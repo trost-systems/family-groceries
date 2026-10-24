@@ -49,5 +49,6 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
 - [MCP access](./mcp-access.md) covers Menü → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
+- [Account](./account.md) covers Menü → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
 
 Not mapped yet. These are on main but outside this seed: Google and Apple sign-in (01b; buttons keyed `sign-in-google` and `sign-in-apple`, shown only when client IDs are configured), the OAuth consent page (03; web only, `/oauth/consent`), stores and category management (02; store picker "Alle/dm/Lidl/Edeka" under the add field, menu entry "Kategorien verwalten"). Each owner adds its file.

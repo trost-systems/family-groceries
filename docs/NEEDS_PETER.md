@@ -424,3 +424,55 @@ push from `vercel.json`:
 Nothing is needed from you here. Optional: a custom domain (Vercel,
 Domains). If you add one, rerun `auth_urls.ts` with it (section 2) and
 change `APP_URL` in `app/config/auth.json`.
+
+Domains). If you add one, rerun `auth_urls.ts` with it and change `appUrl`.
+
+## Job 9: account deletion and data export
+
+In-app deletion and export are built and tested (`docs/ACCOUNT_DELETION.md`).
+Three things need you.
+
+### Approve the drafts (ENTWURF, nicht veröffentlicht: Freigabe durch Peter)
+
+1. `app/web/konto-loeschen.html`: the public "Konto und Daten löschen"
+   page Google Play asks for. After the merge it is served at
+   `https://family-groceries-pied.vercel.app/konto-loeschen.html` with
+   `noindex` and a red ENTWURF banner. Check the wording, the developer
+   name ("Peter Trost", which must match the Play listing), the support
+   address `peter@petertrost.com` and the promise "innerhalb von 30 Tagen"
+   for requests from people who can no longer sign in. To publish it, delete
+   the `<p class="draft">` line and the `noindex` meta tag, then enter the
+   URL in Play Console under App content › Data safety › Data deletion.
+2. `docs/ACCOUNT_DELETION.md`, sections "What is deleted" and "What stays,
+   and for how long": these are the facts for the App Store privacy label
+   and the Play Data safety form (job 14 drafts those).
+
+### Sign in with Apple token revocation on the hosted project
+
+Apple wants the app to revoke Sign in with Apple tokens when a user deletes
+their account. The `account` function does that on iPhones, but only when
+it has the Sign in with Apple key. The function deploys with every merge to
+`main`. Until the secrets below exist, it deletes accounts without revoking,
+and the app tells Apple users to remove "Einkauf" in their Apple ID
+settings (Apple's documented fallback, TN3194).
+
+3. Set the function secrets once, from your Mac or the build box (the key
+   file and IDs are the ones from section 4, step 10; this prints nothing):
+
+   ```bash
+   source ~/groceries-ops/env
+   supabase secrets set --project-ref jdwqrallbpdbshrdhenk \
+     APPLE_TEAM_ID="$APPLE_TEAM_ID" APPLE_KEY_ID="$APPLE_KEY_ID" \
+     APPLE_BUNDLE_ID=com.petertrost.familygroceries \
+     APPLE_PRIVATE_KEY="$(cat "$APPLE_PRIVATE_KEY_FILE")"
+   supabase secrets list --project-ref jdwqrallbpdbshrdhenk | grep APPLE_
+   ```
+
+   The key must be enabled for the App ID `com.petertrost.familygroceries`
+   (it is: section 4, step 10 configured it with that primary App ID). Unlike
+   the Supabase Apple client secret, nothing here expires: the function
+   signs a fresh 5-minute client secret per deletion.
+4. Check it once on your iPhone with a throwaway Apple account (never with
+   your or Lea's real account). Sign in with Apple, then Konto › Konto
+   löschen. The success message must not show the "Apple-ID-Einstellungen"
+   hint, and the function log must show `apple: revoked`.

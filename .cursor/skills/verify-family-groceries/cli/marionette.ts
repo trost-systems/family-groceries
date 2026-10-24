@@ -41,7 +41,15 @@ export function matcherArgs(m: Matcher): string[] {
  */
 export function parseElements(output: string): Element[] {
   const elements: Element[] = [];
+  // Values are printed raw, so a multi-line one (a fresh partner item's
+  // semanticsLabel "Milch\nNeu") continues on the next lines; rejoin it,
+  // escaped so the quoted value still parses as JSON.
+  const lines: string[] = [];
   for (const line of output.split('\n')) {
+    if (line.startsWith('Type: ') || lines.length === 0) lines.push(line);
+    else if (line !== '') lines[lines.length - 1] += `\\n${line}`;
+  }
+  for (const line of lines) {
     if (!line.startsWith('Type: ')) continue;
     const fields: Record<string, string> = {};
     const pair = /(\w+): ("(?:[^"\\]|\\.)*"|\{[^}]*\}|[^,]+)(?:, |$)/g;
