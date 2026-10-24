@@ -140,6 +140,10 @@ snapshots:
       style: secondary
       start: 40
       end: 66
+    - source: "done ? _done : l10n.open"
+      style: secondary
+      start: 41
+      end: 65
   "const _title = 'Einkaufsliste';\nWidget build(BuildContext context) => const Text(_title);\n":
     labels:
     - source: _title
@@ -180,6 +184,24 @@ snapshots:
       style: secondary
       start: 80
       end: 88
+  "final d = showDatePicker(context: context, confirmText: 'Übernehmen', firstDate: a, lastDate: b);\n":
+    labels:
+    - source: "'Übernehmen'"
+      style: primary
+      start: 56
+      end: 69
+    - source: Übernehmen
+      style: secondary
+      start: 57
+      end: 68
+    - source: "confirmText:"
+      style: secondary
+      start: 43
+      end: 55
+    - source: "confirmText: 'Übernehmen'"
+      style: secondary
+      start: 43
+      end: 69
   "final dialog = AlertDialog(title: Text(\"Haushalt verlassen?\"));\n":
     labels:
     - source: "\"Haushalt verlassen?\""
@@ -260,6 +282,36 @@ snapshots:
       style: secondary
       start: 22
       end: 33
+  "final t = Text('Hallo'.toUpperCase());\n":
+    labels:
+    - source: "'Hallo'"
+      style: primary
+      start: 15
+      end: 22
+    - source: Hallo
+      style: secondary
+      start: 16
+      end: 21
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text('Hallo'.toUpperCase())
+      style: secondary
+      start: 10
+      end: 37
+    - source: ('Hallo'.toUpperCase())
+      style: secondary
+      start: 14
+      end: 37
+    - source: "'Hallo'.toUpperCase()"
+      style: secondary
+      start: 15
+      end: 36
+    - source: "'Hallo'.toUpperCase"
+      style: secondary
+      start: 15
+      end: 34
   "final t = Text((('Klammer')));\n":
     labels:
     - source: "'Klammer'"
@@ -282,6 +334,78 @@ snapshots:
       style: secondary
       start: 14
       end: 29
+    - source: (('Klammer'))
+      style: secondary
+      start: 15
+      end: 28
+    - source: ('Klammer')
+      style: secondary
+      start: 16
+      end: 27
+  "final t = Text(<String>['Eins'].join(', '));\n":
+    labels:
+    - source: "'Eins'"
+      style: primary
+      start: 24
+      end: 30
+    - source: Eins
+      style: secondary
+      start: 25
+      end: 29
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text(<String>['Eins'].join(', '))
+      style: secondary
+      start: 10
+      end: 43
+    - source: (<String>['Eins'].join(', '))
+      style: secondary
+      start: 14
+      end: 43
+    - source: <String>['Eins'].join(', ')
+      style: secondary
+      start: 15
+      end: 42
+    - source: <String>['Eins'].join
+      style: secondary
+      start: 15
+      end: 36
+    - source: <String>['Eins']
+      style: secondary
+      start: 15
+      end: 31
+  "final t = Text(['Eins', 'Zwei'][c]);\n":
+    labels:
+    - source: "'Eins'"
+      style: primary
+      start: 16
+      end: 22
+    - source: Eins
+      style: secondary
+      start: 17
+      end: 21
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text(['Eins', 'Zwei'][c])
+      style: secondary
+      start: 10
+      end: 35
+    - source: (['Eins', 'Zwei'][c])
+      style: secondary
+      start: 14
+      end: 35
+    - source: "['Eins', 'Zwei'][c]"
+      style: secondary
+      start: 15
+      end: 34
+    - source: "['Eins', 'Zwei']"
+      style: secondary
+      start: 15
+      end: 31
   "final t = Text(count.toString() + ' Stück');\n":
     labels:
     - source: "' Stück'"
@@ -304,6 +428,10 @@ snapshots:
       style: secondary
       start: 14
       end: 44
+    - source: count.toString() + ' Stück'
+      style: secondary
+      start: 15
+      end: 43
   "final t = Text(done ? 'Erledigt' : l10n.open);\n":
     labels:
     - source: "'Erledigt'"
@@ -326,6 +454,10 @@ snapshots:
       style: secondary
       start: 14
       end: 45
+    - source: "done ? 'Erledigt' : l10n.open"
+      style: secondary
+      start: 15
+      end: 44
   "final t = Text(done ? l10n.done : 'Offen');\n":
     labels:
     - source: "'Offen'"
@@ -348,6 +480,44 @@ snapshots:
       style: secondary
       start: 14
       end: 42
+    - source: "done ? l10n.done : 'Offen'"
+      style: secondary
+      start: 15
+      end: 41
+  "final t = Text(n ?? 'Lea'.toString());\n":
+    labels:
+    - source: "'Lea'"
+      style: primary
+      start: 20
+      end: 25
+    - source: Lea
+      style: secondary
+      start: 21
+      end: 24
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text(n ?? 'Lea'.toString())
+      style: secondary
+      start: 10
+      end: 37
+    - source: (n ?? 'Lea'.toString())
+      style: secondary
+      start: 14
+      end: 37
+    - source: n ?? 'Lea'.toString()
+      style: secondary
+      start: 15
+      end: 36
+    - source: "'Lea'.toString()"
+      style: secondary
+      start: 20
+      end: 36
+    - source: "'Lea'.toString"
+      style: secondary
+      start: 20
+      end: 34
   "final t = Text(switch (kind) { 'bought' => 'Gekauft', _ => l10n.open });\n":
     labels:
     - source: "'Gekauft'"
@@ -370,6 +540,52 @@ snapshots:
       style: secondary
       start: 14
       end: 71
+    - source: switch (kind) { 'bought' => 'Gekauft', _ => l10n.open }
+      style: secondary
+      start: 15
+      end: 70
+    - source: "'bought' => 'Gekauft'"
+      style: secondary
+      start: 31
+      end: 52
+  "final t = Text({'k': 'Wert'}[k]!);\n":
+    labels:
+    - source: "'Wert'"
+      style: primary
+      start: 21
+      end: 27
+    - source: Wert
+      style: secondary
+      start: 22
+      end: 26
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: "Text({'k': 'Wert'}[k]!)"
+      style: secondary
+      start: 10
+      end: 33
+    - source: "({'k': 'Wert'}[k]!)"
+      style: secondary
+      start: 14
+      end: 33
+    - source: "{'k': 'Wert'}[k]!"
+      style: secondary
+      start: 15
+      end: 32
+    - source: "{'k': 'Wert'}[k]"
+      style: secondary
+      start: 15
+      end: 31
+    - source: "{'k': 'Wert'}"
+      style: secondary
+      start: 15
+      end: 28
+    - source: "'k': 'Wert'"
+      style: secondary
+      start: 16
+      end: 27
   "final t = Tooltip(message: name ?? 'Unbenannt', child: icon);\n":
     labels:
     - source: "'Unbenannt'"
@@ -387,6 +603,10 @@ snapshots:
     - source: "message: name ?? 'Unbenannt'"
       style: secondary
       start: 18
+      end: 46
+    - source: name ?? 'Unbenannt'
+      style: secondary
+      start: 27
       end: 46
   "final tip = IconButton(tooltip: \"Löschen\", icon: const Icon(Icons.delete), onPressed: delete);\n":
     labels:
