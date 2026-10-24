@@ -933,7 +933,10 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
 12.3. **What counts as hard-coded UI text.** A string literal in `app/lib`
       (not `l10n/`) whose own text has a letter and is not a path. It counts
       when it is the text of `Text` or `SelectableText`, or the value of a
-      named argument that Flutter uses for text. The names come from emotely's
+      named argument that Flutter uses for text. The rule looks through a
+      ternary's branches, `??`, `+`, parentheses and switch-expression arms
+      to that position, so `Text(done ? 'Erledigt' : 'Offen')` and
+      `Text(n + ' Stück')` fail (review 0). The names come from emotely's
       `avoid_hardcoded_ui_text`. A string constant declared in the same file
       and shown in one of those places counts as the literal. A constant
       imported from another file is not seen, because that needs types.
@@ -945,7 +948,10 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       `SearchController` that is disposed in a function that also awaits
       `show*Dialog`, `show*BottomSheet` or `showCupertinoModalPopup`. A
       `finally` block counts too. The fix is a dialog widget whose State
-      owns the controller.
+      owns the controller. The rule does not check order inside the
+      function, so a dispose written before the await is reported too. It
+      also does not follow a dialog that a helper function opens and the
+      caller awaits; that needs a call graph.
 12.5. **squawk rules as an allow-list in `schema_check.ts`.** squawk has no
       "only these rules" switch, so the check keeps the backward-compatibility
       rules from its JSON report (`COMPAT_RULES`) plus parse errors. Those
@@ -961,7 +967,9 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       households.** The table must appear as `public.<table>` in a
       `supabase/tests/*.test.sql` file that calls `create_household(` at
       least twice. A mention in a single-household test does not count.
-      `personal_access_tokens` meets this in its own test file.
+      `personal_access_tokens` meets this in its own test file. A table
+      created with `(like public.<table> ...)` inherits that table's
+      `household_id` and needs its own RLS, policy and test (review 0).
 12.8. **The base is `origin/main`.** `lint.sh` fetches it at depth 1 when the
       ref is missing, as it is in a CI pull-request checkout. A new migration
       must sort after main's newest, and main's files must match byte for

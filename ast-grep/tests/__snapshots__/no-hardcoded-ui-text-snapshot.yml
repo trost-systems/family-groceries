@@ -100,6 +100,46 @@ snapshots:
       style: secondary
       start: 75
       end: 98
+  "const _done = 'Erledigt';\nfinal t = Text(done ? _done : l10n.open);\n":
+    labels:
+    - source: _done
+      style: primary
+      start: 48
+      end: 53
+    - source: _done
+      style: secondary
+      start: 6
+      end: 11
+    - source: Erledigt
+      style: secondary
+      start: 15
+      end: 23
+    - source: "'Erledigt'"
+      style: secondary
+      start: 14
+      end: 24
+    - source: _done = 'Erledigt'
+      style: secondary
+      start: 6
+      end: 24
+    - source: |
+        const _done = 'Erledigt';
+        final t = Text(done ? _done : l10n.open);
+      style: secondary
+      start: 0
+      end: 68
+    - source: Text
+      style: secondary
+      start: 36
+      end: 40
+    - source: "Text(done ? _done : l10n.open)"
+      style: secondary
+      start: 36
+      end: 66
+    - source: "(done ? _done : l10n.open)"
+      style: secondary
+      start: 40
+      end: 66
   "const _title = 'Einkaufsliste';\nWidget build(BuildContext context) => const Text(_title);\n":
     labels:
     - source: _title
@@ -220,6 +260,134 @@ snapshots:
       style: secondary
       start: 22
       end: 33
+  "final t = Text((('Klammer')));\n":
+    labels:
+    - source: "'Klammer'"
+      style: primary
+      start: 17
+      end: 26
+    - source: Klammer
+      style: secondary
+      start: 18
+      end: 25
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text((('Klammer')))
+      style: secondary
+      start: 10
+      end: 29
+    - source: ((('Klammer')))
+      style: secondary
+      start: 14
+      end: 29
+  "final t = Text(count.toString() + ' Stück');\n":
+    labels:
+    - source: "' Stück'"
+      style: primary
+      start: 34
+      end: 43
+    - source: " Stück"
+      style: secondary
+      start: 35
+      end: 42
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text(count.toString() + ' Stück')
+      style: secondary
+      start: 10
+      end: 44
+    - source: (count.toString() + ' Stück')
+      style: secondary
+      start: 14
+      end: 44
+  "final t = Text(done ? 'Erledigt' : l10n.open);\n":
+    labels:
+    - source: "'Erledigt'"
+      style: primary
+      start: 22
+      end: 32
+    - source: Erledigt
+      style: secondary
+      start: 23
+      end: 31
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: "Text(done ? 'Erledigt' : l10n.open)"
+      style: secondary
+      start: 10
+      end: 45
+    - source: "(done ? 'Erledigt' : l10n.open)"
+      style: secondary
+      start: 14
+      end: 45
+  "final t = Text(done ? l10n.done : 'Offen');\n":
+    labels:
+    - source: "'Offen'"
+      style: primary
+      start: 34
+      end: 41
+    - source: Offen
+      style: secondary
+      start: 35
+      end: 40
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: "Text(done ? l10n.done : 'Offen')"
+      style: secondary
+      start: 10
+      end: 42
+    - source: "(done ? l10n.done : 'Offen')"
+      style: secondary
+      start: 14
+      end: 42
+  "final t = Text(switch (kind) { 'bought' => 'Gekauft', _ => l10n.open });\n":
+    labels:
+    - source: "'Gekauft'"
+      style: primary
+      start: 43
+      end: 52
+    - source: Gekauft
+      style: secondary
+      start: 44
+      end: 51
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text(switch (kind) { 'bought' => 'Gekauft', _ => l10n.open })
+      style: secondary
+      start: 10
+      end: 71
+    - source: (switch (kind) { 'bought' => 'Gekauft', _ => l10n.open })
+      style: secondary
+      start: 14
+      end: 71
+  "final t = Tooltip(message: name ?? 'Unbenannt', child: icon);\n":
+    labels:
+    - source: "'Unbenannt'"
+      style: primary
+      start: 35
+      end: 46
+    - source: Unbenannt
+      style: secondary
+      start: 36
+      end: 45
+    - source: "message:"
+      style: secondary
+      start: 18
+      end: 26
+    - source: "message: name ?? 'Unbenannt'"
+      style: secondary
+      start: 18
+      end: 46
   "final tip = IconButton(tooltip: \"Löschen\", icon: const Icon(Icons.delete), onPressed: delete);\n":
     labels:
     - source: "\"Löschen\""

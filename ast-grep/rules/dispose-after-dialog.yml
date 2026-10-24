@@ -7,6 +7,11 @@
 # close, fixed in f454567). The dialog owns its controllers instead: a
 # StatefulWidget that creates them in its State and disposes them in
 # State.dispose().
+#
+# Two limits of a syntactic rule: it reports a dispose anywhere in a function
+# that awaits a dialog, also one written before the await (still a fragile
+# shape; the fix is the same), and it does not follow a dialog opened in a
+# helper function the code awaits (DECISIONS 12.4).
 id: dispose-after-dialog
 language: dart
 severity: error

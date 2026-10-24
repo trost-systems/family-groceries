@@ -83,6 +83,8 @@ const DROP_POLICY = new RegExp(
 );
 const MEMBER_CHECK = /\bis_household_member\s*\(\s*(?:\w+\.)?household_id\s*\)/;
 const HOUSEHOLD_COLUMN = /[(,]\s*"?household_id"?\s+\w/;
+/** `like public.items` copies the columns (household_id included) but not RLS or policies. */
+const LIKE = /[(,]\s*like\s+(?:public\.)?"?(\w+)"?/g;
 
 /** Every public table enables row level security, so PostgREST never serves it unfiltered. A
  * table with household_id also has a policy calling is_household_member(household_id) and a
@@ -135,7 +137,8 @@ function apply(tables: Map<string, Table>, file: string, statement: string) {
     if (schema === undefined || schema === 'public.') {
       tables.set(name, {
         file,
-        household: HOUSEHOLD_COLUMN.test(body),
+        household: HOUSEHOLD_COLUMN.test(body) ||
+          [...body.matchAll(LIKE)].some(([, source]) => tables.get(source)?.household === true),
         rls: false,
         policies: new Map(),
       });

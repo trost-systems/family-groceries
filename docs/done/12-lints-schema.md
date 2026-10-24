@@ -79,3 +79,24 @@ column quantity`, and a migration older than main's newest.
 - Job 11 (#20) moves CI to gate scripts. Whichever PR lands second moves
   the lint step into `scripts/gates/lint.sh` and drops the separate `lint`
   job (BOARD 20:25).
+
+## Review 0 fixes (PR #25)
+
+- **Must fix.** `no-hardcoded-ui-text` now reaches the text position through
+  the expressions that pass a value on unchanged: a ternary's branches, `??`,
+  `+`, parentheses and switch-expression arms. The reviewer's probes
+  `Text(done ? 'Erledigt' : 'Offen')` and `Text(a + 'abc')` now fail
+  (3 findings). New test cases cover those five shapes and a same-file
+  constant in a ternary. Valid cases cover a literal used as a condition or
+  a switch pattern, which is not shown and stays unreported. Main still
+  scans clean.
+- **Schema check.** `create table ... (like public.items ...)` inherits the
+  source's `household_id`. The copy now needs its own RLS, policy and test.
+  There is a new Deno test, so the suite has 16 tests.
+- **Documented limits.** `dispose-after-dialog` does not check order within
+  the function, and it does not follow a dialog that a helper opens. Both
+  limits are now in the rule comment and DECISIONS 12.4. DECISIONS 12.3 and
+  12.7 cover the new shapes.
+- **Job 11.** #20 is still open. It rebased onto f6f03f8 (BOARD 21:02) and
+  folds the `lint` job into its gate, keeping `lint` in `ci-ok`'s needs
+  (BOARD 20:42).

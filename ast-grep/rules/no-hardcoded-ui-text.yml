@@ -3,6 +3,8 @@
 # reads as language, shown by a widget, is reported:
 #
 # - the text of Text and SelectableText;
+#   (also inside a ternary branch, `??`, `+`, parentheses or a switch
+#   expression arm: `Text(done ? 'Erledigt' : 'Offen')`)
 # - a named argument through which Flutter shows text (label, hintText,
 #   tooltip, message, semanticLabel, ...; the list emotely's
 #   avoid_hardcoded_ui_text analyzer rule uses).
@@ -38,10 +40,22 @@ utils:
           - regex: '(?s)^r[''"]+.*\p{L}'
       - not:
           regex: '^r?[''"]+[^\s/''"]*/[^\s''"]*[''"]+$'
+  # The argument position, reached from the literal through the expressions
+  # that pass a value on unchanged: a ternary's branches, `??`, `+`,
+  # parentheses and switch-expression arms.
   shown-as-text:
-    any:
-      - inside:
-          kind: arguments
+    inside:
+      stopBy:
+        not:
+          any:
+            - kind: conditional_expression
+            - kind: if_null_expression
+            - kind: additive_expression
+            - kind: parenthesized_expression
+            - kind: switch_expression
+            - kind: switch_expression_case
+      any:
+        - kind: arguments
           inside:
             any:
               - kind: call_expression
@@ -52,8 +66,7 @@ utils:
                 has:
                   field: type
                   regex: '^(?:Text|SelectableText)$'
-      - inside:
-          kind: named_argument
+        - kind: named_argument
           has:
             kind: label
             regex: '^(?:counterText|errorText|helperText|hint|hintText|label|labelText|message|prefixText|semanticCounterText|semanticLabel|semanticsLabel|subtitle|suffixText|text|title|tooltip)\s*:$'
