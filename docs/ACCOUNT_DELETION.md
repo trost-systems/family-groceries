@@ -59,7 +59,9 @@ Apple TN3194).
   authorization code (the Apple sheet). The `account` edge function
   exchanges it at `https://appleid.apple.com/auth/token` and revokes the
   refresh token at `https://appleid.apple.com/auth/revoke`. Revocation
-  happens before the database delete.
+  runs after the database delete succeeded. Apple codes are single-use and
+  valid for five minutes, so a delete that fails leaves the code unspent
+  for the retry.
 - **Web and Android, or when revocation fails.** In those cases the server
   holds no Apple token (Supabase Auth does not keep provider tokens). The
   account is deleted anyway, as TN3194 requires, and the app tells the user
@@ -103,7 +105,7 @@ own data:
 | `account` | id, email, created and last sign-in time, sign-in providers |
 | `profile` | display name, created time |
 | `household` | id, name, role and join time, or null |
-| `items_added` | the items you added to the current household, with quantity, status, category, store and times |
+| `items_added` | the items you added to your current household, with quantity, status, category, store and times. Items you added in a household you left belong to that household and are not exported; your actions there are in `history`. |
 | `history` | your entries in the item history (`added`, `bought` and so on), with item name, category and time |
 | `access_tokens` | name, last four characters, created, last used and revoked times. The export never includes the token or its hash. |
 | `connected_apps` | the OAuth apps you allowed, with their scopes and grant times |
@@ -121,6 +123,12 @@ in the app itself can call the export, never an MCP OAuth token.
   with 403.
 - Retrying is safe. A second call after a successful deletion whose
   response got lost still answers 200.
+- The app retries a deletion once, after one second, when the edge
+  gateway drops the call (502, 503, 504 or 546 without the handler's JSON
+  `error`). The local edge runtime does this now and then on a cold worker,
+  and the hosted one on boot failures. A retry that finds the account
+  already gone answers `apple: "manual"`, because it cannot know whether
+  the first call revoked Apple's grant, so the app shows the Apple ID hint.
 - Tests: `supabase/tests/account_deletion.test.sql` (pgTAP),
   `supabase/functions/account/*_test.ts` (Deno),
   `e2e/tests/account.spec.ts` (Playwright) and

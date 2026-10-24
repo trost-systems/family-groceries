@@ -122,6 +122,7 @@ void main() {
       auth.user = userWith(providers);
       return SupabaseAccountRepository(
         FakeFunctionsClient(auth, functions),
+        retryDelay: Duration.zero,
         appleCode: apple == null
             ? null
             : () {
@@ -183,6 +184,45 @@ void main() {
         repository(['google']).delete(),
         throwsA(isA<AccountOffline>()),
       );
+    });
+
+    test(
+      'a call the edge gateway dropped is retried once, then succeeds',
+      () async {
+        var calls = 0;
+        functions.answer = () => calls++ == 0
+            ? throw const FunctionsHttpException(status: 503, details: '')
+            : const {
+                'deleted': true,
+                'household': 'kept',
+                'apple': 'not_linked',
+              };
+        final deleted = await repository(['google']).delete();
+        expect(functions.functionNames, ['account/delete', 'account/delete']);
+        expect(deleted.apple, AppleUnlink.notLinked);
+      },
+    );
+
+    test('a second dropped call fails without a third try', () async {
+      functions.answer = () =>
+          throw const FunctionsHttpException(status: 503, details: '');
+      await expectLater(
+        repository(['google']).delete(),
+        throwsA(isA<AccountFailed>().having((e) => e.code, 'code', '503')),
+      );
+      expect(functions.functionNames, hasLength(2));
+    });
+
+    test('an error the handler answered is not retried', () async {
+      functions.answer = () => throw const FunctionsHttpException(
+        status: 500,
+        details: {'error': 'server', 'message': 'x'},
+      );
+      await expectLater(
+        repository(['google']).delete(),
+        throwsA(isA<AccountFailed>().having((e) => e.code, 'code', 'server')),
+      );
+      expect(functions.functionNames, hasLength(1));
     });
 
     test('an answer without deleted: true is a failure', () async {

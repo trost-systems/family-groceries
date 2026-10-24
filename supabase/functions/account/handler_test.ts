@@ -75,11 +75,11 @@ Deno.test('a retry after the account is gone answers like the first success', as
   const { handle, deleted } = fakeDeps();
   const res = await handle(call({ token: 'gone' }));
   assertEquals(res.status, 200);
-  assertEquals(await res.json(), { deleted: true, household: 'none', apple: 'not_linked' });
+  assertEquals(await res.json(), { deleted: true, household: 'none', apple: 'manual' });
   assertEquals(deleted, []);
 });
 
-Deno.test('an Apple account is revoked with the code, before the delete', async () => {
+Deno.test('an Apple account is revoked with the code, after the delete', async () => {
   const order: string[] = [];
   const { handle } = fakeDeps({
     appleSubject: () => Promise.resolve('apple-sub'),
@@ -96,7 +96,7 @@ Deno.test('an Apple account is revoked with the code, before the delete', async 
     call({ token: 'session', body: JSON.stringify({ apple_authorization_code: 'c0de' }) }),
   );
   assertEquals(await res.json(), { deleted: true, household: 'deleted', apple: 'revoked' });
-  assertEquals(order, ['revoke c0de apple-sub', 'delete']);
+  assertEquals(order, ['delete', 'revoke c0de apple-sub']);
 });
 
 Deno.test('an Apple revocation that fails still deletes, flagged manual', async () => {
@@ -125,11 +125,17 @@ Deno.test('a malformed body is 400 and deletes nothing', async () => {
   }
 });
 
-Deno.test('a database failure is a 500 JSON error', async () => {
-  const { handle } = fakeDeps({ deleteAccount: () => Promise.reject(new Error('boom')) });
-  const res = await handle(call({ token: 'session' }));
+Deno.test('a database failure is a 500 JSON error and leaves the Apple code unspent', async () => {
+  const { handle, revoked } = fakeDeps({
+    appleSubject: () => Promise.resolve('apple-sub'),
+    deleteAccount: () => Promise.reject(new Error('boom')),
+  });
+  const res = await handle(
+    call({ token: 'session', body: JSON.stringify({ apple_authorization_code: 'c0de' }) }),
+  );
   assertEquals(res.status, 500);
   assertEquals((await res.json()).error, 'server');
+  assertEquals(revoked, []);
 });
 
 Deno.test('only POST /account/delete deletes; other methods and paths do not', async () => {
