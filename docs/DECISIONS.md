@@ -65,7 +65,7 @@ any of them; each entry says what changing it would touch.
     leaves the field unable to receive text on the next tap.
 17. **No web hosting yet.** The hosted Auth site URL and redirect list wait
     for a public web URL (GitHub Pages is the free candidate); see
-    `NEEDS_PETER.md`.
+    `NEEDS_PETER.md`. Superseded by 7.x: the web app is on Vercel.
 18. **Local stack trims.** Studio, Storage and Analytics are disabled in
     `supabase/config.toml` to fit the shared 15 GB box; enable them locally
     when needed.
@@ -767,3 +767,32 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       without a freeze passed; CI ran the full suite six times in a row on
       the squashed commit, all green. Local runs log their longest
       mem-guard gap, so a red run can be told apart from a stall.
+
+## Job 7b: loose ends of the Vercel hosting
+
+7b.1. **`APP_URL` lives in `app/config/auth.json`.** The phone apps' invite
+      links need the web origin. Dart no longer hardcodes it: `Environment.appUrl`
+      reads only the `APP_URL` define and is empty without it (the dialog then
+      shows only the code). Every production build already passes
+      `--dart-define-from-file=config/auth.json` (both fastlane lanes and
+      `scripts/vercel.sh`), so that file is the one source of truth; a custom
+      domain is a one-line JSON change. `auth_config_test.dart` fails when a
+      production build command drops the file (checked by removing it from a
+      Fastfile lane and from `vercel.sh`) or `APP_URL` is not an https origin.
+      Rejected: Vercel's `VERCEL_PROJECT_PRODUCTION_URL`, because the phone
+      builds don't run on Vercel and the web app links to its own origin.
+7b.2. **SPA rewrite by asset type, not by "has a dot".** The old rule
+      `/((?!.*\.\w+$).*)` 404ed deep links like `/join/AB.CD`. The rewrite now
+      skips only Flutter's asset folders (`assets/`, `canvaskit/`, `icons/`)
+      and the file extensions a Flutter web build emits, so a missing asset is
+      still a 404. `e2e/web-smoke.mjs` checks both sides. Limit: a path
+      whose last segment ends in one of those extensions (`/join/ab.png`,
+      `/lists/a.json`) is still a 404. No real link has that shape today:
+      invite codes are eight characters from `A-Z` and `2-9` without a dot
+      (`create_invite`), and `/join/:code` is the only route that takes a
+      path parameter.
+7b.3. **Deleted the unused repo secret `SUPABASE_DB_PASSWORD`.** Nothing read
+      it since 7.8. The value stays in `~/groceries-ops/env`, so it can be
+      set again with `gh secret set`. The remaining repo hits of the name are
+      `docs/SPEC.md` (the ops spec, copied verbatim) and past job records in
+      `docs/done/`.
