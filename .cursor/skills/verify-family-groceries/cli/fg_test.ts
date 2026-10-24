@@ -308,6 +308,19 @@ Deno.test('element parsing keeps keys, labels, tooltips, bounds and text with co
   assertEquals(els[8].enabled, true);
 });
 
+Deno.test('a value spanning lines (a fresh partner item) stays one element', () => {
+  const els = parseElements(`Found 2 interactive element(s):
+
+Type: Text, Text: "Milch", semanticsLabel: "Milch
+Neu", bounds: {"x":68,"y":302,"width":284,"height":24}
+Type: IconButton, tooltip: "Menü", bounds: {"x":372,"y":8,"width":40,"height":40}
+`);
+  assertEquals(els.length, 2);
+  assertEquals(els[0].text, 'Milch');
+  assertEquals(els[0].bounds, { x: 68, y: 302, width: 284, height: 24 });
+  assertEquals(els[1].tooltip, 'Menü');
+});
+
 Deno.test('a row is the smallest keyed element around the text', () => {
   const els = parseElements(LIST_SCREEN);
   assertEquals(rowKeyFor(els, 'Äpfel'), 'addb2484');

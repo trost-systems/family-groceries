@@ -796,3 +796,108 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       set again with `gh secret set`. The remaining repo hits of the name are
       `docs/SPEC.md` (the ops spec, copied verbatim) and past job records in
       `docs/done/`.
+
+## Job 9 (account deletion and data export), 2026-10-24
+
+9.1. **What the stores require.** Researched 2026-10-24.
+     - Apple, App Review Guideline 5.1.1(v) and "Offering account deletion
+       in your app"
+       (https://developer.apple.com/support/offering-account-deletion-in-your-app/).
+       The app must let people start deletion inside the app, and the
+       option must be easy to find, typically in account settings. It must
+       delete the whole account record and the personal data, not just
+       deactivate it. A confirmation step is allowed, but deletion must not
+       be "unnecessarily difficult" and must not need a support contact.
+       Data kept for legal reasons must be named. A manual or delayed
+       process is fine if the user is told how long it takes. Apps with Sign
+       in with Apple "should use the Sign in with Apple REST API to revoke
+       user tokens".
+     - Apple TN3194
+       (https://developer.apple.com/documentation/technotes/tn3194-handling-account-deletions-and-revoking-tokens-for-sign-in-with-apple).
+       Revoke with `POST /auth/revoke`. When the app holds no token or
+       code, it must still delete the account and point the user to the
+       Apple ID settings.
+     - Google Play, "Understanding Google Play's app account deletion
+       requirements"
+       (https://support.google.com/googleplay/android-developer/answer/13327111).
+       The app needs an in-app deletion path and a web URL where users can
+       request deletion without reinstalling the app. The page must name the
+       app or developer as on the listing, give the steps, and say what is
+       deleted, what is kept and for how long. The URL goes into the Data
+       safety form.
+     - GDPR Art. 20: an export in a structured, commonly used,
+       machine-readable format. Neither store requires an export.
+9.2. **An edge function, not an RPC.** Apple revocation needs HTTPS calls
+     signed with the Sign in with Apple key, which Postgres cannot make. The
+     database half is still one SQL function, `public.delete_account(uuid)`,
+     granted to `service_role` only. The function deletes `auth.users` in
+     the same transaction as the household cleanup, so deletion either
+     completes or leaves nothing half-done. It does not use the Auth admin
+     API afterwards. Every auth table cascades from `auth.users` (checked in
+     `pg_constraint`), and the hosted `postgres` role has DELETE on it
+     (checked read-only through the Management API).
+9.3. **Fixed on main: no user who had added an item could be deleted.**
+     `items_before_write` restored `added_by` on every UPDATE, including the
+     `ON DELETE SET NULL` that deleting the user triggers, so the foreign key
+     failed. The same failure hit the Supabase dashboard and the admin API.
+     The trigger now passes such a set-null through, but only when the
+     referenced user is really gone. It is security definer because it
+     reads `auth.users`. The set-null also bumps no `updated_at`, and
+     `items_log_event` no longer logs updates that change nothing visible.
+     Clients still cannot rewrite `added_by`.
+9.4. **The household after a deletion.** If other members remain, the
+     household and its list stay. The leaver's items keep their place with
+     `added_by`/`bought_by` null. Their history rows stay with `actor` null,
+     in every household. Ownership passes to the earliest-joined remaining
+     member. If the leaver was the last member, the household goes with all
+     its rows. The household row is locked `FOR UPDATE`, so a concurrent
+     `join_household` or a second member deleting at the same moment
+     serializes behind it, and no orphaned household can be left behind.
+9.5. **Only the app's own session may delete.** `authenticateSession` in
+     `_shared/auth.ts` answers 403 `session_required` to personal access
+     tokens and to OAuth client tokens (MCP), so a connected assistant cannot
+     delete the account. Unlike `authenticate`, it needs no household. A
+     retry whose first call succeeded but lost its response gets 200 again.
+     The JWT still verifies, its user is gone, and a signature cannot be
+     forged for a user who never existed.
+9.6. **Sign in with Apple revocation.** On iOS the app asks Apple for a
+     fresh authorization code after the typed confirmation. The function
+     exchanges it with the bundle ID as client ID, checks that the code's
+     `sub` is the account's Apple identity, and revokes the refresh token
+     before the database delete. Web and Android sign in with Apple through
+     Supabase's redirect, and Supabase keeps no provider token (supabase/auth
+     #1308), so they take TN3194's fallback. The account is deleted and the
+     app shows the Apple ID settings path. Re-running an Apple redirect just
+     to get a token was rejected: it adds a full-page round trip to every
+     Apple deletion on the web for a case Apple documents as acceptable. Any
+     Apple failure (no key configured, network, `invalid_grant`, wrong
+     `sub`) never blocks deletion and ends in the same fallback. The key
+     reaches the hosted function only as a secret Peter sets
+     (`docs/NEEDS_PETER.md`, job 9). The box did not push the private key to
+     production on its own.
+9.7. **Confirmation by typing LÖSCHEN.** It is one deliberate step that
+     Apple's "not unnecessarily difficult" allows, and it needs no email
+     round trip. `LOESCHEN` also counts, for keyboards without umlauts.
+     There is no re-authentication beyond Apple's sheet on iOS. The session
+     already proves the user, and a password prompt does not exist for
+     Google or Apple users.
+9.8. **Online only.** Deletion is not an `ItemOp` and is never queued. When
+     offline, the dialog refuses and says nothing was deleted. Queuing an
+     irreversible action for later would surprise the user.
+9.9. **Export as an RPC.** `public.export_my_data()` returns the caller's
+     own data only, never other members' names, and never token hashes.
+     OAuth client tokens get `session_required`, because PostgREST accepts
+     them too. The app saves it as `einkauf-daten-YYYY-MM-DD.json`: a
+     download on the web, the share sheet on the phones, the Downloads folder
+     on the desktop debug build that the verify skill drives.
+9.10. **Where the entry lives.** It sits in a "Konto" section of the
+      settings screen, opened from its own "Konto" menu entry on the list,
+      so it is one tap from the menu as Apple asks. It is also a button on
+      the welcome screen, so a user who never joined a household can delete
+      their account.
+9.11. **The public deletion page is a static file.** It lives at
+      `app/web/konto-loeschen.html`, not in a Flutter route. It loads
+      without JavaScript, crawlers and Play reviewers can read it, and it
+      bypasses `authRedirect`. Vercel's SPA rewrite skips paths with a file
+      extension. It carries `noindex` and the ENTWURF banner until Peter
+      approves it.
