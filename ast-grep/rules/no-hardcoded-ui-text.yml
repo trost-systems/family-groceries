@@ -1,0 +1,86 @@
+# The UI speaks German from app/l10n/app_de.arb (CLAUDE.md, SPEC: "strings in
+# an ARB/l10n file so English can be added later"). A string literal that
+# reads as language, shown by a widget, is reported:
+#
+# - the text of Text and SelectableText;
+# - a named argument through which Flutter shows text (label, hintText,
+#   tooltip, message, semanticLabel, ...; the list emotely's
+#   avoid_hardcoded_ui_text analyzer rule uses).
+#
+# A literal reads as language when its own text (outside interpolations) has
+# a letter and it is not a path or URL. A constant declared in the same file
+# and shown in one of those places counts as the literal; one imported from
+# another file is out of reach without types (DECISIONS 12.3). A syntactic rule cannot see types, so
+# a non-widget class with a parameter of the same name is reported too: give
+# it the value from AppLocalizations or a non-literal. This is ast-grep, not
+# an analyzer plugin, so it costs no RAM in every agent's analysis server
+# (DECISIONS, Job 12).
+id: no-hardcoded-ui-text
+language: dart
+severity: error
+files:
+  - app/lib/**
+ignores:
+  - app/lib/l10n/**
+utils:
+  language-literal:
+    kind: string_literal
+    all:
+      - any:
+          - has:
+              stopBy: end
+              regex: '\p{L}'
+              any:
+                - kind: template_chars_single_single
+                - kind: template_chars_double_single
+                - kind: template_chars_single
+                - kind: template_chars_double
+          - regex: '(?s)^r[''"]+.*\p{L}'
+      - not:
+          regex: '^r?[''"]+[^\s/''"]*/[^\s''"]*[''"]+$'
+  shown-as-text:
+    any:
+      - inside:
+          kind: arguments
+          inside:
+            any:
+              - kind: call_expression
+                has:
+                  field: function
+                  regex: '(?:^|[^\w.])(?:Text|SelectableText)$'
+              - kind: const_object_expression
+                has:
+                  field: type
+                  regex: '^(?:Text|SelectableText)$'
+      - inside:
+          kind: named_argument
+          has:
+            kind: label
+            regex: '^(?:counterText|errorText|helperText|hint|hintText|label|labelText|message|prefixText|semanticCounterText|semanticLabel|semanticsLabel|subtitle|suffixText|text|title|tooltip)\s*:$'
+rule:
+  matches: shown-as-text
+  any:
+    - matches: language-literal
+    - any:
+        - kind: identifier
+          pattern: $NAME
+        - kind: member_expression
+          has:
+            field: property
+            pattern: $NAME
+      inside:
+        stopBy: end
+        kind: source_file
+        has:
+          stopBy: end
+          any:
+            - kind: static_final_declaration
+            - kind: initialized_variable_definition
+          all:
+            - has:
+                field: name
+                pattern: $NAME
+            - has:
+                field: value
+                matches: language-literal
+message: 'A user-visible string is written into the UI as a literal: add it to app/l10n/app_de.arb and read it through AppLocalizations.of(context)'

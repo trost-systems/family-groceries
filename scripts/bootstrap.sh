@@ -58,6 +58,23 @@ if ! command -v gitleaks >/dev/null; then
 fi
 "$TOOLS_BIN/gitleaks" version 2>/dev/null || gitleaks version
 
+log "ast-grep and squawk (scripts/lint.sh), at the versions ci.yml pins"
+pinned() { sed -n "s/^  $1_VERSION: //p" "$REPO_ROOT/.github/workflows/ci.yml"; }
+version="$(pinned AST_GREP)"
+if [[ "$(ast-grep --version 2>/dev/null)" != "ast-grep $version" ]]; then
+  tmp="$(mktemp -d)"
+  curl -fsSL -o "$tmp/ast-grep.zip" "https://github.com/ast-grep/ast-grep/releases/download/${version}/app-$(uname -m)-unknown-linux-gnu.zip"
+  unzip -o -q "$tmp/ast-grep.zip" ast-grep -d "$TOOLS_BIN"
+  rm -rf "$tmp"
+fi
+version="$(pinned SQUAWK)"
+if [[ "$(squawk --version 2>/dev/null)" != "squawk $version" ]]; then
+  arch="$(uname -m)"; [[ "$arch" == "aarch64" ]] && arch=arm64; [[ "$arch" == "x86_64" ]] && arch=x64
+  curl -fsSL -o "$TOOLS_BIN/squawk" "https://github.com/sbdchd/squawk/releases/download/v${version}/squawk-linux-${arch}"
+  chmod +x "$TOOLS_BIN/squawk"
+fi
+"$TOOLS_BIN/ast-grep" --version; "$TOOLS_BIN/squawk" --version
+
 log "deno"
 if ! command -v deno >/dev/null && [[ ! -x "$HOME/.deno/bin/deno" ]]; then
   curl -fsSL https://deno.land/install.sh | sh -s -- -y --no-modify-path >/dev/null

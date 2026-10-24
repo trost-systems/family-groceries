@@ -25,8 +25,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   German sentence splitter is `parse.ts`, its table of sentences
   `parse_test.ts` (`docs/SIRI_SHORTCUT.md` for the Shortcut).
 - `scripts/`: `bootstrap.sh` (toolchain), `dev.sh` (local stack + web dev
-  server), `verify.sh` (every CI gate, locally), `merge-pr.sh` (land a PR
-  as one commit with the required author and trailers).
+  server), `verify.sh` (every CI gate, locally), `lint.sh` (the lint rules
+  below), `merge-pr.sh` (land a PR as one commit with the required author
+  and trailers).
 
 ## Conventions
 
@@ -64,3 +65,23 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   squashes the PR into one commit authored with the required noreply email
   and rebase-merges that commit. GitHub's own squash merge authors the
   commit with the account's default email and rejects the noreply address.
+
+## Lint rules
+
+`scripts/lint.sh` runs these locally and in CI, and each error names the fix.
+Rules live in `ast-grep/rules/` with tests in `ast-grep/tests/`, the schema
+guards in `supabase/checks/schema_check.ts`. Silence one finding only on the
+line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
+`-- squawk-ignore <rule> -- <reason>`.
+
+| Rule | What fails | Why |
+| --- | --- | --- |
+| `no-from-environment` | `String/bool/int.fromEnvironment` outside `app/lib/app/environment.dart` | One inventory of build-time defines |
+| `dispose-after-dialog` | A local controller or FocusNode disposed after `await showDialog`/`showModalBottomSheet` | The route still animates out with it; the join dialog crashed (f454567) |
+| `shared-preferences-only-in-device-cache`, `device-cache-own-file` | A shared-preferences store outside `DeviceCache`, or one without its own Linux file | A second store on supabase's file signed Linux users out (c4ed2e4) |
+| `auth-navigation-only-in-router` | Navigation to `/login` or `/welcome` outside `router.dart` | Auth gating happens only in `authRedirect` |
+| `no-hardcoded-ui-text` | A string literal with letters in `Text(...)` or a `label`/`tooltip`/`hintText`-style argument in `app/lib` | UI text lives in `app/l10n/app_de.arb` |
+| schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |
+| schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
+| squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |
+| `ignore-needs-reason`, schema check: ignores | An `ast-grep-ignore` or `squawk-ignore` without ` -- <reason>` | An exception a reviewer cannot judge gets copied |

@@ -1,0 +1,262 @@
+id: no-hardcoded-ui-text
+snapshots:
+  "Widget build(BuildContext context) => const Text('Einkaufsliste');\n":
+    labels:
+    - source: "'Einkaufsliste'"
+      style: primary
+      start: 49
+      end: 64
+    - source: Einkaufsliste
+      style: secondary
+      start: 50
+      end: 63
+    - source: Text
+      style: secondary
+      start: 44
+      end: 48
+    - source: const Text('Einkaufsliste')
+      style: secondary
+      start: 38
+      end: 65
+    - source: ('Einkaufsliste')
+      style: secondary
+      start: 48
+      end: 65
+  "Widget build(BuildContext context) {\n  const hint = 'Was fehlt?';\n  return TextField(decoration: const InputDecoration(hintText: hint));\n}\n":
+    labels:
+    - source: hint
+      style: primary
+      start: 129
+      end: 133
+    - source: hint
+      style: secondary
+      start: 45
+      end: 49
+    - source: Was fehlt?
+      style: secondary
+      start: 53
+      end: 63
+    - source: "'Was fehlt?'"
+      style: secondary
+      start: 52
+      end: 64
+    - source: const hint = 'Was fehlt?'
+      style: secondary
+      start: 39
+      end: 64
+    - source: |
+        Widget build(BuildContext context) {
+          const hint = 'Was fehlt?';
+          return TextField(decoration: const InputDecoration(hintText: hint));
+        }
+      style: secondary
+      start: 0
+      end: 139
+    - source: "hintText:"
+      style: secondary
+      start: 119
+      end: 128
+    - source: "hintText: hint"
+      style: secondary
+      start: 119
+      end: 133
+  "class _Labels { static const delete = 'Löschen'; }\nfinal tip = IconButton(tooltip: _Labels.delete, onPressed: delete);\n":
+    labels:
+    - source: _Labels.delete
+      style: primary
+      start: 84
+      end: 98
+    - source: delete
+      style: secondary
+      start: 92
+      end: 98
+    - source: delete
+      style: secondary
+      start: 29
+      end: 35
+    - source: Löschen
+      style: secondary
+      start: 39
+      end: 47
+    - source: "'Löschen'"
+      style: secondary
+      start: 38
+      end: 48
+    - source: delete = 'Löschen'
+      style: secondary
+      start: 29
+      end: 48
+    - source: |
+        class _Labels { static const delete = 'Löschen'; }
+        final tip = IconButton(tooltip: _Labels.delete, onPressed: delete);
+      style: secondary
+      start: 0
+      end: 120
+    - source: "tooltip:"
+      style: secondary
+      start: 75
+      end: 83
+    - source: "tooltip: _Labels.delete"
+      style: secondary
+      start: 75
+      end: 98
+  "const _title = 'Einkaufsliste';\nWidget build(BuildContext context) => const Text(_title);\n":
+    labels:
+    - source: _title
+      style: primary
+      start: 81
+      end: 87
+    - source: _title
+      style: secondary
+      start: 6
+      end: 12
+    - source: Einkaufsliste
+      style: secondary
+      start: 16
+      end: 29
+    - source: "'Einkaufsliste'"
+      style: secondary
+      start: 15
+      end: 30
+    - source: _title = 'Einkaufsliste'
+      style: secondary
+      start: 6
+      end: 30
+    - source: |
+        const _title = 'Einkaufsliste';
+        Widget build(BuildContext context) => const Text(_title);
+      style: secondary
+      start: 0
+      end: 90
+    - source: Text
+      style: secondary
+      start: 76
+      end: 80
+    - source: const Text(_title)
+      style: secondary
+      start: 70
+      end: 88
+    - source: (_title)
+      style: secondary
+      start: 80
+      end: 88
+  "final dialog = AlertDialog(title: Text(\"Haushalt verlassen?\"));\n":
+    labels:
+    - source: "\"Haushalt verlassen?\""
+      style: primary
+      start: 39
+      end: 60
+    - source: Haushalt verlassen?
+      style: secondary
+      start: 40
+      end: 59
+    - source: Text
+      style: secondary
+      start: 34
+      end: 38
+    - source: Text("Haushalt verlassen?")
+      style: secondary
+      start: 34
+      end: 61
+    - source: ("Haushalt verlassen?")
+      style: secondary
+      start: 38
+      end: 61
+  "final hint = TextField(decoration: InputDecoration(hintText: 'Was fehlt?'));\n":
+    labels:
+    - source: "'Was fehlt?'"
+      style: primary
+      start: 61
+      end: 73
+    - source: Was fehlt?
+      style: secondary
+      start: 62
+      end: 72
+    - source: "hintText:"
+      style: secondary
+      start: 51
+      end: 60
+    - source: "hintText: 'Was fehlt?'"
+      style: secondary
+      start: 51
+      end: 73
+  "final sheet = showModalBottomSheet(context: context, builder: (c) => Text('Mehr'));\n":
+    labels:
+    - source: "'Mehr'"
+      style: primary
+      start: 74
+      end: 80
+    - source: Mehr
+      style: secondary
+      start: 75
+      end: 79
+    - source: (c) => Text
+      style: secondary
+      start: 62
+      end: 73
+    - source: (c) => Text('Mehr')
+      style: secondary
+      start: 62
+      end: 81
+    - source: ('Mehr')
+      style: secondary
+      start: 73
+      end: 81
+  "final span = TextSpan(text: 'Neu');\n":
+    labels:
+    - source: "'Neu'"
+      style: primary
+      start: 28
+      end: 33
+    - source: Neu
+      style: secondary
+      start: 29
+      end: 32
+    - source: "text:"
+      style: secondary
+      start: 22
+      end: 27
+    - source: "text: 'Neu'"
+      style: secondary
+      start: 22
+      end: 33
+  "final tip = IconButton(tooltip: \"Löschen\", icon: const Icon(Icons.delete), onPressed: delete);\n":
+    labels:
+    - source: "\"Löschen\""
+      style: primary
+      start: 32
+      end: 42
+    - source: Löschen
+      style: secondary
+      start: 33
+      end: 41
+    - source: "tooltip:"
+      style: secondary
+      start: 23
+      end: 31
+    - source: "tooltip: \"Löschen\""
+      style: secondary
+      start: 23
+      end: 42
+  "void undo(ScaffoldMessengerState m) => m.showSnackBar(SnackBar(content: Text('$name gekauft')));\n":
+    labels:
+    - source: "'$name gekauft'"
+      style: primary
+      start: 77
+      end: 92
+    - source: " gekauft"
+      style: secondary
+      start: 83
+      end: 91
+    - source: Text
+      style: secondary
+      start: 72
+      end: 76
+    - source: Text('$name gekauft')
+      style: secondary
+      start: 72
+      end: 93
+    - source: ('$name gekauft')
+      style: secondary
+      start: 76
+      end: 93

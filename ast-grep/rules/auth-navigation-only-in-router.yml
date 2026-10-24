@@ -1,0 +1,28 @@
+# Auth gating happens only in authRedirect (app/lib/app/router.dart,
+# CLAUDE.md): screens never navigate to the sign-in or onboarding routes
+# themselves. Signing out or leaving a household changes SessionCubit's
+# state, and the router's redirect sends the user to /login or /welcome
+# (and back, carrying a pending invite). A screen that calls
+# go('/login') skips the redirect's invite carry-over and races it.
+id: auth-navigation-only-in-router
+language: dart
+severity: error
+files:
+  - app/**
+ignores:
+  - app/lib/app/router.dart
+  - app/test/**
+rule:
+  any:
+    - kind: string_literal
+      regex: '^r?[''"]/(?:login|welcome)(?:[/?#''"])'
+    - kind: identifier
+      regex: '^(?:loginPath|welcomePath)$'
+  inside:
+    kind: arguments
+    inside:
+      kind: call_expression
+      has:
+        field: function
+        regex: '\.\s*(?:go|goNamed|push|pushNamed|pushReplacement|pushReplacementNamed|replace|replaceNamed|pushNamedAndRemoveUntil|popAndPushNamed)$'
+message: 'Navigation to /login or /welcome outside authRedirect: change the session state (SessionCubit) and let authRedirect in app/lib/app/router.dart route the user'

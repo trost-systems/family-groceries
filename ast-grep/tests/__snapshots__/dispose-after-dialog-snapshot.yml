@@ -1,0 +1,168 @@
+id: dispose-after-dialog
+snapshots:
+  "Future<String?> askName(BuildContext context) async {\n  final focus = FocusNode();\n  try {\n    return await showModalBottomSheet<String>(\n      context: context,\n      builder: (sheet) => TextField(focusNode: focus),\n    );\n  } finally {\n    focus.dispose();\n  }\n}\n":
+    labels:
+    - source: focus.dispose()
+      style: primary
+      start: 242
+      end: 257
+    - source: |-
+        await showModalBottomSheet<String>(
+              context: context,
+              builder: (sheet) => TextField(focusNode: focus),
+            )
+      style: secondary
+      start: 102
+      end: 222
+    - source: focus
+      style: secondary
+      start: 62
+      end: 67
+    - source: FocusNode()
+      style: secondary
+      start: 70
+      end: 81
+    - source: final focus = FocusNode()
+      style: secondary
+      start: 56
+      end: 81
+    - source: |-
+        async {
+          final focus = FocusNode();
+          try {
+            return await showModalBottomSheet<String>(
+              context: context,
+              builder: (sheet) => TextField(focusNode: focus),
+            );
+          } finally {
+            focus.dispose();
+          }
+        }
+      style: secondary
+      start: 46
+      end: 264
+    - source: focus
+      style: secondary
+      start: 242
+      end: 247
+    - source: dispose
+      style: secondary
+      start: 248
+      end: 255
+    - source: focus.dispose
+      style: secondary
+      start: 242
+      end: 255
+  "Future<void> rename(BuildContext context) async {\n  var controller = TextEditingController(text: 'x');\n  await showAdaptiveDialog<void>(context: context, builder: (c) => Field(controller));\n  controller.dispose();\n}\n":
+    labels:
+    - source: controller.dispose()
+      style: primary
+      start: 192
+      end: 212
+    - source: "await showAdaptiveDialog<void>(context: context, builder: (c) => Field(controller))"
+      style: secondary
+      start: 105
+      end: 188
+    - source: controller
+      style: secondary
+      start: 56
+      end: 66
+    - source: "TextEditingController(text: 'x')"
+      style: secondary
+      start: 69
+      end: 101
+    - source: "var controller = TextEditingController(text: 'x')"
+      style: secondary
+      start: 52
+      end: 101
+    - source: |-
+        async {
+          var controller = TextEditingController(text: 'x');
+          await showAdaptiveDialog<void>(context: context, builder: (c) => Field(controller));
+          controller.dispose();
+        }
+      style: secondary
+      start: 42
+      end: 215
+    - source: controller
+      style: secondary
+      start: 192
+      end: 202
+    - source: dispose
+      style: secondary
+      start: 203
+      end: 210
+    - source: controller.dispose
+      style: secondary
+      start: 192
+      end: 210
+  "Future<void> showJoinCodeDialog(BuildContext context) async {\n  final l10n = AppLocalizations.of(context);\n  final router = GoRouter.of(context);\n  final controller = TextEditingController();\n  final code = await showDialog<String>(\n    context: context,\n    builder: (dialog) => AlertDialog(\n      title: Text(l10n.joinOtherHousehold),\n      content: TextField(\n        controller: controller,\n        autofocus: true,\n        onSubmitted: (value) => Navigator.of(dialog).pop(value),\n      ),\n    ),\n  );\n  controller.dispose();\n  final cleaned = code?.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');\n  if (cleaned != null && cleaned.isNotEmpty) {\n    router.go(joinPath(cleaned));\n  }\n}\n":
+    labels:
+    - source: controller.dispose()
+      style: primary
+      start: 508
+      end: 528
+    - source: |-
+        await showDialog<String>(
+            context: context,
+            builder: (dialog) => AlertDialog(
+              title: Text(l10n.joinOtherHousehold),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                onSubmitted: (value) => Navigator.of(dialog).pop(value),
+              ),
+            ),
+          )
+      style: secondary
+      start: 207
+      end: 504
+    - source: controller
+      style: secondary
+      start: 154
+      end: 164
+    - source: TextEditingController()
+      style: secondary
+      start: 167
+      end: 190
+    - source: final controller = TextEditingController()
+      style: secondary
+      start: 148
+      end: 190
+    - source: |-
+        async {
+          final l10n = AppLocalizations.of(context);
+          final router = GoRouter.of(context);
+          final controller = TextEditingController();
+          final code = await showDialog<String>(
+            context: context,
+            builder: (dialog) => AlertDialog(
+              title: Text(l10n.joinOtherHousehold),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                onSubmitted: (value) => Navigator.of(dialog).pop(value),
+              ),
+            ),
+          );
+          controller.dispose();
+          final cleaned = code?.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');
+          if (cleaned != null && cleaned.isNotEmpty) {
+            router.go(joinPath(cleaned));
+          }
+        }
+      style: secondary
+      start: 54
+      end: 691
+    - source: controller
+      style: secondary
+      start: 508
+      end: 518
+    - source: dispose
+      style: secondary
+      start: 519
+      end: 526
+    - source: controller.dispose
+      style: secondary
+      start: 508
+      end: 526

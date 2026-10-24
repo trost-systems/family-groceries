@@ -62,3 +62,13 @@ Reference commit: `119f780` (default branch head on 2026-10-22).
 | Gemfile | `apps/mobile/app/Gemfile` | `app/Gemfile`, `app/Gemfile.lock`, `app/.ruby-version` | fastlane 2.241.1 (emotely 2.240.1), same CocoaPods 1.17.0. No minitest: no Ruby helpers to test. Ruby 3.3 (the version on the build box) instead of 3.4.4. |
 | Android release signing | `apps/mobile/app/android/app/build.gradle.kts` | `app/android/app/build.gradle.kts` | Same `key.properties` lookup with debug fallback and the same keystore location in CI. |
 | fastlane CI job | `ci.yml` `fastlane` (runs Fastfile helper tests) | `ci.yml` `fastlane` | Runs `bundle exec fastlane lanes` instead, on every PR (no path filter); in `ci-ok`'s needs. |
+
+## Reused in job 12
+
+| Piece | emotely path | Here | Changes |
+| --- | --- | --- | --- |
+| ast-grep layout | `sgconfig.yml`, `ast-grep/rules/<group>/`, `ast-grep/tests/` with `__snapshots__` | `sgconfig.yml`, `ast-grep/rules/`, `ast-grep/tests/` | Flat rule directory (seven rules); no `languageGlobs`, all rules are Dart. ast-grep is a pinned release binary instead of an npm package. |
+| ast-grep runner | `scripts/ast-grep.sh` | `scripts/ast-grep.sh` | Same orphan-test check and `git ls-files` scan with `--error=no-suppress-all`; no `--include-off` (no extraction rules) and no pnpm. |
+| `no-from-environment` | `ast-grep/rules/architecture/no-from-environment.yml` and its test | `ast-grep/rules/no-from-environment.yml` | Same matcher; one document for `app/lib/app/environment.dart` instead of the app and site pair; own test cases and message. |
+| Hard-coded UI text | `tools/emotely_lints/lib/src/avoid_hardcoded_ui_text.dart` (analyzer plugin) | `ast-grep/rules/no-hardcoded-ui-text.yml` | Rewritten as a syntactic ast-grep rule (DECISIONS 12.1, 12.3); kept its list of text parameter names and its "has a letter, is not a path" test. |
+| Migration order | `scripts/migration-order.sh` | `supabase/checks/schema_check.ts` (`checkHistory`) | Rewritten in Deno; also fails edited or deleted migrations on main, bad names and duplicate versions. |

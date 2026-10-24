@@ -901,3 +901,66 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       bypasses `authRedirect`. Vercel's SPA rewrite skips paths with a file
       extension. It carries `noindex` and the ENTWURF banner until Peter
       approves it.
+
+## Job 12 (structural lints and schema guards), 2026-10-24
+
+12.1. **ast-grep, not an analyzer plugin.** Every rule is syntactic and runs
+      in `scripts/lint.sh`. An analyzer plugin would add an isolate to every
+      agent's analysis server on a 16 GB box shared by several jobs. The cost
+      is that `no-hardcoded-ui-text` cannot see types (12.3).
+12.2. **Only `DeviceCache` opens a shared-preferences store, not `main.dart`.**
+      The Linux sign-out came from `DeviceCache(SharedPreferencesAsync())` in
+      `main.dart` (c4ed2e4^), so allowing `main.dart` would have let the bug
+      through. A second rule, `device-cache-own-file`, requires the store
+      inside `DeviceCache` to carry `SharedPreferencesLinuxOptions` with a
+      file other than `shared_preferences`. Tests are not checked: they set
+      up fakes.
+12.3. **What counts as hard-coded UI text.** A string literal in `app/lib`
+      (not `l10n/`) whose own text has a letter and is not a path. It counts
+      when it is the text of `Text` or `SelectableText`, or the value of a
+      named argument that Flutter uses for text. The names come from emotely's
+      `avoid_hardcoded_ui_text`. A string constant declared in the same file
+      and shown in one of those places counts as the literal. A constant
+      imported from another file is not seen, because that needs types.
+      This is the price of 12.1. A non-widget class with a parameter named
+      `message` or `title` is reported too; pass it a localized value. Main
+      had no findings.
+12.4. **`dispose-after-dialog` looks at the whole function body.** It reports
+      a local `TextEditingController`, `FocusNode`, `ScrollController` or
+      `SearchController` that is disposed in a function that also awaits
+      `show*Dialog`, `show*BottomSheet` or `showCupertinoModalPopup`. A
+      `finally` block counts too. The fix is a dialog widget whose State
+      owns the controller.
+12.5. **squawk rules as an allow-list in `schema_check.ts`.** squawk has no
+      "only these rules" switch, so the check keeps the backward-compatibility
+      rules from its JSON report (`COMPAT_RULES`) plus parse errors. Those
+      rules ban dropping or renaming a column or table, NOT NULL without a
+      default, setting NOT NULL, dropping NOT NULL, type changes, and
+      dropping a function, view or database. Lock, timeout and style rules
+      stay off. squawk reads only migrations that are not on main. Main's
+      migrations are frozen anyway.
+12.6. **Every public table enables RLS, with or without `household_id`.**
+      PostgREST serves any public table to the API, so a table without RLS is
+      readable with the publishable key. Main already complies.
+12.7. **"Covered in a pgTAP test" means a test that sets up two
+      households.** The table must appear as `public.<table>` in a
+      `supabase/tests/*.test.sql` file that calls `create_household(` at
+      least twice. A mention in a single-household test does not count.
+      `personal_access_tokens` meets this in its own test file.
+12.8. **The base is `origin/main`.** `lint.sh` fetches it at depth 1 when the
+      ref is missing, as it is in a CI pull-request checkout. A new migration
+      must sort after main's newest, and main's files must match byte for
+      byte.
+12.9. **CI's versions are the only versions.** `ci.yml` pins
+      `AST_GREP_VERSION` and `SQUAWK_VERSION`. `bootstrap.sh` installs
+      exactly those versions, and `lint.sh` refuses to run with others,
+      because rule snapshots and squawk findings change between releases.
+12.10. **Exceptions say why.** The forms are
+       `// ast-grep-ignore: <rule> -- <reason>` and
+       `-- squawk-ignore <rule> -- <reason>`, where the reason has at least
+       three words (`ignore-needs-reason`, `checkIgnores`). Both tools accept
+       the ` -- ` suffix. There were no violations on main, so the PR adds
+       no ignores and fixes no code.
+12.11. **`fromEnvironment` and `go('/login')` had no history.** No commit
+       on any branch ever broke these two conventions, so their rule tests
+       use probes instead of historical code.

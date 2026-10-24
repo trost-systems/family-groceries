@@ -1,0 +1,44 @@
+# A route does not unmount when its Future completes: showDialog and
+# showModalBottomSheet return as soon as the route pops, while the dialog's
+# widgets stay mounted for the exit animation. A controller created in the
+# calling function and disposed right after the await is still attached to
+# a TextField, so Flutter fails with "A TextEditingController was used after
+# being disposed" (BOARD 07:20: the join-by-code dialog crashed on every
+# close, fixed in f454567). The dialog owns its controllers instead: a
+# StatefulWidget that creates them in its State and disposes them in
+# State.dispose().
+id: dispose-after-dialog
+language: dart
+severity: error
+rule:
+  kind: call_expression
+  has:
+    field: function
+    kind: member_expression
+    all:
+      - has:
+          field: object
+          kind: identifier
+          pattern: $C
+      - has:
+          field: property
+          regex: '^dispose$'
+  inside:
+    stopBy: end
+    kind: function_body
+    all:
+      - has:
+          stopBy: end
+          kind: await_expression
+          regex: '^await\s+(?:\w+\s*\.\s*)?show(?:Adaptive|Cupertino|General)?(?:Dialog|ModalBottomSheet|BottomSheet|CupertinoModalPopup)\b'
+      - has:
+          stopBy: end
+          kind: initialized_variable_definition
+          all:
+            - has:
+                field: name
+                pattern: $C
+            - has:
+                field: value
+                regex: '^(?:new\s+)?(?:TextEditingController|FocusNode|ScrollController|SearchController)\b'
+message: '$C is disposed after an awaited dialog or sheet whose widgets may still use it during the exit animation: move $C into the dialog as a StatefulWidget that creates it in its State and disposes it in State.dispose() (see _JoinCodeDialog in app/lib/household/invite_dialog.dart)'

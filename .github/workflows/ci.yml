@@ -18,6 +18,8 @@ env:
   FLUTTER_VERSION: 3.47.7
   SUPABASE_CLI_VERSION: 2.121.0
   GITLEAKS_VERSION: 8.30.1
+  AST_GREP_VERSION: 0.51.0
+  SQUAWK_VERSION: 2.70.0
 
 jobs:
   gitleaks:
@@ -81,6 +83,22 @@ jobs:
       - name: fg CLI fmt, lint, tests
         working-directory: .cursor/skills/verify-family-groceries/cli
         run: deno fmt --check && deno lint && deno test --allow-all
+
+  # Job 12: structural lints (ast-grep rules) and the migration/RLS guards (scripts/lint.sh).
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      - name: Install ast-grep and squawk
+        run: |
+          curl -fsSL -o /tmp/ast-grep.zip "https://github.com/ast-grep/ast-grep/releases/download/${AST_GREP_VERSION}/app-x86_64-unknown-linux-gnu.zip"
+          sudo unzip -o -q /tmp/ast-grep.zip ast-grep -d /usr/local/bin
+          sudo curl -fsSL -o /usr/local/bin/squawk "https://github.com/sbdchd/squawk/releases/download/v${SQUAWK_VERSION}/squawk-linux-x64"
+          sudo chmod +x /usr/local/bin/squawk
+      - run: scripts/lint.sh
 
   database:
     runs-on: ubuntu-latest
@@ -202,7 +220,7 @@ jobs:
       - run: flutter build ios --simulator --debug
 
   ci-ok:
-    needs: [gitleaks, app, functions, database, e2e, fastlane, android-build, ios-build]
+    needs: [gitleaks, lint, app, functions, database, e2e, fastlane, android-build, ios-build]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:

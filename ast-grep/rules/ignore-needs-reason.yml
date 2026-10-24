@@ -1,0 +1,15 @@
+# An inline exception to these rules says why, on its own line, so a reviewer
+# can judge it and the next agent does not copy it blindly,
+# for example `// ast-grep-ignore: no-hardcoded-ui-text -- the brand name is not translated`.
+# scripts/ast-grep.sh already fails a bare `ast-grep-ignore` without rule ids
+# (no-suppress-all); this wants the reason after them. Migrations get the
+# same check for `squawk-ignore` in supabase/checks/schema_check.ts.
+id: ignore-needs-reason
+language: dart
+severity: error
+rule:
+  kind: comment
+  regex: 'ast-grep-ignore'
+  not:
+    regex: 'ast-grep-ignore:\s*[\w-]+(?:\s*,\s*[\w-]+)*\s+--\s+\S+(?:\s+\S+){2,}'
+message: 'An ast-grep-ignore without its reason: write "// ast-grep-ignore: <rule-id> -- <why this case is fine>"'
