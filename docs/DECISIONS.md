@@ -936,13 +936,23 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       named argument that Flutter uses for text. The rule looks through a
       ternary's branches, `??`, `+`, parentheses and switch-expression arms
       to that position, so `Text(done ? 'Erledigt' : 'Offen')` and
-      `Text(n + ' Stück')` fail (review 0). The names come from emotely's
-      `avoid_hardcoded_ui_text`. A string constant declared in the same file
-      and shown in one of those places counts as the literal. A constant
-      imported from another file is not seen, because that needs types.
-      This is the price of 12.1. A non-widget class with a parameter named
-      `message` or `title` is reported too; pass it a localized value. Main
-      had no findings.
+      `Text(n + ' Stück')` fail (review 0). It also follows `!`, list and
+      set elements, map values, and the receiver of a method call, property
+      or index: `Text('Hallo'.toUpperCase())`, `Text(['Eins', 'Zwei'][i])`
+      and `Text(<String>['Eins'].join(', '))` fail (review 1). Index and map
+      keys, conditions, switch patterns, and arguments of other calls
+      (`DateFormat('dd.MM.')`, `json['name']`) are data and pass. Two cases
+      stay out of reach for a syntactic rule. One is a value that goes into
+      another call's argument and comes back as its result, such as a
+      closure in `.map((e) => 'Nr. $e')` or a helper function. The other is
+      a constant imported from another file. Both would need the analyzer's
+      types and data flow (12.1). The named-argument list adds the date,
+      time, about and search dialogs' texts (`confirmText`, `cancelText`,
+      `helpText`, `fieldLabelText`, `searchFieldLabel`, ...) to emotely's
+      `avoid_hardcoded_ui_text` list. A string constant declared in the
+      same file and shown in one of those places counts as the literal. A
+      non-widget class with a parameter named `message` or `title` is
+      reported too; pass it a localized value. Main had no findings.
 12.4. **`dispose-after-dialog` looks at the whole function body.** It reports
       a local `TextEditingController`, `FocusNode`, `ScrollController` or
       `SearchController` that is disposed in a function that also awaits

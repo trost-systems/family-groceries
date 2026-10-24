@@ -28,7 +28,29 @@ valid:
     final t = Text(kind == 'bought' ? l10n.bought : l10n.open);
   - |
     final t = Text(switch (kind) { 'bought' => l10n.bought, _ => l10n.open });
+  # Keys, format patterns and arguments of other calls are data.
+  - |
+    final t = Text(json['name'] as String);
+  - |
+    final t = Text(DateFormat('dd.MM.', 'de').format(date));
+  - |
+    final t = Text({'kind': l10n.bought}['kind']!);
+  - |
+    final t = Text(items.firstWhere((i) => i.name == 'Milch').name);
 invalid:
+  # Through a receiver, an index target or a collection (review 1).
+  - |
+    final t = Text('Hallo'.toUpperCase());
+  - |
+    final t = Text(['Eins', 'Zwei'][c]);
+  - |
+    final t = Text(<String>['Eins'].join(', '));
+  - |
+    final t = Text(n ?? 'Lea'.toString());
+  - |
+    final t = Text({'k': 'Wert'}[k]!);
+  - |
+    final d = showDatePicker(context: context, confirmText: 'Übernehmen', firstDate: a, lastDate: b);
   # Two states in a ternary, a fallback, a concatenation, a switch arm.
   - |
     final t = Text(done ? 'Erledigt' : l10n.open);

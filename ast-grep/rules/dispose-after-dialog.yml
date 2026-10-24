@@ -4,9 +4,9 @@
 # calling function and disposed right after the await is still attached to
 # a TextField, so Flutter fails with "A TextEditingController was used after
 # being disposed" (BOARD 07:20: the join-by-code dialog crashed on every
-# close, fixed in f454567). The dialog owns its controllers instead: a
-# StatefulWidget that creates them in its State and disposes them in
-# State.dispose().
+# close; the bad code is at 26e9d06, fixed in 1177b52 as PR commit f454567).
+# The dialog owns its controllers instead: a StatefulWidget that creates them
+# in its State and disposes them in State.dispose().
 #
 # Two limits of a syntactic rule: it reports a dispose anywhere in a function
 # that awaits a dialog, also one written before the await (still a fragile

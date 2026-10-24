@@ -1,22 +1,23 @@
 # The UI speaks German from app/l10n/app_de.arb (CLAUDE.md, SPEC: "strings in
 # an ARB/l10n file so English can be added later"). A string literal that
-# reads as language, shown by a widget, is reported:
-#
-# - the text of Text and SelectableText;
-#   (also inside a ternary branch, `??`, `+`, parentheses or a switch
-#   expression arm: `Text(done ? 'Erledigt' : 'Offen')`)
-# - a named argument through which Flutter shows text (label, hintText,
-#   tooltip, message, semanticLabel, ...; the list emotely's
-#   avoid_hardcoded_ui_text analyzer rule uses).
+# reads as language and reaches a text position is reported. A text position
+# is the text of Text or SelectableText, or a named argument through which
+# Flutter shows text (emotely's avoid_hardcoded_ui_text list plus the date,
+# time, about and search dialogs' texts). `shown-as-text` below lists how a
+# value reaches it: `Text(done ? 'Erledigt' : 'Offen')`,
+# `Text('Hallo'.toUpperCase())`, `Text(['Eins', 'Zwei'][i])` all fail.
 #
 # A literal reads as language when its own text (outside interpolations) has
 # a letter and it is not a path or URL. A constant declared in the same file
-# and shown in one of those places counts as the literal; one imported from
-# another file is out of reach without types (DECISIONS 12.3). A syntactic rule cannot see types, so
-# a non-widget class with a parameter of the same name is reported too: give
-# it the value from AppLocalizations or a non-literal. This is ast-grep, not
-# an analyzer plugin, so it costs no RAM in every agent's analysis server
-# (DECISIONS, Job 12).
+# counts as the literal.
+#
+# What a syntactic rule cannot follow (DECISIONS 12.3): a value that leaves
+# through another call's argument and comes back as its result (a closure
+# such as `.map((e) => 'Nr. $e')`, a helper function), and a constant
+# imported from another file. Both need types and data flow, which is what
+# the analyzer would give at the RAM cost DECISIONS 12.1 avoids. A non-widget
+# class with a parameter of one of these names is reported too: give it the
+# value from AppLocalizations.
 id: no-hardcoded-ui-text
 language: dart
 severity: error
@@ -40,22 +41,12 @@ utils:
           - regex: '(?s)^r[''"]+.*\p{L}'
       - not:
           regex: '^r?[''"]+[^\s/''"]*/[^\s''"]*[''"]+$'
-  # The argument position, reached from the literal through the expressions
-  # that pass a value on unchanged: a ternary's branches, `??`, `+`,
-  # parentheses and switch-expression arms.
-  shown-as-text:
-    inside:
-      stopBy:
-        not:
-          any:
-            - kind: conditional_expression
-            - kind: if_null_expression
-            - kind: additive_expression
-            - kind: parenthesized_expression
-            - kind: switch_expression
-            - kind: switch_expression_case
-      any:
-        - kind: arguments
+  # Directly in a text position: the argument of Text or SelectableText, or
+  # the value of a named argument Flutter shows as text.
+  text-position:
+    any:
+      - inside:
+          kind: arguments
           inside:
             any:
               - kind: call_expression
@@ -66,10 +57,48 @@ utils:
                 has:
                   field: type
                   regex: '^(?:Text|SelectableText)$'
-        - kind: named_argument
+      - inside:
+          kind: named_argument
           has:
             kind: label
-            regex: '^(?:counterText|errorText|helperText|hint|hintText|label|labelText|message|prefixText|semanticCounterText|semanticLabel|semanticsLabel|subtitle|suffixText|text|title|tooltip)\s*:$'
+            regex: '^(?:applicationLegalese|applicationName|barrierLabel|cancelText|confirmText|counterText|errorFormatText|errorInvalidText|errorText|fieldHintText|fieldLabelText|helpText|helperText|hint|hintText|label|labelText|message|prefixText|searchFieldLabel|semanticCounterText|semanticLabel|semanticsLabel|semanticsValue|subtitle|suffixText|text|title|tooltip)\s*:$'
+  # A text position, or reached from one by a value that flows up unchanged
+  # or transformed: a ternary's branches, `??`, `+`, `!`, parentheses,
+  # switch-expression arms, list and set elements, map values, and the
+  # receiver of a method call, property or index (`'Hallo'.toUpperCase()`,
+  # `['Eins', 'Zwei'][i]`). An argument of any other call, an index or a map
+  # key, a condition or a switch pattern is data, not shown text.
+  shown-as-text:
+    any:
+      - matches: text-position
+      - inside:
+          matches: shown-as-text
+          any:
+            - kind: conditional_expression
+            - kind: if_null_expression
+            - kind: additive_expression
+            - kind: parenthesized_expression
+            - kind: null_assertion_expression
+            - kind: switch_expression
+            - kind: switch_expression_case
+            - kind: list_literal
+            - kind: set_or_map_literal
+      - inside:
+          matches: shown-as-text
+          kind: pair
+          field: value
+      - inside:
+          matches: shown-as-text
+          kind: member_expression
+          field: object
+      - inside:
+          matches: shown-as-text
+          kind: call_expression
+          field: function
+      - inside:
+          matches: shown-as-text
+          kind: index_expression
+          field: object
 rule:
   matches: shown-as-text
   any:
