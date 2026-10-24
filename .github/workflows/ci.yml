@@ -1,11 +1,14 @@
 # Every gate a PR must pass. ci-ok is the single required check.
 # Structure (concurrency, SHA-pinned actions, ci-ok gate) follows trost-systems/emotely.
+# Each job installs tools and runs one scripts/gates/<job>.sh, the script scripts/verify.sh runs
+# locally too (scripts/check-gates.sh keeps it that way). Measurements: docs/CI.md.
 name: CI
 
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
@@ -18,10 +21,37 @@ env:
   FLUTTER_VERSION: 3.47.7
   SUPABASE_CLI_VERSION: 2.121.0
   GITLEAKS_VERSION: 8.30.1
+  ACTIONLINT_VERSION: 1.7.12
+  # The CLI's default registry (public.ecr.aws) answers "toomanyrequests" to runners and the CLI
+  # falls back to ghcr.io after ~14 s of retries on every run.
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
 
 jobs:
+  # Which gates this change needs (scripts/ci-changes.sh): docs-only changes skip the heavy
+  # gates, android/ios need app/, fastlane needs app/fastlane or the Gemfile.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      heavy: ${{ steps.filter.outputs.heavy }}
+      native: ${{ steps.filter.outputs.native }}
+      fastlane: ${{ steps.filter.outputs.fastlane }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
+      # A pull_request checkout is the merge commit, whose first parent is the base.
+      - id: filter
+        run: |
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            scripts/ci-changes.sh HEAD^1 HEAD | tee -a "$GITHUB_OUTPUT"
+          else
+            scripts/ci-changes.sh | tee -a "$GITHUB_OUTPUT"
+          fi
+
   gitleaks:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -30,60 +60,29 @@ jobs:
         run: |
           curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
             | tar -xz -C /usr/local/bin gitleaks
-      - name: Scan full history
-        run: gitleaks git --no-banner --redact --verbose .
-      - name: Scan working tree
-        run: gitleaks dir --no-banner --redact --verbose .
+      - run: scripts/gates/gitleaks.sh
 
-  app:
+  lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-      - run: flutter pub get
-      - name: Generated l10n matches the ARB files
-        run: flutter gen-l10n && git diff --exit-code -- lib/l10n
-      - run: dart format --output=none --set-exit-if-changed lib test
-      - run: flutter analyze --fatal-infos
-      - run: flutter test
-      - name: Web build (production config)
-        run: flutter build web --release --no-web-resources-cdn --no-wasm-dry-run
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Install actionlint
+        run: |
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin actionlint
+      - run: scripts/gates/lint.sh
 
-  functions:
+  db:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: supabase/functions
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-        with:
-          deno-version: v2.x
-      - run: deno fmt --check
-      - run: deno lint
-      - run: deno test --allow-env --allow-net
-      # Job 2: the classifier dictionary and the migration generated from it.
-      - name: Classifier dictionary matches its migration
-        working-directory: supabase/classifier
-        run: deno fmt --check && deno lint && deno test --allow-read
-      # Job 07: API-based migration deploy and the per-function import maps.
-      - name: Deploy tooling tests
-        working-directory: supabase/deploy
-        run: deno fmt --check && deno lint && deno test --allow-read
-      # Job 05: the fg verification CLI (.cursor/skills/verify-family-groceries).
-      - name: fg CLI fmt, lint, tests
-        working-directory: .cursor/skills/verify-family-groceries/cli
-        run: deno fmt --check && deno lint && deno test --allow-all
-
-  database:
-    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
@@ -93,18 +92,79 @@ jobs:
       # (32768-60999); an outbound socket on the runner can already hold one.
       - name: Keep ephemeral ports clear of the Supabase ports
         run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
-      - run: supabase db start
-      - run: supabase test db
-      - run: supabase/classifier/sweep.sh
-      - run: supabase db lint --local --fail-on warning
+      - run: scripts/gates/db.sh
+
+  functions:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      - run: scripts/gates/functions.sh
+
+  fg-cli:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      - run: scripts/gates/fg-cli.sh
+
+  flutter:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: scripts/gates/flutter.sh
+
+  web-prod:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: scripts/gates/web-prod.sh
 
   e2e:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
+      # Supabase binds 54320-54329, inside Linux's default ephemeral range
+      # (32768-60999); an outbound socket on the runner can already hold one.
+      - name: Keep ephemeral ports clear of the Supabase ports
+        run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
+      # Pulls and starts the stack while the next steps install Flutter and Playwright; the gate's
+      # supabase_up (scripts/lib.sh) waits on the same lock and reuses it.
+      - name: Start the local Supabase stack in the background
+        run: |
+          (source scripts/lib.sh && supabase_up) >/tmp/supabase-start.log 2>&1 &
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
@@ -115,31 +175,22 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: e2e/package-lock.json
-      # Supabase binds 54320-54329, inside Linux's default ephemeral range
-      # (32768-60999); an outbound socket on the runner can already hold one.
-      - name: Keep ephemeral ports clear of the Supabase ports
-        run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
-      - name: Start the local Supabase stack
-        run: supabase start
-      - name: Export local stack URLs and publishable key
-        run: |
-          supabase status -o env | sed -n 's/^API_URL=/SUPABASE_URL=/p; s/^PUBLISHABLE_KEY=/SUPABASE_PUBLISHABLE_KEY=/p; s/^MAILPIT_URL=/MAILPIT_URL=/p' | tr -d '"' >> "$GITHUB_ENV"
-      - name: Build the web app against the local stack
-        working-directory: app
-        run: |
-          flutter pub get
-          flutter build web --release --no-web-resources-cdn --no-wasm-dry-run \
-            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-            --dart-define-from-file=config/e2e.json
+      - name: Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./e2e/package-lock.json').packages['node_modules/playwright-core'].version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Playwright
         working-directory: e2e
         run: npm ci && npx playwright install --with-deps chromium
-      - name: Playwright
-        working-directory: e2e
-        run: npx playwright test
+      - run: scripts/gates/e2e.sh
         env:
           SCREENSHOT_DIR: ${{ github.workspace }}/e2e/screenshots
+      - name: Supabase start log
+        if: failure()
+        run: cat /tmp/supabase-start.log
       # Job 4b: a 503 from an Edge Function comes from the edge runtime, whose log says why.
       - name: Edge runtime log
         if: failure()
@@ -156,42 +207,54 @@ jobs:
 
   # Job 4 (release): the Gemfile.lock installs and the Fastfile parses.
   fastlane:
+    needs: changes
+    if: needs.changes.outputs.fastlane == 'true'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           working-directory: app
           bundler-cache: true
-      - run: bundle exec fastlane lanes
+      - run: scripts/gates/fastlane.sh
 
   # Job 4b: the app's own Kotlin and Swift (the on-device speech check) compile.
-  android-build:
+  android:
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
+      # The NDK (flutter.ndkVersion of this Flutter) and CMake the build installs on first use.
+      # Only these two: the runner's preinstalled NDKs are several GB.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /usr/local/lib/android/sdk/ndk/28.2.13676358
+            /usr/local/lib/android/sdk/cmake/3.22.1
+          key: android-ndk-28.2.13676358-cmake-3.22.1-${{ runner.os }}
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
-      - run: flutter build apk --debug
+      - run: scripts/gates/android.sh
 
-  ios-build:
+  ios:
+    needs: changes
+    if: needs.changes.outputs.native == 'true'
     runs-on: macos-26
-    defaults:
-      run:
-        working-directory: app
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -199,12 +262,13 @@ jobs:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
-      - run: flutter build ios --simulator --debug
+      - run: scripts/gates/ios.sh
 
   ci-ok:
-    needs: [gitleaks, app, functions, database, e2e, fastlane, android-build, ios-build]
+    needs: [changes, gitleaks, lint, db, functions, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1

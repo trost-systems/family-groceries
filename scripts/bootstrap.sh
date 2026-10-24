@@ -17,7 +17,8 @@ log() { printf '\033[1;34m[bootstrap]\033[0m %s\n' "$*"; }
 
 log "apt packages"
 sudo apt-get update -qq || log "apt-get update failed (mirror?); continuing with cached package lists"
-sudo apt-get install -y -qq curl git unzip xz-utils zip jq ca-certificates docker.io >/dev/null
+sudo apt-get install -y -qq curl git unzip xz-utils zip jq ca-certificates docker.io \
+  shellcheck ruby ruby-dev build-essential >/dev/null
 
 log "docker"
 # Containers (no systemd) need dockerd started directly; /var/run may be a 0700 dir rather than a symlink to /run.
@@ -57,6 +58,19 @@ if ! command -v gitleaks >/dev/null; then
   curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/${tag}/gitleaks_${tag#v}_linux_${arch}.tar.gz" | tar -xz -C "$TOOLS_BIN" gitleaks
 fi
 "$TOOLS_BIN/gitleaks" version 2>/dev/null || gitleaks version
+
+log "actionlint (lint gate)"
+if ! command -v actionlint >/dev/null; then
+  version="$(sed -n 's/^  ACTIONLINT_VERSION: //p' "$REPO_ROOT/.github/workflows/ci.yml")"
+  curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_$(arch_go).tar.gz" | tar -xz -C "$TOOLS_BIN" actionlint
+fi
+actionlint -version | head -1
+
+log "bundler (fastlane gate)"
+bundler_version="$(tail -n 1 "$REPO_ROOT/app/Gemfile.lock" | tr -d ' ')"
+gem list -i bundler -v "$bundler_version" >/dev/null || gem install --user-install --no-document "bundler:$bundler_version" >/dev/null
+# Gems go to the user's cache, not the system Ruby; CI's setup-ruby sets its own path per checkout.
+"$(ruby -e 'print Gem.user_dir')/bin/bundle" config set --global path "$HOME/.cache/fg-bundle" >/dev/null
 
 log "deno"
 if ! command -v deno >/dev/null && [[ ! -x "$HOME/.deno/bin/deno" ]]; then
