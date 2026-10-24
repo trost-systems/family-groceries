@@ -1,0 +1,20 @@
+id: ignore-needs-reason
+snapshots:
+  "// ast-grep-ignore: no-hardcoded-ui-text\nfinal t = Text('Familien-Einkauf');\n":
+    labels:
+    - source: "// ast-grep-ignore: no-hardcoded-ui-text"
+      style: primary
+      start: 0
+      end: 40
+  "// ast-grep-ignore: no-hardcoded-ui-text -- fine\nfinal t = Text('Familien-Einkauf');\n":
+    labels:
+    - source: "// ast-grep-ignore: no-hardcoded-ui-text -- fine"
+      style: primary
+      start: 0
+      end: 48
+  "final t = Text('Familien-Einkauf'); // ast-grep-ignore: no-hardcoded-ui-text\n":
+    labels:
+    - source: "// ast-grep-ignore: no-hardcoded-ui-text"
+      style: primary
+      start: 36
+      end: 76

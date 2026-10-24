@@ -1,0 +1,25 @@
+id: device-cache-own-file
+valid:
+  # The real factory since c4ed2e4.
+  - |
+    class DeviceCache(final SharedPreferencesAsync _prefs) {
+      factory onDevice() => DeviceCache(
+        SharedPreferencesAsync(
+          options: const SharedPreferencesLinuxOptions(fileName: 'device_cache'),
+        ),
+      );
+    }
+invalid:
+  # The store of the historical main.dart, moved into DeviceCache.
+  - |
+    class DeviceCache(final SharedPreferencesAsync _prefs) {
+      factory onDevice() => DeviceCache(SharedPreferencesAsync());
+    }
+  # Linux options that name supabase's file again.
+  - |
+    final prefs = SharedPreferencesAsync(
+      options: const SharedPreferencesLinuxOptions(fileName: 'shared_preferences'),
+    );
+  # The legacy API is the one supabase_flutter uses.
+  - |
+    final prefs = await SharedPreferences.getInstance();

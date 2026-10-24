@@ -1,0 +1,52 @@
+id: no-hardcoded-ui-text
+valid:
+  - |
+    Widget build(BuildContext context) => Text(AppLocalizations.of(context).addItemHint);
+  # Interpolated data, punctuation and digits are not language.
+  - |
+    Widget tile(Item item) => ListTile(title: Text('${item.quantity}× ${item.name}'), trailing: const Text('·'));
+  - |
+    final count = Text('$n');
+  # Keys, routes, asset paths and URLs.
+  - |
+    final field = TextField(key: const ValueKey('add-field'), restorationId: 'add');
+  - |
+    final logo = Image.asset('assets/icon.png', semanticLabel: l10n.logo);
+  - |
+    final link = Link(uri: Uri.parse('https://example.org/datenschutz'));
+  - |
+    final go = TextButton(onPressed: () => context.go('/settings'), child: Text(l10n.settings));
+  # A constant that is not shown, or shown data.
+  - |
+    const _prefix = 'household.';
+    final t = Text(item.name);
+  - |
+    class Fonts { static const family = 'Google Sans'; }
+    final t = Text(l10n.title, style: TextStyle(fontFamily: Fonts.family));
+invalid:
+  # A constant in the same file is the same literal.
+  - |
+    const _title = 'Einkaufsliste';
+    Widget build(BuildContext context) => const Text(_title);
+  - |
+    class _Labels { static const delete = 'Löschen'; }
+    final tip = IconButton(tooltip: _Labels.delete, onPressed: delete);
+  - |
+    Widget build(BuildContext context) {
+      const hint = 'Was fehlt?';
+      return TextField(decoration: const InputDecoration(hintText: hint));
+    }
+  - |
+    Widget build(BuildContext context) => const Text('Einkaufsliste');
+  - |
+    final hint = TextField(decoration: InputDecoration(hintText: 'Was fehlt?'));
+  - |
+    final tip = IconButton(tooltip: "Löschen", icon: const Icon(Icons.delete), onPressed: delete);
+  - |
+    void undo(ScaffoldMessengerState m) => m.showSnackBar(SnackBar(content: Text('$name gekauft')));
+  - |
+    final dialog = AlertDialog(title: Text("Haushalt verlassen?"));
+  - |
+    final span = TextSpan(text: 'Neu');
+  - |
+    final sheet = showModalBottomSheet(context: context, builder: (c) => Text('Mehr'));

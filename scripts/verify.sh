@@ -16,6 +16,10 @@ done
 log "secret scan (gitleaks, full history + working tree)"
 (cd "$REPO_ROOT" && gitleaks git --no-banner --redact . && gitleaks dir --no-banner --redact .)
 
+# Job 12: structural lints and the migration/RLS guards.
+log "structural lints (scripts/lint.sh)"
+"$REPO_ROOT/scripts/lint.sh"
+
 log "database: reset, pgTAP, lint"
 supabase_up
 (cd "$REPO_ROOT" && supabase db reset >/dev/null && supabase test db && supabase/classifier/sweep.sh && supabase db lint --local --fail-on warning)

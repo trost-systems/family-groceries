@@ -1,0 +1,34 @@
+id: no-from-environment
+valid:
+  # The value comes in from Environment.
+  - |
+    final client = SupabaseClient(env.supabaseUrl, env.publishableKey);
+  # Named in a comment or a string, nothing is read.
+  - |
+    /// Never call [String.fromEnvironment] here; see Environment.
+    final hint = 'String.fromEnvironment';
+  # A constructor of our own that happens to share the name.
+  - |
+    final a = Config.fromEnvironment(values);
+  # The process environment at run time is another matter.
+  - |
+    final home = Platform.environment['HOME'];
+invalid:
+  - |
+    class ListRepository {
+      static const url = String.fromEnvironment('SUPABASE_URL');
+    }
+  - |
+    const marionette = bool.fromEnvironment('MARIONETTE', defaultValue: false);
+  - |
+    const retries = int.fromEnvironment('RETRIES', defaultValue: 3);
+  - |
+    const hasKey = bool.hasEnvironment('SUPABASE_PUBLISHABLE_KEY');
+  - |
+    const a = core.String.fromEnvironment('A');
+  - |
+    final b = const core.bool.fromEnvironment('B');
+  - |
+    final read = String.fromEnvironment;
+  - |
+    final empty = const String.fromEnvironment('KEY').isEmpty;

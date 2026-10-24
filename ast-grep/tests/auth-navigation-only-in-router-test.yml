@@ -1,0 +1,31 @@
+id: auth-navigation-only-in-router
+valid:
+  # Other routes are fine.
+  - |
+    void open(BuildContext context) => context.go(listPath);
+  - |
+    void open(BuildContext context) => context.push(settingsPath);
+  - |
+    void join(GoRouter router, String code) => router.go(joinPath(code));
+  # Signing out goes through the session; the router redirects.
+  - |
+    Future<void> signOut(BuildContext context) => context.read<SessionCubit>().signOut();
+  # A path that only starts with the same letters.
+  - |
+    void open(BuildContext context) => context.go('/loginhelp');
+invalid:
+  - |
+    Future<void> signOut(BuildContext context) async {
+      await Supabase.instance.client.auth.signOut();
+      context.go('/login');
+    }
+  - |
+    void leave(BuildContext context) => context.go(welcomePath);
+  - |
+    void leave(BuildContext context) => GoRouter.of(context).go('/welcome?invite=AB');
+  - |
+    void back(BuildContext context) => context.pushReplacement(loginPath);
+  - |
+    void back(BuildContext context) => Navigator.of(context).pushNamed('/login');
+  - |
+    void back(GoRouter router) => router.replace("/welcome");

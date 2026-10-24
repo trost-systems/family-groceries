@@ -1,0 +1,69 @@
+id: dispose-after-dialog
+valid:
+  # The dialog owns the controller (the fix in f454567).
+  - |
+    class _JoinCodeDialogState extends State<_JoinCodeDialog> {
+      final _controller = TextEditingController();
+
+      @override
+      void dispose() {
+        _controller.dispose();
+        super.dispose();
+      }
+    }
+  # No dialog in between.
+  - |
+    void build() {
+      final controller = TextEditingController();
+      use(controller);
+      controller.dispose();
+    }
+  # A dialog, but nothing local is disposed.
+  - |
+    Future<void> confirm(BuildContext context) async {
+      final ok = await showDialog<bool>(context: context, builder: (c) => const Confirm());
+      if (ok ?? false) _subscription.cancel();
+    }
+invalid:
+  # The historical showJoinCodeDialog (f454567^:app/lib/household/invite_dialog.dart).
+  - |
+    Future<void> showJoinCodeDialog(BuildContext context) async {
+      final l10n = AppLocalizations.of(context);
+      final router = GoRouter.of(context);
+      final controller = TextEditingController();
+      final code = await showDialog<String>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text(l10n.joinOtherHousehold),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            onSubmitted: (value) => Navigator.of(dialog).pop(value),
+          ),
+        ),
+      );
+      controller.dispose();
+      final cleaned = code?.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');
+      if (cleaned != null && cleaned.isNotEmpty) {
+        router.go(joinPath(cleaned));
+      }
+    }
+  # The same in a finally block, with a sheet and a FocusNode.
+  - |
+    Future<String?> askName(BuildContext context) async {
+      final focus = FocusNode();
+      try {
+        return await showModalBottomSheet<String>(
+          context: context,
+          builder: (sheet) => TextField(focusNode: focus),
+        );
+      } finally {
+        focus.dispose();
+      }
+    }
+  - |
+    Future<void> rename(BuildContext context) async {
+      var controller = TextEditingController(text: 'x');
+      await showAdaptiveDialog<void>(context: context, builder: (c) => Field(controller));
+      controller.dispose();
+    }
