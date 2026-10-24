@@ -997,3 +997,68 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
 12.11. **`fromEnvironment` and `go('/login')` had no history.** No commit
        on any branch ever broke these two conventions, so their rule tests
        use probes instead of historical code.
+
+## Job 11: one CI run per merge, one gate definition, measured CI speedups
+
+11.1. **One script per gate, called by CI and `verify.sh`.** Each `ci.yml` job
+      installs tools and runs `scripts/gates/<job>.sh`; `verify.sh` runs the
+      same scripts in a fixed order (`--only <gate>` for some).
+      `scripts/check-gates.sh` (lint gate) fails when a gate lacks its job,
+      its `ci-ok` need, its `verify.sh` entry or its executable bit, or when
+      `ci.yml`/`verify.sh` run a check command themselves. That turns the old
+      drift into a lint error: `verify.sh` had no production web build, no
+      fastlane parse and no `--fatal-infos`. The last one was cosmetic:
+      `flutter analyze` defaults to `--fatal-infos` on Flutter 3.47, checked
+      with an info-level probe (`omit_local_variable_types: info`). The
+      gate states the flag anyway, so a default change can't loosen it.
+      `android` and `ios` are CI-only in `verify.sh` (macOS, Gradle RAM).
+11.2. **`scripts/push-pr.sh` pushes the commit main takes.** It rebases onto
+      `origin/main`, squashes to `<PR title> (#n)` with the noreply author and
+      trailers, and pushes with `--force-with-lease`; it refuses `main` and
+      uncommitted changes. `merge-pr.sh` then finds a compliant head and only
+      checks `ci-ok`, so a merge costs one CI run instead of two. The squash
+      body keeps every commit subject, so fix rounds stay readable. Shared
+      code (author, trailers, the compliance check, the squash) is in
+      `scripts/lib.sh`. `merge-pr.sh` keeps its old behavior for PRs pushed
+      the old way and gains `--wait` and `--dry-run`. Not removable: if
+      `main` moves after the push, one more rebase, push and CI run is
+      needed; merge-pr.sh says so.
+11.3. **push-pr.sh carries skip-worktree edits across the rebase.** Every
+      worktree keeps its port block in `supabase/config.toml` as a
+      skip-worktree edit, and git refuses to rebase over it once `main`
+      changes that file (it did: job 9's `[functions.account]`). The rebase
+      saves those edits as a patch, restores the files, rebases, reapplies
+      the patch and marks the files skip-worktree again.
+11.4. **A pre-push hook warns, never blocks.** `.githooks/pre-push` warns
+      when a PR branch goes up with more than one commit over `origin/main`.
+      The first push before `gh pr create` is legitimately several commits.
+      `core.hooksPath=.githooks` is in the shared repository config and
+      resolves per worktree; shown by the warning from a worktree in /tmp.
+11.5. **Box-wide e2e lock.** The e2e gate holds `flock /tmp/fg-e2e.lock` from
+      stack start through Playwright and writes its checkout and pid into
+      the file; a second run prints that and waits. Rejected `pgrep
+      playwright`: it matches the caller's own command line (it matched an
+      agent's shell during this job). Playwright arguments pass through
+      (`verify.sh --only e2e -- tests/x.spec.ts`), so subset runs take the
+      lock too.
+11.6. **A database started alone is not a running stack.** `supabase status`
+      exits 0 when only the database runs, and `supabase start` then reports
+      "already running" and starts nothing else. `supabase_up` checks for an
+      API URL and stops a database-only stack before starting the full one;
+      the db gate starts the full stack when nothing runs, so CI and a local
+      run take the same path.
+11.7. **Path filters (`scripts/ci-changes.sh`).** Docs-only changes (`docs/`,
+      Markdown outside `.cursor/`/`.claude/`) run only gitleaks and lint;
+      `android`/`ios` need `app/`; `fastlane` needs `app/fastlane/` or the
+      Gemfile. A change to `ci.yml`, the filter, `lib.sh` or a gate runs
+      everything, and so do pushes to `main` and manual runs. Not filtered:
+      db, functions, fg-cli, flutter and web-prod. They are off the critical
+      path, so a filter would save runner minutes only, at the risk of a
+      wrongly skipped gate.
+11.8. **Kept the production web build in CI** (`web-prod`, ~1:20, parallel
+      and off the critical path). Vercel builds every push (job 07), but its
+      result is not in `ci-ok`.
+11.9. **Dependabot, not Renovate.** Grouped weekly PRs for GitHub Actions,
+      pub and npm, labelled `dependencies` and `agent-ready`; majors in their
+      own group. Renovate would also bump the versions pinned in `ci.yml`
+      env, but needs its app installed on Peter's account.
