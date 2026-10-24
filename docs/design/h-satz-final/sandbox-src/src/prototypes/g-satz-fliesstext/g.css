@@ -1,0 +1,122 @@
+.g-par {
+  margin: 0;
+  padding: 6px 18px 7px;
+  border-bottom: 1px solid var(--md-outline-variant);
+  font-size: 18px;
+  /* ~40px line boxes so every wrapped line of a token is a comfortable tap target */
+  line-height: 2.2;
+  transition: background 120ms ease;
+}
+.g-par:last-child {
+  border-bottom: 0;
+}
+.g-par.over {
+  background: var(--md-primary-container);
+  box-shadow: inset 3px 0 0 var(--md-primary);
+}
+.g-par.dragging {
+  opacity: 0.5;
+}
+
+.g-label {
+  margin-right: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--md-primary);
+  cursor: grab;
+}
+.g-par:not(.collapsed) .g-label::after {
+  content: ':';
+}
+.g-count {
+  color: var(--md-on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+.g-sep {
+  color: var(--md-outline);
+  font-weight: 700;
+  white-space: pre;
+}
+
+.g-item {
+  padding: 3px 3px;
+  border-radius: 8px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  cursor: pointer;
+  transition:
+    opacity 240ms ease,
+    background 120ms ease;
+}
+.g-item:active {
+  background: var(--md-surface-container-high);
+}
+.g-item.dragging {
+  opacity: 0.3;
+}
+.g-emoji {
+  margin-right: 5px;
+  font-size: 16px;
+}
+.g-qty {
+  margin-right: 4px;
+  font-weight: 900;
+  color: var(--md-primary);
+  font-variant-numeric: tabular-nums;
+}
+.g-name {
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+  text-decoration: line-through transparent 2.5px;
+  transition: text-decoration-color 200ms ease;
+}
+.g-meta {
+  margin-left: 6px;
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+}
+.g-who {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--md-tertiary-container);
+  color: var(--md-on-tertiary-container);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  vertical-align: 2px;
+}
+.g-item.leaving {
+  opacity: 0.35;
+  background: var(--md-primary-container);
+}
+.g-item.leaving .g-name {
+  text-decoration-color: var(--md-primary);
+}
+
+.g-overlay {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 320px;
+  padding: 10px 16px;
+  border-radius: 24px;
+  background: var(--md-surface-container-lowest);
+  box-shadow: var(--elev-3);
+  font-size: 18px;
+  font-weight: 650;
+}
+@media (prefers-reduced-motion: reduce) {
+  .g-par,
+  .g-item,
+  .g-name {
+    transition: none;
+  }
+}

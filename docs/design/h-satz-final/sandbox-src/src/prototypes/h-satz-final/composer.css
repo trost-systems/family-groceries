@@ -1,0 +1,584 @@
+/* H composer: bottom input bar, tabs, and a surface that grows upwards around the input to its content's height. */
+.hc {
+  --hc-ease-open: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --hc-ease-close: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --hc-ms: 280ms;
+  --hc-max: calc(100% - var(--safe-top) - 28px);
+  --hc-min: 50%;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.hc.is-edit {
+  --hc-min: 0px;
+}
+.hc > * {
+  pointer-events: auto;
+}
+
+.hc-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--hc-ms) var(--hc-ease-close),
+    visibility 0s linear var(--hc-ms);
+}
+.hc.is-open .hc-scrim {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--hc-ms) var(--hc-ease-open);
+}
+
+/*
+ * Closed, the surface is exactly the band behind the input and the tabs. Open, it is as tall as its content plus the
+ * bottom band, never less than --hc-min and never more than --hc-max; the list inside scrolls only at the max.
+ */
+.hc-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--r2-bottom);
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--md-surface-container-low);
+  box-shadow: 0 -1px 0 var(--md-outline-variant);
+  transition:
+    height var(--hc-ms) var(--hc-ease-close),
+    border-radius var(--hc-ms) var(--hc-ease-close);
+  pointer-events: none;
+}
+.hc.is-more .hc-sheet {
+  height: var(--r2-tabs-h);
+}
+.hc.is-open .hc-sheet {
+  height: clamp(var(--hc-min), calc(var(--hc-content) + var(--r2-bottom)), var(--hc-max));
+  border-radius: 28px 28px 0 0;
+  transition:
+    height var(--hc-ms) var(--hc-ease-open),
+    border-radius var(--hc-ms) var(--hc-ease-open);
+  pointer-events: auto;
+}
+
+.hc-body {
+  position: absolute;
+  inset: 0 0 var(--r2-bottom) 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 120ms ease-in,
+    visibility 0s linear var(--hc-ms);
+}
+.hc.is-open .hc-body {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 180ms ease-out 40ms;
+}
+
+.hc-top {
+  flex: none;
+}
+.hc-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px 0 20px;
+}
+.hc-grab {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 32px;
+  height: 4px;
+  margin-left: -16px;
+  border-radius: 2px;
+  background: var(--md-outline-variant);
+}
+.hc-head strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hc-textbtn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 22px;
+  background: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-primary);
+  cursor: pointer;
+}
+.hc-textbtn:active {
+  background: var(--md-surface-container-high);
+}
+.hc-textbtn.danger {
+  color: var(--md-error);
+}
+
+/* Edit fields */
+.hc-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 16px 12px;
+}
+.hc-fieldrow {
+  display: flex;
+  gap: 10px;
+}
+.hc-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hc-field > span {
+  padding-left: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+}
+.hc-field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--radius-s);
+  outline: 0;
+  background: var(--md-surface-container-lowest);
+  font: inherit;
+  font-size: 18px;
+  color: var(--md-on-surface);
+}
+.hc-field input:focus {
+  border-color: var(--md-primary);
+  box-shadow: inset 0 0 0 1px var(--md-primary);
+}
+.hc-field input::placeholder {
+  color: var(--md-on-surface-variant);
+  opacity: 0.7;
+}
+.hc-field-name input {
+  font-weight: 650;
+}
+.hc-qty {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+.hc-field-qty {
+  flex: none;
+  width: 72px;
+}
+.hc-field-qty input {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.hc-step {
+  flex: none;
+  width: 44px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--md-surface-container-high);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  cursor: pointer;
+}
+.hc-step:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+/* Fold-out chips */
+.hc-chips {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+.hc-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px 0 12px;
+  border: 1px solid var(--md-outline);
+  border-radius: 22px;
+  background: var(--md-surface-container-lowest);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hc-chip.is-set {
+  border-color: var(--md-primary);
+  box-shadow: inset 0 0 0 1px var(--md-primary);
+}
+.hc-chip.is-open {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+  border-color: transparent;
+}
+.hc-caret {
+  font-size: 11px;
+  transition: transform 200ms ease;
+}
+.hc-chip.is-open .hc-caret {
+  transform: rotate(180deg);
+}
+.hc-fold {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms var(--hc-ease-open);
+}
+.hc-fold.is-open {
+  grid-template-rows: 1fr;
+}
+.hc-fold-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hc-fold.is-open .hc-fold-inner {
+  padding-top: 10px;
+}
+.hc-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--md-surface-container-high);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.hc-opt.on {
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+}
+
+/* Suggestions: top-aligned under the chips; the box scrolls only once the surface is at its max height. */
+.hc-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+.hc-list-inner {
+  flex: none;
+}
+.hc-list-inner > .hc-sugg:last-child {
+  border-bottom: 0;
+}
+/* Takes only the space left over at the minimum height; size containment keeps it out of the content height. */
+.hc-fill {
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  align-items: flex-end;
+}
+.hc-fill p {
+  margin: 0 24px 18px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--md-on-surface-variant);
+}
+@container (max-height: 64px) {
+  .hc-fill p {
+    visibility: hidden;
+  }
+}
+.hc-added {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 0 24px;
+  font-size: 16px;
+  line-height: 1.45;
+  animation: hc-pop 220ms var(--hc-ease-open);
+}
+.hc-added span {
+  flex: 1;
+}
+.hc-sugg {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--md-outline-variant);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.hc-sugg:active {
+  background: var(--md-surface-container-high);
+}
+.hc-sugg.is-first {
+  background: var(--md-secondary-container);
+}
+.hc-sugg-emoji {
+  flex: none;
+  width: 24px;
+  font-size: 20px;
+  text-align: center;
+}
+.hc-sugg-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hc-sugg-name {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.hc-sugg-qty {
+  color: var(--md-primary);
+  font-weight: 900;
+}
+.hc-sugg-meta {
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--md-on-surface-variant);
+}
+.hc-part,
+.hc-sugg-src {
+  white-space: nowrap;
+}
+.hc-sugg-meta strong {
+  color: var(--md-primary);
+}
+.hc-sugg-src {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--md-tertiary);
+}
+.hc-enter {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  border: 1px solid var(--md-outline);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--md-on-surface-variant);
+}
+
+/* The input bar: same element and same place whether the sheet is open or not */
+.hc-dock,
+.hc-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--r2-tabs-h);
+  height: var(--r2-dock-h);
+  display: flex;
+  align-items: center;
+  margin: 0 12px;
+}
+.hc-dock {
+  gap: 10px;
+  padding: 0 6px 0 8px;
+}
+.hc-dock::before {
+  content: '';
+  position: absolute;
+  inset: 10px 0;
+  z-index: -1;
+  border: 2px solid var(--md-primary);
+  border-radius: 26px;
+  background: var(--md-surface-container-lowest);
+}
+.hc.is-open.is-edit .hc-dock,
+.hc:not(.is-open) .hc-actions {
+  visibility: hidden;
+}
+.hc-actions {
+  justify-content: space-between;
+  gap: 12px;
+}
+.hc-filled {
+  min-width: 132px;
+  height: 52px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hc-filled:disabled {
+  background: color-mix(in srgb, var(--md-on-surface) 12%, transparent);
+  color: color-mix(in srgb, var(--md-on-surface) 38%, transparent);
+  cursor: default;
+}
+.hc-actions .hc-textbtn {
+  min-height: 52px;
+  padding: 0 18px;
+  font-size: 17px;
+}
+.hc-lead {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  font-size: 24px;
+  font-weight: 500;
+  animation: hc-pop 220ms var(--hc-ease-open);
+}
+.hc-lead.is-open {
+  background: var(--md-secondary-container);
+  font-size: 20px;
+}
+@keyframes hc-pop {
+  from {
+    transform: scale(0.6);
+  }
+}
+.hc-input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: 0;
+  outline: 0;
+  background: none;
+  font-size: 18px;
+}
+.hc-input::placeholder {
+  color: var(--md-on-surface-variant);
+}
+.hc-clear {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--md-on-surface-variant);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* The tabs slide away under the growing sheet; the band they leave carries a hint (the keyboard, on a phone). */
+.hc-tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--r2-tabs-h);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  transition:
+    transform var(--hc-ms) var(--hc-ease-open),
+    opacity 200ms ease,
+    visibility 0s;
+}
+.hc.is-open .hc-tabs {
+  transform: translateY(100%);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform var(--hc-ms) var(--hc-ease-close),
+    opacity 150ms ease,
+    visibility 0s linear var(--hc-ms);
+}
+.hc-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--md-on-surface-variant);
+  cursor: pointer;
+}
+.hc-tab-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 28px;
+  border-radius: 14px;
+  font-size: 17px;
+}
+.hc-tab.on {
+  color: var(--md-on-surface);
+}
+.hc-tab.on .hc-tab-icon {
+  background: var(--md-secondary-container);
+}
+.hc-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--r2-tabs-h);
+  margin: 0;
+  padding: 10px 20px var(--safe-bottom);
+  font-size: 13px;
+  text-align: center;
+  color: var(--md-on-surface-variant);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms ease;
+}
+.hc.is-open .hc-hint {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 200ms ease 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc *,
+  .hc *::before {
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation: none !important;
+  }
+}
