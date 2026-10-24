@@ -211,3 +211,14 @@ Deno.test('ignores: a squawk-ignore needs its reason after the rule', () => {
   assertMatch(found[0], /^20261024190000_probe\.sql:1: a squawk-ignore without its reason/);
   assertEquals(checkIgnores(repoMigrations), []);
 });
+
+Deno.test('tables: a copy made with like inherits household_id, but not RLS or policies', () => {
+  const found = messages(checkTables(
+    withMigration('create table public.items_archive (like public.items including all);'),
+    new Map([...repoTests, ...crossHouseholdTest]),
+  ));
+  assertEquals(found.length, 3);
+  assertMatch(found[0], /public\.items_archive does not enable row level security/);
+  assertMatch(found[1], /public\.items_archive has household_id but no policy using/);
+  assertMatch(found[2], /add a cross-household case for public\.items_archive/);
+});

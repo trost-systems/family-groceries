@@ -23,7 +23,28 @@ valid:
   - |
     class Fonts { static const family = 'Google Sans'; }
     final t = Text(l10n.title, style: TextStyle(fontFamily: Fonts.family));
+  # A literal used as a condition or a switch pattern is not shown.
+  - |
+    final t = Text(kind == 'bought' ? l10n.bought : l10n.open);
+  - |
+    final t = Text(switch (kind) { 'bought' => l10n.bought, _ => l10n.open });
 invalid:
+  # Two states in a ternary, a fallback, a concatenation, a switch arm.
+  - |
+    final t = Text(done ? 'Erledigt' : l10n.open);
+  - |
+    final t = Text(done ? l10n.done : 'Offen');
+  - |
+    final t = Tooltip(message: name ?? 'Unbenannt', child: icon);
+  - |
+    final t = Text(count.toString() + ' Stück');
+  - |
+    final t = Text((('Klammer')));
+  - |
+    final t = Text(switch (kind) { 'bought' => 'Gekauft', _ => l10n.open });
+  - |
+    const _done = 'Erledigt';
+    final t = Text(done ? _done : l10n.open);
   # A constant in the same file is the same literal.
   - |
     const _title = 'Einkaufsliste';
