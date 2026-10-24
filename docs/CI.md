@@ -97,3 +97,5 @@ and after a CI change.
 scripts/ci-timings.sh --limit 10 --steps e2e
 scripts/ci-timings.sh --branch job/11-ci-flow --since 2026-10-24T18:00:00Z
 ```
+
+<!-- docs-only CI probe for job 11; this PR is closed without merging -->
