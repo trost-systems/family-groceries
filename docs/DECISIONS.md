@@ -864,7 +864,7 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
      fresh authorization code after the typed confirmation. The function
      exchanges it with the bundle ID as client ID, checks that the code's
      `sub` is the account's Apple identity, and revokes the refresh token
-     before the database delete. Web and Android sign in with Apple through
+     once the database delete has succeeded (9.12). Web and Android sign in with Apple through
      Supabase's redirect, and Supabase keeps no provider token (supabase/auth
      #1308), so they take TN3194's fallback. The account is deleted and the
      app shows the Apple ID settings path. Re-running an Apple redirect just
@@ -901,6 +901,21 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       bypasses `authRedirect`. Vercel's SPA rewrite skips paths with a file
       extension. It carries `noindex` and the ENTWURF banner until Peter
       approves it.
+9.12. **Review 0: a dropped call is retried once; Apple comes after the
+      delete.** CI run 40121325467 failed the shared deletion with an
+      empty 503 from the local edge runtime ("connection aborted", a cold
+      `oneshot` worker under two parallel first calls). Job 12 could not
+      reproduce it with 44 concurrent calls. The hosted gateway also answers
+      502, 503, 504 or 546 when a worker fails to boot. These are transient
+      states at the network boundary, and the endpoint is idempotent, so
+      `SupabaseAccountRepository.delete` retries once after one second when
+      the error lacks the handler's JSON `error`. Errors the handler
+      answered are not retried. The function now reads the Apple subject
+      first, deletes, and only then calls Apple. A failed delete therefore
+      never spends the single-use code, and a retry can still revoke. A
+      retry that finds the account gone answers `apple: "manual"`: the
+      first call may have died between the delete and Apple, and the hint
+      is the safe answer.
 
 ## Job 12 (structural lints and schema guards), 2026-10-24
 

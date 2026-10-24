@@ -94,6 +94,9 @@ class SupabaseAccountRepository(
 
   /// Only where the platform's own Apple dialog exists (iOS).
   final AppleAuthorizationCode? _appleCode,
+
+  /// The wait before the one retry of a delete the edge gateway dropped.
+  final Duration _retryDelay = const Duration(seconds: 1),
 }) implements AccountRepository {
   @override
   Future<HouseholdFate> fate() => _guard(() async {
@@ -138,10 +141,20 @@ class SupabaseAccountRepository(
   @override
   Future<AccountDeleted> delete() => _guard(() async {
     final code = await _appleAuthorizationCode();
-    final response = await _client.functions.invoke(
-      'account/delete',
-      body: {'apple_authorization_code': ?code},
-    );
+    final body = {'apple_authorization_code': ?code};
+    FunctionResponse response;
+    try {
+      response = await _client.functions.invoke('account/delete', body: body);
+    } on FunctionException catch (e) {
+      if (!_droppedByGateway(e)) {
+        rethrow;
+      }
+      // The edge runtime sometimes drops a call (an empty 503 on a cold
+      // worker). The endpoint is idempotent: if the first call did delete,
+      // the retry answers 200 all the same.
+      await Future<void>.delayed(_retryDelay);
+      response = await _client.functions.invoke('account/delete', body: body);
+    }
     return switch (response.data) {
       {'deleted': true, 'apple': final Object? apple} => AccountDeleted(
         AppleUnlink.parse(apple),
@@ -172,6 +185,12 @@ class SupabaseAccountRepository(
       throw const AppleReauthCanceled();
     }
   }
+
+  /// A gateway error, not one of the handler's answers, which always carry
+  /// a JSON `error`.
+  static bool _droppedByGateway(FunctionException e) =>
+      const {502, 503, 504, 546}.contains(e.status) &&
+      e.details is! Map<String, Object?>;
 
   static Future<T> _guard<T>(Future<T> Function() call) async {
     try {

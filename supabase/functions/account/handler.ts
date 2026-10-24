@@ -69,9 +69,10 @@ export function createHandler(deps: Deps) {
     try {
       ({ userId } = await deps.authenticate(req));
     } catch (e) {
-      // The first call deleted the account but its answer never arrived.
+      // The first call deleted the account but its answer never arrived. Whether it got to
+      // revoke Apple's grant is unknown, so the app shows the Apple ID hint.
       if (e instanceof AuthError && e.reason === 'user_deleted') {
-        return json({ deleted: true, household: 'none', apple: 'not_linked' } satisfies Deleted);
+        return json({ deleted: true, household: 'none', apple: 'manual' } satisfies Deleted);
       }
       if (e instanceof AuthError) return fail(e);
       console.error('account: authenticate failed', e);
@@ -82,12 +83,14 @@ export function createHandler(deps: Deps) {
     if (!body) return fail('bad_request');
 
     try {
-      // Revoke first: once the identity row is gone there is no Apple user id to check against.
+      // The Apple user id lives in auth.identities, so it is read before the delete. Apple is
+      // called only after the delete succeeded: a failed delete leaves the single-use code unspent
+      // for the retry.
       const subject = await deps.appleSubject(userId);
+      const household = await deps.deleteAccount(userId);
       const apple: AppleFate = subject
         ? await deps.revokeApple({ code: body.appleCode, subject })
         : 'not_linked';
-      const household = await deps.deleteAccount(userId);
       return json({ deleted: true, household, apple } satisfies Deleted);
     } catch (e) {
       console.error('account: deletion failed', e);

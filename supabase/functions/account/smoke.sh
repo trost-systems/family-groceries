@@ -98,8 +98,8 @@ check 'Bob can no longer sign in' "$(curl -sS -o /dev/null -w '%{http_code}' "$A
   -H "apikey: $KEY" -H 'content-type: application/json' \
   -d "{\"email\":\"bob-$RUN@smoke.test\",\"password\":\"$PASSWORD\"}")" 400
 check "Bob is gone from Auth" "$(curl -sS -o /dev/null -w '%{http_code}' "$API/auth/v1/admin/users/$B_ID" -H "apikey: $SECRET")" 404
-check 'a repeated delete with the old session answers like the first (idempotent 200)' \
-  "$(delete_account "$B")" '200 {"deleted":true,"household":"none","apple":"not_linked"}'
+check 'a repeated delete with the old session still answers 200, with the Apple ID hint' \
+  "$(delete_account "$B")" '200 {"deleted":true,"household":"none","apple":"manual"}'
 
 check 'the Auth admin API (dashboard) deletes Carl, who added an item' \
   "$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE "$API/auth/v1/admin/users/$C_ID" -H "apikey: $SECRET")" 200

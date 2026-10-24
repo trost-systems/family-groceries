@@ -102,3 +102,27 @@ requirements, researched on 2026-10-24, are in `docs/DECISIONS.md` 9.1.
 - The real Apple exchange and revocation are tested only against a fake
   Apple server. Checking them needs an iPhone and a throwaway Apple ID
   (NEEDS_PETER step 4).
+
+## Review 0 fixes (2026-10-24, branch `job/9b-account-review-fixes`)
+
+- **Must fix: the deletion call that CI saw fail with an empty 503.** The
+  503 comes from the edge runtime ("connection aborted" on a cold `oneshot`
+  worker), not from the handler. The hosted gateway answers 502, 503, 504
+  or 546 the same way when a worker fails to boot. The endpoint is
+  idempotent, so `SupabaseAccountRepository.delete` now retries once after
+  one second on a gateway error that lacks the handler's JSON `error`.
+  Errors the handler answered are not retried, and a second drop fails
+  without a third try. Three new tests cover this. The retry test fails
+  when the retry is disabled.
+- **Nice to have, done.** The function now reads the Apple subject, deletes,
+  and only then calls Apple. A failed delete therefore never spends the
+  single-use Apple code. A retry that finds the account already gone
+  answers `apple: "manual"`, so the app shows the Apple ID hint, because
+  that call cannot know whether the first one revoked. Covered in
+  `handler_test.ts` and `smoke.sh`.
+- **Nice to have, done.** `docs/ACCOUNT_DELETION.md` now says that
+  `items_added` covers the current household only. Items added in a
+  household you left belong to that household, and your actions there are
+  in `history`.
+- **Decision.** `docs/DECISIONS.md` 9.12.
+- **Verified.** `scripts/verify.sh` all green (pgTAP 513, Deno 246, Flutter 245, Playwright 66/66 in 4.6 min) and `smoke.sh` 26/26 on the local stack.
