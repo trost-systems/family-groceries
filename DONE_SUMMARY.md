@@ -195,3 +195,7 @@ See [docs/done/11-ci-flow.md](docs/done/11-ci-flow.md).
 ## Job 12b: lint and schema-guard follow-ups
 
 See [docs/done/12b-lints-followups.md](docs/done/12b-lints-followups.md).
+
+## Job 13b: nightly encrypted database backups
+
+See [docs/done/13b-db-backups.md](docs/done/13b-db-backups.md).
