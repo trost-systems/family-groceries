@@ -94,10 +94,10 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | Rule | What fails | Why |
 | --- | --- | --- |
 | `no-from-environment` | `String/bool/int.fromEnvironment` outside `app/lib/app/environment.dart` | One inventory of build-time defines |
-| `dispose-after-dialog` | A local controller or FocusNode disposed after `await showDialog`/`showModalBottomSheet` | The route still animates out with it; the join dialog crashed (fixed in 1177b52) |
+| `dispose-after-dialog` | A local controller or FocusNode disposed after `await showDialog`/`showModalBottomSheet` (or a picker or pushed route), or in its `.then` | The route still animates out with it; the join dialog crashed (fixed in 1177b52) |
 | `shared-preferences-only-in-device-cache`, `device-cache-own-file` | A shared-preferences store outside `DeviceCache`, or one without its own Linux file | A second store on supabase's file signed Linux users out (c4ed2e4) |
-| `auth-navigation-only-in-router` | Navigation to `/login` or `/welcome` outside `router.dart` | Auth gating happens only in `authRedirect` |
-| `no-hardcoded-ui-text` | A string literal with letters in `Text(...)` or a `label`/`tooltip`/`hintText`-style argument in `app/lib` | UI text lives in `app/l10n/app_de.arb` |
+| `auth-navigation-only-in-router` | The `/login` or `/welcome` route named outside `router.dart` (path, `loginPath`, `goNamed('login')`) | Auth gating happens only in `authRedirect` |
+| `no-hardcoded-ui-text` | A string literal with letters in `Text(...)` or a `label`/`tooltip`/`hintText`-style argument in `app/lib`, also through a same-file constant, list, map, getter or function | UI text lives in `app/l10n/app_de.arb` |
 | schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |
 | schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |

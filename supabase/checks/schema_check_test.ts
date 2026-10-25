@@ -1,5 +1,12 @@
 import { assertEquals, assertMatch } from '@std/assert';
-import { checkHistory, checkIgnores, checkTables, compat, statements } from './schema_check.ts';
+import {
+  checkHistory,
+  checkIgnores,
+  checkTables,
+  compat,
+  qualifiedName,
+  statements,
+} from './schema_check.ts';
 
 const root = new URL('../', import.meta.url);
 
@@ -147,7 +154,76 @@ Deno.test('tables: household_id added later, renames and drops are followed', ()
   ]);
   const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
   assertEquals(found.length, 1);
-  assertMatch(found[0], /^20261024190000_bar\.sql: public\.foo has household_id but no policy/);
+  assertMatch(found[0], /^20261024220000_rename\.sql: public\.foo has household_id but no policy/);
+});
+
+Deno.test('tables: a finding names the migration that last changed the table', () => {
+  const tree = new Map([
+    ...withMigration(complete),
+    ['20261024200000_rename.sql', 'alter table public.foo rename to foo2;'],
+  ]);
+  const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
+  assertEquals(found, [
+    '20261024200000_rename.sql: public.foo2 has household_id but no pgTAP test with two ' +
+    'households touches it: add a cross-household case for public.foo2 to supabase/tests/rls.test.sql',
+  ]);
+});
+
+Deno.test('names: each part is unquoted, an unqualified name is in public', () => {
+  const name = (text: string) => {
+    const found = qualifiedName(text);
+    return found && [found.schema, found.name, found.rest];
+  };
+  assertEquals(name('public.items (id uuid)'), ['public', 'items', '(id uuid)']);
+  assertEquals(name('"public"."items2" (id uuid)'), ['public', 'items2', '(id uuid)']);
+  assertEquals(name('public."Items" enable'), ['public', 'Items', 'enable']);
+  assertEquals(name('"public" . items enable'), ['public', 'items', 'enable']);
+  assertEquals(name('"a""b" rename'), ['public', 'a"b', 'rename']);
+  assertEquals(name('private.secret'), ['private', 'secret', '']);
+  assertEquals(name('items, "other"'), ['public', 'items', ', "other"']);
+});
+
+const quotedTest = new Map([[
+  'quoted.test.sql',
+  `select public.create_household('A'); select public.create_household('B');
+   select throws_ok('insert into "public"."items2" (household_id) values (null)');
+   select is((select count(*)::int from public."Mixed"), 0, 'invisible');
+   select is((select count(*)::int from public.x), 0, 'invisible');`,
+]]);
+
+Deno.test('tables: quoted, unquoted and mixed names are the same table', () => {
+  const tree = withMigration(`
+create table "public"."items2" (id uuid, "household_id" uuid);
+alter table "public"."items2" enable row level security;
+create policy "items2 member" on "public".items2
+  using (public.is_household_member("household_id"));
+create table if not exists "public"."x" (id uuid);
+alter table public."x" enable row level security;
+alter table "x" add column household_id uuid;
+create policy x_member on x using (is_household_member(household_id));
+create table public."Mixed" (household_id uuid);
+create table "private"."secret" (household_id uuid);
+create table "public"."gone" (id uuid);
+drop table public.unknown, "public"."gone";`);
+  const found = messages(checkTables(tree, new Map([...repoTests, ...quotedTest])));
+  assertEquals(found, [
+    '20261024190000_foo.sql: public."Mixed" does not enable row level security: add ' +
+    '"alter table public."Mixed" enable row level security;" and its policies',
+    '20261024190000_foo.sql: public."Mixed" has household_id but no policy using ' +
+    'public.is_household_member(household_id): add one, e.g. "create policy "Mixed_member" on ' +
+    'public."Mixed" for select to authenticated using (public.is_household_member(household_id));"',
+  ]);
+});
+
+Deno.test('tables: a quoted table that misses a later step is reported by its own name', () => {
+  const tree = withMigration(`
+create table if not exists "public"."x" (id uuid);
+alter table "public"."x" enable row level security;
+alter table "public"."x" add column "household_id" uuid;`);
+  const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
+  assertEquals(found.length, 2);
+  assertMatch(found[0], /^20261024190000_foo\.sql: public\.x has household_id but no policy/);
+  assertMatch(found[1], /add a cross-household case for public\.x /);
 });
 
 Deno.test('statements: strings with quotes and semicolons stay inside one statement', () => {
@@ -221,4 +297,65 @@ Deno.test('tables: a copy made with like inherits household_id, but not RLS or p
   assertMatch(found[0], /public\.items_archive does not enable row level security/);
   assertMatch(found[1], /public\.items_archive has household_id but no policy using/);
   assertMatch(found[2], /add a cross-household case for public\.items_archive/);
+});
+
+Deno.test('statements: E strings, nested comments and dollar quotes do not hide DDL', () => {
+  assertEquals(
+    statements(
+      "select E'it\\'s;'; /* a /* b; */ c; */ create table t (); select $x$ ; $x$, $$ ; $$;",
+    ),
+    ["select e''", 'create table t ()', 'select $$, $$'],
+  );
+  const found = messages(checkTables(
+    withMigration("select E'it\\'s'; create table public.t (id int, household_id uuid);"),
+    repoTests,
+  ));
+  assertEquals(found.length, 3);
+});
+
+Deno.test('tables: alter policy, column renames and set schema are followed', () => {
+  const tests = new Map([...repoTests, ...crossHouseholdTest]);
+  const loosened = new Map([
+    ...withMigration(complete),
+    ['20261024200000_loosen.sql', 'alter policy foo_member on public.foo using (true);'],
+  ]);
+  assertMatch(
+    messages(checkTables(loosened, tests))[0],
+    /^20261024200000_loosen\.sql: .*no policy/,
+  );
+  const renamedPolicy = new Map([
+    ...withMigration(complete),
+    ['20261024200000_rename.sql', 'alter policy foo_member on public.foo rename to foo_m;'],
+  ]);
+  assertEquals(checkTables(renamedPolicy, tests), []);
+  const renamedColumn = new Map([
+    ...repoMigrations,
+    ['20261024190000_bar.sql', 'create table public.bar (hh uuid);'],
+    [
+      '20261024200000_bar.sql',
+      'alter table public.bar enable row level security; ' +
+      'alter table public.bar rename column hh to household_id;',
+    ],
+  ]);
+  assertMatch(messages(checkTables(renamedColumn, tests))[0], /public\.bar has household_id/);
+  const moved = new Map([
+    ...repoMigrations,
+    ['20261024190000_bar.sql', 'create table public.bar (household_id uuid);'],
+    ['20261024200000_bar.sql', 'alter table public.bar set schema private;'],
+  ]);
+  assertEquals(checkTables(moved, tests), []);
+});
+
+Deno.test('tables: a commented-out mention in a test does not count', () => {
+  const commented = new Map([[
+    'rls.test.sql',
+    `select public.create_household('A'); select public.create_household('B');
+     -- todo: public.foo
+     /* select count(*) from public.foo; */`,
+  ]]);
+  const found = messages(
+    checkTables(withMigration(complete), new Map([...repoTests, ...commented])),
+  );
+  assertEquals(found.length, 1);
+  assertMatch(found[0], /no pgTAP test with two households touches it/);
 });

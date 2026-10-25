@@ -6,105 +6,105 @@ snapshots:
       style: primary
       start: 113
       end: 121
-    - source: context.go
+  "const _p = '/login';\nvoid back(BuildContext context) => context.go(_p);\n":
+    labels:
+    - source: "'/login'"
+      style: primary
+      start: 11
+      end: 19
+  "final where = GoRouter.of(context).namedLocation('welcome');\n":
+    labels:
+    - source: "'welcome'"
+      style: primary
+      start: 49
+      end: 58
+    - source: GoRouter.of(context).namedLocation
       style: secondary
-      start: 102
-      end: 112
-    - source: context.go('/login')
+      start: 14
+      end: 48
+    - source: GoRouter.of(context).namedLocation('welcome')
       style: secondary
-      start: 102
-      end: 122
-    - source: ('/login')
+      start: 14
+      end: 59
+    - source: ('welcome')
       style: secondary
-      start: 112
-      end: 122
+      start: 48
+      end: 59
   "void back(BuildContext context) => Navigator.of(context).pushNamed('/login');\n":
     labels:
     - source: "'/login'"
       style: primary
       start: 67
       end: 75
-    - source: Navigator.of(context).pushNamed
-      style: secondary
-      start: 35
+  "void back(BuildContext context) => Navigator.pushNamed(context, '/login');\n":
+    labels:
+    - source: "'/login'"
+      style: primary
+      start: 64
+      end: 72
+  "void back(BuildContext context) => context.go(Uri(path: '/welcome', queryParameters: q).toString());\n":
+    labels:
+    - source: "'/welcome'"
+      style: primary
+      start: 56
       end: 66
-    - source: Navigator.of(context).pushNamed('/login')
+  "void back(BuildContext context) => context.goNamed('login');\n":
+    labels:
+    - source: "'login'"
+      style: primary
+      start: 51
+      end: 58
+    - source: context.goNamed
       style: secondary
       start: 35
-      end: 76
-    - source: ('/login')
+      end: 50
+    - source: context.goNamed('login')
       style: secondary
-      start: 66
-      end: 76
+      start: 35
+      end: 59
+    - source: ('login')
+      style: secondary
+      start: 50
+      end: 59
   "void back(BuildContext context) => context.pushReplacement(loginPath);\n":
     labels:
     - source: loginPath
       style: primary
       start: 59
       end: 68
-    - source: context.pushReplacement
+  "void back(BuildContext context) => context.pushReplacementNamed(\"welcome\", queryParameters: q);\n":
+    labels:
+    - source: "\"welcome\""
+      style: primary
+      start: 64
+      end: 73
+    - source: context.pushReplacementNamed
       style: secondary
       start: 35
-      end: 58
-    - source: context.pushReplacement(loginPath)
+      end: 63
+    - source: "context.pushReplacementNamed(\"welcome\", queryParameters: q)"
       style: secondary
       start: 35
-      end: 69
-    - source: (loginPath)
+      end: 94
+    - source: "(\"welcome\", queryParameters: q)"
       style: secondary
-      start: 58
-      end: 69
+      start: 63
+      end: 94
   "void back(GoRouter router) => router.replace(\"/welcome\");\n":
     labels:
     - source: "\"/welcome\""
       style: primary
       start: 45
       end: 55
-    - source: router.replace
-      style: secondary
-      start: 30
-      end: 44
-    - source: router.replace("/welcome")
-      style: secondary
-      start: 30
-      end: 56
-    - source: ("/welcome")
-      style: secondary
-      start: 44
-      end: 56
   "void leave(BuildContext context) => GoRouter.of(context).go('/welcome?invite=AB');\n":
     labels:
     - source: "'/welcome?invite=AB'"
       style: primary
       start: 60
       end: 80
-    - source: GoRouter.of(context).go
-      style: secondary
-      start: 36
-      end: 59
-    - source: GoRouter.of(context).go('/welcome?invite=AB')
-      style: secondary
-      start: 36
-      end: 81
-    - source: ('/welcome?invite=AB')
-      style: secondary
-      start: 59
-      end: 81
   "void leave(BuildContext context) => context.go(welcomePath);\n":
     labels:
     - source: welcomePath
       style: primary
       start: 47
       end: 58
-    - source: context.go
-      style: secondary
-      start: 36
-      end: 46
-    - source: context.go(welcomePath)
-      style: secondary
-      start: 36
-      end: 59
-    - source: (welcomePath)
-      style: secondary
-      start: 46
-      end: 59

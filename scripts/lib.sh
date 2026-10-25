@@ -11,10 +11,29 @@ stack_running() { (cd "$REPO_ROOT" && supabase status -o env 2>/dev/null | grep 
 
 project_id() { sed -n 's/^project_id = "\(.*\)"$/\1/p' "$REPO_ROOT/supabase/config.toml"; }
 
+# Linux gives outgoing connections source ports from 32768-60999 (ip_local_port_range), and
+# every port block (543xx-561xx) lies inside it. A container that binds its port while some
+# outgoing connection holds that number fails with "bind: address already in use", as the db
+# did during `supabase db reset` under load (DECISIONS 12b.5). Reserving this checkout's block
+# (<API port's first three digits>00-99, the web port included) takes it out of that pool;
+# explicit binds still work. Needs root (passwordless sudo on the box and on CI runners).
+reserve_port_block() {
+  local file=/proc/sys/net/ipv4/ip_local_reserved_ports prefix block have
+  [[ -r $file ]] || return 0
+  prefix="$(sed -n 's/^port = \([0-9]\{3\}\)[0-9]*$/\1/p' "$REPO_ROOT/supabase/config.toml" | head -1)"
+  block="${prefix}00-${prefix}99"
+  have="$(<"$file")"
+  [[ ",$have," == *",$block,"* ]] && return 0
+  if ! sudo -n sysctl -qw "net.ipv4.ip_local_reserved_ports=${have:+$have,}$block" 2>/dev/null; then
+    echo "warning: could not reserve ports $block (sudo sysctl net.ipv4.ip_local_reserved_ports): a stack start can fail with \"address already in use\"" >&2
+  fi
+}
+
 # Starts the local Supabase stack if it is not running and exports its URLs and publishable key,
 # so the e2e tests and the web build talk to this checkout's stack whatever its port block.
 # The lock lets CI start the stack in the background early (ci.yml) while this waits for it.
 supabase_up() {
+  reserve_port_block
   (
     cd "$REPO_ROOT" && flock 7
     stack_running && exit 0

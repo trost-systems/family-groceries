@@ -1,0 +1,102 @@
+== 1. no-hardcoded-ui-text: same-file constants, getters, collection if/for
+  | import 'package:flutter/widgets.dart';
+  | 
+  | const _labels = ['Eins', 'Zwei'];
+  | const _m = {'a': 'Karte'};
+  | String get _title => 'Getter';
+  | 
+  | class P extends StatelessWidget {
+  |   const P({super.key});
+  |   static const _own = ['Statisch'];
+  |   @override
+  |   Widget build(BuildContext context) {
+  |     final c = DateTime.now().second > 3;
+  |     return Column(children: [
+  |       Text(_labels[0]),
+  |       Text(_own[0]),
+  |       Text(_m['a']!),
+  |       Text(_title),
+  |       Text([if (c) 'Wenn'].first),
+  |       Text([for (final _ in [1]) 'Eins'].first),
+  |     ]);
+  |   }
+  | }
+  findings:
+  line 3: 'Eins'
+  line 3: 'Zwei'
+  line 4: 'Karte'
+  line 5: 'Getter'
+  line 9: 'Statisch'
+  line 18: 'Wenn'
+  line 19: 'Eins'
+
+== 5. dispose-after-dialog: .then without await
+  | void open(BuildContext context) {
+  |   final c = TextEditingController();
+  |   showDialog<void>(context: context, builder: (d) => TextField(controller: c)).then((_) => c.dispose());
+  | }
+  | Future<void> pick(BuildContext context) async {
+  |   final f = FocusNode();
+  |   await showDatePicker(context: context, firstDate: a, lastDate: b);
+  |   f.dispose();
+  | }
+  findings:
+  line 3: (_) => c.dispose()
+  line 8: f.dispose()
+
+== 6. auth-navigation-only-in-router: goNamed, Navigator.pushNamed, a const path
+  | void a(BuildContext context) => context.goNamed('login');
+  | void b(BuildContext context) => Navigator.pushNamed(context, '/login');
+  | const _p = '/welcome';
+  | void c(BuildContext context) => context.go(_p);
+  findings:
+  line 1: 'login'
+  line 2: '/login'
+  line 3: '/welcome'
+
+== Extra shapes from this job's own adversarial review
+  | enum Cat { fruit('Obst'); const Cat(this.label); final String label; }
+  | Widget chip(Cat c) => Text(c.label);
+  | Widget saved(bool ok) { String msg; if (ok) { msg = 'Gespeichert'; } else { msg = l10n.error; } return Text(msg); }
+  | class Btn extends StatelessWidget { const Btn({this.caption = 'Speichern'}); final String caption; Widget build(BuildContext c) => Text(caption); }
+  | sealed class LoadState { @override String toString() => 'LoadState'; }
+  | Widget count(int n) => Text(n.toString());
+  findings (LoadState must not be one):
+  line 1: 'Obst'
+  line 3: 'Gespeichert'
+  line 4: 'Speichern'
+  | void open(BuildContext context) {
+  |   final c = TextEditingController();
+  |   showModalBottomSheet<void>(context: context, builder: (_) => TextField(controller: c)).whenComplete(c.dispose);
+  | }
+  findings:
+  line 3: c.dispose
+
+== 2. schema_check: a correct quoted table, and a quoted table missing its policy
+  | create table "public"."items2" (id uuid primary key, household_id uuid not null);
+  | alter table "public"."items2" enable row level security;
+  | create policy items2_member on "public"."items2" for select to authenticated
+  |   using (public.is_household_member(household_id));
+  | create table if not exists "public"."x" (id uuid);
+  | alter table "public"."x" enable row level security;
+  | alter table "public"."x" add column household_id uuid;
+  supabase/migrations/20990101000000_probe.sql: public.items2 has household_id but no pgTAP test with two households touches it: add a cross-household case for public.items2 to supabase/tests/rls.test.sql
+  supabase/migrations/20990101000000_probe.sql: public.x has household_id but no policy using public.is_household_member(household_id): add one, e.g. "create policy x_member on public.x for select to authenticated using (public.is_household_member(household_id));"
+  supabase/migrations/20990101000000_probe.sql: public.x has household_id but no pgTAP test with two households touches it: add a cross-household case for public.x to supabase/tests/rls.test.sql
+  exit 1
+
+== 8. schema_check: a rename is reported against the migration that renames
+  | alter table public.items rename to items_v2;
+  supabase/migrations/20990101000000_probe.sql: public.items_v2 has household_id but no pgTAP test with two households touches it: add a cross-household case for public.items_v2 to supabase/tests/rls.test.sql
+  supabase/migrations/20990101000000_probe.sql:1: renaming-table: Renaming a table may break existing clients. Old app builds still use the current schema: add the new shape next to the old one and remove the old one only once no released build reads it, or put "-- squawk-ignore renaming-table -- <reason>" on the line above.
+  exit 1
+
+== 7. lint.sh: the schema check's message comes before the unit tests
+  | create table public.probe (id uuid, household_id uuid);
+  [1;34m[lint][0m ast-grep rule tests
+  test result: ok. 7 passed; 0 failed;
+  [1;34m[lint][0m ast-grep scan
+  [1;34m[lint][0m schema check against origin/main
+  supabase/migrations/20990101000000_probe.sql: public.probe does not enable row level security: add "alter table public.probe enable row level security;" and its
+  supabase/migrations/20990101000000_probe.sql: public.probe has household_id but no policy using public.is_household_member(household_id): add one, e.g. "create 
+  supabase/migrations/20990101000000_probe.sql: public.probe has household_id but no pgTAP test with two households touches it: add a cross-household case for pub

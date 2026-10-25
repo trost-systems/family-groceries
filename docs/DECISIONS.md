@@ -941,27 +941,50 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       or index: `Text('Hallo'.toUpperCase())`, `Text(['Eins', 'Zwei'][i])`
       and `Text(<String>['Eins'].join(', '))` fail (review 1). Index and map
       keys, conditions, switch patterns, and arguments of other calls
-      (`DateFormat('dd.MM.')`, `json['name']`) are data and pass. Two cases
-      stay out of reach for a syntactic rule. One is a value that goes into
-      another call's argument and comes back as its result, such as a
-      closure in `.map((e) => 'Nr. $e')` or a helper function. The other is
-      a constant imported from another file. Both would need the analyzer's
-      types and data flow (12.1). The named-argument list adds the date,
-      time, about and search dialogs' texts (`confirmText`, `cancelText`,
-      `helpText`, `fieldLabelText`, `searchFieldLabel`, ...) to emotely's
-      `avoid_hardcoded_ui_text` list. A string constant declared in the
-      same file and shown in one of those places counts as the literal. A
-      non-widget class with a parameter named `message` or `title` is
-      reported too; pass it a localized value. Main had no findings.
+      (`DateFormat('dd.MM.')`, `json['name']`) are data and pass. Collection
+      `if` and `for` elements are walked like list elements, and a name
+      declared in the same file is followed to its value when the name
+      reaches a text position: a constant, final, local or field, including
+      list and map constants (`const _labels = ['Eins']; Text(_labels[0])`),
+      a later assignment (`msg = 'Gespeichert'`), a parameter's default
+      value, an enum constant's arguments when one of the enum's fields is
+      shown (`fruit('Obst')` with `Text(c.label)`), and the result of a
+      getter, function or method (`String get _title => 'Titel'`, `String
+      _nr(int n) => 'Nr. $n'`, `return 'Ja';`). The literal is reported
+      where it is declared (job 12b). Names are matched, not resolved: a
+      `title` getter in one class counts when another object's `.title` is
+      shown in the same file, and an enum constant's other literal
+      arguments (a JSON key next to the label) count too; give those an
+      ignore with the reason or move the label to l10n. `toString`
+      overrides are skipped, since `Text(n.toString())` shows `n`. Four cases stay out of
+      reach for a syntactic rule: a value that goes into another call's
+      argument and comes back as its result (a closure in `.map((e) => 'Nr.
+      $e')`, a custom widget's positional parameter that it shows with
+      `Text`), a declaration whose value is another declaration's name
+      (`const _b = _a;`, ast-grep binds one name per match), and a constant
+      imported from another file. They would need the analyzer's types and
+      data flow (12.1). The named-argument list adds the date, time, about
+      and search dialogs' texts (`confirmText`, `cancelText`, `helpText`,
+      `fieldLabelText`, `searchFieldLabel`, ...) to emotely's
+      `avoid_hardcoded_ui_text` list, so a custom widget's named `title:`
+      or `label:` argument is caught. A non-widget class with a parameter
+      named `message` or `title` is reported too; pass it a localized value.
+      Main had no findings.
 12.4. **`dispose-after-dialog` looks at the whole function body.** It reports
       a local `TextEditingController`, `FocusNode`, `ScrollController` or
-      `SearchController` that is disposed in a function that also awaits
-      `show*Dialog`, `show*BottomSheet` or `showCupertinoModalPopup`. A
-      `finally` block counts too. The fix is a dialog widget whose State
-      owns the controller. The rule does not check order inside the
+      `SearchController` that is disposed in a function that also awaits a
+      route: `show*Dialog`, `show*BottomSheet`, `showCupertinoModalPopup`,
+      the date, date-range and time pickers, `showMenu`, `showSearch`,
+      `showAboutDialog`, `showLicensePage`, or a Navigator or go_router
+      `push*`. A `finally` block counts too, and so does a dispose in the
+      route's `.then` or `.whenComplete` callback without an await (job
+      12b). A picker builds its own controllers, but its `builder` can wrap
+      the caller's field, so pickers are in. The fix is a route widget whose
+      State owns the controller. The rule does not check order inside the
       function, so a dispose written before the await is reported too. It
-      also does not follow a dialog that a helper function opens and the
-      caller awaits; that needs a call graph.
+      does not follow a route that a helper function opens and the caller
+      awaits (that needs a call graph), or a route's Future stored in a
+      variable and awaited later.
 12.5. **squawk rules as an allow-list in `schema_check.ts`.** squawk has no
       "only these rules" switch, so the check keeps the backward-compatibility
       rules from its JSON report (`COMPAT_RULES`) plus parse errors. Those
@@ -980,6 +1003,8 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       `personal_access_tokens` meets this in its own test file. A table
       created with `(like public.<table> ...)` inherits that table's
       `household_id` and needs its own RLS, policy and test (review 0).
+      Quoting does not matter: `"public"."items"`, `public."items"` and
+      `public.items` are the same table (job 12b).
 12.8. **The base is `origin/main`.** `lint.sh` fetches it at depth 1 when the
       ref is missing, as it is in a CI pull-request checkout. A new migration
       must sort after main's newest, and main's files must match byte for
@@ -997,6 +1022,62 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
 12.11. **`fromEnvironment` and `go('/login')` had no history.** No commit
        on any branch ever broke these two conventions, so their rule tests
        use probes instead of historical code.
+
+## Job 12b (lint and schema-guard follow-ups), 2026-10-25
+
+12b.1. **`auth-navigation-only-in-router` reports the route names, not only
+       navigation calls.** Nothing in `app/lib` outside `router.dart` has a
+       reason to name `/login` or `/welcome`, so any such path literal,
+       `loginPath`/`welcomePath`, and `'login'`/`'welcome'` as a `*Named`
+       route name fail. A constant (`const _p = '/login'; go(_p)`) and
+       `Uri(path: '/welcome')` are then caught without data flow. A path
+       built at run time (`'/' + name`) is not.
+12b.2. **`schema_check.ts` reads names with one parser.** `qualifiedName`
+       splits a name on the dot and unquotes each part, and `statements()`
+       keeps the case inside double quotes, so `create table
+       "public"."items2"` is `public.items2` and `public."Mixed"` keeps its
+       case in the fix hint. Before, `"public"."items2"` was read as the
+       table `public` (review 2). The same scanner now honours `E'...'`
+       backslash escapes and nested block comments, both of which used to
+       swallow the DDL after them, and test SQL is read without its
+       comments. `alter policy` (new `using`, rename), `rename column` to
+       or from `household_id` and `set schema` are followed.
+12b.3. **A table finding names the migration that last changed the table.**
+       Renames, `alter table` and policy changes move it. The earlier file
+       is often on main and frozen, so the fix goes after the last change:
+       a rename probe used to be reported against the foundation migration.
+12b.4. **`lint.sh` runs the schema check before its unit tests.** A probe
+       migration also fails the unit test over the repository's own
+       migrations, whose assertion diff hid the check's message.
+12b.5. **Port blocks stay where they are; the kernel reserves them.** Linux
+       picks outgoing connections' source ports from 32768-60999, and every
+       job's block (543xx-561xx) and CI's 543xx lie inside it. A container
+       that binds a port an outgoing connection holds fails with `bind:
+       address already in use`; review 2 hit it twice on 55522 during `db
+       reset`. On the box, 9 of 3000 loopback connections drew a source port
+       in 55500-55599, and 0 of 3000 after `sysctl
+       net.ipv4.ip_local_reserved_ports=55500-55599`; an explicit bind on
+       55522 still worked. `reserve_port_block` (`scripts/lib.sh`) reserves
+       the checkout's `<prefix>00-99` before `supabase start` and `db
+       reset`, locally and on CI runners. Moving the blocks below 32768
+       would also work but renumbers every job, and the verify skill's own
+       stacks (`fg`, `~/.cache/fg/<prefix>`) don't go through `lib.sh`, so
+       the box itself should reserve 54300-56199 at boot (BOARD, job 12b).
+12b.6. **`typeInto` waits for Flutter's frame, not for more time.** On web,
+       a DOM focus on a semantics text field only asks the app to focus it;
+       the engine attaches its editor to the `<input>` with the next
+       frame's semantics update (`semantics/text_field.dart`, `update()` ->
+       `activate`). Text inserted before that frame is in the DOM but not in
+       the app, and the frame writes the app's value back. The old helper
+       checked the DOM right after inserting, so it passed. Then, under
+       load, `auth.spec.ts` sent the old password (full run 1, 10:36, no
+       freeze). With frames held back 1.5 s, the old helper left the field
+       empty and the new one kept the text (probe in
+       `docs/screenshots/12b-lints-followups/typeinto-frame-probe.*`).
+       `typeInto` now waits two `requestAnimationFrame`s after focus and
+       again before its value check. Review 2's partner-news failure was
+       different: a 7-minute VM freeze inside a click (mem-guard gap
+       01:42:58-01:50:18), void under the board's ruling.
 
 ## Job 11: one CI run per merge, one gate definition, measured CI speedups
 

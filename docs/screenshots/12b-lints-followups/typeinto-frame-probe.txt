@@ -1,0 +1,6 @@
+PROBE insert before frame: held frames=1, DOM right after="abcdefgh", DOM after frames="", app says too short=true
+PROBE insert after frame: held frames=0, DOM right after="abcdefgh", DOM after frames="abcdefgh", app says too short=false
+PROBE typeInto old, frame 1.5 s late: DOM="", app says too short=true
+PROBE typeInto new, frame 1.5 s late: DOM="abcdefgh", app says too short=false
+  4 passed (13.5s)
+[1;34m[verify][0m passed: e2e
