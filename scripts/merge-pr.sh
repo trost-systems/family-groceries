@@ -11,9 +11,11 @@
 #   exits 2: wait for ci-ok on the new head, then rerun. That costs a second CI run.
 #   If main moved since the push, the head is no longer on top of main: rerun
 #   scripts/push-pr.sh (one rebase, one push, one CI run), then this.
+#   If the PR description changed since that push, it stops: rerun scripts/push-pr.sh, which
+#   lands the current description.
 #   --dry-run checks everything and stops before the merge.
-#   --wait gives up after MERGE_WAIT_MINUTES (default 30), so a ci-ok that never reports can't
-#   hold the merge lock forever.
+#   --wait gives up after MERGE_WAIT_MINUTES (whole minutes, default 30), so a ci-ok that never
+#   reports can't hold the merge lock forever.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -27,6 +29,12 @@ while [[ ${1:-} == --* ]]; do
   shift
 done
 PR="${1:?usage: scripts/merge-pr.sh [--wait] [--dry-run] <pr-number>}"
+wait_minutes="${MERGE_WAIT_MINUTES:-30}"
+if [[ ! $wait_minutes =~ ^[0-9]+$ ]]; then
+  echo "MERGE_WAIT_MINUTES must be a whole number of minutes (like 30), not '$wait_minutes'" >&2
+  exit 2
+fi
+wait_minutes=$((10#$wait_minutes))
 
 cd "$REPO_ROOT"
 branch="$(gh pr view "$PR" --json headRefName -q .headRefName)"
@@ -44,10 +52,15 @@ if [[ "$(git rev-list --count "origin/main..$head")" == 0 ]]; then
   exit 1
 fi
 problem="$(landing_problem "$head" "$subject")"
+description="$(gh pr view "$PR" --json body -q .body)"
+squashed="$(squash_commit "$head" "$subject" "$description")"
+if [[ -z $problem && "$(git log -1 --format=%B "$squashed")" != "$(git log -1 --format=%B "$head")" ]]; then
+  echo "the PR description changed since the last push; run scripts/push-pr.sh (it lands the current one), wait for ci-ok, then rerun" >&2
+  exit 1
+fi
 if [[ -n $problem ]]; then
   [[ $dry_run == 1 ]] && { log "dry run: would squash and push because $problem"; exit 2; }
   log "squashing $branch into one commit ($problem): $subject"
-  squashed="$(squash_commit "$head" "$subject")"
   git push -q --force-with-lease="$branch:$head" origin "$squashed:refs/heads/$branch"
   log "pushed $squashed; rerun once ci-ok passes on it (scripts/push-pr.sh saves this second CI run)"
   exit 2
@@ -57,11 +70,11 @@ fi
 ci_ok() { gh pr checks "$PR" --json name,bucket -q '.[] | select(.name=="ci-ok") | .bucket' || true; }
 state="$(ci_ok)"
 if [[ $wait == 1 ]]; then
-  deadline=$((SECONDS + ${MERGE_WAIT_MINUTES:-30} * 60))
-  log "waiting for ci-ok on $head (up to ${MERGE_WAIT_MINUTES:-30} min)"
+  deadline=$((SECONDS + wait_minutes * 60))
+  log "waiting for ci-ok on $head (up to $wait_minutes min)"
   while [[ $state != pass && $state != fail && $state != cancel ]]; do
     if [[ $SECONDS -ge $deadline ]]; then
-      echo "ci-ok is still '${state:-missing}' on $head after ${MERGE_WAIT_MINUTES:-30} min; not merging. Check the run, then rerun (release the merge lock meanwhile)" >&2
+      echo "ci-ok is still '${state:-missing}' on $head after $wait_minutes min; not merging. Check the run, then rerun (release the merge lock meanwhile)" >&2
       exit 1
     fi
     sleep 20

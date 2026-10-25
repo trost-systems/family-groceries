@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Pushes the current branch to its open PR as the one commit main takes: rebased onto
-# origin/main, squashed, subject "<PR title> (#n)", the noreply author and the trailers. The CI
+# origin/main, squashed, subject "<PR title> (#n)", the PR description as body, the noreply
+# author and the trailers (MODEL_CO_AUTHOR="Name <email>" adds the model's co-author line). The CI
 # run on this push is then the one scripts/merge-pr.sh merges on, with no second squash and run.
 # Use it for every push once the PR exists, fix rounds included. Before that, push the branch
 # once with `git push -u origin HEAD` and open the PR with `gh pr create`.
@@ -36,8 +37,10 @@ if [[ "$(git rev-list --count origin/main..HEAD)" == 0 ]]; then
   echo "nothing to push: $branch has no commits on top of origin/main" >&2
   exit 1
 fi
-if [[ -n "$(landing_problem HEAD "$subject")" ]]; then
-  squashed="$(squash_commit HEAD "$subject")"
+description="$(gh pr view "$pr" --json body -q .body)"
+squashed="$(squash_commit HEAD "$subject" "$description")"
+# Also after an edit of the PR description: the commit main takes carries the current one.
+if [[ -n "$(landing_problem HEAD "$subject")" || "$(git log -1 --format=%B "$squashed")" != "$(git log -1 --format=%B HEAD)" ]]; then
   git reset -q --soft "$squashed"
   log "squashed $branch into $(git rev-parse --short HEAD): $subject"
 fi

@@ -59,11 +59,11 @@ flutter_defines() {
 }
 
 # Commits on main follow one shape (CLAUDE.md, COMMON.md): one commit per PR, subject
-# "<PR title> (#n)", authored with the noreply address GitHub accepts, Peter's trailer last.
+# "<PR title> (#n)", the PR description as body, authored with the noreply address GitHub
+# accepts, Peter's trailer last.
 AUTHOR_NAME="petertrost-bot"
 AUTHOR_EMAIL="341616691+petertrost-bot@users.noreply.github.com"
 PETER_TRAILER='Co-authored-by: Peter Trost <peter@petertrost.com>'
-TRAILERS=$'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n'"$PETER_TRAILER"
 
 # Why <head> is not yet the commit main takes for <subject>, or nothing when it is.
 # Needs origin/main fetched.
@@ -82,20 +82,29 @@ landing_problem() {
   fi
 }
 
-# Prints the id of one commit on origin/main with <head>'s tree, <subject>, the noreply
-# author and the trailers. The body keeps every commit's message: the body of a commit that
-# already carries <subject> (an earlier squash), subject and body of every other commit.
+# The co-author trailer for the model that built the PR, from MODEL_CO_AUTHOR ("Name <email>"),
+# or nothing when it is unset. Commits that already carry such a trailer keep it anyway.
+model_trailer() {
+  [[ -z ${MODEL_CO_AUTHOR:-} ]] && return 0
+  if [[ ! $MODEL_CO_AUTHOR =~ ^[^\<\>]+\ \<[^\<\>@\ ]+@[^\<\>\ ]+\>$ ]]; then
+    echo "MODEL_CO_AUTHOR must look like 'Name <email>', not '$MODEL_CO_AUTHOR'" >&2
+    return 1
+  fi
+  echo "Co-authored-by: $MODEL_CO_AUTHOR"
+}
+
+# Prints the id of one commit on origin/main with <head>'s tree, <subject>, the PR <description>
+# as body, the noreply author and the trailers. Co-author lines of the description, of the
+# branch's commits and model_trailer join the trailer block once each; Peter's comes last.
 squash_commit() {
-  local head="$1" subject="$2" messages body others
-  messages="$(git log --reverse --format='%s%x00%b%x01' "origin/main..$head" \
-    | awk -v RS='\001' -v subject="$subject" '{
-        sub(/^\n/, ""); split($0, part, "\000")
-        print (part[1] == subject ? "" : part[1] "\n\n") part[2]
-      }')"
-  body="$(grep -vi '^Co-authored-by:' <<<"$messages" | sed '/./,$!d')"
-  # Other people's co-author lines move into the trailer block, once each; ours come last.
-  others="$(grep -i '^Co-authored-by:' <<<"$messages" | grep -vixF -e "$PETER_TRAILER" -e "${TRAILERS%%$'\n'*}" | awk '!seen[tolower($0)]++' || true)"
-  printf '%s\n\n%s\n\n%s\n' "$subject" "$body" "${others:+$others$'\n'}$TRAILERS" | sed '/^$/N;/^\n$/D' \
+  local head="$1" subject="$2" description body model others
+  description="$(tr -d '\r' <<<"$3")"
+  model="$(model_trailer)" || return 1
+  body="$(grep -vi '^Co-authored-by:' <<<"$description" | sed '/./,$!d' || true)"
+  others="$({ grep -i '^Co-authored-by:' <<<"$description"; git log --reverse --format=%b "origin/main..$head" \
+    | grep -i '^Co-authored-by:'; echo "$model"; } | sed 's/[[:space:]]*$//' | grep . | grep -vixF "$PETER_TRAILER" \
+    | awk '!seen[tolower($0)]++' || true)"
+  printf '%s\n\n%s\n\n%s\n' "$subject" "$body" "${others:+$others$'\n'}$PETER_TRAILER" | sed '/^$/N;/^\n$/D' \
     | GIT_AUTHOR_NAME="$AUTHOR_NAME" GIT_AUTHOR_EMAIL="$AUTHOR_EMAIL" \
       GIT_COMMITTER_NAME="$AUTHOR_NAME" GIT_COMMITTER_EMAIL="$AUTHOR_EMAIL" \
       git commit-tree "$(git rev-parse "$head^{tree}")" -p origin/main
