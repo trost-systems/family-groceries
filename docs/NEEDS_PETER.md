@@ -29,8 +29,9 @@ Still yours:
 - Section 4, steps 16 and 18: the Xcode capability check and trying
   sign-in on your phones.
 - Section 5, step 1: one MCP connect and disconnect against production.
-- "Job 4: Siri", step 2, and "Job 4: release" (not started: the repo has
-  no `release` environment yet), "Job 5: Android verification run".
+- "Job 4: Siri", step 2, and "Job 4: release" (iOS: the GitHub side is
+  set up except the certificates repo; the Apple steps are open; Android
+  not started), "Job 5: Android verification run".
 - "Job 13: database backups": done (job 13b). Copy the backup private key
   from the build box to your own computer and password manager (section
   "Job 13: database backups").
@@ -269,32 +270,46 @@ The Release workflow and the fastlane lanes are in place
 skips both platforms and stays green. All secrets and variables go into one
 GitHub environment.
 
-### Create the `release` environment
+### Status (2026-10-25)
 
-Repo Settings, Environments, New environment, name `release`. Optionally
-limit deployment branches to `main`. The `gh` commands below write into it;
-run them from a clone of the repo.
+Done from the box:
+
+- Environment `release` exists, deployments limited to the `main` branch.
+- In `release`: variables `APPLE_TEAM_ID` (`VCZSHMZY25`) and `MATCH_GIT_URL`
+  (`git@github.com:trost-systems/family-groceries-certificates.git`),
+  secrets `MATCH_DEPLOY_KEY` and `MATCH_PASSWORD`.
+- The deploy key pair is `~/groceries-ops/match-deploy-key` (+ `.pub`) on the
+  build box; `MATCH_PASSWORD` is also in `~/groceries-ops/env`. Copy both to
+  your password manager: without the passphrase the match repo is unreadable.
+- Workflow `Certificates` (`.github/workflows/certificates.yml`) runs
+  `fastlane ios certificates` on a GitHub macOS runner, so step 6 needs no
+  Mac. Manual only, from `main`, and only when you type `create`.
+
+Not done: the private repo `trost-systems/family-groceries-certificates`.
+The build box's account is not an owner of the `trost-systems`
+organization and GitHub refused to create it (step 5).
+
+Still yours, in this order: steps 1 to 7 below without the parts marked done.
 
 ### iOS
 
-1. **Register the bundle ID.** developer.apple.com, Certificates, Identifiers
-   & Profiles, Identifiers, add an App ID: `com.petertrost.familygroceries`,
-   description "Einkauf". No extra capabilities are needed.
+1. **Agreement and bundle ID.** App Store Connect, Business (or the banner
+   on the home page): accept the current Apple Developer Program License
+   Agreement; TestFlight uploads fail until it is accepted. The App ID
+   `com.petertrost.familygroceries` should already exist from Sign in with
+   Apple (section 4, step 8); if not, register it in developer.apple.com,
+   Certificates, Identifiers & Profiles, Identifiers, description "Einkauf".
 2. **Create the app record.** App Store Connect, Apps, New App: platform iOS,
    name "Einkauf" (the name must be unique on the App Store; pick a variant
    such as "Einkauf Familie" if it is taken, the home-screen name stays
    "Einkauf"), primary language German, bundle ID
    `com.petertrost.familygroceries`, SKU `family-groceries`.
-3. **Team ID.** developer.apple.com, Account, Membership details, Team ID:
-
-   ```bash
-   gh variable set APPLE_TEAM_ID --env release --body <TEAM_ID>
-   ```
-
+3. **Team ID.** Done: `APPLE_TEAM_ID=VCZSHMZY25` in `release`.
 4. **App Store Connect API key.** App Store Connect, Users and Access,
    Integrations, App Store Connect API, Team Keys, generate a key with the
    Admin role (match needs it to create the certificate). Download
-   `AuthKey_<KEY_ID>.p8`; Apple offers the download once.
+   `AuthKey_<KEY_ID>.p8`; Apple offers the download once. Then, from a clone
+   of the repo:
 
    ```bash
    gh secret set APP_STORE_CONNECT_API_KEY_ID --env release --body <KEY_ID>
@@ -302,43 +317,34 @@ run them from a clone of the repo.
    gh secret set APP_STORE_CONNECT_API_KEY_P8 --env release < AuthKey_<KEY_ID>.p8
    ```
 
-5. **match repo and deploy key.** Create an empty private repo, for example
-   `peter-trost/family-groceries-certificates`. Then:
+5. **match repo and deploy key.** Secrets and variable done. Left: as an
+   owner of `trost-systems`, create the repo and add the public key, which
+   is on the build box at `~/groceries-ops/match-deploy-key.pub`:
 
    ```bash
-   ssh-keygen -t ed25519 -N "" -C family-groceries-match -f match_deploy_key
-   gh repo deploy-key add match_deploy_key.pub --allow-write \
-     --repo peter-trost/family-groceries-certificates --title release-ci
-   gh secret set MATCH_DEPLOY_KEY --env release < match_deploy_key
-   gh variable set MATCH_GIT_URL --env release \
-     --body git@github.com:peter-trost/family-groceries-certificates.git
-   openssl rand -base64 32   # keep this in your password manager
-   gh secret set MATCH_PASSWORD --env release --body '<that passphrase>'
-   rm match_deploy_key match_deploy_key.pub
+   gh repo create trost-systems/family-groceries-certificates --private --add-readme
+   gh repo deploy-key add ~/groceries-ops/match-deploy-key.pub --allow-write \
+     --repo trost-systems/family-groceries-certificates --title release-ci
    ```
 
-   Write access lets the next step push the certificates with the same key;
-   CI only reads.
-6. **Create the certificate and profile once**, on a Mac with Xcode and Ruby
-   (the version in `app/.ruby-version`), with SSH access to the match repo:
-
-   ```bash
-   cd app
-   bundle install
-   export APPLE_TEAM_ID=<TEAM_ID> \
-     MATCH_GIT_URL=git@github.com:peter-trost/family-groceries-certificates.git \
-     MATCH_PASSWORD='<passphrase>' \
-     APP_STORE_CONNECT_API_KEY_ID=<KEY_ID> \
-     APP_STORE_CONNECT_ISSUER_ID=<ISSUER_ID> \
-     APP_STORE_CONNECT_API_KEY_P8="$(cat AuthKey_<KEY_ID>.p8)"
-   bundle exec fastlane ios certificates
-   ```
-
-   Apple allows only a few distribution certificates per team. If the lane
-   reports the limit, revoke an unused one in the developer portal and rerun.
-7. Run the Release workflow with `platform: ios`. The build shows up in
-   TestFlight after Apple's processing (10 to 30 minutes). Add yourself and
-   Lea as internal testers in App Store Connect, TestFlight.
+   Or ask the box to do it after giving `petertrost-bot` permission to create
+   repositories in the organization. Write access lets step 6 push the
+   certificates with the same key; the Release workflow only reads.
+6. **Create the certificate and profile once.** After the PR that adds
+   `certificates.yml` is merged: Actions, Certificates, Run workflow on
+   `main`, type `create`. It fails early, naming what is missing, if a
+   secret from steps 4 or 5 is not set. Apple allows only a few
+   distribution certificates per team. If the lane reports the limit,
+   revoke an unused one in the developer portal and rerun. On a Mac the
+   same works by hand with `bundle exec fastlane ios certificates` in `app/`
+   and the six values in the environment.
+7. **First release and testers.** Run the Release workflow with
+   `platform: ios`. The build shows up in TestFlight after Apple's
+   processing (10 to 30 minutes). In App Store Connect, TestFlight, create
+   an internal group and add yourself and Lea. Lea must first be a user of
+   your team (Users and Access, invite her, any role such as Customer
+   Support or Developer); she then installs the TestFlight app and accepts
+   the invitation.
 
 ### Android
 
