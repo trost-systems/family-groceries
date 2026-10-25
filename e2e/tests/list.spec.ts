@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
-import { addField, addItem, itemRow, newEmail, screenshot, signUpWithHousehold, tickBox, typeInto } from './helpers';
+import { actionSnackBar, addField, addItem, itemRow, newEmail, screenshot, signUpWithHousehold, tickBox, typeInto } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signUpWithHousehold(page, newEmail('list'));
@@ -25,7 +25,7 @@ test('ticking removes the item, undo brings it back, and it lands in recently bo
 
   await tickBox(page, 'Joghurt').click();
   await expect(itemRow(page, 'Joghurt')).toHaveCount(0);
-  await expect(page.getByText('Joghurt abgehakt').first()).toBeVisible();
+  await expect(actionSnackBar(page, 'Joghurt abgehakt')).toBeVisible();
   await screenshot(page, '03-ticked-undo-snackbar');
 
   await page.getByRole('button', { name: 'Rückgängig' }).click();

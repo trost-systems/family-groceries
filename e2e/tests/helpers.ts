@@ -33,6 +33,13 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export const itemRow = (page: Page, name: string) =>
   page.getByRole('button', { name: new RegExp(`^${escape(name)}( |$)`) });
 
+/**
+ * A snackbar with an action (undo): Flutter puts its text in the aria-label of a group, so
+ * getByText finds only the screen-reader announcement, an off-screen copy the engine clears
+ * after a few hundred milliseconds.
+ */
+export const actionSnackBar = (page: Page, text: string) => page.getByRole('group', { name: text, exact: true });
+
 export const tickBox = (page: Page, name: string) => page.getByRole('checkbox', { name: `${name} abhaken` });
 
 /** Resolves once the page has drawn two more frames, so Flutter has drawn the frame it had scheduled. */

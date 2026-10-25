@@ -82,7 +82,27 @@ it.
    rebase-merges it. No second squash, no second push, no second CI run.
    `--dry-run` runs every check and stops before the merge. `--wait` gives
    up after `MERGE_WAIT_MINUTES` (default 30) and exits 1, so a stuck run
-   can't hold the merge lock.
+   can't hold the merge lock. The value is a whole number of minutes, such as
+   `MERGE_WAIT_MINUTES=10`. Anything else (`0.5`, `abc`) stops merge-pr.sh
+   with exit 2 before it does anything.
+
+The commit message is the PR as GitHub shows it: the title with ` (#n)` as
+the subject and the PR description as the body. Messages of the branch's
+working commits are dropped. After `gh pr edit <n> --body-file <file>`, run
+`scripts/push-pr.sh` again: it re-squashes when the description changed, so
+the commit on `main` carries the current one. merge-pr.sh refuses (exit 1)
+a head whose message is not the current description, so a description
+edited after the last push can't land stale. Trailers follow the body:
+
+- `Co-authored-by` lines from the description and from the branch's commits,
+  once each, in that order.
+- `Co-authored-by: $MODEL_CO_AUTHOR` when that variable is set, as
+  `MODEL_CO_AUTHOR="Claude Opus 5.5 <noreply@anthropic.com>"`. When unset,
+  nothing is added. A value that is not `Name <email>` stops the push.
+- Peter's trailer, always last.
+
+`scripts/landing-test.sh` (run by the lint gate) covers these rules against
+a scratch remote and a fake `gh`.
 
 If `main` moved after your last push, the commit is no longer on top of
 `main`. merge-pr.sh then stops and says so. Run `scripts/push-pr.sh` again

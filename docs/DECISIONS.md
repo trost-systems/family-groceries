@@ -1387,3 +1387,24 @@ docs/BACKUP.md.
        put `/usr/lib/postgresql/17/bin` first on `PATH`.
 13b.10. **Every push to `main` re-enables the backup schedule**, in the
         same `keepalive-schedule` CI job as the keepalive (13.11).
+
+## Job 11b: job 11's loose ends, 2026-10-25
+
+11b.1. **The landed body is the PR description.** `squash_commit` used to
+       join every working commit's message into the commit on `main`, so
+       lines like `done: PR number` and whole changelogs landed. Now the
+       body is the PR description from `gh pr view --json body`. GitHub's
+       CRLF line ends are stripped. The description is the text a
+       reviewer reads, and anyone can edit it with `gh pr edit`. Commit
+       messages still count for one thing: their `Co-authored-by` lines
+       join the trailer block.
+11b.2. **The model trailer comes from `MODEL_CO_AUTHOR`, or it is left
+       out.** The hard-coded `Claude Opus 5.5` line credited that model for
+       every PR, whichever model built it. An agent's own commits carry its
+       co-author line, and that line is kept. So the env var is needed only
+       when the commits lack the line. A value that is not `Name <email>`
+       stops the push rather than landing a broken trailer.
+11b.3. **`MERGE_WAIT_MINUTES` takes whole minutes.** It is checked before
+       merge-pr.sh calls gh, and anything else exits 2 with a message.
+       `08` is read as decimal (`10#`), not as an invalid octal number.
+       Sub-minute waits help nobody: CI runs take minutes.

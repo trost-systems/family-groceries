@@ -67,7 +67,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   it; change the function, not the callers.
 - Flutter web e2e: semantics are enabled on web, so Playwright finds widgets
   by role and label. Type with `typeInto` (`e2e/tests/helpers.ts`); synthetic
-  key events drop umlauts.
+  key events drop umlauts. A snackbar with an action (undo) keeps its text in
+  a group's aria-label: find it with `actionSnackBar`, since `getByText`
+  only hits the screen-reader announcement, which the engine soon clears.
 - `main` takes one commit per PR with `ci-ok` green. To land a PR:
   1. Push the branch once (`git push -u origin HEAD`) and `gh pr create`.
   2. From then on push only with `scripts/push-pr.sh`, fix rounds included.
