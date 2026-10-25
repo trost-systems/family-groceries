@@ -13,7 +13,7 @@ for the full product spec.
 ```bash
 scripts/bootstrap.sh          # Flutter, Docker, Supabase CLI, Deno, gitleaks, Playwright
 scripts/dev.sh                # local Supabase + web app on http://127.0.0.1:3000
-scripts/verify.sh             # everything CI runs, incl. Playwright e2e
+scripts/verify.sh             # every CI gate (scripts/gates/), incl. Playwright e2e
 ```
 
 Local mail (magic links) lands in Mailpit at http://127.0.0.1:54324.

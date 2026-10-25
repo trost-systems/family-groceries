@@ -25,9 +25,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   German sentence splitter is `parse.ts`, its table of sentences
   `parse_test.ts` (`docs/SIRI_SHORTCUT.md` for the Shortcut).
 - `scripts/`: `bootstrap.sh` (toolchain), `dev.sh` (local stack + web dev
-  server), `verify.sh` (every CI gate, locally), `lint.sh` (the lint rules
-  below), `merge-pr.sh` (land a PR as one commit with the required author
-  and trailers).
+  server), `gates/<gate>.sh` (one per CI job), `verify.sh` (runs the gates
+  locally), `lint.sh` (the lint rules below, run by the lint gate),
+  `push-pr.sh` and `merge-pr.sh` (push and land a PR as one commit with the
+  required author and trailers). `docs/CI.md` explains CI.
 
 ## Conventions
 
@@ -36,9 +37,13 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   drives the real app through `scripts/fg` (start with `scripts/fg help`)
   and keeps one recipe per feature in `features/`. A PR that changes a
   feature updates its `features/<feature>.md`.
-- Run `scripts/verify.sh` before pushing. It runs what CI runs: gitleaks,
-  pgTAP and `db lint`, Deno fmt/lint/test, Flutter l10n/format/analyze/test,
-  the web build and Playwright.
+- Run `scripts/verify.sh` before pushing. It runs the same
+  `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, db,
+  functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
+  some, `--only e2e -- <spec>` one spec. A check goes into a gate script,
+  never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
+  otherwise). The e2e gate holds the box-wide lock `/tmp/fg-e2e.lock`, so a
+  second run waits instead of overlapping.
 - Public repo: never commit secrets. Only the project URL and the publishable
   key may appear in code. gitleaks runs as a pre-commit hook
   (`.githooks/pre-commit`) and as a required CI job.
@@ -60,11 +65,20 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - Flutter web e2e: semantics are enabled on web, so Playwright finds widgets
   by role and label. Type with `typeInto` (`e2e/tests/helpers.ts`); synthetic
   key events drop umlauts.
-- `main` takes one commit per PR with `ci-ok` green. Merge with
-  `scripts/merge-pr.sh <n>` (run it, wait for `ci-ok`, run it again): it
-  squashes the PR into one commit authored with the required noreply email
-  and rebase-merges that commit. GitHub's own squash merge authors the
-  commit with the account's default email and rejects the noreply address.
+- `main` takes one commit per PR with `ci-ok` green. To land a PR:
+  1. Push the branch once (`git push -u origin HEAD`) and `gh pr create`.
+  2. From then on push only with `scripts/push-pr.sh`, fix rounds included.
+     It rebases onto `origin/main` and pushes the one commit main takes
+     (subject `<PR title> (#n)`, noreply author, trailers). The pre-push
+     hook warns when a PR branch goes up as several commits.
+  3. Under the merge lock: `scripts/merge-pr.sh --wait <n>` waits for
+     `ci-ok` on that commit and rebase-merges it. One CI run per merge.
+  If main moved since your push, merge-pr.sh says so: rerun
+  `scripts/push-pr.sh` (one more rebase, push and CI run), then merge-pr.sh.
+  The old way still works: merge-pr.sh on a multi-commit PR squashes,
+  force-pushes and exits 2; rerun it after `ci-ok`, at the cost of a second
+  CI run. GitHub's own squash merge authors the commit with the account's
+  default email and rejects the noreply address, hence the scripts.
 
 ## Lint rules
 

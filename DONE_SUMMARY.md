@@ -186,3 +186,7 @@ See [docs/done/07-pages-auth-config.md](docs/done/07-pages-auth-config.md).
 ## Job 2b: follow-ups to jobs 2 and 5
 
 See [docs/done/02b.md](docs/done/02b.md).
+
+## Job 11: one CI run per merge, one gate definition, measured CI speedups
+
+See [docs/done/11-ci-flow.md](docs/done/11-ci-flow.md).

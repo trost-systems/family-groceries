@@ -18,6 +18,7 @@ trap 'echo "vercel.sh: failed (exit $?) at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 install() {
   [[ -n $FLUTTER_VERSION ]] || fail "no FLUTTER_VERSION in .github/workflows/ci.yml"
+  # shellcheck source=/dev/null
   echo "vercel.sh: Flutter $FLUTTER_VERSION, uid $(id -u), $(. /etc/os-release && echo "$PRETTY_NAME")"
   local missing=() tool
   for tool in git curl unzip xz which tar find; do
