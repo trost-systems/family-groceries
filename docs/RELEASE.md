@@ -4,6 +4,22 @@ The Release workflow builds the app and uploads it to TestFlight (iOS) and to
 the Play internal track (Android). It runs only when started by hand. The
 one-time store setup is in [`NEEDS_PETER.md`](NEEDS_PETER.md#job-4-release).
 
+## App identity
+
+The app is "Hummlist", bundle ID and Android `applicationId`
+`com.hummlist.app` since job 20. `app/fastlane/Appfile`, `Matchfile` and
+`APP_ID` in the `Fastfile` name it; the workflow has no ID of its own.
+
+- iOS: the App ID `com.hummlist.app` is registered (Sign in with Apple, In-App
+  Purchase). Its App Store Connect app record does not exist yet, so
+  `ios beta` cannot upload until Peter creates it (`NEEDS_PETER.md`, job 20).
+  The TestFlight build 0.1.0 (1001) belongs to the old record "Einkauf
+  Familie" (`com.petertrost.familygroceries`) and gets no further builds.
+- Android: a new package name is a new Play app. The Play listing and app
+  signing of `com.petertrost.familygroceries`, if it was ever created, do not
+  carry over; `android internal` needs the new Play app first. The upload
+  keystore can stay the same: Play App Signing takes an upload key per app.
+
 ## Run a release
 
 1. Open the Actions tab, select **Release**, then select **Run workflow**.

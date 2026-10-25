@@ -1,4 +1,4 @@
-package com.petertrost.familygroceries
+package com.hummlist.app
 
 import android.content.Intent
 import android.os.Build

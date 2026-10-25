@@ -10,7 +10,7 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
-  String get appTitle => 'Einkauf';
+  String get appTitle => 'Hummlist';
 
   @override
   String get addFieldHint => 'Was fehlt?';
@@ -622,7 +622,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDeletedApple =>
-      'Falls du dich mit Apple angemeldet hattest: Entferne „Einkauf“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.';
+      'Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.';
 
   @override
   String get exportDone => 'Daten exportiert';

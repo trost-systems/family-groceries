@@ -270,6 +270,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Dein Konto wurde gelöscht.'), findsOneWidget);
+    expect(find.textContaining('Entferne „Hummlist“'), findsOneWidget);
     expect(find.textContaining('Mit Apple anmelden'), findsOneWidget);
   });
 

@@ -12,7 +12,8 @@ Done from the box (details in the sections below):
   enabled. The "Supabase deploy" workflow redeploys from every push to
   `main` over the Management API and fails red when a credential is
   missing (section 1).
-- Web app on Vercel at `https://family-groceries-pied.vercel.app`, built
+- Web app on Vercel at `https://app.hummlist.com` (job 20;
+  `https://family-groceries-pied.vercel.app` still serves it as an alias), built
   from every push (section "Job 7: web hosting on Vercel"). Site URL,
   redirect URLs and the OAuth consent path point at it (section 2).
 - `app/config/auth.json` and `app/ios/Flutter/Auth.xcconfig` carry the real
@@ -60,13 +61,16 @@ supabase functions deploy --use-api --project-ref "$SUPABASE_PROJECT_REF"
 
 Done (job 7, 2026-10-23, Management API via `supabase/deploy/auth_urls.ts`):
 
-- Site URL: `https://family-groceries-pied.vercel.app`
-- Redirect URLs: `https://family-groceries-pied.vercel.app/**`,
+- Site URL: `https://app.hummlist.com` (set by the Engineering Lead on
+  2026-10-25, job 20; it was `https://family-groceries-pied.vercel.app`).
+- Redirect URLs: `https://app.hummlist.com` and `https://app.hummlist.com/**`,
+  `https://family-groceries-pied.vercel.app/**`,
   `https://family-groceries-*-peter-trost.vercel.app/**` (Vercel previews
-  of this team), `com.petertrost.familygroceries://login-callback`. No
-  localhost entries on production (DECISIONS 7.9).
+  of this team), `com.hummlist.app://login-callback` and
+  `com.petertrost.familygroceries://login-callback` (builds from before
+  job 20). No localhost entries on production (DECISIONS 7.9).
 - OAuth server: enabled, authorization path `/oauth/consent`, so MCP
-  clients land on `https://family-groceries-pied.vercel.app/oauth/consent`.
+  clients land on `https://app.hummlist.com/oauth/consent`.
 
 To change the URL later, rerun
 `deno run --allow-env --allow-net supabase/deploy/auth_urls.ts <new-url> --preview <pattern>`
@@ -159,7 +163,7 @@ The variable names are in `.env.example`.
     `GOOGLE_WEB_CLIENT_SECRET` are set. The client ID list is web first, then
     iOS and Android. It enables Apple once the Services ID, Team ID, Key ID
     and `.p8` file are set. The client ID list is the Services ID, then the
-    bundle ID, and the client secret is generated from the `.p8`. To do the
+    old and the new bundle ID (job 20), and the client secret is generated from the `.p8`. To do the
     same by hand, use Dashboard → Authentication → Sign In / Providers →
     Google / Apple, with the same values in the same order. Leave "Skip
     nonce check" off.
@@ -167,8 +171,9 @@ The variable names are in `.env.example`.
     expires after 6 months, and web and Android Apple sign-in stop working
     then. The script prints the expiry date. Native iOS sign-in keeps
     working without it.
-14. Done (job 7): the redirect URLs list the web app and the app's deep
-    link `com.petertrost.familygroceries://login-callback` (section 2).
+14. Done (job 7, job 20): the redirect URLs list the web app and both deep
+    links, `com.hummlist.app://login-callback` and the pre-rename
+    `com.petertrost.familygroceries://login-callback` (section 2).
 
 ### The app
 
@@ -179,7 +184,7 @@ The variable names are in `.env.example`.
     { "GOOGLE_WEB_CLIENT_ID": "<web client id>",
       "GOOGLE_IOS_CLIENT_ID": "<ios client id>",
       "SIGN_IN_WITH_APPLE": "true",
-      "APP_URL": "https://family-groceries-pied.vercel.app" }
+      "APP_URL": "https://app.hummlist.com" }
     ```
 
     In `app/ios/Flutter/Auth.xcconfig`, set `GOOGLE_REVERSED_CLIENT_ID` to
@@ -205,7 +210,8 @@ enabled, dynamic client registration enabled, authorization path
 
 Done since: migrations and `mcp` deployed (section 1), web app hosted and
 Site URL set (section 2); an MCP client registered by DCR reaches
-`https://family-groceries-pied.vercel.app/oauth/consent` (job 7).
+`https://family-groceries-pied.vercel.app/oauth/consent` (job 7), since
+job 20 `https://app.hummlist.com/oauth/consent`.
 
 Still yours:
 
@@ -238,7 +244,7 @@ Still yours:
 The Shortcut itself needs no Apple account setting, but creating the token
 needs a running app on the hosted project: the TestFlight or Play build
 (job 4 release section below) or the web app at
-`https://family-groceries-pied.vercel.app`.
+`https://app.hummlist.com`.
 
 ## Job 4b: the microphone on a real phone
 
@@ -361,7 +367,8 @@ yourself and Lea).
 
 ### Android
 
-1. **Create the app.** Play Console, Create app: name "Einkauf", default
+1. **Create the app.** Play Console, Create app: name "Hummlist" (package
+   `com.hummlist.app` since job 20), default
    language German, app, free. Accept the declarations.
 2. **Create the upload keystore** and keep it with its passwords in your
    password manager:
@@ -397,7 +404,7 @@ yourself and Lea).
    enable the "Google Play Android Developer API", create a service account
    (no project roles needed) and add a JSON key. In Play Console, Users and
    permissions, invite the service account's email, give it access to the
-   Einkauf app with "Release to testing tracks" (and "View app information"),
+   Hummlist app with "Release to testing tracks" (and "View app information"),
    and save.
 
    ```bash
@@ -431,7 +438,8 @@ Done. The Vercel project `peter-trost/family-groceries` (created by
 Engineering Lead on 2026-10-23) is linked to this repo and builds every
 push from `vercel.json`:
 
-- Production: `https://family-groceries-pied.vercel.app` (branch `main`).
+- Production: `https://app.hummlist.com` (branch `main`, custom domain
+  since job 20), also reachable as `https://family-groceries-pied.vercel.app`.
   The plain `family-groceries.vercel.app` belongs to someone else.
 - Previews: `https://family-groceries-git-<branch>-peter-trost.vercel.app`,
   behind Vercel Authentication (team default, unchanged).
@@ -445,11 +453,9 @@ push from `vercel.json`:
   (after `cd e2e && npm ci`): SPA routes, cache headers, and the Google and
   Apple buttons reaching the providers' sign-in pages.
 
-Nothing is needed from you here. Optional: a custom domain (Vercel,
-Domains). If you add one, rerun `auth_urls.ts` with it (section 2) and
-change `APP_URL` in `app/config/auth.json`.
-
-Domains). If you add one, rerun `auth_urls.ts` with it and change `appUrl`.
+Nothing is needed from you here. The custom domain `app.hummlist.com` is
+attached (job 20); for another one, rerun `auth_urls.ts` with it (section 2)
+and change `APP_URL` in `app/config/auth.json`.
 
 ## Job 9: account deletion and data export
 
@@ -460,7 +466,7 @@ Three things need you.
 
 1. `app/web/konto-loeschen.html`: the public "Konto und Daten löschen"
    page Google Play asks for. After the merge it is served at
-   `https://family-groceries-pied.vercel.app/konto-loeschen.html` with
+   `https://app.hummlist.com/konto-loeschen.html` with
    `noindex` and a red ENTWURF banner. Check the wording, the developer
    name ("Peter Trost", which must match the Play listing), the support
    address `peter@petertrost.com` and the promise "innerhalb von 30 Tagen"
@@ -477,7 +483,7 @@ Apple wants the app to revoke Sign in with Apple tokens when a user deletes
 their account. The `account` function does that on iPhones, but only when
 it has the Sign in with Apple key. The function deploys with every merge to
 `main`. Until the secrets below exist, it deletes accounts without revoking,
-and the app tells Apple users to remove "Einkauf" in their Apple ID
+and the app tells Apple users to remove "Hummlist" in their Apple ID
 settings (Apple's documented fallback, TN3194).
 
 3. Set the function secrets once, from your Mac or the build box (the key
@@ -487,13 +493,14 @@ settings (Apple's documented fallback, TN3194).
    source ~/groceries-ops/env
    supabase secrets set --project-ref jdwqrallbpdbshrdhenk \
      APPLE_TEAM_ID="$APPLE_TEAM_ID" APPLE_KEY_ID="$APPLE_KEY_ID" \
-     APPLE_BUNDLE_ID=com.petertrost.familygroceries \
      APPLE_PRIVATE_KEY="$(cat "$APPLE_PRIVATE_KEY_FILE")"
    supabase secrets list --project-ref jdwqrallbpdbshrdhenk | grep APPLE_
    ```
 
-   The key must be enabled for the App ID `com.petertrost.familygroceries`
-   (it is: section 4, step 10 configured it with that primary App ID). Unlike
+   The function tries the bundle IDs `com.hummlist.app` and
+   `com.petertrost.familygroceries` in turn (job 20), so the key must cover
+   both App IDs (job 20, step 3). An `APPLE_BUNDLE_ID` secret from before
+   job 20 is ignored; remove it with `supabase secrets unset`. Unlike
    the Supabase Apple client secret, nothing here expires: the function
    signs a fresh 5-minute client secret per deletion.
 4. Check it once on your iPhone with a throwaway Apple account (never with
@@ -594,3 +601,65 @@ tables as JSON through the Management API with the existing
 `SUPABASE_ACCESS_TOKEN`. The restore would then need a small loader script
 instead of `psql`, and it reads with the most powerful credential the repo
 has. I'd pick `pg_dump` through the pooler.
+
+## Job 20: the app is now "Hummlist" (`com.hummlist.app`)
+
+The repo builds the app as "Hummlist" with bundle ID and Android package
+`com.hummlist.app` and the deep link `com.hummlist.app://login-callback`.
+Already done by the Engineering Lead: the App ID `com.hummlist.app` (Sign in
+with Apple, In-App Purchase), the hosted Supabase Apple client IDs
+(`com.petertrost.familygroceries.web,com.petertrost.familygroceries,com.hummlist.app`)
+and both deep links in the redirect allow list. The match profile is the
+Lead's step. Yours, in this order:
+
+1. **App Store Connect app record.** Apps, New App: platform iOS, name
+   "Hummlist" (pick a variant that still contains the full word "Hummlist"
+   if the name is taken), primary language German, bundle ID
+   `com.hummlist.app`, SKU `hummlist`. Until it exists, `fastlane ios beta`
+   cannot upload. The old record "Einkauf Familie" (`6826907810`) keeps
+   build 0.1.0 (1001) and gets no new builds. The API key
+   `family-groceries-ci` is team-wide and works for the new record.
+2. **Google sign-in** (Google Cloud project `family-groceries-512507`,
+   Google Auth Platform, Clients). Without this, Google sign-in fails on the
+   new builds.
+   - Open the iOS client `1001040145655-q542…` and change its bundle ID to
+     `com.hummlist.app`. The client ID stays, so `app/config/auth.json`,
+     `Auth.xcconfig` (the reversed client ID URL scheme) and Supabase need no
+     change. The TestFlight build 0.1.0 (1001) of the old bundle ID can lose
+     Google sign-in after this; Apple, email and magic link still work there.
+   - Create an Android client with package name `com.hummlist.app` for each
+     SHA-1 of section 4, step 7 (build box debug keystore
+     `4B:41:A1:23:70:B5:26:8F:01:53:98:97:C7:B5:28:79:FA:07:EB:F1`, your Mac's
+     debug keystore, the upload keystore and, once on Play, the app signing
+     key). The app never sends an Android client ID; Google matches it by
+     package name and SHA-1.
+   - Branding: change the app name "Einkauf" to "Hummlist", so the Google
+     consent screen names the app.
+3. **Sign in with Apple key for account deletion** (developer.apple.com,
+   Certificates, Identifiers & Profiles). The `account` function revokes
+   Apple tokens with the key `APPLE_KEY_ID`, signing as the bundle ID the
+   code was issued to. The key was configured with the primary App ID
+   `com.petertrost.familygroceries`; `com.hummlist.app` is a primary App ID
+   of its own. Until the key covers it, deleting an account from a Hummlist
+   iPhone build deletes it but cannot revoke, and the app shows the hint to
+   remove "Hummlist" by hand (nothing else breaks). Fix: under Identifiers,
+   group `com.petertrost.familygroceries` and the Services ID
+   `com.petertrost.familygroceries.web` under the primary App ID
+   `com.hummlist.app`, then under Keys edit the Sign in with Apple key to
+   the primary App ID `com.hummlist.app`. Then rerun section 4, step 12 (the
+   Apple client secret is signed with this key) and check the web Apple
+   sign-in once. Apple changes the grouping on its side; this is inferred
+   from Apple's docs, not tried from the box. While there, change the
+   Services ID's description "Einkauf Web" to "Hummlist": Apple's web
+   sign-in page shows it to the user.
+4. **Play Console.** A new package name is a new Play app: follow "Job 4:
+   release, Android" with the name "Hummlist". Nothing of a
+   `com.petertrost.familygroceries` Play app carries over.
+5. **Retire the old bundle ID** only after a Hummlist build is verified on
+   your iPhone (Apple, Google, magic link) and Lea has moved to it: remove
+   `com.petertrost.familygroceries` from the Supabase Apple client ID list
+   (Dashboard, Authentication, Sign In / Providers, Apple, or drop it from
+   `bundleIds` in `scripts/configure-social-auth.mjs` and rerun step 12).
+   A job can then drop it from `appleBundleIds` in
+   `supabase/functions/account/apple.ts`. Keep its deep link in the redirect allow list; it costs nothing.
+

@@ -5,7 +5,7 @@ storage_mode("git")
 git_branch("main")
 
 type("appstore")
-app_identifier(["com.petertrost.familygroceries"])
+app_identifier(["com.hummlist.app"])
 
 # Read-only so a CI run never mints certificates; `ios certificates` overrides it.
 readonly(true)

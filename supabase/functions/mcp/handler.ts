@@ -48,7 +48,7 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
       authorization_servers: [endpoints.authorizationServer],
       scopes_supported: SCOPES,
       bearer_methods_supported: ['header'],
-      resource_name: 'Einkaufsliste (family-groceries)',
+      resource_name: 'Hummlist',
       resource_documentation:
         'https://github.com/trost-systems/family-groceries/blob/main/docs/MCP.md',
     }));

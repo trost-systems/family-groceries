@@ -1,6 +1,6 @@
 {
   "@@locale": "de",
-  "appTitle": "Einkauf",
+  "appTitle": "Hummlist",
   "addFieldHint": "Was fehlt?",
   "addButton": "Hinzufügen",
   "emptyList": "Die Liste ist leer. Tippe oben ein, was fehlt.",
@@ -200,7 +200,7 @@
   "accountFateFailed": "Was mit deinem Haushalt passiert, konnte nicht geladen werden ({code}).",
   "@accountFateFailed": {"placeholders": {"code": {"type": "String"}}},
   "accountDeletedNotice": "Dein Konto wurde gelöscht.",
-  "accountDeletedApple": "Falls du dich mit Apple angemeldet hattest: Entferne „Einkauf“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.",
+  "accountDeletedApple": "Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.",
   "exportDone": "Daten exportiert",
   "exportDoneAt": "Daten exportiert: {path}",
   "@exportDoneAt": {"placeholders": {"path": {"type": "String"}}},

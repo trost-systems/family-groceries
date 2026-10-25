@@ -4,9 +4,15 @@
 // never logged.
 import { decodeJwt, importPKCS8, SignJWT } from 'jose';
 
+/**
+ * The bundle ids a native iOS code can be issued to, newest first. Builds from before the
+ * Hummlist rename (job 20) still sign in as com.petertrost.familygroceries.
+ */
+export const appleBundleIds = ['com.hummlist.app', 'com.petertrost.familygroceries'];
+
 export type AppleConfig = {
-  /** The bundle id for native iOS codes. */
-  clientId: string;
+  /** The client ids to exchange a code with, tried in order. */
+  clientIds: string[];
   teamId: string;
   keyId: string;
   /** PKCS#8 PEM of the Sign in with Apple key. */
@@ -26,7 +32,7 @@ export function appleConfig(env: Env = (name) => Deno.env.get(name)): AppleConfi
   const privateKey = env('APPLE_PRIVATE_KEY');
   if (!teamId || !keyId || !privateKey) return null;
   return {
-    clientId: env('APPLE_BUNDLE_ID') || 'com.petertrost.familygroceries',
+    clientIds: appleBundleIds,
     teamId,
     keyId,
     // Secrets set from a one-line value carry the PEM's newlines as "\n".
@@ -36,19 +42,29 @@ export function appleConfig(env: Env = (name) => Deno.env.get(name)): AppleConfi
 }
 
 /** The ES256 client secret Apple's token endpoints take; valid for five minutes. */
-export async function clientSecret(config: AppleConfig, now = new Date()): Promise<string> {
+export async function clientSecret(
+  config: AppleConfig,
+  clientId: string,
+  now = new Date(),
+): Promise<string> {
   const iat = Math.floor(now.getTime() / 1000);
   return await new SignJWT({})
     .setProtectedHeader({ alg: 'ES256', kid: config.keyId })
     .setIssuer(config.teamId)
-    .setSubject(config.clientId)
+    .setSubject(clientId)
     .setAudience('https://appleid.apple.com')
     .setIssuedAt(iat)
     .setExpirationTime(iat + 300)
     .sign(await importPKCS8(config.privateKey, 'ES256'));
 }
 
-class AppleFailure extends Error {}
+const nextClient = new Set(['invalid_grant', 'invalid_client']);
+
+class AppleFailure extends Error {
+  constructor(message: string, readonly reason?: string) {
+    super(message);
+  }
+}
 
 /**
  * Revokes the user's Apple grant. `subject` is the Apple user id of the account being deleted;
@@ -62,24 +78,47 @@ export async function revokeAppleGrant(
   try {
     if (!config) throw new AppleFailure('APPLE_TEAM_ID, APPLE_KEY_ID or APPLE_PRIVATE_KEY not set');
     if (!code) throw new AppleFailure('no authorization code sent');
-    const secret = await clientSecret(config);
-    const post = async (path: string, form: Record<string, string>) => {
+    const post = async (path: string, clientId: string, form: Record<string, string>) => {
       const res = await fetchFn(`${config.baseUrl}${path}`, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ client_id: config.clientId, client_secret: secret, ...form }),
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: await clientSecret(config, clientId),
+          ...form,
+        }),
       });
       if (!res.ok) {
         const reason = await res.json().then((b) => b?.error, () => undefined);
-        throw new AppleFailure(`${path} answered ${res.status} ${reason ?? ''}`.trim());
+        throw new AppleFailure(`${path} answered ${res.status} ${reason ?? ''}`.trim(), reason);
       }
       return res;
     };
 
-    const tokens = await (await post('/auth/token', {
-      grant_type: 'authorization_code',
-      code,
-    })).json() as { refresh_token?: unknown; id_token?: unknown };
+    // A code is bound to the app it was issued to, and the request doesn't say which build sent
+    // it. Another app's code gets invalid_grant, and a bundle id the key isn't enabled for gets
+    // invalid_client, so both move on to the next bundle id.
+    const exchange = async (clientId: string) => {
+      try {
+        const res = await post('/auth/token', clientId, { grant_type: 'authorization_code', code });
+        return {
+          clientId,
+          tokens: await res.json() as { refresh_token?: unknown; id_token?: unknown },
+        };
+      } catch (e) {
+        if (e instanceof AppleFailure && nextClient.has(e.reason ?? '')) return null;
+        throw e;
+      }
+    };
+    let exchanged = null;
+    for (const clientId of config.clientIds) {
+      exchanged = await exchange(clientId);
+      if (exchanged) break;
+    }
+    if (!exchanged) {
+      throw new AppleFailure(`/auth/token refused the code for ${config.clientIds.join(', ')}`);
+    }
+    const { clientId, tokens } = exchanged;
     if (typeof tokens.refresh_token !== 'string' || typeof tokens.id_token !== 'string') {
       throw new AppleFailure('/auth/token answered without refresh_token or id_token');
     }
@@ -87,7 +126,10 @@ export async function revokeAppleGrant(
     if (decodeJwt(tokens.id_token).sub !== subject) {
       throw new AppleFailure('the code belongs to a different Apple ID');
     }
-    await post('/auth/revoke', { token: tokens.refresh_token, token_type_hint: 'refresh_token' });
+    await post('/auth/revoke', clientId, {
+      token: tokens.refresh_token,
+      token_type_hint: 'refresh_token',
+    });
     return 'revoked';
   } catch (e) {
     const reason = e instanceof AppleFailure

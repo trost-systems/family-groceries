@@ -18,8 +18,10 @@ import { readFileSync } from 'node:fs';
 const env = process.env;
 const dryRun = process.argv.includes('--dry-run');
 const ref = env.SUPABASE_PROJECT_REF || 'jdwqrallbpdbshrdhenk';
-const bundleId = 'com.petertrost.familygroceries';
-const mobileCallback = `${bundleId}://login-callback`;
+// Builds before the Hummlist rename (job 20) still sign in as com.petertrost.familygroceries;
+// drop it once the com.hummlist.app build is verified (docs/NEEDS_PETER.md, job 20).
+const bundleIds = ['com.petertrost.familygroceries', 'com.hummlist.app'];
+const mobileCallbacks = bundleIds.map((id) => `${id}://login-callback`);
 const api = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
 
 if (!env.SUPABASE_ACCESS_TOKEN) {
@@ -50,7 +52,7 @@ if (current.message) {
 }
 
 const allowList = new Set((current.uri_allow_list || '').split(',').map((s) => s.trim()).filter(Boolean));
-allowList.add(mobileCallback);
+mobileCallbacks.forEach((c) => allowList.add(c));
 const patch = { uri_allow_list: [...allowList].join(',') };
 const notes = [];
 
@@ -71,8 +73,10 @@ if (env.APPLE_SERVICES_ID && env.APPLE_TEAM_ID && env.APPLE_KEY_ID && env.APPLE_
   const { secret, expires } = appleClientSecret();
   Object.assign(patch, {
     external_apple_enabled: true,
-    external_apple_client_id: env.APPLE_SERVICES_ID,
-    external_apple_additional_client_ids: bundleId,
+    // One comma list, Services ID first: the web flow signs in as the first id, native id
+    // tokens may carry any of them.
+    external_apple_client_id: [env.APPLE_SERVICES_ID, ...bundleIds].join(','),
+    external_apple_additional_client_ids: '',
     external_apple_secret: secret,
   });
   notes.push(`Apple: enabled; the client secret expires ${expires.toISOString().slice(0, 10)}, rerun before then`);

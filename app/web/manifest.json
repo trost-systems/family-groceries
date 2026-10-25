@@ -1,6 +1,6 @@
 {
-    "name": "Einkauf",
-    "short_name": "Einkauf",
+    "name": "Hummlist",
+    "short_name": "Hummlist",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2E7D32",
