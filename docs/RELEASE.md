@@ -20,7 +20,7 @@ Fastfile is `app/fastlane/Fastfile`.
 
 | Lane | What it does |
 | --- | --- |
-| `ios certificates` | Creates or renews the App Store distribution certificate and provisioning profile in the match repo. Run it once, by hand, on a Mac. |
+| `ios certificates` | Creates or renews the App Store distribution certificate and provisioning profile in the match repo. Run it once: the manual Certificates workflow runs it on a macOS runner, or by hand on a Mac. |
 | `ios beta` | Installs the certificate and profile from match (read-only), switches the Runner target to manual signing, runs `flutter build ipa` and uploads the IPA to TestFlight. Does not wait for Apple's processing. |
 | `android internal` | Runs `flutter build appbundle` and uploads the AAB to the Play `internal` track. Uploads no listing, changelog or images. |
 
