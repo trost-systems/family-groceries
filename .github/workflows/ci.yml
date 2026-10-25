@@ -102,6 +102,9 @@ jobs:
       # (32768-60999); an outbound socket on the runner can already hold one.
       - name: Keep ephemeral ports clear of the Supabase ports
         run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
+      # Job 13b: the gate's restore drill runs the backup's own pg_dump 17 and age.
+      - name: Install pg_dump 17 and age
+        run: scripts/backup/install-tools.sh
       - run: scripts/gates/db.sh
 
   functions:
@@ -279,7 +282,8 @@ jobs:
       - run: scripts/gates/ios.sh
 
   # Job 13: GitHub never turns a schedule back on that it disabled for 60 days of inactivity, so
-  # every push to main re-enables the keepalive (docs/DEPLOY.md, Keepalive).
+  # every push to main re-enables the keepalive (docs/DEPLOY.md, Keepalive). Job 13b: and the
+  # nightly backup (docs/BACKUP.md).
   keepalive-schedule:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -288,6 +292,9 @@ jobs:
       actions: write
     steps:
       - run: gh workflow enable keepalive.yml --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: gh workflow enable backup.yml --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}
 

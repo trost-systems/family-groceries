@@ -1,0 +1,24 @@
+# Negative checks, 2026-10-25: each broken variant must fail
+
+N1 restore.sh without SET session_replication_role = replica (drill):
+  psql:<stdin>:1341: ERROR:  duplicate key value violates unique constraint "item_events_pkey"  -> drill fails, transaction rolled back
+
+N2 dump.sh with --schema=public --table=auth.users --table=auth.identities (drill diff, before vs after):
+  -public.categories 23 c645ad27c15a6bc876a4f10ceb8643b8
+  -public.category_memory 1 ca748b7f1ce8426dce49e69368530fc1
+  -public.classifier_terms 1159 0b2bc443917ec9d170eb9d86e8888739
+  -public.household_members 3 8bf331829b2b21c1f25c006b05409232
+  -public.households 2 901831dd50889ab13504612b53a421e5
+  -public.invites 2 f220a315e266198a38e3da26b2763648
+  -public.item_events 13 8942d56de43ee0fb783632885efb8911
+  -public.item_store_memory 3 1e45c24b64320813887b46cca1121d9a
+  -> every public table missing after restore: -n is ignored once -t is given
+
+N3 pg_dump cannot connect (PGPORT=1): exit 1, no output file left
+N4 pg_dump writes 40 KB then exits 1 (fake pg_dump on PATH): exit 1, no output file left (age had already written a header)
+N5 pg_dump succeeds with almost nothing: "out.age has 208 bytes, less than 16384: the dump is empty or cut off", exit 1, file deleted
+N6 recipient file without an age1 key: "does not hold one age recipient (age1...)", exit 2
+
+Size reference: migrations-only database (classifier dictionary only) encrypts to 25606 bytes; drill fixtures 46493 bytes.
+
+gitleaks default rule age-secret-key flags a committed AGE-SECRET-KEY-1... (throwaway key, scratch repo): RuleID age-secret-key

@@ -1,0 +1,37 @@
+# Password probe from the PR branch, 2026-10-25 (temporary push trigger, removed before merge)
+
+Run 40208395282 (failed, before the PATH fix): Install pg_dump 17 and age -> 'pg_dump is pg_dump (PostgreSQL) 16.15 (Ubuntu 16.15-1.pgdg24.04+2), expected 17.x'. Opened issue #40 'Database backup failed'.
+
+Run 40209166873 (green): https://github.com/trost-systems/family-groceries/actions/runs/40209166873
+  2026-10-25T15:54:58.0687643Z pg_dump (PostgreSQL) 17.11 (Ubuntu 17.11-1.pgdg24.04+2)
+  2026-10-25T15:55:13.3219896Z encrypted dump /home/runner/work/_temp/backup/db-backup-2026-10-25-40209166873.sql.age: 35231 bytes, age header present
+  ﻿2026-10-25T15:55:13.3306157Z ##[group]Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+  2026-10-25T15:55:13.3306624Z with:
+  2026-10-25T15:55:13.3306844Z   name: db-backup-2026-10-25-40209166873
+  2026-10-25T15:55:13.3307256Z   path: /home/runner/work/_temp/backup/db-backup-2026-10-25-40209166873.sql.age
+  2026-10-25T15:55:13.3307658Z   retention-days: 90
+  2026-10-25T15:55:13.3307917Z   if-no-files-found: error
+  2026-10-25T15:55:13.3308160Z   compression-level: 0
+  2026-10-25T15:55:13.3308394Z   overwrite: false
+  2026-10-25T15:55:13.3308609Z   include-hidden-files: false
+  2026-10-25T15:55:13.3308845Z   archive: true
+  2026-10-25T15:55:13.3309037Z env:
+  2026-10-25T15:55:13.3311634Z   GH_TOKEN: ***
+  2026-10-25T15:55:13.3311891Z   ISSUE_TITLE: Database backup failed
+  2026-10-25T15:55:13.3312160Z ##[endgroup]
+  2026-10-25T15:55:13.4755023Z With the provided path, there will be 1 file uploaded
+  2026-10-25T15:55:13.4793649Z Artifact name is valid!
+  2026-10-25T15:55:13.4794241Z Root directory input is valid!
+  2026-10-25T15:55:13.8785470Z Uploading artifact: db-backup-2026-10-25-40209166873.zip
+  2026-10-25T15:55:13.8825972Z Beginning upload of artifact content to blob storage
+  2026-10-25T15:55:14.2769098Z Uploaded bytes 35425
+  2026-10-25T15:55:14.3678519Z Finished uploading artifact content to blob storage!
+  2026-10-25T15:55:14.3679769Z SHA256 digest of uploaded artifact is e1255c1e300652094f91a91ac5d4f2a8c00147c43d677545853d8b229e909764
+  2026-10-25T15:55:14.3680861Z Finalizing artifact upload
+  2026-10-25T15:55:14.9239335Z Artifact db-backup-2026-10-25-40209166873 successfully finalized. Artifact ID 12604813648
+  2026-10-25T15:55:14.9241348Z Artifact db-backup-2026-10-25-40209166873 has been successfully uploaded! Final size is 35425 bytes. Artifact ID is 12604813648
+  2026-10-25T15:55:14.9244848Z Artifact download URL: https://github.com/trost-systems/family-groceries/actions/runs/40209166873/artifacts/12604813648
+  artifact: db-backup-2026-10-25-40209166873, 35425 bytes zipped, expires 2027-01-23T15:54:40Z (90 days)
+  downloaded file: 35231 bytes, head -c 21 = age-encryption.org/v1 (not decrypted; deleted)
+  log: 0 email addresses, 0 COPY lines; the password appears only as the masked secret
+  issue #40 closed by this run: 'Run .../40209166873 backed up the database again.'

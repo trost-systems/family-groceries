@@ -2,7 +2,8 @@
 
 This page covers the hosted Supabase project `jdwqrallbpdbshrdhenk`: how
 changes reach it, how each deploy is checked, how to roll back, and what
-keeps the free project from pausing. Releases of the apps are in
+keeps the free project from pausing. Nightly backups and restores are in
+[`BACKUP.md`](BACKUP.md). Releases of the apps are in
 [`RELEASE.md`](RELEASE.md).
 
 ## Deploy
@@ -86,8 +87,8 @@ newest one (CLAUDE.md, "schema check: history"). To undo a migration:
    migration.
 2. Keep it backward compatible: the squawk rules in `scripts/lint.sh`
    apply to the revert too.
-3. If the migration lost data, there is no backup to restore from on the
-   free plan (see "Backups" in [`NEEDS_PETER.md`](NEEDS_PETER.md)).
+3. If the migration lost data, restore last night's backup
+   ([`BACKUP.md`](BACKUP.md)) after the revert has landed.
 4. Land it like any PR. The deploy applies it.
 
 ## Keepalive

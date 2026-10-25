@@ -20,6 +20,9 @@ sudo apt-get update -qq || log "apt-get update failed (mirror?); continuing with
 sudo apt-get install -y -qq curl git unzip xz-utils zip jq ca-certificates docker.io \
   shellcheck ruby ruby-dev build-essential >/dev/null
 
+log "pg_dump 17 and age (the db gate's backup restore drill)"
+"$REPO_ROOT/scripts/backup/install-tools.sh" >/dev/null
+
 log "docker"
 # Containers (no systemd) need dockerd started directly; /var/run may be a 0700 dir rather than a symlink to /run.
 if ! sudo docker info >/dev/null 2>&1; then

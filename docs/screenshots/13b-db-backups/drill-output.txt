@@ -1,0 +1,51 @@
+# scripts/verify.sh --only db on the 559xx stack, 2026-10-25 (drill part; migration lines dropped)
+[drill] fixtures
+Resetting local database...
+Recreating database...
+Initialising schema...
+Seeding globals from roles.sql...
+no files matched pattern: supabase/seed.sql
+Restarting containers...
+Finished supabase db reset on branch job/13b-db-backups.
+[drill] dump with a throwaway key
+encrypted dump /tmp/tmp.fmU5IcP5Jw/backup.sql.age: 46493 bytes, age header present
+[drill] reset to the migrations and restore
+Resetting local database...
+Recreating database...
+Initialising schema...
+Seeding globals from roles.sql...
+no files matched pattern: supabase/seed.sql
+Restarting containers...
+Finished supabase db reset on branch job/13b-db-backups.
+NOTICE:  truncate cascades to table "sessions"
+NOTICE:  truncate cascades to table "mfa_factors"
+NOTICE:  truncate cascades to table "one_time_tokens"
+NOTICE:  truncate cascades to table "oauth_authorizations"
+NOTICE:  truncate cascades to table "oauth_consents"
+NOTICE:  truncate cascades to table "webauthn_credentials"
+NOTICE:  truncate cascades to table "webauthn_challenges"
+NOTICE:  truncate cascades to table "scim_users"
+NOTICE:  truncate cascades to table "mfa_recovery_code_sets"
+NOTICE:  truncate cascades to table "refresh_tokens"
+NOTICE:  truncate cascades to table "mfa_challenges"
+NOTICE:  truncate cascades to table "mfa_amr_claims"
+NOTICE:  truncate cascades to table "mfa_recovery_codes"
+[drill] the restored database works
+drill: PASS: 15 tables identical after dump, decrypt and restore:
+  auth.identities                     4  f69035b67bec759eb0757ace2e8016e0
+  auth.users                          3  156fd252d83b04172622d87fa3217a81
+  public.categories                  23  1292caabe345f34a4c4a65988f6ff9a4
+  public.category_memory              1  0a1c5006cc0dfefdbe7755d63a4c444f
+  public.classifier_terms          1159  0b2bc443917ec9d170eb9d86e8888739
+  public.household_members            3  df5d03d9cbee5a26ccb1fa42517f37c9
+  public.households                   2  6c240de2d6c7552742a844fba2a3112c
+  public.invites                      2  4743ff7a5151c19b17d78bc750a331fd
+  public.item_events                 13  cb6c3f9ba911424aa90ceb382f9e43be
+  public.item_store_memory            3  3937812ed9d784608bbd0a4d58679a7a
+  public.items                        7  6f1b731e9fc488efefcf9e6107b387df
+  public.personal_access_tokens       2  7cdf7445dedf6fa9b3ff06b705481902
+  public.profiles                     3  f455f5093b6cadc53296927d0513d063
+  public.store_category_order        69  33112f2b96f8c2ab7047f54ccb5f9884
+  public.stores                       6  8c64f7c38a826de9bc9a6ca9828c2ddf
+[verify] passed: db
+EXIT=0

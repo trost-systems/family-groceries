@@ -1,12 +1,13 @@
 # Hosted backend
 
-The hosted Supabase project stays reachable for the app, MCP clients and Siri. Every deploy from `main` ends with a smoke test of the edge functions, a daily keepalive keeps the free project from pausing, and a dispatch with an earlier `main` commit rolls the edge functions back. The full runbook is `docs/DEPLOY.md`.
+The hosted Supabase project stays reachable for the app, MCP clients and Siri. Every deploy from `main` ends with a smoke test of the edge functions, a daily keepalive keeps the free project from pausing, a dispatch with an earlier `main` commit rolls the edge functions back, and a nightly encrypted backup keeps 90 days of data. The runbooks are `docs/DEPLOY.md` and `docs/BACKUP.md`.
 
 ## Sub-features
 
 - `backend-health` answers `GET /functions/v1/health` with 200 and `{"ok": true, "database": true}` after one read from Postgres, and 503 with `"database": false` when Postgres doesn't answer.
 - `backend-smoke` runs `scripts/smoke-remote.sh` after every deploy: health, the MCP Protected Resource Metadata, and 401 with `WWW-Authenticate` from `voice` and `mcp` for a bad token.
 - `backend-keepalive` reads through `health` once a day (workflow Keepalive), re-enables its own schedule (and every push to `main` does too), and opens the issue "Keepalive failed" on failure (closed by the next green run).
+- `backend-backup` dumps the data of `public` plus `auth.users` and `auth.identities` every night at 02:30 UTC (workflow Backup), encrypted with age to `supabase/backup/recipient.txt`, as the 90-day artifact `db-backup-<UTC date>-<run id>`; a failed run opens the issue "Database backup failed". The db gate's restore drill (`scripts/backup/drill.sh`) proves dump, decrypt and restore round-trip on the local stack.
 - `backend-rollback` redeploys only the edge functions of an earlier `main` commit (workflow Supabase deploy, input `ref`) and smoke-tests them with that commit's script.
 
 ## How to get to it (user POV)
@@ -24,6 +25,8 @@ Preconditions:
 - **A wrong project fails.** Run `scripts/smoke-remote.sh https://jdwqrallbpdbshrdhenx.supabase.co`. Four lines start with `FAIL`, and the exit code is 1.
 - **Local stack.** After `fg up`, run `scripts/smoke-remote.sh http://127.0.0.1:${FG_PORT_PREFIX}21`. All four checks pass. Stop the database container (`docker stop supabase_db_<project_id>`), then `curl -s -w ' %{http_code}' http://127.0.0.1:${FG_PORT_PREFIX}21/functions/v1/health` prints `{"ok":false,...,"database":false} 503` after about 5 s. Start the container again.
 - **Keepalive.** Run `gh workflow run keepalive.yml -R trost-systems/family-groceries`, then `gh run watch` on the new run. It ends green, with "Postgres answered through ..." in the first step.
+- **Backup.** Run `gh workflow run backup.yml -R trost-systems/family-groceries --ref main`, then `gh run watch` on the new run. It ends green and lists one artifact `db-backup-<date>-<run id>`. `gh run download <run id> -R trost-systems/family-groceries -D <tmp dir>`, then `head -c 21 <tmp dir>/*/*.sql.age` prints `age-encryption.org/v1`. Never decrypt the real backup; delete the download.
+- **Restore drill.** Run `scripts/backup/drill.sh` from the repo root (it uses the checkout's own stack from `supabase/config.toml`, not an `fg` instance). The last lines read `drill: PASS: 15 tables identical after dump, decrypt and restore:` and one line per table with its row count and md5. It resets the checkout's local database twice.
 - **Rollback.** Run `gh workflow run supabase-deploy.yml -R trost-systems/family-groceries --ref main -f ref=<sha on main>`. The run shows the notice "Rollback: redeploying the edge functions of <sha>", skips Migrations, and Smoke test passes. A SHA not on `main`, or one older than `scripts/smoke-remote.sh`, fails in "Check out the rollback commit" before anything deploys.
 
 ## Gotchas

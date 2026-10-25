@@ -31,7 +31,9 @@ Still yours:
 - Section 5, step 1: one MCP connect and disconnect against production.
 - "Job 4: Siri", step 2, and "Job 4: release" (not started: the repo has
   no `release` environment yet), "Job 5: Android verification run".
-- "Job 13: database backups": decide, and create the age key pair if yes.
+- "Job 13: database backups": done (job 13b). Copy the backup private key
+  from the build box to your own computer and password manager (section
+  "Job 13: database backups").
   Also watch the repository's issues (Watch, Custom, Issues): a failed
   daily keepalive opens one there (docs/DEPLOY.md, "Keepalive").
 
@@ -482,7 +484,26 @@ settings (Apple's documented fallback, TN3194).
 
 ## Job 13: database backups (decision for Peter)
 
-Nothing is implemented. This needs your age key pair and your decision.
+**DONE (job 13b, 2026-10-25).** Peter said yes on 2026-10-25, with three
+changes to the proposal below: nightly instead of weekly, 90 days of
+retention, and `auth.users` plus `auth.identities` included. Runbook,
+restore steps and key rotation: [`BACKUP.md`](BACKUP.md).
+
+- **Live:** `.github/workflows/backup.yml`, every night at 02:30 UTC and
+  on demand. A failed run opens the issue "Database backup failed".
+- **Key pair:** created by the Engineering Lead. The public key is
+  `supabase/backup/recipient.txt`. The private key is on the build box at
+  `~/groceries-ops/backup-age-key.txt`. **Still yours:** copy it to your
+  own computer and your password manager. Without it no backup can be read.
+- **Database password:** the repository secret `SUPABASE_DB_PASSWORD`, set
+  by the Engineering Lead on 2026-10-25 from the existing value (not
+  rotated). Engineering Lead: update this line if you rotate it through
+  the Management API.
+- "What you would do" below is superseded: steps 1 and 2 were done by the
+  Engineering Lead, step 3 became a repository secret (DECISIONS 13b.3),
+  step 4 is answered (auth tables included).
+
+The original proposal follows for the record.
 
 ### What exists today
 
@@ -534,7 +555,7 @@ mandatory. Only the public key would be committed. Without your private
 key the file is useless, and only you can restore it with
 `age -d -i key.txt dump.sql.age | psql ...`.
 
-### What you would do
+### What you would do (superseded, see above)
 
 1. Create the key pair on your Mac: `age-keygen -o ~/family-groceries-backup.key`.
    Keep the file in your password manager. It prints the public key

@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"
 actionlint
-shellcheck scripts/*.sh scripts/gates/*.sh scripts/fg .githooks/*
+shellcheck scripts/*.sh scripts/gates/*.sh scripts/backup/*.sh scripts/fg .githooks/*
 (cd e2e && { [[ -d node_modules ]] || npm ci; } && npx tsc --noEmit -p .)
 scripts/check-gates.sh
 scripts/lint.sh
