@@ -1,6 +1,7 @@
 # Job 20: the app is "Hummlist", `com.hummlist.app`
 
-PR: https://github.com/trost-systems/family-groceries/pull/46
+PR: https://github.com/trost-systems/family-groceries/pull/46, on `main` as
+b8ce8b9 (CI run 40229348169 and Supabase deploy run 40229348033 green).
 
 Peter approved the name and the ID on 2026-10-25. Every place that shows
 the app's name now says "Hummlist", and every app identifier is
@@ -96,5 +97,17 @@ These can't be done from the box:
 5. Remove `com.petertrost.familygroceries` from the Apple client IDs only
    after the new build is verified.
 
-The live web app shows "Hummlist" only after this PR deploys. That check is
-in the landing section of the PR.
+## After the deploy (2026-10-25, 21:15)
+
+Read-only requests against production, after b8ce8b9 deployed:
+
+- `https://app.hummlist.com` and the alias
+  `https://family-groceries-pied.vercel.app`: `<title>Hummlist</title>`,
+  `apple-mobile-web-app-title` "Hummlist", manifest `name` and `short_name`
+  "Hummlist". `konto-loeschen.html` has the title "Hummlist: Konto und Daten
+  löschen" and links `https://app.hummlist.com/`.
+- Hosted `voice` with an invalid token: 401, "Erstelle in der Hummlist-App
+  unter Menü, Zugänge einen neuen."
+- Hosted `mcp` protected-resource metadata: `resource_name` "Hummlist".
+
+No change was made to hosted Supabase, Vercel, Apple or Google from the box.
