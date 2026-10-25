@@ -12,6 +12,7 @@
 - Job 7b, Vercel hosting loose ends (dotted deep links, APP_URL, NEEDS_PETER cleanup): [docs/done/07b-docs-followups.md](docs/done/07b-docs-followups.md)
 - Job 12, structural lints and migration/RLS guards (`scripts/lint.sh`): [docs/done/12-lints-schema.md](docs/done/12-lints-schema.md)
 - Job 9, in-app account deletion and data export: [docs/done/09-account-deletion.md](docs/done/09-account-deletion.md)
+- Job 13, keepalive for the free Supabase project, deploy smoke test, edge-function rollback: [docs/done/13-ops-keepalive.md](docs/done/13-ops-keepalive.md)
 
 ## Job 1: foundation (2026-10-22)
 
