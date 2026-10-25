@@ -67,14 +67,16 @@ landing_problem() {
 # author and the trailers. The body keeps every commit's message: the body of a commit that
 # already carries <subject> (an earlier squash), subject and body of every other commit.
 squash_commit() {
-  local head="$1" subject="$2" body
-  body="$(git log --reverse --format='%s%x00%b%x01' "origin/main..$head" \
+  local head="$1" subject="$2" messages body others
+  messages="$(git log --reverse --format='%s%x00%b%x01' "origin/main..$head" \
     | awk -v RS='\001' -v subject="$subject" '{
         sub(/^\n/, ""); split($0, part, "\000")
         print (part[1] == subject ? "" : part[1] "\n\n") part[2]
-      }' \
-    | grep -v -e '^Co-authored-by:' -e '^Co-Authored-By:' | sed '/./,$!d')"
-  printf '%s\n\n%s\n\n%s\n' "$subject" "$body" "$TRAILERS" | sed '/^$/N;/^\n$/D' \
+      }')"
+  body="$(grep -vi '^Co-authored-by:' <<<"$messages" | sed '/./,$!d')"
+  # Other people's co-author lines move into the trailer block, once each; ours come last.
+  others="$(grep -i '^Co-authored-by:' <<<"$messages" | grep -vixF -e "$PETER_TRAILER" -e "${TRAILERS%%$'\n'*}" | awk '!seen[tolower($0)]++' || true)"
+  printf '%s\n\n%s\n\n%s\n' "$subject" "$body" "${others:+$others$'\n'}$TRAILERS" | sed '/^$/N;/^\n$/D' \
     | GIT_AUTHOR_NAME="$AUTHOR_NAME" GIT_AUTHOR_EMAIL="$AUTHOR_EMAIL" \
       GIT_COMMITTER_NAME="$AUTHOR_NAME" GIT_COMMITTER_EMAIL="$AUTHOR_EMAIL" \
       git commit-tree "$(git rev-parse "$head^{tree}")" -p origin/main

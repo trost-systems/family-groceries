@@ -32,6 +32,10 @@ if [[ "$(git merge-base origin/main HEAD)" != "$(git rev-parse origin/main)" ]];
   log "rebasing $branch onto origin/main"
   rebase_onto_main
 fi
+if [[ "$(git rev-list --count origin/main..HEAD)" == 0 ]]; then
+  echo "nothing to push: $branch has no commits on top of origin/main" >&2
+  exit 1
+fi
 if [[ -n "$(landing_problem HEAD "$subject")" ]]; then
   squashed="$(squash_commit HEAD "$subject")"
   git reset -q --soft "$squashed"

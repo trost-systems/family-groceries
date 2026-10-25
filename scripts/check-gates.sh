@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # CI and verify.sh run the same checks because both only call scripts/gates/<gate>.sh. This keeps
 # it that way: every gate has a ci.yml job of its name that runs it and is in ci-ok's needs, and
-# is listed in verify.sh; no check command is written into ci.yml or verify.sh directly.
+# is listed in verify.sh; no check command is written into ci.yml or verify.sh directly. Every
+# job in every workflow also sets timeout-minutes.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 cd "$REPO_ROOT"
@@ -30,6 +31,15 @@ for pattern in 'flutter analyze' 'flutter test' 'flutter build' 'dart format' 'd
       problems+=("$file runs '$pattern' itself; put it in a scripts/gates/ script")
     fi
   done
+done
+
+# A hung job holds a runner (and a deploy or release slot) for GitHub's 6 h default.
+for wf in .github/workflows/*.yml; do
+  while read -r job; do
+    block="$(sed -n "/^jobs:/,\$p" "$wf" | sed -n "/^  $job:$/,/^  [a-zA-Z0-9_-]*:$/p" | sed '$!b;/^  [a-zA-Z0-9_-]*:$/d')"
+    grep -qE '^    uses:' <<<"$block" && continue
+    grep -qE '^    timeout-minutes:' <<<"$block" || problems+=("$wf job '$job' has no timeout-minutes")
+  done < <(sed -n '/^jobs:/,$s/^  \([a-zA-Z0-9_-]*\):$/\1/p' "$wf")
 done
 
 if [[ ${#problems[@]} -gt 0 ]]; then
