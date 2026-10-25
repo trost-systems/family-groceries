@@ -94,3 +94,22 @@ flutter gate), `lock-wait.png` (a second e2e waits on the lock),
   Actions, pub and npm.
 - PR #31 (branch `probe/11-push-pr`) was opened by someone outside this job
   with this job's content; left for its owner to close.
+
+## Review 0 fixes (PR #36, branch `job/11b-ci-review`)
+
+- `timeout-minutes` on every job in `release.yml` (5/60/60) and
+  `supabase-deploy.yml` (15); `check-gates.sh` fails on any job without one.
+  Shown: deleting one in `release.yml` or `ci.yml` makes it name the job.
+- `merge-pr.sh --wait` stops after `MERGE_WAIT_MINUTES` (default 30): with
+  ci-ok never reporting and `MERGE_WAIT_MINUTES=1` it exited 1 after 60 s
+  (bare scratch remote, fake `gh`); with ci-ok `pass` it merged.
+- `push-pr.sh` and `merge-pr.sh` exit 1 on a branch with no commits on top
+  of main ("nothing to push" / "nothing to merge") instead of pushing an
+  empty commit.
+- The squash keeps other co-authors (deduplicated, case-insensitive) above
+  our two trailers; Peter's stays last.
+- The e2e gate clears its lock record on exit, and the wait message says
+  a plain `flock` user records nothing ("none recorded").
+- `docs/CI.md`: the 4:26 for non-native PRs is labelled as derived, next to
+  the first real filtered run (Dependabot npm PR #33, `ci-ok` 3:58). It also
+  notes the cold-cache first `main` run (6:49, android 6:43).

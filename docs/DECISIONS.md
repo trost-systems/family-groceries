@@ -1105,3 +1105,21 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
        hardware, not this repo. Medians over 5 runs per variant, with the
        range shown; a change is judged on the segment it touches when the
        medians move less than that noise.
+11.13. **Review 0 fixes.**
+       - Every job in every workflow sets `timeout-minutes`: release secrets 5,
+         release builds 60, Supabase deploy 15. `check-gates.sh` now fails on
+         a job without one (a reusable-workflow job is exempt), so a new job
+         can't miss it.
+       - `merge-pr.sh --wait` gives up after `MERGE_WAIT_MINUTES` (default 30)
+         and exits 1, so a `ci-ok` that never reports can't hold the merge
+         lock forever.
+       - `push-pr.sh` and `merge-pr.sh` refuse a branch with no commits on top
+         of main. They used to squash it into an empty commit and push it.
+       - The squash keeps other people's `Co-authored-by` lines: it moves them
+         into the trailer block once each, case-insensitively. Ours come last,
+         so Peter's trailer still ends the message.
+       - The e2e gate clears its holder record when it exits. The wait message
+         says that a plain `flock` user records nothing.
+       - Kept: the `Co-Authored-By: Claude` trailer. This box's commit
+         attribution rules ask for it on every commit an agent makes, and
+         Peter's trailer stays last.

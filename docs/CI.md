@@ -36,7 +36,8 @@ To add a check, add it to the gate script it belongs to. To add a gate, add
 name in `ci-ok`'s `needs`, and the name in `GATES` (or `CI_ONLY`) in
 `verify.sh`. `scripts/check-gates.sh`, part of the lint gate, fails when one
 of these is missing or a check command is written into `ci.yml` or
-`verify.sh` directly.
+`verify.sh` directly. It also fails when any job in any workflow has no
+`timeout-minutes`.
 
 In CI the e2e job runs as two shards (`--shard=1/2`, `--shard=2/2`), each on
 its own runner with its own stack, because Playwright is the longest step.
@@ -79,7 +80,9 @@ it.
    `--force-with-lease`. It refuses `main`.
 3. `scripts/merge-pr.sh --wait <n>` waits for `ci-ok` on that commit and
    rebase-merges it. No second squash, no second push, no second CI run.
-   `--dry-run` runs every check and stops before the merge.
+   `--dry-run` runs every check and stops before the merge. `--wait` gives
+   up after `MERGE_WAIT_MINUTES` (default 30) and exits 1, so a stuck run
+   can't hold the merge lock.
 
 If `main` moved after your last push, the commit is no longer on top of
 `main`. merge-pr.sh then stops and says so. Run `scripts/push-pr.sh` again
@@ -130,9 +133,16 @@ What a PR waits for now:
 
 - A change touching `app/ios/`, `app/android/` or `app/pubspec.*` waits for
   ios-build, about 5 min (macOS runners vary from 3:34 to 5:24).
-- Any other code change waits for the slower e2e shard: 4:26 median
-  (4:18-4:40), the same runs' end time for `e2e (2)`.
+- Any other code change waits for the slower e2e shard. Derived, not
+  measured as `ci-ok`: 4:26 median (4:18-4:40) is the end time of `e2e (2)`
+  in the 5 full runs above. One real filtered run so far: Dependabot's npm
+  PR (#33), `ci-ok` at 3:58.
 - A docs-only change waits about 30 s.
+- A change to the CI definition runs everything, like a push to `main`.
+  After a cache key changes (a Flutter bump, a new NDK), the first run on
+  `main` refills the Gradle and NDK cache. The first `main` run after this
+  job's merge took 6:49, android 6:43 against ~2:45 once cached. Branch runs
+  read `main`'s cache, so they pay this until that run has finished.
 
 Merging costs one CI run instead of two: before, merge-pr.sh squashed and
 pushed, and the merge waited for a second full run on identical content.

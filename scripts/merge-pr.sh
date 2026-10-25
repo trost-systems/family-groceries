@@ -12,6 +12,8 @@
 #   If main moved since the push, the head is no longer on top of main: rerun
 #   scripts/push-pr.sh (one rebase, one push, one CI run), then this.
 #   --dry-run checks everything and stops before the merge.
+#   --wait gives up after MERGE_WAIT_MINUTES (default 30), so a ci-ok that never reports can't
+#   hold the merge lock forever.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -37,6 +39,10 @@ if [[ "$(git merge-base origin/main "$head")" != "$(git rev-parse origin/main)" 
   echo "$branch is behind main; run scripts/push-pr.sh on it (rebases and squashes), wait for ci-ok, then rerun" >&2
   exit 1
 fi
+if [[ "$(git rev-list --count "origin/main..$head")" == 0 ]]; then
+  echo "#$PR has no commits on top of main; nothing to merge" >&2
+  exit 1
+fi
 problem="$(landing_problem "$head" "$subject")"
 if [[ -n $problem ]]; then
   [[ $dry_run == 1 ]] && { log "dry run: would squash and push because $problem"; exit 2; }
@@ -51,8 +57,13 @@ fi
 ci_ok() { gh pr checks "$PR" --json name,bucket -q '.[] | select(.name=="ci-ok") | .bucket' || true; }
 state="$(ci_ok)"
 if [[ $wait == 1 ]]; then
-  log "waiting for ci-ok on $head"
+  deadline=$((SECONDS + ${MERGE_WAIT_MINUTES:-30} * 60))
+  log "waiting for ci-ok on $head (up to ${MERGE_WAIT_MINUTES:-30} min)"
   while [[ $state != pass && $state != fail && $state != cancel ]]; do
+    if [[ $SECONDS -ge $deadline ]]; then
+      echo "ci-ok is still '${state:-missing}' on $head after ${MERGE_WAIT_MINUTES:-30} min; not merging. Check the run, then rerun (release the merge lock meanwhile)" >&2
+      exit 1
+    fi
     sleep 20
     state="$(ci_ok)"
   done

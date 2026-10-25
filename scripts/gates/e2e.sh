@@ -11,11 +11,14 @@ source "$(dirname "$0")/../lib.sh"
 LOCK="${FG_E2E_LOCK:-/tmp/fg-e2e.lock}"
 exec 9>>"$LOCK"
 if ! flock -n 9; then
-  log "waiting for the box-wide e2e lock $LOCK (last holder that recorded itself: $(cat "$LOCK"))"
+  log "waiting for the box-wide e2e lock $LOCK; last recorded holder (a plain 'flock $LOCK <cmd>' records nothing): $(grep . "$LOCK" || echo none recorded)"
   flock 9
   log "got the e2e lock"
 fi
-echo "$REPO_ROOT (pid $$, since $(date '+%H:%M:%S'))" >"$LOCK"
+holder="$REPO_ROOT (pid $$, since $(date '+%H:%M:%S'))"
+echo "$holder" >"$LOCK"
+# Clear the record on the way out, so the next waiter isn't told about a run that has ended.
+trap '[[ "$(cat "$LOCK" 2>/dev/null)" == "$holder" ]] && : >"$LOCK"' EXIT
 
 supabase_up
 log "web build against the local stack"
