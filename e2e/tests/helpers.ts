@@ -35,17 +35,31 @@ export const itemRow = (page: Page, name: string) =>
 
 export const tickBox = (page: Page, name: string) => page.getByRole('checkbox', { name: `${name} abhaken` });
 
+/** Resolves once the page has drawn two more frames, so Flutter has drawn the frame it had scheduled. */
+async function nextFrames(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+}
+
 /**
  * Flutter swaps in its own editor on focus, so focus first, then insert.
  * insertText (not type) because synthetic key events drop umlauts.
+ *
+ * The DOM focus only asks the app to focus the field; the engine starts
+ * listening to the <input> with the next frame's semantics update. Text
+ * inserted before that frame is in the DOM but not in the app, and the frame
+ * puts the app's value back. That frame comes late under load: the password
+ * typed right after a failed sign-in was sent as the old one (job 12b). So
+ * wait for the frame before typing, and check the value after the next one.
  */
 export async function typeInto(field: Locator, text: string): Promise<void> {
-  // Under load the editor can drop an insert made while it is still taking focus; retype then.
+  const page = field.page();
   await expect(async () => {
     await field.click();
     await expect(field).toBeFocused();
-    await field.page().keyboard.press('ControlOrMeta+a');
-    await field.page().keyboard.insertText(text);
+    await nextFrames(page);
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.insertText(text);
+    await nextFrames(page);
     await expect(field).toHaveValue(text, { timeout: 2_000 });
   }).toPass({ timeout: 20_000 });
 }

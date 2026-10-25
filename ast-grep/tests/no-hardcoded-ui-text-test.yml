@@ -37,7 +37,58 @@ valid:
     final t = Text({'kind': l10n.bought}['kind']!);
   - |
     final t = Text(items.firstWhere((i) => i.name == 'Milch').name);
+  # A getter or list constant that is only data, and a closure's result.
+  - |
+    String get _table => 'items';
+    const _kinds = ['bought', 'open'];
+    final t = Text(l10n.count(_kinds.where((k) => k == kind).length), key: ValueKey(_table));
+  - |
+    String get _names => items.map((i) { return 'Nr. ${i.n}'; }).join();
+    final t = Text(_names);
+  # A toString override, while the file shows another value's toString().
+  - |
+    sealed class LoadState { @override String toString() => 'LoadState'; }
+    Widget w(int n) => Text(n.toString());
 invalid:
+  # Assigned, a default parameter value, an enum constant's argument (job 12b).
+  - |
+    Widget w(bool ok) { String msg; if (ok) { msg = 'Gespeichert'; } else { msg = l10n.error; } return Text(msg); }
+  - |
+    class P { late final String _t; void init() { this._t = 'Titel'; } Widget build(BuildContext c) => Text(_t); }
+  - |
+    class Btn extends StatelessWidget { const Btn({this.caption = 'Speichern'}); final String caption; Widget build(BuildContext c) => Text(caption); }
+  - |
+    enum Cat { fruit('Obst'); const Cat(this.label); final String label; }
+    Widget chip(Cat c) => Text(c.label);
+  # A list, map, getter or function declared in the same file (job 12b).
+  - |
+    const _labels = ['Eins', 'Zwei'];
+    final t = Text(_labels[0]);
+  - |
+    class P { static const _own = ['Statisch']; Widget build(BuildContext c) => Text(_own[0]); }
+  - |
+    const _m = {'a': 'Karte'};
+    final t = Text(_m['a']!);
+  - |
+    String get _title => 'Getter';
+    final t = Text(_title);
+  - |
+    class P { String get _t => 'Getter'; Widget build(BuildContext c) => Text(_t); }
+  - |
+    String _nr(int e) => 'Nr. $e';
+    final t = Text(_nr(1));
+  - |
+    String _state(bool c) { if (c) { return 'Ja'; } return l10n.no; }
+    final t = Text(_state(c));
+  - |
+    class P { final _field = 'Feld'; Widget build(BuildContext c) => Text(_field); }
+  # Collection if and for elements (job 12b).
+  - |
+    final t = Text([if (c) 'Wenn'].first);
+  - |
+    final t = Text([if (c) l10n.yes else 'Sonst'].first);
+  - |
+    final t = Text([for (final i in items) 'Eins'].first);
   # Through a receiver, an index target or a collection (review 1).
   - |
     final t = Text('Hallo'.toUpperCase());

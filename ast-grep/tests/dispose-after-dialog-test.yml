@@ -24,7 +24,59 @@ valid:
       final ok = await showDialog<bool>(context: context, builder: (c) => const Confirm());
       if (ok ?? false) _subscription.cancel();
     }
+  # A route's Future used without disposing anything local.
+  - |
+    void open(BuildContext context) {
+      final controller = TextEditingController();
+      showDialog<void>(context: context, builder: (c) => Field(controller)).then((_) => refresh());
+      keep(controller);
+    }
+  # push on something that is not navigation.
+  - |
+    Future<void> f() async {
+      final c = TextEditingController();
+      await queue.push(1);
+      c.dispose();
+    }
 invalid:
+  # The tear-off (job 12b).
+  - |
+    void open(BuildContext context) {
+      final c = TextEditingController();
+      showModalBottomSheet<void>(context: context, builder: (_) => TextField(controller: c)).whenComplete(c.dispose);
+    }
+  # Without await: the dispose in the route's then or whenComplete (job 12b).
+  - |
+    void open(BuildContext context) {
+      final c = TextEditingController();
+      showDialog<void>(context: context, builder: (d) => TextField(controller: c)).then((_) => c.dispose());
+    }
+  - |
+    void open(BuildContext context) {
+      final f = FocusNode();
+      showModalBottomSheet<void>(context: context, builder: (d) => Field(f)).whenComplete(() {
+        f.dispose();
+      });
+    }
+  # Pickers and pushed pages keep their widgets through the exit animation too.
+  - |
+    Future<void> pick(BuildContext context) async {
+      final c = TextEditingController();
+      await showDatePicker(context: context, firstDate: a, lastDate: b, builder: (_, child) => Field(c, child));
+      c.dispose();
+    }
+  - |
+    Future<void> edit(BuildContext context) async {
+      final c = TextEditingController();
+      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Edit(c)));
+      c.dispose();
+    }
+  - |
+    Future<void> edit(BuildContext context) async {
+      final c = TextEditingController();
+      await context.push<void>('/edit', extra: c);
+      c.dispose();
+    }
   # The historical showJoinCodeDialog (26e9d06:app/lib/household/invite_dialog.dart).
   - |
     Future<void> showJoinCodeDialog(BuildContext context) async {

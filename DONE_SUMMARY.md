@@ -191,3 +191,7 @@ See [docs/done/02b.md](docs/done/02b.md).
 ## Job 11: one CI run per merge, one gate definition, measured CI speedups
 
 See [docs/done/11-ci-flow.md](docs/done/11-ci-flow.md).
+
+## Job 12b: lint and schema-guard follow-ups
+
+See [docs/done/12b-lints-followups.md](docs/done/12b-lints-followups.md).

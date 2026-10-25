@@ -1,5 +1,161 @@
 id: no-hardcoded-ui-text
 snapshots:
+  "String _nr(int e) => 'Nr. $e';\nfinal t = Text(_nr(1));\n":
+    labels:
+    - source: "'Nr. $e'"
+      style: primary
+      start: 21
+      end: 29
+    - source: "Nr. "
+      style: secondary
+      start: 22
+      end: 26
+    - source: _nr
+      style: secondary
+      start: 7
+      end: 10
+    - source: String _nr(int e)
+      style: secondary
+      start: 0
+      end: 17
+    - source: String _nr(int e)
+      style: secondary
+      start: 0
+      end: 17
+    - source: => 'Nr. $e';
+      style: secondary
+      start: 18
+      end: 30
+    - source: Text
+      style: secondary
+      start: 41
+      end: 45
+    - source: Text(_nr(1))
+      style: secondary
+      start: 41
+      end: 53
+    - source: (_nr(1))
+      style: secondary
+      start: 45
+      end: 53
+    - source: _nr(1)
+      style: secondary
+      start: 46
+      end: 52
+    - source: _nr
+      style: secondary
+      start: 46
+      end: 49
+    - source: |
+        String _nr(int e) => 'Nr. $e';
+        final t = Text(_nr(1));
+      style: secondary
+      start: 0
+      end: 55
+  "String _state(bool c) { if (c) { return 'Ja'; } return l10n.no; }\nfinal t = Text(_state(c));\n":
+    labels:
+    - source: "'Ja'"
+      style: primary
+      start: 40
+      end: 44
+    - source: Ja
+      style: secondary
+      start: 41
+      end: 43
+    - source: _state
+      style: secondary
+      start: 7
+      end: 13
+    - source: String _state(bool c)
+      style: secondary
+      start: 0
+      end: 21
+    - source: String _state(bool c)
+      style: secondary
+      start: 0
+      end: 21
+    - source: "{ if (c) { return 'Ja'; } return l10n.no; }"
+      style: secondary
+      start: 22
+      end: 65
+    - source: return 'Ja';
+      style: secondary
+      start: 33
+      end: 45
+    - source: Text
+      style: secondary
+      start: 76
+      end: 80
+    - source: Text(_state(c))
+      style: secondary
+      start: 76
+      end: 91
+    - source: (_state(c))
+      style: secondary
+      start: 80
+      end: 91
+    - source: _state(c)
+      style: secondary
+      start: 81
+      end: 90
+    - source: _state
+      style: secondary
+      start: 81
+      end: 87
+    - source: |
+        String _state(bool c) { if (c) { return 'Ja'; } return l10n.no; }
+        final t = Text(_state(c));
+      style: secondary
+      start: 0
+      end: 93
+  "String get _title => 'Getter';\nfinal t = Text(_title);\n":
+    labels:
+    - source: "'Getter'"
+      style: primary
+      start: 21
+      end: 29
+    - source: Getter
+      style: secondary
+      start: 22
+      end: 28
+    - source: _title
+      style: secondary
+      start: 11
+      end: 17
+    - source: String get _title
+      style: secondary
+      start: 0
+      end: 17
+    - source: String get _title
+      style: secondary
+      start: 0
+      end: 17
+    - source: => 'Getter';
+      style: secondary
+      start: 18
+      end: 30
+    - source: Text
+      style: secondary
+      start: 41
+      end: 45
+    - source: Text(_title)
+      style: secondary
+      start: 41
+      end: 53
+    - source: (_title)
+      style: secondary
+      start: 45
+      end: 53
+    - source: _title
+      style: secondary
+      start: 46
+      end: 52
+    - source: |
+        String get _title => 'Getter';
+        final t = Text(_title);
+      style: secondary
+      start: 0
+      end: 55
   "Widget build(BuildContext context) => const Text('Einkaufsliste');\n":
     labels:
     - source: "'Einkaufsliste'"
@@ -24,34 +180,22 @@ snapshots:
       end: 65
   "Widget build(BuildContext context) {\n  const hint = 'Was fehlt?';\n  return TextField(decoration: const InputDecoration(hintText: hint));\n}\n":
     labels:
-    - source: hint
+    - source: "'Was fehlt?'"
       style: primary
-      start: 129
-      end: 133
-    - source: hint
-      style: secondary
-      start: 45
-      end: 49
+      start: 52
+      end: 64
     - source: Was fehlt?
       style: secondary
       start: 53
       end: 63
-    - source: "'Was fehlt?'"
+    - source: hint
       style: secondary
-      start: 52
-      end: 64
+      start: 45
+      end: 49
     - source: const hint = 'Was fehlt?'
       style: secondary
       start: 39
       end: 64
-    - source: |
-        Widget build(BuildContext context) {
-          const hint = 'Was fehlt?';
-          return TextField(decoration: const InputDecoration(hintText: hint));
-        }
-      style: secondary
-      start: 0
-      end: 139
     - source: "hintText:"
       style: secondary
       start: 119
@@ -60,38 +204,306 @@ snapshots:
       style: secondary
       start: 119
       end: 133
+    - source: hint
+      style: secondary
+      start: 129
+      end: 133
+    - source: |
+        Widget build(BuildContext context) {
+          const hint = 'Was fehlt?';
+          return TextField(decoration: const InputDecoration(hintText: hint));
+        }
+      style: secondary
+      start: 0
+      end: 139
+  "Widget w(bool ok) { String msg; if (ok) { msg = 'Gespeichert'; } else { msg = l10n.error; } return Text(msg); }\n":
+    labels:
+    - source: "'Gespeichert'"
+      style: primary
+      start: 48
+      end: 61
+    - source: Gespeichert
+      style: secondary
+      start: 49
+      end: 60
+    - source: msg
+      style: secondary
+      start: 42
+      end: 45
+    - source: msg
+      style: secondary
+      start: 42
+      end: 45
+    - source: msg = 'Gespeichert'
+      style: secondary
+      start: 42
+      end: 61
+    - source: Text
+      style: secondary
+      start: 99
+      end: 103
+    - source: Text(msg)
+      style: secondary
+      start: 99
+      end: 108
+    - source: (msg)
+      style: secondary
+      start: 103
+      end: 108
+    - source: msg
+      style: secondary
+      start: 104
+      end: 107
+    - source: |
+        Widget w(bool ok) { String msg; if (ok) { msg = 'Gespeichert'; } else { msg = l10n.error; } return Text(msg); }
+      style: secondary
+      start: 0
+      end: 112
+  "class Btn extends StatelessWidget { const Btn({this.caption = 'Speichern'}); final String caption; Widget build(BuildContext c) => Text(caption); }\n":
+    labels:
+    - source: "'Speichern'"
+      style: primary
+      start: 62
+      end: 73
+    - source: Speichern
+      style: secondary
+      start: 63
+      end: 72
+    - source: "{this.caption = 'Speichern'}"
+      style: secondary
+      start: 46
+      end: 74
+    - source: caption
+      style: secondary
+      start: 52
+      end: 59
+    - source: this.caption
+      style: secondary
+      start: 47
+      end: 59
+    - source: Text
+      style: secondary
+      start: 131
+      end: 135
+    - source: Text(caption)
+      style: secondary
+      start: 131
+      end: 144
+    - source: (caption)
+      style: secondary
+      start: 135
+      end: 144
+    - source: caption
+      style: secondary
+      start: 136
+      end: 143
+    - source: |
+        class Btn extends StatelessWidget { const Btn({this.caption = 'Speichern'}); final String caption; Widget build(BuildContext c) => Text(caption); }
+      style: secondary
+      start: 0
+      end: 148
+  "class P { String get _t => 'Getter'; Widget build(BuildContext c) => Text(_t); }\n":
+    labels:
+    - source: "'Getter'"
+      style: primary
+      start: 27
+      end: 35
+    - source: Getter
+      style: secondary
+      start: 28
+      end: 34
+    - source: _t
+      style: secondary
+      start: 21
+      end: 23
+    - source: String get _t
+      style: secondary
+      start: 10
+      end: 23
+    - source: String get _t
+      style: secondary
+      start: 10
+      end: 23
+    - source: String get _t
+      style: secondary
+      start: 10
+      end: 23
+    - source: => 'Getter';
+      style: secondary
+      start: 24
+      end: 36
+    - source: Text
+      style: secondary
+      start: 69
+      end: 73
+    - source: Text(_t)
+      style: secondary
+      start: 69
+      end: 77
+    - source: (_t)
+      style: secondary
+      start: 73
+      end: 77
+    - source: _t
+      style: secondary
+      start: 74
+      end: 76
+    - source: |
+        class P { String get _t => 'Getter'; Widget build(BuildContext c) => Text(_t); }
+      style: secondary
+      start: 0
+      end: 81
+  "class P { final _field = 'Feld'; Widget build(BuildContext c) => Text(_field); }\n":
+    labels:
+    - source: "'Feld'"
+      style: primary
+      start: 25
+      end: 31
+    - source: Feld
+      style: secondary
+      start: 26
+      end: 30
+    - source: _field
+      style: secondary
+      start: 16
+      end: 22
+    - source: _field = 'Feld'
+      style: secondary
+      start: 16
+      end: 31
+    - source: Text
+      style: secondary
+      start: 65
+      end: 69
+    - source: Text(_field)
+      style: secondary
+      start: 65
+      end: 77
+    - source: (_field)
+      style: secondary
+      start: 69
+      end: 77
+    - source: _field
+      style: secondary
+      start: 70
+      end: 76
+    - source: |
+        class P { final _field = 'Feld'; Widget build(BuildContext c) => Text(_field); }
+      style: secondary
+      start: 0
+      end: 81
+  "class P { late final String _t; void init() { this._t = 'Titel'; } Widget build(BuildContext c) => Text(_t); }\n":
+    labels:
+    - source: "'Titel'"
+      style: primary
+      start: 56
+      end: 63
+    - source: Titel
+      style: secondary
+      start: 57
+      end: 62
+    - source: _t
+      style: secondary
+      start: 51
+      end: 53
+    - source: this._t
+      style: secondary
+      start: 46
+      end: 53
+    - source: this._t = 'Titel'
+      style: secondary
+      start: 46
+      end: 63
+    - source: Text
+      style: secondary
+      start: 99
+      end: 103
+    - source: Text(_t)
+      style: secondary
+      start: 99
+      end: 107
+    - source: (_t)
+      style: secondary
+      start: 103
+      end: 107
+    - source: _t
+      style: secondary
+      start: 104
+      end: 106
+    - source: |
+        class P { late final String _t; void init() { this._t = 'Titel'; } Widget build(BuildContext c) => Text(_t); }
+      style: secondary
+      start: 0
+      end: 111
+  "class P { static const _own = ['Statisch']; Widget build(BuildContext c) => Text(_own[0]); }\n":
+    labels:
+    - source: "'Statisch'"
+      style: primary
+      start: 31
+      end: 41
+    - source: Statisch
+      style: secondary
+      start: 32
+      end: 40
+    - source: _own
+      style: secondary
+      start: 23
+      end: 27
+    - source: _own = ['Statisch']
+      style: secondary
+      start: 23
+      end: 42
+    - source: Text
+      style: secondary
+      start: 76
+      end: 80
+    - source: Text(_own[0])
+      style: secondary
+      start: 76
+      end: 89
+    - source: (_own[0])
+      style: secondary
+      start: 80
+      end: 89
+    - source: _own[0]
+      style: secondary
+      start: 81
+      end: 88
+    - source: _own
+      style: secondary
+      start: 81
+      end: 85
+    - source: |
+        class P { static const _own = ['Statisch']; Widget build(BuildContext c) => Text(_own[0]); }
+      style: secondary
+      start: 0
+      end: 93
+    - source: "['Statisch']"
+      style: secondary
+      start: 30
+      end: 42
   "class _Labels { static const delete = 'Löschen'; }\nfinal tip = IconButton(tooltip: _Labels.delete, onPressed: delete);\n":
     labels:
-    - source: _Labels.delete
+    - source: "'Löschen'"
       style: primary
-      start: 84
-      end: 98
-    - source: delete
-      style: secondary
-      start: 92
-      end: 98
-    - source: delete
-      style: secondary
-      start: 29
-      end: 35
+      start: 38
+      end: 48
     - source: Löschen
       style: secondary
       start: 39
       end: 47
-    - source: "'Löschen'"
+    - source: delete
       style: secondary
-      start: 38
-      end: 48
+      start: 29
+      end: 35
     - source: delete = 'Löschen'
       style: secondary
       start: 29
       end: 48
-    - source: |
-        class _Labels { static const delete = 'Löschen'; }
-        final tip = IconButton(tooltip: _Labels.delete, onPressed: delete);
+    - source: delete
       style: secondary
-      start: 0
-      end: 120
+      start: 92
+      end: 98
     - source: "tooltip:"
       style: secondary
       start: 75
@@ -100,34 +512,34 @@ snapshots:
       style: secondary
       start: 75
       end: 98
+    - source: _Labels.delete
+      style: secondary
+      start: 84
+      end: 98
+    - source: |
+        class _Labels { static const delete = 'Löschen'; }
+        final tip = IconButton(tooltip: _Labels.delete, onPressed: delete);
+      style: secondary
+      start: 0
+      end: 120
   "const _done = 'Erledigt';\nfinal t = Text(done ? _done : l10n.open);\n":
     labels:
-    - source: _done
+    - source: "'Erledigt'"
       style: primary
-      start: 48
-      end: 53
-    - source: _done
-      style: secondary
-      start: 6
-      end: 11
+      start: 14
+      end: 24
     - source: Erledigt
       style: secondary
       start: 15
       end: 23
-    - source: "'Erledigt'"
+    - source: _done
       style: secondary
-      start: 14
-      end: 24
+      start: 6
+      end: 11
     - source: _done = 'Erledigt'
       style: secondary
       start: 6
       end: 24
-    - source: |
-        const _done = 'Erledigt';
-        final t = Text(done ? _done : l10n.open);
-      style: secondary
-      start: 0
-      end: 68
     - source: Text
       style: secondary
       start: 36
@@ -144,34 +556,138 @@ snapshots:
       style: secondary
       start: 41
       end: 65
-  "const _title = 'Einkaufsliste';\nWidget build(BuildContext context) => const Text(_title);\n":
+    - source: _done
+      style: secondary
+      start: 48
+      end: 53
+    - source: |
+        const _done = 'Erledigt';
+        final t = Text(done ? _done : l10n.open);
+      style: secondary
+      start: 0
+      end: 68
+  "const _labels = ['Eins', 'Zwei'];\nfinal t = Text(_labels[0]);\n":
     labels:
-    - source: _title
+    - source: "'Eins'"
       style: primary
-      start: 81
-      end: 87
-    - source: _title
+      start: 17
+      end: 23
+    - source: Eins
+      style: secondary
+      start: 18
+      end: 22
+    - source: _labels
       style: secondary
       start: 6
-      end: 12
+      end: 13
+    - source: _labels = ['Eins', 'Zwei']
+      style: secondary
+      start: 6
+      end: 32
+    - source: Text
+      style: secondary
+      start: 44
+      end: 48
+    - source: Text(_labels[0])
+      style: secondary
+      start: 44
+      end: 60
+    - source: (_labels[0])
+      style: secondary
+      start: 48
+      end: 60
+    - source: _labels[0]
+      style: secondary
+      start: 49
+      end: 59
+    - source: _labels
+      style: secondary
+      start: 49
+      end: 56
+    - source: |
+        const _labels = ['Eins', 'Zwei'];
+        final t = Text(_labels[0]);
+      style: secondary
+      start: 0
+      end: 62
+    - source: "['Eins', 'Zwei']"
+      style: secondary
+      start: 16
+      end: 32
+  "const _m = {'a': 'Karte'};\nfinal t = Text(_m['a']!);\n":
+    labels:
+    - source: "'Karte'"
+      style: primary
+      start: 17
+      end: 24
+    - source: Karte
+      style: secondary
+      start: 18
+      end: 23
+    - source: _m
+      style: secondary
+      start: 6
+      end: 8
+    - source: "_m = {'a': 'Karte'}"
+      style: secondary
+      start: 6
+      end: 25
+    - source: Text
+      style: secondary
+      start: 37
+      end: 41
+    - source: Text(_m['a']!)
+      style: secondary
+      start: 37
+      end: 51
+    - source: (_m['a']!)
+      style: secondary
+      start: 41
+      end: 51
+    - source: _m['a']!
+      style: secondary
+      start: 42
+      end: 50
+    - source: _m['a']
+      style: secondary
+      start: 42
+      end: 49
+    - source: _m
+      style: secondary
+      start: 42
+      end: 44
+    - source: |
+        const _m = {'a': 'Karte'};
+        final t = Text(_m['a']!);
+      style: secondary
+      start: 0
+      end: 53
+    - source: "{'a': 'Karte'}"
+      style: secondary
+      start: 11
+      end: 25
+    - source: "'a': 'Karte'"
+      style: secondary
+      start: 12
+      end: 24
+  "const _title = 'Einkaufsliste';\nWidget build(BuildContext context) => const Text(_title);\n":
+    labels:
+    - source: "'Einkaufsliste'"
+      style: primary
+      start: 15
+      end: 30
     - source: Einkaufsliste
       style: secondary
       start: 16
       end: 29
-    - source: "'Einkaufsliste'"
+    - source: _title
       style: secondary
-      start: 15
-      end: 30
+      start: 6
+      end: 12
     - source: _title = 'Einkaufsliste'
       style: secondary
       start: 6
       end: 30
-    - source: |
-        const _title = 'Einkaufsliste';
-        Widget build(BuildContext context) => const Text(_title);
-      style: secondary
-      start: 0
-      end: 90
     - source: Text
       style: secondary
       start: 76
@@ -184,6 +700,72 @@ snapshots:
       style: secondary
       start: 80
       end: 88
+    - source: _title
+      style: secondary
+      start: 81
+      end: 87
+    - source: |
+        const _title = 'Einkaufsliste';
+        Widget build(BuildContext context) => const Text(_title);
+      style: secondary
+      start: 0
+      end: 90
+  "enum Cat { fruit('Obst'); const Cat(this.label); final String label; }\nWidget chip(Cat c) => Text(c.label);\n":
+    labels:
+    - source: "'Obst'"
+      style: primary
+      start: 17
+      end: 23
+    - source: Obst
+      style: secondary
+      start: 18
+      end: 22
+    - source: label
+      style: secondary
+      start: 62
+      end: 67
+    - source: label
+      style: secondary
+      start: 62
+      end: 67
+    - source: enum Cat { fruit('Obst'); const Cat(this.label); final String label; }
+      style: secondary
+      start: 0
+      end: 70
+    - source: fruit('Obst')
+      style: secondary
+      start: 11
+      end: 24
+    - source: ('Obst')
+      style: secondary
+      start: 16
+      end: 24
+    - source: label
+      style: secondary
+      start: 100
+      end: 105
+    - source: Text
+      style: secondary
+      start: 93
+      end: 97
+    - source: Text(c.label)
+      style: secondary
+      start: 93
+      end: 106
+    - source: (c.label)
+      style: secondary
+      start: 97
+      end: 106
+    - source: c.label
+      style: secondary
+      start: 98
+      end: 105
+    - source: |
+        enum Cat { fruit('Obst'); const Cat(this.label); final String label; }
+        Widget chip(Cat c) => Text(c.label);
+      style: secondary
+      start: 0
+      end: 108
   "final d = showDatePicker(context: context, confirmText: 'Übernehmen', firstDate: a, lastDate: b);\n":
     labels:
     - source: "'Übernehmen'"
@@ -406,6 +988,108 @@ snapshots:
       style: secondary
       start: 15
       end: 31
+  "final t = Text([for (final i in items) 'Eins'].first);\n":
+    labels:
+    - source: "'Eins'"
+      style: primary
+      start: 39
+      end: 45
+    - source: Eins
+      style: secondary
+      start: 40
+      end: 44
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text([for (final i in items) 'Eins'].first)
+      style: secondary
+      start: 10
+      end: 53
+    - source: ([for (final i in items) 'Eins'].first)
+      style: secondary
+      start: 14
+      end: 53
+    - source: "[for (final i in items) 'Eins'].first"
+      style: secondary
+      start: 15
+      end: 52
+    - source: "[for (final i in items) 'Eins']"
+      style: secondary
+      start: 15
+      end: 46
+    - source: for (final i in items) 'Eins'
+      style: secondary
+      start: 16
+      end: 45
+  "final t = Text([if (c) 'Wenn'].first);\n":
+    labels:
+    - source: "'Wenn'"
+      style: primary
+      start: 23
+      end: 29
+    - source: Wenn
+      style: secondary
+      start: 24
+      end: 28
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text([if (c) 'Wenn'].first)
+      style: secondary
+      start: 10
+      end: 37
+    - source: ([if (c) 'Wenn'].first)
+      style: secondary
+      start: 14
+      end: 37
+    - source: "[if (c) 'Wenn'].first"
+      style: secondary
+      start: 15
+      end: 36
+    - source: "[if (c) 'Wenn']"
+      style: secondary
+      start: 15
+      end: 30
+    - source: if (c) 'Wenn'
+      style: secondary
+      start: 16
+      end: 29
+  "final t = Text([if (c) l10n.yes else 'Sonst'].first);\n":
+    labels:
+    - source: "'Sonst'"
+      style: primary
+      start: 37
+      end: 44
+    - source: Sonst
+      style: secondary
+      start: 38
+      end: 43
+    - source: Text
+      style: secondary
+      start: 10
+      end: 14
+    - source: Text([if (c) l10n.yes else 'Sonst'].first)
+      style: secondary
+      start: 10
+      end: 52
+    - source: ([if (c) l10n.yes else 'Sonst'].first)
+      style: secondary
+      start: 14
+      end: 52
+    - source: "[if (c) l10n.yes else 'Sonst'].first"
+      style: secondary
+      start: 15
+      end: 51
+    - source: "[if (c) l10n.yes else 'Sonst']"
+      style: secondary
+      start: 15
+      end: 45
+    - source: if (c) l10n.yes else 'Sonst'
+      style: secondary
+      start: 16
+      end: 44
   "final t = Text(count.toString() + ' Stück');\n":
     labels:
     - source: "' Stück'"

@@ -59,6 +59,8 @@ export function checkHistory(base: Migrations, tree: Migrations): Finding[] {
 }
 
 type Table = {
+  /** The last migration that created, renamed or altered the table, or changed its policies:
+   * the one whose statement a finding is about, and the newest place a fix can follow. */
   file: string;
   household: boolean;
   rls: boolean;
@@ -66,25 +68,47 @@ type Table = {
   policies: Map<string, boolean>;
 };
 
-const IDENT = String.raw`"?(\w+)"?`;
-const TABLE_NAME = String.raw`(?:if\s+(?:not\s+)?exists\s+)?(?:only\s+)?(?:public\.)?${IDENT}`;
-const CREATE_TABLE = new RegExp(
-  String
-    .raw`^create\s+(?:unlogged\s+)?table\s+(?:if\s+not\s+exists\s+)?(public\.|\w+\.)?${IDENT}([\s\S]*)$`,
-);
-const ALTER_TABLE = new RegExp(String.raw`^alter\s+table\s+${TABLE_NAME}\s+([\s\S]*)$`);
-const DROP_TABLE = /^drop\s+table\s+(?:if\s+exists\s+)?([\s\S]*?)(?:\s+(?:cascade|restrict))?$/;
+/** One identifier: "quoted" (case kept, "" for a quote) or plain (already lowercased). */
+const PART = String.raw`"(?:[^"]|"")+"|[a-z_][\w$]*`;
+const QUALIFIED = new RegExp(String.raw`^(${PART})(?:\s*\.\s*(${PART}))?`);
+const unquote = (part: string) =>
+  part.startsWith('"') ? part.slice(1, -1).replaceAll('""', '"') : part;
+
+type Name = { schema: string; name: string; rest: string };
+
+/** The possibly schema-qualified name at the start of `text`, each part unquoted; an unqualified
+ * name is in public (the migrations' search_path). */
+export function qualifiedName(text: string): Name | undefined {
+  const m = QUALIFIED.exec(text);
+  if (!m) return undefined;
+  const first = unquote(m[1]);
+  const second = m[2] === undefined ? undefined : unquote(m[2]);
+  return {
+    schema: second === undefined ? 'public' : first,
+    name: second ?? first,
+    rest: text.slice(m[0].length).trim(),
+  };
+}
+
+/** A name as SQL would write it: plain when it can be, quoted otherwise. */
+const sql = (name: string) =>
+  /^[a-z_][a-z0-9_$]*$/.test(name) ? name : `"${name.replaceAll('"', '""')}"`;
+
+const CREATE_TABLE = /^create\s+(?:unlogged\s+)?table\s+(?:if\s+not\s+exists\s+)?([\s\S]*)$/;
+const ALTER_TABLE = /^alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?([\s\S]*)$/;
+const DROP_TABLE = /^drop\s+table\s+(?:if\s+exists\s+)?([\s\S]*)$/;
 const CREATE_POLICY = new RegExp(
-  String.raw`^create\s+policy\s+("[^"]+"|\w+)\s+on\s+(?:only\s+)?(?:public\.)?${IDENT}\b`,
+  String.raw`^create\s+policy\s+(${PART})\s+on\s+(?:only\s+)?([\s\S]*)$`,
 );
 const DROP_POLICY = new RegExp(
-  String
-    .raw`^drop\s+policy\s+(?:if\s+exists\s+)?("[^"]+"|\w+)\s+on\s+(?:only\s+)?(?:public\.)?${IDENT}`,
+  String.raw`^drop\s+policy\s+(?:if\s+exists\s+)?(${PART})\s+on\s+([\s\S]*)$`,
 );
-const MEMBER_CHECK = /\bis_household_member\s*\(\s*(?:\w+\.)?household_id\s*\)/;
+const ALTER_POLICY = new RegExp(String.raw`^alter\s+policy\s+(${PART})\s+on\s+([\s\S]*)$`);
+const MEMBER_CHECK =
+  /\bis_household_member\s*\(\s*(?:(?:\w+|"[^"]+")\s*\.\s*)?"?household_id"?\s*\)/;
 const HOUSEHOLD_COLUMN = /[(,]\s*"?household_id"?\s+\w/;
 /** `like public.items` copies the columns (household_id included) but not RLS or policies. */
-const LIKE = /[(,]\s*like\s+(?:public\.)?"?(\w+)"?/g;
+const LIKE = /[(,]\s*like\s+/g;
 
 /** Every public table enables row level security, so PostgREST never serves it unfiltered. A
  * table with household_id also has a policy calling is_household_member(household_id) and a
@@ -101,106 +125,191 @@ export function checkTables(tree: Migrations, tests: ReadonlyMap<string, string>
   );
   const findings: Finding[] = [];
   for (const [name, table] of [...tables].sort(([a], [b]) => a.localeCompare(b))) {
+    const qualified = `public.${sql(name)}`;
     if (!table.rls) {
       findings.push({
         file: table.file,
-        message: `public.${name} does not enable row level security: add ` +
-          `"alter table public.${name} enable row level security;" and its policies`,
+        message: `${qualified} does not enable row level security: add ` +
+          `"alter table ${qualified} enable row level security;" and its policies`,
       });
     }
     if (!table.household) continue;
     if (![...table.policies.values()].some(Boolean)) {
       findings.push({
         file: table.file,
-        message: `public.${name} has household_id but no policy using ` +
-          `public.is_household_member(household_id): add one, e.g. "create policy ${name}_member on ` +
-          `public.${name} for select to authenticated using (public.is_household_member(household_id));"`,
+        message: `${qualified} has household_id but no policy using ` +
+          `public.is_household_member(household_id): add one, e.g. "create policy ` +
+          `${sql(`${name}_member`)} on ${qualified} for select to authenticated using ` +
+          `(public.is_household_member(household_id));"`,
       });
     }
-    const mention = new RegExp(String.raw`\bpublic\.${name}\b`);
-    if (!crossHousehold.some((sql) => mention.test(sql))) {
+    if (!crossHousehold.some((sql) => mentions(sql, name))) {
       findings.push({
         file: table.file,
-        message:
-          `public.${name} has household_id but no pgTAP test with two households touches it: ` +
-          `add a cross-household case for public.${name} to ${TESTS}/rls.test.sql`,
+        message: `${qualified} has household_id but no pgTAP test with two households touches ` +
+          `it: add a cross-household case for ${qualified} to ${TESTS}/rls.test.sql`,
       });
     }
   }
   return findings;
 }
 
+/** Whether a test's SQL names public.<name>, in any quoting, strings included (pgTAP's
+ * throws_ok and lives_ok take their SQL as a string), comments excluded. */
+function mentions(test: string, name: string): boolean {
+  const text = statements(test, { keepStrings: true }).join(';\n').replace(
+    /"(?:[^"]|"")*"|[^"]+/g,
+    (s) => s.startsWith('"') ? s : s.toLowerCase(),
+  );
+  for (const m of text.matchAll(/(?<![\w$".])(?:public|"public")\s*\./g)) {
+    const found = qualifiedName(text.slice(m.index));
+    if (found?.schema === 'public' && found.name === name) return true;
+  }
+  return false;
+}
+
+/** The public table a statement's remainder starts with, and the text after its name. */
+function publicTable(text: string): { name: string; rest: string } | undefined {
+  const found = qualifiedName(text);
+  return found?.schema === 'public' ? found : undefined;
+}
+
 function apply(tables: Map<string, Table>, file: string, statement: string) {
   let m: RegExpExecArray | null;
   if ((m = CREATE_TABLE.exec(statement))) {
-    const [, schema, name, body] = m;
-    if (schema === undefined || schema === 'public.') {
-      tables.set(name, {
-        file,
-        household: HOUSEHOLD_COLUMN.test(body) ||
-          [...body.matchAll(LIKE)].some(([, source]) => tables.get(source)?.household === true),
-        rls: false,
-        policies: new Map(),
-      });
-    }
+    const created = publicTable(m[1]);
+    if (created === undefined) return;
+    const copies = [...created.rest.matchAll(LIKE)].map((like) =>
+      publicTable(created.rest.slice(like.index + like[0].length))?.name
+    );
+    tables.set(created.name, {
+      file,
+      household: HOUSEHOLD_COLUMN.test(created.rest) ||
+        copies.some((source) => source !== undefined && tables.get(source)?.household === true),
+      rls: false,
+      policies: new Map(),
+    });
   } else if ((m = ALTER_TABLE.exec(statement))) {
-    const [, name, action] = m;
-    const table = tables.get(name);
-    if (table === undefined) return;
-    const renamed = /^rename\s+to\s+"?(\w+)"?$/.exec(action);
-    if (renamed) {
-      tables.delete(name);
-      tables.set(renamed[1], table);
+    const altered = publicTable(m[1]);
+    const table = altered && tables.get(altered.name);
+    if (altered === undefined || table === undefined) return;
+    const action = altered.rest;
+    table.file = file;
+    const renamed = /^rename\s+to\s+([\s\S]*)$/.exec(action);
+    const to = renamed && qualifiedName(renamed[1]);
+    if (to) {
+      tables.delete(altered.name);
+      tables.set(to.name, table);
+    }
+    const moved = /^set\s+schema\s+([\s\S]*)$/.exec(action);
+    if (moved && qualifiedName(moved[1])?.name !== 'public') tables.delete(altered.name);
+    if (/\brename\s+(?:column\s+)?"?household_id"?\s+to\s/.test(action)) table.household = false;
+    if (/\brename\s+(?:column\s+)?\S+\s+to\s+"?household_id"?$/.test(action)) {
+      table.household = true;
     }
     if (/\benable\s+row\s+level\s+security\b/.test(action)) table.rls = true;
     if (/\bdisable\s+row\s+level\s+security\b/.test(action)) table.rls = false;
     if (/\badd\s+(?:column\s+)?(?:if\s+not\s+exists\s+)?"?household_id"?\s/.test(action)) {
       table.household = true;
     }
-    if (/\bdrop\s+(?:column\s+)?(?:if\s+exists\s+)?"?household_id"?\b/.test(action)) {
+    if (/\bdrop\s+(?:column\s+)?(?:if\s+exists\s+)?"?household_id"?(?:\s|,|$)/.test(action)) {
       table.household = false;
     }
   } else if ((m = DROP_TABLE.exec(statement))) {
-    for (const name of m[1].split(',')) {
-      tables.delete(name.trim().replace(/^public\./, '').replaceAll('"', ''));
+    let rest = m[1];
+    for (let dropped = qualifiedName(rest); dropped; dropped = qualifiedName(rest)) {
+      if (dropped.schema === 'public') tables.delete(dropped.name);
+      if (!dropped.rest.startsWith(',')) break;
+      rest = dropped.rest.slice(1).trim();
     }
-  } else if ((m = CREATE_POLICY.exec(statement))) {
-    tables.get(m[2])?.policies.set(m[1], MEMBER_CHECK.test(statement));
-  } else if ((m = DROP_POLICY.exec(statement))) {
-    tables.get(m[2])?.policies.delete(m[1]);
+  } else if ((m = CREATE_POLICY.exec(statement)) || (m = DROP_POLICY.exec(statement))) {
+    const on = publicTable(m[2]);
+    const table = on && tables.get(on.name);
+    if (table === undefined) return;
+    table.file = file;
+    if (statement.startsWith('create')) {
+      table.policies.set(unquote(m[1]), MEMBER_CHECK.test(statement));
+    } else {
+      table.policies.delete(unquote(m[1]));
+    }
+  } else if ((m = ALTER_POLICY.exec(statement))) {
+    const on = publicTable(m[2]);
+    const table = on && tables.get(on.name);
+    const name = unquote(m[1]);
+    if (on === undefined || table === undefined || !table.policies.has(name)) return;
+    table.file = file;
+    const renamed = /^rename\s+to\s+(\S+)$/.exec(on.rest);
+    if (renamed) {
+      table.policies.set(unquote(renamed[1]), table.policies.get(name)!);
+      table.policies.delete(name);
+    } else if (/\b(?:using|with\s+check)\s*\(/.test(on.rest)) {
+      table.policies.set(name, MEMBER_CHECK.test(on.rest));
+    }
   }
 }
 
-/** The statements of a migration, lowercased, with comments, string literals and dollar-quoted
- * bodies blanked so that a function body or a comment never reads as DDL. */
-export function statements(sql: string): string[] {
-  let out = '';
+/** The statements of a migration, lowercased except inside "quoted identifiers", with comments
+ * (nested block comments included), string literals and dollar-quoted bodies blanked so that a
+ * function body or a comment never reads as DDL. With `keepStrings`, literals and bodies stay
+ * as written: pgTAP tests pass their SQL as strings. */
+export function statements(sql: string, { keepStrings = false } = {}): string[] {
+  const out: string[] = [];
+  let current = '';
   let i = 0;
+  const end = () => {
+    const statement = current.trim();
+    if (statement) out.push(statement);
+    current = '';
+  };
   while (i < sql.length) {
     const rest = sql.slice(i);
-    const dollar = /^\$(\w*)\$/.exec(rest);
+    const dollar = /^\$([a-z_]\w*)?\$/i.exec(rest);
     if (rest.startsWith('--')) {
       const end = sql.indexOf('\n', i);
       i = end < 0 ? sql.length : end;
     } else if (rest.startsWith('/*')) {
-      const end = sql.indexOf('*/', i + 2);
-      i = end < 0 ? sql.length : end + 2;
-      out += ' ';
+      let depth = 0;
+      do {
+        if (sql.startsWith('/*', i)) (depth++, i += 2);
+        else if (sql.startsWith('*/', i)) (depth--, i += 2);
+        else i++;
+      } while (depth > 0 && i < sql.length);
+      current += ' ';
     } else if (sql[i] === "'") {
+      // In E'...' a backslash escapes the next character.
+      const escapes = /(?:^|[^\w$])e$/i.test(sql.slice(Math.max(0, i - 2), i));
       let j = i + 1;
-      while (j < sql.length && !(sql[j] === "'" && sql[j + 1] !== "'")) j += sql[j] === "'" ? 2 : 1;
-      out += "''";
+      while (j < sql.length) {
+        if (escapes && sql[j] === '\\') j += 2;
+        else if (sql[j] === "'" && sql[j + 1] === "'") j += 2;
+        else if (sql[j] === "'") break;
+        else j++;
+      }
+      current += keepStrings ? sql.slice(i, j + 1) : "''";
+      i = j + 1;
+    } else if (sql[i] === '"') {
+      let j = i + 1;
+      while (j < sql.length && !(sql[j] === '"' && sql[j + 1] !== '"')) j += sql[j] === '"' ? 2 : 1;
+      current += sql.slice(i, j + 1);
       i = j + 1;
     } else if (dollar) {
-      const end = sql.indexOf(dollar[0], i + dollar[0].length);
-      out += '$$';
-      i = end < 0 ? sql.length : end + dollar[0].length;
+      const close = sql.indexOf(dollar[0], i + dollar[0].length);
+      const stop = close < 0 ? sql.length : close + dollar[0].length;
+      current += keepStrings ? sql.slice(i, stop) : '$$';
+      i = stop;
+    } else if (sql[i] === ';') {
+      end();
+      i++;
+    } else if (/\s/.test(sql[i])) {
+      if (!current.endsWith(' ')) current += ' ';
+      i++;
     } else {
-      out += sql[i];
+      current += sql[i].toLowerCase();
       i++;
     }
   }
-  return out.split(';').map((s) => s.replace(/\s+/g, ' ').trim().toLowerCase()).filter(Boolean);
+  end();
+  return out;
 }
 
 /** squawk's rules that protect clients already in people's hands: TestFlight and Play builds lag

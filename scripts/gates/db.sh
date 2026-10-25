@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"
 if stack_running; then
+  reserve_port_block
   supabase db reset >/dev/null
 else
   supabase_up

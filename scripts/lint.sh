@@ -27,5 +27,8 @@ if ! git rev-parse -q --verify "$base^{commit}" >/dev/null && [[ "$base" == orig
   git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
 fi
 log "schema check against $base"
-(cd supabase/checks && deno fmt --check -q && deno lint -q && deno test -q --allow-read --allow-write --allow-run=squawk)
+# The check before its unit tests: a bad migration fails the test over the repository's own
+# migrations too, and the check's message is the one that says what to do.
 deno run --allow-read --allow-run=git,squawk supabase/checks/schema_check.ts "$base"
+log "schema check tests"
+(cd supabase/checks && deno fmt --check -q && deno lint -q && deno test -q --allow-read --allow-write --allow-run=squawk)
