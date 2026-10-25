@@ -29,9 +29,9 @@ Still yours:
 - Section 4, steps 16 and 18: the Xcode capability check and trying
   sign-in on your phones.
 - Section 5, step 1: one MCP connect and disconnect against production.
-- "Job 4: Siri", step 2, and "Job 4: release" (iOS: the GitHub side is
-  set up except the certificates repo; the Apple steps are open; Android
-  not started), "Job 5: Android verification run".
+- "Job 4: Siri", step 2, and "Job 4: release" (iOS: build 0.1.0 (1001) is
+  in TestFlight and ready for internal testing. You still add the testers.
+  Android is not started.) Also "Job 5: Android verification run".
 - "Job 13: database backups": done (job 13b). Copy the backup private key
   from the build box to your own computer and password manager (section
   "Job 13: database backups").
@@ -270,26 +270,39 @@ The Release workflow and the fastlane lanes are in place
 skips both platforms and stays green. All secrets and variables go into one
 GitHub environment.
 
-### Status (2026-10-25)
+### Status (2026-10-25, first TestFlight build)
 
-Done from the box:
+iOS is done up to testers. Steps 1 to 6 below are done, and step 7 is done
+except the testers:
 
-- Environment `release` exists, deployments limited to the `main` branch.
-- In `release`: variables `APPLE_TEAM_ID` (`VCZSHMZY25`) and `MATCH_GIT_URL`
-  (`git@github.com:trost-systems/family-groceries-certificates.git`),
-  secrets `MATCH_DEPLOY_KEY` and `MATCH_PASSWORD`.
-- The deploy key pair is `~/groceries-ops/match-deploy-key` (+ `.pub`) on the
-  build box; `MATCH_PASSWORD` is also in `~/groceries-ops/env`. Copy both to
-  your password manager: without the passphrase the match repo is unreadable.
-- Workflow `Certificates` (`.github/workflows/certificates.yml`) runs
-  `fastlane ios certificates` on a GitHub macOS runner, so step 6 needs no
-  Mac. Manual only, from `main`, and only when you type `create`.
+- Agreement accepted, app record "Einkauf Familie" (Apple ID `6826907810`,
+  bundle ID `com.petertrost.familygroceries`), API key `family-groceries-ci`
+  (Admin, key ID `4J3N457M89`) and its three secrets in `release`.
+- Environment `release` (deployments from `main` only) holds variables
+  `APPLE_TEAM_ID` (`VCZSHMZY25`) and `MATCH_GIT_URL`
+  (`git@github.com:trost-systems/family-groceries-certificates.git`), plus
+  secrets `MATCH_DEPLOY_KEY`, `MATCH_PASSWORD` and the three
+  `APP_STORE_CONNECT_*`. The deploy key pair is
+  `~/groceries-ops/match-deploy-key` (+ `.pub`) on the build box, and
+  `MATCH_PASSWORD` is in `~/groceries-ops/env`. Copy both to your password
+  manager. Without the passphrase the match repo is unreadable.
+- The private repo `trost-systems/family-groceries-certificates` has the
+  read-write deploy key.
+- Certificates run
+  [40224053069](https://github.com/trost-systems/family-groceries/actions/runs/40224053069)
+  (green) created Apple Distribution certificate `GN85KDC962` and the
+  App Store profile in the match repo. The team now has three distribution
+  certificates (two from earlier, plus this one). No certificate was
+  revoked. Don't rerun Certificates unless the certificate needs renewing.
+- Release run
+  [40224169926](https://github.com/trost-systems/family-groceries/actions/runs/40224169926)
+  (`platform: ios`, green) uploaded version 0.1.0, build 1001
+  (`1000 + run number`). App Store Connect shows it as `VALID`, internal
+  state `READY_FOR_BETA_TESTING`, export compliance answered (no non-exempt
+  encryption). The build expires on 2027-01-23.
 
-Not done: the private repo `trost-systems/family-groceries-certificates`.
-The build box's account is not an owner of the `trost-systems`
-organization and GitHub refused to create it (step 5).
-
-Still yours, in this order: steps 1 to 7 below without the parts marked done.
+Still yours: the testers part of step 7 (create the internal group, add
+yourself and Lea).
 
 ### iOS
 
