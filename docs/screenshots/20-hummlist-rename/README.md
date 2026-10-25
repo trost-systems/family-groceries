@@ -20,3 +20,18 @@ Read from the real artifacts:
 | Linux window (`xdotool`, `xprop`) | title "Hummlist", `WM_CLASS` "com.hummlist.app" |
 | Magic link mail (`fg mail --to lea`) | `redirect_to=com.hummlist.app://login-callback` (GoTrue keeps it, so it is on the allow list) |
 | `fg fn call voice --bearer invalid-token` | 401, "Erstelle in der Hummlist-App unter Menü, Zugänge einen neuen." |
+
+To rerun the artifact checks:
+
+```bash
+cd app
+flutter build apk --debug
+~/android-sdk/build-tools/36.0.0/aapt2 dump badging build/app/outputs/flutter-apk/app-debug.apk \
+  | grep -E "^package|application-label:|launchable-activity"
+~/android-sdk/build-tools/36.0.0/aapt2 dump xmltree --file AndroidManifest.xml \
+  build/app/outputs/flutter-apk/app-debug.apk | grep -A3 scheme
+grep -o '<title>[^<]*' build/web/index.html   # after a web build (the e2e gate makes one)
+export FG_PORT_PREFIX=546                      # your port block
+scripts/fg up --clients peter
+DISPLAY=:5461 xdotool search --name Hummlist getwindowname   # display = <prefix>1
+```

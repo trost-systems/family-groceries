@@ -111,3 +111,20 @@ Read-only requests against production, after b8ce8b9 deployed:
 - Hosted `mcp` protected-resource metadata: `resource_name` "Hummlist".
 
 No change was made to hosted Supabase, Vercel, Apple or Google from the box.
+
+## Review 0 fixes
+
+- Must fix: `features/auth.md` (verify skill), the "Magic link, send" recipe,
+  still expected `redirect_to=com.petertrost.familygroceries://login-callback`
+  in the mail. It now says `com.hummlist.app://login-callback`. Rerun with
+  `scripts/fg` (`FG_PORT_PREFIX=546`): the mail's subject is "Your sign-in
+  link" and its link is
+  `/auth/v1/verify?token=…&type=magiclink&redirect_to=com.hummlist.app://login-callback`,
+  as the recipe now says. `.claude/skills/verify-family-groceries` is a
+  symlink to the same directory, so there is no second copy. An untruncated
+  grep finds no other stale old callback outside the intended server-side
+  keeps and history.
+- Nice to have: `docs/screenshots/20-hummlist-rename/README.md` lists the
+  commands that rerun the APK, web and Linux checks. The "Einkauf Web" text in
+  `features/web-hosting.md` already says it holds until Peter renames the
+  Services ID (`NEEDS_PETER.md`, job 20, step 3).
