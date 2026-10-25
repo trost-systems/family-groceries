@@ -224,6 +224,6 @@ test('a user without a household deletes their account from the welcome screen',
 test('the public deletion page is served', async ({ page }) => {
   const response = await page.goto('/konto-loeschen.html');
   expect(response!.status()).toBe(200);
-  await expect(page).toHaveTitle(/Konto/);
+  await expect(page).toHaveTitle('Hummlist: Konto und Daten löschen');
   await expect(page.locator('#draft')).toContainText('ENTWURF');
 });

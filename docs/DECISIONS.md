@@ -1408,3 +1408,63 @@ docs/BACKUP.md.
        merge-pr.sh calls gh, and anything else exits 2 with a message.
        `08` is read as decimal (`10#`), not as an invalid octal number.
        Sub-minute waits help nobody: CI runs take minutes.
+
+## Job 20 (rename to Hummlist), 2026-10-25
+
+Peter approved the name "Hummlist" and the ID `com.hummlist.app` on
+2026-10-25. This supersedes job 1, decision 1.
+
+1. **One ID everywhere.** Bundle ID, Android `applicationId` and
+   `namespace`, the Kotlin package (`MainActivity.kt` moved to
+   `kotlin/com/hummlist/app/`), the Linux `APPLICATION_ID` and the fastlane
+   `APP_ID`/Appfile/Matchfile are `com.hummlist.app`; RunnerTests is
+   `com.hummlist.app.RunnerTests`. The Dart package `family_groceries`, the
+   MethodChannel `familygroceries/speech`, the Linux binary name, the repo,
+   the Vercel project and its URL, and the export format id
+   `family-groceries-export` stay: none of them is visible as the app's
+   name, and renaming them would break imports, old exports or links.
+2. **Both deep links stay allowed.** The app now redirects to
+   `com.hummlist.app://login-callback`. TestFlight 0.1.0 (1001) and any
+   installed build still use `com.petertrost.familygroceries://login-callback`,
+   so `supabase/config.toml`, `supabase/deploy/auth_urls.ts` and
+   `scripts/configure-social-auth.mjs` keep both. Dropping the old one would
+   break magic links and Apple-on-Android for those builds.
+3. **Apple client IDs as one comma list.** `configure-social-auth.mjs` writes
+   `external_apple_client_id` = Services ID, old bundle ID, new bundle ID and
+   an empty `external_apple_additional_client_ids`, exactly the hosted state
+   the Lead set. Before, it wrote the bundle ID into the additional list, so a
+   rerun would have dropped `com.hummlist.app` and broken native Apple
+   sign-in on the new builds. Checked with `--dry-run` against a stubbed
+   Management API returning the live values (no call to the real API).
+4. **Account deletion revokes for both bundle IDs.** An Apple authorization
+   code only exchanges with the client ID it was issued to, and the request
+   does not say which build sent it. `supabase/functions/account/apple.ts`
+   tries `com.hummlist.app`, then `com.petertrost.familygroceries`, moving on
+   on `invalid_grant` (another app's code) or `invalid_client` (the key does
+   not cover that ID yet), and revokes with the ID that worked. The
+   `APPLE_BUNDLE_ID` secret is no longer read: a single configurable ID
+   would always be wrong for one of the two builds.
+5. **What carries the name "Hummlist".** Home-screen and store names
+   (`CFBundleDisplayName`, `CFBundleName`, `android:label`), the iOS
+   microphone and speech prompts, the web `<title>`, Apple web-app title and
+   manifest `name`/`short_name`, `konto-loeschen.html`, `appTitle` and
+   `accountDeletedApple`, the voice errors ("in der Hummlist-App"), the MCP
+   server (`name: hummlist`, title and `resource_name` "Hummlist", the
+   instructions start with "Hummlist:"), the Linux window title, README and
+   the user docs. "Einkauf" stays where it is the ordinary word
+   (Einkaufsliste, "Gemeinsame Einkaufsliste", the Shortcut name "Einkauf
+   notieren"), and historical records (done summaries, the old App Store
+   record "Einkauf Familie") keep the old name. The name is always the full
+   word "Hummlist".
+6. **No new UI for the name.** The sign-in screen keeps its title
+   "Anmelden"; the name shows in the browser tab, the installed web app and
+   the phones' home screens. Putting it on the sign-in screen is a design
+   change, not part of the rename.
+7. **Production URL `https://app.hummlist.com`.** Peter bought
+   `hummlist.com`; the Lead attached `app.hummlist.com` on Vercel and made it
+   the hosted Site URL (2026-10-25). `APP_URL` in `app/config/auth.json`
+   (the phone apps' invite links), the link on `konto-loeschen.html` and the
+   docs now name it. The old `family-groceries-pied.vercel.app` keeps
+   serving and stays in the redirect allow list, so links already sent and
+   bookmarked keep working. The Vercel project keeps its name.
+

@@ -74,7 +74,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
 
   const client = new Client({ name: 'family-groceries-e2e', version: '1.0.0' });
   await client.connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: timedFetch }));
-  expect(client.getServerVersion()?.name).toBe('family-groceries');
+  expect(client.getServerVersion()?.name).toBe('hummlist');
   const { tools } = await client.listTools();
   expect(tools.map((t) => t.name).sort()).toEqual(
     ['add_items', 'list_categories', 'list_items', 'list_stores', 'move_item', 'tick_items'],

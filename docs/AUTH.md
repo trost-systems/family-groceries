@@ -64,9 +64,11 @@ code with the PKCE verifier it stored.
 
 - Web: `redirect_to` is the current origin plus the screen's return path, so
   `/join/<code>` survives the round trip.
-- Android: `redirect_to` is `com.petertrost.familygroceries://login-callback`,
+- Android: `redirect_to` is `com.hummlist.app://login-callback`,
   registered in `AndroidManifest.xml` and `Info.plist`. Magic links on the
-  phones use the same deep link.
+  phones use the same deep link. Builds from before the Hummlist rename
+  (job 20) use `com.petertrost.familygroceries://login-callback`, so both
+  stay in the redirect allow list.
 - Errors come back as `?error=…&error_description=…`. `access_denied` shows
   "Anmeldung abgebrochen"; anything else shows "Anmeldung fehlgeschlagen: …".
   gotrue's auth stream replays the error, so `SessionCubit` turns it into
@@ -134,12 +136,13 @@ Client IDs are public; secrets are not.
 | Google Android client ID | yes | only Google Cloud and Supabase (additional client ID); Android finds it by package name and SHA-1 |
 | Google Web client secret | **no** | Supabase only (dashboard or `scripts/configure-social-auth.mjs`) |
 | Apple Services ID | yes | Supabase Apple provider (first client ID) |
-| Bundle ID `com.petertrost.familygroceries` | yes | Supabase Apple provider (additional client ID) |
+| Bundle ID `com.hummlist.app` | yes | Supabase Apple provider (in the client ID list) |
+| Old bundle ID `com.petertrost.familygroceries` | yes | Supabase Apple provider (in the client ID list) until the Hummlist build is verified (`NEEDS_PETER.md`, job 20) |
 | Apple Team ID, Key ID | yes | inputs to the client secret |
 | Apple Sign in with Apple key (`.p8`) | **no** | stays on Peter's machine; never in the repo |
 | Apple client secret (JWT from the `.p8`) | **no** | Supabase only; expires after at most 6 months |
 | `SIGN_IN_WITH_APPLE` | yes | `app/config/auth.json`, `"true"` once Apple is set up in Supabase |
-| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links; the same URL is the hosted Site URL (`supabase/deploy/auth_urls.ts`) |
+| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links: `https://app.hummlist.com` since job 20; the same URL is the hosted Site URL (`supabase/deploy/auth_urls.ts`) |
 
 Release builds read the app values with
 `flutter build … --dart-define-from-file=config/auth.json`. Only
@@ -155,7 +158,14 @@ a real provider against the local stack, export the variables from
 The hosted project is configured with `scripts/configure-social-auth.mjs`.
 It reads the values from the environment, enables a provider only when all of
 its credentials are present, generates Apple's client secret from the `.p8`
-key, and always makes sure the app's deep link is in the redirect allow list.
+key, and always makes sure both deep links (old and new bundle ID) are in the
+redirect allow list. Apple's client IDs go into `external_apple_client_id` as
+one comma list, the Services ID first (the web flow signs in as the first
+ID), then both bundle IDs; `external_apple_additional_client_ids` stays empty.
+That is the hosted state since job 20. The hosted Site URL is
+`https://app.hummlist.com`; the allow list also keeps
+`https://family-groceries-pied.vercel.app/**` (the old Vercel URL, still an
+alias) and the preview pattern, and neither script removes an entry.
 On 2026-10-22 it ran once with no provider credentials. It added
 `com.petertrost.familygroceries://login-callback` to the allow list; Google
 and Apple stay disabled.
@@ -167,7 +177,7 @@ and Apple stay disabled.
   `Info.plist` has two URL types, the auth deep link and
   `$(GOOGLE_REVERSED_CLIENT_ID)` from `Flutter/Auth.xcconfig`.
 - Android: an intent filter for
-  `com.petertrost.familygroceries://login-callback`. No SHA fingerprint is
+  `com.hummlist.app://login-callback`. No SHA fingerprint is
   in code. Google matches the app by package name and the signing
   certificate's SHA-1 registered on the Android OAuth client (see
   `NEEDS_PETER.md`, section 4).

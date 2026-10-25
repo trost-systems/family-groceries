@@ -2,11 +2,16 @@ import { assertEquals, assertThrows } from '@std/assert';
 import { desired } from './auth_urls.ts';
 
 Deno.test('the app URL becomes the Site URL and leads the redirect list', () => {
-  const d = desired('com.petertrost.familygroceries://login-callback', 'https://fg.vercel.app/');
-  assertEquals(d.site_url, 'https://fg.vercel.app');
+  const d = desired(
+    'com.petertrost.familygroceries://login-callback,https://family-groceries-pied.vercel.app/**',
+    'https://app.hummlist.com/',
+  );
+  assertEquals(d.site_url, 'https://app.hummlist.com');
   assertEquals(d.uri_allow_list.split(','), [
-    'https://fg.vercel.app/**',
+    'https://app.hummlist.com/**',
+    'com.hummlist.app://login-callback',
     'com.petertrost.familygroceries://login-callback',
+    'https://family-groceries-pied.vercel.app/**',
   ]);
   assertEquals(d.oauth_server_enabled, true);
   assertEquals(d.oauth_server_authorization_path, '/oauth/consent');

@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In de, this message translates to:
-  /// **'Einkauf'**
+  /// **'Hummlist'**
   String get appTitle;
 
   /// No description provided for @addFieldHint.
@@ -1057,7 +1057,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeletedApple.
   ///
   /// In de, this message translates to:
-  /// **'Falls du dich mit Apple angemeldet hattest: Entferne „Einkauf“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.'**
+  /// **'Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.'**
   String get accountDeletedApple;
 
   /// No description provided for @exportDone.

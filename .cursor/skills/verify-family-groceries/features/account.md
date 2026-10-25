@@ -13,7 +13,7 @@ Every signed-in user can export their data and delete their account. Both live i
 - `acct-offline` refuses without a connection ("Keine Internetverbindung. Dein Konto wurde nicht gelöscht. …") and deletes nothing.
 - `acct-export` saves `einkauf-daten-YYYY-MM-DD.json` (format `family-groceries-export`) with the user's account, profile, household, their items and history, token names and hints, never a token hash. The snackbar says "Daten exportiert: <path>" on desktop.
 - `acct-welcome` deletes an account that has no household from the welcome screen ("Du bist in keinem Haushalt, geteilte Daten gibt es nicht.").
-- `acct-apple` asks Apple for a fresh authorization after the typed confirmation and revokes the Apple tokens (iOS only). Not drivable on the box: there is no iOS surface. Elsewhere the sign-in screen adds the hint to remove "Einkauf" from the Apple ID only when the server could not revoke.
+- `acct-apple` asks Apple for a fresh authorization after the typed confirmation and revokes the Apple tokens (iOS only). Not drivable on the box: there is no iOS surface. Elsewhere the sign-in screen adds the hint to remove "Hummlist" from the Apple ID only when the server could not revoke.
 
 ## How to get to it (user POV)
 

@@ -5,7 +5,7 @@ import type { Auth } from '../_shared/auth.ts';
 import { asUser, type Tx } from '../_shared/db.ts';
 import { addItems, categories, listItems, moveItem, stores, tickItems, ToolError } from './list.ts';
 
-const INSTRUCTIONS = `Gemeinsame Einkaufsliste eines Haushalts (deutsch).
+const INSTRUCTIONS = `Hummlist: die gemeinsame Einkaufsliste eines Haushalts (deutsch).
 Einträge haben einen Namen (z. B. "Milch"), optional eine Menge ("2", "500 g"), eine Kategorie
 (Gang im Laden, z. B. "Kühlregal") und optional einen Laden (z. B. "dm"). Neue Einträge werden
 automatisch einsortiert; gib eine Kategorie nur an, wenn der Nutzer sie ausdrücklich nennt.
@@ -35,7 +35,7 @@ const categoryName = z.string().min(1).max(60).describe(
 
 export function buildServer(auth: Auth): McpServer {
   const server = new McpServer(
-    { name: 'family-groceries', title: 'Einkaufsliste', version: '1.0.0' },
+    { name: 'hummlist', title: 'Hummlist', version: '1.0.0' },
     { instructions: INSTRUCTIONS },
   );
   const h = auth.householdId;

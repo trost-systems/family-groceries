@@ -42,7 +42,7 @@ Preconditions:
 - `fg find` and `fg wait` don't see the form's error messages under the fields. Prove them with a screenshot.
 - The app bar title is also "Anmelden", so `fg tap --text Anmelden` is ambiguous. Press Enter in the password field (`--submit`) or use `fg login`.
 - `fg login` fails with `not_on_login` when the app is already signed in. Sign out first.
-- The magic link redirects to `com.petertrost.familygroceries://login-callback`. The Linux desktop build registers no handler for that scheme, so opening the link cannot sign it in. Android handles the scheme (intent filter). The web build uses an http redirect instead: `e2e/tests/auth.spec.ts` "magic link signs in on this device" covers it in CI.
+- The magic link redirects to `com.hummlist.app://login-callback` (builds from before the Hummlist rename use `com.petertrost.familygroceries://login-callback`; both are in the allow list). The Linux desktop build registers no handler for that scheme, so opening the link cannot sign it in. Android handles the scheme (intent filter). The web build uses an http redirect instead: `e2e/tests/auth.spec.ts` "magic link signs in on this device" covers it in CI.
 - The local stack's links point at `127.0.0.1:<prefix>21`. The emulator reaches that as `10.0.2.2:<prefix>21`.
 - Sign-up users from these recipes stay in the database until `fg up --fresh`. They do not affect peter or lea.
 - After `fg seed`, a running app keeps a session for a deleted user. The next `fg up` relaunches every app started before the seed, signed out; then `fg login` again.

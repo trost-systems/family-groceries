@@ -65,7 +65,7 @@ Apple TN3194).
 - **Web and Android, or when revocation fails.** In those cases the server
   holds no Apple token (Supabase Auth does not keep provider tokens). The
   account is deleted anyway, as TN3194 requires, and the app tells the user
-  where to remove "Einkauf" from their Apple ID. On iOS the path is
+  where to remove "Hummlist" from their Apple ID. On iOS the path is
   Einstellungen › [Name] › Anmelden & Sicherheit › Mit Apple anmelden.
 - Revocation needs the Apple key as a function secret on the hosted
   project. Until Peter sets it (`docs/NEEDS_PETER.md`, job 9), every
@@ -135,5 +135,5 @@ in the app itself can call the export, never an MCP OAuth token.
   `supabase/functions/account/smoke.sh` (curl against the local stack).
 - The verify recipe is `.cursor/skills/verify-family-groceries/features/account.md`.
 - The public page for Google Play is `app/web/konto-loeschen.html`
-  (`https://family-groceries-pied.vercel.app/konto-loeschen.html`). It is a
+  (`https://app.hummlist.com/konto-loeschen.html`). It is a
   draft until Peter approves it.

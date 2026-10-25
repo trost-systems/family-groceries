@@ -10,7 +10,7 @@ export const USERS: Record<ClientName, { email: string; password: string; name: 
   lea: { email: 'lea@fg.test', password: 'test-password-123', name: 'Lea' },
 };
 export const HOUSEHOLD = 'Familie Test';
-export const APP_ID = 'com.petertrost.familygroceries';
+export const APP_ID = 'com.hummlist.app';
 export const ENTRYPOINT = 'test_driver/main_marionette.dart';
 
 /** Emulator image and APK target matching the host CPU (x86_64 boxes, Apple silicon). */

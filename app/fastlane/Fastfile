@@ -15,7 +15,7 @@ opt_out_usage
 require "plist"
 require "shellwords"
 
-APP_ID = "com.petertrost.familygroceries"
+APP_ID = "com.hummlist.app"
 # fastlane runs lane code inside fastlane/ and actions in app/, so paths are
 # absolute.
 APP_DIR = File.expand_path("..", __dir__)

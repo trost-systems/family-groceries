@@ -1,0 +1,100 @@
+# Job 20: the app is "Hummlist", `com.hummlist.app`
+
+PR: https://github.com/trost-systems/family-groceries/pull/46
+
+Peter approved the name and the ID on 2026-10-25. Every place that shows
+the app's name now says "Hummlist", and every app identifier is
+`com.hummlist.app`. The production web URL is `https://app.hummlist.com`.
+Builds that are already installed keep working: their bundle ID and deep
+link stay accepted on the server.
+
+## What changed
+
+- **Identifiers.** iOS `PRODUCT_BUNDLE_IDENTIFIER` (Runner
+  `com.hummlist.app`, RunnerTests `com.hummlist.app.RunnerTests`), Android
+  `applicationId` and `namespace`, `MainActivity.kt` moved to
+  `kotlin/com/hummlist/app/` with `package com.hummlist.app`, Linux
+  `APPLICATION_ID`, fastlane `APP_ID`, `Appfile` and `Matchfile`, and the
+  verify skill's `APP_ID`. `release.yml` holds no ID.
+- **Deep link.** `mobileAuthCallback`, the `Info.plist` URL scheme and the
+  Android intent filter use `com.hummlist.app://login-callback`.
+  `supabase/config.toml`, `supabase/deploy/auth_urls.ts` and
+  `scripts/configure-social-auth.mjs` keep the old callback next to the new
+  one. The Google reversed client ID scheme is unchanged.
+- **Name.** Home-screen names (`CFBundleDisplayName`, `CFBundleName`,
+  `android:label`), the iOS microphone and speech prompts, the Linux window
+  title, the web `<title>`, Apple web-app title and manifest, the deletion
+  page, `appTitle` and `accountDeletedApple` ("Entferne „Hummlist“"), the
+  voice errors ("in der Hummlist-App"), and the MCP server (`name:
+  hummlist`, title and `resource_name` "Hummlist"). Also README, SPEC,
+  ACCOUNT_DELETION and SIRI_SHORTCUT. "Einkauf" stays wherever it is the
+  ordinary word.
+- **Apple client IDs.** `configure-social-auth.mjs` writes one comma list,
+  Services ID, old bundle ID, new bundle ID, and an empty additional list.
+  That is exactly the live state the Lead set. The old script would have put
+  the old bundle ID back into the additional list and dropped
+  `com.hummlist.app`.
+- **Account deletion on iPhone.** An Apple code only exchanges with the
+  bundle ID it was issued to, and the request doesn't say which build sent
+  it. `supabase/functions/account/apple.ts` now tries `com.hummlist.app` and
+  then `com.petertrost.familygroceries`, and revokes as the one that
+  worked. Before, a Hummlist build's deletion could never revoke.
+- **app.hummlist.com** (brief addendum 20:45). `APP_URL` in
+  `app/config/auth.json` (the phone apps' invite links), the deletion page's
+  link, the `auth_urls.ts` example and test, and the docs. The old Vercel URL
+  stays an alias and stays in the allow list.
+- **Left as is, on purpose.** The Dart package `family_groceries`, the
+  `familygroceries/speech` channel, the Linux binary name, the repo, the
+  Vercel project and the export format id `family-groceries-export`.
+
+Decisions: `docs/DECISIONS.md`, "Job 20".
+
+## Proof
+
+- `scripts/verify.sh` on e9e5714 is green: gitleaks, lint, db, functions
+  (250 tests), fg-cli, flutter (245 tests), web-prod, fastlane, and e2e with
+  67 of 67 Playwright tests (`--workers=1`, under `/tmp/fg-e2e.lock`).
+- New pins: `boot.spec.ts` "the app is called Hummlist in the tab and when
+  installed" (title, Apple title, manifest), the deletion page title in
+  `account.spec.ts`, the MCP server name in `mcp.spec.ts`, the voice 401 text
+  in `voice.spec.ts`, "Entferne „Hummlist“" in `account_test.dart`, two
+  bundle-ID cases in `apple_test.ts` (an old build's code with
+  `invalid_grant` or `invalid_client` on the new ID), and both callbacks in
+  `auth_urls_test.ts`.
+- `flutter build web`: `index.html` and `manifest.json` say "Hummlist".
+  `flutter build apk --debug`: `aapt2` shows package `com.hummlist.app`,
+  label "Hummlist", activity `com.hummlist.app.MainActivity`, scheme
+  `com.hummlist.app`. That proves the Kotlin package move compiles and
+  resolves.
+- `scripts/fg` on the Linux app (`FG_PORT_PREFIX=546`): `fg up`, both
+  logins, logout, magic-link send, and a restart that keeps the session. The
+  window title is "Hummlist" and `WM_CLASS` is `com.hummlist.app`. The magic
+  link mail carries `redirect_to=com.hummlist.app://login-callback`, so the
+  local allow list accepts the new callback. The voice function answers
+  "Erstelle in der Hummlist-App …".
+- `configure-social-auth.mjs --dry-run`, with `fetch` stubbed to return the
+  live values from the brief (no call to the Management API), prints exactly
+  the live Apple client list and allow list.
+- Greps: no "Humm" without "list" (only "hummus" in the classifier), and no
+  "Einkauf" as the app name outside history.
+- Screenshots and the table of checks:
+  [`docs/screenshots/20-hummlist-rename/`](../screenshots/20-hummlist-rename/README.md).
+
+## Open, for Peter (`docs/NEEDS_PETER.md`, "Job 20")
+
+These can't be done from the box:
+
+1. Create the App Store Connect app record "Hummlist" for `com.hummlist.app`.
+2. Google Cloud: change the iOS OAuth client's bundle ID, add Android
+   clients for `com.hummlist.app`, and rename the consent screen. Until then,
+   Google sign-in fails on the new builds.
+3. Apple: make the Sign in with Apple key cover `com.hummlist.app`. Until
+   then, account deletion from a Hummlist iPhone build falls back to the
+   "remove by hand" hint. Also rename the Services ID description "Einkauf
+   Web", which Apple's web sign-in page shows.
+4. Play Console: a new app for the new package.
+5. Remove `com.petertrost.familygroceries` from the Apple client IDs only
+   after the new build is verified.
+
+The live web app shows "Hummlist" only after this PR deploys. That check is
+in the landing section of the PR.

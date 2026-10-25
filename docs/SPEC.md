@@ -18,7 +18,7 @@ Owner: Peter Trost (Europe/Berlin). Users: Peter and his wife Lea, one shared ho
 
 ## Reuse from emotely (trost-systems/emotely, Flutter app in apps/mobile)
 Clone read-only (`gh repo clone trost-systems/emotely ~/groceries-ops/ref/emotely`, never push, never edit /workspace/emotely). Study and copy/adapt into this repo: GitHub Actions CI workflows (.github/workflows/ci.yml, app-release.yml patterns: concurrency, ci-ok gate, supabase-deploy job), Flutter project structure and analysis_options.yaml / lint config, package layout, fastlane/TestFlight and Android release setup, code-signing approach (match/App Store Connect API key via secrets, Android keystore via secrets), Supabase config.toml / migrations / tests (pgTAP) / scripts, Playwright or other test tooling, AGENTS.md / CLAUDE.md conventions. Record in docs/REUSED_FROM_EMOTELY.md exactly which pieces were reused, from which path, and what was changed. Do not copy emotely secrets, bundle IDs, project refs or product content.
-- App identifiers: bundle id / applicationId `com.petertrost.familygroceries` (record as a decision; Peter can change).
+- App identifiers: bundle id / applicationId `com.hummlist.app`, app name "Hummlist" (job 20, approved by Peter 2026-10-25; was `com.petertrost.familygroceries`, "Einkauf").
 
 ## Requirements
 1. Fast capture: opening the app focuses the add-item text field immediately (keyboard up on mobile, cursor in field on web), with the shopping list visible on the same screen, no separate tab or screen for adding. Enter adds the item and keeps focus for the next one. Ticking an item off removes it from the active list (with a short undo snackbar; ticked items go to a "recently bought" history usable for quick re-add).

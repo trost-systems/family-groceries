@@ -1,12 +1,12 @@
 import { assert, assertEquals } from '@std/assert';
 import { exportPKCS8, generateKeyPair, jwtVerify, SignJWT } from 'jose';
-import { type AppleConfig, appleConfig, revokeAppleGrant } from './apple.ts';
+import { appleBundleIds, type AppleConfig, appleConfig, revokeAppleGrant } from './apple.ts';
 
 const { publicKey, privateKey } = await generateKeyPair('ES256', { extractable: true });
 const pem = await exportPKCS8(privateKey);
 
 const config: AppleConfig = {
-  clientId: 'com.petertrost.familygroceries',
+  clientIds: ['com.hummlist.app', 'com.petertrost.familygroceries'],
   teamId: 'TEAM123456',
   keyId: 'KEY1234567',
   privateKey: pem,
@@ -48,13 +48,13 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
   ]);
   const [token, revoke] = seen;
   assertEquals({ ...token.form, client_secret: '-' }, {
-    client_id: 'com.petertrost.familygroceries',
+    client_id: 'com.hummlist.app',
     client_secret: '-',
     grant_type: 'authorization_code',
     code: 'c0de',
   });
   assertEquals({ ...revoke.form, client_secret: '-' }, {
-    client_id: 'com.petertrost.familygroceries',
+    client_id: 'com.hummlist.app',
     client_secret: '-',
     token: 'rt-secret',
     token_type_hint: 'refresh_token',
@@ -63,12 +63,32 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
   const { payload, protectedHeader } = await jwtVerify(token.form.client_secret, publicKey, {
     issuer: 'TEAM123456',
     audience: 'https://appleid.apple.com',
-    subject: 'com.petertrost.familygroceries',
+    subject: 'com.hummlist.app',
     algorithms: ['ES256'],
   });
   assertEquals(protectedHeader.kid, 'KEY1234567');
   assert(payload.exp! - payload.iat! <= 300, 'the client secret is short-lived');
   assertEquals(revoke.form.client_secret, token.form.client_secret);
+});
+
+Deno.test('a code from a build before the rename is exchanged and revoked as that app', async () => {
+  for (const refusal of ['invalid_grant', 'invalid_client']) {
+    const { fetchFn, seen } = fakeApple({
+      '/auth/token': async () =>
+        seen.at(-1)!.form.client_id === 'com.hummlist.app'
+          ? Response.json({ error: refusal }, { status: 400 })
+          : Response.json({ refresh_token: 'rt-secret', id_token: await idToken('apple-sub') }),
+    });
+    const fate = await revokeAppleGrant({ code: 'c0de', subject: 'apple-sub' }, config, fetchFn);
+    assertEquals(fate, 'revoked', refusal);
+    assertEquals(seen.map((s) => [new URL(s.url).pathname, s.form.client_id]), [
+      ['/auth/token', 'com.hummlist.app'],
+      ['/auth/token', 'com.petertrost.familygroceries'],
+      ['/auth/revoke', 'com.petertrost.familygroceries'],
+    ]);
+    const { payload } = await jwtVerify(seen[2].form.client_secret, publicKey);
+    assertEquals(payload.sub, 'com.petertrost.familygroceries');
+  }
 });
 
 Deno.test('every Apple failure falls back to manual removal, without logging secrets', async (t) => {
@@ -84,8 +104,15 @@ Deno.test('every Apple failure falls back to manual removal, without logging sec
     { name: 'no code', code: null, calls: 0 },
     { name: 'no configuration', config: null, calls: 0 },
     {
-      name: 'invalid_grant',
+      name: 'invalid_grant for every bundle id',
       answers: { '/auth/token': () => Response.json({ error: 'invalid_grant' }, { status: 400 }) },
+      calls: 2,
+    },
+    {
+      name: 'a refusal that no other bundle id fixes',
+      answers: {
+        '/auth/token': () => Response.json({ error: 'invalid_request' }, { status: 400 }),
+      },
       calls: 1,
     },
     {
@@ -129,7 +156,7 @@ Deno.test('every Apple failure falls back to manual removal, without logging sec
   }
 });
 
-Deno.test('the configuration comes from the environment, with the bundle id default', () => {
+Deno.test('the configuration comes from the environment, with both bundle ids', () => {
   // Split so secret scanners don't take the placeholder for a key.
   const [begin, end] = ['BEGIN', 'END'].map((word) => `-----${word} PRIVATE KEY-----`);
   const env: Record<string, string> = {
@@ -137,8 +164,9 @@ Deno.test('the configuration comes from the environment, with the bundle id defa
     APPLE_KEY_ID: 'K',
     APPLE_PRIVATE_KEY: `${begin}\\nabc\\n${end}`,
   };
+  assertEquals(appleBundleIds, ['com.hummlist.app', 'com.petertrost.familygroceries']);
   assertEquals(appleConfig((name) => env[name]), {
-    clientId: 'com.petertrost.familygroceries',
+    clientIds: appleBundleIds,
     teamId: 'T',
     keyId: 'K',
     privateKey: `${begin}\nabc\n${end}`,

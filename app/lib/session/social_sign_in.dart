@@ -57,7 +57,7 @@ Map<SocialProvider, SignInFlow> socialFlows(
 
 /// Where Supabase sends the mobile apps back to after a browser sign-in or a
 /// magic link. Registered in the Android manifest and the iOS Info.plist.
-const mobileAuthCallback = 'com.petertrost.familygroceries://login-callback';
+const mobileAuthCallback = 'com.hummlist.app://login-callback';
 
 /// The user closed the provider's dialog; nothing to report.
 final class const SocialSignInCanceled() implements Exception;

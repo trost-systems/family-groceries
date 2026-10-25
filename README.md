@@ -1,4 +1,4 @@
-# Einkauf (family-groceries)
+# Hummlist (family-groceries)
 
 A shared grocery list for one household. Open the app and the cursor is
 already in the "Was fehlt?" field with the list beneath it. Items sort

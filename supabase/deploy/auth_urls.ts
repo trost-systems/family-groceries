@@ -1,12 +1,16 @@
 // Points the hosted project's auth at the public web app: Site URL, redirect allow list and the
 // OAuth server's consent path. Converges: rerunning with the same arguments changes nothing.
 //
-// Usage: deno run --allow-env --allow-net supabase/deploy/auth_urls.ts <https://app-url> \
+// Usage: deno run --allow-env --allow-net supabase/deploy/auth_urls.ts https://app.hummlist.com \
 //          [--preview <https://family-groceries-*-team.vercel.app>] [--dry-run]
 // Env: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF
 
 export const consentPath = '/oauth/consent';
-const mobileCallback = 'com.petertrost.familygroceries://login-callback';
+// The pre-rename callback stays for builds installed before job 20.
+const mobileCallbacks = [
+  'com.hummlist.app://login-callback',
+  'com.petertrost.familygroceries://login-callback',
+];
 
 export type AuthUrls = {
   site_url: string;
@@ -18,7 +22,7 @@ export type AuthUrls = {
 export function origin(url: string): string {
   const u = new URL(url);
   if (u.protocol !== 'https:' || u.pathname !== '/' || u.search || u.hash) {
-    throw new Error(`${url}: expected an https origin like https://family-groceries.vercel.app`);
+    throw new Error(`${url}: expected an https origin like https://app.hummlist.com`);
   }
   return u.origin;
 }
@@ -27,7 +31,7 @@ export function origin(url: string): string {
 export function desired(current: string, appUrl: string, preview?: string): AuthUrls {
   const site = origin(appUrl);
   const keep = current.split(',').map((s) => s.trim()).filter(Boolean);
-  const allow = [`${site}/**`, ...(preview ? [`${preview}/**`] : []), mobileCallback];
+  const allow = [`${site}/**`, ...(preview ? [`${preview}/**`] : []), ...mobileCallbacks];
   return {
     site_url: site,
     uri_allow_list: [...new Set([...allow, ...keep])].join(','),

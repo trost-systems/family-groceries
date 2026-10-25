@@ -8,7 +8,7 @@ Watch, mit AirPods und in CarPlay:
 > **Du:** Milch, zwei Gurken und Klopapier.
 > **Siri:** Hinzugefügt: Milch, 2 Gurken, Klopapier.
 
-Siri schickt den Satz an die Einkauf-App. Der Server teilt ihn in
+Siri schickt den Satz an die Hummlist-App. Der Server teilt ihn in
 Einträge auf, sortiert jeden Eintrag in seine Kategorie ein und antwortet
 mit dem Satz, den Siri vorliest. Die Einträge erscheinen sofort auf allen
 Geräten im Haushalt.
@@ -18,7 +18,7 @@ Geräten im Haushalt.
 > (`docs/NEEDS_PETER.md`, Abschnitt 1), antwortet die Adresse unten mit
 > einem Fehler.
 
-Die Einrichtung dauert etwa fünf Minuten. Du brauchst die Einkauf-App
+Die Einrichtung dauert etwa fünf Minuten. Du brauchst die Hummlist-App
 (angemeldet, in deinem Haushalt) und die App **Kurzbefehle** auf dem
 iPhone.
 
@@ -27,7 +27,7 @@ iPhone.
 Der Kurzbefehl meldet sich mit einem persönlichen Zugriffstoken an, nicht
 mit deinem Passwort.
 
-1. Öffne die Einkauf-App.
+1. Öffne die Hummlist-App.
 2. Tippe oben rechts auf **Menü** (⋮) und dann auf **Zugänge**.
 3. Tippe unter **Zugriffstoken** auf **Token erstellen**.
 4. Gib als Name `Siri` ein und tippe auf **Erstellen**.

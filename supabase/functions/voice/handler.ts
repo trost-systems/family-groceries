@@ -34,11 +34,11 @@ const failures = {
   method: [405, 'Bitte schick den Text per POST.'],
   unauthorized: [
     401,
-    'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Einkauf-App unter Menü, Zugänge einen neuen.',
+    'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Menü, Zugänge einen neuen.',
   ],
   no_household: [
     403,
-    'Du bist noch in keinem Haushalt. Leg in der Einkauf-App einen an oder tritt einem bei.',
+    'Du bist noch in keinem Haushalt. Leg in der Hummlist-App einen an oder tritt einem bei.',
   ],
   no_text: [400, `Ich habe keinen Text bekommen. ${example}`],
   too_long: [413, 'Das war zu lang. Sag höchstens dreißig Dinge auf einmal.'],
