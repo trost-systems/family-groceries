@@ -5,8 +5,8 @@ A list belongs to a household. A new user creates one on the welcome screen or j
 ## Sub-features
 
 - `hh-create` creates a household from the welcome screen, with a name or the default "Unser Haushalt", and seeds its categories.
-- `hh-invite` shows an invite code (8 characters from A–Z and 2–9, valid 14 days) with a copy button.
-- `hh-join-welcome` joins a household with a code from the welcome screen.
+- `hh-invite` shows an invite code (8 characters from A–Z without I and O, and 2–9; valid 14 days, for any number of joins) with a copy button ("Kopiert"). Each opening of the dialog shows a new code; earlier ones stay valid.
+- `hh-join-welcome` joins a household with a code from the welcome screen. Lowercase, spaces and dashes in the code are accepted.
 - `hh-join-menu` switches a member to another household with a code from the list menu, after a warning.
 - `hh-invalid-code` rejects a wrong code with "Dieser Code ist ungültig oder abgelaufen."
 - `hh-isolation` keeps one household's items invisible to members of another.
@@ -25,8 +25,8 @@ Preconditions:
 - Baseline from `features/README.md`. Peter is signed in on the list.
 - The lea client hosts a fresh user without a household: run `fg logout --client lea`, then `fg type --key login-email --input hh-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea`, `fg tap --text Registrieren --client lea` and `fg wait --key household-name --client lea`.
 
-- **Invite.** Run `fg tap --tooltip Menü`, `fg tap --text "Mitglied einladen"` and `fg wait --text Code`. Read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]'`. Close the dialog with `fg back`.
-- **Join from welcome.** Run `fg type --key invite-code --input <code> --client lea` and `fg tap --text Beitreten --client lea`. `fg wait --key add-item-field --client lea` succeeds, and `fg find --text "Familie Test" --client lea` returns the app bar title. `fg db query "select u.email, m.role from household_members m join auth.users u on u.id = m.user_id join households h on h.id = m.household_id where h.name = 'Familie Test'"` lists the new user as `member`.
+- **Invite.** Run `fg tap --tooltip Menü`, `fg tap --text "Mitglied einladen"` and `fg wait --text Code`. Read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]'`. `fg tap --tooltip Kopieren` shows the snackbar "Kopiert" below the dialog (screenshot it; see Gotchas). Close the dialog with `fg back`.
+- **Join from welcome.** Run `fg type --key invite-code --input <code> --client lea` (`abcd-efgh` for `ABCDEFGH` works too) and `fg tap --text Beitreten --client lea`. `fg wait --key add-item-field --client lea` succeeds, and `fg find --text "Familie Test" --client lea` returns the app bar title. `fg db query "select u.email, m.role from household_members m join auth.users u on u.id = m.user_id join households h on h.id = m.household_id where h.name = 'Familie Test'"` lists the new user as `member`.
 - **Invalid code.** On a welcome screen, run `fg type --key invite-code --input ZZZZZZZZ --client lea` and `fg tap --text Beitreten --client lea`. `fg wait --contains "ungültig oder abgelaufen" --client lea` succeeds.
 - **Create.** On a welcome screen (another fresh user), run `fg type --key household-name --input "WG Test" --client lea` and `fg tap --text "Haushalt anlegen" --client lea`. `fg wait --text "WG Test" --client lea` succeeds, and `fg db query "select count(*) from categories c join households h on h.id = c.household_id where h.name = 'WG Test'"` returns 11.
 - **Join from the menu.** As a member of another household, run `fg tap --tooltip Menü --client lea`, `fg wait --text "Anderem Haushalt beitreten" --client lea`, `fg tap --text "Anderem Haushalt beitreten" --client lea`, `fg wait --label Einladungscode --client lea`, `fg type --label Einladungscode --input <code> --client lea` and `fg tap --text Beitreten --client lea`. The confirm screen shows the code and "Du verlässt deinen aktuellen Haushalt …". Run `fg tap --text Beitreten --client lea` again, then `fg wait --text "Familie Test" --client lea`. The membership query above lists the user in Familie Test.
@@ -39,6 +39,9 @@ Preconditions:
 - The release web build (the e2e tests, Vercel) strips Flutter's debug asserts, so the old join crash ("TextEditingController was used after being disposed", `_dependents.isEmpty`) never shows there. Only the debug app (fg) and `app/test/household/join_code_dialog_test.dart` catch that class of bug.
 - After a join (or creating a household) the list must not show the crossed-out cloud ("Offline: …"). Until job 2b it stayed there until the first write: two overlapping resyncs shared one map and one threw. Check with `fg wait --contains Offline --gone --timeout 5 --client lea` after `fg wait --text "Familie Test"`.
 - `--as peter` and `--as lea` mean the seeded users, not whoever is signed in on the client of that name.
+- A snackbar shown while a dialog is open ("Kopiert") is visible in a screenshot but not to `fg find` or `fg wait`.
+- A failed `fg tap` or `fg find` leaves an "EXCEPTION CAUGHT BY FLUTTER FRAMEWORK … ext.flutter.marionette" block in the app log. Skip those when you read `fg logs --grep EXCEPTION` for an app error.
+- Users from these recipes stay members of "Familie Test" until `fg up --fresh`. Recipes that count its members (`journeys/account-deletion.sh`) compare with the count before their own join.
 - Menus animate open. Tap an entry only after `fg wait --text <entry>`, or the tap can miss.
 - Joining a household leaves the previous one. If the leaver was its last member, that household and its list are deleted. Never run the menu join with the seeded lea or peter unless the recipe restores them (`fg up --fresh`).
 - The invite dialog lists the code as plain text next to the label "Code". Pick it by its pattern, not by position.

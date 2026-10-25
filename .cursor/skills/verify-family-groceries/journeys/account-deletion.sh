@@ -52,8 +52,11 @@ step "both apps are healthy; peter is on the list"
 run doctor >/dev/null
 [[ "$("$fg" find --key login-email --client peter | jq -r .count)" == 0 ]] || run login peter >/dev/null
 run wait --key add-item-field --client peter >/dev/null
+step "earlier items are bought, so the new item's row is on screen (find and wait see built rows only)"
+run db query "update items set status = 'bought' where status = 'active' and household_id = (select id from households where name = 'Familie Test')" --write >/dev/null
 
 member="konto-$stamp@fg.test"
+members_before="$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")"
 step "a throwaway member ($member) joins Familie Test and adds $item"
 sign_up "$member"
 run tap --tooltip Menü --client peter >/dev/null
@@ -109,8 +112,8 @@ step "server state after the shared deletion"
 [[ "$(sql "select count(*) from auth.users where email = '$member'")" == 0 ]] || fail "user still exists"
 [[ "$(sql "select count(*) from items where name = '$item' and added_by is null")" == 1 ]] ||
   fail "the item is gone or still has an author"
-[[ "$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")" == 2 ]] ||
-  fail "Familie Test does not have exactly peter and lea"
+[[ "$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")" == "$members_before" ]] ||
+  fail "Familie Test does not have its $members_before members from before the join"
 [[ "$(sql "select count(*) from personal_access_tokens where name = 'Journey'")" == 0 ]] || fail "token row left"
 [[ "$(voice)" == 401 ]] || fail "the deleted member's token still works"
 status="$(curl -s -o /dev/null -w '%{http_code}' "$api/auth/v1/token?grant_type=password" -H "apikey: $key" \

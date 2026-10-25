@@ -1,6 +1,6 @@
 /** Secondary surfaces: Postgres state, Edge Functions over HTTP, a REST/realtime peer client, and Mailpit. */
 
-import { type Command, FgError, int, type JsonObject, str, usage } from './core.ts';
+import { type Command, type Ctx, FgError, int, type JsonObject, str, usage } from './core.ts';
 import { clientName, USERS } from './instance.ts';
 import { householdOf, restAs, signIn, sql, sqlRows, stackEnv } from './stack.ts';
 
@@ -108,7 +108,7 @@ export const backendCommands: Command[] = [
     summary: 'A second client over REST/realtime: add, tick or list items, or watch live changes.',
     usage: 'fg peer <peter|lea> add <name> | tick <name> | list | watch [--timeout S] [--until TEXT] [--dry-run]',
     description:
-      'Acts as the given user through the same PostgREST and Realtime endpoints the app uses, without a UI. Use it as the second client when only one app runs (Android), and as an independent observer: `watch` prints realtime events for the household until --until appears in an item name or --timeout passes.',
+      'Acts as the given user through the same PostgREST and Realtime endpoints the app uses, without a UI. Use it as the second client when only one app runs (Android), and as an independent observer: `watch` prints realtime events for the household until --until appears in an item name or --timeout passes. It logs "watch live" to stderr once events flow; a write before that line is missed.',
     flags: [{ name: 'timeout', help: 'Seconds for watch (default 15).' }, {
       name: 'until',
       help: 'Stop watch at the first event for an item with this name.',
@@ -163,7 +163,15 @@ export const backendCommands: Command[] = [
         case 'watch':
           return {
             user,
-            ...(await watch(env.apiUrl, env.publishableKey, session.accessToken, household, int(args, 'timeout', 15), str(args, 'until'))),
+            ...(await watch(
+              ctx,
+              env.apiUrl,
+              env.publishableKey,
+              session.accessToken,
+              household,
+              int(args, 'timeout', 15),
+              str(args, 'until'),
+            )),
           };
         default:
           throw usage(`Unknown peer action "${action ?? ''}".`, 'Use add, tick, list or watch.');
@@ -216,13 +224,22 @@ async function userId(ctx: Parameters<Command['run']>[0], user: 'peter' | 'lea')
   return rows[0].id as string;
 }
 
-async function watch(url: string, key: string, token: string, household: string, timeoutS: number, until?: string): Promise<JsonObject> {
+async function watch(
+  ctx: Ctx,
+  url: string,
+  key: string,
+  token: string,
+  household: string,
+  timeoutS: number,
+  until?: string,
+): Promise<JsonObject> {
   const { createClient } = await import('@supabase/supabase-js');
   const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   client.realtime.setAuth(token);
   const events: JsonObject[] = [];
   const started = Date.now();
   let subscribed = false;
+  let liveAtMs: number | null = null;
   const done = await new Promise<string>((resolve) => {
     const timer = setTimeout(() => resolve('timeout'), timeoutS * 1000);
     client
@@ -239,6 +256,13 @@ async function watch(url: string, key: string, token: string, household: string,
         if (until && row.name === until) {
           clearTimeout(timer);
           resolve('matched');
+        }
+      })
+      // Changes flow only after this system message; a write before it is never delivered.
+      .on('system', {}, (p) => {
+        if (liveAtMs === null && p.extension === 'postgres_changes' && p.status === 'ok') {
+          liveAtMs = Date.now() - started;
+          ctx.log(`watch live after ${liveAtMs} ms; writes from now on are reported`);
         }
       })
       .subscribe((status) => {
@@ -259,8 +283,8 @@ async function watch(url: string, key: string, token: string, household: string,
       `No realtime event for "${until}" within ${timeoutS} s.`,
       'Did the other client actually write? Check `fg db query`.',
       1,
-      { events },
+      { liveAtMs, events },
     );
   }
-  return { result: done, events };
+  return { result: done, liveAtMs, events };
 }

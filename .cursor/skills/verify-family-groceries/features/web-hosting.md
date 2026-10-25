@@ -12,7 +12,7 @@ Anyone opens the production web app on Vercel and gets the sign-in page. Deep li
 
 ## How to get to it (user POV)
 
-- Open the production URL (`docs/NEEDS_PETER.md`, section "Job 7: web hosting on Vercel") in a browser.
+- Open the production URL `https://family-groceries-pied.vercel.app` in a browser.
 - Follow an MCP client's "connect" link, which lands on `<url>/oauth/consent?authorization_id=...`.
 - Open an invite link `<url>/join/CODE`.
 
@@ -22,7 +22,7 @@ Preconditions:
 
 - No `fg` stack is needed: the checks run against the hosted project. Install the e2e dependencies once with `(cd e2e && npm ci)`.
 
-- **Routes, headers and both providers.** Run `node e2e/web-smoke.mjs <production-url> <dir>`. Every line starts with `ok`, and the exit code is 0. `<dir>` then holds `1-sign-in.png` (Google and Apple buttons on `/oauth/consent`), `2-google-consent.png` (Google's "Anmeldung" page, "Weiter zu jdwqrallbpdbshrdhenk.supabase.co") and `3-apple-sign-in.png` (Apple's page naming "Einkauf Web").
+- **Routes, headers and both providers.** Run `node e2e/web-smoke.mjs <production-url> <dir>`. Every check line starts with `ok` (two more lines print the Google `client_id`, which must equal `GOOGLE_WEB_CLIENT_ID` in `app/config/auth.json`, and the screenshot directory), and the exit code is 0. Run it under `flock /tmp/fg-e2e.lock`: it starts a browser. `<dir>` then holds `1-sign-in.png` (Google and Apple buttons on `/oauth/consent`), `2-google-consent.png` (Google's "Anmeldung" page, "Weiter zu jdwqrallbpdbshrdhenk.supabase.co") and `3-apple-sign-in.png` (Apple's page naming "Einkauf Web").
 - **The build Vercel runs.** Run `scripts/vercel-local.sh /tmp/fg-vercel-out`. It ends with `output: /tmp/fg-vercel-out`. To check the providers against that output, start `node e2e/serve.mjs /tmp/fg-vercel-out 55081`, then run `SMOKE_BROWSER_ONLY=1 node e2e/web-smoke.mjs http://127.0.0.1:55081 <dir>`. `e2e/serve.mjs` has no Vercel header rules, so the HTTP checks are skipped.
 
 ## Gotchas
