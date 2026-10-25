@@ -20,7 +20,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - `vercel.json`, `scripts/vercel.sh`: Vercel builds and hosts the web app on
   every push (`scripts/vercel-local.sh` runs the same build in Vercel's base
   image). `supabase-deploy.yml` deploys migrations (`supabase/deploy/`,
-  Management API) and edge functions (`--use-api`) from main.
+  Management API) and edge functions (`--use-api`) from main, then runs
+  `scripts/smoke-remote.sh`; its `ref` input rolls functions back.
+  `keepalive.yml` reads through `health` daily so the free project doesn't
+  pause. Runbook: `docs/DEPLOY.md`.
 - `supabase/functions/voice/`: the Siri and in-app dictation endpoint; the
   German sentence splitter is `parse.ts`, its table of sentences
   `parse_test.ts` (`docs/SIRI_SHORTCUT.md` for the Shortcut).

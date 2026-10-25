@@ -31,6 +31,9 @@ Still yours:
 - Section 5, step 1: one MCP connect and disconnect against production.
 - "Job 4: Siri", step 2, and "Job 4: release" (not started: the repo has
   no `release` environment yet), "Job 5: Android verification run".
+- "Job 13: database backups": decide, and create the age key pair if yes.
+  Also watch the repository's issues (Watch, Custom, Issues): a failed
+  daily keepalive opens one there (docs/DEPLOY.md, "Keepalive").
 
 None of the steps below changes the hosted Site URL or removes a redirect
 URL. Only `supabase/deploy/auth_urls.ts` sets the Site URL (section 2).
@@ -476,3 +479,78 @@ settings (Apple's documented fallback, TN3194).
    your or Lea's real account). Sign in with Apple, then Konto › Konto
    löschen. The success message must not show the "Apple-ID-Einstellungen"
    hint, and the function log must show `apple: revoked`.
+
+## Job 13: database backups (decision for Peter)
+
+Nothing is implemented. This needs your age key pair and your decision.
+
+### What exists today
+
+- **The free plan has no backups.** Supabase backs up Pro, Team and
+  Enterprise projects daily; for free projects it recommends regular
+  exports with `supabase db dump` kept off-site
+  (https://supabase.com/docs/guides/platform/backups). Point-in-time
+  recovery is a paid add-on. So if a migration or a bug destroys data,
+  there is nothing to restore from.
+- **A GitHub runner can reach the database, but only through the pooler.**
+  Measured on 2026-10-24 with a throwaway workflow on `ubuntu-latest`, without
+  any credential (log: `docs/screenshots/13/runner-pooler-probe.txt`):
+  - `db.jdwqrallbpdbshrdhenk.supabase.co` has only an IPv6 address, and
+    the runner has no IPv6 route ("Network is unreachable"). The IPv4
+    add-on for direct connections is paid.
+  - The session pooler `aws-1-eu-central-1.pooler.supabase.com:5432`
+    (user `postgres.jdwqrallbpdbshrdhenk`) is reachable. `psql` with a
+    wrong password got "password authentication failed", so the pooler
+    routes to this project. Supabase documents the shared pooler as
+    IPv4 on every plan
+    (https://supabase.com/docs/guides/database/connecting-to-postgres).
+  - The server runs Postgres 17, so the runner needs `pg_dump` 17
+    (`postgresql-client-17`, or `supabase db dump`, which brings a matching
+    one).
+- **The build box can't reach Postgres at all.** Its DNS points every
+  database host at a local proxy, so a backup must run on GitHub.
+- **The repo has no database password secret.** Job 7b deleted the unused
+  `SUPABASE_DB_PASSWORD` secret; deploys need only the access token.
+
+### Proposal
+
+A weekly workflow, `backup.yml` (Sunday night and on demand):
+
+1. Install `pg_dump` 17 and `age`.
+2. Dump the data of `public` through the session pooler:
+   `pg_dump --data-only --schema=public` (schema comes from the
+   migrations). Optionally add `auth.users` and `auth.identities`, so a
+   restore keeps everyone's sign-in and household membership. Without
+   them, the restored rows point at user IDs that no longer exist.
+3. Encrypt the dump with `age -r <your public key>` and stream it straight
+   into the file. Nothing unencrypted touches the disk or the log.
+4. Check that the file starts with the `age-encryption.org/v1` header.
+   Upload nothing if it doesn't.
+5. Upload it as a workflow artifact with 90 days of retention, the maximum
+   for a public repo, so about 13 weekly copies exist.
+
+The repo is public, so anyone can download the artifacts: encryption is
+mandatory. Only the public key would be committed. Without your private
+key the file is useless, and only you can restore it with
+`age -d -i key.txt dump.sql.age | psql ...`.
+
+### What you would do
+
+1. Create the key pair on your Mac: `age-keygen -o ~/family-groceries-backup.key`.
+   Keep the file in your password manager. It prints the public key
+   (`age1...`). If you lose the private key, every backup is unreadable.
+2. Give the public key to the next job (paste it on the board or in the job
+   brief). It goes into the repo as `supabase/backup/recipient.txt`.
+3. Add the database password as a secret for the workflow only:
+   Settings, Environments, New environment `backup`, add secret
+   `SUPABASE_DB_PASSWORD` (dashboard, Project Settings, Database).
+   Alternative: a read-only role just for backups, if you'd rather not
+   hand the workflow the `postgres` password.
+4. Say yes or no to including `auth.users` and `auth.identities` (step 2
+   of the proposal).
+
+A cheaper variant without a database password: the workflow could read the
+tables as JSON through the Management API with the existing
+`SUPABASE_ACCESS_TOKEN`. The restore would then need a small loader script
+instead of `psql`, and it reads with the most powerful credential the repo
+has. I'd pick `pg_dump` through the pooler.
