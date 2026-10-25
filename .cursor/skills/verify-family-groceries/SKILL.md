@@ -104,7 +104,7 @@ scripts/fg db query "select count(*) from items" --as lea          # as lea, thr
 scripts/fg db query "update items set status = 'bought' where name = 'Milch'" --write --dry-run
 scripts/fg fn call health --as anon                                 # Edge Functions over HTTP
 scripts/fg peer lea add Butter                                      # REST client as lea
-scripts/fg peer lea watch --until Butter --timeout 20               # realtime events as lea
+scripts/fg peer lea watch --until Butter --timeout 20               # realtime events as lea; write after its "watch live" line
 scripts/fg mail --to lea                                            # Mailpit: subjects and auth links
 scripts/fg login peter --api                                        # access token for curl
 ```
@@ -129,7 +129,7 @@ On a machine with a working emulator (KVM on Linux, or a Mac): run `fg setup --s
 ## Helpers
 
 - `fg` (and `scripts/fg`): the CLI. The source is in `cli/` (Deno). Tests: `cd cli && deno test -A`. CI runs them.
-- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof.
+- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way.
 - `features/`: one recipe per user-facing feature. Read `features/README.md` first.
 
 When you ship a feature, add or update its `features/<feature>.md` in the same PR, and give new widgets a ValueKey where text is not stable. `/maintain-verification-skill` keeps the map honest.

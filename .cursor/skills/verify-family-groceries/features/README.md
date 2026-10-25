@@ -17,6 +17,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Prefer ValueKeys (`--key`), then field labels (`--label`), tooltips (`--tooltip`), exact text (`--text`), and coordinates last.
 - To act on a list item, scope to its row: `--row <item name>`.
 - Wait for state with `fg wait`. Never use sleep.
+- `fg find` and `fg wait` see only widgets the list has built, so a row below the fold doesn't exist for them. Keep the list short (mark earlier items bought with `fg db query --write`) or bring the row in with `fg marionette -- scroll-to --text <name>`.
 - Treat every command as literal. Keep quoted names, umlauts and flags unchanged.
 - Set preconditions with `fg db query --write` or `fg peer`. Prove the behavior under test only through the app UI.
 
@@ -44,12 +45,13 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [Quick add](./quick-add.md) covers the autofocused add field, Enter-to-add with focus kept, quantities, duplicates, tick with undo, delete and re-add from history.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.
-- [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, and sign-out.
+- [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, sign-out, and the Google and Apple buttons (web build only).
 - [Household](./household.md) covers creating a household, inviting by code and joining with it.
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
-- [MCP access](./mcp-access.md) covers Menü → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
+- [Stores](./stores.md) covers the store picker "Alle/dm/Lidl/Edeka", store views and their order, dm's folded items, tagging items to a store and remembering it, and each store's layout.
+- [Categories](./categories.md) covers Menü → Kategorien verwalten: adding, renaming, deleting and reordering categories.
+- [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Menü → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
 - [Account](./account.md) covers Menü → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
-- [Hosted backend](./hosted-backend.md) covers the hosted project: the health check that reads Postgres, the smoke test after every deploy, the daily keepalive and rolling edge functions back.
-
-Not mapped yet. These are on main but outside this seed: Google and Apple sign-in (01b; buttons keyed `sign-in-google` and `sign-in-apple`, shown only when client IDs are configured), the OAuth consent page (03; web only, `/oauth/consent`), stores and category management (02; store picker "Alle/dm/Lidl/Edeka" under the add field, menu entry "Kategorien verwalten"). Each owner adds its file.
+- [Hosted backend](./hosted-backend.md) covers the hosted project: the health check that reads Postgres, the smoke test after every deploy, the daily keepalive, nightly encrypted backups with their restore drill, and rolling edge functions back.
+- [Hosted web app](./web-hosting.md) covers the production web app on Vercel: deep links, cache headers, the Google and Apple sign-in pages, and the build Vercel runs.
