@@ -1,4 +1,4 @@
-import { assertEquals, assertMatch } from '@std/assert';
+import { assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
 import { type Auth, AuthError } from '../_shared/auth.ts';
 import { type Deps, handle } from './handler.ts';
 
@@ -53,6 +53,17 @@ Deno.test('an invalid token gets 401 with error="invalid_token"', async () => {
   const res = await handle(post(), deps(new AuthError('invalid_token', 'abgelaufen')));
   assertEquals(res.status, 401);
   assertMatch(res.headers.get('www-authenticate')!, /error="invalid_token"/);
+});
+
+Deno.test('the challenge stays RFC 6750 ASCII when the message is German', async () => {
+  // The hosted gateway drops a WWW-Authenticate header with bytes outside printable ASCII.
+  const res = await handle(
+    post(),
+    deps(new AuthError('invalid_token', 'Token ungültig: "kaputt" \\ Größe')),
+  );
+  const header = res.headers.get('www-authenticate')!;
+  assertMatch(header, /^[\x20-\x7e]+$/);
+  assertStringIncludes(header, `error_description="Token ungueltig: 'kaputt'  Groesse"`);
 });
 
 Deno.test('a user without a household gets 403', async () => {

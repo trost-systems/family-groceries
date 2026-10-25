@@ -84,3 +84,10 @@ export async function deleteAccount(userId: string): Promise<HouseholdFate> {
     select public.delete_account(${userId}::uuid) as fate`;
   return row.fate;
 }
+
+/** One read of the shared seed dictionary: real Postgres activity that touches no user data. */
+export async function databaseAnswers(): Promise<boolean> {
+  const [row] = await db()<{ ok: boolean }[]>`
+    select exists (select from public.classifier_terms) as ok`;
+  return row.ok;
+}

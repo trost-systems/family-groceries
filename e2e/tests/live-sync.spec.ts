@@ -29,7 +29,8 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await itemRow(peter, 'Bananen').click();
   await typeInto(peter.getByRole('textbox', { name: 'Menge' }), '6');
   await peter.getByRole('button', { name: 'Speichern' }).click();
-  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen 6 Von peter-\S+ hinzugefügt$/, { timeout: 2_000 });
+  // "Neu" stays on a partner's item until it was on screen for 3 s, which this test may not reach.
+  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6 Von peter-\S+ hinzugefügt$/, { timeout: 2_000 });
 
   await itemRow(lea, 'Windeln').click();
   await lea.getByRole('button', { name: 'Löschen' }).click();

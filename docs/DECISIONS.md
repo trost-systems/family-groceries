@@ -1123,3 +1123,99 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
        - Kept: the `Co-Authored-By: Claude` trailer. This box's commit
          attribution rules ask for it on every commit an agent makes, and
          Peter's trailer stays last.
+
+## Job 13 (keepalive, deploy smoke test, function rollback), 2026-10-24
+
+13.1. **Supabase pauses free projects after 7 days of low database activity.**
+      Researched 2026-10-24 in "Project Pausing"
+      (https://supabase.com/docs/guides/platform/free-project-pausing). A
+      Free plan project is paused when it gets too little "user database
+      activity" over a 7-day window. The docs give no exact threshold: a few
+      database requests a day usually keep a project active. Supabase emails
+      a warning about a week before it pauses, and a paused project can be
+      restored for up to 1 year. Only a paid plan turns pausing off, so that
+      is out (free tier only). A connection that runs no query may not count
+      (a forum answer, not the docs), so the keepalive runs a real query.
+13.2. **GitHub disables scheduled workflows after 60 days.** "Events that
+      trigger workflows", section `schedule`
+      (https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows):
+      "In a public repository, scheduled workflows are automatically
+      disabled when no repository activity has occurred in 60 days." The
+      docs don't define activity. Re-enabling uses
+      `PUT /repos/{owner}/{repo}/actions/workflows/{id}/enable`
+      ("Disabling and enabling a workflow",
+      https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/disabling-and-enabling-a-workflow).
+      What is guaranteed (review 1): every push to `main` re-enables the
+      keepalive (13.11), and a push is repository activity, so the schedule
+      is never off for longer than the time until the next merge. With no
+      pushes at all, the stated recovery is the manual
+      `gh workflow enable keepalive.yml` in docs/DEPLOY.md, and Supabase's
+      own warning email reaches Peter as the owner before a pause. Best
+      effort only: the keepalive also enables itself on every run
+      (`permissions: actions: write`). Community tools
+      (gh-workflow-immortality) say that resets the 60-day clock; GitHub
+      doesn't document it, and it can't be tested short of 60 quiet days.
+      Dummy commits were rejected: they pollute `main`, which takes one
+      commit per PR, and the best-known action that made them,
+      gautamkrishnar/keepalive-workflow, is now disabled by GitHub Staff
+      for a terms-of-service violation.
+13.3. **Job 06's nightly run doesn't keep the project awake.** Job 06 is
+      not started (status `waiting`) and has no workflow on `main`. Its brief
+      lets it choose a test household on the remote project or another
+      option, so it may never hit production. The keepalive is one request
+      a day; if 06 later reads the remote project nightly, the keepalive can
+      be dropped then.
+13.4. **`health` became a readiness check.** It now runs
+      `select exists (select from public.classifier_terms)`: one indexed
+      read of the shared seed dictionary, no user data, over the functions'
+      existing `SUPABASE_DB_URL` pool. It answers 503 with
+      `{"ok": false, "database": false}` when Postgres doesn't answer, so
+      the smoke test also proves the database is reachable after a deploy.
+      The read has a 5-second deadline (review 0): without it, a dead
+      database took the driver's 30-second connect timeout, and the callers
+      (curl, 20 to 30 seconds) saw a timeout instead of the 503.
+      Calling it through the function (instead of PostgREST with the
+      publishable key) keeps the keepalive free of keys and also exercises
+      the edge runtime.
+13.5. **The MCP 401 lost its `WWW-Authenticate` header in production.**
+      Found by the new smoke test: for a bad or expired token, the hosted
+      `mcp` function answered 401 with no `WWW-Authenticate`, so an MCP client
+      couldn't find the Protected Resource Metadata to sign in again. The
+      header's `error_description` carried the German message
+      ("Token ungültig: ..."). RFC 6750 section 3 limits it to printable
+      ASCII, and the hosted gateway drops a header with other bytes (the
+      missing-token 401, which has no description, kept its header). The
+      challenge now transliterates umlauts and drops anything outside the
+      RFC 6750 set; the JSON body keeps the German text.
+13.6. **Rollback deploys functions only, from main, with the commit's own
+      smoke test.** The `ref` input must name a commit on `main` (reviewed
+      code only), and that commit must contain `scripts/smoke-remote.sh`.
+      Older commits have the health check without Postgres and the MCP
+      header bug, so they would fail the smoke test anyway. The run uses
+      that commit's own smoke script, which tests the functions against the
+      contract they shipped with. Migrations are skipped: the database is
+      forward-only (docs/DEPLOY.md, "fix forward").
+13.7. **Deploys only from `main`.** A manual dispatch on another branch used
+      to deploy that branch's functions and migrations to production. The
+      credentials step now refuses any ref other than `refs/heads/main`.
+13.8. **A failed keepalive opens an issue.** GitHub sends a scheduled run's
+      failure mail only to whoever last edited its cron line
+      ("Events that trigger workflows", `schedule`, "actor"), which is the
+      bot account. The failure step opens one issue titled "Keepalive
+      failed", or comments on the open one. The body names the step that
+      failed. The next green run closes it. It matches the title through
+      the plain issue list: in a test, `gh issue list --search` missed an
+      issue created seconds earlier and opened a duplicate.
+13.9. **actionlint comes from job 11's lint gate.** This job first added its
+      own actionlint step to `ci.yml` and `verify.sh`. Job 11 landed first
+      with actionlint in `scripts/gates/lint.sh` (same pinned 1.7.12), so
+      the rebase dropped this job's copy. A broken keepalive file still
+      fails CI.
+13.10. **Backups stay a proposal.** The free plan has no backups, and runners
+       reach Postgres only through the session pooler. Details and the plan
+       are in docs/NEEDS_PETER.md, "Job 13: database backups".
+13.11. **Every push to `main` re-enables the keepalive** (review 0). GitHub
+       doesn't turn a schedule back on that it disabled for inactivity, and
+       a disabled schedule never runs, so it can't report itself. A
+       `keepalive-schedule` job in `ci.yml` runs `gh workflow enable` on
+       push events. It is not part of `ci-ok`.

@@ -278,6 +278,19 @@ jobs:
           cache: true
       - run: scripts/gates/ios.sh
 
+  # Job 13: GitHub never turns a schedule back on that it disabled for 60 days of inactivity, so
+  # every push to main re-enables the keepalive (docs/DEPLOY.md, Keepalive).
+  keepalive-schedule:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow enable keepalive.yml --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   ci-ok:
     needs: [changes, gitleaks, lint, db, functions, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}

@@ -50,7 +50,7 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
       bearer_methods_supported: ['header'],
       resource_name: 'Einkaufsliste (family-groceries)',
       resource_documentation:
-        'https://github.com/peter-trost/family-groceries/blob/main/docs/MCP.md',
+        'https://github.com/trost-systems/family-groceries/blob/main/docs/MCP.md',
     }));
   }
 
@@ -84,12 +84,31 @@ function challenge(error: AuthError, endpoints: Endpoints): Response {
     `scope="${SCOPES.join(' ')}"`,
     ...(error.reason === 'missing_token' ? [] : [
       `error="${error.reason === 'no_household' ? 'insufficient_scope' : 'invalid_token'}"`,
-      `error_description="${error.message.replaceAll('"', "'")}"`,
+      `error_description="${headerSafe(error.message)}"`,
     ]),
   ];
   return Response.json(
     { error: error.reason, error_description: error.message },
     { status: error.status, headers: { 'www-authenticate': `Bearer ${params.join(', ')}` } },
+  );
+}
+
+const UMLAUTS: Record<string, string> = {
+  ä: 'ae',
+  ö: 'oe',
+  ü: 'ue',
+  Ä: 'Ae',
+  Ö: 'Oe',
+  Ü: 'Ue',
+  ß: 'ss',
+  '"': "'",
+};
+
+/** RFC 6750 error_description charset; the hosted gateway drops a header with other bytes. */
+function headerSafe(text: string): string {
+  return text.replace(/[äöüÄÖÜß"]/g, (c) => UMLAUTS[c]).replace(
+    /[^\x20-\x21\x23-\x5b\x5d-\x7e]/g,
+    '',
   );
 }
 
