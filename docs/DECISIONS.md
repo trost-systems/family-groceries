@@ -1300,3 +1300,90 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
        a disabled schedule never runs, so it can't report itself. A
        `keepalive-schedule` job in `ci.yml` runs `gh workflow enable` on
        push events. It is not part of `ci-ok`.
+
+## Job 13b (nightly encrypted database backups), 2026-10-25
+
+Peter approved the proposal in docs/NEEDS_PETER.md ("Job 13: database
+backups") with three changes: nightly instead of weekly, 90 days of
+retention, `auth.users` and `auth.identities` included. Runbook:
+docs/BACKUP.md.
+
+13b.1. **`pg_dump --data-only --table='public.*' --table=auth.users
+       --table=auth.identities --strict-names --quote-all-identifiers`.**
+       `--schema` has no effect once any `--table` is given (pg_dump docs,
+       "-n pattern"), so `--schema=public --table=auth.users` would back up
+       only the two auth tables. The drill proves it: with that variant it
+       fails. `public.*` also selects the sequences, so the dump sets
+       `item_events_id_seq` and new history rows continue after the
+       restored ids (the drill inserts one). `--strict-names` fails the
+       dump if a pattern stops matching (a renamed auth table) instead of
+       silently leaving it out. `--quote-all-identifiers` keeps the dump
+       loadable if a later Postgres reserves a word we use as a name.
+       `--no-owner` and `--no-privileges` are left out: a data-only dump
+       has no ownership or grant statements.
+13b.2. **The schema comes from the migrations, not the dump.** Supabase's
+       own schemas (auth, storage, realtime) belong to the platform, and a
+       full schema dump would recreate objects the target project already
+       has. Our schema is fully described by `supabase/migrations/`.
+13b.3. **Repository secret, not an environment secret.** The proposal
+       suggested a `backup` environment. The Engineering Lead set the
+       repository secret `SUPABASE_DB_PASSWORD` instead. Only
+       `backup.yml` reads it, `ci.yml` never does, and pull requests from
+       forks get no secrets. An environment would add nothing without
+       required reviewers, which a nightly unattended job can't have.
+       The workflow fails, and opens the issue, when the secret is
+       missing or empty: a silent skip would look like a backup.
+13b.4. **Restore in replica mode, replacing all data.**
+       `scripts/backup/restore.sh` runs `SET session_replication_role =
+       replica` in the same psql session as the load, inside one
+       `--single-transaction -v ON_ERROR_STOP=1` run, as Supabase documents
+       for restores (https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore).
+       Without it, `items_before_write` sets `bought_by` from `auth.uid()`
+       and `item_events` gains rows: the drill run without replica mode
+       failed on a duplicate `item_events` key. Before the load it
+       truncates `auth.users`, `auth.identities` and every `public` table
+       with `CASCADE`. That handles the rows migrations seed
+       (`classifier_terms`, the only top-level seed insert; the backup holds
+       the full dictionary) and makes the same command restore into the
+       live project after data loss, not only into an empty one. CASCADE
+       also empties the auth tables that point at users (sessions, refresh
+       tokens, MFA, one-time tokens, OAuth consents): their rows would refer
+       to the users being replaced. psql names each one.
+13b.5. **Recipient in `supabase/backup/recipient.txt`.** The brief's path;
+       it sits next to the other Supabase operations files. The private key
+       never touches the repo, CI or a secret. `dump.sh` checks the file
+       holds one `age1...` recipient.
+13b.6. **A failed dump leaves no file.** age writes a valid header before
+       it has seen any input, so a pg_dump that dies mid-stream would leave a
+       file that passes the header check. `dump.sh` runs with `pipefail` and
+       deletes the output on any error, then checks the header and a
+       16 KiB minimum (the shared classifier dictionary alone is larger).
+13b.7. **The restore drill is part of the `db` gate.** docs/CI.md: a check
+       goes into the gate it belongs to. The db gate already starts a stack
+       and resets it, so the drill costs about a minute and no extra runner.
+       It creates users through GoTrue's admin API (real `auth.users` and
+       `auth.identities` rows), writes fixtures through the app's RPCs and
+       triggers (`scripts/backup/fixtures.sql`), requires rows in every
+       backed-up table, dumps with a throwaway key from `age-keygen`, resets
+       to the migrations, restores, and compares row count and an md5 of the
+       ordered rows per table. Then the restored users sign in with their
+       passwords and a new write runs the triggers again. Job 18's fixtures
+       aren't on `main` yet; when they land, the drill can seed from them.
+       A new table without fixture rows fails the drill, so every new table
+       is proven to round-trip.
+13b.8. **gitleaks already catches age private keys.** Its default rule
+       `age-secret-key` flagged a throwaway `AGE-SECRET-KEY-1...` committed
+       to a scratch repository, so no rule was added. The drill keeps its
+       key in a `mktemp -d` directory outside the repository and deletes it
+       on exit.
+13b.9. **pg_dump 17 from PGDG on runners.** Ubuntu 24.04 ships
+       postgresql-client-16, and pg_dump refuses a newer server.
+       `scripts/backup/install-tools.sh` adds the PGDG repository only when
+       the distribution lacks `postgresql-client-17` (Debian 13, the build
+       box, has it) and fails unless `pg_dump --version` is 17. The first
+       probe run failed that check: the runner image already has PGDG and
+       a PostgreSQL 16 server, and Ubuntu's `/usr/bin/pg_dump` wrapper
+       follows the installed server, not the newest client. So the scripts
+       put `/usr/lib/postgresql/17/bin` first on `PATH`.
+13b.10. **Every push to `main` re-enables the backup schedule**, in the
+        same `keepalive-schedule` CI job as the keepalive (13.11).
