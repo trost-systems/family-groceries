@@ -16,7 +16,7 @@ A list belongs to a household. A new user creates one on the welcome screen or j
 
 - Sign up or sign in as a user without a household. The "Willkommen" screen offers "Name des Haushalts" with "Haushalt anlegen", and "Einladungscode" with "Beitreten".
 - On the list, open "Menü" (top right), then "Mitglied einladen" or "Anderem Haushalt beitreten".
-- Open an invite link (`/join/<code>`). Only the web build has links. The phone apps use the code.
+- Open an invite link (`/join/<code>`). The web build opens it. The release phone apps show the link too (`https://app.hummlist.com/join/<code>`, from `APP_URL`), but it opens the web app; in the phone app the user types the code. The fg debug build sets no `APP_URL`, so its invite dialog shows the code only.
 
 ## Driving it with fg
 
