@@ -129,7 +129,7 @@ On a machine with a working emulator (KVM on Linux, or a Mac): run `fg setup --s
 ## Helpers
 
 - `fg` (and `scripts/fg`): the CLI. The source is in `cli/` (Deno). Tests: `cd cli && deno test -A`. CI runs them.
-- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way.
+- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way. Each journey starts with peter on the list and leaves both clients there (lea signed in as the seeded lea), so they run back to back in any order. A new journey keeps that contract.
 - `features/`: one recipe per user-facing feature. Read `features/README.md` first.
 
 When you ship a feature, add or update its `features/<feature>.md` in the same PR, and give new widgets a ValueKey where text is not stable. `/maintain-verification-skill` keeps the map honest.

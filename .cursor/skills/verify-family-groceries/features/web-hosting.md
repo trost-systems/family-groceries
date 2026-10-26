@@ -5,7 +5,7 @@ Anyone opens the production web app on Vercel and gets the sign-in page. Deep li
 ## Sub-features
 
 - `web-spa-routes` serves `index.html` with `Cache-Control: no-cache` for every app path, dotted ones such as `/join/AB.CD` included, and answers 404 for a missing asset such as `/missing.js`, `/assets/x.png` or anything under `canvaskit/` (`vercel.json`, DECISIONS 7b.2).
-- `web-cache` makes `flutter_bootstrap.js`, `flutter_service_worker.js` and `version.json` `no-cache`, and other files `max-age=0, must-revalidate`.
+- `web-cache` makes `index.html`, `manifest.json`, `flutter_bootstrap.js`, `flutter_service_worker.js` and `version.json` `no-cache`, and other files (`main.dart.js`, icons, assets) `public, max-age=0, must-revalidate`. `web-smoke.mjs` checks the three Flutter files and `main.dart.js`; `curl -sI <url>/manifest.json` shows the rest.
 - `web-google` takes the Google button to `accounts.google.com` with the web client ID from `app/config/auth.json`.
 - `web-apple` takes the Apple button to `appleid.apple.com` with the Services ID.
 - `web-build` runs `vercel.json`'s install and build commands in Amazon Linux 2023 from a fresh clone.

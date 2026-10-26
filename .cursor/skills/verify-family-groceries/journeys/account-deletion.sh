@@ -158,6 +158,12 @@ fi
 [[ "$(jq -r .account.email "$path")" == peter@fg.test ]] || fail "export is not peter's"
 ! grep -q token_hash "$path" || fail "export contains token hashes"
 
+step "peter goes back to the list and lea signs in again, where the next journey starts"
+run back --client peter >/dev/null
+run wait --key add-item-field --client peter >/dev/null
+run login lea >/dev/null
+run wait --key add-item-field --client lea >/dev/null
+
 dir="$("$fg" env | jq -r .evidenceDir)"
 printf '\nPASS: shared deletion kept Familie Test and %s (no author, token 401, sign-in 400); last-member deletion left 0 rows; export at %s.\nEvidence: %s\n' \
   "$item" "$path" "$dir"

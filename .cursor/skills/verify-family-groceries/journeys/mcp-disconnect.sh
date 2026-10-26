@@ -100,6 +100,10 @@ revoked="$(run db query "select revoked_at is not null as revoked from personal_
 [[ "$revoked" == true ]] || fail "the token row is not revoked"
 run record stop >/dev/null
 
+step "peter goes back to the list, where the next journey starts"
+run back >/dev/null
+run wait --key add-item-field >/dev/null
+
 dir="$("$fg" env | jq -r .evidenceDir)"
 printf '\nPASS: "%s" disconnected in Zugänge -> next MCP call %s (token had %s min left); "%s" revoked -> next MCP call %s.\nEvidence: %s\n' \
   "$app" "$after_disconnect" "$expires_in_min" "$pat" "$after_revoke" "$dir"
