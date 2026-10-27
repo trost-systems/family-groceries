@@ -24,9 +24,10 @@ env:
   ACTIONLINT_VERSION: 1.7.12
   AST_GREP_VERSION: 0.51.0
   SQUAWK_VERSION: 2.70.0
-  # The CLI's default registry (public.ecr.aws) answers "toomanyrequests" to runners and the CLI
-  # falls back to ghcr.io after ~14 s of retries on every run.
-  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+  # Where the CLI pulls the Supabase images. public.ecr.aws (its default) answered runners
+  # "toomanyrequests" (job 11), and so did ghcr.io for hours on 2026-10-27, also with a token
+  # login; Docker Hub pulled every image (DECISIONS job 15b).
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
 jobs:
   # Which gates this change needs (scripts/ci-changes.sh): docs-only changes skip the heavy
@@ -283,7 +284,7 @@ jobs:
 
   # Job 13: GitHub never turns a schedule back on that it disabled for 60 days of inactivity, so
   # every push to main re-enables the keepalive (docs/DEPLOY.md, Keepalive). Job 13b: and the
-  # nightly backup (docs/BACKUP.md).
+  # nightly backup (docs/BACKUP.md). Job 23: and the weekly release (docs/RELEASE.md).
   keepalive-schedule:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -295,6 +296,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - run: gh workflow enable backup.yml --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: gh workflow enable release.yml --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}
 

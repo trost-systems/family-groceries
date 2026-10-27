@@ -1,10 +1,14 @@
-# Builds the app and uploads it to TestFlight and the Play internal track.
-# Manual only (Actions tab, Run workflow). The lanes are in app/fastlane/Fastfile;
-# docs/RELEASE.md lists the secrets. A platform whose secrets are missing is
-# skipped with a notice, so the run stays green until they are set.
+# Builds green main and ships it every Monday: iOS to TestFlight (internal group only), Android
+# to the Play internal track. docs/RELEASE.md describes the run; the lanes are in
+# app/fastlane/Fastfile, the decisions in scripts/release/. A dispatch with the default inputs
+# takes the same path as the schedule. A platform whose secrets are missing is skipped with a
+# notice; a failed scheduled run opens the "Weekly release failed" issue.
 name: Release
 
 on:
+  # Mondays 03:00 UTC: after the 02:30 backup, before the 05:23 keepalive.
+  schedule:
+    - cron: '0 3 * * 1'
   workflow_dispatch:
     inputs:
       platform:
@@ -12,6 +16,18 @@ on:
         type: choice
         options: [both, ios, android]
         default: both
+      upload:
+        description: Upload (off = build, sign and validate only)
+        type: boolean
+        default: true
+      force:
+        description: Ship even if main is unchanged since the last upload
+        type: boolean
+        default: false
+      simulate_failure:
+        description: Fail on purpose to test the failure issue
+        type: boolean
+        default: false
 
 concurrency:
   group: release
@@ -20,23 +36,70 @@ concurrency:
 permissions:
   contents: read
 
+# `shell: bash` adds -o pipefail, so `plan.sh ... | tee` fails when plan.sh does.
+defaults:
+  run:
+    shell: bash
+
 env:
   FLUTTER_VERSION: 3.47.7
+  # Build number = offset + run number, the same on both stores. When the schedule started,
+  # TestFlight's highest was 1002 and Play's first, hand-uploaded bundle was 1003 (docs/RELEASE.md);
+  # raise the offset if a store ever holds a higher one.
+  BUILD_NUMBER_OFFSET: 1010
+  # SHA-256 of the upload certificate in ANDROID_KEYSTORE_BASE64 (docs/RELEASE.md).
+  UPLOAD_CERT_SHA256: 2C:9B:48:6D:AF:1B:94:AB:3F:92:38:49:CC:0F:C3:42:EF:09:64:2C:32:40:74:97:69:25:61:74:0C:BA:84:F5
+  PLAY_WORKLOAD_IDENTITY_PROVIDER: projects/1023711338330/locations/global/workloadIdentityPools/github/providers/family-groceries
+  PLAY_SERVICE_ACCOUNT: play-release@family-groceries-ci.iam.gserviceaccount.com
 
 jobs:
-  # Environment secrets are visible only to jobs in the environment, so the
-  # check runs in `release` too.
-  secrets:
+  # Environment secrets are visible only to jobs in the environment, so the plan runs in
+  # `release` too (main only).
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     environment: release
+    permissions:
+      contents: read
+      actions: read
     outputs:
-      ios: ${{ steps.check.outputs.ios }}
-      android: ${{ steps.check.outputs.android }}
+      ship: ${{ steps.decide.outputs.ship }}
+      blocked: ${{ steps.decide.outputs.blocked }}
+      reason: ${{ steps.decide.outputs.reason }}
+      upload: ${{ steps.inputs.outputs.upload }}
+      ios: ${{ steps.secrets.outputs.ios }}
+      android: ${{ steps.secrets.outputs.android }}
+      build_number: ${{ steps.inputs.outputs.build_number }}
+      notes_de: ${{ steps.notes.outputs.de }}
+      notes_en: ${{ steps.notes.outputs.en }}
     steps:
-      - id: check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      # A scheduled run has no inputs; it gets the dispatch defaults here, so both events take
+      # the same path from this step on.
+      - id: inputs
         env:
-          PLATFORM: ${{ inputs.platform }}
+          PLATFORM: ${{ inputs.platform || 'both' }}
+          UPLOAD: ${{ inputs.upload }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          upload="${UPLOAD:-true}" force="${FORCE:-false}"
+          {
+            echo "platform=$PLATFORM"
+            echo "upload=$upload"
+            echo "force=$force"
+            echo "build_number=$((BUILD_NUMBER_OFFSET + GITHUB_RUN_NUMBER))"
+          } | tee -a "$GITHUB_OUTPUT"
+          echo "Release plan ($GITHUB_EVENT_NAME): platform=$PLATFORM upload=$upload force=$force commit=$GITHUB_SHA"
+      - name: Simulate a failure
+        if: inputs.simulate_failure
+        run: |
+          echo "::error::simulate_failure is set: failing on purpose to test the failure issue."
+          exit 1
+      - id: secrets
+        env:
+          PLATFORM: ${{ steps.inputs.outputs.platform }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || secrets.APPLE_TEAM_ID }}
           MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL || secrets.MATCH_GIT_URL }}
           MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
@@ -46,7 +109,6 @@ jobs:
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           check() {
             local platform="$1"; shift
@@ -62,23 +124,75 @@ jobs:
               echo "$platform=true" >> "$GITHUB_OUTPUT"
             else
               echo "$platform=false" >> "$GITHUB_OUTPUT"
-              echo "::notice::$platform release skipped: missing ${missing[*]} (see docs/NEEDS_PETER.md)."
+              echo "::notice::$platform release skipped: missing ${missing[*]} (docs/RELEASE.md)."
             fi
           }
           check ios APPLE_TEAM_ID MATCH_GIT_URL MATCH_DEPLOY_KEY MATCH_PASSWORD \
             APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8
-          check android ANDROID_KEYSTORE_BASE64 ANDROID_KEY_PROPERTIES PLAY_SERVICE_ACCOUNT_JSON
+          check android ANDROID_KEYSTORE_BASE64 ANDROID_KEY_PROPERTIES
+      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+        if: steps.secrets.outputs.ios == 'true'
+        with:
+          working-directory: app
+          bundler-cache: true
+      - name: Check the profile and read TestFlight's builds
+        if: steps.secrets.outputs.ios == 'true'
+        working-directory: app
+        env:
+          TESTFLIGHT_JSON: ${{ runner.temp }}/testflight.json
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: bundle exec fastlane ios preflight
+      - name: Gather the facts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          FORCE: ${{ steps.inputs.outputs.force }}
+          UPLOAD: ${{ steps.inputs.outputs.upload }}
+          HEAD_SHA: ${{ github.sha }}
+          BUILD_NUMBER: ${{ steps.inputs.outputs.build_number }}
+          TESTFLIGHT_JSON: ${{ runner.temp }}/testflight.json
+        run: scripts/release/plan.sh gather | tee "$RUNNER_TEMP/facts.json"
+      - id: decide
+        run: |
+          if ! scripts/release/plan.sh decide "$RUNNER_TEMP/facts.json" > "$RUNNER_TEMP/decision"; then
+            cat "$RUNNER_TEMP/decision"
+            exit 1
+          fi
+          tee -a "$GITHUB_OUTPUT" < "$RUNNER_TEMP/decision"
+          reason="$(sed -n 's/^reason=//p' "$RUNNER_TEMP/decision")"
+          if grep -qx ship=true "$RUNNER_TEMP/decision"; then
+            echo "::notice::Shipping build $((BUILD_NUMBER_OFFSET + GITHUB_RUN_NUMBER)): $reason"
+          else
+            echo "::notice::Release skipped: $reason"
+          fi
+          echo "$reason" >> "$GITHUB_STEP_SUMMARY"
+      - id: notes
+        if: steps.decide.outputs.ship == 'true'
+        env:
+          PREVIOUS: ${{ steps.decide.outputs.previous_sha }}
+        run: |
+          eof="NOTES_$(openssl rand -hex 8)"
+          for lang in de en; do
+            { echo "$lang<<$eof"; scripts/release/notes.sh "$lang" "$PREVIOUS" "$GITHUB_SHA"; echo "$eof"; } >> "$GITHUB_OUTPUT"
+          done
+          scripts/release/notes.sh de "$PREVIOUS" "$GITHUB_SHA"
 
   ios:
-    needs: secrets
-    if: needs.secrets.outputs.ios == 'true'
+    needs: plan
+    if: needs.plan.outputs.ship == 'true' && needs.plan.outputs.ios == 'true'
     # App Store Connect only accepts builds from the current Xcode SDK.
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 100
     environment: release
     defaults:
       run:
+        shell: bash
         working-directory: app
+    env:
+      BUILD_NUMBER: ${{ needs.plan.outputs.build_number }}
+      RELEASE_UPLOAD: ${{ needs.plan.outputs.upload }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
@@ -94,8 +208,7 @@ jobs:
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
           ssh-private-key: ${{ secrets.MATCH_DEPLOY_KEY }}
-      # Expressions cannot do arithmetic, hence the shell.
-      - run: echo "BUILD_NUMBER=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      # The signing secrets go to the fastlane steps only, not to the third-party actions.
       - run: bundle exec fastlane ios beta
         env:
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || secrets.APPLE_TEAM_ID }}
@@ -104,16 +217,36 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+      - name: Wait for TestFlight processing
+        if: needs.plan.outputs.upload == 'true'
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          RELEASE_NOTES_DE: ${{ needs.plan.outputs.notes_de }}
+          RELEASE_NOTES_EN: ${{ needs.plan.outputs.notes_en }}
+          WAIT_MINUTES: '45'
+        run: bundle exec fastlane ios wait_processing
 
   android:
-    needs: secrets
-    if: needs.secrets.outputs.android == 'true'
+    needs: plan
+    if: needs.plan.outputs.ship == 'true' && needs.plan.outputs.android == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     environment: release
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
+        shell: bash
         working-directory: app
+    outputs:
+      uploaded: ${{ steps.upload.outputs.uploaded }}
+    env:
+      BUILD_NUMBER: ${{ needs.plan.outputs.build_number }}
+      RELEASE_UPLOAD: ${{ needs.plan.outputs.upload }}
+      PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
@@ -139,8 +272,81 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
-      - run: echo "BUILD_NUMBER=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
-      - run: bundle exec fastlane android internal
+      - run: bundle exec fastlane android build
+      - name: Remove the upload keystore
+        if: always()
+        run: rm -f android/upload-keystore.jks android/key.properties
+      - run: ../scripts/release/check-aab.sh build/app/outputs/bundle/release/app-release.aab "$UPLOAD_CERT_SHA256"
+      # For the first upload by hand (Play creates the app from it) and for inspection.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hummlist-${{ env.BUILD_NUMBER }}-aab
+          path: app/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 7
+          if-no-files-found: error
+      # Keyless: GitHub's OIDC token for the release environment is exchanged for the service
+      # account, which only Play Console grants anything to.
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ env.PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.PLAY_SERVICE_ACCOUNT }}
+      # PLAY_RELEASE_STATUS unset means the Play app is not set up yet (docs/NEEDS_LEAD.md):
+      # the run checks access and reports instead of uploading. Once set (draft, then
+      # completed), every run uploads, and a missing grant fails the run.
+      - id: upload
         env:
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
+          PLAY_ACCESS_FILE: ${{ runner.temp }}/play-access
+        run: |
+          if [ -z "$PLAY_RELEASE_STATUS" ]; then
+            bundle exec fastlane android play_access
+            access="$(cat "$PLAY_ACCESS_FILE")"
+            if [ "$access" = ok ]; then
+              echo "::notice::Play access works, but PLAY_RELEASE_STATUS is unset: no Play upload. Set it to draft (docs/NEEDS_LEAD.md, L3)."
+            else
+              echo "::notice::No Play upload: Play refuses the service account for com.hummlist.app ($access). docs/NEEDS_LEAD.md, L1-L4; the signed AAB is in this run's artifacts."
+            fi
+            exit 0
+          fi
+          bundle exec fastlane android internal
+          if [ "$RELEASE_UPLOAD" = true ]; then echo "uploaded=true" >> "$GITHUB_OUTPUT"; fi
+
+  # The plan job finds the last upload by this job's name; it runs only after a real upload.
+  uploaded:
+    name: Uploaded
+    needs: [plan, ios, android]
+    if: >-
+      !cancelled() && needs.plan.outputs.ship == 'true' && needs.plan.outputs.upload == 'true'
+      && !contains(needs.*.result, 'failure')
+      && (needs.ios.result == 'success' || needs.android.outputs.uploaded == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          BUILD_NUMBER: ${{ needs.plan.outputs.build_number }}
+          IOS: ${{ needs.ios.result }}
+          ANDROID: ${{ needs.android.outputs.uploaded == 'true' && 'uploaded' || needs.android.result }}
+        run: |
+          echo "Build $BUILD_NUMBER of $GITHUB_SHA: TestFlight $IOS, Play internal $ANDROID." | tee -a "$GITHUB_STEP_SUMMARY"
+
+  report:
+    needs: [plan, ios, android, uploaded]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          SIMULATE: ${{ inputs.simulate_failure || false }}
+          UPLOAD: ${{ needs.plan.outputs.upload }}
+          BLOCKED: ${{ needs.plan.outputs.blocked }}
+          REASON: ${{ needs.plan.outputs.reason }}
+          PLAN: ${{ needs.plan.result }}
+          IOS: ${{ needs.ios.result }}
+          ANDROID: ${{ needs.android.result }}
+          UPLOADED: ${{ needs.uploaded.result }}
+        run: scripts/release/report.sh apply

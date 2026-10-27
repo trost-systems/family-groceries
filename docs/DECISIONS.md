@@ -1468,3 +1468,138 @@ Peter approved the name "Hummlist" and the ID `com.hummlist.app` on
    serving and stays in the redirect allow list, so links already sent and
    bookmarked keep working. The Vercel project keeps its name.
 
+
+## Job 23 (weekly release pipeline), 2026-10-27
+
+1. **Why no TestFlight build was installable.** App Store Connect (read-only
+   API, 2026-10-27) shows every unexpired build of the team expired within
+   two seconds on 2026-10-26, 13:14:02 to 13:14:03 UTC: Hummlist 1002
+   (uploaded 2026-10-25 20:20 UTC), build 1001 of the old app record
+   (`6826907810`) and all 65 builds of another app of the team uploaded since
+   2026-09-13, weeks before their 90 days were up; a fourth app's builds had
+   expired normally after 90 days. No Beta App Review submission exists, no
+   newer build of either Hummlist version replaced 1002, the certificate and
+   the profile are `ACTIVE`, the API key works, and the team's live App Store
+   app is still `READY_FOR_SALE` (so, as far as the API shows, the membership
+   did not lapse). Manual expiry is ruled out: nobody expires 67 builds of
+   three apps in two seconds. Apple's developer forums (thread 813703) report
+   the same team-wide mass expiry for other teams in January, July and August
+   2026; Apple's TestFlight team acknowledged it and gave no cause.
+   Conclusion: an Apple-side event, not this pipeline. The weekly run
+   counters it: when no TestFlight build is installable, an unchanged `main`
+   ships again; a build that comes out of processing already expired fails
+   the run and points to `RELEASE.md` (Apple Developer Support case, Peter's
+   step in `NEEDS_PETER.md`, Job 23).
+2. **"Last upload" is a job name, not a tag.** A run uploaded when its
+   `Uploaded` job succeeded; the plan job pages through successful Release
+   runs on `main` with the Actions API. No tags, no `contents: write`, and
+   dry runs or skips never count. The same lookup gives the notes' start
+   commit.
+3. **Re-ship an unchanged `main`** when TestFlight has no installable build
+   (item 1) or the last upload is 60 days old, so testers never hit the
+   90-day expiry on a quiet `main`.
+4. **Only green `main` ships, and `force` does not override it.** The plan
+   reads the newest `ci.yml` push run on the commit (a green rerun counts)
+   and needs `status: completed`, `conclusion: success`; `ci-ok` fails that
+   run whenever a gate fails. A scheduled run that skips for this opens the
+   failure issue: a red `main` on Monday is a failed release.
+5. **The failure issue.** Scheduled runs and `simulate_failure` dispatches
+   open or comment on "Weekly release failed"; other failed dispatches
+   don't (whoever started them watches). A green upload run or an
+   "unchanged" skip closes it; dry runs never touch it, since they prove the
+   build but not the upload.
+6. **Play is keyless.** fastlane 2.241's supply reads `external_account`
+   credentials (checked in the gem source, `supply/client.rb`), so
+   `google-github-actions/auth` with Workload Identity Federation replaces a
+   JSON key. The service account `play-release@family-groceries-ci` has no
+   key and no project roles; its only binding is
+   `roles/iam.workloadIdentityUser` for the subject
+   `repo:trost-systems@267752722/family-groceries@1429864759:environment:release`
+   (the repo uses GitHub's immutable subject format), so only jobs in the
+   `release` environment, which deploys from `main` only, can act as it.
+   Narrower than the provider's repo-wide condition. `PLAY_SERVICE_ACCOUNT_JSON`
+   is gone from the secrets check.
+7. **`PLAY_RELEASE_STATUS` is the Play setup state.** Unset: no upload; the
+   run proves the token exchange and reports whether Play lets the account
+   in (`android play_access`), and the AAB is an artifact for the Lead's
+   first manual upload. `draft`, then `completed`: every run uploads, and a
+   missing grant fails the run. One variable instead of a separate on/off
+   switch. A failed token exchange always fails the job: that is our setup.
+8. **fastlane 2.241.1 to 2.241.2.** The patch release fixes security
+   advisories in spaceship and match, both of which run with the signing
+   secrets here.
+9. **What to Test is set by `wait_processing`, not by pilot.** pilot waits
+   for the build only when `changelog` is set and ignores
+   `localized_build_info` for that check, and a retried upload would trip
+   over it. The upload is retried once; the wait lane sets de-DE and en-US
+   as soon as the build appears and then polls for `VALID`.
+   `notify_external_testers` stays unset: there are no external groups and
+   `distribute_external` is false; internal testers get TestFlight's normal
+   notice.
+10. **Dry runs validate.** iOS runs `altool --validate-app` with the API key
+    (written to `~/.appstoreconnect/private_keys` for the call and deleted);
+    Android runs the upload with `validate_only` once Play is set up. Both
+    check the signing: the IPA through match's profile, the AAB through
+    `check-aab.sh` against the upload certificate's SHA-256.
+11. **Upload key.** PKCS12 keystores have one password; keytool ignores a
+    separate key password, so `key.properties` names the same random
+    32-character password twice. The first `keytool` call failed before
+    writing a keystore (the password variable was not exported); its
+    stray `key.properties` was deleted and both files were generated again.
+12. **The release tests run in the lint gate**, next to
+    `scripts/landing-test.sh`. The lint gate runs on every PR; the fastlane
+    gate is path-filtered to `app/fastlane` and the Gemfile and would skip a
+    change to `scripts/release/`. The lint gate's shellcheck line now covers
+    `scripts/release/*.sh`.
+13. **5-green, adapted.** The PR touches `scripts/gates/lint.sh`, a gate
+    `verify.sh` runs, but none of `app/` (other than `app/fastlane` and the
+    Gemfile), `supabase/` or `e2e/`. The Lead's rule for CI-only changes
+    applies: CI `ci-ok` on the final head (the gate edit makes CI run every
+    gate), `scripts/verify.sh --only lint,fastlane,gitleaks` locally, then
+    5 consecutive green `upload: false` Release runs on `main` and one real
+    upload run. No local Supabase stack, Playwright or Flutter build: the
+    lint gate edit cannot change what those gates run.
+14. **Capabilities without the Certificates workflow.** `ios renew_profile`
+    runs match with `readonly: false`, `force: true` and
+    `certificate_id: GN85KDC962`; match creates a certificate only when the
+    repo holds none, so it regenerates the profile and nothing else. The
+    box's network blocks SSH to GitHub (ports 22 and 443), so the box uses
+    the HTTPS match URL with `gh` as the credential helper; the no-change
+    run (`MATCH_FORCE=false`) passed and left the match repo's HEAD as it
+    was. The plan's `ios preflight` fails early on an `INVALID` profile.
+15. **Build number guard.** The plan fails a run whose number is not above
+    TestFlight's highest, naming `BUILD_NUMBER_OFFSET`, instead of letting
+    the upload fail after an hour of macOS build.
+16. **One local appbundle build, for the Lead.** The Lead created the Play
+    app while #52 waited for CI (ghcr.io refused runners for hours), and L3
+    needs a signed AAB before any Release run on `main` can make one. The
+    box builds it (`--build-number=1003`, MemAvailable 9 GB, no other
+    flutter build running, the `~/.gradle` limits), checks its signer with
+    `check-aab.sh` and installs it at
+    `~/groceries-ops/artifacts/app-release.aab`. The first attempt (22:37)
+    copied the keystore and `key.properties` into `app/android/` and was
+    killed with the session before it finished, so its cleanup never ran
+    and both copies stayed in the worktree (gitignored, never committed;
+    review 0 found them). They were deleted. The build that counts
+    (`/tmp`-only script, detached so a session end cannot cut it) copies no
+    keystore: its `key.properties` names the keystore in
+    `~/groceries-ops/secrets/android/` by absolute path and is deleted by an
+    exit trap. Only that one build ran; the first never produced a bundle.
+    `BUILD_NUMBER_OFFSET` went from 1000 to 1010 so CI's next number (1013)
+    is above both stores' highest.
+17. **Review round before merge** (independent reviewer, read-only): What
+    to Test is sanitized with pilot's `sanitize_changelog` and a refusal
+    only warns (a red `ios` job after a good upload would reopen the issue
+    and re-ship the same commit); the notes drop titles about the repo's own
+    machinery; an Actions API error in the last-upload lookup now fails the
+    plan instead of reading as "no earlier upload"; the upload retry first
+    looks for the build for 10 minutes; preflight accepts any ACTIVE profile
+    of the name (a regenerated profile can leave an INVALID twin); the notes
+    output uses a random heredoc delimiter; the signing secrets moved from
+    the `ios` job's env to the two fastlane steps, out of reach of the
+    third-party actions.
+18. **ghcr.io refused runners** (`toomanyrequests` on every Supabase image
+    pull, seven attempts over two hours, githubstatus green). #52 takes
+    15b's one-line `ci.yml` change (`SUPABASE_INTERNAL_IMAGE_REGISTRY:
+    docker.io`) byte-for-byte, so whichever of #49 and #52 lands second
+    rebases cleanly.
