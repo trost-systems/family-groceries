@@ -30,9 +30,10 @@ Still yours:
 - Section 4, steps 16 and 18: the Xcode capability check and trying
   sign-in on your phones.
 - Section 5, step 1: one MCP connect and disconnect against production.
-- "Job 4: Siri", step 2, and "Job 4: release" (iOS: build 0.1.0 (1001) is
-  in TestFlight and ready for internal testing. You still add the testers.
-  Android is not started.) Also "Job 5: Android verification run".
+- "Job 4: Siri", step 2. Releases (job 23): iOS ships to TestFlight group
+  "Familie" every Monday by itself; Android builds and signs weekly and
+  uploads once the Lead's Play Console steps are done (`NEEDS_LEAD.md`).
+  Yours: "Job 23" below. Also "Job 5: Android verification run".
 - "Job 13: database backups": done (job 13b). Copy the backup private key
   from the build box to your own computer and password manager (section
   "Job 13: database backups").
@@ -276,39 +277,35 @@ The Release workflow and the fastlane lanes are in place
 skips both platforms and stays green. All secrets and variables go into one
 GitHub environment.
 
-### Status (2026-10-25, first TestFlight build)
+### Status (2026-10-27, job 23)
 
-iOS is done up to testers. Steps 1 to 6 below are done, and step 7 is done
-except the testers:
+Superseded by the weekly pipeline: [`RELEASE.md`](RELEASE.md) and
+[`NEEDS_LEAD.md`](NEEDS_LEAD.md). What still holds from job 4:
 
-- Agreement accepted, app record "Einkauf Familie" (Apple ID `6826907810`,
-  bundle ID `com.petertrost.familygroceries`), API key `family-groceries-ci`
-  (Admin, key ID `4J3N457M89`) and its three secrets in `release`.
 - Environment `release` (deployments from `main` only) holds variables
-  `APPLE_TEAM_ID` (`VCZSHMZY25`) and `MATCH_GIT_URL`
-  (`git@github.com:trost-systems/family-groceries-certificates.git`), plus
-  secrets `MATCH_DEPLOY_KEY`, `MATCH_PASSWORD` and the three
-  `APP_STORE_CONNECT_*`. The deploy key pair is
-  `~/groceries-ops/match-deploy-key` (+ `.pub`) on the build box, and
-  `MATCH_PASSWORD` is in `~/groceries-ops/env`. Copy both to your password
-  manager. Without the passphrase the match repo is unreadable.
-- The private repo `trost-systems/family-groceries-certificates` has the
-  read-write deploy key.
+  `APPLE_TEAM_ID` (`VCZSHMZY25`) and `MATCH_GIT_URL`, secrets
+  `MATCH_DEPLOY_KEY`, `MATCH_PASSWORD`, the three `APP_STORE_CONNECT_*`
+  (API key `family-groceries-ci`, key ID `4J3N457M89`, Admin) and, since
+  job 23, `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEY_PROPERTIES`. The match
+  deploy key pair is `~/groceries-ops/match-deploy-key` (+ `.pub`) and
+  `MATCH_PASSWORD` is in `~/groceries-ops/env` on the build box. Copy both
+  to your password manager. Without the passphrase the match repo is
+  unreadable.
 - Certificates run
   [40224053069](https://github.com/trost-systems/family-groceries/actions/runs/40224053069)
-  (green) created Apple Distribution certificate `GN85KDC962` and the
-  App Store profile in the match repo. The team now has three distribution
-  certificates (two from earlier, plus this one). No certificate was
-  revoked. Don't rerun Certificates unless the certificate needs renewing.
-- Release run
-  [40224169926](https://github.com/trost-systems/family-groceries/actions/runs/40224169926)
-  (`platform: ios`, green) uploaded version 0.1.0, build 1001
-  (`1000 + run number`). App Store Connect shows it as `VALID`, internal
-  state `READY_FOR_BETA_TESTING`, export compliance answered (no non-exempt
-  encryption). The build expires on 2027-01-23.
-
-Still yours: the testers part of step 7 (create the internal group, add
-yourself and Lea).
+  created Apple Distribution certificate `GN85KDC962` (expires 2027-10-25)
+  and the profile now named "match AppStore com.hummlist.app". The team has
+  three distribution certificates; none was revoked. Don't rerun
+  Certificates unless the certificate needs renewing.
+- The App Store Connect app "Hummlist" (Apple ID `6826922741`) exists, with
+  the internal group "Familie" (all builds, you are in it). Release run
+  [40229901781](https://github.com/trost-systems/family-groceries/actions/runs/40229901781)
+  uploaded 0.1.0 (1002). Apple expired it, and every other build of the
+  team, on 2026-10-26 (`RELEASE.md`, "TestFlight builds expired"); the
+  weekly run uploads a new one.
+- Steps 1 to 7 below are done for iOS (Lea's App Store Connect invitation is
+  pending; the Lead follows it up). The Android steps are replaced by
+  `NEEDS_LEAD.md`.
 
 ### iOS
 
@@ -367,55 +364,10 @@ yourself and Lea).
 
 ### Android
 
-1. **Create the app.** Play Console, Create app: name "Hummlist" (package
-   `com.hummlist.app` since job 20), default
-   language German, app, free. Accept the declarations.
-2. **Create the upload keystore** and keep it with its passwords in your
-   password manager:
-
-   ```bash
-   keytool -genkeypair -v -keystore upload-keystore.jks -storetype PKCS12 \
-     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-   ```
-
-3. **Store it as secrets.** `key.properties` uses the passwords you chose:
-
-   ```bash
-   base64 -w0 upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64 --env release
-   # macOS: base64 -i upload-keystore.jks | gh secret set ANDROID_KEYSTORE_BASE64 --env release
-   printf 'storeFile=../upload-keystore.jks\nstorePassword=%s\nkeyAlias=upload\nkeyPassword=%s\n' \
-     '<store password>' '<key password>' | gh secret set ANDROID_KEY_PROPERTIES --env release
-   ```
-
-4. **Upload the first AAB by hand.** The Play API cannot upload to an app
-   that has no release yet. Build one signed with the upload key: copy
-   `upload-keystore.jks` to `app/android/` and write the same `key.properties`
-   to `app/android/key.properties` (both are git-ignored), then
-
-   ```bash
-   cd app && flutter build appbundle --release --build-number=1000
-   ```
-
-   In Play Console, Testing, Internal testing, create a release, accept Play
-   App Signing, upload `build/app/outputs/bundle/release/app-release.aab`,
-   add yourself and Lea as testers and roll it out. Delete the two files from
-   `app/android/` afterwards.
-5. **Service account.** In Google Cloud console, pick or create a project,
-   enable the "Google Play Android Developer API", create a service account
-   (no project roles needed) and add a JSON key. In Play Console, Users and
-   permissions, invite the service account's email, give it access to the
-   Hummlist app with "Release to testing tracks" (and "View app information"),
-   and save.
-
-   ```bash
-   gh secret set PLAY_SERVICE_ACCOUNT_JSON --env release < service-account.json
-   rm service-account.json
-   ```
-
-6. Run the Release workflow with `platform: android`. If Play rejects the
-   upload with "Only releases with status draft may be created on draft
-   app", set `gh variable set PLAY_RELEASE_STATUS --env release --body draft`
-   and roll the draft out by hand in Play Console until the app leaves draft.
+Replaced by job 23. The upload keystore exists (created on the build box,
+`~/groceries-ops/secrets/android/`), its secrets are set, and Play access is
+keyless (no `PLAY_SERVICE_ACCOUNT_JSON`). The Play Console steps are the
+Lead's: [`NEEDS_LEAD.md`](NEEDS_LEAD.md), L1 to L5.
 
 ## Job 5: Android verification run
 
@@ -612,13 +564,9 @@ with Apple, In-App Purchase), the hosted Supabase Apple client IDs
 and both deep links in the redirect allow list. The match profile is the
 Lead's step. Yours, in this order:
 
-1. **App Store Connect app record.** Apps, New App: platform iOS, name
-   "Hummlist" (pick a variant that still contains the full word "Hummlist"
-   if the name is taken), primary language German, bundle ID
-   `com.hummlist.app`, SKU `hummlist`. Until it exists, `fastlane ios beta`
-   cannot upload. The old record "Einkauf Familie" (`6826907810`) keeps
-   build 0.1.0 (1001) and gets no new builds. The API key
-   `family-groceries-ci` is team-wide and works for the new record.
+1. **App Store Connect app record.** Done (2026-10-25): "Hummlist", Apple
+   ID `6826922741`, with the internal group "Familie". The old app record
+   (`6826907810`) gets no new builds.
 2. **Google sign-in** (Google Cloud project `family-groceries-512507`,
    Google Auth Platform, Clients). Without this, Google sign-in fails on the
    new builds.
@@ -652,8 +600,8 @@ Lead's step. Yours, in this order:
    from Apple's docs, not tried from the box. While there, change the
    Services ID's description "Einkauf Web" to "Hummlist": Apple's web
    sign-in page shows it to the user.
-4. **Play Console.** A new package name is a new Play app: follow "Job 4:
-   release, Android" with the name "Hummlist". Nothing of a
+4. **Play Console.** Done by job 23 up to the browser: the Lead creates
+   the Play app "Hummlist" (`NEEDS_LEAD.md`, L1 to L4). Nothing of a
    `com.petertrost.familygroceries` Play app carries over.
 5. **Retire the old bundle ID** only after a Hummlist build is verified on
    your iPhone (Apple, Google, magic link) and Lea has moved to it: remove
@@ -662,4 +610,34 @@ Lead's step. Yours, in this order:
    `bundleIds` in `scripts/configure-social-auth.mjs` and rerun step 12).
    A job can then drop it from `appleBundleIds` in
    `supabase/functions/account/apple.ts`. Keep its deep link in the redirect allow list; it costs nothing.
+
+## Job 23: weekly releases
+
+The Release workflow ships green `main` every Monday at 03:00 UTC: TestFlight
+group "Familie" and, once Play is set up, the Play internal track
+([`RELEASE.md`](RELEASE.md)). The Play Console and Apple Developer browser
+steps are the Lead's, with you only signing in
+([`NEEDS_LEAD.md`](NEEDS_LEAD.md)). Yours:
+
+1. **Only if you have no Google Play developer account** (the Lead finds
+   out in `NEEDS_LEAD.md`, L1): create one at
+   <https://play.google.com/console/signup>. It costs USD 25 once and needs
+   your identity verification (and, for an organization account such as
+   Trost Systems, a D-U-N-S number). Your decision; the box never creates or
+   pays for it. Until then Android builds and signs weekly but uploads
+   nowhere; iOS is unaffected.
+2. **Copy the Android upload key to your password manager.** Both files are
+   on the build box in `~/groceries-ops/secrets/android/`:
+   `upload-keystore.jks` and `key.properties` (its two passwords). Google can
+   reset a lost upload key only through Play Console support, so keep a copy
+   outside the box.
+3. **Watch the repository's issues** (Watch, Custom, Issues) if you haven't:
+   a failed Monday release opens "Weekly release failed" there.
+4. **If a new TestFlight build comes out already expired** (the run fails
+   with "VALID but already expired"; `RELEASE.md`, "TestFlight builds
+   expired"): as the account holder, open a case at
+   <https://developer.apple.com/contact/> (TestFlight) naming the build
+   number. Apple expired all of the team's builds at once on 2026-10-26 and
+   has acknowledged the same problem for other teams; nothing in the account
+   settings or the repo fixes it.
 
