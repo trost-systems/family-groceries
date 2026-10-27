@@ -1,14 +1,14 @@
 /** Commands that act on a running app client through Marionette. */
 
 import { type Args, type Command, type Ctx, FgError, type FlagSpec, int, type JsonObject, str, usage } from './core.ts';
-import { type ClientName, clientName, type ClientState, USERS } from './instance.ts';
+import { type ClientName, clientName, type ClientState } from './instance.ts';
+import { resolveMember } from './members.ts';
 import { type Element, Marionette, type Matcher, matcherArgs, rowKeyFor, SCREEN_KEYS, screenOf } from './marionette.ts';
 import { waitFor } from './surfaces.ts';
 
 export const clientFlag: FlagSpec = {
   name: 'client',
-  help: 'Which running app to drive: peter (default) or lea.',
-  choices: ['peter', 'lea'],
+  help: 'Which running app to drive: peter (default), lea, or the user it was started as (fg up --clients).',
 };
 
 const matcherFlags: FlagSpec[] = [
@@ -24,13 +24,20 @@ const matcherFlags: FlagSpec[] = [
 ];
 
 export function client(ctx: Ctx, args: Args): { name: ClientName; state: ClientState; m: Marionette } {
-  const name = clientName(str(args, 'client'));
+  const asked = clientName(str(args, 'client'));
+  // A bare handle finds the app started as <run>:<handle>.
+  const matches = Object.keys(ctx.state.clients).filter((k) => k === asked || k.endsWith(`:${asked}`));
+  const name = matches.includes(asked) ? asked : matches.length === 1 ? matches[0] : asked;
   const state = ctx.state.clients[name];
   if (!state) {
     throw new FgError(
       'no_client',
       `No ${name} app is running in this instance (FG_PORT_PREFIX=${ctx.inst.prefix}).`,
-      name === 'peter' ? 'Run `fg up`.' : 'Run `fg up --clients peter,lea` to start the second app.',
+      name === 'peter'
+        ? 'Run `fg up`.'
+        : `Run \`fg up --clients ${
+          ['peter', ...Object.keys(ctx.state.clients).filter((k) => k !== 'peter'), name].join(',')
+        }\` to start it.`,
     );
   }
   return { name, state, m: new Marionette(ctx.sh, state.vmUri) };
@@ -119,7 +126,7 @@ export const driveCommands: Command[] = [
   {
     name: 'find',
     summary: 'List widgets on screen (type, key, text, label, tooltip, bounds) as JSON.',
-    usage: 'fg find [--key K] [--text T] [--type W] [--label L] [--tooltip T] [--contains S] [--row TEXT] [--client peter|lea]',
+    usage: 'fg find [--key K] [--text T] [--type W] [--label L] [--tooltip T] [--contains S] [--row TEXT] [--client NAME]',
     description:
       "Reads Marionette's interactive-element tree. Filters are exact matches and combine with AND; --contains matches a substring of text, label, tooltip or key. --row limits the tree to the list row showing that text. An empty result is not an error: check `count`.",
     flags: [...matcherFlags.filter((f) => !['x', 'y'].includes(f.name)), {
@@ -138,8 +145,7 @@ export const driveCommands: Command[] = [
   {
     name: 'tap',
     summary: 'Tap a widget by key, text, type, tooltip, label, row, or coordinates.',
-    usage:
-      'fg tap (--key K | --text T | --type W | --identifier I | --tooltip T | --label L | --x X --y Y) [--row TEXT] [--client peter|lea]',
+    usage: 'fg tap (--key K | --text T | --type W | --identifier I | --tooltip T | --label L | --x X --y Y) [--row TEXT] [--client NAME]',
     description:
       "Taps through Marionette's gesture dispatcher, the same path as a finger. Text must match exactly. To tick an item, tap the checkbox in its row: `fg tap --row Milch --type Checkbox`. Tapping an item's name opens its edit sheet instead.",
     flags: [...matcherFlags, clientFlag],
@@ -154,7 +160,7 @@ export const driveCommands: Command[] = [
   {
     name: 'type',
     summary: 'Enter text into a field (default: the focused one), optionally pressing Enter.',
-    usage: 'fg type --input TEXT [--key K | --label L | --identifier I] [--submit] [--client peter|lea]',
+    usage: 'fg type --input TEXT [--key K | --label L | --identifier I] [--submit] [--client NAME]',
     description:
       'Without a matcher it types into the focused field, which proves focus: on the list screen the add field has focus on launch. With --key or --label it taps the field first, so --submit reaches it; --label finds keyless fields by their label (e.g. "Einladungscode"). The text replaces the field\'s content. --submit sends a real Enter key event (onSubmitted runs). Umlauts and ß are safe.',
     flags: [
@@ -190,7 +196,7 @@ export const driveCommands: Command[] = [
   {
     name: 'press',
     summary: 'Press a key on the focused widget (enter, tab, escape, backspace, arrows, a-z, 0-9).',
-    usage: 'fg press <key> [--modifiers control,shift,alt,meta] [--client peter|lea]',
+    usage: 'fg press <key> [--modifiers control,shift,alt,meta] [--client NAME]',
     description: "Sends a real key event through Flutter's focus system.",
     flags: [{ name: 'modifiers', help: 'Comma-separated: control, shift, alt, meta.' }, clientFlag],
     examples: ['fg press enter', 'fg press escape', 'fg press a --modifiers control'],
@@ -206,7 +212,7 @@ export const driveCommands: Command[] = [
   {
     name: 'back',
     summary: 'Press the system back button (closes sheets and dialogs, pops routes).',
-    usage: 'fg back [--client peter|lea]',
+    usage: 'fg back [--client NAME]',
     description: 'Android back / route pop. On the root route it does nothing useful on Linux.',
     flags: [clientFlag],
     examples: ['fg back'],
@@ -218,7 +224,7 @@ export const driveCommands: Command[] = [
   {
     name: 'swipe',
     summary: 'Swipe a widget or row in a direction (e.g. swipe an item left to delete it).',
-    usage: 'fg swipe (--key K | --text T | --row TEXT) --direction left|right|up|down [--distance PX] [--client peter|lea]',
+    usage: 'fg swipe (--key K | --text T | --row TEXT) --direction left|right|up|down [--distance PX] [--client NAME]',
     description:
       'List rows are Dismissible: swiping left far enough deletes the item (with an undo snackbar). --row swipes the whole row that shows the text.',
     flags: [
@@ -243,8 +249,7 @@ export const driveCommands: Command[] = [
   {
     name: 'wait',
     summary: 'Wait until a widget appears (or with --gone, disappears). Use instead of sleep.',
-    usage:
-      'fg wait (--key K | --text T | --type W | --label L | --tooltip T | --contains S) [--gone] [--timeout SECONDS] [--client peter|lea]',
+    usage: 'fg wait (--key K | --text T | --type W | --label L | --tooltip T | --contains S) [--gone] [--timeout SECONDS] [--client NAME]',
     description:
       'Polls the element tree every 0.5 s. Exits 0 with the matches once the condition holds, or fails with code "timeout" (default 15 s). Live-sync checks use this on the other client: `fg wait --text Milch --gone --client lea`.',
     flags: [
@@ -286,19 +291,20 @@ export const driveCommands: Command[] = [
   {
     name: 'login',
     summary: 'Sign a client in through the real login screen (email + password), or print an API token.',
-    usage: 'fg login <peter|lea> [--client peter|lea] [--api]',
+    usage: 'fg login <USER> [--client NAME] [--api]',
     description:
       "Types the seeded credentials into login-email and login-password and presses Enter, then waits for the list (or welcome) screen. The client defaults to the user's own app. Fails with not_on_login if the app is already signed in: `fg logout` first. With --api it drives nothing and prints an access token for curl and `fg fn call`.",
     flags: [clientFlag, { name: 'api', type: 'boolean', help: 'Return {accessToken, userId} instead of driving the UI.' }],
-    examples: ['fg login peter', 'fg login lea', 'fg login peter --api'],
+    examples: ['fg login peter', 'fg login lea', 'fg login peter --api', 'fg login fx-1025-1432-k3x9:mia --api'],
     async run(ctx, args) {
-      const user = clientName(args.positional[0]);
+      const member = await resolveMember(ctx.sh, ctx.inst, clientName(args.positional[0]));
+      const user = member.ref;
       if (args.flags.api) {
         const { stackEnv, signIn } = await import('./stack.ts');
-        const session = await signIn(ctx.sh, await stackEnv(ctx.sh, ctx.inst), user);
-        return { user, email: USERS[user].email, accessToken: session.accessToken, userId: session.userId };
+        const session = await signIn(ctx.sh, await stackEnv(ctx.sh, ctx.inst), member);
+        return { user, email: member.email, accessToken: session.accessToken, userId: session.userId };
       }
-      const { name, m } = client(ctx, { ...args, flags: { ...args.flags, client: str(args, 'client') ?? user } });
+      const { name, m } = client(ctx, { ...args, flags: { ...args.flags, client: str(args, 'client') ?? args.positional[0] ?? 'peter' } });
       const elements = await m.elements();
       if (!elements.some((e) => e.key === 'login-email')) {
         const screen = screenOf(elements);
@@ -310,7 +316,7 @@ export const driveCommands: Command[] = [
           { screen },
         );
       }
-      const { email, password } = USERS[user];
+      const { email, password } = member;
       await m.call(['enter-text', '--key', 'login-email', '--input', email]);
       await m.call(['tap', '--key', 'login-password']);
       await m.call(['enter-text', '--key', 'login-password', '--input', password]);
@@ -322,7 +328,7 @@ export const driveCommands: Command[] = [
   {
     name: 'logout',
     summary: 'Sign a client out through its menu (Menü, then Abmelden).',
-    usage: 'fg logout [--client peter|lea]',
+    usage: 'fg logout [--client NAME]',
     description:
       "Opens the list screen's menu and chooses Abmelden, or the welcome screen's Abmelden button, then waits for the login screen.",
     flags: [clientFlag],
@@ -357,7 +363,7 @@ export const driveCommands: Command[] = [
   {
     name: 'marionette',
     summary: 'Run any Marionette CLI command against a client (escape hatch).',
-    usage: 'fg marionette [--client peter|lea] -- <marionette args...>',
+    usage: 'fg marionette [--client NAME] -- <marionette args...>',
     description:
       "Passes the client's VM service URI for you. See `marionette help-ai` for the full reference (scroll-to, long-press, double-tap, set-device-config, get-logs, hot-reload).",
     flags: [clientFlag],

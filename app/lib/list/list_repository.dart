@@ -73,11 +73,15 @@ final class const RejectedOp(
   String toString() => 'RejectedOp($message)';
 }
 
-/// Runs a write; a PostgREST answer means the database refused it.
+/// Runs a write; a PostgREST answer means the database refused it, except a
+/// JWT error (PGRST3xx): the token lapsed in flight, and a retry refreshes it.
 Future<T> _refusable<T>(Future<T> Function() write) async {
   try {
     return await write();
   } on PostgrestException catch (e) {
+    if (e.code?.startsWith('PGRST3') ?? false) {
+      rethrow;
+    }
     throw RejectedOp(e.message, nameTaken: e.code == '23505');
   }
 }

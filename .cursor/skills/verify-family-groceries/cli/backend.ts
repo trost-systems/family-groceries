@@ -1,22 +1,26 @@
 /** Secondary surfaces: Postgres state, Edge Functions over HTTP, a REST/realtime peer client, and Mailpit. */
 
 import { type Command, type Ctx, FgError, int, type JsonObject, str, usage } from './core.ts';
-import { clientName, USERS } from './instance.ts';
+import { resolveMember } from './members.ts';
 import { householdOf, restAs, signIn, sql, sqlRows, stackEnv } from './stack.ts';
 
-const asFlag = { name: 'as', help: 'Run as this seeded user (peter or lea) instead of the superuser.', choices: ['peter', 'lea'] };
+const asFlag = {
+  name: 'as',
+  help: 'Run as this user instead of the superuser: peter, lea, or a fixture member (<run>:<handle>, or a handle of the current run).',
+};
 
 export const backendCommands: Command[] = [
   {
     name: 'db query',
     summary: 'Run SQL against the local database; read-only JSON rows unless --write.',
-    usage: 'fg db query "<sql>" [--as peter|lea] [--write] [--dry-run]',
+    usage: 'fg db query "<sql>" [--as USER] [--write] [--dry-run]',
     description:
       "A single SELECT/WITH returns {rows: [...]}. The session is read-only unless --write, so a stray UPDATE fails with code read_only instead of changing data. --as runs the statement as role authenticated with that user's id, so RLS applies exactly as in the app (use it to prove cross-household isolation).",
     flags: [asFlag, { name: 'write', type: 'boolean', help: "Allow writes; output is psql's status text instead of rows." }],
     examples: [
       'fg db query "select name, status, category_id from items order by created_at desc limit 5"',
       'fg db query "select count(*) from items" --as lea',
+      'fg db query "select name from items" --as fx-1025-1432-k3x9:mia',
       'fg db query "delete from items where name = \'Milch\'" --write --dry-run',
     ],
     destructive: true,
@@ -24,7 +28,7 @@ export const backendCommands: Command[] = [
       const text = args.positional[0];
       if (!text) throw usage('No SQL given.', 'Quote it: fg db query "select * from items"');
       const as = str(args, 'as');
-      const asUser = as ? await userId(ctx, clientName(as)) : undefined;
+      const asUser = as ? await userId(ctx, (await resolveMember(ctx.sh, ctx.inst, as)).email) : undefined;
       if (args.flags.write) {
         const out = await ctx.act(`run as ${as ?? 'postgres'}: ${text}`, () => sql(ctx.sh, ctx.inst, text, { write: true, asUser }));
         return { as: as ?? 'postgres', write: true, output: out?.trim() ?? null };
@@ -48,11 +52,11 @@ export const backendCommands: Command[] = [
   {
     name: 'fn call',
     summary: 'Call an Edge Function over HTTP as a seeded user (or anonymously).',
-    usage: 'fg fn call <function> [--as peter|lea|anon] [--method POST] [--path /sub/path] [--body JSON] [--bearer TOKEN] [--dry-run]',
+    usage: 'fg fn call <function> [--as USER|anon] [--method POST] [--path /sub/path] [--body JSON] [--bearer TOKEN] [--dry-run]',
     description:
       "Hits http://127.0.0.1:<prefix>21/functions/v1/<function><path> with the publishable key and the user's session JWT (or --bearer, e.g. a personal access token). Returns status, content type and the parsed body. Some functions write data (voice, mcp tools/call), hence --dry-run.",
     flags: [
-      { name: 'as', help: 'peter, lea or anon (default peter).', choices: ['peter', 'lea', 'anon'] },
+      { name: 'as', help: 'anon, peter (default), lea or a fixture member (<run>:<handle>).' },
       { name: 'method', help: 'HTTP method (default GET, or POST with --body).' },
       { name: 'path', help: 'Suffix after the function name, e.g. /.well-known/oauth-protected-resource.' },
       { name: 'body', help: 'JSON request body.' },
@@ -79,7 +83,8 @@ export const backendCommands: Command[] = [
       }
       const method = str(args, 'method') ?? (body ? 'POST' : 'GET');
       const url = `${env.apiUrl}/functions/v1/${name}${str(args, 'path') ?? ''}`;
-      const token = str(args, 'bearer') ?? (as === 'anon' ? undefined : (await signIn(ctx.sh, env, clientName(as))).accessToken);
+      const token = str(args, 'bearer') ??
+        (as === 'anon' ? undefined : (await signIn(ctx.sh, env, await resolveMember(ctx.sh, ctx.inst, as))).accessToken);
       const headers: Record<string, string> = { apikey: env.publishableKey, accept: 'application/json, text/event-stream' };
       if (token) headers.authorization = `Bearer ${token}`;
       if (body) headers['content-type'] = 'application/json';
@@ -106,22 +111,36 @@ export const backendCommands: Command[] = [
   {
     name: 'peer',
     summary: 'A second client over REST/realtime: add, tick or list items, or watch live changes.',
-    usage: 'fg peer <peter|lea> add <name> | tick <name> | list | watch [--timeout S] [--until TEXT] [--dry-run]',
+    usage: 'fg peer <USER> add <name> | tick <name> | list | watch [--timeout S] [--until TEXT] [--dry-run]',
     description:
       'Acts as the given user through the same PostgREST and Realtime endpoints the app uses, without a UI. Use it as the second client when only one app runs (Android), and as an independent observer: `watch` prints realtime events for the household until --until appears in an item name or --timeout passes. It logs "watch live" to stderr once events flow; a write before that line is missed.',
     flags: [{ name: 'timeout', help: 'Seconds for watch (default 15).' }, {
       name: 'until',
       help: 'Stop watch at the first event for an item with this name.',
     }],
-    examples: ['fg peer lea add Butter', 'fg peer lea tick Milch', 'fg peer lea list', 'fg peer lea watch --until Brot --timeout 20'],
+    examples: [
+      'fg peer lea add Butter',
+      'fg peer fx-1025-1432-k3x9:noah add Hafermilch',
+      'fg peer lea tick Milch',
+      'fg peer lea list',
+      'fg peer lea watch --until Brot --timeout 20',
+    ],
     destructive: true,
     async run(ctx, args) {
       const [rawUser, action, ...words] = args.positional;
-      const user = clientName(rawUser);
+      if (!rawUser) throw usage('Which user?', 'e.g. fg peer lea list, or fg peer <run>:<handle> list');
+      const member = await resolveMember(ctx.sh, ctx.inst, rawUser);
+      const user = member.ref;
       const env = await stackEnv(ctx.sh, ctx.inst);
-      const session = await signIn(ctx.sh, env, user);
-      const household = await householdOf(ctx.sh, ctx.inst, user);
-      if (!household) throw new FgError('no_household', `${USERS[user].email} is in no household.`, 'Run `fg seed`.');
+      const session = await signIn(ctx.sh, env, member);
+      const household = await householdOf(ctx.sh, ctx.inst, member.email);
+      if (!household) {
+        throw new FgError(
+          'no_household',
+          `${member.email} is in no household.`,
+          'Run `fg seed`, or pick a member with a household (`fg runs`).',
+        );
+      }
       const itemName = words.join(' ');
       const active = async () =>
         (await restAs(
@@ -181,7 +200,7 @@ export const backendCommands: Command[] = [
   {
     name: 'mail',
     summary: 'Read the local inbox (Mailpit) and extract sign-in links.',
-    usage: 'fg mail [--to peter|lea|EMAIL] [--limit N]',
+    usage: 'fg mail [--to USER|EMAIL] [--limit N]',
     description:
       'Lists the newest messages for the address with subject, time and any auth links (magic link, confirmation). Nothing leaves the box: the local stack sends all mail to Mailpit.',
     flags: [{ name: 'to', help: 'Seeded user or an email address (default: all).' }, {
@@ -191,7 +210,7 @@ export const backendCommands: Command[] = [
     examples: ['fg mail --to peter', 'fg mail --limit 1'],
     async run(ctx, args) {
       const to = str(args, 'to');
-      const address = to === 'peter' || to === 'lea' ? USERS[to].email : to;
+      const address = to && !to.includes('@') ? (await resolveMember(ctx.sh, ctx.inst, to)).email : to;
       const res = await ctx.sh.fetch(`${ctx.inst.mailUrl}/api/v1/messages?limit=50`).catch(() => null);
       if (!res?.ok) {
         throw new FgError(
@@ -218,9 +237,15 @@ export const backendCommands: Command[] = [
   },
 ];
 
-async function userId(ctx: Parameters<Command['run']>[0], user: 'peter' | 'lea'): Promise<string> {
-  const rows = await sqlRows(ctx.sh, ctx.inst, `select id from auth.users where email = '${USERS[user].email}'`);
-  if (!rows[0]) throw new FgError('no_user', `${USERS[user].email} does not exist.`, 'Run `fg seed`.');
+async function userId(ctx: Parameters<Command['run']>[0], email: string): Promise<string> {
+  const rows = await sqlRows(ctx.sh, ctx.inst, `select id from auth.users where email = '${email.replaceAll("'", "''")}'`);
+  if (!rows[0]) {
+    throw new FgError(
+      'no_user',
+      `${email} does not exist.`,
+      email.endsWith('@fg.test') ? 'Run `fg seed`.' : 'The run was torn down: `fg runs`.',
+    );
+  }
   return rows[0].id as string;
 }
 

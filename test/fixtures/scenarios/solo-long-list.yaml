@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: solo-long-list
+summary: One person alone in a household with a 64-item list spread over Lidl, Edeka, dm and no store, every category used.
+goodFor:
+  - scrolling, grouping and category headers on a long list
+  - store views with many tagged and untagged items
+  - offline start with a big cached list
+users:
+  - { handle: sam, name: Sam Solo }
+households:
+  - name: Sams Wohnung
+    members: [sam]
+    items:
+      # Obst & Gemüse
+      - { name: Äpfel, quantity: "1 kg" }
+      - { name: Bananen, quantity: "6" }
+      - Birnen
+      - { name: Zitronen, quantity: "3" }
+      - { name: Kartoffeln, quantity: "2 kg", store: Lidl }
+      - Zwiebeln
+      - Knoblauch
+      - { name: Paprika, quantity: "3", store: Edeka }
+      - Brokkoli
+      - Salat
+      - { name: Tomaten, quantity: "500 g" }
+      - Avocado
+      # Brot & Backwaren
+      - { name: Vollkornbrot, store: Edeka }
+      - { name: Brötchen, quantity: "6" }
+      - Toastbrot
+      - Croissants
+      # Kühlregal
+      - { name: Milch, quantity: "2", store: Lidl }
+      - Butter
+      - { name: Joghurt, quantity: "4" }
+      - Quark
+      - Gouda
+      - Mozzarella
+      - Frischkäse
+      - { name: Eier, quantity: "10", store: Lidl }
+      - Sahne
+      # Fleisch/Wurst/Fisch
+      - Hähnchenbrust
+      - Hackfleisch
+      - Lachs
+      - Salami
+      - Kochschinken
+      # Vorrat & Konserven
+      - { name: Nudeln, quantity: "2", store: Lidl }
+      - Reis
+      - Mehl
+      - Zucker
+      - Haferflocken
+      - Olivenöl
+      - Passierte Tomaten
+      - Kidneybohnen
+      - Thunfisch
+      - Senf
+      - Ketchup
+      # Süßes & Snacks
+      - Schokolade
+      - Chips
+      - Gummibärchen
+      - Kekse
+      # Getränke
+      - { name: Mineralwasser, quantity: "2 Kisten", store: Edeka }
+      - Apfelsaft
+      - Orangensaft
+      - Bier
+      - Kaffee
+      - Tee
+      # Tiefkühl
+      - Tiefkühlpizza
+      - Erbsen
+      - Spinat
+      - Vanilleeis
+      # Haushalt
+      - Spülmittel
+      - Müllbeutel
+      - Alufolie
+      - Küchenrolle
+      - Waschmittel
+      # 👶 Drogerie
+      - { name: Zahnpasta, store: dm }
+      - { name: Duschgel, store: dm }
+      - { name: Shampoo, store: dm }
+      - { name: Deo, store: dm }

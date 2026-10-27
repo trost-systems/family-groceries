@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: household-3-mid-shop
+summary: Three members of one household in the middle of a Lidl trip; eight items were just ticked off, ten are still open, and Noah's client shows the Lidl view.
+goodFor:
+  - live sync with two or three clients (fg sync household-3-mid-shop --clients 3)
+  - ticking off in a store view (teaches item→store memory)
+  - the recently bought list (Zuletzt gekauft) with fresh ticks, undo
+users:
+  - { handle: mia, name: Mia Brandt }
+  - { handle: noah, name: Noah Brandt }
+  - { handle: ida, name: Ida Brandt }
+households:
+  - name: Familie Brandt
+    members: [mia, noah, ida]
+    items:
+      - { name: Bananen, quantity: "6", by: mia }
+      - { name: Gurke, by: ida }
+      - { name: Vollmilch, quantity: "2", store: Lidl, by: mia }
+      - { name: Butter, store: Lidl, by: noah }
+      - { name: Brötchen, quantity: "4", by: ida }
+      - { name: Nudeln, store: Lidl, by: mia }
+      - { name: Tomaten, by: noah }
+      - { name: Spülmittel, store: dm, by: mia }
+      - { name: Zahnpasta, store: dm, by: ida }
+      - { name: Apfelsaft, by: noah }
+    history:
+      # The trip in progress: ticked off in the Lidl view minutes ago.
+      - at: "-12m"
+        by: noah
+        store: Lidl
+        items: [Eier, Joghurt, Käse, Mehl, Reis, Paprika, Möhren, Haferflocken]
+      # Earlier weeks, so usuals and the history are not empty.
+      - at: "-7d 18:10"
+        by: mia
+        store: Lidl
+        every: 7d
+        times: 3
+        items: [Eier, Joghurt, Vollmilch, Bananen]
+views:
+  noah: { store: Lidl }
+expect:
+  usuals:
+    home: [Eier, Joghurt]

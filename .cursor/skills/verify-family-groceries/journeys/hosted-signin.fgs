@@ -1,0 +1,4 @@
+# One sign-in through the web app against the hosted project, as a fresh test account.
+# fg sync empty-new-user --clients 1 --target hosted --script .cursor/skills/verify-family-groceries/journeys/hosted-signin.fgs
+expect A text "Haushalt anlegen" within 10s
+screenshot "signed-in-welcome"

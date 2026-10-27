@@ -1,0 +1,53 @@
+{
+  "ok": true,
+  "command": "teardown",
+  "target": "hosted",
+  "run": "fx-1025-0742-raaq",
+  "alreadyClean": false,
+  "deleted": {
+    "users": 1,
+    "households": 0
+  },
+  "keptHouseholds": [],
+  "leftovers": {
+    "auth_users": 0,
+    "households": 0,
+    "household_members": 0,
+    "items": 0,
+    "item_events": 0,
+    "invites": 0,
+    "categories": 0,
+    "stores": 0,
+    "store_category_order": 0,
+    "category_memory": 0,
+    "item_store_memory": 0,
+    "profiles.id": 0,
+    "household_members.user_id": 0,
+    "personal_access_tokens.user_id": 0,
+    "item_events.actor": 0,
+    "items.added_by": 0
+  },
+  "nonTestCountsUnchanged": true,
+  "nonTestCounts": {
+    "before": {
+      "auth_users": 1,
+      "households": 1,
+      "household_members": 1,
+      "items": 3,
+      "item_events": 7,
+      "invites": 0,
+      "stores": 3,
+      "categories": 11
+    },
+    "after": {
+      "auth_users": 1,
+      "households": 1,
+      "household_members": 1,
+      "items": 3,
+      "item_events": 7,
+      "invites": 0,
+      "stores": 3,
+      "categories": 11
+    }
+  }
+}

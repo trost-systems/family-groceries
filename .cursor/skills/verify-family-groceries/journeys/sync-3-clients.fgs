@@ -1,0 +1,20 @@
+# fg sync household-3-mid-shop --clients 3 --script journeys/sync-3-clients.fgs
+# A = Mia (Alle), B = Noah (Lidl view, mid-shop), C = Ida (Alle).
+A add "Hafermilch"
+expect B,C see "Hafermilch" within 2000ms
+B tick "Butter"
+expect A,C gone "Butter" within 2000ms
+C edit "Bananen" quantity "8"
+expect A,B see "Bananen 8" within 2000ms
+# Noah loses the connection in the shop.
+B offline
+A add "Kaffee"
+expect C see "Kaffee" within 2000ms
+wait 1500ms
+expect B gone "Kaffee"
+B tick "Nudeln"
+expect B gone "Nudeln"
+# Back online: both directions catch up.
+B online
+expect B see "Kaffee" within 15s
+expect A,C gone "Nudeln" within 15s

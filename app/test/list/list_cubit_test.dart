@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
@@ -14,6 +15,16 @@ void main() {
   late MemoryListCache cache;
 
   Future<void> settle() => pumpEventQueue();
+
+  /// Lets [time] pass, then lets the cubit finish what its timers started.
+  /// Timers that come due together run back to back before any microtask,
+  /// so a stalled box would otherwise resume the test mid-reload.
+  Future<void> elapse(Duration time) async {
+    // ast-grep-ignore: no-wall-time-wait-in-tests -- settle drains it
+    await Future<void>.delayed(time);
+    await settle();
+  }
+
   List<String> activeNames() => [
     for (final i in cubit.state.items.values)
       if (i.status == ItemStatus.active) i.name,
@@ -163,12 +174,12 @@ void main() {
     await settle();
     final before = repo.watches;
     repo.emitStatus!(ConnectionStatus.offline);
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+    await elapse(const Duration(milliseconds: 30));
     expect(repo.watches, before + 1);
     repo.emitStatus!(ConnectionStatus.online);
     await settle();
     expect(retrying.state.connection, ConnectionStatus.online);
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await elapse(const Duration(milliseconds: 50));
     expect(repo.watches, before + 1, reason: 'no more resubscribes once live');
     await retrying.close();
   });
@@ -415,14 +426,14 @@ void main() {
       for (var i = 0; i < 5; i++) {
         repo.emitCatalogChanged!();
       }
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await elapse(const Duration(milliseconds: 300));
       expect(cubit.state.filter, isA<AllStores>());
     },
   );
 
   group('across restarts', () {
     // Longer than the cubit's save debounce.
-    Future<void> saved() => Future.delayed(const Duration(milliseconds: 400));
+    Future<void> saved() => elapse(const Duration(milliseconds: 400));
 
     Future<void> restart() async {
       await cubit.close();
@@ -536,7 +547,7 @@ void main() {
     test('a cached list alone sets no baseline', () async {
       repo.remoteAdd('Tee');
       await cubit.resync();
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await elapse(const Duration(milliseconds: 400));
       cache.seen = null;
       repo.online = false;
       await startAgain();
@@ -556,7 +567,7 @@ void main() {
       ];
       repo.emitItem!(repo.remoteAdd('Tee', addedBy: 'ana'));
       expect(cubit.state.catalog.member('ana'), isNull);
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      await elapse(const Duration(milliseconds: 300));
       expect(cubit.state.catalog.member('ana')?.displayName, 'Ana');
     });
   });
@@ -613,7 +624,7 @@ void main() {
     });
 
     test('cached usuals work offline', () async {
-      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await elapse(const Duration(milliseconds: 400));
       repo.online = false;
       await startAgain();
       expect(cubit.state.connection, ConnectionStatus.offline);
@@ -644,17 +655,26 @@ void main() {
       expect(cubit.state.pending, isEmpty);
     });
 
-    test('they refresh once the list settles after a change', () async {
-      final before = repo.usualsCalls;
-      final id = (cubit.add('Brot') as Added).item.id;
-      await settle();
-      cubit.tick(id);
-      await settle();
-      expect(repo.usualsCalls, before);
-      repo.usuals = [const Usual(name: 'Brot', due: true)];
-      await Future<void>.delayed(const Duration(milliseconds: 1600));
-      expect(repo.usualsCalls, before + 1);
-      expect(names(cubit.dueUsuals), ['Brot']);
+    test('they refresh once the list settles after a change', () {
+      // Fake time: on a stalled box the real 1.5 s debounce could pass
+      // before the first check.
+      fakeAsync((async) {
+        final settling = ListCubit(repo, MemoryListCache(), userId: 'peter')
+          ..start();
+        async.elapse(Duration.zero);
+        final before = repo.usualsCalls;
+        final id = (settling.add('Brot') as Added).item.id;
+        async.elapse(Duration.zero);
+        settling.tick(id);
+        async.elapse(const Duration(milliseconds: 1499));
+        expect(repo.usualsCalls, before, reason: 'not while it settles');
+        repo.usuals = [const Usual(name: 'Brot', due: true)];
+        async.elapse(const Duration(milliseconds: 2));
+        expect(repo.usualsCalls, before + 1);
+        expect(names(settling.dueUsuals), ['Brot']);
+        unawaited(settling.close());
+        async.flushMicrotasks();
+      });
     });
   });
 }
