@@ -1,7 +1,8 @@
 # Siri: „Hey Siri, Einkaufsliste“
 
-Mit diesem Kurzbefehl diktierst du Einträge per Siri, auch auf der Apple
-Watch, mit AirPods und in CarPlay:
+Mit diesem Kurzbefehl diktierst du Einträge per Siri auf dem iPhone.
+Auf der Apple Watch, mit AirPods und in CarPlay kann es über Siri
+ebenfalls klappen, das haben wir aber noch nicht getestet.
 
 > **Du:** Hey Siri, Einkaufsliste.
 > **Siri:** Was soll auf die Liste?
@@ -42,6 +43,11 @@ Wenn das iPhone verloren geht, widerrufe den Token in der App unter
 **Widerrufen**. Der Kurzbefehl
 bekommt danach keinen Zugriff mehr.
 
+> **Achtung:** Teile den fertigen Kurzbefehl nicht mit anderen. Er
+> enthält deinen persönlichen Token. Wenn er doch in fremde Hände gerät,
+> widerrufe den Token in der App unter **Menü** → **Zugänge** (der Knopf
+> heißt **<Tokenname> widerrufen**, zum Beispiel **Siri widerrufen**).
+
 ## 2. Kurzbefehl anlegen
 
 1. Öffne die App **Kurzbefehle** und tippe oben rechts auf **+**.
@@ -73,7 +79,12 @@ Füge dann die drei Aktionen in dieser Reihenfolge hinzu. Suche jede über
    - **Header:** Tippe auf **Neuen Header hinzufügen**.
      - Schlüssel: `Authorization`
      - Text: `Bearer ` (mit Leerzeichen) und danach dein Token, also
-       zum Beispiel `Bearer fgp_AbC123…`
+       zum Beispiel `Bearer fgp_…`
+
+       > **Achtung:** Teile den fertigen Kurzbefehl nicht mit anderen. Er
+       > enthält deinen persönlichen Token. Wenn er doch in fremde Hände gerät,
+       > widerrufe den Token in der App unter **Menü** → **Zugänge** (der Knopf
+       > heißt **<Tokenname> widerrufen**, zum Beispiel **Siri widerrufen**).
    - **Hauptteil der Anfrage:** JSON
      - Tippe auf **Neues Feld hinzufügen** und wähle **Text**.
      - Schlüssel: `text`
