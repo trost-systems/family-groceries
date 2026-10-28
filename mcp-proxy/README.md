@@ -11,12 +11,14 @@ to the `mcp` edge function:
 | `/` | `/functions/v1/mcp` |
 | `/<path>` | `/functions/v1/mcp/<path>` |
 
-Each destination carries the query marker `via=mcp-hummlist`. Vercel also
-sends `x-forwarded-host: mcp.hummlist.com`. Either signal tells the function
-to advertise `https://mcp.hummlist.com` as the resource and
+Each destination carries the query marker `via=mcp-hummlist`, which tells
+the function to advertise `https://mcp.hummlist.com` as the resource and
 `https://mcp.hummlist.com/.well-known/oauth-protected-resource` as its
 metadata (`supabase/functions/mcp/handler.ts`). Requests straight to
 supabase.co keep getting the supabase.co URLs, so both URLs work. The
+function also accepts `x-forwarded-host: mcp.hummlist.com`, which Vercel
+sends, but Supabase's gateway replaces that header before it reaches the
+function, so the marker is what works (`docs/DECISIONS.md`, Job 26, item 11). The
 authorization server stays Supabase Auth on supabase.co.
 
 `x-vercel-enable-rewrite-caching: 0` keeps Vercel from caching any response
@@ -60,7 +62,8 @@ compiled routes are in `.vercel/output/config.json`.
   cannot be redirected or rewritten". The app project on app.hummlist.com
   rewrites `/.well-known/oauth-protected-resource` to its index.html today,
   so the path is not blocked outright; whether an external rewrite of it
-  works shows once the project exists (`scripts/mcp-smoke.sh`). Fallback in `docs/DECISIONS.md` (Job 26).
+  works shows once the project exists (`scripts/mcp-smoke.sh`). Fallback
+  in `docs/DECISIONS.md` (Job 26, item 8).
 - **Cost.** Hobby is free: 1,000,000 CDN requests and 100 GB Fast Data
   Transfer a month ([usage](https://vercel.com/docs/manage-cdn-usage)).
   Hobby is for non-commercial personal use

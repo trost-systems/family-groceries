@@ -2179,3 +2179,13 @@ on purpose, and the interfaces this job ships.
     login) compiles it with status `ok` and only the routes; nothing static
     shadows them. `trailingSlash` is left unset: `false` adds a 308 for
     every path ending in `/`.
+11. **The marker is the live signal** (checked on the hosted project after
+    the deploy of #80, 2026-10-28). A request straight to
+    `…supabase.co/functions/v1/mcp` with `x-forwarded-host: mcp.hummlist.com`
+    still got the supabase.co `resource` and challenge: the hosted gateway
+    replaces that header, as Kong does locally. The same request with
+    `?via=mcp-hummlist` got `https://mcp.hummlist.com` in both. A foreign
+    header or marker value got supabase.co, and a request with neither got
+    exactly the values from before #80. The header check stays: it costs
+    one line, is tested, and keeps working if a gateway ever passes the
+    header through.

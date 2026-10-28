@@ -217,3 +217,7 @@ See [docs/done/18-test-fixtures-sync.md](docs/done/18-test-fixtures-sync.md).
 ## Job 23: weekly releases
 
 See [docs/done/23-release-pipeline.md](docs/done/23-release-pipeline.md).
+
+## Job 26: public MCP URL mcp.hummlist.com
+
+See [docs/done/26-mcp-domain.md](docs/done/26-mcp-domain.md).
