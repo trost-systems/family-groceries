@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, createInviteCode, itemRow, newEmail, screenshot, signUp, signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot, signUp,
+  signUpWithHousehold, tickBox, typeInto,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -26,14 +27,14 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await addItem(lea, 'Windeln');
   await expect(itemRow(peter, 'Windeln'), 'an add in B appears in A').toBeVisible({ timeout: 2_000 });
 
-  await itemRow(peter, 'Bananen').click();
-  await typeInto(peter.getByRole('textbox', { name: 'Menge' }), '6');
-  await peter.getByRole('button', { name: 'Speichern' }).click();
+  await openEdit(peter, 'Bananen');
+  await typeInto(editField(peter, 'Menge'), '6');
+  await saveEdit(peter);
   // "Neu" stays on a partner's item until it was on screen for 3 s, which this test may not reach.
-  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6 Von peter-\S+ hinzugefügt$/, { timeout: 2_000 });
+  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6$/, { timeout: 2_000 });
 
-  await itemRow(lea, 'Windeln').click();
-  await lea.getByRole('button', { name: 'Löschen' }).click();
+  await openEdit(lea, 'Windeln');
+  await editSheet(lea).getByRole('button', { name: 'Löschen' }).click();
   await expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout: 2_000 });
 
   await screenshot(peter, '05-live-sync-a');

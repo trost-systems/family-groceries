@@ -26,4 +26,3 @@ keywords = ["eyj"]
 [allowlist]
 description = "Public client configuration"
 regexes = ['''sb_publishable_[A-Za-z0-9_-]+''']
-paths = ['''(^|/)node_modules/''', '''(^|/)build/''', '''\.dart_tool/''', '''(^|/)supabase/\.temp/''']

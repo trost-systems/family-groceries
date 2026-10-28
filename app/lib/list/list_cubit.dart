@@ -173,7 +173,7 @@ class ListCubit(
       onItem: (row) {
         if (current()) {
           _setServer(mergeServerRow(state.server, row));
-          // A new member: reload so their initial shows.
+          // A new member: reload so the title can name them.
           if (row.addedBy != null &&
               state.catalog.member(row.addedBy) == null) {
             _scheduleCatalogReload();
@@ -303,27 +303,52 @@ class ListCubit(
   void untick(String id) =>
       _enqueue(SetStatus(id, ItemStatus.active, _clock()));
 
-  void edit(
+  /// Writes only what [changes] holds; nothing when it holds nothing.
+  void edit(String id, ItemChanges changes) {
+    if (!changes.isEmpty) {
+      _enqueue(EditItem(id, changes));
+    }
+  }
+
+  /// To the end of group ([storeId], [categoryId]); a null store is no store.
+  void move(
     String id, {
-    required String name,
-    required String? quantity,
     required String categoryId,
     required String? storeId,
-  }) => _enqueue(
-    EditItem(
-      id,
-      name: name,
-      quantity: quantity,
-      categoryId: categoryId,
-      storeId: storeId,
-    ),
-  );
+  }) => _enqueue(MoveItem(id, categoryId: categoryId, storeId: storeId));
 
-  void move(String id, String categoryId) => _enqueue(MoveItem(id, categoryId));
+  /// Directly before or after [anchorId], in the anchor's group. Shows it
+  /// there at once, halfway between the anchor and its neighbour.
+  void place(String id, {required String anchorId, required Edge edge}) {
+    final items = state.items;
+    final anchor = items[anchorId];
+    final categoryId = anchor?.categoryId;
+    if (anchor == null || categoryId == null || anchorId == id) {
+      return;
+    }
+    final group = [
+      for (final item in items.values)
+        if (item.id != id &&
+            item.status == ItemStatus.active &&
+            item.storeId == anchor.storeId &&
+            item.categoryId == categoryId)
+          item,
+    ]..sort(compareWalk);
+    _enqueue(
+      PlaceItem(
+        id,
+        anchorId: anchorId,
+        edge: edge,
+        categoryId: categoryId,
+        storeId: anchor.storeId,
+        sortKey: placeKey(group, anchor, edge),
+      ),
+    );
+  }
 
   void delete(String id) => _enqueue(DeleteItem(id));
 
-  /// Puts a deleted item back, keeping its id and category.
+  /// Puts a deleted item back, keeping its id, category and place.
   void restore(Item item) => _enqueue(
     AddItem(item.copyWith(status: ItemStatus.active, boughtAt: () => null)),
   );
@@ -346,6 +371,11 @@ class ListCubit(
   Future<void> reorderCategories(List<String> ids) => _changeCatalog(
     state.catalog.withRouteOrder(ids),
     () => _repo.reorderCategories(ids),
+  );
+
+  Future<void> reorderStores(List<String> ids) => _changeCatalog(
+    state.catalog.withStoreOrder(ids),
+    () => _repo.reorderStores(ids),
   );
 
   /// Items move on the server; a resync brings them over.
@@ -505,7 +535,7 @@ class ListCubit(
 
   String _nameOf(ItemOp op) => switch (op) {
     AddItem(:final item) => item.name,
-    EditItem(:final name) => name,
+    EditItem(changes: ItemChanges(:final name?)) => name,
     _ => state.server[op.itemId]?.name ?? '',
   };
 

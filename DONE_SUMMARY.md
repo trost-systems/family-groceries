@@ -204,3 +204,7 @@ See [docs/done/13b-db-backups.md](docs/done/13b-db-backups.md).
 ## Job 20: rename to Hummlist
 
 See [docs/done/20-hummlist-rename.md](docs/done/20-hummlist-rename.md).
+
+## Job 15: design H, part 1 (data, parser, edit sheet)
+
+See [docs/done/15-design-data.md](docs/done/15-design-data.md).

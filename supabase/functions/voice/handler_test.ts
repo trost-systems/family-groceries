@@ -19,6 +19,8 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
       calls.push(items);
       return Promise.resolve(items.map((item) => ({
         ...item,
+        brand: null,
+        properties: null,
         category: 'Sonstiges',
         alreadyOnList: item.name === 'Milch',
       })));
@@ -47,6 +49,8 @@ Deno.test('adds the split items and confirms them in German', async () => {
   assertEquals(calls, [[{ name: 'Gurken', quantity: '2' }, { name: 'Klopapier', quantity: null }]]);
   assertEquals(body.items[0], {
     name: 'Gurken',
+    brand: null,
+    properties: null,
     quantity: '2',
     category: 'Sonstiges',
     alreadyOnList: false,
@@ -170,6 +174,8 @@ Deno.test('answers CORS preflight', async () => {
 Deno.test('confirmation lists only what was said back', () => {
   const item = (name: string, alreadyOnList: boolean, quantity: string | null = null): Added => ({
     name,
+    brand: null,
+    properties: null,
     quantity,
     category: 'Kühlregal',
     alreadyOnList,
@@ -179,6 +185,34 @@ Deno.test('confirmation lists only what was said back', () => {
     confirmation([item('Mehl', false, '1 kg'), item('Eier', false)]),
     'Hinzugefügt: 1 kg Mehl, Eier.',
   );
+});
+
+Deno.test('the confirmation reads brand and properties back after the name', async () => {
+  const { handle } = fakeDeps({
+    addItems: () =>
+      Promise.resolve([
+        {
+          name: 'Windeln',
+          brand: 'Pampers',
+          properties: 'Größe 3, Big Pack',
+          quantity: null,
+          category: '👶 Drogerie',
+          alreadyOnList: false,
+        },
+        {
+          name: 'Milch',
+          brand: null,
+          properties: '1,5 %',
+          quantity: '2 l',
+          category: 'Kühlregal',
+          alreadyOnList: false,
+        },
+      ]),
+  });
+  const body = await (await handle(post({ text: 'Windeln Pampers Größe 3 Big Pack' }))).json();
+  assertEquals(body.speech, 'Hinzugefügt: Windeln Pampers Größe 3 Big Pack, 2 l Milch 1,5 %.');
+  assertEquals(body.items[0].brand, 'Pampers');
+  assertEquals(body.items[0].properties, 'Größe 3, Big Pack');
 });
 
 Deno.test('more than thirty items: the first thirty are added and Siri says so', async () => {

@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_de.dart';
+import 'app_localizations_en.dart';
 
 // ignore_for_file: type=lint
 
@@ -92,7 +93,10 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('de')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
+    Locale('en'),
+  ];
 
   /// No description provided for @appTitle.
   ///
@@ -232,17 +236,35 @@ abstract class AppLocalizations {
   /// **'Rückgängig'**
   String get undo;
 
-  /// No description provided for @editItem.
+  /// No description provided for @editTitle.
   ///
   /// In de, this message translates to:
-  /// **'Eintrag bearbeiten'**
-  String get editItem;
+  /// **'Bearbeiten: {name}'**
+  String editTitle(String name);
 
-  /// No description provided for @itemName.
+  /// No description provided for @editSheet.
   ///
   /// In de, this message translates to:
-  /// **'Name'**
-  String get itemName;
+  /// **'Bearbeiten'**
+  String get editSheet;
+
+  /// No description provided for @fieldName.
+  ///
+  /// In de, this message translates to:
+  /// **'Bezeichnung'**
+  String get fieldName;
+
+  /// No description provided for @fieldBrand.
+  ///
+  /// In de, this message translates to:
+  /// **'Marke'**
+  String get fieldBrand;
+
+  /// No description provided for @brandNone.
+  ///
+  /// In de, this message translates to:
+  /// **'ohne Marke'**
+  String get brandNone;
 
   /// No description provided for @itemQuantity.
   ///
@@ -250,17 +272,59 @@ abstract class AppLocalizations {
   /// **'Menge'**
   String get itemQuantity;
 
-  /// No description provided for @itemQuantityHint.
+  /// No description provided for @fieldProperties.
   ///
   /// In de, this message translates to:
-  /// **'z. B. 2 oder 500 g'**
-  String get itemQuantityHint;
+  /// **'Eigenschaften'**
+  String get fieldProperties;
 
-  /// No description provided for @itemCategory.
+  /// No description provided for @propertiesExample.
   ///
   /// In de, this message translates to:
-  /// **'Kategorie'**
-  String get itemCategory;
+  /// **'z. B. Bio, 1 l'**
+  String get propertiesExample;
+
+  /// No description provided for @quantityMinus.
+  ///
+  /// In de, this message translates to:
+  /// **'Eins weniger'**
+  String get quantityMinus;
+
+  /// No description provided for @quantityPlus.
+  ///
+  /// In de, this message translates to:
+  /// **'Eins mehr'**
+  String get quantityPlus;
+
+  /// No description provided for @noStore.
+  ///
+  /// In de, this message translates to:
+  /// **'Ohne Laden'**
+  String get noStore;
+
+  /// Screen-reader name of the store chip in the edit and add sheets
+  ///
+  /// In de, this message translates to:
+  /// **'Laden: {name}'**
+  String chipStore(String name);
+
+  /// Screen-reader name of the category chip
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie: {name}'**
+  String chipCategory(String name);
+
+  /// No description provided for @categoryAuto.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie: automatisch'**
+  String get categoryAuto;
+
+  /// No description provided for @editHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Gespeichert wird nur, was du änderst'**
+  String get editHint;
 
   /// No description provided for @save.
   ///
@@ -802,18 +866,6 @@ abstract class AppLocalizations {
   /// **'Für {store} steht nichts auf der Liste.'**
   String emptyAtStore(String store);
 
-  /// No description provided for @itemStore.
-  ///
-  /// In de, this message translates to:
-  /// **'Geschäft'**
-  String get itemStore;
-
-  /// No description provided for @anyStore.
-  ///
-  /// In de, this message translates to:
-  /// **'Alle Geschäfte'**
-  String get anyStore;
-
   /// No description provided for @manageCategories.
   ///
   /// In de, this message translates to:
@@ -915,12 +967,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Neu'**
   String get newItem;
-
-  /// No description provided for @addedBy.
-  ///
-  /// In de, this message translates to:
-  /// **'Von {name} hinzugefügt'**
-  String addedBy(String name);
 
   /// No description provided for @suggestion.
   ///
@@ -1096,7 +1142,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['de'].contains(locale.languageCode);
+      <String>['de', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1107,6 +1153,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'de':
       return AppLocalizationsDe();
+    case 'en':
+      return AppLocalizationsEn();
   }
 
   throw FlutterError(

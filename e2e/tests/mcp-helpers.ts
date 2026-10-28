@@ -13,10 +13,23 @@ export const callbackUrl = 'http://127.0.0.1:8976/callback';
 
 export type Era = 'legacy' | 'modern';
 
+/**
+ * A worker that failed to boot: the edge runtime (local, and the hosted gateway) answers an empty
+ * 502/503/504/546 before any handler ran, so the call can be sent again (DECISIONS 9.12). The MCP
+ * SDK does not retry, and a dropped Protected Resource Metadata fetch sends it to the wrong issuer.
+ */
+const bootFailure = async (res: Response) =>
+  [502, 503, 504, 546].includes(res.status) && (await res.clone().text()) === '';
+
 /** fetch for SDK transports that reports slow round trips, to tell server stalls from client ones. */
 export const timedFetch: typeof fetch = async (input, init) => {
   const started = Date.now();
-  const res = await fetch(input, init);
+  let res = await fetch(input, init);
+  if (await bootFailure(res)) {
+    console.warn(`edge worker failed to boot: ${init?.method ?? 'GET'} ${String(input)} -> ${res.status}; retrying once`);
+    await new Promise((done) => setTimeout(done, 500));
+    res = await fetch(input, init);
+  }
   const ms = Date.now() - started;
   if (ms > 2_000) console.warn(`slow MCP round trip: ${init?.method ?? 'GET'} ${String(input)} -> ${res.status} in ${ms} ms`);
   return res;

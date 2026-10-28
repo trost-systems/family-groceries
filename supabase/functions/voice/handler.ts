@@ -12,6 +12,10 @@ export interface Caller {
 }
 
 export interface Added extends ParsedItem {
+  /** Marke the server's parser found, e.g. "Pampers". */
+  brand: string | null;
+  /** Eigenschaften, comma-separated, e.g. "Größe 3, Big Pack". */
+  properties: string | null;
   /** The category the classifier picked, by name. */
   category: string;
   /** True when the item was active already and nothing was added. */
@@ -48,9 +52,13 @@ const failures = {
 
 type Failure = keyof typeof failures;
 
+/** How an added item is read back: "2 l Milch", "Windeln Pampers Größe 3 Big Pack". */
+export const said = (item: Added) =>
+  [spoken(item), item.brand, item.properties?.replaceAll(', ', ' ')].filter(Boolean).join(' ');
+
 /** The confirmation Siri speaks. */
 export function confirmation(results: Added[]): string {
-  const list = (items: Added[]) => items.map(spoken).join(', ');
+  const list = (items: Added[]) => items.map(said).join(', ');
   const added = results.filter((r) => !r.alreadyOnList);
   const existing = results.filter((r) => r.alreadyOnList);
   return [

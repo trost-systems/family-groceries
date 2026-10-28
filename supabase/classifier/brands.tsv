@@ -1,0 +1,658 @@
+# Seed brands for public.parse_item (German groceries and drugstore). Format, tab-separated:
+#   brand<TAB>product<TAB>store
+# brand: the display name, as the brand writes itself (elmex, Ja!, Coca-Cola). The parser matches
+#   it ignoring case, umlauts, spaces, dots, hyphens and apostrophes (public.brand_key), so list
+#   one spelling: Coca-Cola also matches "Coca Cola", Dr. Oetker "Dr Oetker", Beck's "Becks".
+# product (optional): the item a text that is only the brand means: "Pampers" is Windeln with
+#   the brand Pampers. Only for brands people say instead of the product. Without one, a text
+#   that is only the brand keeps it as its name ("Nutella"). With one, a single name word of
+#   another kind (food, drinks, non-food) or one the dictionary does not know is the variety:
+#   "Whiskas Lachs" is Katzenfutter, Whiskas, Lachs. So a brand whose range spans kinds gets no
+#   product (Purina, Royal Canin, Vitakraft: cat and dog; Lipton, Teekanne: Tee and Eistee).
+# store (optional): dm, lidl or edeka, only for that store's own brands. The parser tags the
+#   item with the household's store of that seed key.
+# Left out on purpose, because the word is an ordinary word, an Eigenschaft or voice filler
+# (generate_brands_test.ts keeps them out):
+#   Kinder (Ferrero; "Zahnpasta Kinder" is a property), Danke (toilet paper; "danke" ends many
+#   dictated sentences), Ja (without "!"), Bio, Extra (chewing gum), Absolut (vodka), Klar,
+#   Rauch, Wolf, Fuchs, Ruf, Lift, Hugo, Gourmet, Corona, Ritter (alone; Ritter Sport is in),
+#   Müller (also a drugstore chain a household may add as a store), Appel (fish; reads as a
+#   typo of Apfel), Harry (bread; a first name), 3 Glocken (starts with an amount, so the
+#   parser reads "3" as the Menge).
+# Lillydoo is left out too: it stands for a brand the parser does not know until a household
+#   writes it on an item (supabase/tests/parse_item.test.sql).
+# Edit this file, then generate a new migration:
+#   supabase migration new classifier_brands
+#   deno run --allow-read --allow-write supabase/classifier/generate_brands.ts <that file>
+
+# Store brands: dm
+Balea		dm
+alverde		dm
+Babylove		dm
+ebelin		dm
+dmBio		dm
+Mivolis		dm
+Denkmit		dm
+Profissimo		dm
+SUNDANCE		dm
+Dontodent		dm
+Trend It Up		dm
+Langhaarmädchen		dm
+Visiomax		dm
+Das gesunde Plus		dm
+Jessa		dm
+Seinz		dm
+Dein Bestes		dm
+
+# Store brands: Lidl
+Milbona		lidl
+Cien		lidl
+W5		lidl
+Freeway		lidl
+Crivit		lidl
+Pilos		lidl
+Solevita		lidl
+Combino		lidl
+Fin Carré		lidl
+Lupilu		lidl
+Toujours		lidl
+Dentalux		lidl
+Floralys		lidl
+Formil		lidl
+Saskia		lidl
+Kania		lidl
+Belbake		lidl
+Chef Select		lidl
+Alesto		lidl
+Snack Day		lidl
+Favorina		lidl
+Bellarom		lidl
+Vemondo		lidl
+Trattoria Alfredo		lidl
+Sondey		lidl
+Gelatelli		lidl
+Perlenbacher		lidl
+Silvercrest		lidl
+Parkside		lidl
+Livarno		lidl
+Dulano		lidl
+Deluxe		lidl
+Fairglobe		lidl
+Lord Nelson		lidl
+Crusti Croc		lidl
+Baresa		lidl
+Eridanous		lidl
+Italiamo		lidl
+Nixe		lidl
+Pikok		lidl
+Coshida		lidl
+Orlando		lidl
+Vitasia		lidl
+El Tequito		lidl
+McEnnedy		lidl
+Bio Organic		lidl
+Linessa		lidl
+
+# Store brands: Edeka
+Gut & Günstig		edeka
+Edeka Bio		edeka
+Edeka Herzstücke		edeka
+Edeka Zuhause		edeka
+Edeka Italia		edeka
+Edeka Selection		edeka
+Elkos		edeka
+Bio Wertkost		edeka
+
+# Other store brands
+Ja!
+REWE Bio
+REWE Beste Wahl
+K-Classic
+K-Bio
+Milsani
+Moser Roth
+Gut Bio
+Lacura
+Tandil
+Isana
+Babydream
+Alouette
+Domol
+enerBiO
+Rival de Loop
+Sunozon
+Altapharma
+Prokudent
+Naturkind
+
+# Dairy, cheese, chilled
+Weihenstephan
+Bärenmarke
+Exquisa
+Philadelphia	Frischkäse
+Almette	Frischkäse
+Bresso	Frischkäse
+Leerdammer	Käse
+Babybel	Käse
+Milram
+Zott
+Ehrmann
+Danone
+Activia
+Actimel
+Alpro
+Oatly
+Arla
+Bauer
+Lünebest
+Landliebe
+Kerrygold	Butter
+Meggle
+Müllermilch
+Andechser
+Berchtesgadener Land
+Söbbeke
+Grünländer	Käse
+Bergader
+Géramont	Käse
+Saint Albray	Käse
+Président
+Galbani
+Patros
+Gazi
+Hochland
+Fruchtzwerge
+Monte
+Paula	Pudding
+Onken
+Buko
+Rama	Margarine
+Lätta	Margarine
+Becel	Margarine
+Sanella	Margarine
+Deli Reform	Margarine
+Du darfst
+Kaufmann's
+Elinas
+Gervais
+Optiwell
+Froop
+Rügenwalder Mühle
+Wiesenhof
+Herta
+Meica
+Böklunder
+Gutfried
+Stockmeyer
+Zimbo
+Ponnath
+Like Meat
+Garden Gourmet
+Valess
+Wilhelm Brandenburg
+Henglein
+Knack & Back
+Hela
+Homann
+Nadler
+Deutsche See
+Gottfried Friedrichs
+Feinkost Dittmann
+Kühne
+Hengstenberg
+
+# Bread, breakfast, spreads
+Golden Toast	Toast
+Lieken Urkorn
+Lieken
+Mestemacher
+Wasa	Knäckebrot
+Brandt	Zwieback
+Leicht & Cross
+Pema
+Kölln	Haferflocken
+Seitenbacher
+Kellogg's
+Nestlé
+Dr. Karg
+Nutella
+Zentis
+Schwartau
+Bonne Maman
+Langnese
+Ovomaltine
+Kaba	Kakao
+Nesquik	Kakao
+Mühlhäuser
+Breitsamer
+Lizza
+Rapunzel
+Alnatura
+Demeter
+Bioland
+Naturland
+Allos
+Davert
+dennree
+Rosengarten
+Bauck
+Zwergenwiese
+Lebensbaum
+Sonnentor
+
+# Pantry
+Barilla	Nudeln
+Buitoni
+De Cecco	Nudeln
+Birkel	Nudeln
+Bernbacher	Nudeln
+Knorr
+Maggi
+Miracoli
+Mondamin
+Develey
+Thomy
+Heinz	Ketchup
+Hellmann's	Mayonnaise
+Bautz'ner	Senf
+Löwensenf	Senf
+Mutti
+Oro di Parma
+Erasco
+Sonnen Bassermann
+Ben's Original	Reis
+Uncle Ben's	Reis
+Oryza	Reis
+Reis-fit	Reis
+Dr. Oetker
+Ristorante	Pizza
+Wagner	Pizza
+Iglo
+Frosta
+Followfish
+Hawesta
+Saupiquet
+Rio Mare
+Bamboo Garden
+Kikkoman	Sojasauce
+Ostmann
+Bad Reichenhaller	Salz
+Diamant	Zucker
+Südzucker	Zucker
+Aurora	Mehl
+Mazola
+Brölio
+Bertolli
+Basso
+Pfanni
+Bonduelle
+Hak
+Leimer
+Seeberger
+Ültje
+Kattus
+Tabasco
+Old El Paso
+Mövenpick
+Kathi
+
+# Sweets and snacks
+Milka	Schokolade
+Ritter Sport	Schokolade
+Lindt	Schokolade
+Haribo	Gummibärchen
+Katjes
+Trolli
+merci
+Toffifee
+Ferrero
+Raffaello
+Ferrero Rocher
+Duplo
+Hanuta
+Mars
+Snickers
+Twix
+Bounty
+Milky Way
+KitKat
+Lion
+Smarties
+M&M's
+Maltesers
+Toblerone
+Bahlsen	Kekse
+Leibniz	Kekse
+Prinzen Rolle	Kekse
+Choco Crossies
+Hachez
+Sarotti
+Schogetten
+Pringles	Chips
+funny-frisch	Chips
+Chio	Chips
+Lorenz
+Crunchips	Chips
+Lay's	Chips
+Kelly's
+De Beukelaer	Kekse
+Oreo	Kekse
+Balisto
+Knoppers
+Yogurette
+Hitschler
+nimm2
+Werther's
+Ricola
+Halls
+Mentos
+Tic Tac
+Fisherman's Friend
+Mamba
+Maoam
+Hubba Bubba
+Wrigley's
+Airwaves
+Wick
+Storck
+Lambertz
+Magnum
+Cornetto
+Ben & Jerry's
+Häagen-Dazs
+Schöller
+Nucao
+Corny
+XOX
+Pombär
+Pick Up!
+Ragusa
+Hershey's
+Reber
+
+# Drinks
+Coca-Cola	Cola
+Pepsi	Cola
+Fanta
+Sprite
+Mezzo Mix
+Schweppes
+Red Bull	Energydrink
+Monster Energy	Energydrink
+Club-Mate
+fritz-kola	Cola
+Bionade
+Vio
+7Up
+Capri-Sun
+Valensina	Saft
+Hohes C	Saft
+granini	Saft
+Rauch Happy Day	Saft
+Lipton
+Gerolsteiner	Mineralwasser
+Volvic	Mineralwasser
+Evian	Mineralwasser
+Vittel	Mineralwasser
+Apollinaris	Mineralwasser
+Adelholzener	Mineralwasser
+Bad Vilbeler	Mineralwasser
+Christinen	Mineralwasser
+Krombacher	Bier
+Beck's	Bier
+Bitburger	Bier
+Warsteiner	Bier
+Veltins	Bier
+Radeberger	Bier
+Paulaner	Bier
+Erdinger	Bier
+Franziskaner	Bier
+Augustiner	Bier
+Jever	Bier
+Flensburger	Bier
+Heineken	Bier
+Corona Extra	Bier
+Astra	Bier
+Oettinger	Bier
+Hasseröder	Bier
+Köstritzer	Bier
+Rothaus	Bier
+Tegernseer	Bier
+Rotkäppchen	Sekt
+Freixenet	Sekt
+Mumm	Sekt
+Henkell	Sekt
+Jägermeister
+Bacardi
+Smirnoff
+Baileys
+Havana Club
+Jack Daniel's
+Jim Beam
+Gordon's
+Ramazzotti
+Asbach
+Mionetto
+Lillet
+Jacobs	Kaffee
+Tchibo	Kaffee
+Dallmayr	Kaffee
+Melitta
+Lavazza	Kaffee
+Nescafé	Kaffee
+Senseo	Kaffeepads
+Tassimo
+Nespresso
+Onko	Kaffee
+Eduscho	Kaffee
+Segafredo	Kaffee
+illy	Kaffee
+Teekanne
+Meßmer	Tee
+Pompadour	Tee
+Twinings	Tee
+Yogi Tea	Tee
+Milford	Tee
+Punica
+Almdudler
+Afri Cola	Cola
+Vita Cola	Cola
+Thomas Henry
+Fever-Tree
+ChariTea
+Lemonaid
+
+# Drugstore and baby
+Nivea
+Dove
+Axe
+Rexona
+Garnier
+L'Oréal
+Schwarzkopf
+Schauma	Shampoo
+Gliss
+Syoss
+Taft	Haarspray
+got2b
+Head & Shoulders	Shampoo
+Pantene
+Herbal Essences
+Wella
+Fa
+Duschdas	Duschgel
+Palmolive
+Sebamed
+Eucerin
+La Roche-Posay
+bebe
+Penaten
+Bübchen
+Pampers	Windeln
+Huggies	Windeln
+HiPP
+Alete
+Milupa
+Aptamil
+Bebivita
+Humana
+Holle
+elmex	Zahnpasta
+aronal	Zahnpasta
+meridol	Zahnpasta
+Odol-med3	Zahnpasta
+blend-a-med	Zahnpasta
+Colgate	Zahnpasta
+Sensodyne	Zahnpasta
+Oral-B
+Signal	Zahnpasta
+parodontax	Zahnpasta
+Listerine	Mundspülung
+Dentagard	Zahnpasta
+Gillette
+Wilkinson
+Veet
+o.b.	Tampons
+Always	Binden
+Carefree	Slipeinlagen
+Tampax	Tampons
+Libresse
+Tena
+Hansaplast	Pflaster
+Tempo	Taschentücher
+Kleenex	Taschentücher
+Zewa	Küchenrolle
+Hakle	Toilettenpapier
+Cottonelle	Toilettenpapier
+Charmin	Toilettenpapier
+Labello	Lippenpflege
+Bepanthen
+Aspirin
+Voltaren
+Thomapyrin
+Doppelherz
+tetesept
+Kneipp
+Abtei
+Orthomol
+Centrum
+Bullrich
+ratiopharm
+Hexal
+Q-tips	Wattestäbchen
+Old Spice
+Adidas
+Bac
+8x4
+Kamill	Handcreme
+Neutrogena
+Clearasil
+Bioderma
+Weleda
+Lavera
+Dr. Hauschka
+Logona
+Sante
+Speick
+Florena
+Essence
+Catrice
+Maybelline
+Manhattan
+Rimmel
+Kukident
+Corega
+Durex	Kondome
+Billy Boy	Kondome
+Sagrotan
+Lansinoh
+NUK
+MAM
+Avent
+Bepanthol
+Wybert
+Em-eukal
+GeloMyrtol
+Mucosolvan
+
+# Household and cleaning
+Persil	Waschmittel
+Ariel	Waschmittel
+Lenor	Weichspüler
+Weißer Riese	Waschmittel
+Spee	Waschmittel
+Perwoll
+Coral
+Sunil	Waschmittel
+Omo	Waschmittel
+Frosch
+Meister Proper
+Ajax
+Cillit Bang
+Domestos
+Dalli
+Calgon
+Somat	Spülmaschinentabs
+Finish	Spülmaschinentabs
+Pril	Spülmittel
+Fairy	Spülmittel
+Vanish
+Dr. Beckmann
+WC-Ente
+Bref
+Harpic
+Sidolin
+Antikal
+Viss
+Swiffer
+Vileda
+Spontex
+Scotch-Brite
+tesa	Klebeband
+UHU	Kleber
+Pattex
+Toppits
+Albal
+Swirl
+Handy Bag	Müllbeutel
+Glade
+Air Wick
+Febreze
+Duracell	Batterien
+Varta	Batterien
+Energizer	Batterien
+Osram
+Philips
+Sonett
+Ecover
+Biff
+Der General
+Sanso
+Silan
+Kuschelweich
+Fewa
+Hygienix
+Danklorix
+Bloo
+Glorix
+Clin
+
+# Pets
+Whiskas	Katzenfutter
+Felix	Katzenfutter
+Sheba	Katzenfutter
+Kitekat	Katzenfutter
+Pedigree	Hundefutter
+Frolic	Hundefutter
+Chappi	Hundefutter
+Cesar	Hundefutter
+Catsan	Katzenstreu
+Dreamies	Katzensnacks
+Purina
+Royal Canin
+Vitakraft
+Animonda	Katzenfutter
+Bozita	Katzenfutter
+Cat's Best	Katzenstreu
+Perfect Fit	Katzenfutter
+Gimcat	Katzensnacks

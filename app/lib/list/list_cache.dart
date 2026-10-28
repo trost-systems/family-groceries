@@ -43,16 +43,47 @@ class const ListSnapshot({
     );
   }
 
-  static const version = 2;
+  static const version = 3;
 
   /// Version n to n + 1, for every n below [version].
-  static const _upgrades = <int, _Json Function(_Json)>{1: _v1ToV2};
+  static const _upgrades = <int, _Json Function(_Json)>{1: _v1ToV2, 2: _v2ToV3};
 
   static _Json _v1ToV2(_Json json) => {
     ...json,
     'version': 2,
     'usuals': const <Object?>[],
     'catalog': {...json['catalog']! as _Json, 'members': const <Object?>[]},
+  };
+
+  /// Edits carry only their changed columns now. A v2 edit wrote all four,
+  /// and a v2 move was a category-only edit. Items without brand,
+  /// properties or sort key read them as null.
+  static _Json _v2ToV3(_Json json) => {
+    ...json,
+    'version': 3,
+    'pending': [
+      for (final op in json['pending']! as List<Object?>)
+        _v2ToV3Op(op! as _Json),
+    ],
+  };
+
+  static _Json _v2ToV3Op(_Json op) => switch (op['op']) {
+    'edit' => {
+      'item_id': op['item_id'],
+      'op': 'edit',
+      'changes': {
+        'name': op['name'],
+        'quantity': op['quantity'],
+        'category_id': op['category_id'],
+        'store_id': op['store_id'],
+      },
+    },
+    'move' => {
+      'item_id': op['item_id'],
+      'op': 'edit',
+      'changes': {'category_id': op['category_id']},
+    },
+    _ => op,
   };
 
   Map<String, Object?> toJson() => {

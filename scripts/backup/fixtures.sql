@@ -54,6 +54,18 @@ update public.items set category_id = pg_temp.category(household_id, 'drugstore'
   where household_id = (select id from fx where key = 'home') and name = 'Spülmittel';
 update public.items set store_id = pg_temp.store(household_id, 'edeka')
   where household_id = (select id from fx where key = 'home') and name = 'Joghurt';
+-- Job 15: brand and properties from the parser, a brand the household teaches (household_brands),
+-- a drag in the walk order and a new store order.
+select public.add_item((select id from fx where key = 'home'), 'Windeln Pampers Größe 4');
+select public.add_item((select id from fx where key = 'home'), 'Windeln', p_brand => 'Lillydoo', p_properties => 'Größe 5');
+select public.place_item(
+  (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Joghurt'),
+  (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Äpfel'),
+  'before');
+select public.reorder_stores((select id from fx where key = 'home'),
+  array[pg_temp.store((select id from fx where key = 'home'), 'edeka'),
+        pg_temp.store((select id from fx where key = 'home'), 'lidl'),
+        pg_temp.store((select id from fx where key = 'home'), 'dm')]);
 select public.create_personal_access_token('Claude Desktop');
 reset role;
 

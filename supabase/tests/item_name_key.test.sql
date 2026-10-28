@@ -33,7 +33,7 @@ select is(
   4, 'two sizes and two types are four items'
 );
 select is(
-  (select name from public.add_items((select id from he), array['windeln größe 5'])),
+  (select concat_ws(' ', name, properties) from public.add_items((select id from he), array['windeln größe 5'])),
   'Windeln Größe 5', 'a repeat of one size returns that row'
 );
 select is(

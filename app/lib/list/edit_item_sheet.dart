@@ -1,20 +1,23 @@
+import 'dart:math' as math;
+
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/entry.dart';
+import 'package:family_groceries/list/foldout_chips.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 sealed class const EditResult();
 
-final class const EditSaved({
-  required final String name,
-  required final String? quantity,
-  required final String categoryId,
-
-  /// Null: any store.
-  required final String? storeId,
-}) extends EditResult;
+/// [changes] is never empty.
+final class const EditSaved(final ItemChanges changes) extends EditResult;
 
 final class const EditDeleted() extends EditResult;
 
+/// Material's emphasized decelerate, the prototype's sheet curve.
+const _sheetCurve = Cubic(0.05, 0.7, 0.1, 1);
+
+/// Null when the user cancels, dismisses, or saves without a change.
 Future<EditResult?> showEditItemSheet(
   BuildContext context, {
   required Item item,
@@ -22,7 +25,15 @@ Future<EditResult?> showEditItemSheet(
 }) => showModalBottomSheet<EditResult>(
   context: context,
   isScrollControlled: true,
-  showDragHandle: true,
+  useSafeArea: true,
+  sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
+      ? AnimationStyle.noAnimation
+      : const AnimationStyle(
+          curve: _sheetCurve,
+          reverseCurve: _sheetCurve,
+          duration: Duration(milliseconds: 280),
+          reverseDuration: Duration(milliseconds: 200),
+        ),
   builder: (_) => _EditItemSheet(item: item, catalog: catalog),
 );
 
@@ -36,112 +47,395 @@ class const _EditItemSheet({
 
 class _EditItemSheetState() extends State<_EditItemSheet> {
   late final _name = TextEditingController(text: widget.item.name);
+  late final _brand = TextEditingController(text: widget.item.brand);
   late final _quantity = TextEditingController(text: widget.item.quantity);
+  late final _properties = TextEditingController(text: widget.item.properties);
+
+  /// A store that is gone from the catalog shows, and compares, as none.
+  late final String? _originalStore = widget.catalog
+      .store(widget.item.storeId ?? '')
+      ?.id;
+  late String? _storeId = _originalStore;
   late String? _categoryId = widget.item.categoryId;
-  late String? _storeId =
-      widget.catalog.stores.any((s) => s.id == widget.item.storeId)
-      ? widget.item.storeId
-      : null;
 
   @override
   void dispose() {
     _name.dispose();
+    _brand.dispose();
     _quantity.dispose();
+    _properties.dispose();
     super.dispose();
   }
 
-  void _save() {
+  /// What differs from the item, trimmed; an empty field is null.
+  ItemChanges _changes() {
+    final item = widget.item;
+    String? orNull(String text) => text.trim().isEmpty ? null : text.trim();
+    SetTo<String?>? changed(String? now, String? before) =>
+        now == before ? null : SetTo(now);
     final name = _name.text.trim();
-    final categoryId = _categoryId;
-    if (name.isEmpty || categoryId == null) {
+    return ItemChanges(
+      name: name == item.name ? null : name,
+      quantity: changed(orNull(_quantity.text), item.quantity),
+      brand: changed(orNull(_brand.text), item.brand),
+      properties: changed(orNull(_properties.text), item.properties),
+      categoryId: _categoryId == item.categoryId ? null : _categoryId,
+      storeId: changed(_storeId, _originalStore),
+    );
+  }
+
+  void _save() {
+    if (_name.text.trim().isEmpty) {
       return;
     }
-    final quantity = _quantity.text.trim();
-    Navigator.of(context).pop(
-      EditSaved(
-        name: name,
-        quantity: quantity.isEmpty ? null : quantity,
-        categoryId: categoryId,
-        storeId: _storeId,
-      ),
-    );
+    final changes = _changes();
+    Navigator.of(context).pop(changes.isEmpty ? null : EditSaved(changes));
+  }
+
+  void _step({required bool up}) {
+    if (stepQuantity(_quantity.text, up: up) case final next?) {
+      _quantity.text = next;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final media = MediaQuery.of(context);
+    final keyboard = media.viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        24,
-        0,
-        24,
-        24 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.editItem, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _name,
-            maxLength: 120,
-            decoration: InputDecoration(labelText: l10n.itemName),
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _quantity,
-            maxLength: 40,
-            decoration: InputDecoration(
-              labelText: l10n.itemQuantity,
-              hintText: l10n.itemQuantityHint,
-            ),
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _categoryId,
-            decoration: InputDecoration(labelText: l10n.itemCategory),
-            items: [
-              for (final category in widget.catalog.categories)
-                DropdownMenuItem(
-                  value: category.id,
-                  child: Text(category.name),
-                ),
-            ],
-            onChanged: (id) => setState(() => _categoryId = id),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String?>(
-            initialValue: _storeId,
-            decoration: InputDecoration(labelText: l10n.itemStore),
-            items: [
-              DropdownMenuItem(child: Text(l10n.anyStore)),
-              for (final store in widget.catalog.stores)
-                DropdownMenuItem(value: store.id, child: Text(store.name)),
-            ],
-            onChanged: (id) => setState(() => _storeId = id),
-          ),
-          const SizedBox(height: 24),
-          Row(
+      padding: EdgeInsets.only(bottom: keyboard),
+      child: Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: l10n.editSheet,
+        child: SingleChildScrollView(
+          child: Column(
+            key: const ValueKey('edit-sheet'),
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextButton.icon(
-                onPressed: () => Navigator.of(context).pop(const EditDeleted()),
-                icon: const Icon(Icons.delete_outline),
-                label: Text(l10n.delete),
+              SizedBox(
+                height: 16,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 7),
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: scheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
               ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(l10n.cancel),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
+                child: Row(
+                  spacing: 4,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.editTitle(widget.item.name),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      key: const ValueKey('edit-cancel'),
+                      style: TextButton.styleFrom(
+                        // Desktop defaults to compact density, which
+                        // shrinks targets under 44 px.
+                        visualDensity: VisualDensity.standard,
+                        minimumSize: const Size(0, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l10n.cancel),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              FilledButton(onPressed: _save, child: Text(l10n.save)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 10,
+                  children: [
+                    _Field(
+                      fieldKey: 'edit-name',
+                      label: l10n.fieldName,
+                      controller: _name,
+                      maxLength: 120,
+                      bold: true,
+                      onSubmitted: _save,
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      spacing: 10,
+                      children: [
+                        Expanded(
+                          child: _Field(
+                            fieldKey: 'edit-brand',
+                            label: l10n.fieldBrand,
+                            hint: l10n.brandNone,
+                            controller: _brand,
+                            maxLength: 60,
+                            onSubmitted: _save,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 72,
+                          child: _Field(
+                            fieldKey: 'edit-quantity',
+                            label: l10n.itemQuantity,
+                            controller: _quantity,
+                            maxLength: 40,
+                            centered: true,
+                            onSubmitted: _save,
+                          ),
+                        ),
+                        ValueListenableBuilder(
+                          valueListenable: _quantity,
+                          builder: (context, value, _) {
+                            final text = value.text;
+                            if (stepQuantity(text, up: true) == null) {
+                              return const SizedBox.shrink();
+                            }
+                            final canLower =
+                                stepQuantity(text, up: false) != null;
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 4,
+                              children: [
+                                _Stepper(
+                                  key: const ValueKey('edit-quantity-minus'),
+                                  icon: Icons.remove,
+                                  tooltip: l10n.quantityMinus,
+                                  onPressed: canLower
+                                      ? () => _step(up: false)
+                                      : null,
+                                ),
+                                _Stepper(
+                                  key: const ValueKey('edit-quantity-plus'),
+                                  icon: Icons.add,
+                                  tooltip: l10n.quantityPlus,
+                                  onPressed: () => _step(up: true),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    _Field(
+                      fieldKey: 'edit-properties',
+                      label: l10n.fieldProperties,
+                      hint: l10n.propertiesExample,
+                      controller: _properties,
+                      maxLength: 120,
+                      onSubmitted: _save,
+                    ),
+                  ],
+                ),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: scheme.outlineVariant),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: FoldoutChips(
+                    catalog: widget.catalog,
+                    storeId: _storeId,
+                    categoryId: _categoryId,
+                    storeLabel: l10n.noStore,
+                    categoryLabel: l10n.categoryAuto,
+                    storeChanged: _storeId != _originalStore,
+                    categoryChanged: _categoryId != widget.item.categoryId,
+                    onStore: (id) => setState(() => _storeId = id),
+                    onCategory: (id) => setState(() => _categoryId = id),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      key: const ValueKey('edit-delete'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.standard,
+                        minimumSize: const Size(0, 52),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        foregroundColor: scheme.error,
+                        textStyle: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      onPressed: () =>
+                          Navigator.of(context).pop(const EditDeleted()),
+                      child: Text(l10n.delete),
+                    ),
+                    ValueListenableBuilder(
+                      valueListenable: _name,
+                      builder: (context, value, _) => FilledButton(
+                        key: const ValueKey('edit-done'),
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.standard,
+                          minimumSize: const Size(132, 52),
+                          padding: const EdgeInsets.symmetric(horizontal: 28),
+                          shape: const StadiumBorder(),
+                          textStyle: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onPressed: value.text.trim().isEmpty ? null : _save,
+                        child: Text(l10n.done),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  10,
+                  20,
+                  16 + math.max(0, media.padding.bottom - keyboard),
+                ),
+                child: ExcludeSemantics(
+                  child: Text(
+                    l10n.editHint,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A label above a 48 px field; the label names the field for screen
+/// readers.
+class const _Field({
+  required final String fieldKey,
+  required final String label,
+  required final TextEditingController controller,
+  required final int maxLength,
+  required final VoidCallback onSubmitted,
+  final String? hint,
+  final bool bold = false,
+  final bool centered = false,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: BorderSide(color: color, width: width),
+    );
+    return MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 4,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 4),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextField(
+            key: ValueKey(fieldKey),
+            controller: controller,
+            textAlign: centered ? TextAlign.center : TextAlign.start,
+            textAlignVertical: TextAlignVertical.center,
+            textInputAction: TextInputAction.done,
+            textCapitalization: TextCapitalization.sentences,
+            inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+              color: scheme.onSurface,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+              filled: true,
+              fillColor: scheme.surfaceContainerLowest,
+              constraints: const BoxConstraints.tightFor(height: 48),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              enabledBorder: border(scheme.outline, 1),
+              focusedBorder: border(scheme.primary, 2),
+            ),
+            onSubmitted: (_) => onSubmitted(),
           ),
         ],
       ),
+    );
+  }
+}
+
+class const _Stepper({
+  required final IconData icon,
+  required final String tooltip,
+  required final VoidCallback? onPressed,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        visualDensity: VisualDensity.standard,
+        fixedSize: const Size(44, 48),
+        minimumSize: const Size(44, 48),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        backgroundColor: scheme.surfaceContainerHigh,
+        disabledBackgroundColor: scheme.surfaceContainerHigh.withValues(
+          alpha: 0.38,
+        ),
+        foregroundColor: scheme.onSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      icon: Icon(icon, size: 22),
     );
   }
 }

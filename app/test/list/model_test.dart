@@ -9,11 +9,13 @@ Item item(
   int at = 0,
   int updated = 0,
   String? by,
+  double? key,
 }) => Item(
   id: id,
   name: id,
   categoryId: category,
   storeId: store,
+  sortKey: key,
   status: status,
   createdAt: DateTime.utc(2026).add(Duration(minutes: at)),
   updatedAt: DateTime.utc(2026).add(Duration(minutes: updated)),
@@ -39,10 +41,7 @@ void main() {
       AddItem(item('z')),
       const EditItem(
         'z',
-        name: 'Zitronen',
-        quantity: '3',
-        categoryId: 'b',
-        storeId: null,
+        ItemChanges(name: 'Zitronen', quantity: SetTo('3'), categoryId: 'b'),
       ),
     ]);
     expect(view['x']!.status, ItemStatus.bought);
@@ -93,26 +92,188 @@ void main() {
     expect(visibleItems(tagged, [anywhere])['x']!.storeId, 'dm');
   });
 
-  test('an edit sets or clears the store tag', () {
-    final server = {'x': item('x', store: 'dm')};
-    EditItem edit(String? store) => EditItem(
-      'x',
-      name: 'x',
-      quantity: null,
-      categoryId: 'a',
-      storeId: store,
+  test('an edit changes only its columns, null clearing one', () {
+    final server = {
+      'x': item(
+        'x',
+        store: 'dm',
+        key: 5,
+      ).copyWith(quantity: () => '2', brand: () => 'Ja!'),
+    };
+    Item edited(ItemChanges changes) =>
+        visibleItems(server, [EditItem('x', changes)])['x']!;
+    final brand = edited(
+      const ItemChanges(brand: SetTo('Weihenstephan'), quantity: SetTo('3')),
     );
-    expect(visibleItems(server, [edit('lidl')])['x']!.storeId, 'lidl');
-    expect(visibleItems(server, [edit(null)])['x']!.storeId, isNull);
+    expect(
+      (brand.name, brand.brand, brand.quantity, brand.storeId, brand.sortKey),
+      ('x', 'Weihenstephan', '3', 'dm', 5),
+    );
+    final cleared = edited(
+      const ItemChanges(storeId: SetTo(null), brand: SetTo(null)),
+    );
+    expect((cleared.storeId, cleared.brand), (null, null));
+    expect(cleared.quantity, '2', reason: 'untouched');
+    expect(const ItemChanges().isEmpty, isTrue);
+    expect(const ItemChanges(properties: SetTo(null)).isEmpty, isFalse);
   });
 
-  test('a move changes only the category', () {
-    final server = {'x': item('x', store: 'dm', at: 3)};
-    final moved = visibleItems(server, [const MoveItem('x', 'b')])['x']!;
-    expect(moved.categoryId, 'b');
-    expect(moved.storeId, 'dm');
+  test('a move changes store and category and goes last', () {
+    final server = {
+      'x': item('x', store: 'dm', at: 3, key: 1),
+      'y': item('y', category: 'b', key: 5000),
+    };
+    final view = visibleItems(server, [
+      const MoveItem('x', categoryId: 'b', storeId: null),
+    ]);
+    final moved = view['x']!;
+    expect((moved.categoryId, moved.storeId), ('b', null));
     expect(moved.createdAt, server['x']!.createdAt);
-    expect(visibleItems({}, [const MoveItem('gone', 'b')]), isEmpty);
+    final groups = groupActive(
+      view.values,
+      const Catalog(categories: categories),
+      const AllStores(),
+    ).groups;
+    expect([for (final i in groups.single.items) i.id], ['y', 'x']);
+    expect(
+      visibleItems({}, [
+        const MoveItem('gone', categoryId: 'b', storeId: null),
+      ]),
+      isEmpty,
+    );
+  });
+
+  test('a group walks by sort key, unnumbered last, then by age', () {
+    final groups = groupActive(
+      [
+        item('late', at: 1, key: 3072),
+        item('early', at: 9, key: 1024),
+        item('typed2', at: 5),
+        item('typed1', at: 4),
+        item('tie-b', at: 2, key: 2048),
+        item('tie-a', at: 2, key: 2048),
+      ],
+      const Catalog(categories: categories),
+      const AllStores(),
+    ).groups;
+    expect(
+      [for (final i in groups.single.items) i.id],
+      ['early', 'tie-a', 'tie-b', 'late', 'typed1', 'typed2'],
+    );
+  });
+
+  test('a placed item takes the gap next to its anchor', () {
+    final group = [
+      item('a', key: 1024),
+      item('b', key: 2048),
+      item('c', key: 4096),
+    ];
+    expect(placeKey(group, group[1], Edge.before), 1536);
+    expect(placeKey(group, group[1], Edge.after), 3072);
+    expect(placeKey(group, group[0], Edge.before), 0);
+    expect(placeKey(group, group[2], Edge.after), 5120);
+    expect(placeKey([item('n')], item('n'), Edge.after), isNull);
+    final placed = visibleItems(
+      {'x': item('x', store: 'dm', key: 1)},
+      [
+        const PlaceItem(
+          'x',
+          anchorId: 'b',
+          edge: Edge.before,
+          categoryId: 'b',
+          storeId: null,
+          sortKey: 1536,
+        ),
+      ],
+    )['x']!;
+    expect(
+      (placed.categoryId, placed.storeId, placed.sortKey),
+      ('b', null, 1536),
+    );
+  });
+
+  test('every op survives its JSON', () {
+    final at = DateTime.utc(2026, 10, 22, 12);
+    final ops = <ItemOp>[
+      AddItem(
+        item('x', key: 2048).copyWith(
+          brand: () => 'Pampers',
+          properties: () => 'Größe 3',
+          quantity: () => '2',
+        ),
+      ),
+      SetStatus('x', ItemStatus.bought, at, storeId: 'dm'),
+      const EditItem(
+        'x',
+        ItemChanges(
+          name: 'Windeln',
+          quantity: SetTo(null),
+          brand: SetTo('Pampers'),
+          properties: SetTo('Größe 3, Big Pack'),
+          categoryId: 'b',
+          storeId: SetTo(null),
+        ),
+      ),
+      const EditItem('x', ItemChanges(storeId: SetTo('dm'))),
+      const MoveItem('x', categoryId: 'b', storeId: 'dm'),
+      const PlaceItem(
+        'x',
+        anchorId: 'y',
+        edge: Edge.after,
+        categoryId: 'a',
+        storeId: null,
+        sortKey: null,
+      ),
+      const DeleteItem('x'),
+    ];
+    for (final op in ops) {
+      final back = ItemOp.fromJson(op.toJson());
+      expect(back.runtimeType, op.runtimeType);
+      expect(back.toJson(), op.toJson());
+    }
+    final edit = ItemOp.fromJson(ops[3].toJson()) as EditItem;
+    expect(edit.changes, const ItemChanges(storeId: SetTo('dm')));
+    expect(
+      Item.fromJson({...item('x').toJson(), 'sort_key': 2048}).sortKey,
+      2048.0,
+      reason: 'PostgREST sends a whole double as an int',
+    );
+  });
+
+  test('a parsed entry reads the parse_item row', () {
+    final parsed = ParsedEntry.fromJson(const {
+      'name': 'Windeln',
+      'brand': 'Pampers',
+      'properties': 'Größe 3',
+      'quantity': '2',
+      'store_id': 'dm',
+      'category_id': 'drugstore',
+    });
+    expect(
+      (
+        parsed.name,
+        parsed.brand,
+        parsed.properties,
+        parsed.quantity,
+        parsed.storeId,
+        parsed.categoryId,
+      ),
+      ('Windeln', 'Pampers', 'Größe 3', '2', 'dm', 'drugstore'),
+    );
+  });
+
+  test('a store reorder renumbers the stores', () {
+    const catalog = Catalog(
+      stores: [
+        Store(id: 'dm', name: 'dm', sortOrder: 10),
+        Store(id: 'lidl', name: 'Lidl', sortOrder: 20),
+      ],
+    );
+    final next = catalog.withStoreOrder(['lidl', 'dm']);
+    expect(
+      [for (final s in next.stores) (s.id, s.sortOrder)],
+      [('lidl', 10), ('dm', 20)],
+    );
   });
 
   group('store views', () {
@@ -293,19 +454,11 @@ void main() {
     expect([for (final i in bought) i.id], ['new', 'old']);
   });
 
-  test('a badge is the first letter, two when another member shares it', () {
+  test('a member is found by id', () {
     const catalog = Catalog(
-      members: [
-        Member(id: 'p', displayName: 'peter'),
-        Member(id: 'l', displayName: 'Lea'),
-        Member(id: 'l2', displayName: 'Lars'),
-        Member(id: 'x', displayName: ' '),
-      ],
+      members: [Member(id: 'l', displayName: 'Lea')],
     );
-    expect(
-      [for (final m in catalog.members) catalog.initialOf(m)],
-      ['P', 'Le', 'La', '?'],
-    );
+    expect(catalog.member('l')?.displayName, 'Lea');
     expect(catalog.member('unknown'), isNull);
   });
 

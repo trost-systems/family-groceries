@@ -3,7 +3,7 @@ import {
   addField, addItem, createInviteCode, itemRow, newEmail, screenshot, signUp, signUpWithHousehold, typeInto,
 } from './helpers';
 
-test('items the partner added carry their initial and are new until seen', async ({ browser }) => {
+test('items the partner added carry no initial but are new until seen', async ({ browser }) => {
   const peterContext = await browser.newContext();
   let peter = await peterContext.newPage();
   const lea = await (await browser.newContext()).newPage();
@@ -19,21 +19,20 @@ test('items the partner added carry their initial and are new until seen', async
   await expect(itemRow(lea, 'Milch')).toBeVisible();
 
   const subtitle = peter.getByText(`1 neu von ${leaName}`);
-  const byLea = new RegExp(`Von ${leaName} hinzugefügt`);
+  // Design H: no added-by initial on rows (job 15). The row's name is the item and, while unseen, "Neu".
+  const plain = (name: string) => new RegExp(`^${name}$`);
 
   await addItem(lea, 'Hafer');
-  await expect(itemRow(peter, 'Hafer'), 'a live add from the partner shows her initial').toHaveAccessibleName(byLea);
-  await expect(itemRow(peter, 'Hafer'), 'and is highlighted').toHaveAccessibleName(/Neu/);
+  await expect(itemRow(peter, 'Hafer'), 'a live add from the partner is highlighted').toHaveAccessibleName(/^Hafer\sNeu$/);
   await expect(subtitle).toBeVisible();
   await screenshot(peter, '08-partner-new-live');
   await expect(itemRow(peter, 'Hafer'), 'a live highlight clears once seen').not.toHaveAccessibleName(/Neu/);
   await expect(subtitle).toHaveCount(0);
-  await expect(itemRow(peter, 'Milch'), 'own items carry no initial').not.toHaveAccessibleName(/hinzugefügt/);
-  await expect(itemRow(lea, 'Milch'), 'Lea sees Peter as the partner').toHaveAccessibleName(/Von peter-\S+ hinzugefügt/);
+  await expect(itemRow(peter, 'Hafer'), 'and carries no initial once seen').toHaveAccessibleName(plain('Hafer'));
+  await expect(itemRow(lea, 'Milch'), 'Peter\'s item carries no initial for Lea either').toHaveAccessibleName(/^Milch(\sNeu)?$/);
 
   await peter.reload();
-  await expect(itemRow(peter, 'Hafer')).toHaveAccessibleName(byLea);
-  await expect(itemRow(peter, 'Hafer'), 'still cleared after a reload').not.toHaveAccessibleName(/Neu/);
+  await expect(itemRow(peter, 'Hafer'), 'still cleared after a reload').toHaveAccessibleName(plain('Hafer'));
   await expect(peter.getByText(/ neu( von|$)/)).toHaveCount(0);
 
   await peter.close();
@@ -51,6 +50,5 @@ test('items the partner added carry their initial and are new until seen', async
   await expect(addField(peter), 'the highlight never takes focus from the add field').toBeFocused();
 
   await peter.reload();
-  await expect(itemRow(peter, 'Kaffee')).toHaveAccessibleName(byLea);
-  await expect(itemRow(peter, 'Kaffee'), 'cleared for good').not.toHaveAccessibleName(/Neu/);
+  await expect(itemRow(peter, 'Kaffee'), 'cleared for good').toHaveAccessibleName(plain('Kaffee'));
 });

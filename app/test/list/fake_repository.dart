@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_repository.dart';
@@ -132,6 +133,21 @@ class FakeRepository() implements ListRepository {
   }
 
   @override
+  Future<void> reorderStores(List<String> ids) async {
+    _writeCatalog('reorderStores(${ids.join(', ')})');
+    stores = Catalog(stores: stores).withStoreOrder(ids).stores;
+  }
+
+  /// What parse_item answers for a text; unknown texts parse to their name.
+  final parsed = <String, ParsedEntry>{};
+
+  @override
+  Future<ParsedEntry> parse(String text) async {
+    _ensureOnline();
+    return parsed[text] ?? ParsedEntry(name: text);
+  }
+
+  @override
   Future<void> deleteCategory(String id, {String? reassignTo}) async {
     _writeCatalog('delete($id, $reassignTo)');
     final target = reassignTo ?? 'other';
@@ -191,25 +207,45 @@ class FakeRepository() implements ListRepository {
               id: item.id,
               name: item.name,
               quantity: item.quantity,
+              brand: item.brand,
+              properties: item.properties,
               categoryId: item.categoryId ?? classify(item.name),
               storeId: item.storeId,
+              sortKey: item.sortKey,
               status: item.status,
               createdAt: _tick(),
               updatedAt: _clock,
               addedBy: me,
             ),
+      PlaceItem(:final anchorId, :final edge) => _place(
+        current,
+        anchorId,
+        edge,
+      ),
       _ => op.apply(current),
     };
     if (next == null) {
       rows.remove(op.itemId);
       return null;
     }
+    // The items trigger: a new item, or one whose group changed without a
+    // key, goes to the end of its group.
+    final regrouped =
+        current == null ||
+        current.storeId != next.storeId ||
+        current.categoryId != next.categoryId;
+    final keyed = op is PlaceItem || (op is AddItem && next.sortKey != null);
     final stamped = Item(
       id: next.id,
       name: next.name,
       quantity: next.quantity,
+      brand: next.brand,
+      properties: next.properties,
       categoryId: next.categoryId,
       storeId: next.storeId,
+      sortKey: regrouped && !keyed || next.sortKey == null
+          ? _endOf(next)
+          : next.sortKey,
       status: next.status,
       createdAt: next.createdAt,
       updatedAt: _tick(),
@@ -218,6 +254,33 @@ class FakeRepository() implements ListRepository {
     );
     rows[op.itemId] = stamped;
     return stamped;
+  }
+
+  /// The item's (store, category) group on the server, in walk order.
+  List<Item> groupOf(Item item) => [
+    for (final row in rows.values)
+      if (row.id != item.id &&
+          row.status == ItemStatus.active &&
+          row.storeId == item.storeId &&
+          row.categoryId == item.categoryId)
+        row,
+  ]..sort(compareWalk);
+
+  double _endOf(Item item) =>
+      groupOf(item).map((i) => i.sortKey ?? 0).fold<double>(0, math.max) + 1024;
+
+  Item? _place(Item? current, String anchorId, Edge edge) {
+    final anchor = rows[anchorId];
+    if (current == null || anchor == null) {
+      return current;
+    }
+    final moved = current.copyWith(
+      categoryId: anchor.categoryId,
+      storeId: () => anchor.storeId,
+    );
+    return moved.copyWith(
+      sortKey: () => placeKey(groupOf(moved), anchor, edge),
+    );
   }
 
   /// Stands in for the server's splitter: splits on commas and "und".
@@ -251,10 +314,14 @@ class FakeRepository() implements ListRepository {
     String? categoryId,
     String? storeId,
     String? addedBy = 'lea',
+    String? brand,
+    String? properties,
   }) {
     final item = Item(
       id: 'remote-${rows.length}',
       name: name,
+      brand: brand,
+      properties: properties,
       categoryId: categoryId ?? classify(name),
       storeId: storeId,
       status: ItemStatus.active,
@@ -262,7 +329,6 @@ class FakeRepository() implements ListRepository {
       updatedAt: _clock,
       addedBy: addedBy,
     );
-    rows[item.id] = item;
-    return item;
+    return rows[item.id] = item.copyWith(sortKey: () => _endOf(item));
   }
 }

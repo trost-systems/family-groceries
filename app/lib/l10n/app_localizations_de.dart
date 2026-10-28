@@ -97,19 +97,55 @@ class AppLocalizationsDe extends AppLocalizations {
   String get undo => 'Rückgängig';
 
   @override
-  String get editItem => 'Eintrag bearbeiten';
+  String editTitle(String name) {
+    return 'Bearbeiten: $name';
+  }
 
   @override
-  String get itemName => 'Name';
+  String get editSheet => 'Bearbeiten';
+
+  @override
+  String get fieldName => 'Bezeichnung';
+
+  @override
+  String get fieldBrand => 'Marke';
+
+  @override
+  String get brandNone => 'ohne Marke';
 
   @override
   String get itemQuantity => 'Menge';
 
   @override
-  String get itemQuantityHint => 'z. B. 2 oder 500 g';
+  String get fieldProperties => 'Eigenschaften';
 
   @override
-  String get itemCategory => 'Kategorie';
+  String get propertiesExample => 'z. B. Bio, 1 l';
+
+  @override
+  String get quantityMinus => 'Eins weniger';
+
+  @override
+  String get quantityPlus => 'Eins mehr';
+
+  @override
+  String get noStore => 'Ohne Laden';
+
+  @override
+  String chipStore(String name) {
+    return 'Laden: $name';
+  }
+
+  @override
+  String chipCategory(String name) {
+    return 'Kategorie: $name';
+  }
+
+  @override
+  String get categoryAuto => 'Kategorie: automatisch';
+
+  @override
+  String get editHint => 'Gespeichert wird nur, was du änderst';
 
   @override
   String get save => 'Speichern';
@@ -455,12 +491,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get itemStore => 'Geschäft';
-
-  @override
-  String get anyStore => 'Alle Geschäfte';
-
-  @override
   String get manageCategories => 'Kategorien verwalten';
 
   @override
@@ -527,11 +557,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get newItem => 'Neu';
-
-  @override
-  String addedBy(String name) {
-    return 'Von $name hinzugefügt';
-  }
 
   @override
   String suggestion(String label) {

@@ -10,7 +10,7 @@ A list belongs to a household. A new user creates one on the welcome screen or j
 - `hh-join-menu` switches a member to another household with a code from the list menu, after a warning.
 - `hh-invalid-code` rejects a wrong code with "Dieser Code ist ungültig oder abgelaufen."
 - `hh-isolation` keeps one household's items invisible to members of another.
-- `hh-members` loads the members' display names with the list, so items show who added them; a new member's initial appears with their first item (recipe in `features/live-sync.md`, `sync-added-by`).
+- `hh-members` loads the members' display names with the list, so the title can name who added what is new; a new member's name loads with their first item (recipe in `features/live-sync.md`, `sync-new`).
 
 ## How to get to it (user POV)
 

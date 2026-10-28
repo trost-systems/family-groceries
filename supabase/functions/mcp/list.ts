@@ -9,6 +9,10 @@ export type Named = { id: string; name: string };
 export type Item = {
   id: string;
   name: string;
+  /** Marke, e.g. "Pampers". */
+  brand: string | null;
+  /** Eigenschaften, comma-separated, e.g. "Größe 3, Big Pack". */
+  properties: string | null;
   quantity: string | null;
   category: string;
   store: string | null;
@@ -58,14 +62,17 @@ export function stores(tx: Tx, household: string): Promise<(Named & { sort_order
             where household_id = ${household} order by sort_order, name`;
 }
 
-function activeItems(tx: Tx, household: string): Promise<Named[]> {
-  return tx`select id, name from public.items
+function activeItems(
+  tx: Tx,
+  household: string,
+): Promise<(Named & { store_id: string | null })[]> {
+  return tx`select id, name, store_id from public.items
             where household_id = ${household} and status = 'active' order by created_at`;
 }
 
 function itemsById(tx: Tx, ids: readonly string[]): Promise<Item[]> {
   return tx`
-    select i.id, i.name, i.quantity, c.name as category, s.name as store
+    select i.id, i.name, i.brand, i.properties, i.quantity, c.name as category, s.name as store
     from public.items i
     join public.categories c on c.id = i.category_id
     left join public.stores s on s.id = i.store_id
@@ -83,9 +90,10 @@ export async function listItems(
     : null;
   const storeId = store?.id ?? null;
   const categoryId = category?.id ?? null;
-  // A store view shows the store's own items plus untagged ones, in that store's aisle order.
+  // A store view shows the store's own items plus untagged ones, in that store's aisle order;
+  // inside a category, the household's walk order (sort_key).
   const items = await tx<Item[]>`
-    select i.id, i.name, i.quantity, c.name as category, s.name as store
+    select i.id, i.name, i.brand, i.properties, i.quantity, c.name as category, s.name as store
     from public.items i
     join public.categories c on c.id = i.category_id
     left join public.stores s on s.id = i.store_id
@@ -94,18 +102,29 @@ export async function listItems(
     where i.household_id = ${household} and i.status = 'active'
       and (${storeId}::uuid is null or i.store_id is null or i.store_id = ${storeId}::uuid)
       and (${categoryId}::uuid is null or i.category_id = ${categoryId}::uuid)
-    order by coalesce(o.sort_order, c.sort_order), c.name, i.created_at`;
+    order by coalesce(o.sort_order, c.sort_order), c.name, i.sort_key, i.created_at, i.id`;
   return { store: store?.name ?? null, category: category?.name ?? null, items };
 }
 
-export type NewItem = { name: string; quantity?: string; category?: string; store?: string };
+export type NewItem = {
+  name: string;
+  brand?: string;
+  properties?: string;
+  quantity?: string;
+  category?: string;
+  store?: string;
+};
+
+/** A blank optional field is not given: the parsed value stays. */
+const given = (value: string | undefined) => value?.trim() || null;
 
 /**
- * Adds items through public.add_items, the shared add path (also Siri's): it parses a quantity
- * out of the name, classifies with the household's learned corrections, takes the remembered
- * store, and returns the existing row for a name already on the list ("Gurke" is "2 Gurken").
- * An explicit quantity replaces the parsed one. An explicit category is applied as an update,
- * so the classifier learns it like a correction in the app.
+ * Adds items through public.add_item, the shared add path (also Siri's): it splits the name into
+ * Bezeichnung, Marke, Eigenschaften and Menge ("Windeln Pampers Größe 3", "2 Gurken"), classifies
+ * with the household's learned corrections, picks the store, and returns the existing row for an
+ * item already on the list ("Gurke" is "2 Gurken"). An explicit quantity, brand, properties or
+ * store replaces the parsed one. An explicit category is applied as an update, so the classifier
+ * learns it like a correction in the app.
  */
 export async function addItems(
   tx: Tx,
@@ -124,7 +143,9 @@ export async function addItems(
     const category = item.category ? resolve(cats, item.category, 'Kategorie').id : null;
     const store = item.store ? resolve(shops, item.store, 'Laden').id : null;
     const [row] = await tx<{ id: string; category_id: string }[]>`
-      select id, category_id from public.add_items(${household}, array[${item.name}], ${store})`;
+      select id, category_id from public.add_item(
+        ${household}, ${item.name}, ${store}, ${given(item.brand)}, ${given(item.properties)},
+        ${given(item.quantity)})`;
     if (!row) continue;
     if (seen.has(row.id)) {
       existing.push(row.id);
@@ -132,10 +153,6 @@ export async function addItems(
     }
     seen.add(row.id);
     added.push(row.id);
-    const quantity = item.quantity?.trim();
-    if (quantity) {
-      await tx`update public.items set quantity = ${quantity} where id = ${row.id}`;
-    }
     if (category && category !== row.category_id) {
       await tx`update public.items set category_id = ${category} where id = ${row.id}`;
     }
@@ -167,6 +184,10 @@ export async function tickItems(
   return { ticked: await itemsById(tx, ids), notFound };
 }
 
+/**
+ * Changes category and/or store through public.move_item: the item goes to the end of its new
+ * group, and the triggers learn both. A store left out stays; null untags.
+ */
 export async function moveItem(
   tx: Tx,
   household: string,
@@ -176,16 +197,15 @@ export async function moveItem(
     throw new ToolError('Gib eine Kategorie oder einen Laden an.');
   }
   const item = resolve(await activeItems(tx, household), move.item, 'Eintrag');
-  if (move.category !== undefined) {
-    const category = resolve(await categories(tx, household), move.category, 'Kategorie');
-    await tx`update public.items set category_id = ${category.id} where id = ${item.id}`;
-  }
-  if (move.store !== undefined) {
-    const store = move.store === null || move.store.trim() === ''
-      ? null
-      : resolve(await stores(tx, household), move.store, 'Laden');
-    await tx`update public.items set store_id = ${store?.id ?? null} where id = ${item.id}`;
-  }
+  const category = move.category === undefined
+    ? null
+    : resolve(await categories(tx, household), move.category, 'Kategorie').id;
+  const store = move.store === undefined
+    ? item.store_id
+    : move.store === null || move.store.trim() === ''
+    ? null
+    : resolve(await stores(tx, household), move.store, 'Laden').id;
+  await tx`select from public.move_item(${item.id}, ${store}, ${category})`;
   const [moved] = await itemsById(tx, [item.id]);
   return moved;
 }

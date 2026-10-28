@@ -73,7 +73,7 @@ test('a member deletes their account; the household and their items stay for the
   const a = await (await browser.newContext()).newPage();
   const b = await (await browser.newContext()).newPage();
   const [emailA, emailB] = [newEmail('acct-a'), newEmail('acct-b')];
-  const [nameA, nameB] = [emailA.split('@')[0], emailB.split('@')[0]];
+  const nameA = emailA.split('@')[0];
 
   await signUpWithHousehold(a, emailA);
   const code = await createInviteCode(a);
@@ -83,10 +83,15 @@ test('a member deletes their account; the household and their items stay for the
   await addItem(b, 'Hafer');
   await addItem(a, 'Milch');
   await expect(itemRow(b, 'Milch')).toBeVisible();
-  const byB = new RegExp(`Von ${nameB} hinzugefügt`);
-  await expect(itemRow(a, 'Hafer'), 'before: B\'s item carries B\'s initial').toHaveAccessibleName(byB);
-
   const idB = await userId(emailB);
+  // Rows carry no added-by initial since job 15; who added an item stays in the database.
+  const asA = await apiAs(emailA);
+  const addedBy = async (name: string) => {
+    const { data, error } = await asA.from('items').select('added_by').eq('name', name).single();
+    if (error) throw error;
+    return data.added_by;
+  };
+  expect(await addedBy('Hafer'), 'before: B\'s item records B as its author').toBe(idB);
   const tokenB = await personalAccessToken(emailB);
   expect(await voiceStatus(tokenB), 'B\'s token works before deletion').toBe(200);
 
@@ -106,12 +111,12 @@ test('a member deletes their account; the household and their items stay for the
   await expect(b).toHaveURL(/\/login/);
   await screenshot(b, 'account-03-deleted-sign-in');
 
-  await expect(itemRow(a, 'Hafer'), 'live: B\'s item stays, without B\'s initial').not.toHaveAccessibleName(/hinzugefügt/);
+  await expect(itemRow(a, 'Hafer'), 'live: B\'s item stays').toBeVisible();
+  expect(await addedBy('Hafer'), 'its author is gone from the row').toBeNull();
   await expect(itemRow(a, 'Milch')).toBeVisible();
   await screenshot(a, 'account-04-partner-list-after');
   await a.reload();
   await expect(itemRow(a, 'Hafer'), 'after a reload too').toBeVisible();
-  await expect(itemRow(a, 'Hafer')).not.toHaveAccessibleName(/hinzugefügt/);
   await expect(itemRow(a, 'Milch')).toBeVisible();
 
   await typeInto(b.getByRole('textbox', { name: 'E-Mail' }), emailB);
