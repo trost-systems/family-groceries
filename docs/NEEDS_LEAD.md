@@ -14,19 +14,23 @@ secrets, and the keyless Play service account
 weekly without any step below. Android builds and signs weekly; it uploads
 once L1 to L4 are done and `PLAY_RELEASE_STATUS` is set.
 
-Status (2026-10-27, from the Lead's BOARD.md posts):
+Status (2026-10-28): all done. Nothing is open for the Lead.
 
-- L1 and L2 done: Play app "Hummlist", app ID `4972374295718364245`.
-- L3 open: the signed AAB (version code 1003) is at
-  `~/groceries-ops/artifacts/app-release.aab` on the build box; upload it
-  as in L3 from step 2 on.
-- L4 done: the service account has Hummlist only, "Release to testing
-  tracks" and "View app information" (Play Console adds "View app quality
-  information" by itself). Testers list "Familie" exists with Peter.
+- L1 and L2: Play app "Hummlist", app ID `4972374295718364245`.
+- L3: release 1003 (0.1.0) on internal testing, list "Familie", track
+  active; Google-generated app signing key (fingerprints in
+  `RELEASE.md`, "Android signing"); `PLAY_RELEASE_STATUS=completed`.
+- L4: the service account has Hummlist only, "Release to testing tracks"
+  and "View app information" (Play Console adds "View app quality
+  information" by itself). The Release runs reach Play with it.
 - L5: nothing to do for internal testing.
-- L6 done: Associated Domains enabled; `renew_profile` made profile
+- L6: Associated Domains enabled; `renew_profile` made profile
   `5T4AGK7RF2` (ACTIVE, with associated domains, match repo `03f489d`).
-- L7: upload-key client in progress; the app signing client waits for L3.
+- L7: Android clients "Hummlist upload key" and "Hummlist Play app signing"
+  (SHA-1 `77:B6:9B:5E:8F:10:5D:3F:46:3C:62:C3:BC:BE:A8:3D:EA:10:08:53`) in
+  `family-groceries-512507`.
+
+The steps below stay as the record of what was done and for a re-setup.
 
 Values used below (none is secret):
 

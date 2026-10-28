@@ -30,9 +30,9 @@ Still yours:
 - Section 4, steps 16 and 18: the Xcode capability check and trying
   sign-in on your phones.
 - Section 5, step 1: one MCP connect and disconnect against production.
-- "Job 4: Siri", step 2. Releases (job 23): iOS ships to TestFlight group
-  "Familie" every Monday by itself; Android builds and signs weekly and
-  uploads once the Lead's Play Console steps are done (`NEEDS_LEAD.md`).
+- "Job 4: Siri", step 2. Releases (job 23): every Monday green `main` goes
+  to TestFlight group "Familie" and to the Play internal track (list
+  "Familie") by itself.
   Yours: "Job 23" below. Also "Job 5: Android verification run".
 - "Job 13: database backups": done (job 13b). Copy the backup private key
   from the build box to your own computer and password manager (section
@@ -614,18 +614,13 @@ Lead's step. Yours, in this order:
 ## Job 23: weekly releases
 
 The Release workflow ships green `main` every Monday at 03:00 UTC: TestFlight
-group "Familie" and, once Play is set up, the Play internal track
+group "Familie" and the Play internal track
 ([`RELEASE.md`](RELEASE.md)). The Play Console and Apple Developer browser
 steps are the Lead's, with you only signing in
 ([`NEEDS_LEAD.md`](NEEDS_LEAD.md)). Yours:
 
-1. **Only if you have no Google Play developer account** (the Lead finds
-   out in `NEEDS_LEAD.md`, L1): create one at
-   <https://play.google.com/console/signup>. It costs USD 25 once and needs
-   your identity verification (and, for an organization account such as
-   Trost Systems, a D-U-N-S number). Your decision; the box never creates or
-   pays for it. Until then Android builds and signs weekly but uploads
-   nowhere; iOS is unaffected.
+1. **Google Play developer account:** nothing to do. It exists; the Lead
+   created the app "Hummlist" in it on 2026-10-27.
 2. **Copy the Android upload key to your password manager.** Both files are
    on the build box in `~/groceries-ops/secrets/android/`:
    `upload-keystore.jks` and `key.properties` (its two passwords). Google can

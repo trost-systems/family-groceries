@@ -19,7 +19,7 @@ fi
 mapfile -t titles < <(
   git log --first-parent --format=%s "${range[@]}" |
     sed -E 's/ \(#[0-9]+\)$//; s/^Job [0-9]+[a-z]*[^:]*: //I' |
-    sed -E 's/[[:alnum:]._%+-]+@[[:alnum:].-]+//g; s/[Ff]amily[- ][Gg]roceries/Hummlist/g' |
+    sed -E 's/[[:alnum:]._%+-]+@[[:alnum:].-]+//g' |
     grep -viE '^(docs|ci|chore|test|build|style)(\(.*\))?!?:|^verify[- ]skill|^revert "' |
     grep -viE "$internal" |
     grep -v '^[[:space:]]*$' || true
