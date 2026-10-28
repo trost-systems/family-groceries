@@ -36,9 +36,10 @@ was set up with; one token works on both.
 | Authorization server | Supabase Auth on supabase.co | Supabase Auth on supabase.co |
 
 How the function knows which host the client used: every rewrite adds the
-query marker `via=mcp-hummlist`, and Vercel sends
-`x-forwarded-host: mcp.hummlist.com`. Either signal makes the function
-advertise the public URL; anything else gets the supabase.co values. Only
+query marker `via=mcp-hummlist`, which makes the function advertise the
+public URL; anything else gets the supabase.co values. (It would also accept
+`x-forwarded-host: mcp.hummlist.com`, but Supabase's gateway replaces that
+header.) Only
 the public host from `MCP_PUBLIC_URL` (default `https://mcp.hummlist.com`)
 can be advertised, so a spoofed signal cannot point a client anywhere
 else (`docs/DECISIONS.md`, Job 26).
