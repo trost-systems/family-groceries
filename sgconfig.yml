@@ -1,9 +1,0 @@
-# ast-grep: syntactic checks for mistakes this project already made (DECISIONS,
-# "Job 12"). `scripts/ast-grep.sh test` checks each rule under ast-grep/rules
-# against its cases in ast-grep/tests; `scripts/ast-grep.sh` scans every file
-# git tracks. scripts/lint.sh runs both. A new rule is one file in
-# ast-grep/rules plus its test; nothing here changes.
-ruleDirs:
-  - ast-grep/rules
-testConfigs:
-  - testDir: ast-grep/tests

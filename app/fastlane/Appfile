@@ -1,3 +1,0 @@
-app_identifier("com.hummlist.app")
-package_name("com.hummlist.app")
-team_id(ENV["APPLE_TEAM_ID"]) if ENV["APPLE_TEAM_ID"]
