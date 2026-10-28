@@ -28,7 +28,7 @@ Preconditions:
 - **Header order.** With "Alle" selected, the `y` bounds of the header texts in `fg find --type Text` increase in route order. Sonstiges is the last header, above "Zuletzt gekauft".
 - **Move.** Run `fg tap --text Xylophon`, then `fg wait --key edit-sheet` (the sheet is open). Run `fg tap --key chip-category` (`chip-store` is the store chip), `fg wait --text "Süßes & Snacks"`, `fg tap --text "Süßes & Snacks"`, `fg tap --key edit-done` and `fg wait --key edit-sheet --gone`. Xylophon now shows under "Süßes & Snacks", and the category query above returns that category for it. `fg db query "select c.name, m.corrections from category_memory m join categories c on c.id = m.category_id where m.item_key = 'xylophon'"` returns Süßes & Snacks with a count.
 - **Learn.** Tick Xylophon (`fg tap --row Xylophon --type Checkbox`, then `fg wait --text Xylophon --gone`) and add it again with `fg type --key add-item-field --input Xylophon --submit`. It lands under "Süßes & Snacks". `fg db query "select c.name from items i join categories c on c.id = i.category_id where i.name = 'Xylophon' and i.status = 'active'"` returns Süßes & Snacks.
-- **Drag.** Not drivable with fg: Marionette has no press-and-drag gesture. Report `cls-drag` as skipped.
+- **Drag.** Not drivable with fg: the item needs a long press before it drags, and Marionette has no long-press-then-drag gesture (its `swipe` drags at once). Report `cls-drag` as skipped.
 - **Proof.** Take `fg screenshot --name cls-after-add` and `--name cls-after-move`, and save the category query output for both states.
 
 ## Gotchas
