@@ -44,6 +44,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [Quick add](./quick-add.md) covers the autofocused add field, Enter-to-add with focus kept, quantities, duplicates, tick with undo, delete and re-add from history.
+- [Edit an item](./edit-item.md) covers the edit sheet (Bezeichnung, Marke, Eigenschaften, Menge with −/+, store and category chips, Fertig saving only changes, Löschen with undo), the row's "Marke · Eigenschaften" line, and how Siri and MCP entries are split into those fields.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.
 - [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, sign-out, and the Google and Apple buttons (web build only).
 - [Household](./household.md) covers creating a household, inviting by code and joining with it.

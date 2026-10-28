@@ -27,4 +27,36 @@ void main() {
   for (final MapEntry(:key, :value) in cases.entries) {
     test('"$key" parses to $value', () => expect(parseEntry(key), value));
   }
+
+  group('Menge steppers', () {
+    // (Menge, after +, after −); null: that stepper is off.
+    const cases = <(String, String?, String?)>[
+      ('2', '3', '1'),
+      ('1', '2', null),
+      ('', '2', null),
+      ('  ', '2', null),
+      ('2 l', '3 l', '1 l'),
+      ('1,5 l', '2,5 l', null),
+      ('2,5 l', '3,5 l', '1,5 l'),
+      ('0,5 l', '1,5 l', null),
+      ('1.25 kg', '2.25 kg', null),
+      ('500 g', '600 g', '400 g'),
+      ('100 g', '200 g', null),
+      ('150 g', '250 g', null),
+      ('99 g', '100 g', '98 g'),
+      ('250ml', '350ml', '150ml'),
+      ('500 Stück', '501 Stück', '499 Stück'),
+      ('2x', '3x', '1x'),
+      ('3 Packungen', '4 Packungen', '2 Packungen'),
+      ('eine Packung', null, null),
+      ('etwas', null, null),
+      ('1-2', null, null),
+    ];
+    for (final (quantity, up, down) in cases) {
+      test('"$quantity"', () {
+        expect(stepQuantity(quantity, up: true), up, reason: 'plus');
+        expect(stepQuantity(quantity, up: false), down, reason: 'minus');
+      });
+    }
+  });
 }

@@ -57,7 +57,7 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `--key household-name`, `--key invite-code`, `--text "Haushalt anlegen"`, `--text Beitreten` | Welcome screen (signed in, no household) |
 | `--key add-item-field` (label "Was fehlt?") | Add field on the list screen; autofocused on open |
 | `--row <item> --type Checkbox` | Tick an item |
-| `--text <item>` | Open an item's edit sheet (fields labelled `Name`, `Menge`; `--type "DropdownButton<String>"` for the category; `--text Speichern`) |
+| `--text <item>` | Open an item's edit sheet (key `edit-sheet`; fields `--key edit-name`, `edit-brand`, `edit-quantity`, `edit-properties`; `--key chip-store` / `chip-category` fold out `store-option-<id>` (`store-option-none` is "Ohne Laden") / `category-option-<id>`; `--key edit-done` saves only what changed, `edit-cancel`, `edit-delete`) |
 | `fg swipe --row <item> --direction left` | Delete an item (undo snackbar) |
 | `--tooltip Menü`, then `--text "Mitglied einladen"` / `"Anderem Haushalt beitreten"` / `Abmelden` | List screen menu |
 

@@ -10,6 +10,8 @@ export interface ParsedItem {
 
 export const maxItems = 30;
 const maxNameLength = 120;
+/** items.quantity's cap. */
+const maxQuantityLength = 40;
 
 /** Words that separate items. */
 const separators = new Set([
@@ -235,7 +237,11 @@ const tokenPattern = /\d+(?:[.,]\d+)+[^\s,;:&]*|[,;:&]|[^\s,;:&]+/g;
 
 /** Reads one number token: digits ("2", "1,5", "500g", "3x") or a German number word. */
 function readNumber(token: string): { value: number; glued: string } | null {
-  const digits = /^(\d{1,3}(?:\.\d{3})+|0|[1-9]\d*|(?:0|[1-9]\d*)[.,]\d+)(\p{L}*|×)$/u.exec(token);
+  // Up to six integer digits: a longer run of digits is no amount anyone buys ("1e+60 l").
+  const digits =
+    /^(\d{1,3}(?:\.\d{3}){1,2}|0|[1-9]\d{0,5}|(?:0|[1-9]\d{0,5})[.,]\d{1,3})(\p{L}*|×)$/u.exec(
+      token,
+    );
   if (digits) {
     const [, number, glued] = digits;
     const value =
@@ -389,7 +395,7 @@ function piece(tokens: string[], quantity: string | null): Piece | null {
     return quantity ? { name: null, quantity } : null;
   }
   const name = (text[0].toUpperCase() + text.slice(1)).slice(0, maxNameLength).trim();
-  return { name, quantity };
+  return { name, quantity: quantity?.slice(0, maxQuantityLength).trim() ?? null };
 }
 
 function segmentsOf(text: string): string[][] {

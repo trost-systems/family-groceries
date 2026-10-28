@@ -42,8 +42,46 @@ export const actionSnackBar = (page: Page, text: string) => page.getByRole('grou
 
 export const tickBox = (page: Page, name: string) => page.getByRole('checkbox', { name: `${name} abhaken` });
 
+/** The edit sheet (job 15): a group whose rect is exactly the sheet's content. */
+export const editSheet = (page: Page) => page.getByRole('group', { name: 'Bearbeiten', exact: true });
+
+/** A field of the edit sheet by its label: Bezeichnung, Marke, Menge, Eigenschaften. */
+export const editField = (page: Page, label: string) => editSheet(page).getByRole('textbox', { name: label });
+
+/**
+ * Flutter web fills a text field's <input> only while it is being edited, so a prefilled value is
+ * read after focusing the field.
+ */
+export async function expectFieldValue(field: Locator, value: string): Promise<void> {
+  const page = field.page();
+  await expect(async () => {
+    await field.click();
+    await expect(field).toBeFocused();
+    await nextFrames(page);
+    await expect(field).toHaveValue(value, { timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
+/** Opens an item's edit sheet with a right click, the web's long-press. */
+export async function openEdit(page: Page, name: string): Promise<void> {
+  await itemRow(page, name).click({ button: 'right' });
+  await expect(editSheet(page)).toBeVisible();
+}
+
+/** Folds out the store or category chip and picks an option by its name. */
+export async function pickInSheet(page: Page, chip: 'Laden' | 'Kategorie', option: string): Promise<void> {
+  await editSheet(page).getByRole('button', { name: new RegExp(`^${chip}: `) }).click();
+  await editSheet(page).getByRole('button', { name: option, exact: true }).click();
+}
+
+/** Presses Fertig and waits for the sheet to close. */
+export async function saveEdit(page: Page): Promise<void> {
+  await editSheet(page).getByRole('button', { name: 'Fertig' }).click();
+  await expect(editSheet(page)).toHaveCount(0);
+}
+
 /** Resolves once the page has drawn two more frames, so Flutter has drawn the frame it had scheduled. */
-async function nextFrames(page: Page): Promise<void> {
+export async function nextFrames(page: Page): Promise<void> {
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
 }
 

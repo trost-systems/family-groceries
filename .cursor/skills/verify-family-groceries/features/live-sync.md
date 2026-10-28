@@ -1,6 +1,6 @@
 # Live sync
 
-Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way. Items the partner added carry the partner's initial, and the ones added since this device last looked are tinted, with "N neu von <name>" under the household name, until they have been on screen for 3 seconds.
+Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way. Partner items added since this device last looked are tinted, with "N neu von <name>" under the household name, until they have been on screen for 3 seconds.
 
 ## Sub-features
 
@@ -9,7 +9,6 @@ Two members of one household see each other's changes without reloading. An item
 - `sync-edit` shows a renamed or recategorized item on the other list.
 - `sync-delete` removes an item deleted by one member from the other list.
 - `sync-reconnect` catches up after the app comes back (resync on resume or relaunch).
-- `sync-added-by` shows a small initial (key `added-by-<item id>`, semantics "Von <name> hinzugefügt") on items another member added; none on your own. Two letters when two members share the first one.
 - `sync-new` tints partner items added after this device last looked (row name ends in "Neu"), with the subtitle "N neu von <name>" ("N neu" for several partners). An item clears after 3 s more than half on screen while the app shows, or at once when it is ticked, and stays cleared after a relaunch. On a first start nothing old is new. The subtitle has the key `new-items-subtitle`.
 
 ## How to get to it (user POV)
@@ -28,9 +27,9 @@ Preconditions:
 - **One command.** Run `.cursor/skills/verify-family-groceries/journeys/quick-add-live-sync.sh`. It adds Milch on peter through the autofocused field, waits for it on lea, ticks it on lea, waits for it to leave peter, and checks the stored row (bought, by lea). It records both screens and prints `PASS` with both timings and the evidence directory.
 - **Add on one, see on the other.** Run `fg type --key add-item-field --input Butter --submit --client lea`. Then run `fg wait --text Butter --client peter --timeout 5`, which succeeds with `elapsedMs`.
 - **Tick on one, gone on the other.** Run `fg tap --row Butter --type Checkbox --client peter`. Then `fg wait --text Butter --gone --client lea --timeout 5` succeeds.
-- **Edit on one.** On peter, run `fg tap --text Milch` (with Milch on the list), `fg type --label Name --input Hafermilch` and `fg tap --text Speichern`. `fg wait --text Hafermilch --client lea` succeeds.
+- **Edit on one.** On peter, run `fg tap --text Milch` (with Milch on the list), `fg wait --key edit-sheet`, `fg type --key edit-name --input Hafermilch` and `fg tap --key edit-done`. `fg wait --text Hafermilch --client lea` succeeds.
 - **Delete on one.** Run `fg swipe --row Butter --direction left --client lea` with Butter on the list. `fg wait --text Butter --gone --client peter --timeout 10` succeeds.
-- **Partner initial and "neu".** With peter's list open, run `fg peer lea add Hafer`, then at once `fg wait --text Hafer` and `fg screenshot --name sync-new-live`: the row is tinted, shows "L", and the title reads "1 neu von Lea" (`fg find --key new-items-subtitle`). `fg find --contains added-by` lists `added-by-<id>` for the row. `fg wait --key new-items-subtitle --gone --timeout 8` succeeds within about 3 s and the tint is gone; the "L" stays. Peter's own items have no `added-by-` key.
+- **"neu".** With peter's list open, run `fg peer lea add Hafer`, then at once `fg wait --text Hafer` and `fg screenshot --name sync-new-live`: the row is tinted and the title reads "1 neu von Lea" (`fg find --key new-items-subtitle`). Rows carry no partner initial (job 15). `fg wait --key new-items-subtitle --gone --timeout 8` succeeds within about 3 s and the tint is gone.
 - **Stays seen.** Run `fg restart` (and `fg login peter` if the login screen shows). `fg wait --text Hafer` matches and `fg find --contains neu` returns count 0.
 - **Independent observer.** In a second shell, run `fg peer lea watch --until Butter --timeout 20 2>watch.err` and make the change only after `watch.err` shows `watch live after <n> ms`. It prints the realtime INSERT and UPDATE events that lea's session receives, with timestamps (`atMs`, and `liveAtMs` for the moment it went live).
 - **Reconnect.** fg cannot take one client offline yet, so `sync-reconnect` is not drivable here. Report it as skipped on this surface. The web e2e test "a tick made while offline syncs when the connection returns" (`e2e/tests/live-sync.spec.ts`) covers it in CI.

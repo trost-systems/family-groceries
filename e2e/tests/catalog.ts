@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { itemRow } from './helpers';
+import { editSheet, itemRow, openEdit } from './helpers';
 
 /** The list's group headings, top to bottom (the app bar title excluded). */
 export async function groupHeadings(page: Page): Promise<string[]> {
@@ -60,7 +60,7 @@ export async function selectStore(page: Page, store: string): Promise<void> {
 }
 
 export async function deleteItem(page: Page, item: string): Promise<void> {
-  await itemRow(page, item).click();
-  await page.getByRole('button', { name: 'Löschen' }).click();
+  await openEdit(page, item);
+  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
   await expect(itemRow(page, item)).toHaveCount(0);
 }

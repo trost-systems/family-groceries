@@ -168,7 +168,7 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
 - Anfrage: JSON `{"text": "Milch, zwei Gurken und Klopapier"}`; ein
   reiner Text-Hauptteil geht auch.
 - Antwort ohne `?format=text`: JSON mit `speech` (der Satz für Siri) und
-  `items` (Name, Menge, Kategorie, `alreadyOnList`). Mit `?format=text`
+  `items` (Name, Marke, Eigenschaften, Menge, Kategorie, `alreadyOnList`). Mit `?format=text`
   nur der Satz als `text/plain`. Fehler haben einen HTTP-Status
   (400, 401, 403, 405, 413, 422, 500) und ebenfalls einen deutschen Satz.
 - Test von der Kommandozeile:

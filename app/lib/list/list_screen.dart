@@ -337,19 +337,8 @@ class _ShoppingListState() extends State<ShoppingList> {
       catalog: cubit.state.catalog,
     );
     switch (result) {
-      case EditSaved(
-        :final name,
-        :final quantity,
-        :final categoryId,
-        :final storeId,
-      ):
-        cubit.edit(
-          item.id,
-          name: name,
-          quantity: quantity,
-          categoryId: categoryId,
-          storeId: storeId,
-        );
+      case EditSaved(:final changes):
+        cubit.edit(item.id, changes);
       case EditDeleted():
         _delete(item);
       case null:
@@ -458,8 +447,12 @@ class _ShoppingListState() extends State<ShoppingList> {
                 state: state,
                 onFreshVisible: _freshVisible,
                 onTick: _tick,
-                onMove: (item, categoryId) =>
-                    context.read<ListCubit>().move(item.id, categoryId),
+                // A drop on a category keeps the item's store.
+                onMove: (item, categoryId) => context.read<ListCubit>().move(
+                  item.id,
+                  categoryId: categoryId,
+                  storeId: item.storeId,
+                ),
                 onEdit: (item) => unawaited(_edit(item)),
                 onDelete: _delete,
                 onReadd: _readd,
@@ -583,7 +576,7 @@ class _ListBodyState() extends State<_ListBody> {
     final fresh = cubit.fresh;
     // Visibility reports can arrive after this list is gone.
     final onFreshVisible = widget.onFreshVisible;
-    return ListView(
+    final list = ListView(
       padding: const EdgeInsets.only(bottom: 96),
       children: [
         if (grouping.groups.isEmpty)
@@ -608,10 +601,6 @@ class _ListBodyState() extends State<_ListBody> {
                 _ItemTile(
                   key: ValueKey(item.id),
                   item: item,
-                  addedBy: item.isFromPartner(cubit.userId)
-                      ? state.catalog.member(item.addedBy)
-                      : null,
-                  catalog: state.catalog,
                   fresh: fresh.contains(item.id),
                   onVisible: (visible) =>
                       onFreshVisible(item.id, visible: visible),
@@ -657,6 +646,16 @@ class _ListBodyState() extends State<_ListBody> {
             ],
           ),
       ],
+    );
+    if (!kIsWeb) {
+      return list;
+    }
+    // A right click on a row opens the edit sheet, not the browser's menu.
+    // Only over the list: text fields keep the browser's menu.
+    return MouseRegion(
+      onEnter: (_) => unawaited(BrowserContextMenu.disableContextMenu()),
+      onExit: (_) => unawaited(BrowserContextMenu.enableContextMenu()),
+      child: list,
     );
   }
 }
@@ -719,10 +718,6 @@ class const _GroupHeader(final String title) extends StatelessWidget {
 class const _ItemTile({
   required final Item item,
 
-  /// The partner who added it; null for own items and unknown members.
-  required final Member? addedBy,
-  required final Catalog catalog,
-
   /// Not seen yet: tinted, and it reports whether it is on screen.
   required final bool fresh,
   required final ValueChanged<bool> onVisible,
@@ -731,44 +726,83 @@ class const _ItemTile({
   required final VoidCallback onDelete,
   required final ValueChanged<bool> onDragging,
   super.key,
-}) extends StatelessWidget {
+}) extends StatefulWidget {
+  @override
+  State<_ItemTile> createState() => _ItemTileState();
+}
+
+class _ItemTileState() extends State<_ItemTile> {
+  /// How far a long press moved the lifted item, and whether it went past
+  /// the slop: a long press that stays put opens the edit sheet instead.
+  var _travel = Offset.zero;
+  var _moved = false;
+
+  static const _slop = 8.0;
+
+  void _dragUpdate(DragUpdateDetails details) {
+    _travel += details.delta;
+    if (!_moved && _travel.distance >= _slop) {
+      _moved = true;
+      widget.onDragging(true);
+    }
+  }
+
+  void _dragEnd(DraggableDetails details) {
+    if (_moved) {
+      widget.onDragging(false);
+    } else if (!details.wasAccepted) {
+      widget.onEdit();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final item = widget.item;
     // Its own node, so a group's only item does not become the parent of
     // the group heading.
     final plain = Semantics(container: true, child: _tile(context));
-    final tile = fresh
+    final tile = widget.fresh
         ? VisibilityDetector(
             key: ValueKey('new-${item.id}'),
             onVisibilityChanged: (info) =>
-                onVisible(info.visibleFraction > 0.5),
+                widget.onVisible(info.visibleFraction > 0.5),
             child: plain,
           )
         : plain;
     // Long press, so scrolling, tapping and swiping keep working.
-    return LongPressDraggable<Item>(
-      data: item,
-      onDragStarted: () => onDragging(true),
-      onDragEnd: (_) => onDragging(false),
-      feedback: Material(
-        elevation: 6,
-        borderRadius: BorderRadius.circular(8),
-        color: theme.colorScheme.surfaceContainerHigh,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Text(item.name, style: theme.textTheme.bodyLarge),
+    return GestureDetector(
+      onSecondaryTap: widget.onEdit,
+      child: LongPressDraggable<Item>(
+        data: item,
+        delay: const Duration(milliseconds: 300),
+        onDragStarted: () {
+          _travel = Offset.zero;
+          _moved = false;
+        },
+        onDragUpdate: _dragUpdate,
+        onDragEnd: _dragEnd,
+        feedback: Material(
+          elevation: 6,
+          borderRadius: BorderRadius.circular(8),
+          color: theme.colorScheme.surfaceContainerHigh,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Text(item.name, style: theme.textTheme.bodyLarge),
+          ),
         ),
+        childWhenDragging: Opacity(opacity: 0.4, child: tile),
+        child: tile,
       ),
-      childWhenDragging: Opacity(opacity: 0.4, child: tile),
-      child: tile,
     );
   }
 
   Widget _tile(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final item = widget.item;
     final quantity = item.quantity;
+    final details = [?item.brand, ?item.properties].join(' · ');
     return Dismissible(
       key: ValueKey('dismiss-${item.id}'),
       direction: DismissDirection.endToStart,
@@ -782,7 +816,7 @@ class const _ItemTile({
           ),
         ),
       ),
-      onDismissed: (_) => onDelete(),
+      onDismissed: (_) => widget.onDelete(),
       child: ListTile(
         // Unfocusable: on web a focused element that vanishes with its row
         // leaves the add field unable to take text on the next tap.
@@ -790,41 +824,28 @@ class const _ItemTile({
           child: Checkbox(
             value: false,
             semanticLabel: l10n.tickItem(item.name),
-            onChanged: (_) => onTick(),
+            onChanged: (_) => widget.onTick(),
           ),
         ),
-        tileColor: fresh ? theme.colorScheme.tertiaryContainer : null,
+        tileColor: widget.fresh ? theme.colorScheme.tertiaryContainer : null,
         title: Text(
           item.name,
           // Joined like merged labels, so the row's name still starts with
           // the item's.
-          semanticsLabel: fresh ? '${item.name}\n${l10n.newItem}' : null,
+          semanticsLabel: widget.fresh ? '${item.name}\n${l10n.newItem}' : null,
         ),
-        trailing: switch ((quantity, addedBy)) {
-          (null, null) => null,
-          _ => Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 8,
-            children: [
-              if (quantity != null)
-                Text(quantity, style: theme.textTheme.bodyMedium),
-              if (addedBy case final member?)
-                Semantics(
-                  label: l10n.addedBy(member.displayName),
-                  excludeSemantics: true,
-                  child: CircleAvatar(
-                    key: ValueKey('added-by-${item.id}'),
-                    radius: 12,
-                    child: Text(
-                      catalog.initialOf(member),
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  ),
+        subtitle: details.isEmpty
+            ? null
+            : Text(
+                details,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-            ],
-          ),
-        },
-        onTap: onEdit,
+              ),
+        trailing: quantity == null
+            ? null
+            : Text(quantity, style: theme.textTheme.bodyMedium),
+        onTap: widget.onEdit,
       ),
     );
   }

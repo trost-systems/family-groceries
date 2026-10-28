@@ -4,7 +4,7 @@ A spoken sentence such as "Milch, zwei Gurken und Klopapier" becomes separate li
 
 ## Sub-features
 
-- `voice-add` adds the items of a sentence and answers with JSON: `speech`, `items` (name, quantity, category, `alreadyOnList`) and `truncated`.
+- `voice-add` adds the items of a sentence and answers with JSON: `speech`, `items` (name, brand, properties, quantity, category, `alreadyOnList`) and `truncated`.
 - `voice-siri-text` answers with the spoken sentence only (`?format=text`, `text/plain`), which the Shortcut reads aloud.
 - `voice-duplicate` names items already on the list ("Schon auf der Liste: Milch.") and adds nothing for them.
 - `voice-errors` answers every failure with a German sentence and a status: 401 bad or revoked token, 403 no household, 400 no text, 405 not POST, 413 too long, 422 nothing understood.
@@ -27,6 +27,7 @@ Preconditions:
 - Baseline from `features/README.md`; peter signed in on the list. One client is enough. Mark earlier test items bought, or start from `fg up --fresh`.
 
 - **Add.** Run `fg fn call voice --body '{"text":"Milch, zwei Gurken und Klopapier"}'`. The result has status 200 and `speech` "Hinzugefügt: Milch, 2 Gurken, Klopapier.", with Gurken's quantity "2". `fg wait --text Klopapier` succeeds on peter's app within a second, without any tap.
+- **Brand and properties.** Run `fg fn call voice --body '{"text":"Windeln Pampers Größe 3 und zwei Liter Milch"}'`. The `speech` is "Hinzugefügt: Windeln Pampers Größe 3, 2 l Milch." and the first item has name "Windeln", brand "Pampers", properties "Größe 3" (the server parser, `public.parse_item`). `fg db query "select store_id is not null from items where name = 'Windeln'"` is true (drugstore items get the dm store).
 - **Siri text and duplicate.** Run `fg fn call voice --path '?format=text' --body '{"text":"Milch und Brot"}'`. The content type is `text/plain; charset=utf-8` and the body is "Hinzugefügt: Brot. Schon auf der Liste: Milch.". `fg db query "select count(*) from items where name = 'Milch' and status = 'active'"` stays 1.
 - **Parse only.** Run `fg fn call voice --body '{"text":"zwei Kilo Äpfel bitte","mode":"parse"}'`. The speech is "Verstanden: 2 kg Äpfel." and no Äpfel row exists.
 - **Errors.** `fg fn call voice --as anon --path '?format=text' --body '{"text":"Milch"}'` gives 401 with the token sentence and `wwwAuthenticate` `Bearer`. `--body '{"text":"bitte danke"}'` gives 422 `nothing_understood`. `--body '{"text":""}'` gives 400 `no_text`. `fg fn call voice` without a body (GET) gives 405 `method`. For 403, sign up a user with no household over HTTP (local auth needs no key): `JWT=$(curl -s "$(fg env | jq -r .apiUrl)/auth/v1/signup" -H 'content-type: application/json' -d "{\"email\":\"nohh-$(date +%s)@fg.test\",\"password\":\"test-password-123\"}" | jq -r .access_token)`, then `fg fn call voice --bearer "$JWT" --path '?format=text' --body '{"text":"Milch"}'` gives 403, "Du bist noch in keinem Haushalt. …".

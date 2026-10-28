@@ -44,14 +44,22 @@ its own runner with its own stack, because Playwright is the longest step.
 Each shard starts the Supabase stack in the background before installing
 Flutter and Playwright; the gate's `supabase_up` (`scripts/lib.sh`) waits on
 the same per-project lock and reuses the stack. CI pulls the Supabase images
-from ghcr.io (`SUPABASE_INTERNAL_IMAGE_REGISTRY`): the default registry
-rate-limits runners and cost about 14 s of retries per run.
+from Docker Hub (`SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io`): the default
+registry rate-limits runners and cost about 14 s of retries per run, and
+ghcr.io refused every runner pull for hours on 2026-10-27.
 
 The e2e gate takes the box-wide lock `/tmp/fg-e2e.lock`, held from stack start
 through Playwright. A second run prints the last holder that recorded itself
 in the lock file and waits. Anything else that runs Playwright on the box can
 take the same lock with `flock /tmp/fg-e2e.lock <command>`. The kernel
 releases the lock when the holder exits, however it exits.
+
+A failed e2e test gets one retry only when the host paused the test runner
+for 2 s or more during it (a VM stall on the shared box): the line
+`[host-stall] <test>: the host paused the test runner for N s` names it, and
+the retry shows as flaky. Any other failure fails its retry at once with
+"not retried", so the gate still fails (`e2e/tests/fixtures.ts`, DECISIONS
+job 15b).
 
 ## Which gates a PR runs
 

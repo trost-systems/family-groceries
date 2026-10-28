@@ -195,13 +195,17 @@ void main() {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
     await tester.tap(find.widgetWithText(ListTile, 'Brot'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Alle Geschäfte'));
+    await tester.tap(find.byKey(const ValueKey('chip-store')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Lidl').last);
+    await tester.tap(find.byKey(const ValueKey('store-option-lidl')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Speichern'));
+    await tester.tap(find.byKey(const ValueKey('edit-done')));
     await tester.pumpAndSettle();
     expect(repo.rows.values.single.storeId, 'lidl');
+    expect(repo.sent.last, isA<EditItem>());
+    expect((repo.sent.last as EditItem).changes.toColumns(), {
+      'store_id': 'lidl',
+    });
   });
 
   testWidgets('long-press dragging an item onto a category moves it', (
@@ -209,10 +213,12 @@ void main() {
   ) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
     expect(headings(tester), ['Kühlregal']);
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.widgetWithText(ListTile, 'Milch')),
-    );
+    final start = tester.getCenter(find.widgetWithText(ListTile, 'Milch'));
+    final gesture = await tester.startGesture(start);
     await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(headings(tester), ['Kühlregal'], reason: 'lifted, not moved yet');
+    await gesture.moveTo(start + const Offset(0, 20));
     await tester.pump();
     expect(headings(tester), ['Obst & Gemüse', 'Kühlregal', 'Sonstiges']);
 
@@ -222,6 +228,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.rows.values.single.categoryId, 'produce');
     expect(headings(tester), ['Obst & Gemüse']);
+    expect(find.byKey(const ValueKey('edit-sheet')), findsNothing);
+  });
+
+  testWidgets('a long press that stays put opens the edit sheet', (
+    tester,
+  ) async {
+    await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
+    final start = tester.getCenter(find.widgetWithText(ListTile, 'Milch'));
+    final gesture = await tester.startGesture(start);
+    await tester.pump(const Duration(milliseconds: 400));
+    await gesture.moveTo(start + const Offset(3, 2));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('edit-sheet')), findsOneWidget);
+    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+    expect(repo.sent, isEmpty);
+  });
+
+  testWidgets('a right click opens the edit sheet', (tester) async {
+    await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
+    await tester.tap(
+      find.widgetWithText(ListTile, 'Milch'),
+      buttons: kSecondaryButton,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+  });
+
+  testWidgets('a row shows brand and properties under the name', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Milch', brand: 'Weihenstephan', properties: '1,5 %')
+        ..remoteAdd('Brot'),
+    );
+    expect(
+      find.descendant(
+        of: find.widgetWithText(ListTile, 'Milch'),
+        matching: find.text('Weihenstephan · 1,5 %'),
+      ),
+      findsOneWidget,
+    );
+    final brot = tester.widget<ListTile>(find.widgetWithText(ListTile, 'Brot'));
+    expect(brot.subtitle, isNull);
   });
 
   testWidgets('the store layout screen saves which categories dm carries', (
@@ -247,28 +299,18 @@ void main() {
     String rowLabel(WidgetTester tester, String name) =>
         tester.getSemantics(row(name)).label;
 
-    testWidgets('a partner item shows her initial, an own item none', (
-      tester,
-    ) async {
+    testWidgets('a partner item carries no initial', (tester) async {
       final handle = tester.ensureSemantics();
-      late String milk;
-      await pumpList(tester, seed: (repo) => milk = repo.remoteAdd('Milch').id);
-      await tester.enterText(addField(), 'Brot');
-      await tester.testTextInput.receiveAction(TextInputAction.send);
-      await tester.pumpAndSettle();
-
-      final badge = find.byKey(ValueKey('added-by-$milk'));
+      await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
       expect(
-        find.descendant(of: badge, matching: find.text('L')),
-        findsOneWidget,
-      );
-      expect(rowLabel(tester, 'Milch'), contains('Von Lea hinzugefügt'));
-      expect(rowLabel(tester, 'Milch'), startsWith('Milch'));
-      expect(rowLabel(tester, 'Brot'), isNot(contains('hinzugefügt')));
-      expect(
-        find.descendant(of: row('Brot'), matching: find.byType(CircleAvatar)),
+        find.descendant(of: row('Milch'), matching: find.byType(CircleAvatar)),
         findsNothing,
       );
+      expect(
+        find.descendant(of: row('Milch'), matching: find.text('L')),
+        findsNothing,
+      );
+      expect(rowLabel(tester, 'Milch'), isNot(contains('hinzugefügt')));
       expect(find.byKey(const ValueKey('new-items-subtitle')), findsNothing);
       handle.dispose();
     });
@@ -299,10 +341,10 @@ void main() {
       repo.emitItem!(repo.remoteAdd('Kaffee', addedBy: 'ana'));
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('2 neu'), findsOneWidget);
+      expect(find.byKey(ValueKey('new-${tea.id}')), findsOneWidget);
       expect(
-        find.descendant(of: row('Kaffee'), matching: find.text('A')),
-        findsOneWidget,
-        reason: 'the new member is loaded',
+        tester.widget<ListTile>(row('Tee')).tileColor,
+        Theme.of(tester.element(row('Tee'))).colorScheme.tertiaryContainer,
       );
       handle.dispose();
       await tester.pump(const Duration(seconds: 4));

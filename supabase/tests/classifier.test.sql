@@ -117,17 +117,17 @@ select is(public.suggest_store((select id from hc), 'Zahnpasta'), null, 'untaggi
 
 -- add_items: the shared add path for MCP and Siri.
 select results_eq(
-  $$ select name, quantity, pg_temp.seed_of(category_id) from public.add_items(
+  $$ select name, properties, quantity, pg_temp.seed_of(category_id) from public.add_items(
        (select id from hc), array['2 Gurken', 'Windeln Größe 4', 'Hack 500 g', '  ', 'Gurke']) $$,
-  $$ values ('Gurken', '2', 'produce'), ('Windeln Größe 4', null, 'drugstore'), ('Hack', '500 g', 'meat'),
-            ('Gurken', '2', 'produce') $$,
+  $$ values ('Gurken', null, '2', 'produce'), ('Windeln', 'Größe 4', null, 'drugstore'), ('Hack', null, '500 g', 'meat'),
+            ('Gurken', null, '2', 'produce') $$,
   'add_items parses, classifies, skips blanks and returns the existing row for a duplicate'
 );
 select is((select count(*)::int from public.items where household_id = (select id from hc) and name like 'Gurke%'), 1,
   'the duplicate was not inserted');
 select is(
-  (select store_id from public.add_items((select id from hc), array['Shampoo'], pg_temp.store((select id from hc), 'dm'))),
-  pg_temp.store((select id from hc), 'dm'), 'add_items tags with the given store'
+  (select store_id from public.add_items((select id from hc), array['Shampoo'], pg_temp.store((select id from hc), 'lidl'))),
+  pg_temp.store((select id from hc), 'lidl'), 'add_items tags with the given store, not the hint'
 );
 select throws_ok(
   $$ select public.add_items((select id from hd), array['Milch']) $$,
@@ -172,7 +172,7 @@ select is((select name from public.categories where id = (select id from baby)),
 
 -- Deleting a category moves its items without teaching, and hands over its dictionary terms.
 insert into public.items (household_id, name, category_id) select id, 'Schnuller', (select id from baby) from hc;
-update public.items set category_id = (select id from baby) where name = 'Windeln Größe 4';
+update public.items set category_id = (select id from baby) where name = 'Windeln' and properties = 'Größe 4';
 select public.delete_category(pg_temp.cat((select id from hc), 'drugstore'), (select id from baby));
 select is(
   (select count(*)::int from public.categories where household_id = (select id from hc) and seed_key = 'drugstore'), 0,

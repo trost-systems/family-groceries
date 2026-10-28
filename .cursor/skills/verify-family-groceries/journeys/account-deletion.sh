@@ -72,7 +72,8 @@ run wait --text "Familie Test" --client lea >/dev/null
 run type --key add-item-field --input "$item" --submit --client lea >/dev/null
 run wait --text "$item" --client peter >/dev/null
 item_id="$(sql "select id from items where name = '$item'" id)"
-run wait --key "added-by-$item_id" --client peter >/dev/null
+[[ "$(sql "select (added_by is not null) as authored from items where id = '$item_id'" authored)" == true ]] ||
+  fail "the item has no author"
 
 step "precondition: the member has a personal access token that works"
 access="$(curl -fsS "$api/auth/v1/token?grant_type=password" -H "apikey: $key" \
@@ -103,9 +104,8 @@ run wait --key account-deleted-notice --client lea --timeout 20 >/dev/null
 run screenshot --name 03-deleted-sign-in --client lea >/dev/null
 run record stop >/dev/null
 
-step "peter still has the list and the item, now without an initial, without reloading"
+step "peter still has the list and the item, without reloading"
 run wait --text "$item" --client peter >/dev/null
-run wait --key "added-by-$item_id" --gone --client peter >/dev/null
 run screenshot --name 04-peter-list-after --client peter >/dev/null
 
 step "server state after the shared deletion"

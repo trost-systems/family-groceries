@@ -10,8 +10,11 @@ void main() {
     id: 'milk',
     name: 'Milch',
     quantity: '2',
+    brand: 'Weihenstephan',
+    properties: '1,5 %',
     categoryId: 'chilled',
     storeId: 'lidl',
+    sortKey: 1536.5,
     status: ItemStatus.bought,
     createdAt: at,
     updatedAt: at.add(const Duration(minutes: 1)),
@@ -57,12 +60,22 @@ void main() {
       SetStatus('milk', ItemStatus.active, at),
       const EditItem(
         'milk',
-        name: 'Hafermilch',
-        quantity: null,
-        categoryId: 'other',
-        storeId: null,
+        ItemChanges(
+          name: 'Hafermilch',
+          quantity: SetTo(null),
+          brand: SetTo('Alpro'),
+          categoryId: 'other',
+        ),
       ),
-      const MoveItem('bread', 'other'),
+      const MoveItem('bread', categoryId: 'other', storeId: null),
+      const PlaceItem(
+        'bread',
+        anchorId: 'milk',
+        edge: Edge.before,
+        categoryId: 'chilled',
+        storeId: 'lidl',
+        sortKey: 768.25,
+      ),
       const DeleteItem('milk'),
     ],
     usuals: const [
@@ -84,8 +97,19 @@ void main() {
       SetStatus,
       EditItem,
       MoveItem,
+      PlaceItem,
       DeleteItem,
     ]);
+    final edit = back.pending[3] as EditItem;
+    expect(edit.changes.toColumns(), {
+      'name': 'Hafermilch',
+      'quantity': null,
+      'brand': 'Alpro',
+      'category_id': 'other',
+    }, reason: 'only the changed columns, a cleared one as null');
+    expect(back.server.single.sortKey, 1536.5);
+    expect(back.server.single.brand, 'Weihenstephan');
+    expect(back.server.single.properties, '1,5 %');
     expect(back.catalog.fallback?.id, 'other');
     expect(back.catalog.layout.single.hidden, isTrue);
     expect(back.server.single.boughtAt, milk.boughtAt);
@@ -121,7 +145,9 @@ void main() {
       jsonDecode(v1) as Map<String, Object?>,
     );
     expect(loaded.pending.map((op) => op.runtimeType), [AddItem, SetStatus]);
+    expect(loaded.toJson()['version'], 3, reason: 'upgraded through v2');
     expect(loaded.server.single.addedBy, isNull);
+    expect(loaded.server.single.sortKey, isNull);
     expect(loaded.catalog.members, isEmpty);
     expect(loaded.usuals, isEmpty);
     final visible = visibleItems({
@@ -129,6 +155,61 @@ void main() {
     }, loaded.pending);
     expect(visible['bread']!.quantity, '2');
     expect(visible['milk']!.status, ItemStatus.bought);
+    expect(roundTrip(loaded).toJson(), loaded.toJson());
+  });
+
+  test('a version 2 snapshot loads with its queued edits and moves', () {
+    // As the app before brand, properties and walk order wrote it.
+    const v2 = '''
+{"version":2,
+ "catalog":{"categories":[{"id":"chilled","name":"Kühlregal","sort_order":30,"seed_key":null},
+                          {"id":"other","name":"Sonstiges","sort_order":1000,"seed_key":"other"}],
+            "stores":[{"id":"dm","name":"dm","sort_order":10,"seed_key":"dm"}],"layout":[],
+            "members":[{"id":"lea","display_name":"Lea"}]},
+ "server":[{"id":"milk","name":"Milch","quantity":"1","category_id":"chilled",
+            "store_id":"dm","status":"active","created_at":"2026-10-22T12:00:00.000Z",
+            "updated_at":"2026-10-22T12:00:00.000Z","bought_at":null,"added_by":"lea"},
+           {"id":"tea","name":"Tee","quantity":null,"category_id":"other",
+            "store_id":null,"status":"active","created_at":"2026-10-22T12:00:00.000Z",
+            "updated_at":"2026-10-22T12:00:00.000Z","bought_at":null,"added_by":"lea"}],
+ "pending":[{"item_id":"milk","op":"edit","name":"Hafermilch","quantity":null,
+             "category_id":"other","store_id":null},
+            {"item_id":"tea","op":"move","category_id":"chilled"},
+            {"item_id":"tea","op":"delete"}],
+ "usuals":[{"name":"Brot","quantity":null,"due":true}]}''';
+    final loaded = ListSnapshot.fromJson(
+      jsonDecode(v2) as Map<String, Object?>,
+    );
+    expect(loaded.pending.map((op) => op.runtimeType), [
+      EditItem,
+      EditItem,
+      DeleteItem,
+    ]);
+    expect((loaded.pending[0] as EditItem).changes.toColumns(), {
+      'name': 'Hafermilch',
+      'quantity': null,
+      'category_id': 'other',
+      'store_id': null,
+    }, reason: 'a v2 edit wrote all four columns');
+    expect((loaded.pending[1] as EditItem).changes.toColumns(), {
+      'category_id': 'chilled',
+    }, reason: 'a v2 move only changed the category');
+    expect(
+      [
+        for (final item in loaded.server)
+          (item.brand, item.properties, item.sortKey),
+      ],
+      [(null, null, null), (null, null, null)],
+    );
+    final visible = visibleItems({
+      for (final item in loaded.server) item.id: item,
+    }, loaded.pending.take(2));
+    final hafer = visible['milk']!;
+    expect(
+      (hafer.name, hafer.quantity, hafer.categoryId, hafer.storeId),
+      ('Hafermilch', null, 'other', null),
+    );
+    expect(visible['tea']!.categoryId, 'chilled');
     expect(roundTrip(loaded).toJson(), loaded.toJson());
   });
 

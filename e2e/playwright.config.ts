@@ -8,7 +8,8 @@ export default defineConfig({
   fullyParallel: true,
   // One locally: the box's RAM is shared by parallel jobs (COORDINATION.md, Memory).
   workers: process.env.CI ? 2 : 1,
-  retries: 0,
+  // One retry, which fixtures.ts lets run only after a host stall (VM pause) cut the attempt.
+  retries: 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://127.0.0.1:${port}`,

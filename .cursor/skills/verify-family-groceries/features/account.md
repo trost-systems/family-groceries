@@ -8,7 +8,7 @@ Every signed-in user can export their data and delete their account. Both live i
 - `acct-fate-kept` tells a member of a shared household that "Der Haushalt „<name>“ bleibt für <other members> mit der ganzen Liste erhalten."
 - `acct-fate-deleted` tells the last member "Du bist das letzte Mitglied. Deshalb wird der Haushalt „<name>“ … gelöscht."
 - `acct-confirm-word` keeps "Endgültig löschen" disabled until the field holds `LÖSCHEN` or `LOESCHEN` (any case).
-- `acct-delete-shared` deletes the account; the other member keeps the list and the deleted user's items lose their initial, live and after a reload. The user can no longer sign in, and their access tokens get 401.
+- `acct-delete-shared` deletes the account; the other member keeps the list and the deleted user's items lose their author (`added_by` null). The user can no longer sign in, and their access tokens get 401.
 - `acct-delete-last` deletes the account and the household with its items, history, categories, stores, invites, learned memory and tokens.
 - `acct-offline` refuses without a connection ("Keine Internetverbindung. Dein Konto wurde nicht gelöscht. …") and deletes nothing.
 - `acct-export` saves `einkauf-daten-YYYY-MM-DD.json` (format `family-groceries-export`) with the user's account, profile, household, their items and history, token names and hints, never a token hash. The snackbar says "Daten exportiert: <path>" on desktop.
@@ -34,12 +34,12 @@ Preconditions:
 - **Journey: a throwaway member joins Familie Test, adds an item and deletes the account.**
   1. Invite as peter: `fg tap --tooltip Menü`, `fg wait --text "Mitglied einladen"`, `fg tap --text "Mitglied einladen"`, `fg wait --text Code`, read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]'`, then `fg back`.
   2. Join as the throwaway: `fg type --key invite-code --input <code> --client lea`, `fg tap --text Beitreten --client lea`, `fg wait --text "Familie Test" --client lea`.
-  3. Add an item: `I=Xylophon-$(date +%s)`, `fg type --key add-item-field --input $I --submit --client lea`. On peter, `fg wait --text $I` succeeds. Read its id with `fg db query "select id, added_by from items where name = '$I'"`. `fg wait --key added-by-<id>` on peter finds the initial.
+  3. Add an item: `I=Xylophon-$(date +%s)`, `fg type --key add-item-field --input $I --submit --client lea`. On peter, `fg wait --text $I` succeeds. Read its id with `fg db query "select id, added_by from items where name = '$I'"`. It returns lea's id.
   4. `acct-entry`: `fg tap --tooltip Menü --client lea`, `fg wait --key menu-account --client lea`, `fg tap --key menu-account --client lea`, `fg wait --key account-delete --client lea`. Screenshot `acct-entry-settings`.
   5. `acct-fate-kept`: `fg tap --key account-delete --client lea`, `fg wait --key account-delete-confirm-field --client lea`, `fg wait --contains "bleibt für" --client lea`. The sentence names the other members, in any order, joined with "und".
   6. `acct-confirm-word`: `fg tap --key account-delete-confirm --client lea`, then `fg wait --key account-delete-dialog --client lea` still succeeds (the disabled button did nothing). `fg type --key account-delete-confirm-field --input LÖSCHEN --client lea`. Screenshot `acct-confirm-dialog`.
   7. `acct-delete-shared`: `fg tap --key account-delete-confirm --client lea`, `fg wait --key account-deleted-notice --client lea` (text "Dein Konto wurde gelöscht."). Screenshot `acct-deleted-sign-in`.
-  8. Peter, without reload: `fg wait --key added-by-<id> --gone` and `fg wait --text $I` both succeed. Screenshot `acct-partner-list-after`.
+  8. Peter, without reload: `fg wait --text $I` succeeds. Screenshot `acct-partner-list-after`.
   9. Database: `fg db query "select count(*) from auth.users where email = '<throwaway email>'"` returns 0. `fg db query "select added_by from items where name = '$I'"` returns null. The member count query returns the count from before the join.
   10. Sign-in refused: `fg type --key login-email --input <throwaway email> --client lea`, `fg type --key login-password --input test-password-123 --client lea`, `fg tap --text Anmelden --client lea` (the button, not the app bar title), `fg wait --contains "Anmeldung fehlgeschlagen" --client lea`.
 - **Tokens die with the account.** Before step 7, create a token for the throwaway in its settings ("Token erstellen", see `features/mcp-access.md`). After step 7, a POST to `$(fg env | jq -r .apiUrl)/functions/v1/voice` with `Authorization: Bearer <token>` returns 401, and `fg db query "select count(*) from personal_access_tokens where name = '<token name>'"` returns 0.
