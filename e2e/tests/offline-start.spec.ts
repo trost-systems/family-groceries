@@ -1,6 +1,7 @@
 import { expect, test, type Page } from './fixtures';
 import {
   addField, addItem, apiAs, cutOff, itemRow, newEmail, password, screenshot, signUpWithHousehold, tickBox, typeInto,
+  within,
 } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
@@ -42,10 +43,10 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await expireStoredSession(page);
   await page.reload();
   // Fails fast: no hidden library retries (they took 7 s per read) before the cache shows.
-  await expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout: 3_000 });
+  await within(3_000, (timeout) => expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout }));
   await expect(itemRow(page, 'Milch')).toBeVisible();
   await expect(addField(page)).toBeFocused();
-  await expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout: 3_000 });
+  await within(3_000, (timeout) => expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout }));
 
   await addItem(page, 'Käse');
   await tickBox(page, 'Brot').click();

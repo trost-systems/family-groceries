@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot, signUp,
-  signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot,
+  signUp, signUpWithHousehold, tickBox, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -19,23 +19,23 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await expect(itemRow(lea, 'Milch'), 'the joiner sees the existing list').toBeVisible();
 
   await addItem(peter, 'Bananen');
-  await expect(itemRow(lea, 'Bananen'), 'an add in A appears in B').toBeVisible({ timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an add in A appears in B').toBeVisible({ timeout }));
 
   await tickBox(lea, 'Milch').click();
-  await expect(itemRow(peter, 'Milch'), 'a tick in B disappears in A').toHaveCount(0, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Milch'), 'a tick in B disappears in A').toHaveCount(0, { timeout }));
 
   await addItem(lea, 'Windeln');
-  await expect(itemRow(peter, 'Windeln'), 'an add in B appears in A').toBeVisible({ timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Windeln'), 'an add in B appears in A').toBeVisible({ timeout }));
 
   await openEdit(peter, 'Bananen');
   await typeInto(editField(peter, 'Menge'), '6');
   await saveEdit(peter);
   // "Neu" stays on a partner's item until it was on screen for 3 s, which this test may not reach.
-  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6$/, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6$/, { timeout }));
 
   await openEdit(lea, 'Windeln');
   await editSheet(lea).getByRole('button', { name: 'Löschen' }).click();
-  await expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout }));
 
   await screenshot(peter, '05-live-sync-a');
   await screenshot(lea, '06-live-sync-b');

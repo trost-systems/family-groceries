@@ -2,6 +2,7 @@ import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@model
 import { expect, type Page, test } from './fixtures';
 import {
   addItem, apiAs, itemRow, newEmail, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto,
+  within,
 } from './helpers';
 import {
   call, callbackParams, callExpectingError, connectWithToken, mcpUrl, openAuthorization, TestOAuthProvider, timedFetch,
@@ -88,7 +89,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
     ['Äpfel', 'Obst & Gemüse'],
   ]);
   expect(added.alreadyOnList.map((i) => i.name), 'no duplicates').toEqual(['Brot']);
-  await expect(itemRow(app, 'Hafermilch'), 'an MCP add shows up live in the app').toBeVisible({ timeout: 3_000 });
+  await within(3_000, (timeout) => expect(itemRow(app, 'Hafermilch'), 'an MCP add shows up live in the app').toBeVisible({ timeout }));
   await expect(itemRow(app, 'Äpfel')).toHaveAccessibleName('Äpfel 6');
 
   const moved = await call<Item>(client, 'move_item', { item: 'hafermilch', category: 'Getränke', store: 'Lidl' });
@@ -101,7 +102,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await screenshot(app, 'mcp-02-list-after-add');
   const ticked = await call<{ ticked: Item[] }>(client, 'tick_items', { items: ['Brot', 'äpfel'] });
   expect(ticked.ticked.map((i) => i.name).sort()).toEqual(['Brot', 'Äpfel']);
-  await expect(itemRow(app, 'Brot'), 'an MCP tick disappears live in the app').toHaveCount(0, { timeout: 3_000 });
+  await within(3_000, (timeout) => expect(itemRow(app, 'Brot'), 'an MCP tick disappears live in the app').toHaveCount(0, { timeout }));
 
   const listed = await call<{ items: Item[] }>(client, 'list_items', {});
   expect(listed.items.map((i) => i.name)).toEqual(['Hafermilch']);
