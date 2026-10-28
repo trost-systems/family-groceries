@@ -2043,3 +2043,62 @@ on purpose, and the interfaces this job ships.
         evidence against it, and a race that shows up twice fails the run.
       - Job 18b's `host-stall-reporter.ts` is gone. #49's stallRetry
         fixture does the same job (no retry without a stall mark).
+
+## Job 24a (guides site on hummlist.com), 2026-10-28
+
+1. **A small Node generator, not Astro.** `site/build.mjs` (markdown-it,
+   gray-matter; node-html-parser for the output checks) turns
+   `site/content/**/*.md` into `site/dist`. Seven pages need no framework,
+   and every check the brief asks for (frontmatter, one h1, heading order,
+   alt text, no script, no external resource, internal links, placeholders)
+   runs on the HTML the build writes. Page kinds (guide, legal page, index)
+   and locales are two registries, so a guide is one file and a language is
+   one entry.
+2. **Its own Vercel project, the app untouched.** `site/vercel.json` carries
+   install, build and output, so the Lead only sets Root Directory `site`.
+   The app's `vercel.json` builds `app/` into `app/build/web` and reads
+   nothing in `site/`. A release web build on this branch is byte-identical
+   to `main`'s (44 files, same SHA-256), with `site/` and the new Dart file
+   present. The app project still redeploys on a `site/`-only push (same
+   output); skipping that is a Vercel "Ignored Build Step" setting, the
+   Lead's call, not a repo change.
+3. **The Siri guide's app link is a const plus a test.** The app has no
+   Siri setup screen or link today, so per the brief no UI:
+   `app/lib/app/guides.dart` holds `guidesBaseUrl` and `siriGuideUrl(lang)`
+   (German UI to `/de/anleitungen/siri-kurzbefehl`, anything else to
+   `/en/guides/siri-shortcut`). It has no caller yet, so dart2js drops it;
+   its test also fails if either guide file is renamed.
+4. **`/` redirects by `Accept-Language`** in `site/vercel.json`: a header
+   starting with `de` goes to `/de/anleitungen`, any other header to
+   `/en/guides`, none to `/de/anleitungen` (307, `Vary: Accept-Language`).
+   A static `index.html` with a meta refresh to `/de/anleitungen` covers
+   hosts without redirects. `x-default` points at the German version.
+5. **noindex everywhere until the beta launch** (`X-Robots-Tag` header on
+   every response), with a strict CSP (`default-src 'self'`), no cookies,
+   no scripts, no third-party resources or fonts. Removing the header is in
+   `NEEDS_PETER.md`.
+6. **Lighthouse thresholds: performance >= 90, accessibility >= 95** on
+   mobile (Spec #5 AC5, adjusted). Measured on the local preview server,
+   which applies `vercel.json`'s headers: 100/100 on every page type. SEO
+   scores 63 only because of the intended noindex.
+7. **Impressum placeholders.** Open facts are written `[PETER: …]`; a
+   production build (`VERCEL_ENV=production`) fails while a published page
+   contains one, a preview build only warns. Peter answered both on
+   2026-10-27 (address; support@hummlist.com), so none are left.
+8. **The legal pages come later, into `site/`.** Job 24 adds `/datenschutz`,
+   `/privacy` and `/support` as `site/content/legal/*.md` and sets
+   `legalPublished: true` in `site/config.json`. Until then the footer shows
+   only Impressum; a footer link to a missing page fails the build. The job
+   24 brief carries this note.
+9. **CI: a new `site` gate, the normal CI gate for landing.** It always
+   runs (guides are Markdown, which `ci-changes.sh` counts as docs): tests,
+   a production build, and a repo-wide `git grep` for a real access token
+   (`fgp_` plus 43 characters; binary files such as images are searched
+   too). App code changes only by an unused const and its unit test, so the
+   five-green e2e rule does not apply.
+10. **Copy is verbatim.** The guide bodies match
+    `~/groceries-ops/jobs/24a-guides-site/content/` byte for byte; only
+    `translation_key` and `updated` were added. The index intros are the
+    approved paragraphs; their hand-written lists became the generated list
+    (title and description from frontmatter), so a new guide needs no index
+    edit.

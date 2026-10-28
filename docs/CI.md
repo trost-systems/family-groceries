@@ -14,6 +14,7 @@ the same things.
 | --- | --- | --- |
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
 | `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh` | yes |
+| `site` | The guides site in `site/`: build checks, tests, a production build; no real access token in the repo | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
 | `fg-cli` | Deno fmt, lint and tests for the verify skill's CLI | yes |
@@ -68,7 +69,8 @@ the sleeping phone).
 The `changes` job (`scripts/ci-changes.sh`) reads the PR's changed files:
 
 - Only `docs/` and Markdown changed (the verify skill's files under
-  `.cursor/` and `.claude/` count as code): only `gitleaks` and `lint` run.
+  `.cursor/` and `.claude/` count as code): only `gitleaks`, `lint` and
+  `site` run. `site` always runs because the guides are Markdown.
 - `android` and `ios` run when `app/ios/`, `app/android/` or `app/pubspec.*`
   changed. They compile the app's Swift and Kotlin and the plugin registrant
   generated from pubspec. A Dart change in `app/lib/` is compiled by the
