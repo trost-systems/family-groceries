@@ -15,15 +15,16 @@ function `mcp` and speaks MCP over streamable HTTP.
 | Protocol versions | 2026-07-28 (`server/discover`) and 2025-11-25 down to 2024-11-05 (`initialize`) |
 
 The app shows the endpoint under **Menü → Zugänge → MCP-Server**, with a copy
-button. The hosted endpoint goes live once the function is deployed (see
-`NEEDS_PETER.md`, section 5).
+button: `https://mcp.hummlist.com` in builds for the production project, the
+function URL `<project>/functions/v1/mcp` in builds for any other project
+(the local stack).
 
 ## Public URL (mcp.hummlist.com)
 
 `https://mcp.hummlist.com` is the public MCP URL. The Vercel project
 `hummlist-mcp` serves it from [`mcp-proxy/`](../mcp-proxy/README.md): a
 `vercel.json` that rewrites every request to the edge function, with no
-code, build or secrets. It goes live when the Lead has created that project
+code, build or secrets. The Lead created that project
 ([`NEEDS_LEAD.md`](NEEDS_LEAD.md#mcphummlistcom)).
 
 Both URLs reach the same function and stay valid. A client keeps the URL it
@@ -87,7 +88,8 @@ e2e test allows 3 s).
 
 ## Connecting a client
 
-Two ways to authenticate:
+Use `https://mcp.hummlist.com` as the endpoint URL below; the supabase.co
+URL works the same way. Two ways to authenticate:
 
 - **OAuth (recommended).** The client discovers everything from the endpoint
   URL, registers itself (dynamic client registration) and opens the app's
@@ -108,14 +110,14 @@ same flow with the official MCP SDK client.
 ### Claude Code
 
 ```bash
-claude mcp add --transport http einkauf https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
+claude mcp add --transport http einkauf https://mcp.hummlist.com
 # then run /mcp in Claude Code and choose "Authenticate"
 ```
 
 With a personal access token instead:
 
 ```bash
-claude mcp add --transport http einkauf https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp \
+claude mcp add --transport http einkauf https://mcp.hummlist.com \
   --header "Authorization: Bearer fgp_…"
 ```
 

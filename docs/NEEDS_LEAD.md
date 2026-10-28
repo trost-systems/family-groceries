@@ -7,6 +7,10 @@ that need Peter's own decision, money or identity are in
 
 ## mcp.hummlist.com
 
+Status: done. The Lead posted `Lead: mcp.hummlist.com live` (2026-10-28 15:44), and job 26's
+`scripts/mcp-smoke.sh https://mcp.hummlist.com` passed. The steps below
+stay as the record of the setup.
+
 Job 26. Makes `https://mcp.hummlist.com` the public MCP URL
 ([`MCP.md`](MCP.md#public-url-mcphummlistcom)). Everything else is on
 `main`: `mcp-proxy/vercel.json` and the function that advertises the public

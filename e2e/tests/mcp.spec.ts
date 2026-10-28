@@ -112,6 +112,10 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await app.getByRole('button', { name: 'Menü' }).click();
   await app.getByRole('menuitem', { name: 'Zugänge' }).click();
   await expect(app.getByText('Claude (E2E)').first()).toBeVisible();
+  await expect(
+    app.getByRole('group', { name: mcpUrl.href }),
+    'a build for another project than production shows that project\'s function URL',
+  ).toBeVisible();
   await screenshot(app, 'mcp-04-settings-connected-app');
 
   // Disconnecting cuts the client off at once, although its access token has not expired.

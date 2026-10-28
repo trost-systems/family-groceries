@@ -59,11 +59,10 @@ compiled routes are in `.vercel/output/config.json`.
   The function is stateless, so `Mcp-Session-Id` is never used. It never
   reads the upstream `Host` either.
 - **`/.well-known`.** The rewrites page says the path "is reserved and
-  cannot be redirected or rewritten". The app project on app.hummlist.com
-  rewrites `/.well-known/oauth-protected-resource` to its index.html today,
-  so the path is not blocked outright; whether an external rewrite of it
-  works shows once the project exists (`scripts/mcp-smoke.sh`). Fallback
-  in `docs/DECISIONS.md` (Job 26, item 8).
+  cannot be redirected or rewritten". The external rewrite of
+  `/.well-known/oauth-protected-resource` works on mcp.hummlist.com all the
+  same (checked 2026-10-28 with `scripts/mcp-smoke.sh`, `docs/DECISIONS.md`
+  Job 26, item 13).
 - **Cost.** Hobby is free: 1,000,000 CDN requests and 100 GB Fast Data
   Transfer a month ([usage](https://vercel.com/docs/manage-cdn-usage)).
   Hobby is for non-commercial personal use

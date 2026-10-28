@@ -2189,3 +2189,19 @@ on purpose, and the interfaces this job ships.
     exactly the values from before #80. The header check stays: it costs
     one line, is tested, and keeps working if a gateway ever passes the
     header through.
+12. **The app shows `https://mcp.hummlist.com` only in production builds**
+    (part B). `Environment.mcpUrl` stays one const: the public URL when
+    `SUPABASE_URL` is the production project, else
+    `<SUPABASE_URL>/functions/v1/mcp`. A build for the local stack therefore
+    shows a URL that reaches its own function, and the e2e MCP spec asserts
+    exactly that. The widget test runs with the production default and
+    asserts the public URL. The screenshots come from a release web build
+    with production defaults whose supabase.co requests Playwright answered
+    from the local stack, so they show the real production value.
+13. **`/.well-known` through Vercel works** (Lead: mcp.hummlist.com live,
+    15:44). `scripts/mcp-smoke.sh https://mcp.hummlist.com` passed all four
+    discovery checks, the root
+    `https://mcp.hummlist.com/.well-known/oauth-protected-resource` included,
+    so Vercel's "reserved" note does not cover this external rewrite and the
+    item 8 fallback is not needed. Two fetches of the metadata both came
+    back `x-vercel-cache: MISS`.
