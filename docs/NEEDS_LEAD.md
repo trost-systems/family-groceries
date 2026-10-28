@@ -5,6 +5,59 @@ Peter only signing in. Everything around them is done from the box. Steps
 that need Peter's own decision, money or identity are in
 [`NEEDS_PETER.md`](NEEDS_PETER.md) instead.
 
+## mcp.hummlist.com
+
+Job 26. Makes `https://mcp.hummlist.com` the public MCP URL
+([`MCP.md`](MCP.md#public-url-mcphummlistcom)). Everything else is on
+`main`: `mcp-proxy/vercel.json` and the function that advertises the public
+URL. Nothing here costs money: a Hobby project, no env vars, no secrets.
+DNS needs no change: hummlist.com is on Vercel's nameservers with a
+wildcard, and `mcp.hummlist.com` answers `DEPLOYMENT_NOT_FOUND` today.
+
+1. **Create the project** (Vercel connector or dashboard, team of the
+   existing Hummlist projects):
+   - Project name: `hummlist-mcp`.
+   - Git repository: `trost-systems/family-groceries`, production branch
+     `main`.
+   - Root Directory: `mcp-proxy`.
+   - Framework Preset: Other.
+   - Build and Output Settings: leave every override off. `mcp-proxy/vercel.json`
+     sets `installCommand`, `buildCommand` and `outputDirectory` to empty
+     and `framework` to null, which skips the build (checked with
+     `vercel build`: status `ok`, routes only).
+   - Environment variables: none. Node.js version: any.
+2. **Domain.** Add `mcp.hummlist.com` to `hummlist-mcp` as a production
+   domain (no redirect). If Vercel says another project holds it, move it.
+3. **Deployment Protection** (Settings, Deployment Protection):
+   - Vercel Authentication: off, or Standard Protection. Standard covers
+     only preview and generated URLs, never the production domain. Not "All
+     Deployments".
+   - Password Protection: off.
+   - MCP clients must reach `https://mcp.hummlist.com` with no Vercel
+     sign-in.
+4. **Builds only for `mcp-proxy/` (optional).** Settings, Build and
+   Deployment, Ignored Build Step: Behavior "Custom", command
+   `git diff --quiet HEAD^ HEAD -- . || exit 1`. Vercel runs it in the Root
+   Directory and skips the build when it exits 0: the newest commit on
+   `main` (one per merged PR) left `mcp-proxy/` unchanged. Any other result,
+   a missing `HEAD^` included, exits 1 and Vercel builds. Without this step
+   every push to `main` redeploys the same two files, which is harmless.
+   The Root Directory's "Skip deployment" switch does not apply: it needs
+   JS workspaces, which this repo has none of.
+5. **Verify** from the box, in the repo:
+
+   ```bash
+   scripts/mcp-smoke.sh https://mcp.hummlist.com
+   ```
+
+   Four lines start with `PASS`, one with `SKIP` (no token), and the last
+   line reads `all checks passed against https://mcp.hummlist.com`. Then
+   post on BOARD.md: `Lead: mcp.hummlist.com live`.
+
+   If only the metadata check fails with a 404 from Vercel, Vercel refused
+   the `/.well-known` rewrite: say so on the board; job 26 has a one-line
+   fallback (`DECISIONS.md`, Job 26, item 8).
+
 ## Job 23: weekly release pipeline
 
 Done from the box (job 23, 2026-10-27): the weekly Release workflow

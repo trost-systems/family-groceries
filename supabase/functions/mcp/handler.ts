@@ -23,14 +23,17 @@ const cors: Record<string, string> = {
 };
 
 export type Endpoints = {
-  /** The canonical MCP endpoint, e.g. https://<ref>.supabase.co/functions/v1/mcp. */
+  /** The MCP endpoint a client should use, e.g. https://<ref>.supabase.co/functions/v1/mcp. */
   resource: string;
   metadata: string;
   authorizationServer: string;
 };
 
 export type Deps = {
+  /** The function's own endpoints on the project host. */
   endpoints: () => Promise<Endpoints>;
+  /** Origin of the Vercel proxy in front of the function (mcp-proxy/), e.g. https://mcp.hummlist.com. */
+  publicOrigin: () => string;
   authenticate: (req: Request) => Promise<Auth>;
   serve: (req: Request, auth: Auth) => Promise<Response>;
   allowedOriginHosts: () => string[];
@@ -38,7 +41,9 @@ export type Deps = {
 
 export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
-  const endpoints = await deps.endpoints();
+  const direct = await deps.endpoints();
+  const publicOrigin = deps.publicOrigin();
+  const endpoints = viaProxy(req, publicOrigin) ? proxied(publicOrigin, direct) : direct;
   const path = new URL(req.url).pathname;
 
   if (PRM_SUFFIXES.some((suffix) => path.endsWith(suffix))) {
@@ -56,7 +61,8 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
 
   const rejected = originValidationResponse(req, [
     ...localhostAllowedOrigins(),
-    new URL(endpoints.resource).hostname,
+    new URL(direct.resource).hostname,
+    new URL(publicOrigin).hostname,
     ...deps.allowedOriginHosts(),
   ]);
   if (rejected) return withCors(rejected);
@@ -75,6 +81,29 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
     return withCors(challenge(e, endpoints));
   }
   return withCors(await deps.serve(req, auth));
+}
+
+/** The query parameter mcp-proxy/vercel.json adds to every request it forwards. */
+const PROXY_MARKER = ['via', 'mcp-hummlist'];
+
+/**
+ * Whether the request came through the proxy: its marker, or the public host as the forwarded
+ * host (a gateway may overwrite that header). Either only selects the allow-listed public URL, so
+ * a spoofed one can at most make the function advertise that URL.
+ */
+function viaProxy(req: Request, publicOrigin: string): boolean {
+  if (new URL(req.url).searchParams.get(PROXY_MARKER[0]) === PROXY_MARKER[1]) return true;
+  const forwarded = req.headers.get('x-forwarded-host')?.split(',')[0].trim().toLowerCase();
+  return forwarded?.replace(/:\d+$/, '') === new URL(publicOrigin).hostname;
+}
+
+/** The proxy serves the function at its root and the metadata at the RFC 9728 root path. */
+function proxied(publicOrigin: string, direct: Endpoints): Endpoints {
+  return {
+    resource: publicOrigin,
+    metadata: `${publicOrigin}${PRM_SUFFIXES[0]}`,
+    authorizationServer: direct.authorizationServer,
+  };
 }
 
 /** 401 (or 403 without a household) pointing the client at the Protected Resource Metadata. */
@@ -118,7 +147,7 @@ function withCors(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
 }
 
-async function publicEndpoints(): Promise<Endpoints> {
+async function projectEndpoints(): Promise<Endpoints> {
   const { issuer } = await discoverIssuer();
   const resource = `${issuer.replace(/\/auth\/v1\/?$/, '')}/functions/v1/mcp`;
   return {
@@ -128,8 +157,14 @@ async function publicEndpoints(): Promise<Endpoints> {
   };
 }
 
+/** The origin of `MCP_PUBLIC_URL` (the proxy serves no path), default https://mcp.hummlist.com. */
+export function publicOriginFromEnv(): string {
+  return new URL(Deno.env.get('MCP_PUBLIC_URL') || 'https://mcp.hummlist.com').origin;
+}
+
 const defaultDeps: Deps = {
-  endpoints: publicEndpoints,
+  endpoints: projectEndpoints,
+  publicOrigin: publicOriginFromEnv,
   authenticate,
   serve: (req, auth) => createMcpHandler(() => buildServer(auth)).fetch(req),
   allowedOriginHosts: () =>

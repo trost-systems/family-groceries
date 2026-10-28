@@ -6,7 +6,8 @@ function `mcp` and speaks MCP over streamable HTTP.
 
 | | |
 | --- | --- |
-| Endpoint (hosted) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
+| Endpoint (public) | `https://mcp.hummlist.com` (Vercel proxy, see [Public URL](#public-url-mcphummlistcom)) |
+| Endpoint (hosted function) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
 | Endpoint (local stack) | `http://127.0.0.1:54321/functions/v1/mcp` |
 | Protected Resource Metadata | `<endpoint>/.well-known/oauth-protected-resource` |
 | Authorization server | Supabase Auth, `https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1` |
@@ -16,6 +17,46 @@ function `mcp` and speaks MCP over streamable HTTP.
 The app shows the endpoint under **Menü → Zugänge → MCP-Server**, with a copy
 button. The hosted endpoint goes live once the function is deployed (see
 `NEEDS_PETER.md`, section 5).
+
+## Public URL (mcp.hummlist.com)
+
+`https://mcp.hummlist.com` is the public MCP URL. The Vercel project
+`hummlist-mcp` serves it from [`mcp-proxy/`](../mcp-proxy/README.md): a
+`vercel.json` that rewrites every request to the edge function, with no
+code, build or secrets. It goes live when the Lead has created that project
+([`NEEDS_LEAD.md`](NEEDS_LEAD.md#mcphummlistcom)).
+
+Both URLs reach the same function and stay valid. A client keeps the URL it
+was set up with; one token works on both.
+
+| | `https://mcp.hummlist.com` | `…supabase.co/functions/v1/mcp` |
+| --- | --- | --- |
+| `resource` in the metadata | `https://mcp.hummlist.com` | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
+| `resource_metadata` in a 401 | `https://mcp.hummlist.com/.well-known/oauth-protected-resource` | `<endpoint>/.well-known/oauth-protected-resource` |
+| Authorization server | Supabase Auth on supabase.co | Supabase Auth on supabase.co |
+
+How the function knows which host the client used: every rewrite adds the
+query marker `via=mcp-hummlist`, and Vercel sends
+`x-forwarded-host: mcp.hummlist.com`. Either signal makes the function
+advertise the public URL; anything else gets the supabase.co values. Only
+the public host from `MCP_PUBLIC_URL` (default `https://mcp.hummlist.com`)
+can be advertised, so a spoofed signal cannot point a client anywhere
+else (`docs/DECISIONS.md`, Job 26).
+
+`scripts/mcp-smoke.sh <endpoint>` checks a host the way a client discovers
+it (401, metadata on the same host, authorization server metadata, then
+`initialize` and `tools/list` when `MCP_SMOKE_TOKEN` holds a token):
+
+```bash
+scripts/mcp-smoke.sh https://mcp.hummlist.com
+scripts/mcp-smoke.sh https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
+```
+
+Vercel's limits for the proxy are in
+[`mcp-proxy/README.md`](../mcp-proxy/README.md#vercel-limits-docs-read-2026-10-28).
+They matter for one case only: a tool call that sends no byte for 120 s
+fails on mcp.hummlist.com with `ROUTER_EXTERNAL_TARGET_ERROR`. The tools
+answer in well under a second, and the supabase.co URL has no such limit.
 
 ## Tools
 
@@ -127,15 +168,16 @@ The function (`supabase/functions/mcp/handler.ts`):
 1. Serves Protected Resource Metadata (RFC 9728) at
    `<endpoint>/.well-known/oauth-protected-resource` (and
    `<endpoint>/oauth-protected-resource`, the path Supabase's own helper uses).
-   An edge function cannot serve the root `/.well-known/…` path, so clients
-   find the document through the `WWW-Authenticate` header, which the MCP
-   specification lists first.
+   An edge function cannot serve the root `/.well-known/…` path of
+   supabase.co, so clients find the document through the
+   `WWW-Authenticate` header, which the MCP specification lists first. On
+   mcp.hummlist.com the proxy serves it at the root path as well.
 2. Answers requests without a valid credential with `401` and
    `WWW-Authenticate: Bearer resource_metadata="…", scope="openid email"`,
    plus `error="invalid_token"` when a token was sent but rejected. A valid
    user without a household gets `403`.
-3. Rejects browser requests whose `Origin` is not the project's host,
-   localhost, or listed in the `MCP_ALLOWED_ORIGIN_HOSTS` secret
+3. Rejects browser requests whose `Origin` is not the project's host, the
+   public host (`mcp.hummlist.com`), localhost, or listed in the `MCP_ALLOWED_ORIGIN_HOSTS` secret
    (comma-separated hostnames).
 4. Authenticates (`supabase/functions/_shared/auth.ts`, shared with the Siri
    endpoint):
