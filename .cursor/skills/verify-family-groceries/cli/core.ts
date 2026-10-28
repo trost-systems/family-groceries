@@ -26,6 +26,15 @@ export class FgError extends Error {
 
 export const usage = (message: string, hint: string) => new FgError('usage', message, hint, EXIT_USAGE);
 
+/** What a cancelled step throws: a signal (Ctrl-C, SIGTERM, SIGHUP) aborted the work. */
+export const interrupted = (what: string) =>
+  new FgError('interrupted', `${what} was interrupted.`, 'A run this command seeded is torn down next; `fg runs` shows leftovers.', 130);
+
+/** Throws interrupted when signal has been aborted. */
+export function stopIf(signal: AbortSignal | undefined, what = 'The command'): void {
+  if (signal?.aborted) throw interrupted(what);
+}
+
 export interface RunResult {
   code: number;
   stdout: string;
@@ -37,6 +46,8 @@ export interface RunOptions {
   cwd?: string;
   stdin?: string;
   timeoutMs?: number;
+  /** Aborting kills the process; run then fails with code interrupted. */
+  signal?: AbortSignal;
 }
 
 export interface SpawnOptions {
@@ -55,7 +66,8 @@ export interface Shell {
   kill(pid: number, signal: Deno.Signal): Promise<void>;
   exists(path: string): Promise<boolean>;
   readText(path: string): Promise<string>;
-  writeText(path: string, text: string): Promise<void>;
+  /** mode applies when the file is created (e.g. 0o600 for credentials). */
+  writeText(path: string, text: string, opts?: { mode?: number }): Promise<void>;
   mkdir(path: string): Promise<void>;
   remove(path: string): Promise<void>;
   fetch(url: string, init?: RequestInit): Promise<Response>;

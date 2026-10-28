@@ -1758,3 +1758,288 @@ on purpose, and the interfaces this job ships.
    box is the same across two frames. Measuring right after the chip tap,
    the old check failed 3 of 3 (-16 to -136 px) and the new one passed 3 of
    3. The app was right.
+
+## Job 18 (test fixtures and multi-client sync), 2026-10-25
+
+18.1. **One CLI.** Fixtures and sync are `fg` subcommands (`scenario list|show`,
+      `seed <scenario>`, `runs`, `teardown`, `sync`), with fg's JSON, error and
+      `--dry-run` contract. Plain `fg seed` keeps resetting to peter + lea, so
+      existing recipes work unchanged.
+18.2. **Scenarios are YAML with a JSON Schema** (`test/fixtures/`), validated
+      with Ajv plus cross-reference checks in `cli/scenario.ts`, so every error
+      names its field. YAML because scenarios are written and reviewed by hand
+      and need comments. Times are relative ("-3d 18:10" in Berlin time), so a
+      scenario never goes stale; clock times need days >= 1, so they are always
+      in the past at any hour.
+18.3. **No migration.** A run is identified by the email
+      `<handle>.<run>@fg-test.invalid` (`.invalid` is reserved, RFC 2606, so no
+      mail can ever be delivered), `app_metadata.fg_run`, and a manifest of
+      created ids. Teardown finds a run by any of the three, so a lost manifest
+      still tears down.
+18.4. **Seeding goes through the app's own paths where they exist.**
+      `create_household` (categories, stores, layouts), `create_category`,
+      `reorder_categories`, `set_store_layout`, `create_invite`, and inserts and
+      ticks under each member's own session, so the classifier, `added_by`,
+      item→store memory and `item_events` come from the real triggers. Only
+      what no user can do uses the service role: adding members without an
+      invite, backdating `created_at`/`bought_at`/event times, expiring or
+      revoking an invite. History is replayed oldest first, so "latest wins"
+      memories are right; their own `updated_at` is the seeding time.
+18.5. **Teardown deletes users with `public.delete_account`** (the app's path:
+      it locks the household row, deletes it with its last member, hands
+      ownership on otherwise, nulls event actors). There is no bulk household
+      delete before it: a user outside the run who joins between reading the
+      members and deleting would lose their household. Only a household the
+      run created that is left without members is deleted directly. The
+      leftover check counts 16 tables by household and by user and fails on
+      any non-zero count. Ctrl-C during seeding only flags an abort; seeding
+      stops at its next request and teardown starts after it, so teardown
+      sees every record (an independent review found the race).
+18.6. **Member refs.** `--as`, `peer`, `login`, `mail --to`, `up --clients` and
+      `--client` take `peter`, `lea`, `<run>:<handle>`, or a bare handle of the
+      last run seeded on that stack. Scenario handles may not be `peter` or
+      `lea`. Linux clients for members get X displays `:<prefix>3..9`.
+18.7. **Credentials** live only in the run manifest
+      (`$FG_STATE_DIR/runs/<run>.json`, directory 700, file 600) and, during a
+      sync, in a 600 config file in the state dir that is deleted afterwards.
+      Seed output, logs, evidence and screenshots never contain them.
+18.8. **`fg sync` drives web, in one Chromium.** Each client is an isolated
+      context (about 250 MB) instead of a Linux debug app (about 650 MB), so
+      three clients fit on the shared box. The driver is a plain Node script
+      (`e2e/sync/engine.mjs`) using e2e's Playwright, not a Playwright test,
+      so it runs one long scenario with its own capture loop. The script
+      language is parsed in Deno (`cli/sync_dsl.ts`, unit-tested) and handed to
+      the driver as JSON, so a Marionette driver can run the same steps. A
+      native `--surface linux` driver was left out: three Linux clients plus
+      the stack do not fit in this box's RAM (docs/TEST_FIXTURES.md, "Other
+      surfaces").
+18.9. **Changes are detected in the page.** A MutationObserver on Flutter's
+      semantics DOM reports each change of the visible rows, chips and texts
+      with the time of the frame; the driver then screenshots all clients at
+      once. The same log decides expectations and their latency, so the
+      latency resolution is one rendered frame, not a polling interval.
+18.10. **Latency** is reported from the acting client's server ack (its first
+      successful REST write after the input), from the input, and from the
+      `item_events` row (local only, shared clock). The acting client's own
+      optimistic view, expectations that held before the action, and
+      catch-up after `online` are kept out of the live numbers; catch-up is
+      reported apart.
+18.11. **Offline closes the open realtime socket too.** With only Chromium's
+      offline emulation, the open WebSocket stayed up: the offline client got
+      nothing while offline and showed the missed add 48 ms after `online`
+      (measured; it looks like held traffic flushed on reconnect, inferred).
+      That never exercises the app's reconnect. So every realtime socket runs
+      through Playwright's WebSocket route and `offline` also closes it: the
+      app sees a real disconnect and recovers through its reconnect and resync
+      (about 3 s here, reported as catch-up). The relay adds no measurable
+      latency: p50 from ack 288 and 290 ms with it, 307 and 304 ms without
+      (2 runs each, 8 observations per run, `FG_SYNC_DIRECT_WS=1`).
+18.12. **The e2e lock.** `fg sync` builds the web app, then takes
+      `/tmp/fg-e2e.lock` (waiting up to `--lock-wait` seconds, else
+      `e2e_lock_busy`), and only then seeds, so a run never waits idle for
+      the lock: a kill while waiting leaves nothing behind (review 0). A lock
+      already held by a parent process is detected by an open descriptor on
+      the lock file in this process or an ancestor, and reused, so
+      `flock /tmp/fg-e2e.lock scripts/fg sync ...` and the e2e gate's
+      `flock 9` do not deadlock.
+18.13. **Hosted target** (`--target hosted`): test-domain accounts only, the
+      service key fetched per run through the Management API and kept in
+      memory, teardown on any failure or Ctrl-C, and non-test row counts
+      (counts only) recorded before and compared after. `fg sync --target
+      hosted` uses the production web build configuration.
+18.14. **Job 15 fields** (`brand`, `properties`, `walkOrder`) are accepted by
+      the schema and feature-detected at seed time; a database without the
+      column fails with `needs_column` before anything is created. The
+      walk-order column is assumed to be `items.sort_key`
+      (`ITEM_EXTENSION_COLUMNS` in `cli/fixtures.ts`).
+18.15. **Capturing does not slow what it measures.** With change frames on,
+      p50 from ack was 218 and 223 ms; with them off
+      (`FG_SYNC_NO_CHANGE_FRAMES=1`), 315 and 318 ms (3 clients, 12
+      observations per run, alternating runs). Headless Chromium seems to
+      schedule frames later in contexts nothing screenshots (inferred), so
+      the absolute numbers are this harness's view of propagation, not an
+      app benchmark; compare runs made the same way. Across all runs on this
+      box, live p50 from ack (all clients) ranged from 93 to 290 ms; catch-up after a
+      reconnect took about 3 s.
+18.16. **Stop signals (review 0).** SIGINT, SIGTERM and SIGHUP abort one
+      AbortSignal that reaches every slow step: seeding checks it between
+      requests, and the lock wait (`flock`), the web build and the browser
+      driver are child processes started with it, so they are killed at
+      once. The command's own cleanup (web server, lock, config file) runs
+      while it unwinds; then a run it seeded is torn down and fg exits
+      130/143/129. A seed that fails or is stopped is torn down on both
+      targets (a half-seeded run is useless). SIGKILL cannot be caught;
+      `fg runs` and `fg teardown --stale` cover it. Unit tests drive the
+      handler with injected signals (`cancel_test.ts`); `e2e/sync-smoke.sh`
+      sends a real SIGTERM in the lock wait and in the browser run.
+18.17. **Flakes the 5-green found (job 18b).** Each failure was matched
+      against mem-guard's once-a-minute samples. A gap of minutes followed
+      by `load=0.00` is a VM freeze. Every Playwright failure (list:53,
+      offline-start:30 and :84, voice:27, live-sync:171, stores:113) fell
+      in one; some freezes (182 s, 239 s) were shorter than the 300 s the
+      runner script counted as a freeze, so they looked like flakes. A
+      paused VM resumes with every deadline already passed, so no wait in a
+      spec survives it, and longer timeouts would only hide real hangs.
+      What changed instead:
+      - The cubit unit tests waited wall time (`Future.delayed`) for
+        work the cubit's own timers start. In flutter_tester, timers that
+        come due together run back to back before any microtask, so after
+        a stall the test resumed mid-reload ("Expected 'Ana', Actual
+        null"). `elapse()` waits, then drains the event queue; a stall
+        injected after both timers exist fails the old test and passes the
+        new one.
+      - `e2e/tests/fixtures.ts` names a host stall: an auto fixture ticks
+        every second and, when the runner was paused 10 s or more, prints
+        `[host-stall] <test>: the host paused the test runner for N s` and
+        annotates the test. A freeze is then read off the run's own log,
+        not guessed from another process's samples.
+      - The gitleaks gate scans what git could commit (tracked plus
+        untracked, not ignored) instead of every file on disk. Playwright
+        traces in `e2e/test-results/` hold local-stack session JWTs and
+        failed the next local run; ignored files reach a commit only with
+        `git add -f`, which the pre-commit hook scans. The path allowlist
+        (all of it gitignored) went with it.
+      - An app bug found on the way: a write PostgREST answered with a JWT
+        error (`PGRST3xx`, a token that lapsed in flight, e.g. after a
+        freeze or a phone waking) counted as refused, so the queued op was
+        dropped with "Änderung abgelehnt". It now counts as offline and is
+        retried with a fresh token (offline-start.spec "a write the server
+        answers with an expired token is retried, not dropped" failed
+        before the fix).
+18.18. **`db reset` without two realtime writers (job 18b).** One 5-green
+      run failed in the db gate with no stall: `supabase db reset` exited
+      1, and the gate's `>/dev/null` hid the CLI's message, which goes to
+      stdout (`DbSetupError: error running container: exit 1`, at
+      "Initialising schema"). Seen once more in about 90 resets by hand; both failures came
+      while another job's stack was busy. A reset recreates the database
+      and runs a one-shot realtime container that migrates and seeds it;
+      meanwhile the realtime service, which lost its database, restarts and
+      runs the same migrations and seeds against the same database
+      (`docker events`: both up in the same second). That overlap is the
+      only concurrency in the step and the likely cause, but it is
+      unconfirmed: the failing container's own log was never caught (about
+      70 more resets with capture passed). `db_reset` (`scripts/lib.sh`, used
+      by the db gate and the backup drill) stops the realtime service first,
+      so the one-shot container is the only writer; the CLI starts the
+      service again at "Restarting containers". A failure now prints the
+      CLI's error.
+18.19. **Apple client secrets are checked, not compared (job 18b).**
+      `apple_test.ts` asserted the revoke request reused the token
+      request's client secret. `revokeAppleGrant` signs one per request,
+      each with its own `iat`, so the two differ whenever the requests
+      straddle a second; Apple accepts any valid one. The test now verifies
+      both secrets. The app did not change.
+18.20. **A sweep for the same two timing classes (job 18b).** After the
+      cubit and Apple fixes, every unit test (functions, classifier, deploy,
+      fg CLI, Flutter) was read for wall-time waits racing timers and for
+      equal values from two clock reads. Three more could flake on a
+      stalled box: `cancel_test.ts` assumed its lock holder had the lock
+      after 200 ms (it now waits for the holder to say so), and aborted on a
+      300 ms timer that could fire before `takeE2eLock` spawned flock (it
+      now aborts once the waiting flock exists; `takeE2eLock` also checks
+      the signal again after its ancestor walk, so a stop there is
+      `interrupted`, not a raw AbortError); the usuals debounce test checked
+      "no refresh yet" against a real 1.5 s timer (it now runs under
+      `fakeAsync`). Each was proven: a 1 s delay before the holder locks
+      fails the old lock test and passes the new one; a 1000 ms debounce
+      fails the new usuals test.
+18.21. **Host stalls: one rerun, accepted only with proof (job 18b review 0).**
+      Review 0 rejected voiding failed runs: a void rule that counted stall
+      lines could excuse a real failure in another test, and it never
+      showed the app recovers after a pause. Now:
+      - Playwright retries a failed test once (`retries: 1`), and
+        `e2e/host-stall-reporter.ts` fails the run when a test passed only
+        on its rerun and a failed attempt has no `host-stall` annotation.
+        A test the host paused gets its one rerun; any other flake fails
+        the run as before. A 75 s SIGSTOP of the runner and its Chromium in
+        live-sync.spec failed the paused test, its rerun passed, and the run
+        exited 0; a test that fails once with no pause failed the run
+        ("FLAKY without a host stall").
+      - Extending the test timeout by the pause was tried and dropped: in
+        the same 75 s stall the failure came from an inner deadline
+        (`typeInto`'s 20 s `toPass`), which no test timeout covers.
+      - Recovery after a pause is tested on its own: live-sync.spec "a
+        phone that sleeps through a dropped connection ..." freezes the page
+        (CDP `Page.setWebLifecycleState`, which holds every timer: a 50 ms
+        interval stood still while frozen and fired 20 times on waking),
+        kills its Realtime connection and adds an item meanwhile; after
+        waking the item shows, the channel is live again and adds flow both
+        ways. Waiting for Realtime to drop a silent socket was tried first;
+        the local server had not closed it after 150 s.
+      - The 5-green loop voids nothing: every failed run resets the count.
+        It goes on only when each failed test has its own `[host-stall]`
+        line (matched by title) on both attempts, at most twice per head
+        and never twice for one test; anything else stops it.
+      - Every stall the detector reported since the 1 s bash heartbeat
+        (`/tmp/fg18b/heartbeat.log`) started matches a heartbeat hole within
+        3 s (docs/done/18-test-fixtures-sync.md lists them).
+18.22. **A rerun after a host pause is accepted, nothing else (job 18b
+      review 1).** Accepted: a test whose failed attempt the in-run
+      detector saw paused for 10 s or more, rerun once, passing. A pause
+      stops the runner, Chromium and every deadline, Playwright's own
+      included (in a 75 s stall the failure came from `typeInto`'s 20 s
+      `toPass`, not from the spec), so no wait in a spec can be written that
+      survives it; making the waits longer would only hide real hangs. What
+      a pause does to the app (a dead socket, overdue timers, an expired
+      token) is tested on its own: live-sync.spec's sleeping phone, the
+      socket and channel drop tests, and the `PGRST3xx` retry (e2e and
+      `list_repository_test.dart`). The evidence has a gap: the 10-25
+      failures predate the 1 s heartbeat and are matched only to
+      mem-guard's once-a-minute samples and, for three of them, to error
+      types (a reload, a page setup and a context teardown that timed out
+      before or after the spec's own steps). Reading those specs found no
+      test or app race, which is weaker than a heartbeat match. If one of
+      them fails again without its own `[host-stall]` line, the reporter
+      fails the run and it gets the treatment the cubit race got.
+18.23. **Each flaky spec traced to a cause (job 18c).** Review 2 asked for
+      a root cause per spec or a stated policy. Both came out of it:
+      - Load is not a cause. The five specs (list:53, offline-start:30
+        and :84, voice:27, stores:113) ran 30 times with retries off under
+        8 CPU burners, a direct-I/O disk writer and job 15b's run (load
+        15 to 21). 27 passed. Each of the 3 failures fell inside a whole-VM
+        pause that the 1 s heartbeat saw to the second (217, 1000 and
+        184 s). Under load 21 the runner's 1 s tick ran at most 16 ms late,
+        so load does not make the gaps the stall detector looks for.
+      - The pauses are the VM's. Since 2026-10-27 22:00 the VM was paused
+        for 80 to 91% of every hour, in holes of 150 to 2900 s. Both
+        heartbeats and mem-guard go silent together, and in some holes the
+        monotonic clock stops too.
+      - A test defect, under short pauses. While the runner and Chromium
+        were stopped for 8 s every 6 s (the stack kept running, like a
+        server while a phone sleeps), stores:113 failed 2 of 3 with no VM
+        hole and no stall line. The latency checks in stores:113,
+        live-sync:7, mcp:26 and offline-start:31 had 2 to 3 s budgets on
+        the wall clock, so a pause shorter than the 10 s stall threshold
+        failed them with no excuse. `within(ms, check)` (e2e helpers.ts) now
+        counts the budget in time the runner ran: rounds of 250 ms, and
+        each round counts at most 1 s. A check that never passes still
+        fails after 2.06 s. One that turns true at 1 s passes at 1.0 s.
+        Under 8 s pauses every second, a never-passing check throws after
+        9 s of wall time.
+        With 8 s pauses every 6 s and retries off, the four specs then
+        passed 11 of 12. The one failure fell in a 310 s VM hole, which the
+        detector named.
+      - The stall threshold is 2 s, not 10 s, so a pause that breaks an
+        ordinary 10 s wait is named too.
+      - A pause in a fixture teardown was never named. If the pause timed
+        the test out there, Playwright skipped the teardowns still to come,
+        hostStall's own check among them, and the retry was refused. This
+        was seen live: a 149 s hole in a context teardown. hostStall now
+        writes the retry mark on the tick that sees the gap. A 3 s
+        event-loop block in a teardown that times the test out got "not
+        retried" before the fix; after it the retry runs and passes. The
+        same timeout without a block is still refused. stallRetry clears
+        the mark when attempt 0 starts, so a pause in an attempt that
+        passed cannot excuse a later failure.
+      - The accepted policy: a test that the runner saw paused for 2 s or
+        more gets one retry, and the retry must pass. Every other failure
+        fails the run. A VM pause stops the runner, Chromium and the stack,
+        and they resume with every deadline already passed. No spec can
+        wait through a 3000 s pause without dropping its deadlines, and
+        that would hide real hangs. What a pause does to the app (a dead
+        socket, overdue timers, an expired token) has tests of its own
+        (18.21, 18.22). What the policy cannot see: an app race that shows
+        only in an attempt that was also paused. The passing retry is the
+        evidence against it, and a race that shows up twice fails the run.
+      - Job 18b's `host-stall-reporter.ts` is gone. #49's stallRetry
+        fixture does the same job (no retry without a stall mark).

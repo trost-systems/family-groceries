@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: empty-new-user
+summary: One confirmed user who signed up but has no household yet, so the app opens the welcome screen.
+goodFor:
+  - onboarding (create a household, join with a code or link)
+  - the welcome screen and its sign-out
+  - account deletion and data export of a user without data
+users:
+  - { handle: nele, name: Nele Neumann }

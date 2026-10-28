@@ -39,7 +39,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   (`.cursor/skills/verify-family-groceries/`, also `.claude/skills/`): it
   drives the real app through `scripts/fg` (start with `scripts/fg help`)
   and keeps one recipe per feature in `features/`. A PR that changes a
-  feature updates its `features/<feature>.md`.
+  feature updates its `features/<feature>.md`. Test accounts in a known
+  state come from `scripts/fg seed <scenario>` (`test/fixtures/scenarios/`,
+  removed with `fg teardown <run>`), multi-client sync proofs from
+  `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
 - Run `scripts/verify.sh` before pushing. It runs the same
   `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, db,
   functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
@@ -100,6 +103,7 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | `shared-preferences-only-in-device-cache`, `device-cache-own-file` | A shared-preferences store outside `DeviceCache`, or one without its own Linux file | A second store on supabase's file signed Linux users out (c4ed2e4) |
 | `auth-navigation-only-in-router` | The `/login` or `/welcome` route named outside `router.dart` (path, `loginPath`, `goNamed('login')`) | Auth gating happens only in `authRedirect` |
 | `no-hardcoded-ui-text` | A string literal with letters in `Text(...)` or a `label`/`tooltip`/`hintText`-style argument in `app/lib`, also through a same-file constant, list, map, getter or function | UI text lives in `app/l10n/app_de.arb` |
+| `no-wall-time-wait-in-tests` | `Future.delayed` in `app/test` | It races the timers it waits for: after a stall the test resumes mid-reload (DECISIONS 18.17). Use `elapse()` or `fakeAsync` |
 | schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |
 | schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |

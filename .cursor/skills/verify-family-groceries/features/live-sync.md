@@ -8,7 +8,9 @@ Two members of one household see each other's changes without reloading. An item
 - `sync-tick` removes an item from the other member's list when one member ticks it.
 - `sync-edit` shows a renamed or recategorized item on the other list.
 - `sync-delete` removes an item deleted by one member from the other list.
-- `sync-reconnect` catches up after the app comes back (resync on resume or relaunch).
+- `sync-reconnect` catches up after the connection comes back: changes made while offline go out, changes made by others come in.
+- `sync-after-sleep`: a phone that sleeps through a dropped connection and a partner's add catches up on waking (the item shows, the channel is live again, adds go both ways). e2e: live-sync.spec "a phone that sleeps through a dropped connection ...", which freezes the page with CDP `Page.setWebLifecycleState` and closes its Realtime socket meanwhile.
+- `sync-expired-token`: a write the server refuses with a JWT error (`PGRST3xx`, the token lapsed in flight) is retried with a fresh token, not dropped as "Änderung abgelehnt". Covered by the e2e test "a write the server answers with an expired token is retried, not dropped" (`e2e/tests/offline-start.spec.ts`), which fakes the 401 with `page.route`.
 - `sync-new` tints partner items added after this device last looked (row name ends in "Neu"), with the subtitle "N neu von <name>" ("N neu" for several partners). An item clears after 3 s more than half on screen while the app shows, or at once when it is ticked, and stays cleared after a relaunch. On a first start nothing old is new. The subtitle has the key `new-items-subtitle`.
 
 ## How to get to it (user POV)
@@ -18,7 +20,15 @@ Two members of one household see each other's changes without reloading. An item
 
 ## Driving it with fg
 
-Preconditions:
+Preconditions for `fg sync` (web, two or three members, captures by itself):
+
+- A stack: `fg up --only stack`. `fg sync` seeds `household-3-mid-shop` (Mia, Noah in the Lidl view, Ida; a list mid-shop) as a fresh run, builds the web app and tears the run down afterwards.
+
+- **Three clients, one command.** Run `fg sync household-3-mid-shop --clients 3 --script .cursor/skills/verify-family-groceries/journeys/sync-3-clients.fgs`. It covers `sync-add`, `sync-tick`, `sync-edit` and `sync-reconnect` (B goes offline, ticks, A adds, B comes back) and exits 0 with per-client latencies. Open `evidence.index` from its JSON: every step and every observed change has a side-by-side frame of all clients, plus one video per client and `videos/composite.webm`.
+- **Your own steps.** Write a script (`A add "X"`, `B tick "X"`, `C edit "X" quantity "2"`, `A delete "X"`, `B offline`, `B online`, `expect A,C see|gone "X" within 2000ms`; `fg help sync`) and run it with `--clients 2` or `--clients 3`. `--keep` leaves the run for inspection (`fg db query ... --as <run>:mia`).
+- **A failing expectation shows why.** `journeys/sync-failing-expectation.fgs` expects a row that never comes: exit 1, code `sync_failed`, and `error.failureFrames` lists the frames from the step before to the failure.
+
+Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 
 - `fg up --clients peter,lea`, then `fg login peter` and `fg login lea`. `fg doctor` shows `screen list` for both.
 - For `sync-new`, peter's app shows the list (the 3 s clock runs only while the item is on screen).
@@ -32,11 +42,14 @@ Preconditions:
 - **"neu".** With peter's list open, run `fg peer lea add Hafer`, then at once `fg wait --text Hafer` and `fg screenshot --name sync-new-live`: the row is tinted and the title reads "1 neu von Lea" (`fg find --key new-items-subtitle`). Rows carry no partner initial (job 15). `fg wait --key new-items-subtitle --gone --timeout 8` succeeds within about 3 s and the tint is gone.
 - **Stays seen.** Run `fg restart` (and `fg login peter` if the login screen shows). `fg wait --text Hafer` matches and `fg find --contains neu` returns count 0.
 - **Independent observer.** In a second shell, run `fg peer lea watch --until Butter --timeout 20 2>watch.err` and make the change only after `watch.err` shows `watch live after <n> ms`. It prints the realtime INSERT and UPDATE events that lea's session receives, with timestamps (`atMs`, and `liveAtMs` for the moment it went live).
-- **Reconnect.** fg cannot take one client offline yet, so `sync-reconnect` is not drivable here. Report it as skipped on this surface. The web e2e test "a tick made while offline syncs when the connection returns" (`e2e/tests/live-sync.spec.ts`) covers it in CI.
+- **Reconnect.** On the Linux clients fg cannot take one client offline, so drive `sync-reconnect` with `fg sync` (`B offline` ... `B online`, above) on web. The e2e test "a tick made while offline syncs when the connection returns" (`e2e/tests/live-sync.spec.ts`) covers it in CI too.
 - **Proof.** Record both clients (`fg record start --name sync-peter --client peter` and `--name sync-lea --client lea`). Screenshot the observing client after each change, and show the stored row with `fg db query`.
 
 ## Gotchas
 
+- `fg sync` holds `/tmp/fg-e2e.lock` while its browser runs, so it may wait for another job's Playwright run first (`--lock-wait`). Do not wrap it in a second `flock` from another shell; wrapping the same command in `flock /tmp/fg-e2e.lock` is fine (fg sees the parent holds it).
+- `expect ... see` matches rows Flutter has built: on screen plus a small margin. In a long list a row far down is not seen; use a scenario where the rows in play are near the top (household-3-mid-shop fits a 480×900 client) or `--viewport 480x1400`.
+- Latency in `fg sync` is measured from the acting client's server ack to the first rendered frame showing the change (resolution: one frame plus the observer). Catch-up after `online` is reported apart from live propagation.
 - Each debug app uses about 650 MB of RAM (JIT), so two need about 1.3 GB plus the stack. One app plus `fg peer` is the light variant, and the only one with the android surface (one emulator).
 - `elapsedMs` from `fg wait` is an upper bound: polling every 0.5 s plus about 0.2 s per Marionette call.
 - A delete hides the row on the acting client at once (optimistic). The server delete lands about 1 to 3 s later, and only then does the other client drop the row. Use `--timeout 10` for deletes.

@@ -37,7 +37,7 @@ export function defines(inst: Instance, env: StackEnv, surface: SurfaceKind): st
 }
 
 /** Identifies the app source plus build settings, so doctor can tell a stale build from the current one. */
-export async function fingerprint(sh: Shell, inst: Instance, surface: SurfaceKind, flags: string[]): Promise<string> {
+export async function fingerprint(sh: Shell, inst: Instance, surface: SurfaceKind | 'web', flags: string[]): Promise<string> {
   const git = (args: string[]) => sh.run(['git', '-C', inst.repo, ...args]).then((r) => r.stdout);
   const parts = [
     await git(['rev-parse', 'HEAD:app']),
@@ -66,10 +66,21 @@ export async function build(ctx: Ctx, inst: Instance, state: State, surface: Sur
   return fp;
 }
 
-export const displayFor = (inst: Instance, name: ClientName) => Number(`${inst.prefix}${name === 'peter' ? 1 : 2}`);
+/** X display per client: peter :<prefix>1, lea :<prefix>2, any other user the first free of :<prefix>3..9. */
+export function displayFor(inst: Instance, state: State, name: ClientName): number {
+  if (name === 'peter' || name === 'lea') return Number(`${inst.prefix}${name === 'peter' ? 1 : 2}`);
+  const own = state.clients[name]?.display;
+  if (own) return own;
+  const taken = new Set(Object.values(state.clients).map((c) => c?.display));
+  for (let slot = 3; slot <= 9; slot++) {
+    const display = Number(`${inst.prefix}${slot}`);
+    if (!taken.has(display)) return display;
+  }
+  throw new FgError('display_taken', `All X displays of block ${inst.prefix} are in use.`, '`fg down` some clients first.');
+}
 
-export async function startLinux(ctx: Ctx, inst: Instance, name: ClientName, fp: string): Promise<ClientState | undefined> {
-  const display = displayFor(inst, name);
+export async function startLinux(ctx: Ctx, inst: Instance, state: State, name: ClientName, fp: string): Promise<ClientState | undefined> {
+  const display = displayFor(inst, state, name);
   const dir = `${inst.stateDir}/clients/${name}`;
   const socket = `/tmp/.X11-unix/X${display}`;
   const lock = `/tmp/.X${display}-lock`;

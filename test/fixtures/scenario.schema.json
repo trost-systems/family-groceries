@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/trost-systems/family-groceries/test/fixtures/scenario.schema.json",
+  "title": "fg test scenario",
+  "description": "A test account state that `fg seed <scenario>` creates and `fg teardown <run>` removes. Format and every shipped scenario: docs/TEST_FIXTURES.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "summary", "users"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,40}$", "description": "Matches the file name without .yaml." },
+    "summary": { "type": "string", "minLength": 10, "description": "One sentence: what state this is." },
+    "goodFor": { "type": "array", "items": { "type": "string" }, "description": "What to test with it." },
+    "users": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/user" }
+    },
+    "households": { "type": "array", "items": { "$ref": "#/$defs/household" } },
+    "views": {
+      "type": "object",
+      "description": "Per-user client view that `fg sync` applies after sign-in (the app keeps it on the device, not the server).",
+      "additionalProperties": { "$ref": "#/$defs/view" }
+    },
+    "expect": { "$ref": "#/$defs/expect" }
+  },
+  "$defs": {
+    "handle": { "type": "string", "pattern": "^[a-z][a-z0-9]{0,15}$" },
+    "relTime": {
+      "type": "string",
+      "pattern": "^(now|-\\d+[mhd]|-[1-9]\\d*d \\d{2}:\\d{2})$",
+      "description": "Relative to seeding time: now, -90m, -2h, -3d, or a past day at a Berlin wall-clock time like \"-3d 18:10\" (days >= 1, so it is always in the past)."
+    },
+    "duration": { "type": "string", "pattern": "^\\d+[hd]$" },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["handle", "name"],
+      "properties": {
+        "handle": { "$ref": "#/$defs/handle", "description": "Short id used in scenarios and on the CLI (--as <run>:<handle>). peter and lea are reserved for the baseline seed." },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80, "description": "Display name (profiles.display_name)." },
+        "locale": { "enum": ["de", "en"], "default": "de", "description": "Stored in user_metadata.locale and used as the browser locale by fg sync." }
+      }
+    },
+    "household": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "members"],
+      "properties": {
+        "handle": { "$ref": "#/$defs/handle", "description": "Defaults to home, home2, ..." },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "members": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/handle" }, "description": "The first one owns it." },
+        "categories": { "$ref": "#/$defs/categories" },
+        "stores": { "type": "array", "items": { "$ref": "#/$defs/store" } },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/item" }, "description": "The active list." },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/trip" }, "description": "Past shopping trips: items added, then ticked off together." },
+        "invites": { "type": "array", "items": { "$ref": "#/$defs/invite" } }
+      }
+    },
+    "categories": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "add": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 60 }, "description": "New categories, created like the app does (before Sonstiges)." },
+        "order": { "type": "array", "items": { "type": "string" }, "description": "Route order: these first, in this order; the rest keep theirs." }
+      }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 60, "description": "dm, Lidl and Edeka exist in every household; another name creates a store." },
+        "layout": { "type": "array", "items": { "type": "string" }, "description": "Walk order: these categories first, in this order; the rest keep the route order." },
+        "hidden": { "type": "array", "items": { "type": "string" }, "description": "Categories this store does not carry." }
+      }
+    },
+    "itemObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "quantity": { "type": "string", "maxLength": 40 },
+        "store": { "type": "string", "description": "A store of this household; default: none (any supermarket), or what item→store memory says." },
+        "category": { "type": "string", "description": "A category of this household; default: the server classifier." },
+        "by": { "$ref": "#/$defs/handle", "description": "Who added it; default: the first member (on a trip: whoever shopped)." },
+        "at": { "$ref": "#/$defs/relTime", "description": "When it was added; default: just now, in list order (on a trip: 1 day before it)." },
+        "brand": { "type": "string", "maxLength": 40, "description": "items.brand (job 15). Seeding fails with needs_column on a database without it." },
+        "properties": { "type": "string", "maxLength": 40, "description": "items.properties (job 15). Same rule as brand." },
+        "walkOrder": { "type": "integer", "minimum": 0, "description": "Per-item position within store and category (job 15's sort_key). Same rule as brand." }
+      }
+    },
+    "item": {
+      "oneOf": [
+        { "type": "string", "minLength": 1, "maxLength": 120, "description": "Just a name." },
+        { "$ref": "#/$defs/itemObject" }
+      ]
+    },
+    "trip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at", "items"],
+      "properties": {
+        "at": { "$ref": "#/$defs/relTime", "description": "When the items were ticked off (the newest trip when repeated)." },
+        "by": { "$ref": "#/$defs/handle", "description": "Who ticked them off; default: the first member." },
+        "store": { "type": "string", "description": "Ticked off in this store's view: tags the items and teaches item→store memory." },
+        "every": { "$ref": "#/$defs/duration", "description": "Repeat the trip at this interval, going back in time." },
+        "times": { "type": "integer", "minimum": 1, "maximum": 60, "default": 1, "description": "How many trips in total (with every)." },
+        "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
+      }
+    },
+    "invite": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "by": { "$ref": "#/$defs/handle", "description": "Member who creates it; default: the owner." },
+        "expires": { "type": "string", "pattern": "^(-|\\+)\\d+[hd]$", "description": "Override expiry, e.g. +2d or -1d (expired); default: 14 days." },
+        "revoked": { "type": "boolean" }
+      }
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "store": { "type": "string", "description": "Store chip to select (the store view)." }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Checked after seeding, as a member through RLS. Counts are always checked too.",
+      "properties": {
+        "usuals": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } },
+          "description": "Per household handle: names suggest_items must return."
+        },
+        "due": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } },
+          "description": "Per household handle: names suggest_items must mark due."
+        },
+        "notDue": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } },
+          "description": "Per household handle: names suggest_items returns but not as due."
+        }
+      }
+    }
+  }
+}

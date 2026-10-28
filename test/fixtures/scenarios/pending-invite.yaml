@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: pending-invite
+summary: A one-person household with an open invite code, an expired and a revoked one, and a second user who has not joined yet.
+goodFor:
+  - joining with a code or a /join/<code> link (the seed prints the open code)
+  - invalid invite errors (expired and revoked codes)
+  - the moment a second member arrives (live sync of the member list, "neu von" news)
+users:
+  - { handle: olga, name: Olga Owner }
+  - { handle: paul, name: Paul Pending }
+households:
+  - name: WG Sonnenallee
+    members: [olga]
+    items:
+      - Kaffee
+      - { name: Hafermilch, quantity: "2" }
+      - Klopapier
+    invites:
+      - { by: olga }
+      - { by: olga, expires: "-1d" }
+      - { by: olga, revoked: true }

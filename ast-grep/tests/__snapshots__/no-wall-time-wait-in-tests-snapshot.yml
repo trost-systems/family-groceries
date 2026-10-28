@@ -1,0 +1,14 @@
+id: no-wall-time-wait-in-tests
+snapshots:
+  "Future<void> saved() => Future.delayed(const Duration(milliseconds: 400));\n":
+    labels:
+    - source: Future.delayed
+      style: primary
+      start: 24
+      end: 38
+  "Future<void> waitForReload() async {\n  await Future<void>.delayed(const Duration(milliseconds: 300));\n}\n":
+    labels:
+    - source: Future<void>.delayed
+      style: primary
+      start: 45
+      end: 65

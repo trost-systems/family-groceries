@@ -106,6 +106,10 @@ jobs:
       # Job 13b: the gate's restore drill runs the backup's own pg_dump 17 and age.
       - name: Install pg_dump 17 and age
         run: scripts/backup/install-tools.sh
+      # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
       - run: scripts/gates/db.sh
 
   functions:
@@ -203,6 +207,14 @@ jobs:
           npx playwright install chromium
           node -e "import('@playwright/test').then(({ chromium }) => chromium.launch()).then((b) => b.close())" \
             || npx playwright install --with-deps chromium
+      # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      # Job 18: the fg sync smoke test (shard 1) stacks the client videos with ffmpeg.
+      - name: Install ffmpeg
+        if: matrix.shard == 1
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
       - run: scripts/gates/e2e.sh --shard=${{ matrix.shard }}/2
         env:
           SCREENSHOT_DIR: ${{ github.workspace }}/e2e/screenshots
@@ -221,6 +233,7 @@ jobs:
             e2e/playwright-report
             e2e/test-results
             e2e/screenshots
+            e2e/sync-evidence
           retention-days: 14
 
   # Job 4 (release): the Gemfile.lock installs and the Fastfile parses.

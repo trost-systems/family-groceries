@@ -47,3 +47,6 @@ app/fastlane/test_output/
 *.cer
 *.certSigningRequest
 play-service-account*.json
+
+# Job 18: fg sync smoke evidence in CI (FG_EVIDENCE_DIR); run manifests and builds live in ~/.cache/fg, outside the repo
+e2e/sync-evidence/

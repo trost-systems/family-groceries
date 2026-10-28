@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: edge-cases
+summary: A German and an English user sharing a list full of awkward names, a 120-character name, emoji, umlauts, duplicates and odd quantities.
+goodFor:
+  - text layout (wrapping, the 120-character limit, emoji and umlaut rendering)
+  - duplicates on the list and in suggestions
+  - quantity display and editing (units, decimals with commas, long quantities)
+  - an English-locale user (user_metadata.locale en, browser locale en-US in fg sync)
+users:
+  - { handle: doerte, name: Dörte Größ-Übermann, locale: de }
+  - { handle: emma, name: Emma O'Brien, locale: en }
+households:
+  - name: "Haus „Zur Mühle“ 🏡"
+    members: [doerte, emma]
+    categories:
+      add: [Tiernahrung 🐶]
+    items:
+      # Exactly 120 characters, the longest name the database accepts.
+      - name: Extra lange Bezeichnung für Bio-Vollkorn-Dinkelbrötchen mit Kürbiskernen, Sonnenblumenkernen und Leinsamen vom Bäcker 1a
+        quantity: "1"
+      - { name: Äpfel, quantity: "1,5 kg" }
+      - { name: Weißwurst, quantity: "4 Stück" }
+      - { name: Müsli, by: emma }
+      - { name: Grüner Tee }
+      - Straße-Snack
+      - { name: 🍕 Pizza, quantity: "2" }
+      - 🥑
+      - { name: Erdbeeren 🍓, by: emma }
+      - { name: Milch, quantity: "1" }
+      - { name: Milch, quantity: "2", by: emma }
+      - { name: milch }
+      - { name: Peanut butter, by: emma }
+      - { name: Kitchen roll, by: emma, quantity: "3 rolls" }
+      - { name: "\"Bio\" Eier", quantity: "10" }
+      - { name: "Ben & Jerry's", category: Tiefkühl, by: emma }
+      - { name: Hundeleckerli, category: Tiernahrung 🐶 }
+      # A 40-character quantity, the longest allowed.
+      - { name: Wasser, quantity: "6 × 1,5 l still, ohne Kohlensäure, Glas!" }
+      - { name: Senf, quantity: "½" }
+      - { name: Sonstiges Zeug, category: Sonstiges }
+    history:
+      - at: "-1d 19:45"
+        by: emma
+        items: [Bread, Milch, 🥑]
+      - at: "-4d 08:05"
+        by: doerte
+        items: [Äpfel, Müsli, Ölsardinen]

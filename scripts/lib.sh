@@ -152,3 +152,15 @@ rebase_onto_main() {
   fi
   rm -f "$patch"
 }
+
+# Job 18: points scripts/fg at this checkout's own stack (the one supabase_up starts) instead of an
+# fg instance's generated one: its port block and project id from supabase/config.toml, and a
+# throwaway state dir, so fixture runs from a gate never mix with an agent's fg state.
+fg_on_repo_stack() {
+  local config="$REPO_ROOT/supabase/config.toml"
+  FG_PORT_PREFIX="$(sed -n 's/^port = \(5[0-9][0-9]\)21$/\1/p' "$config" | head -1)"
+  FG_PROJECT_ID="$(sed -n 's/^project_id = "\(.*\)"$/\1/p' "$config")"
+  FG_STACK_WORKDIR="$REPO_ROOT"
+  FG_STATE_DIR="$(mktemp -d)"
+  export FG_PORT_PREFIX FG_PROJECT_ID FG_STACK_WORKDIR FG_STATE_DIR
+}

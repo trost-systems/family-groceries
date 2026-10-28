@@ -1,6 +1,7 @@
 import { expect, test, type Page } from './fixtures';
 import {
   addField, addItem, apiAs, cutOff, itemRow, newEmail, password, screenshot, signUpWithHousehold, tickBox, typeInto,
+  within,
 } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
@@ -42,10 +43,10 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await expireStoredSession(page);
   await page.reload();
   // Fails fast: no hidden library retries (they took 7 s per read) before the cache shows.
-  await expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout: 3_000 });
+  await within(3_000, (timeout) => expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout }));
   await expect(itemRow(page, 'Milch')).toBeVisible();
   await expect(addField(page)).toBeFocused();
-  await expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout: 3_000 });
+  await within(3_000, (timeout) => expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout }));
 
   await addItem(page, 'Käse');
   await tickBox(page, 'Brot').click();
@@ -94,4 +95,29 @@ test('signing out drops the cached list', async ({ page }) => {
     () => page.evaluate(() => Object.keys(localStorage).filter((k) => /\b(list|household)\./.test(k)).length),
     { message: 'nothing of the list stays on the device' },
   ).toBe(0);
+});
+
+test('a write the server answers with an expired token is retried, not dropped', async ({ page }) => {
+  const email = newEmail('expired');
+  await signUpWithHousehold(page, email);
+  let refused = 0;
+  // The token can lapse between the client's refresh check and the server, e.g. on a phone woken from sleep.
+  await page.route('**/rest/v1/items?**', async (route) => {
+    if (route.request().method() !== 'POST' || refused > 0) return route.fallback();
+    refused++;
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'PGRST303', details: null, hint: null, message: 'JWT expired' }),
+    });
+  });
+  await addItem(page, 'Brot');
+  const api = await apiAs(email);
+  await expect.poll(async () => {
+    const { data } = await api.from('items').select('name');
+    return data;
+  }, { message: 'the refused add reaches the server on the retry', timeout: 15_000 }).toEqual([{ name: 'Brot' }]);
+  expect(refused, 'the first write was refused').toBe(1);
+  await expect(page.getByText(/^Änderung abgelehnt/)).toHaveCount(0);
+  await expect(itemRow(page, 'Brot')).toBeVisible();
 });

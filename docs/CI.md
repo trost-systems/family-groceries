@@ -12,7 +12,7 @@ the same things.
 
 | Gate | What it checks | Runs locally |
 | --- | --- | --- |
-| `gitleaks` | No secret in the history or the working tree | yes |
+| `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
 | `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh` | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
@@ -60,6 +60,8 @@ for 2 s or more during it (a VM stall on the shared box): the line
 the retry shows as flaky. Any other failure fails its retry at once with
 "not retried", so the gate still fails (`e2e/tests/fixtures.ts`, DECISIONS
 job 15b).
+That the app itself recovers from a pause is a test of its own (live-sync.spec,
+the sleeping phone).
 
 ## Which gates a PR runs
 

@@ -208,3 +208,7 @@ See [docs/done/20-hummlist-rename.md](docs/done/20-hummlist-rename.md).
 ## Job 15: design H, part 1 (data, parser, edit sheet)
 
 See [docs/done/15-design-data.md](docs/done/15-design-data.md).
+
+## Job 18: test fixtures and multi-client sync capture
+
+See [docs/done/18-test-fixtures-sync.md](docs/done/18-test-fixtures-sync.md).

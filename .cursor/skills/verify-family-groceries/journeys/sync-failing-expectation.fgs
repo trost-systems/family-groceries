@@ -1,0 +1,5 @@
+# A deliberately wrong expectation: fg sync must exit 1 and show why.
+# fg sync household-3-mid-shop --clients 2 --script journeys/sync-failing-expectation.fgs
+A add "Zimt"
+expect B see "Zimt" within 2000ms
+expect B see "Zimtschnecken" within 1500ms
