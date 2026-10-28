@@ -10,7 +10,7 @@ app="Journey Client $stamp"
 pat="Journey $stamp"
 
 step() { printf '\n== %s\n' "$*" >&2; }
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() { printf 'FAIL: %s\n' "$*" >&2; "$fg" record stop >/dev/null 2>&1; exit 1; }
 run() {
   local out
   out="$("$fg" "$@")" || { echo "$out" >&2; fail "fg $*"; }

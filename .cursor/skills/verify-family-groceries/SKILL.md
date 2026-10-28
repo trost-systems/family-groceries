@@ -67,6 +67,7 @@ scripts/fg type --input "2 Äpfel" --submit  # into the focused field; umlauts a
 scripts/fg tap --row Milch --type Checkbox --client lea
 scripts/fg wait --text Milch --gone         # never sleep; wait polls (default 15 s) and reports elapsedMs
 scripts/fg marionette -- scroll-to --text "Zuletzt gekauft"   # any other Marionette command
+scripts/fg marionette -- swipe --start-x 368 --start-y 136 --end-x 368 --end-y 250   # a drag by coordinates (reorder handles)
 ```
 
 `find` and `wait` see what Marionette lists: fields, list texts, tooltips and keys. Text inside buttons is not listed, but `tap --text` still finds it. To wait for a dialog, wait for one of its fields or texts instead.
@@ -149,6 +150,8 @@ scripts/fg mail --to lea                                            # Mailpit: s
 scripts/fg login peter --api                                        # access token for curl
 ```
 
+On a loaded box (load average far above the core count), the local edge runtime now and then aborts a request: a 503 with an empty body, and `docker logs supabase_edge_runtime_$(scripts/fg env | jq -r .projectId)` shows `connection aborted (uri: "/<function>")`. Send the request again. A 503 with a JSON body is the function's own answer, such as `health` without its database.
+
 ## Cleanup
 
 ```bash
@@ -169,7 +172,7 @@ On a machine with a working emulator (KVM on Linux, or a Mac): run `fg setup --s
 ## Helpers
 
 - `fg` (and `scripts/fg`): the CLI. The source is in `cli/` (Deno). Tests: `cd cli && deno test -A`. CI runs them.
-- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way. Each journey starts with peter on the list and leaves both clients there (lea signed in as the seeded lea), so they run back to back in any order. A new journey keeps that contract.
+- `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way. Each journey starts with peter on the list and leaves both clients there (lea signed in as the seeded lea), so they run back to back in any order. On a failure, `fail` stops the recordings the journey started: an orphaned recording left running on a client spoils the next recording there (`record stop` then reports `recording_failed`). A new journey keeps that contract.
 - `journeys/*.fgs`: `fg sync` scripts (three-client sync with reconnect, a deliberately failing expectation, a hosted sign-in).
 - `features/`: one recipe per user-facing feature. Read `features/README.md` first.
 

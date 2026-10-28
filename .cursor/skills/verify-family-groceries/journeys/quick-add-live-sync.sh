@@ -8,7 +8,7 @@ item="${1:-Milch}"
 stamp="$(date +%H%M%S)"
 
 step() { printf '\n== %s\n' "$*" >&2; }
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() { printf 'FAIL: %s\n' "$*" >&2; "$fg" record stop >/dev/null 2>&1; exit 1; }
 # Runs fg, echoes its JSON to stderr, fails the journey on ok:false.
 run() {
   local out

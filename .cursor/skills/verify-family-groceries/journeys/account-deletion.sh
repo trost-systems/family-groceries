@@ -10,7 +10,7 @@ stamp="$(date +%s)"
 item="Xylophon-$stamp"
 
 step() { printf '\n== %s\n' "$*" >&2; }
-fail() { printf 'FAIL: %s\n' "$*" >&2; exit 1; }
+fail() { printf 'FAIL: %s\n' "$*" >&2; "$fg" record stop >/dev/null 2>&1; exit 1; }
 run() {
   local out
   out="$("$fg" "$@")" || { echo "$out" >&2; fail "fg $*"; }
@@ -79,7 +79,7 @@ step "precondition: the member has a personal access token that works"
 access="$(curl -fsS "$api/auth/v1/token?grant_type=password" -H "apikey: $key" \
   -H 'content-type: application/json' -d "{\"email\":\"$member\",\"password\":\"$password\"}" | jq -r .access_token)"
 pat="$(curl -fsS "$api/rest/v1/rpc/create_personal_access_token" -H "apikey: $key" \
-  -H "authorization: Bearer $access" -H 'content-type: application/json' -d '{"p_name":"Journey"}' | jq -r '.[0].token')"
+  -H "authorization: Bearer $access" -H 'content-type: application/json' -d "{\"p_name\":\"Journey $stamp\"}" | jq -r '.[0].token')"
 voice() {
   curl -s -o /dev/null -w '%{http_code}' "$api/functions/v1/voice" -H "authorization: Bearer $pat" \
     -H 'content-type: application/json' -d '{"text":"Zahnbürste"}'
@@ -114,7 +114,7 @@ step "server state after the shared deletion"
   fail "the item is gone or still has an author"
 [[ "$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")" == "$members_before" ]] ||
   fail "Familie Test does not have its $members_before members from before the join"
-[[ "$(sql "select count(*) from personal_access_tokens where name = 'Journey'")" == 0 ]] || fail "token row left"
+[[ "$(sql "select count(*) from personal_access_tokens where name = 'Journey $stamp'")" == 0 ]] || fail "token row left"
 [[ "$(voice)" == 401 ]] || fail "the deleted member's token still works"
 status="$(curl -s -o /dev/null -w '%{http_code}' "$api/auth/v1/token?grant_type=password" -H "apikey: $key" \
   -H 'content-type: application/json' -d "{\"email\":\"$member\",\"password\":\"$password\"}")"
@@ -157,6 +157,9 @@ fi
 [[ "$(jq -r .format "$path")" == family-groceries-export ]] || fail "export has the wrong format"
 [[ "$(jq -r .account.email "$path")" == peter@fg.test ]] || fail "export is not peter's"
 ! grep -q token_hash "$path" || fail "export contains token hashes"
+dir="$("$fg" env | jq -r .evidenceDir)"
+mv "$path" "$dir/08-export.json"
+path="$dir/08-export.json"
 
 step "peter goes back to the list and lea signs in again, where the next journey starts"
 run back --client peter >/dev/null
@@ -164,6 +167,5 @@ run wait --key add-item-field --client peter >/dev/null
 run login lea >/dev/null
 run wait --key add-item-field --client lea >/dev/null
 
-dir="$("$fg" env | jq -r .evidenceDir)"
 printf '\nPASS: shared deletion kept Familie Test and %s (no author, token 401, sign-in 400); last-member deletion left 0 rows; export at %s.\nEvidence: %s\n' \
   "$item" "$path" "$dir"
