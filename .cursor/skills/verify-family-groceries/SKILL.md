@@ -101,7 +101,7 @@ The reference proof is `journeys/quick-add-live-sync.sh`. It prints `PASS` with 
 Seed test accounts in a known state instead of building it by hand. Scenarios live in `test/fixtures/scenarios/*.yaml` (format and every scenario: `docs/TEST_FIXTURES.md`).
 
 ```bash
-scripts/fg scenario list                         # empty-new-user, solo-long-list, household-3-mid-shop, heavy-history, many-stores, edge-cases, pending-invite
+scripts/fg scenario list                         # empty-new-user, solo-long-list, household-3-mid-shop, heavy-history, many-stores, edge-cases, pending-invite, h-list-walk
 scripts/fg scenario show heavy-history           # the plan with absolute times and the checks
 scripts/fg seed heavy-history                    # a run: users <handle>.<run>@fg-test.invalid, data, checks through RLS
 scripts/fg db query "select name from items where status = 'active'" --as <run>:jo

@@ -43,6 +43,7 @@ scripts/fg sync household-3-mid-shop --clients 3 \
 | `many-stores` | Nine stores (dm, Lidl, Edeka, Rewe, Aldi Süd, Kaufland, Netto, Rossmann, Wochenmarkt, Fressnapf) with distinct walk orders and hidden categories, a "Tiernahrung" category | The store picker with many chips, store layouts, hidden categories, item→store memory |
 | `edge-cases` | A German and an English user; a 120-character name, a 40-character quantity, emoji, umlauts, quotes, duplicates (Milch twice, milch) | Text layout, duplicates, quantity display, an `en` user |
 | `pending-invite` | A one-person household with one open, one expired and one revoked invite code; a second user without a household | Joining by code or `/join/<code>` (the seed prints the open code), invalid-invite errors, a member arriving live |
+| `h-list-walk` | Two members, Lidl, dm and Edeka with their own layouts, 14 items with brands, properties and a set walk order inside each group, two without a store | Design H's list (store sections, category dividers, Marke · Eigenschaften rows), drag and drop against a known order, store reordering, the edit sheet prefilled |
 
 `fg scenario show <name>` prints the resolved plan: every user, item and
 trip with absolute times, and the counts the seed checks.

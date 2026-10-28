@@ -12,10 +12,19 @@ async function problems(yaml: string): Promise<string> {
   return e.message;
 }
 
-Deno.test('every shipped scenario validates and the seven required ones exist', async () => {
+Deno.test('every shipped scenario validates and the required ones exist', async () => {
   const names = (await listScenarios(realShell, repo)).map((s) => s.name);
   for (
-    const n of ['empty-new-user', 'solo-long-list', 'household-3-mid-shop', 'heavy-history', 'many-stores', 'edge-cases', 'pending-invite']
+    const n of [
+      'empty-new-user',
+      'solo-long-list',
+      'household-3-mid-shop',
+      'heavy-history',
+      'many-stores',
+      'edge-cases',
+      'pending-invite',
+      'h-list-walk',
+    ]
   ) {
     assert(names.includes(n), `${n} is shipped`);
   }
@@ -30,6 +39,8 @@ Deno.test('shipped scenarios have the shape their summary promises', async () =>
   assertEquals(mid.households.home.members, 3);
   assert(mid.households.home.boughtItems > 0 && mid.households.home.activeItems > 0, 'partly ticked');
   assert((await counts('many-stores')).households.home.stores >= 8);
+  const walk = await counts('h-list-walk');
+  assertEquals([walk.households.home.stores, walk.households.home.activeItems], [3, 14]);
   const invite = await counts('pending-invite');
   assertEquals(invite.households.home.openInvites, 1);
   assertEquals(invite.withoutHousehold, 1);
