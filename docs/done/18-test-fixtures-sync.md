@@ -252,3 +252,33 @@ Failures with no pause in their window were real and are fixed above: the db res
 client secret, and the cubit race. The 5-green result for the landed head (every run, its time,
 any rerun) goes into this file in the follow-up docs PR, since adding it here would change the
 tested tree.
+
+## Job 18c: a cause for each flaky spec, then landing after #49
+
+Review 2 asked for a root cause per flaky spec, or a stated policy. Details and numbers are in
+DECISIONS 18.23. Evidence is in `/tmp/fg18c` on the box.
+
+| Probe (retries off) | Result | What it shows |
+| --- | --- | --- |
+| The five specs ×6 under 8 CPU burners, a disk writer and job 15b's run (load 15 to 21) | 27 of 30 passed. The 3 failures each fell in a VM pause the heartbeat saw (217, 1000, 184 s) | Load is not a cause. The runner's 1 s tick ran at most 16 ms late at load 21 |
+| The five specs, runner and Chromium SIGSTOPped for 8 s every 20 s, then every 6 s | stores:113 failed 2 of 3 with no VM pause | A test defect: 2 to 3 s latency budgets on the wall clock failed on any pause under the 10 s stall threshold |
+| A probe test whose fixture teardown blocks for 3 s, then times out | "not retried" | A pause in a teardown was never named |
+
+The fixes:
+- `within(ms, check)` (`e2e/tests/helpers.ts`) counts a latency budget in time the runner ran.
+  It covers the live checks in live-sync:7, stores:113, mcp:26 and offline-start:31. With 8 s
+  pauses every 6 s, those four passed 11 of 12, and the one failure fell in a 310 s VM pause
+  that was named.
+- A host stall is named from 2 s (it was 10 s). The mark that allows the retry is written on the
+  tick that sees the pause, and cleared when a test's first attempt starts. The teardown probe now
+  retries and passes. The same timeout without a pause is still refused.
+- On the rebase onto #49, its `stallRetry` fixture replaced job 18b's `host-stall-reporter.ts`.
+  Both did the same job.
+- `h-list-walk` (design H's list: three stores, brands, properties, walk order) joined the
+  scenarios. It seeded with 8/8 checks, and its teardown left 0 rows in all 16 tables.
+
+The accepted policy: a test that the runner saw paused for 2 s or more gets one retry, and the
+retry must pass. Every other failure fails the run. A VM pause stops everything, and everything
+resumes with every deadline already passed (the VM was paused 80 to 91% of every hour from
+2026-10-27 22:00). What a pause does to the app is tested on its own: the sleeping phone, dropped
+sockets, the expired token.
