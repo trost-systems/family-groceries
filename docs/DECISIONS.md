@@ -1991,3 +1991,55 @@ on purpose, and the interfaces this job ships.
       test or app race, which is weaker than a heartbeat match. If one of
       them fails again without its own `[host-stall]` line, the reporter
       fails the run and it gets the treatment the cubit race got.
+18.23. **Each flaky spec traced to a cause (job 18c).** Review 2 asked for
+      a root cause per spec or a stated policy. Both came out of it:
+      - Load is not a cause. The five specs (list:53, offline-start:30
+        and :84, voice:27, stores:113) ran 30 times with retries off under
+        8 CPU burners, a direct-I/O disk writer and job 15b's run (load
+        15 to 21). 27 passed. Each of the 3 failures fell inside a whole-VM
+        pause that the 1 s heartbeat saw to the second (217, 1000 and
+        184 s). Under load 21 the runner's 1 s tick ran at most 16 ms late,
+        so load does not make the gaps the stall detector looks for.
+      - The pauses are the VM's. Since 2026-10-27 22:00 the VM was paused
+        for 80 to 91% of every hour, in holes of 150 to 2900 s. Both
+        heartbeats and mem-guard go silent together, and in some holes the
+        monotonic clock stops too.
+      - A test defect, under short pauses. While the runner and Chromium
+        were stopped for 8 s every 6 s (the stack kept running, like a
+        server while a phone sleeps), stores:113 failed 2 of 3 with no VM
+        hole and no stall line. The latency checks in stores:113,
+        live-sync:7, mcp:26 and offline-start:31 had 2 to 3 s budgets on
+        the wall clock, so a pause shorter than the 10 s stall threshold
+        failed them with no excuse. `within(ms, check)` (e2e helpers.ts) now
+        counts the budget in time the runner ran: rounds of 250 ms, and
+        each round counts at most 1 s. A check that never passes still
+        fails after 2.06 s. One that turns true at 1 s passes at 1.0 s.
+        Under 8 s pauses every second, a never-passing check throws after
+        9 s of wall time.
+        With 8 s pauses every 6 s and retries off, the four specs then
+        passed 11 of 12. The one failure fell in a 310 s VM hole, which the
+        detector named.
+      - The stall threshold is 2 s, not 10 s, so a pause that breaks an
+        ordinary 10 s wait is named too.
+      - A pause in a fixture teardown was never named. If the pause timed
+        the test out there, Playwright skipped the teardowns still to come,
+        hostStall's own check among them, and the retry was refused. This
+        was seen live: a 149 s hole in a context teardown. hostStall now
+        writes the retry mark on the tick that sees the gap. A 3 s
+        event-loop block in a teardown that times the test out got "not
+        retried" before the fix; after it the retry runs and passes. The
+        same timeout without a block is still refused. stallRetry clears
+        the mark when attempt 0 starts, so a pause in an attempt that
+        passed cannot excuse a later failure.
+      - The accepted policy: a test that the runner saw paused for 2 s or
+        more gets one retry, and the retry must pass. Every other failure
+        fails the run. A VM pause stops the runner, Chromium and the stack,
+        and they resume with every deadline already passed. No spec can
+        wait through a 3000 s pause without dropping its deadlines, and
+        that would hide real hangs. What a pause does to the app (a dead
+        socket, overdue timers, an expired token) has tests of its own
+        (18.21, 18.22). What the policy cannot see: an app race that shows
+        only in an attempt that was also paused. The passing retry is the
+        evidence against it, and a race that shows up twice fails the run.
+      - Job 18b's `host-stall-reporter.ts` is gone. #49's stallRetry
+        fixture does the same job (no retry without a stall mark).
