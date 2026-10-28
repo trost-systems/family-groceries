@@ -9,7 +9,7 @@ name: Supabase deploy
 on:
   push:
     branches: [main]
-    paths: ['supabase/**', 'scripts/smoke-remote.sh', '.github/workflows/supabase-deploy.yml']
+    paths: ['supabase/**', 'scripts/smoke-remote.sh', 'scripts/mcp-smoke.sh', '.github/workflows/supabase-deploy.yml']
   workflow_dispatch:
     inputs:
       ref:

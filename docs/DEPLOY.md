@@ -29,9 +29,13 @@ check. It exits 1 if any check fails.
 | Check | Passes when |
 | --- | --- |
 | `GET /functions/v1/health` | 200 and `{"ok": true, "database": true}`: the function read from Postgres. |
-| `GET /functions/v1/mcp/.well-known/oauth-protected-resource` | 200 with `resource` and `authorization_servers`. |
 | `POST /functions/v1/voice` with a made-up bearer token | 401 and `WWW-Authenticate: Bearer`. |
-| `POST /functions/v1/mcp` with a made-up bearer token | 401 and `WWW-Authenticate: Bearer resource_metadata=".../mcp/.well-known/oauth-protected-resource", ..., error="invalid_token"`. |
+| `scripts/mcp-smoke.sh <project>/functions/v1/mcp` | Its discovery checks pass: 401 without a token and with a made-up one, both pointing at the metadata on the same host; the metadata names the endpoint as `resource`; the authorization server's metadata has the authorize, token and registration endpoints. `initialize` + `tools/list` report `SKIP` (no token in CI; set `MCP_SMOKE_TOKEN` to run them). |
+
+The public MCP URL `https://mcp.hummlist.com` is a Vercel proxy in front of
+the same function ([`MCP.md`](MCP.md#public-url-mcphummlistcom)). It needs no
+deploy of its own beyond Vercel building `mcp-proxy/` from `main`; check it
+with `scripts/mcp-smoke.sh https://mcp.hummlist.com`.
 
 Run it from any machine with `curl` and `jq`:
 

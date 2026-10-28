@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "",
+  "outputDirectory": "",
+  "rewrites": [
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource?via=mcp-hummlist"
+    },
+    { "source": "/", "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp?via=mcp-hummlist" },
+    {
+      "source": "/:path*",
+      "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/:path*?via=mcp-hummlist"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }]
+    }
+  ]
+}

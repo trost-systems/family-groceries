@@ -27,6 +27,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - `site/`: the public guides site on hummlist.com, its own Vercel project
   (Root Directory `site`), static HTML from Markdown in `site/content/`;
   `site/README.md` explains adding a guide. Separate from the app's build.
+- `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
+  `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
+  checks MCP discovery on either URL (`docs/MCP.md`).
 - `supabase/functions/voice/`: the Siri and in-app dictation endpoint; the
   German sentence splitter is `parse.ts`, its table of sentences
   `parse_test.ts` (`docs/SIRI_SHORTCUT.md` for the Shortcut).

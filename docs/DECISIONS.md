@@ -2102,3 +2102,80 @@ on purpose, and the interfaces this job ships.
     approved paragraphs; their hand-written lists became the generated list
     (title and description from frontmatter), so a new guide needs no index
     edit.
+
+## Job 26 (public MCP URL mcp.hummlist.com), 2026-10-28
+
+1. **A rewrite-only Vercel project, not a domain on the app project.**
+   Peter approved `https://mcp.hummlist.com` as the public MCP URL through a
+   new Vercel project (`hummlist-mcp`, Root Directory `mcp-proxy/`) that
+   rewrites to the `mcp` edge function. The directory holds only
+   `vercel.json` and a README: no build, no functions, no env vars. The app
+   project (repo root `vercel.json`, output `app/build/web`) and the guides
+   site (`site/`, PR #54) each read only their own Root Directory's `vercel.json`,
+   so neither sees `mcp-proxy/`.
+2. **Both URLs stay valid.** Clients already connected to
+   `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` keep it.
+   Supabase does not bind tokens to the `resource` (MCP.md, research notes),
+   so one token works on both hosts, and the local authorization server
+   accepted `resource=https://mcp.hummlist.com` at `oauth/authorize` (302 to
+   the consent page). The issuer and `authorization_servers` stay
+   supabase.co on both hosts.
+3. **The function advertises the URL the client came through.** Through the
+   proxy, the metadata says `resource: https://mcp.hummlist.com`, and the
+   401/403 challenge points at
+   `https://mcp.hummlist.com/.well-known/oauth-protected-resource` (the
+   RFC 9728 path for a resource without a path). Any other request gets
+   exactly the supabase.co values from before. An MCP client checks that the
+   metadata's `resource` matches the URL it connected to, so each host must
+   name itself.
+4. **Two proxy signals, both allow-listed.** The request counts as proxied
+   when the query has the marker `via=mcp-hummlist` that `vercel.json` adds
+   to every destination, or when the first `x-forwarded-host` value (case
+   folded, port stripped) equals the `MCP_PUBLIC_URL` host. The brief asked
+   for the header with the marker as a fallback. The local stack's gateway
+   (Kong) replaces a client's `x-forwarded-host` with its own host
+   (checked 2026-10-28: the function saw `127.0.0.1`), while query
+   parameters and other headers arrive. The hosted gateway may do the same,
+   so the marker ships from the start instead of after a second deploy. A
+   spoofed marker or header only makes the function advertise the
+   allow-listed public URL, which serves the same function: harmless. Item
+   11, written after the deploy, records which signal arrives on the hosted
+   project.
+5. **`MCP_PUBLIC_URL` has a committed default.** It is not a secret, and a
+   default (`https://mcp.hummlist.com`) means no manual secret step on the
+   hosted project. Only its origin counts, since the proxy serves the
+   function at the root.
+6. **The public host is always an allowed `Origin`**, proxied or not, like
+   the project host.
+7. **No caching.** Vercel caches external rewrites by default for projects
+   created after 2026-04-06, honoring upstream `cache-control`.
+   `x-vercel-enable-rewrite-caching: 0` on every path turns that off, as
+   Vercel documents. A `Cache-Control: no-store` override would replace the
+   function's own `no-cache, no-transform` on SSE responses, so the proxy
+   leaves response headers alone. `mcp-smoke.sh` fails on
+   `x-vercel-cache: HIT` for the metadata.
+8. **`/.well-known` on Vercel.** The rewrites docs say the path "is reserved
+   and cannot be redirected or rewritten" (next to an unrelated SSL
+   sentence). Our app project rewrites `/.well-known/oauth-protected-resource`
+   to its index.html today (checked with curl, 2026-10-28). That is a
+   same-project rewrite, not an external one, so it shows the path is not
+   blocked outright but does not prove an external rewrite of it; the rule
+   ships as briefed and the Lead's smoke run settles it. If the live smoke test shows Vercel refuses it, the
+   fix is one line in `proxied()` (handler.ts): advertise
+   `https://mcp.hummlist.com/oauth-protected-resource`, a path the function
+   already serves and the catch-all rewrite reaches. Clients follow the
+   `resource_metadata` URL from the challenge, so they keep working.
+9. **Smoke script.** `scripts/mcp-smoke.sh <MCP URL>` walks discovery as a
+   client does: the 401 challenge, its metadata on the same host with
+   `resource` equal to the URL, the authorization server's metadata (RFC
+   8414 path-inserted first, then the issuer-relative paths), then
+   `initialize` and `tools/list` with `MCP_SMOKE_TOKEN` or `SKIP` without.
+   `smoke-remote.sh` runs it for the supabase.co URL after every deploy
+   instead of its two older MCP checks. CI has no token, so the deploy
+   smoke reports the tools check as `SKIP`.
+10. **No build settings beyond `vercel.json`.** Empty `installCommand`,
+    `buildCommand` and `outputDirectory` plus `"framework": null` skip
+    every build step whatever the dashboard says. `npx vercel build` (no
+    login) compiles it with status `ok` and only the routes; nothing static
+    shadows them. `trailingSlash` is left unset: `false` adds a 308 for
+    every path ending in `/`.
