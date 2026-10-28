@@ -124,6 +124,20 @@ jobs:
           deno-version: v2.x
       - run: scripts/gates/functions.sh
 
+  # The guides site (site/, job 24a). Always runs: guide content is Markdown, which
+  # ci-changes.sh counts as documentation.
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: scripts/gates/site.sh
+
   fg-cli:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
@@ -316,7 +330,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, db, functions, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, db, functions, site, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

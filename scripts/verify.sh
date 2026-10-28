@@ -6,7 +6,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 # Every gate, in the order a local run takes them: cheap and independent first, e2e last.
-GATES=(gitleaks lint db functions fg-cli flutter web-prod fastlane e2e)
+GATES=(gitleaks lint site db functions fg-cli flutter web-prod fastlane e2e)
 # CI-only: iOS needs macOS, and a Gradle build takes more RAM than the shared box spares.
 # They still run on request with --only.
 CI_ONLY=(android ios)

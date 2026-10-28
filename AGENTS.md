@@ -24,6 +24,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   `scripts/smoke-remote.sh`; its `ref` input rolls functions back.
   `keepalive.yml` reads through `health` daily so the free project doesn't
   pause. Runbook: `docs/DEPLOY.md`.
+- `site/`: the public guides site on hummlist.com, its own Vercel project
+  (Root Directory `site`), static HTML from Markdown in `site/content/`;
+  `site/README.md` explains adding a guide. Separate from the app's build.
 - `supabase/functions/voice/`: the Siri and in-app dictation endpoint; the
   German sentence splitter is `parse.ts`, its table of sentences
   `parse_test.ts` (`docs/SIRI_SHORTCUT.md` for the Shortcut).
@@ -44,8 +47,8 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   removed with `fg teardown <run>`), multi-client sync proofs from
   `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
 - Run `scripts/verify.sh` before pushing. It runs the same
-  `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, db,
-  functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
+  `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, site,
+  db, functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
   some, `--only e2e -- <spec>` one spec. A check goes into a gate script,
   never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
   otherwise). The e2e gate holds the box-wide lock `/tmp/fg-e2e.lock`, so a

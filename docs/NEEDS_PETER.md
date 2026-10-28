@@ -641,3 +641,16 @@ steps are the Lead's, with you only signing in
    has acknowledged the same problem for other teams; nothing in the account
    settings or the repo fixes it.
 
+
+## Job 24a: guides on hummlist.com
+
+The guides site is `site/` on `main`. The Lead creates its Vercel project
+(Root Directory `site`, everything else from `site/vercel.json`) and
+attaches hummlist.com and www. Yours:
+
+1. **Remove noindex at the beta launch.** Every page carries
+   `X-Robots-Tag: noindex` so search engines skip it while the pages change.
+   At launch, delete that header entry from `site/vercel.json` (or ask a
+   job to).
+2. **The support@hummlist.com mailbox must receive mail** before the site
+   goes live: the Impressum lists it as the contact address.
