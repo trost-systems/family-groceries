@@ -19,7 +19,7 @@ A row of chips under the add field picks the store: "Alle", "dm", "Lidl" or "Ede
 
 - On the list screen, tap a chip under the add field.
 - In a store view, tap the icon at the right end of the chip row ("Reihenfolge bearbeiten").
-- Tap an item's name and pick a store in "Geschäft".
+- Tap an item's name, tap the store chip ("Laden: <store>" or "Ohne Laden") and pick a store.
 - In dm, tap the "… anzeigen" line under the list.
 
 ## Driving it with fg
@@ -42,7 +42,7 @@ Preconditions:
 
 ## Gotchas
 
-- The chips are buttons: `fg find --text dm` does not list them, but `fg tap --text dm` reaches them. With the edit sheet's store menu open, `fg tap --text dm` hits the menu entry. Check the result with the store query.
+- The chips are buttons: `fg find --text dm` does not list them, but `fg tap --text dm` reaches them. With the edit sheet's store options open, the chip and the option of the same store can both read "dm": tap the option by key (`store-option-<id>`), and check the result with the store query.
 - `fg find` lists the layout switches as `Semantics` with the label "<category> gibt es bei <store>"; tap them with `--label`.
 - The dm button's count ("4 Artikel …") depends on what is on the list. Read it from a screenshot, or keep the item set above.
 - Store memory and layouts persist across `fg up`. A layout switched off in an earlier run hides that category in the store view.
