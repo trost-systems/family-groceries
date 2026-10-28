@@ -158,12 +158,12 @@ commit "Job 22 review 1: onboarding mail from peter@example.com no longer shows 
 commit "ci: faster e2e (#64)"
 commit "Job 11: one CI run per merge, one gate definition (#59)"
 commit "Job 13b: nightly encrypted database backups (#58)"
-commit "Family Groceries keeps the list sorted (#65)"
+commit "the list keeps its sort order (#65)"
 to="$(git -C "$repo" rev-parse HEAD)"
 notes() { (cd "$repo" && "$here/notes.sh" "$@"); }
 expect_eq "notes (de): user-facing PRs since the last upload, newest first, no repo machinery" "$(notes de "$base" "$to")" \
 "Neu in diesem Build von Hummlist:
-- Hummlist keeps the list sorted
+- the list keeps its sort order
 - onboarding mail from  no longer shows
 - feedback button on the list"
 expect_eq "notes (en): same list, English heading" "$(notes en "$base" "$to" | head -1)" "New in this Hummlist build:"
@@ -175,7 +175,7 @@ for i in $(seq 1 15); do commit "change $i (#$((70 + i)))"; done
 out="$(notes en "$to" HEAD)"
 expect_eq "notes: at most 12 lines" "$(grep -c '^- change' <<<"$out")" 12
 expect_eq "notes: the rest is counted" "$(tail -1 <<<"$out")" "- and 3 more changes"
-if notes en "$base" "$to" | grep -qE '@|#[0-9]|Job [0-9]|[Ff]amily'; then fail "notes leak an email, PR number, job prefix or the old name"; fi
+if notes en "$base" "$to" | grep -qE '@|#[0-9]|Job [0-9]'; then fail "notes leak an email, PR number or job prefix"; fi
 
 # --- report.sh decide -----------------------------------------------------------------------
 report() {

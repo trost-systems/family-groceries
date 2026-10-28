@@ -158,6 +158,8 @@ platform :ios do
         app_identifier: APP_ID,
         distribute_external: false,
         skip_submission: true,
+        # fastlane then logs "no changelog supplied": wait_processing sets
+        # What to Test once the build shows up in App Store Connect.
         skip_waiting_for_build_processing: true
       )
     rescue StandardError => e

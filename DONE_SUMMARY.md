@@ -213,3 +213,7 @@ See [docs/done/15-design-data.md](docs/done/15-design-data.md).
 ## Job 18: test fixtures and multi-client sync capture
 
 See [docs/done/18-test-fixtures-sync.md](docs/done/18-test-fixtures-sync.md).
+
+## Job 23: weekly releases
+
+See [docs/done/23-release-pipeline.md](docs/done/23-release-pipeline.md).
