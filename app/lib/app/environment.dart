@@ -4,8 +4,9 @@
 abstract final class Environment() {
   static const supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://jdwqrallbpdbshrdhenk.supabase.co',
+    defaultValue: _productionUrl,
   );
+  static const _productionUrl = 'https://jdwqrallbpdbshrdhenk.supabase.co';
   static const supabasePublishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
     defaultValue: 'sb_publishable_YMFUFoZ-smly3zDIYTIFRw_vRt6UBk5',
@@ -30,8 +31,12 @@ abstract final class Environment() {
   /// Whether the Supabase project has Sign in with Apple configured.
   static const signInWithApple = bool.fromEnvironment('SIGN_IN_WITH_APPLE');
 
-  /// The MCP server endpoint, an edge function of the same project.
-  static const mcpUrl = '$supabaseUrl/functions/v1/mcp';
+  /// The MCP server endpoint: for the production project its public URL,
+  /// a Vercel proxy to the edge function (docs/MCP.md); for any other
+  /// project (the local stack) the edge function itself.
+  static const mcpUrl = supabaseUrl == _productionUrl
+      ? 'https://mcp.hummlist.com'
+      : '$supabaseUrl/functions/v1/mcp';
 }
 
 /// Where this web app lives; it is always served at the domain root.

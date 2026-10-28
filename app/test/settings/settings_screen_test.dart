@@ -77,7 +77,8 @@ void main() {
   testWidgets('shows the MCP endpoint and empty sections', (tester) async {
     await pumpSettings(tester);
     expect(find.text('Zugänge'), findsOneWidget);
-    expect(find.textContaining('/functions/v1/mcp'), findsOneWidget);
+    // Tests build for the production project, whose MCP URL is the proxy.
+    expect(find.text('https://mcp.hummlist.com'), findsOneWidget);
     expect(find.text('Kein aktiver Token.'), findsOneWidget);
     expect(find.text('Noch keine App verbunden.'), findsOneWidget);
   });
