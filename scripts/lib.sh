@@ -29,6 +29,25 @@ reserve_port_block() {
   fi
 }
 
+# `supabase db reset` on the running stack. The CLI recreates the database and runs a one-shot
+# realtime container to migrate and seed it, while the realtime service, which lost its database,
+# restarts and migrates and seeds the same database at once; a reset under load failed with
+# "error running container: exit 1" (DECISIONS 18.18). Stopping the service first leaves the
+# one-shot container alone; the reset starts the service again when it is done. The CLI prints
+# its error to stdout, so stdout is kept for a failure.
+db_reset() {
+  local out
+  reserve_port_block
+  docker stop "supabase_realtime_$(project_id)" >/dev/null 2>&1 || true
+  out="$(mktemp)"
+  if ! (cd "$REPO_ROOT" && supabase db reset >"$out"); then
+    cat "$out" >&2
+    rm -f "$out"
+    return 1
+  fi
+  rm -f "$out"
+}
+
 # Starts the local Supabase stack if it is not running and exports its URLs and publishable key,
 # so the e2e tests and the web build talk to this checkout's stack whatever its port block.
 # The lock lets CI start the stack in the background early (ci.yml) while this waits for it.

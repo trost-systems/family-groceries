@@ -60,15 +60,17 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
     token_type_hint: 'refresh_token',
   });
 
-  const { payload, protectedHeader } = await jwtVerify(token.form.client_secret, publicKey, {
-    issuer: 'TEAM123456',
-    audience: 'https://appleid.apple.com',
-    subject: 'com.hummlist.app',
-    algorithms: ['ES256'],
-  });
-  assertEquals(protectedHeader.kid, 'KEY1234567');
-  assert(payload.exp! - payload.iat! <= 300, 'the client secret is short-lived');
-  assertEquals(revoke.form.client_secret, token.form.client_secret);
+  // Each request signs its own secret, so the two differ once the calls straddle a second.
+  for (const { form } of seen) {
+    const { payload, protectedHeader } = await jwtVerify(form.client_secret, publicKey, {
+      issuer: 'TEAM123456',
+      audience: 'https://appleid.apple.com',
+      subject: 'com.hummlist.app',
+      algorithms: ['ES256'],
+    });
+    assertEquals(protectedHeader.kid, 'KEY1234567');
+    assert(payload.exp! - payload.iat! <= 300, 'the client secret is short-lived');
+  }
 });
 
 Deno.test('a code from a build before the rename is exchanged and revoked as that app', async () => {

@@ -3,6 +3,8 @@
 The family-groceries design prototypes lived only on a box that was lost on 2026-10-24 (~21:30 Berlin).
 This folder keeps them in GitHub so they are never box-only again. It is reference material, not app code.
 
+**Build from [`SPEC.md`](SPEC.md)**: Peter's decisions for the Flutter port (jobs 15 to 17), the prototype's tokens, where the app deliberately differs from the prototype, and the interfaces job 15 ships.
+
 | Path | What it is |
 |---|---|
 | `h-dist/` | Built preview H as deployed on Vercel (deployment `dpl_FrX1PMbZP5MBYyqdwLYa51u91t74`). Rebuilt from `sandbox-src` after anonymizing mock data (the deployed bundle differed only in the mock member name). Route: `#/h-satz-final`. |

@@ -30,7 +30,8 @@ language sql as $$
   union all select 'item_events', count(*)::int from public.item_events where household_id = p_household
   union all select 'category_memory', count(*)::int from public.category_memory where household_id = p_household
   union all select 'item_store_memory', count(*)::int from public.item_store_memory where household_id = p_household
-  union all select 'personal_access_tokens', count(*)::int from public.personal_access_tokens where household_id = p_household;
+  union all select 'personal_access_tokens', count(*)::int from public.personal_access_tokens where household_id = p_household
+  union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household;
 $$;
 
 select is(
@@ -174,7 +175,8 @@ create temp table pat_c as select token from public.create_personal_access_token
 grant select on pat_c to authenticated;
 update public.items
 set category_id = (select id from public.categories where household_id = (select id from h) and seed_key = 'drinks'),
-    store_id = (select id from public.stores where household_id = (select id from h) and seed_key = 'lidl')
+    store_id = (select id from public.stores where household_id = (select id from h) and seed_key = 'lidl'),
+    brand = 'Hofbäckerei Kurz'
 where name = 'Brot';
 select pg_temp.as_postgres();
 select is(
@@ -205,7 +207,7 @@ create temp table he as select id from public.create_household('Emil & Frida');
 create temp table inv_e as select code from public.create_invite((select id from he));
 grant select on he, inv_e to authenticated;
 select public.create_personal_access_token('Kurzbefehl');
-insert into public.items (household_id, name, quantity) select id, 'Äpfel', '1 kg' from he;
+insert into public.items (household_id, name, brand, properties, quantity) select id, 'Äpfel', 'Elstar', 'Bio', '1 kg' from he;
 select pg_temp.login('00000000-0000-0000-0000-0000000000f1');
 select public.join_household((select code from inv_e));
 insert into public.items (household_id, name) select id, 'Fridas Geheimnis' from he;
@@ -235,7 +237,8 @@ select is(
       'last_sign_in_at', null, 'providers', '[]'::jsonb),
     'profile', jsonb_build_object('display_name', 'emil', 'created_at', now()),
     'household', jsonb_build_object('id', (select id from he), 'name', 'Emil & Frida', 'role', 'owner', 'joined_at', now()),
-    'items_added', jsonb_build_array(jsonb_build_object('name', 'Äpfel', 'quantity', '1 kg', 'status', 'active',
+    'items_added', jsonb_build_array(jsonb_build_object('name', 'Äpfel', 'brand', 'Elstar', 'properties', 'Bio',
+      'quantity', '1 kg', 'status', 'active',
       'category', 'Obst & Gemüse', 'store', null, 'created_at', now(), 'bought_at', null)),
     'history', jsonb_build_array(jsonb_build_object('action', 'added', 'item_name', 'Äpfel',
       'category', 'Obst & Gemüse', 'created_at', now())),

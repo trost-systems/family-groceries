@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "editTitle": "Edit: {name}",
+  "editSheet": "Edit",
+  "fieldName": "Name",
+  "fieldBrand": "Brand",
+  "brandNone": "no brand",
+  "itemQuantity": "Qty",
+  "fieldProperties": "Details",
+  "propertiesExample": "e.g. organic, 1 l",
+  "quantityMinus": "One less",
+  "quantityPlus": "One more",
+  "noStore": "No store",
+  "chipStore": "Store: {name}",
+  "chipCategory": "Category: {name}",
+  "categoryAuto": "Category: automatic",
+  "editHint": "Only what you change is saved",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "done": "Done"
+}

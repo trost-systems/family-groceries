@@ -105,7 +105,7 @@ own data:
 | `account` | id, email, created and last sign-in time, sign-in providers |
 | `profile` | display name, created time |
 | `household` | id, name, role and join time, or null |
-| `items_added` | the items you added to your current household, with quantity, status, category, store and times. Items you added in a household you left belong to that household and are not exported; your actions there are in `history`. |
+| `items_added` | the items you added to your current household, with brand, properties, quantity, status, category, store and times. Items you added in a household you left belong to that household and are not exported; your actions there are in `history`. |
 | `history` | your entries in the item history (`added`, `bought` and so on), with item name, category and time |
 | `access_tokens` | name, last four characters, created, last used and revoked times. The export never includes the token or its hash. |
 | `connected_apps` | the OAuth apps you allowed, with their scopes and grant times |
@@ -117,7 +117,8 @@ in the app itself can call the export, never an MCP OAuth token.
 
 - Server: `public.delete_account(p_user uuid)`, service role only, and
   `public.export_my_data()` are in the job 9 migration in
-  `supabase/migrations/`. The edge function is `supabase/functions/account/`
+  `supabase/migrations/`. Job 15 (`20261025212052_item_details.sql`)
+  replaces `export_my_data()` to add brand and properties. The edge function is `supabase/functions/account/`
   (`POST /functions/v1/account/delete`). It accepts only the app's own
   session JWT and refuses personal access tokens and OAuth client tokens
   with 403.

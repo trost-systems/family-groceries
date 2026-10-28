@@ -57,8 +57,8 @@ test('the JSON answer names each item with its category', async ({ page }) => {
   expect(JSON.parse(said.body)).toEqual({
     speech: 'Hinzugefügt: 1 Packung Eier, Windeln.',
     items: [
-      { name: 'Eier', quantity: '1 Packung', category: 'Kühlregal', alreadyOnList: false },
-      { name: 'Windeln', quantity: null, category: '👶 Drogerie', alreadyOnList: false },
+      { name: 'Eier', brand: null, properties: null, quantity: '1 Packung', category: 'Kühlregal', alreadyOnList: false },
+      { name: 'Windeln', brand: null, properties: null, quantity: null, category: '👶 Drogerie', alreadyOnList: false },
     ],
     truncated: false,
   });
@@ -178,11 +178,14 @@ test('a different size or type is a new item, not "already on the list"', async 
     'Hinzugefügt: Windeln Größe 5, Mehl Typ 405.',
   );
   const mcp = await connectWithToken(token);
-  const viaMcp = await call<{ added: { name: string }[]; alreadyOnList: { name: string }[] }>(mcp, 'add_items', {
+  const viaMcp = await call<{
+    added: { name: string }[];
+    alreadyOnList: { name: string; properties: string | null }[];
+  }>(mcp, 'add_items', {
     items: [{ name: 'Mehl Typ 550' }, { name: 'Windeln Größe 4' }],
   });
   expect(viaMcp.added.map((i) => i.name)).toEqual(['Mehl Typ 550']);
-  expect(viaMcp.alreadyOnList.map((i) => i.name)).toEqual(['Windeln Größe 4']);
+  expect(viaMcp.alreadyOnList.map((i) => [i.name, i.properties])).toEqual([['Windeln', 'Größe 4']]);
   for (const name of ['Windeln Größe 4', 'Windeln Größe 5', 'Mehl Typ 405', 'Mehl Typ 550']) {
     await expect(itemRow(page, name)).toBeVisible();
   }

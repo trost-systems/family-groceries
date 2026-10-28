@@ -40,8 +40,7 @@ sign_in() {
 }
 
 log "fixtures"
-reserve_port_block
-supabase db reset >/dev/null
+db_reset
 for user in peter:Peter lea:Lea carl:Carl; do
   code="$(curl -sS -o "$work/user.json" -w '%{http_code}' "$SUPABASE_URL/auth/v1/admin/users" \
     -H "apikey: $service_key" -H "Authorization: Bearer $service_key" -H 'Content-Type: application/json' \
@@ -66,7 +65,7 @@ age -d -i "$work/key.txt" "$work/backup.sql.age" | grep -q '^-- PostgreSQL datab
   || fail "the decrypted dump is not a complete pg_dump"
 
 log "reset to the migrations and restore"
-supabase db reset >/dev/null
+db_reset
 [[ "$(sql -c 'select count(*) from auth.users')" == 0 ]] || fail "reset left users behind"
 age -d -i "$work/key.txt" "$work/backup.sql.age" | scripts/backup/restore.sh
 snapshot >"$work/after.txt"

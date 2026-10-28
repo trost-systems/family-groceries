@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show immutable;
+import 'package:flutter/foundation.dart' show immutable, mapEquals;
 
 enum ItemStatus() {
   active,
@@ -110,27 +110,30 @@ class const Catalog({
 
   Member? member(String? id) => members.where((m) => m.id == id).firstOrNull;
 
-  /// The badge for [member]: the first letter, two when another member's
-  /// name starts with the same one, '?' for an empty name.
-  String initialOf(Member member) {
-    String head(String name, int n) =>
-        String.fromCharCodes(name.trim().runes.take(n));
-    final first = head(member.displayName, 1).toUpperCase();
-    if (first.isEmpty) {
-      return '?';
-    }
-    final shared = members.any(
-      (m) => m.id != member.id && head(m.displayName, 1).toUpperCase() == first,
-    );
-    return shared
-        ? first + head(member.displayName, 2).substring(first.length)
-        : first;
-  }
-
   Category? get fallback =>
       categories.where((c) => c.seedKey == 'other').firstOrNull;
 
   Store? store(String id) => stores.where((s) => s.id == id).firstOrNull;
+
+  /// The store order is the position in [ids].
+  Catalog withStoreOrder(List<String> ids) {
+    final byId = {for (final s in stores) s.id: s};
+    return Catalog(
+      categories: categories,
+      stores: [
+        for (final (i, id) in ids.indexed)
+          if (byId[id] case final s?)
+            Store(
+              id: s.id,
+              name: s.name,
+              sortOrder: (i + 1) * 10,
+              seedKey: s.seedKey,
+            ),
+      ],
+      layout: layout,
+      members: members,
+    );
+  }
 
   /// The route order is the position in [ids].
   Catalog withRouteOrder(List<String> ids) {
@@ -250,9 +253,19 @@ class const Item({
   required final DateTime updatedAt,
   final String? quantity,
 
+  /// Marke.
+  final String? brand,
+
+  /// Eigenschaften, parts joined with ", ".
+  final String? properties,
+
   /// Null only while a new item waits for the server to classify it.
   final String? categoryId,
   final String? storeId,
+
+  /// Walk order inside its (store, category) group, lower first. Null only
+  /// until the server numbers a new item; it sorts last.
+  final double? sortKey,
   final DateTime? boughtAt,
 
   /// The member who added it; null until the server confirms the add, and
@@ -263,8 +276,12 @@ class const Item({
     id: json['id']! as String,
     name: json['name']! as String,
     quantity: json['quantity'] as String?,
+    brand: json['brand'] as String?,
+    properties: json['properties'] as String?,
     categoryId: json['category_id'] as String?,
     storeId: json['store_id'] as String?,
+    // PostgREST sends a whole double precision as an int.
+    sortKey: (json['sort_key'] as num?)?.toDouble(),
     status: ItemStatus.values.byName(json['status']! as String),
     createdAt: DateTime.parse(json['created_at']! as String),
     updatedAt: DateTime.parse(json['updated_at']! as String),
@@ -280,8 +297,11 @@ class const Item({
     'id': id,
     'name': name,
     'quantity': quantity,
+    'brand': brand,
+    'properties': properties,
     'category_id': categoryId,
     'store_id': storeId,
+    'sort_key': sortKey,
     'status': status.name,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
@@ -292,16 +312,22 @@ class const Item({
   Item copyWith({
     String? name,
     String? Function()? quantity,
+    String? Function()? brand,
+    String? Function()? properties,
     String? categoryId,
     String? Function()? storeId,
+    double? Function()? sortKey,
     ItemStatus? status,
     DateTime? Function()? boughtAt,
   }) => Item(
     id: id,
     name: name ?? this.name,
     quantity: quantity == null ? this.quantity : quantity(),
+    brand: brand == null ? this.brand : brand(),
+    properties: properties == null ? this.properties : properties(),
     categoryId: categoryId ?? this.categoryId,
     storeId: storeId == null ? this.storeId : storeId(),
+    sortKey: sortKey == null ? this.sortKey : sortKey(),
     status: status ?? this.status,
     createdAt: createdAt,
     updatedAt: updatedAt,
@@ -311,6 +337,154 @@ class const Item({
 
   /// Added by another member (not by [userId], and not still unconfirmed).
   bool isFromPartner(String userId) => addedBy != null && addedBy != userId;
+}
+
+/// Walk order inside a group: [Item.sortKey] (null last), then created,
+/// then id, as the server orders it.
+int compareWalk(Item a, Item b) {
+  final (ka, kb) = (a.sortKey, b.sortKey);
+  final byKey = switch ((ka, kb)) {
+    (null, null) => 0,
+    (null, _) => 1,
+    (_, null) => -1,
+    (final x?, final y?) => x.compareTo(y),
+  };
+  if (byKey != 0) {
+    return byKey;
+  }
+  final byCreated = a.createdAt.compareTo(b.createdAt);
+  return byCreated != 0 ? byCreated : a.id.compareTo(b.id);
+}
+
+/// The provisional key for an item put [edge] of [anchor]: halfway to the
+/// neighbour in [group] (the anchor's group in walk order, without the item),
+/// or 1024 past the anchor at an end. Null while the anchor has no key.
+double? placeKey(List<Item> group, Item anchor, Edge edge) {
+  final key = anchor.sortKey;
+  if (key == null) {
+    return null;
+  }
+  final at = group.indexWhere((i) => i.id == anchor.id);
+  final next = switch (edge) {
+    Edge.before => at > 0 ? group[at - 1].sortKey : null,
+    Edge.after => at + 1 < group.length ? group[at + 1].sortKey : null,
+  };
+  return switch ((edge, next)) {
+    (_, final n?) => (key + n) / 2,
+    (Edge.before, null) => key - 1024,
+    (Edge.after, null) => key + 1024,
+  };
+}
+
+/// A nullable column an edit sets, to [value] (null clears it). An edit
+/// that leaves the column alone has no [SetTo] for it.
+@immutable
+final class const SetTo<T>(final T value) {
+  @override
+  bool operator ==(Object other) => other is SetTo<T> && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+
+  @override
+  String toString() => 'SetTo($value)';
+}
+
+/// The columns one edit changes; everything null here is left alone.
+@immutable
+class const ItemChanges({
+  final String? name,
+  final SetTo<String?>? quantity,
+  final SetTo<String?>? brand,
+  final SetTo<String?>? properties,
+  final String? categoryId,
+
+  /// `SetTo(null)`: no store.
+  final SetTo<String?>? storeId,
+}) {
+  /// Reads what [toColumns] wrote: a key present is a change.
+  factory fromColumns(Map<String, Object?> json) {
+    SetTo<String?>? change(String key) =>
+        json.containsKey(key) ? SetTo(json[key] as String?) : null;
+    return ItemChanges(
+      name: json['name'] as String?,
+      quantity: change('quantity'),
+      brand: change('brand'),
+      properties: change('properties'),
+      categoryId: json['category_id'] as String?,
+      storeId: change('store_id'),
+    );
+  }
+
+  bool get isEmpty => toColumns().isEmpty;
+
+  /// Only the changed columns, as the server names them: the PATCH body.
+  Map<String, Object?> toColumns() => {
+    'name': ?name,
+    if (quantity case SetTo(:final value)) 'quantity': value,
+    if (brand case SetTo(:final value)) 'brand': value,
+    if (properties case SetTo(:final value)) 'properties': value,
+    'category_id': ?categoryId,
+    if (storeId case SetTo(:final value)) 'store_id': value,
+  };
+
+  Item apply(Item item) => item.copyWith(
+    name: name,
+    quantity: switch (quantity) {
+      SetTo(:final value) => () => value,
+      null => null,
+    },
+    brand: switch (brand) {
+      SetTo(:final value) => () => value,
+      null => null,
+    },
+    properties: switch (properties) {
+      SetTo(:final value) => () => value,
+      null => null,
+    },
+    categoryId: categoryId,
+    storeId: switch (storeId) {
+      SetTo(:final value) => () => value,
+      null => null,
+    },
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is ItemChanges && mapEquals(other.toColumns(), toColumns());
+
+  @override
+  int get hashCode => Object.hashAllUnordered(
+    toColumns().entries.map((e) => Object.hash(e.key, e.value)),
+  );
+
+  @override
+  String toString() => 'ItemChanges(${toColumns()})';
+}
+
+enum Edge() {
+  before,
+  after,
+}
+
+/// What `public.parse_item` makes of one typed entry.
+@immutable
+class const ParsedEntry({
+  required final String name,
+  final String? brand,
+  final String? properties,
+  final String? quantity,
+  final String? storeId,
+  final String? categoryId,
+}) {
+  factory fromJson(Map<String, Object?> json) => ParsedEntry(
+    name: json['name']! as String,
+    brand: json['brand'] as String?,
+    properties: json['properties'] as String?,
+    quantity: json['quantity'] as String?,
+    storeId: json['store_id'] as String?,
+    categoryId: json['category_id'] as String?,
+  );
 }
 
 /// A user's intent, applied optimistically on top of the server state until
@@ -329,12 +503,21 @@ sealed class const ItemOp(final String itemId) {
       ),
       'edit' => EditItem(
         id,
-        name: json['name']! as String,
-        quantity: json['quantity'] as String?,
+        ItemChanges.fromColumns(json['changes']! as Map<String, Object?>),
+      ),
+      'move' => MoveItem(
+        id,
         categoryId: json['category_id']! as String,
         storeId: json['store_id'] as String?,
       ),
-      'move' => MoveItem(id, json['category_id']! as String),
+      'place' => PlaceItem(
+        id,
+        anchorId: json['anchor_id']! as String,
+        edge: Edge.values.byName(json['edge']! as String),
+        categoryId: json['category_id']! as String,
+        storeId: json['store_id'] as String?,
+        sortKey: (json['sort_key'] as num?)?.toDouble(),
+      ),
       'delete' => DeleteItem(id),
       final op => throw FormatException('unknown op', op),
     };
@@ -353,20 +536,30 @@ sealed class const ItemOp(final String itemId) {
         'at': at.toIso8601String(),
         'store_id': storeId,
       },
-      EditItem(
-        :final name,
-        :final quantity,
+      EditItem(:final changes) => {
+        'op': 'edit',
+        'changes': changes.toColumns(),
+      },
+      MoveItem(:final categoryId, :final storeId) => {
+        'op': 'move',
+        'category_id': categoryId,
+        'store_id': storeId,
+      },
+      PlaceItem(
+        :final anchorId,
+        :final edge,
         :final categoryId,
         :final storeId,
+        :final sortKey,
       ) =>
         {
-          'op': 'edit',
-          'name': name,
-          'quantity': quantity,
+          'op': 'place',
+          'anchor_id': anchorId,
+          'edge': edge.name,
           'category_id': categoryId,
           'store_id': storeId,
+          'sort_key': sortKey,
         },
-      MoveItem(:final categoryId) => {'op': 'move', 'category_id': categoryId},
       DeleteItem() => {'op': 'delete'},
     },
   };
@@ -394,29 +587,50 @@ final class const SetStatus(
   );
 }
 
-final class const EditItem(
+/// Writes only the [changes]; the server puts an item whose store or
+/// category changed at the end of its new group.
+final class const EditItem(super.itemId, final ItemChanges changes)
+    extends ItemOp {
+  @override
+  Item? apply(Item? current) => current == null ? null : changes.apply(current);
+}
+
+/// To the end of group ([storeId], [categoryId]), with `move_item`. Until
+/// the server numbers it, the key is null, which sorts last.
+final class const MoveItem(
   super.itemId, {
-  required final String name,
-  required final String? quantity,
   required final String categoryId,
 
-  /// Null: any store.
+  /// Null: no store.
   required final String? storeId,
 }) extends ItemOp {
   @override
   Item? apply(Item? current) => current?.copyWith(
-    name: name,
-    quantity: () => quantity,
     categoryId: categoryId,
     storeId: () => storeId,
+    sortKey: () => null,
   );
 }
 
-/// Drag to another group: only the category changes.
-final class const MoveItem(super.itemId, final String categoryId)
-    extends ItemOp {
+/// Directly before or after [anchorId], with `place_item`. [categoryId],
+/// [storeId] and the provisional [sortKey] are the anchor's group and the
+/// gap as the app saw them, for the optimistic view; the server decides.
+final class const PlaceItem(
+  super.itemId, {
+  required final String anchorId,
+  required final Edge edge,
+  required final String categoryId,
+  required final String? storeId,
+
+  /// Null when the anchor had no key yet.
+  required final double? sortKey,
+}) extends ItemOp {
   @override
-  Item? apply(Item? current) => current?.copyWith(categoryId: categoryId);
+  Item? apply(Item? current) => current?.copyWith(
+    categoryId: categoryId,
+    storeId: () => storeId,
+    sortKey: () => sortKey,
+  );
 }
 
 final class const DeleteItem(super.itemId) extends ItemOp {
@@ -502,7 +716,7 @@ Grouping groupActive(
     }
   }
   for (final list in byCategory.values) {
-    list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    list.sort(compareWalk);
   }
   final known = {for (final stop in stops) stop.category.id};
   final orphans = [

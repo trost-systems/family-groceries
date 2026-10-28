@@ -52,6 +52,7 @@ chicoree	produce
 chili	produce
 chinakohl	produce
 clementine	produce
+cremefine	chilled
 datteltomate	produce
 dill	produce
 eichblattsalat	produce
@@ -673,39 +674,63 @@ dosenobst	pantry
 
 # Süßes & Snacks
 adventskalender	sweets
+airwaves	sweets
+balisto	sweets
 bonbon	sweets
+bounty	sweets
 butterkekse	sweets
 cashew	sweets
 cashewkerne	sweets
 chips	sweets
 chipstüte	sweets
+choco crossies	sweets
 cookies	sweets
+corny	sweets
 cracker	sweets
 dinkelkekse	sweets
 dominosteine	sweets
 doppelkekse	sweets
 duplo	sweets
 erdnüsse	sweets
+ferrero rocher	sweets
 flips	sweets
 fruchtgummi	sweets
+fruchtschnecke	sweets
 gebrannte mandeln	sweets
+goldbär	sweets
+goldbärchen	sweets
 gummi	sweets
 gummibärchen	sweets
 gummibären	sweets
 haferkekse	sweets
 hanuta	sweets
 haribo	sweets
+hitschler	sweets
+hubba bubba	sweets
+katjes	sweets
 kaugummi	sweets
 keks	sweets
+kinder bueno	sweets
+kitkat	sweets
 knabberzeug	sweets
 knoppers	sweets
 lakritz	sweets
+lakritzschnecke	sweets
 lebkuchen	sweets
+lion	sweets
 löffelbiskuit	sweets
 lolli	sweets
 lutscher	sweets
+malteser	sweets
+mamba	sweets
+maoam	sweets
+mars	sweets
 marshmallow	sweets
+mäusespeck	sweets
+mentos	sweets
+merci	sweets
 milka	sweets
+milky way	sweets
 nachos	sweets
 nikolaus	sweets
 nougat	sweets
@@ -713,30 +738,48 @@ nussmischung	sweets
 oreo	sweets
 osterhase	sweets
 pistazien	sweets
+pombär	sweets
 popcorn	sweets
 praline	sweets
 prinzenrolle	sweets
+raffaello	sweets
+ricola	sweets
 riegel	sweets
+russisch brot	sweets
+salmiak	sweets
 salzbrezel	sweets
 salzstangen	sweets
+saure zunge	sweets
 schaumkuss	sweets
+schaumzucker	sweets
+schogetten	sweets
 schoko	sweets
 schokoeier	sweets
 schokohase	sweets
 schokokekse	sweets
 schokokuss	sweets
 schokolade	sweets
+smarties	sweets
 snack	sweets
 snickers	sweets
 spekulatius	sweets
 studentenfutter	sweets
 süßigkeiten	sweets
+tic tac	sweets
+toblerone	sweets
+toffee	sweets
 toffifee	sweets
+tortilla chips	sweets
+trolli	sweets
 trüffel	sweets
 twix	sweets
 überraschungsei	sweets
 vollkornkekse	sweets
 waffel	sweets
+weihnachtsmann	sweets
+wrigleys	sweets
+yogurette	sweets
+zuckerstange	sweets
 zuckerwatte	sweets
 
 # Getränke

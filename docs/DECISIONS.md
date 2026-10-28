@@ -1603,3 +1603,158 @@ Peter approved the name "Hummlist" and the ID `com.hummlist.app` on
     15b's one-line `ci.yml` change (`SUPABASE_INTERNAL_IMAGE_REGISTRY:
     docker.io`) byte-for-byte, so whichever of #49 and #52 lands second
     rebases cleanly.
+
+## Job 15 (design H, part 1: data, parser, edit sheet), 2026-10-25
+
+The build spec for design H (jobs 15 to 17) is
+[`docs/design/h-satz-final/SPEC.md`](design/h-satz-final/SPEC.md): Peter's
+decisions, the prototype's tokens, where the app differs from the prototype
+on purpose, and the interfaces this job ships.
+
+1. **The parser is SQL (`public.parse_item`).** One implementation that the
+   app (RPC), MCP and Siri (`public.add_item`, which `add_items` calls) all
+   reach. A Deno module would have needed a second copy in Dart for the app,
+   and the parser needs the household's memories and learned brands, which
+   live in Postgres. Offline, the app's add flow falls back to `parseEntry`
+   (name and quantity). Changing it means changing the function, not the
+   callers.
+2. **Properties are one text column** (`items.properties`, parts joined with
+   `", "`). The edit sheet shows one field, as the prototype does. Splitting on
+   ", ", "·" or ";" keeps "1,5 %" whole. A text array would need a migration of
+   every caller (MCP, voice, export) for no visible gain.
+3. **Walk order is a `double precision` `sort_key` per (store, category)
+   group.** A move rewrites one row (midpoint). When the gap falls under
+   0.001, `place_item` renumbers that one group in steps of 1024 first. Bought
+   items keep their key, so Undo and re-add put an item back where it was.
+   A plain edit that changes the store or category puts the item at the end
+   of its new group. The backfill numbered existing rows by `created_at`, with
+   triggers off, so neither `updated_at` nor the history changed.
+4. **Two drag RPCs instead of one with modes.** `place_item(item, anchor,
+   edge)` is a drop on a row: the item adopts the anchor's store and category.
+   `move_item(item, store, category)` is a drop on a divider: the end of that
+   group, where a null store means "Ohne Laden". Each has one meaning and no flags.
+   Learning stays in the triggers, so both learn exactly like an edit.
+5. **Brands are data.** `supabase/classifier/brands.tsv` (608 brands, each
+   with an optional product and the store for a store's own brand) becomes a
+   migration through `generate_brands.ts`, like the dictionary. `brand_key`
+   folds case, umlauts, ß, spaces, dots, hyphens and apostrophes and keeps & and !
+   (Coca Cola = Coca-Cola; "Ja!" is a brand, "ja" is not). Ordinary words are
+   excluded on purpose (Kinder, Danke, Ja, Bio, Müller, Harry, ...), and a test
+   checks that. Households learn brands the list lacks
+   (`household_brands`) from any write of `items.brand`.
+6. **Laden for a new entry**: item→store memory, then the brand's own store
+   (Balea → dm), then the category's hint (drugstore → the household's dm),
+   else none. This applies to MCP, Siri and job 17's add sheet. Rows the app
+   writes without a store still get only the memory (the trigger), as before.
+7. **Duplicates compare name, brand and properties.** "Windeln Pampers
+   Größe 3" and "Windeln Größe 4" are two items, and "Gurke" is still "2 Gurken".
+8. **Edits are patches.** `EditItem` carries only the changed columns
+   (`ItemChanges`, with `SetTo<T>` for nullable columns so "unchanged" and
+   "clear" differ). The same map is the PATCH body, so Fertig can never
+   overwrite a partner's change to another field. The offline snapshot is
+   v3. Its migrator turns queued v2 edits into full patches and v2 moves into
+   category-only patches, which is exactly the old PATCH.
+9. **Long press is 300 ms (was 500), as in the prototype.** Releasing within
+   8 px opens the edit sheet. Moving further starts the drag. The empty drop
+   targets appear only after 8 px, so the list does not jump under a press
+   that opens the sheet. A plain tap still opens edit until job 16 makes it
+   tick.
+10. **Right click on web opens edit.** The browser's context menu is off only
+    while the pointer is over the list, so text fields keep paste and
+    spelling.
+11. **Menge −/+** changes only the leading number and keeps the unit and the
+    decimal comma. The step is 1, or 100 for g and ml from 100 up ("500 g" → "600 g").
+    An empty Menge counts as 1. The steppers hide when the Menge does not
+    start with a number ("eine Packung").
+12. **The edit sheet is a Material modal bottom sheet** with the prototype's
+    emphasized-decelerate curve (280 ms open, 200 ms close, none when
+    animations are off). A spring is not cheap with the Material sheet route.
+    The content column decides the height (no fraction), and the sheet
+    scrolls only when the keyboard leaves less room than the content needs.
+13. **No added-by initial on rows** (Peter's decision). `Catalog.initialOf`
+    and the strings only it used are deleted. `added_by`, `Member` and "N neu
+    von Lea" stay. The highlight adds no glyph to the row, so it does not
+    conflict with the design, and nothing is needed from Peter.
+14. **`app_en.arb` starts with the keys this job adds.** gen-l10n's
+    untranslated-messages file moved to `.dart_tool/` because `build/` does
+    not exist on a fresh checkout. Job 17 completes the English.
+15. **Parser rules settled in review (0 and 1).** One rule for amounts: a
+    leading count or amount is the Menge, else the first amount with a unit
+    wherever it stands, else a count anywhere ("Äpfel 1 kg bio" and "1 kg
+    Mehl" both give Menge 1 kg). Halves become `1/2`, or `0,5 <unit>`
+    before a unit, and "anderthalb" becomes `1,5`. Multipacks are one
+    property written `6x1,5 l`. Plain descriptors (Bio, laktosefrei, ...)
+    count up front too; flavours up front stay the name ("Paprika rot").
+    Letter sizes are sizes ("Größe M"). `parse_item` reads one entry and
+    keeps a list comma or "und" in the name instead of dropping it. Splitting
+    sentences stays the voice splitter's job, which the app already calls,
+    so the three callers cannot diverge. Every parsed field is capped at its
+    column (cut at a space). An explicit over-long `add_item` field raises
+    22001 before anything is written. Each rule is a row in
+    `supabase/tests/parse_item.test.sql` or a test in
+    `item_details.test.sql`.
+16. **The voice splitter reads at most six integer digits as an amount.**
+    A longer run of digits used to come back as "1e+60 l". It now stays in
+    the name, and a spoken quantity is cut to the column's 40 characters.
+17. **Paar, Dutzend, Laib and Kopf are units in `parse_item`** ("3 Paar
+    Socken" gives Socken, Menge `3 Paar`), as they already were in the voice
+    splitter, so the two parsers read counting nouns alike (review 2).
+
+### Job 15b (landing #49), 2026-10-26
+
+1. **The box has two kinds of host stall, and only one breaks tests.** A
+   heartbeat that logs the wall and the monotonic clock every second
+   (`/tmp/fg15b/heartbeat.log`) saw both on 2026-10-26: at 12:44 the wall
+   clock jumped 525 s and the monotonic clock 524 s, and at 12:53 the wall
+   clock jumped 1954 s while the monotonic clock moved 11 s. In the first
+   kind every deadline (a test's 60 s, an expect's 10 s, Kong's 60 s
+   upstream timeout) has passed when the box resumes, so the test fails
+   however its waits are written. The second kind leaves monotonic timers
+   alone: a full e2e run passed 73/73 straight through the 1954 s hole.
+   Job 15's four failed tests (live-sync join, STORE ORDERING,
+   CLASSIFIER-LEARNING twice, live layout sync) each ran 2.8 to 7.1 min
+   against a 60 s test timeout. That overshoot needs a stall with the clock
+   running, and each error is a spent budget: the test timeout, the 20 s
+   `typeInto` budget, and Kong's 504. CLASSIFIER-LEARNING otherwise passes
+   in 10 to 11 s.
+2. **A test cut by such a stall gets one retry, and nothing else does.**
+   Playwright runs with `retries: 1`. The `stallRetry` fixture
+   (`e2e/tests/fixtures.ts`) lets the retry run only if the failed attempt
+   measured a runner pause of 2 s or more (18b's `hostStall`, which leaves a
+   mark the moment its 1 s tick sees the pause, so a pause that times out a
+   fixture teardown still counts; 18c measured the tick at most 16 ms late
+   at load 21). Any other failure fails its retry at once with "not
+   retried", so a real failure still fails the gate. A stall-retried test
+   shows as flaky in the summary. Longer timeouts would not help, because
+   the stall eats any budget, and a blind retry would hide real failures.
+   Proven with a probe spec (SIGSTOP of the runner for 15 s during an
+   `expect.poll`: retried and passed. A plain failure: refused).
+3. **`account/apple_test.ts` checks each Apple client secret instead of
+   comparing them.** Each request signs its own secret, so the token and
+   revoke secrets differ once a second ticks over between the calls. This
+   was a real flake on main (18b's run, no stall), and a 1.1 s delay
+   between the calls makes the old test fail every time.
+4. **gitleaks scans what could be committed** (18b's change on #35, taken
+   byte-identical): Playwright traces under the ignored `e2e/test-results/`
+   hold local session JWTs and no longer fail a local run.
+5. **`db_reset` stops realtime before `supabase db reset`** (18b's fix on
+   #35, DECISIONS 18.18 there, taken unchanged). Run 9 of #49's 5-green
+   failed in the db gate with no host stall, at "Initialising schema",
+   the same signature 18b traced to two realtime writers migrating one
+   fresh database. The db gate and the backup drill use it.
+6. **CI pulls the Supabase images from Docker Hub.** From about 20:20 on
+   2026-10-27, ghcr.io answered every image pull from GitHub's runners with
+   "toomanyrequests" (main, #49, #35 and job 23 alike, for over two hours),
+   while the same pulls from the box went through. A `docker login ghcr.io`
+   with the run's token did not help (probe run 40582681259). With
+   `SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io` the db job pulled every
+   image and passed (probe run 40582999552). The variable stays the one
+   switch to change if Docker Hub ever limits runners too.
+7. **The edit-sheet size check waits for the sheet to hold still.** Run 22
+   failed with no host stall (its retry refused, as designed):
+   `expectHugsContent` read the sheet's box and Abbrechen's a frame apart
+   while the category options were still folding out, so Abbrechen sat
+   32 px "above" the sheet. The check now first polls until the sheet's
+   box is the same across two frames. Measuring right after the chip tap,
+   the old check failed 3 of 3 (-16 to -136 px) and the new one passed 3 of
+   3. The app was right.

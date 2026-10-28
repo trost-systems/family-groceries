@@ -245,3 +245,19 @@ Deno.test('caps a long name at 120 characters', () => {
 Deno.test('reads decomposed umlauts the same as composed ones', () => {
   assertEquals(parseSentence('Äpfel'), [{ name: 'Äpfel', quantity: null }]);
 });
+
+Deno.test('a run of digits too long for an amount stays in the name; quantities fit the column', () => {
+  const [huge] = parseSentence(`${'9'.repeat(60)} Liter Milch`);
+  assertEquals(huge.quantity, null, 'no "1e+60 l"');
+  for (
+    const item of parseSentence(
+      `zwei ${'Superlangerartikelname '.repeat(20)}und 999999 Liter Milch`,
+    )
+  ) {
+    assertEquals(
+      item.name.length <= 120 && (item.quantity ?? '').length <= 40,
+      true,
+      JSON.stringify(item),
+    );
+  }
+});

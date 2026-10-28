@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
-import { actionSnackBar, addField, addItem, itemRow, newEmail, screenshot, signUpWithHousehold, tickBox, typeInto } from './helpers';
+import { actionSnackBar, addField, addItem, editField, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tickBox, typeInto } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signUpWithHousehold(page, newEmail('list'));
@@ -52,13 +52,12 @@ test('adding an item that is already on the list does not duplicate it', async (
 
 test('edit changes name, quantity and category; delete can be undone', async ({ page }) => {
   await addItem(page, 'Sprudel');
-  await itemRow(page, 'Sprudel').click();
-  await typeInto(page.getByRole('textbox', { name: 'Name' }), 'Mineralwasser');
-  await typeInto(page.getByRole('textbox', { name: 'Menge' }), '6 Flaschen');
-  await page.getByRole('button', { name: /Kategorie/ }).click();
-  await page.getByRole('menuitem', { name: 'Getränke' }).click();
+  await openEdit(page, 'Sprudel');
+  await typeInto(editField(page, 'Bezeichnung'), 'Mineralwasser');
+  await typeInto(editField(page, 'Menge'), '6 Flaschen');
+  await pickInSheet(page, 'Kategorie', 'Getränke');
   await screenshot(page, '04-edit-sheet');
-  await page.getByRole('button', { name: 'Speichern' }).click();
+  await saveEdit(page);
 
   await expect(itemRow(page, 'Mineralwasser')).toHaveAccessibleName('Mineralwasser 6 Flaschen');
   await page.reload();
@@ -66,8 +65,8 @@ test('edit changes name, quantity and category; delete can be undone', async ({ 
   const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
   expect(headings).toContain('Getränke');
 
-  await itemRow(page, 'Mineralwasser').click();
-  await page.getByRole('button', { name: 'Löschen' }).click();
+  await openEdit(page, 'Mineralwasser');
+  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
   await expect(itemRow(page, 'Mineralwasser')).toHaveCount(0);
   await page.getByRole('button', { name: 'Rückgängig' }).click();
   await expect(itemRow(page, 'Mineralwasser')).toBeVisible();

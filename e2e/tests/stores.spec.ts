@@ -1,7 +1,8 @@
 import { expect, type Page, test } from './fixtures';
 import { dragHandle, groupHeadings, selectStore } from './catalog';
 import {
-  addField, addItem, createInviteCode, itemRow, newEmail, screenshot, signUp, signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, createInviteCode, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold,
+  tickBox, typeInto,
 } from './helpers';
 
 const route = [
@@ -10,10 +11,9 @@ const route = [
 ];
 
 async function setStore(page: Page, item: string, store: string): Promise<void> {
-  await itemRow(page, item).click();
-  await page.getByRole('button', { name: /Geschäft/ }).click();
-  await page.getByRole('menuitem', { name: store, exact: true }).click();
-  await page.getByRole('button', { name: 'Speichern' }).click();
+  await openEdit(page, item);
+  await pickInSheet(page, 'Laden', store);
+  await saveEdit(page);
 }
 
 test('STORE ORDERING: each store groups in its own order, editable by drag, with item->store memory', async ({ page }) => {
@@ -163,10 +163,9 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await expect.poll(() => groupHeadings(page), { message: 'the route order changed' })
     .toEqual(['Getränke', '👶 Drogerie']);
 
-  await itemRow(page, 'Windeln').click();
-  await page.getByRole('button', { name: /Kategorie/ }).click();
-  await page.getByRole('menuitem', { name: 'Baby' }).click();
-  await page.getByRole('button', { name: 'Speichern' }).click();
+  await openEdit(page, 'Windeln');
+  await pickInSheet(page, 'Kategorie', 'Baby');
+  await saveEdit(page);
   await expect.poll(() => groupHeadings(page)).toEqual(['Getränke', 'Baby']);
 
   await page.getByRole('button', { name: 'Menü' }).click();

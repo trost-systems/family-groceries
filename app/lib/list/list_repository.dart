@@ -32,6 +32,13 @@ abstract interface class ListRepository() {
   /// [ids] is every category, in the new route order.
   Future<void> reorderCategories(List<String> ids);
 
+  /// [ids] is every store, in the new order.
+  Future<void> reorderStores(List<String> ids);
+
+  /// Splits one typed entry into its fields with the server's parser.
+  /// Throws when the server can't be reached.
+  Future<ParsedEntry> parse(String text);
+
   /// Moves the category's items to [reassignTo], by default the fallback.
   Future<void> deleteCategory(String id, {String? reassignTo});
 
@@ -80,8 +87,8 @@ class SupabaseListRepository(
   final String householdId,
 ) implements ListRepository {
   static const _itemColumns =
-      'id, name, quantity, category_id, store_id, status, created_at, '
-      'updated_at, bought_at, added_by';
+      'id, name, quantity, brand, properties, category_id, store_id, '
+      'sort_key, status, created_at, updated_at, bought_at, added_by';
 
   @override
   Future<Catalog> fetchCatalog() async {
@@ -142,6 +149,23 @@ class SupabaseListRepository(
   );
 
   @override
+  Future<void> reorderStores(List<String> ids) => _refusable(
+    () => _client.rpc<void>(
+      'reorder_stores',
+      params: {'p_household': householdId, 'p_ids': ids},
+    ),
+  );
+
+  @override
+  Future<ParsedEntry> parse(String text) async {
+    final Object? result = await _client.rpc<dynamic>(
+      'parse_item',
+      params: {'p_household': householdId, 'p_text': text},
+    );
+    return ParsedEntry.fromJson(_singleRow(result)!);
+  }
+
+  @override
   Future<void> deleteCategory(String id, {String? reassignTo}) => _refusable(
     () => _client.rpc<void>(
       'delete_category',
@@ -196,61 +220,88 @@ class SupabaseListRepository(
   }
 
   @override
-  Future<Item?> send(ItemOp op) async {
-    final rows = await _refusable(() => _write(op));
-    if (op is DeleteItem) {
-      return null;
-    }
-    // No row back: the item is gone, or an upsert hit an existing id.
-    return rows.isEmpty
-        ? await _fetchItem(op.itemId)
-        : Item.fromJson(rows.single);
-  }
-
-  Future<List<Map<String, dynamic>>> _write(ItemOp op) {
+  Future<Item?> send(ItemOp op) => _refusable(() async {
     final items = _client.rest.from('items');
-    return switch (op) {
-      AddItem(:final item) =>
-        items
+    final List<Map<String, dynamic>> rows;
+    switch (op) {
+      case AddItem(:final item):
+        rows = await items
             .upsert({
               'id': item.id,
               'household_id': householdId,
               'name': item.name,
               'quantity': item.quantity,
+              'brand': ?item.brand,
+              'properties': ?item.properties,
               'category_id': ?item.categoryId,
               // None given: the server fills in the remembered store.
               'store_id': ?item.storeId,
+              // A restored item keeps its place.
+              'sort_key': ?item.sortKey,
               'status': item.status.name,
             }, ignoreDuplicates: true)
-            .select(_itemColumns),
-      SetStatus(:final status, :final storeId) =>
-        items
+            .select(_itemColumns);
+      case SetStatus(:final status, :final storeId):
+        rows = await items
             .update({'status': status.name, 'store_id': ?storeId})
             .eq('id', op.itemId)
-            .select(_itemColumns),
-      EditItem(
-        :final name,
-        :final quantity,
-        :final categoryId,
-        :final storeId,
-      ) =>
-        items
-            .update({
-              'name': name,
-              'quantity': quantity,
-              'category_id': categoryId,
-              'store_id': storeId,
-            })
+            .select(_itemColumns);
+      case EditItem(:final changes):
+        rows = await items
+            .update(changes.toColumns())
             .eq('id', op.itemId)
-            .select(_itemColumns),
-      MoveItem(:final categoryId) =>
-        items
-            .update({'category_id': categoryId})
-            .eq('id', op.itemId)
-            .select(_itemColumns),
-      DeleteItem() => items.delete().eq('id', op.itemId).select('id'),
-    };
+            .select(_itemColumns);
+      case MoveItem(:final categoryId, :final storeId):
+        return await _rpcItem(op, 'move_item', {
+          'p_item': op.itemId,
+          'p_store': storeId,
+          'p_category': categoryId,
+        });
+      case PlaceItem(:final anchorId, :final edge):
+        return await _rpcItem(op, 'place_item', {
+          'p_item': op.itemId,
+          'p_anchor': anchorId,
+          'p_edge': edge.name,
+        });
+      case DeleteItem():
+        await items.delete().eq('id', op.itemId).select('id');
+        return null;
+    }
+    // No row back: the item is gone, or an upsert hit an existing id.
+    return rows.isEmpty
+        ? await _fetchItem(op.itemId)
+        : Item.fromJson(rows.single);
+  });
+
+  /// An RPC that returns the item's row. `P0002`: the item or the anchor is
+  /// gone; the item's current row (or null) acknowledges the op.
+  Future<Item?> _rpcItem(
+    ItemOp op,
+    String function,
+    Map<String, Object?> params,
+  ) async {
+    try {
+      final Object? result = await _client.rpc<dynamic>(
+        function,
+        params: params,
+      );
+      final row = _singleRow(result);
+      return row == null ? await _fetchItem(op.itemId) : Item.fromJson(row);
+    } on PostgrestException catch (e) {
+      if (e.code == 'P0002') {
+        return await _fetchItem(op.itemId);
+      }
+      rethrow;
+    }
   }
+
+  /// A function returning one row answers with an object, a set-returning
+  /// one with a list.
+  static Map<String, Object?>? _singleRow(Object? result) => switch (result) {
+    final Map<String, Object?> row => row,
+    [final Map<String, Object?> row, ...] => row,
+    _ => null,
+  };
 
   @override
   Future<List<Entry>> splitSpoken(String text) async {

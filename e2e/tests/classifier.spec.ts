@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { deleteItem, dragItemTo, expectGroup } from './catalog';
-import { addItem, apiAs, itemRow, newEmail, screenshot, signUpWithHousehold, tickBox } from './helpers';
+import { addItem, apiAs, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tickBox } from './helpers';
 
 test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household only', async ({ browser }) => {
   const peterEmail = newEmail('learn');
@@ -18,10 +18,9 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
 
   await addItem(peter, 'Zahnbürste');
   await expectGroup(peter, 'Zahnbürste', '👶 Drogerie');
-  await itemRow(peter, 'Zahnbürste').click();
-  await peter.getByRole('button', { name: /Kategorie/ }).click();
-  await peter.getByRole('menuitem', { name: 'Haushalt' }).click();
-  await peter.getByRole('button', { name: 'Speichern' }).click();
+  await openEdit(peter, 'Zahnbürste');
+  await pickInSheet(peter, 'Kategorie', 'Haushalt');
+  await saveEdit(peter);
   await expectGroup(peter, 'Zahnbürste', 'Haushalt');
   await tickBox(peter, 'Zahnbürste').click();
   await addItem(peter, 'Zahnbürsten');

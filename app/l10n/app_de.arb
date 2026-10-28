@@ -30,11 +30,38 @@
   "dictationAlreadyOnList": "Schon auf der Liste: {items}.",
   "@dictationAlreadyOnList": {"placeholders": {"items": {"type": "String"}}},
   "undo": "Rückgängig",
-  "editItem": "Eintrag bearbeiten",
-  "itemName": "Name",
+  "editTitle": "Bearbeiten: {name}",
+  "@editTitle": {"placeholders": {"name": {"type": "String"}}},
+  "editSheet": "Bearbeiten",
+  "fieldName": "Bezeichnung",
+  "fieldBrand": "Marke",
+  "brandNone": "ohne Marke",
   "itemQuantity": "Menge",
-  "itemQuantityHint": "z. B. 2 oder 500 g",
-  "itemCategory": "Kategorie",
+  "fieldProperties": "Eigenschaften",
+  "propertiesExample": "z. B. Bio, 1 l",
+  "quantityMinus": "Eins weniger",
+  "quantityPlus": "Eins mehr",
+  "noStore": "Ohne Laden",
+  "chipStore": "Laden: {name}",
+  "@chipStore": {
+    "description": "Screen-reader name of the store chip in the edit and add sheets",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chipCategory": "Kategorie: {name}",
+  "@chipCategory": {
+    "description": "Screen-reader name of the category chip",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryAuto": "Kategorie: automatisch",
+  "editHint": "Gespeichert wird nur, was du änderst",
   "save": "Speichern",
   "cancel": "Abbrechen",
   "delete": "Löschen",
@@ -142,8 +169,6 @@
   "@hideHiddenItems": {"placeholders": {"count": {"type": "int"}, "store": {"type": "String"}}},
   "emptyAtStore": "Für {store} steht nichts auf der Liste.",
   "@emptyAtStore": {"placeholders": {"store": {"type": "String"}}},
-  "itemStore": "Geschäft",
-  "anyStore": "Alle Geschäfte",
   "manageCategories": "Kategorien verwalten",
   "categoriesTitle": "Kategorien",
   "categoriesHint": "In dieser Reihenfolge sortiert „Alle“ die Liste. Tippe auf eine Kategorie, um sie umzubenennen.",
@@ -168,8 +193,6 @@
   "newItems": "{count} neu",
   "@newItems": {"placeholders": {"count": {"type": "int"}}},
   "newItem": "Neu",
-  "addedBy": "Von {name} hinzugefügt",
-  "@addedBy": {"placeholders": {"name": {"type": "String"}}},
   "suggestion": "Vorschlag: {label}",
   "@suggestion": {"placeholders": {"label": {"type": "String"}}},
   "dueSuggestions": "Brauchen wir wieder?",
