@@ -14,6 +14,7 @@ for the full product spec.
 scripts/bootstrap.sh          # Flutter, Docker, Supabase CLI, Deno, gitleaks, Playwright
 scripts/dev.sh                # local Supabase + web app on http://127.0.0.1:3000
 scripts/verify.sh             # every CI gate (scripts/gates/), incl. Playwright e2e
+scripts/fg help               # the verification CLI: drive the app, seed test accounts, multi-client sync
 ```
 
 Local mail (magic links) lands in Mailpit at http://127.0.0.1:54324.
@@ -26,7 +27,8 @@ Local mail (magic links) lands in Mailpit at http://127.0.0.1:54324.
 | `app/` | Flutter app |
 | `supabase/` | migrations, pgTAP tests, edge functions, local config |
 | `e2e/` | Playwright tests against the web build |
-| `scripts/` | bootstrap, dev, verify |
+| `scripts/` | bootstrap, dev, verify, `fg` (verification CLI) |
+| `test/fixtures/` | test account scenarios for `fg seed` (`docs/TEST_FIXTURES.md`) |
 | `docs/` | spec, decisions, open items for Peter, emotely reuse notes |
 
 ## Configuration

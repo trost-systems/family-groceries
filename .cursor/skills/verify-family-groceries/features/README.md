@@ -9,6 +9,8 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Run `fg doctor` and require `"ok": true` (exit code 0). On a failure it prints `"ok": false` with `error.code` `unhealthy` and every check, each failed one with its `fix`.
 - Sign both apps in: `fg login peter` and `fg login lea`. Both users are in the household "Familie Test", password `test-password-123`.
 - The seed has no items. Recipes create their own and mark them bought afterwards.
+- For any other state (long lists, weeks of history with usuals, many stores, three members mid-shop, awkward names, a pending invite, a user without a household), seed a scenario instead: `fg scenario list`, `fg seed <scenario>`, then `--as <run>:<handle>` on any user flag, and `fg teardown <run>` at the end. Scenario runs never reset the database. See `docs/TEST_FIXTURES.md`.
+- Sync between two or three members is driven on web with `fg sync <scenario> --clients 2|3 --script <file>`, which captures frames, videos and latencies by itself (see [Live sync](./live-sync.md)).
 - Never drive an instance that this run did not start.
 
 ## Driving conventions

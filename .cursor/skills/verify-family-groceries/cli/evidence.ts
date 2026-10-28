@@ -63,7 +63,7 @@ export const evidenceCommands: Command[] = [
   {
     name: 'screenshot',
     summary: "Save a PNG of a client to the run's evidence directory.",
-    usage: 'fg screenshot [--name NAME] [--client peter|lea] [--native]',
+    usage: 'fg screenshot [--name NAME] [--client NAME] [--native]',
     description:
       "Marionette renders the app's own frame (no window chrome). --native grabs the X display or the emulator screen instead (shows the soft keyboard on Android). Files go to $FG_EVIDENCE_DIR/<run>/ and survive `fg down`.",
     flags: [{ name: 'name', help: 'File name without extension (default <client>-<time>).' }, clientFlag, nativeFlag],
@@ -101,7 +101,7 @@ export const evidenceCommands: Command[] = [
   {
     name: 'record start',
     summary: 'Start a screen recording of a client (WebM via Marionette, or --native).',
-    usage: 'fg record start [--name NAME] [--client peter|lea] [--native]',
+    usage: 'fg record start [--name NAME] [--client NAME] [--native]',
     description:
       "Runs in the background until `fg record stop`. Marionette streams the app's frames to ffmpeg (WebM). --native records the X display with ffmpeg (MP4) or the emulator with adb screenrecord (MP4, max 3 min). One recording per name.",
     flags: [{ name: 'name', help: 'Recording name and file name (default <client>-<time>).' }, clientFlag, nativeFlag],
@@ -199,7 +199,7 @@ export const evidenceCommands: Command[] = [
   {
     name: 'logs',
     summary: "Tail app output (default) or a Supabase service's container log.",
-    usage: 'fg logs [--client peter|lea] [--service auth|rest|realtime|edge_runtime|db|kong|inbucket] [--lines N] [--grep REGEX]',
+    usage: 'fg logs [--client NAME] [--service auth|rest|realtime|edge_runtime|db|kong|inbucket] [--lines N] [--grep REGEX]',
     description:
       "App logs are the client's stdout/stderr (print, debugPrint, Flutter errors, the VM service line). --service reads `docker logs` of this instance's container.",
     flags: [clientFlag, { name: 'service', help: 'Supabase container: auth, rest, realtime, edge_runtime, db, kong, inbucket.' }, {
@@ -242,7 +242,7 @@ export const evidenceCommands: Command[] = [
   {
     name: 'trace',
     summary: '(planned) Record a performance timeline of an interaction.',
-    usage: 'fg trace start|stop [--client peter|lea]',
+    usage: 'fg trace start|stop [--client NAME]',
     description:
       'Placeholder for the profiling job: will capture a Dart/Flutter timeline over the VM service (profile build) and save it next to the other evidence.',
     examples: ['fg trace start', 'fg trace stop'],
@@ -259,7 +259,7 @@ export const evidenceCommands: Command[] = [
   {
     name: 'memory',
     summary: "(planned) Report the app's memory use.",
-    usage: 'fg memory [--client peter|lea]',
+    usage: 'fg memory [--client NAME]',
     description: 'Placeholder for the profiling job: will read heap usage over the VM service (getMemoryUsage) and process RSS.',
     examples: ['fg memory'],
     planned: true,

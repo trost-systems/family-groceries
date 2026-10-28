@@ -12,6 +12,7 @@ import {
   type SurfaceKind,
   USERS,
 } from './instance.ts';
+import { resolveMember } from './members.ts';
 import { Marionette, screenOf } from './marionette.ts';
 import { stopRecording } from './evidence.ts';
 import {
@@ -56,9 +57,9 @@ async function stackRunning(ctx: Ctx): Promise<StackEnv | null> {
 
 async function usersReady(ctx: Ctx, env: StackEnv): Promise<boolean> {
   try {
-    await signIn(ctx.sh, env, 'peter');
-    await signIn(ctx.sh, env, 'lea');
-    const [a, b] = [await householdOf(ctx.sh, ctx.inst, 'peter'), await householdOf(ctx.sh, ctx.inst, 'lea')];
+    await signIn(ctx.sh, env, USERS.peter);
+    await signIn(ctx.sh, env, USERS.lea);
+    const [a, b] = [await householdOf(ctx.sh, ctx.inst, USERS.peter.email), await householdOf(ctx.sh, ctx.inst, USERS.lea.email)];
     return a !== null && a === b;
   } catch {
     return false;
@@ -70,10 +71,10 @@ const surfaceFor = (primary: SurfaceKind, name: ClientName): SurfaceKind => (nam
 
 function parseClients(raw: string | undefined): ClientName[] {
   const names = (raw ?? 'peter').split(',').map((s) => s.trim()).filter(Boolean);
-  for (const n of names) {
-    if (n !== 'peter' && n !== 'lea') throw usage(`Unknown client "${n}".`, 'Use --clients peter or --clients peter,lea.');
+  if (names.length > 9) {
+    throw usage('At most 9 clients (one X display each).', 'Each Linux client takes about 650 MB; 2-3 is the sensible limit here.');
   }
-  return names as ClientName[];
+  return names.map(clientName);
 }
 
 type Check = { name: string; ok: boolean; detail: string; fix?: string };
@@ -299,11 +300,16 @@ export const lifecycleCommands: Command[] = [
   {
     name: 'up',
     summary: 'Bring the instance to a usable state: stack, seed, build, app clients, Marionette.',
-    usage: 'fg up [--clients peter|peter,lea] [--surface linux|android] [--only stack] [--rebuild] [--fresh] [--run NAME] [--dry-run]',
+    usage:
+      'fg up [--clients peter,lea|<run>:<handle>,...] [--surface linux|android] [--only stack] [--rebuild] [--fresh] [--run NAME] [--dry-run]',
     description:
       "Idempotent: reuses what already runs and is current. Starts this instance's Supabase stack (ports from FG_PORT_PREFIX), seeds peter@fg.test and lea@fg.test in one household when they are missing (--fresh always reseeds), builds the debug app from test_driver/main_marionette.dart when the source changed, launches each client and waits until Marionette answers. A new evidence run directory starts when no client was running (or with --run). Ready = this command exits 0; its JSON names every URL and path.",
     flags: [
-      { name: 'clients', help: 'Apps to run: peter (default) or peter,lea. Each logs in as itself with `fg login`.' },
+      {
+        name: 'clients',
+        help:
+          'Apps to run, named after their user: peter (default), peter,lea, or fixture members like fx-1025-1432-k3x9:mia. Each logs in as itself with `fg login`.',
+      },
       surfaceFlag,
       { name: 'only', help: 'stack: start Supabase (and seed) only.', choices: ['stack'] },
       { name: 'rebuild', type: 'boolean', help: 'Rebuild and relaunch the app even if nothing changed.' },
@@ -316,6 +322,7 @@ export const lifecycleCommands: Command[] = [
       const { inst, state } = ctx;
       const surface = surfaceOf(ctx, str(args, 'surface'));
       const names = parseClients(str(args, 'clients'));
+      for (const n of names) await resolveMember(ctx.sh, inst, n);
       await writeWorkdir(ctx, inst);
       let env = await stackRunning(ctx);
       const signature = await stackSignature(ctx.sh, inst);
@@ -382,7 +389,7 @@ export const lifecycleCommands: Command[] = [
               delete state.clients[name];
             }
             if (kind === 'android') await ensureEmulator(ctx, inst, state);
-            const started = kind === 'android' ? await startAndroid(ctx, inst, fp) : await startLinux(ctx, inst, name, fp);
+            const started = kind === 'android' ? await startAndroid(ctx, inst, fp) : await startLinux(ctx, inst, state, name, fp);
             if (started) {
               state.clients[name] = started;
               await ctx.save();
@@ -415,10 +422,10 @@ export const lifecycleCommands: Command[] = [
   {
     name: 'restart',
     summary: 'Quit and reopen an app client like a user would, keeping its login.',
-    usage: 'fg restart [--client peter|lea] [--dry-run]',
+    usage: 'fg restart [--client NAME] [--dry-run]',
     description:
       'Ends the app process and launches the same build again with the same stored session, then waits for Marionette. Use it to prove launch behavior: what shows and what has focus right after opening the app. `fg up --rebuild` instead starts signed out.',
-    flags: [{ name: 'client', help: 'peter (default) or lea.', choices: ['peter', 'lea'] }],
+    flags: [{ name: 'client', help: 'Which app: peter (default), lea, or the user name it was started with (fg up --clients).' }],
     examples: ['fg restart', 'fg restart --client lea'],
     destructive: true,
     async run(ctx, args) {
@@ -532,24 +539,6 @@ export const lifecycleCommands: Command[] = [
         clients: state.clients as unknown as JsonObject,
         recordings: state.recordings as unknown as JsonObject,
       });
-    },
-  },
-  {
-    name: 'seed',
-    summary: 'Reset the database and create peter@fg.test + lea@fg.test in one household.',
-    usage: 'fg seed [--dry-run]',
-    description:
-      "Runs `supabase db reset` on this instance (all data is lost), then creates both users through the auth admin API and the household through the app's own RPCs: create_household as peter, create_invite, join_household as lea. Running apps keep stale sessions: `fg logout` and `fg login` them afterwards.",
-    examples: ['fg seed --dry-run', 'fg seed'],
-    destructive: true,
-    async run(ctx) {
-      if (!(await stackRunning(ctx))) {
-        throw new FgError('stack_down', 'The stack is not running.', 'Run `fg up --only stack` (it seeds too).');
-      }
-      const result = await seed(ctx, ctx.inst);
-      ctx.state.seededAt = new Date().toISOString();
-      await ctx.save();
-      return { ...result, next: 'Running apps hold stale sessions now: `fg up` relaunches them signed out.' };
     },
   },
 ];

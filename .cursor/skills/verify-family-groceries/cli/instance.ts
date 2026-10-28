@@ -2,10 +2,11 @@
 
 import { FgError, type Shell } from './core.ts';
 
-export type ClientName = 'peter' | 'lea';
+/** An app client is named after the user it signs in as: peter, lea, <run>:<handle> or a bare handle of the current run. */
+export type ClientName = string;
 export type SurfaceKind = 'linux' | 'android';
 
-export const USERS: Record<ClientName, { email: string; password: string; name: string }> = {
+export const USERS: Record<'peter' | 'lea', { email: string; password: string; name: string }> = {
   peter: { email: 'peter@fg.test', password: 'test-password-123', name: 'Peter' },
   lea: { email: 'lea@fg.test', password: 'test-password-123', name: 'Lea' },
 };
@@ -18,13 +19,16 @@ export const ANDROID_ABI = Deno.build.arch === 'aarch64'
   ? { image: 'arm64-v8a', target: 'android-arm64' }
   : { image: 'x86_64', target: 'android-x64' };
 
+const USER_REF = /^([a-z0-9][a-z0-9-]{2,40}:)?[a-z][a-z0-9]{0,15}$/;
+
+/** Checks a user/client name's syntax (no I/O); members.ts resolves it to credentials. */
 export function clientName(raw: string | undefined): ClientName {
   const name = raw ?? 'peter';
-  if (name === 'peter' || name === 'lea') return name;
+  if (USER_REF.test(name)) return name;
   throw new FgError(
     'unknown_user',
-    `Unknown user "${name}".`,
-    'The seeded users are "peter" and "lea" (one household).',
+    `"${name}" is not a user.`,
+    'Use peter or lea (baseline `fg seed`), <run>:<handle> from `fg seed <scenario>`, or a bare handle of the current run.',
     64,
   );
 }
@@ -35,6 +39,8 @@ export interface Instance {
   prefix: string;
   projectId: string;
   stateDir: string;
+  /** ~/.cache/fg: shared by every instance (hosted fixture runs live here). */
+  cacheRoot: string;
   /** Generated Supabase workdir: config.toml with this port block, symlinks to the repo's sql/functions. */
   workdir: string;
   apiUrl: string;
@@ -77,7 +83,9 @@ export async function loadInstance(sh: Shell, env: Record<string, string | undef
     prefix,
     projectId,
     stateDir,
-    workdir: `${stateDir}/stack`,
+    cacheRoot: `${home}/.cache/fg`,
+    // FG_STACK_WORKDIR points fg at a stack it did not start, e.g. CI's `supabase start` in the repo.
+    workdir: env.FG_STACK_WORKDIR ?? `${stateDir}/stack`,
     apiUrl: `http://127.0.0.1:${prefix}21`,
     dbPort: Number(`${prefix}22`),
     mailUrl: `http://127.0.0.1:${prefix}24`,

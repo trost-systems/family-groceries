@@ -1,0 +1,13 @@
+# A Flutter test that waits wall time (`Future.delayed`) for work the code's own timers start
+# races them: timers that come due together run back to back before any microtask, so after a
+# stall the test resumes mid-reload (DECISIONS 18.17). Wait with `elapse()` in the test file,
+# which drains the event queue after the delay, or run the test under `fakeAsync`.
+id: no-wall-time-wait-in-tests
+language: dart
+severity: error
+files:
+  - app/test/**
+rule:
+  kind: member_expression
+  regex: '^Future\s*(<[^>]*>)?\s*\.\s*delayed$'
+message: 'Future.delayed in a test races the timers it waits for: use elapse() (waits, then drains the event queue) or fakeAsync'

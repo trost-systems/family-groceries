@@ -31,3 +31,13 @@ log "playwright"
 cd "$REPO_ROOT/e2e"
 [[ -d node_modules ]] || npm ci
 npx playwright test "$@"
+
+# Job 18: a two-client fg sync smoke test on the web build above (one add, one tick, the artifacts
+# and the index), once per full run: on CI's first shard, or locally without a subset. It reuses
+# this gate's e2e lock (fg sync sees that a parent holds it).
+if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
+  log "fg sync smoke test"
+  fg_on_repo_stack
+  export FG_EVIDENCE_DIR="$REPO_ROOT/e2e/sync-evidence"
+  "$REPO_ROOT/e2e/sync-smoke.sh" --web-build "$REPO_ROOT/app/build/web"
+fi

@@ -19,7 +19,7 @@ scripts/fg help tap          # one command: flags and examples
 | `linux` | The debug app (`app/test_driver/main_marionette.dart`) as a Linux desktop window on its own Xvfb display, 412×892 | Default on boxes where the emulator cannot run. Two clients (peter, lea) at once for live-sync proofs. |
 | `android` | The same entrypoint as a debug APK on a headless emulator (AVD `fg-<prefix>`, 2 GB) | Mobile-only behavior: the soft keyboard, deep links, the magic-link return. One emulator per instance; lea then runs on linux. |
 | backend | `fg db query`, `fg fn call`, `fg peer`, `fg mail` | Server state, RLS, Edge Functions, a UI-less second client, the local inbox. |
-| web (fallback) | `e2e/` Playwright against the web build (`scripts/verify.sh`) | Headless CI checks only. Not a substitute for driving the app here. |
+| web | `fg sync`: the web build in 1-3 Playwright contexts of one Chromium, each a household member | Multi-client sync with automatic frames, videos and latencies; offline/online per client. `e2e/` Playwright (`scripts/verify.sh`) stays the CI suite. |
 
 `FG_SURFACE` picks the surface. If unset, it is `android`, unless `~/.config/fg/kvm-broken` exists. On the shared build box that marker exists: starting a KVM guest there crashes the host kernel (`kernel BUG at arch/x86/kvm/x86.c:702`). Never delete the marker to "try again" on that box.
 
@@ -96,11 +96,51 @@ Proof standards:
 
 The reference proof is `journeys/quick-add-live-sync.sh`. It prints `PASS` with timings and the evidence path, or `FAIL: <step>`.
 
+## Fixtures
+
+Seed test accounts in a known state instead of building it by hand. Scenarios live in `test/fixtures/scenarios/*.yaml` (format and every scenario: `docs/TEST_FIXTURES.md`).
+
+```bash
+scripts/fg scenario list                         # empty-new-user, solo-long-list, household-3-mid-shop, heavy-history, many-stores, edge-cases, pending-invite, h-list-walk
+scripts/fg scenario show heavy-history           # the plan with absolute times and the checks
+scripts/fg seed heavy-history                    # a run: users <handle>.<run>@fg-test.invalid, data, checks through RLS
+scripts/fg db query "select name from items where status = 'active'" --as <run>:jo
+scripts/fg runs                                  # runs on this stack; orphaned ones too
+scripts/fg teardown <run>                        # deletes exactly the run; leftovers all 0; a second call is a no-op
+scripts/fg teardown --stale                      # runs older than 24 h, also those whose manifest is lost
+```
+
+- `fg seed <scenario>` never resets the database; plain `fg seed` still resets it to peter + lea.
+- Any user flag (`--as`, `fg peer`, `fg login`, `fg mail --to`, `fg up --clients`, `--client`) takes `<run>:<handle>`, or a bare handle of the last run seeded on this stack.
+- Passwords stay in `$FG_STATE_DIR/runs/<run>.json` (mode 600). Never paste them anywhere.
+- `--target hosted` seeds the real project with test accounts only and tears down on failure; use it only to check production configuration, and tear down yourself (`fg runs --target hosted`).
+
+## Multi-client sync
+
+`fg sync` runs a short script in two or three signed-in web clients of one household and captures by itself: a frame of all clients after every step and whenever any client's screen changes (side by side, labelled, timed), one video per client and a composite video, and the propagation latency per client.
+
+```bash
+scripts/fg sync household-3-mid-shop --clients 3 --script .cursor/skills/verify-family-groceries/journeys/sync-3-clients.fgs
+open "$(scripts/fg env | jq -r .evidenceDir | xargs dirname)/<run>/sync/index.html"   # or the evidence.index path from the JSON
+```
+
+```text
+A add "Hafermilch"
+expect B,C see "Hafermilch" within 2000ms
+B tick "Butter"
+expect A,C gone "Butter" within 2000ms
+C edit "Bananen" quantity "8"
+B offline
+B online
+```
+
+It takes `/tmp/fg-e2e.lock` itself (one Playwright run per box), exits 1 with `sync_failed` and the failure frames when an expectation fails, and tears down the run it seeded unless `--keep`. Steps and how a native (Marionette) driver plugs in: `docs/TEST_FIXTURES.md`.
+
 ## Backend
 
 ```bash
 scripts/fg db query "select name, status from items order by created_at desc limit 5"   # read-only rows
-scripts/fg db query "select count(*) from items" --as lea          # as lea, through RLS
+scripts/fg db query "select count(*) from items" --as lea          # as lea, through RLS (or --as <run>:<handle>)
 scripts/fg db query "update items set status = 'bought' where name = 'Milch'" --write --dry-run
 scripts/fg fn call health --as anon                                 # Edge Functions over HTTP
 scripts/fg peer lea add Butter                                      # REST client as lea
@@ -130,6 +170,7 @@ On a machine with a working emulator (KVM on Linux, or a Mac): run `fg setup --s
 
 - `fg` (and `scripts/fg`): the CLI. The source is in `cli/` (Deno). Tests: `cd cli && deno test -A`. CI runs them.
 - `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way. Each journey starts with peter on the list and leaves both clients there (lea signed in as the seeded lea), so they run back to back in any order. A new journey keeps that contract.
+- `journeys/*.fgs`: `fg sync` scripts (three-client sync with reconnect, a deliberately failing expectation, a hosted sign-in).
 - `features/`: one recipe per user-facing feature. Read `features/README.md` first.
 
 When you ship a feature, add or update its `features/<feature>.md` in the same PR, and give new widgets a ValueKey where text is not stable. `/maintain-verification-skill` keeps the map honest.

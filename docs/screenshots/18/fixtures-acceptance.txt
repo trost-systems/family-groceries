@@ -1,0 +1,17 @@
+edge-cases             fx-1025-0846-xcrs  checks 8/8  users 2  0.5s
+empty-new-user         fx-1025-0846-xer3  checks 1/1  users 1  0.2s
+heavy-history          fx-1025-0846-u8pr  checks 11/11  users 2  0.8s
+household-3-mid-shop   fx-1025-0846-tp9a  checks 12/12  users 3  0.5s
+many-stores            fx-1025-0846-d87e  checks 8/8  users 2  0.4s
+pending-invite         fx-1025-0846-5cjy  checks 8/8  users 2  0.3s
+solo-long-list         fx-1025-0846-2rkk  checks 7/7  users 1  0.4s
+RLS: fx-1025-0846-tp9a:mia sees 30 own items, 0 of fx-1025-0846-u8pr; fx-1025-0846-u8pr:jo sees 113 own, 0 of fx-1025-0846-tp9a
+secrets: no seeded password in any output; manifests are mode 600
+teardown fx-1025-0846-xcrs    users 2 households 1, 16 leftover counts all 0; second call alreadyClean
+teardown fx-1025-0846-u8pr    users 2 households 1, 16 leftover counts all 0; second call alreadyClean
+teardown fx-1025-0846-tp9a    users 3 households 1, 16 leftover counts all 0; second call alreadyClean
+teardown fx-1025-0846-d87e    users 2 households 1, 16 leftover counts all 0; second call alreadyClean
+teardown fx-1025-0846-5cjy    users 2 households 1, 16 leftover counts all 0; second call alreadyClean
+teardown fx-1025-0846-2rkk    users 1 households 1, 16 leftover counts all 0; second call alreadyClean
+orphan: fx-1025-0846-xer3 (manifest deleted) listed as orphaned, removed by teardown --stale, leftovers 0
+PASS

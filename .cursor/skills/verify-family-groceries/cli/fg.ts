@@ -1,16 +1,38 @@
 /** fg: drive the real Family Groceries app and its backend, and prove behavior. Entry point. */
 
-import { type Args, type Command, type Ctx, EXIT_USAGE, FgError, type RunOptions, type Shell, type SpawnOptions, usage } from './core.ts';
+import {
+  type Args,
+  type Command,
+  type Ctx,
+  EXIT_USAGE,
+  FgError,
+  interrupted,
+  type RunOptions,
+  type Shell,
+  type SpawnOptions,
+  usage,
+} from './core.ts';
 import { loadInstance, readState, writeState } from './instance.ts';
 import { lifecycleCommands } from './lifecycle.ts';
 import { driveCommands } from './drive.ts';
 import { evidenceCommands } from './evidence.ts';
 import { backendCommands } from './backend.ts';
+import { fixtureCommands } from './fixture_commands.ts';
+import { syncCommands } from './sync.ts';
 
-export const COMMANDS: Command[] = [...lifecycleCommands, ...driveCommands, ...evidenceCommands, ...backendCommands];
+export const COMMANDS: Command[] = [
+  ...lifecycleCommands,
+  ...driveCommands,
+  ...evidenceCommands,
+  ...backendCommands,
+  ...fixtureCommands,
+  ...syncCommands,
+];
 
 const GROUPS: [string, string[]][] = [
-  ['Lifecycle', ['setup', 'up', 'restart', 'down', 'doctor', 'env', 'seed']],
+  ['Lifecycle', ['setup', 'up', 'restart', 'down', 'doctor', 'env']],
+  ['Fixtures (test accounts)', ['scenario list', 'scenario show', 'seed', 'runs', 'teardown']],
+  ['Multi-client sync (web)', ['sync']],
   ['Drive the app (Marionette)', ['login', 'logout', 'find', 'tap', 'type', 'press', 'back', 'swipe', 'wait', 'marionette']],
   ['Evidence', ['screenshot', 'record start', 'record stop', 'logs']],
   ['Backend', ['db query', 'fn call', 'peer', 'mail']],
@@ -31,12 +53,13 @@ export function overview(): string {
     lines.push(`${group}:`);
     for (const name of names) {
       const c = COMMANDS.find((x) => x.name === name)!;
-      lines.push(`  ${name.padEnd(14)}${c.summary}${c.destructive ? ' [--dry-run]' : ''}`);
+      lines.push(`  ${name.padEnd(15)}${c.summary}${c.destructive ? ' [--dry-run]' : ''}`);
     }
     lines.push('');
   }
   lines.push(
     'Start: fg up --clients peter,lea && fg doctor && fg login peter && fg login lea --client lea',
+    'Fixtures: fg scenario list; fg seed <scenario> -> run id; --as <run>:<handle>; fg teardown <run>. Sync: fg sync <scenario> --clients 3 --script F.',
     'Errors: {"ok":false,"error":{"code","message","hint"}}; exit 1 failed, 64 bad usage. Follow the hint.',
     'Instance: FG_PORT_PREFIX (default 543 -> ports 54321..), FG_PROJECT_ID, FG_SURFACE (linux|android),',
     '          FG_AVD, FG_EMU_PORT, FG_EVIDENCE_DIR (default ~/fg-evidence), FG_STATE_DIR.',
@@ -129,8 +152,37 @@ function unknown(name: string): FgError {
   );
 }
 
+/** Reads a stream to the end in the background; cancel() stops early. */
+function collect(stream: ReadableStream<Uint8Array>) {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  const done = (async () => {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      chunks.push(value);
+    }
+  })().catch(() => {});
+  return {
+    cancel: () => reader.cancel().catch(() => {}),
+    text: async () => {
+      await done;
+      const all = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+      let at = 0;
+      for (const c of chunks) {
+        all.set(c, at);
+        at += c.length;
+      }
+      return new TextDecoder().decode(all);
+    },
+  };
+}
+
 export const realShell: Shell = {
   async run(cmd: string[], opts: RunOptions = {}) {
+    const stop = opts.timeoutMs || opts.signal
+      ? AbortSignal.any([...(opts.timeoutMs ? [AbortSignal.timeout(opts.timeoutMs)] : []), ...(opts.signal ? [opts.signal] : [])])
+      : undefined;
     try {
       const child = new Deno.Command(cmd[0], {
         args: cmd.slice(1),
@@ -139,16 +191,22 @@ export const realShell: Shell = {
         stdin: opts.stdin === undefined ? 'null' : 'piped',
         stdout: 'piped',
         stderr: 'piped',
-        signal: opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined,
+        signal: stop,
       }).spawn();
       if (opts.stdin !== undefined) {
         const w = child.stdin.getWriter();
         await w.write(new TextEncoder().encode(opts.stdin));
         await w.close();
       }
-      const out = await child.output();
-      const dec = new TextDecoder();
-      return { code: out.code, stdout: dec.decode(out.stdout), stderr: dec.decode(out.stderr) };
+      const out = collect(child.stdout);
+      const err = collect(child.stderr);
+      const status = await child.status;
+      // A killed process's own children (a browser) may hold its pipes open: once stopped, don't wait for them.
+      if (stop?.aborted) {
+        await Promise.all([out.cancel(), err.cancel()]);
+        if (opts.signal?.aborted) throw interrupted(`\`${cmd[0]}\``);
+      }
+      return { code: status.code, stdout: await out.text(), stderr: await err.text() };
     } catch (e) {
       if (e instanceof Deno.errors.NotFound) {
         throw new FgError('missing_tool', `\`${cmd[0]}\` is not installed or not on PATH.`, 'Run `fg setup` (see --dry-run first).');
@@ -193,7 +251,7 @@ export const realShell: Shell = {
     }
   },
   readText: (path) => Deno.readTextFile(path),
-  writeText: (path, text) => Deno.writeTextFile(path, text),
+  writeText: (path, text, opts) => Deno.writeTextFile(path, text, opts?.mode ? { mode: opts.mode } : undefined),
   mkdir: (path) => Deno.mkdir(path, { recursive: true }),
   remove: (path) => Deno.remove(path, { recursive: true }).catch(() => {}),
   fetch: (url, init) => fetch(url, init),

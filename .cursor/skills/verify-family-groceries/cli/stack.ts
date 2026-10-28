@@ -1,7 +1,7 @@
 /** The local Supabase stack: generated workdir, status, SQL, auth and the seed. */
 
 import { type Ctx, FgError, type JsonObject, type Shell } from './core.ts';
-import { type ClientName, HOUSEHOLD, type Instance, USERS } from './instance.ts';
+import { HOUSEHOLD, type Instance, USERS } from './instance.ts';
 
 /** The repo's config.toml with this instance's port block and project id; URLs (e.g. the test OIDC issuer) stay as they are. */
 export function rewriteConfig(toml: string, prefix: string, projectId: string): string {
@@ -58,7 +58,11 @@ export async function stackSignature(sh: Shell, inst: Instance): Promise<string>
   return Array.from(new Uint8Array(digest).slice(0, 8), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export async function mustRun(sh: Shell, cmd: string[], opts: { cwd?: string; stdin?: string; timeoutMs?: number } = {}) {
+export async function mustRun(
+  sh: Shell,
+  cmd: string[],
+  opts: { cwd?: string; stdin?: string; timeoutMs?: number; signal?: AbortSignal } = {},
+) {
   const res = await sh.run(cmd, opts);
   if (res.code !== 0) {
     throw new FgError(
@@ -139,8 +143,8 @@ export interface Session {
   userId: string;
 }
 
-export async function signIn(sh: Shell, env: StackEnv, user: ClientName): Promise<Session> {
-  const { email, password } = USERS[user];
+export async function signIn(sh: Shell, env: StackEnv, user: { email: string; password: string }): Promise<Session> {
+  const { email, password } = user;
   const res = await sh.fetch(`${env.apiUrl}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { apikey: env.publishableKey, 'content-type': 'application/json' },
@@ -151,7 +155,9 @@ export async function signIn(sh: Shell, env: StackEnv, user: ClientName): Promis
     throw new FgError(
       'login_failed',
       `${email} cannot sign in: ${body.msg ?? body.error_description ?? res.status}.`,
-      'Run `fg seed` to recreate the test users (it resets the database).',
+      email.endsWith('@fg.test')
+        ? 'Run `fg seed` to recreate the test users (it resets the database).'
+        : 'The fixture run may be torn down: `fg runs`.',
     );
   }
   return { accessToken: body.access_token, userId: body.user.id };
@@ -204,8 +210,8 @@ export async function seed(ctx: Ctx, inst: Instance): Promise<JsonObject> {
     }
     await res.body?.cancel();
   }
-  const peter = await signIn(ctx.sh, env, 'peter');
-  const lea = await signIn(ctx.sh, env, 'lea');
+  const peter = await signIn(ctx.sh, env, USERS.peter);
+  const lea = await signIn(ctx.sh, env, USERS.lea);
   const household = (await restAs(ctx.sh, env, peter, 'rpc/create_household', {
     method: 'POST',
     body: JSON.stringify({ p_name: HOUSEHOLD }),
@@ -243,11 +249,13 @@ async function untilReady(sh: Shell, env: StackEnv): Promise<void> {
   );
 }
 
-export async function householdOf(sh: Shell, inst: Instance, user: ClientName): Promise<string | null> {
+export async function householdOf(sh: Shell, inst: Instance, email: string): Promise<string | null> {
   const rows = await sqlRows(
     sh,
     inst,
-    `select m.household_id from public.household_members m join auth.users u on u.id = m.user_id where u.email = '${USERS[user].email}'`,
+    `select m.household_id from public.household_members m join auth.users u on u.id = m.user_id where u.email = '${
+      email.replaceAll("'", "''")
+    }'`,
   );
   return (rows[0]?.household_id as string | undefined) ?? null;
 }

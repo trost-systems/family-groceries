@@ -18,7 +18,7 @@ log() { printf '\033[1;34m[bootstrap]\033[0m %s\n' "$*"; }
 log "apt packages"
 sudo apt-get update -qq || log "apt-get update failed (mirror?); continuing with cached package lists"
 sudo apt-get install -y -qq curl git unzip xz-utils zip jq ca-certificates docker.io \
-  shellcheck ruby ruby-dev build-essential >/dev/null
+  shellcheck ruby ruby-dev build-essential ffmpeg >/dev/null  # ffmpeg: fg sync composite video (job 18)
 
 log "pg_dump 17 and age (the db gate's backup restore drill)"
 "$REPO_ROOT/scripts/backup/install-tools.sh" >/dev/null

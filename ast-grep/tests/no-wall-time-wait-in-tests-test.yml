@@ -1,0 +1,17 @@
+id: no-wall-time-wait-in-tests
+valid:
+  - |
+    Future<void> waitForReload() async {
+      await elapse(const Duration(milliseconds: 300));
+    }
+  - |
+    fakeAsync((async) => async.elapse(const Duration(seconds: 2)));
+  - |
+    final value = Future.value(1);
+invalid:
+  - |
+    Future<void> waitForReload() async {
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+    }
+  - |
+    Future<void> saved() => Future.delayed(const Duration(milliseconds: 400));

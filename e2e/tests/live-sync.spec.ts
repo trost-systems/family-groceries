@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot, signUp,
-  signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot,
+  signUp, signUpWithHousehold, tickBox, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -19,23 +19,23 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await expect(itemRow(lea, 'Milch'), 'the joiner sees the existing list').toBeVisible();
 
   await addItem(peter, 'Bananen');
-  await expect(itemRow(lea, 'Bananen'), 'an add in A appears in B').toBeVisible({ timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an add in A appears in B').toBeVisible({ timeout }));
 
   await tickBox(lea, 'Milch').click();
-  await expect(itemRow(peter, 'Milch'), 'a tick in B disappears in A').toHaveCount(0, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Milch'), 'a tick in B disappears in A').toHaveCount(0, { timeout }));
 
   await addItem(lea, 'Windeln');
-  await expect(itemRow(peter, 'Windeln'), 'an add in B appears in A').toBeVisible({ timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Windeln'), 'an add in B appears in A').toBeVisible({ timeout }));
 
   await openEdit(peter, 'Bananen');
   await typeInto(editField(peter, 'Menge'), '6');
   await saveEdit(peter);
   // "Neu" stays on a partner's item until it was on screen for 3 s, which this test may not reach.
-  await expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6$/, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen (Neu )?6$/, { timeout }));
 
   await openEdit(lea, 'Windeln');
   await editSheet(lea).getByRole('button', { name: 'Löschen' }).click();
-  await expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout: 2_000 });
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout }));
 
   await screenshot(peter, '05-live-sync-a');
   await screenshot(lea, '06-live-sync-b');
@@ -146,9 +146,16 @@ test('a change made before the channel is live still shows up', async ({ page })
 
 /** Routes the page's Realtime socket through the test so it can play the server's part. */
 async function interceptRealtime(page: import('@playwright/test').Page) {
-  const state: { joined?: unknown[]; live: boolean; close: () => void; closeChannel: () => void } = {
+  const state: {
+    joined?: unknown[];
+    live: boolean;
+    close: () => void;
+    closeServer: () => Promise<void>;
+    closeChannel: () => void;
+  } = {
     live: false,
     close: () => {},
+    closeServer: async () => {},
     closeChannel: () => {},
   };
   await page.routeWebSocket(/\/realtime\/v1\/websocket/, (ws) => {
@@ -163,6 +170,10 @@ async function interceptRealtime(page: import('@playwright/test').Page) {
       ws.send(message);
     });
     state.close = () => ws.close({ code: 1011, reason: 'server restart' });
+    state.closeServer = async () => {
+      await server.close({ code: 1001, reason: 'gone' });
+      await ws.close({ code: 1001, reason: 'connection lost' });
+    };
     state.closeChannel = () => ws.send(JSON.stringify([state.joined![0], null, state.joined![2], 'phx_close', {}]));
   });
   return state;
@@ -188,3 +199,31 @@ for (const drop of ['closes the list channel', 'drops the socket'] as const) {
     await expect(itemRow(page, 'Nach dem Abbruch'), 'live updates flow again').toBeVisible();
   });
 }
+
+test('a phone that sleeps through a dropped connection and a partner\'s add catches up when it wakes and stays live', async ({ page }) => {
+  const realtime = await interceptRealtime(page);
+  const email = newEmail('sleep');
+  await signUpWithHousehold(page, email);
+  await expect.poll(() => realtime.live, { message: 'the channel is live' }).toBe(true);
+  realtime.live = false;
+  const api = await apiAs(email);
+  const { data } = await api.from('household_members').select('household_id').single();
+  const household = data!.household_id;
+
+  // Frozen like a suspended app: no script, no timers. Its connection dies meanwhile, and the
+  // close event reaches the app only when it wakes, together with every overdue timer.
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.setWebLifecycleState', { state: 'frozen' });
+  await realtime.closeServer();
+  await api.from('items').insert({ household_id: household, name: 'Im Schlaf' });
+  await cdp.send('Page.setWebLifecycleState', { state: 'active' });
+
+  await expect(itemRow(page, 'Im Schlaf'), 'what was added during the sleep shows').toBeVisible({ timeout: 20_000 });
+  await expect.poll(() => realtime.live, { message: 'the channel is live again', timeout: 20_000 }).toBe(true);
+  await api.from('items').insert({ household_id: household, name: 'Nach dem Aufwachen' });
+  await expect(itemRow(page, 'Nach dem Aufwachen'), 'live updates flow after waking').toBeVisible();
+  await addItem(page, 'Vom Handy');
+  await expect.poll(async () => (await api.from('items').select('name').eq('name', 'Vom Handy')).data?.length, {
+    message: 'an add after waking reaches the server',
+  }).toBe(1);
+});

@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "command": "seed",
+  "run": "fx-1025-0845-texs",
+  "scenario": "heavy-history",
+  "target": "local",
+  "createdAt": "2026-10-25T07:46:00.298Z",
+  "members": {
+    "jo": {
+      "ref": "fx-1025-0845-texs:jo",
+      "email": "jo.fx-1025-0845-texs@fg-test.invalid",
+      "name": "Jo Weber",
+      "locale": "de",
+      "household": "home"
+    },
+    "kai": {
+      "ref": "fx-1025-0845-texs:kai",
+      "email": "kai.fx-1025-0845-texs@fg-test.invalid",
+      "name": "Kai Weber",
+      "locale": "de",
+      "household": "home"
+    }
+  },
+  "households": {
+    "home": {
+      "id": "1cf7539e-bd42-48bd-ac3d-3ef29d62b998",
+      "name": "Wohnung Weber",
+      "members": [
+        "jo",
+        "kai"
+      ]
+    }
+  },
+  "invites": [],
+  "views": {},
+  "counts": {
+    "users": 2,
+    "households": {
+      "home": {
+        "members": 2,
+        "activeItems": 3,
+        "boughtItems": 110,
+        "stores": 3,
+        "categories": 11,
+        "openInvites": 0
+      }
+    },
+    "withoutHousehold": 0
+  },
+  "checks": {
+    "ok": true,
+    "passed": 11,
+    "failed": []
+  },
+  "seconds": 0.9,
+  "credentials": "/home/box/.cache/fg/560/runs/fx-1025-0845-texs.json",
+  "next": "fg db query \"select count(*) from items\" --as fx-1025-0845-texs:jo; fg sync heavy-history --run-id fx-1025-0845-texs --script F; fg teardown fx-1025-0845-texs"
+}

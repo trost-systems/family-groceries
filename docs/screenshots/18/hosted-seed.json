@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "command": "seed",
+  "run": "fx-1025-0742-raaq",
+  "scenario": "empty-new-user",
+  "target": "hosted",
+  "createdAt": "2026-10-25T06:42:18.210Z",
+  "members": {
+    "nele": {
+      "ref": "fx-1025-0742-raaq:nele",
+      "email": "nele.fx-1025-0742-raaq@fg-test.invalid",
+      "name": "Nele Neumann",
+      "locale": "de",
+      "household": null
+    }
+  },
+  "households": {},
+  "invites": [],
+  "views": {},
+  "counts": {
+    "users": 1,
+    "households": {},
+    "withoutHousehold": 1
+  },
+  "checks": {
+    "ok": true,
+    "passed": 1,
+    "failed": []
+  },
+  "seconds": 3.4,
+  "credentials": "/home/box/.cache/fg/hosted/runs/fx-1025-0742-raaq.json",
+  "next": "fg db query \"select count(*) from items\" --as fx-1025-0742-raaq:nele; fg sync empty-new-user --run-id fx-1025-0742-raaq ...; fg teardown fx-1025-0742-raaq --target hosted"
+}

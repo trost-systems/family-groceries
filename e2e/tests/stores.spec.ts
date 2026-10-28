@@ -1,8 +1,8 @@
 import { expect, type Page, test } from './fixtures';
 import { dragHandle, groupHeadings, selectStore } from './catalog';
 import {
-  addField, addItem, createInviteCode, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold,
-  tickBox, typeInto,
+  addField, addItem, createInviteCode, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUp,
+  signUpWithHousehold, tickBox, typeInto, within,
 } from './helpers';
 
 const route = [
@@ -127,8 +127,8 @@ test('category and store layout changes sync live to the other member', async ({
   await selectStore(peter, 'Lidl');
   await peter.getByRole('button', { name: 'Reihenfolge bearbeiten' }).click();
   await dragHandle(peter, 'Haushalt verschieben', 'Brot & Backwaren verschieben');
-  await expect.poll(() => groupHeadings(lea), { message: 'a store reorder in A reaches B', timeout: 3_000 })
-    .toEqual(['Haushalt', 'Brot & Backwaren']);
+  await within(3_000, (timeout) => expect.poll(() => groupHeadings(lea), { message: 'a store reorder in A reaches B', timeout })
+    .toEqual(['Haushalt', 'Brot & Backwaren']));
   await peter.getByRole('button', { name: 'Zurück' }).click();
 
   await peter.getByRole('button', { name: 'Menü' }).click();
@@ -136,8 +136,8 @@ test('category and store layout changes sync live to the other member', async ({
   await peter.getByRole('button', { name: 'Haushalt', exact: true }).click();
   await typeInto(peter.getByRole('textbox', { name: 'Name' }), 'Putzzeug');
   await peter.getByRole('button', { name: 'Speichern' }).click();
-  await expect.poll(() => groupHeadings(lea), { message: 'a rename in A reaches B', timeout: 3_000 })
-    .toEqual(['Putzzeug', 'Brot & Backwaren']);
+  await within(3_000, (timeout) => expect.poll(() => groupHeadings(lea), { message: 'a rename in A reaches B', timeout })
+    .toEqual(['Putzzeug', 'Brot & Backwaren']));
   await screenshot(lea, '09-live-catalog-sync');
 });
 

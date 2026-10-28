@@ -62,6 +62,25 @@ export async function expectFieldValue(field: Locator, value: string): Promise<v
   }).toPass({ timeout: 20_000 });
 }
 
+/**
+ * Passes once `check` does, within `ms` of the time the test runner ran. A live-sync budget
+ * measures the app; a host pause inside it stops the runner, Chromium and the stack alike, and a
+ * wall-clock deadline would fail on it however fast the app is. Each round is short and counts at
+ * most one second, so a pause costs a second of the budget, not all of it.
+ */
+export async function within(ms: number, check: (timeout: number) => Promise<unknown>): Promise<void> {
+  for (let ran = 0; ;) {
+    const start = Date.now();
+    try {
+      await check(250);
+      return;
+    } catch (error) {
+      ran += Math.min(Date.now() - start, 1_000);
+      if (ran >= ms) throw error;
+    }
+  }
+}
+
 /** Opens an item's edit sheet with a right click, the web's long-press. */
 export async function openEdit(page: Page, name: string): Promise<void> {
   await itemRow(page, name).click({ button: 'right' });
