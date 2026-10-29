@@ -17,10 +17,20 @@ run() {
   echo "$out" | jq -c . >&2
   echo "$out"
 }
+# Opens an entry of the More tab (the list is a lazy ListView, so scroll to it first).
+open_more() {
+  [[ "$("$fg" find --key add-sheet-close --client "$1" | jq -r .count)" == 0 ]] || run tap --key add-sheet-close --client "$1" >/dev/null
+  run tap --key tab-more --client "$1" >/dev/null
+  # The tab reopens its last page; a second tap on it goes to the More list.
+  "$fg" wait --key more-screen --timeout 2 --client "$1" >/dev/null 2>&1 || run tap --key tab-more --client "$1" >/dev/null
+  run wait --key more-screen --client "$1" >/dev/null
+  run marionette --client "$1" -- scroll-to --key "$2" >/dev/null
+  run tap --key "$2" --client "$1" >/dev/null
+}
 sql() { run db query "$1" | jq -r ".rows[0].${2:-count}"; }
 
 api="$("$fg" env | jq -r .apiUrl)"
-key="$(supabase status -o json --workdir "$("$fg" env | jq -r .stateDir)/stack" 2>/dev/null | jq -r .PUBLISHABLE_KEY)"
+key="$(supabase status -o json --workdir "${FG_STACK_WORKDIR:-$("$fg" env | jq -r .stateDir)/stack}" 2>/dev/null | jq -r .PUBLISHABLE_KEY)"
 password=test-password-123
 
 # A fresh user signs up on lea's client and lands on the welcome screen.
@@ -34,9 +44,7 @@ sign_up() {
 }
 
 open_delete_dialog() {
-  run tap --tooltip Menü --client lea >/dev/null
-  run wait --key menu-account --client lea >/dev/null
-  run tap --key menu-account --client lea >/dev/null
+  open_more lea menu-account
   run wait --key account-delete --client lea >/dev/null
   run tap --key account-delete --client lea >/dev/null
   run wait --key account-delete-confirm-field --client lea >/dev/null
@@ -59,17 +67,17 @@ member="konto-$stamp@fg.test"
 members_before="$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")"
 step "a throwaway member ($member) joins Familie Test and adds $item"
 sign_up "$member"
-run tap --tooltip Menü --client peter >/dev/null
-run wait --text "Mitglied einladen" --client peter >/dev/null
-run tap --text "Mitglied einladen" --client peter >/dev/null
+open_more peter more-invite
 run wait --text Code --client peter >/dev/null
 code="$("$fg" find --type Text --client peter | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]')"
 [[ "$code" =~ ^[A-Z2-9]{8}$ ]] || fail "no invite code on peter's screen"
 run back --client peter >/dev/null
+run tap --key tab-list --client peter >/dev/null
 run type --key invite-code --input "$code" --client lea >/dev/null
 run tap --text Beitreten --client lea >/dev/null
-run wait --text "Familie Test" --client lea >/dev/null
+run wait --text "FAMILIE TEST" --client lea >/dev/null
 run type --key add-item-field --input "$item" --submit --client lea >/dev/null
+run wait --contains "Hinzugefügt: $item" --client lea >/dev/null
 run wait --text "$item" --client peter >/dev/null
 item_id="$(sql "select id from items where name = '$item'" id)"
 [[ "$(sql "select (added_by is not null) as authored from items where id = '$item_id'" authored)" == true ]] ||
@@ -127,7 +135,7 @@ run type --key household-name --input "WG $stamp" --client lea >/dev/null
 run tap --text "Haushalt anlegen" --client lea >/dev/null
 run wait --key add-item-field --client lea >/dev/null
 run type --key add-item-field --input Milch --submit --client lea >/dev/null
-run wait --text Milch --client lea >/dev/null
+run wait --contains "Hinzugefügt: Milch" --client lea >/dev/null
 hh="$(sql "select id from households where name = 'WG $stamp'" id)"
 run db query "update items set brand = 'Zwergenhof' where household_id = '$hh'" --write >/dev/null
 [[ "$(sql "select count(*) from household_brands where household_id = '$hh'")" == 1 ]] || fail "the brand was not learned for 'WG $stamp'"
@@ -144,9 +152,7 @@ left="$(sql "select (select count(*) from households where id = '$hh') + (select
 [[ "$left" == 0 ]] || fail "$left rows of the deleted household are left"
 
 step "peter exports his data from Konto"
-run tap --tooltip Menü --client peter >/dev/null
-run wait --key menu-account --client peter >/dev/null
-run tap --key menu-account --client peter >/dev/null
+open_more peter menu-account
 run wait --key account-export --client peter >/dev/null
 run screenshot --name 06-settings-konto --client peter >/dev/null
 run tap --key account-export --client peter >/dev/null
@@ -164,7 +170,7 @@ mv "$path" "$dir/08-export.json"
 path="$dir/08-export.json"
 
 step "peter goes back to the list and lea signs in again, where the next journey starts"
-run back --client peter >/dev/null
+run tap --key tab-list --client peter >/dev/null
 run wait --key add-item-field --client peter >/dev/null
 run login lea >/dev/null
 run wait --key add-item-field --client lea >/dev/null

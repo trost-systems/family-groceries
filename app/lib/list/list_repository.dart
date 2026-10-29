@@ -1,3 +1,4 @@
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,6 +39,10 @@ abstract interface class ListRepository() {
   /// Splits one typed entry into its fields with the server's parser.
   /// Throws when the server can't be reached.
   Future<ParsedEntry> parse(String text);
+
+  /// The add sheet's rows for one typed entry, the parsed entry first
+  /// (`public.suggest_entries`). Throws when the server can't be reached.
+  Future<List<Suggestion>> suggest(String text);
 
   /// Moves the category's items to [reassignTo], by default the fallback.
   Future<void> deleteCategory(String id, {String? reassignTo});
@@ -167,6 +172,17 @@ class SupabaseListRepository(
       params: {'p_household': householdId, 'p_text': text},
     );
     return ParsedEntry.fromJson(_singleRow(result)!);
+  }
+
+  @override
+  Future<List<Suggestion>> suggest(String text) async {
+    final rows = await _client.rpc<List<dynamic>>(
+      'suggest_entries',
+      params: {'p_household': householdId, 'p_text': text},
+    );
+    return [
+      for (final row in rows) Suggestion.fromJson(row as Map<String, Object?>),
+    ];
   }
 
   @override

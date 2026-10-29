@@ -20,6 +20,8 @@ This directory is the maintained source for verifying the user-facing behavior o
 - A list row is one button: `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, and `fg drag` moves it. The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
 - Seeded scenario runs share the stack with the baseline household. Read with `--as peter` (or `--as <run>:<handle>`) so a query sees one household, and filter `--write` preconditions by household.
 - Wait for state with `fg wait`. Never use sleep.
+- `fg type --key add-item-field --input <item> --submit` adds through the add sheet, which stays open after the add: wait for its note (`fg wait --contains "Hinzugefügt: <item>"`), then `fg press escape` before you check or touch the list. While the sheet is open, `fg find` and `fg wait` don't see the list's rows, and the tabs don't take taps.
+- Screens of the More tab open from `fg tap --key tab-more`. The tab reopens the page it last showed (Zugänge after an `acct-*` or `mcp-*` recipe): when `fg wait --key more-screen` times out, tap `tab-more` once more, which goes to the More list. More is a lazy list: run `fg marionette -- scroll-to --key <entry>` before tapping an entry below the fold (`menu-account`, `more-sign-out` and everything after them on a 412×892 client).
 - `fg find` and `fg wait` see only widgets the list has built, so a row below the fold doesn't exist for them. Keep the list short (mark earlier items bought with `fg db query --write`) or bring the row in with `fg marionette -- scroll-to --text <name>`.
 - Treat every command as literal. Keep quoted names, umlauts and flags unchanged.
 - Set preconditions with `fg db query --write` or `fg peer`. Prove the behavior under test only through the app UI.
@@ -47,16 +49,17 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [List and walk order](./list-walk-order.md) covers design H's list: store sections and category dividers, walk order, a tap that ticks with undo, dragging rows onto rows, category and store dividers, reordering stores and categories by drag or divider menu, folds and the explainer card kept per device, and a partner's adds and moves.
-- [Quick add](./quick-add.md) covers the autofocused add field, Enter-to-add with focus kept, quantities, duplicates, tick with undo, delete and re-add from history.
+- [Quick add](./quick-add.md) covers the add bar and the add sheet: autofocus on desktop, rows with their sources, Enter for the first row, store and category chips, the added note with undo, due usuals, closing, and tick with undo, delete and re-add from history.
+- [Shell and More](./shell-more.md) covers the tabs (Liste, Mehr; a rail from 840 px), every entry of the More tab, the language switch kept on the device, the licenses, the privacy draft and the imprint link.
 - [Edit an item](./edit-item.md) covers the edit sheet (Bezeichnung, Marke, Eigenschaften, Menge with −/+, store and category chips, Fertig saving only changes, Löschen with undo), the row's "Marke · Eigenschaften" line, and how Siri and MCP entries are split into those fields.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.
 - [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, sign-out, and the Google and Apple buttons (web build only).
 - [Household](./household.md) covers creating a household, inviting by code and joining with it.
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
 - [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", tagging items to a store by drag or edit sheet and remembering it, and each store's layout screen.
-- [Categories](./categories.md) covers Menü → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
-- [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Menü → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
+- [Categories](./categories.md) covers Mehr → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
+- [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Mehr → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
-- [Account](./account.md) covers Menü → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
+- [Account](./account.md) covers Mehr → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
 - [Hosted backend](./hosted-backend.md) covers the hosted project: the health check that reads Postgres, the smoke test after every deploy, the daily keepalive, nightly encrypted backups with their restore drill, and rolling edge functions back.
 - [Hosted web app](./web-hosting.md) covers the production web app on Vercel: deep links, cache headers, the Google and Apple sign-in pages, and the build Vercel runs.

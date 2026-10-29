@@ -1,4 +1,5 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
@@ -53,7 +54,34 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder addField() => find.widgetWithText(TextField, 'Was fehlt?');
+  Finder addField() => find.byKey(const ValueKey('add-item-field'));
+  FocusNode fieldFocus(WidgetTester tester) =>
+      tester.widget<TextField>(addField()).focusNode!;
+  Finder sheet() => find.byKey(const ValueKey('add-sheet'));
+
+  /// A sheet row by what a screen reader says for it.
+  Finder sheetRow(String label) => find.descendant(
+    of: sheet(),
+    matching: find.byWidgetPredicate(
+      (w) => w is Semantics && w.properties.label == label,
+    ),
+  );
+
+  /// A 390x844 phone. The sheet's first height is half the screen, which
+  /// on the test's default 800x600 is too short for its chips.
+  void phone(WidgetTester tester) {
+    tester.view
+      ..devicePixelRatio = 3
+      ..physicalSize = const Size(390 * 3, 844 * 3);
+    addTearDown(tester.view.reset);
+  }
+
+  /// Waits out the typing pause and the server's answer.
+  Future<void> settleRows(WidgetTester tester) async {
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+  }
+
   Finder row(String name) =>
       find.byWidgetPredicate((w) => w is ItemRow && w.item.name == name);
   Finder storeDivider(String key) => find.byKey(ValueKey('store-$key'));
@@ -102,27 +130,40 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('the add field has focus on open; an empty list says so', (
-    tester,
-  ) async {
+  testWidgets('on a phone the add field waits for a tap; an empty list '
+      'says so', (tester) async {
+    phone(tester);
     await pumpList(tester);
-    final field = tester.widget<TextField>(addField());
-    expect(field.focusNode!.hasFocus, isTrue);
+    expect(
+      fieldFocus(tester).hasFocus,
+      isFalse,
+      reason: 'phones get the keyboard only when asked',
+    );
+    expect(sheet(), findsNothing);
     expect(find.byType(ChoiceChip), findsNothing, reason: 'no store filter');
     expect(
-      find.text('Die Liste ist leer. Tippe oben ein, was fehlt.'),
+      find.text('Die Liste ist leer. Tippe unten ein, was fehlt.'),
       findsOneWidget,
     );
     expect(find.text('🧺'), findsOneWidget);
     expect(find.byType(StoreDivider), findsNothing);
+
+    await tester.tap(addField());
+    await tester.pumpAndSettle();
+    expect(fieldFocus(tester).hasFocus, isTrue);
+    expect(sheet(), findsOneWidget, reason: 'a tap opens the add sheet');
+    expect(find.text('Was brauchst du?'), findsOneWidget);
   });
 
   testWidgets('a category divider is its own node, outside the rows', (
     tester,
   ) async {
+    phone(tester);
     await pumpList(tester);
     await tester.enterText(addField(), 'Vollmilch');
     await tester.testTextInput.receiveAction(TextInputAction.send);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('add-sheet-close')));
     await tester.pumpAndSettle();
     expect(
       tester.getSemantics(categoryDivider('Kühlregal')),
@@ -140,6 +181,7 @@ void main() {
   });
 
   testWidgets('enter adds under its category and keeps focus', (tester) async {
+    phone(tester);
     await pumpList(tester);
     await tester.enterText(addField(), 'Vollmilch');
     await tester.testTextInput.receiveAction(TextInputAction.send);
@@ -154,6 +196,7 @@ void main() {
   testWidgets('hardware enter adds once per press and keeps focus', (
     tester,
   ) async {
+    phone(tester);
     await pumpList(tester);
     for (final name in ['Milch', 'Brot']) {
       await tester.enterText(addField(), name);
@@ -165,6 +208,7 @@ void main() {
   });
 
   testWidgets('a long paste is capped at the server limit', (tester) async {
+    phone(tester);
     await pumpList(tester);
     await tester.enterText(addField(), 'x' * 130);
     await tester.testTextInput.receiveAction(TextInputAction.send);
@@ -702,6 +746,7 @@ void main() {
       tester,
     ) async {
       await pumpList(tester);
+      await tester.showKeyboard(addField());
       final tea = repo.remoteAdd('Tee');
       repo.emitItem!(tea);
       await tester.pump();
@@ -748,50 +793,60 @@ void main() {
       const Usual(name: 'Gurkensalat', due: false),
       const Usual(name: 'Brot', due: true),
     ];
-    FocusNode fieldFocus(WidgetTester tester) =>
-        tester.widget<TextField>(addField()).focusNode!;
+    const typed = Suggestion(
+      SuggestionSource.typed,
+      ParsedEntry(name: 'Gurken'),
+    );
+    const salad = Suggestion(
+      SuggestionSource.history,
+      ParsedEntry(name: 'Gurkensalat'),
+    );
 
-    testWidgets('the empty field offers what is due', (tester) async {
+    testWidgets('the empty open sheet offers what is due', (tester) async {
+      phone(tester);
       await pumpList(tester, seed: seedUsuals);
-      final due = find.byKey(const ValueKey('due-suggestions'));
+      await tester.tap(addField());
+      await tester.pumpAndSettle();
+      expect(sheetRow('2× Gurken, Wieder fällig'), findsOneWidget);
+      expect(sheetRow('Brot, Wieder fällig'), findsOneWidget);
       expect(
-        find.descendant(of: due, matching: find.text('Brauchen wir wieder?')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: due, matching: find.text('2 Gurken')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('suggestion-Gurkensalat')),
+        find.descendant(of: sheet(), matching: find.textContaining('salat')),
         findsNothing,
+        reason: 'Gurkensalat is not due',
       );
-      expect(find.byKey(const ValueKey('suggestions')), findsNothing);
     });
 
-    testWidgets('typing shows chips; a tap adds and typing goes on', (
+    testWidgets('typing offers rows; a tap adds and typing goes on', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
-      await pumpList(tester, seed: seedUsuals);
+      phone(tester);
+      await pumpList(
+        tester,
+        seed: (repo) {
+          seedUsuals(repo);
+          repo.suggestions['gur'] = const [
+            Suggestion(SuggestionSource.typed, ParsedEntry(name: 'Gur')),
+            Suggestion(
+              SuggestionSource.history,
+              ParsedEntry(name: 'Gurken', quantity: '2'),
+            ),
+            salad,
+          ];
+        },
+      );
+      await tester.tap(addField());
       await tester.enterText(addField(), 'gur');
-      await tester.pump();
-      final chipFinder = find.byKey(const ValueKey('suggestion-Gurken'));
+      await settleRows(tester);
+      expect(sheetRow('Gur, Wie getippt'), findsOneWidget);
+      expect(sheetRow('Gurkensalat, Schon mal gekauft'), findsOneWidget);
+      expect(sheetRow('Brot, Wieder fällig'), findsNothing);
       expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('suggestions')),
-          matching: chipFinder,
-        ),
+        find.bySemanticsLabel('2× Gurken, Schon mal gekauft'),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey('suggestion-Gurkensalat')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('due-suggestions')), findsNothing);
-      expect(find.bySemanticsLabel('Vorschlag: 2 Gurken'), findsOneWidget);
 
-      await tester.tap(chipFinder);
+      await tester.tap(find.byKey(const ValueKey('suggestion-1')));
       await tester.pumpAndSettle();
       final row = repo.rows.values.single;
       expect((row.name, row.quantity), ('Gurken', '2'));
@@ -809,31 +864,51 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('a chip never takes focus', (tester) async {
+    testWidgets('picking a store or category hands focus back to the input', (
+      tester,
+    ) async {
+      phone(tester);
       await pumpList(tester, seed: seedUsuals);
-      expect(find.byType(ActionChip), findsWidgets);
-      for (var i = 0; i < 8; i++) {
-        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
-        await tester.pump();
-        final focused = FocusManager.instance.primaryFocus?.context;
+      await tester.tap(addField());
+      await tester.enterText(addField(), 'Gurken');
+      await settleRows(tester);
+      for (final (chip, option) in [
+        ('chip-store', 'store-option-lidl'),
+        ('chip-category', 'category-option-produce'),
+      ]) {
+        await tester.tap(find.byKey(ValueKey(chip)));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ValueKey(option)));
+        await tester.pumpAndSettle();
         expect(
-          focused?.findAncestorWidgetOfExactType<ActionChip>(),
-          isNull,
-          reason: 'tab $i landed on a chip',
+          FocusManager.instance.primaryFocus,
+          fieldFocus(tester),
+          reason: 'after $option',
         );
       }
+      tester.testTextInput.enterText('Gurken!');
+      await tester.pump();
+      expect(tester.widget<TextField>(addField()).controller!.text, 'Gurken!');
     });
 
-    testWidgets('a chip goes once its item is on the list', (tester) async {
-      await pumpList(tester, seed: seedUsuals);
-      await tester.enterText(addField(), 'gurken');
-      await tester.pump();
-      repo.emitItem!(repo.remoteAdd('Gurkensalat', addedBy: 'peter'));
-      await tester.pump();
-      expect(
-        find.byKey(const ValueKey('suggestion-Gurkensalat')),
-        findsNothing,
+    testWidgets('a row goes once its item is on the list; the typed row '
+        'stays', (tester) async {
+      phone(tester);
+      await pumpList(
+        tester,
+        seed: (repo) => repo.suggestions['gurken'] = const [typed, salad],
       );
+      await tester.tap(addField());
+      await tester.enterText(addField(), 'gurken');
+      await settleRows(tester);
+      expect(sheetRow('Gurkensalat, Schon mal gekauft'), findsOneWidget);
+      repo
+        ..emitItem!(repo.remoteAdd('Gurkensalat', addedBy: 'peter'))
+        ..emitItem!(repo.remoteAdd('Gurken', addedBy: 'peter'));
+      await tester.pump();
+      await tester.pump();
+      expect(sheetRow('Gurkensalat, Schon mal gekauft'), findsNothing);
+      expect(sheetRow('Gurken, Wie getippt'), findsOneWidget);
     });
   });
 }

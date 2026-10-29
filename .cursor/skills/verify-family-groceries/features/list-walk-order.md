@@ -23,7 +23,7 @@ The list is one scroll of sections, one per store in the household's store order
 
 ## How to get to it (user POV)
 
-- Open the app while signed in to a household. The list sits under the add field.
+- Open the app while signed in to a household. The list sits above the add bar.
 - Tap a row to tick it, tap "Rückgängig" in the snackbar to undo.
 - Press and hold a row, then let go without moving to edit it, or keep holding and drag it.
 - Tap a store divider to fold or unfold it. Hold it (or right-click) for its menu, or hold and drag it.

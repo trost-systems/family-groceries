@@ -1,8 +1,10 @@
+import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'model_test.dart' show item;
@@ -234,8 +236,25 @@ void main() {
       expect(itemIcon(named('Reis'), null), '🍚');
       expect(itemIcon(named('Quark'), chilled), '🥛');
       expect(itemIcon(named('Creme'), baby), '👶');
-      expect(categoryLabel(baby), 'Drogerie');
-      expect(categoryLabel(chilled), 'Kühlregal');
+      final de = lookupAppLocalizations(const Locale('de'));
+      final en = lookupAppLocalizations(const Locale('en'));
+      expect(categoryLabel(baby, de), 'Drogerie');
+      expect(categoryLabel(chilled, de), 'Kühlregal');
+      expect(categoryLabel(baby, en), 'Drugstore', reason: 'seeded, unrenamed');
+      expect(categoryLabel(chilled, en), 'Chilled');
+      expect(
+        categoryLabel(
+          const Category(
+            id: 'c',
+            name: 'Kühlung',
+            sortOrder: 1,
+            seedKey: 'chilled',
+          ),
+          en,
+        ),
+        'Kühlung',
+        reason: 'a renamed category keeps what the household wrote',
+      );
     });
   });
 }

@@ -1,4 +1,5 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
@@ -394,7 +395,9 @@ class _CategoryDividerState() extends State<CategoryDivider> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final category = widget.block.category;
-    final label = category == null ? l10n.sortingItem : categoryLabel(category);
+    final label = category == null
+        ? l10n.sortingItem
+        : categoryLabel(category, l10n);
     final line = _Line(label: label, hover: widget.session.hover, id: _key);
     final body = category == null
         ? line
@@ -433,7 +436,7 @@ class _CategoryDividerState() extends State<CategoryDivider> {
       container: true,
       header: true,
       // The category's full name, as the edit sheet's chip calls it.
-      label: category?.name ?? label,
+      label: category == null ? label : categoryName(category, l10n),
       onLongPress: category == null ? null : widget.onMenu,
       customSemanticsActions: {
         CustomSemanticsAction(label: l10n.moveCategoryUp): ?widget.onMoveUp,

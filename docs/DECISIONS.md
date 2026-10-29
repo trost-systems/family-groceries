@@ -2430,3 +2430,140 @@ Playwright off the Mac runner and the box.
     fixtures. A seed file can come back later by adding it and flipping
     the switch (the verify skill's `stack.ts` already links one when it
     exists).
+
+## Job 17 (design H, part 3: add sheet, app shell, English), 2026-10-29
+
+The add bar and add sheet, the List and More tabs, the settings in More,
+and English throughout. The code is in `app/lib/list/add_sheet/`,
+`app/lib/list/list_screen.dart`, `app/lib/app/shell.dart` and
+`app/lib/more/`; the suggestions come from `public.suggest_entries`.
+
+1. **The rows come from the server.** `public.suggest_entries(household,
+   text)` returns the parsed entry first, then up to 3 earlier purchases
+   (any status, last year, name starting like the typed name, each with its
+   own brand and details), other packs and other details
+   seen on the same name before, Größe ±1, other brands (the household's
+   own first, then `public.brands` for the product) and up to 3 dictionary
+   words starting like the last typed word, deduplicated and cut at 8. The
+   prototype invents packs and brands from a mock catalogue; the app has no
+   product catalogue, so these rows come from what the household bought and
+   the brand list. One function serves every client, like `parse_item`.
+   Every row is at the store and in the category the list guesses for it
+   now (`classify_item`, `guess_store`), not where an old purchase was:
+   the memory already holds the latest tag, and a row tapped without a
+   chip pick must not teach an old category or store back (review of
+   9dc1304: an old "Milch, laktosefrei" in Getränke would have overruled a
+   newer Kühlregal correction).
+2. **Fetching.** The sheet asks 120 ms after the last keystroke and keeps
+   the answer per text, so backspacing is instant. Until the answer for the
+   new text arrives the previous rows stay (the first keystroke shows the
+   text split on the device). Enter takes the first row for exactly what is
+   typed: it waits up to 3 s for that answer, then falls back to the device
+   split. Offline the rows are the device split plus the household's usuals
+   that start like it.
+3. **Labels.** The source labels are the prototype's (SPEC 2.7): "Schon
+   mal gekauft", not the brief's "Zuletzt gekauft", which is already the
+   name of job 16's bought section. Due usuals in the empty sheet are
+   labelled "Wieder fällig". Alternatives already on the list are left out,
+   as the old chips did; the typed row always stays and says "steht schon
+   auf der Liste" when taken.
+4. **A picked store or category is learned on insert.** The items trigger
+   learned only from updates, so a store chip picked in the sheet would be
+   forgotten. An AFTER INSERT statement trigger now records a correction
+   when the row's category or store differs from the guess
+   (`public.guess_store` repeats `parse_item`'s store rule: memory, then the
+   brand's store, then the drugstore hint). A row that equals the guess
+   teaches nothing, so only chip picks teach (decision 1). "Ohne Laden"
+   picked on add is sent as the add plus an edit that clears the store,
+   because the insert trigger fills a missing store from memory. Putting a
+   deleted item back (the delete snackbar's Rückgängig, an insert of an id
+   with a `deleted` event in the last day) teaches nothing: its store and
+   category are history. Deleting an item within 10 minutes of the add
+   that taught a memory row takes the lesson back
+   (`items_unlearn_delete`): the add sheet's Rückgängig undoes the pick
+   too. Each memory row keeps what the last insert did to it (`undo_item`,
+   `undo_by`, `undo_prev_at`, `undo_at`, nullable columns); a row created
+   by the add goes, an older one gets its count and `updated_at` back, and
+   a row anything learned on since is left alone.
+5. **Same item twice.** An add is refused as "steht schon auf der Liste"
+   only when name, Marke and Eigenschaften all match an active item, as in
+   `add_item`; Windeln Pampers Größe 3 and Windeln Pampers Größe 4 can both
+   be on the list. Eigenschaften match in any order, folded like names.
+   The device does not stem names (Gurke and Gurken are two entries on the
+   device, one for `add_item`), as before this job: a German stemmer in
+   Dart for a duplicate warning is not worth a second copy of
+   `item_key`.
+6. **Height.** The surface is `min(content, max)`, with max = the space
+   above the add bar minus the safe top minus 28 px. Before anything is
+   typed it is at most half the screen, bar and tabs included, so the
+   first opening stays small; due usuals beyond that scroll. There is no
+   other floor (Peter's override of the prototype's 50 % minimum).
+7. **Motion.** Only the surface's size animates (`AnimatedSize`, 280 ms,
+   `Easing.emphasizedDecelerate` growing, `emphasizedAccelerate` closing,
+   0 with reduced motion). The content is laid out once at its own height,
+   top-aligned and clipped while the surface catches up, so the rows never
+   reflow per frame (the review's concern about animating height). While
+   closing, the content keeps hanging from the surface's top edge and is
+   dropped 40 ms after it settles. No spring: `AnimatedSize` takes a curve,
+   and a spring would need a custom render object for a curve that looks
+   the same at 280 ms.
+8. **The input never moves.** It is the List tab's bottom bar, not part of
+   the sheet. The shell's tab band keeps its height while the tabs slide
+   away and shows the hint "Antippen fügt hinzu · ↵ nimmt den ersten
+   Vorschlag" instead, so nothing above it shifts. From 840 px there is no
+   tab band and no hint; the ↵ key cap on the first row says the same.
+9. **The closed bar has no outlined pill.** SPEC 2.7 describes a 2 px
+   primary pill, but the prototype draws it behind the sheet surface
+   (`z-index: -1`), so it never shows; its screenshots have none, and the
+   app follows the screenshots.
+10. **Opening and closing.** A tap on the field or typing opens the sheet.
+    On desktop and web the field is focused on open (as before) without
+    opening the sheet, so the list stays visible until the first key;
+    phones focus nothing until tapped, so no keyboard covers the list on
+    launch. Escape, "Schließen" or a tap on the scrim closes the sheet and
+    clears the field, as the prototype resets once the sheet has settled.
+    The list behind an open sheet is out of focus order and semantics.
+11. **Shell.** go_router `StatefulShellRoute.indexedStack` with two
+    branches: `/` (List) and `/more`, `/more/privacy` and `/settings`
+    (More). `/settings?section=account` keeps working inside the More tab.
+    Login, welcome, consent and join stay outside; any other path, an
+    unknown `/more/…` included, goes to the list. An invite link
+    (`?invite=`) opens the join page from any path, `/settings` included,
+    where it used to stay on settings. The `ListCubit` moved up
+    into `ListScope` so More can manage categories and stores; the List tab
+    has its own `ScaffoldMessenger`, so its snackbars float above the add
+    bar.
+12. **More.** Haushalt (invite, join, categories, a new "Läden" screen that
+    orders the stores and opens each store's walking order), Zugänge and
+    Konto (both open the existing settings page; Konto scrolled to its
+    section, as `/settings?section=account` did), Abmelden, Sprache,
+    Rechtliches and the version. Impressum opens hummlist.com/impressum
+    (or /en/imprint): the page exists in `site/` (job 24a). Datenschutz has
+    no text anywhere yet, so it opens an in-app page marked "Entwurf"
+    (`privacyPolicyUrl` in `app/lib/app/guides.dart` switches it to a link).
+    Lizenzen is `showLicensePage` with "Hummlist" and the version from
+    `package_info_plus` (new dependency).
+13. **Language.** The device's language picks German or English, German
+    for anything else. Sprache (Wie Gerät, Deutsch, English) overrides it,
+    applies at once and is stored on the device (`DeviceCache`, key
+    `language`), read before the first frame and kept across sign-outs.
+14. **English.** `app_en.arb` has every key of `app_de.arb`;
+    `test/l10n/arb_parity_test.dart` checks keys, placeholders and that no
+    English text equals the German one unless allow-listed. Seeded category
+    names are data in German; `category_names.dart` shows a seeded category
+    the household has not renamed under its name for the UI language
+    ("Kühlregal" reads "Chilled"), everywhere the app names a category. The
+    account deletion check also accepts DELETE, which the English dialog
+    asks for. Server texts (MCP and voice answers, emails) stay German: out
+    of scope.
+15. **Wide layouts.** A `NavigationRail` from 840 px. The add bar and sheet
+    keep to 640 px, centred like the one-column list (from 840 px the list
+    has two or three columns and the sheet stays a centred 640 px sheet).
+    More shows its list (360 px) beside the selected page from 840 px.
+16. **Eight rows fit on 844 px.** The app's rows have one second line; the
+    prototype's mock data adds "Standard Pack" and wraps to two. So
+    "Windeln Pampers Größe 3" (8 rows) ends below the top gap on 390×844
+    and reaches it on a 390×667 phone, where the rows then scroll. The e2e
+    spec proves both.
+17. **Dictation** is its own widget (`app/lib/list/dictation_button.dart`)
+    in the add bar, so job 10 (voice paste) changes one file.

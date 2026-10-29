@@ -13,13 +13,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appTitle => 'Hummlist';
 
   @override
-  String get addFieldHint => 'Was fehlt?';
+  String get addFieldHint => 'Was brauchst du?';
 
   @override
   String get addButton => 'Hinzufügen';
 
   @override
-  String get emptyList => 'Die Liste ist leer. Tippe oben ein, was fehlt.';
+  String get emptyList => 'Die Liste ist leer. Tippe unten ein, was fehlt.';
 
   @override
   String get sortingItem => 'Wird einsortiert …';
@@ -676,4 +676,161 @@ class AppLocalizationsDe extends AppLocalizations {
   String exportFailed(String code) {
     return 'Export fehlgeschlagen ($code).';
   }
+
+  @override
+  String get tabList => 'Liste';
+
+  @override
+  String get tabMore => 'Mehr';
+
+  @override
+  String get addSheetHint =>
+      'Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag';
+
+  @override
+  String get storeAuto => 'Laden: automatisch';
+
+  @override
+  String get typeToSuggest => 'Tippe, um Vorschläge zu sehen';
+
+  @override
+  String get suggestionTyped => 'Wie getippt';
+
+  @override
+  String get suggestionHistory => 'Schon mal gekauft';
+
+  @override
+  String get suggestionPack => 'Andere Packung';
+
+  @override
+  String get suggestionVariant => 'Andere Sorte';
+
+  @override
+  String get suggestionSize => 'Andere Größe';
+
+  @override
+  String get suggestionBrand => 'Andere Marke';
+
+  @override
+  String get suggestionCatalog => 'Aus dem Katalog';
+
+  @override
+  String get suggestionDue => 'Wieder fällig';
+
+  @override
+  String addedTo(String name, String store) {
+    return 'Hinzugefügt: $name → $store';
+  }
+
+  @override
+  String addedItem(String name) {
+    return 'Hinzugefügt: $name';
+  }
+
+  @override
+  String get clearInput => 'Eingabe leeren';
+
+  @override
+  String listItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Artikel',
+      one: '1 Artikel',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get household => 'Haushalt';
+
+  @override
+  String get storesTitle => 'Läden';
+
+  @override
+  String get storesRowHint => 'Reihenfolge und Laufweg';
+
+  @override
+  String get storesHint =>
+      'Halten und ziehen ändert die Reihenfolge der Läden in der Liste. Ein Laden öffnet seinen Laufweg.';
+
+  @override
+  String dragStore(String store) {
+    return '$store verschieben';
+  }
+
+  @override
+  String get accessRowHint => 'MCP-Server, Zugangsschlüssel, verbundene Apps';
+
+  @override
+  String get accountRowHint => 'Daten exportieren, Konto löschen';
+
+  @override
+  String get language => 'Sprache';
+
+  @override
+  String get languageSystem => 'Wie Gerät';
+
+  @override
+  String get languageGerman => 'Deutsch';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get legal => 'Rechtliches';
+
+  @override
+  String get imprint => 'Impressum';
+
+  @override
+  String get privacy => 'Datenschutz';
+
+  @override
+  String get licenses => 'Lizenzen';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get draft => 'Entwurf';
+
+  @override
+  String get privacyDraftBody =>
+      'Die Datenschutzerklärung von Hummlist wird gerade geschrieben und erscheint hier, sobald sie fertig ist.';
+
+  @override
+  String get categoryProduce => 'Obst & Gemüse';
+
+  @override
+  String get categoryBakery => 'Brot & Backwaren';
+
+  @override
+  String get categoryChilled => 'Kühlregal';
+
+  @override
+  String get categoryMeat => 'Fleisch/Wurst/Fisch';
+
+  @override
+  String get categoryPantry => 'Vorrat & Konserven';
+
+  @override
+  String get categorySweets => 'Süßes & Snacks';
+
+  @override
+  String get categoryDrinks => 'Getränke';
+
+  @override
+  String get categoryFrozen => 'Tiefkühl';
+
+  @override
+  String get categoryHousehold => 'Haushalt';
+
+  @override
+  String get categoryDrugstore => '👶 Drogerie';
+
+  @override
+  String get categoryOther => 'Sonstiges';
 }

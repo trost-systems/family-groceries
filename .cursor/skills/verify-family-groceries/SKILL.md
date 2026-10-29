@@ -55,7 +55,9 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `--key login-email`, `--key login-password` | Login screen fields |
 | `--text Anmelden` / `Registrieren` / `"Anmeldelink per E-Mail senden"` | Login buttons (the app bar also says "Anmelden"; `fg login` presses Enter instead) |
 | `--key household-name`, `--key invite-code`, `--text "Haushalt anlegen"`, `--text Beitreten` | Welcome screen (signed in, no household) |
-| `--key add-item-field` (label "Was fehlt?") | Add field on the list screen; autofocused on open |
+| `--key add-item-field` (hint "Was brauchst du?") | The add bar at the bottom of the list; autofocused on open on desktop and web. `add-clear` (✕) empties it while the sheet is open; `dictation-button` shows on phones only |
+| `--key add-sheet` (semantics "Hinzufügen"), rows `--key suggestion-0`, `suggestion-1`, … | The add sheet, open while typing or after a tap on the bar. A row's label reads "<qty> <name>, <source>, <brand>, <properties…>, <store>" (`fg wait --text "Milch, Wie getippt"`); Enter (`fg press enter`) takes `suggestion-0`. `chip-store` / `chip-category` fold out `store-option-<id>` / `category-option-<id>` for the next row taken. After an add: `added-note` ("✓ Hinzugefügt: <name> → <store>") and `added-undo`. Empty field: "Wieder fällig" rows or `add-sheet-empty`. `add-sheet-close`, `fg press escape` or a tap on the dimmed list closes it and clears the field |
+| `--key list-title` (household name in capitals), `list-count` ("N Artikel"), `new-items-subtitle` | The list header |
 | `--text "<row text>"` | Tick an item: a tap on its row. The row text reads the quantity first ("2 l Milch", "6× Bananen"); a row without a quantity reads the name. The row's key is the item id. |
 | `fg marionette -- long-press --text "<row text>"` (or `secondary-tap`, a right click) | Open an item's edit sheet (key `edit-sheet`; fields `--key edit-name`, `edit-brand`, `edit-quantity`, `edit-properties`; `--key chip-store` / `chip-category` fold out `store-option-<id>` (`store-option-none` is "Ohne Laden") / `category-option-<id>`; `--key edit-done` saves only what changed, `edit-cancel`, `edit-delete`) |
 | `fg swipe --row "<row text>" --direction left` | Delete an item (undo snackbar) |
@@ -63,11 +65,13 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `--key category-<store id or none>-<category id>` | A category divider (text in capitals, semantics label the full name); long-press opens the same menu with "Kategorie nach oben/unten" |
 | `fg drag --from-text <row or divider text> --to-text <...> [--edge before\|after]` | Hold and drag a row or divider onto a row, a category divider or a store divider (linux surface) |
 | `--key list-hint-dismiss` | "Verstanden" on the explainer card (`list-hint`); `list-empty` is the empty state |
-| `--tooltip Menü`, then `--text "Mitglied einladen"` / `"Anderem Haushalt beitreten"` / `Abmelden` | List screen menu |
+| `--key tab-list` ("Liste"), `--key tab-more` ("Mehr") | The tabs (a NavigationRail from 840 px wide). Each reopens its last page; a tap on the current tab goes to its first page. The open add sheet hides them |
+| `more-invite`, `more-join`, `more-categories`, `more-stores`, `more-access`, `menu-account`, `more-sign-out`, `language-system` / `language-de` / `language-en`, `more-imprint`, `more-privacy`, `more-licenses`, `more-version` | Entries of the More tab (`more-screen`, a lazy list: `fg marionette -- scroll-to --key <entry>` first). Recipe: `features/shell-more.md` |
 
 ```bash
 scripts/fg find --contains Milch            # what is on screen, as JSON (type, key, text, label, tooltip, bounds)
-scripts/fg type --input "2 Äpfel" --submit  # into the focused field; umlauts are safe
+scripts/fg type --input "2 Äpfel" --submit  # into the focused field; umlauts are safe; the add sheet stays open
+scripts/fg press escape                     # closes the add sheet, so the list is in reach again
 scripts/fg tap --text "2 l Milch" --client lea   # ticks Milch: the row reads the quantity first
 scripts/fg drag --from-text Gurke --to-text "1 kg Äpfel" --edge before   # a real held drag (xdotool on the client's display)
 scripts/fg wait --text Milch --gone         # never sleep; wait polls (default 15 s) and reports elapsedMs

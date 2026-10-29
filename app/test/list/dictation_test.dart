@@ -38,6 +38,11 @@ void main() {
   late FakeRepository repo;
 
   Future<void> pumpList(WidgetTester tester, Dictation? dictation) async {
+    // A phone: the microphone is a phone feature.
+    tester.view
+      ..devicePixelRatio = 3
+      ..physicalSize = const Size(390 * 3, 844 * 3);
+    addTearDown(tester.view.reset);
     repo = FakeRepository();
     await tester.pumpWidget(
       MaterialApp(

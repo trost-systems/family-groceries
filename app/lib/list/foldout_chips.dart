@@ -1,4 +1,5 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,10 @@ class const FoldoutChips({
 
   /// The category chip without a category.
   required final String categoryLabel,
+
+  /// When set, no store means "not decided yet": the chip shows this and
+  /// no option is selected (the add sheet before a store is known).
+  final String? storeAutoLabel,
 
   /// Outlines a chip whose value the user changed.
   final bool storeChanged = false,
@@ -57,8 +62,11 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
         .firstOrNull;
     final still = MediaQuery.disableAnimationsOf(context);
     final l10n = AppLocalizations.of(context);
-    final storeName = store?.name ?? w.storeLabel;
-    final categoryName = category?.name ?? w.categoryLabel;
+    final storeName = store?.name ?? w.storeAutoLabel ?? w.storeLabel;
+    final shownCategory = switch (category) {
+      final c? => categoryName(c, l10n),
+      null => w.categoryLabel,
+    };
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -73,7 +81,10 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
                   ? const Icon(Icons.storefront_outlined, size: 20)
                   : StoreBadge(store, size: 20),
               label: storeName,
-              semanticsLabel: l10n.chipStore(storeName),
+              // The automatic labels already say what the chip is.
+              semanticsLabel: store == null && w.storeAutoLabel != null
+                  ? storeName
+                  : l10n.chipStore(storeName),
               open: _fold == _Fold.store,
               changed: w.storeChanged,
               onTap: () => _toggle(_Fold.store),
@@ -81,8 +92,10 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
             _Chip(
               key: const ValueKey('chip-category'),
               leading: const Icon(Icons.category_outlined, size: 20),
-              label: categoryName,
-              semanticsLabel: l10n.chipCategory(categoryName),
+              label: shownCategory,
+              semanticsLabel: category == null
+                  ? shownCategory
+                  : l10n.chipCategory(shownCategory),
               open: _fold == _Fold.category,
               changed: w.categoryChanged,
               onTap: () => _toggle(_Fold.category),
@@ -100,7 +113,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
                 key: const ValueKey('store-option-none'),
                 leading: const Icon(Icons.storefront_outlined, size: 22),
                 label: w.storeLabel,
-                selected: w.storeId == null,
+                selected: w.storeId == null && w.storeAutoLabel == null,
                 onTap: () => _pick(() => w.onStore(null)),
               ),
               for (final s in w.catalog.stores)
@@ -116,7 +129,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
               for (final c in w.catalog.categories)
                 _Option(
                   key: ValueKey('category-option-${c.id}'),
-                  label: c.name,
+                  label: categoryName(c, l10n),
                   selected: c.id == w.categoryId,
                   onTap: () => _pick(() => w.onCategory(c.id)),
                 ),
@@ -147,26 +160,32 @@ class const _Chip({
       (false, true) => BorderSide(color: scheme.primary, width: 2),
       (false, false) => BorderSide(color: scheme.outline),
     };
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        // Desktop defaults to compact density, which shrinks targets
-        // under 44 px.
-        visualDensity: VisualDensity.standard,
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 10, 0),
-        shape: const StadiumBorder(),
-        side: side,
-        backgroundColor: open
-            ? scheme.secondaryContainer
-            : scheme.surfaceContainerLowest,
-        foregroundColor: open ? scheme.onSecondaryContainer : scheme.onSurface,
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      child: Semantics(
-        expanded: open,
-        label: semanticsLabel,
-        excludeSemantics: true,
+    // The button's own web semantics node would take the add field's text
+    // input with it on a tap; this node only taps.
+    return Semantics(
+      button: true,
+      expanded: open,
+      label: semanticsLabel,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          // Desktop defaults to compact density, which shrinks targets
+          // under 44 px.
+          visualDensity: VisualDensity.standard,
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 10, 0),
+          shape: const StadiumBorder(),
+          side: side,
+          backgroundColor: open
+              ? scheme.secondaryContainer
+              : scheme.surfaceContainerLowest,
+          foregroundColor: open
+              ? scheme.onSecondaryContainer
+              : scheme.onSurface,
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 8,
@@ -208,21 +227,25 @@ class const _Option({
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        visualDensity: VisualDensity.standard,
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 14, 0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        backgroundColor: selected
-            ? scheme.primary
-            : scheme.surfaceContainerHigh,
-        foregroundColor: selected ? scheme.onPrimary : scheme.onSurface,
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
-      child: Semantics(
-        selected: selected,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          visualDensity: VisualDensity.standard,
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 14, 0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: selected
+              ? scheme.primary
+              : scheme.surfaceContainerHigh,
+          foregroundColor: selected ? scheme.onPrimary : scheme.onSurface,
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 6,

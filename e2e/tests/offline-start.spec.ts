@@ -1,7 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  addField, addItem, apiAs, cutOff, itemRow, newEmail, password, screenshot, signUpWithHousehold, tick, typeInto,
-  within,
+  addField, addItem, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
@@ -88,8 +87,7 @@ test('signing out drops the cached list', async ({ page }) => {
   await expect(itemRow(page, 'Geheimzutat')).toBeVisible();
   await expect.poll(async () => (await cachedList(page))?.server.length, { message: 'the list is cached' }).toBe(1);
 
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Abmelden' }).click();
+  await openMore(page, 'Abmelden');
   await expect(page.getByRole('button', { name: 'Anmelden', exact: true })).toBeVisible();
   await expect.poll(
     () => page.evaluate(() => Object.keys(localStorage).filter((k) => /\b(list|household)\./.test(k)).length),

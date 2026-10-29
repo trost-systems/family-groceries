@@ -233,3 +233,7 @@ See [docs/done/web-release-align.md](docs/done/web-release-align.md).
 ## Job 27: on-demand e2e on GitHub Actions
 
 See [docs/done/27-ci-e2e-on-demand.md](docs/done/27-ci-e2e-on-demand.md).
+
+## Job 17: design H add sheet, app shell, English
+
+See [docs/done/17-design-add-shell.md](docs/done/17-design-add-shell.md).

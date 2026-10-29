@@ -1,11 +1,10 @@
 import { expect, test } from './fixtures';
-import { addField, latestLinkFor, newEmail, password, signUpWithHousehold, typeInto } from './helpers';
+import { addField, latestLinkFor, newEmail, openMore, password, signUpWithHousehold, typeInto } from './helpers';
 
 test('email and password: sign out and back in', async ({ page }) => {
   const email = newEmail('pw');
   await signUpWithHousehold(page, email);
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Abmelden' }).click();
+  await openMore(page, 'Abmelden');
   await expect(page).toHaveURL(/\/login$/);
 
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
@@ -21,8 +20,7 @@ test('email and password: sign out and back in', async ({ page }) => {
 test('magic link signs in on this device', async ({ page }) => {
   const email = newEmail('magic');
   await signUpWithHousehold(page, email);
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Abmelden' }).click();
+  await openMore(page, 'Abmelden');
 
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' }).click();

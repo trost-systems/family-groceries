@@ -36,7 +36,7 @@ Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 - Neither test item is active: `fg db query "update items set status = 'bought' where status = 'active' and name in ('Milch', 'Butter', 'Hafer', 'Hafermilch') and household_id = (select id from households where name = 'Familie Test')" --write`.
 
 - **One command.** Run `.cursor/skills/verify-family-groceries/journeys/quick-add-live-sync.sh`. It adds Milch on peter through the autofocused field, waits for it on lea, ticks it on lea with a tap on its row, waits for it to leave peter, and checks the stored row (bought, by lea). It records both screens and prints `PASS` with both timings and the evidence directory.
-- **Add on one, see on the other.** Run `fg type --key add-item-field --input Butter --submit --client lea`. Then run `fg wait --text Butter --client peter --timeout 5`, which succeeds with `elapsedMs`.
+- **Add on one, see on the other.** Run `fg type --key add-item-field --input Butter --submit --client lea` and `fg wait --contains "Hinzugefügt: Butter" --client lea`. Then run `fg wait --text Butter --client peter --timeout 5`, which succeeds with `elapsedMs`.
 - **Tick on one, gone on the other.** Run `fg tap --text Butter --client peter` (a tap on the row ticks it). Then `fg wait --text Butter --gone --client lea --timeout 5` succeeds.
 - **Edit on one.** On peter, run `fg marionette -- long-press --text Milch` (with Milch on the list), `fg wait --key edit-sheet`, `fg type --key edit-name --input Hafermilch` and `fg tap --key edit-done`. `fg wait --text Hafermilch --client lea` succeeds.
 - **Delete on one.** Run `fg swipe --row Butter --direction left --client lea` with Butter on the list. `fg wait --text Butter --gone --client peter --timeout 10` succeeds.
@@ -56,7 +56,7 @@ Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 - `elapsedMs` from `fg wait` is an upper bound: polling every 0.5 s plus about 0.2 s per Marionette call.
 - A delete hides the row on the acting client at once (optimistic). The server delete lands about 1 to 3 s later, and only then does the other client drop the row. Use `--timeout 10` for deletes.
 - A precondition written with `fg db query --write` also syncs live, because it is a real update. Write preconditions before you start recording.
-- Both apps must be signed in to the same household. A client left on another account from an earlier recipe shows a different list. Check the app bar title ("Familie Test").
+- Both apps must be signed in to the same household. A client left on another account from an earlier recipe shows a different list. Check the list title (`fg find --key list-title`, "FAMILIE TEST").
 - Realtime joins a channel before its Postgres listener is live (the `system` message "Subscribed to PostgreSQL" follows ~2.5 s later). The list resyncs on that message too (job 2b), so a change made right after opening still appears. The web e2e test "a change made before the channel is live still shows up" holds that message back to prove it.
 - `fg peer watch` reports nothing that was written before its `watch live` line: starting it in the background and writing at once loses the event, and it then fails with `timeout`. A swipe-delete reaches the watcher as no event at all; prove deletes on the other client or with `fg db query`.
 - The "neu" tint lasts only 3 s on screen. Take its screenshot in the same command chain as the wait, and prove "cleared" with `fg find --contains neu` (count 0) rather than a sleep.

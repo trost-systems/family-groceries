@@ -1,37 +1,16 @@
-import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/list_cubit.dart';
-import 'package:family_groceries/list/list_screen.dart';
-import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../more/more_harness.dart';
 import 'fake_repository.dart';
-import 'memory_cache.dart';
 
 void main() {
   late FakeRepository repo;
 
+  /// Categories live under More now.
   Future<void> openCategories(WidgetTester tester) async {
-    repo = FakeRepository();
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('de'),
-        home: BlocProvider(
-          create: (_) =>
-              ListCubit(repo, MemoryListCache(), userId: 'peter')..start(),
-          child: const ShoppingList(
-            household: Household(id: 'h', name: 'Trost'),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Menü'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Kategorien verwalten'));
+    repo = (await pumpMore(tester)).repo;
+    await tester.tap(find.byKey(const ValueKey('more-categories')));
     await tester.pumpAndSettle();
     expect(find.text('Kategorien'), findsOneWidget);
   }
@@ -77,11 +56,18 @@ void main() {
     await tester.tap(find.text('Kategorie hinzufügen'));
     await tester.pumpAndSettle();
     await enterName(tester, 'Sonstiges');
+    expect(names().where((n) => n == 'Sonstiges'), hasLength(1));
+  });
+
+  testWidgets('a taken name says so on the categories screen', (tester) async {
+    await openCategories(tester);
+    await tester.tap(find.text('Kategorie hinzufügen'));
+    await tester.pumpAndSettle();
+    await enterName(tester, 'Sonstiges');
     expect(
       find.text('Eine Kategorie „Sonstiges“ gibt es schon.'),
       findsOneWidget,
     );
-    expect(names().where((n) => n == 'Sonstiges'), hasLength(1));
   });
 
   testWidgets('deleting moves the items to the fallback by default', (

@@ -16,8 +16,8 @@ const matcherFlags: FlagSpec[] = [
   { name: 'text', help: 'Exact visible text, e.g. "Haushalt anlegen" or an item name.' },
   { name: 'type', help: 'Widget type name, e.g. IconButton, FilledButton.' },
   { name: 'identifier', help: 'Semantics identifier.' },
-  { name: 'tooltip', help: 'Tooltip of an icon button, e.g. "Menü" (tapped at its center).' },
-  { name: 'label', help: 'Label/hint of a text field, e.g. "Was fehlt?" (tapped at its center).' },
+  { name: 'tooltip', help: 'Tooltip of an icon button, e.g. "Kopieren" (tapped at its center).' },
+  { name: 'label', help: 'Label/hint of a text field, e.g. "Einladungscode" (tapped at its center).' },
   { name: 'x', help: 'X coordinate in logical pixels (with --y).' },
   { name: 'y', help: 'Y coordinate in logical pixels (with --x).' },
   { name: 'row', help: 'Scope the match to the list row that shows this exact text, e.g. --row Milch --type IconButton.' },
@@ -149,7 +149,7 @@ export const driveCommands: Command[] = [
     description:
       'Taps through Marionette\'s gesture dispatcher, the same path as a finger. Text must match exactly. A tap on an item row ticks it: `fg tap --text "2 l Milch"` (the row reads the quantity first). Hold without moving opens the edit sheet: `fg marionette -- long-press --key <item id>`; to drag, use `fg drag`.',
     flags: [...matcherFlags, clientFlag],
-    examples: ['fg tap --text "Haushalt anlegen"', 'fg tap --text Milch', 'fg tap --tooltip Menü', 'fg tap --text Abmelden'],
+    examples: ['fg tap --text "Haushalt anlegen"', 'fg tap --text Milch', 'fg tap --key tab-more', 'fg tap --tooltip Kopieren'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const r = (await resolve(m, args))!;
@@ -403,34 +403,36 @@ export const driveCommands: Command[] = [
   },
   {
     name: 'logout',
-    summary: 'Sign a client out through its menu (Menü, then Abmelden).',
+    summary: 'Sign a client out through the More tab (Mehr, then Abmelden).',
     usage: 'fg logout [--client NAME]',
     description:
-      "Opens the list screen's menu and chooses Abmelden, or the welcome screen's Abmelden button, then waits for the login screen.",
+      "Closes the add sheet if it is open, opens the More tab, scrolls to Abmelden and taps it, or taps the welcome screen's Abmelden button, then waits for the login screen.",
     flags: [clientFlag],
     examples: ['fg logout', 'fg logout --client lea'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const elements = await m.elements();
       if (elements.some((e) => e.key === 'login-email')) return { client: name, screen: 'login', alreadySignedOut: true };
-      const tapTooltip = async (tooltip: string) => {
-        const el = (await m.elements()).find((e) => e.tooltip === tooltip && e.bounds);
-        if (!el?.bounds) {
-          throw new FgError('not_found', `No "${tooltip}" button on screen.`, 'Take `fg screenshot`; close dialogs with `fg back`.');
-        }
-        await m.call(['tap', '--x', String(el.bounds.x + el.bounds.width / 2), '--y', String(el.bounds.y + el.bounds.height / 2)]);
-      };
-      if (elements.some((e) => e.tooltip === 'Menü')) {
-        await tapTooltip('Menü');
-        await waitFor(
-          ctx.sh,
-          async () => (await m.elements()).some((e) => e.text === 'Abmelden'),
-          5000,
-          () => new FgError('timeout', 'The menu did not open.', 'Take `fg screenshot`.'),
-        );
-        await m.call(['tap', '--text', 'Abmelden']);
+      const welcomeSignOut = elements.find((e) => (e.tooltip === 'Abmelden' || e.tooltip === 'Sign out') && e.bounds);
+      if (welcomeSignOut?.bounds) {
+        const { x, y, width, height } = welcomeSignOut.bounds;
+        await m.call(['tap', '--x', String(x + width / 2), '--y', String(y + height / 2)]);
       } else {
-        await tapTooltip('Abmelden');
+        // The open add sheet takes the tabs away.
+        if (elements.some((e) => e.key === 'add-sheet-close')) await m.call(['tap', '--key', 'add-sheet-close']);
+        if (!elements.some((e) => e.key === 'more-screen')) {
+          await waitForAnyKey(ctx, m, ['tab-more'], 5000).catch(() => {
+            throw new FgError('not_found', 'No "Mehr" tab on screen.', 'Take `fg screenshot`; leave a pushed page with `fg back`.');
+          });
+          await m.call(['tap', '--key', 'tab-more']);
+          // The tab reopens its last page (Zugänge, say); a tap on the current tab goes to the More list.
+          await waitForAnyKey(ctx, m, ['more-screen'], 2000).catch(async () => {
+            await m.call(['tap', '--key', 'tab-more']);
+            await waitForAnyKey(ctx, m, ['more-screen'], 5000);
+          });
+        }
+        await m.call(['scroll-to', '--key', 'more-sign-out']);
+        await m.call(['tap', '--key', 'more-sign-out']);
       }
       await waitForAnyKey(ctx, m, ['login-email'], 15_000);
       return { client: name, screen: 'login' };
@@ -444,7 +446,7 @@ export const driveCommands: Command[] = [
       "Passes the client's VM service URI for you. See `marionette help-ai` for the full reference (scroll-to, long-press, double-tap, set-device-config, get-logs, hot-reload).",
     flags: [clientFlag],
     examples: [
-      'fg marionette -- scroll-to --text "Kürzlich gekauft"',
+      'fg marionette -- scroll-to --key more-sign-out',
       'fg marionette -- long-press --text Milch',
       'fg marionette -- set-device-config --text-scale 2.0',
     ],

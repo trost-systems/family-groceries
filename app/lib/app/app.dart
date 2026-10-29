@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -13,6 +16,9 @@ class const App({
   required final SocialSignIn social,
   required final DeviceCache cache,
   required final AccountRepository account,
+
+  /// The language picked under More, read before the first frame.
+  final AppLanguage? language,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -21,10 +27,12 @@ class const App({
 
 class _AppState() extends State<App> {
   late final GoRouter _router = buildRouter(widget.session);
+  late final _language = LanguageCubit(widget.cache, widget.language);
 
   @override
   void dispose() {
     _router.dispose();
+    unawaited(_language.close());
     super.dispose();
   }
 
@@ -37,25 +45,32 @@ class _AppState() extends State<App> {
         RepositoryProvider.value(value: widget.cache),
         RepositoryProvider.value(value: widget.account),
       ],
-      child: BlocProvider.value(
-        value: widget.session,
-        child: MaterialApp.router(
-          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-          theme: ThemeData(colorSchemeSeed: seed),
-          darkTheme: ThemeData(
-            colorSchemeSeed: seed,
-            brightness: Brightness.dark,
-          ),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('de'),
-          routerConfig: _router,
-          builder: (context, child) => BlocBuilder<SessionCubit, Session>(
-            builder: (context, session) => session is SessionLoading
-                ? const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  )
-                : child!,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: widget.session),
+          BlocProvider.value(value: _language),
+        ],
+        child: BlocBuilder<LanguageCubit, AppLanguage?>(
+          builder: (context, picked) => MaterialApp.router(
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            theme: ThemeData(colorSchemeSeed: seed),
+            darkTheme: ThemeData(
+              colorSchemeSeed: seed,
+              brightness: Brightness.dark,
+            ),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: picked == null ? null : Locale(picked.code),
+            localeListResolutionCallback: (preferred, _) =>
+                resolveLocale(preferred, null),
+            routerConfig: _router,
+            builder: (context, child) => BlocBuilder<SessionCubit, Session>(
+              builder: (context, session) => session is SessionLoading
+                  ? const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    )
+                  : child!,
+            ),
           ),
         ),
       ),

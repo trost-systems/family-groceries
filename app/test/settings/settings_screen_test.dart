@@ -61,7 +61,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('de'),
-        home: SettingsScreen(repository: repo),
+        home: Scaffold(body: SettingsScreen(repository: repo)),
       ),
     );
     await tester.pumpAndSettle();
@@ -76,7 +76,7 @@ void main() {
 
   testWidgets('shows the MCP endpoint and empty sections', (tester) async {
     await pumpSettings(tester);
-    expect(find.text('Zugänge'), findsOneWidget);
+    expect(find.text('MCP-Server'), findsOneWidget);
     // Tests build for the production project, whose MCP URL is the proxy.
     expect(find.text('https://mcp.hummlist.com'), findsOneWidget);
     expect(find.text('Kein aktiver Token.'), findsOneWidget);

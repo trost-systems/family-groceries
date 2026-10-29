@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
@@ -60,7 +61,7 @@ class const StoreLayoutScreen({required final String storeId, super.key})
           final (:category, hidden: _) = stops[index];
           return ListTile(
             key: ValueKey(category.id),
-            title: Text(category.name),
+            title: Text(categoryName(category, l10n)),
             trailing: ReorderableDragStartListener(
               index: index,
               child: Padding(
@@ -71,7 +72,9 @@ class const StoreLayoutScreen({required final String storeId, super.key})
                   container: true,
                   child: Icon(
                     Icons.drag_handle,
-                    semanticLabel: l10n.dragCategory(category.name),
+                    semanticLabel: l10n.dragCategory(
+                      categoryName(category, l10n),
+                    ),
                   ),
                 ),
               ),

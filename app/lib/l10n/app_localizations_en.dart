@@ -13,13 +13,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Hummlist';
 
   @override
-  String get addFieldHint => 'Was fehlt?';
+  String get addFieldHint => 'What do you need?';
 
   @override
-  String get addButton => 'Hinzufügen';
+  String get addButton => 'Add';
 
   @override
-  String get emptyList => 'The list is empty. Type above what you need.';
+  String get emptyList => 'The list is empty. Type below what you need.';
 
   @override
   String get sortingItem => 'Sorting …';
@@ -47,45 +47,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String alreadyOnList(String name) {
-    return '$name steht schon auf der Liste';
+    return '$name is already on the list';
   }
 
   @override
-  String get dictationStart => 'Diktieren';
+  String get dictationStart => 'Dictate';
 
   @override
-  String get dictationStop => 'Diktat beenden';
+  String get dictationStop => 'Stop dictation';
 
   @override
-  String get dictationListening => 'Ich höre zu …';
+  String get dictationListening => 'Listening …';
 
   @override
   String get dictationUnavailable =>
-      'Spracheingabe ist nicht verfügbar. Erlaube Mikrofon und Spracherkennung in den Einstellungen.';
+      'Voice input isn\'t available. Allow microphone and speech recognition in Settings.';
 
   @override
   String get dictationNoOfflineGerman =>
-      'Diktieren geht nur offline, damit deine Stimme auf dem Gerät bleibt. Dafür fehlt hier die deutsche Offline-Spracherkennung. Lade sie in den Systemeinstellungen herunter oder tippe den Eintrag ein.';
+      'Dictation only works offline, so your voice stays on the device. This device is missing German offline speech recognition. Download it in the system settings or type the item instead.';
 
   @override
-  String get dictationNothingHeard => 'Ich habe nichts gehört.';
+  String get dictationNothingHeard => 'I didn\'t hear anything.';
 
   @override
   String get dictationNothingUnderstood =>
-      'Ich habe nichts verstanden, was auf die Liste soll.';
+      'I didn\'t catch anything for the list.';
 
   @override
   String get dictationSplitFailed =>
-      'Keine Verbindung. Der Text steht im Feld; prüfe ihn und tippe auf Hinzufügen.';
+      'No connection. The text is in the field; check it and tap Add.';
 
   @override
   String dictationAdded(String items) {
-    return 'Hinzugefügt: $items.';
+    return 'Added: $items.';
   }
 
   @override
   String dictationAlreadyOnList(String items) {
-    return 'Schon auf der Liste: $items.';
+    return 'Already on the list: $items.';
   }
 
   @override
@@ -143,7 +143,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editHint => 'Only what you change is saved';
 
   @override
-  String get save => 'Speichern';
+  String get save => 'Save';
 
   @override
   String get cancel => 'Cancel';
@@ -153,15 +153,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offline =>
-      'Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist';
+      'Offline: changes will sync once the connection is back';
 
   @override
   String pendingChanges(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count Änderungen werden synchronisiert',
-      one: '1 Änderung wird synchronisiert',
+      other: 'Syncing $count changes',
+      one: 'Syncing 1 change',
     );
     return '$_temp0';
   }
@@ -172,23 +172,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get menu => 'Menü';
+  String get menu => 'Menu';
 
   @override
-  String get inviteMember => 'Mitglied einladen';
+  String get inviteMember => 'Invite member';
 
   @override
-  String get joinOtherHousehold => 'Anderem Haushalt beitreten';
+  String get joinOtherHousehold => 'Join another household';
 
   @override
-  String get signOut => 'Abmelden';
+  String get signOut => 'Sign out';
 
   @override
-  String get inviteTitle => 'Mitglied einladen';
+  String get inviteTitle => 'Invite member';
 
   @override
   String get inviteBody =>
-      'Gib diesen Code in der App ein oder teile den Link. Er ist 14 Tage gültig.';
+      'Enter this code in the app or share the link. It\'s valid for 14 days.';
 
   @override
   String get inviteCodeLabel => 'Code';
@@ -197,165 +197,165 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteLinkLabel => 'Link';
 
   @override
-  String get copy => 'Kopieren';
+  String get copy => 'Copy';
 
   @override
-  String get copied => 'Kopiert';
+  String get copied => 'Copied';
 
   @override
-  String get close => 'Schließen';
+  String get close => 'Close';
 
   @override
-  String get signInTitle => 'Anmelden';
+  String get signInTitle => 'Sign in';
 
   @override
-  String get email => 'E-Mail';
+  String get email => 'Email';
 
   @override
-  String get password => 'Passwort';
+  String get password => 'Password';
 
   @override
-  String get signIn => 'Anmelden';
+  String get signIn => 'Sign in';
 
   @override
-  String get signUp => 'Registrieren';
+  String get signUp => 'Sign up';
 
   @override
-  String get sendMagicLink => 'Anmeldelink per E-Mail senden';
+  String get sendMagicLink => 'Email me a sign-in link';
 
   @override
   String get magicLinkSent =>
-      'Wir haben dir einen Anmeldelink geschickt. Öffne ihn auf diesem Gerät.';
+      'We sent you a sign-in link. Open it on this device.';
 
   @override
   String get signUpCheckEmail =>
-      'Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben.';
+      'Please confirm your email address with the link we sent you.';
 
   @override
-  String get invalidEmail => 'Bitte eine gültige E-Mail-Adresse eingeben';
+  String get invalidEmail => 'Please enter a valid email address';
 
   @override
-  String get passwordTooShort => 'Mindestens 6 Zeichen';
+  String get passwordTooShort => 'At least 6 characters';
 
   @override
   String authFailed(String message) {
-    return 'Anmeldung fehlgeschlagen: $message';
+    return 'Sign-in failed: $message';
   }
 
   @override
-  String get signInWithGoogle => 'Mit Google anmelden';
+  String get signInWithGoogle => 'Sign in with Google';
 
   @override
-  String get signInWithApple => 'Mit Apple anmelden';
+  String get signInWithApple => 'Sign in with Apple';
 
   @override
-  String get signInCanceled => 'Anmeldung abgebrochen';
+  String get signInCanceled => 'Sign-in canceled';
 
   @override
-  String get orWithEmail => 'oder mit E-Mail';
+  String get orWithEmail => 'or with email';
 
   @override
-  String get onboardingTitle => 'Willkommen';
+  String get onboardingTitle => 'Welcome';
 
   @override
   String get onboardingBody =>
-      'Lege einen Haushalt an oder tritt mit einem Einladungscode bei.';
+      'Create a household or join one with an invite code.';
 
   @override
-  String get householdName => 'Name des Haushalts';
+  String get householdName => 'Household name';
 
   @override
-  String get householdNameDefault => 'Unser Haushalt';
+  String get householdNameDefault => 'Our household';
 
   @override
-  String get createHousehold => 'Haushalt anlegen';
+  String get createHousehold => 'Create household';
 
   @override
-  String get inviteCode => 'Einladungscode';
+  String get inviteCode => 'Invite code';
 
   @override
-  String get joinHousehold => 'Beitreten';
+  String get joinHousehold => 'Join';
 
   @override
-  String get invalidInvite => 'Dieser Code ist ungültig oder abgelaufen.';
+  String get invalidInvite => 'This code is invalid or has expired.';
 
   @override
   String get switchHouseholdWarning =>
-      'Du verlässt deinen aktuellen Haushalt. Bist du der letzte, wird er mit seiner Liste gelöscht.';
+      'You\'ll leave your current household. If you\'re the last member, it\'s deleted along with its list.';
 
   @override
   String genericError(String message) {
-    return 'Etwas ist schiefgelaufen: $message';
+    return 'Something went wrong: $message';
   }
 
   @override
-  String get loading => 'Lädt …';
+  String get loading => 'Loading …';
 
   @override
-  String get consentTitle => 'Zugriff erlauben?';
+  String get consentTitle => 'Allow access?';
 
   @override
   String consentSignedInAs(String email) {
-    return 'Angemeldet als $email';
+    return 'Signed in as $email';
   }
 
   @override
   String consentHousehold(String name) {
-    return 'Haushalt: $name';
+    return 'Household: $name';
   }
 
   @override
   String consentWants(String client) {
-    return '$client möchte:';
+    return '$client wants to:';
   }
 
   @override
   String get consentListAccess =>
-      'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und verschieben';
+      'Read, add, tick off and move items on your shopping list';
 
   @override
-  String get scopeOpenid => 'Deine Anmeldung bestätigen';
+  String get scopeOpenid => 'Confirm your sign-in';
 
   @override
-  String get scopeEmail => 'Deine E-Mail-Adresse';
+  String get scopeEmail => 'Your email address';
 
   @override
-  String get scopeProfile => 'Dein Name und Profil';
+  String get scopeProfile => 'Your name and profile';
 
   @override
-  String get scopePhone => 'Deine Telefonnummer';
+  String get scopePhone => 'Your phone number';
 
   @override
-  String get scopeOfflineAccess => 'Dauerhaft angemeldet bleiben';
+  String get scopeOfflineAccess => 'Stay signed in';
 
   @override
-  String get consentAllow => 'Erlauben';
+  String get consentAllow => 'Allow';
 
   @override
-  String get consentDeny => 'Ablehnen';
+  String get consentDeny => 'Deny';
 
   @override
-  String get redirecting => 'Weiterleitung …';
+  String get redirecting => 'Redirecting …';
 
   @override
   String get consentInvalid =>
-      'Diese Anfrage ist ungültig oder abgelaufen. Starte die Verbindung in deiner App neu.';
+      'This request is invalid or has expired. Start the connection again in your app.';
 
   @override
-  String get accessTitle => 'Zugänge';
+  String get accessTitle => 'Access';
 
   @override
-  String get mcpServer => 'MCP-Server';
+  String get mcpServer => 'MCP server';
 
   @override
   String get mcpServerBody =>
-      'Für Claude, ChatGPT und andere KI-Assistenten. Verbinde per Anmeldung (OAuth) oder mit einem Zugriffstoken.';
+      'For Claude, ChatGPT and other AI assistants. Connect by signing in (OAuth) or with an access token.';
 
   @override
-  String get accessTokens => 'Zugriffstoken';
+  String get accessTokens => 'Access tokens';
 
   @override
-  String get noTokens => 'Kein aktiver Token.';
+  String get noTokens => 'No active token.';
 
   @override
   String tokenHint(String hint) {
@@ -367,7 +367,7 @@ class AppLocalizationsEn extends AppLocalizations {
     final intl.DateFormat dateDateFormat = intl.DateFormat.yMd(localeName);
     final String dateString = dateDateFormat.format(date);
 
-    return 'Erstellt am $dateString';
+    return 'Created $dateString';
   }
 
   @override
@@ -375,82 +375,79 @@ class AppLocalizationsEn extends AppLocalizations {
     final intl.DateFormat dateDateFormat = intl.DateFormat.yMd(localeName);
     final String dateString = dateDateFormat.format(date);
 
-    return 'Zuletzt benutzt $dateString';
+    return 'Last used $dateString';
   }
 
   @override
-  String get neverUsed => 'Noch nie benutzt';
+  String get neverUsed => 'Never used';
 
   @override
-  String get createToken => 'Token erstellen';
+  String get createToken => 'Create token';
 
   @override
-  String get create => 'Erstellen';
+  String get create => 'Create';
 
   @override
   String get tokenName => 'Name';
 
   @override
-  String get tokenNameHint => 'z. B. Claude oder Siri';
+  String get tokenNameHint => 'e.g. Claude or Siri';
 
   @override
-  String get tokenCreated => 'Token erstellt';
+  String get tokenCreated => 'Token created';
 
   @override
-  String get tokenShownOnce =>
-      'Kopiere den Token jetzt. Er wird nicht noch einmal angezeigt.';
+  String get tokenShownOnce => 'Copy the token now. It won\'t be shown again.';
 
   @override
   String get done => 'Done';
 
   @override
   String revokeToken(String name) {
-    return '$name widerrufen';
+    return 'Revoke $name';
   }
 
   @override
-  String get revokeTokenTitle => 'Token widerrufen?';
+  String get revokeTokenTitle => 'Revoke token?';
 
   @override
-  String get revokeTokenBody =>
-      'Apps, die ihn benutzen, verlieren sofort den Zugriff.';
+  String get revokeTokenBody => 'Apps using it lose access right away.';
 
   @override
-  String get revoke => 'Widerrufen';
+  String get revoke => 'Revoke';
 
   @override
-  String get tooManyTokens => 'Höchstens 20 aktive Tokens.';
+  String get tooManyTokens => 'At most 20 active tokens.';
 
   @override
-  String get connectedApps => 'Verbundene Apps';
+  String get connectedApps => 'Connected apps';
 
   @override
-  String get noConnectedApps => 'Noch keine App verbunden.';
+  String get noConnectedApps => 'No apps connected yet.';
 
   @override
   String connectedOn(DateTime date) {
     final intl.DateFormat dateDateFormat = intl.DateFormat.yMd(localeName);
     final String dateString = dateDateFormat.format(date);
 
-    return 'Verbunden am $dateString';
+    return 'Connected $dateString';
   }
 
   @override
-  String get disconnect => 'Trennen';
+  String get disconnect => 'Disconnect';
 
   @override
   String disconnectApp(String name) {
-    return '$name trennen';
+    return 'Disconnect $name';
   }
 
   @override
   String disconnectTitle(String name) {
-    return '$name trennen?';
+    return 'Disconnect $name?';
   }
 
   @override
-  String get disconnectBody =>
-      'Die App verliert sofort den Zugriff auf deine Liste.';
+  String get disconnectBody => 'The app loses access to your list right away.';
 
   @override
   String get editStoreLayout => 'Edit order';
@@ -459,7 +456,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manageCategories => 'Manage categories';
 
   @override
-  String get categoriesTitle => 'Kategorien';
+  String get categoriesTitle => 'Categories';
 
   @override
   String get categoriesHint =>
@@ -469,18 +466,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryName => 'Name';
 
   @override
-  String get renameCategory => 'Kategorie umbenennen';
+  String get renameCategory => 'Rename category';
 
   @override
-  String get addCategory => 'Kategorie hinzufügen';
+  String get addCategory => 'Add category';
 
   @override
   String deleteCategory(String name) {
-    return '$name löschen';
+    return 'Delete $name';
   }
 
   @override
-  String get moveItemsTo => 'Artikel verschieben nach';
+  String get moveItemsTo => 'Move items to';
 
   @override
   String dragCategory(String name) {
@@ -489,7 +486,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String categoryNameTaken(String name) {
-    return 'Eine Kategorie „$name“ gibt es schon.';
+    return 'A category named “$name” already exists.';
   }
 
   @override
@@ -506,12 +503,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String newItemsFrom(int count, String name) {
-    return '$count neu von $name';
+    return '$count new from $name';
   }
 
   @override
   String newItems(int count) {
-    return '$count neu';
+    return '$count new';
   }
 
   @override
@@ -568,109 +565,264 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String suggestion(String label) {
-    return 'Vorschlag: $label';
+    return 'Suggestion: $label';
   }
 
   @override
-  String get dueSuggestions => 'Brauchen wir wieder?';
+  String get dueSuggestions => 'Need these again?';
 
   @override
-  String get account => 'Konto';
+  String get account => 'Account';
 
   @override
-  String get accountExport => 'Meine Daten exportieren';
+  String get accountExport => 'Export my data';
 
   @override
   String get accountExportBody =>
-      'Alles, was über dich gespeichert ist, als JSON-Datei.';
+      'Everything stored about you, as a JSON file.';
 
   @override
-  String get accountDelete => 'Konto löschen';
+  String get accountDelete => 'Delete account';
 
   @override
-  String get accountDeleteTitle => 'Konto löschen?';
+  String get accountDeleteTitle => 'Delete account?';
 
   @override
   String get accountDeleteWhat =>
-      'Dein Konto, dein Profil, deine Zugangs-Tokens und deine verbundenen Apps werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.';
+      'Your account, profile, access tokens and connected apps will be deleted for good. This can\'t be undone.';
 
   @override
   String accountDeleteKept(String household, String names) {
-    return 'Der Haushalt „$household“ bleibt für $names mit der ganzen Liste erhalten. Deine Einträge bleiben dort, aber ohne deinen Namen.';
+    return 'The household “$household” stays with $names, list and all. Your items stay there, but without your name.';
   }
 
   @override
   String accountDeleteKeptUnnamed(String household) {
-    return 'Der Haushalt „$household“ bleibt für die anderen Mitglieder mit der ganzen Liste erhalten. Deine Einträge bleiben dort, aber ohne deinen Namen.';
+    return 'The household “$household” stays with the other members, list and all. Your items stay there, but without your name.';
   }
 
   @override
   String namesAnd(String first, String last) {
-    return '$first und $last';
+    return '$first and $last';
   }
 
   @override
   String accountDeleteDeleted(String household) {
-    return 'Du bist das letzte Mitglied. Deshalb wird der Haushalt „$household“ mit Liste, Verlauf, Kategorien und Geschäften gelöscht.';
+    return 'You\'re the last member, so the household “$household” will be deleted with its list, history, categories and stores.';
   }
 
   @override
   String get accountDeleteNone =>
-      'Du bist in keinem Haushalt, geteilte Daten gibt es nicht.';
+      'You\'re not in a household, so there\'s no shared data.';
 
   @override
   String get accountDeleteExportHint =>
-      'Mit „Meine Daten exportieren“ in den Einstellungen kannst du vorher eine Kopie sichern.';
+      'To keep a copy first, use “Export my data” in Settings.';
 
   @override
-  String get accountDeleteConfirmLabel => 'Zum Bestätigen LÖSCHEN eingeben';
+  String get accountDeleteConfirmLabel => 'Type DELETE to confirm';
 
   @override
-  String get accountDeleteConfirm => 'Endgültig löschen';
+  String get accountDeleteConfirm => 'Delete for good';
 
   @override
   String get accountDeleteOffline =>
-      'Keine Internetverbindung. Dein Konto wurde nicht gelöscht. Versuche es erneut, sobald du online bist.';
+      'No internet connection. Your account was not deleted. Try again once you\'re online.';
 
   @override
   String accountDeleteFailed(String code) {
-    return 'Löschen fehlgeschlagen ($code). Dein Konto wurde nicht gelöscht.';
+    return 'Deletion failed ($code). Your account was not deleted.';
   }
 
   @override
-  String get accountDeleteCanceled =>
-      'Abgebrochen. Dein Konto wurde nicht gelöscht.';
+  String get accountDeleteCanceled => 'Canceled. Your account was not deleted.';
 
   @override
   String get accountFateOffline =>
-      'Keine Internetverbindung. Was mit deinem Haushalt passiert, konnte nicht geladen werden.';
+      'No internet connection. Couldn\'t load what happens to your household.';
 
   @override
   String accountFateFailed(String code) {
-    return 'Was mit deinem Haushalt passiert, konnte nicht geladen werden ($code).';
+    return 'Couldn\'t load what happens to your household ($code).';
   }
 
   @override
-  String get accountDeletedNotice => 'Dein Konto wurde gelöscht.';
+  String get accountDeletedNotice => 'Your account was deleted.';
 
   @override
   String get accountDeletedApple =>
-      'Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.';
+      'If you signed in with Apple, remove “Hummlist” on your iPhone under Settings › [your name] › Sign-In & Security › Sign in with Apple.';
 
   @override
-  String get exportDone => 'Daten exportiert';
+  String get exportDone => 'Data exported';
 
   @override
   String exportDoneAt(String path) {
-    return 'Daten exportiert: $path';
+    return 'Data exported: $path';
   }
 
   @override
   String get exportOffline =>
-      'Keine Internetverbindung. Deine Daten wurden nicht exportiert.';
+      'No internet connection. Your data was not exported.';
 
   @override
   String exportFailed(String code) {
-    return 'Export fehlgeschlagen ($code).';
+    return 'Export failed ($code).';
   }
+
+  @override
+  String get tabList => 'List';
+
+  @override
+  String get tabMore => 'More';
+
+  @override
+  String get addSheetHint => 'Tap to add · ↵ takes the first suggestion';
+
+  @override
+  String get storeAuto => 'Store: automatic';
+
+  @override
+  String get typeToSuggest => 'Type to see suggestions';
+
+  @override
+  String get suggestionTyped => 'As typed';
+
+  @override
+  String get suggestionHistory => 'Bought before';
+
+  @override
+  String get suggestionPack => 'Other pack';
+
+  @override
+  String get suggestionVariant => 'Other kind';
+
+  @override
+  String get suggestionSize => 'Other size';
+
+  @override
+  String get suggestionBrand => 'Other brand';
+
+  @override
+  String get suggestionCatalog => 'From the catalogue';
+
+  @override
+  String get suggestionDue => 'Due again';
+
+  @override
+  String addedTo(String name, String store) {
+    return 'Added: $name → $store';
+  }
+
+  @override
+  String addedItem(String name) {
+    return 'Added: $name';
+  }
+
+  @override
+  String get clearInput => 'Clear';
+
+  @override
+  String listItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get household => 'Household';
+
+  @override
+  String get storesTitle => 'Stores';
+
+  @override
+  String get storesRowHint => 'Order and walking route';
+
+  @override
+  String get storesHint =>
+      'Drag to change the order of the stores in the list. Tap a store to edit its walking route.';
+
+  @override
+  String dragStore(String store) {
+    return 'Move $store';
+  }
+
+  @override
+  String get accessRowHint => 'MCP server, access tokens, connected apps';
+
+  @override
+  String get accountRowHint => 'Export your data, delete your account';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'Device';
+
+  @override
+  String get languageGerman => 'Deutsch';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get legal => 'Legal';
+
+  @override
+  String get imprint => 'Imprint';
+
+  @override
+  String get privacy => 'Privacy';
+
+  @override
+  String get licenses => 'Licenses';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get draft => 'Draft';
+
+  @override
+  String get privacyDraftBody =>
+      'Hummlist\'s privacy policy is being written and will appear here once it is ready.';
+
+  @override
+  String get categoryProduce => 'Fruit & veg';
+
+  @override
+  String get categoryBakery => 'Bread & bakery';
+
+  @override
+  String get categoryChilled => 'Chilled';
+
+  @override
+  String get categoryMeat => 'Meat & fish';
+
+  @override
+  String get categoryPantry => 'Pantry';
+
+  @override
+  String get categorySweets => 'Sweets & snacks';
+
+  @override
+  String get categoryDrinks => 'Drinks';
+
+  @override
+  String get categoryFrozen => 'Frozen';
+
+  @override
+  String get categoryHousehold => 'Household';
+
+  @override
+  String get categoryDrugstore => '👶 Drugstore';
+
+  @override
+  String get categoryOther => 'Other';
 }

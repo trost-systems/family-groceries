@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @addFieldHint.
   ///
   /// In de, this message translates to:
-  /// **'Was fehlt?'**
+  /// **'Was brauchst du?'**
   String get addFieldHint;
 
   /// No description provided for @addButton.
@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyList.
   ///
   /// In de, this message translates to:
-  /// **'Die Liste ist leer. Tippe oben ein, was fehlt.'**
+  /// **'Die Liste ist leer. Tippe unten ein, was fehlt.'**
   String get emptyList;
 
   /// No description provided for @sortingItem.
@@ -1159,6 +1159,282 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Export fehlgeschlagen ({code}).'**
   String exportFailed(String code);
+
+  /// The List tab
+  ///
+  /// In de, this message translates to:
+  /// **'Liste'**
+  String get tabList;
+
+  /// The More tab: settings, sign-out, legal
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr'**
+  String get tabMore;
+
+  /// Under the open add sheet, where the tabs were
+  ///
+  /// In de, this message translates to:
+  /// **'Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag'**
+  String get addSheetHint;
+
+  /// The add sheet's store chip before a store is known
+  ///
+  /// In de, this message translates to:
+  /// **'Laden: automatisch'**
+  String get storeAuto;
+
+  /// The add sheet with nothing typed and nothing due
+  ///
+  /// In de, this message translates to:
+  /// **'Tippe, um Vorschläge zu sehen'**
+  String get typeToSuggest;
+
+  /// Source of the first add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Wie getippt'**
+  String get suggestionTyped;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Schon mal gekauft'**
+  String get suggestionHistory;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Andere Packung'**
+  String get suggestionPack;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Andere Sorte'**
+  String get suggestionVariant;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Andere Größe'**
+  String get suggestionSize;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Andere Marke'**
+  String get suggestionBrand;
+
+  /// Source label of an add suggestion
+  ///
+  /// In de, this message translates to:
+  /// **'Aus dem Katalog'**
+  String get suggestionCatalog;
+
+  /// Source label of a due usual in the add sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Wieder fällig'**
+  String get suggestionDue;
+
+  /// The add sheet's note after an add
+  ///
+  /// In de, this message translates to:
+  /// **'Hinzugefügt: {name} → {store}'**
+  String addedTo(String name, String store);
+
+  /// The add sheet's note after an add without a store
+  ///
+  /// In de, this message translates to:
+  /// **'Hinzugefügt: {name}'**
+  String addedItem(String name);
+
+  /// Clears the add field
+  ///
+  /// In de, this message translates to:
+  /// **'Eingabe leeren'**
+  String get clearInput;
+
+  /// Open items, under the list title
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Artikel} other{{count} Artikel}}'**
+  String listItemCount(int count);
+
+  /// More: section
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt'**
+  String get household;
+
+  /// More: the stores screen
+  ///
+  /// In de, this message translates to:
+  /// **'Läden'**
+  String get storesTitle;
+
+  /// More: under Läden
+  ///
+  /// In de, this message translates to:
+  /// **'Reihenfolge und Laufweg'**
+  String get storesRowHint;
+
+  /// Stores screen hint
+  ///
+  /// In de, this message translates to:
+  /// **'Halten und ziehen ändert die Reihenfolge der Läden in der Liste. Ein Laden öffnet seinen Laufweg.'**
+  String get storesHint;
+
+  /// Drag handle of a store
+  ///
+  /// In de, this message translates to:
+  /// **'{store} verschieben'**
+  String dragStore(String store);
+
+  /// More: under Zugänge
+  ///
+  /// In de, this message translates to:
+  /// **'MCP-Server, Zugangsschlüssel, verbundene Apps'**
+  String get accessRowHint;
+
+  /// More: under Konto
+  ///
+  /// In de, this message translates to:
+  /// **'Daten exportieren, Konto löschen'**
+  String get accountRowHint;
+
+  /// More: section
+  ///
+  /// In de, this message translates to:
+  /// **'Sprache'**
+  String get language;
+
+  /// Language option: follow the device
+  ///
+  /// In de, this message translates to:
+  /// **'Wie Gerät'**
+  String get languageSystem;
+
+  /// Language option, in its own language
+  ///
+  /// In de, this message translates to:
+  /// **'Deutsch'**
+  String get languageGerman;
+
+  /// Language option, in its own language
+  ///
+  /// In de, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// More: section
+  ///
+  /// In de, this message translates to:
+  /// **'Rechtliches'**
+  String get legal;
+
+  /// More: legal notice
+  ///
+  /// In de, this message translates to:
+  /// **'Impressum'**
+  String get imprint;
+
+  /// More: privacy policy
+  ///
+  /// In de, this message translates to:
+  /// **'Datenschutz'**
+  String get privacy;
+
+  /// More: open-source licenses
+  ///
+  /// In de, this message translates to:
+  /// **'Lizenzen'**
+  String get licenses;
+
+  /// More: bottom line
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version}'**
+  String appVersion(String version);
+
+  /// Marks placeholder text
+  ///
+  /// In de, this message translates to:
+  /// **'Entwurf'**
+  String get draft;
+
+  /// Placeholder until a privacy policy is published
+  ///
+  /// In de, this message translates to:
+  /// **'Die Datenschutzerklärung von Hummlist wird gerade geschrieben und erscheint hier, sobald sie fertig ist.'**
+  String get privacyDraftBody;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Obst & Gemüse'**
+  String get categoryProduce;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Brot & Backwaren'**
+  String get categoryBakery;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Kühlregal'**
+  String get categoryChilled;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Fleisch/Wurst/Fisch'**
+  String get categoryMeat;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Vorrat & Konserven'**
+  String get categoryPantry;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Süßes & Snacks'**
+  String get categorySweets;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Getränke'**
+  String get categoryDrinks;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Tiefkühl'**
+  String get categoryFrozen;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt'**
+  String get categoryHousehold;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'👶 Drogerie'**
+  String get categoryDrugstore;
+
+  /// Seeded category, exactly as public.seed_household names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Sonstiges'**
+  String get categoryOther;
 }
 
 class _AppLocalizationsDelegate

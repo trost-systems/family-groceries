@@ -1,6 +1,9 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
-import { actionSnackBar, addField, addItem, editField, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tick, typeInto } from './helpers';
+import {
+  actionSnackBar, addedNote, addField, addItem, closeSheet, editField, enterItem, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold,
+  tick, typeInto,
+} from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signUpWithHousehold(page, newEmail('list'));
@@ -45,8 +48,9 @@ test('ticking removes the item, undo brings it back, and it lands in recently bo
 test('adding an item that is already on the list does not duplicate it', async ({ page }) => {
   await addItem(page, 'Butter');
   await expect(itemRow(page, 'Butter')).toBeVisible();
-  await addItem(page, 'butter');
-  await expect(page.getByText('Butter steht schon auf der Liste').first()).toBeVisible();
+  await enterItem(page, 'butter');
+  await expect(addedNote(page, 'Butter steht schon auf der Liste')).toBeVisible();
+  await closeSheet(page);
   await expect(itemRow(page, 'Butter')).toHaveCount(1);
 });
 

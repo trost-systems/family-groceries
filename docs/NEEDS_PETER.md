@@ -685,3 +685,16 @@ box, and the agent made the change with it:
   Authentication (deployment protection unchanged).
 - `app.hummlist.com` stayed on the 5b6659d build (`dpl_AiSL9Jf7`) and moves
   with the next store release (`DEPLOY.md`, section "Web app").
+
+## Job 17: legal pages and the guides site
+
+- **Datenschutz.** The app has no privacy policy to link. More →
+  Datenschutz opens an in-app page marked "Entwurf" that says the policy is
+  being written. Once a policy is published, set `privacyPolicyUrl` in
+  `app/lib/app/guides.dart` to its URL (one line) and the row links there.
+  The text itself is yours (or a lawyer's) to write; the app invents none.
+- **Impressum.** More → Impressum opens https://hummlist.com/impressum
+  (English: /en/imprint), the page job 24a wrote in `site/`. On 2026-10-29
+  hummlist.com answered 404 for every path, so the site is not deployed
+  yet. Deploying it (docs/DEPLOY.md, the site's Vercel project) makes the
+  link work; nothing changes in the app.

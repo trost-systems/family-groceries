@@ -22,6 +22,13 @@ void main() {
     (household, '/?code=pkce', '/'),
     (household, '/', null),
     (household, '/settings', null),
+    (household, '/settings?section=account', null),
+    // An invite link opens the join page wherever it points.
+    (household, '/settings?invite=ABCD2345', '/join/ABCD2345'),
+    (household, '/more', null),
+    (household, '/more/privacy', null),
+    (household, '/more/nothing-here', '/'),
+    (SignedOut(), '/more', '/login'),
     (SignedOut(), '/settings', '/login'),
     (SignedOut(), consent, '/login?$next'),
     (SignedOut(), '/login?$next', null),

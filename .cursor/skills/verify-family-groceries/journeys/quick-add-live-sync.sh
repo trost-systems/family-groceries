@@ -36,13 +36,21 @@ run record start --name "peter-quick-add-$stamp" --client peter >/dev/null
 run record start --name "lea-live-sync-$stamp" --client lea >/dev/null
 run screenshot --name 01-peter-opened --client peter >/dev/null
 
-step "type into whatever has focus (the add field, if autofocus works) and press Enter"
-run type --input "$item" --submit --client peter >/dev/null
-run wait --text "$item" --client peter --timeout 5 >/dev/null
+step "type into whatever has focus (the add field, if autofocus works) and press Enter: the sheet's first row"
+run type --input "$item" --client peter >/dev/null
+run wait --text "$item, Wie getippt" --client peter --timeout 5 >/dev/null
+run press enter --client peter >/dev/null
+run wait --contains "Hinzugefügt: $item" --client peter --timeout 5 >/dev/null
 run screenshot --name 02-peter-added --client peter >/dev/null
 
 step "focus stays in the field: a second Enter-add without tapping"
 run type --input "2 Äpfel" --submit --client peter >/dev/null
+run wait --contains "Hinzugefügt: Äpfel" --client peter --timeout 5 >/dev/null
+
+step "Escape closes the sheet; peter's list shows both rows"
+run press escape --client peter >/dev/null
+run wait --key add-sheet --gone --client peter >/dev/null
+run wait --text "$item" --client peter --timeout 5 >/dev/null
 run wait --text "2× Äpfel" --client peter --timeout 5 >/dev/null
 
 step "lea's app shows the item without any action on lea's side"
@@ -55,7 +63,7 @@ gone="$(run wait --text "$item" --gone --client peter --timeout 5 | jq -r '.elap
 run screenshot --name 04-peter-item-gone --client peter >/dev/null
 
 step "server state: the row just added is bought, by lea"
-rows="$(run db query "select i.name, i.status, u.email as bought_by from items i left join auth.users u on u.id = i.bought_by where i.name = '$item' order by i.created_at desc limit 1")"
+rows="$(run db query "select i.name, i.status, u.email as bought_by from items i left join auth.users u on u.id = i.bought_by where i.name = '$item' and i.household_id = (select id from households where name = 'Familie Test') order by i.created_at desc limit 1")"
 [[ "$(echo "$rows" | jq -r '.rows[0].status')" == bought ]] || fail "item is not marked bought in the database"
 [[ "$(echo "$rows" | jq -r '.rows[0].bought_by')" == lea@fg.test ]] || fail "item was not bought by lea"
 
