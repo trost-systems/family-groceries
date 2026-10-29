@@ -124,7 +124,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "store": { "type": "string", "description": "Store chip to select (the store view)." }
+        "store": { "type": "string", "description": "The store this member shops at: every other store section but \"Ohne Laden\" is folded (design H has no store view)." }
       }
     },
     "expect": {

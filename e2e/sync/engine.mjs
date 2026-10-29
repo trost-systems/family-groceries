@@ -176,6 +176,22 @@ for (const spec of config.clients) {
 
 const byLabel = (/** @type {string} */ l) => clients.find((c) => c.label === l);
 const addField = (/** @type {any} */ page) => page.getByRole('textbox', { name: 'Was fehlt?' });
+/**
+ * Design H has no store views: shopping at a store folds every other store section and unfolds
+ * that one and "Ohne Laden", whose items can be bought anywhere, as the old store view showed them
+ * ("Alle" unfolds them all). Folds stay on the device, like the app's own.
+ */
+async function shopAt(/** @type {import('@playwright/test').Page} */ page, /** @type {string} */ store) {
+  // The dividers come with the first sync after sign-in.
+  await page.getByRole('button', { name: /^.+, \d+ Artikel/ }).first().waitFor({ timeout: 20_000 });
+  for (const divider of await page.getByRole('button', { name: /^.+, \d+ Artikel/ }).all()) {
+    // e.g. '- button "Lidl, 3 Artikel" [expanded]'; an empty store has nothing to unfold.
+    const [, name = '', count = '0'] = /"(.+), (\d+) Artikel/.exec(await divider.ariaSnapshot()) ?? [];
+    const open = /\[expanded\]/.test(await divider.ariaSnapshot());
+    if (count !== '0' && open !== (store === 'Alle' || name === store || name === 'Ohne Laden')) await divider.click();
+  }
+}
+
 const row = (/** @type {any} */ page, /** @type {string} */ name) =>
   page.getByRole('button', { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`) });
 
@@ -213,7 +229,10 @@ async function signIn(/** @type {any} */ c) {
       page.getByRole('button', { name: 'Haushalt anlegen' }).waitFor({ timeout: 20_000 }).then(() => 'welcome'),
     ]).catch(() => null);
     if (landed) {
-      if (c.store) await page.getByRole('checkbox', { name: c.store, exact: true }).click();
+      // A returning user has dismissed the explainer card; it would push the list down.
+      const hint = page.getByRole('button', { name: 'Verstanden', exact: true });
+      if (landed === 'list' && (await hint.waitFor({ timeout: 5_000 }).then(() => true, () => false))) await hint.click();
+      if (c.store) await shopAt(page, c.store);
       return landed;
     }
     if (attempt === 3) throw new Error(`${c.label} (${c.ref}) did not reach the list or welcome screen after signing in 3 times`);
@@ -231,18 +250,21 @@ async function act(/** @type {any} */ c, /** @type {any} */ s) {
       await typeInto(addField(page), s.text);
       return await issue(() => page.keyboard.press('Enter'));
     case 'tick':
-      return await issue(() => page.getByRole('checkbox', { name: `${s.item} abhaken`, exact: true }).click());
+      // Design H: a tap on the row ticks it.
+      return await issue(() => row(page, s.item).first().click());
     case 'edit': {
-      await row(page, s.item).first().click();
-      const field = page.getByRole('textbox', { name: s.field === 'name' ? 'Name' : 'Menge', exact: true });
+      // A right click opens the edit sheet (a tap would tick).
+      await row(page, s.item).first().click({ button: 'right' });
+      const sheet = page.getByRole('group', { name: 'Bearbeiten', exact: true });
+      const field = sheet.getByRole('textbox', { name: s.field === 'name' ? 'Bezeichnung' : 'Menge', exact: true });
       await typeInto(field, s.value);
-      return await issue(() => page.getByRole('button', { name: 'Speichern' }).click());
+      return await issue(() => sheet.getByRole('button', { name: 'Fertig' }).click());
     }
     case 'delete':
-      await row(page, s.item).first().click();
-      return await issue(() => page.getByRole('button', { name: 'Löschen' }).click());
+      await row(page, s.item).first().click({ button: 'right' });
+      return await issue(() => page.getByRole('group', { name: 'Bearbeiten', exact: true }).getByRole('button', { name: 'Löschen' }).click());
     case 'store':
-      return await issue(() => page.getByRole('checkbox', { name: s.store, exact: true }).click());
+      return await issue(() => shopAt(page, s.store));
     case 'offline':
       c.offline = true;
       await c.context.setOffline(true);

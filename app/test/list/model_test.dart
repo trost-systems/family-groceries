@@ -1,3 +1,4 @@
+import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,6 +34,10 @@ void main() {
     Category(id: 'a', name: 'A', sortOrder: 10),
   ];
 
+  /// The blocks of a list without stores.
+  List<CategoryBlock> blocksOf(Iterable<Item> items) =>
+      sectionsOf(items, const Catalog(categories: categories)).single.blocks;
+
   test('pending ops fold over server rows in order', () {
     final server = {'x': item('x'), 'y': item('y')};
     final view = visibleItems(server, [
@@ -66,24 +71,20 @@ void main() {
   });
 
   test('groups follow category sort order; unclassified items lead', () {
-    final groups = groupActive(
-      [
-        item('b1', category: 'b', at: 1),
-        item('a2', at: 2),
-        item('a1', at: 1),
-        item('new', category: null),
-        item('gone', status: ItemStatus.bought),
-        item('orphan', category: 'deleted-category'),
-      ],
-      const Catalog(categories: categories),
-      const AllStores(),
-    ).groups;
+    final groups = blocksOf([
+      item('b1', category: 'b', at: 1),
+      item('a2', at: 2),
+      item('a1', at: 1),
+      item('new', category: null),
+      item('gone', status: ItemStatus.bought),
+      item('orphan', category: 'deleted-category'),
+    ]);
     expect([for (final g in groups) g.category?.id], [null, 'a', 'b', null]);
     expect([for (final i in groups[1].items) i.id], ['a1', 'a2']);
     expect(groups.last.items.single.id, 'orphan');
   });
 
-  test('ticking at a store tags the item; ticking in "Alle" keeps its tag', () {
+  test('a tick with a store tags the item; a plain tick keeps its tag', () {
     final at = DateTime.utc(2026);
     final tagged = {'x': item('x', store: 'dm')};
     final atLidl = SetStatus('x', ItemStatus.bought, at, storeId: 'lidl');
@@ -129,11 +130,7 @@ void main() {
     final moved = view['x']!;
     expect((moved.categoryId, moved.storeId), ('b', null));
     expect(moved.createdAt, server['x']!.createdAt);
-    final groups = groupActive(
-      view.values,
-      const Catalog(categories: categories),
-      const AllStores(),
-    ).groups;
+    final groups = blocksOf(view.values);
     expect([for (final i in groups.single.items) i.id], ['y', 'x']);
     expect(
       visibleItems({}, [
@@ -144,18 +141,14 @@ void main() {
   });
 
   test('a group walks by sort key, unnumbered last, then by age', () {
-    final groups = groupActive(
-      [
-        item('late', at: 1, key: 3072),
-        item('early', at: 9, key: 1024),
-        item('typed2', at: 5),
-        item('typed1', at: 4),
-        item('tie-b', at: 2, key: 2048),
-        item('tie-a', at: 2, key: 2048),
-      ],
-      const Catalog(categories: categories),
-      const AllStores(),
-    ).groups;
+    final groups = blocksOf([
+      item('late', at: 1, key: 3072),
+      item('early', at: 9, key: 1024),
+      item('typed2', at: 5),
+      item('typed1', at: 4),
+      item('tie-b', at: 2, key: 2048),
+      item('tie-a', at: 2, key: 2048),
+    ]);
     expect(
       [for (final i in groups.single.items) i.id],
       ['early', 'tie-a', 'tie-b', 'late', 'typed1', 'typed2'],
@@ -274,175 +267,6 @@ void main() {
       [for (final s in next.stores) (s.id, s.sortOrder)],
       [('lidl', 10), ('dm', 20)],
     );
-  });
-
-  group('store views', () {
-    const catalog = Catalog(
-      categories: [
-        Category(id: 'produce', name: 'produce', sortOrder: 10),
-        Category(id: 'chilled', name: 'chilled', sortOrder: 20),
-        Category(id: 'pantry', name: 'pantry', sortOrder: 30),
-        Category(id: 'new', name: 'new', sortOrder: 40),
-        Category(id: 'other', name: 'other', sortOrder: 1000),
-      ],
-      stores: [
-        Store(id: 'dm', name: 'dm', sortOrder: 10),
-        Store(id: 'lidl', name: 'Lidl', sortOrder: 20),
-      ],
-      // Neither store has a row for 'new' yet.
-      layout: [
-        StoreCategory(storeId: 'lidl', categoryId: 'other', sortOrder: 10),
-        StoreCategory(storeId: 'lidl', categoryId: 'pantry', sortOrder: 20),
-        StoreCategory(storeId: 'lidl', categoryId: 'chilled', sortOrder: 30),
-        StoreCategory(storeId: 'lidl', categoryId: 'produce', sortOrder: 40),
-        StoreCategory(storeId: 'dm', categoryId: 'pantry', sortOrder: 10),
-        StoreCategory(storeId: 'dm', categoryId: 'other', sortOrder: 20),
-        StoreCategory(
-          storeId: 'dm',
-          categoryId: 'produce',
-          sortOrder: 30,
-          hidden: true,
-        ),
-        StoreCategory(
-          storeId: 'dm',
-          categoryId: 'chilled',
-          sortOrder: 40,
-          hidden: true,
-        ),
-      ],
-    );
-    final everything = [
-      item('apple', category: 'produce'),
-      item('milk', category: 'chilled', at: 1),
-      item('yoghurt', category: 'chilled', store: 'dm', at: 2),
-      item('rice', category: 'pantry'),
-      item('noodles', category: 'new'),
-      item('soap', category: 'other', store: 'dm', at: 1),
-      item('beer', category: 'other', store: 'lidl', at: 2),
-      item('typed', category: null),
-      item('bought', category: 'pantry', status: ItemStatus.bought),
-    ];
-
-    final cases =
-        <
-          ({
-            String name,
-            List<Item> items,
-            StoreFilter filter,
-            bool showHidden,
-            bool includeEmpty,
-            List<String> groups,
-            int hiddenCount,
-          })
-        >[
-          (
-            name: 'Alle: route order, every store',
-            items: everything,
-            filter: const AllStores(),
-            showHidden: false,
-            includeEmpty: false,
-            groups: [
-              '?: typed',
-              'produce: apple',
-              'chilled: milk yoghurt',
-              'pantry: rice',
-              'new: noodles',
-              'other: soap beer',
-            ],
-            hiddenCount: 0,
-          ),
-          (
-            name: "Lidl: its order, no dm items, unplaced 'new' last",
-            items: everything,
-            filter: const AtStore('lidl'),
-            showHidden: false,
-            includeEmpty: false,
-            groups: [
-              '?: typed',
-              'other: beer',
-              'pantry: rice',
-              'chilled: milk',
-              'produce: apple',
-              'new: noodles',
-            ],
-            hiddenCount: 0,
-          ),
-          (
-            name: 'dm: hides untagged items it does not carry, keeps tagged',
-            items: everything,
-            filter: const AtStore('dm'),
-            showHidden: false,
-            includeEmpty: false,
-            groups: [
-              '?: typed',
-              'pantry: rice',
-              'other: soap',
-              'chilled: yoghurt',
-              'new: noodles',
-            ],
-            hiddenCount: 2,
-          ),
-          (
-            name: 'dm with hidden items shown',
-            items: everything,
-            filter: const AtStore('dm'),
-            showHidden: true,
-            includeEmpty: false,
-            groups: [
-              '?: typed',
-              'pantry: rice',
-              'other: soap',
-              'produce: apple',
-              'chilled: milk yoghurt',
-              'new: noodles',
-            ],
-            hiddenCount: 2,
-          ),
-          (
-            name: 'dm while dragging: empty carried categories as targets',
-            items: [item('soap', category: 'other', store: 'dm')],
-            filter: const AtStore('dm'),
-            showHidden: false,
-            includeEmpty: true,
-            groups: ['pantry: ', 'other: soap', 'new: '],
-            hiddenCount: 0,
-          ),
-          (
-            name: 'dm while dragging with hidden shown: every category',
-            items: [],
-            filter: const AtStore('dm'),
-            showHidden: true,
-            includeEmpty: true,
-            groups: ['pantry: ', 'other: ', 'produce: ', 'chilled: ', 'new: '],
-            hiddenCount: 0,
-          ),
-          (
-            name: 'unknown store: route order',
-            items: [item('rice', category: 'pantry')],
-            filter: const AtStore('gone'),
-            showHidden: false,
-            includeEmpty: false,
-            groups: ['pantry: rice'],
-            hiddenCount: 0,
-          ),
-        ];
-
-    for (final c in cases) {
-      test(c.name, () {
-        final grouping = groupActive(
-          c.items,
-          catalog,
-          c.filter,
-          showHidden: c.showHidden,
-          includeEmpty: c.includeEmpty,
-        );
-        expect([
-          for (final g in grouping.groups)
-            '${g.category?.id ?? '?'}: ${g.items.map((i) => i.id).join(' ')}',
-        ], c.groups);
-        expect(grouping.hiddenCount, c.hiddenCount);
-      });
-    }
   });
 
   test('recently bought is newest first', () {

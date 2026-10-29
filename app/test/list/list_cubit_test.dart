@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -195,93 +196,34 @@ void main() {
     await settle();
     expect(repo.rows[item.id]!.categoryId, 'chilled');
   });
-  test('in a store view, adds and ticks are tagged with that store', () async {
-    cubit.selectStore(const AtStore('lidl'));
+  test('adds carry no store; a tick keeps the store an item has', () async {
     final id = (cubit.add('Brot') as Added).item.id;
-    await settle();
-    expect(repo.rows[id]!.storeId, 'lidl');
-
-    cubit.selectStore(const AllStores());
-    final other = (cubit.add('Käse') as Added).item.id;
-    await settle();
-    expect(repo.rows[other]!.storeId, isNull);
-
-    cubit
-      ..selectStore(const AtStore('dm'))
-      ..tick(other);
-    await settle();
-    expect(repo.sent.last, isA<SetStatus>());
-    expect(repo.rows[other]!.status, ItemStatus.bought);
-    expect(repo.rows[other]!.storeId, 'dm');
-  });
-
-  test('ticking in "Alle" sends no store', () async {
-    final id = repo.remoteAdd('Brot', storeId: 'dm').id;
-    await cubit.resync();
-    cubit.tick(id);
-    await settle();
-    expect((repo.sent.last as SetStatus).storeId, isNull);
-    expect(repo.rows[id]!.storeId, 'dm');
-  });
-
-  test('a drag to a category keeps the store and goes to the end', () async {
-    repo
-      ..remoteAdd('Joghurt', storeId: 'dm', categoryId: 'produce')
-      ..remoteAdd('Milch', storeId: 'dm');
-    await cubit.resync();
-    final milk = cubit.state.items.values.firstWhere((i) => i.name == 'Milch');
-    cubit.move(milk.id, categoryId: 'produce', storeId: 'dm');
-    expect(cubit.state.items[milk.id]!.categoryId, 'produce');
-    await settle();
-    expect(repo.sent.last, isA<MoveItem>());
-    expect(
-      (repo.rows[milk.id]!.categoryId, repo.rows[milk.id]!.storeId),
-      ('produce', 'dm'),
-    );
-    expect(
-      [for (final i in repo.groupOf(repo.rows[milk.id]!)) i.name],
-      ['Joghurt'],
-    );
-    expect(
-      repo.rows[milk.id]!.sortKey,
-      greaterThan(repo.groupOf(repo.rows[milk.id]!).single.sortKey!),
-    );
-  });
-
-  test('an edit sends only what changed', () async {
-    final id = (cubit.add('2 Milch') as Added).item.id;
-    await settle();
-    cubit.edit(
-      id,
-      const ItemChanges(brand: SetTo('Weihenstephan'), quantity: SetTo('3')),
-    );
-    final edit = cubit.state.pending.single as EditItem;
-    expect(edit.changes.toColumns(), {
-      'brand': 'Weihenstephan',
-      'quantity': '3',
-    });
-    await settle();
-    final row = repo.rows[id]!;
-    expect(
-      (row.name, row.brand, row.quantity, row.categoryId),
-      ('Milch', 'Weihenstephan', '3', 'chilled'),
-    );
-    cubit.edit(id, const ItemChanges(storeId: SetTo('dm')));
-    await settle();
-    expect(repo.rows[id]!.storeId, 'dm');
-    cubit.edit(id, const ItemChanges(storeId: SetTo(null)));
     await settle();
     expect(repo.rows[id]!.storeId, isNull);
+    repo.remoteAdd('Seife', storeId: 'dm');
+    await cubit.resync();
+    final soap = cubit.state.items.values.firstWhere((i) => i.name == 'Seife');
+    cubit
+      ..tick(id)
+      ..tick(soap.id);
+    await settle();
+    expect(repo.rows[id]!.storeId, isNull);
+    expect(repo.rows[soap.id]!.storeId, 'dm');
   });
 
-  test('an edit without changes sends nothing', () async {
-    final id = (cubit.add('Brot') as Added).item.id;
+  test('folded stores and the dismissed card survive a restart', () async {
+    cubit
+      ..toggleFold('dm')
+      ..toggleFold('none')
+      ..toggleFold('none')
+      ..dismissHint();
     await settle();
-    final sent = repo.sent.length;
-    cubit.edit(id, const ItemChanges());
-    expect(cubit.state.pending, isEmpty);
+    expect(cubit.state.prefs.folded, {'dm'});
+    final restarted = ListCubit(repo, cache, userId: 'peter')..start();
     await settle();
-    expect(repo.sent, hasLength(sent));
+    expect(restarted.state.prefs.folded, {'dm'});
+    expect(restarted.state.prefs.hintDismissed, isTrue);
+    await restarted.close();
   });
 
   test('a placed item shows between its neighbours at once', () async {
@@ -292,11 +234,10 @@ void main() {
     String idOf(String name) =>
         cubit.state.items.values.firstWhere((i) => i.name == name).id;
     List<String> produce() => [
-      for (final i in groupActive(
+      for (final i in sectionsOf(
         cubit.state.items.values,
         cubit.state.catalog,
-        const AllStores(),
-      ).groups.single.items)
+      ).last.blocks.single.items)
         i.name,
     ];
     expect(produce(), ['Äpfel', 'Birnen', 'Kiwis', 'Trauben']);
@@ -383,18 +324,17 @@ void main() {
     await sub.cancel();
   });
 
-  test('a store layout change is saved and sorts the store view', () async {
+  test('a store layout change is saved and sorts the store', () async {
     await cubit.setStoreLayout(
       'dm',
       ['produce', 'other', 'chilled'],
       {'chilled'},
     );
-    final grouping = groupActive(
-      [repo.remoteAdd('Äpfel', categoryId: 'produce')],
-      cubit.state.catalog,
-      const AtStore('dm'),
-    );
-    expect(grouping.groups.single.category!.id, 'produce');
+    final dm = sectionsOf([
+      repo.remoteAdd('Milch', storeId: 'dm'),
+      repo.remoteAdd('Äpfel', categoryId: 'produce', storeId: 'dm'),
+    ], cubit.state.catalog).first;
+    expect([for (final b in dm.blocks) b.category!.id], ['produce', 'chilled']);
     expect(repo.layout.where((r) => r.storeId == 'dm' && r.hidden), [
       isA<StoreCategory>().having((r) => r.categoryId, 'id', 'chilled'),
     ]);
@@ -418,18 +358,34 @@ void main() {
     expect(cubit.state.items[id]!.categoryId, 'produce');
   });
 
-  test(
-    'when the selected store disappears the view falls back to Alle',
-    () async {
-      cubit.selectStore(const AtStore('dm'));
-      repo.stores = [...repo.stores.where((s) => s.id != 'dm')];
-      for (var i = 0; i < 5; i++) {
-        repo.emitCatalogChanged!();
-      }
-      await elapse(const Duration(milliseconds: 300));
-      expect(cubit.state.filter, isA<AllStores>());
-    },
-  );
+  test('offline, a store or category reorder is refused, not shown', () async {
+    final rejections = <Rejected>[];
+    final sub = cubit.rejections.listen(rejections.add);
+    repo.online = false;
+    await cubit.resync();
+    expect(cubit.state.connection, ConnectionStatus.offline);
+    await cubit.reorderStores(['lidl', 'dm']);
+    await cubit.setStoreLayout('dm', ['chilled', 'other', 'produce'], {});
+    await settle();
+    expect([for (final s in cubit.state.catalog.stores) s.id], ['dm', 'lidl']);
+    expect(repo.catalogCalls, isEmpty);
+    expect(rejections, [isA<NeedsConnection>(), isA<NeedsConnection>()]);
+    await sub.cancel();
+  });
+
+  test('a store reorder that fails on the way is undone', () async {
+    final rejections = <Rejected>[];
+    final sub = cubit.rejections.listen(rejections.add);
+    // The list still thinks it is online; the write is what fails.
+    repo.online = false;
+    final saved = cubit.reorderStores(['lidl', 'dm']);
+    expect([for (final s in cubit.state.catalog.stores) s.id], ['lidl', 'dm']);
+    await saved;
+    await settle();
+    expect([for (final s in cubit.state.catalog.stores) s.id], ['dm', 'lidl']);
+    expect(rejections.single, isA<CatalogRejected>());
+    await sub.cancel();
+  });
 
   group('across restarts', () {
     // Longer than the cubit's save debounce.

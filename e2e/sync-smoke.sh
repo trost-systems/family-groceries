@@ -12,6 +12,9 @@ script="$(mktemp --suffix .fgs)"
 out="$(mktemp)"
 trap 'rm -f "$script" "$out"' EXIT
 cat >"$script" <<'FGS'
+# Design H: new untagged items go to "Ohne Laden" at the end; both shop there, so it is on screen.
+A store "Ohne Laden"
+B store "Ohne Laden"
 A add "Sync-Smoke"
 expect B see "Sync-Smoke" within 5000ms
 B tick "Sync-Smoke"

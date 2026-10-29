@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, adminClient, apiAs, cutOff, itemRow, newEmail, screenshot, signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, adminClient, apiAs, cutOff, itemRow, newEmail, screenshot, signUpWithHousehold, tick, typeInto,
 } from './helpers';
 
 const daysAgo = (days: number, hours = 0) => new Date(Date.now() - (days * 24 + hours) * 3_600_000).toISOString();
@@ -10,7 +10,7 @@ test('typing offers what the household bought before; a tap adds it with its las
   await addItem(page, '2 l Milch');
   await addItem(page, 'Mineralwasser');
   await expect(itemRow(page, 'Milch')).toHaveAccessibleName(/^Milch 2 l/);
-  await tickBox(page, 'Milch').click();
+  await tick(page, 'Milch');
   await expect(itemRow(page, 'Milch')).toHaveCount(0);
 
   await typeInto(addField(page), 'Mi');
@@ -37,7 +37,7 @@ test('typing offers what the household bought before; a tap adds it with its las
 test('suggestions come from the device cache when Supabase is unreachable', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('usuals-offline'));
   await addItem(page, '6 Eier');
-  await tickBox(page, 'Eier').click();
+  await tick(page, 'Eier');
   await typeInto(addField(page), 'Ei');
   await expect(page.getByRole('button', { name: 'Vorschlag: 6 Eier' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
@@ -61,7 +61,7 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
   await signUpWithHousehold(page, email);
   await addItem(page, '4 Brötchen');
   await expect(itemRow(page, 'Brötchen')).toHaveAccessibleName(/^Brötchen 4/);
-  await tickBox(page, 'Brötchen').click();
+  await tick(page, 'Brötchen');
   await expect(itemRow(page, 'Brötchen')).toHaveCount(0);
   await expect(page.getByText('Brauchen wir wieder?'), 'one purchase is not a usual interval yet').toHaveCount(0);
 

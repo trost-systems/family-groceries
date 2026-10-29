@@ -26,7 +26,7 @@ for who in peter lea; do
 done
 
 step "precondition: neither test item is on the active list (earlier runs marked bought)"
-run db query "update items set status = 'bought' where status = 'active' and name in ('$item', 'Äpfel')" --write >/dev/null
+run db query "update items set status = 'bought' where status = 'active' and name in ('$item', 'Äpfel') and household_id = (select id from households where name = 'Familie Test')" --write >/dev/null
 run wait --text "$item" --gone --client lea >/dev/null
 
 step "reopen peter's app; nothing tapped in the list yet"
@@ -43,14 +43,14 @@ run screenshot --name 02-peter-added --client peter >/dev/null
 
 step "focus stays in the field: a second Enter-add without tapping"
 run type --input "2 Äpfel" --submit --client peter >/dev/null
-run wait --text "Äpfel" --client peter --timeout 5 >/dev/null
+run wait --text "2× Äpfel" --client peter --timeout 5 >/dev/null
 
 step "lea's app shows the item without any action on lea's side"
 synced="$(run wait --text "$item" --client lea --timeout 5 | jq -r '.elapsedMs')"
 run screenshot --name 03-lea-sees-item --client lea >/dev/null
 
-step "lea ticks the item; it disappears on peter's app"
-run tap --row "$item" --type Checkbox --client lea >/dev/null
+step "lea taps the item's row, which ticks it; it disappears on peter's app"
+run tap --text "$item" --client lea >/dev/null
 gone="$(run wait --text "$item" --gone --client peter --timeout 5 | jq -r '.elapsedMs')"
 run screenshot --name 04-peter-item-gone --client peter >/dev/null
 

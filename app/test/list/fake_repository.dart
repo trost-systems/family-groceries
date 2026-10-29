@@ -316,10 +316,12 @@ class FakeRepository() implements ListRepository {
     String? addedBy = 'lea',
     String? brand,
     String? properties,
+    String? quantity,
   }) {
     final item = Item(
       id: 'remote-${rows.length}',
       name: name,
+      quantity: quantity,
       brand: brand,
       properties: properties,
       categoryId: categoryId ?? classify(name),

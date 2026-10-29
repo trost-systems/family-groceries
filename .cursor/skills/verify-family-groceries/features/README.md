@@ -17,7 +17,8 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Start every recipe from the baseline unless its preconditions say otherwise. `fg up --fresh` restores the baseline: database reset and both users reseeded. Then `fg login` each client again.
 - Prefer ValueKeys (`--key`), then field labels (`--label`), tooltips (`--tooltip`), exact text (`--text`), and coordinates last.
-- To act on a list item, scope to its row: `--row <item name>`.
+- A list row is one button: `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, and `fg drag` moves it. The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
+- Seeded scenario runs share the stack with the baseline household. Read with `--as peter` (or `--as <run>:<handle>`) so a query sees one household, and filter `--write` preconditions by household.
 - Wait for state with `fg wait`. Never use sleep.
 - `fg find` and `fg wait` see only widgets the list has built, so a row below the fold doesn't exist for them. Keep the list short (mark earlier items bought with `fg db query --write`) or bring the row in with `fg marionette -- scroll-to --text <name>`.
 - Treat every command as literal. Keep quoted names, umlauts and flags unchanged.
@@ -45,14 +46,15 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
+- [List and walk order](./list-walk-order.md) covers design H's list: store sections and category dividers, walk order, a tap that ticks with undo, dragging rows onto rows, category and store dividers, reordering stores and categories by drag or divider menu, folds and the explainer card kept per device, and a partner's adds and moves.
 - [Quick add](./quick-add.md) covers the autofocused add field, Enter-to-add with focus kept, quantities, duplicates, tick with undo, delete and re-add from history.
 - [Edit an item](./edit-item.md) covers the edit sheet (Bezeichnung, Marke, Eigenschaften, Menge with −/+, store and category chips, Fertig saving only changes, Löschen with undo), the row's "Marke · Eigenschaften" line, and how Siri and MCP entries are split into those fields.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.
 - [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, sign-out, and the Google and Apple buttons (web build only).
 - [Household](./household.md) covers creating a household, inviting by code and joining with it.
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
-- [Stores](./stores.md) covers the store picker "Alle/dm/Lidl/Edeka", store views and their order, dm's folded items, tagging items to a store and remembering it, and each store's layout.
-- [Categories](./categories.md) covers Menü → Kategorien verwalten: adding, renaming, deleting and reordering categories.
+- [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", tagging items to a store by drag or edit sheet and remembering it, and each store's layout screen.
+- [Categories](./categories.md) covers Menü → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
 - [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Menü → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
 - [Account](./account.md) covers Menü → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.

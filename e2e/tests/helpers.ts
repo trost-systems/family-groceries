@@ -40,7 +40,40 @@ export const itemRow = (page: Page, name: string) =>
  */
 export const actionSnackBar = (page: Page, text: string) => page.getByRole('group', { name: text, exact: true });
 
-export const tickBox = (page: Page, name: string) => page.getByRole('checkbox', { name: `${name} abhaken` });
+/**
+ * Scrolls the list with the mouse wheel until [target] is fully on screen. The list builds rows
+ * lazily, so a row far off screen is not in the page at all until the list scrolls near it; it is
+ * looked for downwards first, then upwards.
+ */
+export async function reveal(page: Page, target: Locator): Promise<void> {
+  const field = (await addField(page).boundingBox())!;
+  const top = field.y + field.height;
+  const bottom = page.viewportSize()!.height;
+  await page.mouse.move(page.viewportSize()!.width / 2, (top + bottom) / 2);
+  for (let i = 0; i < 40; i++) {
+    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
+    if (box && box.y >= top && box.y + box.height <= bottom) return;
+    const down = box ? box.y + box.height > bottom : i < 20;
+    await page.mouse.wheel(0, down ? 250 : -250);
+    await page.waitForTimeout(150);
+  }
+  throw new Error(`could not scroll ${target} into view`);
+}
+
+/**
+ * Ticks an item off: a tap on its row (design H has no check box). The row leaves for 260 ms
+ * before the tick commits, so this waits for the "<name> abgehakt" snackbar: an add of the same
+ * name before then finds the item still on the list.
+ */
+export async function tick(page: Page, name: string): Promise<void> {
+  await reveal(page, itemRow(page, name));
+  await itemRow(page, name).click();
+  await expect(actionSnackBar(page, `${name} abgehakt`)).toBeVisible();
+}
+
+/** A store's divider by its name; its accessible name is "<store>, <n> Artikel". */
+export const storeDivider = (page: Page, store: string) =>
+  page.getByRole('button', { name: new RegExp(`^${escape(store)}, \\d+ Artikel`) });
 
 /** The edit sheet (job 15): a group whose rect is exactly the sheet's content. */
 export const editSheet = (page: Page) => page.getByRole('group', { name: 'Bearbeiten', exact: true });

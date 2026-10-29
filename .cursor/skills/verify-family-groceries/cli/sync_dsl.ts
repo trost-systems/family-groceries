@@ -138,7 +138,7 @@ export function parseScript(text: string, clients: { label: string; handle: stri
             break;
           }
           case 'store':
-            steps.push({ ...base, action: 'store', store: str(2, 'the store name (or "Alle")') });
+            steps.push({ ...base, action: 'store', store: str(2, 'the store to shop at, folding the others (or "Alle" to unfold all)') });
             end(3);
             break;
           case 'offline':

@@ -21,6 +21,9 @@ export async function writeWorkdir(ctx: Ctx, inst: Instance): Promise<void> {
   await ctx.act(`write ${target}/config.toml (ports ${inst.prefix}xx, project ${inst.projectId})`, async () => {
     await ctx.sh.mkdir(target);
     await ctx.sh.writeText(`${target}/config.toml`, rewriteConfig(config, inst.prefix, inst.projectId));
+    // On the checkout's own stack (FG_STACK_WORKDIR = the repo) the dirs are already there; a link
+    // would land inside them (supabase/functions/functions).
+    if (inst.workdir === inst.repo) return;
     for (const dir of ['migrations', 'functions', 'tests']) {
       await mustRun(ctx.sh, ['ln', '-sfn', `${inst.repo}/supabase/${dir}`, `${target}/${dir}`]);
     }

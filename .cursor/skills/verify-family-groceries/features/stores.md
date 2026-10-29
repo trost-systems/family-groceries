@@ -1,50 +1,51 @@
 # Stores
 
-A row of chips under the add field picks the store: "Alle", "dm", "Lidl" or "Edeka". "Alle" shows the household's route order. A store sorts the list in that store's walking order and shows the items tagged to it plus untagged ones. Items tagged to another store are hidden. In dm, untagged items from categories dm doesn't carry fold behind one button. Ticking or adding an item in a store view tags it to that store, and the household remembers where each item was bought, so a later re-add lands in that store again. The edit sheet sets or clears the store, and each store's layout is editable.
+Every store of the household is a section of the list: a divider "<Store>, N Artikel", then the items tagged to that store in the store's walking order. Items without a store sit in a last section, "Ohne Laden", in the household's route order. There is no store picker and no store view (job 16): an item gets its store when it is dragged onto a store or into another store's rows, or in the edit sheet. The household remembers where each item was put, so a later re-add lands in that store again. Each store's category order is editable from its divider's menu.
 
 ## Sub-features
 
-- `st-picker` shows the chips "Alle", "dm", "Lidl", "Edeka" under the add field, with "Alle" selected after every start.
-- `st-order` sorts a store view by the store's category order (Lidl: "Brot & Backwaren" before "Obst & Gemüse"; Edeka: "Fleisch/Wurst/Fisch" before "Kühlregal").
-- `st-filter` shows a store's tagged items and untagged items, never items tagged to another store.
-- `st-dm-hidden` folds untagged items in categories dm doesn't carry behind "<n> Artikel, die es bei dm meist nicht gibt, anzeigen"; the same button then reads "… ausblenden".
-- `st-tick-tags` tags an item ticked in a store view to that store and remembers it for the item's name.
-- `st-memory` puts a re-added item (from "Alle") back in the store it was last bought at.
-- `st-add-in-store` tags an item added in a store view to that store.
+- `st-sections` shows one divider per store in store order ("dm, 0 Artikel" too) and "Ohne Laden" last while it has items. The list without any item shows only the empty state.
+- `st-order` sorts a store's section by that store's category order (Lidl: "Brot & Backwaren" before "Obst & Gemüse"; Edeka: "Fleisch/Wurst/Fisch" before "Kühlregal"), and "Ohne Laden" by the route.
+- `st-drop-tags` tags an item dropped on a store divider (folded or not) or on a row of another store to that store, keeps its category, and remembers the store for the item's name.
+- `st-memory` puts a re-added item back in the store it was last tagged to.
+- `st-tick-no-tag` leaves an untagged item untagged when it is ticked; nothing is remembered.
 - `st-sheet` sets the store in the edit sheet (store chip, key `chip-store`); "Ohne Laden" (`store-option-none`) clears the tag and the memory.
-- `st-layout` opens "<Store>: Reihenfolge" (tooltip "Reihenfolge bearbeiten", store views only), where a switch per category ("<category> gibt es bei <store>") shows or hides it in that store. Every change saves at once.
+- `st-layout` opens "<Store>: Reihenfolge" from the store divider's menu ("Reihenfolge bearbeiten", key `section-menu-layout`). The screen lists the categories with drag handles only; the "gibt es bei" switches are gone. Every change saves at once.
 - `st-layout-reorder` reorders a store's categories by dragging their handles ("<category> verschieben").
+- `st-store-order` reorders the stores: `features/list-walk-order.md` (drag a store divider, or "Laden nach oben/unten").
 
 ## How to get to it (user POV)
 
-- On the list screen, tap a chip under the add field.
-- In a store view, tap the icon at the right end of the chip row ("Reihenfolge bearbeiten").
-- Tap an item's name, tap the store chip ("Laden: <store>" or "Ohne Laden") and pick a store.
-- In dm, tap the "… anzeigen" line under the list.
+- Scroll the list: each store is a section with its own divider.
+- Press and hold an item, drag it onto a store's divider or among that store's items, and let go.
+- Hold an item without moving (or right-click it), then pick a store under "Laden".
+- Hold a store's divider without moving (or right-click it), then tap "Reihenfolge bearbeiten".
 
 ## Driving it with fg
 
 Preconditions:
 
-- Baseline from `features/README.md`; peter signed in on the list. `fg up --fresh` if earlier runs tagged these items or changed a store layout: tags, memory and layouts survive `fg up`.
-- A short list: `fg db query "update items set status = 'bought' where status = 'active'" --write`, then add the test items: `fg type --key add-item-field --input <item> --submit` for Äpfel, Brot, Milch, Hack, Zahnpasta and Klopapier, and `fg wait --contains "Wird einsortiert" --gone`.
+- Baseline from `features/README.md` on the linux surface (`fg drag`); peter signed in on the list. `fg up --fresh` if earlier runs tagged these items or changed a store layout: tags, memory and layouts survive `fg up`.
+- A short list: `fg db query "update items set status = 'bought' where status = 'active'" --write`, then `fg type --key add-item-field --input <item> --submit` for Äpfel, Brot, Milch, Hack, Zahnpasta and Klopapier, and `fg wait --contains "Wird einsortiert" --gone`. Tap `--key list-hint-dismiss` if the card shows, so all sections fit.
+- The store ids: `fg db query "select name, id from stores order by sort_order" --as peter`. The store query used below: `S="select i.name, s.name as store, c.name as category from items i left join stores s on s.id = i.store_id join categories c on c.id = i.category_id where i.status = 'active' order by 1"`.
 
-- **Picker and order.** `fg find --tooltip "Reihenfolge bearbeiten"` counts 0 under "Alle". Run `fg tap --text Lidl`. `fg find --type Text | jq -c '[.elements[].text]'` lists "Brot & Backwaren" before "Obst & Gemüse" (the reverse of "Alle"), and the tooltip now counts 1. `fg tap --text Edeka` lists "Fleisch/Wurst/Fisch" before "Kühlregal".
-- **dm.** Run `fg tap --text dm`. Only "👶 Drogerie" (Zahnpasta) and "Haushalt" (Klopapier) show. Run `fg tap --text "4 Artikel, die es bei dm meist nicht gibt, anzeigen"` and `fg wait --text Milch`; then `fg tap --text "4 Artikel, die es bei dm meist nicht gibt, ausblenden"` and `fg wait --text Milch --gone`. Take `fg screenshot --name st-dm`.
-- **Layout switch.** In dm, run `fg tap --tooltip "Reihenfolge bearbeiten"`, `fg wait --text "dm: Reihenfolge"` and `fg tap --label "Kühlregal gibt es bei dm"`. `fg db query "select o.hidden from store_category_order o join stores s on s.id = o.store_id join categories c on c.id = o.category_id join households h on h.id = s.household_id where h.name = 'Familie Test' and s.name = 'dm' and c.name = 'Kühlregal'"` turns from true to false (repeat it if it lags a second). Run `fg back` and `fg wait --text Milch`: Milch now shows in dm. Tap the switch again to restore it.
-- **Tick tags.** Run `fg tap --text Lidl`, `fg tap --row Hack --type Checkbox` and `fg wait --text Hack --gone`. `fg db query "select s.name from item_store_memory m join stores s on s.id = m.store_id where m.item_key = item_key('Hack')"` returns Lidl.
-- **Memory.** Run `fg tap --text Alle`, `fg type --key add-item-field --input Hack --submit` and `fg wait --text Hack`. With `fg tap --text Edeka`, `fg find --text Hack` counts 0 and `fg find --text Klopapier` counts 1; with `fg tap --text Lidl`, Hack counts 1. `fg db query "select i.name, s.name as store from items i left join stores s on s.id = i.store_id where i.status = 'active' order by 1"` shows Hack with Lidl and the rest with null.
-- **Edit sheet.** Under "Alle", run `fg tap --text Zahnpasta`, `fg wait --key edit-sheet`, `fg tap --key chip-store`, `fg wait --key store-option-none`, `fg tap --key store-option-<dm id>`, `fg tap --key edit-done` and `fg wait --key edit-sheet --gone`. The store query shows dm, and the Lidl view no longer lists Zahnpasta. Repeat with `fg tap --key store-option-none`: `fg db query "select i.store_id is null as untagged, (select count(*) from item_store_memory where item_key = item_key('Zahnpasta')) as memory from items i where i.name = 'Zahnpasta' and i.status = 'active'"` returns true and 0.
-- **Add in a store view.** Run `fg tap --text Edeka`, `fg type --key add-item-field --input Butter --submit` and `fg wait --text Butter`. In the Lidl view `fg find --text Butter` counts 0, and the store query shows Edeka for Butter.
-- **Picker resets.** Run `fg restart` and `fg wait --key add-item-field`. `fg find --tooltip "Reihenfolge bearbeiten"` counts 0: the list is back on "Alle".
-- **Reorder.** On "dm: Reihenfolge", the handle starts a drag at once (no long press), so a coordinate swipe drives it, as in `features/categories.md` (Reorder). `fg find --contains verschieben` lists the handles top to bottom ("👶 Drogerie verschieben" first). `fg marionette -- swipe --start-x 368 --start-y 136 --end-x 368 --end-y 250` moves "👶 Drogerie" below "Süßes & Snacks", and `fg db query "select c.name from store_category_order o join stores s on s.id = o.store_id join categories c on c.id = o.category_id join households h on h.id = s.household_id where h.name = 'Familie Test' and s.name = 'dm' order by o.sort_order limit 3"` returns the new order (repeat it if it lags a second). Restore it with `fg marionette -- swipe --start-x 368 --start-y 232 --end-x 368 --end-y 118`.
-- **Proof.** Screenshot each store view and the layout screen, and save the store and memory queries.
+- **Sections.** `fg find --contains Artikel | jq -c '[.elements[] | select(.type == "Semantics") | .label]'` returns "dm, 0 Artikel", "Lidl, 0 Artikel", "Edeka, 0 Artikel", "Ohne Laden, 6 Artikel": new items from the app have no store. `fg find --type Text` lists the Ohne Laden dividers in route order: OBST & GEMÜSE, BROT & BACKWAREN, KÜHLREGAL, FLEISCH/WURST/FISCH, HAUSHALT, DROGERIE.
+- **Drop on a store.** Run `fg drag --from-text Brot --to-key store-<Lidl id>`, `fg drag --from-text Äpfel --to-key store-<Lidl id>` and `fg drag --from-text Milch --to-key store-<Edeka id>`. `fg db query "$S" --as peter` shows Äpfel and Brot with Lidl, Milch with Edeka, each with its old category.
+- **Edit sheet.** Run `fg marionette -- long-press --text Hack`, `fg wait --key edit-sheet`, `fg tap --key chip-store`, `fg wait --key store-option-<Edeka id>`, `fg tap --key store-option-<Edeka id>`, `fg tap --key edit-done` and `fg wait --key edit-sheet --gone`. `$S` shows Hack with Edeka.
+- **Order per store.** `fg find --type Text` now lists Lidl with BROT & BACKWAREN before OBST & GEMÜSE (the reverse of the route) and Edeka with FLEISCH/WURST/FISCH before KÜHLREGAL. Take `fg screenshot --name st-sections`.
+- **Memory.** `fg db query "select m.item_key, s.name from item_store_memory m join stores s on s.id = m.store_id order by 1" --as peter` returns apfel and brot with Lidl, hack and milch with Edeka. Run `fg tap --text Hack` (a tick), `fg wait --text Hack --gone`, `fg type --key add-item-field --input Hack --submit`, `fg wait --text Hack` and `fg wait --contains "Wird einsortiert" --gone`. `fg db query "select s.name from items i join stores s on s.id = i.store_id where i.status = 'active' and i.name = 'Hack'" --as peter` returns Edeka, and the row sits under the Edeka divider.
+- **Clear the store.** Open Milch the same way and pick `store-option-none`, then `edit-done`. `fg db query "select i.store_id is null as untagged, (select count(*) from item_store_memory where item_key = item_key('Milch')) as memory from items i where i.name = 'Milch' and i.status = 'active'" --as peter` returns true and 0, and the labels read "Edeka, 1 Artikel", "Ohne Laden, 3 Artikel".
+- **A tick doesn't tag.** Run `fg tap --text Klopapier` and `fg wait --text Klopapier --gone`. `fg db query "select count(*) from item_store_memory where item_key = item_key('Klopapier')" --as peter` returns 0. `fg tap --text Rückgängig` puts it back.
+- **Layout screen.** Run `fg marionette -- long-press --key store-<dm id>` and `fg wait --key section-menu` (dm, the first store, has `section-menu-down` and `section-menu-layout` but no up). Run `fg tap --key section-menu-layout` and `fg wait --text "dm: Reihenfolge"`. `fg find --contains "gibt es bei"` counts 0.
+- **Reorder.** On "dm: Reihenfolge", the handle starts a drag at once (no long press), so a coordinate swipe drives it, as in `features/categories.md` (Reorder). `fg find --contains verschieben` lists the handles top to bottom ("👶 Drogerie verschieben" first, at y 104; rows are 48 px apart). `fg marionette -- swipe --start-x 368 --start-y 116 --end-x 368 --end-y 230` moves "👶 Drogerie" below "Süßes & Snacks", and `fg db query "select c.name from store_category_order o join stores s on s.id = o.store_id join categories c on c.id = o.category_id where s.name = 'dm' order by o.sort_order limit 3" --as peter` returns Vorrat & Konserven, Süßes & Snacks, 👶 Drogerie (repeat it if it lags a second). Restore it with `fg marionette -- swipe --start-x 368 --start-y 212 --end-x 368 --end-y 98`, then `fg back`.
+- **Proof.** Screenshot the sections before and after the drops, the menu and the layout screen, and save the store and memory queries.
 
 ## Gotchas
 
-- The chips are buttons: `fg find --text dm` does not list them, but `fg tap --text dm` reaches them. With the edit sheet's store options open, the chip and the option of the same store can both read "dm": tap the option by key (`store-option-<id>`), and check the result with the store query.
-- `fg find` lists the layout switches as `Semantics` with the label "<category> gibt es bei <store>"; tap them with `--label`.
-- The dm button's count ("4 Artikel …") depends on what is on the list. Read it from a screenshot, or keep the item set above.
-- Store memory and layouts persist across `fg up`. A layout switched off in an earlier run hides that category in the store view.
-- The picker isn't saved: after `fg restart` (or any relaunch) the list shows "Alle".
-- `classifier.md` covers categories under "Alle"; `categories.md` covers renaming, adding and deleting them, which also changes every store's order.
+- The store chips "Alle/dm/Lidl/Edeka", store views, the dm "… anzeigen" button and the "gibt es bei" switches are gone (job 16). `fg tap --text dm` now hits the dm divider's name or the edit sheet's store option, not a chip.
+- With the edit sheet's store options open, the store names show twice (the option and the divider behind the sheet). Tap options by key (`store-option-<id>`).
+- A new item takes the store memory holds for its name, from the app, MCP and Siri alike (`features/edit-item.md`). Earlier runs' memory therefore puts the test items into stores at once; start from `fg up --fresh` when "Ohne Laden, 6 Artikel" matters.
+- Store memory and layouts persist across `fg up`. `fg up --fresh` restores them.
+- `fg back` on the list screen closes the Linux app. Use it only on the layout screen.
+- The `hidden` flags in `store_category_order` stay in the database but change nothing in the app.
+- `classifier.md` covers categories; `categories.md` covers renaming, adding and deleting them, which also changes every store's order; `list-walk-order.md` covers dragging, folding and the store order.

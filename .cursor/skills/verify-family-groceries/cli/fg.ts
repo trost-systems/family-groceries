@@ -33,7 +33,7 @@ const GROUPS: [string, string[]][] = [
   ['Lifecycle', ['setup', 'up', 'restart', 'down', 'doctor', 'env']],
   ['Fixtures (test accounts)', ['scenario list', 'scenario show', 'seed', 'runs', 'teardown']],
   ['Multi-client sync (web)', ['sync']],
-  ['Drive the app (Marionette)', ['login', 'logout', 'find', 'tap', 'type', 'press', 'back', 'swipe', 'wait', 'marionette']],
+  ['Drive the app (Marionette)', ['login', 'logout', 'find', 'tap', 'type', 'press', 'back', 'swipe', 'drag', 'wait', 'marionette']],
   ['Evidence', ['screenshot', 'record start', 'record stop', 'logs']],
   ['Backend', ['db query', 'fn call', 'peer', 'mail']],
   ['Performance (planned)', ['trace', 'memory']],

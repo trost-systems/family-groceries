@@ -19,8 +19,8 @@ Future<void> openStoreLayout(BuildContext context, String storeId) {
   );
 }
 
-/// One store's walking order and which categories it carries. Every change
-/// saves at once.
+/// One store's walking order. Every change saves at once; which categories
+/// the store carries (`hidden`, from the old store filter) is kept as it is.
 class const StoreLayoutScreen({required final String storeId, super.key})
     extends StatelessWidget {
   @override
@@ -29,7 +29,7 @@ class const StoreLayoutScreen({required final String storeId, super.key})
     final cubit = context.read<ListCubit>();
     final catalog = context.select<ListCubit, Catalog>((c) => c.state.catalog);
     final storeName = catalog.store(storeId)?.name ?? '';
-    final stops = walkingOrder(catalog, AtStore(storeId));
+    final stops = walkingOrder(catalog, storeId);
 
     void save(List<Stop> next) => unawaited(
       cubit.setStoreLayout(
@@ -57,42 +57,24 @@ class const StoreLayoutScreen({required final String storeId, super.key})
           save(next);
         },
         itemBuilder: (context, index) {
-          final (:category, :hidden) = stops[index];
+          final (:category, hidden: _) = stops[index];
           return ListTile(
             key: ValueKey(category.id),
             title: Text(category.name),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Semantics(
-                  label: l10n.storeCarries(category.name, storeName),
-                  child: Switch(
-                    value: !hidden,
-                    onChanged: (carried) => save([
-                      for (final s in stops)
-                        if (s.category.id == category.id)
-                          (category: category, hidden: !carried)
-                        else
-                          s,
-                    ]),
+            trailing: ReorderableDragStartListener(
+              index: index,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                // Its own node: merged into the row, its label would
+                // rename the row.
+                child: Semantics(
+                  container: true,
+                  child: Icon(
+                    Icons.drag_handle,
+                    semanticLabel: l10n.dragCategory(category.name),
                   ),
                 ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    // Its own node: merged into the row, its label would
-                    // rename the row.
-                    child: Semantics(
-                      container: true,
-                      child: Icon(
-                        Icons.drag_handle,
-                        semanticLabel: l10n.dragCategory(category.name),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },

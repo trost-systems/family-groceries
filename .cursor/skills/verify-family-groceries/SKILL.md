@@ -56,21 +56,26 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `--text Anmelden` / `Registrieren` / `"Anmeldelink per E-Mail senden"` | Login buttons (the app bar also says "Anmelden"; `fg login` presses Enter instead) |
 | `--key household-name`, `--key invite-code`, `--text "Haushalt anlegen"`, `--text Beitreten` | Welcome screen (signed in, no household) |
 | `--key add-item-field` (label "Was fehlt?") | Add field on the list screen; autofocused on open |
-| `--row <item> --type Checkbox` | Tick an item |
-| `--text <item>` | Open an item's edit sheet (key `edit-sheet`; fields `--key edit-name`, `edit-brand`, `edit-quantity`, `edit-properties`; `--key chip-store` / `chip-category` fold out `store-option-<id>` (`store-option-none` is "Ohne Laden") / `category-option-<id>`; `--key edit-done` saves only what changed, `edit-cancel`, `edit-delete`) |
-| `fg swipe --row <item> --direction left` | Delete an item (undo snackbar) |
+| `--text "<row text>"` | Tick an item: a tap on its row. The row text reads the quantity first ("2 l Milch", "6× Bananen"); a row without a quantity reads the name. The row's key is the item id. |
+| `fg marionette -- long-press --text "<row text>"` (or `secondary-tap`, a right click) | Open an item's edit sheet (key `edit-sheet`; fields `--key edit-name`, `edit-brand`, `edit-quantity`, `edit-properties`; `--key chip-store` / `chip-category` fold out `store-option-<id>` (`store-option-none` is "Ohne Laden") / `category-option-<id>`; `--key edit-done` saves only what changed, `edit-cancel`, `edit-delete`) |
+| `fg swipe --row "<row text>" --direction left` | Delete an item (undo snackbar) |
+| `--key store-<store id>`, `--key store-none` ("Ohne Laden") | A store divider: a tap folds or unfolds it; `fg marionette -- long-press` or `secondary-tap` on it opens its menu (`section-menu`, `section-menu-up`, `section-menu-down`, `section-menu-layout`) |
+| `--key category-<store id or none>-<category id>` | A category divider (text in capitals, semantics label the full name); long-press opens the same menu with "Kategorie nach oben/unten" |
+| `fg drag --from-text <row or divider text> --to-text <...> [--edge before\|after]` | Hold and drag a row or divider onto a row, a category divider or a store divider (linux surface) |
+| `--key list-hint-dismiss` | "Verstanden" on the explainer card (`list-hint`); `list-empty` is the empty state |
 | `--tooltip Menü`, then `--text "Mitglied einladen"` / `"Anderem Haushalt beitreten"` / `Abmelden` | List screen menu |
 
 ```bash
 scripts/fg find --contains Milch            # what is on screen, as JSON (type, key, text, label, tooltip, bounds)
 scripts/fg type --input "2 Äpfel" --submit  # into the focused field; umlauts are safe
-scripts/fg tap --row Milch --type Checkbox --client lea
+scripts/fg tap --text "2 l Milch" --client lea   # ticks Milch: the row reads the quantity first
+scripts/fg drag --from-text Gurke --to-text "1 kg Äpfel" --edge before   # a real held drag (xdotool on the client's display)
 scripts/fg wait --text Milch --gone         # never sleep; wait polls (default 15 s) and reports elapsedMs
 scripts/fg marionette -- scroll-to --text "Zuletzt gekauft"   # any other Marionette command
-scripts/fg marionette -- swipe --start-x 368 --start-y 136 --end-x 368 --end-y 250   # a drag by coordinates (reorder handles)
+scripts/fg marionette -- swipe --start-x 368 --start-y 116 --end-x 368 --end-y 230   # a drag by coordinates (reorder handles, which need no hold)
 ```
 
-`find` and `wait` see what Marionette lists: fields, list texts, tooltips and keys. Text inside buttons is not listed, but `tap --text` still finds it. To wait for a dialog, wait for one of its fields or texts instead.
+`find` and `wait` see what Marionette lists: fields, list texts, tooltips and keys. Text inside buttons is not listed, but `tap --text` still finds it. To wait for a dialog, wait for one of its fields or texts instead. `fg tap` taps and `fg marionette -- long-press` holds without moving, but Marionette's `swipe` never holds first, so the list's hold-to-drag needs `fg drag` (linux surface only: it presses through xdotool on the client's Xvfb display). `fg drag` resolves `--from-text`/`--to-text` before it lifts; while a store divider is dragged every store folds, and while a category divider is dragged its siblings fold, so aim at a target that does not move when that happens (the first divider of the section, or `--edge before` on a store above).
 
 ## Evidence
 
@@ -89,7 +94,7 @@ Flutter errors, including the cause behind a red error screen, go to the app log
 
 Proof standards:
 
-- Drive the user path (the field, the checkbox, the menu). Do not use RPCs or test hooks for the step under test. Use `db query --write` and `peer` only to set up preconditions.
+- Drive the user path (the field, the row, the menu). Do not use RPCs or test hooks for the step under test. Use `db query --write` and `peer` only to set up preconditions.
 - Capture the action and the resulting state. Take a screenshot before and after, and a recording across the action.
 - Check side effects with a second, read-only view: `fg db query` for rows, the other client for sync, `fg mail` for mail.
 - Name the entry point you proved. A skipped entry point is reported as skipped, not as verified through another path.
@@ -102,7 +107,7 @@ The reference proof is `journeys/quick-add-live-sync.sh`. It prints `PASS` with 
 Seed test accounts in a known state instead of building it by hand. Scenarios live in `test/fixtures/scenarios/*.yaml` (format and every scenario: `docs/TEST_FIXTURES.md`).
 
 ```bash
-scripts/fg scenario list                         # empty-new-user, solo-long-list, household-3-mid-shop, heavy-history, many-stores, edge-cases, pending-invite, h-list-walk
+scripts/fg scenario list                         # empty-new-user, solo-long-list, household-3-mid-shop, heavy-history, many-stores, edge-cases, pending-invite, h-list-walk (design H walk), h-prototype
 scripts/fg scenario show heavy-history           # the plan with absolute times and the checks
 scripts/fg seed heavy-history                    # a run: users <handle>.<run>@fg-test.invalid, data, checks through RLS
 scripts/fg db query "select name from items where status = 'active'" --as <run>:jo

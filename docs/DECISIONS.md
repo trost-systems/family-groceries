@@ -2205,3 +2205,116 @@ on purpose, and the interfaces this job ships.
     so Vercel's "reserved" note does not cover this external rewrite and the
     item 8 fallback is not needed. Two fetches of the metadata both came
     back `x-vercel-cache: MISS`.
+
+
+## Job 16 (design H, part 2: the list), 2026-10-28
+
+The list between the header and the add bar is design H's: stores as
+sections, one block per category in the store's walk order, rows in walk
+order, drag and drop, folding, ticking with Undo. The code is in
+`app/lib/list/list_view/`; the interfaces job 17 builds on are in
+[`docs/design/h-satz-final/SPEC.md`](design/h-satz-final/SPEC.md), part 4.
+
+1. **The store filter is gone.** H folds stores instead of filtering them.
+   The chips ("Alle", one per store), `StoreFilter`, `AtStore`, the hidden
+   items toggle and `groupActive` are removed. What they did is covered:
+   - each store is a section in its own walk order, always;
+   - its category order is editable inline (drag a category divider) and on
+     the store layout screen, which opens from the store divider's menu
+     (hold it without moving, or right click: "Reihenfolge bearbeiten");
+   - the categories screen opens from the menu of the section without a
+     store and from the app menu.
+   Two behaviours went with the filter, because H has no "store I'm in":
+   an add no longer takes the viewed store (job 17's add sheet has a store
+   chip), and a tick no longer tags an untagged item to the viewed store.
+   Item→store memory still learns from every store change: a drop on a
+   store, a drop on a row in another store, the edit sheet's store chip,
+   MCP. NEEDS_PETER.md asks whether he misses the chips.
+2. **The per-store "carries this category" switches are gone from the
+   store layout screen.** They only hid untagged items in a store view. In
+   H an item without a store sits under "Ohne Laden" and a store shows
+   every item tagged to it, so the switch would change nothing. The
+   `hidden` values stay in the database and are saved back unchanged.
+   Nothing else depends on them: in `supabase/` only `set_store_layout`,
+   `apply_default_store_layouts` and the new-category placement in
+   `20261022233800_classifier_stores.sql` write the column, and no function,
+   MCP tool or voice path reads it. Older app builds (TestFlight, Play) still
+   show store views with their switches; their data is untouched.
+   Item→store memory doesn't use it either; review 0's failing re-add in
+   `stores.spec.ts` was a test race (a re-add during the 260 ms tick
+   animation finds the item still on the list), fixed in the `tick` helper.
+3. **Every store is a section, also an empty one** ("Edeka, 0 Artikel", no
+   rows), so it stays a place to drop an item and to reorder stores. The
+   section without a store comes last and shows when it has items or while
+   an item is dragged. It is at the end, so showing it moves nothing above
+   the finger.
+4. **A drop on a store divider (folded or not) keeps the item's category**
+   and puts it at the end of that category in the store (`move_item` with
+   the store and the category). Every store walks every category: its
+   layout rows first, the rest in route order, so the item always has its
+   block there. An item still waiting for the server to classify it (an
+   optimistic add, no category yet) can't be dragged until it has one.
+5. **Category order per section.** In a store, a dragged category divider
+   saves that store's layout (`set_store_layout`, the store layout screen's
+   data, hidden flags unchanged). In "Ohne Laden" the order is the route
+   order, so a drag there reorders the route (`reorder_categories`, the
+   categories screen's data). While a category is dragged, its siblings
+   fold to dividers; while a store is dragged, every store does.
+6. **Offline: item moves queue, store and category orders don't.** An item
+   drop is an `ItemOp` (`MoveItem`/`PlaceItem`, job 15), applied at once,
+   kept in the offline snapshot and sent when the list is back online. A
+   store or category reorder is a catalog write: offline it is refused with
+   "Die Reihenfolge lässt sich nur mit Verbindung ändern." and nothing moves,
+   instead of showing an order no one else sees. A catalog write that fails
+   on the way (online at the start) is undone on screen and reported, then
+   the catalog reloads. An item move the server refuses is dropped from the
+   queue, reported, and the resync puts the item back.
+7. **Fold state and the explainer card live on the device**
+   (`ListPrefs`, DeviceCache key `listprefs.<user>.<household>`), kept and
+   removed like the list snapshot. Folded ids of deleted stores are
+   ignored when drawing. The prototype kept folds per tab
+   (`sessionStorage`); Peter wants them kept.
+8. **Row icons are emoji from the name, else the category.** The app has
+   no item emoji. `itemIcon` matches word endings of the folded name against
+   about 80 common groceries (so "Vollmilch" gets 🥛), and falls back to an
+   emoji per seeded category, or the one a category name starts with. It is
+   display only, on the device. The category divider drops a leading emoji
+   from the name ("👶 Drogerie" reads DROGERIE, as H has no emoji on
+   dividers); its semantics label keeps the full name.
+9. **Accessibility.** A row is a button named by the item, then "Marke ·
+   Eigenschaften", then the quantity (the order rows had since job 15), then
+   "Neu" while unseen; tap ticks, long press
+   edits (both as semantics actions). The store divider is a button
+   "<store>, <n> Artikel" with its expanded state and a "Zuklappen" or
+   "Aufklappen" hint. Non-drag alternatives: the edit sheet's store and
+   category chips move an item; store and category dividers carry "nach
+   oben" and "nach unten" as custom semantics actions and in their menu.
+   Each column of the wide layout is its own semantics node, read before
+   the next; sorted by position, a screen reader would mix the stores row
+   by row.
+10. **Wide layouts.** One `CustomScrollView`; from 840 px a
+    `SliverCrossAxisGroup` holds two columns, from 1200 px three, each at
+    most 560 px. The stores are cut into runs in household order (a store
+    never splits) so that the tallest column is as short as possible
+    (folded and empty stores count as one row). Reading order stays store
+    by store, column by column. Between 600 and 840 px one column, centred,
+    at most 640 px. Drag and drop works across columns; it is one list.
+11. **Drag mechanics.** `LongPressDraggable` with a 300 ms hold; a hold that
+    ends within 8 px edits (rows) or opens the menu (dividers), and the
+    lifted pill only shows once the hold moves. The edge of the drop comes
+    from the pointer against the hovered row's half height. Auto-scroll
+    runs while the pointer is in the outer 8 % of the list, up to 14 px a
+    frame. A lifted row is kept alive (`AutomaticKeepAlive`) and a
+    `Listener` tracks the pointer and ends the session on pointer up:
+    Flutter's `Draggable` only reports how a drag ended while its source
+    is mounted, and auto-scroll can carry the source off screen.
+12. **Kept from before H:** swipe left to delete with Undo
+    (`dismiss-<id>`), "Zuletzt gekauft" with re-add (`bought-<id>`) at the
+    end of the list, and job 8's tint and "Neu" on unseen partner rows.
+    None conflicts with H (no glyph on rows), so nothing went to
+    NEEDS_PETER for them.
+13. **Small deviations.** "Verstanden" is 44 px tall, not 36, for the tap
+    target rule. The category divider's hit area stays 32 px, the documented
+    exception; a taller hit area would take the space of the rows next to it.
+    A store name too long for a narrow column ends in an ellipsis rather than
+    pushing the count out.

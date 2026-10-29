@@ -106,4 +106,37 @@ abstract interface class ListCache() {
   Future<SeenMark?> loadSeen();
 
   Future<void> saveSeen(SeenMark mark);
+
+  /// The user's view of the list on this device.
+  Future<ListPrefs?> loadPrefs();
+
+  Future<void> savePrefs(ListPrefs prefs);
+}
+
+/// The key of the section for items without a store, in
+/// [ListPrefs.folded] next to store ids.
+const noStoreKey = 'none';
+
+/// How the user left the list on this device: which sections are folded
+/// (store ids and [noStoreKey]; ids of deleted stores are ignored), and
+/// whether the explainer card was dismissed.
+@immutable
+class const ListPrefs({
+  final Set<String> folded = const {},
+  final bool hintDismissed = false,
+}) {
+  factory fromJson(Map<String, Object?> json) => ListPrefs(
+    folded: {...(json['folded'] as List<Object?>? ?? const []).cast<String>()},
+    hintDismissed: json['hint_dismissed'] as bool? ?? false,
+  );
+
+  Map<String, Object?> toJson() => {
+    'folded': [...folded],
+    'hint_dismissed': hintDismissed,
+  };
+
+  ListPrefs copyWith({Set<String>? folded, bool? hintDismissed}) => ListPrefs(
+    folded: folded ?? this.folded,
+    hintDismissed: hintDismissed ?? this.hintDismissed,
+  );
 }

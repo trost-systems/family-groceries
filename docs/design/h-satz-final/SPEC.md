@@ -1,10 +1,11 @@
 # Design H "Satz · Laufweg": build spec
 
-Peter approved design variant H on 2026-10-24. Jobs 15, 16 and 17 build it in the Flutter app, and their reviewers check against this file. It has three parts:
+Peter approved design variant H on 2026-10-24. Jobs 15, 16 and 17 build it in the Flutter app, and their reviewers check against this file. It has four parts:
 
 1. Peter's decisions, verbatim. They win over everything else.
 2. What the prototype shows that the decisions don't cover: layout, type, colour, motion, and where the app deliberately differs from the prototype.
 3. The interfaces job 15 ships for jobs 16 and 17.
+4. The interfaces job 16 ships for job 17.
 
 Reference material in this folder:
 
@@ -316,3 +317,48 @@ Dart entry point: `ListRepository.parse(String text) → Future<ParsedEntry>` (`
     - `category-option-<id>`
 - `app/lib/list/store_badge.dart`: `StoreBadge(store, size:)` and `storeTint(store)`, with the colours from part 2. Job 16 uses them on the store dividers.
 - Rows (`_ItemTile`): long-press and release without moving, or a right click, opens the edit sheet. A tap still opens it too, until job 16 makes the tap tick the item. No added-by initial. `new-<id>` and `new-items-subtitle` are unchanged.
+
+## 4. Job 16 interfaces (for job 17)
+
+Job 16 built everything between the header and the add bar. The code is in `app/lib/list/list_view/`; `list_screen.dart` keeps only the scaffold, the add field, the usual chips, the title, the sync indicator and the menu, which job 17 replaces. The reasons are in `docs/DECISIONS.md`, "Job 16".
+
+### The widget
+
+`ShoppingListView({double bottomInset = 24, VoidCallback? onInteract})` in `list_view/shopping_list_view.dart` needs a `ListCubit` above it and a `ScaffoldMessenger` (it shows the tick, delete and re-add snackbars itself).
+
+- `bottomInset` is the room under the last row. Job 17 passes the height of the bottom band (input bar plus tabs, 134 px plus the safe area in the prototype) so the last row scrolls clear of it. The snackbars are the scaffold's: give them the same offset (prototype: 144 px up on the List tab).
+- `onInteract` is called when the user ticks, edits, deletes, re-adds, drops or opens a divider's menu. `list_screen.dart` passes `_leaveField`, so the keyboard goes down while shopping.
+- It owns the "Neu" seen timers (job 8) and opens the edit sheet (job 15) itself. The title's "N neu von Lea" (`new-items-subtitle`) still reads `ListCubit.fresh`.
+- Widths: one column up to 840 px, centred at 640 px from 600 px on; two columns from 840 px and three from 1200 px, each at most 560 px (`ShoppingListView.twoColumns`, `threeColumns`, `columnWidth`, `wideColumnWidth`). The add sheet (about 640 px wide) can align with `columnWidth`.
+
+### State
+
+- `ListState.prefs` is a `ListPrefs(folded: Set<String>, hintDismissed: bool)` from `list_cache.dart`, saved on the device per user and household (`listprefs.<user>.<household>`). `ListCubit.toggleFold(key)` and `ListCubit.dismissHint()` change it. A section's key is the store id, or `noStoreKey` (`'none'`) for "Ohne Laden".
+- `NeedsConnection` is a new `Rejected`: a store or category reorder made offline. `list_screen.dart` shows `reorderNeedsConnection` for it; keep that when the scaffold moves.
+- The store filter is gone: no `StoreFilter`, `ListCubit.selectStore`, `ListState.filter` or `showHidden`. `ListCubit.add` no longer takes a store from a view; the add sheet's store chip sets it.
+- `sectionsOf(items, catalog)` in `list_view/sections.dart` groups the list (stores in order, then no store; one block per category). The header's "15 Artikel" count is the sum of `StoreSection.count`.
+
+### Where the reorder screens are
+
+- The store layout screen (`openStoreLayout(context, storeId)`, a store's category order) opens from a store divider's menu: hold the divider without moving, or right click, then "Reihenfolge bearbeiten". It no longer has the "gibt es bei" switches.
+- The categories screen (`openCategories(context)`, rename, add, delete, route order) opens from the menu of the "Ohne Laden" divider and from the app menu. Job 17 can move the app menu entry to More.
+- Store order has no screen of its own: drag a store divider, or use "Laden nach oben/unten" in its menu or as a semantics action.
+
+### Keys (for `scripts/fg` and widget tests)
+
+| Key | Widget |
+| --- | --- |
+| `<item id>` | an item row (`ItemRow`) |
+| `dismiss-<id>`, `new-<id>`, `bought-<id>` | swipe to delete, the unseen tint, a recently bought row (unchanged) |
+| `drop-line-<id or section key>` | the insertion line while a drag hovers a row or divider |
+| `store-<store id>`, `store-none` | a store divider, and the one for no store |
+| `category-<section key>-<category id>` | a category divider |
+| `list-hint`, `list-hint-dismiss` | the explainer card and its "Verstanden" |
+| `list-empty` | the empty state |
+| `recently-bought` | "Zuletzt gekauft" |
+| `section-menu`, `section-menu-up`, `section-menu-down`, `section-menu-layout` | a divider's menu |
+
+### Strings
+
+New in both `app_de.arb` and `app_en.arb`: `storeSectionLabel`, `itemsWord`, `expandSection`, `collapseSection`, `moveStoreUp`, `moveStoreDown`, `moveCategoryUp`, `moveCategoryDown`, `listHint`, `listHintDismiss`, `reorderNeedsConnection`. English was added for the existing strings the list shows (`emptyList`, `sortingItem`, `recentlyBought`, `readd`, `itemTicked`, `itemDeleted`, `itemReadded`, `undo`, `newItem`, `editStoreLayout`, `manageCategories`, `storeLayoutTitle`, `storeLayoutHint`, `dragCategory`, `syncFailed`, `catalogSaveFailed`). `emptyList` still says "Tippe oben ein": job 17 changes it to "unten" when it moves the input down. Removed: `tickItem`, `allStores`, `showHiddenItems`, `hideHiddenItems`, `emptyAtStore`, `storeCarries`.
+

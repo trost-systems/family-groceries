@@ -1,12 +1,13 @@
 # Live sync
 
-Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way. Partner items added since this device last looked are tinted, with "N neu von <name>" under the household name, until they have been on screen for 3 seconds.
+Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way: a partner's drag to another place, category or store shows on the other phone. Partner items added since this device last looked are tinted, with "N neu von <name>" under the household name, until they have been on screen for 3 seconds.
 
 ## Sub-features
 
 - `sync-add` shows an item added by one member on the other member's list.
 - `sync-tick` removes an item from the other member's list when one member ticks it.
 - `sync-edit` shows a renamed or recategorized item on the other list.
+- `sync-move` shows an item a partner dragged (to another row, category or store) in its new place on the other list (`features/list-walk-order.md`, Partner move).
 - `sync-delete` removes an item deleted by one member from the other list.
 - `sync-reconnect` catches up after the connection comes back: changes made while offline go out, changes made by others come in.
 - `sync-after-sleep`: a phone that sleeps through a dropped connection and a partner's add catches up on waking (the item shows, the channel is live again, adds go both ways). e2e: live-sync.spec "a phone that sleeps through a dropped connection ...", which freezes the page with CDP `Page.setWebLifecycleState` and closes its Realtime socket meanwhile.
@@ -22,7 +23,7 @@ Two members of one household see each other's changes without reloading. An item
 
 Preconditions for `fg sync` (web, two or three members, captures by itself):
 
-- A stack: `fg up --only stack`. `fg sync` seeds `household-3-mid-shop` (Mia, Noah in the Lidl view, Ida; a list mid-shop) as a fresh run, builds the web app and tears the run down afterwards.
+- A stack: `fg up --only stack`. `fg sync` seeds `household-3-mid-shop` (Mia, Noah, Ida; a list mid-shop) as a fresh run, builds the web app and tears the run down afterwards.
 
 - **Three clients, one command.** Run `fg sync household-3-mid-shop --clients 3 --script .cursor/skills/verify-family-groceries/journeys/sync-3-clients.fgs`. It covers `sync-add`, `sync-tick`, `sync-edit` and `sync-reconnect` (B goes offline, ticks, A adds, B comes back) and exits 0 with per-client latencies. Open `evidence.index` from its JSON: every step and every observed change has a side-by-side frame of all clients, plus one video per client and `videos/composite.webm`.
 - **Your own steps.** Write a script (`A add "X"`, `B tick "X"`, `C edit "X" quantity "2"`, `A delete "X"`, `B offline`, `B online`, `expect A,C see|gone "X" within 2000ms`; `fg help sync`) and run it with `--clients 2` or `--clients 3`. `--keep` leaves the run for inspection (`fg db query ... --as <run>:mia`).
@@ -32,12 +33,12 @@ Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 
 - `fg up --clients peter,lea`, then `fg login peter` and `fg login lea`. `fg doctor` shows `screen list` for both.
 - For `sync-new`, peter's app shows the list (the 3 s clock runs only while the item is on screen).
-- Neither test item is active: `fg db query "update items set status = 'bought' where status = 'active' and name in ('Milch', 'Butter')" --write`.
+- Neither test item is active: `fg db query "update items set status = 'bought' where status = 'active' and name in ('Milch', 'Butter', 'Hafer', 'Hafermilch') and household_id = (select id from households where name = 'Familie Test')" --write`.
 
-- **One command.** Run `.cursor/skills/verify-family-groceries/journeys/quick-add-live-sync.sh`. It adds Milch on peter through the autofocused field, waits for it on lea, ticks it on lea, waits for it to leave peter, and checks the stored row (bought, by lea). It records both screens and prints `PASS` with both timings and the evidence directory.
+- **One command.** Run `.cursor/skills/verify-family-groceries/journeys/quick-add-live-sync.sh`. It adds Milch on peter through the autofocused field, waits for it on lea, ticks it on lea with a tap on its row, waits for it to leave peter, and checks the stored row (bought, by lea). It records both screens and prints `PASS` with both timings and the evidence directory.
 - **Add on one, see on the other.** Run `fg type --key add-item-field --input Butter --submit --client lea`. Then run `fg wait --text Butter --client peter --timeout 5`, which succeeds with `elapsedMs`.
-- **Tick on one, gone on the other.** Run `fg tap --row Butter --type Checkbox --client peter`. Then `fg wait --text Butter --gone --client lea --timeout 5` succeeds.
-- **Edit on one.** On peter, run `fg tap --text Milch` (with Milch on the list), `fg wait --key edit-sheet`, `fg type --key edit-name --input Hafermilch` and `fg tap --key edit-done`. `fg wait --text Hafermilch --client lea` succeeds.
+- **Tick on one, gone on the other.** Run `fg tap --text Butter --client peter` (a tap on the row ticks it). Then `fg wait --text Butter --gone --client lea --timeout 5` succeeds.
+- **Edit on one.** On peter, run `fg marionette -- long-press --text Milch` (with Milch on the list), `fg wait --key edit-sheet`, `fg type --key edit-name --input Hafermilch` and `fg tap --key edit-done`. `fg wait --text Hafermilch --client lea` succeeds.
 - **Delete on one.** Run `fg swipe --row Butter --direction left --client lea` with Butter on the list. `fg wait --text Butter --gone --client peter --timeout 10` succeeds.
 - **"neu".** With peter's list open, run `fg peer lea add Hafer`, then at once `fg wait --text Hafer` and `fg screenshot --name sync-new-live`: the row is tinted and the title reads "1 neu von Lea" (`fg find --key new-items-subtitle`). Rows carry no partner initial (job 15). `fg wait --key new-items-subtitle --gone --timeout 8` succeeds within about 3 s and the tint is gone.
 - **Stays seen.** Run `fg restart` (and `fg login peter` if the login screen shows). `fg wait --text Hafer` matches and `fg find --contains neu` returns count 0.
@@ -47,6 +48,7 @@ Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 
 ## Gotchas
 
+- `fg sync`'s browser steps still drive the list before job 16: `tick` clicks the checkbox "<item> abhaken" and `store` and a client's store view click a store chip (`e2e/sync/engine.mjs`). Neither exists in design H, so scripts with `tick`, `store` or a scenario client in a store view (household-3-mid-shop's Noah) fail until the engine taps the row instead. Prove ticks on the Marionette clients meanwhile.
 - `fg sync` holds `/tmp/fg-e2e.lock` while its browser runs, so it may wait for another job's Playwright run first (`--lock-wait`). Do not wrap it in a second `flock` from another shell; wrapping the same command in `flock /tmp/fg-e2e.lock` is fine (fg sees the parent holds it).
 - `expect ... see` matches rows Flutter has built: on screen plus a small margin. In a long list a row far down is not seen; use a scenario where the rows in play are near the top (household-3-mid-shop fits a 480×900 client) or `--viewport 480x1400`.
 - Latency in `fg sync` is measured from the acting client's server ack to the first rendered frame showing the change (resolution: one frame plus the observer). Catch-up after `online` is reported apart from live propagation.
