@@ -50,7 +50,10 @@ How production moves:
    (classic protection, must print `false`).
 3. Vercel builds `release` as a production deployment and assigns
    `app.hummlist.com` to it (a few minutes). No Vercel token is stored in
-   GitHub.
+   GitHub. The production branch is a project setting (Settings,
+   Environments, Production, Branch Tracking; API
+   `PATCH /v9/projects/{id}/branch`, read back as `link.productionBranch`),
+   and auto-assignment of production domains must stay on.
 
 A dry run (`upload=false`) or a skipped run leaves `release`, and so
 `app.hummlist.com`, where it is. A failed `Web production` job opens or

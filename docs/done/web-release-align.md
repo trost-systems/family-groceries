@@ -17,9 +17,11 @@ Done outside the repository (Vercel and Supabase settings):
 
 - Vercel project `family-groceries`: auto-assignment of production domains
   turned off on 2026-10-29 at about 17:25 CET, so merges to `main` stopped
-  moving `app.hummlist.com` right away. It stays on the 5b6659d build until the
-  production branch is `release` and auto-assignment is back on (see
-  `NEEDS_PETER.md` and the PR).
+  moving `app.hummlist.com` right away. At about 18:20 CET the same day, with
+  the Vercel CLI Peter authorized, the production branch was switched to
+  `release`, auto-assignment was turned back on, and `preview.app.hummlist.com`
+  was added on `main`. `app.hummlist.com` stayed on the 5b6659d build
+  (`NEEDS_PETER.md`, section "web-release-align").
 - Branch `release` created at 5b6659d, the commit `app.hummlist.com` serves.
 - Supabase `jdwqrallbpdbshrdhenk`: `https://preview.app.hummlist.com/**` added
   to the redirect allow list.
