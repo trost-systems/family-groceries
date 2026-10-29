@@ -168,7 +168,7 @@ ls "$(scripts/fg env | jq -r .evidenceDir)"      # evidence survives
 
 ## Isolation
 
-One instance per port block. `FG_PORT_PREFIX` sets the Supabase ports (`<prefix>21` API, `22` DB, `24` Mailpit), the project id, the state dir, the X displays (`:<prefix>1`, `:<prefix>2`) and the emulator port. `FG_PROJECT_ID`, `FG_AVD`, `FG_EMU_PORT`, `FG_STATE_DIR` and `FG_EVIDENCE_DIR` override single values. Two agents on different prefixes never touch each other's processes. `fg up` refuses a display another live Xvfb holds (`display_taken`). Never drive an instance you did not start.
+One instance per port block. `FG_PORT_PREFIX` sets the Supabase ports (`<prefix>21` API, `22` DB, `24` Mailpit), the project id, the state dir, the X displays (`:<prefix>1`, `:<prefix>2`) and the emulator port. `FG_PROJECT_ID`, `FG_AVD`, `FG_EMU_PORT`, `FG_STATE_DIR` and `FG_EVIDENCE_DIR` override single values. Two agents on different prefixes never touch each other's processes. `scripts/gates/e2e.sh` and `fg sync` take `/tmp/fg-e2e.lock` themselves; never wrap the gate in `flock /tmp/fg-e2e.lock` (it then waits on its own wrapper forever). `node e2e/web-smoke.mjs` takes no lock, so wrap that one. Steps that stop a container of the stack (the health 503 check in `features/hosted-backend.md`) break every drive on that stack, an `fg sync` run included: run them after the other drives. `fg up` refuses a display another live Xvfb holds (`display_taken`). Never drive an instance you did not start.
 
 ## Android (not verified on the build box)
 
