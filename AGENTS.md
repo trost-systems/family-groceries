@@ -17,9 +17,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   stack.
 - `app/fastlane/`, `.github/workflows/release.yml`: TestFlight and Play
   internal releases, manual, signing from secrets (`docs/RELEASE.md`).
-- `vercel.json`, `scripts/vercel.sh`: Vercel builds and hosts the web app on
-  every push (`scripts/vercel-local.sh` runs the same build in Vercel's base
-  image). `supabase-deploy.yml` deploys migrations (`supabase/deploy/`,
+- `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app on every push
+  (`scripts/vercel-local.sh` runs the same build in Vercel's base image).
+  `main` goes to `preview.app.hummlist.com` (Vercel login); `app.hummlist.com`
+  moves only when `release.yml` ships a store release and pushes the
+  `release` branch (`docs/DEPLOY.md`, section "Web app"). `supabase-deploy.yml` deploys migrations (`supabase/deploy/`,
   Management API) and edge functions (`--use-api`) from main, then runs
   `scripts/smoke-remote.sh`; its `ref` input rolls functions back.
   `keepalive.yml` reads through `health` daily so the free project doesn't

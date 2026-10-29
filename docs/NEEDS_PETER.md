@@ -13,8 +13,10 @@ Done from the box (details in the sections below):
   `main` over the Management API and fails red when a credential is
   missing (section 1).
 - Web app on Vercel at `https://app.hummlist.com` (job 20;
-  `https://family-groceries-pied.vercel.app` still serves it as an alias), built
-  from every push (section "Job 7: web hosting on Vercel"). Site URL,
+  `https://family-groceries-pied.vercel.app` still serves it as an alias), moved
+  only by a store release since 2026-10-29; `main` is on
+  `https://preview.app.hummlist.com` behind Vercel login (section "Job 7: web
+  hosting on Vercel", `DEPLOY.md` section "Web app"). Site URL,
   redirect URLs and the OAuth consent path point at it (section 2).
 - `app/config/auth.json` and `app/ios/Flutter/Auth.xcconfig` carry the real
   client IDs and the app URL (section 4, step 15).
@@ -390,8 +392,11 @@ Done. The Vercel project `peter-trost/family-groceries` (created by
 Engineering Lead on 2026-10-23) is linked to this repo and builds every
 push from `vercel.json`:
 
-- Production: `https://app.hummlist.com` (branch `main`, custom domain
-  since job 20), also reachable as `https://family-groceries-pied.vercel.app`.
+- Production: `https://app.hummlist.com` (custom domain since job 20), also
+  reachable as `https://family-groceries-pied.vercel.app`. Since 2026-10-29
+  the production branch is `release`, which `release.yml` moves when it ships
+  a store build; `main` is on `https://preview.app.hummlist.com` behind
+  Vercel Authentication (`DEPLOY.md`, section "Web app").
   The plain `family-groceries.vercel.app` belongs to someone else.
 - Previews: `https://family-groceries-git-<branch>-peter-trost.vercel.app`,
   behind Vercel Authentication (team default, unchanged).
@@ -666,3 +671,16 @@ Nothing blocks. Two things to look at, both reversible:
 - **Empty stores show as "Edeka 0 Artikel" dividers**, so you can drop items
   on them and reorder them. The prototype hid stores without items. Say if
   you'd rather hide them (they'd then only appear while dragging).
+
+## web-release-align: production branch `release` (2026-10-29)
+
+One Vercel dashboard setting the connector cannot change:
+
+1. Vercel, project `family-groceries`, Settings, Environments, Production,
+   Branch Tracking: change the branch from `main` to `release`, save.
+
+After that the agent (or you) turns auto-assignment of production domains
+back on (Settings, Domains, or the API's `autoAssignCustomDomains: true`)
+and adds `preview.app.hummlist.com` as a domain on the `main` branch
+(`DEPLOY.md`, section "Web app"). Until then `app.hummlist.com` stays on the
+5b6659d build and `main` builds are not assigned to any custom domain.

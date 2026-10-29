@@ -20,6 +20,53 @@ Every push to `main` that touches `supabase/**`,
 The workflow runs from `main` only. A dispatch on another branch fails
 before it deploys anything.
 
+## Web app: preview from main, production with the store release
+
+The Vercel project `peter-trost/family-groceries` builds the Flutter web app
+(`vercel.json`, `scripts/vercel.sh`) from every push. Since job
+web-release-align (2026-10-29), `app.hummlist.com` moves only with a store
+release, so the web app never runs ahead of TestFlight and Play:
+
+| URL | Serves | Who can open it |
+| --- | --- | --- |
+| `https://preview.app.hummlist.com` | the newest build of `main` (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
+| `https://app.hummlist.com` (alias `family-groceries-pied.vercel.app`) | the newest build of the `release` branch, Vercel's production branch | everyone |
+| `https://family-groceries-git-<branch>-peter-trost.vercel.app` | each branch's newest build | Vercel Authentication |
+
+How production moves:
+
+1. A Release run (`release.yml`, Mondays or by hand) ships green `main` to
+   TestFlight and/or Play internal. Its `Uploaded` job succeeds.
+2. Its `Web production` job pushes that commit to the `release` branch with
+   the workflow's own token. If `release` already contains the commit (a rerun
+   of an older Release run), the job changes nothing; otherwise the plain push
+   only fast-forwards, so production never moves back from here.
+3. Vercel builds `release` as a production deployment and assigns
+   `app.hummlist.com` to it (a few minutes). No Vercel token is stored in
+   GitHub.
+
+A dry run (`upload=false`) or a skipped run leaves `release`, and so
+`app.hummlist.com`, where it is. A failed `Web production` job opens or
+comments on the "Weekly release failed" issue on a scheduled run.
+
+Ship the web app by hand (only a commit that is already in a store release):
+
+```bash
+git push origin <sha>:refs/heads/release
+```
+
+Roll the web app back: Vercel dashboard, project `family-groceries`,
+Deployments, the earlier production deployment, **Instant Rollback**. Vercel
+then stops assigning new production builds to `app.hummlist.com` until
+someone selects **Undo Rollback** (or promotes a deployment), so do that once
+the fix has shipped. Pushing an older commit to `release` needs `--force`
+and rebuilds; Instant Rollback is faster.
+
+Sign-in on the preview: Google and Apple go through the Supabase redirect
+flow ([`AUTH.md`](AUTH.md)), so the only setting is the hosted redirect
+allow list, which has `https://preview.app.hummlist.com/**`. The phone apps'
+invite links still point at `https://app.hummlist.com` (`APP_URL`).
+
 ## Smoke test
 
 `scripts/smoke-remote.sh [project URL]` checks a deployed project. It
