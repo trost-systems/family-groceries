@@ -1,0 +1,131 @@
+# Job 27: the Supabase + Playwright e2e (and the db gate's pgTAP checks) on demand, for a branch,
+# without the rest of CI. Start it with scripts/ci-e2e.sh, which dispatches it, finds its run by
+# request_id and prints the result (docs/CI.md, On-demand e2e). Setup, gate and report are the
+# same as ci.yml's e2e and db jobs: the same composite actions, the same scripts/gates/*.sh and
+# the same pins (scripts/check-gates.sh fails when the two drift). Not a required check.
+name: E2E on demand
+run-name: "e2e ${{ inputs.spec || 'full suite' }} on ${{ github.ref_name }} [${{ inputs.request_id || github.event_name }}]"
+
+on:
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: 'Playwright arguments, e.g. tests/stores.spec.ts or -g "drag"; empty runs the full suite'
+        type: string
+        default: ''
+      shards:
+        description: 'Shards: auto is 2 for the full suite, 1 with a spec'
+        type: choice
+        options: [auto, '1', '2']
+        default: auto
+      db:
+        description: Also run the db gate (pgTAP, classifier sweep, db lint, backup drill, fixtures) in its own job
+        type: boolean
+        default: true
+      sync_smoke:
+        description: 'The fg sync smoke test on shard 1: auto runs it for the full suite only'
+        type: choice
+        options: [auto, 'true', 'false']
+        default: auto
+      request_id:
+        description: Set by scripts/ci-e2e.sh to find this run; shows in the run name
+        type: string
+        default: ''
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.spec }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Same values as ci.yml (scripts/check-gates.sh).
+env:
+  FLUTTER_VERSION: 3.47.8
+  SUPABASE_CLI_VERSION: 2.121.0
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+
+jobs:
+  # The shard list and the sync smoke switch from the inputs.
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+      total: ${{ steps.plan.outputs.total }}
+      sync: ${{ steps.plan.outputs.sync }}
+    steps:
+      - id: plan
+        env:
+          SPEC: ${{ inputs.spec }}
+          SHARDS: ${{ inputs.shards || 'auto' }}
+          SYNC: ${{ inputs.sync_smoke || 'auto' }}
+        run: |
+          total="$SHARDS"
+          [[ $total != auto ]] || if [[ -n $SPEC ]]; then total=1; else total=2; fi
+          sync="$SYNC"
+          [[ $sync != auto ]] || if [[ -n $SPEC ]]; then sync=false; else sync=true; fi
+          {
+            echo "total=$total"
+            echo "shards=$(seq -s, 1 "$total" | sed 's/.*/[&]/')"
+            echo "sync=$sync"
+          } | tee -a "$GITHUB_OUTPUT"
+          {
+            echo "### e2e on \`${GITHUB_REF_NAME}\` at \`${GITHUB_SHA::7}\`"
+            echo "- spec: \`${SPEC:-full suite}\`"
+            echo "- shards: $total, fg sync smoke: $sync"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+  db:
+    if: github.event_name != 'workflow_dispatch' || inputs.db
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/db-setup
+        with:
+          supabase-cli-version: ${{ env.SUPABASE_CLI_VERSION }}
+      - run: scripts/gates/db.sh
+
+  e2e:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/e2e-setup
+        with:
+          supabase-cli-version: ${{ env.SUPABASE_CLI_VERSION }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          ffmpeg: ${{ matrix.shard == 1 && needs.plan.outputs.sync == 'true' }}
+      # The spec splits into words like a shell would (quotes group), without running anything.
+      # A shard of a spec may hold no test, so a sharded spec run passes an empty shard; the
+      # summary and scripts/ci-e2e.sh count the tests.
+      - name: e2e gate
+        env:
+          SPEC: ${{ inputs.spec }}
+          SHARD: ${{ matrix.shard }}
+          TOTAL: ${{ needs.plan.outputs.total }}
+          FG_SYNC_SMOKE: ${{ (matrix.shard == 1 && needs.plan.outputs.sync == 'true') && '1' || '0' }}
+          SCREENSHOT_DIR: ${{ github.workspace }}/e2e/screenshots
+        run: |
+          args=()
+          if [[ -n $SPEC ]]; then
+            words="$(xargs printf '%s\n' <<<"$SPEC")" || { echo "::error::cannot split the spec: $SPEC"; exit 2; }
+            mapfile -t args <<<"$words"
+          fi
+          if [[ $TOTAL != 1 ]]; then
+            args+=("--shard=$SHARD/$TOTAL")
+            [[ -z $SPEC ]] || args+=(--pass-with-no-tests)
+          fi
+          echo "scripts/gates/e2e.sh ${args[*]}"
+          scripts/gates/e2e.sh "${args[@]}"
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/e2e-report
+        with:
+          job-status: ${{ job.status }}
+          artifact-name: playwright-${{ matrix.shard }}-attempt${{ github.run_attempt }}
+          results-name: e2e-results-${{ matrix.shard }}-attempt${{ github.run_attempt }}

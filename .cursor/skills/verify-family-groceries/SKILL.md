@@ -19,7 +19,7 @@ scripts/fg help tap          # one command: flags and examples
 | `linux` | The debug app (`app/test_driver/main_marionette.dart`) as a Linux desktop window on its own Xvfb display, 412×892 | Default on boxes where the emulator cannot run. Two clients (peter, lea) at once for live-sync proofs. |
 | `android` | The same entrypoint as a debug APK on a headless emulator (AVD `fg-<prefix>`, 2 GB) | Mobile-only behavior: the soft keyboard, deep links, the magic-link return. One emulator per instance; lea then runs on linux. |
 | backend | `fg db query`, `fg fn call`, `fg peer`, `fg mail` | Server state, RLS, Edge Functions, a UI-less second client, the local inbox. |
-| web | `fg sync`: the web build in 1-3 Playwright contexts of one Chromium, each a household member | Multi-client sync with automatic frames, videos and latencies; offline/online per client. `e2e/` Playwright (`scripts/verify.sh`) stays the CI suite. |
+| web | `fg sync`: the web build in 1-3 Playwright contexts of one Chromium, each a household member | Multi-client sync with automatic frames, videos and latencies; offline/online per client. `e2e/` Playwright (`scripts/verify.sh`, or on GitHub Actions without local Docker: `scripts/ci-e2e.sh --spec <file>`) stays the CI suite. |
 
 `FG_SURFACE` picks the surface. If unset, it is `android`, unless `~/.config/fg/kvm-broken` exists. On the shared build box that marker exists: starting a KVM guest there crashes the host kernel (`kernel BUG at arch/x86/kvm/x86.c:702`). Never delete the marker to "try again" on that box.
 

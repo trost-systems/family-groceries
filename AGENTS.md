@@ -59,6 +59,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
   otherwise). The e2e gate holds the box-wide lock `/tmp/fg-e2e.lock`, so a
   second run waits instead of overlapping.
+- No Docker here (the Mac runner), or sparing the box: `scripts/ci-e2e.sh
+  [--spec "<playwright args>"] [--no-db]` runs the e2e and db gates on
+  GitHub Actions for the pushed branch and prints the result (`docs/CI.md`,
+  On-demand e2e).
 - Public repo: never commit secrets. Only the project URL and the publishable
   key may appear in code. gitleaks runs as a pre-commit hook
   (`.githooks/pre-commit`) and as a required CI job.

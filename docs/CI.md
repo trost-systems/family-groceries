@@ -2,7 +2,8 @@
 
 `.github/workflows/ci.yml` runs on every PR, on every push to `main` and on
 demand (`gh workflow run ci.yml --ref <branch>`). `ci-ok` is the one check a
-merge waits for (`scripts/merge-pr.sh`).
+merge waits for (`scripts/merge-pr.sh`). For only the e2e and db gates on a
+branch, with a spec filter, use `scripts/ci-e2e.sh` (On-demand e2e, below).
 
 ## Gates
 
@@ -76,12 +77,83 @@ The `changes` job (`scripts/ci-changes.sh`) reads the PR's changed files:
   generated from pubspec. A Dart change in `app/lib/` is compiled by the
   flutter, web-prod and e2e gates already.
 - `fastlane` runs when `app/fastlane/` or `app/Gemfile*` changed.
-- A change to `ci.yml`, `scripts/ci-changes.sh`, `scripts/lib.sh` or
-  `scripts/gates/` runs everything, and so does a push to `main` or a manual
-  run.
+- A change to `ci.yml`, `.github/actions/`, `scripts/ci-changes.sh`,
+  `scripts/lib.sh`, `scripts/gates/` or `scripts/e2e-summary.sh` runs
+  everything, and so does a push to `main` or a manual run.
+- `e2e.yml` and `scripts/ci-e2e.sh` (On-demand e2e) count like
+  documentation: ci.yml doesn't run them, and the `lint` gate (actionlint,
+  shellcheck, `check-gates.sh`) checks them.
 
 A skipped job counts as passed for `ci-ok`. A failed or cancelled one fails
 it.
+
+## On-demand e2e (job 27)
+
+`scripts/ci-e2e.sh` runs the Supabase + Playwright e2e, and by default the
+db gate, on GitHub Actions for a pushed branch, without the rest of CI. It is
+the way to run e2e where Docker is not allowed (the Mac runner), and it takes
+that load off the box. It needs only `gh` (logged in), `git` and `jq`.
+
+```bash
+scripts/ci-e2e.sh                                  # full suite, 2 shards, db gate, fg sync smoke
+scripts/ci-e2e.sh --spec tests/stores.spec.ts      # one spec: 1 shard, no sync smoke
+scripts/ci-e2e.sh --spec '-g "drag"' --no-db       # by title, without the db gate
+scripts/ci-e2e.sh --spec tests/list.spec.ts --download /tmp/pw   # also fetch report, traces, screenshots
+scripts/ci-e2e.sh --ref job/42-foo --shards 2 --sync-smoke
+```
+
+- The branch must be pushed: the script refuses when your local branch and
+  `origin/<ref>` are different commits, since the run checks out origin's.
+  On a PR branch push with `scripts/push-pr.sh` first. Uncommitted changes
+  are not part of the run, and the script says so.
+- It dispatches `.github/workflows/e2e.yml` with a fresh `request_id`. The
+  workflow puts that id into its run name (`run-name:`), so the script finds
+  its own run, not one someone else started on the same branch a second
+  earlier. Then it waits for the run and prints each job's result with its
+  time, each shard's passed, failed and flaky counts with the failed titles,
+  and the run URL. It exits 0 when the run passed and at least one test ran,
+  1 when the run failed or was cancelled or no test ran, 2 on a usage
+  problem. If a run fails, `gh run view <id> --log-failed` says why.
+- Inputs of `e2e.yml` (also in the Actions tab, **Run workflow**): `spec`
+  (Playwright arguments; empty is the full suite), `shards` (`auto` is 2 for
+  the full suite and 1 with a spec), `db` (default on: `scripts/gates/db.sh`
+  in its own job), `sync_smoke` (`auto` runs the fg sync smoke test on shard
+  1 for the full suite only). A sharded spec run passes an empty shard
+  (`--pass-with-no-tests`); the script then checks that some test ran.
+- One run per branch and spec: a second dispatch with the same spec cancels
+  the first (`concurrency`). Different specs run side by side.
+- Artifacts, per shard and attempt: `playwright-<shard>-attempt<n>` (HTML
+  report, test results with traces, screenshots, sync evidence) and
+  `e2e-results-<shard>-attempt<n>` (only `playwright-results.json`, what the
+  script reads). Each e2e job writes a summary of passed, failed and flaky
+  tests per spec file onto the run page (`scripts/e2e-summary.sh`); ci.yml's
+  e2e jobs write the same summary.
+- It is not a required check and does not replace `ci-ok`: a PR still lands
+  on ci.yml's run. Once a PR is open, every push runs the full ci.yml anyway;
+  use ci-e2e.sh for single specs while iterating.
+
+The backend comes up exactly as in ci.yml's e2e and db jobs and the local
+gates. Both workflows' jobs use the same composite actions:
+`.github/actions/e2e-setup` (Supabase CLI, ephemeral ports, the stack
+started in the background, Flutter, Node and Playwright, Deno, ffmpeg),
+`.github/actions/e2e-report` (the stack's logs on failure, the artifacts,
+the job summary) and `.github/actions/db-setup`. Between them each job runs
+its own `scripts/gates/<gate>.sh`, which calls `supabase_up` with the repo's
+migrations and seed, the job-18 fixtures and `e2e/playwright.config.ts`.
+The pins (`FLUTTER_VERSION`, `SUPABASE_CLI_VERSION`,
+`SUPABASE_INTERNAL_IMAGE_REGISTRY`) are written in both workflows, because a
+composite action can't read a workflow's `env`. `scripts/check-gates.sh` fails
+when the pins differ, when the two `e2e` or `db` jobs use different actions,
+versions or action inputs, or when e2e.yml's job no longer runs its gate script. The
+gate's `FG_SYNC_SMOKE=1|0` overrides its sync smoke rule (`sync_smoke`).
+
+`gh workflow run` finds a workflow by file name only once GitHub has
+registered it, and a `workflow_dispatch` workflow is registered when it
+reaches the default branch. To try changes to e2e.yml on a branch before it
+is on main, add a temporary `push:` trigger limited to that branch. One
+push registers it, and from then on `scripts/ci-e2e.sh --ref <branch>` runs
+the branch's own e2e.yml. Remove the trigger before landing (job 27 did
+this, DECISIONS job 27).
 
 ## Landing a PR: one CI run
 

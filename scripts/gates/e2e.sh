@@ -8,6 +8,13 @@
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 
+case "${FG_SYNC_SMOKE:-auto}" in
+  1) sync_smoke=1 ;;
+  0) sync_smoke=0 ;;
+  auto) if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then sync_smoke=1; else sync_smoke=0; fi ;;
+  *) echo "FG_SYNC_SMOKE is '$FG_SYNC_SMOKE'; use 1, 0 or auto" >&2; exit 2 ;;
+esac
+
 LOCK="${FG_E2E_LOCK:-/tmp/fg-e2e.lock}"
 exec 9>>"$LOCK"
 if ! flock -n 9; then
@@ -34,8 +41,10 @@ npx playwright test "$@"
 
 # Job 18: a two-client fg sync smoke test on the web build above (one add, one tick, the artifacts
 # and the index), once per full run: on CI's first shard, or locally without a subset. It reuses
-# this gate's e2e lock (fg sync sees that a parent holds it).
-if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
+# this gate's e2e lock (fg sync sees that a parent holds it). FG_SYNC_SMOKE=1 or 0 overrides that
+# rule (the on-demand e2e.yml's sync_smoke input, job 27); it is read up front, so a bad value
+# fails before the stack starts.
+if [[ $sync_smoke == 1 ]]; then
   log "fg sync smoke test"
   fg_on_repo_stack
   export FG_EVIDENCE_DIR="$REPO_ROOT/e2e/sync-evidence"

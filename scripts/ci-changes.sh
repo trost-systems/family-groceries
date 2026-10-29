@@ -6,7 +6,9 @@
 #             is compiled by the flutter, web-prod and e2e gates already.
 #   fastlane  only when app/fastlane/ or app/Gemfile* changes
 # Without a range (a push to main, a manual run) and when the CI definition itself changes
-# (this script, ci.yml, a gate, lib.sh), everything runs.
+# (this script, ci.yml, the composite actions it uses, a gate, lib.sh, the e2e summary),
+# everything runs. The on-demand e2e (e2e.yml, scripts/ci-e2e.sh, job 27) is not part of ci.yml:
+# alone it needs only the lint gate (actionlint, shellcheck, check-gates), which always runs.
 # Usage: scripts/ci-changes.sh [<base> <head>]
 set -euo pipefail
 
@@ -14,10 +16,11 @@ all() { printf 'heavy=true\nnative=true\nfastlane=true\n'; exit 0; }
 [[ $# == 2 ]] || all
 files="$(git diff --name-only "$1" "$2")"
 [[ -n $files ]] || all
-grep -qE '^(\.github/workflows/ci\.yml|scripts/ci-changes\.sh|scripts/lib\.sh|scripts/gates/)' <<<"$files" && all
+grep -qE '^(\.github/workflows/ci\.yml|\.github/actions/|scripts/ci-changes\.sh|scripts/lib\.sh|scripts/gates/|scripts/e2e-summary\.sh)' <<<"$files" && all
 
 # Documentation: docs/ and Markdown, except the verify skill's files, which its CLI reads.
-code="$(grep -vE '^docs/' <<<"$files" | grep -vE '^[^.].*\.md$|^\.github/.*\.md$' || true)"
+code="$(grep -vE '^docs/' <<<"$files" | grep -vE '^[^.].*\.md$|^\.github/.*\.md$' \
+  | grep -vxE '\.github/workflows/e2e\.yml|scripts/ci-e2e\.sh' || true)"
 heavy=false native=false fastlane=false
 [[ -n $code ]] && heavy=true
 grep -qE '^app/(ios|android)/|^app/pubspec\.(yaml|lock)$' <<<"$files" && native=true

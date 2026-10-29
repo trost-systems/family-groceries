@@ -10,7 +10,10 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 1,
   // One retry, which fixtures.ts lets run only after a host stall (VM pause) cut the attempt.
   retries: 1,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  // The JSON report is what the job summary and scripts/ci-e2e.sh read (scripts/e2e-summary.sh).
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'playwright-results.json' }]]
+    : 'list',
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     locale: 'de-DE',

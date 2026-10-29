@@ -1,0 +1,61 @@
+# Everything the e2e gate needs before it runs, shared by ci.yml's e2e job and the on-demand
+# e2e.yml (job 27). The caller passes the pinned versions from its env and sets
+# SUPABASE_INTERNAL_IMAGE_REGISTRY; scripts/check-gates.sh keeps the two workflows' pins equal.
+name: e2e gate setup
+description: Supabase stack (started in the background), Flutter, Node and Playwright, Deno, ffmpeg
+inputs:
+  supabase-cli-version:
+    description: Supabase CLI version
+    required: true
+  flutter-version:
+    description: Flutter version
+    required: true
+  ffmpeg:
+    description: Install ffmpeg, which the fg sync smoke test needs ('true' or 'false')
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+      with:
+        version: ${{ inputs.supabase-cli-version }}
+    # Supabase binds 54320-54329, inside Linux's default ephemeral range
+    # (32768-60999); an outbound socket on the runner can already hold one.
+    - name: Keep ephemeral ports clear of the Supabase ports
+      shell: bash
+      run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
+    # Pulls and starts the stack while the next steps install Flutter and Playwright; the gate's
+    # supabase_up (scripts/lib.sh) waits on the same lock and reuses it.
+    - name: Start the local Supabase stack in the background
+      shell: bash
+      run: |
+        (source scripts/lib.sh && supabase_up) >/tmp/supabase-start.log 2>&1 &
+    - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+      with:
+        channel: stable
+        flutter-version: ${{ inputs.flutter-version }}
+        cache: true
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: e2e/package-lock.json
+    # The runner image already has the libraries headless Chromium needs. install-deps (apt:
+    # fonts, xvfb) took 6 min on a slow mirror once, so it runs only when a launch fails.
+    - name: Install Playwright
+      shell: bash
+      working-directory: e2e
+      run: |
+        npm ci
+        npx playwright install chromium
+        node -e "import('@playwright/test').then(({ chromium }) => chromium.launch()).then((b) => b.close())" \
+          || npx playwright install --with-deps chromium
+    # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
+    - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      with:
+        deno-version: v2.x
+    # Job 18: the fg sync smoke test stacks the client videos with ffmpeg.
+    - name: Install ffmpeg
+      if: inputs.ffmpeg == 'true'
+      shell: bash
+      run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg

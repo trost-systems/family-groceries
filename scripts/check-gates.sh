@@ -2,7 +2,8 @@
 # CI and verify.sh run the same checks because both only call scripts/gates/<gate>.sh. This keeps
 # it that way: every gate has a ci.yml job of its name that runs it and is in ci-ok's needs, and
 # is listed in verify.sh; no check command is written into ci.yml or verify.sh directly. Every
-# job in every workflow also sets timeout-minutes.
+# job in every workflow also sets timeout-minutes, and the on-demand e2e.yml sets up its db and
+# e2e jobs exactly like ci.yml's (job 27).
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 cd "$REPO_ROOT"
@@ -33,13 +34,42 @@ for pattern in 'flutter analyze' 'flutter test' 'flutter build' 'dart format' 'd
   done
 done
 
+# The lines of job <job> in workflow <wf>.
+job_block() {
+  sed -n "/^jobs:/,\$p" "$1" | sed -n "/^  $2:$/,/^  [a-zA-Z0-9_-]*:$/p" | sed '$!b;/^  [a-zA-Z0-9_-]*:$/d'
+}
+
 # A hung job holds a runner (and a deploy or release slot) for GitHub's 6 h default.
 for wf in .github/workflows/*.yml; do
   while read -r job; do
-    block="$(sed -n "/^jobs:/,\$p" "$wf" | sed -n "/^  $job:$/,/^  [a-zA-Z0-9_-]*:$/p" | sed '$!b;/^  [a-zA-Z0-9_-]*:$/d')"
+    block="$(job_block "$wf" "$job")"
     grep -qE '^    uses:' <<<"$block" && continue
     grep -qE '^    timeout-minutes:' <<<"$block" || problems+=("$wf job '$job' has no timeout-minutes")
   done < <(sed -n '/^jobs:/,$s/^  \([a-zA-Z0-9_-]*\):$/\1/p' "$wf")
+done
+
+# Job 27: e2e.yml runs ci.yml's e2e and db jobs on demand. Both workflows pin the same versions,
+# and each of the two jobs uses the same actions (the shared ones in .github/actions/), passes
+# them the same versions and inputs (by name) and runs its gate script.
+E2E=.github/workflows/e2e.yml
+pin() { sed -n "/^env:/,/^[a-z]/s/^  $2: *\(.*\)$/\1/p" "$1"; }
+for key in FLUTTER_VERSION SUPABASE_CLI_VERSION SUPABASE_INTERNAL_IMAGE_REGISTRY; do
+  [[ -n "$(pin "$CI" "$key")" && "$(pin "$CI" "$key")" == "$(pin "$E2E" "$key")" ]] \
+    || problems+=("$E2E env $key is '$(pin "$E2E" "$key")', ci.yml's is '$(pin "$CI" "$key")'")
+done
+for job in db e2e; do
+  for what in uses version inputs; do
+    case $what in
+      uses) pattern='s/^ *-\{0,1\} *uses: \(.*\)$/\1/p' ;;
+      version) pattern='s/^ *\([a-z-]*-version: .*\)$/\1/p' ;;
+      inputs) pattern='s/^          \([a-z-]*\): .*$/\1/p' ;; # the names under each action's with:
+    esac
+    ci_lines="$(job_block "$CI" "$job" | sed -n "$pattern")"
+    e2e_lines="$(job_block "$E2E" "$job" | sed -n "$pattern")"
+    [[ -n $ci_lines && "$ci_lines" == "$e2e_lines" ]] \
+      || problems+=("$E2E job '$job' differs from ci.yml's in its '$what' lines: $(diff <(echo "$ci_lines") <(echo "$e2e_lines") | grep '^[<>]' | tr '\n' ' ' || true)")
+  done
+  job_block "$E2E" "$job" | grep -q "scripts/gates/$job.sh" || problems+=("$E2E job '$job' does not run scripts/gates/$job.sh")
 done
 
 if [[ ${#problems[@]} -gt 0 ]]; then
