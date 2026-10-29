@@ -2351,4 +2351,3 @@ stores, and `main` needs a Vercel-login-guarded preview on its own subdomain.
 3. **Web ships after any real store upload** (`Uploaded` job green), also an
    iOS-only run: the web app then matches the newest TestFlight build. A dry
    run or a skipped run leaves production alone.
-

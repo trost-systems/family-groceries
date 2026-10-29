@@ -40,7 +40,14 @@ How production moves:
 2. Its `Web production` job pushes that commit to the `release` branch with
    the workflow's own token. If `release` already contains the commit (a rerun
    of an older Release run), the job changes nothing; otherwise the plain push
-   only fast-forwards, so production never moves back from here.
+   only fast-forwards, so production never moves back from here. No branch
+   protection or ruleset may cover `release`: one that blocks pushes without
+   a PR, or from `github-actions`, fails this job after a store already got
+   the build. None does; check both kinds with
+   `gh api repos/trost-systems/family-groceries/rules/branches/release`
+   (rulesets, must print `[]`) and
+   `gh api repos/trost-systems/family-groceries/branches/release --jq .protected`
+   (classic protection, must print `false`).
 3. Vercel builds `release` as a production deployment and assigns
    `app.hummlist.com` to it (a few minutes). No Vercel token is stored in
    GitHub.
@@ -55,9 +62,9 @@ Ship the web app by hand (only a commit that is already in a store release):
 git push origin <sha>:refs/heads/release
 ```
 
-Roll the web app back: Vercel dashboard, project `family-groceries`,
-Deployments, the earlier production deployment, **Instant Rollback**. Vercel
-then stops assigning new production builds to `app.hummlist.com` until
+Roll the web app back: Vercel dashboard, project
+`peter-trost/family-groceries`, Deployments, the earlier production
+deployment, **Instant Rollback**. Vercel then stops assigning new production builds to `app.hummlist.com` until
 someone selects **Undo Rollback** (or promotes a deployment), so do that once
 the fix has shipped. Pushing an older commit to `release` needs `--force`
 and rebuilds; Instant Rollback is faster.
