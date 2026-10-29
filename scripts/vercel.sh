@@ -44,7 +44,7 @@ build() {
   [[ ${SUPABASE_PUBLISHABLE_KEY:-} == sb_publishable_* ]] \
     || fail "set SUPABASE_PUBLISHABLE_KEY to the project's publishable key (sb_publishable_...); never a secret key"
   cd app
-  flutter build web --release --no-wasm-dry-run --base-href / \
+  flutter build web --release --wasm --base-href / \
     --dart-define=SUPABASE_URL="$SUPABASE_URL" \
     --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
     --dart-define-from-file=config/auth.json

@@ -32,7 +32,7 @@ log "web build against the local stack"
 cd "$REPO_ROOT/app"
 flutter pub get >/dev/null
 # shellcheck disable=SC2046 # flutter_defines prints several arguments
-flutter build web --release --no-web-resources-cdn --no-wasm-dry-run $(flutter_defines) --dart-define-from-file=config/e2e.json
+flutter build web --release --no-web-resources-cdn --wasm $(flutter_defines) --dart-define-from-file=config/e2e.json
 
 log "playwright"
 cd "$REPO_ROOT/e2e"

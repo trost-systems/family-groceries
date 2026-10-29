@@ -155,6 +155,24 @@ push registers it, and from then on `scripts/ci-e2e.sh --ref <branch>` runs
 the branch's own e2e.yml. Remove the trigger before landing (job 27 did
 this, DECISIONS job 27).
 
+### Browsers and timings (job 28)
+
+The e2e run has three Playwright projects: `chromium` (every spec but one),
+`iphone` (WebKit as an iPhone 15, `tests/iphone.spec.ts`: the add field's tap
+focus) and `webkit` (the timings). The web build is `--wasm`, so Chromium runs
+the wasm app; `tests/wasm-boot.spec.ts` also boots the JS fallback. WebKit
+runs on GitHub Actions only: it does not start on the Mac runner.
+
+The timings (`tests/perf.spec.ts`, 4-5 min) run only when named:
+
+```bash
+scripts/ci-e2e.sh --no-db --spec tests/perf.spec.ts
+```
+
+Each build measured prints a `PERF {...}` line, and the job summary shows
+them as a table: the time from navigation to the drawn list, and the frame
+intervals while scrolling a 200-item list (DECISIONS job 28, 7).
+
 ## Landing a PR: one CI run
 
 1. Push the branch once (`git push -u origin HEAD`), then `gh pr create`.

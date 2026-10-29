@@ -238,3 +238,7 @@ See [docs/done/27-ci-e2e-on-demand.md](docs/done/27-ci-e2e-on-demand.md).
 ## Job 17: design H add sheet, app shell, English
 
 See [docs/done/17-design-add-shell.md](docs/done/17-design-add-shell.md).
+
+## Job 28: WebAssembly web build, iOS Safari tap focus
+
+See [docs/done/28-web-wasm-ios.md](docs/done/28-web-wasm-ios.md).

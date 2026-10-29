@@ -5,10 +5,11 @@ Anyone opens the production web app on Vercel and gets the sign-in page. Deep li
 ## Sub-features
 
 - `web-spa-routes` serves `index.html` with `Cache-Control: no-cache` for every app path, dotted ones such as `/join/AB.CD` included, and answers 404 for a missing asset such as `/missing.js`, `/assets/x.png` or anything under `canvaskit/` (`vercel.json`, DECISIONS 7b.2).
-- `web-cache` makes `index.html`, `manifest.json`, `flutter_bootstrap.js`, `flutter_service_worker.js` and `version.json` `no-cache`, and other files (`main.dart.js`, icons, assets) `public, max-age=0, must-revalidate`. `web-smoke.mjs` checks the three Flutter files and `main.dart.js`; `curl -sI <url>/manifest.json` shows the rest.
+- `web-cache` makes `index.html`, `manifest.json`, `flutter_bootstrap.js`, `flutter_service_worker.js` and `version.json` `no-cache`, and other files (`main.dart.js`, `main.dart.wasm`, `main.dart.mjs`, icons, assets) `public, max-age=0, must-revalidate`. `web-smoke.mjs` checks the three Flutter files and the three entry files; `curl -sI <url>/manifest.json` shows the rest.
 - `web-google` takes the Google button to `accounts.google.com` with the web client ID from `app/config/auth.json`.
 - `web-apple` takes the Apple button to `appleid.apple.com` with the Services ID.
 - `web-build` runs `vercel.json`'s install and build commands in Amazon Linux 2023 from a fresh clone.
+- `web-wasm` (job 28): the build is `flutter build web --wasm`. Chromium runs `main.dart.wasm` (skwasm, single-threaded: no COOP/COEP headers); Safari, every iOS browser, Firefox and browsers without WasmGC run `main.dart.js` from the same build (Flutter's `wasmAllowList` default, DECISIONS job 28). `vercel.json` serves `.wasm` as `application/wasm` and `.mjs` as `text/javascript`; `web-smoke.mjs` checks both and that Chromium loads the wasm app.
 
 ## How to get to it (user POV)
 
@@ -26,6 +27,8 @@ Preconditions:
 - **The build Vercel runs.** Run `scripts/vercel-local.sh /tmp/fg-vercel-out`. It ends with `output: /tmp/fg-vercel-out`. To check the providers against that output, start `node e2e/serve.mjs /tmp/fg-vercel-out 55081`, then run `SMOKE_BROWSER_ONLY=1 node e2e/web-smoke.mjs http://127.0.0.1:55081 <dir>`. `e2e/serve.mjs` has no Vercel header rules, so the HTTP checks are skipped.
 
 ## Gotchas
+
+- Which app a browser runs: DevTools' Network tab shows `main.dart.wasm` or `main.dart.js`; in the e2e specs `watchBuild` (`e2e/tests/web-build.ts`) records it. `withoutWasmGC` makes Chromium take the JS fallback, `wasmAllowList` opts an engine in or out for one page.
 
 - The smoke test stops at the providers' sign-in pages and never signs in. A full Google or Apple round trip needs a real account, so it is a manual step (`docs/NEEDS_PETER.md`, section 4, step 18).
 - Production is the last store release, not `main`: to check what just merged, use `https://preview.app.hummlist.com` (its build of `main`) with a share link. Without a share link or a Vercel login it shows Vercel's login wall, not the app, and `app.hummlist.com` stays on the last store release until the next Release run that uploads (scheduled Mondays, or started by hand); a failed or skipped run keeps it there longer.

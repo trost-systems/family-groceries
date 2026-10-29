@@ -51,3 +51,15 @@ if [[ $flaky != 0 ]]; then
   printf '\n**Flaky** (passed on the retry)\n\n'
   titles flaky | sed 's/^/- /'
 fi
+
+# Job 28: tests/perf.spec.ts prints one `PERF {json}` line per build it measured.
+perf="$(jq -r '.. | objects | select(has("stdout")) | .stdout[]? | .text? // empty' "$@" \
+  | sed -n 's/^PERF //p')"
+if [[ -n $perf ]]; then
+  printf '\n**Timings** (tests/perf.spec.ts: navigation to the drawn list, median of 3; frame intervals while scrolling 200 items, first and second pass)\n\n'
+  echo "| Browser | Build | List drawn | 1st scroll mean / p95 / max, frames > 25 ms | 2nd scroll mean / p95 / max, frames > 25 ms |"
+  echo "| --- | --- | ---: | --- | --- |"
+  jq -r 'def f: if . == null then "-" else "\(.meanMs) / \(.p95Ms) / \(.maxMs) ms, \(.over25ms) of \(.frames)" end;
+    if .failed then "| \(.browser) | \(.build) | did not run: \(.failed) | | |"
+    else "| \(.browser) | \(.build) | \(.loadMedianMs) ms | \(.firstScroll | f) | \(.secondScroll | f) |" end' <<<"$perf"
+fi
