@@ -1,0 +1,28 @@
+# The db gate's tools, shared by ci.yml's db job and the on-demand e2e.yml (job 27), so both
+# bring the stack up the same way. The caller passes the pinned versions from its env and sets
+# SUPABASE_INTERNAL_IMAGE_REGISTRY; scripts/check-gates.sh keeps the two workflows' pins equal.
+name: db gate setup
+description: Supabase CLI, ephemeral ports, pg_dump 17 and age, Deno
+inputs:
+  supabase-cli-version:
+    description: Supabase CLI version
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: supabase/setup-cli@45a513f8c64c0bc8e0e3dfe572b5c95be85f6359 # v3.0.1
+      with:
+        version: ${{ inputs.supabase-cli-version }}
+    # Supabase binds 54320-54329, inside Linux's default ephemeral range
+    # (32768-60999); an outbound socket on the runner can already hold one.
+    - name: Keep ephemeral ports clear of the Supabase ports
+      shell: bash
+      run: sudo sysctl -w net.ipv4.ip_local_port_range="60000 65000"
+    # Job 13b: the gate's restore drill runs the backup's own pg_dump 17 and age.
+    - name: Install pg_dump 17 and age
+      shell: bash
+      run: scripts/backup/install-tools.sh
+    # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
+    - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      with:
+        deno-version: v2.x

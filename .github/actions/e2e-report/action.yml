@@ -1,0 +1,56 @@
+# After the e2e gate, shared by ci.yml's e2e job and the on-demand e2e.yml (job 27): the stack's
+# logs when the job failed, the artifacts, and a job summary of the Playwright results. Call it
+# with `if: ${{ !cancelled() }}`. Its steps use always() and the caller's job.status, because a
+# status function inside a composite action does not see the caller's failed steps reliably.
+name: e2e gate report
+description: Failure logs, Playwright artifacts and the job summary
+inputs:
+  job-status:
+    description: The caller's job.status
+    required: true
+  artifact-name:
+    description: Name of the artifact with the report, test results, screenshots and sync evidence
+    required: true
+  results-name:
+    description: Name of the small artifact with only playwright-results.json (scripts/ci-e2e.sh reads it)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Supabase start log
+      if: always() && inputs.job-status == 'failure'
+      shell: bash
+      run: cat /tmp/supabase-start.log || true
+    # Job 4b: a 503 from an Edge Function comes from the edge runtime, whose log says why.
+    - name: Edge runtime log
+      if: always() && inputs.job-status == 'failure'
+      shell: bash
+      run: docker logs "$(docker ps -qf name=supabase_edge_runtime)" 2>&1 | tail -n 300 || true
+    - if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          e2e/playwright-report
+          e2e/test-results
+          e2e/screenshots
+          e2e/sync-evidence
+        retention-days: 14
+    - if: always() && hashFiles('e2e/playwright-results.json') != ''
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.results-name }}
+        path: e2e/playwright-results.json
+        retention-days: 14
+    # Job 27: passed, failed and flaky tests per spec file on the run's page. Informational: a
+    # broken report never fails the job, whose result is the gate's.
+    - name: Job summary
+      if: always()
+      shell: bash
+      run: |
+        if [[ -f e2e/playwright-results.json ]]; then
+          scripts/e2e-summary.sh e2e/playwright-results.json >>"$GITHUB_STEP_SUMMARY" \
+            || echo "Could not summarize e2e/playwright-results.json." >>"$GITHUB_STEP_SUMMARY"
+        else
+          echo "No Playwright results: the gate stopped before Playwright ran (see its log)." >>"$GITHUB_STEP_SUMMARY"
+        fi

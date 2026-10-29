@@ -2351,3 +2351,82 @@ stores, and `main` needs a Vercel-login-guarded preview on its own subdomain.
 3. **Web ships after any real store upload** (`Uploaded` job green), also an
    iOS-only run: the web app then matches the newest TestFlight build. A dry
    run or a skipped run leaves production alone.
+
+## Job 27 (on-demand e2e on GitHub Actions), 2026-10-29
+
+`scripts/ci-e2e.sh` dispatches `.github/workflows/e2e.yml`, which runs the
+e2e gate (optionally one spec) and the db gate for a pushed branch, and
+reports back (docs/CI.md, On-demand e2e). Peter wants Docker, Supabase and
+Playwright off the Mac runner and the box.
+
+1. **Shared through composite actions, not a reusable workflow.** A reusable
+   workflow would turn ci.yml's `e2e` job into a `uses:` job. Its checks
+   would then be named `e2e (1) / …`, `check-gates.sh`'s "the job runs
+   scripts/gates/e2e.sh" rule would no longer hold, and it could not read
+   ci.yml's `env` pins (a caller's `with:` has no `env` context), so the pins
+   would be duplicated anyway. Three composite actions (`e2e-setup`,
+   `e2e-report`, `db-setup`) hold the steps before and after the gate. Both
+   workflows' jobs keep their names, their matrix and their own `run:
+   scripts/gates/<gate>.sh` line. ci.yml's behavior is unchanged: same steps
+   in the same order, same artifact names (`playwright-<shard>`), same
+   `ci-ok` needs. The one addition is the job summary and a small
+   `e2e-results-<shard>` artifact.
+2. **What stays duplicated, and the guard.** Three pins and the job
+   skeletons (checkout, the actions, the gate line). `check-gates.sh` fails
+   when the pins differ, or when the `e2e` or `db` jobs of the two workflows
+   use different actions, versions or action inputs, or when e2e.yml's no longer runs its
+   gate. Tried by editing each: a Flutter pin, the registry, an extra step in
+   ci.yml, a hard-coded version, a dropped report action, a dropped db gate.
+3. **`e2e-report` passes `job.status` in** and gives its steps `always()`.
+   A status function inside a composite action does not see the caller's
+   failed steps reliably, and the failure logs must show after a failed gate.
+4. **The run is found by a `request_id` input shown in `run-name:`.** Only
+   recent gh versions print the new run's URL after `workflow run` (the box
+   and the Mac need not have the same gh), and "the newest run on the
+   branch" can be a neighbour's. The script polls `gh run list` for the run
+   whose title ends in `[<id>]`.
+5. **The summary comes from Playwright's JSON reporter** (on CI only,
+   `e2e/playwright-results.json`), read by `scripts/e2e-summary.sh` (jq). It
+   is also uploaded on its own (a few KB), so the script prints failed titles
+   without downloading traces.
+6. **The spec is split like shell words by `xargs`,** which honours quotes
+   and runs nothing. An unbalanced quote stops the job instead of falling
+   back to the full suite. Inputs reach the shell through `env:`, never
+   `${{ }}` in the script.
+7. **`FG_SYNC_SMOKE=1|0` in the e2e gate** overrides its "full run or shard
+   1" rule for the `sync_smoke` input. Unset, the gate behaves as before. A
+   bad value fails before the stack starts.
+8. **A sharded spec run passes `--pass-with-no-tests`,** because a one-test
+   spec leaves shard 2 empty. ci-e2e.sh then fails a passing run in which no
+   test ran, so a typo in `--spec` still fails.
+9. **e2e.yml and ci-e2e.sh alone count as documentation for
+   ci-changes.sh,** because ci.yml runs neither. The always-on lint gate
+   checks them (actionlint, shellcheck, check-gates). `.github/actions/` and
+   `scripts/e2e-summary.sh` are part of ci.yml's e2e job, so they run
+   everything.
+10. **Proving it before main.** `gh workflow run e2e.yml` needs the workflow
+    registered, which for a `workflow_dispatch`-only file happens on the
+    default branch. A temporary `push: branches: [job/27-ci-e2e-on-demand]`
+    trigger registered it with one push, which also ran the full suite. The
+    next commit removed the trigger, and every later run was a real dispatch
+    through `scripts/ci-e2e.sh` against this branch's e2e.yml. The
+    deliberately failing spec (`e2e/tests/zz-job27-fail.spec.ts`) was only
+    on the branch and was dropped before landing.
+11. **No `supabase/seed.sql`; the seed is off** (lead, 2026-10-29 18:12: CI
+    backends should have seed data; resolve the missing file). Since job 1,
+    `config.toml` named `./seed.sql` with the seed enabled, but the file
+    never existed, so every `supabase start` and `db reset` printed "no files
+    matched pattern: supabase/seed.sql" and loaded nothing. The data a
+    backend needs is already there without it. Reference data
+    (categories, the classifier dictionary, default store layouts) is in
+    migrations, so production has it too. Accounts, households, lists and
+    stores come from the job-18 fixtures: `scripts/fg seed <scenario>`
+    (test/fixtures/scenarios/) creates them through the Auth API in a known
+    state, the db gate's fixtures test checks they seed, stay apart under
+    RLS and tear down to zero rows, and e2e specs create their own users. A
+    static seed.sql with test users would sit in every local and CI database
+    outside that bookkeeping and could break the tests that expect a fresh
+    database. So `[db.seed] enabled = false`, with a comment pointing to the
+    fixtures. A seed file can come back later by adding it and flipping
+    the switch (the verify skill's `stack.ts` already links one when it
+    exists).

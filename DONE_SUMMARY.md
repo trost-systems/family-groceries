@@ -229,3 +229,7 @@ See [docs/done/16-design-list.md](docs/done/16-design-list.md).
 ## web-release-align: web production follows the store release
 
 See [docs/done/web-release-align.md](docs/done/web-release-align.md).
+
+## Job 27: on-demand e2e on GitHub Actions
+
+See [docs/done/27-ci-e2e-on-demand.md](docs/done/27-ci-e2e-on-demand.md).
