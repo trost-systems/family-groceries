@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
-import { actionSnackBar, addField, addItem, editField, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tickBox, typeInto } from './helpers';
+import { actionSnackBar, addField, addItem, editField, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tick, typeInto } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signUpWithHousehold(page, newEmail('list'));
@@ -23,7 +23,7 @@ test('ticking removes the item, undo brings it back, and it lands in recently bo
   await addItem(page, 'Joghurt');
   await expect(itemRow(page, 'Joghurt')).toBeVisible();
 
-  await tickBox(page, 'Joghurt').click();
+  await tick(page, 'Joghurt');
   await expect(itemRow(page, 'Joghurt')).toHaveCount(0);
   await expect(actionSnackBar(page, 'Joghurt abgehakt')).toBeVisible();
   await screenshot(page, '03-ticked-undo-snackbar');
@@ -31,7 +31,7 @@ test('ticking removes the item, undo brings it back, and it lands in recently bo
   await page.getByRole('button', { name: 'Rückgängig' }).click();
   await expect(itemRow(page, 'Joghurt')).toBeVisible();
 
-  await tickBox(page, 'Joghurt').click();
+  await tick(page, 'Joghurt');
   await expect(itemRow(page, 'Joghurt')).toHaveCount(0);
   await page.reload();
   await expect(addField(page)).toBeFocused();

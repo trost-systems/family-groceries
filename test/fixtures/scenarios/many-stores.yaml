@@ -3,7 +3,7 @@ name: many-stores
 summary: A household with nine stores, each with its own walk order and hidden categories, and items tagged to every store.
 goodFor:
   - the store picker with many chips (overflow, scrolling)
-  - store views ordered by distinct walk orders, hidden categories
+  - store sections ordered by distinct walk orders
   - the store layout editor
   - item→store memory across many stores
 users:

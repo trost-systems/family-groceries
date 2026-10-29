@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../scenario.schema.json
+name: h-prototype
+summary: The list of design H's prototype (round2State in docs/design/h-satz-final/sandbox-src/src/shared/mockData.ts) as real data, for side-by-side screenshots against h-satz-final-list.png. The prototype orders the stores dm, Edeka, Lidl; set that with reorder_stores after seeding (features/list-walk-order.md).
+goodFor:
+  - comparing design H's list with the prototype's screenshots, same items
+  - a long name that must wrap in full
+  - a partner's adds with no added-by badge on rows
+users:
+  - { handle: paul, name: Paul Probe }
+  - { handle: sam, name: Sam Probe }
+households:
+  - name: Familie Probe
+    members: [paul, sam]
+    stores:
+      - name: dm
+        layout: [👶 Drogerie, Haushalt, Süßes & Snacks, Getränke, Sonstiges]
+    items:
+      - { name: Feuchttücher, store: dm, category: 👶 Drogerie, brand: Babylove, properties: 4er Pack, walkOrder: 1024, by: sam }
+      - { name: Zahnpasta, store: dm, category: 👶 Drogerie, brand: elmex, properties: Kinder, walkOrder: 2048, by: paul }
+      - { name: Proteinriegel, quantity: "7", store: dm, category: Süßes & Snacks, walkOrder: 1024, by: paul }
+      - { name: Cola Zero, quantity: "2", store: dm, category: Getränke, properties: "0,5 l", walkOrder: 1024, by: sam }
+      - { name: Bananen, quantity: "6", store: Edeka, category: Obst & Gemüse, properties: Bio, walkOrder: 1024, by: sam }
+      - { name: Gurken, quantity: "2", store: Edeka, category: Obst & Gemüse, walkOrder: 2048, by: paul }
+      - { name: Brötchen, quantity: "6", store: Edeka, category: Brot & Backwaren, walkOrder: 1024, by: paul }
+      - { name: Glutenfreie Dinkel-Vollkorn-Toastbrötchen mit Sonnenblumenkernen, store: Edeka, category: Brot & Backwaren, brand: Schär, properties: 6 Stück, walkOrder: 2048, by: sam }
+      - { name: Milch, quantity: "2", store: Edeka, category: Kühlregal, brand: Weihenstephan, properties: "1,5 %, 1 l", walkOrder: 1024, by: sam }
+      - { name: Joghurt, store: Edeka, category: Kühlregal, brand: Alpro, properties: Skyr Style, walkOrder: 2048, by: paul }
+      - { name: Hackfleisch, quantity: 500 g, store: Edeka, category: Fleisch/Wurst/Fisch, properties: gemischt, walkOrder: 1024, by: paul }
+      - { name: Kaffee, store: Edeka, category: Vorrat & Konserven, brand: Tchibo, properties: Cappuccino, walkOrder: 1024, by: sam }
+      - { name: Pizza, quantity: "2", store: Lidl, category: Tiefkühl, brand: Ristorante, properties: Salame, walkOrder: 1024, by: paul }
+      - { name: Spülmittel, store: Lidl, category: Haushalt, brand: Pril, walkOrder: 1024, by: sam }
+      - { name: Äpfel, quantity: 1 kg, store: Lidl, category: Obst & Gemüse, properties: Elstar, walkOrder: 1024, by: paul }

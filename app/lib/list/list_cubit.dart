@@ -20,27 +20,17 @@ class const ListState({
   final bool loaded = false,
   final ConnectionStatus connection = ConnectionStatus.connecting,
 
-  /// Starts at "Alle" on every launch.
-  final StoreFilter filter = const AllStores(),
-
-  /// Whether the store view also shows untagged items in categories the
-  /// store does not carry.
-  final bool showHidden = false,
-
   /// What the household buys again and again, best first.
   final List<Usual> usuals = const [],
 
   /// Null until loaded from the device or, on a first start, set by the
   /// first resync.
   final SeenMark? seen,
+
+  /// Folded stores and the dismissed explainer, from the device.
+  final ListPrefs prefs = const ListPrefs(),
 }) {
   Map<String, Item> get items => visibleItems(server, pending);
-
-  /// The store being shopped at, or null for "Alle".
-  String? get storeId => switch (filter) {
-    AtStore(:final storeId) => storeId,
-    AllStores() => null,
-  };
 
   ListState copyWith({
     Catalog? catalog,
@@ -48,30 +38,19 @@ class const ListState({
     List<ItemOp>? pending,
     bool? loaded,
     ConnectionStatus? connection,
-    StoreFilter? filter,
-    bool? showHidden,
     List<Usual>? usuals,
     SeenMark? seen,
-  }) {
-    final next = ListState(
-      catalog: catalog ?? this.catalog,
-      server: server ?? this.server,
-      pending: pending ?? this.pending,
-      loaded: loaded ?? this.loaded,
-      connection: connection ?? this.connection,
-      filter: filter ?? this.filter,
-      showHidden: showHidden ?? this.showHidden,
-      usuals: usuals ?? this.usuals,
-      seen: seen ?? this.seen,
-    );
-    // A store that disappeared from the catalog falls back to "Alle".
-    return switch (next.filter) {
-      AtStore(:final storeId)
-          when next.loaded && next.catalog.store(storeId) == null =>
-        next.copyWith(filter: const AllStores(), showHidden: false),
-      _ => next,
-    };
-  }
+    ListPrefs? prefs,
+  }) => ListState(
+    catalog: catalog ?? this.catalog,
+    server: server ?? this.server,
+    pending: pending ?? this.pending,
+    loaded: loaded ?? this.loaded,
+    connection: connection ?? this.connection,
+    usuals: usuals ?? this.usuals,
+    seen: seen ?? this.seen,
+    prefs: prefs ?? this.prefs,
+  );
 }
 
 sealed class const AddResult();
@@ -91,6 +70,9 @@ final class const NameTaken(final String name) extends Rejected;
 
 /// A category or layout change did not save; the catalog was reloaded.
 final class const CatalogRejected() extends Rejected;
+
+/// A store or category order change made offline; nothing changed.
+final class const NeedsConnection() extends Rejected;
 
 const _maxResubscribe = Duration(seconds: 30);
 
@@ -143,7 +125,14 @@ class ListCubit(
   void start() => unawaited(_start());
 
   Future<void> _start() async {
-    final (cached, seen) = await (_cache.load(), _cache.loadSeen()).wait;
+    final (cached, seen, prefs) = await (
+      _cache.load(),
+      _cache.loadSeen(),
+      _cache.loadPrefs(),
+    ).wait;
+    if (prefs != null) {
+      emit(state.copyWith(prefs: prefs));
+    }
     if (cached != null) {
       emit(
         state.copyWith(
@@ -286,8 +275,6 @@ class ListCubit(
       id: const Uuid().v4(),
       name: entry.name,
       quantity: entry.quantity,
-      // Typed in a store view, it belongs there and stays visible.
-      storeId: state.storeId,
       status: ItemStatus.active,
       createdAt: now,
       updatedAt: now,
@@ -296,9 +283,7 @@ class ListCubit(
     return Added(item);
   }
 
-  void tick(String id) => _enqueue(
-    SetStatus(id, ItemStatus.bought, _clock(), storeId: state.storeId),
-  );
+  void tick(String id) => _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
 
   void untick(String id) =>
       _enqueue(SetStatus(id, ItemStatus.active, _clock()));
@@ -353,11 +338,21 @@ class ListCubit(
     AddItem(item.copyWith(status: ItemStatus.active, boughtAt: () => null)),
   );
 
-  void selectStore(StoreFilter filter) =>
-      emit(state.copyWith(filter: filter, showHidden: false));
+  /// Folds or unfolds the section [key] (a store id, or [noStoreKey]).
+  void toggleFold(String key) {
+    final folded = {...state.prefs.folded};
+    if (!folded.remove(key)) {
+      folded.add(key);
+    }
+    _setPrefs(state.prefs.copyWith(folded: folded));
+  }
 
-  void toggleShowHidden() =>
-      emit(state.copyWith(showHidden: !state.showHidden));
+  void dismissHint() => _setPrefs(state.prefs.copyWith(hintDismissed: true));
+
+  void _setPrefs(ListPrefs prefs) {
+    emit(state.copyWith(prefs: prefs));
+    unawaited(_cache.savePrefs(prefs));
+  }
 
   Future<void> renameCategory(String id, String name) => _changeCatalog(
     state.catalog.withName(id, name),
@@ -368,12 +363,12 @@ class ListCubit(
   Future<void> createCategory(String name) =>
       _changeCatalog(null, () => _repo.createCategory(name), name: name);
 
-  Future<void> reorderCategories(List<String> ids) => _changeCatalog(
+  Future<void> reorderCategories(List<String> ids) => _changeOrder(
     state.catalog.withRouteOrder(ids),
     () => _repo.reorderCategories(ids),
   );
 
-  Future<void> reorderStores(List<String> ids) => _changeCatalog(
+  Future<void> reorderStores(List<String> ids) => _changeOrder(
     state.catalog.withStoreOrder(ids),
     () => _repo.reorderStores(ids),
   );
@@ -391,29 +386,46 @@ class ListCubit(
     String storeId,
     List<String> orderedIds,
     Set<String> hiddenIds,
-  ) => _changeCatalog(
+  ) => _changeOrder(
     state.catalog.withStoreLayout(storeId, orderedIds, hiddenIds),
     () => _repo.setStoreLayout(storeId, orderedIds, hiddenIds),
   );
 
+  /// Orders are not queued like item writes: offline, the change is refused
+  /// with a message instead of showing an order no one else will see.
+  Future<void> _changeOrder(
+    Catalog optimistic,
+    Future<void> Function() write,
+  ) async {
+    if (state.connection == ConnectionStatus.offline) {
+      _report(const NeedsConnection());
+      return;
+    }
+    await _changeCatalog(optimistic, write);
+  }
+
   /// Shows [optimistic] at once, writes, then reloads the catalog. A failed
-  /// write is reported, and the reload puts the server's state back.
+  /// write is reported and undone, and the reload brings the server's state.
   Future<void> _changeCatalog(
     Catalog? optimistic,
     Future<void> Function() write, {
     String? name,
   }) async {
+    final before = state.catalog;
     if (optimistic != null) {
       emit(state.copyWith(catalog: optimistic));
     }
     try {
       await write();
-    } on RejectedOp catch (e) {
+    } on Object catch (e) {
+      if (optimistic != null && identical(state.catalog, optimistic)) {
+        emit(state.copyWith(catalog: before));
+      }
       _report(
-        e.nameTaken && name != null ? NameTaken(name) : const CatalogRejected(),
+        e is RejectedOp && e.nameTaken && name != null
+            ? NameTaken(name)
+            : const CatalogRejected(),
       );
-    } on Object {
-      _report(const CatalogRejected());
     }
     await _reloadCatalog();
   }

@@ -3,7 +3,7 @@ name: solo-long-list
 summary: One person alone in a household with a 64-item list spread over Lidl, Edeka, dm and no store, every category used.
 goodFor:
   - scrolling, grouping and category headers on a long list
-  - store views with many tagged and untagged items
+  - store sections with many tagged and untagged items
   - offline start with a big cached list
 users:
   - { handle: sam, name: Sam Solo }

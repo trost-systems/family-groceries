@@ -3,7 +3,7 @@ name: household-3-mid-shop
 summary: Three members of one household in the middle of a Lidl trip; eight items were just ticked off, ten are still open, and Noah's client shows the Lidl view.
 goodFor:
   - live sync with two or three clients (fg sync household-3-mid-shop --clients 3)
-  - ticking off in a store view (teaches item→store memory)
+  - ticking off while shopping at one store (the other stores folded)
   - the recently bought list (Zuletzt gekauft) with fresh ticks, undo
 users:
   - { handle: mia, name: Mia Brandt }

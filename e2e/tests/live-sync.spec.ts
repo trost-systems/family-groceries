@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 import {
   addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot,
-  signUp, signUpWithHousehold, tickBox, typeInto, within,
+  signUp, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -21,7 +21,7 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await addItem(peter, 'Bananen');
   await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an add in A appears in B').toBeVisible({ timeout }));
 
-  await tickBox(lea, 'Milch').click();
+  await tick(lea, 'Milch');
   await within(2_000, (timeout) => expect(itemRow(peter, 'Milch'), 'a tick in B disappears in A').toHaveCount(0, { timeout }));
 
   await addItem(lea, 'Windeln');
@@ -96,7 +96,7 @@ test('a tick made while offline syncs when the connection returns', async ({ bro
   await expect(itemRow(lea, 'Brot')).toBeVisible();
 
   await peterContext.setOffline(true);
-  await tickBox(peter, 'Brot').click();
+  await tick(peter, 'Brot');
   await addItem(peter, 'Eier');
   await expect(itemRow(peter, 'Brot'), 'optimistic while offline').toHaveCount(0);
   await expect(itemRow(peter, 'Eier')).toBeVisible();

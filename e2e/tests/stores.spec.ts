@@ -1,8 +1,8 @@
 import { expect, type Page, test } from './fixtures';
-import { dragHandle, groupHeadings, selectStore } from './catalog';
+import { dragHandle, dragItemToStore, groupHeadings, openStoreLayout, sectionHeadings, storeOf } from './catalog';
 import {
   addField, addItem, createInviteCode, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUp,
-  signUpWithHousehold, tickBox, typeInto, within,
+  signUpWithHousehold, storeDivider, tick, typeInto, within,
 } from './helpers';
 
 const route = [
@@ -16,98 +16,68 @@ async function setStore(page: Page, item: string, store: string): Promise<void> 
   await saveEdit(page);
 }
 
-test('STORE ORDERING: each store groups in its own order, editable by drag, with item->store memory', async ({ page }) => {
+test('STORE ORDERING: each store section walks its own order, editable on its layout screen, with item->store memory', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('stores'));
   for (const item of ['Brot', 'Äpfel', 'Milch', 'Hack', 'Zahnpasta', 'Klopapier', 'Chips', 'Pizza']) {
     await addItem(page, item);
   }
   await expect(itemRow(page, 'Pizza')).toBeVisible();
-  await expect(addField(page), 'the picker does not take focus from the add field').toBeFocused();
-  await expect.poll(() => groupHeadings(page)).toEqual(route);
+  await expect(addField(page), 'the list does not take focus from the add field').toBeFocused();
+  await expect.poll(() => sectionHeadings(page, 'Ohne Laden'), { message: 'no store: route order' }).toEqual(route);
+  await expect(page.getByRole('checkbox', { name: 'Alle' }), 'no store filter chips').toHaveCount(0);
 
-  await selectStore(page, 'Lidl');
-  await expect.poll(() => groupHeadings(page), { message: 'Lidl: bake station first' }).toEqual([
-    'Brot & Backwaren', 'Obst & Gemüse', 'Kühlregal', 'Fleisch/Wurst/Fisch', 'Süßes & Snacks', 'Tiefkühl', 'Haushalt',
-    '👶 Drogerie',
+  for (const item of ['Brot', 'Äpfel', 'Milch', 'Hack', 'Pizza']) {
+    await dragItemToStore(page, item, 'Lidl');
+    await expect.poll(() => storeOf(page, item)).toBe('Lidl');
+  }
+  await setStore(page, 'Chips', 'Lidl');
+  await expect.poll(() => sectionHeadings(page, 'Lidl'), { message: 'Lidl: bake station first' }).toEqual([
+    'Brot & Backwaren', 'Obst & Gemüse', 'Kühlregal', 'Fleisch/Wurst/Fisch', 'Süßes & Snacks', 'Tiefkühl',
   ]);
   await page.mouse.move(0, 899);
   await screenshot(page, '05-store-lidl');
 
-  await selectStore(page, 'Edeka');
-  await expect.poll(() => groupHeadings(page), { message: 'Edeka: counters before the chilled aisle' }).toEqual([
-    'Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch', 'Kühlregal', 'Süßes & Snacks', 'Tiefkühl', 'Haushalt',
-    '👶 Drogerie',
-  ]);
+  for (const item of ['Äpfel', 'Brot', 'Hack', 'Milch']) {
+    await dragItemToStore(page, item, 'Edeka');
+    await expect.poll(() => storeOf(page, item)).toBe('Edeka');
+  }
+  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'Edeka: counters before the chilled aisle' })
+    .toEqual(['Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch', 'Kühlregal']);
 
-  await selectStore(page, 'dm');
-  await expect.poll(() => groupHeadings(page), { message: 'dm: only what a drugstore carries' }).toEqual([
+  for (const item of ['Zahnpasta', 'Klopapier', 'Chips']) {
+    await dragItemToStore(page, item, 'dm');
+    await expect.poll(() => storeOf(page, item)).toBe('dm');
+  }
+  await expect.poll(() => sectionHeadings(page, 'dm'), { message: 'dm: drugstore first' }).toEqual([
     '👶 Drogerie', 'Süßes & Snacks', 'Haushalt',
   ]);
-  const hidden = page.getByRole('button', { name: '5 Artikel, die es bei dm meist nicht gibt, anzeigen' });
-  await expect(hidden).toBeVisible();
+  await expect(storeDivider(page, 'Ohne Laden'), 'no store section once it is empty').toHaveCount(0);
   await page.mouse.move(0, 899);
   await screenshot(page, '06-store-dm');
-  await hidden.click();
-  await expect(itemRow(page, 'Milch')).toBeVisible();
-  await page.getByRole('button', { name: '5 Artikel, die es bei dm meist nicht gibt, ausblenden' }).click();
-  await expect(itemRow(page, 'Milch')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Reihenfolge bearbeiten' }).click();
-  await expect(page.getByText('dm: Reihenfolge')).toBeVisible();
-  await page.getByRole('switch', { name: 'Kühlregal gibt es bei dm' }).click();
-  await page.getByRole('button', { name: 'Zurück' }).click();
-  await expect.poll(() => groupHeadings(page), { message: 'dm now carries the chilled aisle' }).toEqual([
-    '👶 Drogerie', 'Süßes & Snacks', 'Haushalt', 'Kühlregal',
-  ]);
-
-  await selectStore(page, 'Lidl');
-  await page.getByRole('button', { name: 'Reihenfolge bearbeiten' }).click();
-  await dragHandle(page, 'Tiefkühl verschieben', 'Brot & Backwaren verschieben');
+  await openStoreLayout(page, 'Edeka');
+  await dragHandle(page, 'Kühlregal verschieben', 'Obst & Gemüse verschieben');
   await screenshot(page, '07-store-layout-editor');
   await page.getByRole('button', { name: 'Zurück' }).click();
-  await expect.poll(() => groupHeadings(page), { message: 'the reorder applies to the Lidl view' }).toEqual([
-    'Tiefkühl', 'Brot & Backwaren', 'Obst & Gemüse', 'Kühlregal', 'Fleisch/Wurst/Fisch', 'Süßes & Snacks', 'Haushalt',
-    '👶 Drogerie',
-  ]);
+  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'the reorder applies to the Edeka section' })
+    .toEqual(['Kühlregal', 'Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch']);
   await page.reload();
   await expect(addField(page)).toBeFocused();
-  await expect.poll(() => groupHeadings(page), { message: 'after a reload the picker is back on Alle' }).toEqual(route);
-  await selectStore(page, 'Lidl');
-  await expect.poll(async () => (await groupHeadings(page))[0], { message: 'the Lidl order was saved' })
-    .toBe('Tiefkühl');
+  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'the Edeka order was saved' })
+    .toEqual(['Kühlregal', 'Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch']);
 
-  await tickBox(page, 'Hack').click();
+  await tick(page, 'Hack');
   await expect(itemRow(page, 'Hack')).toHaveCount(0);
-  await selectStore(page, 'Alle');
   await addItem(page, 'Hack');
-  await selectStore(page, 'Edeka');
-  await expect(itemRow(page, 'Klopapier'), 'untagged items show at every supermarket').toBeVisible();
-  await expect(itemRow(page, 'Hack'), 'bought at Lidl last time, so not listed for Edeka').toHaveCount(0);
-  await selectStore(page, 'Lidl');
-  await expect(itemRow(page, 'Hack'), 'remembered for Lidl').toBeVisible();
-
-  await setStore(page, 'Zahnpasta', 'dm');
-  await expect(itemRow(page, 'Zahnpasta'), 'tagged for dm, gone from the Lidl view').toHaveCount(0);
-  await selectStore(page, 'dm');
-  await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
-  await expect(itemRow(page, 'Klopapier'), 'untagged household goods show at dm too').toBeVisible();
-  await page.mouse.move(0, 899);
-  await screenshot(page, '08-store-memory-dm');
-
-  await selectStore(page, 'Edeka');
-  await addItem(page, 'Butter');
-  await expect(itemRow(page, 'Butter'), 'typed in the Edeka view, it stays there').toBeVisible();
-  await selectStore(page, 'Lidl');
-  await expect(itemRow(page, 'Butter')).toHaveCount(0);
-
-  await selectStore(page, 'Alle');
+  await expect.poll(() => storeOf(page, 'Hack'), { message: 'bought at Edeka last time, so added there' })
+    .toBe('Edeka');
   await addItem(page, 'Zahnpasta');
   await expect(page.getByText('Zahnpasta steht schon auf der Liste').first()).toBeVisible();
-  await tickBox(page, 'Zahnpasta').click();
+  await tick(page, 'Zahnpasta');
   await addItem(page, 'Zahnpasta');
-  await selectStore(page, 'Lidl');
-  await expect(page.getByRole('heading', { name: 'Tiefkühl' })).toBeVisible();
-  await expect(itemRow(page, 'Zahnpasta'), 're-added, it is still a dm item').toHaveCount(0);
+  await expect.poll(() => storeOf(page, 'Zahnpasta'), { message: 're-added, it is still a dm item' }).toBe('dm');
+  await page.mouse.move(0, 899);
+  await screenshot(page, '08-store-memory');
 });
 
 test('category and store layout changes sync live to the other member', async ({ browser }) => {
@@ -116,18 +86,20 @@ test('category and store layout changes sync live to the other member', async ({
   await signUpWithHousehold(peter, newEmail('peter-cat'));
   await addItem(peter, 'Spülmittel');
   await addItem(peter, 'Brot');
+  await expect(itemRow(peter, 'Brot')).toBeVisible();
+  await dragItemToStore(peter, 'Spülmittel', 'Lidl');
+  await dragItemToStore(peter, 'Brot', 'Lidl');
+  await expect.poll(() => storeOf(peter, 'Brot')).toBe('Lidl');
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('lea-cat'));
   await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
   await lea.getByRole('button', { name: 'Beitreten' }).click();
   await expect(itemRow(lea, 'Spülmittel')).toBeVisible();
-  await selectStore(lea, 'Lidl');
-  await expect.poll(() => groupHeadings(lea)).toEqual(['Brot & Backwaren', 'Haushalt']);
+  await expect.poll(() => sectionHeadings(lea, 'Lidl')).toEqual(['Brot & Backwaren', 'Haushalt']);
 
-  await selectStore(peter, 'Lidl');
-  await peter.getByRole('button', { name: 'Reihenfolge bearbeiten' }).click();
+  await openStoreLayout(peter, 'Lidl');
   await dragHandle(peter, 'Haushalt verschieben', 'Brot & Backwaren verschieben');
-  await within(3_000, (timeout) => expect.poll(() => groupHeadings(lea), { message: 'a store reorder in A reaches B', timeout })
+  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Lidl'), { message: 'a store reorder in A reaches B', timeout })
     .toEqual(['Haushalt', 'Brot & Backwaren']));
   await peter.getByRole('button', { name: 'Zurück' }).click();
 
@@ -136,7 +108,7 @@ test('category and store layout changes sync live to the other member', async ({
   await peter.getByRole('button', { name: 'Haushalt', exact: true }).click();
   await typeInto(peter.getByRole('textbox', { name: 'Name' }), 'Putzzeug');
   await peter.getByRole('button', { name: 'Speichern' }).click();
-  await within(3_000, (timeout) => expect.poll(() => groupHeadings(lea), { message: 'a rename in A reaches B', timeout })
+  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Lidl'), { message: 'a rename in A reaches B', timeout })
     .toEqual(['Putzzeug', 'Brot & Backwaren']));
   await screenshot(lea, '09-live-catalog-sync');
 });

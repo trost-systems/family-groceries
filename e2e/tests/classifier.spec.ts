@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { deleteItem, dragItemTo, expectGroup } from './catalog';
-import { addItem, apiAs, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold, tickBox } from './helpers';
+import { addItem, apiAs, itemRow, newEmail, openEdit, pickInSheet, reveal, saveEdit, screenshot, signUpWithHousehold, tick } from './helpers';
 
 test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household only', async ({ browser }) => {
   const peterEmail = newEmail('learn');
@@ -9,6 +9,9 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
 
   await addItem(peter, 'Hafermilch');
   await expectGroup(peter, 'Hafermilch', 'Kühlregal');
+  // Design H shows a category only with items in it, so a drink gives Getränke its divider.
+  await addItem(peter, 'Apfelsaft');
+  await expectGroup(peter, 'Apfelsaft', 'Getränke');
   await dragItemTo(peter, 'Hafermilch', 'Getränke');
   await expectGroup(peter, 'Hafermilch', 'Getränke');
   await screenshot(peter, '01-dragged-to-getraenke');
@@ -22,14 +25,14 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
   await pickInSheet(peter, 'Kategorie', 'Haushalt');
   await saveEdit(peter);
   await expectGroup(peter, 'Zahnbürste', 'Haushalt');
-  await tickBox(peter, 'Zahnbürste').click();
+  await tick(peter, 'Zahnbürste');
   await addItem(peter, 'Zahnbürsten');
   await expectGroup(peter, 'Zahnbürsten', 'Haushalt');
   await screenshot(peter, '02-relearned-after-readd');
 
   const api = await apiAs(peterEmail);
   const { data: household } = await api.from('households').select('id').single();
-  await tickBox(peter, 'Hafermilch').click();
+  await tick(peter, 'Hafermilch');
   await expect(itemRow(peter, 'Hafermilch')).toHaveCount(0);
   await expect.poll(async () => {
     const { data } = await api.from('items').select('status').eq('name', 'Hafermilch');
@@ -70,7 +73,8 @@ test('seed dictionary spot checks: compounds, plurals, quantities, umlauts', asy
     'Quietscheentchen': 'Sonstiges',
   };
   for (const item of Object.keys(expected)) await addItem(page, item);
-  await expect(itemRow(page, 'Quietscheentchen')).toBeVisible();
+  // The last add sits at the end of the list, below the fold: scroll to it like a user.
+  await reveal(page, itemRow(page, 'Quietscheentchen'));
   for (const [input, group] of Object.entries(expected)) {
     const name = input.replace(/^\d+ /, '').replace(/ \d+ kg$/, '');
     await expectGroup(page, name, group);

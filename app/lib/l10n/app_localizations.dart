@@ -140,12 +140,6 @@ abstract class AppLocalizations {
   /// **'Wieder auf die Liste'**
   String get readd;
 
-  /// No description provided for @tickItem.
-  ///
-  /// In de, this message translates to:
-  /// **'{name} abhaken'**
-  String tickItem(String name);
-
   /// No description provided for @itemTicked.
   ///
   /// In de, this message translates to:
@@ -836,35 +830,11 @@ abstract class AppLocalizations {
   /// **'Die App verliert sofort den Zugriff auf deine Liste.'**
   String get disconnectBody;
 
-  /// No description provided for @allStores.
-  ///
-  /// In de, this message translates to:
-  /// **'Alle'**
-  String get allStores;
-
   /// No description provided for @editStoreLayout.
   ///
   /// In de, this message translates to:
   /// **'Reihenfolge bearbeiten'**
   String get editStoreLayout;
-
-  /// No description provided for @showHiddenItems.
-  ///
-  /// In de, this message translates to:
-  /// **'{count, plural, =1{1 Artikel, den es bei {store} meist nicht gibt, anzeigen} other{{count} Artikel, die es bei {store} meist nicht gibt, anzeigen}}'**
-  String showHiddenItems(int count, String store);
-
-  /// No description provided for @hideHiddenItems.
-  ///
-  /// In de, this message translates to:
-  /// **'{count, plural, =1{1 Artikel, den es bei {store} meist nicht gibt, ausblenden} other{{count} Artikel, die es bei {store} meist nicht gibt, ausblenden}}'**
-  String hideHiddenItems(int count, String store);
-
-  /// No description provided for @emptyAtStore.
-  ///
-  /// In de, this message translates to:
-  /// **'Für {store} steht nichts auf der Liste.'**
-  String emptyAtStore(String store);
 
   /// No description provided for @manageCategories.
   ///
@@ -881,7 +851,7 @@ abstract class AppLocalizations {
   /// No description provided for @categoriesHint.
   ///
   /// In de, this message translates to:
-  /// **'In dieser Reihenfolge sortiert „Alle“ die Liste. Tippe auf eine Kategorie, um sie umzubenennen.'**
+  /// **'In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.'**
   String get categoriesHint;
 
   /// No description provided for @categoryName.
@@ -941,14 +911,8 @@ abstract class AppLocalizations {
   /// No description provided for @storeLayoutHint.
   ///
   /// In de, this message translates to:
-  /// **'Ordne die Kategorien so, wie du durch den Laden gehst. Schalte aus, was es dort nicht gibt.'**
+  /// **'Ordne die Kategorien so, wie du durch den Laden gehst.'**
   String get storeLayoutHint;
-
-  /// No description provided for @storeCarries.
-  ///
-  /// In de, this message translates to:
-  /// **'{category} gibt es bei {store}'**
-  String storeCarries(String category, String store);
 
   /// No description provided for @newItemsFrom.
   ///
@@ -967,6 +931,72 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Neu'**
   String get newItem;
+
+  /// No description provided for @storeSectionLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'{store}, {count, plural, =1{1 Artikel} other{{count} Artikel}}'**
+  String storeSectionLabel(String store, int count);
+
+  /// No description provided for @itemsWord.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Artikel} other{Artikel}}'**
+  String itemsWord(int count);
+
+  /// No description provided for @expandSection.
+  ///
+  /// In de, this message translates to:
+  /// **'Aufklappen'**
+  String get expandSection;
+
+  /// No description provided for @collapseSection.
+  ///
+  /// In de, this message translates to:
+  /// **'Zuklappen'**
+  String get collapseSection;
+
+  /// No description provided for @moveStoreUp.
+  ///
+  /// In de, this message translates to:
+  /// **'Laden nach oben'**
+  String get moveStoreUp;
+
+  /// No description provided for @moveStoreDown.
+  ///
+  /// In de, this message translates to:
+  /// **'Laden nach unten'**
+  String get moveStoreDown;
+
+  /// No description provided for @moveCategoryUp.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie nach oben'**
+  String get moveCategoryUp;
+
+  /// No description provided for @moveCategoryDown.
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie nach unten'**
+  String get moveCategoryDown;
+
+  /// No description provided for @listHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt'**
+  String get listHint;
+
+  /// No description provided for @listHintDismiss.
+  ///
+  /// In de, this message translates to:
+  /// **'Verstanden'**
+  String get listHintDismiss;
+
+  /// No description provided for @reorderNeedsConnection.
+  ///
+  /// In de, this message translates to:
+  /// **'Die Reihenfolge lässt sich nur mit Verbindung ändern.'**
+  String get reorderNeedsConnection;
 
   /// No description provided for @suggestion.
   ///

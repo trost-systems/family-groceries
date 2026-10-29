@@ -6,11 +6,10 @@ import 'package:family_groceries/household/invite_dialog.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/list/dictation.dart';
-import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:family_groceries/list/store_layout_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 /// The whole app for day-to-day use: add field on top, list beneath.
 class const ListScreen({
@@ -82,32 +80,12 @@ class _ShoppingListState() extends State<ShoppingList> {
   late final StreamSubscription<Rejected> _rejections;
   var _listening = false;
 
-  /// Fresh items on screen now, and the timers that mark them seen.
-  final _visibleFresh = <String>{};
-  final _seenTimers = <String, Timer>{};
-  var _onScreen = _shows(WidgetsBinding.instance.lifecycleState);
-
-  /// Inactive still shows the app: a web tab whose window lost focus, or an
-  /// iOS app under the control center.
-  static bool _shows(AppLifecycleState? state) => switch (state) {
-    null || AppLifecycleState.resumed || AppLifecycleState.inactive => true,
-    _ => false,
-  };
-
   @override
   void initState() {
     super.initState();
     final cubit = context.read<ListCubit>();
     _lifecycle = AppLifecycleListener(
       onResume: () => unawaited(cubit.resync()),
-      onStateChange: (state) {
-        _onScreen = _shows(state);
-        if (_onScreen) {
-          _visibleFresh.forEach(_armSeen);
-        } else {
-          _cancelSeenTimers();
-        }
-      },
     );
     _rejections = cubit.rejections.listen((rejection) {
       if (!mounted) {
@@ -118,6 +96,7 @@ class _ShoppingListState() extends State<ShoppingList> {
         ItemRejected(:final itemName) => l10n.syncFailed(itemName),
         NameTaken(:final name) => l10n.categoryNameTaken(name),
         CatalogRejected() => l10n.catalogSaveFailed,
+        NeedsConnection() => l10n.reorderNeedsConnection,
       });
     });
   }
@@ -125,7 +104,6 @@ class _ShoppingListState() extends State<ShoppingList> {
   @override
   void dispose() {
     unawaited(_rejections.cancel());
-    _cancelSeenTimers();
     _lifecycle.dispose();
     _input.dispose();
     _inputFocus.dispose();
@@ -145,42 +123,6 @@ class _ShoppingListState() extends State<ShoppingList> {
               : SnackBarAction(label: l10n.undo, onPressed: undo),
         ),
       );
-  }
-
-  /// A fresh item counts as seen after three seconds on screen while the
-  /// app shows.
-  void _freshVisible(String id, {required bool visible}) {
-    if (!mounted) {
-      return;
-    }
-    if (!visible) {
-      _visibleFresh.remove(id);
-      _seenTimers.remove(id)?.cancel();
-      return;
-    }
-    if (_visibleFresh.add(id)) {
-      _armSeen(id);
-    }
-  }
-
-  void _armSeen(String id) {
-    if (!_onScreen || _seenTimers.containsKey(id)) {
-      return;
-    }
-    _seenTimers[id] = Timer(const Duration(seconds: 3), () {
-      _seenTimers.remove(id);
-      _visibleFresh.remove(id);
-      if (mounted) {
-        context.read<ListCubit>().markSeen({id});
-      }
-    });
-  }
-
-  void _cancelSeenTimers() {
-    for (final timer in _seenTimers.values) {
-      timer.cancel();
-    }
-    _seenTimers.clear();
   }
 
   void _submit() => _afterAdd(context.read<ListCubit>().add(_input.text));
@@ -304,48 +246,6 @@ class _ShoppingListState() extends State<ShoppingList> {
   /// while ticking things off in the store.
   void _leaveField() => _inputFocus.unfocus();
 
-  void _tick(Item item) {
-    _leaveField();
-    final cubit = context.read<ListCubit>()..tick(item.id);
-    _snack(
-      AppLocalizations.of(context).itemTicked(item.name),
-      undo: () => cubit.untick(item.id),
-    );
-  }
-
-  void _delete(Item item) {
-    _leaveField();
-    final cubit = context.read<ListCubit>()..delete(item.id);
-    _snack(
-      AppLocalizations.of(context).itemDeleted(item.name),
-      undo: () => cubit.restore(item),
-    );
-  }
-
-  void _readd(Item item) {
-    _leaveField();
-    context.read<ListCubit>().untick(item.id);
-    _snack(AppLocalizations.of(context).itemReadded(item.name));
-  }
-
-  Future<void> _edit(Item item) async {
-    _leaveField();
-    final cubit = context.read<ListCubit>();
-    final result = await showEditItemSheet(
-      context,
-      item: item,
-      catalog: cubit.state.catalog,
-    );
-    switch (result) {
-      case EditSaved(:final changes):
-        cubit.edit(item.id, changes);
-      case EditDeleted():
-        _delete(item);
-      case null:
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -440,412 +340,8 @@ class _ShoppingListState() extends State<ShoppingList> {
               ),
             ),
           ),
-          const _StorePicker(),
-          Expanded(
-            child: BlocBuilder<ListCubit, ListState>(
-              builder: (context, state) => _ListBody(
-                state: state,
-                onFreshVisible: _freshVisible,
-                onTick: _tick,
-                // A drop on a category keeps the item's store.
-                onMove: (item, categoryId) => context.read<ListCubit>().move(
-                  item.id,
-                  categoryId: categoryId,
-                  storeId: item.storeId,
-                ),
-                onEdit: (item) => unawaited(_edit(item)),
-                onDelete: _delete,
-                onReadd: _readd,
-              ),
-            ),
-          ),
+          Expanded(child: ShoppingListView(onInteract: _leaveField)),
         ],
-      ),
-    );
-  }
-}
-
-/// "Alle" plus one chip per store; the list is sorted for the chosen one.
-class const _StorePicker() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final cubit = context.read<ListCubit>();
-    final (stores, filter) = context
-        .select<ListCubit, (List<Store>, StoreFilter)>(
-          (c) => (c.state.catalog.stores, c.state.filter),
-        );
-    if (stores.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    final current = switch (filter) {
-      AtStore(:final storeId) =>
-        stores.where((s) => s.id == storeId).firstOrNull,
-      AllStores() => null,
-    };
-    Widget chip(String label, StoreFilter target, {required bool selected}) =>
-        ChoiceChip(
-          label: Text(label),
-          selected: selected,
-          showCheckmark: false,
-          onSelected: (_) => cubit.selectStore(target),
-        );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                spacing: 8,
-                children: [
-                  chip(
-                    l10n.allStores,
-                    const AllStores(),
-                    selected: current == null,
-                  ),
-                  for (final store in stores)
-                    chip(
-                      store.name,
-                      AtStore(store.id),
-                      selected: current?.id == store.id,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          if (current != null)
-            IconButton(
-              tooltip: l10n.editStoreLayout,
-              icon: const Icon(Icons.low_priority),
-              onPressed: () => unawaited(openStoreLayout(context, current.id)),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class const _ListBody({
-  required final ListState state,
-  required final void Function(String id, {required bool visible})
-  onFreshVisible,
-  required final ValueChanged<Item> onTick,
-  required final ValueChanged<Item> onEdit,
-  required final ValueChanged<Item> onDelete,
-  required final ValueChanged<Item> onReadd,
-  required final void Function(Item item, String categoryId) onMove,
-}) extends StatefulWidget {
-  @override
-  State<_ListBody> createState() => _ListBodyState();
-}
-
-class _ListBodyState() extends State<_ListBody> {
-  /// While an item is dragged, every category is a drop target.
-  var _dragging = false;
-
-  void _setDragging(bool dragging) {
-    if (mounted && _dragging != dragging) {
-      setState(() => _dragging = dragging);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final state = widget.state;
-    if (!state.loaded) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    final items = state.items.values;
-    final grouping = groupActive(
-      items,
-      state.catalog,
-      state.filter,
-      showHidden: state.showHidden,
-      includeEmpty: _dragging,
-    );
-    final storeName = switch (state.filter) {
-      AtStore(:final storeId) => state.catalog.store(storeId)?.name,
-      AllStores() => null,
-    };
-    final bought = recentlyBought(items);
-    final theme = Theme.of(context);
-    final cubit = context.read<ListCubit>();
-    final fresh = cubit.fresh;
-    // Visibility reports can arrive after this list is gone.
-    final onFreshVisible = widget.onFreshVisible;
-    final list = ListView(
-      padding: const EdgeInsets.only(bottom: 96),
-      children: [
-        if (grouping.groups.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text(
-              storeName == null ? l10n.emptyList : l10n.emptyAtStore(storeName),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge,
-            ),
-          ),
-        for (final group in grouping.groups)
-          _DropGroup(
-            key: ValueKey(
-              'group-${group.category?.id ?? group.items.first.id}',
-            ),
-            title: group.category?.name ?? l10n.sortingItem,
-            categoryId: group.category?.id,
-            onMove: widget.onMove,
-            children: [
-              for (final item in group.items)
-                _ItemTile(
-                  key: ValueKey(item.id),
-                  item: item,
-                  fresh: fresh.contains(item.id),
-                  onVisible: (visible) =>
-                      onFreshVisible(item.id, visible: visible),
-                  onTick: () => widget.onTick(item),
-                  onEdit: () => widget.onEdit(item),
-                  onDelete: () => widget.onDelete(item),
-                  onDragging: _setDragging,
-                ),
-            ],
-          ),
-        if (storeName != null && grouping.hiddenCount > 0)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: TextButton(
-              onPressed: () => context.read<ListCubit>().toggleShowHidden(),
-              child: Text(
-                state.showHidden
-                    ? l10n.hideHiddenItems(grouping.hiddenCount, storeName)
-                    : l10n.showHiddenItems(grouping.hiddenCount, storeName),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        if (bought.isNotEmpty)
-          ExpansionTile(
-            title: Text(l10n.recentlyBought),
-            children: [
-              for (final item in bought)
-                ListTile(
-                  key: ValueKey('bought-${item.id}'),
-                  dense: true,
-                  title: Text(
-                    item.name,
-                    style: TextStyle(color: theme.colorScheme.outline),
-                  ),
-                  trailing: IconButton(
-                    tooltip: l10n.readd,
-                    icon: const Icon(Icons.add),
-                    onPressed: () => widget.onReadd(item),
-                  ),
-                  onTap: () => widget.onReadd(item),
-                ),
-            ],
-          ),
-      ],
-    );
-    if (!kIsWeb) {
-      return list;
-    }
-    // A right click on a row opens the edit sheet, not the browser's menu.
-    // Only over the list: text fields keep the browser's menu.
-    return MouseRegion(
-      onEnter: (_) => unawaited(BrowserContextMenu.disableContextMenu()),
-      onExit: (_) => unawaited(BrowserContextMenu.enableContextMenu()),
-      child: list,
-    );
-  }
-}
-
-/// A header and its items; for a real category, also a drop target that
-/// moves a dragged item into it.
-class const _DropGroup({
-  required final String title,
-  required final String? categoryId,
-  required final void Function(Item item, String categoryId) onMove,
-  required final List<Widget> children,
-  super.key,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final target = categoryId;
-    Widget column({required bool hovered}) => ColoredBox(
-      color: hovered
-          ? Theme.of(context).colorScheme.primaryContainer
-          : Colors.transparent,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [_GroupHeader(title), ...children],
-      ),
-    );
-    if (target == null) {
-      return column(hovered: false);
-    }
-    return DragTarget<Item>(
-      onWillAcceptWithDetails: (details) => details.data.categoryId != target,
-      onAcceptWithDetails: (details) => onMove(details.data, target),
-      builder: (context, candidates, _) =>
-          column(hovered: candidates.isNotEmpty),
-    );
-  }
-}
-
-class const _GroupHeader(final String title) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Its own node: a group is one list child, and without a container the
-    // header merges into the first item's button.
-    return Semantics(
-      container: true,
-      header: true,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-        child: Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: theme.colorScheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class const _ItemTile({
-  required final Item item,
-
-  /// Not seen yet: tinted, and it reports whether it is on screen.
-  required final bool fresh,
-  required final ValueChanged<bool> onVisible,
-  required final VoidCallback onTick,
-  required final VoidCallback onEdit,
-  required final VoidCallback onDelete,
-  required final ValueChanged<bool> onDragging,
-  super.key,
-}) extends StatefulWidget {
-  @override
-  State<_ItemTile> createState() => _ItemTileState();
-}
-
-class _ItemTileState() extends State<_ItemTile> {
-  /// How far a long press moved the lifted item, and whether it went past
-  /// the slop: a long press that stays put opens the edit sheet instead.
-  var _travel = Offset.zero;
-  var _moved = false;
-
-  static const _slop = 8.0;
-
-  void _dragUpdate(DragUpdateDetails details) {
-    _travel += details.delta;
-    if (!_moved && _travel.distance >= _slop) {
-      _moved = true;
-      widget.onDragging(true);
-    }
-  }
-
-  void _dragEnd(DraggableDetails details) {
-    if (_moved) {
-      widget.onDragging(false);
-    } else if (!details.wasAccepted) {
-      widget.onEdit();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final item = widget.item;
-    // Its own node, so a group's only item does not become the parent of
-    // the group heading.
-    final plain = Semantics(container: true, child: _tile(context));
-    final tile = widget.fresh
-        ? VisibilityDetector(
-            key: ValueKey('new-${item.id}'),
-            onVisibilityChanged: (info) =>
-                widget.onVisible(info.visibleFraction > 0.5),
-            child: plain,
-          )
-        : plain;
-    // Long press, so scrolling, tapping and swiping keep working.
-    return GestureDetector(
-      onSecondaryTap: widget.onEdit,
-      child: LongPressDraggable<Item>(
-        data: item,
-        delay: const Duration(milliseconds: 300),
-        onDragStarted: () {
-          _travel = Offset.zero;
-          _moved = false;
-        },
-        onDragUpdate: _dragUpdate,
-        onDragEnd: _dragEnd,
-        feedback: Material(
-          elevation: 6,
-          borderRadius: BorderRadius.circular(8),
-          color: theme.colorScheme.surfaceContainerHigh,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Text(item.name, style: theme.textTheme.bodyLarge),
-          ),
-        ),
-        childWhenDragging: Opacity(opacity: 0.4, child: tile),
-        child: tile,
-      ),
-    );
-  }
-
-  Widget _tile(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final item = widget.item;
-    final quantity = item.quantity;
-    final details = [?item.brand, ?item.properties].join(' · ');
-    return Dismissible(
-      key: ValueKey('dismiss-${item.id}'),
-      direction: DismissDirection.endToStart,
-      background: ColoredBox(
-        color: Theme.of(context).colorScheme.errorContainer,
-        child: const Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: EdgeInsets.only(right: 24),
-            child: Icon(Icons.delete_outline),
-          ),
-        ),
-      ),
-      onDismissed: (_) => widget.onDelete(),
-      child: ListTile(
-        // Unfocusable: on web a focused element that vanishes with its row
-        // leaves the add field unable to take text on the next tap.
-        leading: ExcludeFocus(
-          child: Checkbox(
-            value: false,
-            semanticLabel: l10n.tickItem(item.name),
-            onChanged: (_) => widget.onTick(),
-          ),
-        ),
-        tileColor: widget.fresh ? theme.colorScheme.tertiaryContainer : null,
-        title: Text(
-          item.name,
-          // Joined like merged labels, so the row's name still starts with
-          // the item's.
-          semanticsLabel: widget.fresh ? '${item.name}\n${l10n.newItem}' : null,
-        ),
-        subtitle: details.isEmpty
-            ? null
-            : Text(
-                details,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-        trailing: quantity == null
-            ? null
-            : Text(quantity, style: theme.textTheme.bodyMedium),
-        onTap: widget.onEdit,
       ),
     );
   }

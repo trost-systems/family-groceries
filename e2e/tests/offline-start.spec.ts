@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  addField, addItem, apiAs, cutOff, itemRow, newEmail, password, screenshot, signUpWithHousehold, tickBox, typeInto,
+  addField, addItem, apiAs, cutOff, itemRow, newEmail, password, screenshot, signUpWithHousehold, tick, typeInto,
   within,
 } from './helpers';
 
@@ -49,7 +49,7 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await within(3_000, (timeout) => expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout }));
 
   await addItem(page, 'Käse');
-  await tickBox(page, 'Brot').click();
+  await tick(page, 'Brot');
   await expect(itemRow(page, 'Käse')).toBeVisible();
   await expect(itemRow(page, 'Brot')).toHaveCount(0);
 

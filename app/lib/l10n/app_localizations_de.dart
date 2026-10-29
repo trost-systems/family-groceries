@@ -31,11 +31,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get readd => 'Wieder auf die Liste';
 
   @override
-  String tickItem(String name) {
-    return '$name abhaken';
-  }
-
-  @override
   String itemTicked(String name) {
     return '$name abgehakt';
   }
@@ -458,37 +453,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App verliert sofort den Zugriff auf deine Liste.';
 
   @override
-  String get allStores => 'Alle';
-
-  @override
   String get editStoreLayout => 'Reihenfolge bearbeiten';
-
-  @override
-  String showHiddenItems(int count, String store) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Artikel, die es bei $store meist nicht gibt, anzeigen',
-      one: '1 Artikel, den es bei $store meist nicht gibt, anzeigen',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String hideHiddenItems(int count, String store) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count Artikel, die es bei $store meist nicht gibt, ausblenden',
-      one: '1 Artikel, den es bei $store meist nicht gibt, ausblenden',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String emptyAtStore(String store) {
-    return 'Für $store steht nichts auf der Liste.';
-  }
 
   @override
   String get manageCategories => 'Kategorien verwalten';
@@ -498,7 +463,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get categoriesHint =>
-      'In dieser Reihenfolge sortiert „Alle“ die Liste. Tippe auf eine Kategorie, um sie umzubenennen.';
+      'In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.';
 
   @override
   String get categoryName => 'Name';
@@ -538,12 +503,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get storeLayoutHint =>
-      'Ordne die Kategorien so, wie du durch den Laden gehst. Schalte aus, was es dort nicht gibt.';
-
-  @override
-  String storeCarries(String category, String store) {
-    return '$category gibt es bei $store';
-  }
+      'Ordne die Kategorien so, wie du durch den Laden gehst.';
 
   @override
   String newItemsFrom(int count, String name) {
@@ -557,6 +517,57 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get newItem => 'Neu';
+
+  @override
+  String storeSectionLabel(String store, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Artikel',
+      one: '1 Artikel',
+    );
+    return '$store, $_temp0';
+  }
+
+  @override
+  String itemsWord(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Artikel',
+      one: 'Artikel',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get expandSection => 'Aufklappen';
+
+  @override
+  String get collapseSection => 'Zuklappen';
+
+  @override
+  String get moveStoreUp => 'Laden nach oben';
+
+  @override
+  String get moveStoreDown => 'Laden nach unten';
+
+  @override
+  String get moveCategoryUp => 'Kategorie nach oben';
+
+  @override
+  String get moveCategoryDown => 'Kategorie nach unten';
+
+  @override
+  String get listHint =>
+      'Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt';
+
+  @override
+  String get listHintDismiss => 'Verstanden';
+
+  @override
+  String get reorderNeedsConnection =>
+      'Die Reihenfolge lässt sich nur mit Verbindung ändern.';
 
   @override
   String suggestion(String label) {

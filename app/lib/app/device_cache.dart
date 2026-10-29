@@ -24,6 +24,7 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
   static const _householdPrefix = 'household.';
   static const _listPrefix = 'list.';
   static const _seenPrefix = 'seen.';
+  static const _prefsPrefix = 'listprefs.';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -32,6 +33,9 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
 
   static String _seenKey(String userId, String householdId) =>
       '$_seenPrefix$userId.$householdId';
+
+  static String _prefsKey(String userId, String householdId) =>
+      '$_prefsPrefix$userId.$householdId';
 
   ListCache list(String userId, String householdId) =>
       _PrefsListCache(this, userId, householdId);
@@ -66,11 +70,16 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
         }
         final keep = household == null
             ? const <String>{}
-            : {_listKey(userId, household.id), _seenKey(userId, household.id)};
+            : {
+                _listKey(userId, household.id),
+                _seenKey(userId, household.id),
+                _prefsKey(userId, household.id),
+              };
         await _removeWhere(
           (k) =>
               (k.startsWith('$_listPrefix$userId.') ||
-                  k.startsWith('$_seenPrefix$userId.')) &&
+                  k.startsWith('$_seenPrefix$userId.') ||
+                  k.startsWith('$_prefsPrefix$userId.')) &&
               !keep.contains(k),
         );
       });
@@ -81,7 +90,8 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
       (k) =>
           k.startsWith(_householdPrefix) ||
           k.startsWith(_listPrefix) ||
-          k.startsWith(_seenPrefix),
+          k.startsWith(_seenPrefix) ||
+          k.startsWith(_prefsPrefix),
     ),
   );
 
@@ -121,6 +131,14 @@ class _PrefsListCache(
   @override
   Future<void> saveSeen(SeenMark mark) =>
       _store(DeviceCache._seenKey(_userId, _householdId), mark.toJson());
+
+  @override
+  Future<ListPrefs?> loadPrefs() =>
+      _read(DeviceCache._prefsKey(_userId, _householdId), ListPrefs.fromJson);
+
+  @override
+  Future<void> savePrefs(ListPrefs prefs) =>
+      _store(DeviceCache._prefsKey(_userId, _householdId), prefs.toJson());
 
   Future<T?> _read<T>(
     String key,

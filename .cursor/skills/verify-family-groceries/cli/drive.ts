@@ -14,13 +14,13 @@ export const clientFlag: FlagSpec = {
 const matcherFlags: FlagSpec[] = [
   { name: 'key', help: 'ValueKey<String> of the widget (most stable). Keys: see features/README.md.' },
   { name: 'text', help: 'Exact visible text, e.g. "Haushalt anlegen" or an item name.' },
-  { name: 'type', help: 'Widget type name, e.g. Checkbox, FilledButton.' },
+  { name: 'type', help: 'Widget type name, e.g. IconButton, FilledButton.' },
   { name: 'identifier', help: 'Semantics identifier.' },
   { name: 'tooltip', help: 'Tooltip of an icon button, e.g. "Menü" (tapped at its center).' },
   { name: 'label', help: 'Label/hint of a text field, e.g. "Was fehlt?" (tapped at its center).' },
   { name: 'x', help: 'X coordinate in logical pixels (with --y).' },
   { name: 'y', help: 'Y coordinate in logical pixels (with --x).' },
-  { name: 'row', help: 'Scope the match to the list row that shows this exact text, e.g. --row Milch --type Checkbox.' },
+  { name: 'row', help: 'Scope the match to the list row that shows this exact text, e.g. --row Milch --type IconButton.' },
 ];
 
 export function client(ctx: Ctx, args: Args): { name: ClientName; state: ClientState; m: Marionette } {
@@ -57,7 +57,7 @@ async function resolve(m: Marionette, args: Args, required = true): Promise<Reso
   if (given.length + (hasXY ? 1 : 0) > 1) {
     throw usage(
       `Give one matcher, got ${[...given, ...(hasXY ? ['x/y'] : [])].join(', ')}.`,
-      'Combine a matcher only with --row, e.g. --row Milch --type Checkbox.',
+      'Combine a matcher only with --row, e.g. --row Milch --type IconButton.',
     );
   }
   if (hasXY) {
@@ -133,7 +133,7 @@ export const driveCommands: Command[] = [
       name: 'contains',
       help: 'Substring of text, label, tooltip or key.',
     }, clientFlag],
-    examples: ['fg find', 'fg find --text Milch', 'fg find --row Milch --type Checkbox', 'fg find --key add-item-field --client lea'],
+    examples: ['fg find', 'fg find --text Milch', 'fg find --row Milch --type IconButton', 'fg find --key add-item-field --client lea'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const row = str(args, 'row');
@@ -147,9 +147,9 @@ export const driveCommands: Command[] = [
     summary: 'Tap a widget by key, text, type, tooltip, label, row, or coordinates.',
     usage: 'fg tap (--key K | --text T | --type W | --identifier I | --tooltip T | --label L | --x X --y Y) [--row TEXT] [--client NAME]',
     description:
-      "Taps through Marionette's gesture dispatcher, the same path as a finger. Text must match exactly. To tick an item, tap the checkbox in its row: `fg tap --row Milch --type Checkbox`. Tapping an item's name opens its edit sheet instead.",
+      'Taps through Marionette\'s gesture dispatcher, the same path as a finger. Text must match exactly. A tap on an item row ticks it: `fg tap --text "2 l Milch"` (the row reads the quantity first). Hold without moving opens the edit sheet: `fg marionette -- long-press --key <item id>`; to drag, use `fg drag`.',
     flags: [...matcherFlags, clientFlag],
-    examples: ['fg tap --text "Haushalt anlegen"', 'fg tap --row Milch --type Checkbox', 'fg tap --tooltip Menü', 'fg tap --text Abmelden'],
+    examples: ['fg tap --text "Haushalt anlegen"', 'fg tap --text Milch', 'fg tap --tooltip Menü', 'fg tap --text Abmelden'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const r = (await resolve(m, args))!;
@@ -244,6 +244,82 @@ export const driveCommands: Command[] = [
         : withAncestors((await resolve(m, args))!);
       await m.call(['swipe', ...target, '--direction', direction, '--distance', String(int(args, 'distance', 300))]);
       return { client: name, swiped: direction, target: target.join(' ') };
+    },
+  },
+  {
+    name: 'drag',
+    summary: 'Hold a widget until it lifts, then drag it onto another and let go (linux surface).',
+    usage: 'fg drag (--from-key K | --from-text T) (--to-key K | --to-text T) [--edge before|after] [--hold MS] [--client NAME]',
+    description:
+      "A finger's long-press drag, which Marionette's swipe can't do (it never holds): xdotool presses on the source's centre on the client's X display, waits --hold ms (default 600; the list lifts after 300), moves in steps to the target and releases. A --from-text or --to-text stands for the keyed row or divider that shows it. --edge before drops 8 px inside the target's top edge, after 8 px inside its bottom edge, else its centre: on an item row that is the insertion line above or below it. Both widgets must be on screen. Linux surface only.",
+    flags: [
+      { name: 'from-key', help: 'ValueKey of the widget to lift (an item id, store-<id>).' },
+      { name: 'from-text', help: 'Exact text of the widget to lift.' },
+      { name: 'to-key', help: 'ValueKey of the drop target.' },
+      { name: 'to-text', help: 'Exact text of the drop target.' },
+      { name: 'edge', help: 'before or after: near the top or bottom edge of the target.', choices: ['before', 'after'] },
+      { name: 'hold', help: 'Milliseconds to hold before moving (default 600).' },
+      clientFlag,
+    ],
+    examples: ['fg drag --from-text Gurke --to-text "1 kg Äpfel" --edge before', 'fg drag --from-text Brot --to-key store-<lidl id>'],
+    async run(ctx, args) {
+      const { name, state, m } = client(ctx, args);
+      if (state.surface !== 'linux' || state.display === undefined) {
+        throw new FgError('wrong_surface', 'fg drag drives the X display of a linux client.', 'Start the client with FG_SURFACE=linux.');
+      }
+      const elements = await m.elements();
+      const find = (side: 'from' | 'to') => {
+        const key = str(args, `${side}-key`);
+        const text = str(args, `${side}-text`);
+        if ((key === undefined) === (text === undefined)) throw usage(`Give --${side}-key or --${side}-text.`, 'e.g. --from-text Gurke');
+        // A text stands for the row or divider around it: the smallest keyed widget that holds it.
+        const k = key ?? rowKeyFor(elements, text!);
+        const el = elements.find((e) => e.bounds && e.key === k);
+        if (!el?.bounds) {
+          throw new FgError(
+            'not_found',
+            `No element on screen with ${key !== undefined ? `key ${key}` : `text "${text}"`}.`,
+            'Scroll it into view; `fg find` lists what is on screen.',
+          );
+        }
+        return el.bounds;
+      };
+      const from = find('from');
+      const to = find('to');
+      const edge = str(args, 'edge');
+      const x0 = Math.round(from.x + Math.min(from.width / 2, 120));
+      const y0 = Math.round(from.y + from.height / 2);
+      const x1 = Math.round(to.x + Math.min(to.width / 2, 120));
+      const y1 = Math.round(edge === 'before' ? to.y + 8 : edge === 'after' ? to.y + to.height - 8 : to.y + to.height / 2);
+      const hold = int(args, 'hold', 600) / 1000;
+      const steps = Array.from({ length: 12 }, (_, i) => {
+        const t = (i + 1) / 12;
+        return ['mousemove', String(Math.round(x0 + (x1 - x0) * t)), String(Math.round(y0 + 12 + (y1 - y0 - 12) * t)), 'sleep', '0.03'];
+      }).flat();
+      await ctx.sh.run(
+        [
+          'xdotool',
+          'mousemove',
+          String(x0),
+          String(y0),
+          'mousedown',
+          '1',
+          'sleep',
+          String(hold),
+          'mousemove',
+          String(x0),
+          String(y0 + 12),
+          'sleep',
+          '0.05',
+          ...steps,
+          'sleep',
+          '0.2',
+          'mouseup',
+          '1',
+        ],
+        { env: { DISPLAY: `:${state.display}` } },
+      );
+      return { client: name, from: [x0, y0], to: [x1, y1], edge: edge ?? 'centre' };
     },
   },
   {

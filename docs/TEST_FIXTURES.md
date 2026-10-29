@@ -37,8 +37,8 @@ scripts/fg sync household-3-mid-shop --clients 3 \
 | Scenario | State | Good for |
 | --- | --- | --- |
 | `empty-new-user` | One confirmed user, no household | Onboarding: the welcome screen, create a household, join with a code, deleting an account without data |
-| `solo-long-list` | One person, 64 items over Lidl, Edeka, dm and no store, every category | Scrolling and grouping, store views with many items, offline start with a big cache |
-| `household-3-mid-shop` | Three members; 8 items ticked 12 minutes ago in the Lidl view, 10 open; Noah's client shows Lidl | Live sync with 2 or 3 clients, ticking in a store view, fresh "Zuletzt gekauft" |
+| `solo-long-list` | One person, 64 items over Lidl, Edeka, dm and no store, every category | Scrolling and grouping, store sections with many items, offline start with a big cache |
+| `household-3-mid-shop` | Three members; 8 items ticked 12 minutes ago at Lidl, 10 open; Noah's client has every store but Lidl folded | Live sync with 2 or 3 clients, ticking while shopping at one store, fresh "Zuletzt gekauft" |
 | `heavy-history` | Two members, 8 weeks of trips at Edeka (weekly), Lidl (weekly), dm (every 2 weeks) | Usuals and "Brauchen wir wieder?": Milch, Brot, Eier, Windeln, Duschgel are due; Hafermilch, Gurken, Tomaten, Nudeln are usuals but not due |
 | `many-stores` | Nine stores (dm, Lidl, Edeka, Rewe, Aldi Süd, Kaufland, Netto, Rossmann, Wochenmarkt, Fressnapf) with distinct walk orders and hidden categories, a "Tiernahrung" category | The store picker with many chips, store layouts, hidden categories, item→store memory |
 | `edge-cases` | A German and an English user; a 120-character name, a 40-character quantity, emoji, umlauts, quotes, duplicates (Milch twice, milch) | Text layout, duplicates, quantity display, an `en` user |
@@ -252,7 +252,7 @@ their handles.
 | `B tick "Milch"` | Taps the row's checkbox ("Milch abhaken") |
 | `C edit "Bananen" quantity "6"` / `name "Banane"` | Opens the row, retypes the field, Speichern |
 | `A delete "Brot"` | Opens the row, Löschen |
-| `A store "Lidl"` / `A store "Alle"` | Picks a store chip |
+| `A store "Lidl"` / `A store "Alle"` | Shops at that store: folds every other store section except "Ohne Laden" ("Alle" unfolds all; design H has no store chips) |
 | `A offline` / `A online` | Cuts the client off: offline emulation plus closing its open realtime socket, so the app sees a real disconnect / reconnects |
 | `A reload` | Reloads the page |
 | `expect B,C see "X" [within 2000ms]` | Each client shows a list row named X ("X" or "X …", e.g. "Bananen 8"); default 3000 ms |

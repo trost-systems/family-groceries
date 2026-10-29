@@ -221,3 +221,7 @@ See [docs/done/23-release-pipeline.md](docs/done/23-release-pipeline.md).
 ## Job 26: public MCP URL mcp.hummlist.com
 
 See [docs/done/26-mcp-domain.md](docs/done/26-mcp-domain.md).
+
+## Job 16: design H list
+
+See [docs/done/16-design-list.md](docs/done/16-design-list.md).

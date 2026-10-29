@@ -5,6 +5,7 @@ import 'package:family_groceries/list/model.dart';
 /// contents.
 class MemoryListCache([var ListSnapshot? saved]) implements ListCache {
   SeenMark? seen;
+  ListPrefs? prefs;
 
   @override
   Future<ListSnapshot?> load() async => saved;
@@ -17,4 +18,10 @@ class MemoryListCache([var ListSnapshot? saved]) implements ListCache {
 
   @override
   Future<void> saveSeen(SeenMark mark) async => seen = mark;
+
+  @override
+  Future<ListPrefs?> loadPrefs() async => prefs;
+
+  @override
+  Future<void> savePrefs(ListPrefs prefs) async => this.prefs = prefs;
 }

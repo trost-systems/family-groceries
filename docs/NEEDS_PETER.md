@@ -649,3 +649,20 @@ attaches hummlist.com and www. Yours:
    job to).
 2. **The support@hummlist.com mailbox must receive mail** before the site
    goes live: the Impressum lists it as the contact address.
+
+## Job 16: the design H list
+
+Nothing blocks. Two things to look at, both reversible:
+
+- **Removed the store filter chips because H folds stores; say if you miss
+  them.** The "Alle / dm / Lidl / Edeka" chips above the list are gone. Each
+  store is a section in its own walk order; fold the ones you are not in.
+  With the chips went two side effects of "the store I'm in": an add no
+  longer lands in the viewed store (the add sheet's store chip in job 17 does
+  that), and ticking an item without a store no longer tags it to that store.
+  Tag items by dragging them onto a store or with the edit sheet's store
+  chip. The per-store "gibt es bei …" switches went from the store layout
+  screen too, since nothing is hidden any more (DECISIONS, Job 16, 1 and 2).
+- **Empty stores show as "Edeka 0 Artikel" dividers**, so you can drop items
+  on them and reorder them. The prototype hid stores without items. Say if
+  you'd rather hide them (they'd then only appear while dragging).
