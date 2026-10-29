@@ -42,7 +42,7 @@ defaults:
     shell: bash
 
 env:
-  FLUTTER_VERSION: 3.47.7
+  FLUTTER_VERSION: 3.47.8
   # Build number = offset + run number, the same on both stores. When the schedule started,
   # TestFlight's highest was 1002 and Play's first, hand-uploaded bundle was 1003 (docs/RELEASE.md);
   # raise the offset if a store ever holds a higher one.
