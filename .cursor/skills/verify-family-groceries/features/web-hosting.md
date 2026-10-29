@@ -28,7 +28,7 @@ Preconditions:
 ## Gotchas
 
 - The smoke test stops at the providers' sign-in pages and never signs in. A full Google or Apple round trip needs a real account, so it is a manual step (`docs/NEEDS_PETER.md`, section 4, step 18).
-- Production is the last store release, not `main`: to check what just merged, use `https://preview.app.hummlist.com` (its build of `main`) with a share link. Without a share link or a Vercel login it shows Vercel's login wall, not the app, and `app.hummlist.com` may lag `main` by up to a week.
+- Production is the last store release, not `main`: to check what just merged, use `https://preview.app.hummlist.com` (its build of `main`) with a share link. Without a share link or a Vercel login it shows Vercel's login wall, not the app, and `app.hummlist.com` stays on the last store release until the next Release run that uploads (scheduled Mondays, or started by hand); a failed or skipped run keeps it there longer.
 - Previews are behind Vercel Authentication (302 to vercel.com). Pass a share link from the Vercel dashboard as the URL (`<preview>/?_vercel_share=...`); the smoke test reuses its cookie. Production is public.
 - On a preview URL or on localhost, the provider round trip ends on the production Site URL unless that origin is in the hosted redirect list. Reaching the provider page does not depend on it.
 - `scripts/vercel-local.sh` builds the committed `HEAD` and ignores uncommitted changes, like Vercel does.

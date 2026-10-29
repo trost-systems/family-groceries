@@ -66,12 +66,14 @@ another branch fails at its first job.
 ## Failures
 
 A scheduled run that fails, or that skips because `main` is not green, opens
-the issue "Weekly release failed" with the run link and the failing job
-(`plan`, `ios`, `android` or `web`), or comments on it if it is already open. The
-next green upload run, or a run that finds `main` unchanged since the last
-upload, closes it. Dry runs never touch it. A failed dispatch does not open
-the issue, since whoever started it watches the run; `simulate_failure`
-does. Watch the repository's issues (Watch, Custom, Issues) to get these.
+the issue "Weekly release failed" with the run link, the failing job
+(`plan`, `ios`, `android` or `web`) and what reached TestFlight, Play internal
+and `app.hummlist.com` ("may not" where a stopped job cannot tell), or
+comments on it if it is already open. The next green upload run, or a run
+that finds `main` unchanged since the last upload, closes it. Dry runs never
+touch it. A failed dispatch does not open the issue, since whoever started it
+watches the run; `simulate_failure` does. Watch the repository's issues
+(Watch, Custom, Issues) to get these.
 
 What to do, by failing job:
 
@@ -97,9 +99,11 @@ What to do, by failing job:
   draft may be created on draft app" means `PLAY_RELEASE_STATUS` must be
   `draft` until the app leaves draft (`NEEDS_LEAD.md`, L3).
 - `web` (`Web production`), push rejected: `release` holds a commit that is
-  not an ancestor of this one (someone force-pushed it). The stores got the
-  build; check what `release` holds, then `git push --force origin
-  <sha>:refs/heads/release` once you are sure, or let the next release move it.
+  not an ancestor of this one (someone force-pushed it), or a branch rule
+  blocks the push (there must be none on `release`). The issue says which
+  stores got the build; check what `release` holds, then `git push --force
+  origin <sha>:refs/heads/release` once you are sure, or let the next release
+  move it.
 
 ### TestFlight builds expired
 

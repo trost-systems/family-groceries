@@ -23,3 +23,14 @@ Done outside the repository (Vercel and Supabase settings):
 - Branch `release` created at 5b6659d, the commit `app.hummlist.com` serves.
 - Supabase `jdwqrallbpdbshrdhenk`: `https://preview.app.hummlist.com/**` added
   to the redirect allow list.
+
+Follow-up (review suggestions on #88, 2026-10-29):
+
+- The failure issue now says what reached TestFlight, Play internal and
+  `app.hummlist.com` from each job's own result (`report.sh outcome`), so it
+  is right for any mix, such as a cancelled iOS job with a failed web job.
+  `release.yml` passes the Android job's `uploaded` output to the report.
+- `Web production` needs only `Uploaded`.
+- `DEPLOY.md` and `RELEASE.md`: no branch protection or ruleset may cover
+  `release`. Checked on 2026-10-29: no repository rulesets, the branch is not
+  protected, and `rules/branches/release` is `[]`.

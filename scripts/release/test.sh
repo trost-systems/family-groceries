@@ -215,11 +215,58 @@ expect_match "first failure creates the issue with the run link and platform" "$
   '^issue create --repo o/r --title Weekly release failed --body Release run https://github.com/o/r/actions/runs/77 \(schedule\) on aaaaaaa failed: ios \(failure\)'
 expect_match "next failure comments on the open issue" "$(apply 12 failure skipped)" '^issue comment 12 '
 expect_eq "green upload closes every open copy" "$(apply '12 13' success success | cut -d' ' -f1-3)" $'issue close 12\nissue close 13'
-expect_match "web-only failure says the stores got the build" \
-  "$(: >"$tmp/gh.log"; env -i PATH="$tmp/bin:$PATH" FAKE_LOG="$tmp/gh.log" FAKE_OPEN='' EVENT=schedule SIMULATE=false UPLOAD=true \
-    PLAN=success IOS=success ANDROID=skipped UPLOADED=success WEB=failure GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=o/r \
-    GITHUB_RUN_ID=77 GITHUB_SHA="$head" "$here/report.sh" apply >/dev/null; grep '^issue create' "$tmp/gh.log")" \
-  'failed: web \(failure\)\. The store upload went through, but app.hummlist.com was not moved'
+# The issue body says what reached each store and the web app, whatever mix of jobs failed.
+# body KEY=VALUE...: the body of the issue a scheduled run creates (defaults: a green upload).
+body() {
+  : >"$tmp/gh.log"
+  env -i PATH="$tmp/bin:$PATH" FAKE_LOG="$tmp/gh.log" FAKE_OPEN='' EVENT=schedule SIMULATE=false UPLOAD=true \
+    PLAN=success IOS=success ANDROID=success ANDROID_UPLOADED=true UPLOADED=success WEB=success \
+    GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=o/r GITHUB_RUN_ID=77 GITHUB_SHA="$head" \
+    "$@" "$here/report.sh" apply >/dev/null
+  sed -n 's/^issue create .* --body //p' "$tmp/gh.log"
+}
+outcome_of() {
+  body "$@" | sed -E 's/^.* failed: .*\. ((TestFlight|The iOS|Play internal|No Play|The Android|Nothing|This was) )/\1/; s/ docs\/RELEASE.md, section Failures.*$//'
+}
+expect_match "body: names the failed jobs" "$(body WEB=failure)" 'failed: web \(failure\)\. '
+expect_eq "web-only failure: both stores got it, the web app did not move" "$(outcome_of WEB=failure)" \
+  'TestFlight got this build; Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+expect_eq "cancelled iOS + failed web: only Play got it" \
+  "$(outcome_of IOS=cancelled WEB=failure)" \
+  'The iOS job stopped, so TestFlight may not have this build; Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+expect_eq "iOS uploaded, Android failed (no Uploaded, no web job)" \
+  "$(outcome_of ANDROID=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "iOS failed, Android built but did not upload" \
+  "$(outcome_of IOS=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
+  'The iOS job stopped, so TestFlight may not have this build; no Play upload (the Android job says why). The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "plan failed: nothing shipped" \
+  "$(outcome_of UPLOAD='' PLAN=failure IOS=skipped ANDROID=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
+  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "red CI skip: nothing shipped" \
+  "$(outcome_of BLOCKED=true REASON='CI concluded failure' IOS=skipped ANDROID=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
+  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "cancelled Android after the iOS upload, web moved" \
+  "$(outcome_of ANDROID=cancelled ANDROID_UPLOADED='')" \
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) moves to this commit.'
+expect_eq "Android-only run uploaded, web failed" \
+  "$(outcome_of IOS=skipped WEB=failure)" \
+  'Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+expect_eq "Android-only run without a Play upload, plan cancelled" \
+  "$(outcome_of IOS=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped PLAN=cancelled)" \
+  'No Play upload (the Android job says why). The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "Android-only run, Android job stopped" \
+  "$(outcome_of IOS=skipped ANDROID=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
+  'The Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) stays on the last store release.'
+expect_eq "TestFlight uploaded, no Play upload, web failed" \
+  "$(outcome_of ANDROID_UPLOADED='' WEB=failure)" \
+  'TestFlight got this build; no Play upload (the Android job says why). The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+expect_eq "web job cancelled: it may have pushed already" \
+  "$(outcome_of WEB=cancelled)" \
+  'TestFlight got this build; Play internal got this build. The web app (app.hummlist.com) may not have moved to this commit (check the release branch, docs/DEPLOY.md, section Web app).'
+expect_eq "simulated failure on a dry run" \
+  "$(outcome_of EVENT=workflow_dispatch SIMULATE=true UPLOAD=false PLAN=failure IOS=skipped ANDROID=skipped UPLOADED=skipped WEB=skipped)" \
+  'This was a dry run: nothing was uploaded and app.hummlist.com did not move.'
 
 # --- check-aab.sh ---------------------------------------------------------------------------
 if command -v keytool >/dev/null && command -v jarsigner >/dev/null && command -v jar >/dev/null; then

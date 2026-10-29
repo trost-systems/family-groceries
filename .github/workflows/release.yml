@@ -331,11 +331,12 @@ jobs:
   # The web app ships with the store builds: app.hummlist.com is Vercel's production, and Vercel's
   # production branch is `release` (docs/DEPLOY.md, section "Web app"). Moving `release` to this
   # run's commit makes Vercel build it and assign app.hummlist.com. A rerun of an older run is a
-  # no-op, and the plain push only fast-forwards, so production never moves back from here. Pushes to `main` build
-  # previews only (preview.app.hummlist.com, behind Vercel Authentication).
+  # no-op, and the plain push only fast-forwards, so production never moves back from here.
+  # Pushes to `main` build previews only (preview.app.hummlist.com, behind Vercel Authentication).
+  # No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
-    needs: [plan, uploaded]
+    needs: uploaded
     if: ${{ !cancelled() && needs.uploaded.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -378,6 +379,7 @@ jobs:
           PLAN: ${{ needs.plan.result }}
           IOS: ${{ needs.ios.result }}
           ANDROID: ${{ needs.android.result }}
+          ANDROID_UPLOADED: ${{ needs.android.outputs.uploaded }}
           UPLOADED: ${{ needs.uploaded.result }}
           WEB: ${{ needs.web.result }}
         run: scripts/release/report.sh apply
