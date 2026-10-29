@@ -1,6 +1,6 @@
 # Classifier
 
-Every new item lands in a category without the user choosing one. The list groups items under small category dividers: inside a store in that store's order, under "Ohne Laden" in the household's route order (Obst & Gemüse first, Sonstiges last). The user can move an item to another category in its edit sheet or by dragging it onto a category divider, and the household remembers the move: the next time that item is added, it lands in the category it was moved to. Classification runs on the server (`classify_item`: learned corrections, then a German dictionary of about 1160 terms, then "Sonstiges"), so the app, MCP and Siri agree.
+Every new item lands in a category without the user choosing one. The list groups items under small category dividers: inside a store in that store's order, under "Ohne Laden" in the household's route order (Obst & Gemüse first, Sonstiges last). The user can move an item to another category in its edit sheet or by dragging it onto a category divider, and the household remembers the move: the next time that item is added, it lands in the category it was moved to. Classification runs on the server (`classify_item`: learned corrections, then a German dictionary of about 1200 terms, then "Sonstiges"), so the app, MCP and Siri agree.
 
 ## Sub-features
 

@@ -6,7 +6,7 @@ An item on the list has a Bezeichnung (name), an optional Marke (brand), Eigensc
 
 - `ed-row-details` shows "Marke · Eigenschaften" as the row's second line when either is set, and no added-by initial on any row.
 - `ed-open` opens the sheet (key `edit-sheet`) on a hold that does not move or a right click. A tap on the row ticks the item.
-- `ed-prefill` prefills `edit-name`, `edit-brand`, `edit-quantity` and `edit-properties`, sets the store chip (`chip-store`, "Laden: <store>" or "Ohne Laden") and the category chip (`chip-category`, "Kategorie: <name>").
+- `ed-prefill` prefills `edit-name`, `edit-brand`, `edit-quantity` and `edit-properties`, sets the store chip (`chip-store`, showing the store such as "dm", or "Ohne Laden") and the category chip (`chip-category`, showing the category such as "👶 Drogerie"). Screen readers name them "Laden: <store>" and "Kategorie: <name>".
 - `ed-steppers` changes the Menge with `edit-quantity-minus` and `edit-quantity-plus`: "2" gives "3", "2 l" gives "3 l", "500 g" gives "600 g", and an empty Menge counts as 1. The steppers hide for a Menge that does not start with a number. "−" is disabled at 1.
 - `ed-chips` folds out `store-option-<id>` (plus `store-option-none`) or `category-option-<id>`. A pick folds them back, and the sheet grows and shrinks with them.
 - `ed-patch` makes Fertig (`edit-done`) write only the changed columns. An unchanged Fertig writes nothing, and Fertig is disabled while the name is empty.
@@ -39,6 +39,6 @@ Preconditions:
 
 - `fg tap` on a row ticks the item. Open the sheet with `fg marionette -- long-press` or `secondary-tap`. The e2e spec `e2e/tests/edit-sheet.spec.ts` covers the long press and the right click on web.
 - On Flutter web a text field's value is empty in the DOM until the field is focused. Read prefilled values after a click (`expectFieldValue` in `e2e/tests/helpers.ts`).
-- The chip and the option of the same store share a name. The chips are named "Laden: …" and "Kategorie: …" for screen readers and Playwright.
+- The chip and the option of the same store show the same text ("dm"). Only the chips' screen-reader names differ ("Laden: …", "Kategorie: …"), which Playwright uses; with fg, tap the option by key (`store-option-<id>`).
 - A fresh partner item stops being new 3 s after it is on screen. Screenshot right after `fg wait`.
 - The row text starts with the quantity ("2× Windeln", "2 l Milch"); `--text` needs the whole of it.
