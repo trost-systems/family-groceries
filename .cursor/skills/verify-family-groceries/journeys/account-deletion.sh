@@ -129,6 +129,8 @@ run wait --key add-item-field --client lea >/dev/null
 run type --key add-item-field --input Milch --submit --client lea >/dev/null
 run wait --text Milch --client lea >/dev/null
 hh="$(sql "select id from households where name = 'WG $stamp'" id)"
+run db query "update items set brand = 'Zwergenhof' where household_id = '$hh'" --write >/dev/null
+[[ "$(sql "select count(*) from household_brands where household_id = '$hh'")" == 1 ]] || fail "the brand was not learned for 'WG $stamp'"
 open_delete_dialog
 run wait --contains "Du bist das letzte Mitglied" --client lea >/dev/null
 run screenshot --name 05-delete-dialog-last --client lea >/dev/null
@@ -138,7 +140,7 @@ left="$(sql "select (select count(*) from households where id = '$hh') + (select
   + (select count(*) from categories where household_id = '$hh') + (select count(*) from stores where household_id = '$hh')
   + (select count(*) from store_category_order where household_id = '$hh') + (select count(*) from invites where household_id = '$hh')
   + (select count(*) from category_memory where household_id = '$hh') + (select count(*) from item_store_memory where household_id = '$hh')
-  + (select count(*) from personal_access_tokens where household_id = '$hh') as left" left)"
+  + (select count(*) from personal_access_tokens where household_id = '$hh') + (select count(*) from household_brands where household_id = '$hh') as left" left)"
 [[ "$left" == 0 ]] || fail "$left rows of the deleted household are left"
 
 step "peter exports his data from Konto"
