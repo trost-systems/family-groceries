@@ -3,8 +3,9 @@
 # .github/workflows/e2e.yml, waits for it and prints the result (docs/CI.md, On-demand e2e).
 # Usage: scripts/ci-e2e.sh [--ref <branch>] [--spec "<playwright args>"] [--shards 1|2] [--no-db]
 #                          [--sync-smoke | --no-sync-smoke] [--download <dir>]
-#   --ref        the branch to test (default: the current one). It must be pushed: local and
-#                origin/<ref> must be the same commit, so the run tests what you have.
+#   --ref        the branch to test (default: the current one). It must be pushed: the checked
+#                out branch must be origin/<ref>'s commit, another local branch must not have
+#                commits origin lacks, so the run tests what you have.
 #   --spec       Playwright arguments, e.g. tests/stores.spec.ts or '-g "drag"' (default: the
 #                full suite). One shard and no fg sync smoke test unless you ask for them.
 #   --shards     1 or 2 (default: 2 for the full suite, 1 with --spec)
@@ -50,13 +51,18 @@ if [[ $ref == "$current" ]]; then
   local_sha="$(git rev-parse HEAD)"
   [[ -z "$(git status --porcelain --untracked-files=no)" ]] \
     || echo "ci-e2e: note: uncommitted changes are not part of the run" >&2
-elif git show-ref -q --verify "refs/heads/$ref"; then
+elif git show-ref -q --verify "refs/heads/$ref" \
+  && ! git merge-base --is-ancestor "refs/heads/$ref" "$remote_sha"; then
+  # A branch you don't have checked out matters only when it has commits origin lacks.
   local_sha="$(git rev-parse "refs/heads/$ref")"
 else
   local_sha="$remote_sha"
 fi
-[[ $local_sha == "$remote_sha" ]] \
-  || die "local $ref is at ${local_sha:0:7} but origin/$ref at ${remote_sha:0:7}; push first (scripts/push-pr.sh on a PR branch, else git push), then rerun"
+if [[ $local_sha != "$remote_sha" ]]; then
+  git merge-base --is-ancestor "$local_sha" "$remote_sha" \
+    && die "local $ref (${local_sha:0:7}) is behind origin/$ref (${remote_sha:0:7}); pull first, so the run tests what you have"
+  die "local $ref is at ${local_sha:0:7} but origin/$ref at ${remote_sha:0:7}; push first (scripts/push-pr.sh on a PR branch, else git push), then rerun"
+fi
 
 # e2e.yml puts request_id into its run name; that is how this finds its own run and not one
 # someone else started on the same branch a second earlier.
