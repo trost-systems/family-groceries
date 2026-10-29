@@ -672,15 +672,16 @@ Nothing blocks. Two things to look at, both reversible:
   on them and reorder them. The prototype hid stores without items. Say if
   you'd rather hide them (they'd then only appear while dragging).
 
-## web-release-align: production branch `release` (2026-10-29)
+## web-release-align: production branch `release` (2026-10-29, done)
 
-One Vercel dashboard setting the connector cannot change:
+Done on 2026-10-29 at about 18:20 CET. You authorized the Vercel CLI on the
+box, and the agent made the change with it:
 
-1. Vercel, project `family-groceries`, Settings, Environments, Production,
-   Branch Tracking: change the branch from `main` to `release`, save.
-
-After that the agent (or you) turns auto-assignment of production domains
-back on (Settings, Domains, or the API's `autoAssignCustomDomains: true`)
-and adds `preview.app.hummlist.com` as a domain on the `main` branch
-(`DEPLOY.md`, section "Web app"). Until then `app.hummlist.com` stays on the
-5b6659d build and `main` builds are not assigned to any custom domain.
+- Production branch (Settings, Environments, Production, Branch Tracking):
+  `main` -> `release`, through `PATCH /v9/projects/{id}/branch`.
+- Auto-assignment of production domains is back on
+  (`autoAssignCustomDomains: true`).
+- `preview.app.hummlist.com` is a domain on the `main` branch, behind Vercel
+  Authentication (deployment protection unchanged).
+- `app.hummlist.com` stayed on the 5b6659d build (`dpl_AiSL9Jf7`) and moves
+  with the next store release (`DEPLOY.md`, section "Web app").
