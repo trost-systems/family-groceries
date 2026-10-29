@@ -44,6 +44,11 @@ for (const path of httpChecks ? ['/flutter_bootstrap.js', '/flutter_service_work
 if (httpChecks) {
   const js = await head('/main.dart.js');
   check(js.status === 200 && js.type.includes('javascript') && /max-age=0/.test(js.cache), `/main.dart.js ${js.status}, ${js.type}, Cache-Control: ${js.cache}`);
+  // Job 28: the wasm build and its JS support module. Streaming compilation needs application/wasm.
+  const wasm = await head('/main.dart.wasm');
+  check(wasm.status === 200 && wasm.type.startsWith('application/wasm') && /max-age=0/.test(wasm.cache), `/main.dart.wasm ${wasm.status}, ${wasm.type}, Cache-Control: ${wasm.cache}`);
+  const mjs = await head('/main.dart.mjs');
+  check(mjs.status === 200 && mjs.type.includes('javascript') && /max-age=0/.test(mjs.cache), `/main.dart.mjs ${mjs.status}, ${mjs.type}, Cache-Control: ${mjs.cache}`);
   for (const path of ['/does-not-exist.js', '/missing.js', '/assets/x.png', '/canvaskit/missing.wasm']) {
     const missing = await head(path);
     check(missing.status === 404, `${path} is a 404, not index.html (${missing.status})`);
@@ -60,10 +65,13 @@ try {
     }));
   }
   const page = await context.newPage();
+  const entrypoints = [];
+  page.on('request', (r) => { if (/\/main\.dart\.(wasm|js)$/.test(r.url())) entrypoints.push(new URL(r.url()).pathname); });
   await page.goto(new URL('/oauth/consent?authorization_id=smoke', base).href);
   const google = page.getByRole('button', { name: 'Mit Google anmelden' });
   await google.waitFor({ timeout: 60_000 });
   check(true, 'deep link /oauth/consent boots the app and shows the sign-in page');
+  check(entrypoints.join() === '/main.dart.wasm', `Chromium runs the wasm build (loaded ${entrypoints.join(', ') || 'no entry point'})`);
   check(await page.getByRole('button', { name: 'Mit Apple anmelden' }).isVisible(), 'Apple button is visible');
   await page.screenshot({ path: `${shots}/1-sign-in.png` });
 

@@ -1,8 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 import { fakeOidcPort, webPort as port } from './stack';
 
+// Job 28: the timings in tests/perf.spec.ts take 4-5 minutes, so they run only when named:
+// `npx playwright test tests/perf.spec.ts`, or `scripts/ci-e2e.sh --spec tests/perf.spec.ts`.
+const timingsAsked = process.argv.some((arg) => /perf/.test(arg));
+
 export default defineConfig({
   testDir: './tests',
+  grepInvert: timingsAsked ? undefined : /@perf/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
@@ -20,12 +25,24 @@ export default defineConfig({
     timezoneId: 'Europe/Berlin',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    ...devices['Desktop Chrome'],
-    viewport: { width: 480, height: 900 },
-    // Supabase Auth sends the browser to the fake identity provider by the
-    // name its container knows it under.
-    launchOptions: { args: ['--host-resolver-rules=MAP host.docker.internal 127.0.0.1'] },
   },
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /iphone\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 480, height: 900 },
+        // Supabase Auth sends the browser to the fake identity provider by the
+        // name its container knows it under.
+        launchOptions: { args: ['--host-resolver-rules=MAP host.docker.internal 127.0.0.1'] },
+      },
+    },
+    // Job 28: Safari's engine. As an iPhone for the tap focus, as a desktop for the timings
+    // (the mouse wheel does not scroll a mobile WebKit page).
+    { name: 'iphone', testMatch: /iphone\.spec\.ts/, use: { ...devices['iPhone 15'] } },
+    { name: 'webkit', testMatch: /perf\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
+  ],
   webServer: [
     {
       command: `node serve.mjs ../app/build/web ${port}`,

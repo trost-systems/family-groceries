@@ -125,7 +125,7 @@ async function webBuild(ctx: Ctx, t: Target, force: boolean, signal?: AbortSigna
     'web',
     '--release',
     '--no-web-resources-cdn',
-    '--no-wasm-dry-run',
+    '--wasm',
     '-o',
     dir,
     ...defines,

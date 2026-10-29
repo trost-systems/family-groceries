@@ -2628,3 +2628,97 @@ in `app/lib/list/list_view/sections.dart`, used by
    the item moves) and `fg drag` all look up the drop target once the item
    has moved past the slop, not before the press.
 
+## Job 28 (WebAssembly web build, iOS Safari tap focus), 2026-10-29
+
+1. **Every web build is `flutter build web --wasm`** (`scripts/vercel.sh`,
+   `scripts/gates/web-prod.sh`, `scripts/gates/e2e.sh`, `fg sync`). One build
+   holds both apps: `main.dart.wasm` (dart2wasm, skwasm renderer) and
+   `main.dart.js` (dart2js, CanvasKit). `flutter_bootstrap.js` picks wasm
+   where the browser has WasmGC and its engine is on Flutter's
+   `wasmAllowList`, JS everywhere else; that is Flutter's own fallback, kept
+   as is. Every dependency already compiles to wasm (the app uses
+   `package:web` and `dart:js_interop` only; the build fails on `dart:html`
+   or `package:js`). The web-prod gate fails if a build lacks either app or
+   a build script drops `--wasm`. The boot retry in `flutter_bootstrap.js`
+   covers the wasm files too (`boot.spec.ts`: `skwasm.js`, `main.dart.mjs`,
+   `main.dart.wasm` failing once, `main.dart.wasm` failing for good).
+2. **WebKit stays on JS: Flutter's default allow list, unchanged.** Flutter
+   3.47 runs wasm only on Chromium (`wasmAllowList` blink on, webkit and
+   gecko off). So Safari, and every iOS browser, still runs `main.dart.js`
+   after this job, Peter's iPhone included. We could opt WebKit in with one
+   line (`config: { wasmAllowList: { webkit: true } }` in
+   `app/web/flutter_bootstrap.js`), but not safely on 3.47. Its loader checks
+   only for WasmGC, so Safari 18.2 to 26.1 (WasmGC, plus the WebKit bug that
+   keeps Flutter off Safari, flutter/flutter#154344) would take the wasm
+   path with no fallback. Flutter 3.50 checks the features Safari 26.2 added
+   and documents the opt-in for Safari 26.2+, and the Flutter team only now
+   runs Safari wasm suites in CI (flutter/flutter#195347). Gating it
+   ourselves would mean user-agent or Safari-version code, which Peter ruled
+   out (no Safari-specific code). Measured in CI's WebKit (Linux, no GPU;
+   runs 40939521469 and 40941887799): the wasm build drew frames about 3x
+   faster while scrolling (mean 111-117 ms against 300-469 ms) and drew the
+   list sooner (1087-1091 ms against 1698-1987 ms, median of three). **Follow-up:** after the Flutter upgrade to 3.50 or later, add
+   the opt-in and rerun `scripts/ci-e2e.sh --spec tests/perf.spec.ts`.
+3. **No cross-origin isolation (no COOP/COEP headers).** skwasm runs
+   single-threaded. Isolated, it renders on a worker, but measured in
+   Chromium (the only engine on wasm) it changed nothing beyond noise:
+   scroll frames 17.7-19.0 ms mean against 17.8-20.0 ms, list drawn after
+   793-876 ms against 806-956 ms (same two runs). The headers do change how the browser treats
+   every cross-origin request. In the measurement, Chromium applied Local
+   Network Access to the isolated page and blocked its Supabase calls until
+   that check was switched off. COEP `credentialless` does not exist in
+   Safari, and `require-corp` blocks cross-origin subresources without a
+   CORP header: the Vercel toolbar on previews, third-party scripts like the
+   planned analytics. COOP `same-origin` cuts `window.opener` for popup
+   sign-in (Google and Apple use full-page redirects today, so a later popup
+   flow would break silently). No measured gain for a real risk: revisit
+   only with a number that shows one.
+4. **`vercel.json` sets the content types of `.wasm` (`application/wasm`,
+   which streaming compilation needs) and `.mjs` (`text/javascript`)**
+   rather than relying on Vercel's defaults. `e2e/web-smoke.mjs` checks both
+   on a deployment, and that Chromium loads `main.dart.wasm`.
+5. **iOS Safari double tap: our first tap is clean.** No Safari-specific
+   code (Peter). The `iphone` Playwright project (WebKit as an iPhone 15)
+   logs every DOM focus change and `focus()`/`blur()` call around a tap on
+   the add field. One tap moves the focus into the field's input natively,
+   during the tap's `touchend`. Nothing blurs it or moves the focus later;
+   the engine's `placeElement` calls `focus()` again on the input that is
+   already focused, which is a no-op. So the first tap has what iOS needs to
+   show the keyboard, and the two-tap open is Flutter's or Safari's. The
+   upstream fix for fields that stop taking taps on iOS 27 after a caret
+   drag (flutter/flutter#188781) is in our Flutter 3.47.8. A real keyboard
+   cannot be checked from here: Playwright's WebKit has no soft keyboard, so
+   the spec checks the focus events iOS keys the keyboard on.
+   Playwright's iPhone profile leaves `navigator.platform` at the host's
+   ("Linux x86_64"), and Flutter reads the OS from it, so the spec reports
+   "iPhone" as Safari does. Otherwise Flutter takes the page for Linux and
+   autofocuses the field.
+6. **After a tapped suggestion: checked, unchanged.** The tap on a row or
+   chip blurs the field's input, so the keyboard goes away. The field keeps
+   Flutter's focus for the next item, and on its next semantics update the
+   engine focuses the input again (`semantics/text_field.dart`, `update()`),
+   outside the tap, so no keyboard. The next tap on the field calls
+   `focus()` on the input from inside the tap (the engine's `click`
+   listener), and iOS shows the keyboard for a tap that refocuses the
+   focused element (WebKit's `elementDidRefocus` in
+   `completeSyntheticClick`, bug 195824, r243044). One tap, then typing
+   reaches the app (`iphone.spec.ts`). Our desktop-web refocus
+   (`_refocusAfterTap`, DECISIONS 8.8) runs in phone browsers too, though
+   8.8 says "mobile is untouched". Skipping it there was tried and changed
+   nothing: the engine's own refocus came 137 ms after the tap instead of
+   185 ms. So per Peter's rule the code stays as it was.
+7. **Timings are opt-in.** `e2e/tests/perf.spec.ts` measures, per build,
+   the time from navigation to the drawn list (three signed-in reloads) and
+   the `requestAnimationFrame` intervals while the wheel scrolls a 200-item
+   list down and back up, twice. It runs Chromium with wasm, wasm isolated
+   and JS, and WebKit with JS and wasm. It takes 4-5 minutes, so it runs
+   only when named (`--spec tests/perf.spec.ts`; `playwright.config.ts`
+   filters the `@perf` tag otherwise). The job summary shows a table of its
+   `PERF` lines. A CI runner has no GPU, so compare builds within one run,
+   never with a phone.
+8. **CI installs WebKit next to Chromium** (`.github/actions/e2e-setup`,
+   apt dependencies only when a launch fails, like Chromium). Projects:
+   `chromium` (every spec but the iPhone one), `iphone` (`iphone.spec.ts`)
+   and `webkit` (the timings, as a desktop: the wheel does not scroll a
+   mobile WebKit page). WebKit does not start on the Mac runner (no window
+   server for the `agents` user), so WebKit runs on GitHub Actions only.
