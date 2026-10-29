@@ -488,7 +488,8 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
 
 7.1. **Vercel hosts the web app** (Peter's decision, 2026-10-23 10:58,
      instead of GitHub Pages). A Git-linked Vercel project builds every push
-     from `vercel.json`; production is `main`. The app is served at the
+     from `vercel.json`; production is `main` (since 2026-10-29: `release`,
+     section "web-release-align"). The app is served at the
      domain root, so `WEB_BASE_PATH` and the Pages workflow are gone.
 7.2. **The Flutter SDK lives in `node_modules/.flutter`.** Vercel's build
      cache keeps only `node_modules/**`. The SDK is a shallow clone of the
@@ -2318,3 +2319,36 @@ order, drag and drop, folding, ticking with Undo. The code is in
     exception; a taller hit area would take the space of the rows next to it.
     A store name too long for a narrow column ends in an ellipsis rather than
     pushing the count out.
+
+## Job web-release-align (web production follows the store release), 2026-10-29
+
+Peter (2026-10-29 17:17): `app.hummlist.com` must not run ahead of the
+stores, and `main` needs a Vercel-login-guarded preview on its own subdomain.
+
+1. **Vercel's production branch is `release`; `release.yml` fast-forwards it.**
+   Options weighed:
+   - Production branch `release`, moved by the Release run with the
+     workflow's `GITHUB_TOKEN` (chosen). No Vercel credential in GitHub (the
+     repository is public), Vercel's own Git integration still builds and
+     assigns production, `main` becomes an ordinary preview branch so the
+     branch domain `preview.app.hummlist.com` can track it, and a plain push
+     can only fast-forward, so production never moves backwards by accident.
+     Cost: production is a second build of the same commit (about two
+     minutes), not the preview's bytes.
+   - Keep `main` as production branch, turn off auto-assignment of production
+     domains and promote from `release.yml` with a Vercel token (rejected):
+     needs a long-lived Vercel token in GitHub secrets, and Vercel refuses a
+     branch domain on the production branch
+     (`cannot_set_production_branch_as_preview`), so the preview subdomain
+     could not follow `main`.
+   - A deploy hook or `vercel deploy --prod` from CI (rejected): also a
+     credential in GitHub, and a second deploy path next to the Git one.
+2. **The preview is a branch domain, not a production alias.** Vercel
+   Authentication on this project is Standard Protection
+   (`all_except_custom_domains`): production custom domains stay public,
+   everything else, branch domains included, asks for a Vercel login. The
+   setting is unchanged.
+3. **Web ships after any real store upload** (`Uploaded` job green), also an
+   iOS-only run: the web app then matches the newest TestFlight build. A dry
+   run or a skipped run leaves production alone.
+

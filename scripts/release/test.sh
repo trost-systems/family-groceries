@@ -180,7 +180,7 @@ if notes en "$base" "$to" | grep -qE '@|#[0-9]|Job [0-9]'; then fail "notes leak
 # --- report.sh decide -----------------------------------------------------------------------
 report() {
   env -i PATH="$PATH" EVENT="$1" SIMULATE="$2" UPLOAD="$3" PLAN="$4" IOS="$5" ANDROID="$6" UPLOADED="$7" \
-    BLOCKED="${8:-false}" REASON="${9:-}" "$here/report.sh" decide
+    BLOCKED="${8:-false}" REASON="${9:-}" WEB="${10:-}" "$here/report.sh" decide
 }
 expect_eq "scheduled iOS failure opens the issue" "$(report schedule false true success failure success skipped)" open
 expect_eq "scheduled plan failure (no outputs) opens the issue" "$(report schedule false '' failure skipped skipped skipped)" open
@@ -193,6 +193,8 @@ expect_eq "green dispatched upload closes the issue" "$(report workflow_dispatch
 expect_eq "unchanged main closes the issue" "$(report schedule false true success skipped skipped skipped false 'main is unchanged since the last upload (x)')" close
 expect_eq "green dry run leaves the issue alone" "$(report workflow_dispatch false false success success success skipped)" none
 expect_eq "green run that uploaded nothing leaves the issue alone" "$(report schedule false true success skipped success skipped)" none
+expect_eq "scheduled web production failure opens the issue" "$(report schedule false true success success skipped success false '' failure)" open
+expect_eq "green upload and web production closes the issue" "$(report schedule false true success success skipped success false '' success)" close
 
 # --- report.sh apply ------------------------------------------------------------------------
 cat >"$tmp/bin/gh" <<'GH'
@@ -213,6 +215,11 @@ expect_match "first failure creates the issue with the run link and platform" "$
   '^issue create --repo o/r --title Weekly release failed --body Release run https://github.com/o/r/actions/runs/77 \(schedule\) on aaaaaaa failed: ios \(failure\)'
 expect_match "next failure comments on the open issue" "$(apply 12 failure skipped)" '^issue comment 12 '
 expect_eq "green upload closes every open copy" "$(apply '12 13' success success | cut -d' ' -f1-3)" $'issue close 12\nissue close 13'
+expect_match "web-only failure says the stores got the build" \
+  "$(: >"$tmp/gh.log"; env -i PATH="$tmp/bin:$PATH" FAKE_LOG="$tmp/gh.log" FAKE_OPEN='' EVENT=schedule SIMULATE=false UPLOAD=true \
+    PLAN=success IOS=success ANDROID=skipped UPLOADED=success WEB=failure GITHUB_SERVER_URL=https://github.com GITHUB_REPOSITORY=o/r \
+    GITHUB_RUN_ID=77 GITHUB_SHA="$head" "$here/report.sh" apply >/dev/null; grep '^issue create' "$tmp/gh.log")" \
+  'failed: web \(failure\)\. The store upload went through, but app.hummlist.com was not moved'
 
 # --- check-aab.sh ---------------------------------------------------------------------------
 if command -v keytool >/dev/null && command -v jarsigner >/dev/null && command -v jar >/dev/null; then

@@ -225,3 +225,7 @@ See [docs/done/26-mcp-domain.md](docs/done/26-mcp-domain.md).
 ## Job 16: design H list
 
 See [docs/done/16-design-list.md](docs/done/16-design-list.md).
+
+## web-release-align: web production follows the store release
+
+See [docs/done/web-release-align.md](docs/done/web-release-align.md).

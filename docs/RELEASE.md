@@ -7,6 +7,10 @@ step:
 - iOS to TestFlight, internal group "Familie" only. No external groups, no
   Beta App Review, no App Store submission.
 - Android to the Play internal testing track.
+- The web app: after a real upload, the `Web production` job moves the
+  `release` branch to the same commit, and Vercel puts that build on
+  `https://app.hummlist.com` ([`DEPLOY.md`](DEPLOY.md), section "Web app").
+  `main` itself is only on `https://preview.app.hummlist.com`.
 
 Both platforms get the same build number in a run. The one-time store setup
 that needs a browser is in [`NEEDS_LEAD.md`](NEEDS_LEAD.md); decisions are in
@@ -63,7 +67,7 @@ another branch fails at its first job.
 
 A scheduled run that fails, or that skips because `main` is not green, opens
 the issue "Weekly release failed" with the run link and the failing job
-(`plan`, `ios` or `android`), or comments on it if it is already open. The
+(`plan`, `ios`, `android` or `web`), or comments on it if it is already open. The
 next green upload run, or a run that finds `main` unchanged since the last
 upload, closes it. Dry runs never touch it. A failed dispatch does not open
 the issue, since whoever started it watches the run; `simulate_failure`
@@ -92,6 +96,10 @@ What to do, by failing job:
 - `android`, upload: Play's error names the cause. "Only releases with status
   draft may be created on draft app" means `PLAY_RELEASE_STATUS` must be
   `draft` until the app leaves draft (`NEEDS_LEAD.md`, L3).
+- `web` (`Web production`), push rejected: `release` holds a commit that is
+  not an ancestor of this one (someone force-pushed it). The stores got the
+  build; check what `release` holds, then `git push --force origin
+  <sha>:refs/heads/release` once you are sure, or let the next release move it.
 
 ### TestFlight builds expired
 
