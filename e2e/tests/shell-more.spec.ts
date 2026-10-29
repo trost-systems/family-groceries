@@ -31,6 +31,10 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
 
   await page.getByRole('button', { name: /^Läden/ }).click();
   await expect(page.getByRole('heading', { name: 'Läden' })).toBeVisible();
+  for (const store of ['dm', 'Lidl', 'Edeka']) {
+    // The list hides stores without items (job 17b); this screen lists every store.
+    await expect(page.getByRole('button', { name: new RegExp(`^${store}\\b`) }), `${store} is listed though empty`).toBeVisible();
+  }
   await page.getByRole('button', { name: /^Lidl/ }).click();
   await expect(page.getByRole('heading', { name: 'Lidl: Reihenfolge' }), 'a store opens its walking order').toBeVisible();
   await page.getByRole('button', { name: 'Zurück' }).click();

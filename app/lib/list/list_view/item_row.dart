@@ -87,8 +87,39 @@ class _ItemRowState()
   void _dragUpdate(DragUpdateDetails details) {
     _travel += details.delta;
     if (!widget.session.moved.value && _travel.distance >= dragSlop) {
+      _stayUnderFinger();
       widget.session.moved.value = true;
     }
+  }
+
+  /// Once the item moves, the empty stores show as drop targets, some of
+  /// them above this row: the list scrolls by what they pushed it down, so
+  /// it stays under the finger where the list has room to scroll.
+  void _stayUnderFinger() {
+    final before = _top();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || before == null) {
+        return;
+      }
+      final after = _top();
+      final position = Scrollable.maybeOf(context)?.position;
+      if (after == null || position == null || after == before) {
+        return;
+      }
+      position.jumpTo(
+        (position.pixels + after - before).clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        ),
+      );
+    });
+  }
+
+  double? _top() {
+    final box = context.findRenderObject();
+    return box is RenderBox && box.attached
+        ? box.localToGlobal(Offset.zero).dy
+        : null;
   }
 
   void _dragEnd(DraggableDetails details) {

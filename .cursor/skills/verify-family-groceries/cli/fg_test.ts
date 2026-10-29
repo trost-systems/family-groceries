@@ -375,3 +375,41 @@ Deno.test('setup --dry-run on a fresh box plans pkg-config, the GTK headers and 
   const plan = (json?.wouldDo as string[]).join('\n');
   for (const pkg of ['pkg-config', 'libgtk-3-dev', 'openjdk-21-jdk-headless', 'cmake']) assertStringIncludes(plan, pkg);
 });
+
+Deno.test('drag lifts first, then finds the target: an empty store shows only during a drag', async () => {
+  const row =
+    'Type: _ItemTile, Key: "brot", bounds: {"x":0,"y":300,"width":400,"height":48}\nType: Text, Text: "Brot", bounds: {"x":68,"y":312,"width":100,"height":24}\n';
+  const edeka = 'Type: StoreDivider, Key: "store-edeka", bounds: {"x":0,"y":100,"width":400,"height":40}\n';
+  let lifted = false;
+  const sh = new FakeShell((cmd) => {
+    if (cmd[0] === 'marionette') return { code: 0, stdout: `Found some interactive element(s):\n\n${row}${lifted ? edeka : ''}` };
+    if (cmd[0] === 'xdotool') {
+      if (cmd.includes('mousedown')) lifted = true;
+      return { code: 0, stdout: '' };
+    }
+    return { code: 1, stdout: '' };
+  });
+  sh.alivePids.add(77);
+  const state = (display: number) =>
+    JSON.stringify({
+      run: 'r',
+      clients: { peter: { surface: 'linux', pid: 77, marker: 'm', vmUri: 'ws://x', log: '/l', fingerprint: 'f', display } },
+      builds: {},
+      recordings: {},
+    });
+  sh.files.set('/home/t/.cache/fg/548/state.json', state(5));
+  const { code, json } = await fg(['drag', '--from-text', 'Brot', '--to-key', 'store-edeka'], sh);
+  assertEquals(code, 0, JSON.stringify(json));
+  assertEquals(json?.to, [120, 120]);
+  const xdotool = sh.calls.filter((c) => c[0] === 'xdotool');
+  assertEquals(xdotool.length, 2, 'the lift, then the move to the target and the release');
+  assert(xdotool[0].includes('mousedown') && !xdotool[0].includes('mouseup'));
+  assertEquals(xdotool[1].at(-1), '1');
+  assertEquals(xdotool[1].at(-2), 'mouseup');
+
+  // A target that never shows: the button is released, and the error says so.
+  lifted = false;
+  const missing = await fg(['drag', '--from-text', 'Brot', '--to-key', 'store-gone'], sh);
+  assertEquals(error(missing.json).code, 'not_found');
+  assertEquals(sh.calls.filter((c) => c[0] === 'xdotool').at(-1), ['xdotool', 'mouseup', '1']);
+});

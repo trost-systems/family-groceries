@@ -91,7 +91,8 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   await seed(page, email, lidl);
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
   await expect(storeDivider(page, 'dm')).toHaveAccessibleName(/^dm, 1 Artikel/);
-  await expect(storeDivider(page, 'Edeka'), 'an empty store is a divider too').toHaveAccessibleName(/^Edeka, 0 Artikel/);
+  await expect(storeDivider(page, 'Edeka'), 'a store without items does not show').toHaveCount(0);
+  await expect(page.getByRole('button', { name: /, 0 Artikel/ }), 'no "0 Artikel" anywhere').toHaveCount(0);
   await expect.poll(() => sectionItems(page, 'Lidl')).toEqual(['Äpfel Elstar 1 kg', 'Bananen Bio 6', 'Gurke', 'Milch Milbona · 1,5 % 2 l', 'Joghurt']);
   await expect.poll(() => sectionHeadings(page, 'Lidl')).toEqual(['Obst & Gemüse', 'Kühlregal']);
   await page.mouse.move(0, 899);
@@ -133,6 +134,26 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   await expect.poll(() => storeOf(page, 'Brot')).toBe('Lidl');
   await expect.poll(() => sectionHeadings(page, 'Lidl'), { message: 'Brot keeps its category, in Lidl\'s order' })
     .toEqual(['Brot & Backwaren', 'Obst & Gemüse', 'Kühlregal']);
+  await expect(storeDivider(page, 'Ohne Laden'), 'its last item moved out, the section without a store hides').toHaveCount(0);
+
+  // While an item is dragged the empty stores show, folded, as drop targets.
+  await holdAndDrop(page, itemRow(page, 'Zahnpasta'), storeDivider(page, 'Edeka'), (b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }), {
+    up: false,
+    beforeDrop: async () => {
+      await expect(storeDivider(page, 'Edeka')).toHaveAccessibleName(/^Edeka, 0 Artikel/);
+      await expect(storeDivider(page, 'Ohne Laden')).toHaveAccessibleName(/^Ohne Laden, 0 Artikel/);
+      await screenshot(page, 'walk-07-drag-shows-empty-stores');
+    },
+  });
+  await expect(storeDivider(page, 'Edeka'), 'the empty store took the drop').toHaveAccessibleName(/^Edeka, 1 Artikel/);
+  await expect(storeDivider(page, 'dm'), 'its last item moved out, dm hides after the drop').toHaveCount(0);
+  await expect(storeDivider(page, 'Ohne Laden'), 'still empty, hidden again').toHaveCount(0);
+  await expect.poll(() => storeOf(page, 'Zahnpasta')).toBe('Edeka');
+  await page.mouse.move(240, 400);
+  await page.mouse.wheel(0, -2000);
+  await expect(storeDivider(page, 'Lidl')).toBeInViewport();
+  await page.mouse.move(0, 899);
+  await screenshot(page, 'walk-08-after-drop-into-empty-store');
 });
 
 test('drag and drop puts items before and after rows, into categories and stores, and it sticks', async ({ browser }) => {
@@ -226,14 +247,14 @@ test('categories and stores reorder by drag, for good and live for the other mem
   await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Lidl'), { message: 'live for the other member', timeout })
     .toEqual(['Kühlregal', 'Obst & Gemüse']));
 
-  await expect.poll(() => stores(peter)).toEqual(['dm', 'Lidl', 'Edeka', 'Ohne Laden']);
+  await expect.poll(() => stores(peter), { message: 'Edeka has no items: not shown' }).toEqual(['dm', 'Lidl', 'Ohne Laden']);
   await dragDivider(peter, storeDivider(peter, 'Lidl'), storeDivider(peter, 'dm'));
-  await expect.poll(() => stores(peter), { message: 'a store moves among the stores' }).toEqual(['Lidl', 'dm', 'Edeka', 'Ohne Laden']);
+  await expect.poll(() => stores(peter), { message: 'a store moves among the stores' }).toEqual(['Lidl', 'dm', 'Ohne Laden']);
   await within(3_000, (timeout) => expect.poll(() => stores(lea), { message: 'live for the other member', timeout })
-    .toEqual(['Lidl', 'dm', 'Edeka', 'Ohne Laden']));
+    .toEqual(['Lidl', 'dm', 'Ohne Laden']));
   await peter.reload();
   await expect(itemRow(peter, 'Gurke')).toBeVisible();
-  await expect.poll(() => stores(peter), { message: 'after a reload' }).toEqual(['Lidl', 'dm', 'Edeka', 'Ohne Laden']);
+  await expect.poll(() => stores(peter), { message: 'after a reload' }).toEqual(['Lidl', 'dm', 'Ohne Laden']);
   await expect.poll(() => sectionHeadings(peter, 'Lidl')).toEqual(['Kühlregal', 'Obst & Gemüse']);
 });
 

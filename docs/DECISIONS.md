@@ -2249,6 +2249,8 @@ order, drag and drop, folding, ticking with Undo. The code is in
    section without a store comes last and shows when it has items or while
    an item is dragged. It is at the end, so showing it moves nothing above
    the finger.
+   Superseded by job 17b, 1 and 2: an empty store is hidden and shows only
+   while an item is dragged.
 4. **A drop on a store divider (folded or not) keeps the item's category**
    and puts it at the end of that category in the store (`move_item` with
    the store and the category). Every store walks every category: its
@@ -2567,3 +2569,62 @@ and English throughout. The code is in `app/lib/list/add_sheet/`,
     spec proves both.
 17. **Dictation** is its own widget (`app/lib/list/dictation_button.dart`)
     in the add bar, so job 10 (voice paste) changes one file.
+
+## Job 17b (hide stores with no items on the list), 2026-10-29
+
+Peter, answering job 16's question: "we don't want to show stores that have
+0 articles on the list." The code is `shownSections` and `withDropTargets`
+in `app/lib/list/list_view/sections.dart`, used by
+`shopping_list_view.dart`.
+
+1. **What counts.** A section shows when it has active items, the same
+   number its divider shows ("N Artikel"). Bought items never count: they
+   leave the store section for "Zuletzt gekauft". A ticked item still
+   counts during its 260 ms tick-out animation, because it is still active
+   then. Its store hides in the same frame as the row, and undo brings
+   both back. "Ohne Laden" follows the same rule; it already did.
+2. **Drag and drop.** Once a dragged item moves past the 8 px slop, every
+   store shows, an empty one as a folded divider "<Store>, 0 Artikel",
+   and so does an empty "Ohne Laden". They show only after the move, not
+   on lift: a hold that stays put opens the edit sheet, and the list should
+   not jump for that. When the drag ends (drop, cancel, or a drop where it
+   started), a store that is still empty hides again. A store whose last
+   item moved out hides then too. While the item is in the air its own
+   store still holds it, so it does not hide yet.
+3. **The list moves when the empty stores show.** Dividers that show above
+   the dragged row push it down. The row then scrolls the list back by that
+   amount in the next frame, so it stays under the finger. While the
+   empty stores show, the list's cache extent grows by 120 px per empty
+   store. That keeps the lifted row laid out however far they push it
+   (a kept-alive row outside the cache extent is not laid out and would
+   report its old position). The list cannot scroll above its top, so at
+   the very top of a short list the rows still move down by the dividers'
+   height. That is on purpose, after review. A bottom spacer could make
+   room to scroll, but it would scroll the dividers that just showed off
+   the top of the screen: the user would see no new drop target exactly
+   in the case they need one (a new household, every item in "Ohne
+   Laden"). The finger has moved only 8 px by then. The dragged item
+   follows the finger, and the divider under it is tinted as the drop
+   target, so a drop there is visible before letting go.
+4. **Store reordering** (dragging a store divider, or its menu) shows only
+   the stores with items, folded. "Laden nach oben/unten" steps over the
+   hidden ones: the store goes next to the visible neighbour. The empty
+   stores keep their place among the others in the household order. Empty
+   stores are reordered on More > Stores, which lists every store.
+5. **Wide columns** are balanced over the stores with items only, and
+   there are never more columns than such stores. One store with items
+   reads as one centred 640 px column, not a single column across the
+   screen (review). While
+   an item is dragged, each empty section shows in the column of the
+   section before it in household order, or in the first column if none
+   comes before it. No store with items changes column under the finger.
+   "Ohne Laden" comes last, so it joins the last column, as it did before.
+6. **Every store empty:** no section shows, and the existing empty-list
+   state shows (`shown.isEmpty`). Before, the check was a zero item total
+   with no drag.
+7. **Test drivers measure the target after the lift.** An empty store
+   exists on screen only during a drag. The widget test `drag` helper, the
+   e2e `holdAndDrop`/`dragItemToStore` (their `up` direction is asked once
+   the item moves) and `fg drag` all look up the drop target once the item
+   has moved past the slop, not before the press.
+

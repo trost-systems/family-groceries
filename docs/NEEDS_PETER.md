@@ -668,9 +668,10 @@ Nothing blocks. Two things to look at, both reversible:
   Tag items by dragging them onto a store or with the edit sheet's store
   chip. The per-store "gibt es bei …" switches went from the store layout
   screen too, since nothing is hidden any more (DECISIONS, Job 16, 1 and 2).
-- **Empty stores show as "Edeka 0 Artikel" dividers**, so you can drop items
-  on them and reorder them. The prototype hid stores without items. Say if
-  you'd rather hide them (they'd then only appear while dragging).
+- ~~**Empty stores show as "Edeka 0 Artikel" dividers**~~ Done (job 17b,
+  2026-10-29): you answered "we don't want to show stores that have 0
+  articles on the list". Empty stores are hidden and show only while an item
+  is dragged, as drop targets (DECISIONS, Job 17b).
 
 ## web-release-align: production branch `release` (2026-10-29, done)
 
