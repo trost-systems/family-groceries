@@ -146,6 +146,62 @@ void main() {
       ]);
       expect(ids(columnsOf(const [], 2, count)), [<String>[]]);
     });
+
+    test('empty stores join the column of the store before them', () {
+      final sections = [
+        section('empty-first', 0),
+        section('a', 8),
+        section('empty-a', 0),
+        section('b', 2),
+        section('c', 3),
+        section('empty-c', 0),
+        section('d', 6),
+        section('empty-last', 0),
+      ];
+      final resting = columnsOf(
+        shownSections(sections, dropping: false),
+        3,
+        count,
+      );
+      expect(ids(resting), [
+        ['a'],
+        ['b', 'c'],
+        ['d'],
+      ], reason: 'balanced on the stores with items only');
+      expect(ids(withDropTargets(resting, sections)), [
+        ['empty-first', 'a', 'empty-a'],
+        ['b', 'c', 'empty-c'],
+        ['d', 'empty-last'],
+      ]);
+      expect(
+        ids(withDropTargets(resting, shownSections(sections, dropping: false))),
+        ids(resting),
+        reason: 'nothing to add at rest',
+      );
+    });
+  });
+
+  group('shown sections', () {
+    test('only sections with active items; while an item is dragged, '
+        'every one', () {
+      final sections = sectionsOf([
+        item('soap', category: 'other', store: 'dm'),
+        item('bought', category: 'pantry', status: ItemStatus.bought),
+      ], catalog);
+      expect(
+        [for (final s in shownSections(sections, dropping: false)) s.key],
+        ['dm'],
+        reason: 'a bought item does not keep its section on the list',
+      );
+      expect(
+        [for (final s in shownSections(sections, dropping: true)) s.key],
+        ['dm', 'lidl', noStoreKey],
+      );
+      expect(
+        shownSections(sectionsOf(const [], catalog), dropping: false),
+        isEmpty,
+      );
+    });
   });
 
   group('drops', () {

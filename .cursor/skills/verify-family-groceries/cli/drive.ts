@@ -251,7 +251,7 @@ export const driveCommands: Command[] = [
     summary: 'Hold a widget until it lifts, then drag it onto another and let go (linux surface).',
     usage: 'fg drag (--from-key K | --from-text T) (--to-key K | --to-text T) [--edge before|after] [--hold MS] [--client NAME]',
     description:
-      "A finger's long-press drag, which Marionette's swipe can't do (it never holds): xdotool presses on the source's centre on the client's X display, waits --hold ms (default 600; the list lifts after 300), moves in steps to the target and releases. A --from-text or --to-text stands for the keyed row or divider that shows it. --edge before drops 8 px inside the target's top edge, after 8 px inside its bottom edge, else its centre: on an item row that is the insertion line above or below it. Both widgets must be on screen. Linux surface only.",
+      "A finger's long-press drag, which Marionette's swipe can't do (it never holds): xdotool presses on the source's centre on the client's X display, waits --hold ms (default 600; the list lifts after 300), moves past the slop, finds the target (an empty store shows only once an item is dragged), moves to it in steps and releases. A --from-text or --to-text stands for the keyed row or divider that shows it. --edge before drops 8 px inside the target's top edge, after 8 px inside its bottom edge, else its centre: on an item row that is the insertion line above or below it. Both widgets must be on screen. Linux surface only.",
     flags: [
       { name: 'from-key', help: 'ValueKey of the widget to lift (an item id, store-<id>).' },
       { name: 'from-text', help: 'Exact text of the widget to lift.' },
@@ -267,8 +267,7 @@ export const driveCommands: Command[] = [
       if (state.surface !== 'linux' || state.display === undefined) {
         throw new FgError('wrong_surface', 'fg drag drives the X display of a linux client.', 'Start the client with FG_SURFACE=linux.');
       }
-      const elements = await m.elements();
-      const find = (side: 'from' | 'to') => {
+      const find = (elements: Awaited<ReturnType<typeof m.elements>>, side: 'from' | 'to') => {
         const key = str(args, `${side}-key`);
         const text = str(args, `${side}-text`);
         if ((key === undefined) === (text === undefined)) throw usage(`Give --${side}-key or --${side}-text.`, 'e.g. --from-text Gurke');
@@ -284,18 +283,16 @@ export const driveCommands: Command[] = [
         }
         return el.bounds;
       };
-      const from = find('from');
-      const to = find('to');
+      // Checked before the lift, so a bad flag never leaves the button down.
+      if ((str(args, 'to-key') === undefined) === (str(args, 'to-text') === undefined)) {
+        throw usage('Give --to-key or --to-text.', 'e.g. --to-key store-<lidl id>');
+      }
+      const from = find(await m.elements(), 'from');
       const edge = str(args, 'edge');
       const x0 = Math.round(from.x + Math.min(from.width / 2, 120));
       const y0 = Math.round(from.y + from.height / 2);
-      const x1 = Math.round(to.x + Math.min(to.width / 2, 120));
-      const y1 = Math.round(edge === 'before' ? to.y + 8 : edge === 'after' ? to.y + to.height - 8 : to.y + to.height / 2);
       const hold = int(args, 'hold', 600) / 1000;
-      const steps = Array.from({ length: 12 }, (_, i) => {
-        const t = (i + 1) / 12;
-        return ['mousemove', String(Math.round(x0 + (x1 - x0) * t)), String(Math.round(y0 + 12 + (y1 - y0 - 12) * t)), 'sleep', '0.03'];
-      }).flat();
+      const display = { env: { DISPLAY: `:${state.display}` } };
       await ctx.sh.run(
         [
           'xdotool',
@@ -310,16 +307,36 @@ export const driveCommands: Command[] = [
           String(x0),
           String(y0 + 12),
           'sleep',
-          '0.05',
-          ...steps,
-          'sleep',
-          '0.2',
-          'mouseup',
-          '1',
+          '0.3',
         ],
-        { env: { DISPLAY: `:${state.display}` } },
+        display,
       );
-      return { client: name, from: [x0, y0], to: [x1, y1], edge: edge ?? 'centre' };
+      // The target is measured once the item moves: by then the empty stores show as drop targets,
+      // and what is below them has moved down. Whatever fails from here lets go of the button.
+      try {
+        let to: ReturnType<typeof find> | undefined;
+        for (let attempt = 0;; attempt++) {
+          try {
+            to = find(await m.elements(), 'to');
+            break;
+          } catch (e) {
+            if (attempt >= 5) throw e;
+            await ctx.sh.sleep(300);
+          }
+        }
+        const x1 = Math.round(to.x + Math.min(to.width / 2, 120));
+        const y1 = Math.round(edge === 'before' ? to.y + 8 : edge === 'after' ? to.y + to.height - 8 : to.y + to.height / 2);
+        const steps = Array.from({ length: 12 }, (_, i) => {
+          const t = (i + 1) / 12;
+          return ['mousemove', String(Math.round(x0 + (x1 - x0) * t)), String(Math.round(y0 + 12 + (y1 - y0 - 12) * t)), 'sleep', '0.03'];
+        }).flat();
+        const moved = await ctx.sh.run(['xdotool', ...steps, 'sleep', '0.2', 'mouseup', '1'], display);
+        if (moved.code !== 0) throw new FgError('drag_failed', `xdotool failed: ${moved.stderr.trim()}`, 'Run `fg doctor`.');
+        return { client: name, from: [x0, y0], to: [x1, y1], edge: edge ?? 'centre' };
+      } catch (e) {
+        await ctx.sh.run(['xdotool', 'mouseup', '1'], display);
+        throw e;
+      }
     },
   },
   {

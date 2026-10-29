@@ -77,6 +77,38 @@ List<CategoryBlock> _blocks(
   ];
 }
 
+/// The sections the list shows: the ones with active items. While an item
+/// is dragged ([dropping]) every store shows, an empty one folded, and the
+/// section without a store too, so an item can be dropped into any of them.
+List<StoreSection> shownSections(
+  List<StoreSection> sections, {
+  required bool dropping,
+}) => [
+  for (final section in sections)
+    if (dropping || section.count > 0) section,
+];
+
+/// [columns] (cut from the sections with items) with the other sections of
+/// [shown] each in the column of the section before it, or the first one: a
+/// store that shows only during a drag joins in place, and no store changes
+/// column under the finger.
+List<List<StoreSection>> withDropTargets(
+  List<List<StoreSection>> columns,
+  List<StoreSection> shown,
+) {
+  final columnOf = {
+    for (final (i, column) in columns.indexed)
+      for (final section in column) section.key: i,
+  };
+  final result = [for (final _ in columns) <StoreSection>[]];
+  var at = 0;
+  for (final section in shown) {
+    at = columnOf[section.key] ?? at;
+    result[at].add(section);
+  }
+  return result;
+}
+
 /// [sections] cut into at most [count] columns, each a run of whole sections
 /// in order, so that the tallest column (by [weight]) is as short as it can
 /// be.

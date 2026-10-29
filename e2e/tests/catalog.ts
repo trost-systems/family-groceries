@@ -106,17 +106,25 @@ type Box = { x: number; y: number; width: number; height: number };
 /**
  * Holds [from] until it lifts, then carries it to [to] and lets go at [at] (a point in the target's
  * box). A target off screen is reached the way a user reaches it: by holding the item at the list's
- * top or bottom edge until the list has scrolled it into view.
+ * top or bottom edge until the list has scrolled it into view. [up] says which way that is; as a
+ * function it is asked once the item moves, when the empty stores show as drop targets too.
+ * [beforeDrop] runs over the target, just before letting go.
  */
 export async function holdAndDrop(
-  page: Page, from: Locator, to: Locator, at: (box: Box) => { x: number; y: number }, { up }: { up: boolean },
+  page: Page, from: Locator, to: Locator, at: (box: Box) => { x: number; y: number },
+  { up, beforeDrop }: { up: boolean | (() => Promise<boolean>); beforeDrop?: () => Promise<void> },
 ): Promise<void> {
   await reveal(page, from);
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + Math.min(a.width / 2, 120), a.y + a.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(600);
-  await page.mouse.move(a.x + Math.min(a.width / 2, 120), a.y + a.height / 2 + (up ? -12 : 12), { steps: 4 });
+  // Past the slop towards the target; sideways while its direction is still unknown, so a row near
+  // an edge doesn't start the list scrolling the wrong way.
+  const x = a.x + Math.min(a.width / 2, 120);
+  const dy = typeof up === 'function' ? 0 : up ? -12 : 12;
+  await page.mouse.move(x + (dy === 0 ? 12 : 0), a.y + a.height / 2 + dy, { steps: 4 });
+  if (typeof up === 'function') up = await up();
   const list = await listArea(page);
   const top = list.top + 12;
   const bottom = list.bottom;
@@ -138,20 +146,27 @@ export async function holdAndDrop(
   const point = at(box);
   await page.mouse.move(point.x, point.y, { steps: 15 });
   await page.waitForTimeout(150);
+  await beforeDrop?.();
   await page.mouse.up();
 }
 
 /** Where [store] is relative to [item]'s section: true when above it. */
 async function storeIsAbove(page: Page, item: string, store: string): Promise<boolean> {
-  const sections = (await outline(page)).map((s) => s.store);
+  let sections: string[] = [];
+  await expect.poll(async () => (sections = (await outline(page)).map((s) => s.store)).includes(store),
+    { message: `${store} shows as a drop target` }).toBe(true);
   const from = await storeOf(page, item);
   return sections.indexOf(store) < sections.indexOf(from ?? '');
 }
 
-/** Long-press drag of an item row onto a store's divider (folded or not). */
+/**
+ * Long-press drag of an item row onto a store's divider (folded or not). An empty store shows only
+ * during the drag, so where it is gets asked then.
+ */
 export async function dragItemToStore(page: Page, item: string, store: string): Promise<void> {
-  const up = await storeIsAbove(page, item, store);
-  await holdAndDrop(page, itemRow(page, item), storeDivider(page, store), (b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }), { up });
+  await holdAndDrop(page, itemRow(page, item), storeDivider(page, store), (b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }), {
+    up: () => storeIsAbove(page, item, store),
+  });
 }
 
 /** Opens a store's menu with a right click on its divider, then its layout screen. */

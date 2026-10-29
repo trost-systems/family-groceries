@@ -15,6 +15,7 @@
 - Job 13, keepalive for the free Supabase project, deploy smoke test, edge-function rollback: [docs/done/13-ops-keepalive.md](docs/done/13-ops-keepalive.md)
 - Job 11b, job 11's loose ends (PR description as landed body, model trailer from MODEL_CO_AUTHOR, MERGE_WAIT_MINUTES check, list.spec undo-snackbar flake): [docs/done/11b-ci-followups.md](docs/done/11b-ci-followups.md)
 - Job 24a, guides site on hummlist.com (`site/`, its own Vercel project): [docs/done/24a-guides-site.md](docs/done/24a-guides-site.md)
+- Job 17b, hide stores with no items on the list (they show only during an item drag, as drop targets): [docs/done/17b-hide-empty-stores.md](docs/done/17b-hide-empty-stores.md)
 
 ## Job 1: foundation (2026-10-22)
 

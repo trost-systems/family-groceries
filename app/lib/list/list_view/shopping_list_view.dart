@@ -15,6 +15,8 @@ import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_layout_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, listEquals;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'
+    show RenderAbstractViewport, ScrollCacheExtent;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
@@ -374,8 +376,18 @@ class _ShoppingListViewState()
     final list = LayoutBuilder(
       builder: (context, constraints) => ValueListenableBuilder(
         valueListenable: _session.active,
-        builder: (context, active, _) =>
-            _scrollView(context, state, active, constraints.maxWidth),
+        builder: (context, active, _) => ValueListenableBuilder(
+          valueListenable: _session.moved,
+          builder: (context, moved, _) => _scrollView(
+            context,
+            state,
+            active,
+            constraints.maxWidth,
+            // Only once the item moves: a hold that stays put edits it, and
+            // the list should not jump under the finger for that.
+            dropping: active is DraggedItem && moved,
+          ),
+        ),
       ),
     );
     final listened = Listener(
@@ -400,16 +412,24 @@ class _ShoppingListViewState()
     BuildContext context,
     ListState state,
     Dragged? active,
-    double width,
-  ) {
+    double width, {
+    required bool dropping,
+  }) {
     final sections = sectionsOf(state.items.values, state.catalog);
-    final total = sections.fold(0, (n, s) => n + s.count);
     final bought = recentlyBought(state.items.values);
-    final columnCount = width >= ShoppingListView.threeColumns
-        ? 3
-        : width >= ShoppingListView.twoColumns
-        ? 2
-        : 1;
+    // The list as it stands without a drag. Columns are cut from it, so no
+    // store changes column under the finger, and never more columns than
+    // it has sections: one store with items reads as one centred column.
+    final resting = shownSections(sections, dropping: false);
+    final shown = dropping ? shownSections(sections, dropping: true) : resting;
+    final columnCount = math.min(
+      width >= ShoppingListView.threeColumns
+          ? 3
+          : width >= ShoppingListView.twoColumns
+          ? 2
+          : 1,
+      math.max(1, resting.length),
+    );
     final contentWidth = columnCount == 1
         ? math.min(width, ShoppingListView.columnWidth)
         : math.min(
@@ -418,32 +438,20 @@ class _ShoppingListViewState()
                 (columnCount - 1) * _columnGap,
           );
     final side = width < 600 ? 0.0 : (width - contentWidth) / 2;
-    final shown = [
-      for (final section in sections)
-        if (section.store != null || section.count > 0 || active is DraggedItem)
-          section,
-    ];
     bool folded(StoreSection s) =>
         s.count == 0 ||
         active is DraggedStore ||
         state.prefs.folded.contains(s.key);
-    // Balanced as the list stands without a drag, so no store changes
-    // column under the finger; the section without a store that only shows
-    // during a drag joins the last column.
-    final resting = [
-      for (final s in shown)
-        if (s.store != null || s.count > 0) s,
-    ];
-    final columns = columnsOf(
+    final balanced = columnsOf(
       resting,
       columnCount,
-      (s) => s.count == 0 || state.prefs.folded.contains(s.key)
+      (s) => state.prefs.folded.contains(s.key)
           ? 1
           : 1 + s.count + 0.6 * s.blocks.length,
     );
-    if (shown.length > resting.length) {
-      columns.last.add(shown.last);
-    }
+    // The empty sections that show only while an item is dragged join the
+    // column of the section before them.
+    final columns = dropping ? withDropTargets(balanced, shown) : balanced;
     final fresh = context.read<ListCubit>().fresh;
     SliverList column(List<StoreSection> run) {
       final entries = _entries(run, shown, state, active, folded, fresh);
@@ -455,7 +463,8 @@ class _ShoppingListViewState()
       );
     }
 
-    final body = total == 0 && active == null
+    // Every store empty: no section shows, the empty list says so.
+    final body = shown.isEmpty
         ? const SliverToBoxAdapter(child: EmptyList())
         : columnCount == 1
         ? column(shown)
@@ -485,6 +494,13 @@ class _ShoppingListViewState()
     return CustomScrollView(
       key: _viewport,
       controller: _scroll,
+      // The dragged row is kept alive but laid out only within the cache
+      // extent; the empty stores that show above it must not push it past
+      // that, or it cannot tell how far it moved (`ItemRow`).
+      scrollCacheExtent: ScrollCacheExtent.pixels(
+        RenderAbstractViewport.defaultCacheExtent +
+            (shown.length - resting.length) * _dividerBound,
+      ),
       slivers: [
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: side),
@@ -536,6 +552,9 @@ class _ShoppingListViewState()
   }
 
   static const _columnGap = 16.0;
+
+  /// More than a folded store divider is tall, with its gap.
+  static const _dividerBound = 120.0;
 
   /// The dividers and rows of [run], top to bottom.
   List<Widget> _entries(
