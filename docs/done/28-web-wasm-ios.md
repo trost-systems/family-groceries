@@ -85,9 +85,23 @@ add and reload), `28-js-fallback.png` (JS fallback), `28-iphone-one-tap.png`
 (WebKit iPhone: sheet open after one tap, typed text in), and
 `28-iphone-after-pick.png` (after tapping a suggestion).
 
+## Deployment
+
+Merged as `64f8444` (#95, ci-ok green: run 40943183522, 99 e2e passed, 0
+flaky). Vercel built that commit once, for the PR push. Deployment
+`4HMwTh7VUENcuSFL4FubLunMfhXF` is Ready (GitHub status "Deployment has
+completed"). `main` uses the same build, as with every merge through
+`push-pr.sh` (the merged commit is the PR's commit). The job could not fetch
+`main.dart.wasm` from preview.app.hummlist.com: Vercel Authentication, and
+no Vercel token on the Mac. That one-minute check is in
+`docs/NEEDS_PETER.md` (Job 28). Production, `release` and app.hummlist.com
+were not touched.
+
 ## Missing or blocked
 
 - A real iPhone keyboard cannot be tested from here (no device, and no soft
   keyboard in Playwright's WebKit). Peter can check on
   preview.app.hummlist.com.
+- Fetching `main.dart.wasm` from the preview needs a Vercel login
+  (NEEDS_PETER, Job 28).
 - WebKit wasm waits for Flutter 3.50 (follow-up above).

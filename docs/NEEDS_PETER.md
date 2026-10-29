@@ -699,3 +699,21 @@ box, and the agent made the change with it:
   hummlist.com answered 404 for every path, so the site is not deployed
   yet. Deploying it (docs/DEPLOY.md, the site's Vercel project) makes the
   link work; nothing changes in the app.
+
+## Job 28: WebAssembly web build (2026-10-29)
+
+- **Check the preview once (1 min).** `#95` merged as `64f8444`, and its
+  Vercel deployment (`4HMwTh7VUENcuSFL4FubLunMfhXF`) is Ready. The job could
+  not open it: preview.app.hummlist.com is behind Vercel Authentication, and
+  the Mac runner has no Vercel token. Open https://preview.app.hummlist.com in
+  desktop Chrome, signed in to Vercel. DevTools → Network should show
+  `main.dart.wasm` (type `wasm`, `application/wasm`), not `main.dart.js`.
+  Or run `node e2e/web-smoke.mjs '<preview URL>/?_vercel_share=<link>'`:
+  every line `ok`, including `/main.dart.wasm` and "Chromium runs the wasm
+  build".
+- **Your iPhone stays on the JS build** (Safari and every iOS browser, by
+  Flutter's default; DECISIONS job 28.2), so it should feel the same as
+  before. The double tap: one tap focuses the field correctly in our tests
+  (DECISIONS 28.5). If the keyboard still needs two taps on the preview, it
+  is Flutter's or Safari's behaviour, not our code. Nothing for you to do
+  unless you want to report it upstream.
