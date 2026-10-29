@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import {
-  addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, newEmail, password, screenshot,
-  signUp, signUpWithHousehold, typeInto,
+  addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
 } from './helpers';
 
 const deletedNotice = (page: Page) => page.getByText('Dein Konto wurde gelöscht.');
@@ -10,8 +9,7 @@ const confirmField = (page: Page) => page.getByRole('textbox', { name: 'Zum Best
 const confirmButton = (page: Page) => page.getByRole('button', { name: 'Endgültig löschen' });
 
 async function openAccount(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Konto', exact: true }).click();
+  await openMore(page, 'Konto');
   await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeVisible();
 }
 

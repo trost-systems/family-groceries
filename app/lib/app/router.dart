@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/household/join_screen.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:family_groceries/settings/settings_screen.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,6 +16,8 @@ const loginPath = '/login';
 const welcomePath = '/welcome';
 const consentPath = '/oauth/consent';
 const settingsPath = '/settings';
+const morePath = '/more';
+const privacyPath = '/more/privacy';
 String joinPath(String code) => '/join/$code';
 
 /// The only auth gate. An invite code from a `/join/<code>` link survives
@@ -38,7 +41,7 @@ String? authRedirect(Session session, Uri uri) {
     SignedOut() => carry(loginPath),
     NeedsHousehold() => carry(welcomePath),
     InHousehold() when next != null => next,
-    InHousehold() when uri.path == settingsPath => uri.toString(),
+    InHousehold() when invite == null && _inShell(uri.path) => uri.toString(),
     // Onboarding is done once in a household; only a link or a fresh
     // sign-in from a link still asks to switch households.
     InHousehold() when invite == null || uri.path == welcomePath => listPath,
@@ -46,6 +49,11 @@ String? authRedirect(Session session, Uri uri) {
   };
   return target == null || target == uri.toString() ? null : target;
 }
+
+/// The More tab's pages; the list is `/` itself. Any other path goes to
+/// the list.
+bool _inShell(String path) =>
+    path == settingsPath || path == morePath || path == privacyPath;
 
 /// A same-origin consent URL, or null: `next` must not become an open
 /// redirect.
@@ -63,7 +71,38 @@ GoRouter buildRouter(SessionCubit session) => GoRouter(
   refreshListenable: _StreamListenable(session.stream),
   redirect: (context, state) => authRedirect(session.state, state.uri),
   routes: [
-    GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
+    StatefulShellRoute.indexedStack(
+      builder: (_, _, shell) => AppShell(shell: shell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: morePath,
+              builder: (_, _) => const MoreScreen(),
+              routes: [
+                GoRoute(
+                  path: 'privacy',
+                  builder: (_, _) => const MoreScreen(page: MorePage.privacy),
+                ),
+              ],
+            ),
+            GoRoute(
+              path: settingsPath,
+              builder: (_, state) => MoreScreen(
+                page: state.uri.queryParameters['section'] == 'account'
+                    ? MorePage.account
+                    : MorePage.access,
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
     GoRoute(
       path: loginPath,
       builder: (_, state) => LoginScreen(
@@ -80,12 +119,6 @@ GoRouter buildRouter(SessionCubit session) => GoRouter(
       path: consentPath,
       builder: (_, state) => ConsentScreen(
         authorizationId: state.uri.queryParameters['authorization_id'],
-      ),
-    ),
-    GoRoute(
-      path: settingsPath,
-      builder: (_, state) => SettingsScreen(
-        showAccount: state.uri.queryParameters['section'] == 'account',
       ),
     ),
     GoRoute(

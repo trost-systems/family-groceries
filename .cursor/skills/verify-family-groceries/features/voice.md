@@ -10,14 +10,14 @@ A spoken sentence such as "Milch, zwei Gurken und Klopapier" becomes separate li
 - `voice-errors` answers every failure with a German sentence and a status: 401 bad or revoked token, 403 no household, 400 no text, 405 not POST, 413 too long, 422 nothing understood.
 - `voice-truncate` takes at most 30 items and says so ("Mehr als dreißig auf einmal gehen nicht …").
 - `voice-parse` splits without adding (`"mode": "parse"`, answer "Verstanden: …"), which the app's microphone uses.
-- `voice-token` works with a personal access token from Menü → Zugänge, which Siri uses, and stops working once it is revoked.
+- `voice-token` works with a personal access token from Mehr → Zugänge, which Siri uses, and stops working once it is revoked.
 - `voice-mic` is the microphone button (key `dictation-button`, tooltip "Diktieren", "Diktat beenden" while listening, hint "Ich höre zu …"). It shows on iOS and Android only.
 - `voice-mic-offline-only` refuses to listen when the device can't recognize German offline and says why ("… fehlt hier die deutsche Offline-Spracherkennung …"). It never falls back to a server recognizer.
 
 ## How to get to it (user POV)
 
 - Siri: "Hey Siri, Einkaufsliste", then the sentence. The Shortcut (docs/SIRI_SHORTCUT.md) POSTs `{"text": "<dictated text>"}` to `/functions/v1/voice?format=text` with `Authorization: Bearer fgp_…`.
-- App: on the list screen, tap the microphone in the add field and speak. Tap it again to stop early.
+- App: on the list screen, tap the microphone in the add bar at the bottom and speak. Tap it again to stop early.
 - Any HTTP client: `POST <API URL>/functions/v1/voice` with a session JWT or a personal access token.
 
 ## Driving it with fg

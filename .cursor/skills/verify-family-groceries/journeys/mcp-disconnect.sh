@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Proof journey: an OAuth app and a personal access token lose MCP access the moment peter
-# disconnects or revokes them in the app (Menü → Zugänge), not when their tokens expire.
+# disconnects or revokes them in the app (Mehr → Zugänge), not when their tokens expire.
 # Needs `fg up --clients peter` (the script signs peter in if not).
 # Usage: journeys/mcp-disconnect.sh   Evidence: the run directory printed at the end.
 set -euo pipefail
@@ -16,6 +16,16 @@ run() {
   out="$("$fg" "$@")" || { echo "$out" >&2; fail "fg $*"; }
   echo "$out" | jq -c . >&2
   echo "$out"
+}
+# Opens an entry of the More tab (the list is a lazy ListView, so scroll to it first).
+open_more() {
+  [[ "$("$fg" find --key add-sheet-close --client "$1" | jq -r .count)" == 0 ]] || run tap --key add-sheet-close --client "$1" >/dev/null
+  run tap --key tab-more --client "$1" >/dev/null
+  # The tab reopens its last page; a second tap on it goes to the More list.
+  "$fg" wait --key more-screen --timeout 2 --client "$1" >/dev/null 2>&1 || run tap --key tab-more --client "$1" >/dev/null
+  run wait --key more-screen --client "$1" >/dev/null
+  run marionette --client "$1" -- scroll-to --key "$2" >/dev/null
+  run tap --key "$2" --client "$1" >/dev/null
 }
 
 api="$("$fg" env | jq -r .apiUrl)"
@@ -60,9 +70,7 @@ expires_in_min=$(( ($(jq -R 'split(".")[1] | @base64d | fromjson | .exp' <<<"$ac
 echo "OAuth token reaches MCP (200), expires in $expires_in_min min" >&2
 
 step "peter opens Zugänge and sees the app"
-run tap --tooltip Menü >/dev/null
-run wait --text Zugänge >/dev/null
-run tap --text Zugänge >/dev/null
+open_more peter more-access
 run wait --text "$app" >/dev/null
 run record start --name "mcp-disconnect-$stamp" >/dev/null
 run screenshot --name mcp-01-connected >/dev/null
@@ -101,7 +109,7 @@ revoked="$(run db query "select revoked_at is not null as revoked from personal_
 run record stop >/dev/null
 
 step "peter goes back to the list, where the next journey starts"
-run back >/dev/null
+run tap --key tab-list >/dev/null
 run wait --key add-item-field >/dev/null
 
 dir="$("$fg" env | jq -r .evidenceDir)"

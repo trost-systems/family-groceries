@@ -175,7 +175,9 @@ for (const spec of config.clients) {
 }
 
 const byLabel = (/** @type {string} */ l) => clients.find((c) => c.label === l);
-const addField = (/** @type {any} */ page) => page.getByRole('textbox', { name: 'Was fehlt?' });
+const addField = (/** @type {any} */ page) => page.getByRole('textbox', { name: 'Was brauchst du?' });
+/** The add sheet (design H): it opens on typing and covers the list until it is closed. */
+const addSheet = (/** @type {any} */ page) => page.getByRole('group', { name: 'Hinzufügen', exact: true });
 /**
  * Design H has no store views: shopping at a store folds every other store section and unfolds
  * that one and "Ohne Laden", whose items can be bought anywhere, as the old store view showed them
@@ -246,9 +248,19 @@ async function signIn(/** @type {any} */ c) {
 async function act(/** @type {any} */ c, /** @type {any} */ s) {
   const page = c.page;
   switch (s.action) {
-    case 'add':
+    case 'add': {
       await typeInto(addField(page), s.text);
-      return await issue(() => page.keyboard.press('Enter'));
+      const at = await issue(() => page.keyboard.press('Enter'));
+      // Enter keeps the sheet open for the next item; close it once it confirms ("✓ Hinzugefügt: …",
+      // a group with Rückgängig, or "✓ … steht schon auf der Liste", plain text), so this client's
+      // list is on screen (and in the observer's snapshots) again. Escape, as e2e/tests/helpers.ts
+      // closeSheet does.
+      const note = addSheet(page).getByRole('group', { name: /^✓ / }).or(addSheet(page).getByText(/^✓ /));
+      await note.waitFor({ timeout: 10_000 });
+      await page.keyboard.press('Escape');
+      await addSheet(page).waitFor({ state: 'hidden', timeout: 10_000 });
+      return at;
+    }
     case 'tick':
       // Design H: a tap on the row ticks it.
       return await issue(() => row(page, s.item).first().click());

@@ -26,6 +26,10 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
   static const _seenPrefix = 'seen.';
   static const _prefsPrefix = 'listprefs.';
 
+  /// The app language picked under More; absent follows the device. Kept
+  /// across sign-outs: it belongs to the device, not the account.
+  static const _languageKey = 'language';
+
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
   static String _listKey(String userId, String householdId) =>
@@ -36,6 +40,21 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
 
   static String _prefsKey(String userId, String householdId) =>
       '$_prefsPrefix$userId.$householdId';
+
+  /// `de`, `en`, or null for the device's language.
+  Future<String?> language() async {
+    try {
+      return await _prefs.getString(_languageKey);
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> saveLanguage(String? code) => _write(
+    () => code == null
+        ? _prefs.remove(_languageKey)
+        : _prefs.setString(_languageKey, code),
+  );
 
   ListCache list(String userId, String householdId) =>
       _PrefsListCache(this, userId, householdId);

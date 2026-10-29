@@ -1,13 +1,13 @@
 import { expect, type Page, test } from './fixtures';
 import { dragHandle, dragItemToStore, groupHeadings, openStoreLayout, sectionHeadings, storeOf } from './catalog';
 import {
-  addField, addItem, createInviteCode, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUp,
-  signUpWithHousehold, storeDivider, tick, typeInto, within,
+  addedNote, addField, addItem, addSheet, closeSheet, createInviteCode, enterItem, itemRow, newEmail, openEdit, openMore,
+  openTab, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold, storeDivider, tick, typeInto, within,
 } from './helpers';
 
+/** The route order of the categories the test's items land in under "Ohne Laden" (Zahnpasta's 👶 Drogerie goes to dm). */
 const route = [
   'Obst & Gemüse', 'Brot & Backwaren', 'Kühlregal', 'Fleisch/Wurst/Fisch', 'Süßes & Snacks', 'Tiefkühl', 'Haushalt',
-  '👶 Drogerie',
 ];
 
 async function setStore(page: Page, item: string, store: string): Promise<void> {
@@ -17,13 +17,19 @@ async function setStore(page: Page, item: string, store: string): Promise<void> 
 }
 
 test('STORE ORDERING: each store section walks its own order, editable on its layout screen, with item->store memory', async ({ page }) => {
+  // The longest journey (eight adds, a dozen drags, a reload): it took 46-55 s of the default 60 s
+  // on main, and the add sheet's open and close add a few seconds.
+  test.setTimeout(120_000);
   await signUpWithHousehold(page, newEmail('stores'));
   for (const item of ['Brot', 'Äpfel', 'Milch', 'Hack', 'Zahnpasta', 'Klopapier', 'Chips', 'Pizza']) {
-    await addItem(page, item);
+    await enterItem(page, item);
   }
-  await expect(itemRow(page, 'Pizza')).toBeVisible();
   await expect(addField(page), 'the list does not take focus from the add field').toBeFocused();
+  await closeSheet(page);
+  await expect(itemRow(page, 'Pizza')).toBeVisible();
   await expect.poll(() => sectionHeadings(page, 'Ohne Laden'), { message: 'no store: route order' }).toEqual(route);
+  await expect.poll(() => storeOf(page, 'Zahnpasta'), { message: 'the add sheet\'s store guess puts a drugstore item in dm' })
+    .toBe('dm');
   await expect(page.getByRole('checkbox', { name: 'Alle' }), 'no store filter chips').toHaveCount(0);
 
   for (const item of ['Brot', 'Äpfel', 'Milch', 'Hack', 'Pizza']) {
@@ -44,7 +50,7 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
   await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'Edeka: counters before the chilled aisle' })
     .toEqual(['Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch', 'Kühlregal']);
 
-  for (const item of ['Zahnpasta', 'Klopapier', 'Chips']) {
+  for (const item of ['Klopapier', 'Chips']) {
     await dragItemToStore(page, item, 'dm');
     await expect.poll(() => storeOf(page, item)).toBe('dm');
   }
@@ -71,8 +77,9 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
   await addItem(page, 'Hack');
   await expect.poll(() => storeOf(page, 'Hack'), { message: 'bought at Edeka last time, so added there' })
     .toBe('Edeka');
-  await addItem(page, 'Zahnpasta');
-  await expect(page.getByText('Zahnpasta steht schon auf der Liste').first()).toBeVisible();
+  await enterItem(page, 'Zahnpasta');
+  await expect(addedNote(page, 'Zahnpasta steht schon auf der Liste')).toBeVisible();
+  await closeSheet(page);
   await tick(page, 'Zahnpasta');
   await addItem(page, 'Zahnpasta');
   await expect.poll(() => storeOf(page, 'Zahnpasta'), { message: 're-added, it is still a dm item' }).toBe('dm');
@@ -103,8 +110,7 @@ test('category and store layout changes sync live to the other member', async ({
     .toEqual(['Haushalt', 'Brot & Backwaren']));
   await peter.getByRole('button', { name: 'Zurück' }).click();
 
-  await peter.getByRole('button', { name: 'Menü' }).click();
-  await peter.getByRole('menuitem', { name: 'Kategorien verwalten' }).click();
+  await openMore(peter, 'Kategorien verwalten');
   await peter.getByRole('button', { name: 'Haushalt', exact: true }).click();
   await typeInto(peter.getByRole('textbox', { name: 'Name' }), 'Putzzeug');
   await peter.getByRole('button', { name: 'Speichern' }).click();
@@ -115,10 +121,18 @@ test('category and store layout changes sync live to the other member', async ({
 
 test('categories: add, move an item there, rename, reorder, delete with reassignment', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('categories'));
-  await addItem(page, 'Windeln');
+  // The sheet would put Windeln in dm, its store guess; both items stay without a store, so the
+  // headings below follow the route order alone.
+  await addField(page).click();
+  await typeInto(addField(page), 'Windeln');
+  await addSheet(page).getByRole('button', { name: /^Laden: / }).click();
+  await addSheet(page).getByRole('button', { name: 'Ohne Laden', exact: true }).click();
+  await expect(addField(page)).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(addedNote(page, /^✓ Hinzugefügt: Windeln$/)).toBeVisible();
+  await closeSheet(page);
   await addItem(page, 'Bier');
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Kategorien verwalten' }).click();
+  await openMore(page, 'Kategorien verwalten');
 
   await page.getByRole('button', { name: 'Kategorie hinzufügen' }).click();
   await typeInto(page.getByRole('textbox', { name: 'Name' }), 'Baby');
@@ -132,6 +146,7 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await dragHandle(page, 'Getränke verschieben', 'Obst & Gemüse verschieben');
   await screenshot(page, '10-categories-screen');
   await page.getByRole('button', { name: 'Zurück' }).click();
+  await openTab(page, 'Liste');
   await expect.poll(() => groupHeadings(page), { message: 'the route order changed' })
     .toEqual(['Getränke', '👶 Drogerie']);
 
@@ -140,8 +155,7 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await saveEdit(page);
   await expect.poll(() => groupHeadings(page)).toEqual(['Getränke', 'Baby']);
 
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Kategorien verwalten' }).click();
+  await openMore(page, 'Kategorien verwalten');
   await page.getByRole('button', { name: 'Baby', exact: true }).click();
   await typeInto(page.getByRole('textbox', { name: 'Name' }), 'Babysachen');
   await page.getByRole('button', { name: 'Speichern' }).click();
@@ -152,6 +166,7 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Babysachen', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Zurück' }).click();
+  await openTab(page, 'Liste');
   await expect.poll(() => groupHeadings(page), { message: 'the items moved to the chosen category' })
     .toEqual(['Getränke', '👶 Drogerie']);
 

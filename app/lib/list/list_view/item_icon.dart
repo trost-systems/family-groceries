@@ -1,9 +1,14 @@
+import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/model.dart';
 
 /// The small leading icon of a row: an emoji for the item when its name
 /// says what it is, else its category's.
-String itemIcon(Item item, Category? category) {
-  for (final word in foldName(item.name).split(RegExp('[^a-z]+'))) {
+String itemIcon(Item item, Category? category) => nameIcon(item.name, category);
+
+/// The icon for a name, as [itemIcon]: the add sheet's rows have no item.
+String nameIcon(String name, Category? category) {
+  for (final word in foldName(name).split(RegExp('[^a-z]+'))) {
     for (final (ending, emoji) in _items) {
       if (word.endsWith(ending)) {
         return emoji;
@@ -27,9 +32,10 @@ String categoryIcon(Category? category) {
 }
 
 /// A category's name for its divider, without a leading emoji.
-String categoryLabel(Category category) {
-  final label = category.name.replaceFirst(_leadingSymbols, '').trim();
-  return label.isEmpty ? category.name : label;
+String categoryLabel(Category category, AppLocalizations l10n) {
+  final name = categoryName(category, l10n);
+  final label = name.replaceFirst(_leadingSymbols, '').trim();
+  return label.isEmpty ? name : label;
 }
 
 final _leadingSymbols = RegExp(r'^[^\p{L}\p{N}]+', unicode: true);

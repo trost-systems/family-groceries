@@ -257,7 +257,9 @@ class _ShoppingListViewState()
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Text(
-                category == null ? storeName : categoryLabel(category),
+                category == null
+                    ? storeName
+                    : categoryLabel(category, AppLocalizations.of(context)),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),

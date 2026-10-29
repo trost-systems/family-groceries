@@ -26,7 +26,7 @@ export async function apiAs(email: string): Promise<SupabaseClient> {
   return client;
 }
 
-export const addField = (page: Page) => page.getByRole('textbox', { name: 'Was fehlt?' });
+export const addField = (page: Page) => page.getByRole('textbox', { name: 'Was brauchst du?' });
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** A list row; its accessible name is the item name, a space, then the quantity. */
@@ -41,14 +41,25 @@ export const itemRow = (page: Page, name: string) =>
 export const actionSnackBar = (page: Page, text: string) => page.getByRole('group', { name: text, exact: true });
 
 /**
+ * The list's visible band: from the header's bottom (8 px below the "N Artikel" line, or below the
+ * sync icon while it shows) to the top of the add bar, 12 px above its field.
+ */
+export async function listArea(page: Page): Promise<{ top: number; bottom: number }> {
+  const count = (await page.getByText(/^\d+ Artikel$/).boundingBox())!;
+  const sync = await page.getByText(/^Offline: |^\d+ Änderung(en)? w(ird|erden) synchronisiert$/)
+    .boundingBox({ timeout: 100 }).catch(() => null);
+  const header = Math.max(count.y + count.height, sync ? sync.y + sync.height : 0) + 8;
+  const field = (await addField(page).boundingBox())!;
+  return { top: header, bottom: field.y - 12 };
+}
+
+/**
  * Scrolls the list with the mouse wheel until [target] is fully on screen. The list builds rows
  * lazily, so a row far off screen is not in the page at all until the list scrolls near it; it is
  * looked for downwards first, then upwards.
  */
 export async function reveal(page: Page, target: Locator): Promise<void> {
-  const field = (await addField(page).boundingBox())!;
-  const top = field.y + field.height;
-  const bottom = page.viewportSize()!.height;
+  const { top, bottom } = await listArea(page);
   await page.mouse.move(page.viewportSize()!.width / 2, (top + bottom) / 2);
   for (let i = 0; i < 40; i++) {
     const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
@@ -114,8 +125,9 @@ export async function within(ms: number, check: (timeout: number) => Promise<unk
   }
 }
 
-/** Opens an item's edit sheet with a right click, the web's long-press. */
+/** Opens an item's edit sheet with a right click, the web's long-press, scrolling to it first. */
 export async function openEdit(page: Page, name: string): Promise<void> {
+  await reveal(page, itemRow(page, name));
   await itemRow(page, name).click({ button: 'right' });
   await expect(editSheet(page)).toBeVisible();
 }
@@ -174,19 +186,73 @@ export async function signUpWithHousehold(page: Page, email: string): Promise<vo
   await expect(addField(page)).toBeFocused();
 }
 
-export async function addItem(page: Page, text: string): Promise<void> {
+/** The add sheet (job 17): a group whose rect is the sheet's content, open while adding. */
+export const addSheet = (page: Page) => page.getByRole('group', { name: 'Hinzufügen', exact: true });
+
+/**
+ * The sheet's line about the last add, as shown: "✓ Hinzugefügt: Milch → Lidl" (with Rückgängig)
+ * or "Butter steht schon auf der Liste". Any such line by default.
+ */
+export const addedNote = (page: Page, line: string | RegExp = /^✓ Hinzugefügt: | steht schon auf der Liste$/) =>
+  addSheet(page).getByText(line, { exact: true });
+
+/**
+ * Types [text] and presses Enter, which takes the sheet's first suggestion (the server's reading
+ * of the text), and waits for the sheet to say so. The sheet stays open for the next item, the
+ * field focused, and the list behind the scrim out of reach: see [addItem].
+ */
+export async function enterItem(page: Page, text: string): Promise<void> {
+  // Text inserted during the tap that opens the sheet lands in the DOM input but not in the app
+  // (seen in job 17), so the sheet opens first.
+  await addField(page).click();
+  await expect(addSheet(page)).toBeVisible();
   await typeInto(addField(page), text);
+  // The row for what was typed shows once the app has the text.
+  await expect(addSheet(page).getByRole('button', { name: /, Wie getippt(,|$)/ })).toBeVisible();
   await page.keyboard.press('Enter');
+  await expect(addedNote(page)).toBeVisible();
 }
 
-/** Reads the invite code from the in-app invite dialog. */
+/**
+ * Closes the add sheet with Escape in the field, which hands the list back. Not the Schließen
+ * button: after it, the next tap on the field shows a cursor but drops what is typed (job 17,
+ * reported to the lead).
+ */
+export async function closeSheet(page: Page): Promise<void> {
+  await expect(addField(page)).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(addSheet(page)).toHaveCount(0);
+}
+
+/** Adds one item with Enter and closes the sheet, so the list is in reach again. */
+export async function addItem(page: Page, text: string): Promise<void> {
+  await enterItem(page, text);
+  await closeSheet(page);
+}
+
+/** Switches tabs: a bottom bar on phones, a rail ("Mehr Tab 2 von 2") from 840 px. */
+export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> {
+  await page.getByRole('tab', { name: tab, exact: true }).or(page.getByRole('button', { name: `${tab} Tab ` })).click();
+}
+
+/** Opens an entry of the More tab by its title ("Mitglied einladen", "Zugänge", "Abmelden" …). */
+export async function openMore(page: Page, entry: string): Promise<void> {
+  await openTab(page, 'Mehr');
+  // The tab comes back to the page it was left on; a second tap goes to its first page, More's list.
+  await expect(page).toHaveURL(/\/(more|settings)\b/);
+  if (new URL(page.url()).pathname !== '/more') await openTab(page, 'Mehr');
+  await expect(page).toHaveURL(/\/more$/);
+  await page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) }).click();
+}
+
+/** Reads the invite code from the invite dialog (More, Mitglied einladen), then returns to the list. */
 export async function createInviteCode(page: Page): Promise<string> {
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Mitglied einladen' }).click();
+  await openMore(page, 'Mitglied einladen');
   const code = page.getByRole('group', { name: /^Code [A-HJ-NP-Z2-9]{8}$/ });
   await expect(code).toBeVisible();
   const value = (await code.getAttribute('aria-label'))!.split(/\s+/)[1];
   await page.getByRole('button', { name: 'Schließen' }).click();
+  await openTab(page, 'Liste');
   return value;
 }
 

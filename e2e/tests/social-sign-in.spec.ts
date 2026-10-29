@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
-  addField, addItem, apiAs, itemRow, newEmail, screenshot, signUpWithHousehold, supabaseUrl, typeInto, viaFakeProvider,
+  addField, addItem, apiAs, itemRow, newEmail, openMore, screenshot, signUpWithHousehold, supabaseUrl, typeInto, viaFakeProvider,
 } from './helpers';
 
 const google = (page: Page) => page.getByRole('button', { name: 'Mit Google anmelden' });
@@ -16,8 +16,7 @@ async function authorizeUrl(page: Page, button: Locator): Promise<URL> {
 }
 
 async function signOut(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Abmelden' }).click();
+  await openMore(page, 'Abmelden');
   await expect(page).toHaveURL(/\/login$/);
 }
 

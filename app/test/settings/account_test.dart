@@ -68,14 +68,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// The access page as More frames it.
   Widget settings({bool showAccount = false, AccessRepository? access}) =>
-      SettingsScreen(
-        repository: access ?? FakeAccessRepository(),
-        showAccount: showAccount,
-        saveExport: (fileName, json, {origin}) async {
-          saved.add((fileName: fileName, json: json, origin: origin));
-          return savedPath;
-        },
+      Scaffold(
+        body: SettingsScreen(
+          repository: access ?? FakeAccessRepository(),
+          showAccount: showAccount,
+          saveExport: (fileName, json, {origin}) async {
+            saved.add((fileName: fileName, json: json, origin: origin));
+            return savedPath;
+          },
+        ),
       );
 
   Future<void> tapKey(WidgetTester tester, String key) async {
@@ -346,7 +349,7 @@ void main() {
     );
   });
 
-  group('the menu entry Konto', () {
+  group('the account section (More: Konto)', () {
     FakeAccessRepository manyTokens() {
       final access = FakeAccessRepository();
       for (var i = 0; i < 12; i++) {

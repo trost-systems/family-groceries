@@ -24,6 +24,8 @@ Future<EditResult?> showEditItemSheet(
   required Catalog catalog,
 }) => showModalBottomSheet<EditResult>(
   context: context,
+  // Over the whole app, tabs included: the sheet stands on the bottom edge.
+  useRootNavigator: true,
   isScrollControlled: true,
   useSafeArea: true,
   sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)

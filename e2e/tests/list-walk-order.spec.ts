@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Page, test } from './fixtures';
 import { dragItemToStore, holdAndDrop, outline, sectionHeadings, sectionItems, storeOf } from './catalog';
 import {
-  actionSnackBar, adminClient, apiAs, createInviteCode, editSheet, itemRow, newEmail, screenshot, signUp,
+  actionSnackBar, adminClient, apiAs, createInviteCode, editSheet, itemRow, newEmail, reveal, screenshot, signUp,
   signUpWithHousehold, storeDivider, tick, typeInto, within,
 } from './helpers';
 
@@ -278,6 +278,8 @@ test('a tap ticks with undo back in place, a hold or right click edits, names wr
   await (await apiAs(leaEmail)).from('items').insert({
     household_id: await householdOf(await apiAs(leaEmail)), name: 'Hafer',
   });
+  // The add bar at the bottom leaves the list less room: Hafer lands below the fold.
+  await reveal(peter, itemRow(peter, 'Hafer'));
   await expect(itemRow(peter, 'Hafer'), 'the partner\'s add: no initial, but new').toHaveAccessibleName(/^Hafer\sNeu$/);
   await expect(peter.getByText(`1 neu von ${leaEmail.split('@')[0]}`)).toBeVisible();
   await peter.mouse.move(0, 899);

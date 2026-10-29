@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
-import { addField, addItem, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { addedNote, addField, addItem, closeSheet, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 
-test('on open the add field is focused and the list is visible beneath it', async ({ page }) => {
+test('on open the add field is focused and the list is visible above it', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('focus'));
   await addItem(page, 'Bananen');
   await expect(itemRow(page, 'Bananen')).toBeVisible();
@@ -13,12 +13,15 @@ test('on open the add field is focused and the list is visible beneath it', asyn
   await expect(itemRow(page, 'Bananen')).toBeVisible();
   const field = (await addField(page).boundingBox())!;
   const item = (await itemRow(page, 'Bananen').boundingBox())!;
-  expect(item.y, 'the list sits below the add field on the same screen').toBeGreaterThan(field.y);
+  expect(item.y + item.height, 'the list sits above the add field (design H: the field is at the bottom), on the same screen')
+    .toBeLessThanOrEqual(field.y);
 
   await page.keyboard.type('Milch');
   await page.keyboard.press('Enter');
-  await expect(itemRow(page, 'Milch')).toBeVisible();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Milch\b/), 'Enter adds what was typed').toBeVisible();
   await expect(addField(page), 'Enter keeps focus for the next item').toBeFocused();
   await expect(addField(page)).toHaveValue('');
   await screenshot(page, '01-autofocus');
+  await closeSheet(page);
+  await expect(itemRow(page, 'Milch')).toBeVisible();
 });

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_repository.dart';
@@ -245,13 +246,14 @@ class ListCubit(
   List<Usual> suggestionsFor(String text) =>
       suggestUsuals(state.usuals, state.items.values, text);
 
+  /// The add sheet's rows for a typed entry, from the server.
+  Future<List<Suggestion>> suggest(String text) => _repo.suggest(text);
+
   /// Usuals that are due and not on the list, at most 10.
   List<Usual> get dueUsuals => dueUsualsOf(state.usuals, state.items.values);
 
   AddResult addUsual(Usual usual) =>
       addEntry(Entry(usual.name, usual.quantity));
-
-  AddResult add(String input) => addEntry(parseEntry(input));
 
   /// Splits a dictated sentence on the server and adds each entry.
   /// Throws when the server can't be reached; nothing is added then.
@@ -260,28 +262,57 @@ class ListCubit(
     return [for (final entry in entries) addEntry(entry)];
   }
 
-  AddResult addEntry(Entry entry) {
-    if (entry.name.isEmpty) {
+  AddResult addEntry(Entry entry) =>
+      addParsed(ParsedEntry(name: entry.name, quantity: entry.quantity));
+
+  /// Adds [entry] with every field it has. A null store lets the server
+  /// pick the remembered one, unless [noStore]: the user chose "Ohne
+  /// Laden", so the store is cleared after the add. An item with the same
+  /// name, brand and details already on the list is not added twice.
+  AddResult addParsed(ParsedEntry entry, {bool noStore = false}) {
+    final name = entry.name.trim();
+    if (name.isEmpty) {
       return const NothingToAdd();
     }
-    final key = entry.name.toLowerCase();
+    final key = _sameItem(name, entry.brand, entry.properties);
     for (final item in state.items.values) {
-      if (item.status == ItemStatus.active && item.name.toLowerCase() == key) {
+      if (item.status == ItemStatus.active &&
+          _sameItem(item.name, item.brand, item.properties) == key) {
         return AlreadyOnList(item);
       }
     }
     final now = _clock();
     final item = Item(
       id: const Uuid().v4(),
-      name: entry.name,
+      name: name,
       quantity: entry.quantity,
+      brand: entry.brand,
+      properties: entry.properties,
+      categoryId: entry.categoryId,
+      storeId: noStore ? null : entry.storeId,
       status: ItemStatus.active,
       createdAt: now,
       updatedAt: now,
     );
     _enqueue(AddItem(item));
+    if (noStore) {
+      _enqueue(EditItem(item.id, const ItemChanges(storeId: SetTo(null))));
+    }
     return Added(item);
   }
+
+  /// Details in any order: "Größe 3, sensitiv" is "sensitiv, Größe 3".
+  static String _sameItem(String name, String? brand, String? properties) => [
+    foldName(name),
+    foldName(brand ?? ''),
+    ((properties ?? '')
+            .split(',')
+            .map(foldName)
+            .where((p) => p.isNotEmpty)
+            .toList()
+          ..sort())
+        .join(','),
+  ].join('|');
 
   void tick(String id) => _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
 

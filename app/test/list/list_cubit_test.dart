@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
@@ -42,7 +43,7 @@ void main() {
 
   test('an add shows at once, then takes the server category', () async {
     repo.gate = Completer();
-    final result = cubit.add('2 Vollmilch');
+    final result = cubit.addEntry(parseEntry('2 Vollmilch'));
     expect(result, isA<Added>());
     final id = (result as Added).item.id;
     expect(cubit.state.items[id]!.categoryId, isNull);
@@ -55,15 +56,48 @@ void main() {
   });
 
   test('duplicates of active items are refused, case-insensitively', () async {
-    cubit.add('Butter');
+    cubit.addEntry(parseEntry('Butter'));
     await settle();
-    expect(cubit.add('butter'), isA<AlreadyOnList>());
-    expect(cubit.add('   '), isA<NothingToAdd>());
+    expect(cubit.addEntry(parseEntry('butter')), isA<AlreadyOnList>());
+    expect(cubit.addEntry(parseEntry('   ')), isA<NothingToAdd>());
     expect(activeNames(), ['Butter']);
   });
 
+  test('the same name, brand and details is a duplicate, details in any '
+      'order', () async {
+    cubit.addParsed(
+      const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 3, sensitiv',
+      ),
+    );
+    await settle();
+    expect(
+      cubit.addParsed(
+        const ParsedEntry(
+          name: 'windeln',
+          brand: 'pampers',
+          properties: 'sensitiv,  größe 3',
+        ),
+      ),
+      isA<AlreadyOnList>(),
+    );
+    expect(
+      cubit.addParsed(
+        const ParsedEntry(
+          name: 'Windeln',
+          brand: 'Pampers',
+          properties: 'Größe 4',
+        ),
+      ),
+      isA<Added>(),
+      reason: 'other details are another item',
+    );
+  });
+
   test('tick and undo round-trip through the server', () async {
-    final id = (cubit.add('Brot') as Added).item.id;
+    final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
     await settle();
     cubit.tick(id);
     expect(activeNames(), isEmpty, reason: 'optimistic');
@@ -76,13 +110,13 @@ void main() {
   });
 
   test('offline ops stay visible, queue, and flush on reconnect', () async {
-    final id = (cubit.add('Brot') as Added).item.id;
+    final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
     await settle();
 
     repo.online = false;
     cubit
       ..tick(id)
-      ..add('Käse');
+      ..addEntry(parseEntry('Käse'));
     await settle();
     expect(cubit.state.connection, ConnectionStatus.offline);
     expect(cubit.state.pending, hasLength(2));
@@ -100,7 +134,7 @@ void main() {
     final rejections = <Rejected>[];
     final sub = cubit.rejections.listen(rejections.add);
     repo.reject = true;
-    cubit.add('Wein');
+    cubit.addEntry(parseEntry('Wein'));
     await settle();
     expect(rejections.single, isA<ItemRejected>());
     expect((rejections.single as ItemRejected).itemName, 'Wein');
@@ -155,7 +189,7 @@ void main() {
     repo.catalogGate = Completer();
     final rename = cubit.renameCategory('produce', 'Obst');
     await settle();
-    cubit.add('Brot');
+    cubit.addEntry(parseEntry('Brot'));
     await settle();
     expect(cubit.state.pending, isEmpty);
     repo.catalogGate!.complete();
@@ -186,7 +220,7 @@ void main() {
   });
 
   test('a delete can be undone with the same id', () async {
-    final item = (cubit.add('Milch') as Added).item;
+    final item = (cubit.addEntry(parseEntry('Milch')) as Added).item;
     await settle();
     final saved = cubit.state.items[item.id]!;
     cubit.delete(item.id);
@@ -197,7 +231,7 @@ void main() {
     expect(repo.rows[item.id]!.categoryId, 'chilled');
   });
   test('adds carry no store; a tick keeps the store an item has', () async {
-    final id = (cubit.add('Brot') as Added).item.id;
+    final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
     await settle();
     expect(repo.rows[id]!.storeId, isNull);
     repo.remoteAdd('Seife', storeId: 'dm');
@@ -351,7 +385,7 @@ void main() {
   });
 
   test('a deleted category moves its items to the chosen one', () async {
-    final id = (cubit.add('Vollmilch') as Added).item.id;
+    final id = (cubit.addEntry(parseEntry('Vollmilch')) as Added).item.id;
     await settle();
     await cubit.deleteCategory('chilled', reassignTo: 'produce');
     expect(routeOrder(), ['produce', 'other']);
@@ -398,12 +432,12 @@ void main() {
     }
 
     test('an offline start shows the cached list and its queued ops', () async {
-      final bread = (cubit.add('Brot') as Added).item.id;
+      final bread = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
       await settle();
       repo.online = false;
       cubit
         ..tick(bread)
-        ..add('Käse');
+        ..addEntry(parseEntry('Käse'));
       await saved();
 
       await restart();
@@ -416,7 +450,7 @@ void main() {
 
     test('ops queued during an offline start survive the next restart, '
         'then flush on reconnect', () async {
-      final bread = (cubit.add('Brot') as Added).item.id;
+      final bread = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
       await settle();
       repo.online = false;
       await saved();
@@ -424,7 +458,7 @@ void main() {
       await restart();
       cubit
         ..tick(bread)
-        ..add('Eier');
+        ..addEntry(parseEntry('Eier'));
       // No wait for the debounce: the app may be killed right after a tap.
       await settle();
       await restart();
@@ -452,7 +486,7 @@ void main() {
   group('who added what', () {
     test('rows carry who added them', () async {
       final theirs = repo.remoteAdd('Tee').id;
-      final mine = (cubit.add('Brot') as Added).item.id;
+      final mine = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
       expect(cubit.state.items[mine]!.addedBy, isNull, reason: 'unconfirmed');
       await cubit.resync();
       expect(cubit.state.items[theirs]!.addedBy, 'lea');
@@ -472,7 +506,7 @@ void main() {
 
     test('a later partner add is fresh, an own add never', () async {
       final tea = repo.remoteAdd('Tee').id;
-      cubit.add('Brot');
+      cubit.addEntry(parseEntry('Brot'));
       await cubit.resync();
       expect(cubit.fresh, {tea});
     });
@@ -560,13 +594,13 @@ void main() {
       ]);
       expect(cubit.suggestionsFor(''), isEmpty);
 
-      cubit.add('milch');
+      cubit.addEntry(parseEntry('milch'));
       expect(names(cubit.suggestionsFor('milch')), ['Hafer-Milch']);
     });
 
     test('due usuals leave out what is on the list', () {
       expect(names(cubit.dueUsuals), ['Milch', 'Hafer-Milch', 'Möhren']);
-      cubit.add('Möhren');
+      cubit.addEntry(parseEntry('Möhren'));
       expect(names(cubit.dueUsuals), ['Milch', 'Hafer-Milch']);
     });
 
@@ -602,7 +636,7 @@ void main() {
       repo.usualsGate = Completer();
       unawaited(cubit.resync());
       await settle();
-      final id = (cubit.add('Brot') as Added).item.id;
+      final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
       await settle();
       expect(repo.rows, contains(id));
       repo.usualsGate!.complete();
@@ -619,7 +653,7 @@ void main() {
           ..start();
         async.elapse(Duration.zero);
         final before = repo.usualsCalls;
-        final id = (settling.add('Brot') as Added).item.id;
+        final id = (settling.addEntry(parseEntry('Brot')) as Added).item.id;
         async.elapse(Duration.zero);
         settling.tick(id);
         async.elapse(const Duration(milliseconds: 1499));

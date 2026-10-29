@@ -1,13 +1,16 @@
 import 'dart:async';
 
-import 'package:family_groceries/app/device_cache.dart';
-import 'package:family_groceries/app/router.dart';
-import 'package:family_groceries/household/invite_dialog.dart';
+import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/categories_screen.dart';
+import 'package:family_groceries/list/add_sheet/add_sheet.dart';
+import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/dictation.dart';
+import 'package:family_groceries/list/dictation_button.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/list/list_scope.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -15,16 +18,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// The whole app for day-to-day use: add field on top, list beneath.
-class const ListScreen({
-  super.key,
-
-  /// Overrides the Supabase repository, for tests.
-  final ListRepository? repository,
-}) extends StatelessWidget {
+/// The List tab: the household's name and count on top, the list, and the
+/// add bar at the bottom, which opens the add sheet. Needs the list scope
+/// (`ListScope`) above it.
+class const ListScreen({super.key}) extends StatelessWidget {
   static final Dictation? _dictation = dictationFor(
     defaultTargetPlatform,
     web: kIsWeb,
@@ -48,88 +46,124 @@ class const ListScreen({
     if (session is! InHousehold) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    final household = session.household;
-    return BlocProvider(
-      key: ValueKey(household.id),
-      create: (context) => ListCubit(
-        repository ??
-            SupabaseListRepository(Supabase.instance.client, household.id),
-        context.read<DeviceCache>().list(session.userId, household.id),
-        userId: session.userId,
-      )..start(),
-      child: ShoppingList(household: household, dictation: _dictation),
-    );
+    return ShoppingList(household: session.household, dictation: _dictation);
   }
 }
 
+/// The tab's content for [household]; needs a [ListCubit] above it.
 class const ShoppingList({
   required final Household household,
 
   /// Null hides the microphone button.
   final Dictation? dictation,
   super.key,
-}) extends StatefulWidget {
+}) extends StatelessWidget {
   @override
-  State<ShoppingList> createState() => _ShoppingListState();
+  Widget build(BuildContext context) => BlocProvider(
+    create: (context) => AddSheetCubit(context.read<ListCubit>()),
+    // The list's snackbars float above the add bar, not above the tabs.
+    child: ScaffoldMessenger(
+      child: _ShoppingList(household: household, dictation: dictation),
+    ),
+  );
 }
 
-class _ShoppingListState() extends State<ShoppingList> {
+class const _ShoppingList({
+  required final Household household,
+  required final Dictation? dictation,
+}) extends StatefulWidget {
+  @override
+  State<_ShoppingList> createState() => _ShoppingListState();
+}
+
+class _ShoppingListState() extends State<_ShoppingList> {
   final _input = TextEditingController();
   final _inputFocus = FocusNode();
-  late final AppLifecycleListener _lifecycle;
-  late final StreamSubscription<Rejected> _rejections;
+  RejectionNotices? _notices;
+  SheetOpenNotifier? _sheetOpen;
   var _listening = false;
+
+  /// Phones get the keyboard only when asked; with a hardware keyboard
+  /// the field is ready for typing at once.
+  static final _autofocus =
+      defaultTargetPlatform != TargetPlatform.iOS &&
+      defaultTargetPlatform != TargetPlatform.android;
 
   @override
   void initState() {
     super.initState();
-    final cubit = context.read<ListCubit>();
-    _lifecycle = AppLifecycleListener(
-      onResume: () => unawaited(cubit.resync()),
-    );
-    _rejections = cubit.rejections.listen((rejection) {
-      if (!mounted) {
-        return;
-      }
-      final l10n = AppLocalizations.of(context);
-      _snack(switch (rejection) {
-        ItemRejected(:final itemName) => l10n.syncFailed(itemName),
-        NameTaken(:final name) => l10n.categoryNameTaken(name),
-        CatalogRejected() => l10n.catalogSaveFailed,
-        NeedsConnection() => l10n.reorderNeedsConnection,
-      });
-    });
+    _notices = context.read<RejectionNotices?>()?..listTab = _rejected;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final notifier = SheetOpen.maybeOf(context);
+    if (notifier != _sheetOpen) {
+      _sheetOpen?.removeListener(_followShell);
+      _sheetOpen = notifier?..addListener(_followShell);
+    }
+  }
+
+  /// The shell closes the sheet when the user leaves the tab.
+  void _followShell() {
+    if (_sheetOpen?.value == false) {
+      context.read<AddSheetCubit>().dismiss();
+    }
   }
 
   @override
   void dispose() {
-    unawaited(_rejections.cancel());
-    _lifecycle.dispose();
+    _sheetOpen?.removeListener(_followShell);
+    // The tabs come back, after this frame: the tree is locked now, and a
+    // new household's list may already have taken the notifier over.
+    if (_sheetOpen case final notifier? when notifier.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => notifier.release());
+    }
+    if (_notices?.listTab == _rejected) {
+      _notices?.listTab = null;
+    }
     _input.dispose();
     _inputFocus.dispose();
     super.dispose();
   }
 
-  void _snack(String text, {VoidCallback? undo}) {
-    final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(text),
-          persist: false,
-          action: undo == null
-              ? null
-              : SnackBarAction(label: l10n.undo, onPressed: undo),
-        ),
-      );
+  /// A refused write, in the list's own messenger while the list is on
+  /// screen; false sends it to the app's (More, screens opened on top).
+  bool _rejected(String text) {
+    if (!mounted ||
+        !TickerMode.valuesOf(context).enabled ||
+        !(ModalRoute.of(context)?.isCurrent ?? true)) {
+      return false;
+    }
+    _snack(text);
+    return true;
   }
 
-  void _submit() => _afterAdd(context.read<ListCubit>().add(_input.text));
+  void _snack(String text) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text), persist: false));
 
-  void _addUsual(Usual usual) {
-    _afterAdd(context.read<ListCubit>().addUsual(usual));
+  void _close() {
+    context.read<AddSheetCubit>().dismiss();
+    _inputFocus.unfocus();
+  }
+
+  void _take(Suggestion suggestion) {
+    _afterAdd(context.read<AddSheetCubit>().take(suggestion));
     _refocusAfterTap();
+  }
+
+  Future<void> _submit() async {
+    _afterAdd(await context.read<AddSheetCubit>().takeFirst());
+  }
+
+  void _afterAdd(AddResult? result) {
+    if (!mounted || result == null || result is NothingToAdd) {
+      return;
+    }
+    _input.clear();
+    _inputFocus.requestFocus();
   }
 
   /// On web a tap outside the field blurs its DOM input while Flutter keeps
@@ -138,6 +172,7 @@ class _ShoppingListState() extends State<ShoppingList> {
   /// connection (a zero-delay timer) to run first, or that blur wins.
   void _refocusAfterTap() {
     if (!kIsWeb) {
+      _inputFocus.requestFocus();
       return;
     }
     _inputFocus.unfocus();
@@ -148,285 +183,387 @@ class _ShoppingListState() extends State<ShoppingList> {
     });
   }
 
-  void _afterAdd(AddResult result) {
-    final l10n = AppLocalizations.of(context);
-    switch (result) {
-      case Added():
-        _input.clear();
-      case AlreadyOnList(:final item):
-        _input.clear();
-        _snack(l10n.alreadyOnList(item.name));
-      case NothingToAdd():
-        break;
-    }
-    _inputFocus.requestFocus();
-  }
-
-  /// Fills the field while the user speaks, then adds what the server's
-  /// splitter makes of the sentence. On failure the text stays in the field.
-  Future<void> _dictate(Dictation dictation) async {
-    if (_listening) {
-      await dictation.stop();
-      return;
-    }
-    final l10n = AppLocalizations.of(context);
-    final cubit = context.read<ListCubit>();
-    if (await dictation.prepare() case final problem?) {
-      if (mounted) {
-        _snack(_dictationProblem(l10n, problem));
-      }
-      return;
-    }
-    setState(() => _listening = true);
-    final dictated = await dictation.listen(
-      onWords: (words) => _input.text = words,
-    );
-    if (!mounted) {
-      return;
-    }
-    setState(() => _listening = false);
-    final String text;
-    switch (dictated) {
-      case Heard(text: final heard):
-        text = heard;
-      case NothingHeard():
-        _snack(l10n.dictationNothingHeard);
-        return;
-      case Refused(:final problem):
-        _snack(_dictationProblem(l10n, problem));
-        return;
-    }
-    try {
-      final results = await cubit.addSpoken(text);
-      if (!mounted) {
-        return;
-      }
-      if (results.isEmpty) {
-        _snack(l10n.dictationNothingUnderstood);
-      } else {
-        _input.clear();
-        _snack(_dictationSummary(l10n, results));
-      }
-    } on Exception {
-      if (mounted) {
-        _snack(l10n.dictationSplitFailed);
-      }
-    }
-    _inputFocus.requestFocus();
-  }
-
-  static String _dictationProblem(
-    AppLocalizations l10n,
-    DictationProblem problem,
-  ) => switch (problem) {
-    DictationProblem.unavailable => l10n.dictationUnavailable,
-    DictationProblem.noOfflineGerman => l10n.dictationNoOfflineGerman,
-  };
-
-  static String _dictationSummary(
-    AppLocalizations l10n,
-    List<AddResult> results,
-  ) {
-    final added = [
-      for (final result in results)
-        if (result case Added(:final item))
-          [?item.quantity, item.name].join(' '),
-    ];
-    final existing = [
-      for (final result in results)
-        if (result case AlreadyOnList(:final item)) item.name,
-    ];
-    return [
-      if (added.isNotEmpty) l10n.dictationAdded(added.join(', ')),
-      if (existing.isNotEmpty) l10n.dictationAlreadyOnList(existing.join(', ')),
-    ].join(' ');
-  }
-
   /// Acting on the list ends typing, which also drops the soft keyboard
-  /// while ticking things off in the store.
-  void _leaveField() => _inputFocus.unfocus();
+  /// while ticking things off in the store. A tick commits 260 ms after
+  /// the tap; by then the user may have opened the sheet to type, and the
+  /// late call must not take the field away.
+  void _leaveField() {
+    if (!context.read<AddSheetCubit>().state.open) {
+      _inputFocus.unfocus();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: _Title(widget.household.name),
-        actions: [
-          const _SyncIndicator(),
-          _Menu(household: widget.household),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Focus(
-              // Hardware Enter (web, desktop): handled here, because Flutter
-              // web's text-input action path blurs the field and leaves it
-              // dead for the next Enter. Soft keyboards still submit below.
-              onKeyEvent: (_, event) {
-                final enter =
-                    event.logicalKey == LogicalKeyboardKey.enter ||
-                    event.logicalKey == LogicalKeyboardKey.numpadEnter;
-                if (!enter || event is KeyUpEvent) {
-                  return KeyEventResult.ignored;
-                }
-                if (event is KeyDownEvent) {
-                  _submit();
-                }
-                return KeyEventResult.handled;
-              },
-              child: TextField(
-                key: const ValueKey('add-item-field'),
-                controller: _input,
-                focusNode: _inputFocus,
-                autofocus: true,
-                // The server caps names at 120 characters.
-                maxLength: 120,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                textInputAction: TextInputAction.send,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  hintText: _listening
-                      ? l10n.dictationListening
-                      : l10n.addFieldHint,
-                  prefixIcon: const Icon(Icons.add_shopping_cart),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
+    final open = context.select<AddSheetCubit, bool>((c) => c.state.open);
+    final media = MediaQuery.of(context);
+    // The tabs below the bar: the band the open sheet stands on.
+    final tabs = media.size.width >= wideLayout ? 0.0 : 62.0;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AddSheetCubit, AddSheetState>(
+          listenWhen: (a, b) => a.open != b.open,
+          listener: (_, sheet) => _sheetOpen?.value = sheet.open,
+        ),
+        // A sheet that starts over (closed, or opened again) clears the
+        // input too.
+        BlocListener<AddSheetCubit, AddSheetState>(
+          listenWhen: (a, b) => b.text.isEmpty && a.text.isNotEmpty,
+          listener: (_, _) {
+            if (_input.text.isNotEmpty) {
+              _input.clear();
+            }
+          },
+        ),
+      ],
+      // Tab goes input, suggestions, chips, Schließen, then the bar's
+      // buttons (DECISIONS, Job 17).
+      child: FocusTraversalGroup(
+        policy: OrderedTraversalPolicy(),
+        child: Scaffold(
+          // The shell's scaffold makes room for the keyboard.
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            children: [
+              ExcludeFocus(
+                excluding: open,
+                child: ExcludeSemantics(
+                  excluding: open,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (widget.dictation case final dictation?)
-                        IconButton(
-                          key: const ValueKey('dictation-button'),
-                          tooltip: _listening
-                              ? l10n.dictationStop
-                              : l10n.dictationStart,
-                          icon: Icon(
-                            _listening ? Icons.stop_circle : Icons.mic,
-                          ),
-                          color: _listening
-                              ? Theme.of(context).colorScheme.error
-                              : null,
-                          onPressed: () => unawaited(_dictate(dictation)),
+                      _Header(widget.household),
+                      Expanded(
+                        child: ShoppingListView(
+                          bottomInset: addBarHeight,
+                          onInteract: _leaveField,
                         ),
-                      IconButton(
-                        tooltip: l10n.addButton,
-                        icon: const Icon(Icons.send),
-                        onPressed: () {
-                          _submit();
-                          _refocusAfterTap();
-                        },
                       ),
                     ],
                   ),
-                  border: const OutlineInputBorder(),
-                  counterText: '',
                 ),
-                // Keeps the soft keyboard up after submitting.
-                onEditingComplete: () {},
-                onTapOutside: (_) => _leaveField(),
-                onSubmitted: (_) => _submit(),
               ),
+              Positioned.fill(
+                child: TextFieldTapRegion(
+                  child: AddSheet(
+                    onTake: _take,
+                    onClose: _close,
+                    onPicked: _refocusAfterTap,
+                    bandHeight: addBarHeight + tabs + media.padding.bottom,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: TextFieldTapRegion(
+            child: _AddBar(
+              input: _input,
+              focus: _inputFocus,
+              autofocus: _autofocus,
+              listening: _listening,
+              onSubmit: () => unawaited(_submit()),
+              onClose: _close,
+              onLeave: _leaveField,
+              dictation: switch (widget.dictation) {
+                final dictation? => DictationButton(
+                  dictation: dictation,
+                  input: _input,
+                  onMessage: _snack,
+                  onListening: (listening) =>
+                      setState(() => _listening = listening),
+                  onDone: _inputFocus.requestFocus,
+                ),
+                null => null,
+              },
             ),
           ),
-          // Tapping a chip neither takes focus nor counts as a tap outside
-          // the field, so typing goes on.
-          ExcludeFocus(
-            child: TextFieldTapRegion(
-              child: ValueListenableBuilder(
-                valueListenable: _input,
-                builder: (context, value, _) =>
-                    _UsualChips(text: value.text, onTap: _addUsual),
-              ),
-            ),
-          ),
-          Expanded(child: ShoppingListView(onInteract: _leaveField)),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// The household's name, and how many partner adds are new.
-class const _Title(final String household) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return BlocBuilder<ListCubit, ListState>(
-      builder: (context, state) {
-        final fresh = context.read<ListCubit>().fresh;
-        if (fresh.isEmpty) {
-          return Text(household);
-        }
-        final by = {for (final id in fresh) state.items[id]?.addedBy};
-        final partner = by.length == 1 ? state.catalog.member(by.single) : null;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(household),
-            Text(
-              partner == null
-                  ? l10n.newItems(fresh.length)
-                  : l10n.newItemsFrom(fresh.length, partner.displayName),
-              key: const ValueKey('new-items-subtitle'),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Usuals for what is typed, or the due ones while the field is empty.
-class const _UsualChips({
-  required final String text,
-  required final ValueChanged<Usual> onTap,
+/// The input, in the thumb zone: the leading disc, the field, clear while
+/// the sheet is open, and the microphone. It never moves while the sheet
+/// opens, grows or closes.
+class const _AddBar({
+  required final TextEditingController input,
+  required final FocusNode focus,
+  required final bool autofocus,
+  required final bool listening,
+  required final VoidCallback onSubmit,
+  required final VoidCallback onClose,
+  required final VoidCallback onLeave,
+  required final Widget? dictation,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return BlocBuilder<ListCubit, ListState>(
-      builder: (context, _) {
-        final cubit = context.read<ListCubit>();
-        final typing = text.trim().isNotEmpty;
-        final usuals = typing ? cubit.suggestionsFor(text) : cubit.dueUsuals;
-        if (usuals.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        return Padding(
-          key: ValueKey(typing ? 'suggestions' : 'due-suggestions'),
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                spacing: 8,
-                children: [
-                  if (!typing) Text(l10n.dueSuggestions),
-                  for (final usual in usuals) _chip(l10n, usual),
-                ],
+    final scheme = Theme.of(context).colorScheme;
+    final cubit = context.read<AddSheetCubit>();
+    final sheet = context.watch<AddSheetCubit>().state;
+    final list = context.watch<ListCubit>();
+    final open = sheet.open;
+    final first = sheetRows(sheet, list).firstOrNull?.entry;
+    return Material(
+      color: scheme.surfaceContainerLow,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: open ? Colors.transparent : scheme.outlineVariant,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: addBarHeight,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: addSheetMaxWidth),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      _Disc(
+                        open: open,
+                        icon: first == null
+                            ? null
+                            : nameIcon(
+                                first.name,
+                                list.state.catalog.categories
+                                    .where((c) => c.id == first.categoryId)
+                                    .firstOrNull,
+                              ),
+                      ),
+                      Expanded(
+                        child: Focus(
+                          // Hardware Enter (web, desktop) is handled here,
+                          // because Flutter web's text-input action path
+                          // blurs the field and leaves it dead for the next
+                          // Enter. Soft keyboards still submit below.
+                          onKeyEvent: (_, event) {
+                            final key = event.logicalKey;
+                            final enter =
+                                key == LogicalKeyboardKey.enter ||
+                                key == LogicalKeyboardKey.numpadEnter;
+                            if (event is KeyUpEvent) {
+                              return KeyEventResult.ignored;
+                            }
+                            if (key == LogicalKeyboardKey.escape && open) {
+                              onClose();
+                              return KeyEventResult.handled;
+                            }
+                            if (!enter) {
+                              return KeyEventResult.ignored;
+                            }
+                            if (event is KeyDownEvent) {
+                              onSubmit();
+                            }
+                            return KeyEventResult.handled;
+                          },
+                          child: FocusTraversalOrder(
+                            order: const NumericFocusOrder(1),
+                            child: TextField(
+                              key: const ValueKey('add-item-field'),
+                              controller: input,
+                              focusNode: focus,
+                              autofocus: autofocus,
+                              // Focus comes back after every tap in the
+                              // sheet; typing goes on where it was.
+                              selectAllOnFocus: false,
+                              // The server caps names at 120 characters.
+                              maxLength: 120,
+                              maxLengthEnforcement:
+                                  MaxLengthEnforcement.enforced,
+                              textInputAction: TextInputAction.send,
+                              textCapitalization: TextCapitalization.sentences,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: scheme.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: listening
+                                    ? l10n.dictationListening
+                                    : l10n.addFieldHint,
+                                hintStyle: TextStyle(
+                                  fontSize: 18,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                                border: InputBorder.none,
+                                counterText: '',
+                              ),
+                              onTap: () {
+                                cubit.show();
+                                // Text the microphone left behind.
+                                if (input.text.isNotEmpty) {
+                                  cubit.type(input.text);
+                                }
+                              },
+                              onChanged: cubit.type,
+                              // Keeps the soft keyboard up after submitting.
+                              onEditingComplete: () {},
+                              onSubmitted: (_) => onSubmit(),
+                              onTapOutside: (_) {
+                                if (!open) {
+                                  onLeave();
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (open && sheet.text.isNotEmpty)
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(5),
+                          child: IconButton(
+                            key: const ValueKey('add-clear'),
+                            tooltip: l10n.clearInput,
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              input.clear();
+                              cubit.type('');
+                              focus.requestFocus();
+                            },
+                          ),
+                        ),
+                      if (dictation case final dictation?)
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(6),
+                          child: dictation,
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+}
 
-  Widget _chip(AppLocalizations l10n, Usual usual) {
-    final label = [?usual.quantity, usual.name].join(' ');
-    return Semantics(
-      label: l10n.suggestion(label),
-      button: true,
-      excludeSemantics: true,
-      onTap: () => onTap(usual),
-      child: ActionChip(
-        key: ValueKey('suggestion-${usual.name}'),
-        label: Text(label),
-        onPressed: () => onTap(usual),
+/// "+" while closed; open, the first row's icon, popping in.
+class const _Disc({required final bool open, required final String? icon})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final still = MediaQuery.disableAnimationsOf(context);
+    final Widget face = !open
+        ? Icon(Icons.add, size: 24, color: scheme.onPrimary)
+        : icon == null
+        ? Icon(Icons.search, size: 20, color: scheme.onSecondaryContainer)
+        : Text(icon!, style: const TextStyle(fontSize: 20));
+    return ExcludeSemantics(
+      child: AnimatedSwitcher(
+        duration: still ? Duration.zero : const Duration(milliseconds: 220),
+        switchInCurve: Easing.emphasizedDecelerate,
+        transitionBuilder: (child, animation) => ScaleTransition(
+          scale: Tween<double>(begin: 0.6, end: 1).animate(animation),
+          child: child,
+        ),
+        layoutBuilder: (current, previous) =>
+            Stack(alignment: Alignment.center, children: [?current]),
+        child: Container(
+          key: ValueKey((open, icon)),
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: open ? scheme.secondaryContainer : scheme.primary,
+          ),
+          child: face,
+        ),
+      ),
+    );
+  }
+}
+
+/// The household's name (Hummlist without one), the item count, how many
+/// partner adds are new, and the sync state.
+class const _Header(final Household household) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final cubit = context.watch<ListCubit>();
+    final state = cubit.state;
+    final count = state.items.values
+        .where((i) => i.status == ItemStatus.active)
+        .length;
+    final fresh = cubit.fresh;
+    final by = {for (final id in fresh) state.items[id]?.addedBy};
+    final partner = by.length == 1 ? state.catalog.member(by.single) : null;
+    final name = household.name.trim().isEmpty ? l10n.appTitle : household.name;
+    final small = TextStyle(fontSize: 13, color: scheme.onSurfaceVariant);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.paddingOf(context).top + 6,
+          8,
+          8,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      name.toUpperCase(),
+                      key: const ValueKey('list-title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 13 * 0.08,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      Text(
+                        l10n.listItemCount(count),
+                        key: const ValueKey('list-count'),
+                        style: small,
+                      ),
+                      if (fresh.isNotEmpty)
+                        Text(
+                          partner == null
+                              ? l10n.newItems(fresh.length)
+                              : l10n.newItemsFrom(
+                                  fresh.length,
+                                  partner.displayName,
+                                ),
+                          key: const ValueKey('new-items-subtitle'),
+                          style: small.copyWith(
+                            color: scheme.tertiary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const _SyncIndicator(),
+          ],
+        ),
       ),
     );
   }
@@ -461,54 +598,5 @@ class const _SyncIndicator() extends StatelessWidget {
       );
     }
     return const SizedBox.shrink();
-  }
-}
-
-enum _MenuAction() {
-  categories,
-  invite,
-  join,
-  access,
-  account,
-  signOut,
-}
-
-class const _Menu({required final Household household})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return PopupMenuButton<_MenuAction>(
-      tooltip: l10n.menu,
-      onSelected: (action) => unawaited(switch (action) {
-        _MenuAction.categories => openCategories(context),
-        _MenuAction.invite => showInviteDialog(context, household),
-        _MenuAction.join => showJoinCodeDialog(context),
-        _MenuAction.access => context.push(settingsPath),
-        _MenuAction.account => context.push('$settingsPath?section=account'),
-        _MenuAction.signOut => context.read<SessionCubit>().signOut(),
-      }),
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          value: _MenuAction.categories,
-          child: Text(l10n.manageCategories),
-        ),
-        PopupMenuItem(
-          value: _MenuAction.invite,
-          child: Text(l10n.inviteMember),
-        ),
-        PopupMenuItem(
-          value: _MenuAction.join,
-          child: Text(l10n.joinOtherHousehold),
-        ),
-        PopupMenuItem(value: _MenuAction.access, child: Text(l10n.accessTitle)),
-        PopupMenuItem(
-          key: const ValueKey('menu-account'),
-          value: _MenuAction.account,
-          child: Text(l10n.account),
-        ),
-        PopupMenuItem(value: _MenuAction.signOut, child: Text(l10n.signOut)),
-      ],
-    );
   }
 }

@@ -1,7 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot,
-  signUp, signUpWithHousehold, tick, typeInto, within,
+  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -66,8 +65,7 @@ test('a member of another household joins with a code from the menu', async ({ b
   await signUpWithHousehold(lea, newEmail('lea'));
   await addItem(lea, 'Tee');
 
-  await lea.getByRole('button', { name: 'Menü' }).click();
-  await lea.getByRole('menuitem', { name: 'Anderem Haushalt beitreten' }).click();
+  await openMore(lea, 'Anderem Haushalt beitreten');
   await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code.toLowerCase());
   await lea.getByRole('button', { name: 'Beitreten' }).click();
   await expect(lea, 'the code goes to the confirm screen').toHaveURL(new RegExp(`/join/${code}$`));

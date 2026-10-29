@@ -25,10 +25,13 @@ Future<void> deleteAccount(BuildContext context) async {
   }
 }
 
-/// Whether [input] is the confirmation word; `LOESCHEN` for keyboards
-/// without umlauts.
-bool isDeleteConfirmation(String input) =>
-    const {'löschen', 'loeschen'}.contains(input.trim().toLowerCase());
+/// Whether [input] is the confirmation word: `LÖSCHEN`, `LOESCHEN` for
+/// keyboards without umlauts, or `DELETE` as the English app asks.
+bool isDeleteConfirmation(String input) => const {
+  'löschen',
+  'loeschen',
+  'delete',
+}.contains(input.trim().toLowerCase());
 
 sealed class const _Step();
 

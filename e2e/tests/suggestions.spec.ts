@@ -1,9 +1,14 @@
-import { expect, test } from './fixtures';
+import { expect, test, type Page } from './fixtures';
 import {
-  addField, addItem, adminClient, apiAs, cutOff, itemRow, newEmail, screenshot, signUpWithHousehold, tick, typeInto,
+  addedNote, addField, addItem, addSheet, adminClient, apiAs, closeSheet, cutOff, itemRow, newEmail, screenshot,
+  signUpWithHousehold, tick, typeInto,
 } from './helpers';
 
 const daysAgo = (days: number, hours = 0) => new Date(Date.now() - (days * 24 + hours) * 3_600_000).toISOString();
+
+/** A row of the add sheet by its line and source: "2 l Milch, Schon mal gekauft, …", "6× Eier, Wieder fällig". */
+const suggestion = (page: Page, line: string, source: string) =>
+  addSheet(page).getByRole('button', { name: new RegExp(`^${line}, ${source}(,|$)`) });
 
 test('typing offers what the household bought before; a tap adds it with its last quantity', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('usuals'));
@@ -14,24 +19,27 @@ test('typing offers what the household bought before; a tap adds it with its las
   await expect(itemRow(page, 'Milch')).toHaveCount(0);
 
   await typeInto(addField(page), 'Mi');
-  const chip = page.getByRole('button', { name: 'Vorschlag: 2 l Milch' });
-  await expect(chip, 'a bought item is offered while typing').toBeVisible();
+  const row = suggestion(page, '2 l Milch', 'Schon mal gekauft');
+  await expect(row, 'a bought item is offered while typing').toBeVisible();
   await expect(
-    page.getByRole('button', { name: /^Vorschlag: .*Mineralwasser/ }),
+    addSheet(page).getByRole('button', { name: /^Mineralwasser,/ }),
     'an item already on the list is not offered',
   ).toHaveCount(0);
   await screenshot(page, '10-suggestion-chips');
 
-  await chip.click();
-  await expect(itemRow(page, 'Milch'), 'added with the quantity it was bought in').toHaveAccessibleName(/^Milch 2 l/);
-  await expect(addField(page), 'the chip leaves focus in the add field').toBeFocused();
+  await row.click();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Milch\b/), 'a tap adds the row').toBeVisible();
+  await expect(addField(page), 'the row leaves focus in the add field').toBeFocused();
   await expect(addField(page)).toHaveValue('');
-  await expect(chip).toHaveCount(0);
+  await expect(row).toHaveCount(0);
 
   await page.keyboard.insertText('Brot');
   await page.keyboard.press('Enter');
-  await expect(itemRow(page, 'Brot'), 'Enter adds the next item').toBeVisible();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Brot\b/), 'Enter adds the next item').toBeVisible();
   await expect(addField(page)).toBeFocused();
+  await closeSheet(page);
+  await expect(itemRow(page, 'Milch'), 'added with the quantity it was bought in').toHaveAccessibleName(/^Milch 2 l/);
+  await expect(itemRow(page, 'Brot')).toBeVisible();
 });
 
 test('suggestions come from the device cache when Supabase is unreachable', async ({ page }) => {
@@ -39,7 +47,7 @@ test('suggestions come from the device cache when Supabase is unreachable', asyn
   await addItem(page, '6 Eier');
   await tick(page, 'Eier');
   await typeInto(addField(page), 'Ei');
-  await expect(page.getByRole('button', { name: 'Vorschlag: 6 Eier' })).toBeVisible();
+  await expect(suggestion(page, '6× Eier', 'Schon mal gekauft')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /\blist\./.test(k));
     let value = key && JSON.parse(localStorage.getItem(key)!);
@@ -51,9 +59,10 @@ test('suggestions come from the device cache when Supabase is unreachable', asyn
   await page.reload();
   await expect(page.getByRole('button', { name: 'Zuletzt gekauft' }), 'the cached list is back').toBeVisible();
   await typeInto(addField(page), 'ei');
-  await page.getByRole('button', { name: 'Vorschlag: 6 Eier' }).click();
-  await expect(itemRow(page, 'Eier'), 'added offline from a cached suggestion').toHaveAccessibleName(/^Eier 6/);
+  await suggestion(page, '6× Eier', 'Schon mal gekauft').click();
   await expect(addField(page)).toBeFocused();
+  await closeSheet(page);
+  await expect(itemRow(page, 'Eier'), 'added offline from a cached suggestion').toHaveAccessibleName(/^Eier 6/);
 });
 
 test('with the field empty, what is due again is offered; a tap adds it and typing goes on', async ({ page }) => {
@@ -63,7 +72,11 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
   await expect(itemRow(page, 'Brötchen')).toHaveAccessibleName(/^Brötchen 4/);
   await tick(page, 'Brötchen');
   await expect(itemRow(page, 'Brötchen')).toHaveCount(0);
-  await expect(page.getByText('Brauchen wir wieder?'), 'one purchase is not a usual interval yet').toHaveCount(0);
+  // What is due shows in the sheet while the field is empty; a tap on the field opens it.
+  await addField(page).click();
+  await expect(addSheet(page)).toBeVisible();
+  await expect(suggestion(page, '4× Brötchen', 'Wieder fällig'), 'one purchase is not a usual interval yet').toHaveCount(0);
+  await closeSheet(page);
 
   // Two purchases a week apart, the last a week ago: history only the server writes.
   const api = await apiAs(email);
@@ -78,17 +91,20 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
 
   await page.reload();
   await expect(addField(page)).toBeFocused();
-  await expect(page.getByText('Brauchen wir wieder?'), 'the usual week has passed').toBeVisible();
-  const chip = page.getByRole('button', { name: 'Vorschlag: 4 Brötchen' });
-  await expect(chip).toBeVisible();
+  await addField(page).click();
+  const due = suggestion(page, '4× Brötchen', 'Wieder fällig');
+  await expect(due, 'the usual week has passed').toBeVisible();
   await screenshot(page, '11-due-suggestions');
 
-  await chip.click();
-  await expect(itemRow(page, 'Brötchen'), 'added with its usual quantity').toHaveAccessibleName(/^Brötchen 4/);
-  await expect(page.getByText('Brauchen wir wieder?'), 'nothing else is due').toHaveCount(0);
-  await expect(addField(page), 'the chip leaves focus in the add field').toBeFocused();
+  await due.click();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Brötchen\b/), 'a tap adds it').toBeVisible();
+  await expect(addSheet(page).getByRole('button', { name: /, Wieder fällig(,|$)/ }), 'nothing else is due').toHaveCount(0);
+  await expect(addField(page), 'the row leaves focus in the add field').toBeFocused();
   await page.keyboard.insertText('Butter');
   await page.keyboard.press('Enter');
-  await expect(itemRow(page, 'Butter'), 'Enter adds the next item').toBeVisible();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Butter\b/), 'Enter adds the next item').toBeVisible();
   await expect(addField(page)).toBeFocused();
+  await closeSheet(page);
+  await expect(itemRow(page, 'Brötchen'), 'added with its usual quantity').toHaveAccessibleName(/^Brötchen 4/);
+  await expect(itemRow(page, 'Butter')).toBeVisible();
 });

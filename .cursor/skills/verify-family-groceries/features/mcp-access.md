@@ -1,6 +1,6 @@
 # MCP access (Zugänge)
 
-Menü → Zugänge shows the MCP server URL, the user's personal access tokens and the AI apps connected over OAuth. A token is shown once when it is created and works as a bearer token at the MCP endpoint (and the Siri endpoint). Revoking a token or disconnecting an app ends its access on its very next request, even though an OAuth access token is valid for an hour.
+Mehr → Zugänge shows the MCP server URL, the user's personal access tokens and the AI apps connected over OAuth. A token is shown once when it is created and works as a bearer token at the MCP endpoint (and the Siri endpoint). Revoking a token or disconnecting an app ends its access on its very next request, even though an OAuth access token is valid for an hour.
 
 ## Sub-features
 
@@ -13,7 +13,7 @@ Menü → Zugänge shows the MCP server URL, the user's personal access tokens a
 
 ## How to get to it (user POV)
 
-- On the list screen, tap the menu (tooltip "Menü"), then "Zugänge".
+- Tap "Mehr" in the tab bar, then "Zugänge".
 - An app appears under "Verbundene Apps" after the user approves it on the consent page. Supabase Auth sends the browser there, so only the web build shows it. On the Linux surface nothing opens that route, so the journey grants the app over HTTP as a precondition.
 
 ## Driving it with fg
@@ -24,7 +24,7 @@ Preconditions:
 - For `mcp-apps` and `mcp-disconnect`: an approved OAuth client. `journeys/mcp-disconnect.sh` registers one dynamically and approves it as peter over HTTP: authorize, GET the authorization, POST the consent, then exchange the code with PKCE.
 
 - **Consent page.** Not drivable with fg. Run `scripts/gates/e2e.sh --workers=1 tests/mcp.spec.ts`: it approves on the page ("Erlauben"), denies ("denying consent sends access_denied back to the client") and signs in on the way ("a signed-out user signs in on the way to the consent page and lands back on it").
-- **Open.** Run `fg tap --tooltip Menü`, `fg wait --text Zugänge`, `fg tap --text Zugänge`. `fg wait --text "Verbundene Apps"` succeeds.
+- **Open.** Run `fg tap --key tab-more`, `fg wait --key more-access`, `fg tap --key more-access`. `fg wait --text "Verbundene Apps"` succeeds.
 - **URL.** `fg wait --text "$(fg env | jq -r .apiUrl)/functions/v1/mcp"` succeeds. `fg tap --tooltip Kopieren` and `fg wait --text Kopiert` succeed.
 - **Disconnect.** Run `fg tap --tooltip "<app> trennen"`, `fg wait --text "<app> trennen?"`, `fg tap --text Trennen` and `fg wait --text "<app>" --gone`. A `tools/list` POST to the MCP URL with the app's access token now returns 401. `fg db query "select count(*) from auth.sessions where oauth_client_id = '<client id>'"` returns 0.
 - **Create a token.** Use a unique name, such as `N="Siri $(date +%s)"`. Run `fg tap --text "Token erstellen"`, `fg wait --label Name`, `fg type --label Name --input "$N"`, `fg tap --text Erstellen`. `fg wait --contains fgp_` returns the token. It reaches MCP (200). Then run `fg tap --text Fertig`; `fg find --contains "Noch nie benutzt"` shows its row.
@@ -33,7 +33,7 @@ Preconditions:
 
 ## Gotchas
 
-- Wait for the menu entry and for each dialog's title before tapping. Taps sent during the open animation fail with `not_found`.
+- Wait for each dialog's title before tapping. Taps sent during the open animation fail with `not_found`.
 - Button labels inside dialogs ("Trennen", "Widerrufen", "Erstellen") are not listed by `fg find`. `fg tap --text` still finds them.
 - The created token appears in `fg wait --contains fgp_` output. Keep that output out of committed logs.
 - GoTrue only approves an authorization after the user has read it (GET `/auth/v1/oauth/authorizations/<id>`). A consent POST without it returns `oauth_authorization_not_found`.

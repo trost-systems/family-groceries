@@ -1,8 +1,7 @@
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
 import { expect, type Page, test } from './fixtures';
 import {
-  addItem, apiAs, itemRow, newEmail, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto,
-  within,
+  addItem, apiAs, itemRow, newEmail, openMore, openTab, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto, within,
 } from './helpers';
 import {
   call, callbackParams, callExpectingError, connectWithToken, mcpUrl, openAuthorization, TestOAuthProvider, timedFetch,
@@ -109,8 +108,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await screenshot(app, 'mcp-03-list-after-tick');
 
   // The grant shows up in the app's settings and can be disconnected there.
-  await app.getByRole('button', { name: 'Menü' }).click();
-  await app.getByRole('menuitem', { name: 'Zugänge' }).click();
+  await openMore(app, 'Zugänge');
   await expect(app.getByText('Claude (E2E)').first()).toBeVisible();
   await expect(
     app.getByRole('group', { name: mcpUrl.href }),
@@ -206,8 +204,7 @@ test('a signed-out user signs in on the way to the consent page and lands back o
 });
 
 async function createTokenInSettings(page: Page, name: string): Promise<string> {
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Zugänge' }).click();
+  await openMore(page, 'Zugänge');
   await page.getByRole('button', { name: 'Token erstellen' }).click();
   await typeInto(page.getByRole('textbox', { name: 'Name' }), name);
   await page.getByRole('button', { name: 'Erstellen' }).click();
@@ -234,10 +231,9 @@ test('personal access token: create in settings, use over MCP in both protocol e
   const categories = await call<{ name: string }[]>(modern, 'list_categories');
   expect(categories[0].name).toBe('Obst & Gemüse');
 
-  await page.goBack();
+  await openTab(page, 'Liste');
   await expect(itemRow(page, 'Klopapier')).toBeVisible();
-  await page.getByRole('button', { name: 'Menü' }).click();
-  await page.getByRole('menuitem', { name: 'Zugänge' }).click();
+  await openMore(page, 'Zugänge');
   await expect(page.getByRole('group', { name: /^Siri …\S{4} · Erstellt am .* · Zuletzt benutzt / })).toBeVisible();
   await page.getByRole('button', { name: 'Siri widerrufen' }).click();
   await page.getByRole('button', { name: 'Widerrufen' }).click();

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
@@ -145,6 +146,29 @@ class FakeRepository() implements ListRepository {
   Future<ParsedEntry> parse(String text) async {
     _ensureOnline();
     return parsed[text] ?? ParsedEntry(name: text);
+  }
+
+  /// What suggest_entries answers per text; else the parse alone.
+  final suggestions = <String, List<Suggestion>>{};
+
+  /// Texts asked for, in order.
+  final suggestCalls = <String>[];
+
+  /// When set, suggest waits for it.
+  Completer<void>? suggestGate;
+
+  @override
+  Future<List<Suggestion>> suggest(String text) async {
+    suggestCalls.add(text);
+    await suggestGate?.future;
+    _ensureOnline();
+    return suggestions[text] ??
+        [
+          Suggestion(
+            SuggestionSource.typed,
+            parsed[text] ?? ParsedEntry(name: text, categoryId: classify(text)),
+          ),
+        ];
   }
 
   @override

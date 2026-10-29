@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
@@ -58,15 +59,15 @@ class const CategoriesScreen({super.key}) extends StatelessWidget {
           final category = categories[index];
           return ListTile(
             key: ValueKey(category.id),
-            title: Text(category.name),
+            title: Text(categoryName(category, l10n)),
             onTap: () async {
               final name = await showNameDialog(
                 context,
                 title: l10n.renameCategory,
                 confirm: l10n.save,
-                initial: category.name,
+                initial: categoryName(category, l10n),
               );
-              if (name != null && name != category.name) {
+              if (name != null && name != categoryName(category, l10n)) {
                 await cubit.renameCategory(category.id, name);
               }
             },
@@ -75,7 +76,7 @@ class const CategoriesScreen({super.key}) extends StatelessWidget {
               children: [
                 if (category.seedKey != 'other')
                   IconButton(
-                    tooltip: l10n.deleteCategory(category.name),
+                    tooltip: l10n.deleteCategory(categoryName(category, l10n)),
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () async {
                       final target = await _askReassignTarget(
@@ -101,7 +102,9 @@ class const CategoriesScreen({super.key}) extends StatelessWidget {
                       container: true,
                       child: Icon(
                         Icons.drag_handle,
-                        semanticLabel: l10n.dragCategory(category.name),
+                        semanticLabel: l10n.dragCategory(
+                          categoryName(category, l10n),
+                        ),
                       ),
                     ),
                   ),
@@ -201,7 +204,7 @@ class _DeleteDialogState() extends State<_DeleteDialog> {
     final l10n = AppLocalizations.of(context);
     final target = _target;
     return AlertDialog(
-      title: Text(l10n.deleteCategory(widget.category.name)),
+      title: Text(l10n.deleteCategory(categoryName(widget.category, l10n))),
       content: DropdownButtonFormField<String>(
         initialValue: target,
         isExpanded: true,
@@ -209,7 +212,7 @@ class _DeleteDialogState() extends State<_DeleteDialog> {
         items: [
           for (final c in widget.catalog.categories)
             if (c.id != widget.category.id)
-              DropdownMenuItem(value: c.id, child: Text(c.name)),
+              DropdownMenuItem(value: c.id, child: Text(categoryName(c, l10n))),
         ],
         onChanged: (id) => setState(() => _target = id),
       ),

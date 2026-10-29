@@ -1,0 +1,42 @@
+import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/session/session_cubit.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'fake_repository.dart';
+import 'memory_cache.dart';
+
+/// Its own file: the list decides once per run whether the field
+/// autofocuses, so a phone test before it would fix the answer.
+void main() {
+  testWidgets('with a hardware keyboard the field is ready at once, the '
+      'sheet still closed', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('de'),
+        home: BlocProvider(
+          create: (_) =>
+              ListCubit(FakeRepository(), MemoryListCache(), userId: 'peter')
+                ..start(),
+          child: const ShoppingList(
+            household: Household(id: 'h', name: 'Trost'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = tester.widget<TextField>(
+      find.byKey(const ValueKey('add-item-field')),
+    );
+    expect(field.focusNode!.hasFocus, isTrue);
+    expect(find.byKey(const ValueKey('add-sheet')), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
+}

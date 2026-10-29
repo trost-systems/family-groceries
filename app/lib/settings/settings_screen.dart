@@ -15,7 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Ways in from outside the app: the MCP endpoint, personal access tokens
 /// and OAuth-connected apps. At the bottom, exporting and deleting the
-/// account.
+/// account. A page of the More tab, which gives it its frame.
 class const SettingsScreen({
   super.key,
 
@@ -75,74 +75,71 @@ class _SettingsState() extends State<_Settings> {
       listenWhen: (_, _) => widget.showAccount,
       listener: (_, _) =>
           WidgetsBinding.instance.addPostFrameCallback((_) => _revealAccount()),
-      child: Scaffold(
-        appBar: AppBar(title: Text(l10n.accessTitle)),
-        body: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            // Not a lazy ListView: the account section must exist to scroll
-            // to it.
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _Header(l10n.mcpServer),
-                  ListTile(
-                    title: const SelectionArea(child: Text(Environment.mcpUrl)),
-                    subtitle: Text(l10n.mcpServerBody),
-                    trailing: IconButton(
-                      tooltip: l10n.copy,
-                      icon: const Icon(Icons.copy),
-                      onPressed: () => _copy(context, Environment.mcpUrl),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          // Not a lazy ListView: the account section must exist to scroll
+          // to it.
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Header(l10n.mcpServer),
+                ListTile(
+                  title: const SelectionArea(child: Text(Environment.mcpUrl)),
+                  subtitle: Text(l10n.mcpServerBody),
+                  trailing: IconButton(
+                    tooltip: l10n.copy,
+                    icon: const Icon(Icons.copy),
+                    onPressed: () => _copy(context, Environment.mcpUrl),
+                  ),
+                ),
+                _Header(l10n.accessTokens),
+                ..._section(
+                  context,
+                  state.tokens,
+                  empty: l10n.noTokens,
+                  tile: (token) => _TokenTile(token: token),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.add),
+                      label: Text(l10n.createToken),
+                      onPressed: () => unawaited(_createToken(context)),
                     ),
                   ),
-                  _Header(l10n.accessTokens),
-                  ..._section(
-                    context,
-                    state.tokens,
-                    empty: l10n.noTokens,
-                    tile: (token) => _TokenTile(token: token),
+                ),
+                _Header(l10n.connectedApps),
+                ..._section(
+                  context,
+                  state.apps,
+                  empty: l10n.noConnectedApps,
+                  tile: (app) => _AppTile(app: app),
+                ),
+                _Header(l10n.account, key: _account),
+                Builder(
+                  builder: (tile) => ListTile(
+                    key: const ValueKey('account-export'),
+                    leading: const Icon(Icons.download),
+                    title: Text(l10n.accountExport),
+                    subtitle: Text(l10n.accountExportBody),
+                    onTap: () => unawaited(_export(tile, widget.saveExport)),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FilledButton.tonalIcon(
-                        icon: const Icon(Icons.add),
-                        label: Text(l10n.createToken),
-                        onPressed: () => unawaited(_createToken(context)),
-                      ),
-                    ),
-                  ),
-                  _Header(l10n.connectedApps),
-                  ..._section(
-                    context,
-                    state.apps,
-                    empty: l10n.noConnectedApps,
-                    tile: (app) => _AppTile(app: app),
-                  ),
-                  _Header(l10n.account, key: _account),
-                  Builder(
-                    builder: (tile) => ListTile(
-                      key: const ValueKey('account-export'),
-                      leading: const Icon(Icons.download),
-                      title: Text(l10n.accountExport),
-                      subtitle: Text(l10n.accountExportBody),
-                      onTap: () => unawaited(_export(tile, widget.saveExport)),
-                    ),
-                  ),
-                  ListTile(
-                    key: const ValueKey('account-delete'),
-                    leading: const Icon(Icons.delete_forever),
-                    iconColor: Theme.of(context).colorScheme.error,
-                    textColor: Theme.of(context).colorScheme.error,
-                    title: Text(l10n.accountDelete),
-                    onTap: () => unawaited(deleteAccount(context)),
-                  ),
-                ],
-              ),
+                ),
+                ListTile(
+                  key: const ValueKey('account-delete'),
+                  leading: const Icon(Icons.delete_forever),
+                  iconColor: Theme.of(context).colorScheme.error,
+                  textColor: Theme.of(context).colorScheme.error,
+                  title: Text(l10n.accountDelete),
+                  onTap: () => unawaited(deleteAccount(context)),
+                ),
+              ],
             ),
           ),
         ),

@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { editSheet, itemRow, openEdit, reveal, storeDivider } from './helpers';
+import { editSheet, itemRow, listArea, openEdit, reveal, storeDivider } from './helpers';
 
-/** The list's group headings, top to bottom (the app bar title excluded). */
+/** The list's group headings, top to bottom (the household name above the list excluded). */
 export async function groupHeadings(page: Page): Promise<string[]> {
   const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
   return headings.slice(1);
@@ -117,16 +117,16 @@ export async function holdAndDrop(
   await page.mouse.down();
   await page.waitForTimeout(600);
   await page.mouse.move(a.x + Math.min(a.width / 2, 120), a.y + a.height / 2 + (up ? -12 : 12), { steps: 4 });
-  const field = (await page.getByRole('textbox', { name: 'Was fehlt?' }).boundingBox())!;
-  const top = field.y + field.height + 12;
-  const bottom = page.viewportSize()!.height;
+  const list = await listArea(page);
+  const top = list.top + 12;
+  const bottom = list.bottom;
   let lastY: number | undefined;
   for (let i = 0; i < 80; i++) {
     const box = await to.boundingBox({ timeout: 200 }).catch(() => null);
     if (box && box.y > top + 60 && box.y + box.height < bottom - 60) break;
     // On screen and no longer moving: the list is at its end (a target at the very top or bottom
-    // never leaves the edge zone).
-    if (box && box.y >= field.y + field.height && box.y + box.height <= bottom && box.y === lastY) break;
+    // never leaves the edge zone). On screen from the start: nothing to scroll.
+    if (box && box.y >= list.top && box.y + box.height <= bottom && (i === 0 || box.y === lastY)) break;
     lastY = box?.y;
     await page.mouse.move(a.x + 40, up ? top + 4 : bottom - 4, { steps: 2 });
     await page.waitForTimeout(100);
