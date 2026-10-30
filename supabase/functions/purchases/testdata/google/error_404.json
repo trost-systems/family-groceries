@@ -1,0 +1,15 @@
+{
+  "_comment": "Google's standard API error body (google.rpc.Status over JSON), not recorded from a live API.",
+  "error": {
+    "code": 404,
+    "message": "The purchase token was not found.",
+    "status": "NOT_FOUND",
+    "errors": [
+      {
+        "message": "The purchase token was not found.",
+        "domain": "androidpublisher",
+        "reason": "purchaseTokenNotFound"
+      }
+    ]
+  }
+}

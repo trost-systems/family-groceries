@@ -1,0 +1,24 @@
+{
+  "_comment": "Built from Google's documented Order shape (orders.get, developers.google.com/android-publisher/api-ref/rest/v3/orders), not recorded from a live API.",
+  "orderId": "GPA.3301-2345-6789-01234",
+  "purchaseToken": "opaque-token-up-to-150-chars.AO-J1Oz",
+  "state": "PROCESSED",
+  "salesChannel": "IN_APP",
+  "createTime": "2025-10-30T08:00:00Z",
+  "lastEventTime": "2025-10-30T08:00:05Z",
+  "buyerAddress": { "buyerCountry": "DE" },
+  "total": { "currencyCode": "EUR", "units": "4", "nanos": 990000000 },
+  "tax": { "currencyCode": "EUR", "units": "0", "nanos": 800000000 },
+  "orderDetails": { "taxInclusive": true },
+  "developerRevenueInBuyerCurrency": { "currencyCode": "EUR", "units": "3", "nanos": 570000000 },
+  "lineItems": [
+    {
+      "productTitle": "Hummlist Lifetime",
+      "productId": "com.hummlist.app.lifetime",
+      "listingPrice": { "currencyCode": "EUR", "units": "4", "nanos": 990000000 },
+      "total": { "currencyCode": "EUR", "units": "4", "nanos": 990000000 },
+      "tax": { "currencyCode": "EUR", "units": "0", "nanos": 800000000 },
+      "oneTimePurchaseDetails": { "quantity": 1 }
+    }
+  ]
+}

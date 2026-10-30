@@ -1885,6 +1885,138 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Erneut versuchen'**
   String get retry;
+
+  /// More: the one-time purchase; the product name, the same in every language
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime'**
+  String get lifetimeTitle;
+
+  /// More: under Hummlist Lifetime while not unlocked
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist unterstützen'**
+  String get lifetimeRowHint;
+
+  /// No description provided for @lifetimeBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Ein Kauf, für euren ganzen Haushalt: Hummlist Lifetime unterstützt die Entwicklung von Hummlist.'**
+  String get lifetimeBody;
+
+  /// Hummlist Lifetime: the buy button with the store's price
+  ///
+  /// In de, this message translates to:
+  /// **'Für {price} kaufen'**
+  String lifetimeBuy(String price);
+
+  /// No description provided for @lifetimeRestore.
+  ///
+  /// In de, this message translates to:
+  /// **'Käufe wiederherstellen'**
+  String get lifetimeRestore;
+
+  /// No description provided for @lifetimeUnlocked.
+  ///
+  /// In de, this message translates to:
+  /// **'Freigeschaltet'**
+  String get lifetimeUnlocked;
+
+  /// No description provided for @lifetimeUnlockedBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime ist für euren ganzen Haushalt freigeschaltet. Danke!'**
+  String get lifetimeUnlockedBody;
+
+  /// Hummlist Lifetime: Ask to Buy or a Play payment that completes later
+  ///
+  /// In de, this message translates to:
+  /// **'Wartet auf Bestätigung'**
+  String get lifetimePending;
+
+  /// No description provided for @lifetimePendingBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern.'**
+  String get lifetimePendingBody;
+
+  /// No description provided for @lifetimeVerifying.
+  ///
+  /// In de, this message translates to:
+  /// **'Kauf wird geprüft …'**
+  String get lifetimeVerifying;
+
+  /// No description provided for @lifetimeCanceled.
+  ///
+  /// In de, this message translates to:
+  /// **'Kauf abgebrochen.'**
+  String get lifetimeCanceled;
+
+  /// Hummlist Lifetime: the store has no product yet
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime ist bald verfügbar.'**
+  String get lifetimeComingSoon;
+
+  /// No description provided for @lifetimeStoreOffline.
+  ///
+  /// In de, this message translates to:
+  /// **'Der Store ist gerade nicht erreichbar. Prüfe die Verbindung.'**
+  String get lifetimeStoreOffline;
+
+  /// No description provided for @lifetimeUsedElsewhere.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Kauf ist schon in einem anderen Haushalt freigeschaltet.'**
+  String get lifetimeUsedElsewhere;
+
+  /// No description provided for @lifetimeNothingRestored.
+  ///
+  /// In de, this message translates to:
+  /// **'Kein früherer Kauf gefunden.'**
+  String get lifetimeNothingRestored;
+
+  /// No description provided for @lifetimeRefunded.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Kauf wurde erstattet und ist nicht mehr freigeschaltet.'**
+  String get lifetimeRefunded;
+
+  /// No description provided for @lifetimeStoreFailed.
+  ///
+  /// In de, this message translates to:
+  /// **'Der Kauf hat nicht geklappt ({code}).'**
+  String lifetimeStoreFailed(String code);
+
+  /// No description provided for @lifetimeVerifyOffline.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Verbindung. Der Kauf bleibt gespeichert und wird geprüft, sobald du online bist.'**
+  String get lifetimeVerifyOffline;
+
+  /// No description provided for @lifetimeRateLimited.
+  ///
+  /// In de, this message translates to:
+  /// **'Zu viele Versuche. Versuche es später erneut.'**
+  String get lifetimeRateLimited;
+
+  /// No description provided for @lifetimeRefused.
+  ///
+  /// In de, this message translates to:
+  /// **'Der Beleg des Stores wurde nicht angenommen ({code}).'**
+  String lifetimeRefused(String code);
+
+  /// No description provided for @lifetimeServerFailed.
+  ///
+  /// In de, this message translates to:
+  /// **'Der Kauf konnte nicht geprüft werden ({code}). Er bleibt gespeichert; versuche es später erneut.'**
+  String lifetimeServerFailed(String code);
+
+  /// No description provided for @lifetimeWeb.
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime gibt es in der iOS- und Android-App.'**
+  String get lifetimeWeb;
 }
 
 class _AppLocalizationsDelegate

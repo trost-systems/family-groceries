@@ -32,6 +32,7 @@ import '../feedback/fakes.dart';
 import '../household/harness.dart'
     show FakeInvites, FakeSharer, MemoryPendingStore;
 import '../list/fake_repository.dart';
+import '../purchases/fakes.dart';
 import '../settings/fake_account.dart';
 
 class FakeSession() extends MockCubit<Session> implements SessionCubit;
@@ -81,6 +82,7 @@ typedef More = ({
   Analytics analytics,
   FakeFeedbackRepository feedback,
   ScreenTracker screens,
+  TestPurchases purchases,
 });
 
 /// More's routes as `buildRouter` has them, without the shell (whose list
@@ -104,6 +106,12 @@ Future<More> pumpMore(
 
   /// Instead of `moreTabRoutes()`, e.g. a More built like a release build.
   List<RouteBase>? routes,
+
+  /// The store, the purchases function and the household's entitlement
+  /// rows; a store that sells and a household without Lifetime by default.
+  FakePurchaseRepository? store,
+  FakePurchaseApi? api,
+  FakeEntitlementsSource? entitlements,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -131,6 +139,13 @@ Future<More> pumpMore(
       Household(id: 'home', name: 'Zuhause'),
     ),
   );
+  final purchases = TestPurchases(
+    session: session,
+    store: store,
+    api: api,
+    source: entitlements,
+  );
+  addTearDown(purchases.close);
   final repo = FakeRepository();
   final feedback = FakeFeedbackRepository();
   final feedbackCubit = FeedbackCubit(feedback, analytics: shownAnalytics);
@@ -171,6 +186,8 @@ Future<More> pumpMore(
           BlocProvider.value(value: themeCubit),
           BlocProvider.value(value: shownAnalytics),
           BlocProvider.value(value: feedbackCubit),
+          BlocProvider.value(value: purchases.entitlements),
+          BlocProvider.value(value: purchases.purchases),
         ],
         child: Builder(
           builder: (context) => MaterialApp.router(
@@ -201,5 +218,6 @@ Future<More> pumpMore(
     analytics: shownAnalytics,
     feedback: feedback,
     screens: screens,
+    purchases: purchases,
   );
 }

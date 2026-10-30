@@ -11,6 +11,10 @@ import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/purchase_api.dart';
+import 'package:family_groceries/purchases/purchase_cubit.dart';
+import 'package:family_groceries/purchases/setup.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -93,15 +97,29 @@ Future<void> _main() async {
   final language = AppLanguage.byCode(await cache.language());
   final theme = themeModeOf(await cache.theme());
   final pendingInvite = await PendingInvite.load(cache);
+  final session = SessionCubit(
+    client,
+    cache,
+    analytics: analytics,
+    pendingInvite: pendingInvite,
+  );
+  final entitlements = Entitlements(
+    SupabaseEntitlementsSource(client),
+    session,
+  );
   runApp(
     App(
       language: language,
       theme: theme,
-      session: SessionCubit(
-        client,
-        cache,
-        analytics: analytics,
-        pendingInvite: pendingInvite,
+      session: session,
+      entitlements: entitlements,
+      // Created before the first frame: the store hands over transactions
+      // an earlier session left unfinished as soon as it is listened to.
+      purchases: PurchaseCubit(
+        purchaseRepository(client),
+        SupabasePurchaseApi(client),
+        entitlements,
+        session,
       ),
       analytics: analytics,
       social: social,

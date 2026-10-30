@@ -1087,4 +1087,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get retry => 'Try again';
+
+  @override
+  String get lifetimeTitle => 'Hummlist Lifetime';
+
+  @override
+  String get lifetimeRowHint => 'Support Hummlist';
+
+  @override
+  String get lifetimeBody =>
+      'One purchase for your whole household: Hummlist Lifetime supports the development of Hummlist.';
+
+  @override
+  String lifetimeBuy(String price) {
+    return 'Buy for $price';
+  }
+
+  @override
+  String get lifetimeRestore => 'Restore purchases';
+
+  @override
+  String get lifetimeUnlocked => 'Unlocked';
+
+  @override
+  String get lifetimeUnlockedBody =>
+      'Hummlist Lifetime is unlocked for your whole household. Thank you!';
+
+  @override
+  String get lifetimePending => 'Waiting for approval';
+
+  @override
+  String get lifetimePendingBody =>
+      'Hummlist Lifetime is unlocked as soon as the purchase is approved. This can take a while.';
+
+  @override
+  String get lifetimeVerifying => 'Checking the purchase …';
+
+  @override
+  String get lifetimeCanceled => 'Purchase canceled.';
+
+  @override
+  String get lifetimeComingSoon => 'Hummlist Lifetime is coming soon.';
+
+  @override
+  String get lifetimeStoreOffline =>
+      'The store can\'t be reached right now. Check your connection.';
+
+  @override
+  String get lifetimeUsedElsewhere =>
+      'This purchase is already unlocked in another household.';
+
+  @override
+  String get lifetimeNothingRestored => 'No earlier purchase found.';
+
+  @override
+  String get lifetimeRefunded =>
+      'This purchase was refunded and is no longer unlocked.';
+
+  @override
+  String lifetimeStoreFailed(String code) {
+    return 'The purchase didn\'t go through ($code).';
+  }
+
+  @override
+  String get lifetimeVerifyOffline =>
+      'No connection. The purchase is kept and checked as soon as you\'re online.';
+
+  @override
+  String get lifetimeRateLimited => 'Too many attempts. Try again later.';
+
+  @override
+  String lifetimeRefused(String code) {
+    return 'The store\'s receipt was not accepted ($code).';
+  }
+
+  @override
+  String lifetimeServerFailed(String code) {
+    return 'The purchase couldn\'t be checked ($code). It is kept; try again later.';
+  }
+
+  @override
+  String get lifetimeWeb =>
+      'Hummlist Lifetime is available in the iOS and Android apps.';
 }

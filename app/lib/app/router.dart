@@ -44,6 +44,9 @@ const accountPath = '/more/account';
 /// More's Einladungen: invite the partner, the open invites, revoke one.
 const invitesPath = '/more/invites';
 
+/// More's Hummlist Lifetime: the purchase and its restore.
+const lifetimePath = '/more/lifetime';
+
 /// More's Einstellungen: theme and language.
 const appSettingsPath = '/more/settings';
 
@@ -65,6 +68,7 @@ const screenNames = {
   'access',
   'account',
   'invites',
+  'lifetime',
   'settings',
   'language',
   'login',
@@ -87,6 +91,7 @@ String screenNameOf(Uri location) => switch (location.path) {
   accessPath => 'access',
   accountPath => 'account',
   invitesPath => 'invites',
+  lifetimePath => 'lifetime',
   appSettingsPath => 'settings',
   languagePath => 'language',
   settingsPath when location.queryParameters['section'] == 'account' =>
@@ -111,6 +116,7 @@ bool inMoreTab(Uri location) => const {
   accessPath,
   accountPath,
   invitesPath,
+  lifetimePath,
   appSettingsPath,
   languagePath,
 }.contains(location.path);
@@ -212,6 +218,7 @@ List<RouteBase> moreTabRoutes() => [
         ('access', MorePage.access),
         ('account', MorePage.account),
         ('invites', MorePage.invites),
+        ('lifetime', MorePage.lifetime),
       ])
         GoRoute(
           path: path,

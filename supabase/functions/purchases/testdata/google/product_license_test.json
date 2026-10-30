@@ -1,0 +1,10 @@
+{
+  "_comment": "Built from Google's documented ProductPurchase shape: a license tester's purchase (purchaseType 0) without an orderId. Not recorded from a live API.",
+  "kind": "androidpublisher#productPurchase",
+  "purchaseTimeMillis": "1761811200000",
+  "purchaseState": 0,
+  "consumptionState": 0,
+  "purchaseType": 0,
+  "acknowledgementState": 0,
+  "regionCode": "DE"
+}

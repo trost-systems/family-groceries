@@ -19,6 +19,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 
 import '../list/fake_repository.dart';
 import '../more/more_harness.dart';
+import '../purchases/fakes.dart';
 
 /// The shell as `buildRouter` builds it: List and More as tabs.
 Future<void> pumpShell(
@@ -64,6 +65,8 @@ Future<void> pumpShell(
     ],
   );
   addTearDown(router.dispose);
+  final purchases = TestPurchases(session: session);
+  addTearDown(purchases.close);
   await tester.pumpWidget(
     RepositoryProvider.value(
       value: cache,
@@ -72,6 +75,8 @@ Future<void> pumpShell(
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider.value(value: language),
           BlocProvider.value(value: Analytics.off(cache)),
+          BlocProvider.value(value: purchases.entitlements),
+          BlocProvider.value(value: purchases.purchases),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

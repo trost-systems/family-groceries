@@ -1,0 +1,11 @@
+{
+  "_comment": "Built from Google's documented ProductPurchase shape: a pending payment (purchaseState 2). Not recorded from a live API.",
+  "kind": "androidpublisher#productPurchase",
+  "purchaseTimeMillis": "1761811200000",
+  "purchaseState": 2,
+  "consumptionState": 0,
+  "orderId": "GPA.3301-2345-6789-05678",
+  "acknowledgementState": 0,
+  "productId": "com.hummlist.app.lifetime",
+  "regionCode": "DE"
+}

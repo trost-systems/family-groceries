@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Keys whose English text is the same as the German one on purpose.
 const sameInBothLanguages = {
   'appTitle': 'brand name',
+  'lifetimeTitle': 'product name',
   'inviteCodeLabel': '"Code" is English too',
   'inviteLinkLabel': '"Link" is English too',
   'tokenHint': 'only an ellipsis and the token hint',

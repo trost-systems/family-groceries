@@ -12,6 +12,7 @@ void main() {
       '/more/access': 'access',
       '/more/account': 'account',
       '/more/settings': 'settings',
+      '/more/lifetime': 'lifetime',
       '/more/settings/language': 'language',
       '/settings': 'access',
       '/settings?section=account': 'account',

@@ -455,6 +455,12 @@ verify_jwt = false
 import_map = "./functions/deno.json"
 verify_jwt = false
 
+[functions.purchases]
+import_map = "./functions/deno.json"
+# The app's session is checked in the function (purchases/deps.ts); Apple's notifications and the
+# voided-purchases poll carry no Supabase JWT.
+verify_jwt = false
+
 [functions.voice]
 import_map = "./functions/deno.json"
 # Siri and the app send personal access tokens or session JWTs; the function checks them itself.

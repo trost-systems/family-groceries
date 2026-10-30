@@ -37,6 +37,7 @@ it either completes or deletes nothing.
 | "Added by" and "bought by" on items (`items.added_by`, `items.bought_by`) | Removed (set to null) |
 | Sign in with Apple tokens at Apple | Revoked when possible (see below) |
 | Local device data (cached list, household, session) | Cleared on the device that deletes |
+| Hummlist Lifetime purchases (`purchases.user_id`, `entitlements.granted_by`, job 25) | The link to the account is removed (set to null). The purchase row stays without it, and the household keeps its unlock (see "What stays") |
 
 ## What happens to the household
 
@@ -47,8 +48,8 @@ it either completes or deletes nothing.
   to the member who joined first after him.
 - **The user is the last member.** The household is deleted with
   everything in it: items, history, categories, stores, store layouts,
-  the learned category and store memory, open invites, and every token
-  issued for it.
+  the learned category and store memory, open invites, every token
+  issued for it, and its Hummlist Lifetime unlock.
 
 ## Sign in with Apple
 
@@ -90,8 +91,16 @@ deleting the Supabase user removes the link to the Google account.
 - **Copies outside the app.** An exported JSON file stays wherever the user
   saved it. Apple and Google keep their own records of the sign-in.
 
-Nothing is kept for legal reasons. There is no billing and there are no
-orders.
+- **Hummlist Lifetime purchases** (job 25, `docs/PURCHASES.md`). The store's
+  transaction (store, product, transaction id, dates, price, currency,
+  country) stays without any link to the account, so a refund can still be
+  matched and the same purchase cannot unlock a second household. The
+  household keeps its unlock while it exists; the purchase can unlock
+  another household only after that one is deleted.
+
+Nothing is kept for legal reasons. Hummlist issues no invoices: Apple sells
+in-app purchases as our commissionaire and Google as merchant of record,
+and both keep the tax records of the sale (DECISIONS 25.9).
 
 ## Data export
 
@@ -110,6 +119,7 @@ own data:
 | `history` | your entries in the item history (`added`, `bought` and so on), with item name, category and time |
 | `access_tokens` | name, last four characters, created, last used and revoked times. The export never includes the token or its hash. |
 | `connected_apps` | the OAuth apps you allowed, with their scopes and grant times |
+| `purchases` | the Hummlist Lifetime purchases your account verified: store, product, the store's transaction id, environment, purchase and refund times, price, currency, country, and the household it unlocks (job 25) |
 
 Other members' names and data are not part of the export. Only a session
 in the app itself can call the export, never an MCP OAuth token.

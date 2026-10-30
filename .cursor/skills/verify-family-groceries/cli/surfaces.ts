@@ -33,6 +33,8 @@ export function defines(inst: Instance, env: StackEnv, surface: SurfaceKind): st
     `--dart-define=SUPABASE_PUBLISHABLE_KEY=${env.publishableKey}`,
     // Debug builds otherwise post Flutter errors only to the VM service, so `fg logs` would miss them.
     '--dart-define=flutter.inspector.structuredErrors=false',
+    // Job 25: the app's fake store (features/purchases.md); FG_FAKE_STORE picks its scenario.
+    `--dart-define=FAKE_STORE=${Deno.env.get('FG_FAKE_STORE') || 'ok'}`,
   ];
 }
 

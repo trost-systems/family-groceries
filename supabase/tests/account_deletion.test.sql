@@ -1,5 +1,5 @@
 begin;
-select plan(43);
+select plan(44);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -39,7 +39,8 @@ language sql as $$
   union all select 'personal_access_tokens', count(*)::int from public.personal_access_tokens where household_id = p_household
   union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household
   union all select 'feedback', count(*)::int from public.feedback where household_id = p_household
-  union all select 'item_merges', count(*)::int from public.item_merges where household_id = p_household;
+  union all select 'item_merges', count(*)::int from public.item_merges where household_id = p_household
+  union all select 'entitlements', count(*)::int from public.entitlements where household_id = p_household;
 $$;
 
 select is(
@@ -225,6 +226,9 @@ set category_id = (select id from public.categories where household_id = (select
     brand = 'Hofbäckerei Kurz'
 where name = 'Brot';
 select pg_temp.as_postgres();
+-- Job 25: Carl bought Hummlist Lifetime for the household.
+select public.purchase_grant('apple', '2000000000002501', 'com.hummlist.app.lifetime', 'Sandbox', now(), null,
+  9.99, 'EUR', 'DE', '00000000-0000-0000-0000-0000000000c1', (select id from h));
 select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n = 0),
   null, 'before: every household table has rows'
@@ -237,6 +241,10 @@ select is(
 );
 select is((select count(*)::int from public.feedback where user_id = '00000000-0000-0000-0000-0000000000c1'), 0,
   'the last member''s feedback is gone');
+select results_eq(
+  $$ select user_id, revoked_at from public.purchases where transaction_id = '2000000000002501' $$,
+  $$ values (null::uuid, null::timestamptz) $$,
+  'the purchase stays for refunds and replays, without the buyer; its unlock went with the household');
 select results_eq(
   $$ select user_id, household_id from public.feedback $$,
   $$ values ('00000000-0000-0000-0000-0000000000a2'::uuid, null::uuid) $$,
@@ -279,7 +287,8 @@ create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
   array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'connected_apps', 'exported_at',
-        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'profile', 'version'],
+        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'profile', 'purchases',
+        'version'],
   'the export has the documented sections'
 );
 select is(
@@ -310,7 +319,9 @@ select is(
     'connected_apps', jsonb_build_array(jsonb_build_object('client_name', 'Claude', 'scopes', 'openid email',
       'granted_at', now(), 'revoked_at', null)),
     'analytics_decisions', '[]'::jsonb,
-    'alexa_links', '[]'::jsonb
+    'alexa_links', '[]'::jsonb,
+    -- Job 25: Emil bought nothing (purchases.test.sql covers a buyer's export).
+    'purchases', '[]'::jsonb
   ),
   'the export holds the user''s own data and nothing of the other member''s'
 );

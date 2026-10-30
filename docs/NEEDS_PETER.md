@@ -969,3 +969,49 @@ data map behind the store forms.
   14 fills the App Store privacy label and Play's data safety form from it. It has no open
   `[PETER: …]` items.
 - Optional: have a lawyer or a generator check the policy and this page.
+
+## Job 25: Hummlist Lifetime (in-app purchase, sandbox)
+
+Everything that needs no money, contract or identity is built (docs/PURCHASES.md). Until the items
+below are done the purchase flow is inert: the app says "not available yet", the server answers
+503. Nothing is sold, nothing is charged.
+
+1. **Paid Applications agreement, banking, tax** (App Store Connect, Business). Without it Apple
+   loads no in-app product, not even in the sandbox. App Store Connect → Business → "Paid Apps":
+   View and Agree to Terms; add the bank account (account holder, IBAN, bank); complete the tax
+   forms (for a German seller: the US form W-8BEN or W-8BEN-E, and the German tax details Apple
+   asks for); add the contacts. Apple reviews it, usually within a day; the status turns
+   "Active". Tell the Lead.
+2. **Google Play payments profile** (merchant account). Play Console → Setup → Payments profile →
+   Create payments profile: legal name, address, bank account; verify it. Play only lets the
+   app sell in-app products after this. Tell the Lead.
+3. **15 % store fee.** Apple: enroll in the App Store Small Business Program
+   (developer.apple.com/app-store/small-business-program, needs item 1 active). Google: 15 % on
+   the first USD 1M a year once the developer account is in an account group (Play Console →
+   Settings → Account groups). The revenue estimate assumes 15 % (docs/ANALYTICS.md).
+4. **Confirm or change the product decisions** (DECISIONS 25.1 to 25.5):
+   - 25.1 One non-consumable, id `com.hummlist.app.lifetime` on both stores, name "Hummlist
+     Lifetime" (DE and EN), EUR 9.99 with Germany as base; other countries from Apple's and
+     Google's automatic prices (AT and CH are printed by the setup scripts once they can run).
+   - 25.2 The unlock is the household's (both partners) and stays with the household where it
+     was bought, also when the buyer leaves or deletes the account; restoring it in another
+     household works only after the first household is gone.
+   - 25.3 Apple Family Sharing for the purchase: off (Apple never lets it be turned off again).
+   - 25.4 Nothing is behind the unlock yet. **Which features need it, or a free limit?**
+   - 25.5 Web: no buying; More shows that it is in the iOS and Android app, and the unlocked state.
+5. **Approve the privacy text** for purchases, German and English: draft section 5a in
+   `site/content/legal/datenschutz-kaeufe.md` and `privacy-purchases.md` (preview only, banner
+   "ENTWURF"). It says the anonymous transaction record is kept while Hummlist runs (against
+   double use and to match refunds); confirm that period or name one. Then a small PR moves the
+   text into the policy. Not legal advice; Apple sells as commissionaire and Google as merchant
+   of record, so we keep no tax records about buyers (DECISIONS 25.9). Your tax adviser may want
+   to confirm that for your bookkeeping of the store payouts.
+6. **Say yes to the store screen copy** (draft): "Ein Kauf, für euren ganzen Haushalt …" on the
+   Hummlist Lifetime page (`app/l10n/app_de.arb`, keys `lifetime…`), and the store description
+   "Ein Kauf für den ganzen Haushalt." / "One purchase for the whole household."
+   (`scripts/iap/product.ts`).
+7. **Sandbox purchase on a device** (with the Lead, after NEEDS_LEAD Job 25): a TestFlight
+   build, signed in to the App Store with the sandbox tester account; checklist in NEEDS_LEAD.
+8. **Tester unlocks after launch.** TestFlight testers, App Review and Play license testers unlock
+   their households with sandbox purchases, which cost nothing. Keep those unlocks after the
+   public launch, or drop them then (DECISIONS 25.27, one database statement by the Lead)?
