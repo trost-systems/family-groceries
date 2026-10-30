@@ -11,9 +11,12 @@ void main() {
   final toggle = find.byKey(const ValueKey('more-analytics'));
   final version = find.byKey(const ValueKey('more-version'));
 
+  late MemoryAnalyticsStore store;
+  setUp(() => store = MemoryAnalyticsStore());
+
   Future<(Analytics, RecordingSink)> consented() async {
     final sink = RecordingSink();
-    final analytics = await loadedAnalytics(sink, MemoryAnalyticsStore())
+    final analytics = await loadedAnalytics(sink, store)
       ..setUser(customer);
     await analytics.decide(granted: true);
     await analytics.flush();
@@ -43,13 +46,22 @@ void main() {
     expect(analytics.state.consent, isFalse);
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
     expect(analytics.queued, isEmpty);
+    expect(store.id, isNull, reason: 'off deletes the install id');
     analytics.track('item_ticked');
     await analytics.flush();
     expect(sink.names, ['first_open']);
 
+    final before = sink.events.single['properties']! as Map;
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(analytics.state.consent, isTrue);
+    await analytics.flush();
+    expect(sink.names, ['first_open', 'first_open']);
+    expect(
+      (sink.events.last['properties']! as Map)['install_id'],
+      allOf(store.id, isNot(before['install_id'])),
+      reason: 'on again: a new install id',
+    );
   });
 
   testWidgets('a long press on the version marks the install internal', (

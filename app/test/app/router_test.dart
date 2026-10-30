@@ -40,7 +40,8 @@ void main() {
     // An invite link opens the join page wherever it points.
     (household, '/settings?invite=ABCD2345', '/join/ABCD2345'),
     (household, '/more', null),
-    (household, '/more/privacy', null),
+    // The draft privacy page is gone; an old link lands on the list.
+    (household, '/more/privacy', '/'),
     (household, '/more/access', null),
     (household, '/more/account', null),
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),

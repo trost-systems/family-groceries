@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
+
+import '../app/fake_launcher.dart';
 import 'more_harness.dart';
 
 void main() {
@@ -161,15 +164,33 @@ void main() {
     });
   }
 
-  testWidgets('Datenschutz shows the draft while none is published', (
-    tester,
-  ) async {
-    await pumpMore(tester);
-    await tester.scrollUntilVisible(key('more-privacy'), 200);
-    await tapKey(tester, 'more-privacy');
-    expect(key('privacy-draft'), findsOneWidget);
-    expect(find.text('Entwurf'), findsOneWidget);
-  });
+  for (final (device, privacy, imprint) in [
+    (
+      const Locale('de', 'DE'),
+      'https://hummlist.com/datenschutz',
+      'https://hummlist.com/impressum',
+    ),
+    (
+      const Locale('en', 'US'),
+      'https://hummlist.com/en/privacy',
+      'https://hummlist.com/en/imprint',
+    ),
+  ]) {
+    testWidgets('$device: the legal rows open the site in the browser', (
+      tester,
+    ) async {
+      final launcher = fakeLauncher();
+      await pumpMore(tester, device: [device]);
+      await tester.scrollUntilVisible(key('more-licenses'), 200);
+      await tapKey(tester, 'more-privacy');
+      await tapKey(tester, 'more-imprint');
+      expect(launcher.opened, [
+        (privacy, PreferredLaunchMode.externalApplication),
+        (imprint, PreferredLaunchMode.externalApplication),
+      ]);
+      expect(key('more-screen'), findsOneWidget, reason: 'More stays open');
+    });
+  }
 
   group('from 840 px', () {
     testWidgets('More shows the list beside the access page', (tester) async {

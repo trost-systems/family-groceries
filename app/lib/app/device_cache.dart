@@ -94,6 +94,12 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
       _write(() => _prefs.setString(_installIdKey, id));
 
   @override
+  Future<void> forgetInstallId() => _write(() async {
+    await _prefs.remove(_installIdKey);
+    await _prefs.remove(_firstOpenKey);
+  });
+
+  @override
   Future<bool?> consent() async {
     try {
       return await _prefs.getBool(_consentKey);

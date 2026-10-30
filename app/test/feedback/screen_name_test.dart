@@ -8,7 +8,7 @@ void main() {
       '/': 'list',
       '/?invite=ABCD2345': 'list',
       '/more': 'more',
-      '/more/privacy': 'privacy',
+      '/more/privacy': 'other',
       '/more/access': 'access',
       '/more/account': 'account',
       '/more/settings': 'settings',
@@ -65,14 +65,13 @@ void main() {
         'list',
       );
       expect(
-        visited(['/', '/more', '/more/privacy', '/more']).feedbackScreen,
+        visited(['/', '/more', '/more/access', '/more']).feedbackScreen,
         'list',
       );
     });
 
     test('opened beside a More page (wide): that page', () {
       expect(visited(['/', '/more/account']).feedbackScreen, 'account');
-      expect(visited(['/', '/more/privacy']).feedbackScreen, 'privacy');
     });
 
     test('a join link before More: join, without the code', () {

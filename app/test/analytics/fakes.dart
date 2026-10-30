@@ -35,6 +35,12 @@ class MemoryAnalyticsStore() implements AnalyticsStore {
   Future<void> saveInstallId(String id) async => this.id = id;
 
   @override
+  Future<void> forgetInstallId() async {
+    id = null;
+    firstOpen = null;
+  }
+
+  @override
   Future<bool?> consent() async => decided;
 
   @override

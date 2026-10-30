@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -50,6 +51,8 @@ class const LoginScreen({
               ),
             ),
           Expanded(child: Center(child: panel)),
+          // Outside the scrolling form: visible without scrolling.
+          const SafeArea(top: false, child: LegalFooter()),
         ],
       ),
     );

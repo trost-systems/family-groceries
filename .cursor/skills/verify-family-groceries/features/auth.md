@@ -12,6 +12,7 @@ A user signs in with email and password, creates an account with "Registrieren",
 - `auth-signout` signs out from the More tab ("Mehr", then "Abmelden", key `more-sign-out`) or from the welcome screen's logout icon (tooltip "Abmelden").
 - `auth-session` keeps the user signed in across an app restart.
 - `auth-form-check` refuses to send an email without "@" ("Bitte eine gültige E-Mail-Adresse eingeben") or a password under 6 characters ("Mindestens 6 Zeichen"), under the fields.
+- `auth-legal` shows "Impressum · Datenschutz" ("Imprint · Privacy" in English; keys `legal-imprint`, `legal-privacy`) at the bottom of the login screen, on screen without scrolling. Each opens hummlist.com (`/impressum`, `/datenschutz`; English `/en/imprint`, `/en/privacy`) in the browser, never inside the app.
 - `auth-providers` shows "Mit Google anmelden" (key `sign-in-google`) and "Mit Apple anmelden" (key `sign-in-apple`) above the form, with the divider "oder mit E-Mail", in builds that configure them. They redirect to the provider and back to the page the user started from, link an existing account with the same email, and a cancel shows "Anmeldung abgebrochen".
 
 ## How to get to it (user POV)
@@ -27,6 +28,7 @@ Preconditions:
 - Baseline from `features/README.md`. The lea client is signed out: `fg logout --client lea`.
 
 - **Password sign-in.** Run `fg login lea`. It types into `login-email` and `login-password` and presses Enter. The result is `"screen": "list"` (the list names no household since job 29a; `fg db query "select h.name from household_members m join households h on h.id = m.household_id join auth.users u on u.id = m.user_id where u.email = 'lea@fg.test'"` returns "Familie Test").
+- **Legal links.** Signed out, `fg find --key legal-imprint --client lea` and `fg find --key legal-privacy --client lea` each return one element; `fg screenshot --name auth-legal --client lea`. `fg tap --key legal-privacy --client lea` hands https://hummlist.com/datenschutz to the desktop (`pgrep -af hummlist.com/datenschutz`; stop that browser with `kill <pid>`), and the app stays on the login. On the web the e2e spec `e2e/tests/legal.spec.ts` checks the hrefs and the new tab.
 - **Wrong password.** Sign out, then run `fg type --key login-email --input lea@fg.test --client lea`, `fg type --key login-password --input falsch123 --submit --client lea` and `fg wait --contains "Anmeldung fehlgeschlagen" --client lea`. `fg find --key login-email --client lea` still returns one element.
 - **Form checks.** Signed out, run `fg type --key login-email --input foo --client lea` and `fg type --key login-password --input 123 --submit --client lea`. `fg screenshot --name auth-form-check --client lea` shows both messages under the fields, and the client stays on the login screen.
 - **Sign-up.** Run `fg type --key login-email --input neu-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea` and `fg tap --text Registrieren --client lea`. Then `fg wait --key welcome --client lea` succeeds: onboarding Step 1 of a user without a household (`features/onboarding.md`).

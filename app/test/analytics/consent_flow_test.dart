@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
@@ -13,7 +14,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import '../app/fake_launcher.dart';
 import '../more/more_harness.dart';
 import 'fakes.dart';
 
@@ -26,7 +29,11 @@ void main() {
   late Analytics analytics;
   late DeviceCache cache;
 
-  Future<void> pumpApp(WidgetTester tester, Session state) async {
+  Future<void> pumpApp(
+    WidgetTester tester,
+    Session state, {
+    Locale locale = const Locale('de'),
+  }) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(390, 844);
@@ -54,7 +61,7 @@ void main() {
           child: MaterialApp.router(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: const Locale('de'),
+            locale: locale,
             routerConfig: router,
           ),
         ),
@@ -68,31 +75,88 @@ void main() {
   final decline = find.byKey(const ValueKey('analytics-consent-decline'));
   final welcome = find.byKey(const ValueKey('welcome'));
 
+  /// Scrolls the consent text to [target]: on a phone the answers sit
+  /// below it.
+  Future<void> reach(WidgetTester tester, Finder target) async {
+    await tester.scrollUntilVisible(
+      target,
+      200,
+      scrollable: find.descendant(
+        of: consent,
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('a first sign-in asks before onboarding; yes sends first_open', (
     tester,
   ) async {
     await pumpApp(tester, const NeedsHousehold('u'));
     expect(consent, findsOneWidget);
     expect(welcome, findsNothing);
-    expect(find.text('ENTWURF: Freigabe durch Peter'), findsOneWidget);
+    await reach(tester, accept);
+    expect(
+      find.textContaining('ENTWURF'),
+      findsNothing,
+      reason: 'Peter approved the wording on 2026-10-30',
+    );
     // A titled page: screen readers start on its heading.
     expect(find.widgetWithText(AppBar, 'Nutzungsdaten'), findsOneWidget);
     await analytics.flush();
     expect(sink.batches, isEmpty);
+    expect(await cache.installId(), isNull, reason: 'nothing stored yet');
 
+    await reach(tester, accept);
     await tester.tap(accept);
     await tester.pumpAndSettle();
     expect(welcome, findsOneWidget);
     await analytics.flush();
     expect(sink.names, ['first_open']);
+    expect(await cache.installId(), matches(uuidPattern));
   });
+
+  for (final (locale, title, link, url) in [
+    (
+      const Locale('de'),
+      'Darf Hummlist Nutzungsdaten erfassen?',
+      'Datenschutzerklärung',
+      'https://hummlist.com/datenschutz',
+    ),
+    (
+      const Locale('en'),
+      'May Hummlist collect usage data?',
+      'privacy policy',
+      'https://hummlist.com/en/privacy',
+    ),
+  ]) {
+    testWidgets('$locale: the text names Peter Trost and links the policy', (
+      tester,
+    ) async {
+      final launcher = fakeLauncher();
+      await pumpApp(tester, const NeedsHousehold('u'), locale: locale);
+      expect(find.text(title), findsOneWidget);
+      expect(
+        find.textContaining('Peter Trost', findRichText: true),
+        findsOneWidget,
+      );
+      await reach(tester, find.text(link));
+      await tester.tap(find.text(link));
+      await tester.pumpAndSettle();
+      expect(launcher.opened, [(url, PreferredLaunchMode.externalApplication)]);
+      expect(consent, findsOneWidget, reason: 'still waits for an answer');
+    });
+  }
 
   testWidgets('no goes on to onboarding and sends nothing', (tester) async {
     await pumpApp(tester, const NeedsHousehold('u'));
+    await reach(tester, decline);
     await tester.tap(decline);
     await tester.pumpAndSettle();
     expect(welcome, findsOneWidget);
     expect(analytics.state.consent, isFalse);
+    expect(await cache.installId(), isNull);
     analytics.track('household_created');
     await analytics.flush();
     expect(sink.batches, isEmpty);
@@ -102,11 +166,13 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester, const NeedsHousehold('u'));
+    await reach(tester, accept);
     expect(tester.getSize(accept), tester.getSize(decline));
   });
 
   testWidgets('a decided install is not asked again', (tester) async {
     await pumpApp(tester, const NeedsHousehold('u'));
+    await reach(tester, decline);
     await tester.tap(decline);
     await tester.pumpAndSettle();
     final again = Analytics(sink, cache, releaseConfig);

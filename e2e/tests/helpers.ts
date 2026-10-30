@@ -282,6 +282,23 @@ export async function signUp(
   await answerConsent(page, consent);
 }
 
+/** One finger swipe up the middle of the screen, as touch pointer events (WebKit has no swipe API). */
+export async function touchSwipeUp(page: Page): Promise<void> {
+  const { width, height } = page.viewportSize() ?? { width: 390, height: 660 };
+  await page.evaluate(({ width, height }) => {
+    const x = width / 2;
+    const from = height * 0.7;
+    const target = document.elementFromPoint(x, from) ?? document.body;
+    const fire = (type: string, y: number) => target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, composed: true, cancelable: true, pointerId: 7, pointerType: 'touch', isPrimary: true,
+      clientX: x, clientY: y, button: 0, buttons: type === 'pointerup' ? 0 : 1, pressure: type === 'pointerup' ? 0 : 0.5,
+    }));
+    fire('pointerdown', from);
+    for (let i = 1; i <= 10; i++) fire('pointermove', from - i * height * 0.04);
+    fire('pointerup', from - height * 0.4);
+  }, { width, height });
+}
+
 export type ConsentChoice = 'accept' | 'decline';
 
 /** The analytics consent screen (job 19), asked once per install right after sign-in. */
@@ -296,6 +313,17 @@ export async function answerConsent(page: Page, choice: ConsentChoice = 'decline
   await expect(page).toHaveURL(/\/analytics-consent(\?|$)/);
   const answer = page.getByRole('button', { name: choice === 'accept' ? 'Einverstanden' : 'Ablehnen' });
   await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  // A phone (job 33b): the consent text is longer than an iPhone screen. Scroll as a finger does
+  // (no mouse wheel on a phone), then tap the answer.
+  if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
+    await expect(async () => {
+      if (!(await answer.isVisible())) await touchSwipeUp(page);
+      await expect(answer).toBeInViewport({ timeout: 500 });
+    }).toPass();
+    await answer.tap();
+    await expect(page).not.toHaveURL(/\/analytics-consent/);
+    return;
+  }
   // On a short screen the answers sit below the text: wheel down to them. Only then: the mouse
   // left over the page would hover whatever comes next.
   if (!(await answer.isVisible())) {

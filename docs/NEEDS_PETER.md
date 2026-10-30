@@ -689,11 +689,9 @@ box, and the agent made the change with it:
 
 ## Job 17: legal pages and the guides site
 
-- **Datenschutz.** The app has no privacy policy to link. More →
-  Datenschutz opens an in-app page marked "Entwurf" that says the policy is
-  being written. Once a policy is published, set `privacyPolicyUrl` in
-  `app/lib/app/guides.dart` to its URL (one line) and the row links there.
-  The text itself is yours (or a lawyer's) to write; the app invents none.
+- **Datenschutz.** Done in job 33b: More → Datenschutz, the login footer
+  and the consent screen open https://hummlist.com/datenschutz (English:
+  /en/privacy), the pages job 33a publishes.
 - **Impressum.** More → Impressum opens https://hummlist.com/impressum
   (English: /en/imprint), the page job 24a wrote in `site/`. On 2026-10-29
   hummlist.com answered 404 for every path, so the site is not deployed
@@ -724,7 +722,8 @@ Built and tested, but **off** until you set the keys below; nothing is sent toda
 [ANALYTICS.md](ANALYTICS.md). Please do the steps in this order: the wording first, because the
 keys make the consent screen appear for everyone.
 
-1. **Approve the consent wording (ENTWURF).** The screen after the first sign-in and the
+1. **Done 2026-10-30: consent wording approved** (job 33b applied the legal review's version and
+   removed the chip). Was: approve the consent wording (ENTWURF). The screen after the first sign-in and the
    switch under Mehr → Nutzungsdaten, German and English, in `app/l10n/app_de.arb` /
    `app_en.arb`: `analyticsConsentTitle`, `analyticsConsentBody`, `analyticsAccept`,
    `analyticsDecline`, `analyticsSection`, `analyticsToggle`, `analyticsToggleHint`. Both show the
@@ -848,3 +847,20 @@ already done (NEEDS_LEAD L3 and L6).
    for one day, to rate-limit guessing (10 per hour). Invites are part of "Meine Daten
    exportieren" for the person who created them. Nothing is sent by Hummlist; the user shares
    the link themselves.
+
+## Job 33b: legal fixes in the app
+
+You approved the wording on 2026-10-30 (07:51). PR #107 carries it, with the
+ENTWURF chip removed, and waits ready for the lead, who merges it together with
+33a's privacy pages so the links never point at a 404 in a shipped build (a
+merge ships the internal TestFlight and Play builds). The PR description lists
+every changed text in German and English under "Wording (approved by Peter
+2026-10-30)".
+
+1. **Nothing to approve any more.** Before a public release, enter
+   https://hummlist.com/datenschutz as the privacy policy URL in Play Console
+   and App Store Connect (review H-01).
+2. **Optional (H-21): split usage data and error reports into two
+   switches. Not built; say if you want it.
+3. Still yours from the review, outside the app: H-11 (where the backups
+   live), H-14 (the Play payments profile address 7 → 5).
