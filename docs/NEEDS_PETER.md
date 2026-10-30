@@ -948,6 +948,6 @@ data map behind the store forms.
   shows "Hilfe & Kontakt" in release builds. Until then hummlist.com/support answers 404 and the
   row is only in debug and test builds.
 - **Data map:** `docs/PRIVACY_DATA_MAP.md` collects what is stored where, why and how long. Job
-  14 fills the App Store privacy label and Play's data safety form from it. Its one
-  open `[PETER: …]` is the policy's own (transfer basis for the AI support assistant).
+  14 fills the App Store privacy label and Play's data safety form from it. It has no open
+  `[PETER: …]` items.
 - Optional: have a lawyer or a generator check the policy and this page.

@@ -296,6 +296,9 @@ See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
 production until Peter's OK), More → "Hilfe & Kontakt" (debug/test builds only until then),
 `docs/PRIVACY_DATA_MAP.md` for the store privacy forms, stale "Menü" directions fixed in the Siri
 texts. The privacy policy itself is 33a's. See [docs/done/24-privacy-page.md](docs/done/24-privacy-page.md).
+Fix 1 (review 0): the help page's deletion link now ends in `.html` (the bare path opened the app),
+a site test checks app.hummlist.com links and pins the three publish switches together, the data
+map follows 33b/33g, the FAQ covers Alexa; Lighthouse mobile 100/100/100 on the preview build.
 
 ## Job 32b: duplicate hint with one-tap merge (Spec #8 Part B)
 
