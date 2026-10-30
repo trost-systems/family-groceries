@@ -24,7 +24,6 @@ void main() {
     test('a fresh install has not decided and is asked', () {
       expect(analytics.state.consent, isNull);
       expect(analytics.asksConsent, isTrue);
-      expect(store.id, matches(uuidPattern));
     });
 
     test('before the decision nothing is queued or sent', () async {
@@ -115,6 +114,90 @@ void main() {
       off.track('item_ticked');
       await off.flush();
       expect(off.queued, isEmpty);
+      await off.close();
+    });
+  });
+
+  group('the install id exists only while the answer is yes', () {
+    test('a fresh install stores none before the answer', () {
+      expect(store.id, isNull);
+      expect(store.firstOpen, isNull);
+    });
+
+    test('yes stores one and every event carries it', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      analytics.track('item_ticked');
+      await analytics.flush();
+      expect(store.id, matches(uuidPattern));
+      expect(sink.events.map((e) => e['properties']! as Map), [
+        for (final _ in ['first_open', 'item_ticked'])
+          containsPair('install_id', store.id),
+      ]);
+    });
+
+    test('no stores none', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: false);
+      expect(store.id, isNull);
+    });
+
+    test('turning it off deletes it; a later yes makes a new one', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      await analytics.flush();
+      final first = store.id;
+      analytics.track('item_ticked');
+
+      await analytics.decide(granted: false);
+      expect(store.id, isNull);
+      expect(store.firstOpen, isNull);
+      expect(analytics.queued, isEmpty);
+
+      await analytics.decide(granted: true);
+      await analytics.flush();
+      expect(store.id, allOf(matches(uuidPattern), isNot(first)));
+      expect(sink.names, ['first_open', 'first_open']);
+      expect((sink.events.last['properties']! as Map)['install_id'], store.id);
+    });
+
+    test('a yes from an older build keeps its id', () async {
+      const kept = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
+      final older = MemoryAnalyticsStore()
+        ..id = kept
+        ..decided = true
+        ..firstOpen = kept;
+      final a = await loadedAnalytics(sink, older);
+      a
+        ..setUser(customer)
+        ..track('item_ticked');
+      await a.flush();
+      expect(older.id, kept);
+      expect(sink.names, ['item_ticked'], reason: 'no second first_open');
+      expect((sink.events.single['properties']! as Map)['install_id'], kept);
+      await a.close();
+    });
+
+    for (final decided in [null, false]) {
+      test('an id an older build stored without a yes ($decided) '
+          'is deleted at start', () async {
+        final older = MemoryAnalyticsStore()
+          ..id = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc'
+          ..decided = decided
+          ..firstOpen = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
+        final a = await loadedAnalytics(sink, older);
+        expect(older.id, isNull);
+        expect(older.firstOpen, isNull);
+        expect(a.state.consent, decided);
+        await a.close();
+      });
+    }
+
+    test('a build without a key stores none', () async {
+      final fresh = MemoryAnalyticsStore();
+      final off = Analytics.off(fresh);
+      await off.load();
+      expect(fresh.id, isNull);
       await off.close();
     });
   });

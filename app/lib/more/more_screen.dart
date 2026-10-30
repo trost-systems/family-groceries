@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/guides.dart';
+import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
@@ -17,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// The pages More opens: beside its list on wide screens, on their own
 /// on phones.
@@ -30,9 +30,6 @@ enum MorePage() {
 
   /// Invite the partner, the open invites, revoke (`/more/invites`).
   invites,
-
-  /// The draft privacy page while none is published (`/more/privacy`).
-  privacy,
 
   /// Theme and language (`/more/settings`).
   settings,
@@ -111,7 +108,6 @@ class const MoreScreen({super.key, final MorePage? page})
     MorePage.access => l10n.accessTitle,
     MorePage.account => l10n.account,
     MorePage.invites => l10n.invitesTitle,
-    MorePage.privacy => l10n.privacy,
     MorePage.settings => l10n.settingsTitle,
     MorePage.language => l10n.language,
   };
@@ -123,7 +119,6 @@ class const _Page(final MorePage page) extends StatelessWidget {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
     MorePage.invites => const InvitesPage(),
-    MorePage.privacy => const _PrivacyDraft(),
     MorePage.settings => const SettingsScreen(),
     MorePage.language => const LanguageScreen(),
   };
@@ -222,18 +217,21 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           label: l10n.imprint,
           external: true,
           onTap: () => unawaited(
-            launchUrl(imprintUrl(Localizations.localeOf(context).languageCode)),
+            openLegalPage(
+              imprintUrl(Localizations.localeOf(context).languageCode),
+            ),
           ),
         ),
         _Row(
           key: const ValueKey('more-privacy'),
           icon: Icons.privacy_tip_outlined,
           label: l10n.privacy,
-          selected: selected == MorePage.privacy,
-          onTap: () => switch (privacyPolicyUrl) {
-            final url? => unawaited(launchUrl(Uri.parse(url))),
-            null => context.go(privacyPath),
-          },
+          external: true,
+          onTap: () => unawaited(
+            openLegalPage(
+              privacyPolicyUrl(Localizations.localeOf(context).languageCode),
+            ),
+          ),
         ),
         _Row(
           key: const ValueKey('more-licenses'),
@@ -318,7 +316,7 @@ class const _AnalyticsSwitch() extends StatelessWidget {
     return SwitchListTile(
       key: const ValueKey('more-analytics'),
       title: Text(l10n.analyticsToggle),
-      subtitle: Text('${l10n.analyticsToggleHint}\n${l10n.analyticsDraftNote}'),
+      subtitle: Text(l10n.analyticsToggleHint),
       isThreeLine: true,
       value: consent,
       onChanged: (on) =>
@@ -390,29 +388,4 @@ class const _Version() extends StatelessWidget {
   static void _raiseTestError() => Timer.run(
     () => throw StateError('Hummlist test error (More, internal install)'),
   );
-}
-
-/// No privacy policy is published yet. This page says so instead of
-/// inventing legal text.
-class const _PrivacyDraft() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    return ListView(
-      key: const ValueKey('privacy-draft'),
-      padding: const EdgeInsets.all(24),
-      children: [
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Chip(
-            label: Text(l10n.draft),
-            backgroundColor: scheme.tertiaryContainer,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(l10n.privacyDraftBody),
-      ],
-    );
-  }
 }

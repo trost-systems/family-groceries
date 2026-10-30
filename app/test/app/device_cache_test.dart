@@ -125,5 +125,11 @@ void main() {
     expect(await cache.consent(), isFalse);
     expect(await cache.firstOpenSentFor(), 'id-1');
     expect(await cache.internalInstall(), isTrue);
+
+    await cache.forgetInstallId();
+    expect(await cache.installId(), isNull);
+    expect(await cache.firstOpenSentFor(), isNull);
+    expect(await cache.consent(), isFalse, reason: 'the answer stays');
+    expect(await cache.internalInstall(), isTrue);
   });
 }

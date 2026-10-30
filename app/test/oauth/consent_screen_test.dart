@@ -88,7 +88,8 @@ void main() {
     expect(find.text('Haushalt: Trost'), findsOneWidget);
     const listAccess =
         'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und '
-        'verschieben';
+        'verschieben. Claude und sein Anbieter erhalten dabei die Inhalte '
+        'eurer Liste.';
     for (final label in [
       listAccess,
       'Deine Anmeldung bestätigen',

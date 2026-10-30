@@ -50,7 +50,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [List and walk order](./list-walk-order.md) covers design H's list: store sections and category dividers, walk order, a tap that ticks with undo, dragging rows onto rows, category and store dividers, reordering stores and categories by drag or divider menu, folds and the explainer card kept per device, and a partner's adds and moves.
 - [Quick add](./quick-add.md) covers the add bar and the add sheet: autofocus on desktop, rows with their sources, Enter for the first row, store and category chips, the added note with undo, due usuals, closing, and tick with undo, delete and re-add from history.
-- [Shell and More](./shell-more.md) covers the tabs (Liste, Mehr; a rail from 840 px), every entry of the More tab, the licenses, the privacy draft and the imprint link.
+- [Shell and More](./shell-more.md) covers the tabs (Liste, Mehr; a rail from 840 px), every entry of the More tab, the licenses and the imprint and privacy links.
 - [Settings](./settings.md) covers Mehr → Einstellungen: light, dark or the device's theme and the language list, both applied at once and kept on the device across restarts and sign-out.
 - [Edit an item](./edit-item.md) covers the edit sheet (Bezeichnung, Marke, Eigenschaften, Menge with −/+, store and category chips, Fertig saving only changes, Löschen with undo), the row's "Marke · Eigenschaften" line, and how Siri and MCP entries are split into those fields.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.

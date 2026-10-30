@@ -596,11 +596,11 @@ abstract class AppLocalizations {
   /// **'{client} möchte:'**
   String consentWants(String client);
 
-  /// No description provided for @consentListAccess.
+  /// OAuth consent: the list permission and that the client's provider receives the list (legal review H-17)
   ///
   /// In de, this message translates to:
-  /// **'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und verschieben'**
-  String get consentListAccess;
+  /// **'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und verschieben. {client} und sein Anbieter erhalten dabei die Inhalte eurer Liste.'**
+  String consentListAccess(String client);
 
   /// No description provided for @scopeOpenid.
   ///
@@ -1388,18 +1388,6 @@ abstract class AppLocalizations {
   /// **'Version {version}'**
   String appVersion(String version);
 
-  /// Marks placeholder text
-  ///
-  /// In de, this message translates to:
-  /// **'Entwurf'**
-  String get draft;
-
-  /// Placeholder until a privacy policy is published
-  ///
-  /// In de, this message translates to:
-  /// **'Die Datenschutzerklärung von Hummlist wird gerade geschrieben und erscheint hier, sobald sie fertig ist.'**
-  String get privacyDraftBody;
-
   /// Seeded category, exactly as public.seed_household names it in German
   ///
   /// In de, this message translates to:
@@ -1466,23 +1454,23 @@ abstract class AppLocalizations {
   /// **'Sonstiges'**
   String get categoryOther;
 
-  /// Analytics consent screen after the first sign-in: title. DRAFT text, Peter approves
+  /// Analytics consent screen after the first sign-in: title. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'Hilf mit, Hummlist besser zu machen'**
+  /// **'Darf Hummlist Nutzungsdaten erfassen?'**
   String get analyticsConsentTitle;
 
-  /// Analytics consent screen: what is sent and what never is. DRAFT text, Peter approves
+  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'Mit deiner Erlaubnis sendet Hummlist anonyme Nutzungsdaten und Fehlerberichte an PostHog, einen Dienst mit Servern in der EU: zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, die App-Version und eine zufällige Kennung dieser Installation. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen und dein Standort werden nie gesendet. Ohne Erlaubnis wird nichts gesendet. Du kannst das jederzeit unter Mehr → Nutzungsdaten ändern.'**
+  /// **'Peter Trost, der Anbieter von Hummlist, möchte verstehen, welche Funktionen genutzt werden, Fehler finden und messen, ob sich Hummlist wirtschaftlich trägt. Dafür speichert Hummlist mit deiner Erlaubnis eine zufällige Kennung auf diesem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Dienstleister PostHog (Server in der EU): zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, mit dieser Kennung, der Kennung deines Haushalts, Plattform und App-Version. Die Daten sind pseudonym, nicht anonym. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort werden nie gesendet. Ohne Erlaubnis wird nichts gespeichert oder gesendet. Du kannst die Erlaubnis jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
   String get analyticsConsentBody;
 
-  /// Marks the analytics consent wording as a draft until Peter approves it
+  /// Analytics consent screen: the link to the privacy policy that ends analyticsConsentBody. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'ENTWURF: Freigabe durch Peter'**
-  String get analyticsDraftNote;
+  /// **'Datenschutzerklärung'**
+  String get analyticsConsentPrivacyLink;
 
   /// Analytics consent: allow
   ///
@@ -1502,16 +1490,16 @@ abstract class AppLocalizations {
   /// **'Nutzungsdaten'**
   String get analyticsSection;
 
-  /// More: analytics switch. DRAFT text, Peter approves
+  /// More: analytics switch. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'Anonyme Nutzungsdaten und Fehlerberichte senden'**
+  /// **'Nutzungsdaten und Fehlerberichte senden'**
   String get analyticsToggle;
 
-  /// More: below the analytics switch. DRAFT text, Peter approves
+  /// More: below the analytics switch. Turning it off deletes the install id. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'An PostHog (EU), ohne Listeninhalte. Gilt für dieses Gerät.'**
+  /// **'Pseudonym an PostHog (Server in der EU), ohne Listeninhalte. Gilt für dieses Gerät. Ausschalten löscht die Kennung auf diesem Gerät.'**
   String get analyticsToggleHint;
 
   /// More: shown under the version while this install is marked internal (its analytics are filtered out)

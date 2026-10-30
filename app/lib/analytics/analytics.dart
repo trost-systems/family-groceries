@@ -24,11 +24,15 @@ class const AnalyticsState({
 
 /// What analytics keeps on the device, per install (not per account): the
 /// pseudonymous install id, the consent decision and whether `first_open`
-/// went out for this install id.
+/// went out for this install id. The install id and the `first_open` mark
+/// exist only while the consent is yes (TDDDG §25).
 abstract interface class AnalyticsStore() {
   Future<String?> installId();
 
   Future<void> saveInstallId(String id);
+
+  /// Deletes the install id and the `first_open` mark.
+  Future<void> forgetInstallId();
 
   Future<bool?> consent();
 
@@ -134,8 +138,9 @@ class Analytics(
   @visibleForTesting
   List<Map<String, Object?>> get queued => List.unmodifiable(_queue);
 
-  /// Reads the decision and the install id, making one on a fresh
-  /// install. Call once before the first frame.
+  /// Reads the decision and, after a yes, the install id. Without a yes
+  /// no install id is made, and one stored by an older build is deleted.
+  /// Call once before the first frame.
   Future<void> load() async {
     final (stored, consent, internal, firstOpen) = await (
       _store.installId(),
@@ -143,13 +148,16 @@ class Analytics(
       _store.internalInstall(),
       _store.firstOpenSentFor(),
     ).wait;
-    _firstOpenFor = firstOpen;
-    var id = stored;
-    if (id == null || !uuidPattern.hasMatch(id)) {
-      id = const Uuid().v4();
-      await _store.saveInstallId(id);
+    if (consent == true) {
+      _firstOpenFor = firstOpen;
+      if (stored != null && uuidPattern.hasMatch(stored)) {
+        _installId = stored;
+      } else {
+        await _ownInstallId();
+      }
+    } else if (stored != null || firstOpen != null) {
+      await _store.forgetInstallId();
     }
-    _installId = id;
     emit(
       AnalyticsState(loaded: true, consent: consent, internalInstall: internal),
     );
@@ -164,21 +172,33 @@ class Analytics(
     }
   }
 
-  /// The user's answer on the consent screen or the More toggle. Yes sends
-  /// `first_open` once per install id; no drops the queue at once.
+  /// The user's answer on the consent screen or the More toggle. Yes makes
+  /// an install id if there is none and sends `first_open` once per install
+  /// id; no drops the queue at once and deletes the install id, so a later
+  /// yes starts with a new one.
   Future<void> decide({required bool granted}) async {
     emit(_with(consent: granted));
-    await _store.saveConsent(granted: granted);
     if (!granted) {
       _dropQueue();
+      _installId = null;
+      _firstOpenFor = null;
+      await _store.saveConsent(granted: false);
+      await _store.forgetInstallId();
       return;
     }
-    final id = _installId;
-    if (id != null && _firstOpenFor != id && _live) {
+    await _store.saveConsent(granted: true);
+    final id = _installId ?? await _ownInstallId();
+    if (_firstOpenFor != id && _live) {
       _firstOpenFor = id;
       track('first_open');
       await _store.saveFirstOpenSentFor(id);
     }
+  }
+
+  Future<String> _ownInstallId() async {
+    final id = _installId = const Uuid().v4();
+    await _store.saveInstallId(id);
+    return id;
   }
 
   /// More's switch for test devices: every event then says internal.

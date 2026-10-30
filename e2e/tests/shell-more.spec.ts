@@ -93,17 +93,20 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
-  await wheelTo(page, page.getByRole('button', { name: /^Datenschutz/ }));
-  await page.getByRole('button', { name: /^Datenschutz/ }).click();
-  await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'no privacy policy yet: a marked draft' })
-    .toMatch(/Entwurf[\s\S]*Datenschutzerklärung von Hummlist wird gerade geschrieben/);
-  await page.getByRole('button', { name: 'Zurück' }).click();
-
-  const popup = page.waitForEvent('popup');
-  await wheelTo(page, page.getByRole('button', { name: /^Impressum/ }));
-  await page.getByRole('button', { name: /^Impressum/ }).click();
-  expect((await popup).url(), 'the imprint is the site page').toContain('hummlist.com/impressum');
-  await (await popup).close();
+  await page.context().route('https://hummlist.com/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  for (const [name, url] of [
+    ['Datenschutz', 'https://hummlist.com/datenschutz'],
+    ['Impressum', 'https://hummlist.com/impressum'],
+  ]) {
+    const row = page.getByRole('button', { name: new RegExp(`^${name}`) });
+    await wheelTo(page, row);
+    const popup = page.waitForEvent('popup');
+    await row.click();
+    expect((await popup).url(), `${name} is the site page, in a new tab`).toBe(url);
+    await (await popup).close();
+    await expect(page, 'the app stays on More').toHaveURL(/\/more$/);
+  }
 
   await wheelTo(page, page.getByRole('button', { name: /^Lizenzen/ }));
   await page.getByRole('button', { name: /^Lizenzen/ }).click();

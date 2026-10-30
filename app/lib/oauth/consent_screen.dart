@@ -238,7 +238,7 @@ class _ConsentViewState() extends State<ConsentView> {
         style: theme.textTheme.titleMedium,
       ),
       for (final permission in [
-        l10n.consentListAccess,
+        l10n.consentListAccess(request.clientName),
         for (final scope in request.scopes) scopeLabel(l10n, scope),
       ])
         ListTile(

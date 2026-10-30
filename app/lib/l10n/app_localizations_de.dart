@@ -305,8 +305,9 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get consentListAccess =>
-      'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und verschieben';
+  String consentListAccess(String client) {
+    return 'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und verschieben. $client und sein Anbieter erhalten dabei die Inhalte eurer Liste.';
+  }
 
   @override
   String get scopeOpenid => 'Deine Anmeldung bestätigen';
@@ -812,13 +813,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get draft => 'Entwurf';
-
-  @override
-  String get privacyDraftBody =>
-      'Die Datenschutzerklärung von Hummlist wird gerade geschrieben und erscheint hier, sobald sie fertig ist.';
-
-  @override
   String get categoryProduce => 'Obst & Gemüse';
 
   @override
@@ -852,14 +846,14 @@ class AppLocalizationsDe extends AppLocalizations {
   String get categoryOther => 'Sonstiges';
 
   @override
-  String get analyticsConsentTitle => 'Hilf mit, Hummlist besser zu machen';
+  String get analyticsConsentTitle => 'Darf Hummlist Nutzungsdaten erfassen?';
 
   @override
   String get analyticsConsentBody =>
-      'Mit deiner Erlaubnis sendet Hummlist anonyme Nutzungsdaten und Fehlerberichte an PostHog, einen Dienst mit Servern in der EU: zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, die App-Version und eine zufällige Kennung dieser Installation. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen und dein Standort werden nie gesendet. Ohne Erlaubnis wird nichts gesendet. Du kannst das jederzeit unter Mehr → Nutzungsdaten ändern.';
+      'Peter Trost, der Anbieter von Hummlist, möchte verstehen, welche Funktionen genutzt werden, Fehler finden und messen, ob sich Hummlist wirtschaftlich trägt. Dafür speichert Hummlist mit deiner Erlaubnis eine zufällige Kennung auf diesem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Dienstleister PostHog (Server in der EU): zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, mit dieser Kennung, der Kennung deines Haushalts, Plattform und App-Version. Die Daten sind pseudonym, nicht anonym. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort werden nie gesendet. Ohne Erlaubnis wird nichts gespeichert oder gesendet. Du kannst die Erlaubnis jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der';
 
   @override
-  String get analyticsDraftNote => 'ENTWURF: Freigabe durch Peter';
+  String get analyticsConsentPrivacyLink => 'Datenschutzerklärung';
 
   @override
   String get analyticsAccept => 'Einverstanden';
@@ -871,12 +865,11 @@ class AppLocalizationsDe extends AppLocalizations {
   String get analyticsSection => 'Nutzungsdaten';
 
   @override
-  String get analyticsToggle =>
-      'Anonyme Nutzungsdaten und Fehlerberichte senden';
+  String get analyticsToggle => 'Nutzungsdaten und Fehlerberichte senden';
 
   @override
   String get analyticsToggleHint =>
-      'An PostHog (EU), ohne Listeninhalte. Gilt für dieses Gerät.';
+      'Pseudonym an PostHog (Server in der EU), ohne Listeninhalte. Gilt für dieses Gerät. Ausschalten löscht die Kennung auf diesem Gerät.';
 
   @override
   String get internalInstall => 'Interne Installation';

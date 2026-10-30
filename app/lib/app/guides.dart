@@ -18,6 +18,10 @@ Uri imprintUrl(String languageCode) => Uri.parse(
       : '$guidesBaseUrl/en/imprint',
 );
 
-/// The published privacy policy. None exists yet, so More shows a draft
-/// page instead (docs/NEEDS_PETER.md, Job 17); set this to link it.
-const String? privacyPolicyUrl = null;
+/// The privacy policy on hummlist.com (`site/content/legal/`), German or
+/// English. Every privacy link in the app goes here.
+Uri privacyPolicyUrl(String languageCode) => Uri.parse(
+  languageCode == 'de'
+      ? '$guidesBaseUrl/datenschutz'
+      : '$guidesBaseUrl/en/privacy',
+);

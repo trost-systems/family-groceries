@@ -3519,3 +3519,93 @@ Calls made in this job:
     other device into `already_in_household`, which the app answers by loading the household.
     Kept as decided: old builds get null for a bad code (8). The export lists codes the user made
     also for a household they left (their own data).
+
+## Job 33b (legal fixes in the app), 2026-10-30
+
+From the legal review of 2026-10-30 (H-01 app part, H-03, H-07, H-08, H-17;
+the review and the engineering answers to its open facts are local files,
+not in this public repo). Peter set the priority at 07:46. The PR waits for
+his legal OK and is not merged by the job.
+
+1. **One privacy URL.** `privacyPolicyUrl(languageCode)` in
+   `app/lib/app/guides.dart`, shaped like `imprintUrl`: `de` gets
+   https://hummlist.com/datenschutz, every other language
+   https://hummlist.com/en/privacy (the paths job 33a publishes; the review's
+   one-constant redline would have sent English users to the German page).
+   More → Datenschutz, the login footer and the consent screen all call it.
+   The in-app draft page is gone with its route `/more/privacy`,
+   `MorePage.privacy` and the keys `privacyDraftBody` and `draft`. An old
+   `/more/privacy` link lands on the list, like any unknown path.
+2. **Legal pages open outside the app** (engineering answer 15). Impressum
+   and Datenschutz open with `LaunchMode.externalApplication`
+   (`openLegalPage`, `LegalLink` in `app/lib/app/legal_links.dart`): the
+   system browser on iOS and Android, a new tab on the web. With no
+   in-app browser view the App Store age-rating answer "Unrestricted Web
+   Access: No" is unambiguous. The links in the login footer and the
+   consent text are url_launcher `Link`s, so the web build renders them as
+   `<a href … target="_blank">`. Social sign-in and the MCP consent redirect
+   keep their own launch modes; they are sign-in flows, not pages to read.
+3. **Login footer.** "Impressum · Datenschutz" / "Imprint · Privacy" sits
+   below the scrolling form, outside it, so it is on screen without
+   scrolling (tested at 320×568 and 1280×720 in widget tests, 360×640 and
+   1280×720 on the web). The login screen has one state: sign-in, sign-up
+   and the magic link are buttons on the same form, so one footer covers
+   all three.
+4. **Consent wording verbatim from the review's redline**, DE and EN, with
+   "Peter Trost" spelled out. The body is split around the link instead of
+   parsing it: `analyticsConsentBody` ends with "Mehr in der" / "More in
+   the", `analyticsConsentPrivacyLink` is the link label, and the screen adds
+   the space and the full stop. Peter approved the wording on 2026-10-30
+   at 07:51, so the lead's update (08:05) had the ENTWURF chip and
+   `analyticsDraftNote` removed in this PR, and the `@…` descriptions say
+   "approved by Peter 2026-10-30".
+5. **Install id only after a yes** (H-08, TDDDG §25). `Analytics.load()`
+   never makes an id: with consent it reads the stored one (or makes one if
+   it is missing or malformed, which the consent covers); without consent it
+   deletes any stored id and `first_open` mark, which removes the ids builds
+   since job 19 wrote before anyone answered. `decide(granted: true)` makes
+   and stores the id if there is none. `decide(granted: false)` drops the
+   queue and deletes the id and the `first_open` mark
+   (`AnalyticsStore.forgetInstallId`), so the toggle hint "Ausschalten
+   löscht die Kennung auf diesem Gerät" is true. A later yes is a new
+   pseudonymous install: new id, one more `first_open`. That counts the
+   same person twice in install cohorts after an off-and-on, which is the
+   price of actually deleting the id; it is rare and `docs/ANALYTICS.md`
+   says so.
+6. **Purchases and the internal mark need no change.** The app has no
+   purchase code yet; `recordPurchase` in `_shared/purchases.ts` already
+   sends nothing unless the app reports `consent` and an `installId`, so the
+   purchase job only has to pass `installId: null` without consent. The
+   internal-install mark under More is a separate boolean, not an id, and
+   keeps working with or without an install id (`more_toggle_test.dart`).
+7. **H-17 is in.** `consentListAccess` takes `{client}` and tells the user
+   that the client and its provider receive the list contents: the ARB keys,
+   the call in `app/lib/oauth/consent_screen.dart` and its test.
+8. **Where the engineering answers correct the review.** The review says
+   purchase events go out without consent (H-05); they don't (answer 7), so
+   nothing changes in the app for H-05. The review's English privacy URL
+   `/en/privacy` is used although the site's footer still says `/privacy`;
+   job 33a moves the site to `/en/privacy`.
+9. **On a phone, the e2e helper scrolls the consent text with a finger.**
+   On CI both iPhone focus tests (`e2e/tests/iphone.spec.ts`, WebKit with
+   the iPhone platform) failed on this branch: the add field took `focusin`
+   and then wasn't focused. Throwaway branches off `main` (on-demand e2e,
+   iPhone spec only) narrowed it down:
+   - the new consent text alone fails; the install id change and the legal
+     links alone pass;
+   - the same text in a smaller style that fits the screen passes, and so
+     does the overflowing text with the buttons above it;
+   - so the trigger is how the test reached buttons below the fold: the
+     helper `answerConsent` used the mouse wheel (or, in one attempt, a
+     synthetic click on the button's semantics node). Neither a
+     `NoTransitionPage` nor jumping the list back to the top before
+     answering helped, and swapping url_launcher's `Link` for a plain tap
+     didn't either;
+   - scrolling with touch pointer events, as a finger does, and then
+     tapping the button passes (3 of 3).
+   A phone has no mouse wheel, so this was the test harness, not the app.
+   On touch devices `answerConsent` now swipes with touch pointer events
+   (`touchSwipeUp` in `e2e/tests/helpers.ts`) and taps the answer. The app
+   code is unchanged for this. Why a wheel-scrolled consent page breaks
+   the next page's focus on an emulated iPhone is not known; a guess is the
+   engine behavior of 19.20.

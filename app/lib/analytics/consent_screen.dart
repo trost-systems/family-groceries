@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/app/guides.dart';
+import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Asked once per install, right after the first sign-in and before
 /// onboarding or the list: may Hummlist send usage data and error reports?
 /// Both answers are one tap and equally prominent; the router moves on as
-/// soon as one is stored. The wording is a draft until Peter approves it.
+/// soon as one is stored. Peter approved the wording on 2026-10-30.
 class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -51,13 +53,32 @@ class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Text(l10n.analyticsConsentBody),
-              const SizedBox(height: 12),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Chip(
-                  label: Text(l10n.analyticsDraftNote),
-                  backgroundColor: theme.colorScheme.tertiaryContainer,
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: '${l10n.analyticsConsentBody} '),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic,
+                      child: LegalLink(
+                        key: const ValueKey('analytics-consent-privacy'),
+                        url: privacyPolicyUrl(
+                          Localizations.localeOf(context).languageCode,
+                        ),
+                        builder: (context, open) => GestureDetector(
+                          onTap: open,
+                          child: Text(
+                            l10n.analyticsConsentPrivacyLink,
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const TextSpan(text: '.'),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),

@@ -34,7 +34,6 @@ const joinCodePath = '/join';
 const analyticsConsentPath = '/analytics-consent';
 const consentPath = '/oauth/consent';
 const morePath = '/more';
-const privacyPath = '/more/privacy';
 
 /// More's Zugänge: the MCP server, tokens and connected apps.
 const accessPath = '/more/access';
@@ -63,7 +62,6 @@ String joinPath(String code) => '/join/$code';
 const screenNames = {
   'list',
   'more',
-  'privacy',
   'access',
   'account',
   'invites',
@@ -86,7 +84,6 @@ const screenNames = {
 String screenNameOf(Uri location) => switch (location.path) {
   listPath || '' => 'list',
   morePath => 'more',
-  privacyPath => 'privacy',
   accessPath => 'access',
   accountPath => 'account',
   invitesPath => 'invites',
@@ -111,7 +108,6 @@ String screenNameOf(Uri location) => switch (location.path) {
 bool inMoreTab(Uri location) => const {
   settingsPath,
   morePath,
-  privacyPath,
   accessPath,
   accountPath,
   invitesPath,
@@ -213,7 +209,6 @@ List<RouteBase> moreTabRoutes() => [
     builder: (_, _) => const MoreScreen(),
     routes: [
       for (final (path, page) in const [
-        ('privacy', MorePage.privacy),
         ('access', MorePage.access),
         ('account', MorePage.account),
         ('invites', MorePage.invites),

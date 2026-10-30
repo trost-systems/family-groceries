@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import '../app/fake_launcher.dart';
 import 'fake_auth.dart';
 
 void main() {
@@ -22,7 +24,13 @@ void main() {
     WidgetTester tester, {
     Map<SocialProvider, SignInFlow> flows = both,
     Exception? returnError,
+    Locale locale = const Locale('de'),
+    Size size = const Size(390, 844),
   }) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = size;
+    addTearDown(tester.view.reset);
     auth = FakeAuth();
     addTearDown(auth.close);
     native = FakeNativeSignIn();
@@ -38,11 +46,11 @@ void main() {
         value: SocialSignIn(auth, flows: flows, native: native),
         child: BlocProvider.value(
           value: session,
-          child: const MaterialApp(
+          child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: Locale('de'),
-            home: LoginScreen(),
+            locale: locale,
+            home: const LoginScreen(),
           ),
         ),
       ),
@@ -52,6 +60,43 @@ void main() {
 
   Finder google() => find.bySemanticsLabel('Mit Google anmelden');
   Finder apple() => find.bySemanticsLabel('Mit Apple anmelden');
+
+  for (final (locale, labels, urls) in [
+    (
+      const Locale('de'),
+      ['Impressum', 'Datenschutz'],
+      ['https://hummlist.com/impressum', 'https://hummlist.com/datenschutz'],
+    ),
+    (
+      const Locale('en'),
+      ['Imprint', 'Privacy'],
+      ['https://hummlist.com/en/imprint', 'https://hummlist.com/en/privacy'],
+    ),
+  ]) {
+    for (final size in [const Size(320, 568), const Size(1280, 720)]) {
+      testWidgets('$locale ${size.width}: the legal links show and open the '
+          'site in the browser', (tester) async {
+        final launcher = fakeLauncher();
+        await pumpLogin(tester, locale: locale, size: size);
+        for (final label in labels) {
+          final link = find.text(label);
+          expect(link, findsOneWidget);
+          final box = tester.getRect(link);
+          expect(
+            box.bottom <= size.height && box.top >= 0,
+            isTrue,
+            reason: '$label on screen without scrolling: $box',
+          );
+          await tester.tap(link);
+          await tester.pumpAndSettle();
+        }
+        expect(launcher.opened, [
+          for (final url in urls)
+            (url, PreferredLaunchMode.externalApplication),
+        ]);
+      });
+    }
+  }
 
   testWidgets('shows every configured method', (tester) async {
     await pumpLogin(tester);

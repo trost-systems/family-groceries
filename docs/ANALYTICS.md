@@ -64,20 +64,26 @@ collector.
   A browser tab authorizing an MCP client (`next=/oauth/consent…`) is not interrupted; the app
   asks the next time it is opened. Signed out, nothing is captured, not even errors: the login
   screen sends nothing.
-- **Per install**, with the install id: a later sign-in on the same install (another account
-  included) is not asked again. More → Nutzungsdaten switches it. Off stops sending at once and
-  drops whatever still waits in the queue; nothing captured before a yes is ever sent later.
+- **Per install**: a later sign-in on the same install (another account included) is not asked
+  again. More → Nutzungsdaten switches it. Off stops sending at once, drops whatever still waits
+  in the queue and deletes the install id; nothing captured before a yes is ever sent later.
+- **The install id exists only after a yes** (job 33b, legal review H-08, TDDDG §25): a yes
+  makes and stores it, a no or off deletes it together with the `first_open` mark, and a later
+  yes makes a new one. Without a yes the device holds only the decision (`analytics.consent`),
+  never an id. An id an older build (job 19) stored without a yes is deleted at the next start;
+  an id stored with a yes keeps working.
 - **A build without a key** (CI, fg, local debug) never shows the screen: nothing could be sent.
-- The wording (DE and EN) is a draft, marked "ENTWURF: Freigabe durch Peter" on the screen and
-  under More, until Peter approves it.
+- Peter approved the wording (DE and EN, the legal review's version) on 2026-10-30; job 33b
+  removed the "ENTWURF" mark from the screen and from More.
 - **`first_open`** is sent at the moment of consent on the first sign-in of an install, once per
   install id, not at process start. Install-week cohorts therefore start at the first consented
-  open. Someone who said no and later switches it on under More sends `first_open` then.
+  open. Someone who said no and later switches it on under More sends `first_open` then, and so
+  does someone who switched it off and on again: that is a new install id.
 
 ## Event catalog
 
-Every event carries `distinct_id` = `install_id` (a random UUID made on the device, new on a
-reinstall; never an e-mail or name, no `identify`), `event_id` (UUID, also PostHog's `uuid`, so a
+Every event carries `distinct_id` = `install_id` (a random UUID made on the device at the yes,
+new on a reinstall or after switching off and on; never an e-mail or name, no `identify`), `event_id` (UUID, also PostHog's `uuid`, so a
 retried batch is not counted twice), `household_id` (null before joining), `platform`
 (`ios`, `android`, `web`), `app_version` (`0.1.0+1023`), `is_internal`, `$geoip_disable: true`,
 `$process_person_profile: false`, `$lib: hummlist-app`, `$lib_version`. No `$ip`. With

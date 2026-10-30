@@ -305,8 +305,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get consentListAccess =>
-      'Read, add, tick off and move items on your shopping list';
+  String consentListAccess(String client) {
+    return 'Read, add, tick off and move items on your shopping list. $client and its provider will receive your list contents.';
+  }
 
   @override
   String get scopeOpenid => 'Confirm your sign-in';
@@ -805,13 +806,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get draft => 'Draft';
-
-  @override
-  String get privacyDraftBody =>
-      'Hummlist\'s privacy policy is being written and will appear here once it is ready.';
-
-  @override
   String get categoryProduce => 'Fruit & veg';
 
   @override
@@ -845,14 +839,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryOther => 'Other';
 
   @override
-  String get analyticsConsentTitle => 'Help make Hummlist better';
+  String get analyticsConsentTitle => 'May Hummlist collect usage data?';
 
   @override
   String get analyticsConsentBody =>
-      'With your permission, Hummlist sends anonymous usage data and error reports to PostHog, a service with servers in the EU: for example that an item was added or ticked off, the app version and a random ID for this installation. Item names, list contents, names, e-mail addresses and your location are never sent. Without your permission nothing is sent. You can change this any time under More → Usage data.';
+      'Peter Trost, who runs Hummlist, wants to see which features are used, find bugs and measure whether Hummlist pays for itself. For that, with your permission, Hummlist stores a random ID on this device and sends usage data and error reports to our service provider PostHog (servers in the EU): for example that an item was added or ticked off, together with this ID, your household\'s ID, platform and app version. The data is pseudonymous, not anonymous. Item names, list contents, names, e-mail addresses, IP address and location are never sent. Without your permission nothing is stored or sent. You can withdraw your permission any time under More → Usage data. More in the';
 
   @override
-  String get analyticsDraftNote => 'DRAFT: awaiting Peter\'s approval';
+  String get analyticsConsentPrivacyLink => 'privacy policy';
 
   @override
   String get analyticsAccept => 'Allow';
@@ -864,11 +858,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyticsSection => 'Usage data';
 
   @override
-  String get analyticsToggle => 'Send anonymous usage data and error reports';
+  String get analyticsToggle => 'Send usage data and error reports';
 
   @override
   String get analyticsToggleHint =>
-      'To PostHog (EU), never list contents. Applies to this device.';
+      'Pseudonymous, to PostHog (servers in the EU), never list contents. Applies to this device. Turning it off deletes the ID on this device.';
 
   @override
   String get internalInstall => 'Internal installation';

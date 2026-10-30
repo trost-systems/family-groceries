@@ -275,3 +275,7 @@ before). Details: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-
 ## Job 22: onboarding: create or join a household, invite a partner (Spec #3)
 
 See [docs/done/22-onboarding.md](docs/done/22-onboarding.md).
+
+## Job 33b: legal fixes in the app
+
+See [docs/done/33b-legal-app.md](docs/done/33b-legal-app.md).
