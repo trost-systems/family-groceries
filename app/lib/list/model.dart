@@ -268,6 +268,11 @@ class const Item({
   /// The member who added it; null until the server confirms the add, and
   /// in snapshots older than the field.
   final String? addedBy,
+
+  /// How the server chose the category on insert (`categorized_via`:
+  /// household, exact, synonym, fuzzy, fallback, picked); null until it
+  /// confirms the add, and on rows from before job 32a. For analytics only.
+  final String? categorizedVia,
 }) {
   factory fromJson(Map<String, Object?> json) => Item(
     id: json['id']! as String,
@@ -287,6 +292,7 @@ class const Item({
       _ => null,
     },
     addedBy: json['added_by'] as String?,
+    categorizedVia: json['categorized_via'] as String?,
   );
 
   /// The same keys as a server row, so [Item.fromJson] reads it back.
@@ -304,6 +310,7 @@ class const Item({
     'updated_at': updatedAt.toIso8601String(),
     'bought_at': boughtAt?.toIso8601String(),
     'added_by': addedBy,
+    'categorized_via': categorizedVia,
   };
 
   Item copyWith({
@@ -330,6 +337,7 @@ class const Item({
     updatedAt: updatedAt,
     boughtAt: boughtAt == null ? this.boughtAt : boughtAt(),
     addedBy: addedBy,
+    categorizedVia: categorizedVia,
   );
 
   /// Added by another member (not by [userId], and not still unconfirmed).
@@ -491,7 +499,10 @@ sealed class const ItemOp(final String itemId) {
   factory fromJson(Map<String, Object?> json) {
     final id = json['item_id']! as String;
     return switch (json['op']) {
-      'add' => AddItem(Item.fromJson(json['item']! as Map<String, Object?>)),
+      'add' => AddItem(
+        Item.fromJson(json['item']! as Map<String, Object?>),
+        restored: json['restored'] == true,
+      ),
       'status' => SetStatus(
         id,
         ItemStatus.values.byName(json['status']! as String),
@@ -526,7 +537,11 @@ sealed class const ItemOp(final String itemId) {
   Map<String, Object?> toJson() => {
     'item_id': itemId,
     ...switch (this) {
-      AddItem(:final item) => {'op': 'add', 'item': item.toJson()},
+      AddItem(:final item, :final restored) => {
+        'op': 'add',
+        'item': item.toJson(),
+        if (restored) 'restored': true,
+      },
       SetStatus(:final status, :final at, :final storeId) => {
         'op': 'status',
         'status': status.name,
@@ -562,7 +577,9 @@ sealed class const ItemOp(final String itemId) {
   };
 }
 
-final class AddItem(final Item item) extends ItemOp {
+/// [restored]: a deleted item put back (the delete's undo), not a new add.
+final class AddItem(final Item item, {final bool restored = false})
+    extends ItemOp {
   this : super(item.id);
 
   @override

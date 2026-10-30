@@ -218,12 +218,20 @@ void main() {
         sortKey: null,
       ),
       const DeleteItem('x'),
+      AddItem(item('x'), restored: true),
     ];
     for (final op in ops) {
       final back = ItemOp.fromJson(op.toJson());
       expect(back.runtimeType, op.runtimeType);
       expect(back.toJson(), op.toJson());
     }
+    expect((ItemOp.fromJson(ops.last.toJson()) as AddItem).restored, isTrue);
+    expect((ItemOp.fromJson(ops.first.toJson()) as AddItem).restored, isFalse);
+    expect(
+      Item.fromJson({...item('x').toJson(), 'categorized_via': 'synonym'})
+          .categorizedVia,
+      'synonym',
+    );
     final edit = ItemOp.fromJson(ops[3].toJson()) as EditItem;
     expect(edit.changes, const ItemChanges(storeId: SetTo('dm')));
     expect(

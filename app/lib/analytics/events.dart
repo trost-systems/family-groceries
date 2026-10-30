@@ -52,6 +52,19 @@ final class const IntIn(final int min, final int max) extends PropertyRule;
 /// True or false.
 final class const IsBool() extends PropertyRule;
 
+/// How the server chose an added item's category (`items.categorized_via`,
+/// job 32a): a household correction, the dictionary (also after folding the
+/// spelling), a synonym, a typo match, the fallback Sonstiges, or picked (the
+/// add brought another category than the guess).
+const categorizedVia = {
+  'household',
+  'exact',
+  'synonym',
+  'fuzzy',
+  'fallback',
+  'picked',
+};
+
 const _roles = OneOf({'owner', 'member'});
 const _householdSize = IntIn(1, 100);
 
@@ -71,6 +84,22 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'scope': OneOf({for (final s in ReorderScope.values) s.wire}),
   },
   'store_reordered': const {},
+  // Job 32a: once per added item, when the server confirmed the add.
+  'item_categorized': const {'via': OneOf(categorizedVia)},
+  // Spec #8 Part B (job 32b): the duplicate hint ("Möhren steht schon auf
+  // der Liste"). Listed by 32a so 32b only emits them; never the item names.
+  'dedupe_hint_shown': const {
+    'actor_role': _roles,
+    'household_size': _householdSize,
+  },
+  'dedupe_hint_merged': const {
+    'actor_role': _roles,
+    'household_size': _householdSize,
+  },
+  'dedupe_hint_ignored': const {
+    'actor_role': _roles,
+    'household_size': _householdSize,
+  },
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

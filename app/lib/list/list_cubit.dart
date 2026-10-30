@@ -409,7 +409,10 @@ class ListCubit(
 
   /// Puts a deleted item back, keeping its id, category and place.
   void restore(Item item) => _enqueue(
-    AddItem(item.copyWith(status: ItemStatus.active, boughtAt: () => null)),
+    AddItem(
+      item.copyWith(status: ItemStatus.active, boughtAt: () => null),
+      restored: true,
+    ),
   );
 
   /// Folds or unfolds the section [key] (a store id, or [noStoreKey]).
@@ -646,6 +649,14 @@ class ListCubit(
   void _ack(ItemOp op, Item? row) {
     for (final acked in _resyncAcks) {
       acked[op.itemId] = row;
+    }
+    // Job 32a: how the server categorized a new add, once per add (an op is
+    // acknowledged once, also after a retry whose first answer was lost).
+    if (op case AddItem(restored: false)) {
+      if (row?.categorizedVia case final via?
+          when categorizedVia.contains(via)) {
+        _track('item_categorized', {'via': via});
+      }
     }
     final server = row == null
         ? ({...state.server}..remove(op.itemId))

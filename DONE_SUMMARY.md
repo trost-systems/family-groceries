@@ -20,6 +20,7 @@
 - Job 29b, no undo snackbar on a tick; "Zuletzt verwendet" shows the list's own rows, a tap puts an item back: [docs/done/29b-recently-used.md](docs/done/29b-recently-used.md)
 - Job 29d, More: Zugänge (`/more/access`) and Konto (`/more/account`) on separate pages, old `/settings` links redirect: [docs/done/29d-more-access-account.md](docs/done/29d-more-access-account.md)
 - Job 29a, fixed-height top bar (the sync icon no longer moves the list), no household name or item count on the list: [docs/done/29a-topbar-header.md](docs/done/29a-topbar-header.md)
+- Job 32a, spelling variants, synonyms and typos in the classifier (Spec #8 Part A), `items.canonical_key` for 32b, `item_categorized` analytics: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-classifier.md)
 
 ## Job 1: foundation (2026-10-22)
 
@@ -262,3 +263,11 @@ See [docs/done/21-feedback.md](docs/done/21-feedback.md).
 ## Job 29e: Einstellungen with light/dark/system theme and a language list
 
 See [docs/done/29e-settings-theme.md](docs/done/29e-settings-theme.md).
+
+## Job 32a: spelling variants and synonyms in the classifier
+
+"Karrotten", "Paradeiser", "Schokolde" and "carrots" land with the word they mean on every add
+path, through the one database classifier; text stays as typed; a household's correction holds
+for the word's variants; `items.canonical_key` is ready for 32b's duplicate hint. Word list:
+misspellings 94.2% right, false matches 0.48%; the classifier got faster (p95 about a third of
+before). Details: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-classifier.md).

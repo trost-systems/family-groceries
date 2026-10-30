@@ -18,6 +18,8 @@
 #   (Katzenfutter, Hundefutter, Katzenstreu), which shares the non-food aisle.
 # - Bags (-beutel, -tüte) are Haushalt; Filtertüten sit with the coffee.
 # - Brand names stand for their product (Elmex, Frosch, Somat, Lenor).
+# Regional and English synonyms live in synonyms.tsv (job 32a); spelling variants and typos are
+# folded and matched by public.classify_item_detail, so do not list misspellings here.
 # - Snack nuts (Erdnüsse, Cashews, Pistazien) are sweets; baking nuts pantry.
 # - Canned fish (Thunfisch, Sardinen) is pantry; fresh and smoked fish is meat.
 # - Fresh pasta, dough and deli salads are chilled; Erbsen default to frozen.

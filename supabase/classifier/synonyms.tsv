@@ -1,0 +1,173 @@
+# Synonyms for public.classify_item (job 32a): variant<TAB>canonical.
+# The canonical is a term of dictionary.tsv; a variant takes its category and its
+# canonical key (public.canonical_key), so Karotte, Mohrrübe and Möhre are one item for the
+# household's corrections, the store memory and the duplicate hint (job 32b).
+# A variant the dictionary lists too must have the canonical's category there.
+# Terms go through public.item_key like the dictionary; list English singular and plural when
+# the German stemmer reduces them differently (apple -> appl, apples -> apple).
+# Leave out variants that end other words with another meaning (Brause: Duschbrause; Kraut:
+# Sauerkraut; Rande: Girlande): a variant also matches as the end of a compound.
+
+# Regional German (DE, AT, CH)
+karotte	möhre
+mohrrübe	möhre
+gelbe rübe	möhre
+rüebli	möhre
+semmel	brötchen
+weck	brötchen
+wecken	brötchen
+weckle	brötchen
+schrippe	brötchen
+rundstück	brötchen
+erdapfel	kartoffel
+erdäpfel	kartoffel
+grumbeere	kartoffel
+grundbirne	kartoffel
+rahm	sahne
+obers	sahne
+schlagobers	schlagsahne
+schlagrahm	schlagsahne
+kaffeeobers	kaffeesahne
+topfen	quark
+zwetschge	pflaume
+zwetschke	pflaume
+zwetsche	pflaume
+paradeiser	tomate
+paradeisa	tomate
+karfiol	blumenkohl
+marille	aprikose
+kren	meerrettich
+kohlsprossen	rosenkohl
+faschiertes	hackfleisch
+gehacktes	hackfleisch
+hackepeter	hackfleisch
+hendl	hähnchen
+hühnchen	hähnchen
+broiler	hähnchen
+poulet	hähnchen
+melanzani	aubergine
+melanzane	aubergine
+kukuruz	mais
+rapunzel	feldsalat
+nüsslisalat	feldsalat
+vogerlsalat	feldsalat
+rote rübe	rote bete
+rote beete	rote bete
+ribisel	johannisbeere
+fisolen	bohne
+schwammerl	pilz
+eierschwammerl	pfifferling
+breze	brezel
+brezn	brezel
+weißkraut	weißkohl
+blaukraut	rotkohl
+rotkraut	rotkohl
+krapfen	berliner
+kreppel	berliner
+bulette	frikadelle
+fleischpflanzerl	frikadelle
+fleischküchle	frikadelle
+fleischlaberl	frikadelle
+leberkäse	fleischkäse
+frankfurter	wiener
+selters	mineralwasser
+sprudel	mineralwasser
+apfelsaftschorle	apfelschorle
+semmelbrösel	paniermehl
+konfitüre	marmelade
+guetzli	keks
+zuckerl	bonbon
+palatschinken	pfannkuchen
+klopapier	toilettenpapier
+haushaltsrolle	küchenrolle
+küchenpapier	küchenrolle
+mülltüte	müllbeutel
+müllsack	müllbeutel
+abfallsack	müllbeutel
+kehrichtsack	müllbeutel
+waschpulver	waschmittel
+abwaschmittel	spülmittel
+geschirrspülmittel	spülmittel
+zahncreme	zahnpasta
+deo	deodorant
+
+# English
+apple	apfel
+apples	apfel
+banana	banane
+bananas	banane
+oranges	orange
+lemon	zitrone
+lemons	zitrone
+lime	limette
+limes	limette
+strawberry	erdbeere
+strawberries	erdbeere
+blueberries	heidelbeere
+raspberries	himbeere
+pear	birne
+pears	birne
+peach	pfirsich
+peaches	pfirsich
+cherries	kirsche
+grapes	weintrauben
+tomato	tomate
+tomatoes	tomate
+potato	kartoffel
+potatoes	kartoffel
+onion	zwiebel
+onions	zwiebel
+garlic	knoblauch
+carrot	möhre
+carrots	möhre
+cucumber	gurke
+cucumbers	gurke
+lettuce	salat
+spinach	spinat
+cauliflower	blumenkohl
+mushroom	pilz
+mushrooms	pilz
+ginger	ingwer
+bread	brot
+milk	milch
+cheese	käse
+yogurt	joghurt
+yoghurt	joghurt
+cream	sahne
+eggs	eier
+chicken	hähnchen
+beef	rind
+pork	schwein
+ham	schinken
+sausage	wurst
+sausages	wurst
+bacon	speck
+salmon	lachs
+tuna	thunfisch
+rice	reis
+noodles	nudel
+flour	mehl
+sugar	zucker
+salt	salz
+pepper	pfeffer
+olive oil	olivenöl
+vinegar	essig
+honey	honig
+jam	marmelade
+coffee	kaffee
+tea	tee
+oats	haferflocken
+water	wasser
+juice	saft
+wine	wein
+ice cream	eis
+toilet paper	toilettenpapier
+paper towels	küchenrolle
+dish soap	spülmittel
+detergent	waschmittel
+trash bags	müllbeutel
+toothpaste	zahnpasta
+toothbrush	zahnbürste
+soap	seife
+diapers	windel
+tissues	taschentücher
