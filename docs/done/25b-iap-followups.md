@@ -79,3 +79,11 @@ runner can't build the Linux desktop app.
 - Privacy section 5a waits on Peter (NEEDS_PETER Job 25). NEEDS_LEAD Job 25 is unchanged; its
   P2 already says `Production,Sandbox` from review on, which is now also the only accepted
   production setting.
+
+## Landing record
+
+- Merged #132 on 2026-10-31 under the Mac merge lock: PR head d16bdf8, main 2f2176b (rebase-merge
+  re-commits; same tree).
+- CI on d16bdf8: run https://github.com/trost-systems/family-groceries/actions/runs/41141239253,
+  `ci-ok` green on the first attempt (both e2e shards, db, functions, flutter, ios, android). No
+  reruns, no flakes.
