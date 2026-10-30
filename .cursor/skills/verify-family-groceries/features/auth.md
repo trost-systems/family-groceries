@@ -26,7 +26,7 @@ Preconditions:
 
 - Baseline from `features/README.md`. The lea client is signed out: `fg logout --client lea`.
 
-- **Password sign-in.** Run `fg login lea`. It types into `login-email` and `login-password` and presses Enter. The result is `"screen": "list"`, and `fg find --key list-title --client lea` returns the title "FAMILIE TEST".
+- **Password sign-in.** Run `fg login lea`. It types into `login-email` and `login-password` and presses Enter. The result is `"screen": "list"` (the list names no household since job 29a; `fg db query "select h.name from household_members m join households h on h.id = m.household_id join auth.users u on u.id = m.user_id where u.email = 'lea@fg.test'"` returns "Familie Test").
 - **Wrong password.** Sign out, then run `fg type --key login-email --input lea@fg.test --client lea`, `fg type --key login-password --input falsch123 --submit --client lea` and `fg wait --contains "Anmeldung fehlgeschlagen" --client lea`. `fg find --key login-email --client lea` still returns one element.
 - **Form checks.** Signed out, run `fg type --key login-email --input foo --client lea` and `fg type --key login-password --input 123 --submit --client lea`. `fg screenshot --name auth-form-check --client lea` shows both messages under the fields, and the client stays on the login screen.
 - **Sign-up.** Run `fg type --key login-email --input neu-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea` and `fg tap --text Registrieren --client lea`. Then `fg wait --key household-name --client lea` succeeds: the welcome screen of a user without a household.

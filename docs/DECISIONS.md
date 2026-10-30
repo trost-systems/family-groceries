@@ -3263,3 +3263,49 @@ we can put the light/dark/system mode switch and add dark+light mode."
    sent from either page names it rather than `other`. Both match the
    `feedback.screen` check (`^[a-z][a-z_]{0,39}$`); the analytics
    allow-list takes them from the same set.
+
+## Job 29a (fixed-height top bar, no household name or count), 2026-10-30
+
+1. **Why the list jumped.** `_SyncIndicator` was `SizedBox.shrink()` while
+   synced and a 48 px padded icon while offline or pending. The header was a
+   `Row` of the two text lines (about 36 px) and that indicator, so its
+   height followed the taller child: about 50 px synced, 62 px with the
+   cloud. A short pending state after every tick or add (the icon shows
+   until the server acknowledges) made the bar, and the whole list under it,
+   jump by about 12 px for a moment.
+2. **One height in every state.** The bar (`_Header`, key `list-header`) is
+   a `SizedBox` of `_Header.height` = 44 px below the top inset, whatever it
+   holds. The sync icon sits centred in a fixed 44 x 44 slot (also its tap
+   target for the tooltip), which is empty while synced; the partner note is
+   one line with an ellipsis, so neither a long name nor a large text scale
+   can make the bar grow. The widget test "the bar above the list keeps its
+   height in every sync state" checks the bar's height and the list's top
+   through synced, pending, offline, reconnecting, synced again and a
+   partner add, with a 47 px notch; `e2e/tests/list-header.spec.ts` checks
+   the first divider's position in the browser with a held write and a cut
+   network.
+3. **No household name, no count (Peter).** The name was on screen all the
+   time and said nothing new (one household per user), and the count
+   duplicated the store dividers' "N Artikel". Both are gone from the list,
+   and so is the bar's heading semantics. The household name stays where it
+   helps: Mehr (household section, invite, join confirm). `ShoppingList` no
+   longer takes the household (`ListScreen` still waits for `InHousehold`),
+   so five widget tests lost a `household:` line.
+4. **What the bar keeps.** The "N neu (von X)" note for a partner's live
+   adds (left) and the sync icon (right), the two things that change. While
+   neither shows, the bar is an empty 44 px band with its bottom line. It is
+   kept rather than collapsed, because a bar that appears with the first
+   note or icon would move the list again.
+5. **String left in place.** `listItemCount` is now unused but stays in
+   `app_de.arb`/`app_en.arb` and the generated files: 19 and 29b edit the
+   l10n files in parallel. Remove it in a later cleanup. (`appTitle`, the
+   old fallback for an unnamed household, is still the window title and the
+   licenses page's name.)
+6. **Tests that read the header.** e2e: `listArea` takes the bar's fixed
+   height (`listBarHeight` in `helpers.ts`) instead of the "N Artikel"
+   line; `web-build.ts` `signIn` waits for the add field; `perf.spec.ts`
+   times the list by the "Ohne Laden, 200 Artikel" divider (in the markup,
+   since it is an aria-label); `groupHeadings` no longer drops a first
+   heading. The verify recipes (`SKILL.md`, `auth.md`, `household.md`,
+   `live-sync.md`) stop reading `list-title`; `list-walk-order.md` has
+   `lw-top-bar`.

@@ -12,15 +12,14 @@ import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
-import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The List tab: the household's name and count on top, the list, and the
-/// add bar at the bottom, which opens the add sheet. Needs the list scope
+/// The List tab: a status bar on top, the list, and the add bar at the
+/// bottom, which opens the add sheet. Needs the list scope
 /// (`ListScope`) above it.
 class const ListScreen({super.key}) extends StatelessWidget {
   static final Dictation? _dictation = dictationFor(
@@ -46,14 +45,12 @@ class const ListScreen({super.key}) extends StatelessWidget {
     if (session is! InHousehold) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return ShoppingList(household: session.household, dictation: _dictation);
+    return ShoppingList(dictation: _dictation);
   }
 }
 
-/// The tab's content for [household]; needs a [ListCubit] above it.
+/// The tab's content; needs a [ListCubit] above it.
 class const ShoppingList({
-  required final Household household,
-
   /// Null hides the microphone button.
   final Dictation? dictation,
   super.key,
@@ -62,16 +59,12 @@ class const ShoppingList({
   Widget build(BuildContext context) => BlocProvider(
     create: (context) => AddSheetCubit(context.read<ListCubit>()),
     // The list's snackbars float above the add bar, not above the tabs.
-    child: ScaffoldMessenger(
-      child: _ShoppingList(household: household, dictation: dictation),
-    ),
+    child: ScaffoldMessenger(child: _ShoppingList(dictation: dictation)),
   );
 }
 
-class const _ShoppingList({
-  required final Household household,
-  required final Dictation? dictation,
-}) extends StatefulWidget {
+class const _ShoppingList({required final Dictation? dictation})
+    extends StatefulWidget {
   @override
   State<_ShoppingList> createState() => _ShoppingListState();
 }
@@ -232,7 +225,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _Header(widget.household),
+                      const _Header(),
                       Expanded(
                         child: ShoppingListView(
                           bottomInset: addBarHeight,
@@ -484,85 +477,60 @@ class const _Disc({required final bool open, required final String? icon})
   }
 }
 
-/// The household's name (Hummlist without one), the item count, how many
-/// partner adds are new, and the sync state.
-class const _Header(final Household household) extends StatelessWidget {
+/// The bar above the list: how many partner adds are new, and the sync
+/// state. It is [height] tall in every state, so the list below never moves
+/// when either comes or goes (DECISIONS, Job 29a).
+class const _Header() extends StatelessWidget {
+  /// Below the top safe area; also the sync icon's square tap target.
+  static const height = 44.0;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final cubit = context.watch<ListCubit>();
     final state = cubit.state;
-    final count = state.items.values
-        .where((i) => i.status == ItemStatus.active)
-        .length;
     final fresh = cubit.fresh;
     final by = {for (final id in fresh) state.items[id]?.addedBy};
     final partner = by.length == 1 ? state.catalog.member(by.single) : null;
-    final name = household.name.trim().isEmpty ? l10n.appTitle : household.name;
-    final small = TextStyle(fontSize: 13, color: scheme.onSurfaceVariant);
     return DecoratedBox(
+      key: const ValueKey('list-header'),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          MediaQuery.paddingOf(context).top + 6,
-          8,
-          8,
+        padding: EdgeInsets.only(
+          left: 20,
+          top: MediaQuery.paddingOf(context).top,
+          right: 8,
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      name.toUpperCase(),
-                      key: const ValueKey('list-title'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 13 * 0.08,
-                        color: scheme.primary,
-                      ),
-                    ),
-                  ),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      Text(
-                        l10n.listItemCount(count),
-                        key: const ValueKey('list-count'),
-                        style: small,
-                      ),
-                      if (fresh.isNotEmpty)
-                        Text(
-                          partner == null
-                              ? l10n.newItems(fresh.length)
-                              : l10n.newItemsFrom(
-                                  fresh.length,
-                                  partner.displayName,
-                                ),
-                          key: const ValueKey('new-items-subtitle'),
-                          style: small.copyWith(
-                            color: scheme.tertiary,
-                            fontWeight: FontWeight.w700,
-                          ),
+        child: SizedBox(
+          height: height,
+          child: Row(
+            children: [
+              Expanded(
+                child: fresh.isEmpty
+                    ? const SizedBox.shrink()
+                    : Text(
+                        partner == null
+                            ? l10n.newItems(fresh.length)
+                            : l10n.newItemsFrom(
+                                fresh.length,
+                                partner.displayName,
+                              ),
+                        key: const ValueKey('new-items-subtitle'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: scheme.tertiary,
+                          fontWeight: FontWeight.w700,
                         ),
-                    ],
-                  ),
-                ],
+                      ),
               ),
-            ),
-            const _SyncIndicator(),
-          ],
+              const SizedBox.square(dimension: height, child: _SyncIndicator()),
+            ],
+          ),
         ),
       ),
     );
@@ -586,8 +554,7 @@ class const _SyncIndicator() extends StatelessWidget {
       return Tooltip(
         message: message,
         excludeFromSemantics: true,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: Center(
           child: Icon(
             connection == ConnectionStatus.offline
                 ? Icons.cloud_off

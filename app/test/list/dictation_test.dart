@@ -4,7 +4,6 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/dictation.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
-import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -52,10 +51,7 @@ void main() {
         home: BlocProvider(
           create: (_) =>
               ListCubit(repo, MemoryListCache(), userId: 'peter')..start(),
-          child: ShoppingList(
-            household: const Household(id: 'h', name: 'Trost'),
-            dictation: dictation,
-          ),
+          child: ShoppingList(dictation: dictation),
         ),
       ),
     );

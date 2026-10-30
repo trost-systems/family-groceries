@@ -1,7 +1,6 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
-import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,9 +24,7 @@ void main() {
           create: (_) =>
               ListCubit(FakeRepository(), MemoryListCache(), userId: 'peter')
                 ..start(),
-          child: const ShoppingList(
-            household: Household(id: 'h', name: 'Trost'),
-          ),
+          child: const ShoppingList(),
         ),
       ),
     );

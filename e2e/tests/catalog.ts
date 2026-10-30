@@ -1,10 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { editSheet, itemRow, listArea, openEdit, reveal, storeDivider } from './helpers';
 
-/** The list's group headings, top to bottom (the household name above the list excluded). */
+/** The list's group headings, top to bottom. */
 export async function groupHeadings(page: Page): Promise<string[]> {
-  const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
-  return headings.slice(1);
+  return page.getByRole('heading', { level: 2 }).allTextContents();
 }
 
 /** The heading of the group an item row sits in: the nearest heading above it. */
