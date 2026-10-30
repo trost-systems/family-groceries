@@ -4043,6 +4043,13 @@ The lead filled only facts checked against official sources on 2026-10-30 (sourc
     skill. Job 33f (#121) added that section ("### Amazon Alexa" in section 7) while this job
     was landing, so job 24 adds nothing to the policy; the data map has the Alexa and
     `analytics_consents` rows.
+13. **Fix 1 (review 0).** The help page linked `app.hummlist.com/konto-loeschen`, which the app
+    host (`cleanUrls: false`, SPA fallback) answers with the Flutter app; now `.html`, and
+    `site/test/consistency.test.mjs` requires every `app.hummlist.com/<path>` link in
+    `site/content` to be a file in `app/web`. The same test pins the three publish switches
+    (`draft: true` in both help pages, `supportPublished`, `supportPagePublished`) to agree. The
+    data map follows 33b/33g; the FAQ gains Alexa. Lighthouse mobile on the local preview build:
+    100/100/100 (performance, accessibility, best practices), SEO 63 from the intended noindex.
 
 ## Job 32b (duplicate hint with one-tap merge, Spec #8 Part B), 2026-10-30
 

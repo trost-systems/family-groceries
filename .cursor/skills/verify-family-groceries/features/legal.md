@@ -25,6 +25,7 @@ banner and noindex, production builds leave them out (404). The app opens them f
 
 ```bash
 cd site && npm ci && npm test                       # draft.test.mjs proves lg-draft both ways
+                                                    # consistency.test.mjs: app links are real files, publish switches agree
 npm run build && PORT=55880 node scripts/preview.mjs   # open /support and /en/support: banner
 VERCEL_ENV=production npm run build                  # restart preview: /support is 404
 ```

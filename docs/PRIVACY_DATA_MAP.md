@@ -4,7 +4,7 @@ What Hummlist stores or sends about people, where, why, on which legal basis, fo
 it goes away, with the code that does it. It is the single source for the store forms (job 14:
 App Store "App Privacy", Play "Data safety") and the fact base behind the privacy policy
 (`site/content/legal/datenschutz.md` and `privacy.md`, job 33a). Not legal advice: Peter approves
-the policy text. Written in job 24 (2026-10-30) against `main` 8ecc62f (after jobs 33a-f and 31). A job that adds, sends or
+the policy text. Written in job 24 (2026-10-30) against `main` 0b47f91 (after jobs 33a-g, 31 and 32b). A job that adds, sends or
 keeps new personal data updates its row here in the same PR.
 
 Legal bases: (b) Art. 6(1)(b) GDPR, the contract (running the app you signed up for);
@@ -28,6 +28,7 @@ interest.
 | Household name, members, role, joined date | `households`, `household_members` | Sharing one list | (b) | While the household exists | Supabase EU | Last member's deletion deletes the household; otherwise the membership goes | `20261022150000_foundation.sql`, `..._account_deletion.sql` |
 | List items: name, quantity, brand, properties, category, store, status, added_by, bought_by, timestamps, `canonical_key`, `categorized_via` | `public.items` | The shopping list | (b) | While the household exists | Supabase EU | Item delete; account deletion nulls `added_by`/`bought_by` (names stay visible to the others) | `20261022150000_foundation.sql`, `20261030110000_classifier_variants.sql` |
 | History: action, item name, category, actor | `public.item_events` | "Recently bought", undo, history | (b) | While the household exists (no purge) | Supabase EU | Account deletion nulls `actor`; household deletion cascades | `..._account_deletion.sql` line 122 |
+| Merges of duplicate items (job 32b): both items' rows before and after (names, quantities, who added), who merged, when, undone | `public.item_merges` (members read, no client writes) | Undo a merge ("Rückgängig") | (b) | 30 days (older rows of the household are deleted on the next merge) | Supabase EU | Household deletion cascades; a deleted user's id is cleared from the stored rows (trigger on `auth.users`) | `20261030160000_dedupe_merge.sql` |
 | Stores, categories, store/category order, learned category and store memory | `stores`, `categories`, `store_category_order`, `category_memory`, `item_store_memory`, `household_brands` | Sorting the list | (b) | While the household exists | Supabase EU | Household deletion cascades | `supabase/migrations/` |
 | Invites: 8-character code, creator, created/expires (7 days), used_at/used_by, revoked_at | `public.invites` | Joining a household; single use | (b) | Rows stay after expiry while the household exists | Supabase EU | Household deletion cascades; creator/user nulled on account deletion | `20261030120000_onboarding_invites.sql` |
 | Failed join attempts (user, time) | `public.invite_attempts` (no client access) | Rate limit 10 failures per hour | (f) abuse protection | Rows older than 1 day are deleted whenever a new failure is recorded (line 70) | Supabase EU | Cascades with the account | `20261030120000_onboarding_invites.sql` |
@@ -63,7 +64,7 @@ interest.
 | Server function errors (function, error type, scrubbed message, stack; no user, household, install id or IP) | PostHog EU | Fixing server errors | (f) | 1 year | PostHog EU | n/a | `supabase/functions/_shared/telemetry.ts` |
 | Purchase events (planned, job 25): product, store, revenue | PostHog EU | Revenue | to be decided in job 25 | | PostHog EU | | `serverEventCatalog` in `telemetry.ts` |
 | Consent decision per install (user, install id, yes/no, internal, decided at) | `public.analytics_consents` (service only) | Server events (e.g. Alexa adds) follow the user's newest answer; proof of consent | (c)/(f) proof of consent (Art. 7(1)) | 20 newest installs per user; deleted with the account | Supabase EU | Cascades with the account; in the export as `analytics_decisions` | `20261030140000_alexa.sql` |
-| On the device: install id, consent decision, first_open sent, internal flag | `DeviceCache` (shared preferences) | Remember the choice | (a)/§25(2) TDDDG for the decision | Until uninstall | Device | Uninstall; 33b (open PR) deletes the install id on "no" | `app/lib/app/device_cache.dart` |
+| On the device: install id, consent decision, first_open sent, internal flag | `DeviceCache` (shared preferences) | Remember the choice | (a)/§25(2) TDDDG for the decision | Until uninstall | Device | Uninstall; no install id is made without a yes, and an old one is deleted on "no" (33b, `analytics.dart`) | `app/lib/app/device_cache.dart` |
 
 ## Other data on the device
 
@@ -94,7 +95,6 @@ the policy section if its design differs.
 | PostHog Inc. (analytics, error tracking) | Processor | EU cloud, Frankfurt; US sub-processors possible (DPA 10.2) | DPF and SCCs (DPA 10.3, 10.4) |
 | GitHub (encrypted backups) | Processor | USA | DPF |
 | Google Cloud EMEA Limited, Dublin (Workspace, support mail) | Processor | EU/US | DPF; SCCs if Google stops relying on it |
-| Anysphere, Inc. (AI support assistant "Hummlist Support", drafts only; policy §10) | Processor | USA | `[PETER: …]` open in policy §13 (no DPF, SCCs only in the Teams/Enterprise DPA) |
 | Apple (App Store, TestFlight, Sign in with Apple), Google (Play, Google sign-in), Amazon (Alexa) | Independent controllers | | |
 
 ## Account deletion and export (job 9)
@@ -113,8 +113,8 @@ the policy section if its design differs.
 No advertising, no sale of data, no location (PostHog GeoIP off), no contacts, no tracking or
 analytics without consent, no cookies or trackers on hummlist.com (`site/test/preview.test.mjs`).
 
-## Differences to the policy draft (33a, open PR #105)
+## Differences to the privacy policy (`site/content/legal/datenschutz.md`)
 
-None found (Alexa is in the policy since job 33f). Not named in the policy draft, both short-lived: the
-`invite_attempts` rate-limit rows (deleted after about a day) and the function error logs. The
-transfer basis for the AI support assistant stays with Peter, as in the policy.
+None found (Alexa is in the policy since job 33f; 33g removed the AI support assistant). Not named
+in the policy, both short-lived: the `invite_attempts` rate-limit rows (deleted after about a day)
+and the function error logs.

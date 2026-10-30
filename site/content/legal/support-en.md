@@ -37,7 +37,7 @@ Tap **More**, then **Account** and **Export my data**. You get everything stored
 
 Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
 
-Without the app: the steps are at [app.hummlist.com/konto-loeschen](https://app.hummlist.com/konto-loeschen) (German), or write to [support@hummlist.com](mailto:support@hummlist.com).
+Without the app: the steps are at [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html) (German), or write to [support@hummlist.com](mailto:support@hummlist.com).
 
 ### How do I turn off usage data?
 
@@ -46,6 +46,10 @@ Tap **More** and, under **Usage data**, turn off **Send usage data and error rep
 ### Can I add items with Siri?
 
 Yes, with a shortcut on your iPhone. The guide [Hummlist with Siri](/en/guides/siri-shortcut) explains it. Adding by voice works in German only for now.
+
+### Can I add items with Alexa?
+
+Yes, with the Alexa skill "Hummlist" (German only). Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, „Alexa, sag Hummlist, füg Milch und Eier hinzu“ ("add milk and eggs") or „Alexa, frag Hummlist, was auf der Liste steht“ ("what's on the list"). You unlink it in the Alexa app or in Hummlist under **More** → **Access**. The skill is still being tested and not yet available to everyone.
 
 ### Can I use Hummlist with Claude, ChatGPT or another AI assistant?
 

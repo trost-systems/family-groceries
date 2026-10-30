@@ -37,7 +37,7 @@ Tippe auf **Mehr**, dann auf **Konto** und auf **Meine Daten exportieren**. Du b
 
 Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
 
-Ohne App geht es auch: Die Schritte stehen unter [app.hummlist.com/konto-loeschen](https://app.hummlist.com/konto-loeschen), oder schreib an [support@hummlist.com](mailto:support@hummlist.com).
+Ohne App geht es auch: Die Schritte stehen unter [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html), oder schreib an [support@hummlist.com](mailto:support@hummlist.com).
 
 ### Wie schalte ich die Nutzungsdaten aus?
 
@@ -46,6 +46,10 @@ Tippe auf **Mehr** und schalte unter **Nutzungsdaten** den Schalter **Nutzungsda
 ### Kann ich Sachen per Siri auf die Liste setzen?
 
 Ja, mit einem Kurzbefehl auf dem iPhone. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Siri: Kurzbefehl einrichten](/de/anleitungen/siri-kurzbefehl).
+
+### Kann ich Sachen per Alexa auf die Liste setzen?
+
+Ja, mit dem Alexa-Skill „Hummlist“ (auf Deutsch). Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Hummlist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Die Verknüpfung trennst du in der Alexa-App oder in Hummlist unter **Mehr** → **Zugänge**. Der Skill ist noch im Test und noch nicht für alle verfügbar.
 
 ### Kann ich Hummlist mit Claude, ChatGPT oder einem anderen KI-Assistenten nutzen?
 
