@@ -1,9 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
-import { fakeOidcPort, webPort as port } from './stack';
+import { readFileSync } from 'node:fs';
+import { fakeOidcPort, webPort as port, stack } from './stack';
 
 // Job 28: the timings in tests/perf.spec.ts take 4-5 minutes, so they run only when named:
 // `npx playwright test tests/perf.spec.ts`, or `scripts/ci-e2e.sh --spec tests/perf.spec.ts`.
 const timingsAsked = process.argv.some((arg) => /perf/.test(arg));
+// Job 33c: the e2e build's stand-in PostHog host, for the production CSP serve.mjs sends.
+const posthogHost = JSON.parse(readFileSync(new URL('../app/config/e2e.json', import.meta.url), 'utf8')).POSTHOG_HOST;
 
 export default defineConfig({
   testDir: './tests',
@@ -41,11 +44,17 @@ export default defineConfig({
     // Job 28: Safari's engine. As an iPhone for the tap focus, as a desktop for the timings
     // (the mouse wheel does not scroll a mobile WebKit page).
     { name: 'iphone', testMatch: /iphone\.spec\.ts/, use: { ...devices['iPhone 15'] } },
-    { name: 'webkit', testMatch: /perf\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
+    // Job 33c: no request to Google in every engine (Firefox and WebKit run the JS build).
+    { name: 'webkit', testMatch: /(perf|no-google)\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
+    {
+      name: 'firefox',
+      testMatch: /no-google\.spec\.ts/,
+      use: { ...devices['Desktop Firefox'], viewport: { width: 480, height: 900 } },
+    },
   ],
   webServer: [
     {
-      command: `node serve.mjs ../app/build/web ${port}`,
+      command: `node serve.mjs ../app/build/web ${port} --csp ${stack.url} ${posthogHost}`,
       url: `http://127.0.0.1:${port}`,
       reuseExistingServer: !process.env.CI,
     },

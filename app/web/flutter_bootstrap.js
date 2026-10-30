@@ -21,10 +21,16 @@ window.addEventListener('error', (event) => {
   }
 }, true);
 
+// Job 33c (legal review H-02): the engine files (canvaskit/, skwasm) and the fonts come from our
+// own origin, never from www.gstatic.com or fonts.gstatic.com. app/web/fonts/ mirrors the paths
+// the engine asks for (scripts/web-fonts.sh). The loader reads canvasKitBaseUrl, the engine
+// fontFallbackBaseUrl, so both get the config.
+const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/' };
 _flutter.loader.load({
+  config,
   onEntrypointLoaded: async (engineInitializer) => {
     try {
-      const appRunner = await engineInitializer.initializeEngine();
+      const appRunner = await engineInitializer.initializeEngine(config);
       await appRunner.runApp();
       started = true;
       sessionStorage.removeItem(bootRetries);

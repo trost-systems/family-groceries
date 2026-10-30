@@ -42,14 +42,14 @@ runs:
         cache-dependency-path: e2e/package-lock.json
     # The runner image already has the libraries headless Chromium needs. install-deps (apt:
     # fonts, xvfb) took 6 min on a slow mirror once, so it runs only when a launch fails.
-    # WebKit (job 28: the iphone and webkit projects) gets the same treatment.
+    # WebKit (job 28: the iphone and webkit projects) and Firefox (job 33c) get the same treatment.
     - name: Install Playwright
       shell: bash
       working-directory: e2e
       run: |
         npm ci
-        npx playwright install chromium webkit
-        for browser in chromium webkit; do
+        npx playwright install chromium webkit firefox
+        for browser in chromium webkit firefox; do
           node -e "import('@playwright/test').then((p) => p['$browser'].launch()).then((b) => b.close())" \
             || npx playwright install --with-deps "$browser"
         done

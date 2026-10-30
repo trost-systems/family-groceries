@@ -29,3 +29,18 @@ done
 for file in .well-known/apple-app-site-association .well-known/assetlinks.json; do
   cmp -s "web/$file" "$out/$file" || { echo "web-prod: $out/$file is missing or differs from web/$file" >&2; exit 1; }
 done
+
+# Job 33c (legal review H-02): the engine and every font load from our origin, never gstatic.com.
+# The loader reads canvasKitBaseUrl from load(), the engine fontFallbackBaseUrl from initializeEngine().
+for code in "const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/' };" \
+  'config,' 'initializeEngine(config)'; do
+  grep -qF "$code" "$out/flutter_bootstrap.js" \
+    || { echo "web-prod: flutter_bootstrap.js lacks: $code (job 33c: engine and fonts from our origin)" >&2; exit 1; }
+done
+for file in canvaskit.wasm chromium/canvaskit.wasm skwasm.wasm skwasm_heavy.wasm; do
+  [[ -s $out/canvaskit/$file ]] || { echo "web-prod: $out/canvaskit/$file is missing" >&2; exit 1; }
+done
+fonts="$(grep -ohE '\b[a-z0-9]+/v[0-9]+/[A-Za-z0-9._-]+\.woff2' "$out/main.dart.js" | sort -u)"
+(($(wc -l <<<"$fonts") > 100)) || { echo "web-prod: main.dart.js names only $(wc -l <<<"$fonts") fonts" >&2; exit 1; }
+missing="$(while read -r font; do [[ -s $out/fonts/$font ]] || echo "$font"; done <<<"$fonts")"
+[[ -z $missing ]] || { echo "web-prod: the engine fetches fonts app/web/fonts lacks; run scripts/web-fonts.sh:" >&2; echo "$missing" >&2; exit 1; }

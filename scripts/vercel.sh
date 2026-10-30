@@ -62,7 +62,7 @@ build() {
     maps=(--source-maps)
   fi
   cd app
-  flutter build web --release --wasm --base-href / \
+  flutter build web --release --no-web-resources-cdn --wasm --base-href / \
     --dart-define=SUPABASE_URL="$SUPABASE_URL" \
     --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
     --dart-define-from-file=config/auth.json ${analytics[@]+"${analytics[@]}"} ${maps[@]+"${maps[@]}"}
