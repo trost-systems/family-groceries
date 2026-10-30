@@ -14,7 +14,7 @@ Every new item lands in a category without the user choosing one. The list group
 ## How to get to it (user POV)
 
 - Add an item in the add bar at the bottom of the list. Without a store it appears under its category divider in "Ohne Laden".
-- Hold the item without moving to open the edit sheet, tap the category chip, pick another category from the options that fold out, and tap "Fertig".
+- Swipe the item to the left (or hold it without moving) to open the edit sheet, tap the category chip, pick another category from the options that fold out, and tap "Fertig".
 - Hold an item and drag it onto another category divider.
 
 ## Driving it with fg

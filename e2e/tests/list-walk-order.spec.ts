@@ -87,7 +87,7 @@ async function householdOf(api: SupabaseClient): Promise<string> {
 test('stores and categories are dividers that scroll away, stores fold for good, the explainer goes for good', async ({ page }) => {
   const email = newEmail('walk-dividers');
   await signUpWithHousehold(page, email);
-  await expect(page.getByText('Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt')).toBeVisible();
+  await expect(page.getByText('Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt')).toBeVisible();
   await seed(page, email, lidl);
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
   await expect(storeDivider(page, 'dm')).toHaveAccessibleName(/^dm, 1 Artikel/);
@@ -113,7 +113,7 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   await page.mouse.wheel(0, -80);
 
   await page.getByRole('button', { name: 'Verstanden' }).click();
-  await expect(page.getByText('Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt')).toHaveCount(0);
+  await expect(page.getByText('Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt')).toHaveCount(0);
 
   await store.click();
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
@@ -124,7 +124,7 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   await page.reload();
   await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
   await expect(itemRow(page, 'Äpfel'), 'still folded after a reload').toHaveCount(0);
-  await expect(page.getByText('Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt'), 'dismissed for good')
+  await expect(page.getByText('Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt'), 'dismissed for good')
     .toHaveCount(0);
 
   await dragItemToStore(page, 'Brot', 'Lidl');

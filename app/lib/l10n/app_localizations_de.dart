@@ -560,7 +560,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get listHint =>
-      'Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt';
+      'Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt';
 
   @override
   String get listHintDismiss => 'Verstanden';

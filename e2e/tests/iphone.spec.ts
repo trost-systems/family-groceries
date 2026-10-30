@@ -1,5 +1,7 @@
 import { expect, test, type Page } from './fixtures';
-import { addField, addSheet, newEmail, nextFrames, screenshot } from './helpers';
+import {
+  actionSnackBar, addField, addSheet, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
+} from './helpers';
 import { householdWithItems, signIn, watchBuild } from './web-build';
 
 // Job 28, in WebKit as an iPhone (the `iphone` project). Peter had to tap the add field twice in
@@ -130,4 +132,31 @@ test('after a tapped suggestion one tap on the field brings the keyboard back', 
   await screenshot(page, '28-iphone-after-pick');
 
   await tapFieldOnce(page, 'Eier');
+});
+
+// Job 29c, Peter: in Safari on the iPhone a hold "always triggers the move action". A swipe to the
+// left now edits (it used to delete), a hold that wobbles a little still edits, and the sheet deletes.
+test('a finger swipe to the left opens the edit sheet and the row stays; Löschen in it deletes', async ({ page }) => {
+  const email = newEmail('iphone-swipe');
+  await householdWithItems(email, ['Zahnpasta', 'Brot']);
+  await page.goto('/');
+  await signIn(page, email);
+  const row = itemRow(page, 'Zahnpasta');
+  const before = (await row.boundingBox())!;
+
+  await swipeLeft(page, row, { onMove: () => screenshot(page, '29c-iphone-swipe-mid') });
+  await expect(editSheet(page), 'a finger swipe to the left opens edit').toBeVisible();
+  await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
+  await screenshot(page, '29c-iphone-swipe-sheet');
+  await editSheet(page).getByRole('button', { name: 'Abbrechen' }).tap();
+  await expect(editSheet(page)).toHaveCount(0);
+  await expect.poll(async () => (await row.boundingBox())?.x, { message: 'the row sprang back' }).toBe(before.x);
+
+  const mid = { x: before.x + before.width / 2, y: before.y + before.height / 2 };
+  await finger(page, [mid, { x: mid.x + 7, y: mid.y + 10 }], { hold: 700, steps: 4, pause: 300 });
+  await expect(editSheet(page), 'a hold that wobbles 12 px opens edit, not a move').toBeVisible();
+  await editSheet(page).getByRole('button', { name: 'Löschen' }).tap();
+  await expect(actionSnackBar(page, 'Zahnpasta gelöscht')).toBeVisible();
+  await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
+  await expect(itemRow(page, 'Brot')).toBeVisible();
 });

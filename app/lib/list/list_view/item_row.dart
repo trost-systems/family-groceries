@@ -6,6 +6,7 @@ import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 /// "6×" for a count, any other quantity as typed; null for one.
@@ -15,9 +16,13 @@ String? quantityLabel(String? quantity) => switch (quantity?.trim()) {
   final q => q,
 };
 
-/// One item: a tap ticks it, a hold that stays put (or a right click) edits
-/// it, a hold that moves drags it, a swipe to the left deletes it. It is
-/// also a drop target that puts a dragged item before or after it.
+/// One item: a tap ticks it, a swipe to the left (or a right click, or a
+/// hold that stays put) edits it, a hold that moves drags it. The swipe
+/// leaves the row in place and opens the edit sheet, which deletes the item
+/// and moves it to another category or store, so only reordering within its
+/// category needs a hold: on a phone's browser a hold often drifts into a
+/// drag (job 29c). Screen readers get edit and delete as actions. It is also
+/// a drop target that puts a dragged item before or after it.
 class const ItemRow({
   required final Item item,
   required final Category? category,
@@ -34,6 +39,9 @@ class const ItemRow({
   required final ValueChanged<bool> onVisible,
   required final ValueChanged<Item> onTick,
   required final ValueChanged<Item> onEdit,
+
+  /// Only a screen reader's action deletes from the row; everyone else
+  /// deletes in the edit sheet.
   required final ValueChanged<Item> onDelete,
   required final void Function(Item item, ItemDrop drop) onDrop,
   super.key,
@@ -49,6 +57,9 @@ class _ItemRowState()
   /// disposed source never learns how its drag ended.
   var _lifted = false;
   var _travel = Offset.zero;
+
+  /// [holdSlop] of the pointer that pressed last.
+  var _slop = dragSlop;
   var _leaving = false;
   Timer? _leave;
 
@@ -86,7 +97,7 @@ class _ItemRowState()
 
   void _dragUpdate(DragUpdateDetails details) {
     _travel += details.delta;
-    if (!widget.session.moved.value && _travel.distance >= dragSlop) {
+    if (!widget.session.moved.value && _travel.distance >= _slop) {
       _stayUnderFinger();
       widget.session.moved.value = true;
     }
@@ -181,12 +192,7 @@ class _ItemRowState()
     if (item.categoryId == null) {
       return GestureDetector(
         onLongPress: () => widget.onEdit(item),
-        child: Dismissible(
-          key: ValueKey('dismiss-${item.id}'),
-          direction: DismissDirection.endToStart,
-          onDismissed: (_) => widget.onDelete(item),
-          child: watched,
-        ),
+        child: _swipeToEdit(context, watched, enabled: true),
       );
     }
     final draggable = LongPressDraggable<Dragged>(
@@ -219,27 +225,49 @@ class _ItemRowState()
       builder: (context, _, _) => Stack(
         clipBehavior: Clip.none,
         children: [
-          Dismissible(
-            key: ValueKey('dismiss-${item.id}'),
-            direction: session.active.value == null
-                ? DismissDirection.endToStart
-                : DismissDirection.none,
-            background: ColoredBox(
-              color: Theme.of(context).colorScheme.errorContainer,
-              child: const Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: EdgeInsets.only(right: 24),
-                  child: Icon(Icons.delete_outline),
-                ),
-              ),
+          Listener(
+            onPointerDown: (event) => _slop = holdSlop(event.kind),
+            child: _swipeToEdit(
+              context,
+              draggable,
+              enabled: session.active.value == null,
             ),
-            onDismissed: (_) => widget.onDelete(item),
-            child: draggable,
           ),
           _InsertionLine(id: item.id, hover: session.hover),
         ],
       ),
+    );
+  }
+
+  /// A swipe to the left past the threshold opens the edit sheet; the row
+  /// springs back instead of leaving.
+  Widget _swipeToEdit(
+    BuildContext context,
+    Widget child, {
+    required bool enabled,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Dismissible(
+      key: ValueKey('dismiss-${widget.item.id}'),
+      direction: enabled ? DismissDirection.endToStart : DismissDirection.none,
+      background: ColoredBox(
+        color: scheme.secondaryContainer,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 24),
+            child: Icon(
+              Icons.edit_outlined,
+              color: scheme.onSecondaryContainer,
+            ),
+          ),
+        ),
+      ),
+      confirmDismiss: (_) async {
+        widget.onEdit(widget.item);
+        return false;
+      },
+      child: child,
     );
   }
 
@@ -261,6 +289,10 @@ class _ItemRowState()
       label: label,
       onTap: _tick,
       onLongPress: () => widget.onEdit(item),
+      customSemanticsActions: {
+        CustomSemanticsAction(label: l10n.editSheet): () => widget.onEdit(item),
+        CustomSemanticsAction(label: l10n.delete): () => widget.onDelete(item),
+      },
       excludeSemantics: true,
       child: child,
     );
