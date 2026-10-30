@@ -165,6 +165,12 @@ class const LifetimeScreen({super.key}) extends StatelessWidget {
         Icons.money_off,
         l10n.lifetimeRefunded,
       ),
+      FlowNotAccepted(:final code) => _Note(
+        'lifetime-not-accepted',
+        Icons.error_outline,
+        l10n.lifetimeRefused(code),
+        error: true,
+      ),
       FlowFailed(:final kind, :final code) => _Note(
         'lifetime-error',
         Icons.error_outline,
@@ -172,7 +178,6 @@ class const LifetimeScreen({super.key}) extends StatelessWidget {
           FailureKind.store => l10n.lifetimeStoreFailed(code),
           FailureKind.offline => l10n.lifetimeVerifyOffline,
           FailureKind.rateLimited => l10n.lifetimeRateLimited,
-          FailureKind.refused => l10n.lifetimeRefused(code),
           FailureKind.server => l10n.lifetimeServerFailed(code),
         },
         error: true,

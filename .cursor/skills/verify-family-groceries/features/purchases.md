@@ -13,6 +13,7 @@ Mehr → Hummlist Lifetime sells a one-time unlock for the whole household on iO
 - `iap-killed` covers an app killed between purchase and verification: the next start verifies and unlocks.
 - `iap-refund` locks the household again after a refund notification.
 - `iap-elsewhere` refuses a purchase already unlocking another household (`lifetime-used-elsewhere`).
+- `iap-refused` finishes a transaction the server refuses for good (wrong environment, forged) and shows `lifetime-not-accepted` once, without `lifetime-retry`; it is not sent again on retry, on a session change or at the next start, only on a restore the user asks for.
 - `iap-web` shows `lifetime-web` and no buy or restore button on the web build.
 
 ## How to get to it (user POV)
@@ -37,6 +38,7 @@ Preconditions:
 - **Killed.** Built with `ok`: `fg tap --key lifetime-buy`, then at once `fg restart --client peter` (the fake store has recorded the purchase as unfinished). After the restart, without another tap, the page shows `lifetime-unlocked`; `fg db query "select count(*) from purchases"` is 1.
 - **Refund.** Read the transaction: `fg db query "select transaction_id from purchases order by verified_at desc limit 1"`. Sign Apple's refund for it and send it: `curl -s -X POST "$(fg env | jq -r .apiUrl)/functions/v1/purchases/test/sign" -d '{"transactionId":"<id>","notificationType":"REFUND"}'` gives `signedPayload`; `curl -s -X POST "$(fg env | jq -r .apiUrl)/functions/v1/purchases/apple/notifications" -d '{"signedPayload":"<…>"}'` answers `{"status":"revoked"}`. Both clients lose `lifetime-unlocked` live.
 - **Elsewhere.** The fake store is per client, so this runs at the API level: sign one transaction with `/purchases/test/sign`, verify it as peter (`fg login peter --api` prints an access token; `POST /functions/v1/purchases/verify` with `{"store":"apple","source":"purchase","jws":…}`), then as a user of a seeded other household: `{"status":"used_elsewhere"}`. `e2e/tests/purchases.spec.ts` does the same in CI.
+- **Refused.** The fake store only sells proofs the local function accepts, so this runs at the API level and in the cubit tests: sign one transaction with `/purchases/test/sign`, change one character of its signature part (after the last `.`) and verify it as peter: 422 `{"error":"refused","reason":"bad_signature"}`, no `purchases` row. `app/test/purchases/purchase_cubit_test.dart` ("a refused proof") shows the app finishing it and not sending it again; `screenshots_test.dart` renders `lifetime-not-accepted`.
 - **Web.** `fg sync` clients are web: the page shows `Hummlist Lifetime gibt es in der iOS- und Android-App.` and no buttons. `e2e/tests/purchases.spec.ts` drives the web side end to end in CI.
 - **Proof.** `fg screenshot --name iap-<sub-feature>` per state, the `fg db query` rows, and `fg record start/stop` across buy and partner.
 

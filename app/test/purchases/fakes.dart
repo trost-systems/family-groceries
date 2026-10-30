@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/fake_store.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
@@ -169,3 +170,17 @@ class TestPurchases({
     await entitlements.close();
   }
 }
+
+/// The fake store's ledger, in memory.
+class MemoryLedger() implements FakeLedgerStore {
+  String? contents;
+
+  @override
+  Future<String?> read() async => contents;
+
+  @override
+  Future<void> write(String contents) async => this.contents = contents;
+}
+
+/// What the local stack's signer would sign, as text the test can read.
+Future<String> fakeSign(String id) async => 'signed:$id';

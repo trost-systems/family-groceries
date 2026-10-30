@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Playwright drives the release web build against the local stack. Arguments go to
-# `playwright test` (a file or -g to run a subset).
+# `playwright test` (a file or -g to run a subset), with or without a leading `--` as verify.sh
+# takes them: playwright itself ignores everything after a `--` and runs the whole suite.
 #
 # One e2e run at a time on the box: two overlapping runs (stack, web build, browsers) froze it
 # (COORDINATION.md, Memory). The lock is box-wide, not per checkout, and the kernel drops it
@@ -8,6 +9,7 @@
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 no_posthog_in_ci
+if [[ ${1:-} == -- ]]; then shift; fi
 
 case "${FG_SYNC_SMOKE:-auto}" in
   1) sync_smoke=1 ;;

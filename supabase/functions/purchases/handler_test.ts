@@ -463,13 +463,30 @@ Deno.test('Apple notifications we do not act on are acknowledged with 200', asyn
   const ignored = [
     await notification(w, 'TEST'),
     await notification(w, 'REFUND', { productId: 'com.hummlist.app.other' }),
-    await notification(w, 'REFUND', {}, 'Production'),
+    await notification(w, 'REFUND', { environment: 'Production' }, 'Production'),
     await notification(w, 'CONSUMPTION_REQUEST'),
   ];
   for (const n of ignored) {
     await expect(await w.handle('/apple/notifications', n, {}), 200, { status: 'ignored' });
   }
   assertEquals(w.ledger.rows.get('2000000812345678')?.revoked, false);
+});
+
+Deno.test('an Apple notification whose transaction is from another environment is refused', async () => {
+  const w = await world();
+  await w.handle('/verify', await appleBody(w));
+  const mismatched = [
+    await notification(w, 'REFUND', { environment: 'Production' }, 'Sandbox'),
+    await notification(w, 'REFUND', {}, 'Production'),
+  ];
+  for (const n of mismatched) {
+    await expect(await w.handle('/apple/notifications', n, {}), 400, {
+      error: 'refused',
+      reason: 'environment_mismatch',
+    });
+  }
+  assertEquals(w.ledger.rows.get('2000000812345678')?.revoked, false);
+  assertEquals(w.events.map((e) => e.name), ['purchase_completed']);
 });
 
 Deno.test('a forged Apple notification is refused with 400 and changes nothing', async () => {

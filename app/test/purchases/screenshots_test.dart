@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -99,6 +100,16 @@ final List<Scene> _scenes = [
     store: FakePurchaseRepository.new,
     unlocked: false,
     act: (t, m) => _buyThen(t, m, const StoreFailed('E42')),
+  ),
+  (
+    name: 'not-accepted',
+    location: lifetimePath,
+    store: FakePurchaseRepository.new,
+    unlocked: false,
+    act: (t, m) async {
+      m.purchases.server.answer = const VerificationRefused('bad_signature');
+      await _buyThen(t, m, paid('jws-1'));
+    },
   ),
   (
     name: 'more',

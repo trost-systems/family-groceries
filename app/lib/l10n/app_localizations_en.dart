@@ -1158,7 +1158,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lifetimeRefused(String code) {
-    return 'The store\'s receipt was not accepted ($code).';
+    return 'The store\'s receipt was not accepted ($code). If you bought Hummlist Lifetime, tap “Restore purchases” later.';
   }
 
   @override
