@@ -64,9 +64,18 @@ Nothing is merged silently, typed text is never rewritten. Decisions: [DECISIONS
 - Local (Mac, Postgres 17 without Docker, all migrations): pgTAP suite green (dedupe_merge 48/48,
   rls 59/59, account_deletion 43/43, the rest unchanged); db-gate integration tests 10/10;
   `flutter test` 900/900; `flutter analyze` and `scripts/lint.sh` clean; deno tests green.
-- CI: see the PR for `ci-ok` on the merged head. The run before the last head was green in every
-  job (both e2e shards included) except the backup drill, which needed a fixture row for
-  `item_merges` (added).
+- Landed on main as `0b47f91`, the rebase-merge of PR head `e3af581` (identical tree), with
+  `ci-ok` green on that head (run 41069795841, every job). GitHub answered the merge call with a
+  502 after the commit was on main, so PR #118 shows Closed, not Merged; the PR carries a note.
+  Main's CI after the merge: green on d76ce11, a506b70 and 258d8c0; 559f9d1 failed once on the
+  known add-sheet-open flake in `classifier.spec.ts` (issue #109), not on anything similar.
+- CI rounds before landing: the backup drill wanted a fixture row for `item_merges`; account
+  deletion's table list needed it; `supabase db lint` flagged `merge_quantities`; on the web
+  the merged snackbar was closed by the hint's own hide. All fixed in the landed commit.
+- Review 0 (FIX) asked to rebase and land: the work was already on main (above); main's copies of
+  the reviewed files are byte-identical to `e3af581`, DECISIONS and DONE_SUMMARY hold main's and
+  32b's sections without conflict, and `20261030160000_dedupe_merge.sql` is the newest
+  migration. The PR body now names the landing and lists ACs 9-11 with their screenshots.
 - Screenshots: `docs/screenshots/32b/` (hint in the sheet, as a snackbar, ignored, merged, the
   partner's view, undo, the note rule).
 
