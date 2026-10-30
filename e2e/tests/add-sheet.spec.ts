@@ -1,7 +1,8 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
-  addField, adminClient, apiAs, itemRow, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
+  addField, adminClient, apiAs, holdFrames, itemRow, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
 } from './helpers';
+import { watchBuild, withoutWasmGC } from './web-build';
 
 /** The open add sheet: a group whose rect is the sheet's content. */
 const sheet = (page: Page) => page.getByRole('group', { name: 'Hinzufügen', exact: true });
@@ -219,6 +220,27 @@ test('after Schließen, a tap on the field and typing open the sheet again', asy
   await page.keyboard.type('Brot', { delay: 120 });
   await expect(rows(page).first(), 'the app gets the keys, not only the DOM input').toHaveAccessibleName(/^Brot, Wie getippt/);
 });
+
+for (const build of ['wasm', 'js'] as const) {
+  test(`after Schließen, a key typed before the next frame still reaches the app (${build})`, async ({ page }) => {
+    if (build === 'js') await withoutWasmGC(page);
+    const loaded = watchBuild(page);
+    await signUpWithHousehold(page, newEmail(`sheet-early-${build}`));
+    expect(loaded()).toEqual([build]);
+    await typeInto(addField(page), 'Butter');
+    await page.keyboard.press('Enter');
+    await sheet(page).getByRole('button', { name: 'Schließen' }).click();
+    await expect(sheet(page)).toHaveCount(0);
+    await nextFrames(page);
+    const release = await holdFrames(page);
+    await addField(page).click();
+    await page.keyboard.type('B');
+    expect(await release(), 'the tap asked for a frame, and it was held').toBeGreaterThan(0);
+    await page.keyboard.type('rot', { delay: 120 });
+    await expect(rows(page).first(), 'the first key is not lost').toHaveAccessibleName(/^Brot, Wie getippt/);
+    await screenshot(page, `add-first-key-${build}`);
+  });
+}
 
 test('with nothing typed, the open sheet offers what is due', async ({ page }) => {
   const email = newEmail('sheet-due');

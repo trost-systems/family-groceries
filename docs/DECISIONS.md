@@ -4166,3 +4166,50 @@ The job's own calls:
    attempt; starting a beta needs no certification, and the brief allowed it. The invitation
    link stays out of the repo and the board.
 
+## Job 34 (the add field drops the first key after Schließen), 2026-10-30
+
+1. **Cause: the web engine's semantics text field takes over the DOM input one frame late.** With
+   semantics on (always, on the web), a tap focuses the field's `<input>` at once. The engine asks
+   the app to focus the field (`SemanticsAction.focus`), but it attaches its `input` listener only
+   with the next frame's semantics update, and that update writes the app's text (empty) over the
+   input (`semantics/text_field.dart`, `update()` -> `SemanticsTextEditingStrategy.activate` ->
+   `DefaultTextEditingStrategy.enable` -> `setEditingState(lastEditingState)`). A key typed before
+   that frame lands in the DOM, then is erased; the app gets only the keys after it. This is the
+   gap 12b.6 found for `typeInto`. After Schließen the field is unfocused, so the next tap reopens
+   that gap. The tap also opens the sheet, a heavy frame, and in the failed CI attempt (run
+   41054432634) the "B" went out 5 ms after the click returned, while the close's 320 ms settle
+   timer was due.
+2. **Fix in the app: `EarlyKeys`, for every text field** (`app/lib/app/early_keys.dart`, started
+   in `main.dart` next to `ensureSemantics()`, on the web only). It follows the primary focus.
+   From the moment a text field gains it until the end of the next frame, a printable key down is
+   typed into that field through `EditableTextState.userUpdateTextEditingValue` (so formatters,
+   `maxLength` and `onChanged` apply as for any typed key) and marked handled. The app's text then
+   holds the key, so when the engine attaches the input it writes the key back instead of erasing
+   it. After the frame, keys are left to the input as before, so nothing is typed twice. Ctrl and
+   Meta shortcuts and control characters are not typed; Ctrl+Alt is, since that is AltGr (@, €)
+   on Windows. Native text input has no such semantics hand-over, so it is not started there.
+3. **App-wide, not only the add field.** The first version wrapped the add field alone. Every
+   other field (login, join code, edit sheet, feedback, ten in all) has the same gap: the login
+   test below loses its first key without the fix. One handler at the root covers them all and
+   new fields too, instead of a wrapper per field.
+4. **Not chosen.** A wait in the test (12b.6 did that for `typeInto`, but this test is the user
+   who taps and types at once). Keeping the add field focused after Schließen: any other blur (a
+   tap on the list, the scrim) reopens the same gap, and other fields would keep it. Forcing a
+   frame synchronously from the focus change: not a supported API. Fixing the engine: the app
+   builds on stable 3.47.8.
+5. **Regression checks.** `add-sheet.spec.ts` "after Schließen, a key typed before the next frame
+   still reaches the app" (wasm and js) holds `requestAnimationFrame` back (`holdFrames`,
+   `helpers.ts`), taps the field, types "B", releases the frames and types "rot" with the
+   original 120 ms delay. Without the fix it failed 60 of 60 (30 wasm, 30 js; the row read "rot",
+   or "ot" when the "r" also beat the released frame), the CI failure made deterministic.
+   `auth.spec.ts` does the same on the login page's Passwort field (wasm and js); on the box
+   (js build, no Supabase needed) it failed 5 of 5 without the fix ("heim-123") and passed 5 of 5
+   with it. The widget test `app/test/app/early_keys_test.dart` covers typing in the gap,
+   formatters, nothing typed after the frame, refocus, shortcuts and AltGr; with the handler off,
+   the 4 gap tests fail. The original test keeps its assertion.
+6. **Numbers** (on demand e2e, `-g Schließen`, one shard). Before the fix, run 41062722302 on
+   5c07a0b, `--repeat-each=30`: the original test failed 1 of 30 ("rot, Wie getippt", no host
+   stall), the new test 60 of 60. With the first (add field only) version, run 41063065757 on
+   1ac2a11, `--repeat-each=40`: 120 passed, 0 failed, 0 flaky. The app-wide version, run 41066142423 on d95bc72, the
+   add sheet and login tests (`-g "Schließen|next frame"`), `--repeat-each=40`: 200 passed, 0
+   failed, 0 flaky.

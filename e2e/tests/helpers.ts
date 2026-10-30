@@ -241,6 +241,24 @@ export async function nextFrames(page: Page): Promise<void> {
 }
 
 /**
+ * Holds Flutter's frames back until the returned release runs, and tells how many it held. A key
+ * typed while they are held lands before the frame that hands the field's DOM input to the app.
+ */
+export async function holdFrames(page: Page): Promise<() => Promise<number>> {
+  await page.evaluate(() => {
+    const w = window as unknown as { __release: () => number };
+    const raf = window.requestAnimationFrame.bind(window);
+    const held: FrameRequestCallback[] = [];
+    window.requestAnimationFrame = (callback) => (held.push(callback), 0);
+    w.__release = () => {
+      window.requestAnimationFrame = raf;
+      return held.splice(0).map((callback) => raf(callback)).length;
+    };
+  });
+  return () => page.evaluate(() => (window as unknown as { __release: () => number }).__release());
+}
+
+/**
  * Flutter swaps in its own editor on focus, so focus first, then insert.
  * insertText (not type) because synthetic key events drop umlauts.
  *
