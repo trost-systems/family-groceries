@@ -26,7 +26,7 @@ export const LOCALES = {
     ogLocale: 'en_US',
     footer: {
       imprint: { label: 'Imprint', href: '/en/imprint' },
-      privacy: { label: 'Privacy', href: '/privacy' },
+      privacy: { label: 'Privacy', href: '/en/privacy' },
       support: { label: 'Support', href: '/support' },
     },
     ui: { updated: 'Updated', languageNav: 'Language', footerNav: 'Legal' },
@@ -35,14 +35,28 @@ export const LOCALES = {
 
 const SITE_NAME = 'Hummlist';
 
-// Privacy and support pages ship in job 24; until then the footer must not link them.
+// A footer link to a page that isn't built yet fails the build, so each waits for its flag.
 const FOOTER_LINKS = [
   { key: 'imprint', shown: () => true },
-  { key: 'privacy', shown: (config) => config.legalPublished },
-  { key: 'support', shown: (config) => config.legalPublished },
+  { key: 'privacy', shown: (config) => config.privacyPublished },
+  { key: 'support', shown: (config) => config.supportPublished },
 ];
 
 const md = new MarkdownIt({ html: false, linkify: false, typographer: false, breaks: true });
+
+// `## Heading {#id}` gives the heading a stable anchor, e.g. /datenschutz#rechte for the stores.
+const HEADING_ID = /\s*\{#([a-z0-9-]+)\}$/;
+md.core.ruler.push('heading_id', (state) => {
+  state.tokens.forEach((token, i) => {
+    if (token.type !== 'heading_open') return;
+    const inline = state.tokens[i + 1];
+    const last = inline.children.at(-1);
+    const match = last?.type === 'text' && HEADING_ID.exec(last.content);
+    if (!match) return;
+    token.attrSet('id', match[1]);
+    last.content = last.content.slice(0, match.index);
+  });
+});
 
 function markdownFiles(dir) {
   if (!existsSync(dir)) return [];

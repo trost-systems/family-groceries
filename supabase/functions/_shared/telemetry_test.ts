@@ -74,13 +74,69 @@ Deno.test('an unhandled exception is reported with the function name, before the
   assertEquals(properties.$geoip_disable, true);
   const [exception] = properties.$exception_list as Record<string, unknown>[];
   assertEquals(exception.type, 'TypeError');
-  assertEquals(exception.value, 'cannot add <redacted> for <email>');
+  assertEquals(exception.value, 'cannot <w> <redacted> <w> <email>');
   assertEquals((exception.mechanism as Record<string, unknown>).handled, false);
   const frames = (exception.stacktrace as { frames: Record<string, unknown>[] }).frames;
   assert(frames.length > 0);
   assertEquals(frames.at(-1)!.filename, '_shared/telemetry_test.ts');
   const text = JSON.stringify(sent);
   for (const secret of ['Hafermilch', 'Milch', 'fgp_secret-token', 'peter@', 'authorization']) {
+    assertFalse(text.includes(secret), secret);
+  }
+});
+
+Deno.test('an error report carries no personal data from the request or the message', async () => {
+  const user = '5d1c3a9e-2b7f-4c1d-8e6a-9f0b1c2d3e4f';
+  const household = '7a2b4c6d-8e0f-4a1b-9c3d-5e7f9a1b3c5d';
+  const { sent, fetchImpl } = recorder();
+  const t = telemetryFor(
+    'voice',
+    env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }),
+    fetchImpl,
+  );
+  const handler = withTelemetry('voice', async (req) => {
+    const body = await req.json();
+    throw new TypeError(
+      `cannot parse ${body.text} for ${body.email} in ${body.household_id} by ${body.user_id}`,
+    );
+  }, t);
+  const response = await handler(
+    new Request('http://x/voice', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer fgp_secret-token',
+        'x-forwarded-for': '203.0.113.42',
+        'x-install-id': INSTALL,
+      },
+      body: JSON.stringify({
+        text: 'Hafermilch 2 Liter',
+        email: 'peter@example.com',
+        household_id: household,
+        user_id: user,
+        install_id: INSTALL,
+      }),
+    }),
+  );
+  assertEquals(response.status, 500);
+  const [event] = sent[0].body.batch;
+  const properties = event.properties as Record<string, unknown>;
+  assertEquals(properties.distinct_id, 'edge-function-voice');
+  const [exception] = properties.$exception_list as Record<string, unknown>[];
+  assertEquals(exception.type, 'TypeError');
+  assertEquals(exception.value, 'cannot <w> <n> <w> <email> in <uuid> <w> <uuid>');
+  const text = JSON.stringify(sent);
+  for (
+    const secret of [
+      user,
+      household,
+      INSTALL,
+      'peter@example.com',
+      'Hafermilch',
+      'Liter',
+      'fgp_secret-token',
+      '203.0.113.42',
+    ]
+  ) {
     assertFalse(text.includes(secret), secret);
   }
 });
@@ -111,7 +167,7 @@ Deno.test('a PostHog outage never breaks the response', async () => {
   assertEquals(response.status, 500);
 });
 
-Deno.test('scrubMessage keeps codes and runtime errors, nothing else', () => {
+Deno.test('scrubMessage keeps codes and the shape of runtime errors, nothing else', () => {
   assertEquals(
     scrubMessage(Object.assign(new Error('duplicate (name)=(Milch)'), { code: '23505' })),
     '23505',
@@ -121,8 +177,30 @@ Deno.test('scrubMessage keeps codes and runtime errors, nothing else', () => {
   assertEquals(scrubMessage('Milch'), '<redacted>');
   assertEquals(
     scrubMessage(new RangeError('id 0f8fad5b-d9cb-469f-a165-70867728950e at https://a.b/c?x=1')),
-    'id <uuid> at <url>',
+    '<w> <uuid> at <url>',
   );
+  assertEquals(
+    scrubMessage(new TypeError("Cannot read properties of undefined (reading 'name')")),
+    'Cannot read properties of undefined (reading <redacted>)',
+  );
+  assertEquals(
+    scrubMessage(new TypeError('body.items.map is not a function')),
+    '<w> is not a function',
+  );
+  assertEquals(
+    scrubMessage(new SyntaxError('Unexpected token H in JSON at position 12\nHafermilch')),
+    'Unexpected token <w> in JSON at position <n>',
+  );
+  assertEquals(
+    scrubMessage(new ReferenceError('Peter Trost Hafermilch is not defined')),
+    '<w> is not defined',
+  );
+  assertEquals(
+    scrubMessage(new TypeError('cannot add <milch> to <email>')),
+    'cannot <w> to <email>',
+  );
+  assertEquals(scrubMessage(new RangeError('x'.repeat(500))).length, 3);
+  assert(scrubMessage(new TypeError('cannot set '.repeat(40))).length <= 120);
 });
 
 Deno.test('frames: functions-relative paths, crash site last', () => {

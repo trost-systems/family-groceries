@@ -1,7 +1,8 @@
 // Error tracking and server-side analytics events for the edge functions, sent to PostHog EU
 // (docs/ANALYTICS.md). Off without POSTHOG_PROJECT_API_KEY; only https://eu.i.posthog.com is
-// accepted as POSTHOG_HOST. An exception carries the function name, a scrubbed message and code
-// locations: never the request body, headers, tokens or item text. Events pass an allow-list.
+// accepted as POSTHOG_HOST. An exception carries the function name, its message reduced to the
+// runtime's own template words and code locations: never the request body, headers, tokens or
+// item text. Events pass an allow-list.
 //
 // Use: `Deno.serve(withTelemetry('voice', handler))`. Errors a handler catches itself go through
 // `telemetry.exception(e)`; the wrapper sends everything queued before the response returns.
@@ -223,11 +224,11 @@ export function withTelemetry(
 
 const runtimeErrors = [TypeError, RangeError, ReferenceError, SyntaxError, EvalError, URIError];
 
-/** First line of a runtime error's message, scrubbed; a code for anything else. */
+/** A runtime error's first line reduced to its shape; a code for anything else. */
 export function scrubMessage(error: unknown): string {
   if (runtimeErrors.some((t) => error instanceof t)) {
     const first = String((error as Error).message ?? '').split('\n')[0];
-    return scrub(first).slice(0, 300);
+    return shape(scrub(first)).slice(0, 120);
   }
   const code = (error as { code?: unknown } | null)?.code ??
     (error as { status?: unknown } | null)?.status;
@@ -242,6 +243,36 @@ const scrub = (text: string) =>
     .replace(/"[^"]*"|'[^']*'|„[^“”]*[“”]|“[^”]*”|‘[^’]*’|«[^»]*»|`[^`]*`/g, '<redacted>')
     .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<uuid>')
     .replace(/[0-9]{6,}/g, '<n>');
+
+/**
+ * Words of V8's and Deno's own error templates. Any other word came from a value (an item, a
+ * name, a key) and becomes <w>, so `cannot parse Hafermilch` reads `cannot <w>`.
+ */
+const templateWords = new Set(
+  `a abort aborted access already an and argument arguments array assignment async at await been
+  before between bigint body bounds buffer call called cannot character class code column
+  constant constructor convert create date decode declared deep defined detached digits element
+  empty encode end error exceeded expected explicit expression extensible failed fetch field
+  flags fraction frozen function generator getter has in index initial initialization input
+  instance invalid is iterable iterator json keyword left length line literal locked malformed
+  maximum member method missing mix mode must network new non not null number object of offset
+  on only or out position precision primitive private promise properties property radix range
+  read reading recursion redefine reduce regular request reserved response right sealed set
+  setter setting side size stack strict stream string super symbol the this time timed to token
+  too type types undefined unexpected unterminated uri use used valid value variable with without
+  writable`.split(/\s+/),
+);
+
+const marker = /^<(?:url|email|redacted|uuid|n)>$/;
+
+const shape = (text: string) =>
+  text
+    .replace(/<[a-z]+>|[\p{L}\p{N}_$]+(?:\.[\p{L}\p{N}_$]+)*/gu, (word) => {
+      if (marker.test(word)) return word;
+      if (/^\p{N}+$/u.test(word)) return '<n>';
+      return templateWords.has(word.toLowerCase()) ? word : '<w>';
+    })
+    .replace(/<w>(?:\s*<w>)+/g, '<w>');
 
 function exceptionList(error: unknown, handled: boolean): Record<string, unknown>[] {
   const type = error instanceof Error ? error.name || error.constructor.name : typeof error;

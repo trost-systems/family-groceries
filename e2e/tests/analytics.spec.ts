@@ -376,7 +376,7 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
     type: string; value: string; mechanism: { handled: boolean }; stacktrace?: { frames: unknown[] };
   }[];
   expect(exception.type).toBe('StateError');
-  expect(exception.value).toBe('Bad state: Hummlist test error (More, internal install)');
+  expect(exception.value).toBe('Bad state: <w> error (<w>, <w>)');
   expect(exception.mechanism.handled).toBe(false);
   expect(exception.stacktrace?.frames.length ?? 0).toBeGreaterThan(0);
   expect(error.properties.is_internal).toBe(true);

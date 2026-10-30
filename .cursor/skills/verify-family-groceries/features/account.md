@@ -20,7 +20,7 @@ Every signed-in user can export their data and delete their account. Both live o
 - Tap "Mehr" in the tab bar, then "Konto". Zugänge opens scrolled to the "Konto" section.
 - Tap "Mehr", then "Zugänge", and scroll to "Konto" at the bottom.
 - Signed in without a household, the welcome screen shows "Konto löschen" below the onboarding form.
-- The public page `/konto-loeschen.html` on the web build explains the steps for Google Play (a draft with an "ENTWURF" banner until Peter approves it).
+- The public page `/konto-loeschen.html` on the web build explains the steps for Google Play (published since job 33a: no ENTWURF banner, no noindex; contact support@hummlist.com, links the privacy policy).
 
 ## Driving it with fg
 

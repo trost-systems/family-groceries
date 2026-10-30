@@ -163,8 +163,11 @@ so the filter is this pair of lists in each query rather than a saved cohort.
   (consent, signed in, `is_internal`). The event is `$exception` with `$exception_list` in
   posthog_flutter's shape (type, value, mechanism, raw frames).
 - **Scrubbing** (`scrubMessage`): errors the Dart runtime and Flutter raise themselves (type,
-  range, null-check, state, layout errors) keep the first line of their message with anything
-  quoted, e-mail addresses, URLs, UUIDs and long numbers replaced. Every other error (a Postgres
+  range, null-check, state, layout errors) keep the shape of their message's first line, at most
+  120 characters: anything quoted, e-mail addresses, URLs, UUIDs and numbers are replaced, and
+  every word outside the runtime's and Flutter's own error templates becomes `<w>`, so
+  `StateError('cannot parse Hafermilch 2 Liter')` reads `Bad state: cannot <w> <n> <w>`. The
+  word list is the edge functions' (`telemetry.ts`) plus Dart's and Flutter's. Every other error (a Postgres
   error echoing a value, a format error quoting its input, the app's own exceptions) keeps only a
   code that looks like one (`23505`, `invalid_invite`) or `<redacted>`. Frames carry code
   locations only; a device path keeps its file name.

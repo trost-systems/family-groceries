@@ -38,11 +38,12 @@ or a link to a page that doesn't exist fails the build with the file and the rea
 - `content/indexes/<locale>.md`: the index intro (`title`, `description`, `locale`); the guide list
   is generated.
 - `content/legal/*.md`: pages at a fixed `path` (`title`, `description`, `locale`, `path`,
-  `translation_key`, `updated`), such as `/impressum` and `/en/imprint`. Job 24 adds
-  `/datenschutz`, `/privacy` and `/support` here.
-- `config.json`: `legalPublished` shows the Datenschutz/Privacy and Hilfe/Support footer links.
-  Set it to `true` only together with those pages; a footer link to a missing page fails the
-  build. Impressum is always linked.
+  `translation_key`, `updated`), such as `/impressum` and `/en/imprint`, `/datenschutz` and
+  `/en/privacy` (`/privacy` redirects there, `vercel.json`). Job 24 adds `/support`. A heading
+  ending in `{#id}` gets that anchor: `/datenschutz#rechte` is the stores' privacy-choices URL.
+- `config.json`: `privacyPublished` shows the Datenschutz/Privacy footer links,
+  `supportPublished` the Hilfe/Support one. Set a flag to `true` only together with its pages;
+  a footer link to a missing page fails the build. Impressum is always linked.
 
 ## Placeholders
 
