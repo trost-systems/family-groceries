@@ -8,6 +8,8 @@ import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -87,16 +89,24 @@ Future<void> _main() async {
   );
   final language = AppLanguage.byCode(await cache.language());
   final theme = themeModeOf(await cache.theme());
+  final pendingInvite = await PendingInvite.load(cache);
   runApp(
     App(
       language: language,
       theme: theme,
-      session: SessionCubit(client, cache, analytics: analytics),
+      session: SessionCubit(
+        client,
+        cache,
+        analytics: analytics,
+        pendingInvite: pendingInvite,
+      ),
       analytics: analytics,
       social: social,
       cache: cache,
       account: account,
       feedback: SupabaseFeedbackRepository(client),
+      invites: SupabaseInviteRepository(client),
+      pendingInvite: pendingInvite,
     ),
   );
 }

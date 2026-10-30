@@ -87,8 +87,9 @@ retried batch is not counted twice), `household_id` (null before joining), `plat
 | Event | When | Properties |
 | --- | --- | --- |
 | `first_open` | the first yes on an install | none |
-| `household_created` | the server created the household | none |
-| `invite_accepted` | the server confirmed a new membership from an invite (not when the user was a member already) | `method`: `link` (the code came from `/join/<code>` or `?invite=` and was not edited) or `code` (typed) |
+| `household_created` | the server created the household; once, also when a retry finds the household a lost answer made (job 22) | `default_stores` (true: dm, Lidl and Edeka; false: Skip) |
+| `invite_accepted` | the server confirmed a new membership from an invite (`accept_invite` answered `joined`; not when the user was a member already, except as the answer to a try whose answer was lost) | `method`: `link` (the code came from `/join/<code>`, `?invite=` or the pending invite kept on the device, and was not edited) or `code` (typed) |
+| `invite_sent` | job 22: an invite was handed out: the share sheet opened, or its link or code was copied; once per tap | `channel` (`share_sheet`, `copy_link`, `copy_code`), `context` (`onboarding`: Step 3 after creating; `settings`: More, Einladungen). Never the code, the link or the household's name |
 | `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick); `actor_role` (`owner`, `member`); `household_size` |
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |

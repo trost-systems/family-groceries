@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Page, test } from './fixtures';
 import { dragItemToStore, holdAndDrop, outline, sectionHeadings, sectionItems, storeOf } from './catalog';
 import {
-  adminClient, apiAs, createInviteCode, editSheet, itemRow, newEmail, reveal, screenshot, signUp,
+  adminClient, apiAs, createInviteCode, editSheet, itemRow, joinWithCode, newEmail, reveal, screenshot, signUp,
   signUpWithHousehold, storeDivider, putBack, tick, typeInto, within,
 } from './helpers';
 
@@ -165,8 +165,7 @@ test('drag and drop puts items before and after rows, into categories and stores
   const lea = await (await browser.newContext()).newPage();
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('walk-drag-lea'));
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Gurke')).toBeVisible();
 
   await dragOnto(peter, 'Gurke', 'Äpfel', 8);
@@ -235,8 +234,7 @@ test('categories and stores reorder by drag, for good and live for the other mem
   const lea = await (await browser.newContext()).newPage();
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('walk-reorder-lea'));
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Gurke')).toBeVisible();
 
   await dragDivider(peter,
@@ -292,8 +290,7 @@ test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold o
   const lea = await (await browser.newContext()).newPage();
   const code = await createInviteCode(peter);
   await signUp(lea, leaEmail);
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Gurke')).toBeVisible();
   await (await apiAs(leaEmail)).from('items').insert({
     household_id: await householdOf(await apiAs(leaEmail)), name: 'Hafer',

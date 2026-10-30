@@ -9,6 +9,9 @@ import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
+import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/invite_share.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -24,6 +27,13 @@ class const App({
   required final AccountRepository account,
   required final Analytics analytics,
   required final FeedbackRepository feedback,
+  required final InviteRepository invites,
+
+  /// The invite link waiting for an answer, loaded before the first frame.
+  required final PendingInvite pendingInvite,
+
+  /// The share sheet and clipboard; the plugins by default.
+  final InviteSharer? sharer,
 
   /// Build and device facts for feedback; the plugins by default.
   final FeedbackDevice? feedbackDevice,
@@ -41,7 +51,12 @@ class const App({
 }
 
 class _AppState() extends State<App> {
-  late final GoRouter _router = buildRouter(widget.session, widget.analytics);
+  late final GoRouter _router = buildRouter(
+    widget.session,
+    widget.analytics,
+    widget.pendingInvite,
+  );
+  late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
   late final _theme = ThemeCubit(widget.cache, widget.theme);
 
@@ -98,6 +113,9 @@ class _AppState() extends State<App> {
       RepositoryProvider.value(value: widget.account),
       RepositoryProvider.value(value: _screens),
       RepositoryProvider.value(value: _device),
+      RepositoryProvider.value(value: widget.invites),
+      RepositoryProvider.value(value: widget.pendingInvite),
+      RepositoryProvider.value(value: _sharer),
     ],
     child: MultiBlocProvider(
       providers: [

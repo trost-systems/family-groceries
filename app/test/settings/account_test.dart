@@ -78,6 +78,8 @@ void main() {
 
   Future<void> tapKey(WidgetTester tester, String key) async {
     await tester.ensureVisible(find.byKey(ValueKey(key)));
+    // The scroll lands with the next frame.
+    await tester.pump();
     await tester.tap(find.byKey(ValueKey(key)));
     await tester.pumpAndSettle();
   }
@@ -285,6 +287,7 @@ void main() {
   testWidgets('the welcome screen offers deletion too', (tester) async {
     account.fateResult = const FateNone();
     await pump(tester, const WelcomeScreen());
+    // Below Step 1's two choices, past the bottom of the test window.
     await tapKey(tester, 'account-delete');
     expect(
       find.text('Du bist in keinem Haushalt, geteilte Daten gibt es nicht.'),

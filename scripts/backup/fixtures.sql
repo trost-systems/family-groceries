@@ -83,6 +83,8 @@ reset role;
 
 select pg_temp.login('carl@backup.test');
 insert into fx (key, id) select 'other', id from public.create_household('Nachbarn');
+-- Job 22: a mistyped invite code is a failed attempt (invite_attempts, the rate limit's log).
+select public.accept_invite('FALSCH22');
 select public.add_items((select id from fx where key = 'other'), array['Bier', 'Chips']);
 insert into public.feedback (id, message, app_version, build, platform, os_version, locale, screen)
 values (gen_random_uuid(), 'Gibt es das auch auf Englisch?', '0.1.0', '42', 'web', 'Safari on iOS', 'en', 'more');

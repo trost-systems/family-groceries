@@ -10,7 +10,7 @@ import {
   screenshot,
   signUp,
   signUpWithHousehold,
-  typeInto,
+  typeInto, createHousehold, skipInvite,
 } from './helpers';
 
 // Job 21: in-app feedback (docs/FEEDBACK.md). More -> "Feedback senden" -> a note with the app's
@@ -118,7 +118,8 @@ test('with analytics consent: one feedback_submitted, without the text (AC8)', a
   const page = await context.newPage();
   const email = newEmail('feedback-consent');
   await signUp(page, email, '/', { consent: 'accept' });
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
+  await createHousehold(page);
+  await skipInvite(page);
   await addItem(page, 'Hafermilch');
   await openFeedback(page);
   await typeInto(messageField(page), 'Idee: Hafermilch als Favorit merken');
@@ -278,7 +279,9 @@ test.describe('in English', () => {
     await typeInto(page.getByRole('textbox', { name: 'Password' }), 'test-password-123');
     await page.getByRole('button', { name: 'Sign up' }).click();
     await page.getByRole('button', { name: 'Decline' }).click();
-    await page.getByRole('button', { name: 'Create household' }).click();
+    await page.getByRole('button', { name: /^Create a household/ }).click();
+    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
+    await page.getByRole('button', { name: 'Later', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeFocused();
 
     await openFeedback(page, 'Send feedback', 'More', 'job21-more-entry-en');

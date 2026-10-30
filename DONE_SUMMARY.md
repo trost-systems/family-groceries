@@ -271,3 +271,7 @@ path, through the one database classifier; text stays as typed; a household's co
 for the word's variants; `items.canonical_key` is ready for 32b's duplicate hint. Word list:
 misspellings 94.2% right, false matches 0.48%; the classifier got faster (p95 about a third of
 before). Details: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-classifier.md).
+
+## Job 22: onboarding: create or join a household, invite a partner (Spec #3)
+
+See [docs/done/22-onboarding.md](docs/done/22-onboarding.md).

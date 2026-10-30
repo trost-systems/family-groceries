@@ -807,3 +807,44 @@ Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDB
 3. **After the deploy (lead)**: check the cleanup is scheduled on the hosted project:
    `select jobname, schedule, active from cron.job where jobname = 'purge-old-feedback';` should
    return one active row with `17 3 * * *`.
+
+## Job 22: onboarding and invites
+
+Live with the next release. Invite links open the installed apps only once app.hummlist.com
+serves `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, that is
+after the next *dispatched* Release run (the web follows the store release). Check them with
+`node e2e/web-smoke.mjs https://app.hummlist.com`. The Apple and Play steps for the domains were
+already done (NEEDS_LEAD L3 and L6).
+
+1. **Device check, iPhone and Android** (no simulator or emulator on the build machines). On
+   each phone, with the TestFlight / Play internal build installed and signed out:
+   1. On a second device, create a household, tap "Partner einladen" and send the link to the
+      phone (e.g. by a message to yourself).
+   2. Tap the link on the phone: the Hummlist app opens (not the browser) on the sign-in screen.
+      If the browser opens instead, long-press the link and choose "In Hummlist öffnen", and
+      tell the lead (the domain files are not live yet).
+   3. Sign in with Apple. After the consent screen comes the join screen with the household's
+      name and "Haushalt beitreten". Join: the shared list appears; an item added on the other
+      device shows up within seconds.
+   4. Repeat with a new invite and an account that signs in with Google, then with a magic link
+      (the mail's link opens the app; the join screen must still come, without tapping the
+      invite link again), then with email and password.
+   5. Kill the app between tapping the invite link and signing in (swipe it away), open it
+      again and sign in: the join screen still comes.
+   6. Open the same link again once joined: the list opens, nothing else happens.
+   7. On a phone already in a household, open an invite link: "Du bist schon in einem Haushalt"
+      with Abbrechen (prominent) and Haushalt beitreten.
+   8. In Mehr, "Partner einladen": "Neue Einladung" opens the share sheet; the text reads "Komm
+      in unseren Hummlist-Haushalt: https://app.hummlist.com/join/… · Code: …". Widerrufen
+      removes it; its link then says "Dieser Code ist ungültig oder abgelaufen."
+   9. With the phone set to English, the same screens are in English.
+2. **Country-specific store sets for Austria and Switzerland later?** Today everyone gets dm,
+   Lidl and Edeka (Edeka exists only in Germany; Austrians and Swiss can delete it or tap
+   "Überspringen"). Say if you want e.g. Billa/Spar (AT) or Migros/Coop (CH) sets.
+3. **Privacy policy entry for invites** (with the Job 17, 19 and 21 items). Suggested
+   content: a member can create invite links/codes for their household. Stored per invite: the
+   code, who created it, when, when it expires (7 days), whether and when it was used and by
+   whom, and when it was revoked. Failed code entries are logged with the account id and time
+   for one day, to rate-limit guessing (10 per hour). Invites are part of "Meine Daten
+   exportieren" for the person who created them. Nothing is sent by Hummlist; the user shares
+   the link themselves.

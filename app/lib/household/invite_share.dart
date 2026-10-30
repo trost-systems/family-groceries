@@ -1,0 +1,252 @@
+import 'dart:async';
+
+import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/web_share.dart';
+import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
+
+/// Where an invite was handed out, for `invite_sent`'s `context`.
+enum InviteContext() {
+  /// Step 3, right after creating the household.
+  onboarding,
+
+  /// More's Einladungen.
+  settings,
+}
+
+/// How an invite was handed out, for `invite_sent`'s `channel`.
+enum InviteChannel(final String wire) {
+  shareSheet('share_sheet'),
+  copyLink('copy_link'),
+  copyCode('copy_code'),
+}
+
+/// The share sheet (iOS, Android, Web Share) and the clipboard. Tests pass
+/// their own.
+abstract interface class InviteSharer() {
+  /// Whether [share] opens a system sheet here; otherwise the invite offers
+  /// copying only.
+  bool get canShare;
+
+  Future<void> share(String text, {Rect? origin});
+
+  Future<void> copy(String text);
+}
+
+class PlatformInviteSharer() implements InviteSharer {
+  @override
+  bool get canShare => shareSheetAvailable();
+
+  @override
+  Future<void> share(String text, {Rect? origin}) async {
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: text,
+          // iPad anchors the share popover here.
+          sharePositionOrigin: origin,
+          // No mailto: link where there is no sheet; the card offers copying.
+          mailToFallbackEnabled: false,
+        ),
+      );
+    } on Object {
+      // No sheet after all (the web asks for a fresh tap): the card with
+      // the code, the link and the copy buttons stays on screen.
+    }
+  }
+
+  @override
+  Future<void> copy(String text) =>
+      Clipboard.setData(ClipboardData(text: text));
+}
+
+/// The link of invite [code]: the page's origin on the web, APP_URL in the
+/// apps (https://app.hummlist.com, which opens the installed app through
+/// universal links and App Links). Null in a build without APP_URL.
+String? inviteLink(String code) {
+  final base = kIsWeb ? webRoot : Environment.appUrl;
+  return base.isEmpty ? null : '$base${joinPath(code)}';
+}
+
+/// What the share sheet sends, in the app's language: the link and the
+/// code, which can be typed after installing the app.
+String inviteShareText(AppLocalizations l10n, String code) =>
+    switch (inviteLink(code)) {
+      final link? => l10n.inviteShareText(link, code),
+      null => l10n.inviteShareTextCodeOnly(code),
+    };
+
+/// One invite: its code and link, how long it is valid, and the ways to
+/// hand it out. Each way is one `invite_sent`; the code and the link never
+/// go to analytics.
+class const InviteCard({
+  required final Invite invite,
+  required final InviteContext origin,
+
+  /// More's Einladungen: revoke this invite.
+  final VoidCallback? onRevoke,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final sharer = context.read<InviteSharer>();
+    final link = inviteLink(invite.code);
+    final until = invite.expiresAt.toLocal();
+    return Card.outlined(
+      key: ValueKey('invite-${invite.code}'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // One node "Code ABCD2345" for screen readers (and e2e).
+            Semantics(
+              container: true,
+              label: '${l10n.inviteCodeLabel} ${invite.code}',
+              excludeSemantics: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.inviteCodeLabel, style: theme.textTheme.labelLarge),
+                  Text(
+                    invite.code,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      letterSpacing: 4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Own nodes, so screen readers (and the web's DOM) read each
+            // line instead of one label for the whole card.
+            if (link != null) ...[
+              const SizedBox(height: 8),
+              Semantics(
+                container: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.inviteLinkLabel,
+                      style: theme.textTheme.labelLarge,
+                    ),
+                    Text(link, key: const ValueKey('invite-link')),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Semantics(
+              container: true,
+              child: Text(
+                l10n.inviteValidUntil(until, until),
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (sharer.canShare)
+                  Builder(
+                    builder: (button) => FilledButton.icon(
+                      key: const ValueKey('invite-share'),
+                      icon: const Icon(Icons.ios_share),
+                      label: Text(l10n.share),
+                      onPressed: () =>
+                          unawaited(shareInvite(button, invite.code, origin)),
+                    ),
+                  ),
+                if (link != null)
+                  OutlinedButton.icon(
+                    key: const ValueKey('invite-copy-link'),
+                    icon: const Icon(Icons.link),
+                    label: Text(l10n.copyLink),
+                    onPressed: () =>
+                        unawaited(_copy(context, link, InviteChannel.copyLink)),
+                  ),
+                OutlinedButton.icon(
+                  key: const ValueKey('invite-copy-code'),
+                  icon: const Icon(Icons.copy),
+                  label: Text(l10n.copyCode),
+                  onPressed: () => unawaited(
+                    _copy(context, invite.code, InviteChannel.copyCode),
+                  ),
+                ),
+                if (onRevoke != null)
+                  TextButton.icon(
+                    key: const ValueKey('invite-revoke'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                    ),
+                    icon: const Icon(Icons.block),
+                    label: Semantics(
+                      label: l10n.inviteRevokeLabel(invite.code),
+                      excludeSemantics: true,
+                      child: Text(l10n.inviteRevoke),
+                    ),
+                    onPressed: onRevoke,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _copy(
+    BuildContext context,
+    String text,
+    InviteChannel channel,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    trackInviteSent(context.read<Analytics>(), channel, origin);
+    await context.read<InviteSharer>().copy(text);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          channel == InviteChannel.copyLink ? l10n.linkCopied : l10n.codeCopied,
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the share sheet with invite [code]'s text, anchored at [button]
+/// (the iPad's popover), and counts it once.
+Future<void> shareInvite(
+  BuildContext button,
+  String code,
+  InviteContext origin,
+) async {
+  final sharer = button.read<InviteSharer>();
+  final text = inviteShareText(AppLocalizations.of(button), code);
+  final box = button.findRenderObject() as RenderBox?;
+  trackInviteSent(button.read<Analytics>(), InviteChannel.shareSheet, origin);
+  await sharer.share(
+    text,
+    origin: box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+  );
+}
+
+void trackInviteSent(
+  Analytics analytics,
+  InviteChannel channel,
+  InviteContext origin,
+) => analytics.track('invite_sent', {
+  'channel': channel.wire,
+  'context': origin.name,
+});

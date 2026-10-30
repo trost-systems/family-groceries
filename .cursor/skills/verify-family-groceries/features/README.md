@@ -55,7 +55,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Edit an item](./edit-item.md) covers the edit sheet (Bezeichnung, Marke, Eigenschaften, Menge with −/+, store and category chips, Fertig saving only changes, Löschen with undo), the row's "Marke · Eigenschaften" line, and how Siri and MCP entries are split into those fields.
 - [Live sync](./live-sync.md) covers two members seeing each other's adds and ticks without reloading.
 - [Sign-in](./auth.md) covers email and password, sign-up, magic link through the local inbox, sign-out, and the Google and Apple buttons (web build only).
-- [Household](./household.md) covers creating a household, inviting by code and joining with it.
+- [Household](./household.md) covers creating a household, inviting by code and joining with it, the invite list and revoking.
+- [Onboarding](./onboarding.md) covers the steps after sign-in: create or join, invite the partner, the pending invite link, errors and events.
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
 - [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", tagging items to a store by drag or edit sheet and remembering it, and each store's layout screen.
 - [Categories](./categories.md) covers Mehr → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.

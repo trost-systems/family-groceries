@@ -166,7 +166,7 @@ households:
         times: 8
         items: [Milch, Brot]
     invites:
-      - { by: mia }               # open, 14 days
+      - { by: mia }               # open, 7 days, works once
       - { expires: "-1d" }        # expired
       - { revoked: true }
 views:

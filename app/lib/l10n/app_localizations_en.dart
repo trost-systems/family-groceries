@@ -170,7 +170,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menu => 'Menu';
 
   @override
-  String get inviteMember => 'Invite member';
+  String get inviteMember => 'Invite your partner';
 
   @override
   String get joinOtherHousehold => 'Join another household';
@@ -183,7 +183,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteBody =>
-      'Enter this code in the app or share the link. It\'s valid for 14 days.';
+      'Enter this code in the app or share the link. The invite is valid for 7 days and for one person.';
 
   @override
   String get inviteCodeLabel => 'Code';
@@ -250,11 +250,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get orWithEmail => 'or with email';
 
   @override
-  String get onboardingTitle => 'Welcome';
+  String get onboardingTitle => 'Welcome to Hummlist';
 
   @override
   String get onboardingBody =>
-      'Create a household or join one with an invite code.';
+      'Hummlist shares one shopping list with everyone in your household. Create a new household or accept an invite.';
 
   @override
   String get householdName => 'Household name';
@@ -263,13 +263,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get householdNameDefault => 'Our household';
 
   @override
-  String get createHousehold => 'Create household';
+  String get createHousehold => 'Create a household';
 
   @override
   String get inviteCode => 'Invite code';
 
   @override
-  String get joinHousehold => 'Join';
+  String get joinHousehold => 'Join household';
 
   @override
   String get invalidInvite => 'This code is invalid or has expired.';
@@ -947,4 +947,131 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackClose => 'Close';
+
+  @override
+  String get onboardingCreateHint =>
+      'A new list; you invite your partner next.';
+
+  @override
+  String get onboardingJoin => 'Join with an invite';
+
+  @override
+  String get onboardingJoinHint => 'You got a link or a code.';
+
+  @override
+  String get householdNameInvalid => 'Enter a name of 1 to 80 characters.';
+
+  @override
+  String get storesChoice => 'Stores';
+
+  @override
+  String get defaultStores => 'Add default German stores';
+
+  @override
+  String get defaultStoresHint => 'dm, Lidl and Edeka, each in its aisle order';
+
+  @override
+  String get skipStores => 'Skip';
+
+  @override
+  String get skipStoresHint =>
+      'Start without stores. You can add them later under More.';
+
+  @override
+  String get householdOffline =>
+      'No internet connection. Try again once you\'re online.';
+
+  @override
+  String get tooManyAttempts => 'Too many attempts. Please try again later.';
+
+  @override
+  String get alreadyInHousehold => 'You\'re already in a household';
+
+  @override
+  String switchHouseholdAlone(String household) {
+    return 'You\'re the only member of “$household”. If you join, “$household” is deleted along with its list.';
+  }
+
+  @override
+  String switchHouseholdShared(String household) {
+    return 'If you join, you leave “$household”. The other members keep its list.';
+  }
+
+  @override
+  String get inviteCheck => 'Continue';
+
+  @override
+  String get invitePreview => 'Invite to the household';
+
+  @override
+  String get invitePartnerBody =>
+      'Share the link or the code with the person you shop with. The invite is valid for 7 days and for one person.';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get toTheList => 'Go to the list';
+
+  @override
+  String inviteShareText(String link, String code) {
+    return 'Join our Hummlist household: $link · Code: $code';
+  }
+
+  @override
+  String inviteShareTextCodeOnly(String code) {
+    return 'Join our Hummlist household. Code: $code';
+  }
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get copyLink => 'Copy link';
+
+  @override
+  String get copyCode => 'Copy code';
+
+  @override
+  String get linkCopied => 'Link copied';
+
+  @override
+  String get codeCopied => 'Code copied';
+
+  @override
+  String get invitesTitle => 'Invites';
+
+  @override
+  String get invitesOpen => 'Open invites';
+
+  @override
+  String get invitesEmpty => 'No open invites.';
+
+  @override
+  String get newInvite => 'New invite';
+
+  @override
+  String inviteValidUntil(DateTime date, DateTime time) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+    final intl.DateFormat timeDateFormat = intl.DateFormat.Hm(localeName);
+    final String timeString = timeDateFormat.format(time);
+
+    return 'valid until $dateString, $timeString';
+  }
+
+  @override
+  String get inviteRevoke => 'Revoke';
+
+  @override
+  String inviteRevokeLabel(String code) {
+    return 'Revoke invite $code';
+  }
+
+  @override
+  String get inviteRevoked =>
+      'Invite revoked. Its link and code no longer work.';
+
+  @override
+  String get retry => 'Try again';
 }

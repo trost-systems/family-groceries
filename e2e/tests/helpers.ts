@@ -355,8 +355,67 @@ export const eventNames = (collector: Collector) => collector.events.map((e) => 
 
 export async function signUpWithHousehold(page: Page, email: string): Promise<void> {
   await signUp(page, email);
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
+  await createHousehold(page);
+  await skipInvite(page);
+}
+
+/**
+ * Onboarding (job 22) from Step 1: "Haushalt erstellen", then Step 2a with [name] (the prefilled
+ * "Unser Haushalt" by default) and the default stores unless [stores] is false. Ends on Step 3,
+ * inviting the partner.
+ */
+export async function createHousehold(
+  page: Page,
+  { name, stores = true }: { name?: string; stores?: boolean } = {},
+): Promise<void> {
+  await expect(page).toHaveURL(/\/welcome(\?|$)/);
+  await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
+  await expect(page).toHaveURL(/\/welcome\/create(\?|$)/);
+  // The prefilled name is not in the DOM until the field is edited, so it is not checked here.
+  const field = page.getByRole('textbox', { name: 'Name des Haushalts' });
+  await expect(field).toBeVisible();
+  if (name !== undefined) await typeInto(field, name);
+  if (!stores) await page.getByRole('radio', { name: /^Überspringen/ }).click();
+  await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
+  await expect(page).toHaveURL(/\/welcome\/invite$/);
+}
+
+/** Onboarding Step 3's "Später" (or "Weiter zur Liste" once invited): on to the list, its add field focused. */
+export async function skipInvite(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /^(Später|Weiter zur Liste)$/ }).click();
+  await expect(page).toHaveURL(/\/$/);
   await expect(addField(page)).toBeFocused();
+}
+
+/**
+ * The household name the join screen shows for a good code. Its card is one text node on the web:
+ * "Einladung in den Haushalt Familie Trost".
+ */
+export const invitePreview = (page: Page, household: string) =>
+  page.getByText(new RegExp(`Einladung in den Haushalt\\s*${escape(household)}$`));
+
+/**
+ * Joins with a typed [code] (job 22): from Step 1 ("Einladung annehmen") or the join screen, type,
+ * "Weiter", see the household's name, "Haushalt beitreten". Ends on the list.
+ */
+export async function joinWithCode(page: Page, code: string, household?: string): Promise<void> {
+  if (/\/welcome(\?|$)/.test(new URL(page.url()).pathname)) {
+    await page.getByRole('button', { name: /^Einladung annehmen/ }).click();
+  }
+  await expect(page).toHaveURL(/\/join(\?|\/|$)/);
+  await typeInto(page.getByRole('textbox', { name: 'Einladungscode' }), code);
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
+  await confirmJoin(page, household);
+}
+
+/** On the join screen with a previewed code: "Haushalt beitreten", then the list. */
+export async function confirmJoin(page: Page, household?: string): Promise<void> {
+  const join = page.getByRole('button', { name: 'Haushalt beitreten', exact: true });
+  await expect(join).toBeVisible();
+  if (household) await expect(invitePreview(page, household)).toBeVisible();
+  await join.click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(addField(page)).toBeVisible();
 }
 
 /** The add sheet (job 17): a group whose rect is the sheet's content, open while adding. */
@@ -408,7 +467,7 @@ export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> 
   await page.getByRole('tab', { name: tab, exact: true }).or(page.getByRole('button', { name: `${tab} Tab ` })).click();
 }
 
-/** Opens an entry of the More tab by its title ("Mitglied einladen", "Zugänge", "Abmelden" …). */
+/** Opens an entry of the More tab by its title ("Partner einladen", "Zugänge", "Abmelden" …). */
 export async function openMore(page: Page, entry: string): Promise<void> {
   await openTab(page, 'Mehr');
   // The tab comes back to the page it was left on; a second tap goes to its first page, More's list.
@@ -418,15 +477,40 @@ export async function openMore(page: Page, entry: string): Promise<void> {
   await page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) }).click();
 }
 
-/** Reads the invite code from the invite dialog (More, Mitglied einladen), then returns to the list. */
+const inviteCode = /^Code [A-HJ-NP-Z2-9]{8}$/;
+
+/** Invite cards' code labels ("Code ABCD2345"), or the one for [code]. */
+export const inviteCodeLabel = (page: Page, code?: string) => {
+  const name = code === undefined ? inviteCode : `Code ${code}`;
+  return page.getByRole('group', { name }).or(page.getByText(name, { exact: true }));
+};
+
+/** The codes the invite cards on screen show, top to bottom. */
+export async function shownInviteCodes(page: Page): Promise<string[]> {
+  const codes: string[] = [];
+  for (const label of await inviteCodeLabel(page).all()) {
+    const text = (await label.getAttribute('aria-label')) ?? (await label.textContent()) ?? '';
+    const code = text.trim().split(/\s+/)[1];
+    if (code && !codes.includes(code)) codes.push(code);
+  }
+  return codes;
+}
+
+/**
+ * Makes a new invite under More, Partner einladen (Einladungen, job 22), reads its code, then returns
+ * to the list.
+ */
 export async function createInviteCode(page: Page): Promise<string> {
-  await openMore(page, 'Mitglied einladen');
-  const code = page.getByRole('group', { name: /^Code [A-HJ-NP-Z2-9]{8}$/ });
-  await expect(code).toBeVisible();
-  const value = (await code.getAttribute('aria-label'))!.split(/\s+/)[1];
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  await openMore(page, 'Partner einladen');
+  await expect(page).toHaveURL(/\/more\/invites$/);
+  await expect(page.getByText('Keine offenen Einladungen.').or(inviteCodeLabel(page).first())).toBeVisible();
+  const before = await shownInviteCodes(page);
+  await page.getByRole('button', { name: 'Neue Einladung' }).click();
+  let created: string | undefined;
+  await expect.poll(async () => (created = (await shownInviteCodes(page)).find((c) => !before.includes(c))))
+    .toBeTruthy();
   await openTab(page, 'Liste');
-  return value;
+  return created!;
 }
 
 export async function screenshot(page: Page, name: string): Promise<void> {

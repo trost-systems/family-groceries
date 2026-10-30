@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, createInviteCode, itemRow, newEmail, screenshot, signUp, signUpWithHousehold, typeInto,
+  addField, addItem, createInviteCode, itemRow, joinWithCode, newEmail, screenshot, signUp, signUpWithHousehold, typeInto,
 } from './helpers';
 
 test('items the partner added carry no initial but are new until seen', async ({ browser }) => {
@@ -14,8 +14,7 @@ test('items the partner added carry no initial but are new until seen', async ({
   await addItem(peter, 'Milch');
   const code = await createInviteCode(peter);
   await signUp(lea, leaEmail);
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Milch')).toBeVisible();
 
   const subtitle = peter.getByText(`1 neu von ${leaName}`);

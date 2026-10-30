@@ -1,22 +1,24 @@
 # Household
 
-A list belongs to a household. A new user creates one on the welcome screen or joins one with an invite code. A member invites someone from the More tab ("Mitglied einladen"), which shows an 8-character code. A member can switch to another household with a code ("Anderem Haushalt beitreten").
+A list belongs to a household. A new user goes through onboarding (`features/onboarding.md`): Step 1 offers "Haushalt erstellen" and "Einladung annehmen". Under Mehr, "Partner einladen" opens the Einladungen page (make an invite, see the open ones, revoke one), and "Anderem Haushalt beitreten" opens the join screen, which warns before switching.
 
 ## Sub-features
 
-- `hh-create` creates a household from the welcome screen, with a name or the default "Unser Haushalt", and seeds its categories.
-- `hh-invite` shows an invite code (8 characters from A–Z without I and O, and 2–9; valid 14 days, for any number of joins) with a copy button ("Kopiert"). Each opening of the dialog shows a new code; earlier ones stay valid.
-- `hh-join-welcome` joins a household with a code from the welcome screen. Lowercase, spaces and dashes in the code are accepted.
-- `hh-join-menu` switches a member to another household with a code from the More tab, after a warning.
-- `hh-invalid-code` rejects a wrong code with "Dieser Code ist ungültig oder abgelaufen."
+- `hh-create` creates a household (onboarding Step 2a) with a name (prefilled "Unser Haushalt", 1-80 characters), with dm, Lidl and Edeka ("Deutsche Standard-Läden hinzufügen", default) or without ("Überspringen"). The 11 categories with "Sonstiges" are always seeded. A double tap or a retry makes one household.
+- `hh-invite` makes an invite code (8 characters from A-Z without I and O, and 2-9). It is valid for 7 days and works once: after one person joins with it, it is used up. Step 3 and More's Einladungen show it with its link (`APP_URL/join/<code>`), "gültig bis …", "Link kopieren", "Code kopieren", and "Teilen" (the share sheet in the apps; Web Share where the browser has it).
+- `hh-invites-list` lists the household's open invites under Mehr, Partner einladen (`/more/invites`). Any member revokes one ("Widerrufen"); its link and code stop at once. Used, revoked and expired invites are not listed.
+- `hh-join` joins with a code (typed at `/join`, or from a link `/join/<code>`): the screen first shows the household's name ("Einladung in den Haushalt"), then "Haushalt beitreten". Lowercase, spaces and dashes in the code are accepted.
+- `hh-join-menu` switches a member to another household: the join screen says "Du bist schon in einem Haushalt" and what switching does (the last member's household is deleted with its list). Abbrechen is the prominent button.
+- `hh-invalid-code` answers made-up, expired, revoked and used codes with the same "Dieser Code ist ungültig oder abgelaufen." The field keeps the code.
+- `hh-rate-limit`: after 10 failed codes in an hour, every code (a good one too) gets "Zu viele Versuche. Bitte später noch einmal." until the hour has passed.
 - `hh-isolation` keeps one household's items invisible to members of another.
 - `hh-members` loads the members' display names with the list, so the title can name who added what is new; a new member's name loads with their first item (recipe in `features/live-sync.md`, `sync-new`).
 
 ## How to get to it (user POV)
 
-- Sign up or sign in as a user without a household. The "Willkommen" screen offers "Name des Haushalts" with "Haushalt anlegen", and "Einladungscode" with "Beitreten".
-- Tap "Mehr" in the tab bar, then "Mitglied einladen" or "Anderem Haushalt beitreten" under "Haushalt".
-- Open an invite link (`/join/<code>`). The web build opens it. The release phone apps show the link too (`https://app.hummlist.com/join/<code>`, from `APP_URL`), but it opens the web app; in the phone app the user types the code. The fg debug build sets no `APP_URL`, so its invite dialog shows the code only.
+- Sign up or sign in as a user without a household. After the analytics question (builds with a key), "Willkommen bei Hummlist" offers "Haushalt erstellen" and "Einladung annehmen".
+- Tap "Mehr" in the tab bar, then "Partner einladen" or "Anderem Haushalt beitreten" under "Haushalt".
+- Open an invite link (`/join/<code>`). The web build opens it, also before sign-in (the code is kept on the device through sign-in). The release phone apps claim `https://app.hummlist.com/join/*` (universal links, App Links) once app.hummlist.com serves the `.well-known` files. The fg debug build sets no `APP_URL`, so its invites show the code only.
 
 ## Driving it with fg
 
@@ -25,25 +27,27 @@ Preconditions:
 - Baseline from `features/README.md`. Peter is signed in on the list.
 - The lea client hosts a fresh user without a household: run `fg logout --client lea`, then `fg type --key login-email --input hh-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea`, `fg tap --text Registrieren --client lea` and `fg wait --key household-name --client lea`.
 
-- **Invite.** Run `fg tap --key tab-more`, `fg wait --key more-invite`, `fg tap --key more-invite` and `fg wait --text Code`. Read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]'`. `fg tap --tooltip Kopieren` shows the snackbar "Kopiert" below the dialog (screenshot it; see Gotchas). Close the dialog with `fg back`, then `fg tap --key tab-list`.
-- **Join from welcome.** Run `fg type --key invite-code --input <code> --client lea` (`abcd-efgh` for `ABCDEFGH` works too) and `fg tap --text Beitreten --client lea`. `fg wait --key add-item-field --client lea` succeeds; the list shows no household name (job 29a), so check membership in the database: `fg db query "select u.email, m.role from household_members m join auth.users u on u.id = m.user_id join households h on h.id = m.household_id where h.name = 'Familie Test'"` lists the new user as `member`.
-- **Invalid code.** On a welcome screen, run `fg type --key invite-code --input ZZZZZZZZ --client lea` and `fg tap --text Beitreten --client lea`. `fg wait --contains "ungültig oder abgelaufen" --client lea` succeeds.
-- **Create.** On a welcome screen (another fresh user), run `fg type --key household-name --input "WG Test" --client lea` and `fg tap --text "Haushalt anlegen" --client lea`. `fg wait --key add-item-field --client lea` succeeds (the list names no household since job 29a), and `fg db query "select count(*) from categories c join households h on h.id = c.household_id where h.name = 'WG Test'"` returns 11.
-- **Join from More.** As a member of another household, run `fg tap --key tab-more --client lea`, `fg wait --key more-join --client lea`, `fg tap --key more-join --client lea`, `fg wait --label Einladungscode --client lea`, `fg type --label Einladungscode --input <code> --client lea` and `fg tap --text Beitreten --client lea`. The confirm screen shows the code and "Du verlässt deinen aktuellen Haushalt …". Run `fg tap --text Beitreten --client lea` again, then `fg wait --key add-item-field --client lea` (the app returns to the list). The membership query above lists the user in Familie Test.
+- **Invite.** Run `fg tap --key tab-more`, `fg wait --key more-invite`, `fg tap --key more-invite`, `fg wait --key invite-new`, `fg tap --key invite-new` and `fg wait --key invite-copy-code`. Read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-HJ-NP-Z2-9]{8}$"))][0]'`. `fg tap --key invite-copy-code` shows the snackbar "Code kopiert". `fg back`, then `fg tap --key tab-list`.
+- **Join from Step 1.** Run `fg tap --key onboarding-join --client lea`, `fg type --key invite-code --input <code> --client lea` (`abcd-efgh` for `ABCDEFGH` works too), `fg tap --key invite-check --client lea`, `fg wait --text "Familie Test" --client lea` (the preview) and `fg tap --key join-confirm --client lea`. `fg wait --key add-item-field --client lea` succeeds; check membership in the database: `fg db query "select u.email, m.role from household_members m join auth.users u on u.id = m.user_id join households h on h.id = m.household_id where h.name = 'Familie Test'"` lists the new user as `member`. The invite is used up: `fg db query "select used_at is not null as used from invites where code = '<code>'"`.
+- **Invalid code.** On the join screen, run `fg type --key invite-code --input ZZZZ2345 --client lea` and `fg tap --key invite-check --client lea`. `fg wait --contains "ungültig oder abgelaufen" --client lea` succeeds. The same code used a second time gives the same answer.
+- **Create.** On Step 1 (another fresh user), run `fg tap --key onboarding-create --client lea`, `fg type --key household-name --input "WG Test" --client lea`, optionally `fg tap --key skip-stores --client lea`, then `fg tap --key create-household --client lea` and `fg wait --key invite-later --client lea` (Step 3). `fg tap --key invite-later --client lea`, then `fg wait --key add-item-field --client lea`. `fg db query "select count(*) from categories c join households h on h.id = c.household_id where h.name = 'WG Test'"` returns 11; the stores query returns 3, or 0 after Skip.
+- **Revoke.** Under Mehr, Partner einladen, tap `invite-revoke` on a card. `fg wait --contains "Einladung widerrufen" ` succeeds, and the code then answers `invalid_invite`.
+- **Join from More.** As a member of another household, run `fg tap --key tab-more --client lea`, `fg wait --key more-join --client lea`, `fg tap --key more-join --client lea`, `fg wait --key invite-code --client lea`, `fg type --key invite-code --input <code> --client lea` and `fg tap --key invite-check --client lea`. The screen shows "Du bist schon in einem Haushalt" and what switching does. `fg tap --key join-confirm --client lea`, then `fg wait --key add-item-field --client lea`. The membership query above lists the user in Familie Test.
 - **Isolation.** With the fresh user in its own household (after **Create**), add an item there: `fg type --key add-item-field --input Xylophon-WG --submit --client lea` and `fg wait --contains "Hinzugefügt: Xylophon-WG" --client lea`. Then `fg db query "select name from items where name = 'Xylophon-WG'" --as peter` returns no rows, while the same query without `--as` returns one. The pgTAP suite (`supabase/tests/rls.test.sql`) covers writes.
-- **Proof.** Screenshot the invite dialog, the welcome screen before joining and the list after joining. Add the `household_members` query output.
+- **Proof.** Screenshot the invite card, the join screen with the household name and the list after joining. Add the `household_members` query output.
 
 ## Gotchas
 
-- `hh-join-menu` crashed on main until job 04's fix (2026-10-23): a red error screen after "Beitreten". If it comes back, `fg logs --client lea --grep EXCEPTION` names the cause.
-- The release web build (the e2e tests, Vercel) strips Flutter's debug asserts, so the old join crash ("TextEditingController was used after being disposed", `_dependents.isEmpty`) never shows there. Only the debug app (fg) and `app/test/household/join_code_dialog_test.dart` catch that class of bug.
-- After a join (or creating a household) the list must not show the crossed-out cloud ("Offline: …"). Until job 2b it stayed there until the first write: two overlapping resyncs shared one map and one threw. Check with `fg wait --contains Offline --gone --timeout 5 --client lea` after `fg wait --text "FAMILIE TEST"`.
+- `hh-join-menu` crashed on main until job 04's fix (2026-10-23): a red error screen after "Beitreten" in the old join dialog (gone since job 22). If it comes back, `fg logs --client lea --grep EXCEPTION` names the cause.
+- The release web build (the e2e tests, Vercel) strips Flutter's debug asserts, so a controller disposed too early ("TextEditingController was used after being disposed", `_dependents.isEmpty`) never shows there. Only the debug app (fg) and the widget tests (`app/test/household/onboarding_test.dart`) catch that class of bug.
+- After a join (or creating a household) the list must not show the crossed-out cloud ("Offline: …"). Until job 2b it stayed there until the first write: two overlapping resyncs shared one map and one threw. Check with `fg wait --contains Offline --gone --timeout 5 --client lea` after `fg wait --key add-item-field`.
 - `--as peter` and `--as lea` mean the seeded users, not whoever is signed in on the client of that name.
-- A snackbar shown while a dialog is open ("Kopiert") is visible in a screenshot but not to `fg find` or `fg wait`.
 - A failed `fg tap` or `fg find` leaves an "EXCEPTION CAUGHT BY FLUTTER FRAMEWORK … ext.flutter.marionette" block in the app log. Skip those when you read `fg logs --grep EXCEPTION` for an app error.
 - Users from these recipes stay members of "Familie Test" until `fg up --fresh`. Recipes that count its members (`journeys/account-deletion.sh`) compare with the count before their own join.
 - Dialogs animate open. Tap inside one only after `fg wait` for its text or field, or the tap can miss.
 - Joining a household leaves the previous one. If the leaver was its last member, that household and its list are deleted. Never run the join from More with the seeded lea or peter unless the recipe restores them (`fg up --fresh`).
-- The invite dialog lists the code as plain text next to the label "Code". Pick it by its pattern, not by position.
-- Labels on buttons ("Beitreten", "Haushalt anlegen") are invisible to `fg find`, but `fg tap --text` reaches them.
+- The invite card lists the code as plain text below the label "Code". Pick it by its pattern, not by position.
+- Labels on buttons ("Haushalt beitreten", "Haushalt erstellen") are invisible to `fg find`, but `fg tap --text` reaches them; the keys above are steadier.
+- Invites work once (job 22). A recipe that joins two users needs two invites.
+- Ten failed codes in an hour lock that user out of joining for the hour (`invite_attempts`). Reset in a recipe with `fg db query "delete from invite_attempts" --write`.
 - Fresh sign-up users accumulate across runs. Use a timestamp in the email to stay unique.

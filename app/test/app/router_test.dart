@@ -11,12 +11,26 @@ void main() {
     (SignedOut(), '/', '/login'),
     (SignedOut(), '/login', null),
     (SignedOut(), '/join/ABCD2345', '/login?invite=ABCD2345'),
-    (NeedsHousehold('u'), '/login?invite=ABCD2345', '/welcome?invite=ABCD2345'),
+    // Job 22: an invite skips Step 1 and opens the join screen.
+    (NeedsHousehold('u'), '/login?invite=ABCD2345', '/join/ABCD2345'),
     (NeedsHousehold('u'), '/', '/welcome'),
-    (NeedsHousehold('u'), '/join/ABCD2345', '/welcome?invite=ABCD2345'),
+    (NeedsHousehold('u'), '/join/ABCD2345', null),
+    (NeedsHousehold('u'), '/welcome?invite=ABCD2345', '/join/ABCD2345'),
+    (NeedsHousehold('u'), '/welcome', null),
+    (NeedsHousehold('u'), '/welcome/create', null),
+    (NeedsHousehold('u'), '/join', null),
+    (NeedsHousehold('u'), '/welcome/invite', '/welcome'),
+    (NeedsHousehold('u'), '/more/invites', '/welcome'),
+    (household, '/welcome/create', '/welcome/invite'),
+    (household, '/welcome/invite', null),
+    (household, '/join', null),
+    (household, '/more/invites', null),
+    (SignedOut(), '/welcome/invite', '/login'),
+    (SignedOut(), '/join', '/login'),
     (household, '/login', '/'),
     (household, '/welcome', '/'),
-    (household, '/welcome?invite=ABCD2345', '/'),
+    // An invite in any location opens the join screen (which warns).
+    (household, '/welcome?invite=ABCD2345', '/join/ABCD2345'),
     (household, '/login?invite=ABCD2345', '/join/ABCD2345'),
     (household, '/join/ABCD2345', null),
     (household, '/?code=pkce', '/'),
@@ -43,6 +57,11 @@ void main() {
     (NeedsHousehold('u'), '/login?$next', '/welcome?$next'),
     (NeedsHousehold('u'), consent, '/welcome?$next'),
     (NeedsHousehold('u'), '/welcome?$next', null),
+    (NeedsHousehold('u'), '/welcome/create?$next', null),
+    (NeedsHousehold('u'), '/join?$next', null),
+    (NeedsHousehold('u'), '/join/ABCD2345?$next', null),
+    (household, '/welcome/create?$next', consent),
+    (household, '/join?$next', consent),
     (household, '/login?$next', consent),
     (household, '/welcome?$next', consent),
     (household, consent, null),
@@ -59,6 +78,81 @@ void main() {
       expect(authRedirect(session, Uri.parse(from)), to);
     });
   }
+
+  // Job 22: the invite kept on the device stands in for one in the
+  // location, which the mobile apps lose: a magic link or Apple on Android
+  // returns through com.hummlist.app://login-callback, and a cold start
+  // opens at `/`.
+  const pending = <(Session, String, String?)>[
+    (SignedOut(), '/', '/login?invite=ABCD2345'),
+    (SignedOut(), '/login', '/login?invite=ABCD2345'),
+    (SignedOut(), '/login?invite=ABCD2345', null),
+    (NeedsHousehold('u'), '/', '/join/ABCD2345'),
+    (NeedsHousehold('u'), '/?code=pkce', '/join/ABCD2345'),
+    (NeedsHousehold('u'), '/welcome', '/join/ABCD2345'),
+    (NeedsHousehold('u'), '/join/ABCD2345', null),
+    (household, '/', '/join/ABCD2345'),
+    (household, '/more', '/join/ABCD2345'),
+    (household, '/join/ABCD2345', null),
+    // A link in the location wins over an older pending one.
+    (NeedsHousehold('u'), '/join/WXYZ6789', null),
+    (household, '/login?invite=WXYZ6789', '/join/WXYZ6789'),
+  ];
+  for (final (session, from, to) in pending) {
+    test('pending invite: ${session.runtimeType} at $from goes to '
+        '${to ?? 'stays'}', () {
+      expect(
+        authRedirect(session, Uri.parse(from), pendingInvite: 'ABCD2345'),
+        to,
+      );
+    });
+  }
+
+  test('pending invite: asked for consent first, carried along', () {
+    expect(
+      authRedirect(
+        const NeedsHousehold('u'),
+        Uri.parse('/'),
+        askConsent: true,
+        pendingInvite: 'ABCD2345',
+      ),
+      '/analytics-consent?invite=ABCD2345',
+    );
+  });
+
+  // The URIs the platforms hand go_router: a universal link / App Link
+  // (the path of https://app.hummlist.com/join/<code>) and the auth
+  // callback, whose path is empty.
+  test('a universal link names its invite', () {
+    expect(
+      inviteIn(Uri.parse('https://app.hummlist.com/join/ABCD2345')),
+      'ABCD2345',
+    );
+    expect(
+      authRedirect(
+        const SignedOut(),
+        Uri.parse('https://app.hummlist.com/join/ABCD2345'),
+      ),
+      '/login?invite=ABCD2345',
+    );
+  });
+
+  test(
+    'the custom-scheme callback has no invite; the pending one leads on',
+    () {
+      final callback = Uri.parse('com.hummlist.app://login-callback?code=abc');
+      expect(inviteIn(callback), isNull);
+      expect(
+        authRedirect(
+          const NeedsHousehold('u'),
+          callback,
+          pendingInvite: 'ABCD2345',
+        ),
+        '/join/ABCD2345',
+      );
+      expect(authRedirect(const NeedsHousehold('u'), callback), '/welcome');
+    },
+  );
 
   // Job 29d: Zugänge and Konto are two pages; the links of the one page
   // they were before go to the right one.
@@ -86,6 +180,7 @@ void main() {
     (NeedsHousehold('u'), '/login', ask),
     (NeedsHousehold('u'), '/', ask),
     (NeedsHousehold('u'), '/welcome', ask),
+    (NeedsHousehold('u'), '/welcome/create', ask),
     (NeedsHousehold('u'), ask, null),
     (NeedsHousehold('u'), '/login?invite=ABCD2345', '$ask?invite=ABCD2345'),
     (NeedsHousehold('u'), '/join/ABCD2345', '$ask?invite=ABCD2345'),
@@ -115,7 +210,7 @@ void main() {
   // of the invite, or the list.
   const decided = <(Session, String, String?)>[
     (NeedsHousehold('u'), ask, '/welcome'),
-    (NeedsHousehold('u'), '$ask?invite=ABCD2345', '/welcome?invite=ABCD2345'),
+    (NeedsHousehold('u'), '$ask?invite=ABCD2345', '/join/ABCD2345'),
     (household, ask, '/'),
     (household, '$ask?invite=ABCD2345', '/join/ABCD2345'),
     (SignedOut(), ask, '/login'),

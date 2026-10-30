@@ -40,7 +40,7 @@ sign_up() {
   run type --key login-email --input "$1" --client lea >/dev/null
   run type --key login-password --input "$password" --client lea >/dev/null
   run tap --text Registrieren --client lea >/dev/null
-  run wait --key household-name --client lea >/dev/null
+  run wait --key welcome --client lea >/dev/null
 }
 
 open_delete_dialog() {
@@ -67,15 +67,22 @@ member="konto-$stamp@fg.test"
 members_before="$(sql "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'")"
 step "a throwaway member ($member) joins Familie Test and adds $item"
 sign_up "$member"
+# Job 22: More, Partner einladen is the Einladungen page; a new invite shows its code.
 open_more peter more-invite
-run wait --text Code --client peter >/dev/null
-code="$("$fg" find --type Text --client peter | jq -r '[.elements[].text | select(test("^[A-Z2-9]{8}$"))][0]')"
-[[ "$code" =~ ^[A-Z2-9]{8}$ ]] || fail "no invite code on peter's screen"
+run wait --key invite-new --client peter >/dev/null
+run tap --key invite-new --client peter >/dev/null
+run wait --key invite-copy-code --client peter >/dev/null
+code="$("$fg" find --type Text --client peter | jq -r '[.elements[].text | select(test("^[A-HJ-NP-Z2-9]{8}$"))][0]')"
+[[ "$code" =~ ^[A-HJ-NP-Z2-9]{8}$ ]] || fail "no invite code on peter's screen"
 run back --client peter >/dev/null
 run tap --key tab-list --client peter >/dev/null
+run tap --key onboarding-join --client lea >/dev/null
+run wait --key invite-code --client lea >/dev/null
 run type --key invite-code --input "$code" --client lea >/dev/null
-run tap --text Beitreten --client lea >/dev/null
-run wait --text "FAMILIE TEST" --client lea >/dev/null
+run tap --key invite-check --client lea >/dev/null
+run wait --text "Familie Test" --client lea >/dev/null
+run tap --key join-confirm --client lea >/dev/null
+run wait --key add-item-field --client lea >/dev/null
 run type --key add-item-field --input "$item" --submit --client lea >/dev/null
 run wait --contains "Hinzugefügt: $item" --client lea >/dev/null
 run wait --text "$item" --client peter >/dev/null
@@ -131,8 +138,12 @@ status="$(curl -s -o /dev/null -w '%{http_code}' "$api/auth/v1/token?grant_type=
 last="konto-last-$stamp@fg.test"
 step "a throwaway ($last) is the last member of 'WG $stamp' and deletes the account"
 sign_up "$last"
+run tap --key onboarding-create --client lea >/dev/null
+run wait --key household-name --client lea >/dev/null
 run type --key household-name --input "WG $stamp" --client lea >/dev/null
-run tap --text "Haushalt anlegen" --client lea >/dev/null
+run tap --key create-household --client lea >/dev/null
+run wait --key invite-later --client lea >/dev/null
+run tap --key invite-later --client lea >/dev/null
 run wait --key add-item-field --client lea >/dev/null
 run type --key add-item-field --input Milch --submit --client lea >/dev/null
 run wait --contains "Hinzugefügt: Milch" --client lea >/dev/null

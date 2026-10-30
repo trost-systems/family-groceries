@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Locator, test, type Page } from './fixtures';
 import {
-  addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto,
+  addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel,
 } from './helpers';
 
 const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
@@ -37,15 +37,24 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await screenshot(page, 'more-01-phone');
   // More is a lazy list taller than the window (job 21 added Feedback): wheel to what is below.
   await wheelTo(page, page.getByText(/^Version \d+\.\d+\.\d+/));
-  await wheelTo(page, page.getByRole('button', { name: /^Mitglied einladen/ }));
+  await wheelTo(page, page.getByRole('button', { name: /^Partner einladen/ }));
 
-  await page.getByRole('button', { name: /^Mitglied einladen/ }).click();
-  await expect(page.getByRole('group', { name: /^Code [A-HJ-NP-Z2-9]{8}$/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  // Job 22: Einladungen, a page below More: a new invite, its code, revoke.
+  await page.getByRole('button', { name: /^Partner einladen/ }).click();
+  await expect(page).toHaveURL(/\/more\/invites$/);
+  await page.getByRole('button', { name: 'Neue Einladung' }).click();
+  await expect(inviteCodeLabel(page).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
 
+  await wheelTo(page, page.getByRole('button', { name: 'Anderem Haushalt beitreten' }));
   await page.getByRole('button', { name: 'Anderem Haushalt beitreten' }).click();
+  await expect(page).toHaveURL(/\/join$/);
   await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toBeVisible();
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Abbrechen' }).click();
+  await expect(addField(page)).toBeVisible();
+  await openMore(page);
+  await wheelTo(page, page.getByRole('button', { name: 'Kategorien verwalten' }));
 
   await page.getByRole('button', { name: 'Kategorien verwalten' }).click();
   await expect(page.getByRole('heading', { name: 'Kategorien' })).toBeVisible();
@@ -202,9 +211,19 @@ test.describe('with an English browser', () => {
     await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
     await expectNoGerman(page, 'analytics consent', german);
     await page.getByRole('button', { name: 'Decline' }).click();
-    await expect(page.getByRole('button', { name: 'Create household' })).toBeVisible();
+    // Job 22: onboarding's steps, in English too.
+    await expect(page.getByRole('button', { name: /^Create a household/ })).toBeVisible();
     await expectNoGerman(page, 'welcome', german);
-    await page.getByRole('button', { name: 'Create household' }).click();
+    await page.getByRole('button', { name: /^Create a household/ }).click();
+    await expect(page.getByRole('radio', { name: /^Add default German stores/ })).toBeVisible();
+    await expectNoGerman(page, 'create household', german);
+    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Invite your partner', exact: true })).toBeVisible();
+    await expectNoGerman(page, 'invite partner', german);
+    await page.getByRole('button', { name: 'Invite your partner', exact: true }).click();
+    await expect(page.getByText(/^valid until /)).toBeVisible();
+    await expectNoGerman(page, 'invite card', german);
+    await page.getByRole('button', { name: 'Go to the list' }).click();
 
     const field = page.getByRole('textbox', { name: 'What do you need?' });
     await expect(field).toBeFocused();

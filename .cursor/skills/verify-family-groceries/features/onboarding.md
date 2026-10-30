@@ -1,0 +1,41 @@
+# Onboarding
+
+After sign-in (and the analytics question, in builds with a key), a user without a household goes
+through onboarding (job 22, Spec #3). Step 1, "Willkommen bei Hummlist", offers "Haushalt
+erstellen" and "Einladung annehmen". Step 2a creates the household (name, default stores or
+"Überspringen"). Step 2b joins one with a code, after showing the household's name. Step 3,
+"Partner einladen", makes an invite and shares it ("Später" goes to the list). An invite link
+skips Step 1. A user who already has a household goes straight to the list.
+
+## Sub-features
+
+- `ob-order` follows sign-in, then analytics consent (once per install), then Step 1 or the list. Routes: `/welcome`, `/welcome/create`, `/join`, `/join/<code>`, `/welcome/invite`. The only gate is `authRedirect` in `app/lib/app/router.dart`.
+- `ob-create` (Step 2a, key `create-household-screen`): `household-name` is prefilled "Unser Haushalt" ("Our household" in English). `default-stores` (dm, Lidl, Edeka with their aisle order) is the default, `skip-stores` starts without stores. `create-household` creates; offline it says "Keine Internetverbindung …" and keeps the name and the choice; a retry after a lost answer finds the household instead of making a second one.
+- `ob-invite` (Step 3, `invite-partner-screen`): `invite-partner` makes one invite. iOS and Android open the share sheet with "Komm in unseren Hummlist-Haushalt: <link> · Code: <code>". The web and the Linux app show the card: the code, the link, `invite-copy-link`, `invite-copy-code`, and `invite-share` where a share sheet exists. `invite-later` ("Später", then "Weiter zur Liste") goes to the list.
+- `ob-join` (Step 2b, `join-screen`): `invite-code`, then `invite-check` ("Weiter") shows `invite-household` with the name, then `join-confirm` ("Haushalt beitreten"). `join-cancel` goes back to Step 1 and drops the pending link. In a household, `already-in-household` comes first and Abbrechen is the filled button.
+- `ob-pending` keeps a link's code on the device (`DeviceCache` key `invite.pending`, 7 days) from the moment `/join/<code>` or `?invite=` arrives. It survives sign-in (also the apps' `com.hummlist.app://login-callback` return), an app kill, the consent and the steps. It goes after a join, Cancel, an invalid code or a sign-out.
+- `ob-errors`: one "Dieser Code ist ungültig oder abgelaufen." for made-up, expired, revoked and used codes; "Zu viele Versuche. Bitte später noch einmal." after 10 failures in an hour; the offline line. The field always keeps the code.
+- `ob-events` (builds with a key, after a yes): `household_created` (`default_stores`), `invite_sent` (`channel` share_sheet/copy_link/copy_code, `context` onboarding/settings), `invite_accepted` (`method` link/code). Each once per action; never the code, the link or a name.
+
+## How to get to it (user POV)
+
+- Sign up with a new email. Answer the analytics question if it comes. Step 1 shows.
+- Or open `/join/<code>` signed out: sign in by any method; after the question, the join screen for that code shows.
+
+## Driving it with fg
+
+Preconditions: the baseline from `features/README.md`; a fresh user on lea's client (`features/household.md`, Preconditions; it now waits for `--key welcome`).
+
+- **Create with stores.** `fg tap --key onboarding-create --client lea`, `fg wait --key household-name --client lea`, `fg type --key household-name --input "WG $(date +%s)" --client lea`, `fg tap --key create-household --client lea`, `fg wait --key invite-partner --client lea`. `fg db query "select count(*) from stores s join households h on h.id = s.household_id where h.name = '<name>'"` returns 3.
+- **Create without stores.** The same with `fg tap --key skip-stores --client lea` before `create-household`; the stores query returns 0, categories 11.
+- **Invite (Linux: no share sheet).** On Step 3, `fg tap --key invite-partner --client lea`, `fg wait --key invite-copy-code --client lea`. Read the code as in `features/household.md`. `fg tap --key invite-copy-code --client lea` shows "Code kopiert". `fg tap --key invite-later --client lea`, `fg wait --key add-item-field --client lea`.
+- **Second client joins by code, then live.** Use `fg sync` (two clients, `docs/TEST_FIXTURES.md`) or peter's client after `fg logout --client peter` and a fresh sign-up there: `fg tap --key onboarding-join`, type the code into `invite-code`, `fg tap --key invite-check`, `fg wait --text "<household name>"`, `fg tap --key join-confirm`, `fg wait --key add-item-field`. Then add an item on one client and `fg wait --text <item>` on the other (as in `features/live-sync.md`).
+- **Proof.** Screenshots of Step 1, Step 2a (both store options), Step 3 with the card, the join preview and the list on both clients; the `household_members` and `stores` query output.
+
+## Gotchas
+
+- fg builds have no PostHog key, so the analytics question never comes and nothing is sent.
+- The fg debug build has no `APP_URL`: the invite card shows the code without a link, and the share text names the code only.
+- Invites are single use and expire after 7 days; seed a fresh one per join (`fg seed pending-invite` prints an open code).
+- After 10 wrong codes in an hour, the user is rate-limited for an hour: `fg db query "delete from invite_attempts" --write` resets it.
+- The Mac runner has no Docker, so no local stack and no fg there. Run fg on the box, or prove the web flows with `scripts/ci-e2e.sh --spec tests/onboarding.spec.ts`.

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,12 +37,6 @@ final class const NeedsHousehold(final String userId) extends Session;
 final class const InHousehold(final String userId, final Household household)
     extends Session;
 
-/// A household RPC refused the request, e.g. an expired invite code.
-final class const HouseholdError(
-  /// The Postgres exception message, e.g. `invalid_invite`.
-  final String code,
-) implements Exception;
-
 /// The household each user was last in, kept on the device so an offline
 /// start can open the list.
 abstract interface class SessionCache() {
@@ -60,6 +56,10 @@ class SessionCubit(
   /// Follows who is signed in and in which household, and hears about
   /// households created and invites accepted.
   final Analytics? analytics,
+
+  /// The invite link waiting for an answer; dropped after a join and on
+  /// sign-out.
+  final PendingInvite? pendingInvite,
 }) extends Cubit<Session> {
   this : super(const SessionLoading()) {
     // Also replays a failed browser sign-in that supabase_flutter read from
@@ -81,6 +81,12 @@ class SessionCubit(
   /// The user whose household the server last confirmed.
   String? _loadedFor;
   Timer? _retry;
+
+  /// A create or join whose answer never came (offline, a timeout): the
+  /// server may have done it. The retry then answers
+  /// `already_in_household` or `member`, and the event goes out once, then.
+  ({bool defaultStores})? _unansweredCreate;
+  ({String code, JoinMethod method})? _unansweredJoin;
 
   Future<void> _load(String? userId) async {
     if (userId == null) {
@@ -149,28 +155,85 @@ class SessionCubit(
     emit(next);
   }
 
-  Future<void> createHousehold(String name) async {
-    final created = await _call('create_household', {'p_name': name});
-    if (created case {'id': final String id}) {
-      _trackIn(id, 'household_created');
+  /// Creates the user's household, with dm, Lidl and Edeka unless
+  /// [defaultStores] is false. Creating again (a double tap, a retry after a
+  /// lost answer) makes no second household: the server answers
+  /// `already_in_household`, which loads the one there is.
+  Future<void> createHousehold(String name, {bool defaultStores = true}) async {
+    final Object? created;
+    try {
+      created = await householdCall(
+        () => _client.rpc<Object?>(
+          'create_household',
+          params: {'p_name': name, 'p_default_stores': defaultStores},
+        ),
+      );
+    } on HouseholdError catch (e) {
+      if (e.problem == HouseholdProblem.offline) {
+        _unansweredCreate ??= (defaultStores: defaultStores);
+        rethrow;
+      }
+      // The household is there already; show it.
+      if (e.problem != HouseholdProblem.alreadyInHousehold) {
+        rethrow;
+      }
+      await householdCall(refresh);
+      if (state case InHousehold(:final household)) {
+        if (_unansweredCreate case (:final defaultStores)) {
+          _trackIn(household.id, 'household_created', {
+            'default_stores': defaultStores,
+          });
+        }
+        _unansweredCreate = null;
+        return;
+      }
+      rethrow;
     }
-    await refresh();
+    _unansweredCreate = null;
+    if (created case {'id': final String id}) {
+      _trackIn(id, 'household_created', {'default_stores': defaultStores});
+    }
+    await householdCall(refresh);
   }
 
   /// Joins the household of invite [code]. [method] says whether the code
   /// came from a link or was typed. `invite_accepted` goes out only for a
-  /// new membership, not when the server answers that the user is a member
-  /// already.
+  /// new membership (status `joined`), not when the server answers that the
+  /// user is a member already, unless that answers an earlier try whose
+  /// answer was lost. Throws [HouseholdError] for a bad code, the rate
+  /// limit or no connection.
   Future<void> join(String code, {JoinMethod method = JoinMethod.code}) async {
-    final before = switch (state) {
-      InHousehold(:final household) => household.id,
-      _ => null,
-    };
-    final joined = await _call('join_household', {'p_code': code});
-    if (joined is String && joined != before) {
-      _trackIn(joined, 'invite_accepted', {'method': method.name});
+    final normalized = normalizeInviteCode(code);
+    final Map<String, dynamic> result;
+    try {
+      result = await householdCall(
+        () => _client.rpc<Map<String, dynamic>>(
+          'accept_invite',
+          params: {'p_code': normalized},
+        ),
+      );
+    } on HouseholdError catch (e) {
+      if (e.problem == HouseholdProblem.offline) {
+        _unansweredJoin = (code: normalized, method: method);
+      }
+      rethrow;
     }
-    await refresh();
+    final unanswered = _unansweredJoin;
+    _unansweredJoin = null;
+    switch (result) {
+      case {'status': 'joined', 'household_id': final String id}:
+        _trackIn(id, 'invite_accepted', {'method': method.name});
+      case {'status': 'member', 'household_id': final String id}:
+        if (unanswered?.code == normalized) {
+          _trackIn(id, 'invite_accepted', {'method': unanswered!.method.name});
+        }
+      case {'status': final String status}:
+        throw HouseholdError.fromStatus(status);
+      default:
+        throw const HouseholdError(HouseholdProblem.other);
+    }
+    pendingInvite?.clear();
+    await householdCall(refresh);
   }
 
   /// Tracks [event] in [householdId], which the server just confirmed:
@@ -193,6 +256,9 @@ class SessionCubit(
   /// Sends what analytics still holds for this user first (briefly):
   /// nothing is sent once signed out.
   Future<void> signOut() async {
+    pendingInvite?.signedOut();
+    _unansweredCreate = null;
+    _unansweredJoin = null;
     await analytics?.flush().timeout(
       const Duration(seconds: 2),
       onTimeout: () {},
@@ -205,6 +271,9 @@ class SessionCubit(
   Future<void> accountDeleted(AccountDeletedNotice notice) async {
     _loadedFor = null;
     _retry?.cancel();
+    pendingInvite?.signedOut();
+    _unansweredCreate = null;
+    _unansweredJoin = null;
     emit(SignedOut(deleted: notice));
     await _cache.forget();
     try {
@@ -212,15 +281,6 @@ class SessionCubit(
       await _client.auth.signOut();
     } on Object {
       // Local sign-out only clears storage; the account is gone regardless.
-    }
-  }
-
-  /// Calls the household RPC [fn] and returns its answer.
-  Future<Object?> _call(String fn, Map<String, Object?> params) async {
-    try {
-      return await _client.rpc<Object?>(fn, params: params);
-    } on PostgrestException catch (e) {
-      throw HouseholdError(e.message);
     }
   }
 
