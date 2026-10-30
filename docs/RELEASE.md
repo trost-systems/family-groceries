@@ -1,54 +1,105 @@
 # Releases
 
-The Release workflow (`.github/workflows/release.yml`) builds green `main`
-every Monday at 03:00 UTC (04:00 CET, 05:00 CEST) and ships it with no human
-step:
+Every green merge to `main` reaches the internal testers with no human step
+(Peter, 2026-10-29: "internal testing / test flight should be pushed on every
+merge to main"). The Release workflow (`.github/workflows/release.yml`) starts
+when CI (`ci.yml`) finishes green on a push to `main` and ships the newest
+green `main` commit:
 
 - iOS to TestFlight, internal group "Familie" only. No external groups, no
   Beta App Review, no App Store submission.
 - Android to the Play internal testing track.
-- The web app: after a real upload, the `Web production` job moves the
-  `release` branch to the same commit, and Vercel puts that build on
-  `https://app.hummlist.com` ([`DEPLOY.md`](DEPLOY.md), section "Web app").
-  `main` itself is only on `https://preview.app.hummlist.com`.
+
+The web app is not part of these runs: `https://app.hummlist.com` is public,
+so it moves only with a dispatched run (below, [Public releases](#public-releases)).
+`main` itself is on `https://preview.app.hummlist.com`
+([`DEPLOY.md`](DEPLOY.md), section "Web app").
 
 Both platforms get the same build number in a run. The one-time store setup
 that needs a browser is in [`NEEDS_LEAD.md`](NEEDS_LEAD.md); decisions are in
-[`DECISIONS.md`](DECISIONS.md), section "Job 23".
+[`DECISIONS.md`](DECISIONS.md), sections "Job 23" and "Job 30".
+
+## Public releases
+
+There is no public release path yet: no Play production track, no App Store
+review, no external TestFlight group, and the Paid Applications agreement
+stays unaccepted. Nothing in this workflow promotes a build beyond the
+internal testers. A public release will be a separate, later step with a
+manual gate: a build that the internal testers have had, after a full
+end-to-end pass on it, weekly or more often once that is quick and reliable.
+It needs its own job and Peter's go.
 
 ## When a run ships
 
+Three events start a run:
+
+| Event | When | Ships |
+| --- | --- | --- |
+| `workflow_run` | CI finished on `main` | The newest green `main` commit. Only a green CI run on a push to this repository starts the plan; after a red one (or a fork's PR from a branch named `main`, or a dispatched CI run) every job is skipped and nothing ships. |
+| `schedule` | Mondays 03:00 UTC | The same as `workflow_run`. A catch-up: it ships nothing when the testers have the newest green `main`, but re-ships before TestFlight's 90-day expiry or after Apple expired the builds, and picks up a commit whose `workflow_run` event never came. |
+| `workflow_dispatch` | By hand | The `main` commit it was started on, which must be green ([Run it by hand](#run-it-by-hand)). The only event that moves `app.hummlist.com`. |
+
 The `plan` job gathers facts (`scripts/release/plan.sh gather`) and decides
 (`plan.sh decide`, a pure function with fixture tests in
-`scripts/release/test.sh`). The first rule that matches wins:
+`scripts/release/test.sh`).
+
+Which commit: `gather` walks `main` from its tip (fetched when the plan runs,
+so possibly newer than the commit whose CI started the run) back to the last
+upload, reading the newest `ci.yml` push run of each commit (a green rerun
+counts). An automatic run takes the first green commit: newer commits whose
+CI still runs ship with their own run, red ones never ship. A dispatch takes
+the tip only.
+
+Whether it ships: the first rule that matches wins.
 
 | Facts | Result |
 | --- | --- |
-| The newest `ci.yml` push run on the commit has not finished, or did not conclude `success` | Skip with a notice. A scheduled run also opens the failure issue. `force` does not override this: only green `main` ships. |
+| Dispatch: the newest `ci.yml` push run on the commit has not finished, or did not conclude `success` | Skip with a notice. `force` does not override this: only green `main` ships. |
+| Automatic: no green commit since the last upload, and no upload ever | Skip. |
 | The build number is not above TestFlight's highest build | Fail, naming `BUILD_NUMBER_OFFSET`. |
 | `upload` is off | Build, sign and validate (dry run). |
 | `force` is on | Ship. |
 | No earlier upload run | Ship. |
-| `main` moved since the last upload run | Ship. |
-| TestFlight has no installable build (all expired) | Ship. |
-| The last upload run is 60 or more days old | Ship, before TestFlight's 90-day expiry. |
+| A newer green commit than the last upload, and something under `app/` or `release.yml` changed since it | Ship. |
+| TestFlight has no installable build (all expired) | Ship (again). |
+| The last upload run is 60 or more days old | Ship (again), before TestFlight's 90-day expiry. |
+| A newer green commit, but only docs, CI, scripts or the backend changed | Skip: the testers already have this app. |
 | Otherwise | Skip with the notice "main is unchanged since the last upload". |
 
+The last two skips set the plan output `current`, which closes the failure
+issue. When the commit that started the run is older than the last upload
+(its CI finished after a newer commit's), the notice says so.
+
 The last upload run is the newest successful Release run on `main` whose
-`Uploaded` job succeeded. That job runs only after a real upload, so dry runs
-and skipped runs never count. The workflow needs no tags and no `contents:
-write`; `actions: read` on the plan job is enough.
+`Uploaded <sha>` job succeeded; the job's name carries the commit it shipped,
+since a `workflow_run` run's own commit is `main`'s tip when it started.
+(Runs before job 30 named it `Uploaded` and shipped their own commit.) That
+job runs only after a real upload, so dry runs and skipped runs never count.
+The workflow needs no tags and no `contents: write` for this; `actions: read`
+on the plan job is enough.
+
+### Merge bursts
+
+The workflow's concurrency group `release` runs one Release run at a time
+and never cancels one in progress, so an upload always finishes. GitHub keeps
+at most one run pending and cancels the older pending run when a newer one
+arrives. Every run picks the newest green commit when its plan starts, so
+whichever run survives ships everything merged so far: three quick merges
+give one or two uploads, never an older commit after a newer one. CI on
+`main` runs per commit (`ci.yml` groups push runs by SHA), so an older
+commit's CI can finish after a newer one's; its run then finds the newer
+commit already shipped and skips.
 
 ## Run it by hand
 
-A scheduled run has no inputs; the plan job gives it the dispatch defaults,
-so a dispatch with the defaults takes the same path. The log line `Release
-plan (schedule): platform=both upload=true force=false ...` (or
-`(workflow_dispatch)`) shows it.
+A `workflow_run` or scheduled run has no inputs; the plan job gives it the
+dispatch defaults, so all three events take the same path from there. The log
+line `Release plan (workflow_run): platform=both upload=true force=false
+main=<sha> trigger=<sha>` (or `(schedule)`, `(workflow_dispatch)`) shows it.
 
 ```bash
-gh workflow run release.yml                       # the scheduled path, now
-gh workflow run release.yml -f force=true         # ship even if main is unchanged
+gh workflow run release.yml                       # main's tip, if green and not shipped yet; moves app.hummlist.com
+gh workflow run release.yml -f force=true         # ship even if the testers already have it
 gh workflow run release.yml -f upload=false       # build, sign and validate only
 gh workflow run release.yml -f platform=android   # one platform
 ```
@@ -57,28 +108,40 @@ gh workflow run release.yml -f platform=android   # one platform
 | --- | --- | --- |
 | `platform` | `both` | `both`, `ios` or `android`. |
 | `upload` | `true` | Off: iOS builds, signs and runs `altool --validate-app`; Android builds, signs, checks the signer and, once Play is set up, runs the upload with `validate_only`. Nothing is published. |
-| `force` | `false` | Ship even if `main` is unchanged since the last upload. |
+| `force` | `false` | Ship even if the testers already have this app (main unchanged, or only non-app files changed). |
 | `simulate_failure` | `false` | Fail the plan job on purpose, to test the failure issue. |
 
+A dispatch that finds `main` unchanged skips, so it does not move
+`app.hummlist.com` either; to publish the web app of a commit the testers
+already have, use `force=true` (a new store build of the same commit) or the
+manual push in [`DEPLOY.md`](DEPLOY.md), section "Web app".
+
 The `release` environment allows deployments from `main` only, so a run on
-another branch fails at its first job.
+another branch fails at its first job. `workflow_run` and scheduled runs
+always run on `main`.
 
 ## Failures
 
-A scheduled run that fails, or that skips because `main` is not green, opens
-the issue "Weekly release failed" with the run link, the failing job
-(`plan`, `ios`, `android` or `web`) and what reached TestFlight, Play internal
-and `app.hummlist.com` ("may not" where a stopped job cannot tell), or
-comments on it if it is already open. The next green upload run, or a run
-that finds `main` unchanged since the last upload, closes it. Dry runs never
-touch it. A failed dispatch does not open the issue, since whoever started it
-watches the run; `simulate_failure` does. Watch the repository's issues
-(Watch, Custom, Issues) to get these.
+An automatic run (`workflow_run` or `schedule`) that fails opens the issue
+"Internal release failed" with the run link, the commit, the failing job
+(`plan`, `ios`, `android`) and what reached TestFlight and Play internal
+("may not" where a stopped job cannot tell). While it is open, every further
+failed run comments on it instead of opening another, so a broken pipeline
+during a day of merges is one issue with one comment per run. The next run
+that uploads, or that finds the testers on the newest green `main`
+(`current`), closes it. Dry runs never touch it. A failed dispatch does not
+open the issue, since whoever started it watches the run; `simulate_failure`
+does (and its body also says whether `app.hummlist.com` moved). Until job 30
+the issue was "Weekly release failed" (#53, closed). Watch the repository's
+issues (Watch, Custom, Issues) to get these.
+
+A red CI on `main` starts no release and opens no issue here: CI itself is
+the signal, and the next green commit ships.
 
 What to do, by failing job:
 
-- `plan`, "CI concluded failure": fix `main`; the next Monday run ships it,
-  or dispatch the workflow once `ci-ok` is green.
+- `plan`, "CI concluded failure" (dispatch only): fix `main`; the merge that
+  fixes it ships by itself once its CI is green.
 - `plan`, "Profile ... is INVALID": see [Capabilities](#capabilities).
 - `plan`, "Build number ... is not above": a build was uploaded outside this
   workflow. Raise `BUILD_NUMBER_OFFSET` in `release.yml` so that
@@ -86,7 +149,10 @@ What to do, by failing job:
 - `ios`, upload: an Apple outage gets one retry, after the lane has looked
   for the build in App Store Connect for 10 minutes (a first attempt may have
   arrived after all). Check
-  <https://developer.apple.com/system-status/> and rerun the failed jobs.
+  <https://developer.apple.com/system-status/> and rerun the failed jobs, but
+  only of the newest Release run: a rerun keeps its run number and its
+  commit, so rerunning an older run after a newer one shipped would upload an
+  older build. For an older run, let the next merge (or a dispatch) ship.
 - `ios`, "Wait for TestFlight processing": `INVALID` or `FAILED` means Apple
   rejected the binary; Apple's email to the account holder says why. A build
   still processing after 45 minutes usually turns `VALID` later; check
@@ -98,7 +164,7 @@ What to do, by failing job:
 - `android`, upload: Play's error names the cause. "Only releases with status
   draft may be created on draft app" means `PLAY_RELEASE_STATUS` must be
   `draft` until the app leaves draft (`NEEDS_LEAD.md`, L3).
-- `web` (`Web production`), push rejected: `release` holds a commit that is
+- `web` (`Web production`, dispatch only), push rejected: `release` holds a commit that is
   not an ancestor of this one (someone force-pushed it), or a branch rule
   blocks the push (there must be none on `release`). The issue says which
   stores got the build; check what `release` holds, then `git push --force
@@ -119,10 +185,11 @@ August 2026); Apple's TestFlight team acknowledged an investigation and has
 not named a cause.
 `DECISIONS.md`, Job 23, has the query results.
 
-The weekly run handles it: when TestFlight has no installable build, an
-unchanged `main` ships again (rule above), so testers have a build again by
-the next Monday at the latest. To get one sooner, dispatch the workflow with
-the defaults. If a new build comes out expired too, the run fails ("VALID but
+The next run handles it: when TestFlight has no installable build, the
+newest green commit ships again even if the testers had it (rule above), so
+testers have a build again after the next merge, or the next Monday's
+catch-up at the latest. To get one sooner, dispatch the workflow with the
+defaults. If a new build comes out expired too, the run fails ("VALID but
 already expired"): then the account holder opens a case with Apple Developer
 Support (developer.apple.com/contact, TestFlight) quoting the build number;
 nothing in the account or the repo fixes it.
@@ -215,7 +282,11 @@ sign-in client IDs and `APP_URL`.
 The build number is `BUILD_NUMBER_OFFSET + GITHUB_RUN_NUMBER` (offset 1010).
 Every run, dry runs and skips included, takes a new run number, so the
 number only grows on both stores, and iOS and Android get the same one in a
-run. Gaps are fine. When the schedule started, TestFlight's highest was 1002
+run. The run number counts all runs of the workflow, whatever started them
+(`workflow_run`, `schedule`, `workflow_dispatch`), and a newer run never
+ships an older commit, so build numbers and commits rise together. A run
+cancelled while pending still uses up its number; gaps are fine. A rerun
+keeps its number (see Failures, `ios`). When the schedule started, TestFlight's highest was 1002
 (Release run 2, offset 1000 then) and Play's first bundle, built on the box
 for the Lead's first manual upload, had version code 1003. The offset went
 to 1010 so that the next run (3) builds 1013, above both. The plan job fails
@@ -326,7 +397,7 @@ build. The sequence:
    signs with the new profile.
 
 Order matters only between 1 and 2: a run between them fails in `plan` with
-the message above and costs nothing else. A weekly run after step 2 but
+the message above and costs nothing else. A run after step 2 but
 before step 3 builds fine; the new profile allows the capability without
 requiring it.
 

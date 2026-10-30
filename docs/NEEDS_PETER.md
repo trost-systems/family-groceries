@@ -32,8 +32,8 @@ Still yours:
 - Section 4, steps 16 and 18: the Xcode capability check and trying
   sign-in on your phones.
 - Section 5, step 1: one MCP connect and disconnect against production.
-- "Job 4: Siri", step 2. Releases (job 23): every Monday green `main` goes
-  to TestFlight group "Familie" and to the Play internal track (list
+- "Job 4: Siri", step 2. Releases (jobs 23, 30): every green merge to `main`
+  goes to TestFlight group "Familie" and to the Play internal track (list
   "Familie") by itself.
   Yours: "Job 23" below. Also "Job 5: Android verification run".
 - "Job 13: database backups": done (job 13b). Copy the backup private key
@@ -304,7 +304,7 @@ Superseded by the weekly pipeline: [`RELEASE.md`](RELEASE.md) and
   [40229901781](https://github.com/trost-systems/family-groceries/actions/runs/40229901781)
   uploaded 0.1.0 (1002). Apple expired it, and every other build of the
   team, on 2026-10-26 (`RELEASE.md`, "TestFlight builds expired"); the
-  weekly run uploads a new one.
+  next merge uploads a new one.
 - Steps 1 to 7 below are done for iOS (Lea's App Store Connect invitation is
   pending; the Lead follows it up). The Android steps are replaced by
   `NEEDS_LEAD.md`.
@@ -618,8 +618,8 @@ Lead's step. Yours, in this order:
 
 ## Job 23: weekly releases
 
-The Release workflow ships green `main` every Monday at 03:00 UTC: TestFlight
-group "Familie" and the Play internal track
+The Release workflow ships every green merge to `main` (job 30; until then
+Mondays): TestFlight group "Familie" and the Play internal track
 ([`RELEASE.md`](RELEASE.md)). The Play Console and Apple Developer browser
 steps are the Lead's, with you only signing in
 ([`NEEDS_LEAD.md`](NEEDS_LEAD.md)). Yours:
@@ -632,7 +632,7 @@ steps are the Lead's, with you only signing in
    reset a lost upload key only through Play Console support, so keep a copy
    outside the box.
 3. **Watch the repository's issues** (Watch, Custom, Issues) if you haven't:
-   a failed Monday release opens "Weekly release failed" there.
+   a failed automatic release opens "Internal release failed" there.
 4. **If a new TestFlight build comes out already expired** (the run fails
    with "VALID but already expired"; `RELEASE.md`, "TestFlight builds
    expired"): as the account holder, open a case at

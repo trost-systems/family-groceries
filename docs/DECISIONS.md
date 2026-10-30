@@ -2915,3 +2915,89 @@ action." The code is `ItemRow` in `app/lib/list/list_view/item_row.dart`.
    the dropped drag, so it can't tell the difference; the e2e mouse swipe
    moves at a hand's pace (seen on CI when the whole drag ran in under
    200 ms under load).
+
+## Job 30 (every green merge to the internal testers), 2026-10-30
+
+Peter (2026-10-29 22:05): "internal testing / test flight should be pushed on
+every merge to main. Only public releases should be published after thorough
+end to end testing weekly (or multiple times a week when the system is
+efficient and high quality)." Tester Max still had the old design because
+only the Monday schedule uploaded. `docs/RELEASE.md` describes the result.
+
+1. **Trigger: `workflow_run` on CI, green push runs on `main` only.** The
+   plan job's `if` requires `conclusion == 'success'`, `event == 'push'` and
+   the head repository to be this one, so a red CI, a dispatched CI run and
+   a fork PR from a branch named `main` (which `branches: [main]` alone lets
+   through) leave every job skipped, `report` included. Options weighed:
+   - `push` on `main` with a job that waits for `ci-ok` (rejected): a runner
+     polling for 20 minutes per merge, and a second definition of "green".
+   - `workflow_run` and also running the plan after a red CI to ship an
+     older green commit (rejected): the brief wants no run after a red CI,
+     and the next green merge, or a green rerun of the red one (also a
+     `workflow_run` event), ships anyway.
+2. **A run ships the newest green `main` commit, not the commit that started
+   it.** `gather` fetches `main` and walks it from the tip to the last
+   upload; the first commit whose newest push CI run is green ships, newer
+   ones still running are left to their own run, red ones never ship. This
+   is what makes merge bursts safe: GitHub keeps one pending run per
+   concurrency group and cancels the older pending one, in arrival order,
+   which is CI completion order, not commit order. With "ship the trigger"
+   a late older commit's run could cancel the newer one's pending run and
+   ship the older commit last. Now every surviving run ships everything
+   green so far, and a run whose commit is older than the last upload skips
+   and says so. Rejected: skipping while a newer commit's CI still runs (one
+   upload per burst instead of one or two), because if that newer commit
+   then goes red, no run ever ships the green ones before it.
+3. **The last upload's commit is in the `Uploaded` job's name**
+   (`Uploaded <sha>`). A `workflow_run` run's `head_sha` is `main`'s tip when
+   the run was created, which may be newer than what it shipped. Rejected:
+   tags or a branch (needs `contents: write` on every run), artifacts (expire,
+   one download per run). Older runs' `Uploaded` jobs still count, with their
+   `head_sha`, which for a dispatch is the shipped commit.
+4. **A dispatch keeps its meaning** (ship the tip it was started on if green;
+   `force`, `upload=false`, `platform`, `simulate_failure` as before) with one
+   fix the new trigger made necessary: a dispatch that waited in the queue
+   while an automatic run shipped a newer commit now finds no candidates and
+   skips, instead of uploading the older commit with a higher build number.
+5. **No build when the app did not change.** If nothing under `app/` or in
+   `release.yml` changed between the last upload and the newest green commit
+   (docs, CI, scripts, backend, site), the run skips: the testers would get a
+   byte-identical app and a TestFlight notification for nothing. The expiry
+   rules (no installable TestFlight build, last upload 60 days old) and
+   `force` still ship. Backend changes reach every app through Supabase
+   without a store build.
+6. **The Monday schedule stays as a catch-up**, deciding like an automatic
+   run: it uploads only for the expiry rules or a green commit whose
+   `workflow_run` run never came (for example while the workflow was
+   disabled for inactivity, which `ci.yml`'s `keepalive-schedule` undoes on
+   the next push).
+7. **`app.hummlist.com` moves only with a dispatch.** Since web-release-align
+   the `Web production` job fast-forwarded `release` after every upload.
+   With an upload per merge that would make the public web app follow
+   `main` within the hour, which is what `preview.app.hummlist.com` is for,
+   and Peter wants public releases to come after thorough end-to-end testing.
+   So the automatic runs reach the internal testers only, and a dispatched
+   run (the manual gate for now) still moves the web app. The rule from
+   web-release-align holds: the web app never runs ahead of the stores. If
+   Peter wants the web app on every merge too, the job's `if` loses
+   `github.event_name == 'workflow_dispatch'`.
+8. **No public store release path.** No production track, no App Store review
+   submission, no external TestFlight group; the Paid Applications agreement
+   stays unaccepted. `RELEASE.md`, "Public releases", says that this is a
+   separate, later, manually gated step after a full e2e pass.
+9. **One failure issue, renamed "Internal release failed".** Automatic runs
+   (`workflow_run`, `schedule`) open it or comment on the open one, so a day
+   of merges with a broken pipeline is one issue. A run that uploads, or
+   finds the testers on the newest green `main` (plan output `current`,
+   replacing the match on the reason text), closes it. Dispatches still
+   leave it alone unless `simulate_failure`. The old issue (#53, "Weekly
+   release failed") is closed; nothing renames it.
+10. **Build numbers.** `offset + run number` stays. The run number counts
+    every run of the workflow whatever its event, skipped and cancelled
+    pending runs included, and with rule 2 and the dispatch fix in 4 a newer
+    run never ships an older commit, so build number and commit rise
+    together on both stores. A rerun keeps its run number, so `RELEASE.md`
+    now says to rerun failed jobs only on the newest run.
+11. **Release notes unchanged.** `notes.sh` lists the PR titles from the last
+    upload to the shipped commit, which for a per-merge run is usually the
+    one merged PR.
