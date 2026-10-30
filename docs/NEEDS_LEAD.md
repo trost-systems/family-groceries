@@ -199,12 +199,12 @@ them under "Set up your app".
 
 | Item (Policy, App content) | Blocks internal testing | Blocks closed/open/production | When |
 | --- | --- | --- | --- |
-| Privacy policy URL | No | Yes | After job 24 publishes the page and Peter OKs it. |
+| Privacy policy URL | No | Yes | After 33a's policy is on hummlist.com (https://hummlist.com/datenschutz). |
 | App access (sign-in needed; reviewer credentials) | No | Yes (review) | With the production track. |
 | Ads (no ads) | No | Yes | Any time: "No, my app does not contain ads". |
 | Content rating (IARC questionnaire) | No | Yes | Any time; the answers are Peter's. |
 | Target audience and content | No | Yes | Any time: 18+ suggested (household tool); Peter's call. |
-| Data safety form | No | Yes | After job 24's privacy page (the form must match it). |
+| Data safety form | No | Yes | After 33a's policy; answers from `docs/PRIVACY_DATA_MAP.md` (job 14). |
 | Government apps, financial features, health | No | Yes | Any time: "No" for each. |
 | Store listing (descriptions, screenshots, icon) | No | Yes | Job 14 owns the metadata. |
 
@@ -253,3 +253,18 @@ sends an Android client ID; Google matches it by package and SHA-1.
 
 Verify: both clients are listed with package `com.hummlist.app`. On a phone
 with the internal testing build, "Mit Google anmelden" completes.
+
+## Job 24: help page URLs (after Peter's publish OK)
+
+Status: waiting for Peter's OK on the text (docs/NEEDS_PETER.md, Job 24).
+
+1. Send Peter the hummlist-site preview of the PR's head: `/support` and `/en/support` on the
+   preview deployment URL (BOARD.md line "24-privacy-page: PR …", or the PR's Vercel check).
+2. After the publish PR is merged and https://hummlist.com/support answers 200:
+   - App Store Connect → Apps → Hummlist → the app version (or App Information) → **Support
+     URL**: `https://hummlist.com/support` (required for review). Marketing URL stays empty.
+   - Play Console → Hummlist → Grow users → Store presence → Store settings → **Store listing
+     contact details**: Email `support@hummlist.com`, Website `https://hummlist.com/support`,
+     **Save**.
+3. Check: `curl -sI https://hummlist.com/support | head -1` gives 200 and the page has no
+   "ENTWURF" banner.

@@ -67,7 +67,7 @@ test('the JSON answer names each item with its category', async ({ page }) => {
 test('errors come back as German sentences Siri can speak', async ({ page }) => {
   expect(await say('fgp_not-a-token', 'Milch', '?format=text')).toEqual({
     status: 401,
-    body: 'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Menü, Zugänge einen neuen.',
+    body: 'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.',
   });
 
   const email = newEmail('voice-errors');

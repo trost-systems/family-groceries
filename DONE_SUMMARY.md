@@ -289,3 +289,10 @@ See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
 ## Job 31: Alexa skill "Hummlist" (Spec #7)
 
 "Alexa, sag Hummlist, füg Milch und Eier hinzu" adds to the linked household, read back in German; ReadListIntent reads the list; account linking through Supabase's OAuth server (confidential client, PKCE). Live after the Amazon steps in NEEDS_PETER. Details: [docs/done/31-alexa.md](docs/done/31-alexa.md).
+
+## Job 24: help and contact page (draft) and the privacy data map
+
+`/support` and `/en/support` on hummlist.com as drafts (banner and noindex on previews, 404 in
+production until Peter's OK), More → "Hilfe & Kontakt" (debug/test builds only until then),
+`docs/PRIVACY_DATA_MAP.md` for the store privacy forms, stale "Menü" directions fixed in the Siri
+texts. The privacy policy itself is 33a's. See [docs/done/24-privacy-page.md](docs/done/24-privacy-page.md).

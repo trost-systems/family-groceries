@@ -40,7 +40,7 @@ const failures = {
   method: [405, 'Bitte schick den Text per POST.'],
   unauthorized: [
     401,
-    'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Menü, Zugänge einen neuen.',
+    'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.',
   ],
   no_household: [
     403,

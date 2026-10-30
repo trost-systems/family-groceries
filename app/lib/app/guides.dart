@@ -1,3 +1,5 @@
+import 'package:family_groceries/app/environment.dart';
+
 /// The public guides on hummlist.com (`site/` in this repo). Slugs are
 /// stable; the site serves German guides under /de/anleitungen and English
 /// ones under /en/guides.
@@ -24,4 +26,20 @@ Uri privacyPolicyUrl(String languageCode) => Uri.parse(
   languageCode == 'de'
       ? '$guidesBaseUrl/datenschutz'
       : '$guidesBaseUrl/en/privacy',
+);
+
+/// Whether the help and contact page is live on hummlist.com. Until Peter
+/// approves its text it is a draft (`draft: true` in
+/// `site/content/legal/support.md` and `support-en.md`), which production
+/// builds of the site leave out. Publishing flips this and drops those
+/// draft lines (docs/NEEDS_PETER.md, Job 24).
+const supportPagePublished = false;
+
+/// More shows "Hilfe & Kontakt" once the page is published, and before
+/// that only where drafts are wanted ([Environment.legalDrafts]).
+const supportLinkShown = supportPagePublished || Environment.legalDrafts;
+
+/// The help and contact page on hummlist.com, German or English.
+Uri supportUrl(String languageCode) => Uri.parse(
+  languageCode == 'de' ? '$guidesBaseUrl/support' : '$guidesBaseUrl/en/support',
 );

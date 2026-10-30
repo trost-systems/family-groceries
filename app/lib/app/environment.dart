@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Build-time configuration. The only file that reads `--dart-define`s.
 /// Defaults point at the production project; its URL and publishable key
 /// are public by design.
@@ -64,6 +66,14 @@ abstract final class Environment() {
   /// paid add-on (NEEDS_PETER).
   static const analyticsHouseholdGroups = bool.fromEnvironment(
     'ANALYTICS_HOUSEHOLD_GROUPS',
+  );
+
+  /// Shows links to hummlist.com pages that are still drafts (the help
+  /// page, job 24). On in debug builds, widget tests and e2e
+  /// (`config/e2e.json`); off in release builds, where the page answers 404.
+  static const legalDrafts = bool.fromEnvironment(
+    'LEGAL_DRAFTS',
+    defaultValue: kDebugMode,
   );
 
   /// The MCP server endpoint:for the production project its public URL,

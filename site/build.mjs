@@ -18,7 +18,7 @@ export const LOCALES = {
       privacy: { label: 'Datenschutz', href: '/datenschutz' },
       support: { label: 'Hilfe', href: '/support' },
     },
-    ui: { updated: 'Aktualisiert', languageNav: 'Sprache', footerNav: 'Rechtliches' },
+    ui: { updated: 'Aktualisiert', languageNav: 'Sprache', footerNav: 'Rechtliches', draft: 'ENTWURF: Freigabe durch Peter' },
   },
   en: {
     name: 'English',
@@ -27,9 +27,9 @@ export const LOCALES = {
     footer: {
       imprint: { label: 'Imprint', href: '/en/imprint' },
       privacy: { label: 'Privacy', href: '/en/privacy' },
-      support: { label: 'Support', href: '/support' },
+      support: { label: 'Support', href: '/en/support' },
     },
-    ui: { updated: 'Updated', languageNav: 'Language', footerNav: 'Legal' },
+    ui: { updated: 'Updated', languageNav: 'Language', footerNav: 'Legal', draft: "DRAFT: pending Peter's approval" },
   },
 };
 
@@ -41,6 +41,10 @@ const FOOTER_LINKS = [
   { key: 'privacy', shown: (config) => config.privacyPublished },
   { key: 'support', shown: (config) => config.supportPublished },
 ];
+
+// `draft: true` in the frontmatter: built with a banner and noindex in preview and local builds,
+// left out of Vercel production builds, so the path answers 404 there as before.
+const isProduction = (env) => env.VERCEL_ENV === 'production';
 
 const md = new MarkdownIt({ html: false, linkify: false, typographer: false, breaks: true });
 
@@ -129,6 +133,7 @@ function loadPage(kindName, { file, expect }, contentDir) {
   for (const [field, expected] of Object.entries(expect)) {
     if (fm[field] !== expected) fail(name, `frontmatter field "${field}" is "${fm[field]}" but the file location requires "${expected}"`);
   }
+  if (fm.draft !== undefined && typeof fm.draft !== 'boolean') fail(name, `frontmatter field "draft" must be true or false, got ${JSON.stringify(fm.draft)}`);
   if (kindName === 'page' && !/^\/[a-z0-9/-]*[a-z0-9]$/.test(fm.path)) fail(name, `frontmatter field "path" must look like /some/path, got "${fm.path}"`);
   return {
     kind: kindName,
@@ -140,6 +145,7 @@ function loadPage(kindName, { file, expect }, contentDir) {
     title: fm.title,
     description: fm.description,
     updated: fm.updated,
+    draft: fm.draft === true,
     body: md.render(content),
   };
 }
@@ -187,12 +193,13 @@ function renderPage(page, { config, groups, guidesByLocale }) {
     .join('');
   const title = escapeHtml(page.title);
   const description = escapeHtml(page.description);
+  const draft = page.draft ? escapeHtml(locale.ui.draft) : null;
   return `<!doctype html>
 <html lang="${page.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} | ${SITE_NAME}</title>
+${draft ? `<!-- ${locale.ui.draft} -->\n<meta name="robots" content="noindex">\n` : ''}<title>${title} | ${SITE_NAME}</title>
 <meta name="description" content="${description}">
 <link rel="canonical" href="${url}">
 ${alternates}
@@ -209,7 +216,7 @@ ${alternates}
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-<header class="site-header">
+${draft ? `<p class="draft-banner" role="note"><strong>${draft}</strong></p>\n` : ''}<header class="site-header">
 <a class="site-name" href="${locale.guidesBase}">${SITE_NAME}</a>
 <nav aria-label="${locale.ui.languageNav}">${switches}</nav>
 </header>
@@ -320,7 +327,9 @@ export function readConfig(siteDir = SITE_DIR) {
 }
 
 export function build({ contentDir = join(SITE_DIR, 'content'), outDir = join(SITE_DIR, 'dist'), env = {}, config = readConfig() } = {}) {
-  const pages = Object.keys(KINDS).flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir)));
+  const pages = Object.keys(KINDS)
+    .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir)))
+    .filter((page) => !(page.draft && isProduction(env)));
 
   const byRoute = new Map([['/', { file: '(root page)' }], ['/404', { file: '(404 page)' }]]);
   for (const page of pages) {
@@ -351,7 +360,7 @@ export function build({ contentDir = join(SITE_DIR, 'content'), outDir = join(SI
   );
   if (placeholders.length > 0) {
     const list = placeholders.join('\n  ');
-    if (env.VERCEL_ENV === 'production') throw new BuildError(`placeholders left in published pages:\n  ${list}`);
+    if (isProduction(env)) throw new BuildError(`placeholders left in published pages:\n  ${list}`);
     warnings.push(`placeholders left in published pages (production builds fail on these):\n  ${list}`);
   }
 

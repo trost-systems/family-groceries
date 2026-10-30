@@ -101,6 +101,9 @@ Future<More> pumpMore(
 
   /// Analytics as the app has it; a build without a key by default.
   Analytics? analytics,
+
+  /// Instead of `moreTabRoutes()`, e.g. a More built like a release build.
+  List<RouteBase>? routes,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -139,7 +142,7 @@ Future<More> pumpMore(
       // As in the app, the list sits above the tabs (AppShell's ListScope).
       ShellRoute(
         builder: (_, _, child) => ListScope(repository: repo, child: child),
-        routes: [...moreTabRoutes()],
+        routes: routes ?? [...moreTabRoutes()],
       ),
     ],
   );

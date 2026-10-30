@@ -4,7 +4,7 @@ description: "Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Hummlist: 
 slug: siri-kurzbefehl
 locale: de
 translation_key: siri-shortcut
-updated: 2026-10-27
+updated: 2026-10-30
 ---
 
 # Hummlist per Siri: Kurzbefehl einrichten
@@ -29,7 +29,7 @@ Siri schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge a
 Der Kurzbefehl meldet sich mit einem persönlichen Zugriffstoken an, nicht mit deinem Passwort.
 
 1. Öffne die Hummlist-App.
-2. Tippe oben rechts auf **Menü** (⋮) und dann auf **Zugänge**.
+2. Tippe auf **Mehr** und dann auf **Zugänge**.
 3. Tippe unter **Zugriffstoken** auf **Token erstellen**.
 4. Gib als Name `Siri` ein und tippe auf **Erstellen**.
 5. Kopiere den Token. Er beginnt mit `fgp_`.
@@ -101,7 +101,7 @@ Ab jetzt geht es ohne Hände: „Hey Siri, Einkaufsliste“.
 >
 > - Teile den fertigen Kurzbefehl nicht mit anderen. Dein Token steckt darin, und wer ihn hat, kann Sachen auf deine Liste setzen.
 > - Zeig deinen Token niemandem und schick ihn nicht per Nachricht oder Mail.
-> - Wenn dein iPhone verloren geht oder du glaubst, jemand kennt deinen Token: Widerrufe ihn in der App: **Menü** (⋮) → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**. Danach hat der Kurzbefehl keinen Zugriff mehr.
+> - Wenn dein iPhone verloren geht oder du glaubst, jemand kennt deinen Token: Widerrufe ihn in der App: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**. Danach hat der Kurzbefehl keinen Zugriff mehr.
 
 ## So kannst du sprechen
 
@@ -122,7 +122,7 @@ Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“,
 
 | Siri sagt | Woran es liegt | Was hilft |
 | --- | --- | --- |
-| „Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Menü, Zugänge einen neuen.“ | Der Token fehlt im Kurzbefehl, ist falsch kopiert oder wurde widerrufen. | Erstell in Hummlist unter **Menü** (⋮) → **Zugänge** einen neuen Token (Schritt 1). Öffne dann den Kurzbefehl, geh in Aktion 2 zum Header `Authorization` und ersetze den alten Token: `Bearer `, Leerzeichen, dann der ganze neue Token, also `Bearer fgp_…`. |
+| „Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.“ | Der Token fehlt im Kurzbefehl, ist falsch kopiert oder wurde widerrufen. | Erstell in Hummlist unter **Mehr** → **Zugänge** einen neuen Token (Schritt 1). Öffne dann den Kurzbefehl, geh in Aktion 2 zum Header `Authorization` und ersetze den alten Token: `Bearer `, Leerzeichen, dann der ganze neue Token, also `Bearer fgp_…`. |
 | „Du bist noch in keinem Haushalt …“ | Das Konto, zu dem der Token gehört, ist in keinem Haushalt. | Leg in der App einen Haushalt an oder tritt einem bei. |
 | „Ich habe nichts verstanden, was auf die Liste soll …“ | Das Diktat war leer oder bestand nur aus Füllwörtern. | Versuch es noch einmal, zum Beispiel mit „Milch und Brot“. |
 | „Das war zu lang …“ | Mehr als 1000 Zeichen. | Sag weniger auf einmal (höchstens 30 Dinge). |
@@ -133,7 +133,7 @@ Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“,
 ## Siri wieder abschalten
 
 1. Lösch den Kurzbefehl in der Kurzbefehle-App.
-2. Widerrufe den Token in Hummlist: **Menü** (⋮) → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.
+2. Widerrufe den Token in Hummlist: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.
 
 Damit ist die Verbindung getrennt.
 

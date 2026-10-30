@@ -12,6 +12,7 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 - `sm-old-links` the routes of the one page they were before keep working: `/settings` redirects to `/more/access`, `/settings?section=account` to `/more/account`.
 - `sm-sign-out` signs out (`more-sign-out`, "Abmelden") and shows the login screen (`features/auth.md`).
 - `sm-feedback` opens the feedback form (`more-feedback`, "Feedback senden", section "Feedback" before Einstellungen): `features/feedback.md`.
+- `sm-help` "Hilfe & Kontakt" (`more-help`, below Feedback senden) opens the help page on hummlist.com in the system browser: `features/legal.md`. Only in debug, test and e2e builds until Peter publishes the page.
 - `sm-settings` opens Einstellungen (`more-settings` → `settings-screen`, route `/more/settings`): the theme and the language list (job 29e; `features/settings.md`). The language is no longer on the More list itself.
 - `sm-imprint` opens the imprint in the browser (`more-imprint`, external: https://hummlist.com/impressum, English /en/imprint).
 - `sm-privacy` opens the privacy policy in the browser (`more-privacy`, external: https://hummlist.com/datenschutz, English /en/privacy).

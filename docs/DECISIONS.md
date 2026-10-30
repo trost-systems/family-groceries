@@ -3963,3 +3963,83 @@ The lead filled only facts checked against official sources on 2026-10-30 (sourc
    DPA (cursor.com/terms/dpa, 2025-11-05) incorporates the 2021 SCCs (module 2) but applies under
    the Anysphere Master Services Agreement (Teams/Enterprise); Cursor's help page says the DPA does
    not apply to individual plans. Writing "SCCs" would claim a contract we cannot show.
+
+## Job 24 (help and contact page, data map; privacy policy moved to 33a), 2026-10-30
+
+1. **Scope after the split.** The brief predates three later rulings: 24a built the guides
+   site (`site/`, its own Vercel project on hummlist.com), the Lead's 2026-10-30 07:52 ruling
+   gave the privacy policy to 33a (#105) and the in-app privacy links (login footer, consent
+   link, More → Datenschutz, `privacyPolicyUrl`) to 33b (#107). Job 24 therefore builds the
+   help and contact page (`/support`, `/en/support`), the More entry "Hilfe & Kontakt", the
+   data map (`docs/PRIVACY_DATA_MAP.md`) and the open items for Peter and the Lead. It touches
+   33a, 33b and 33c landed while this job ran; it rebased onto them and uses their interfaces
+   (`supportPublished`, `openLegalPage`, the launcher fake).
+2. **Where the pages live: `site/`, not the app's web build.** The 2026-10-28 addendum puts
+   legal pages into `site/content/legal/`. The app's `vercel.json` and build are unchanged, so
+   app.hummlist.com answers /support, /datenschutz, /privacy and /impressum exactly as before
+   (the SPA); nothing there needs a production-vs-preview proof any more.
+3. **Unpublished draft = `draft: true` in the frontmatter.** hummlist.com is already live from
+   `main` (24a, Peter 2026-10-27 22:12), so a gate in config alone would publish the page on
+   merge. A draft page is built with a visible banner ("ENTWURF: Freigabe durch Peter" /
+   "DRAFT: pending Peter's approval"), the same text in an HTML comment and
+   `<meta name="robots" content="noindex">` in preview and local builds, and left out of Vercel
+   production builds (`VERCEL_ENV=production`), where its path stays a 404. The whole site keeps
+   sending `X-Robots-Tag: noindex` (24a) until the beta launch. Placeholders in a draft only
+   warn; once published, the existing production check fails on any `[PETER:`. A footer link to
+   a draft page fails the production build (broken-link check), so the footer flag cannot go
+   on before the page. Publishing = drop `draft: true` from `support.md` and `support-en.md`,
+   set the footer flag `supportPublished` (33a's) and flip
+   `supportPagePublished` in `app/lib/app/guides.dart`: one small PR with Peter's OK.
+4. **Paths.** German `/support` (footer label "Hilfe", as 24a set it), English `/en/support`
+   like `/en/imprint` and 33a's `/en/privacy`. The only change to 24a's/33a's footer is the
+   English support href `/support` → `/en/support` in `site/build.mjs`. The help page links the
+   Impressum and the privacy policy.
+5. **Contact.** support@hummlist.com, the address the published Impressum already gives. No
+   new mailbox, no DNS. The page does not say who reads the mail: 33a's policy still asks
+   Peter whether an AI assistant pre-sorts support mail.
+6. **In-app link and its flag.** More → Feedback section → "Hilfe & Kontakt" / "Help &
+   contact" (`more-help`, `helpRow`/`helpRowHint`), opening `supportUrl(languageCode)` (de →
+   /support, otherwise /en/support) through 33b's `openLegalPage` (`LaunchMode.externalApplication`):
+   the system browser, never a web view and never the app's own router. Shown when `supportPagePublished` (const,
+   false) or `Environment.legalDrafts` (`LEGAL_DRAFTS`, default `kDebugMode`). So: on in debug
+   builds and widget tests, on in e2e (`app/config/e2e.json`), off in release builds (store,
+   TestFlight, app.hummlist.com and its Vercel previews). Deviation from the brief ("on in
+   preview"): the link points at hummlist.com, where the draft is a 404 until publishing; the
+   draft is only on hummlist-site's protected preview, so a row in the app preview would open
+   a 404. Login footer and consent-screen links are 33b's.
+7. **Proof of both states.** Site: `site/test/draft.test.mjs` builds preview (no env and
+   `VERCEL_ENV=preview`) and production and serves each through `scripts/preview.mjs`
+   (vercel.json's headers and clean URLs): 200 with banner, comment, meta noindex and
+   `X-Robots-Tag` vs. 404 with the site's 404 page; a published simulation (draft line removed)
+   has no banner and fails production on a placeholder. Removing the production filter fails 3
+   of these tests (checked). App: widget tests for the DE/EN URL and the external mode, and
+   More built with `showHelp: false` (as release) without the row; e2e `help.spec.ts` clicks
+   the row in the e2e web build and checks the new tab's URL while the app stays put.
+8. **Stale directions fixed.** The Siri guide, `docs/SIRI_SHORTCUT.md` and the voice function's
+   401 text still said "Menü (⋮) → Zugänge" (the menu became the More tab in 29d). Now "Mehr →
+   Zugänge"; the guide's `updated` is 2026-10-30. Same kind of fix 33a made on the deletion page.
+9. **Data map.** `docs/PRIVACY_DATA_MAP.md` lists each data item with table/storage, purpose,
+   basis, retention, processor/region, deletion path and the source file, for job 14's store
+   forms and as the fact base of 33a's policy. Unknowns stay `[PETER: …]` as in 33a. No
+   difference to 33a's draft found; two short-lived items the draft does not name
+   (`invite_attempts`, about a day; function error logs, max. one day).
+10. **Requirements checked (not legal advice; Peter approves, optionally a lawyer):**
+    GDPR Art. 13 (information at collection: controller, purposes, bases, recipients, transfers,
+    retention, rights, complaint; https://eur-lex.europa.eu/eli/reg/2016/679/oj);
+    TDDDG §25 (consent for storing/reading non-essential information on the device; the
+    analytics install id, job 19/33b; https://www.gesetze-im-internet.de/ttdsg/__25.html);
+    DDG §5 (Impressum, live since 24a; https://www.gesetze-im-internet.de/ddg/__5.html);
+    Apple App Review Guideline 5.1.1 (privacy policy link in App Store Connect and in the app,
+    in-app account deletion; https://developer.apple.com/app-store/review/guidelines/#data-collection-and-storage),
+    App Store Connect also requires a Support URL (this page);
+    Google Play User Data policy (privacy policy link in Play Console and in the app;
+    https://support.google.com/googleplay/android-developer/answer/10144311).
+11. **Checks.** Site tests (`npm test`, 48, 8 of them for drafts), axe (WCAG 2.1 A/AA, light and dark: 0 violations)
+    and 320/390/1366 px without horizontal scroll on both pages, HTML validated with
+    html-validate (only `doctype-style`, the site's lowercase doctype), all run locally with
+    Chromium and no Supabase. Lighthouse needs the deployed preview, which is behind Vercel
+    Authentication; not run.
+12. **Alexa in the privacy policy.** Job 31 asked "job 24's privacy page" to name the Alexa
+    skill. Job 33f (#121) added that section ("### Amazon Alexa" in section 7) while this job
+    was landing, so job 24 adds nothing to the policy; the data map has the Alexa and
+    `analytics_consents` rows.
