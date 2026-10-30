@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -32,6 +33,7 @@ class const ListScope({
             SupabaseListRepository(Supabase.instance.client, household.id),
         context.read<DeviceCache>().list(session.userId, household.id),
         userId: session.userId,
+        analytics: context.read<Analytics>(),
       )..start(),
       child: _Scope(child: child),
     );

@@ -1,0 +1,188 @@
+{
+  "requestsBeforeConsent": 0,
+  "sent": [
+    {
+      "method": "POST",
+      "url": "https://eu.i.posthog.com/batch/",
+      "body": {
+        "api_key": "<redacted>",
+        "batch": [
+          {
+            "event": "first_open",
+            "uuid": "2ed4f522-d299-43f6-9e49-8310bf3804cf",
+            "timestamp": "2026-10-29T19:59:41.174Z",
+            "properties": {
+              "distinct_id": "63ea3e2d-cd47-450f-b085-31f22374d44e",
+              "event_id": "2ed4f522-d299-43f6-9e49-8310bf3804cf",
+              "install_id": "63ea3e2d-cd47-450f-b085-31f22374d44e",
+              "household_id": "5f0c2a9e-0000-4000-8000-00000000b011",
+              "platform": "web",
+              "app_version": "0.1.0+1",
+              "is_internal": true,
+              "$geoip_disable": true,
+              "$process_person_profile": false,
+              "$lib": "hummlist-app",
+              "$lib_version": "0.1.0+1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "url": "https://eu.i.posthog.com/batch/",
+      "body": {
+        "api_key": "<redacted>",
+        "batch": [
+          {
+            "event": "$exception",
+            "uuid": "1d2a85bb-746c-474f-99cd-d3d2248ddc38",
+            "timestamp": "2026-10-29T19:59:50.498Z",
+            "properties": {
+              "$exception_level": "error",
+              "$exception_list": [
+                {
+                  "type": "minified:hm",
+                  "value": "Bad state: Hummlist test error (More, internal install)",
+                  "mechanism": {
+                    "handled": false,
+                    "synthetic": false,
+                    "type": "generic"
+                  },
+                  "stacktrace": {
+                    "type": "raw",
+                    "frames": [
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "b1B.$0",
+                        "filename": "main.dart.js",
+                        "lineno": 49550,
+                        "colno": 8,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "aPJ.$0",
+                        "filename": "main.dart.js",
+                        "lineno": 50615,
+                        "colno": 20,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "a92.oV",
+                        "filename": "main.dart.js",
+                        "lineno": 50579,
+                        "colno": 12,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "a4b.b3Y",
+                        "filename": "main.dart.js",
+                        "lineno": 5790,
+                        "colno": 9,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "aPI.$0",
+                        "filename": "main.dart.js",
+                        "lineno": 50626,
+                        "colno": 20,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "a92.un",
+                        "filename": "main.dart.js",
+                        "lineno": 50546,
+                        "colno": 10,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "a92.oV",
+                        "filename": "main.dart.js",
+                        "lineno": 50579,
+                        "colno": 12,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "a4b.b3Y",
+                        "filename": "main.dart.js",
+                        "lineno": 5787,
+                        "colno": 19,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "b2a.$0",
+                        "filename": "main.dart.js",
+                        "lineno": 60536,
+                        "colno": 15,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      },
+                      {
+                        "platform": "web:javascript",
+                        "abs_path": "main.dart.js",
+                        "in_app": true,
+                        "function": "Object.Z",
+                        "filename": "main.dart.js",
+                        "lineno": 4173,
+                        "colno": 29,
+                        "chunk_id": "80092e71-a8b0-5198-95ae-a3d289af72d7"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "distinct_id": "63ea3e2d-cd47-450f-b085-31f22374d44e",
+              "event_id": "1d2a85bb-746c-474f-99cd-d3d2248ddc38",
+              "install_id": "63ea3e2d-cd47-450f-b085-31f22374d44e",
+              "household_id": "5f0c2a9e-0000-4000-8000-00000000b011",
+              "platform": "web",
+              "app_version": "0.1.0+1",
+              "is_internal": true,
+              "$geoip_disable": true,
+              "$process_person_profile": false,
+              "$lib": "hummlist-app",
+              "$lib_version": "0.1.0+1"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "answers": [
+    {
+      "url": "https://eu.i.posthog.com/batch/",
+      "status": 200,
+      "body": "{\"status\":\"Ok\"}"
+    },
+    {
+      "url": "https://eu.i.posthog.com/batch/",
+      "status": 200,
+      "body": "{\"status\":\"Ok\"}"
+    }
+  ]
+}

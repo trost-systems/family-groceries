@@ -2722,3 +2722,131 @@ in `app/lib/list/list_view/sections.dart`, used by
    and `webkit` (the timings, as a desktop: the wheel does not scroll a
    mobile WebKit page). WebKit does not start on the Mac runner (no window
    server for the `agents` user), so WebKit runs on GitHub Actions only.
+
+## Job 19 (kill-gate and LTV analytics, error tracking in PostHog EU), 2026-10-29
+
+Overview and definitions: [ANALYTICS.md](ANALYTICS.md).
+
+1. **No PostHog SDK; the app posts to PostHog's capture API itself.** The brief named
+   posthog_flutter (and posthog-js on web). I built `Analytics` on a ~60-line `PostHogSink`
+   (`POST https://eu.i.posthog.com/batch/`, the public endpoint the SDKs use) instead, because:
+   (a) every byte then passes the allow-list (`checkEvent`, `checkContext`), while the native SDKs
+   add their own device properties and posthog-js adds `$current_url`, `$pathname` and
+   `$referrer`, which here carry invite codes (`/join/<code>`) and OAuth authorization ids;
+   (b) posthog-js fetches remote config and feature flags (`/flags`, `config.js`) as soon as it
+   starts, and project settings such as exception or web-vitals autocapture can switch features on
+   from the server, so "nothing but our events" could not be guaranteed by client config;
+   (c) "off stops at once, nothing queued" is exact with our in-memory queue, while the native SDKs
+   keep their own disk queue; (d) one code path on iOS, Android and web, and e2e can answer the
+   PostHog host with a fake collector, which tests the production sender itself. Cost: no native
+   crash capture (out of the small scope) and an in-memory queue (a batch not sent before the app
+   is killed is lost; flushed every 5 s, on hide and before sign-out). The `$exception_list` shape
+   (type, value, mechanism, raw frames, `chunk_id`) copies posthog_flutter 5.58's, so PostHog's
+   error tracking reads it the same way; the proofs show it does (11, 19).
+2. **`first_open` is sent at the consent, once per install id** (Peter, 2026-10-27), with
+   `household_id` null. Someone who declines and later switches analytics on under More sends it
+   then: their install cohort starts at their first consented open. It is remembered in
+   `DeviceCache` (`analytics.first_open` = the install id it went out for).
+3. **Consent route.** `/analytics-consent`, gated in `authRedirect` (`askConsent`): signed in and
+   undecided goes there first, with `?invite=` carried. After the answer: `NeedsHousehold` →
+   `/welcome` (with the invite), `InHousehold` → the list, or `/join/<code>` with an invite. A
+   `next=/oauth/consent…` flow is not interrupted. A build without a key (CI, fg, local debug)
+   never asks: nothing could be sent, so asking would only mislead.
+4. **The decision is per install, not per account.** `DeviceCache` keys `analytics.install_id`,
+   `analytics.consent`, `analytics.first_open`, `analytics.internal` (shared preferences, the only
+   store the lints allow) survive sign-out (`forget()` only drops the household, list, seen and
+   prefs keys). On web a "device" is a browser profile: localStorage.
+5. **Signed out, nothing is captured** (not even errors, so the login screen sends nothing).
+   Sign-out first sends what waits (at most 2 s), then signs out; whatever is left is dropped.
+6. **Off drops the queue instead of sending it**, also a batch that fails while the user switches
+   off. "Stops sending at once" wins over the few seconds of events captured just before.
+7. **One event per action.** Events fire in the cubit methods the UI calls for a user action, not
+   in the op flush, so an offline tick sent on reconnect, a realtime echo or a resync sends
+   nothing. Undo sends nothing and no compensating event (PostHog can't retract one; the tick was
+   a real action); undo then tick again is a second `item_ticked`. A tick counts when the user
+   makes it, even offline; in the rare case the server then refuses the op (the item was deleted
+   by the partner meanwhile), the event stays: we measure user actions, and the refusal is shown
+   to the user. Reorders count only once the server took them (they are not queued), and only
+   when the order changed; hiding a category in a store is not a reorder.
+8. **`source`** follows the PM's typed / spoken / suggestion: the add sheet's "Wie getippt" row
+   (also Enter) is `typed`, any other row (history, pack, size, variant, brand, dictionary, due)
+   and a re-add from recently bought are `suggestion`, in-app dictation is `spoken`. MCP and Siri
+   adds and ticks are not sent (PM, 2026-10-25); no server-side consent flag, no migration.
+9. **`invite_accepted` without a migration.** `join_household` returns the household id whether
+   the user joined or was a member already, so `SessionCubit.join` compares it with the household
+   it was in before: a different one is a new membership. `method` is `link` when the code came
+   from `/join/<code>` or `?invite=` and was not edited (the welcome form, the join screen),
+   `code` when typed (the welcome form, More's join dialog, which tells the join screen through
+   go_router's `extra`).
+10. **`actor_role` and `household_size`** come from the list's catalog; the members query now also
+    reads `household_members.role` (`Member.role`, nullable for lists cached before). No actor
+    key or per-member hash (PM).
+11. **`is_internal`**: debug and profile builds, the internal device mark (a long press on the
+    version under More, which also shows "Testfehler senden" for error-tracking checks), the
+    households in `ANALYTICS_INTERNAL_HOUSEHOLDS`, and e-mail domains that can't belong to a
+    customer: the reserved TLDs `.test`, `.invalid`, `.example`, `.localhost` and
+    `example.com/.net/.org` (covers `fg.test`, `fg-test.invalid` and e2e's `example.test`), plus
+    `ANALYTICS_INTERNAL_EMAIL_DOMAINS`. The queries drop every install and household that ever
+    sent `is_internal = true`: a filter written into each query, because PostHog cohorts need
+    person profiles and the app sends personless events.
+12. **Retention periods are fixed 7 and 30 days from the household's first event**, so every
+    cohort's month k has the same length; weeks 0-12 and months 0-11 (Peter, 2026-10-25: no
+    export, PostHog only, a year).
+13. **Edge-function exceptions are sent without a consent check.** They carry no user: the
+    `distinct_id` is `edge-function-<name>`, the message is scrubbed to a code or runtime text,
+    and the request (body, headers, token) is never read. No personal data, so no consent to ask
+    for. Server events that do concern a person (purchases) need the install's consent.
+14. **The edge functions need `POSTHOG_HOST` set explicitly** (only `https://eu.i.posthog.com`
+    accepted), like the app: no host fallback in code.
+15. **Source maps are uploaded from the Vercel build, not a GitHub Actions step.** Peter planned a
+    GitHub secret, but the deployed `main.dart.js` is built by Vercel; the chunk ids
+    `posthog-cli` injects must be in the files users load, so the upload has to happen in the same
+    build. `scripts/vercel.sh` does it when `POSTHOG_PERSONAL_API_KEY` and `POSTHOG_PROJECT_ID`
+    are set in the Vercel project, then deletes the maps from the deployment; a failed upload
+    only leaves traces minified. No GitHub Actions step exists, so CI never talks to PostHog.
+16. **Web wasm (job 28):** Chromium runs dart2wasm, whose frames carry Dart function names but no
+    lines, and PostHog can't symbolicate wasm. The JS build (Safari, Firefox) maps back to Dart
+    through the uploaded source map. Common error types are named in code, because dart2js
+    minifies `runtimeType` (`minified:hm`).
+17. **Purchases: interface, mapping and events, no real verification** (PM: AC6 and AC8 partial
+    until the IAP job). `PurchaseVerifier` with `FakePurchaseVerifier`, `fromApple`/`fromGoogle`
+    from the stores' payload shapes, `netAmount`, `recordPurchase`, tested with fixture payloads.
+    The JWS chain check against Apple Root CA - G3 and its self-made test chain belong with the
+    real verifier in the IAP job; ANALYTICS.md "Purchases" has the design.
+18. **e2e**: the e2e build gets a stand-in key and `https://posthog.invalid` (`app/config/e2e.json`),
+    which can never reach PostHog even unanswered; `fakeCollector` answers it and fails on any
+    request to a real PostHog host. `signUp` answers the consent (declined unless asked), every
+    other first sign-in in a fresh context calls `answerConsent`, so the sign-in → consent →
+    onboarding order runs in every spec. `no_posthog_in_ci` (lib.sh) fails a CI build that has a
+    key, and checks the stand-in and that `config/auth.json` names no PostHog define.
+19. **Proofs used the personal key that turned up in `~/groceries-ops/env`.** The brief expected no
+    PostHog API access. The key (error tracking scope) reads the error-tracking issue list and
+    uploads symbol sets; it can't run queries (`query:read` is missing). I used it only to upload
+    one source map for the AC11 build and to list the issues. In project 319492 that created, all
+    internal: 3 error-tracking issues (`StateError` "Hummlist test error", `TypeError` "Job 19
+    forced test exception (edge function voice)", `Error` "23505"), 1 symbol set and the release
+    `hummlist-web@job19-proof`, plus 2 events (`first_open`, `$exception`) from a fake user
+    `proof-ac11@fg.test`. Nothing else was created or changed.
+20. **Focus after the consent: the consent page is one list, like the welcome page.** With the
+    answers pinned below a scrolling text (a `Column` with an `Expanded` scroll view), the list
+    opened from it lost the add field's browser focus on the web, also on the iPhone after the
+    first tap (Chromium wasm and JS, WebKit). A stack trace on a profile build showed why: in the
+    semantics update that brings the list, the web engine moves the field's DOM element, which
+    blurs and refocuses it; the blur queues the engine's deferred `safeBlur`
+    (`SemanticsTextEditingStrategy.disable`), which then runs on the refocused input and hands
+    the focus to the Flutter view. Login → list and welcome → list don't move the element, and
+    neither does the consent page once it is a single `ListView` (title, text, draft chip, the
+    two equal buttons; checked 3 of 3 on a local wasm build with Supabase faked by routes). An
+    earlier repair in the list screen (refocusing when the browser lost it) was removed: it
+    treated the symptom, and on the iPhone a focus outside the tap opens no keyboard. The page
+    also got an app bar title ("Nutzungsdaten") so a new page starts on a heading for screen
+    readers instead of the sign-out button.
+21. **Review fixes (self-review before the Sonnet review).** A flush waits for a send already on
+    its way (sign-out used to drop what was queued meanwhile); on the web the batch is sent with
+    `fetch(keepalive)`, so a batch sent as the tab is hidden or closed still arrives; a frame's
+    `chunk_id` matches its file name exactly (`main.dart.js` is not `main.dart.js_1.part.js`);
+    Vercel deployments other than production build with `ANALYTICS_INTERNAL_BUILD=true` (preview
+    testers are ours); `first_open` is claimed in memory before the write (a double tap sent two);
+    `household_created` and `invite_accepted` are tracked with the household the RPC returned,
+    before the reload, so a failed reload doesn't lose them. Kept as is: the consent hop sends an
+    already signed-in user to the list rather than back to e.g. `/more` (login behaves the same).

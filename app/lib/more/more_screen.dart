@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
@@ -174,6 +175,10 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
         ),
         _Section(l10n.language),
         const _LanguagePicker(),
+        if (context.read<Analytics>().enabled) ...[
+          _Section(l10n.analyticsSection),
+          const _AnalyticsSwitch(),
+        ],
         _Section(l10n.legal),
         _Row(
           key: const ValueKey('more-imprint'),
@@ -311,26 +316,90 @@ class const _LanguagePicker() extends StatelessWidget {
   }
 }
 
+/// The analytics consent of this install (job 19): off stops sending at
+/// once and drops what waits.
+class const _AnalyticsSwitch() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final consent = context.select<Analytics, bool>(
+      (a) => a.state.consent ?? false,
+    );
+    return SwitchListTile(
+      key: const ValueKey('more-analytics'),
+      title: Text(l10n.analyticsToggle),
+      subtitle: Text('${l10n.analyticsToggleHint}\n${l10n.analyticsDraftNote}'),
+      isThreeLine: true,
+      value: consent,
+      onChanged: (on) =>
+          unawaited(context.read<Analytics>().decide(granted: on)),
+    );
+  }
+}
+
+/// The version; a long press marks this install internal (or not), so a
+/// test phone's events are filtered out of the gate insights. An internal
+/// install can raise a test error for error tracking.
 class const _Version() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return FutureBuilder(
-      future: PackageInfo.fromPlatform(),
-      builder: (context, snapshot) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-        child: Text(
-          switch (snapshot.data) {
-            final info? => l10n.appVersion(_versionOf(info)),
-            null => '',
-          },
-          key: const ValueKey('more-version'),
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall,
+    final internal = context.select<Analytics, bool>(
+      (a) => a.state.internalInstall,
+    );
+    return Column(
+      children: [
+        GestureDetector(
+          // The whole row, padding included, takes the long press.
+          behavior: HitTestBehavior.opaque,
+          onLongPress: () => unawaited(_toggleInternal(context, !internal)),
+          child: FutureBuilder(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) => Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Text(
+                switch (snapshot.data) {
+                  final info? => l10n.appVersion(_versionOf(info)),
+                  null => '',
+                },
+                key: const ValueKey('more-version'),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ),
         ),
+        if (internal) ...[
+          Text(
+            l10n.internalInstall,
+            key: const ValueKey('more-internal'),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          TextButton(
+            key: const ValueKey('more-test-error'),
+            onPressed: _raiseTestError,
+            child: Text(l10n.sendTestError),
+          ),
+        ],
+      ],
+    );
+  }
+
+  static Future<void> _toggleInternal(BuildContext context, bool on) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await context.read<Analytics>().markInternalInstall(internal: on);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(on ? l10n.internalInstallOn : l10n.internalInstallOff),
       ),
     );
   }
+
+  /// Thrown outside any handler, so it takes the path a real crash takes.
+  static void _raiseTestError() => Timer.run(
+    () => throw StateError('Hummlist test error (More, internal install)'),
+  );
 }
 
 /// No privacy policy is published yet. This page says so instead of

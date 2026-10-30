@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
@@ -137,5 +138,13 @@ class _WelcomeScreenState() extends State<WelcomeScreen> {
     );
   }
 
-  Future<void> _join() => _run((s) => s.join(_code.text));
+  /// A link's code still in the field, as it came, is a join by link.
+  Future<void> _join() => _run(
+    (s) => s.join(
+      _code.text,
+      method: widget.invite != null && _code.text.trim() == widget.invite
+          ? JoinMethod.link
+          : JoinMethod.code,
+    ),
+  );
 }

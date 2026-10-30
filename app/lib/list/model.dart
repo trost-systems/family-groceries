@@ -199,13 +199,21 @@ class const Catalog({
 class const Member({
   required final String id,
   required final String displayName,
+
+  /// `owner` or `member`; null in a list cached before job 19.
+  final String? role,
 }) {
   factory fromJson(Map<String, Object?> json) => Member(
     id: json['id']! as String,
     displayName: json['display_name']! as String,
+    role: json['role'] as String?,
   );
 
-  Map<String, Object?> toJson() => {'id': id, 'display_name': displayName};
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'display_name': displayName,
+    'role': ?role,
+  };
 }
 
 /// A category in a store's walking order; `hidden` when the store does not

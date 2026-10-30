@@ -14,7 +14,8 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 - `sm-imprint` opens the imprint on the web (`more-imprint`, external: https://hummlist.com/impressum).
 - `sm-privacy` shows the draft privacy page (`more-privacy` → `privacy-draft`, chip "Entwurf", "Die Datenschutzerklärung von Hummlist wird gerade geschrieben …") while no privacy URL is configured.
 - `sm-licenses` opens Flutter's license page for "Hummlist" with the version (`more-licenses`).
-- `sm-version` shows "Version <version> (<build>)" at the bottom (`more-version`).
+- `sm-version` shows "Version <version> (<build>)" at the bottom (`more-version`). A long press marks the device internal for analytics (`features/analytics.md`, `an-internal`).
+- `sm-analytics` "Nutzungsdaten" (`more-analytics`) between Sprache and Rechtliches, only in builds with a PostHog key (not fg builds): `features/analytics.md`, `an-switch`.
 - `sm-wide` from 840 px: a NavigationRail instead of the bar, the add sheet as wide as the list column, and More in two panes (the list on the left, Zugänge or the picked page on the right).
 
 ## How to get to it (user POV)

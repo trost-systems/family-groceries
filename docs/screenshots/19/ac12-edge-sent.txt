@@ -1,0 +1,152 @@
+voice: adding items failed Error: duplicate key (name)=(Hafermilch) for peter@example.com
+    at Object.addItems (file:///Users/agents/fg-wt/19-analytics-killgate/analytics/proofs/edge_exception.ts:35:23)
+    at file:///Users/agents/fg-wt/19-analytics-killgate/supabase/functions/voice/handler.ts:147:32
+    at async file:///Users/agents/fg-wt/19-analytics-killgate/supabase/functions/_shared/telemetry.ts:207:18
+    at async file:///Users/agents/fg-wt/19-analytics-killgate/analytics/proofs/edge_exception.ts:57:20 {
+  code: "23505"
+}
+sent to https://eu.i.posthog.com/batch/ {
+  "api_key": "<redacted>",
+  "batch": [
+    {
+      "event": "$exception",
+      "uuid": "d1d6c7e2-2ec4-4940-ad60-c1b71b609899",
+      "timestamp": "2026-10-29T19:50:11.535Z",
+      "properties": {
+        "distinct_id": "edge-function-voice",
+        "event_id": "d1d6c7e2-2ec4-4940-ad60-c1b71b609899",
+        "function_name": "voice",
+        "platform": "server",
+        "is_internal": true,
+        "$exception_level": "error",
+        "$exception_list": [
+          {
+            "type": "Error",
+            "value": "23505",
+            "mechanism": {
+              "handled": true,
+              "synthetic": false,
+              "type": "generic"
+            },
+            "stacktrace": {
+              "type": "raw",
+              "frames": [
+                {
+                  "platform": "node:javascript",
+                  "filename": "edge_exception.ts",
+                  "abs_path": "edge_exception.ts",
+                  "function": "<anonymous>",
+                  "lineno": 57,
+                  "colno": 20,
+                  "in_app": false
+                },
+                {
+                  "platform": "node:javascript",
+                  "filename": "_shared/telemetry.ts",
+                  "abs_path": "_shared/telemetry.ts",
+                  "function": "<anonymous>",
+                  "lineno": 207,
+                  "colno": 18,
+                  "in_app": true
+                },
+                {
+                  "platform": "node:javascript",
+                  "filename": "voice/handler.ts",
+                  "abs_path": "voice/handler.ts",
+                  "function": "<anonymous>",
+                  "lineno": 147,
+                  "colno": 32,
+                  "in_app": true
+                },
+                {
+                  "platform": "node:javascript",
+                  "filename": "edge_exception.ts",
+                  "abs_path": "edge_exception.ts",
+                  "function": "Object.addItems",
+                  "lineno": 35,
+                  "colno": 23,
+                  "in_app": false
+                }
+              ]
+            }
+          }
+        ],
+        "$geoip_disable": true,
+        "$process_person_profile": false,
+        "$lib": "hummlist-edge"
+      }
+    }
+  ]
+}
+PostHog answered 200 {"status":"Ok"}
+caught answered 500 {"error":"server","speech":"Das hat leider nicht geklappt. Versuch es gleich noch einmal."}
+voice: unhandled TypeError: Job 19 forced test exception (edge function voice)
+    at file:///Users/agents/fg-wt/19-analytics-killgate/analytics/proofs/edge_exception.ts:46:9
+    at file:///Users/agents/fg-wt/19-analytics-killgate/supabase/functions/_shared/telemetry.ts:207:24
+    at file:///Users/agents/fg-wt/19-analytics-killgate/analytics/proofs/edge_exception.ts:57:26
+sent to https://eu.i.posthog.com/batch/ {
+  "api_key": "<redacted>",
+  "batch": [
+    {
+      "event": "$exception",
+      "uuid": "03011774-7505-4c38-b489-6892d9156bae",
+      "timestamp": "2026-10-29T19:50:11.663Z",
+      "properties": {
+        "distinct_id": "edge-function-voice",
+        "event_id": "03011774-7505-4c38-b489-6892d9156bae",
+        "function_name": "voice",
+        "platform": "server",
+        "is_internal": true,
+        "$exception_level": "error",
+        "$exception_list": [
+          {
+            "type": "TypeError",
+            "value": "Job 19 forced test exception (edge function voice)",
+            "mechanism": {
+              "handled": false,
+              "synthetic": false,
+              "type": "generic"
+            },
+            "stacktrace": {
+              "type": "raw",
+              "frames": [
+                {
+                  "platform": "node:javascript",
+                  "filename": "edge_exception.ts",
+                  "abs_path": "edge_exception.ts",
+                  "function": "<anonymous>",
+                  "lineno": 57,
+                  "colno": 26,
+                  "in_app": false
+                },
+                {
+                  "platform": "node:javascript",
+                  "filename": "_shared/telemetry.ts",
+                  "abs_path": "_shared/telemetry.ts",
+                  "function": "<anonymous>",
+                  "lineno": 207,
+                  "colno": 24,
+                  "in_app": true
+                },
+                {
+                  "platform": "node:javascript",
+                  "filename": "edge_exception.ts",
+                  "abs_path": "edge_exception.ts",
+                  "function": "<anonymous>",
+                  "lineno": 46,
+                  "colno": 9,
+                  "in_app": false
+                }
+              ]
+            }
+          }
+        ],
+        "$geoip_disable": true,
+        "$process_person_profile": false,
+        "$lib": "hummlist-edge"
+      }
+    }
+  ]
+}
+PostHog answered 200 {"status":"Ok"}
+uncaught answered 500 {"error":"server"}

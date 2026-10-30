@@ -1,0 +1,40 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": "01a1893f-6a63-72e0-ae5d-c269720033d3",
+      "status": "active",
+      "severity": "critical",
+      "name": "StateError",
+      "description": "Bad state: Hummlist test error (More, internal install)",
+      "first_seen": "2026-10-29T19:59:50.498000Z",
+      "assignee": null,
+      "external_issues": [],
+      "cohort": null
+    },
+    {
+      "id": "01a18936-7df5-72e1-99d8-6f853cc827f9",
+      "status": "active",
+      "severity": "medium",
+      "name": "Error",
+      "description": "23505",
+      "first_seen": "2026-10-29T19:50:11.535000Z",
+      "assignee": null,
+      "external_issues": [],
+      "cohort": null
+    },
+    {
+      "id": "01a18936-7df4-7220-bc92-49b38a3ad6bb",
+      "status": "active",
+      "severity": "high",
+      "name": "TypeError",
+      "description": "Job 19 forced test exception (edge function voice)",
+      "first_seen": "2026-10-29T19:50:11.663000Z",
+      "assignee": null,
+      "external_issues": [],
+      "cohort": null
+    }
+  ]
+}

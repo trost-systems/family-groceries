@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -10,7 +11,8 @@ import 'package:shared_preferences_linux/shared_preferences_linux.dart';
 /// and one list snapshot and seen mark per user and household. A cache: a
 /// value that cannot be read counts as missing, and a failed write is
 /// dropped.
-class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
+class DeviceCache(final SharedPreferencesAsync _prefs)
+    implements SessionCache, AnalyticsStore {
   /// On Linux, supabase_flutter's legacy SharedPreferences and
   /// SharedPreferencesAsync each rewrite the whole file from their own copy,
   /// so sharing shared_preferences.json loses the session. The other
@@ -29,6 +31,14 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
   /// The app language picked under More; absent follows the device. Kept
   /// across sign-outs: it belongs to the device, not the account.
   static const _languageKey = 'language';
+
+  /// Analytics (job 19): the install id, the consent decision, the install
+  /// id `first_open` went out for, and the internal-install mark. Kept
+  /// across sign-outs: the decision is per install, not per account.
+  static const _installIdKey = 'analytics.install_id';
+  static const _consentKey = 'analytics.consent';
+  static const _firstOpenKey = 'analytics.first_open';
+  static const _internalKey = 'analytics.internal';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -55,6 +65,54 @@ class DeviceCache(final SharedPreferencesAsync _prefs) implements SessionCache {
         ? _prefs.remove(_languageKey)
         : _prefs.setString(_languageKey, code),
   );
+
+  @override
+  Future<String?> installId() => _readString(_installIdKey);
+
+  @override
+  Future<void> saveInstallId(String id) =>
+      _write(() => _prefs.setString(_installIdKey, id));
+
+  @override
+  Future<bool?> consent() async {
+    try {
+      return await _prefs.getBool(_consentKey);
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveConsent({required bool granted}) =>
+      _write(() => _prefs.setBool(_consentKey, granted));
+
+  @override
+  Future<String?> firstOpenSentFor() => _readString(_firstOpenKey);
+
+  @override
+  Future<void> saveFirstOpenSentFor(String installId) =>
+      _write(() => _prefs.setString(_firstOpenKey, installId));
+
+  @override
+  Future<bool> internalInstall() async {
+    try {
+      return await _prefs.getBool(_internalKey) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> saveInternalInstall({required bool internal}) =>
+      _write(() => _prefs.setBool(_internalKey, internal));
+
+  Future<String?> _readString(String key) async {
+    try {
+      return await _prefs.getString(key);
+    } on Object {
+      return null;
+    }
+  }
 
   ListCache list(String userId, String householdId) =>
       _PrefsListCache(this, userId, householdId);

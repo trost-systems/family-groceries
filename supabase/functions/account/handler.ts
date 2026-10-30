@@ -19,6 +19,8 @@ export interface Deps {
   appleSubject(userId: string): Promise<string | null>;
   revokeApple(grant: { code: string | null; subject: string }): Promise<AppleRevocation>;
   deleteAccount(userId: string): Promise<HouseholdFate>;
+  /** Error tracking for a failure answered with 500 (telemetry.ts); scrubbed there. */
+  report?(error: unknown): void;
 }
 
 const failures = {
@@ -76,6 +78,7 @@ export function createHandler(deps: Deps) {
       }
       if (e instanceof AuthError) return fail(e);
       console.error('account: authenticate failed', e);
+      deps.report?.(e);
       return fail('server');
     }
 
@@ -94,6 +97,7 @@ export function createHandler(deps: Deps) {
       return json({ deleted: true, household, apple } satisfies Deleted);
     } catch (e) {
       console.error('account: deletion failed', e);
+      deps.report?.(e);
       return fail('server');
     }
   };

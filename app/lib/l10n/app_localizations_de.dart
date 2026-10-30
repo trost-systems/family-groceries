@@ -833,4 +833,44 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get categoryOther => 'Sonstiges';
+
+  @override
+  String get analyticsConsentTitle => 'Hilf mit, Hummlist besser zu machen';
+
+  @override
+  String get analyticsConsentBody =>
+      'Mit deiner Erlaubnis sendet Hummlist anonyme Nutzungsdaten und Fehlerberichte an PostHog, einen Dienst mit Servern in der EU: zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, die App-Version und eine zufällige Kennung dieser Installation. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen und dein Standort werden nie gesendet. Ohne Erlaubnis wird nichts gesendet. Du kannst das jederzeit unter Mehr → Nutzungsdaten ändern.';
+
+  @override
+  String get analyticsDraftNote => 'ENTWURF: Freigabe durch Peter';
+
+  @override
+  String get analyticsAccept => 'Einverstanden';
+
+  @override
+  String get analyticsDecline => 'Ablehnen';
+
+  @override
+  String get analyticsSection => 'Nutzungsdaten';
+
+  @override
+  String get analyticsToggle =>
+      'Anonyme Nutzungsdaten und Fehlerberichte senden';
+
+  @override
+  String get analyticsToggleHint =>
+      'An PostHog (EU), ohne Listeninhalte. Gilt für dieses Gerät.';
+
+  @override
+  String get internalInstall => 'Interne Installation';
+
+  @override
+  String get internalInstallOn => 'Diese Installation zählt jetzt als intern.';
+
+  @override
+  String get internalInstallOff =>
+      'Diese Installation zählt nicht mehr als intern.';
+
+  @override
+  String get sendTestError => 'Testfehler senden';
 }

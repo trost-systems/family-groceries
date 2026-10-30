@@ -174,7 +174,7 @@ class _ShoppingListViewState()
 
   void _readd(Item item) {
     widget.onInteract?.call();
-    _cubit.untick(item.id);
+    _cubit.readd(item.id);
     _snack(AppLocalizations.of(context).itemReadded(item.name));
   }
 

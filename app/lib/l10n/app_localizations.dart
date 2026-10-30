@@ -1435,6 +1435,78 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Sonstiges'**
   String get categoryOther;
+
+  /// Analytics consent screen after the first sign-in: title. DRAFT text, Peter approves
+  ///
+  /// In de, this message translates to:
+  /// **'Hilf mit, Hummlist besser zu machen'**
+  String get analyticsConsentTitle;
+
+  /// Analytics consent screen: what is sent and what never is. DRAFT text, Peter approves
+  ///
+  /// In de, this message translates to:
+  /// **'Mit deiner Erlaubnis sendet Hummlist anonyme Nutzungsdaten und Fehlerberichte an PostHog, einen Dienst mit Servern in der EU: zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, die App-Version und eine zufällige Kennung dieser Installation. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen und dein Standort werden nie gesendet. Ohne Erlaubnis wird nichts gesendet. Du kannst das jederzeit unter Mehr → Nutzungsdaten ändern.'**
+  String get analyticsConsentBody;
+
+  /// Marks the analytics consent wording as a draft until Peter approves it
+  ///
+  /// In de, this message translates to:
+  /// **'ENTWURF: Freigabe durch Peter'**
+  String get analyticsDraftNote;
+
+  /// Analytics consent: allow
+  ///
+  /// In de, this message translates to:
+  /// **'Einverstanden'**
+  String get analyticsAccept;
+
+  /// Analytics consent: decline; as prominent as allow
+  ///
+  /// In de, this message translates to:
+  /// **'Ablehnen'**
+  String get analyticsDecline;
+
+  /// More: section with the analytics switch
+  ///
+  /// In de, this message translates to:
+  /// **'Nutzungsdaten'**
+  String get analyticsSection;
+
+  /// More: analytics switch. DRAFT text, Peter approves
+  ///
+  /// In de, this message translates to:
+  /// **'Anonyme Nutzungsdaten und Fehlerberichte senden'**
+  String get analyticsToggle;
+
+  /// More: below the analytics switch. DRAFT text, Peter approves
+  ///
+  /// In de, this message translates to:
+  /// **'An PostHog (EU), ohne Listeninhalte. Gilt für dieses Gerät.'**
+  String get analyticsToggleHint;
+
+  /// More: shown under the version while this install is marked internal (its analytics are filtered out)
+  ///
+  /// In de, this message translates to:
+  /// **'Interne Installation'**
+  String get internalInstall;
+
+  /// Snackbar after a long press on the version marks the install internal
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Installation zählt jetzt als intern.'**
+  String get internalInstallOn;
+
+  /// Snackbar after a long press on the version unmarks the install
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Installation zählt nicht mehr als intern.'**
+  String get internalInstallOff;
+
+  /// More, internal installs only: raises a test exception for error tracking
+  ///
+  /// In de, this message translates to:
+  /// **'Testfehler senden'**
+  String get sendTestError;
 }
 
 class _AppLocalizationsDelegate

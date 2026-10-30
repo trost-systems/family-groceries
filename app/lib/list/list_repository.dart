@@ -118,20 +118,28 @@ class SupabaseListRepository(
           .eq('household_id', householdId),
       _client.rest
           .from('household_members')
-          .select('user_id')
+          .select('user_id, role')
           .eq('household_id', householdId),
       // No foreign key to join on; RLS returns everyone the user shares a
       // household with, and the member ids pick this one's.
       _client.rest.from('profiles').select('id, display_name'),
     ).wait;
-    final ids = {for (final row in memberIds) row['user_id']! as String};
+    final roles = {
+      for (final row in memberIds)
+        row['user_id']! as String: row['role'] as String?,
+    };
     return Catalog(
       categories: categories.map(Category.fromJson).toList(),
       stores: stores.map(Store.fromJson).toList(),
       layout: layout.map(StoreCategory.fromJson).toList(),
       members: [
         for (final member in profiles.map(Member.fromJson))
-          if (ids.contains(member.id)) member,
+          if (roles.containsKey(member.id))
+            Member(
+              id: member.id,
+              displayName: member.displayName,
+              role: roles[member.id],
+            ),
       ],
     );
   }

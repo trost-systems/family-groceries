@@ -157,6 +157,18 @@ for (const [label, request, overrides, status, error, speech] of errors) {
   });
 }
 
+Deno.test('a 500 is reported to error tracking, a 4xx is not', async () => {
+  const reported: unknown[] = [];
+  const boom = new Error('boom');
+  const report = (e: unknown) => reported.push(e);
+  const failing = fakeDeps({ addItems: () => Promise.reject(boom), report });
+  await (await failing.handle(post({ text: 'Milch' }))).body?.cancel();
+  const fine = fakeDeps({ report });
+  await (await fine.handle(post({ text: 'Bitte, danke' }))).body?.cancel();
+  await (await fine.handle(post({ text: 'Milch' }, { token: 'nope' }))).body?.cancel();
+  assertEquals(reported, [boom]);
+});
+
 Deno.test('a 401 tells the client to send a bearer token', async () => {
   const { handle } = fakeDeps();
   const res = await handle(post({ text: 'Milch' }, { token: 'nope' }));

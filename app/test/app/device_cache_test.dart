@@ -110,4 +110,20 @@ void main() {
       expect(await cache.list('peter', 'work').loadSeen(), isNull);
     });
   });
+
+  test('analytics state is per install and survives sign-outs', () async {
+    expect(await cache.installId(), isNull);
+    expect(await cache.consent(), isNull);
+    expect(await cache.internalInstall(), isFalse);
+    await cache.saveInstallId('id-1');
+    await cache.saveConsent(granted: false);
+    await cache.saveFirstOpenSentFor('id-1');
+    await cache.saveInternalInstall(internal: true);
+    await cache.remember('peter', home);
+    await cache.forget();
+    expect(await cache.installId(), 'id-1');
+    expect(await cache.consent(), isFalse);
+    expect(await cache.firstOpenSentFor(), 'id-1');
+    expect(await cache.internalInstall(), isTrue);
+  });
 }

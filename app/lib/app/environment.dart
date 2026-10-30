@@ -31,7 +31,42 @@ abstract final class Environment() {
   /// Whether the Supabase project has Sign in with Apple configured.
   static const signInWithApple = bool.fromEnvironment('SIGN_IN_WITH_APPLE');
 
-  /// The MCP server endpoint: for the production project its public URL,
+  /// PostHog project API key (`phc_…`, Einkauf project 319492). Empty, the
+  /// default and what CI builds get, turns analytics and error tracking off
+  /// completely (docs/ANALYTICS.md). Never committed: Vercel and release
+  /// builds pass it in.
+  static const posthogProjectKey = String.fromEnvironment(
+    'POSTHOG_PROJECT_API_KEY',
+  );
+
+  /// PostHog ingestion host; only https://eu.i.posthog.com (or a stand-in
+  /// that can't reach PostHog, for e2e) is accepted. No default.
+  static const posthogHost = String.fromEnvironment('POSTHOG_HOST');
+
+  /// Household ids whose events are internal (Peter's family),
+  /// comma-separated.
+  static const analyticsInternalHouseholds = String.fromEnvironment(
+    'ANALYTICS_INTERNAL_HOUSEHOLDS',
+  );
+
+  /// E-mail domains whose users are internal besides the reserved test
+  /// domains, comma-separated.
+  static const analyticsInternalEmailDomains = String.fromEnvironment(
+    'ANALYTICS_INTERNAL_EMAIL_DOMAINS',
+  );
+
+  /// Every event of this build is internal (Vercel's preview deployments).
+  static const analyticsInternalBuild = bool.fromEnvironment(
+    'ANALYTICS_INTERNAL_BUILD',
+  );
+
+  /// Also sends the PostHog `household` group. Off: group analytics is a
+  /// paid add-on (NEEDS_PETER).
+  static const analyticsHouseholdGroups = bool.fromEnvironment(
+    'ANALYTICS_HOUSEHOLD_GROUPS',
+  );
+
+  /// The MCP server endpoint:for the production project its public URL,
   /// a Vercel proxy to the edge function (docs/MCP.md); for any other
   /// project (the local stack) the edge function itself.
   static const mcpUrl = supabaseUrl == _productionUrl

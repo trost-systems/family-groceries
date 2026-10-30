@@ -4,6 +4,8 @@
 #
 #   scripts/vercel.sh install
 #   SUPABASE_URL=https://<ref>.supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publishable_... scripts/vercel.sh build
+# Optional (job 19, docs/ANALYTICS.md): POSTHOG_PROJECT_API_KEY and POSTHOG_HOST turn analytics on;
+# with POSTHOG_PERSONAL_API_KEY and POSTHOG_PROJECT_ID the source map goes to PostHog too.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -43,11 +45,38 @@ build() {
   [[ $SUPABASE_URL == https://*.supabase.co ]] || fail "SUPABASE_URL must be https://<ref>.supabase.co"
   [[ ${SUPABASE_PUBLISHABLE_KEY:-} == sb_publishable_* ]] \
     || fail "set SUPABASE_PUBLISHABLE_KEY to the project's publishable key (sb_publishable_...); never a secret key"
+  # Analytics (job 19, docs/ANALYTICS.md): on only when the Vercel project sets the PostHog
+  # project key and host; the app accepts only https://eu.i.posthog.com.
+  local analytics=()
+  local name
+  for name in POSTHOG_PROJECT_API_KEY POSTHOG_HOST ANALYTICS_INTERNAL_HOUSEHOLDS; do
+    if [[ -n ${!name:-} ]]; then analytics+=("--dart-define=$name=${!name}"); fi
+  done
+  # Preview deployments (main on preview.app.hummlist.com) are ours: every event internal.
+  if [[ ${VERCEL_ENV:-} != production ]]; then analytics+=(--dart-define=ANALYTICS_INTERNAL_BUILD=true); fi
+  echo "vercel.sh: analytics $([[ -n ${POSTHOG_PROJECT_API_KEY:-} ]] && echo on || echo off)"
+  # Readable web stack traces need the source map in PostHog: only with a personal key (error
+  # tracking write, Einkauf only) and the project id in the Vercel project.
+  local maps=()
+  if [[ -n ${POSTHOG_PROJECT_API_KEY:-} && -n ${POSTHOG_PERSONAL_API_KEY:-} && -n ${POSTHOG_PROJECT_ID:-} ]]; then
+    maps=(--source-maps)
+  fi
   cd app
   flutter build web --release --wasm --base-href / \
     --dart-define=SUPABASE_URL="$SUPABASE_URL" \
     --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-    --dart-define-from-file=config/auth.json
+    --dart-define-from-file=config/auth.json ${analytics[@]+"${analytics[@]}"} ${maps[@]+"${maps[@]}"}
+  if ((${#maps[@]})); then
+    # Chunk ids into main.dart.js, the map to PostHog, then the map deleted so it is not served.
+    # A failed upload does not stop the deploy: the traces just stay minified.
+    if ! POSTHOG_CLI_API_KEY="$POSTHOG_PERSONAL_API_KEY" POSTHOG_CLI_PROJECT_ID="$POSTHOG_PROJECT_ID" \
+      npx --yes @posthog/cli@0.19.0 --host https://eu.posthog.com sourcemap process \
+      --directory build/web --release-name hummlist-web \
+      --release-version "${VERCEL_GIT_COMMIT_SHA:-local}" --delete-after; then
+      echo "vercel.sh: source map upload to PostHog failed; web stack traces stay minified" >&2
+    fi
+    rm -f build/web/*.map
+  fi
 }
 
 case "${1:-}" in

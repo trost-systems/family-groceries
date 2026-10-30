@@ -1,0 +1,36 @@
+# Analytics and error tracking
+
+After the first sign-in on a device, before onboarding or the list, the app asks once whether it may send anonymous usage data and error reports to PostHog (EU). Both answers are one tap. With a yes it sends `first_open`, then one event per add, tick, household created, invite accepted and category or store reorder, never an item name or other list text; with a no it sends nothing, ever. Mehr → Nutzungsdaten switches it on or off for the device; off stops sending at once. A long press on the version line marks the device internal (its data is filtered out of the gate insights) and shows "Testfehler senden". Edge functions report their exceptions, tagged with the function name. Background and definitions: `docs/ANALYTICS.md`.
+
+## Sub-features
+
+- `an-consent` the consent screen (`analytics-consent`, buttons `analytics-consent-decline` "Ablehnen" and `analytics-consent-accept` "Einverstanden", chip "ENTWURF: Freigabe durch Peter") right after the first sign-in on a device, route `/analytics-consent`; an invite link keeps its code through it; an MCP authorization tab is not interrupted.
+- `an-decline` after "Ablehnen" nothing reaches the PostHog host, also after adding and ticking.
+- `an-events` after "Einverstanden": exactly one `first_open` per device, then `household_created` / `invite_accepted` (method `link` or `code`), `item_added` (source `typed`, `spoken`, `suggestion`), `item_ticked` once per tick (undo sends nothing), `category_reordered` (scope `default` or `store`), `store_reordered`; each with `household_id`, none with list text.
+- `an-switch` Mehr → Nutzungsdaten (`more-analytics`) shows the decision and changes it; off stops sending at once.
+- `an-internal` a long press on `more-version` toggles "Interne Installation" (`more-internal`) and the "Testfehler senden" button (`more-test-error`).
+- `an-errors` an uncaught app error and an edge-function exception arrive in PostHog error tracking, scrubbed.
+
+## How to get to it (user POV)
+
+- Sign in on a new device (or a fresh browser profile): the question comes before "Haushalt anlegen" or the list.
+- Mehr → Nutzungsdaten.
+- Mehr → hold the version line at the bottom.
+
+## Driving it with fg
+
+Preconditions:
+
+- `fg` builds have no PostHog key, so analytics is off there: no consent screen, no Nutzungsdaten section, nothing sent. `fg login` goes straight to the list as before. The web e2e build (`app/config/e2e.json`) has a stand-in key and host `https://posthog.invalid`, which the spec answers with a fake collector.
+
+- **`an-consent`, `an-decline`, `an-events`, `an-switch`.** Not drivable with fg (no key in fg builds). Run `scripts/ci-e2e.sh --spec tests/analytics.spec.ts` (GitHub Actions; on the box also `scripts/gates/e2e.sh --workers=1 tests/analytics.spec.ts` under `flock /tmp/fg-e2e.lock`). Four tests pass. With `--download <dir>`, `screenshots/` holds `analytics-01-consent-after-sign-in.png` (the question after sign-up), `analytics-02-declined-then-welcome.png`, `analytics-03-collector-declined.png` (the collector log: 0 requests), `analytics-04/05-more-switch-on/off.png`, `analytics-06-collector-accepted.png` (one line per event: `first_open`, `household_created`, `item_added` ×3, `item_ticked` ×3, nothing after the switch went off), `analytics-07-consent-before-list.png` and `analytics-08-declined-then-list.png` (an existing member on a new device).
+- **`an-internal`, `an-errors` (app).** Manual, against PostHog project 319492, never from CI. Build: `cd app && flutter build web --release --source-maps -o /tmp/proof --dart-define=SUPABASE_URL=https://fake-supabase.invalid --dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_fakeproof --dart-define=POSTHOG_PROJECT_API_KEY="$POSTHOG_PROJECT_API_KEY" --dart-define=POSTHOG_HOST="$POSTHOG_HOST"` with `~/groceries-ops/env` sourced. Optional readable frames: `POSTHOG_CLI_API_KEY=$POSTHOG_PERSONAL_API_KEY POSTHOG_CLI_PROJECT_ID=$POSTHOG_PROJECT_ID npx @posthog/cli@0.19.0 --host https://eu.posthog.com sourcemap process --directory /tmp/proof --delete-after`. Serve with `node e2e/serve.mjs /tmp/proof 5<prefix>80 &`, then `flock /tmp/fg-e2e.lock node e2e/analytics-proof.mjs http://127.0.0.1:5<prefix>80 <out>`. It prints `before consent: 0` and two `POST https://eu.i.posthog.com/batch/` answered 200 `{"status":"Ok"}` (`first_open`, then `$exception`); `<out>/ac11-02-internal-install.png` shows "Diese Installation zählt jetzt als intern."; `<out>/ac11-sent.json` has the `$exception` with type `StateError`, value "Bad state: Hummlist test error (More, internal install)", `is_internal: true` and frames with a `chunk_id`. The issue list: `curl -H "Authorization: Bearer $POSTHOG_PERSONAL_API_KEY" https://eu.posthog.com/api/environments/319492/error_tracking/issues/` names a `StateError` issue with that description.
+- **`an-errors` (edge functions).** `deno run --config supabase/functions/deno.json --allow-env --allow-net analytics/proofs/edge_exception.ts` with the env sourced. It prints two batches answered 200: an `Error` with value `23505` (the caught database failure; its message is not sent) and a `TypeError` "Job 19 forced test exception (edge function voice)", both with `function_name: voice`, `is_internal: true`, and no "Hafermilch", token or header anywhere. The issue list above shows both.
+
+## Gotchas
+
+- The consent decision belongs to the device (browser profile), not the account: a second sign-in in the same Playwright context is not asked again, a new context is. Specs answer it through `signUp` or `answerConsent`.
+- The app flushes every 5 s; "nothing was sent" needs a wait past that (the spec waits 7 s).
+- On `/analytics-consent` the MCP consent page's "Ablehnen" is not on screen; the two never show together.
+- Chromium runs the wasm build (job 28): its error frames name Dart functions without lines. The source-map proof above needs the JS build, which is what `--source-maps` and Safari use.
+- Never send proof events without `is_internal` (the proofs set it through the `fg.test` user, the internal device mark and `ANALYTICS_INTERNAL=true`).

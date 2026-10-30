@@ -26,6 +26,8 @@ export interface Deps<C extends Caller = Caller> {
   /** Resolves the bearer token; throws an AuthError when it can't. */
   authenticate(req: Request): Promise<C>;
   addItems(caller: C, items: ParsedItem[]): Promise<Added[]>;
+  /** Error tracking for a failure answered with 500 (telemetry.ts); scrubbed there. */
+  report?(error: unknown): void;
 }
 
 export const maxTextLength = 1000;
@@ -119,6 +121,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     } catch (e) {
       if (e instanceof AuthError) return fail(e.status === 403 ? 'no_household' : 'unauthorized');
       console.error('voice: authenticate failed', e);
+      deps.report?.(e);
       return fail('server');
     }
 
@@ -145,6 +148,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       return reply(200, { speech: confirmation(added) + cut, items: added, truncated });
     } catch (e) {
       console.error('voice: adding items failed', e);
+      deps.report?.(e);
       return fail('server');
     }
   };

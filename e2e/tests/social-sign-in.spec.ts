@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
-  addField, addItem, apiAs, itemRow, newEmail, openMore, screenshot, signUpWithHousehold, supabaseUrl, typeInto, viaFakeProvider,
+  addField, addItem, answerConsent, apiAs, itemRow, newEmail, openMore, screenshot, signUpWithHousehold, supabaseUrl, typeInto,
+  viaFakeProvider,
 } from './helpers';
 
 const google = (page: Page) => page.getByRole('button', { name: 'Mit Google anmelden' });
@@ -59,6 +60,8 @@ test('a first provider sign-in goes through household onboarding', async ({ page
   await page.goto('/');
   await viaFakeProvider(page, email);
   await google(page).click();
+  // Job 19: the analytics consent comes first, then onboarding.
+  await answerConsent(page);
 
   await expect(page.getByRole('button', { name: 'Haushalt anlegen' })).toBeVisible();
   await expect(page).toHaveURL(/\/welcome$/);

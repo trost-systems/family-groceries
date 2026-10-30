@@ -73,6 +73,27 @@ supabase_up() {
   export SUPABASE_URL SUPABASE_PUBLISHABLE_KEY MAILPIT_URL
 }
 
+# Job 19: no CI build ever gets a real PostHog project key. CI builds have analytics off (web-prod,
+# flutter) or, for e2e, the stand-in key in app/config/e2e.json pointing at a .invalid host that
+# Playwright answers in place of PostHog. The committed production config never carries a key.
+no_posthog_in_ci() {
+  if [[ -n ${GITHUB_ACTIONS:-} && -n ${POSTHOG_PROJECT_API_KEY:-} ]]; then
+    echo "POSTHOG_PROJECT_API_KEY is set in a CI build; CI must never reach PostHog" >&2
+    return 1
+  fi
+  if grep -q POSTHOG "$REPO_ROOT/app/config/auth.json"; then
+    echo "app/config/auth.json names a PostHog define; keys come from the build environment" >&2
+    return 1
+  fi
+  local key host
+  key="$(sed -n 's/^ *"POSTHOG_PROJECT_API_KEY": *"\([^"]*\)".*/\1/p' "$REPO_ROOT/app/config/e2e.json")"
+  host="$(sed -n 's/^ *"POSTHOG_HOST": *"\([^"]*\)".*/\1/p' "$REPO_ROOT/app/config/e2e.json")"
+  if [[ $key != phc_e2e_fake_collector || $host != https://*.invalid ]]; then
+    echo "app/config/e2e.json must keep the stand-in PostHog key and a .invalid host" >&2
+    return 1
+  fi
+}
+
 flutter_defines() {
   echo "--dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY"
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
@@ -16,6 +17,7 @@ class const App({
   required final SocialSignIn social,
   required final DeviceCache cache,
   required final AccountRepository account,
+  required final Analytics analytics,
 
   /// The language picked under More, read before the first frame.
   final AppLanguage? language,
@@ -26,11 +28,24 @@ class const App({
 }
 
 class _AppState() extends State<App> {
-  late final GoRouter _router = buildRouter(widget.session);
+  late final GoRouter _router = buildRouter(widget.session, widget.analytics);
   late final _language = LanguageCubit(widget.cache, widget.language);
+
+  /// Sends what analytics has queued when the app goes to the background
+  /// or the tab is hidden: it may not come back.
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onHide: () => unawaited(widget.analytics.flush()),
+    );
+  }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _router.dispose();
     unawaited(_language.close());
     super.dispose();
@@ -48,6 +63,7 @@ class _AppState() extends State<App> {
       child: MultiBlocProvider(
         providers: [
           BlocProvider.value(value: widget.session),
+          BlocProvider.value(value: widget.analytics),
           BlocProvider.value(value: _language),
         ],
         child: BlocBuilder<LanguageCubit, AppLanguage?>(

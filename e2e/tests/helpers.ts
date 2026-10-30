@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { expect, type Locator, type Page } from '@playwright/test';
+import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import WebSocket from 'ws';
@@ -173,12 +173,94 @@ export async function typeInto(field: Locator, text: string): Promise<void> {
   }).toPass({ timeout: 20_000 });
 }
 
-export async function signUp(page: Page, email: string, path = '/'): Promise<void> {
+/**
+ * Signs up in a fresh browser context, then answers the analytics consent that follows the first
+ * sign-in on an install (job 19): declined unless [consent] says otherwise. Ends on onboarding
+ * (or its join form for an invite link).
+ */
+export async function signUp(
+  page: Page,
+  email: string,
+  path = '/',
+  { consent = 'decline' }: { consent?: ConsentChoice } = {},
+): Promise<void> {
   await page.goto(path);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Registrieren' }).click();
+  await answerConsent(page, consent);
 }
+
+export type ConsentChoice = 'accept' | 'decline';
+
+/** The analytics consent screen (job 19), asked once per install right after sign-in. */
+export const consentScreen = (page: Page) => page.getByRole('button', { name: 'Einverstanden' });
+
+/**
+ * Answers the analytics consent, which a fresh browser context sees after its first sign-in, and
+ * waits until the app moved on. Every first sign-in goes through here: the order sign-in,
+ * consent, onboarding or list is part of every spec.
+ */
+export async function answerConsent(page: Page, choice: ConsentChoice = 'decline'): Promise<void> {
+  await expect(page).toHaveURL(/\/analytics-consent(\?|$)/);
+  const answer = page.getByRole('button', { name: choice === 'accept' ? 'Einverstanden' : 'Ablehnen' });
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  // On a short screen the answers sit below the text: wheel down to them. Only then: the mouse
+  // left over the page would hover whatever comes next.
+  if (!(await answer.isVisible())) {
+    const size = page.viewportSize() ?? { width: 400, height: 800 };
+    await page.mouse.move(size.width / 2, size.height / 2);
+    await expect(async () => {
+      if (!(await answer.isVisible())) await page.mouse.wheel(0, 400);
+      await expect(answer).toBeVisible({ timeout: 500 });
+    }).toPass();
+  }
+  await answer.click();
+  await expect(page).not.toHaveURL(/\/analytics-consent/);
+}
+
+/** What the app sent to PostHog, as the stand-in collector received it. */
+export interface Captured {
+  event: string;
+  uuid: string;
+  properties: Record<string, unknown>;
+}
+
+/**
+ * Answers the e2e build's PostHog host (app/config/e2e.json, a .invalid host) in [context] and
+ * keeps every request: nothing leaves the machine. Any request to a real PostHog host fails the
+ * spec through [Collector.leaks].
+ */
+export async function fakeCollector(context: BrowserContext): Promise<Collector> {
+  const collector = { requests: [] as string[], events: [] as Captured[], leaks: [] as string[] };
+  await context.route('https://posthog.invalid/**', async (route) => {
+    const request = route.request();
+    collector.requests.push(`${request.method()} ${new URL(request.url()).pathname}`);
+    if (request.method() === 'POST') {
+      const body = request.postDataJSON() as { api_key: string; batch: Captured[] };
+      collector.events.push(...body.batch);
+    }
+    await route.fulfill({
+      status: 200,
+      headers: {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'POST, OPTIONS',
+        'access-control-allow-headers': 'content-type',
+      },
+      body: '{"status":1}',
+    });
+  });
+  await context.route(/^https:\/\/([a-z0-9-]+\.)*posthog\.com\//, async (route) => {
+    collector.leaks.push(route.request().url());
+    await route.abort();
+  });
+  return collector;
+}
+
+export type Collector = { requests: string[]; events: Captured[]; leaks: string[] };
+
+/** The names of what [collector] received, in order. */
+export const eventNames = (collector: Collector) => collector.events.map((e) => e.event);
 
 export async function signUpWithHousehold(page: Page, email: string): Promise<void> {
   await signUp(page, email);

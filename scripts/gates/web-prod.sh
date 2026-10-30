@@ -3,6 +3,7 @@
 # it never replaces the e2e build in app/build/web.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+no_posthog_in_ci
 cd "$REPO_ROOT/app"
 flutter pub get >/dev/null
 flutter build web --release --no-web-resources-cdn --wasm --output build/web-prod

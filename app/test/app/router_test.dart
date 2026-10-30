@@ -51,4 +51,57 @@ void main() {
       expect(authRedirect(session, Uri.parse(from)), to);
     });
   }
+
+  // Job 19: an install that has not decided on analytics is asked right
+  // after sign-in, before onboarding and before the list; an invite rides
+  // along every hop, and MCP's OAuth tab is not interrupted.
+  const ask = '/analytics-consent';
+  const asking = <(Session, String, String?)>[
+    (SessionLoading(), '/', null),
+    (SignedOut(), '/', '/login'),
+    (SignedOut(), ask, '/login'),
+    (SignedOut(), '/login', null),
+    (SignedOut(), '/join/ABCD2345', '/login?invite=ABCD2345'),
+    (NeedsHousehold('u'), '/login', ask),
+    (NeedsHousehold('u'), '/', ask),
+    (NeedsHousehold('u'), '/welcome', ask),
+    (NeedsHousehold('u'), ask, null),
+    (NeedsHousehold('u'), '/login?invite=ABCD2345', '$ask?invite=ABCD2345'),
+    (NeedsHousehold('u'), '/join/ABCD2345', '$ask?invite=ABCD2345'),
+    (NeedsHousehold('u'), '$ask?invite=ABCD2345', null),
+    (household, '/login', ask),
+    (household, '/', ask),
+    (household, '/more', ask),
+    (household, ask, null),
+    (household, '/login?invite=ABCD2345', '$ask?invite=ABCD2345'),
+    (household, '/join/ABCD2345', '$ask?invite=ABCD2345'),
+    (household, '$ask?invite=ABCD2345', null),
+    // MCP's OAuth consent keeps its `next` and is not interrupted.
+    (SignedOut(), consent, '/login?$next'),
+    (NeedsHousehold('u'), '/login?$next', '/welcome?$next'),
+    (NeedsHousehold('u'), consent, '/welcome?$next'),
+    (household, '/login?$next', consent),
+    (household, consent, null),
+  ];
+  for (final (session, from, to) in asking) {
+    test('asking consent: ${session.runtimeType} at $from goes to '
+        '${to ?? 'stays'}', () {
+      expect(authRedirect(session, Uri.parse(from), askConsent: true), to);
+    });
+  }
+
+  // Once decided, the consent page hands over: onboarding, the join page
+  // of the invite, or the list.
+  const decided = <(Session, String, String?)>[
+    (NeedsHousehold('u'), ask, '/welcome'),
+    (NeedsHousehold('u'), '$ask?invite=ABCD2345', '/welcome?invite=ABCD2345'),
+    (household, ask, '/'),
+    (household, '$ask?invite=ABCD2345', '/join/ABCD2345'),
+    (SignedOut(), ask, '/login'),
+  ];
+  for (final (session, from, to) in decided) {
+    test('decided: ${session.runtimeType} at $from goes to $to', () {
+      expect(authRedirect(session, Uri.parse(from)), to);
+    });
+  }
 }

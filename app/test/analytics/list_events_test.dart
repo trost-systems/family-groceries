@@ -1,0 +1,254 @@
+import 'dart:convert';
+
+import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
+import 'package:family_groceries/list/entry.dart';
+import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/model.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../list/fake_repository.dart';
+import '../list/memory_cache.dart';
+import 'fakes.dart';
+
+/// The list's analytics: one event per user action (AC3, AC9), never one
+/// for an op's retry, a realtime echo or an undo.
+void main() {
+  late FakeRepository repo;
+  late RecordingSink sink;
+  late Analytics analytics;
+  late ListCubit cubit;
+
+  Future<void> settle() => pumpEventQueue();
+
+  /// Events sent since the setup's first_open.
+  Future<List<Map<String, Object?>>> sent() async {
+    await analytics.flush();
+    return [
+      for (final e in sink.events)
+        if (e['event'] != 'first_open') e,
+    ];
+  }
+
+  /// Forgets what was sent so far, the setup's adds included.
+  Future<void> reset() async {
+    await analytics.flush();
+    sink.batches.clear();
+  }
+
+  Future<List<String>> names() async => [
+    for (final e in await sent()) e['event']! as String,
+  ];
+
+  Map<String, Object?> props(Map<String, Object?> event) =>
+      event['properties']! as Map<String, Object?>;
+
+  Future<String> addedId(String name) async {
+    final result = cubit.addEntry(parseEntry(name));
+    await settle();
+    return (result as Added).item.id;
+  }
+
+  setUp(() async {
+    repo = FakeRepository()
+      ..members = const [
+        Member(id: 'peter', displayName: 'Peter', role: 'owner'),
+        Member(id: 'lea', displayName: 'Lea', role: 'member'),
+      ];
+    sink = RecordingSink();
+    analytics = await loadedAnalytics(sink, MemoryAnalyticsStore())
+      ..setUser(customer);
+    await analytics.decide(granted: true);
+    cubit = ListCubit(
+      repo,
+      MemoryListCache(),
+      userId: 'peter',
+      analytics: analytics,
+    )..start();
+    await settle();
+  });
+
+  tearDown(() async {
+    await cubit.close();
+    await analytics.close();
+  });
+
+  group('ticks', () {
+    test('one tick, one item_ticked with role and size, no name', () async {
+      final id = await addedId('Hafermilch');
+      await reset();
+      cubit.tick(id);
+      await settle();
+      // The realtime echo of the server row.
+      repo.emitItem!(repo.rows[id]!);
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['item_ticked']);
+      expect(props(events.single)['actor_role'], 'owner');
+      expect(props(events.single)['household_size'], 2);
+      expect(props(events.single)['household_id'], householdA);
+      expect(jsonEncode(events), isNot(contains('Hafermilch')));
+    });
+
+    test('a tick made offline and sent on reconnect is one event', () async {
+      final id = await addedId('Brot');
+      await reset();
+      repo.online = false;
+      cubit.tick(id);
+      await settle();
+      expect(repo.sent.whereType<SetStatus>(), isEmpty);
+      repo.online = true;
+      await cubit.resync();
+      await settle();
+      await cubit.resync();
+      await settle();
+      expect(repo.sent.whereType<SetStatus>(), hasLength(1));
+      expect(await names(), ['item_ticked']);
+    });
+
+    test('undo sends nothing; ticking again is a new action', () async {
+      final id = await addedId('Butter');
+      await reset();
+      cubit
+        ..tick(id)
+        ..untick(id);
+      await settle();
+      expect(await names(), ['item_ticked']);
+      cubit.tick(id);
+      await settle();
+      expect(await names(), ['item_ticked', 'item_ticked']);
+    });
+
+    test('ticking an item that is not on the list sends nothing', () async {
+      final id = await addedId('Käse');
+      cubit.tick(id);
+      await settle();
+      await reset();
+      cubit
+        ..tick(id)
+        ..tick('nope');
+      await settle();
+      expect(await names(), isEmpty);
+    });
+  });
+
+  group('adds', () {
+    test('each add says where it came from', () async {
+      cubit.addEntry(parseEntry('Milch'));
+      await cubit.addSpoken('Gurken und Tomaten');
+      cubit.addUsual(const Usual(name: 'Eier', due: true));
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), everyElement('item_added'));
+      expect(events.map((e) => props(e)['source']), [
+        'typed',
+        'spoken',
+        'spoken',
+        'suggestion',
+      ]);
+      expect(jsonEncode(events), isNot(contains('Gurken')));
+    });
+
+    test(
+      "the add sheet's typed row is typed, any other row a suggestion",
+      () async {
+        final sheet = AddSheetCubit(cubit);
+        addTearDown(sheet.close);
+        sheet
+          ..take(
+            const Suggestion(
+              SuggestionSource.typed,
+              ParsedEntry(name: 'Milch'),
+            ),
+          )
+          ..take(
+            const Suggestion(
+              SuggestionSource.history,
+              ParsedEntry(name: 'Hafermilch', brand: 'Oatly'),
+            ),
+          )
+          ..take(
+            const Suggestion(SuggestionSource.due, ParsedEntry(name: 'Eier')),
+          );
+        await settle();
+        final events = await sent();
+        expect(events.map((e) => props(e)['source']), [
+          'typed',
+          'suggestion',
+          'suggestion',
+        ]);
+        expect(jsonEncode(events), isNot(contains('Oatly')));
+      },
+    );
+
+    test('an item already on the list is no add', () async {
+      await addedId('Milch');
+      await reset();
+      cubit.addEntry(parseEntry('milch'));
+      await settle();
+      expect(await names(), isEmpty);
+    });
+
+    test('a re-add from recently bought is an add, a restore is not', () async {
+      final bought = await addedId('Mehl');
+      final deleted = await addedId('Zucker');
+      cubit.tick(bought);
+      await settle();
+      final item = cubit.state.items[deleted]!;
+      cubit.delete(deleted);
+      await settle();
+      await reset();
+      cubit
+        ..readd(bought)
+        ..restore(item);
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['item_added']);
+      expect(props(events.single)['source'], 'suggestion');
+    });
+  });
+
+  group('reorders', () {
+    test('a new route order is category_reordered, scope default', () async {
+      await cubit.reorderCategories(['chilled', 'produce', 'other']);
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['category_reordered']);
+      expect(props(events.single)['scope'], 'default');
+    });
+
+    test("a store's new layout is category_reordered, scope store", () async {
+      await cubit.setStoreLayout('lidl', ['chilled', 'other', 'produce'], {});
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['category_reordered']);
+      expect(props(events.single)['scope'], 'store');
+    });
+
+    test('hiding a category in a store is no reorder', () async {
+      await cubit.setStoreLayout(
+        'lidl',
+        ['other', 'chilled', 'produce'],
+        {'produce'},
+      );
+      expect(await names(), isEmpty);
+    });
+
+    test('a new store order is store_reordered', () async {
+      await cubit.reorderStores(['lidl', 'dm']);
+      expect(await names(), ['store_reordered']);
+    });
+
+    test(
+      'the same order, an offline or a refused change send nothing',
+      () async {
+        await cubit.reorderCategories(['produce', 'chilled', 'other']);
+        repo.reject = true;
+        await cubit.reorderStores(['lidl', 'dm']);
+        repo.online = false;
+        await cubit.resync();
+        await cubit.reorderCategories(['chilled', 'produce', 'other']);
+        expect(await names(), isEmpty);
+      },
+    );
+  });
+}

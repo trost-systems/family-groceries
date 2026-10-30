@@ -1,4 +1,6 @@
 {
   "GOOGLE_WEB_CLIENT_ID": "family-groceries-e2e",
-  "SIGN_IN_WITH_APPLE": "true"
+  "SIGN_IN_WITH_APPLE": "true",
+  "POSTHOG_PROJECT_API_KEY": "phc_e2e_fake_collector",
+  "POSTHOG_HOST": "https://posthog.invalid"
 }
