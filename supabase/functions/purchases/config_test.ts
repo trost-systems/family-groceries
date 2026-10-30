@@ -32,6 +32,12 @@ Deno.test('unset or unknown environments leave the function inert', () => {
   );
 });
 
+Deno.test('Production without Sandbox stays inert: App Review buys in the sandbox', () => {
+  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Production' })).environments, []);
+  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Production,Xcode' })).environments, []);
+  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Sandbox' })).environments, ['Sandbox']);
+});
+
 Deno.test('the In-App Purchase key needs all three parts', () => {
   assertEquals(configFrom(env({ APPLE_IAP_KEY_ID: 'K', APPLE_IAP_ISSUER_ID: 'I' })).appleKey, null);
   assertEquals(

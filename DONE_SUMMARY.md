@@ -320,3 +320,7 @@ App Store Server API with a key, Server Notifications V2; Google Play Developer 
 daily voided poll) before `entitlements` unlocks it; More → Hummlist Lifetime in the iOS and
 Android app, a note plus the unlock on the web. Inert until NEEDS_PETER/NEEDS_LEAD "Job 25" are
 done. Details, tests, screenshots: `docs/done/25-iap-sandbox.md`; design: `docs/PURCHASES.md`.
+
+## Job 25b: Hummlist Lifetime review follow-ups
+
+A receipt the server refuses for good is finished with the store and shown once, not re-sent on every retry and launch. Production-only `PURCHASES_ENVIRONMENTS` is inert, so App Review's sandbox purchases wait instead of being refused. Apple notifications must carry a transaction from their own environment. `scripts/gates/e2e.sh -- <spec>` runs only that spec. Details: [docs/done/25b-iap-followups.md](docs/done/25b-iap-followups.md).

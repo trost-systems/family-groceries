@@ -1170,7 +1170,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String lifetimeRefused(String code) {
-    return 'Der Beleg des Stores wurde nicht angenommen ($code).';
+    return 'Der Beleg des Stores wurde nicht angenommen ($code). Falls du Hummlist Lifetime gekauft hast, tippe später auf „Käufe wiederherstellen“.';
   }
 
   @override

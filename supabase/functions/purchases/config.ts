@@ -1,8 +1,10 @@
 // The purchases function's settings from the environment (docs/PURCHASES.md, "Configuration").
 // Every value is a Supabase function secret the Lead sets (NEEDS_LEAD Job 25); none is in the repo.
 //   PURCHASES_ENVIRONMENTS: which store environments may unlock, comma-separated: "Sandbox"
-//     (TestFlight, Apple sandbox testers, Play license testers), "Production", or both. Unset, the
-//     function is inert: every route answers 503 not_configured.
+//     (TestFlight, Apple sandbox testers, Play license testers) or "Production,Sandbox". Unset, the
+//     function is inert: every route answers 503 not_configured. "Production" without "Sandbox"
+//     leaves it inert too: App Review buys in the sandbox, and a refusal is final for the app
+//     (DECISIONS 25b.2), while a 503 keeps the purchase queued until the list is fixed.
 //   APPLE_IAP_KEY_ID, APPLE_IAP_ISSUER_ID, APPLE_IAP_PRIVATE_KEY: an App Store Connect In-App
 //     Purchase key (not the App Store Connect API key). Optional: without it Apple transactions are
 //     verified from their signature alone; with it the App Store Server API is asked too.
@@ -55,8 +57,12 @@ export function configFrom(env: Env): PurchasesConfig {
       console.error('purchases: PURCHASES_TEST_ROOT_PEM ignored outside the local stack');
     }
   }
+  const productionOnly = environments.includes('Production') && !environments.includes('Sandbox');
+  if (productionOnly) {
+    console.error('purchases: PURCHASES_ENVIRONMENTS=Production needs Sandbox too; inert');
+  }
   return {
-    environments: [...new Set(environments)],
+    environments: productionOnly ? [] : [...new Set(environments)],
     apple: { anchors, bundleId: appId, now: () => new Date() },
     appleKey: keyId && issuerId && privateKey
       ? { keyId, issuerId, privateKey: privateKey.replaceAll('\\n', '\n') }

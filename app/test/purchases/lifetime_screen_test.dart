@@ -23,6 +23,7 @@ void main() {
     'lifetime-unavailable',
     'lifetime-offline',
     'lifetime-error',
+    'lifetime-not-accepted',
     'lifetime-canceled',
     'lifetime-used-elsewhere',
     'lifetime-nothing-restored',
@@ -192,6 +193,28 @@ void main() {
     );
     shows({'lifetime-offline', 'lifetime-retry'});
     expect(key('lifetime-buy'), findsNothing);
+  });
+
+  testWidgets('a refused proof: not accepted, restore later, no retry', (
+    tester,
+  ) async {
+    final more = await openLifetime(
+      tester,
+      api: FakePurchaseApi(answer: const VerificationRefused('bad_signature')),
+    );
+    more.purchases.repository.send(paid('jws-1'));
+    await tester.pumpAndSettle();
+    shows({'lifetime-not-accepted'});
+    expect(
+      find.text(
+        'Der Beleg des Stores wurde nicht angenommen (bad_signature). Falls '
+        'du Hummlist Lifetime gekauft hast, tippe später auf „Käufe '
+        'wiederherstellen“.',
+      ),
+      findsOneWidget,
+    );
+    expect(enabled(tester, 'lifetime-buy'), isTrue);
+    expect(enabled(tester, 'lifetime-restore'), isTrue);
   });
 
   testWidgets('used in another household', (tester) async {

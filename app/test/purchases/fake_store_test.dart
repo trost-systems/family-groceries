@@ -5,24 +5,13 @@ import 'package:family_groceries/purchases/fake_store.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class MemoryLedger() implements FakeLedgerStore {
-  String? contents;
-
-  @override
-  Future<String?> read() async => contents;
-
-  @override
-  Future<void> write(String contents) async => this.contents = contents;
-}
-
-/// What the local stack's signer would sign, as text the test can read.
-Future<String> sign(String id) async => 'signed:$id';
+import 'fakes.dart';
 
 void main() {
   ({FakeStore store, List<StoreUpdate> seen}) open(
     FakeStoreMode mode,
     MemoryLedger ledger, {
-    SignTransaction signer = sign,
+    SignTransaction signer = fakeSign,
   }) {
     final store = FakeStore(mode, sign: signer, ledger: ledger);
     final seen = <StoreUpdate>[];

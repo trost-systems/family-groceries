@@ -26,11 +26,15 @@ final class const FlowVerifying() extends PurchaseFlow;
 
 final class const FlowCanceled() extends PurchaseFlow;
 
-/// The store or the server failed; a store transaction, if any, stays
-/// unfinished and is verified again on [PurchaseCubit.retry] and at the next
-/// start.
+/// The store or the server failed for now; a store transaction, if any,
+/// stays unfinished and is verified again on [PurchaseCubit.retry] and at the
+/// next start.
 final class const FlowFailed(final FailureKind kind, final String code)
     extends PurchaseFlow;
+
+/// The server refused the store's proof for good. The store transaction is
+/// finished; only a restore the user asks for sends it again.
+final class const FlowNotAccepted(final String code) extends PurchaseFlow;
 
 /// The purchase is already unlocked for another household.
 final class const FlowUsedElsewhere() extends PurchaseFlow;
@@ -50,9 +54,6 @@ enum FailureKind() {
 
   /// Too many verifications; later.
   rateLimited,
-
-  /// The server refused the proof.
-  refused,
 
   /// The server failed, or did not accept the session.
   server,
@@ -86,8 +87,9 @@ const restoreGrace = Duration(seconds: 2);
 /// earlier session left unfinished arrives as soon as the store is heard.
 ///
 /// A store transaction is finished only after the server's final word
-/// ([Verified]); without an answer it stays unfinished and is verified again
-/// on [retry], when the session gets a household, and at the next start.
+/// ([Verified], or [VerificationRefused] for a proof it never accepts);
+/// without one it stays unfinished and is verified again on [retry], when the
+/// session gets a household, and at the next start.
 class PurchaseCubit(
   final PurchaseRepository _store,
   final PurchaseApi _api,
@@ -240,14 +242,7 @@ class PurchaseCubit(
       }
       switch (answer) {
         case Verified(:final outcome):
-          _unverified.remove(purchase.proof.data);
-          try {
-            await _store.finish(purchase);
-          } on Object {
-            // The server's answer stands; the store hands the unfinished
-            // transaction over again at the next start, which verifies it
-            // again (restored) and finishes it then.
-          }
+          await _finish(purchase);
           if (outcome == VerifyOutcome.granted ||
               outcome == VerifyOutcome.restored) {
             await _entitlements.refresh();
@@ -263,17 +258,31 @@ class PurchaseCubit(
           );
         case VerificationPending():
           _emit(flow: const FlowAwaitingApproval());
+        case VerificationRefused(:final code):
+          await _finish(purchase);
+          _emit(flow: FlowNotAccepted(code));
         case VerificationFailed(:final problem, :final code):
           _emit(
             flow: FlowFailed(switch (problem) {
               VerifyProblem.offline => FailureKind.offline,
               VerifyProblem.rateLimited => FailureKind.rateLimited,
-              VerifyProblem.refused => FailureKind.refused,
               VerifyProblem.session ||
               VerifyProblem.server => FailureKind.server,
             }, code),
           );
       }
+    }
+  }
+
+  /// After the server's final word: never sent again in this session.
+  Future<void> _finish(StorePurchased purchase) async {
+    _unverified.remove(purchase.proof.data);
+    try {
+      await _store.finish(purchase);
+    } on Object {
+      // The server's answer stands; the store hands the unfinished
+      // transaction over again at the next start, which verifies it again
+      // and finishes it then.
     }
   }
 

@@ -18,7 +18,9 @@ are in place. Built in job 25, sandbox only. Decisions: DECISIONS.md "Job 25".
    `revoked` or `refunded`; Google payments still in progress answer `pending` (202).
 4. Only after such a definitive answer does the app finish the store transaction. A network
    error, the store or the function being down, or a 503 keeps it unfinished: the store hands it
-   over again on the next start, so a purchase interrupted by a killed app is granted then.
+   over again on the next start, so a purchase interrupted by a killed app is granted then. A
+   refusal (400, 422) is definitive too: the app finishes the transaction, says the receipt was
+   not accepted and sends it again only on a restore the user asks for (DECISIONS 25b.1).
 5. Every member's app reads the household's `entitlements` rows (RLS: members only) and hears new
    ones over Realtime: the partner's phone shows "Freigeschaltet" without buying.
 6. Refunds: Apple sends App Store Server Notifications V2 (`REFUND`, `REVOKE`) to
@@ -31,7 +33,9 @@ are in place. Built in job 25, sandbox only. Decisions: DECISIONS.md "Job 25".
 | --- | --- |
 | Double tap on Buy, app killed mid-purchase | One store purchase; the transaction stays unfinished until the server answered, so the next start verifies it |
 | Restore on a new phone or the partner's phone | Household already unlocked: shown at once. Restore re-verifies (`restored`, `purchase_restored`) |
-| Forged or modified JWS, other app, other product, Sandbox JWS on a Production-only config | 422 `refused` with the reason, nothing stored, logged by reason only |
+| Forged or modified JWS, other app, other product, a JWS from an environment not configured | 422 `refused` with the reason, nothing stored, logged by reason only; the app finishes it and a restore sends it again |
+| `PURCHASES_ENVIRONMENTS=Production` without Sandbox | Inert (503 `not_configured`): App Review's sandbox purchases stay queued in the app instead of being refused (DECISIONS 25b.2) |
+| Apple notification whose transaction is from another environment than the notification | 400 `environment_mismatch`, nothing changed |
 | The same transaction from another household | `used_elsewhere`: one household per purchase |
 | Refund or revoke | Unlock removed, `purchase_refunded` once (the `revoked_at` transition). A refund of a transaction never verified is recorded as revoked, so its receipt never unlocks later |
 | Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; it completes when the store delivers the approved transaction |
@@ -80,7 +84,7 @@ function is inert: everything but `GET /purchases` answers 503 `not_configured`.
 
 | Secret | Meaning |
 | --- | --- |
-| `PURCHASES_ENVIRONMENTS` | `Sandbox` while only TestFlight and testers buy; `Production,Sandbox` from App Store review on (App Review buys in the sandbox) |
+| `PURCHASES_ENVIRONMENTS` | `Sandbox` while only TestFlight and testers buy; `Production,Sandbox` from App Store review on (App Review buys in the sandbox). `Production` alone leaves the function inert |
 | `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY` | In-App Purchase key (Users and Access > Integrations > In-App Purchase), not the App Store Connect API key. Optional: without it Apple is verified from the signature alone |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | The Play service account's JSON key. Without it Google answers 503 |
 | `PURCHASES_CRON_SECRET` | Bearer token of the voided poll; the same value as the repository secret of that name |

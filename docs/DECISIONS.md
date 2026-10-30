@@ -4346,3 +4346,58 @@ change". Overview: docs/PURCHASES.md.
     live" intercepted every channel's "Subscribed to PostgreSQL" frame and released whichever came
     first; when the entitlements channel won, the list never caught up (CI run 41116236878). The
     spec now holds back only the list channel's frames.
+
+## Job 25b: Hummlist Lifetime review follow-ups, 2026-10-30
+
+Job 25's review 0 (PASS) listed nice-to-haves that are real behavior gaps; these are the calls.
+
+1. **A refused proof is a final word: the app finishes it.** The function answers 400 or 422
+   for a proof it will never accept as sent: wrong environment, product or app, a forged or
+   malformed JWS, a purchase the store does not know. The app used to keep such a transaction
+   unfinished, send it again on every retry and session change (each try spends one of the
+   user's verifications before the refusal), show the error with a Retry that could not help,
+   and get it from the store again at every launch. Now `VerificationRefused` is its own answer,
+   next to `Verified`: the cubit finishes the transaction with the store and shows one note
+   (`lifetime-not-accepted`, "… tippe später auf „Käufe wiederherstellen“"), without Retry.
+   Offline, 429, 401/403 and 5xx (502 store unavailable, 503 not configured) stay
+   `VerificationFailed`: unfinished, sent again on retry, on session change and at the next start.
+   Why finishing can't lose a purchase that would verify later (for example after
+   `PURCHASES_ENVIRONMENTS` changes):
+   - Finishing a non-consumable only tells the store the app has handled it. It is not consumed
+     and not refunded. A restore the user asks for hands it over again. On iOS the plugin's
+     `restorePurchases` reads `Transaction.currentEntitlements`, which holds finished
+     non-consumables until a refund. On Android it calls `queryPurchases(inapp)`, which returns
+     every owned purchase, acknowledged or not. The cubit verifies a restored, already finished
+     transaction only when the user asked for the restore, with `source: restore`. The server
+     then decides under its configuration at that time. A refusal writes nothing on the server,
+     so nothing blocks a later grant (`purchase_cubit_test.dart` covers the refusal, then a restore
+     that grants).
+   - Leaving it unfinished doesn't help, and on Android it does harm. Only a change on the server
+     changes the answer (its environment list, a code fix), and the app can't see that change. A
+     purchase that stays unacknowledged for three days is refunded by Play, so keeping it open is
+     what would lose it there.
+   - The note tells the user how to get it back: restore later. Peter or support can tell them
+     the same once the configuration is fixed.
+2. **Production without Sandbox makes the function inert, not refusing.** Take the case of a
+   TestFlight or App Review purchase against `PURCHASES_ENVIRONMENTS=Production`. App Review buys
+   in the sandbox for every submission, and so do TestFlight testers. With such a list, every one
+   of those purchases would get a 422 `wrong_environment`, which is now final for the app (1),
+   and only a manual restore would bring it back. So `configFrom` doesn't accept that list. With
+   Production but no Sandbox it logs an error and leaves `environments` empty. Every verification
+   then answers 503 `not_configured` (`GET /purchases` shows `configured: false`), and 503 is
+   transient: the app keeps the purchase unfinished and verifies it by itself as soon as the list
+   is fixed. The two valid settings stay as in docs/PURCHASES.md: `Sandbox` before review,
+   `Production,Sandbox` from review on. Sandbox purchases are marked internal and their unlocks
+   are marked Sandbox (25.27), so accepting Sandbox in production costs nothing.
+3. **A notification's transaction must come from the notification's environment.** The handler
+   checks `data.environment` against the allowed list, then acts on `signedTransactionInfo`.
+   `appleNotification` now refuses a payload whose transaction has a different `environment`
+   (`environment_mismatch`, answered 400, nothing changed). Apple signs both, so a mismatch can't
+   be forged. The check makes "the environment we checked is the one we act on" hold by
+   construction, and the transaction's environment is allowed through the outer check.
+4. **`scripts/gates/e2e.sh -- <spec>` narrows to the spec.** Playwright ignores every argument
+   after a `--` and runs the whole suite, which the reviewer hit (18 minutes instead of one spec).
+   The gate now drops a leading `--`, so `e2e.sh -- <spec>`, `e2e.sh <spec>` and `verify.sh --only
+   e2e -- <spec>` all run one spec. `scripts/e2e-gate-test.sh` (lint gate) runs the real gate
+   with the stack, the build and Playwright stubbed out. It checks the arguments Playwright gets
+   and when the fg sync smoke test runs.

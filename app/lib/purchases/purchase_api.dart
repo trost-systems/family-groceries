@@ -16,17 +16,14 @@ enum VerifyOutcome(final String wire) {
       values.where((v) => v.wire == wire).firstOrNull;
 }
 
-/// Why a verification gave no final word. The transaction stays unfinished
-/// and is verified again.
+/// Why a verification gave no final word yet: a transient problem. The
+/// transaction stays unfinished and is verified again.
 enum VerifyProblem() {
   /// No answer: offline, a timeout.
   offline,
 
   /// 429: too many verifications.
   rateLimited,
-
-  /// 400, 422: the server refused the proof.
-  refused,
 
   /// 401, 403: the session or household the server saw.
   session,
@@ -42,6 +39,14 @@ final class const Verified(final VerifyOutcome outcome) extends Verification;
 
 /// A Play payment not completed yet (202).
 final class const VerificationPending() extends Verification;
+
+/// 400 or 422: the server refused the proof for good (wrong environment,
+/// product or app, forged, malformed). Finished like a final word; a restore
+/// sends it again.
+final class const VerificationRefused(
+  /// The function's `reason` (or `error`) or the HTTP status.
+  final String code,
+) extends Verification;
 
 final class const VerificationFailed(
   final VerifyProblem problem,
@@ -101,18 +106,19 @@ Verification verificationOfError(Object error) => switch (error) {
   // Thrown when the request never got an answer.
   FunctionsFetchException() || ClientException() || TimeoutException() =>
     const VerificationFailed(VerifyProblem.offline, 'offline'),
-  FunctionException(:final status, :final details) => VerificationFailed(
-    switch (status) {
+  FunctionException(:final status, :final details) => switch (status) {
+    400 || 422 => VerificationRefused(_code(status, details)),
+    _ => VerificationFailed(switch (status) {
       429 => VerifyProblem.rateLimited,
-      400 || 422 => VerifyProblem.refused,
       401 || 403 => VerifyProblem.session,
       _ => VerifyProblem.server,
-    },
-    switch (details) {
-      {'error': 'refused', 'reason': final String reason} => reason,
-      {'error': final String code} => code,
-      _ => '$status',
-    },
-  ),
+    }, _code(status, details)),
+  },
   _ => VerificationFailed(VerifyProblem.server, '${error.runtimeType}'),
+};
+
+String _code(int status, Object? details) => switch (details) {
+  {'error': 'refused', 'reason': final String reason} => reason,
+  {'error': final String code} => code,
+  _ => '$status',
 };

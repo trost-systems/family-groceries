@@ -113,3 +113,12 @@ unavailable, offline, error, More) from the real page with the fake store in a w
   prices. Each is a NEEDS_LEAD step's first run.
 - The fg recipe could not run here (no Linux desktop toolchain); the web e2e and the widget
   renders cover the page instead.
+
+## Landing record
+
+- Merged #129 on 2026-10-30: PR head a9f88c0, main ed7396c (rebase-merge re-commits; same tree).
+- CI on a9f88c0: run https://github.com/trost-systems/family-groceries/actions/runs/41124293915,
+  green after one rerun of e2e shard 1: `classifier.spec.ts:59` add sheet not opening after the
+  field click, the known flake (issue #111, occurrence added; #131 closed as its duplicate).
+- Earlier green run on 6fc6c37 (same code): https://github.com/trost-systems/family-groceries/actions/runs/41118314642.
+- Follow-ups: issue #130 (StoreKitTest XCTests not running in CI's ios job).

@@ -2003,7 +2003,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifetimeRefused.
   ///
   /// In de, this message translates to:
-  /// **'Der Beleg des Stores wurde nicht angenommen ({code}).'**
+  /// **'Der Beleg des Stores wurde nicht angenommen ({code}). Falls du Hummlist Lifetime gekauft hast, tippe später auf „Käufe wiederherstellen“.'**
   String lifetimeRefused(String code);
 
   /// No description provided for @lifetimeServerFailed.

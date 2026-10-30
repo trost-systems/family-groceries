@@ -64,14 +64,23 @@ void main() {
       );
     });
 
+    const refusals = <(int, Object?, String)>[
+      (400, {'error': 'bad_request'}, 'bad_request'),
+      (422, {'error': 'refused', 'reason': 'bad_signature'}, 'bad_signature'),
+      (422, '', '422'),
+    ];
+    for (final (status, details, code) in refusals) {
+      test('$status is refused for good ($code)', () {
+        expect(
+          verificationOfError(
+            FunctionsHttpException(status: status, details: details),
+          ),
+          isA<VerificationRefused>().having((f) => f.code, 'code', code),
+        );
+      });
+    }
+
     const errors = <(int, Object?, VerifyProblem, String)>[
-      (400, {'error': 'bad_request'}, VerifyProblem.refused, 'bad_request'),
-      (
-        422,
-        {'error': 'refused', 'reason': 'bad_signature'},
-        VerifyProblem.refused,
-        'bad_signature',
-      ),
       (401, {'error': 'invalid_token'}, VerifyProblem.session, 'invalid_token'),
       (403, {'error': 'no_household'}, VerifyProblem.session, 'no_household'),
       (

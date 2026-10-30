@@ -8,7 +8,8 @@
 //   3. the leaf carries Apple's App Store receipt-signing OID 1.2.840.113635.100.6.11.1, the
 //      intermediate the Apple WWDR OID 1.2.840.113635.100.6.2.1;
 //   4. the JWS signature verifies with the leaf's key;
-//   5. bundleId is ours, then (applePurchase) productId and environment.
+//   5. bundleId is ours, then (applePurchase) productId and environment; a notification's
+//      transaction is from the notification's own environment.
 // With an In-App Purchase key (NEEDS_LEAD Job 25) the handler also asks the App Store Server API
 // for the transaction's current state ([AppStoreServerApi]), which reports refunds and revocations
 // the app's copy cannot know about. OCSP revocation of Apple's certificates is not checked: the
@@ -172,6 +173,10 @@ export async function appleNotification(
   if (n.data?.bundleId !== trust.bundleId) throw new Refused('wrong_app');
   const signed = n.data?.signedTransactionInfo;
   const transaction = signed ? await appleTransaction(signed, trust) : null;
+  // The handler decides on the outer environment; the transaction it acts on must be from it.
+  if (transaction && transaction.environment !== n.data?.environment) {
+    throw new Refused('environment_mismatch');
+  }
   return { ...n, transaction };
 }
 

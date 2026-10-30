@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/fake_store.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
@@ -177,8 +179,6 @@ void main() {
           FailureKind.server,
       VerificationFailed(VerifyProblem.session, 'invalid_token'):
           FailureKind.server,
-      VerificationFailed(VerifyProblem.refused, 'bad_signature'):
-          FailureKind.refused,
     };
     for (final MapEntry(key: answer, value: shown) in open.entries) {
       test('$answer: unfinished, verified again on retry', () async {
@@ -212,6 +212,125 @@ void main() {
       await pumpEventQueue();
       expect(api.calls, hasLength(1));
       expect(p.repository.finished, hasLength(1));
+    });
+  });
+
+  group('a refused proof', () {
+    test('is finished, not accepted, and never sent again', () async {
+      final api = FakePurchaseApi(
+        answer: const VerificationRefused('bad_signature'),
+      );
+      final p = await started(session: const NeedsHousehold('peter'), api: api);
+      p.repository.send(paid('jws-1'));
+      await (p.session as TestSession).createHousehold('Zuhause');
+      await pumpEventQueue();
+      expect(api.calls, hasLength(1));
+      expect(p.repository.finished.map((f) => f.data), ['jws-1']);
+      expect(
+        p.purchases.state.flow,
+        isA<FlowNotAccepted>().having((f) => f.code, 'code', 'bad_signature'),
+      );
+      api.answer = const Verified(VerifyOutcome.granted);
+      await p.purchases.retry();
+      await (p.session as TestSession).join('ABC123');
+      await pumpEventQueue();
+      expect(api.calls, hasLength(1), reason: 'the answer stays the same');
+      expect(p.purchases.state.flow, isA<FlowNotAccepted>());
+    });
+
+    test('next to an offline one: only the offline one goes again', () async {
+      final api = FakePurchaseApi()..hold = true;
+      final p = await started(api: api);
+      p.repository
+        ..send(paid('jws-refused'))
+        ..send(paid('jws-offline'));
+      await pumpEventQueue();
+      api.pending.removeAt(0).complete(const VerificationRefused('wrong_app'));
+      await pumpEventQueue();
+      api.pending
+          .removeAt(0)
+          .complete(const VerificationFailed(VerifyProblem.offline, 'offline'));
+      await pumpEventQueue();
+      expect(p.repository.finished.map((f) => f.data), ['jws-refused']);
+      api.hold = false;
+      await p.purchases.retry();
+      expect(api.calls.map((c) => c.$1.data), [
+        'jws-refused',
+        'jws-offline',
+        'jws-offline',
+      ]);
+      expect(p.repository.finished.map((f) => f.data), [
+        'jws-refused',
+        'jws-offline',
+      ]);
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+    });
+
+    test('a restore sends it again, and a grant then unlocks', () async {
+      // Finishing a refused proof never loses a purchase that verifies
+      // later, e.g. once the server accepts another environment.
+      final rows = FakeEntitlementsSource();
+      final api = FakePurchaseApi(
+        answer: const VerificationRefused('wrong_environment'),
+      )..onGrant = () => rows.unlockedNow = true;
+      final p = await started(api: api, rows: rows);
+      p.repository.send(paid('jws-1'));
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowNotAccepted>());
+      api.answer = const Verified(VerifyOutcome.restored);
+      p.repository.owned = [
+        paid('jws-1', source: PurchaseSource.restore, alreadyFinished: true),
+      ];
+      await p.purchases.restore();
+      await pumpEventQueue();
+      expect(api.calls.map((c) => (c.$1.data, c.$2)), [
+        ('jws-1', PurchaseSource.purchase),
+        ('jws-1', PurchaseSource.restore),
+      ]);
+      expect(p.entitlements.isUnlocked, isTrue);
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+    });
+
+    test('is not handed over again at the next start', () async {
+      final ledger = MemoryLedger();
+      final api = FakePurchaseApi(
+        answer: const VerificationRefused('wrong_environment'),
+      );
+      final session = TestSession(home);
+      addTearDown(session.close);
+      Future<PurchaseCubit> launch() async {
+        final entitlements = Entitlements(FakeEntitlementsSource(), session);
+        final cubit = PurchaseCubit(
+          FakeStore(FakeStoreMode.ok, sign: fakeSign, ledger: ledger),
+          api,
+          entitlements,
+          session,
+        );
+        addTearDown(entitlements.close);
+        addTearDown(cubit.close);
+        await pumpEventQueue();
+        return cubit;
+      }
+
+      final first = await launch();
+      await first.buy();
+      await pumpEventQueue();
+      expect(first.state.flow, isA<FlowNotAccepted>());
+      await first.close();
+      await launch();
+      expect(api.calls, hasLength(1), reason: 'the store kept it finished');
+    });
+
+    test('is not sent again when the store fails to finish it', () async {
+      final store = FakePurchaseRepository()
+        ..failFinish = Exception('channel closed');
+      final api = FakePurchaseApi(answer: const VerificationRefused('forged'));
+      final p = await started(store: store, api: api);
+      p.repository.send(paid('jws-1'));
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowNotAccepted>());
+      await p.purchases.retry();
+      expect(api.calls, hasLength(1));
     });
   });
 

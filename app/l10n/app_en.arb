@@ -444,7 +444,7 @@
   "@lifetimeStoreFailed": {"placeholders": {"code": {"type": "String"}}},
   "lifetimeVerifyOffline": "No connection. The purchase is kept and checked as soon as you're online.",
   "lifetimeRateLimited": "Too many attempts. Try again later.",
-  "lifetimeRefused": "The store's receipt was not accepted ({code}).",
+  "lifetimeRefused": "The store's receipt was not accepted ({code}). If you bought Hummlist Lifetime, tap “Restore purchases” later.",
   "@lifetimeRefused": {"placeholders": {"code": {"type": "String"}}},
   "lifetimeServerFailed": "The purchase couldn't be checked ({code}). It is kept; try again later.",
   "@lifetimeServerFailed": {"placeholders": {"code": {"type": "String"}}},

@@ -456,7 +456,7 @@
   "@lifetimeStoreFailed": {"placeholders": {"code": {"type": "String"}}},
   "lifetimeVerifyOffline": "Keine Verbindung. Der Kauf bleibt gespeichert und wird geprüft, sobald du online bist.",
   "lifetimeRateLimited": "Zu viele Versuche. Versuche es später erneut.",
-  "lifetimeRefused": "Der Beleg des Stores wurde nicht angenommen ({code}).",
+  "lifetimeRefused": "Der Beleg des Stores wurde nicht angenommen ({code}). Falls du Hummlist Lifetime gekauft hast, tippe später auf „Käufe wiederherstellen“.",
   "@lifetimeRefused": {"placeholders": {"code": {"type": "String"}}},
   "lifetimeServerFailed": "Der Kauf konnte nicht geprüft werden ({code}). Er bleibt gespeichert; versuche es später erneut.",
   "@lifetimeServerFailed": {"placeholders": {"code": {"type": "String"}}},

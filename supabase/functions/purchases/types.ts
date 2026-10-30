@@ -49,6 +49,7 @@ export type Refusal =
   | 'wrong_app'
   | 'wrong_product'
   | 'wrong_environment'
+  | 'environment_mismatch'
   | 'unknown_purchase';
 
 export class Refused extends Error {
