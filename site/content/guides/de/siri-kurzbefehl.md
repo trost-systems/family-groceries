@@ -38,14 +38,14 @@ Die App zeigt den Token nur dieses eine Mal an. Füge ihn am besten direkt in Sc
 
 ## Schritt 2: Kurzbefehl anlegen
 
-1. Öffne die App **Kurzbefehle** und tippe oben rechts auf **+**.
-2. Tippe oben auf den Namen und nenne den Kurzbefehl `Einkaufsliste`. Dieser Name ist der Satz, auf den Siri hört.
+1. Öffne die App **Kurzbefehle** und tippe oben rechts auf **Hinzufügen** (**+**).
+2. Tippe oben auf **Neuer Kurzbefehl** und dann auf **Umbenennen**. Gib `Einkaufsliste` ein und tippe auf **Fertig**. Dieser Name ist der Satz, auf den Siri hört.
 3. Füge die drei Aktionen unten in dieser Reihenfolge hinzu. Du findest jede über **Aktion hinzufügen** oder das Suchfeld unten.
 
 ### Aktion 1: Text diktieren
 
 1. Füge **Text diktieren** hinzu.
-2. Tippe in der Aktion auf den Pfeil (**>**) und stelle ein:
+2. Tippe in der Aktion auf **Mehr anzeigen** (den Pfeil **>**) und stelle ein:
    - **Sprache:** `Deutsch (Deutschland)`
    - **Aufnahme beenden:** `Nach Pause`
    - **Eingabeaufforderung:** `Was soll auf die Liste?`
@@ -59,12 +59,12 @@ Die App zeigt den Token nur dieses eine Mal an. Füge ihn am besten direkt in Sc
    https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/voice?format=text
    ~~~
 
-3. Tippe auf den Pfeil (**>**) und stelle ein:
+3. Tippe auf **Mehr anzeigen** (den Pfeil **>**) und stelle ein:
    - **Methode:** `POST`
    - **Header:** Tippe auf **Neuen Header hinzufügen**.
      - Schlüssel: `Authorization`
      - Text: `Bearer ` (mit Leerzeichen), direkt danach dein Token. Das sieht dann so aus: `Bearer fgp_…`
-   - **Hauptteil der Anfrage:** `JSON`
+   - **Haupttext anfordern:** `JSON`
      - Tippe auf **Neues Feld hinzufügen** und wähle **Text**.
      - Schlüssel: `text`
      - Wert: Tippe in das Feld und wähle über der Tastatur die Variable **Diktierter Text** aus.
@@ -73,7 +73,7 @@ Die App zeigt den Token nur dieses eine Mal an. Füge ihn am besten direkt in Sc
 
 1. Füge **Text sprechen** hinzu.
 2. Als Text muss die Variable **Inhalte der URL** dastehen. Meist setzt Kurzbefehle sie von selbst ein. Falls nicht, tippe auf das Feld und wähle sie aus.
-3. Optional: Tippe auf den Pfeil (**>**) und wähle als **Sprache** `Deutsch (Deutschland)`.
+3. Optional: Tippe auf **Mehr anzeigen** (den Pfeil **>**) und wähle als **Sprache** `Deutsch (Deutschland)`.
 
 Tippe oben rechts auf **Fertig**.
 
@@ -91,11 +91,11 @@ Text sprechen           (Inhalte der URL)
 
 ## Schritt 3: Ausprobieren
 
-1. Tippe in der Kurzbefehle-App auf den Kurzbefehl **Einkaufsliste**. Beim ersten Mal fragt iOS, ob der Kurzbefehl Daten an `jdwqrallbpdbshrdhenk.supabase.co` senden darf. Tippe auf **Immer erlauben**.
+1. Tippe in der Kurzbefehle-App auf den Kurzbefehl **Einkaufsliste**. Beim ersten Mal fragt iOS, ob der Kurzbefehl Daten an `jdwqrallbpdbshrdhenk.supabase.co` senden darf. Tippe auf **Immer erlauben**. Dann fragt iOS beim nächsten Mal nicht mehr.
 2. Sag: „Milch, zwei Gurken und Klopapier“.
 3. Siri antwortet „Hinzugefügt: Milch, 2 Gurken, Klopapier.“, und die Einträge stehen in der App.
 
-Ab jetzt geht es ohne Hände: „Hey Siri, Einkaufsliste“.
+Ab jetzt geht es ohne Hände: „Hey Siri, Einkaufsliste“ (oder „Siri, Einkaufsliste“, je nachdem, worauf Siri bei dir hört).
 
 > **Wichtig: Dein Token ist wie ein Schlüssel zu deiner Liste**
 >
@@ -109,14 +109,14 @@ Sag mehrere Dinge in einem Satz. Trenne sie mit einer kurzen Pause, mit „und�
 
 | Du sagst | Auf der Liste |
 | --- | --- |
-| Milch, zwei Gurken und Klopapier | Milch · Gurken (2) · Klopapier |
+| Milch, zwei Gurken und Klopapier | Milch · 2× Gurken · Klopapier |
 | Wir brauchen noch Butter und Eier | Butter · Eier |
 | Schreib bitte Windeln auf die Liste | Windeln |
-| Ein Kilo Äpfel und 500 Gramm Hackfleisch | Äpfel (1 kg) · Hackfleisch (500 g) |
-| Eine Packung Eier sowie zwei Flaschen Wein | Eier (1 Packung) · Wein (2 Flaschen) |
-| Einen Kasten Wasser, auch Kaffee | Wasser (1 Kasten) · Kaffee |
+| Ein Kilo Äpfel und 500 Gramm Hackfleisch | 1 kg Äpfel · 500 g Hackfleisch |
+| Eine Packung Eier sowie zwei Flaschen Wein | 1 Packung Eier · 2 Flaschen Wein |
+| Einen Kasten Wasser, auch Kaffee | 1 Kasten Wasser · Kaffee |
 
-Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“, „auf die Liste“ und Artikel lässt Hummlist weg. Zahlwörter werden zu Ziffern („zwei“ wird 2). Mengen mit Einheit bleiben als Menge am Eintrag („1 kg“, „2 Flaschen“). Was schon auf der Liste steht, kommt nicht doppelt dazu. Siri sagt dann zum Beispiel „Schon auf der Liste: Milch.“
+Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“, „auf die Liste“ und Artikel lässt Hummlist weg. Zahlwörter werden zu Ziffern („zwei“ wird 2). Mengen bleiben als Menge am Eintrag, die App zeigt sie vor dem Namen („2× Gurken“, „1 kg Äpfel“). Was schon auf der Liste steht, kommt nicht doppelt dazu. Siri sagt dann zum Beispiel „Schon auf der Liste: Milch.“ Steht etwas Ähnliches schon drauf, etwa Möhren, wenn du Karotten sagst, kommt der neue Eintrag trotzdem dazu, und Siri sagt „Möhren steht schon auf der Liste.“
 
 ## Wenn es nicht klappt
 
@@ -128,13 +128,13 @@ Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“,
 | „Das war zu lang …“ | Mehr als 1000 Zeichen. | Sag weniger auf einmal (höchstens 30 Dinge). |
 | „Das hat leider nicht geklappt …“ | Hummlist ist gerade nicht erreichbar. | Versuch es später noch einmal. |
 
-Öffnet Siri bei „Einkaufsliste“ die Erinnerungen-App statt deines Kurzbefehls? Dann gib dem Kurzbefehl einen eindeutigeren Namen, etwa `Einkauf notieren`, und sag „Hey Siri, Einkauf notieren“.
+Startet Siri bei „Einkaufsliste“ nicht deinen Kurzbefehl? Prüf, ob er genau so heißt. Sonst gib ihm einen eindeutigeren Namen, etwa `Einkauf notieren`, und sag „Hey Siri, Einkauf notieren“. Zum Umbenennen öffnest du den Kurzbefehl, tippst auf den Pfeil neben seinem Namen und dann auf **Umbenennen**.
 
 ## Siri wieder abschalten
 
-1. Lösch den Kurzbefehl in der Kurzbefehle-App.
+1. Lösch den Kurzbefehl in der Kurzbefehle-App: Leg den Finger auf **Einkaufsliste**, tippe auf **Löschen** und bestätige.
 2. Widerrufe den Token in Hummlist: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.
 
 Damit ist die Verbindung getrennt.
 
-Fragen oder Probleme? Schreib mir in der App über **Einstellungen** > **Feedback senden**.
+Fragen oder Probleme? Schreib mir in der App über **Mehr** → **Feedback senden**.
