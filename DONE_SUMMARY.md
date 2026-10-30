@@ -307,3 +307,7 @@ map follows 33b/33g, the FAQ covers Alexa; Lighthouse mobile 100/100/100 on the 
 the server in one transaction (500 g + 1 kg = 1,5 kg, else "1 Bund + 500 g") and Rückgängig
 restores both items exactly. MCP and Siri report the similar item. Details:
 [docs/done/32b-dedupe-hint.md](docs/done/32b-dedupe-hint.md).
+
+## Job 34: the first key after a tap on a text field is kept
+
+On the web a key typed right after tapping an unfocused text field was erased by the engine's late hand-over of the DOM input ("rot" for "Brot" in the add field after Schließen). `EarlyKeys` (app-wide, web only) types those keys through Flutter's key events. Before: 1/30 of the original test and 60/60 of the frame-held test failed; after: 0. Details: [docs/done/34-add-sheet-first-key.md](docs/done/34-add-sheet-first-key.md).

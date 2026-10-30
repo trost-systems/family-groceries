@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/setup.dart';
 import 'package:family_groceries/app/app.dart';
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/app/early_keys.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/theme.dart';
@@ -40,6 +41,8 @@ Future<void> _main() async {
   if (kIsWeb) {
     // Exposes the widget tree to the DOM for screen readers and Playwright.
     SemanticsBinding.instance.ensureSemantics();
+    // Semantics hands a field's input to the app a frame late.
+    EarlyKeys();
   }
   await Supabase.initialize(
     url: Environment.supabaseUrl,
