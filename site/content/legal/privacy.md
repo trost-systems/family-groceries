@@ -42,9 +42,20 @@ Legal basis: Art. 6(1)(b) GDPR.
 When you dictate an item in the iPhone or Android app, your operating system's speech recognition turns speech into text. This happens only on your device: if the device cannot recognise German without the internet, Hummlist does not offer voice input. There is no voice input in the browser. The app sends the recognised text to our server, which turns it into items; we never receive audio.
 Legal basis: Art. 6(1)(b) GDPR.
 
-## 7. Siri and AI assistants
+## 7. Siri, Alexa and AI assistants
 
 You can connect Hummlist to Siri or to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com). This only happens if you create an access key or approve a connection yourself. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each key we store a name, a hash and when it was last used. You can revoke keys and connections in the app at any time.
+Legal basis: Art. 6(1)(b) GDPR.
+
+### Amazon Alexa
+
+You can enable the Alexa skill "Hummlist" in the Alexa app and link it to your Hummlist account. To do so, you sign in to Hummlist and allow "Amazon Alexa" to access your list. Amazon receives an access token and a refresh token for this and keeps them.
+
+When you ask Alexa to add something to your list or read it out, Amazon records your speech and turns it into text. We do not receive a voice recording from Amazon, only the recognised text (for example "milk and eggs"), the kind of request, the access token, an ID of your Alexa account and technical details about the device and language. We do not use the device ID. We add the items to the list of your current household, just as if you had entered them in the app; the other members see them. In our reply we send Amazon the item names, which Alexa reads out to you and shows as a card in the Alexa app: the items just added, or up to 10 open items on your list.
+
+For this we store a hash (SHA-256) of your Alexa ID, which sign-in session belongs to it and when you last used the skill, so that we can end the connection when you disable the skill. We also count how many items you added in the current minute (at most 30). We delete this data as soon as the connection ends: when you disable the skill in the Alexa app, link it again, choose "Disconnect Amazon Alexa" under More › Access, or delete your account. If you only unlink in the Alexa app, Amazon deletes the tokens; the entry under More › Access stays until you remove it.
+
+Amazon processes your voice recordings, their transcript and our replies as an independent controller under Amazon's Alexa Terms of Use and privacy notice. For Alexa on amazon.de, your contract partner is Amazon Media EU S.à r.l., 38 avenue John F. Kennedy, L-1855 Luxembourg. How long Amazon keeps voice recordings and how you delete them is set in the Alexa app; we have no influence on this.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ## 8. Export your data and delete your account
@@ -53,7 +64,7 @@ Account › Export my data gives you your data as a JSON file. Account › Delet
 
 ## 9. Usage data and error reports (only with consent)
 
-Only if you agree, Hummlist stores a random installation ID on your device and sends usage data and error reports to our processor PostHog Inc. (servers in the EU, Frankfurt). Sent: the installation ID, your household's ID, platform, app version, actions such as "app opened for the first time", "household created", "invite accepted", "item added/ticked off" and "category/store reordered" (with details such as your role in the household, the number of members and whether an item was typed, dictated or suggested), and cleaned-up error reports. For in-app purchases our servers send the purchase event (purchase, refund or restore) with the same installation and household ID, with product, price, currency, store, country and a pseudonymised purchase reference (hash), but without payment data; this too only if you agreed. Never sent: item names, list contents, names, e-mail addresses, IP address and location. PostHog creates no person profile and does not derive a location from the IP address. The data is pseudonymous.
+Only if you agree, Hummlist stores a random installation ID on your device and sends usage data and error reports to our processor PostHog Inc. (servers in the EU, Frankfurt). Sent: the installation ID, your household's ID, platform, app version, actions such as "app opened for the first time", "household created", "invite accepted", "item added/ticked off" and "category/store reordered" (with details such as your role in the household, the number of members and whether an item was typed, dictated, suggested or added through Alexa), and cleaned-up error reports. For in-app purchases our servers send the purchase event (purchase, refund or restore) with the same installation and household ID, with product, price, currency, store, country and a pseudonymised purchase reference (hash), but without payment data; this too only if you agreed. If you add an item through Alexa that was not yet on the list, our servers send the event "item added" marked "through Alexa", with your role and the number of members, under the installation ID of the device on which you last decided about usage data, and only if that decision was yes. To make this possible and to be able to prove your consent, we store for your account, per installation, your decision (yes or no), when you made it and, for a yes, the installation ID; at most the 20 most recent decisions. They are deleted with your account (legal basis: Art. 6(1)(c) GDPR in conjunction with Art. 7(1) GDPR). Never sent: item names, list contents, names, e-mail addresses, IP address and location. PostHog creates no person profile and does not derive a location from the IP address. The data is pseudonymous.
 Purpose: to see which features are used, find bugs and measure whether Hummlist pays for itself.
 Legal basis: your consent (Art. 6(1)(a) GDPR; for storing the ID, § 25(1) TDDDG). You can withdraw it any time under More › Usage data, with effect for the future.
 Retention at PostHog: 1 year.
@@ -81,22 +92,23 @@ These service providers process data on our behalf and on our instructions (Art.
 - Google Cloud EMEA Limited, Dublin, Ireland (Google Workspace, e-mail)
 - Anysphere, Inc., USA (AI support assistant Grok Bot; see section 10)
 
-Independent controllers: Google or Apple when you sign in with them; Google, as long as the web app loads program libraries and fonts from gstatic.com (section 3); the provider of your operating system's speech recognition; AI assistants you connect yourself; Apple and Google as app stores.
+Independent controllers: Google or Apple when you sign in with them; Google, as long as the web app loads program libraries and fonts from gstatic.com (section 3); the provider of your operating system's speech recognition; AI assistants you connect yourself; Amazon, when you use the Alexa skill (section 7); Apple and Google as app stores.
 
 ## 13. Transfers outside the EU
 
 Some providers are based in the USA or belong to US companies. Supabase's server functions can also run in data centres outside the EU (see section 12). Where data is transferred to the USA or other third countries or US authorities could access it, we rely on the following:
 
-- Vercel Inc., GitHub Inc., PostHog Inc. and Google LLC (the US parent to which Google Cloud EMEA Limited passes data) are certified under the EU-US Data Privacy Framework. The European Commission's adequacy decision applies to them (Art. 45 GDPR). Vercel and PostHog have also agreed Standard Contractual Clauses (Art. 46(2)(c) GDPR) in their data processing agreements; for Google, Standard Contractual Clauses apply if Google stops relying on the Data Privacy Framework.
+- Vercel Inc., GitHub Inc., PostHog Inc. and Google LLC (USA; part of the same group as Google Cloud EMEA Limited and processes data for it) are certified under the EU-US Data Privacy Framework. The European Commission's adequacy decision applies to them (Art. 45 GDPR). Vercel and PostHog have also agreed Standard Contractual Clauses (Art. 46(2)(c) GDPR) in their data processing agreements; for Google, Standard Contractual Clauses apply if Google stops relying on the Data Privacy Framework.
 - PostHog stores the data in Frankfurt am Main. Under its contract, PostHog may also process it in the USA, for example through sub-processors; the above applies to that.
 - Supabase Pte. Ltd. (Singapore) is not certified under the Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of Supabase's data processing agreement.
+- Amazon (Alexa) receives our replies as an independent controller (section 7). Where Amazon passes them to Amazon companies in the USA, Amazon.com, Inc. (including Amazon.com Services LLC) is certified under the EU-US Data Privacy Framework (Art. 45 GDPR); where no adequacy decision applies, Amazon's developer agreement provides for controller-to-controller Standard Contractual Clauses.
 - Anysphere, Inc. (AI support assistant): [PETER: Anysphere is not certified under the Data Privacy Framework. Standard Contractual Clauses are only in Anysphere's data processing agreement, which applies to Teams/Enterprise contracts, not to an individual subscription. Decide the basis, e.g. sign a contract that includes the data processing agreement]
 
 You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
-We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships and access keys immediately. If you are the last member of a household, the household and everything in it is deleted. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
+We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included) and your usage-data decisions immediately. We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
 
 ## 15. Your rights {#rights}
 
