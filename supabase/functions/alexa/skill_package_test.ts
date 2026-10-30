@@ -34,6 +34,12 @@ Deno.test('AC11: skill name "Hummlist", invocation name "hummlist", never "Humm"
   }
 });
 
+Deno.test('manifestVersion sits inside manifest, where ask deploy keeps it', () => {
+  // At the top level, ask deploy uploaded the manifest without it (job 31b).
+  assertEquals(Object.keys(skill), ['manifest']);
+  assertEquals(skill.manifest.manifestVersion, '1.0');
+});
+
 Deno.test('the manifest points Alexa and skill events at the alexa function', () => {
   const endpoint = 'https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa';
   assertEquals(skill.manifest.apis.custom.endpoint, {

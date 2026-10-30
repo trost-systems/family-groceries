@@ -1,0 +1,28 @@
+$ ask smapi list-skills-for-vendor
+{"skillId":"amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b","stage":"development","nameByLocale":{"de-DE":"Hummlist"},"publicationStatus":"DEVELOPMENT"}
+$ ask smapi get-skill-status
+{"manifest":"SUCCEEDED","model_deDE":"SUCCEEDED","steps":["LANGUAGE_MODEL_QUICK_BUILD=SUCCEEDED","LANGUAGE_MODEL_FULL_BUILD=SUCCEEDED","DIALOG_MODEL_BUILD=SUCCEEDED","NAME_FREE_INTERACTION_BUILD=SUCCEEDED"]}
+$ invocation name + endpoint
+{"invocationName":"hummlist"}
+{"name":"Hummlist","endpoint":"https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa","privacy":"https://hummlist.com/datenschutz","manifestVersion":"1.0"}
+$ ask smapi get-account-linking-info
+{"type":"AUTH_CODE","authorizationUrl":"https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1/oauth/authorize","accessTokenUrl":"https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1/oauth/token","accessTokenScheme":"HTTP_BASIC","pkceConfiguration":{"codeChallengeMethod":"S256","status":"ENABLED"},"skipOnEnablement":false}
+$ ask smapi get-skill-enablement-status
+Command executed successfully!
+$ ask smapi get-beta-test / get-list-of-testers
+{"status":"RUNNING","invitesRemaining":500}
+{"testers":0}
+$ ask smapi invoke-skill-end-point (LaunchRequest  )
+{"status":"SUCCESSFUL","endpoint":"https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa","speech":"Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.","card":"LinkAccount"}
+$ ask smapi invoke-skill-end-point (IntentRequest AddItemIntent milch und eier)
+{"status":"SUCCESSFUL","endpoint":"https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa","speech":"Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.","card":"LinkAccount"}
+$ curl unsigned POST
+{"error":"missing_signature"} HTTP 400
+$ function logs (alexa, last 3 min)
+2026-10-30T14:34:00.872000 function_edge_logs POST | 400 | https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa
+2026-10-30T14:34:00.870000 function_logs alexa request refused: missing_signature 
+2026-10-30T14:34:00.240000 function_edge_logs POST | 200 | https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa
+2026-10-30T14:33:58.052000 function_edge_logs POST | 200 | https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa
+2026-10-30T14:31:22.542000 function_edge_logs POST | 200 | https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa
+$ ask smapi simulate-skill --input-content "öffne hummlist" --device-locale de-DE (open: NEEDS_PETER Job 31b)
+{"status":"FAILED","error":"This utterance did not resolve to any intent in your skill. Please inv"}

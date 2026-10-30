@@ -164,12 +164,17 @@ keeps its hash. It is never in the repo, the function's environment or a log.
   before certification (NEEDS_PETER, Job 31).
 - "Meine Daten exportieren" lists the stored analytics answers and the Alexa links (last use).
 
-## Deploy (after Peter's Amazon Developer sign-in)
+## Deploy
 
-Nothing here has been run against Amazon. Hummlist Ops, after Peter signed in once with 2FA:
+Deployed by job 31b (2026-10-30) to Peter's Amazon Developer account: skill
+`amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b` (development stage, de-DE), account linking
+with the Supabase client "Amazon Alexa", development testing on, a beta test created and running
+with no testers. Status and smoke results: [done/31b-alexa-deploy.md](done/31b-alexa-deploy.md).
+The steps below are how it was done and how to redo it.
 
-1. **ASK CLI.** `npm install -g ask-cli` (v2), then `ask configure` and sign in as
-   hello@hummlist.com (opens a browser). The vendor id: `ask smapi list-vendors`.
+1. **ASK CLI.** `npm install -g ask-cli` (v2), then `ask configure` and sign in with the
+   developer account (opens a browser; `ask configure --no-browser` on a server). The vendor
+   id: `ask smapi list-vendors`.
 2. **Create the skill** from the package: `cd alexa && ask deploy --target skill-metadata`.
    It creates the skill "Hummlist" (development stage), uploads `skill.json`, the de-DE model and
    the icons, and builds the model. The skill id lands in `alexa/.ask/ask-states.json`
@@ -198,7 +203,25 @@ Nothing here has been run against Amazon. Hummlist Ops, after Peter signed in on
    account, after linking in the Alexa app (Skills → Hummlist → Konto verknüpfen). The beta
    checklist below is the full run.
 
-Changes to the model or manifest later: edit the files, `ask deploy --target skill-metadata`.
+Changes to the model or manifest later: edit the files, then `ask deploy --target skill-metadata`
+from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
+creates a second skill:
+
+```bash
+mkdir -p alexa/.ask && jq -n --arg id "$ALEXA_SKILL_ID" \
+  '{askcliStatesVersion: "2020-03-31", profiles: {default: {skillId: $id}}}' > alexa/.ask/ask-states.json
+```
+
+ask deploy rewrites `skill.json` and `ask-resources.json` in its own JSON style; discard that
+(`git checkout -- alexa/`). It also keeps only what is inside `manifest`, which is why
+`manifestVersion` sits there (`skill_package_test.ts` checks it).
+
+**Smoke test without a device.** `ask smapi invoke-skill-end-point -s <skill id>
+--endpoint-region Default --skill-request-body file:<request.json>` makes Amazon sign a request
+and send it to the function: an unlinked LaunchRequest or AddItemIntent answers "Bitte verknüpfe
+zuerst dein Hummlist-Konto …" with a LinkAccount card. The function logs only refusals
+("alexa request refused: <reason>", 400), so a 200 with no such line means the signature check
+passed.
 
 ## Beta and certification
 
