@@ -140,6 +140,10 @@ test.describe('with an English browser', () => {
     await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('english'));
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();
+    // Job 19: the analytics consent comes first, in English too.
+    await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
+    await expectNoGerman(page, 'analytics consent', german);
+    await page.getByRole('button', { name: 'Decline' }).click();
     await expect(page.getByRole('button', { name: 'Create household' })).toBeVisible();
     await expectNoGerman(page, 'welcome', german);
     await page.getByRole('button', { name: 'Create household' }).click();

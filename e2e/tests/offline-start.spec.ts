@@ -1,6 +1,7 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  addField, addItem, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick, typeInto, within,
+  addField, addItem, answerConsent, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick,
+  typeInto, within,
 } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
@@ -76,6 +77,8 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await typeInto(other.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(other.getByRole('textbox', { name: 'Passwort' }), password);
   await other.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  // A new install: the analytics consent first (job 19).
+  await answerConsent(other);
   await expect(itemRow(other, 'Käse'), 'another session of the same user sees the synced list').toBeVisible();
   await expect(itemRow(other, 'Milch')).toBeVisible();
   await expect(itemRow(other, 'Brot')).toHaveCount(0);

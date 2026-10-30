@@ -44,6 +44,15 @@ def flutter(*args)
   sh("cd #{APP_DIR.shellescape} && flutter #{args.shelljoin}")
 end
 
+# Analytics (job 19, docs/ANALYTICS.md): the PostHog project key and host and the internal
+# households, from the release environment. Unset, the build has analytics off.
+ANALYTICS_DEFINES = %w[POSTHOG_PROJECT_API_KEY POSTHOG_HOST ANALYTICS_INTERNAL_HOUSEHOLDS].freeze
+
+def analytics_defines
+  ANALYTICS_DEFINES.reject { |name| ENV.fetch(name, "").empty? }
+                   .map { |name| "--dart-define=#{name}=#{ENV.fetch(name)}" }
+end
+
 platform :ios do
   def asc_api_key
     key = app_store_connect_api_key(
@@ -137,7 +146,7 @@ platform :ios do
     }.to_plist)
 
     flutter("build", "ipa", "--release", "--build-number=#{build_number}",
-            "--dart-define-from-file=config/auth.json",
+            "--dart-define-from-file=config/auth.json", *analytics_defines,
             "--export-options-plist=#{export_options}")
 
     ipa = Dir.glob(File.join(APP_DIR, "build/ios/ipa/*.ipa")).first
@@ -266,7 +275,7 @@ platform :android do
   desc "Build the release App Bundle (signed with android/key.properties)"
   lane :build do
     flutter("build", "appbundle", "--release", "--build-number=#{build_number}",
-            "--dart-define-from-file=config/auth.json")
+            "--dart-define-from-file=config/auth.json", *analytics_defines)
   end
 
   # Credentials come from Workload Identity Federation: google-github-actions/auth

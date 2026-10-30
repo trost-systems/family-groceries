@@ -242,3 +242,7 @@ See [docs/done/17-design-add-shell.md](docs/done/17-design-add-shell.md).
 ## Job 28: WebAssembly web build, iOS Safari tap focus
 
 See [docs/done/28-web-wasm-ios.md](docs/done/28-web-wasm-ios.md).
+
+## Job 19: kill-gate and LTV analytics, error tracking (PostHog EU)
+
+See [docs/done/19-analytics-killgate.md](docs/done/19-analytics-killgate.md).

@@ -2,6 +2,7 @@
 # Generated l10n matches the ARB files, format, analyze with infos as errors, unit and widget tests.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+no_posthog_in_ci
 cd "$REPO_ROOT/app"
 flutter pub get >/dev/null
 flutter gen-l10n

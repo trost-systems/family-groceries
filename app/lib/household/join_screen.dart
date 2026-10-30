@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -8,8 +9,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 /// An invite opened by someone who already has a household.
-class const JoinScreen({required final String code, super.key})
-    extends StatefulWidget {
+class const JoinScreen({
+  required final String code,
+  super.key,
+
+  /// [JoinMethod.code] when the code was typed into More's join dialog;
+  /// otherwise it came from an invite link.
+  final JoinMethod method = JoinMethod.link,
+}) extends StatefulWidget {
   @override
   State<JoinScreen> createState() => _JoinScreenState();
 }
@@ -23,7 +30,10 @@ class _JoinScreenState() extends State<JoinScreen> {
     final router = GoRouter.of(context);
     setState(() => _busy = true);
     try {
-      await context.read<SessionCubit>().join(widget.code);
+      await context.read<SessionCubit>().join(
+        widget.code,
+        method: widget.method,
+      );
       router.go(listPath);
     } on HouseholdError catch (e) {
       messenger.showSnackBar(

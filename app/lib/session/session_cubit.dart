@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -51,8 +53,14 @@ abstract interface class SessionCache() {
   Future<void> forget();
 }
 
-class SessionCubit(final SupabaseClient _client, final SessionCache _cache)
-    extends Cubit<Session> {
+class SessionCubit(
+  final SupabaseClient _client,
+  final SessionCache _cache, {
+
+  /// Follows who is signed in and in which household, and hears about
+  /// households created and invites accepted.
+  final Analytics? analytics,
+}) extends Cubit<Session> {
   this : super(const SessionLoading()) {
     // Also replays a failed browser sign-in that supabase_flutter read from
     // the return URL before this cubit existed.
@@ -141,12 +149,56 @@ class SessionCubit(final SupabaseClient _client, final SessionCache _cache)
     emit(next);
   }
 
-  Future<void> createHousehold(String name) =>
-      _rpc('create_household', {'p_name': name});
+  Future<void> createHousehold(String name) async {
+    final created = await _call('create_household', {'p_name': name});
+    if (created case {'id': final String id}) {
+      _trackIn(id, 'household_created');
+    }
+    await refresh();
+  }
 
-  Future<void> join(String code) => _rpc('join_household', {'p_code': code});
+  /// Joins the household of invite [code]. [method] says whether the code
+  /// came from a link or was typed. `invite_accepted` goes out only for a
+  /// new membership, not when the server answers that the user is a member
+  /// already.
+  Future<void> join(String code, {JoinMethod method = JoinMethod.code}) async {
+    final before = switch (state) {
+      InHousehold(:final household) => household.id,
+      _ => null,
+    };
+    final joined = await _call('join_household', {'p_code': code});
+    if (joined is String && joined != before) {
+      _trackIn(joined, 'invite_accepted', {'method': method.name});
+    }
+    await refresh();
+  }
 
-  Future<void> signOut() => _client.auth.signOut();
+  /// Tracks [event] in [householdId], which the server just confirmed:
+  /// before the reload, so it counts even when the reload fails.
+  void _trackIn(
+    String householdId,
+    String event, [
+    Map<String, Object> properties = const {},
+  ]) {
+    analytics
+      ?..setUser(
+        AnalyticsUser(
+          email: _client.auth.currentUser?.email,
+          householdId: householdId,
+        ),
+      )
+      ..track(event, properties);
+  }
+
+  /// Sends what analytics still holds for this user first (briefly):
+  /// nothing is sent once signed out.
+  Future<void> signOut() async {
+    await analytics?.flush().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () {},
+    );
+    await _client.auth.signOut();
+  }
 
   /// The server already deleted the account and its sessions: signs out on
   /// this device only and drops everything cached.
@@ -163,13 +215,28 @@ class SessionCubit(final SupabaseClient _client, final SessionCache _cache)
     }
   }
 
-  Future<void> _rpc(String fn, Map<String, Object?> params) async {
+  /// Calls the household RPC [fn] and returns its answer.
+  Future<Object?> _call(String fn, Map<String, Object?> params) async {
     try {
-      await _client.rpc<Object?>(fn, params: params);
+      return await _client.rpc<Object?>(fn, params: params);
     } on PostgrestException catch (e) {
       throw HouseholdError(e.message);
     }
-    await refresh();
+  }
+
+  /// Analytics learns of each change at once, so an event right after a
+  /// change (a new household) carries the new household.
+  @override
+  void onChange(Change<Session> change) {
+    super.onChange(change);
+    analytics?.setUser(switch (change.nextState) {
+      NeedsHousehold() => AnalyticsUser(email: _client.auth.currentUser?.email),
+      InHousehold(:final household) => AnalyticsUser(
+        email: _client.auth.currentUser?.email,
+        householdId: household.id,
+      ),
+      SignedOut() || SessionLoading() => null,
+    });
   }
 
   @override

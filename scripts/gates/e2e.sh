@@ -7,6 +7,7 @@
 # when the holder exits, however it exits.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+no_posthog_in_ci
 
 case "${FG_SYNC_SMOKE:-auto}" in
   1) sync_smoke=1 ;;

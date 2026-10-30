@@ -211,6 +211,10 @@ jobs:
       # The signing secrets go to the fastlane steps only, not to the third-party actions.
       - run: bundle exec fastlane ios beta
         env:
+          # Analytics (job 19, docs/ANALYTICS.md): empty until Peter sets them, which keeps it off.
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          ANALYTICS_INTERNAL_HOUSEHOLDS: ${{ vars.ANALYTICS_INTERNAL_HOUSEHOLDS }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || secrets.APPLE_TEAM_ID }}
           MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL || secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
@@ -273,6 +277,10 @@ jobs:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEY_PROPERTIES: ${{ secrets.ANDROID_KEY_PROPERTIES }}
       - run: bundle exec fastlane android build
+        env:
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          ANALYTICS_INTERNAL_HOUSEHOLDS: ${{ vars.ANALYTICS_INTERNAL_HOUSEHOLDS }}
       - name: Remove the upload keystore
         if: always()
         run: rm -f android/upload-keystore.jks android/key.properties

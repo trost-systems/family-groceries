@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
@@ -70,6 +71,7 @@ Future<void> pumpShell(
         providers: [
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider.value(value: language),
+          BlocProvider.value(value: Analytics.off(cache)),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

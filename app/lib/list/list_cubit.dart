@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/foundation.dart' show immutable, setEquals;
+import 'package:flutter/foundation.dart' show immutable, listEquals, setEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 
@@ -85,6 +87,10 @@ class ListCubit(
   required final String userId,
   DateTime Function()? clock,
   Duration resubscribeAfter = const Duration(seconds: 3),
+
+  /// Told once per user action (add, tick, re-add, reorder); never by an
+  /// op's retry, a realtime echo or an undo (docs/ANALYTICS.md).
+  final Analytics? analytics,
 }) extends Cubit<ListState> {
   this : super(const ListState());
 
@@ -253,23 +259,33 @@ class ListCubit(
   List<Usual> get dueUsuals => dueUsualsOf(state.usuals, state.items.values);
 
   AddResult addUsual(Usual usual) =>
-      addEntry(Entry(usual.name, usual.quantity));
+      addEntry(Entry(usual.name, usual.quantity), source: AddSource.suggestion);
 
   /// Splits a dictated sentence on the server and adds each entry.
   /// Throws when the server can't be reached; nothing is added then.
   Future<List<AddResult>> addSpoken(String text) async {
     final entries = await _repo.splitSpoken(text);
-    return [for (final entry in entries) addEntry(entry)];
+    return [
+      for (final entry in entries) addEntry(entry, source: AddSource.spoken),
+    ];
   }
 
-  AddResult addEntry(Entry entry) =>
-      addParsed(ParsedEntry(name: entry.name, quantity: entry.quantity));
+  AddResult addEntry(Entry entry, {AddSource source = AddSource.typed}) =>
+      addParsed(
+        ParsedEntry(name: entry.name, quantity: entry.quantity),
+        source: source,
+      );
 
   /// Adds [entry] with every field it has. A null store lets the server
   /// pick the remembered one, unless [noStore]: the user chose "Ohne
   /// Laden", so the store is cleared after the add. An item with the same
   /// name, brand and details already on the list is not added twice.
-  AddResult addParsed(ParsedEntry entry, {bool noStore = false}) {
+  /// [source] is how the user picked it, for analytics.
+  AddResult addParsed(
+    ParsedEntry entry, {
+    bool noStore = false,
+    AddSource source = AddSource.typed,
+  }) {
     final name = entry.name.trim();
     if (name.isEmpty) {
       return const NothingToAdd();
@@ -298,6 +314,7 @@ class ListCubit(
     if (noStore) {
       _enqueue(EditItem(item.id, const ItemChanges(storeId: SetTo(null))));
     }
+    _track('item_added', {'source': source.name, ..._actor()});
     return Added(item);
   }
 
@@ -314,10 +331,26 @@ class ListCubit(
         .join(','),
   ].join('|');
 
-  void tick(String id) => _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
+  void tick(String id) {
+    final active = state.items[id]?.status == ItemStatus.active;
+    _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
+    if (active) {
+      _track('item_ticked', _actor());
+    }
+  }
 
+  /// Puts a ticked item back, e.g. the tick's undo: no analytics event.
   void untick(String id) =>
       _enqueue(SetStatus(id, ItemStatus.active, _clock()));
+
+  /// Puts a bought item from "recently bought" back on the list: an add.
+  void readd(String id) {
+    final bought = state.items[id]?.status == ItemStatus.bought;
+    untick(id);
+    if (bought) {
+      _track('item_added', {'source': AddSource.suggestion.name, ..._actor()});
+    }
+  }
 
   /// Writes only what [changes] holds; nothing when it holds nothing.
   void edit(String id, ItemChanges changes) {
@@ -394,15 +427,29 @@ class ListCubit(
   Future<void> createCategory(String name) =>
       _changeCatalog(null, () => _repo.createCategory(name), name: name);
 
-  Future<void> reorderCategories(List<String> ids) => _changeOrder(
-    state.catalog.withRouteOrder(ids),
-    () => _repo.reorderCategories(ids),
-  );
+  Future<void> reorderCategories(List<String> ids) async {
+    final before = [
+      for (final s in walkingOrder(state.catalog, null)) s.category.id,
+    ];
+    if (await _changeOrder(
+          state.catalog.withRouteOrder(ids),
+          () => _repo.reorderCategories(ids),
+        ) &&
+        !listEquals(before, ids)) {
+      _track('category_reordered', {'scope': ReorderScope.route.wire});
+    }
+  }
 
-  Future<void> reorderStores(List<String> ids) => _changeOrder(
-    state.catalog.withStoreOrder(ids),
-    () => _repo.reorderStores(ids),
-  );
+  Future<void> reorderStores(List<String> ids) async {
+    final before = [for (final s in state.catalog.stores) s.id];
+    if (await _changeOrder(
+          state.catalog.withStoreOrder(ids),
+          () => _repo.reorderStores(ids),
+        ) &&
+        !listEquals(before, ids)) {
+      _track('store_reordered');
+    }
+  }
 
   /// Items move on the server; a resync brings them over.
   Future<void> deleteCategory(String id, {String? reassignTo}) async {
@@ -413,31 +460,43 @@ class ListCubit(
     await resync();
   }
 
+  /// Also hides or shows categories; only a changed order counts as a
+  /// reorder for analytics.
   Future<void> setStoreLayout(
     String storeId,
     List<String> orderedIds,
     Set<String> hiddenIds,
-  ) => _changeOrder(
-    state.catalog.withStoreLayout(storeId, orderedIds, hiddenIds),
-    () => _repo.setStoreLayout(storeId, orderedIds, hiddenIds),
-  );
+  ) async {
+    final before = [
+      for (final s in walkingOrder(state.catalog, storeId)) s.category.id,
+    ];
+    if (await _changeOrder(
+          state.catalog.withStoreLayout(storeId, orderedIds, hiddenIds),
+          () => _repo.setStoreLayout(storeId, orderedIds, hiddenIds),
+        ) &&
+        !listEquals(before, orderedIds)) {
+      _track('category_reordered', {'scope': ReorderScope.store.wire});
+    }
+  }
 
   /// Orders are not queued like item writes: offline, the change is refused
   /// with a message instead of showing an order no one else will see.
-  Future<void> _changeOrder(
+  /// Whether the server took it.
+  Future<bool> _changeOrder(
     Catalog optimistic,
     Future<void> Function() write,
   ) async {
     if (state.connection == ConnectionStatus.offline) {
       _report(const NeedsConnection());
-      return;
+      return false;
     }
-    await _changeCatalog(optimistic, write);
+    return await _changeCatalog(optimistic, write);
   }
 
   /// Shows [optimistic] at once, writes, then reloads the catalog. A failed
   /// write is reported and undone, and the reload brings the server's state.
-  Future<void> _changeCatalog(
+  /// Whether the write went through.
+  Future<bool> _changeCatalog(
     Catalog? optimistic,
     Future<void> Function() write, {
     String? name,
@@ -446,9 +505,11 @@ class ListCubit(
     if (optimistic != null) {
       emit(state.copyWith(catalog: optimistic));
     }
+    var saved = true;
     try {
       await write();
     } on Object catch (e) {
+      saved = false;
       if (optimistic != null && identical(state.catalog, optimistic)) {
         emit(state.copyWith(catalog: before));
       }
@@ -459,6 +520,22 @@ class ListCubit(
       );
     }
     await _reloadCatalog();
+    return saved;
+  }
+
+  void _track(String event, [Map<String, Object> properties = const {}]) =>
+      analytics?.track(event, properties);
+
+  /// The acting user's role and the household's size, as far as the
+  /// catalog knows them.
+  Map<String, Object> _actor() {
+    final members = state.catalog.members;
+    final role = members.where((m) => m.id == userId).firstOrNull?.role;
+    return {
+      if (role == 'owner' || role == 'member') 'actor_role': role!,
+      if (members.isNotEmpty && members.length <= 100)
+        'household_size': members.length,
+    };
   }
 
   void _report(Rejected rejection) {

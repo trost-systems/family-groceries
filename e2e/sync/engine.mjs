@@ -226,10 +226,31 @@ async function signIn(/** @type {any} */ c) {
     await typeInto(page.getByRole('textbox', { name: 'Passwort' }), c.password);
     // Enter submits from the password field itself, like fg login; a click first moves focus.
     await page.keyboard.press('Enter');
-    const landed = await Promise.race([
+    const land = () => Promise.race([
       addField(page).waitFor({ timeout: 20_000 }).then(() => 'list'),
       page.getByRole('button', { name: 'Haushalt anlegen' }).waitFor({ timeout: 20_000 }).then(() => 'welcome'),
+      // Job 19: a new install is asked about analytics right after sign-in; declined here.
+      page.waitForURL(/\/analytics-consent(\?|$)/, { timeout: 20_000 }).then(() => 'consent'),
     ]).catch(() => null);
+    let landed = await land();
+    if (landed === 'consent') {
+      // On a small client the answers sit below the text: wheel down to them.
+      const decline = page.getByRole('button', { name: 'Ablehnen' });
+      await page.getByRole('heading', { name: 'Nutzungsdaten' }).waitFor({ timeout: 20_000 });
+      if (!(await decline.isVisible())) {
+        await page.mouse.move(viewport.width / 2, viewport.height / 2);
+        for (let i = 0; i < 10 && !(await decline.isVisible()); i++) {
+          await page.mouse.wheel(0, 400);
+          await page.waitForTimeout(200);
+        }
+      }
+      await decline.click();
+      // The URL still says consent until the app moves on; only then look again.
+      await page.waitForURL((url) => !url.pathname.startsWith('/analytics-consent'), { timeout: 20_000 })
+        .catch(() => null);
+      landed = await land();
+      if (landed === 'consent') landed = null;
+    }
     if (landed) {
       // A returning user has dismissed the explainer card; it would push the list down.
       const hint = page.getByRole('button', { name: 'Verstanden', exact: true });

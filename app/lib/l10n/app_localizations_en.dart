@@ -825,4 +825,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryOther => 'Other';
+
+  @override
+  String get analyticsConsentTitle => 'Help make Hummlist better';
+
+  @override
+  String get analyticsConsentBody =>
+      'With your permission, Hummlist sends anonymous usage data and error reports to PostHog, a service with servers in the EU: for example that an item was added or ticked off, the app version and a random ID for this installation. Item names, list contents, names, e-mail addresses and your location are never sent. Without your permission nothing is sent. You can change this any time under More → Usage data.';
+
+  @override
+  String get analyticsDraftNote => 'DRAFT: awaiting Peter\'s approval';
+
+  @override
+  String get analyticsAccept => 'Allow';
+
+  @override
+  String get analyticsDecline => 'Decline';
+
+  @override
+  String get analyticsSection => 'Usage data';
+
+  @override
+  String get analyticsToggle => 'Send anonymous usage data and error reports';
+
+  @override
+  String get analyticsToggleHint =>
+      'To PostHog (EU), never list contents. Applies to this device.';
+
+  @override
+  String get internalInstall => 'Internal installation';
+
+  @override
+  String get internalInstallOn => 'This installation now counts as internal.';
+
+  @override
+  String get internalInstallOff =>
+      'This installation no longer counts as internal.';
+
+  @override
+  String get sendTestError => 'Send a test error';
 }

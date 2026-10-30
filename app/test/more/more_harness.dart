@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bloc_test/bloc_test.dart';
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
@@ -67,6 +68,7 @@ typedef More = ({
   DeviceCache cache,
   LanguageCubit language,
   GoRouter router,
+  Analytics analytics,
 });
 
 /// More's routes as `buildRouter` has them, without the shell (whose list
@@ -79,6 +81,9 @@ Future<More> pumpMore(
 
   /// The device's preferred languages.
   List<Locale> device = const [Locale('de', 'DE')],
+
+  /// Analytics as the app has it; a build without a key by default.
+  Analytics? analytics,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -91,6 +96,8 @@ Future<More> pumpMore(
   final cache = DeviceCache(SharedPreferencesAsync());
   final languageCubit = LanguageCubit(cache, language);
   addTearDown(languageCubit.close);
+  final shownAnalytics = analytics ?? Analytics.off(cache);
+  addTearDown(shownAnalytics.close);
   final session = FakeSession();
   whenListen(
     session,
@@ -143,6 +150,7 @@ Future<More> pumpMore(
         providers: [
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider.value(value: languageCubit),
+          BlocProvider.value(value: shownAnalytics),
         ],
         child: BlocBuilder<LanguageCubit, AppLanguage?>(
           builder: (context, picked) => MaterialApp.router(
@@ -158,5 +166,11 @@ Future<More> pumpMore(
     ),
   );
   await tester.pumpAndSettle();
-  return (repo: repo, cache: cache, language: languageCubit, router: router);
+  return (
+    repo: repo,
+    cache: cache,
+    language: languageCubit,
+    router: router,
+    analytics: shownAnalytics,
+  );
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -26,7 +27,8 @@ Future<void> showJoinCodeDialog(BuildContext context) async {
   );
   final cleaned = code?.toUpperCase().replaceAll(RegExp('[^A-Z0-9]'), '');
   if (cleaned != null && cleaned.isNotEmpty) {
-    router.go(joinPath(cleaned));
+    // Typed, not a link: the join screen reports it as such.
+    router.go(joinPath(cleaned), extra: JoinMethod.code);
   }
 }
 

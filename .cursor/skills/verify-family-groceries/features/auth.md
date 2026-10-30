@@ -40,6 +40,7 @@ Preconditions:
 ## Gotchas
 
 - `fg find` and `fg wait` don't see the form's error messages under the fields. Prove them with a screenshot.
+- Builds with a PostHog key (Vercel, the stores, the web e2e build) ask about analytics right after the first sign-in on a device, before the welcome screen or the list (`features/analytics.md`, `an-consent`). fg builds have no key and go straight on.
 - The app bar title is also "Anmelden", so `fg tap --text Anmelden` is ambiguous. Press Enter in the password field (`--submit`) or use `fg login`.
 - `fg login` fails with `not_on_login` when the app is already signed in. Sign out first.
 - The magic link redirects to `com.hummlist.app://login-callback` (builds from before the Hummlist rename use `com.petertrost.familygroceries://login-callback`; both are in the allow list). The Linux desktop build registers no handler for that scheme, so opening the link cannot sign it in. Android handles the scheme (intent filter). The web build uses an http redirect instead: `e2e/tests/auth.spec.ts` "magic link signs in on this device" covers it in CI.

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -116,6 +117,9 @@ class AddSheetCubit(
         categoryId: state.category ?? entry.categoryId,
       ),
       noStore: store != null && store.value == null,
+      source: suggestion.source == SuggestionSource.typed
+          ? AddSource.typed
+          : AddSource.suggestion,
     );
     if (result is! NothingToAdd) {
       // An add can change what the server suggests next (store memory,

@@ -717,3 +717,57 @@ box, and the agent made the change with it:
   (DECISIONS 28.5). If the keyboard still needs two taps on the preview, it
   is Flutter's or Safari's behaviour, not our code. Nothing for you to do
   unless you want to report it upstream.
+
+## Job 19: analytics and error tracking (PostHog EU)
+
+Built and tested, but **off** until you set the keys below; nothing is sent today. Details in
+[ANALYTICS.md](ANALYTICS.md). Please do the steps in this order: the wording first, because the
+keys make the consent screen appear for everyone.
+
+1. **Approve the consent wording (ENTWURF).** The screen after the first sign-in and the
+   switch under Mehr → Nutzungsdaten, German and English, in `app/l10n/app_de.arb` /
+   `app_en.arb`: `analyticsConsentTitle`, `analyticsConsentBody`, `analyticsAccept`,
+   `analyticsDecline`, `analyticsSection`, `analyticsToggle`, `analyticsToggleHint`. Both show the
+   chip "ENTWURF: Freigabe durch Peter" (`analyticsDraftNote`); once you approve (or edit) the
+   text, the chip goes (one small PR). Screenshots: `docs/screenshots/19/`.
+2. **Privacy policy entry for PostHog.** Name PostHog Inc. as processor (EU Cloud, data in
+   Frankfurt), what is sent (a random installation id, the household id, app version, platform,
+   which action happened: add, tick, reorder, household created, invite accepted; scrubbed error
+   reports), what never is (item names, list text, names, e-mail, IP, location), the legal basis
+   (consent, Art. 6(1)(a) GDPR, withdrawable under Mehr → Nutzungsdaten), retention, and the
+   edge-function error reports (no user data; legitimate interest). The privacy page isn't live
+   yet (Job 17 item above).
+3. **DPA with PostHog**: accept PostHog's data processing agreement in the organization settings
+   of "Einkauf".
+4. **Data retention.** The free plan keeps 1 year; the spec's month-12 retention needs about 14
+   months. You said you'll upgrade before year end; until then the queries go to month 11.
+5. **Group analytics yes/no.** It is a paid add-on. The app can also send the `household` group
+   (`ANALYTICS_HOUSEHOLD_GROUPS=true` as a build define); off now, the household metrics use the
+   `household_id` property.
+6. **Turn it on** (the lead or you; no agent changes these):
+   - Vercel project `family-groceries`, environment **Production** (and Preview if you want data
+     from preview.app.hummlist.com, marked internal by your household id):
+     `POSTHOG_PROJECT_API_KEY` = the Einkauf project key (`phc_…`),
+     `POSTHOG_HOST` = `https://eu.i.posthog.com`,
+     `ANALYTICS_INTERNAL_HOUSEHOLDS` = your household id
+     (`select id from households where name = '<your household>'` in the SQL editor).
+   - Readable web stack traces (optional, Production only): `POSTHOG_PERSONAL_API_KEY` (the
+     error-tracking key) and `POSTHOG_PROJECT_ID` = `319492` in the same Vercel project.
+     `scripts/vercel.sh` uploads the source map and deletes it from the deployment. A GitHub
+     secret `POSTHOG_PERSONAL_API_KEY` is not used (the web app is built by Vercel; DECISIONS Job
+     19.15); you can delete it if you created it.
+   - GitHub (environment `release`): secret `POSTHOG_PROJECT_API_KEY`, variables `POSTHOG_HOST`
+     and `ANALYTICS_INTERNAL_HOUSEHOLDS`. The next TestFlight and Play builds then ask for
+     consent after sign-in.
+   - Supabase function secrets on the hosted project: `POSTHOG_PROJECT_API_KEY` and
+     `POSTHOG_HOST` (error tracking for mcp, voice, account, health). Do not set
+     `ANALYTICS_INTERNAL` there.
+7. **Store credentials for purchase verification** (the in-app purchase job): an App Store
+   Connect In-App Purchase key (issuer id, key id, `.p8`) and the App Store Server Notifications v2
+   URL; a Google Play service account with the Play Developer API and Orders API, and a Pub/Sub
+   topic with a push subscription for Real-time Developer Notifications.
+8. **Optional:** in PostHog project settings, the internal/test-account filter can use the
+   event property `is_internal = true`; the delivered queries filter it themselves anyway.
+
+What the proofs left in project 319492 (all internal): 3 error-tracking issues, 1 symbol set, the
+release `hummlist-web@job19-proof` and 2 events from `proof-ac11@fg.test` (DECISIONS Job 19.19).

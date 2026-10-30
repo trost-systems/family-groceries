@@ -15,6 +15,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   in `tests/`, Deno edge functions in `functions/` (`_shared/` for helpers).
 - `e2e/`: Playwright tests that drive the Flutter web build against the local
   stack.
+- `analytics/`: the PostHog gate insights as HogQL (`queries/`), a TypeScript
+  reference over fixture events that the functions gate tests, and the manual
+  proofs. The app's side is `app/lib/analytics/` (consent, allow-list,
+  sender), the functions' `supabase/functions/_shared/telemetry.ts`
+  (`docs/ANALYTICS.md`).
 - `app/fastlane/`, `.github/workflows/release.yml`: TestFlight and Play
   internal releases, manual, signing from secrets (`docs/RELEASE.md`).
 - `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app on every push
@@ -78,6 +83,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   `app/lib/list/model.dart`) applied optimistically and retried until the
   server acknowledges them; the screen shows server rows with pending ops
   folded on top. Add new mutations as new `ItemOp` variants.
+- Analytics events pass the allow-list in `app/lib/analytics/events.dart`
+  (`eventCatalog`): a new event or property gets a rule there, a test and a
+  row in `docs/ANALYTICS.md`. Never list text, names or free text.
 - Categorization runs server-side in `public.classify_item(household, name)`
   (called by the items insert trigger). The app, MCP and Siri all go through
   it; change the function, not the callers.
