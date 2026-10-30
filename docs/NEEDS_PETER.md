@@ -771,3 +771,16 @@ keys make the consent screen appear for everyone.
 
 What the proofs left in project 319492 (all internal): 3 error-tracking issues, 1 symbol set, the
 release `hummlist-web@job19-proof` and 2 events from `proof-ac11@fg.test` (DECISIONS Job 19.19).
+
+## Job 29c: swipe left edits (2026-10-30)
+
+- **Try it on your phone once (2 min), optional.** No real phone was
+  available. The e2e specs drive Chrome as an Android phone (real touch
+  events) and WebKit as an iPhone. On https://preview.app.hummlist.com
+  (Vercel login), in Safari on your iPhone:
+  1. Swipe an item to the left. The edit sheet should open and the row stay.
+     Löschen in the sheet deletes, with Rückgängig.
+  2. Hold an item still for about a second and let go. The edit sheet should
+     open, not a move. If a still hold still turns into a move, tell the next
+     job: the drift tolerance (18 px for a finger, DECISIONS 29c 4) wasn't the
+     cause. The swipe works either way.
