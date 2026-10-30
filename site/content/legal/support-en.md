@@ -5,7 +5,7 @@ locale: en
 path: /en/support
 translation_key: support
 updated: 2026-10-30
-draft: true
+draft: false
 ---
 
 # Help and contact

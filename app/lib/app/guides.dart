@@ -28,12 +28,12 @@ Uri privacyPolicyUrl(String languageCode) => Uri.parse(
       : '$guidesBaseUrl/en/privacy',
 );
 
-/// Whether the help and contact page is live on hummlist.com. Until Peter
-/// approves its text it is a draft (`draft: true` in
-/// `site/content/legal/support.md` and `support-en.md`), which production
-/// builds of the site leave out. Publishing flips this and drops those
-/// draft lines (docs/NEEDS_PETER.md, Job 24).
-const supportPagePublished = false;
+/// Whether the help and contact page is live on hummlist.com. Peter
+/// approved its text on 2026-10-30, so `site/content/legal/support.md` and
+/// `support-en.md` are no longer drafts (docs/NEEDS_PETER.md, Job 24).
+/// Taking the page down again means setting this back to false together
+/// with `draft: true` there and `supportPublished` in `site/config.json`.
+const supportPagePublished = true;
 
 /// More shows "Hilfe & Kontakt" once the page is published, and before
 /// that only where drafts are wanted ([Environment.legalDrafts]).
