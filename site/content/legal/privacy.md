@@ -62,8 +62,8 @@ Separately, our servers report errors in server functions to PostHog. Such a rep
 
 ## 10. Contact and support
 
-If you write to support@hummlist.com, hello@hummlist.com or feedback@hummlist.com, we process your e-mail address and your message to reply. Google hosts these mailboxes (Google Workspace). Incoming messages are also pre-sorted and analysed for draft replies by an AI assistant ([PETER: provider and location of the AI support assistant]). Peter Trost reviews and sends replies himself [PETER: is that right? Do you review and send every reply yourself?].
-Legal basis: Art. 6(1)(b) GDPR where it concerns your account, otherwise Art. 6(1)(f) GDPR (legitimate interest in answering requests). Support e-mails are deleted [PETER: deletion period for support e-mails, e.g. "12 months after the request is closed"].
+If you write to support@hummlist.com, hello@hummlist.com or feedback@hummlist.com, we process your e-mail address and your message to reply. Google hosts these mailboxes (Google Workspace). Incoming messages are also pre-sorted and analysed for draft replies by an AI assistant ("Hummlist Support", run on Grok Bot by Anysphere, Inc., USA). The assistant only writes drafts and sends no automated replies; Peter Trost reviews and sends every reply himself.
+Legal basis: Art. 6(1)(b) GDPR where it concerns your account, otherwise Art. 6(1)(f) GDPR (legitimate interest in answering requests). Support e-mails are deleted 6 months after the request is closed.
 
 ## 11. Backups
 
@@ -79,7 +79,7 @@ These service providers process data on our behalf and on our instructions (Art.
 - PostHog Inc. (usage data and error reports, servers in the EU; only as described in section 9)
 - GitHub Inc. (encrypted backups)
 - Google Cloud EMEA Limited, Dublin, Ireland (Google Workspace, e-mail)
-- [PETER: provider of the AI support assistant (name, location)]
+- Anysphere, Inc., USA (AI support assistant Grok Bot; see section 10)
 
 Independent controllers: Google or Apple when you sign in with them; Google, as long as the web app loads program libraries and fonts from gstatic.com (section 3); the provider of your operating system's speech recognition; AI assistants you connect yourself; Apple and Google as app stores.
 
@@ -90,7 +90,7 @@ Some providers are based in the USA or belong to US companies. Supabase's server
 - Vercel Inc., GitHub Inc., PostHog Inc. and Google LLC (the US parent to which Google Cloud EMEA Limited passes data) are certified under the EU-US Data Privacy Framework. The European Commission's adequacy decision applies to them (Art. 45 GDPR). Vercel and PostHog have also agreed Standard Contractual Clauses (Art. 46(2)(c) GDPR) in their data processing agreements; for Google, Standard Contractual Clauses apply if Google stops relying on the Data Privacy Framework.
 - PostHog stores the data in Frankfurt am Main. Under its contract, PostHog may also process it in the USA, for example through sub-processors; the above applies to that.
 - Supabase Pte. Ltd. (Singapore) is not certified under the Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of Supabase's data processing agreement.
-- AI support assistant: [PETER: basis for the AI support assistant's provider (Data Privacy Framework or Standard Contractual Clauses)]
+- Anysphere, Inc. (AI support assistant): [PETER: Anysphere is not certified under the Data Privacy Framework. Standard Contractual Clauses are only in Anysphere's data processing agreement, which applies to Teams/Enterprise contracts, not to an individual subscription. Decide the basis, e.g. sign a contract that includes the data processing agreement]
 
 You can get a copy of the safeguards from support@hummlist.com.
 

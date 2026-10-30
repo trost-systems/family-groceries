@@ -75,8 +75,8 @@ Unabhängig davon melden unsere Server Fehler in Server-Funktionen an PostHog. E
 
 ## 10. Kontakt und Support
 
-Wenn du an support@hummlist.com, hello@hummlist.com oder feedback@hummlist.com schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Die Postfächer betreibt Google (Google Workspace). Eingehende Nachrichten werden zusätzlich von einem KI-Assistenten ([PETER: Anbieter und Sitz des KI-Support-Assistenten]) vorsortiert und für Antwortentwürfe ausgewertet; Antworten prüft und sendet Peter Trost selbst [PETER: stimmt das? Prüfst und sendest du jede Antwort selbst?].
-Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO, soweit es um dein Konto geht, sonst Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, Anfragen zu beantworten). Wir löschen Support-E-Mails [PETER: Frist für das Löschen von Support-E-Mails, z. B. „12 Monate nach Abschluss der Anfrage“].
+Wenn du an support@hummlist.com, hello@hummlist.com oder feedback@hummlist.com schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Die Postfächer betreibt Google (Google Workspace). Eingehende Nachrichten werden zusätzlich von einem KI-Assistenten („Hummlist Support“, betrieben mit Grok Bot der Anysphere, Inc., USA) vorsortiert und für Antwortentwürfe ausgewertet. Der Assistent schreibt nur Entwürfe und verschickt keine automatischen Antworten; jede Antwort prüft und sendet Peter Trost selbst.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO, soweit es um dein Konto geht, sonst Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, Anfragen zu beantworten). Wir löschen Support-E-Mails 6 Monate nach Abschluss der Anfrage.
 
 ## 11. Sicherungskopien
 
@@ -92,7 +92,7 @@ Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach uns
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
 - Google Cloud EMEA Limited, Dublin, Irland (Google Workspace, E-Mail)
-- [PETER: Anbieter des KI-Support-Assistenten (Name, Sitz)]
+- Anysphere, Inc., USA (KI-Support-Assistent Grok Bot; siehe Abschnitt 10)
 
 Eigenständig verantwortlich sind: Google bzw. Apple, wenn du dich darüber anmeldest; Google, solange die Web-App Programmbibliotheken und Schriften von gstatic.com lädt (Abschnitt 3); der Anbieter der Spracherkennung deines Betriebssystems; KI-Assistenten, die du selbst verbindest; Apple und Google als App-Stores.
 
@@ -103,7 +103,7 @@ Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen
 - Vercel Inc., GitHub Inc., PostHog Inc. und Google LLC (die US-Muttergesellschaft, an die Google Cloud EMEA Limited weitergibt) sind nach dem EU-US Data Privacy Framework zertifiziert. Für sie gilt der Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO). Vercel und PostHog haben in ihren Auftragsverarbeitungsverträgen zusätzlich Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO) vereinbart; bei Google gelten Standardvertragsklauseln, falls Google sich nicht mehr auf das Data Privacy Framework stützt.
 - PostHog speichert die Daten in Frankfurt am Main. Laut Vertrag kann PostHog sie auch in den USA verarbeiten, etwa durch Unterauftragsverarbeiter; dafür gilt das eben Gesagte.
 - Supabase Pte. Ltd. (Singapur) ist nicht nach dem Data Privacy Framework zertifiziert. Hier gelten die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags von Supabase sind.
-- KI-Support-Assistent: [PETER: Grundlage für den Anbieter des KI-Support-Assistenten (Data Privacy Framework oder Standardvertragsklauseln)]
+- Anysphere, Inc. (KI-Support-Assistent): [PETER: Anysphere ist nicht nach dem Data Privacy Framework zertifiziert. Standardvertragsklauseln enthält nur der Auftragsverarbeitungsvertrag von Anysphere, der für Teams-/Enterprise-Verträge gilt, nicht für ein Einzel-Abo. Grundlage festlegen, z. B. Vertrag mit Auftragsverarbeitungsvertrag abschließen]
 
 Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 

@@ -3944,3 +3944,22 @@ The lead filled only facts checked against official sources on 2026-10-30 (sourc
    2020 EEA Workspace agreement naming Google Ireland Limited is superseded.
 6. Left as `[PETER: …]`: AI support provider and location, who sends replies, support-mail
    deletion period (section 10) and the AI provider's transfer basis (section 13).
+
+## Job 33e (support facts in the privacy policy, sections 10, 12, 13), 2026-10-30
+
+1. **Section 10 from Peter's answers (2026-10-30 14:21):** the AI support assistant is "Hummlist
+   Support" on Grok Bot; it only drafts, sends no automated replies, and Peter reviews and sends
+   every reply; support e-mails are deleted 6 months after the request is closed.
+2. **Grok Bot's provider is Anysphere, Inc., USA (a Texas corporation).** Sources checked
+   2026-10-30: the X-Subscription Consumer Terms (x.ai/legal/x-subscription-terms-of-service,
+   updated 2026-10-27): the agreement is with SpaceX Super Intelligence LLC, but "access to Cursor,
+   Grok Bot, or the Third-Party AI Models ... is provided by Anysphere, Inc., a Texas corporation";
+   the Grok Bot Terms (cursor.com/terms/grok-bot, 2026-10-12) define the Provider as the entity
+   providing Grok Bot under the agreement; Peter's plan is The X Subscription Premium (receipt
+   2026-10-13, issued by SpaceXAI, LLC, the earlier name of SpaceX Super Intelligence LLC), which
+   includes Grok Bot (docs.x.ai/x-subscription/grok-bot). Sections 10 and 12 name Anysphere, Inc., USA.
+3. **Transfer basis not verifiable, left as the only `[PETER: …]`:** the DPF participant API has no
+   entry for Anysphere, SpaceX Super Intelligence, SpaceXAI or xAI (active or inactive). Anysphere's
+   DPA (cursor.com/terms/dpa, 2025-11-05) incorporates the 2021 SCCs (module 2) but applies under
+   the Anysphere Master Services Agreement (Teams/Enterprise); Cursor's help page says the DPA does
+   not apply to individual plans. Writing "SCCs" would claim a contract we cannot show.
