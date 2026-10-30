@@ -437,6 +437,11 @@ enabled = true
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
+[functions.alexa]
+import_map = "./functions/deno.json"
+# Alexa signs its requests instead (alexa/verify.ts); the linked token comes in the body.
+verify_jwt = false
+
 [functions.account]
 import_map = "./functions/deno.json"
 # Only the app's own session may delete an account; the function checks the JWT itself.

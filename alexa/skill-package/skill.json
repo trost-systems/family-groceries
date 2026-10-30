@@ -1,0 +1,60 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "de-DE": {
+          "name": "Hummlist",
+          "summary": "Eure gemeinsame Einkaufsliste: Sachen per Zuruf auf die Hummlist setzen.",
+          "description": "Mit Hummlist setzt du Sachen auf die Einkaufsliste eures Haushalts, ohne das Handy in die Hand zu nehmen. Sag einfach: Alexa, sag Hummlist, füg Milch und Eier hinzu. Die Sachen landen sofort auf der Hummlist aller im Haushalt, sortiert wie in der App. Du kannst auch fragen, was auf der Liste steht. Für den Skill brauchst du ein Hummlist-Konto, das du in der Alexa-App verknüpfst.",
+          "examplePhrases": [
+            "Alexa, sag Hummlist, füg Milch und Eier hinzu",
+            "Alexa, frag Hummlist, was auf der Liste steht",
+            "Alexa, öffne Hummlist"
+          ],
+          "keywords": ["Einkaufsliste", "Einkaufen", "Einkaufszettel", "Haushalt", "Liste"],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": ["DE", "AT", "CH", "LU", "LI"],
+      "distributionMode": "PUBLIC",
+      "category": "SHOPPING",
+      "testingInstructions": "Siehe docs/ALEXA.md, Abschnitt Zertifizierung: Testkonto und Testschritte (Entwurf, von Hummlist Ops vor der Einreichung eingesetzt)."
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa",
+          "sslCertificateType": "Wildcard"
+        },
+        "interfaces": []
+      }
+    },
+    "events": {
+      "endpoint": {
+        "uri": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa",
+        "sslCertificateType": "Wildcard"
+      },
+      "subscriptions": [
+        { "eventName": "SKILL_ACCOUNT_LINKED" },
+        { "eventName": "SKILL_DISABLED" }
+      ]
+    },
+    "permissions": [],
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": true,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "de-DE": {
+          "privacyPolicyUrl": "https://hummlist.com/datenschutz",
+          "termsOfUseUrl": "https://hummlist.com/impressum"
+        }
+      }
+    }
+  },
+  "manifestVersion": "1.0"
+}

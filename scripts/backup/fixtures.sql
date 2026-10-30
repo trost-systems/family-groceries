@@ -90,4 +90,17 @@ insert into public.feedback (id, message, app_version, build, platform, os_versi
 values (gen_random_uuid(), 'Gibt es das auch auf Englisch?', '0.1.0', '42', 'web', 'Safari on iOS', 'en', 'more');
 reset role;
 
+-- Job 31: the app records each install's analytics answer; the alexa function's link map and
+-- rate limit (service connection only).
+select pg_temp.login('peter@backup.test');
+select public.record_analytics_consent('6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b', true);
+reset role;
+select pg_temp.login('lea@backup.test');
+select public.record_analytics_consent('7a2b3c4d-5e6f-4a70-8b8c-9d0e1f2a3b4c', false);
+reset role;
+insert into public.alexa_links (alexa_user_hash, session_id, user_id)
+select encode(sha256('amzn1.ask.account.BACKUP'::bytea), 'hex'), gen_random_uuid(), id
+from auth.users where email = 'peter@backup.test';
+select public.alexa_take_adds((select id from auth.users where email = 'peter@backup.test'), 2);
+
 commit;

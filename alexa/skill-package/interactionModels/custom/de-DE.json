@@ -1,0 +1,108 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "hummlist",
+      "intents": [
+        {
+          "name": "AddItemIntent",
+          "slots": [
+            {
+              "name": "items",
+              "type": "AMAZON.SearchQuery",
+              "samples": [
+                "{items}",
+                "füg {items} hinzu",
+                "füge {items} hinzu",
+                "setz {items} auf die liste",
+                "schreib {items} auf",
+                "wir brauchen {items}",
+                "ich brauche {items}"
+              ]
+            }
+          ],
+          "samples": [
+            "füg {items} hinzu",
+            "füge {items} hinzu",
+            "füg {items} zur liste hinzu",
+            "füge {items} zur liste hinzu",
+            "füg {items} zur einkaufsliste hinzu",
+            "{items} hinzufügen",
+            "setz {items} auf die liste",
+            "setze {items} auf die liste",
+            "setz {items} auf die einkaufsliste",
+            "pack {items} auf die liste",
+            "packe {items} auf die liste",
+            "schreib {items} auf",
+            "schreibe {items} auf",
+            "schreib {items} auf die liste",
+            "trag {items} ein",
+            "trage {items} ein",
+            "notier {items}",
+            "notiere {items}",
+            "wir brauchen {items}",
+            "ich brauche {items}",
+            "wir brauchen noch {items}",
+            "{items} auf die liste",
+            "{items} auf die einkaufsliste",
+            "dass wir {items} brauchen",
+            "dass ich {items} brauche"
+          ]
+        },
+        {
+          "name": "ReadListIntent",
+          "slots": [],
+          "samples": [
+            "was auf der liste steht",
+            "was steht auf der liste",
+            "was steht auf meiner liste",
+            "was steht auf unserer liste",
+            "was steht auf der einkaufsliste",
+            "was auf der einkaufsliste steht",
+            "was wir brauchen",
+            "was brauchen wir",
+            "was ich kaufen muss",
+            "was muss ich kaufen",
+            "was wir kaufen müssen",
+            "lies die liste vor",
+            "lies mir die liste vor",
+            "lies die einkaufsliste vor",
+            "die liste vorlesen",
+            "die liste"
+          ]
+        },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] }
+      ],
+      "types": []
+    },
+    "dialog": {
+      "intents": [
+        {
+          "name": "AddItemIntent",
+          "delegationStrategy": "SKILL_RESPONSE",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "items",
+              "type": "AMAZON.SearchQuery",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": { "elicitation": "Elicit.Slot.AddItemIntent.items" }
+            }
+          ]
+        }
+      ],
+      "delegationStrategy": "SKILL_RESPONSE"
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.AddItemIntent.items",
+        "variations": [{ "type": "PlainText", "value": "Was soll auf die Liste?" }]
+      }
+    ]
+  }
+}

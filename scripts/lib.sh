@@ -53,6 +53,8 @@ db_reset() {
 # The lock lets CI start the stack in the background early (ci.yml) while this waits for it.
 supabase_up() {
   reserve_port_block
+  # Job 31: the alexa function's test CA and skill id, in supabase/functions/.env before the start.
+  "$REPO_ROOT/scripts/alexa-test-ca.sh" >/dev/null
   (
     cd "$REPO_ROOT" && flock 7
     stack_running && exit 0

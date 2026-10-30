@@ -21,6 +21,9 @@ function db(): Sql {
   return pool;
 }
 
+/** The service connection, for credential and bookkeeping tables no client may touch. */
+export const serviceDb = (): Sql => db();
+
 /** Runs `work` in one transaction as `userId`, under RLS. */
 export async function asUser<T>(userId: string, work: (tx: Tx) => Promise<T>): Promise<T> {
   const claims = JSON.stringify({ sub: userId, role: 'authenticated' });

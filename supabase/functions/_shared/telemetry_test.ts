@@ -240,3 +240,27 @@ Deno.test('checkServerEvent names the property, never the value', () => {
   );
   assertFalse(e.message.includes('Deutschland'));
 });
+
+Deno.test('item_added (job 31): source alexa, role and household size only', async () => {
+  const { sent, fetchImpl } = recorder();
+  const t = telemetryFor(
+    'alexa',
+    env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }),
+    fetchImpl,
+  );
+  const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
+  const subject = { installId: INSTALL, householdId: household, internal: true };
+  const ok = { source: 'alexa', actor_role: 'member', household_size: 2 };
+  assert(t.event('item_added', subject, ok));
+  assertFalse(t.event('item_added', subject, { ...ok, source: 'typed' }));
+  assertFalse(t.event('item_added', subject, { ...ok, household_size: 1.5 }));
+  assertFalse(t.event('item_added', subject, { ...ok, household_size: 0 }));
+  assertFalse(t.event('item_added', subject, { ...ok, name: 'Milch' }));
+  assertFalse(t.event('item_added', subject, { ...ok, actor_role: 'Peter' }));
+  await t.flush();
+  assertEquals(sent[0].body.batch.length, 1);
+  const p = sent[0].body.batch[0].properties as Record<string, unknown>;
+  assertEquals(p.source, 'alexa');
+  assertEquals(p.household_id, household);
+  assertEquals(p.is_internal, true, 'an internal install says so');
+});

@@ -1,0 +1,13 @@
+{
+  "accountLinkingRequest": {
+    "type": "AUTH_CODE",
+    "authorizationUrl": "https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1/oauth/authorize",
+    "accessTokenUrl": "https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1/oauth/token",
+    "clientId": "REPLACE_WITH_CLIENT_ID",
+    "accessTokenScheme": "HTTP_BASIC",
+    "scopes": [],
+    "domains": ["app.hummlist.com", "jdwqrallbpdbshrdhenk.supabase.co"],
+    "skipOnEnablement": false,
+    "pkceConfiguration": { "status": "ENABLED", "codeChallengeMethod": "S256" }
+  }
+}

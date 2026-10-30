@@ -26,7 +26,8 @@ class _Db(final FakeAuth fakeAuth) extends Fake implements SupabaseClient {
   /// Reads fail: the reload after an RPC.
   var failReads = false;
 
-  /// The next call is done on the server but its answer is lost.
+  /// The next household call is done on the server but its answer is lost
+  /// (not analytics' own consent call, which runs beside it, job 31).
   var dropNextAnswer = false;
   final calls = <String>[];
 
@@ -34,7 +35,8 @@ class _Db(final FakeAuth fakeAuth) extends Fake implements SupabaseClient {
     'http://db.invalid/rest/v1',
     httpClient: MockClient((request) async {
       calls.add(request.url.path);
-      if (dropNextAnswer) {
+      if (dropNextAnswer &&
+          !request.url.path.endsWith('record_analytics_consent')) {
         // The server does the work, but the answer never arrives.
         dropNextAnswer = false;
         _answer(request);
@@ -142,6 +144,21 @@ void main() {
 
   Map<String, Object?> props(Map<String, Object?> e) =>
       e['properties']! as Map<String, Object?>;
+
+  test('the yes reaches the server once, for this install (job 31)', () async {
+    await pumpEventQueue();
+    expect(
+      db.calls.where((c) => c.endsWith('/rpc/record_analytics_consent')),
+      hasLength(1),
+    );
+    await cubit.createHousehold('Zuhause');
+    await pumpEventQueue();
+    expect(
+      db.calls.where((c) => c.endsWith('/rpc/record_analytics_consent')),
+      hasLength(1),
+      reason: 'a household change is not a new answer',
+    );
+  });
 
   test('first_open before a household has no household_id', () async {
     await analytics.flush();

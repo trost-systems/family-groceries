@@ -494,6 +494,124 @@ void main() {
     expect(slow.names, ['first_open', 'item_ticked']);
     await b.close();
   });
+
+  // Job 31: the server keeps each install's answer, so an add over Alexa is
+  // counted only after a yes in the app.
+  group('the answer reaches the server', () {
+    late List<String> recorded;
+
+    Future<void> record({
+      required String? installId,
+      required bool consent,
+      required bool internal,
+      required bool answered,
+    }) async {
+      recorded.add('$installId $consent $internal $answered');
+    }
+
+    setUp(() {
+      recorded = [];
+      analytics.recordConsent = record;
+    });
+
+    test('a yes is recorded under the install id, as an answer', () async {
+      analytics.setUser(customer);
+      expect(recorded, isEmpty, reason: 'not before the answer');
+      await analytics.decide(granted: true);
+      expect(recorded, ['${store.id} true false true']);
+      // Token refreshes and reloads: nothing new.
+      analytics
+        ..setUser(customer)
+        ..setUser(customer);
+      expect(recorded, hasLength(1));
+    });
+
+    test(
+      'a no is recorded under the id the install had, then without one',
+      () async {
+        analytics.setUser(customer);
+        await analytics.decide(granted: true);
+        final id = store.id;
+        await analytics.decide(granted: false);
+        expect(recorded.last, '$id false false true');
+        expect(store.id, isNull, reason: 'job 33b: a no deletes the id');
+        // The next start of this install: a no without an id, not an answer.
+        final again = await loadedAnalytics(sink, store);
+        again
+          ..recordConsent = record
+          ..setUser(customer);
+        expect(recorded.last, 'null false false false');
+        await again.close();
+      },
+    );
+
+    test('a first no on a fresh install has no id', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: false);
+      expect(recorded, ['null false false true']);
+    });
+
+    test(
+      'an answer given signed out is recorded at the next sign-in',
+      () async {
+        await analytics.decide(granted: true);
+        expect(recorded, isEmpty);
+        analytics.setUser(customer);
+        expect(recorded, ['${store.id} true false false']);
+        // Another account on the same install: recorded for it too.
+        analytics
+          ..setUser(null)
+          ..setUser(
+            const AnalyticsUser(
+              email: 'lea@gmail.com',
+              householdId: householdA,
+            ),
+          );
+        expect(recorded, hasLength(2));
+      },
+    );
+
+    test('marking the install internal records that', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      await analytics.markInternalInstall(internal: true);
+      expect(recorded.last, '${store.id} true true false');
+    });
+
+    test('a failed write is tried again on the next change', () async {
+      var fail = true;
+      analytics
+        ..recordConsent =
+            ({
+              required installId,
+              required consent,
+              required internal,
+              required answered,
+            }) async {
+              if (fail) {
+                throw Exception('offline');
+              }
+              recorded.add('$installId $consent');
+            }
+        ..setUser(customer);
+      await analytics.decide(granted: true);
+      await pumpEventQueue();
+      fail = false;
+      analytics.setUser(customer);
+      expect(recorded, ['${store.id} true']);
+    });
+
+    test('a build without a key records nothing', () async {
+      final off = Analytics(null, store, releaseConfig);
+      await off.load();
+      off
+        ..recordConsent = record
+        ..setUser(customer);
+      await off.decide(granted: true);
+      expect(recorded, isEmpty);
+      await off.close();
+    });
+  });
 }
 
 class _SlowSink() extends RecordingSink {
