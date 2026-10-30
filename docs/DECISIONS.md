@@ -2850,3 +2850,68 @@ Overview and definitions: [ANALYTICS.md](ANALYTICS.md).
     `household_created` and `invite_accepted` are tracked with the household the RPC returned,
     before the reload, so a failed reload doesn't lose them. Kept as is: the consent hop sends an
     already signed-in user to the list rather than back to e.g. `/more` (login behaves the same).
+
+## Job 29c (swipe left edits instead of deleting), 2026-10-30
+
+Peter, 2026-10-29: "replace delete with edit in the swipe-left action. Tap
+and hold doesn't work on mobile browser, that always triggers the move
+action." The code is `ItemRow` in `app/lib/list/list_view/item_row.dart`.
+
+1. **The swipe edits.** A swipe to the left past 40 % of the row (or a
+   fling) calls `onEdit`, the same edit sheet a right click or a still hold
+   opens. `Dismissible.confirmDismiss` returns false, so the row springs
+   back and stays where it was; the swipe writes nothing. The background
+   under the swipe is the secondary container with a pencil, no longer the
+   error colour with a bin. Rows still being sorted (no category yet) swipe
+   the same way. `shopping_list_view.dart` is unchanged (29b and 19 change
+   it): the row already had `onEdit`.
+2. **Delete lives in the edit sheet.** Its Löschen deletes with the undo
+   snackbar, as since job 15. One tap more than the old swipe, and no
+   accidental deletes from a swipe meant to scroll. Screen readers also get
+   "Bearbeiten" and "Löschen" as custom actions on the row (the strings
+   `editSheet` and `delete` already existed, so no l10n change); that is
+   what keeps `onDelete` on the row.
+3. **No item action needs a hold.** Tick: a tap. Edit: the swipe, a right
+   click, or a hold that stays put. Delete: the sheet's Löschen. Move to
+   another category or store: the sheet's chips. Only reordering within a
+   category (or dropping on a particular row) is a hold and drag, as a
+   drag has to start somewhere; the chips put the item at the end of its
+   new category, which covers moving it.
+4. **Why a hold became a move on a phone's browser.** A lifted item counted
+   as moving once the finger had travelled 8 px in total, for as long as it
+   was held. Nothing shows on lift (the pill appears only once it moves, so
+   a hold that edits shows nothing lifted), so a finger waits and drifts,
+   and 8 px is below Flutter's own touch slop (`kTouchSlop`, 18 px).
+   Now a touch, stylus or unknown pointer gets 18 px, a mouse keeps 8 px
+   (`holdSlop` in `drag.dart`). Store and category dividers use it too:
+   their menus open on a hold that stays put, and the same drift turned
+   those into drags.
+   This is the likely cause, not a proven one: no real phone here. The
+   e2e specs hold a finger still for 700 ms, drift 12 px and expect the
+   sheet, in Chrome as an Android phone (real touch events over CDP,
+   `edit-sheet.spec.ts`) and in WebKit as an iPhone (Safari's touch
+   pointer events, `iphone.spec.ts`). Whatever the cause, the swipe no
+   longer depends on a hold.
+5. **Tests.** Widget tests in `app/test/list/list_screen_test.dart`: swipe
+   opens the sheet and the row stays, a short swipe springs back, delete
+   from a swiped-open sheet with undo, a row still being sorted, every
+   action without a hold, a drifting finger edits where a mouse drags, and
+   the screen-reader actions, and a drifting finger on a store and a
+   category divider opens the menu. Drags in the tests now move 24 px
+   (past the touch slop) before they count as drags.
+6. **The explainer card names the swipe.** It read "Halten bearbeitet",
+   pointing phone users at the gesture that failed for them. Now "Tippen
+   hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt"
+   (English "Swipe left edits"). That is the one l10n change of this job:
+   the value of `listHint` in both ARB files, no new key.
+7. **A mouse swipe faster than 200 ms ticks on web.** Flutter web holds a
+   press on a tappable semantics node back for 200 ms (its click
+   debouncer, `pointer_binding.dart`). If the button comes back up within
+   that time, the browser's `click` reaches the engine while it is still
+   holding the events back. The engine then sends the row a semantic tap
+   and drops the drag, so the item ticks. A finger swipe produces no click
+   and is unaffected; a mouse drag at a hand's pace takes longer than
+   200 ms. It was the same for the old swipe-to-delete. The app never sees
+   the dropped drag, so it can't tell the difference; the e2e mouse swipe
+   moves at a hand's pace (seen on CI when the whole drag ran in under
+   200 ms under load).

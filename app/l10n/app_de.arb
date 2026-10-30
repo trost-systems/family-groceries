@@ -178,7 +178,7 @@
   "moveStoreDown": "Laden nach unten",
   "moveCategoryUp": "Kategorie nach oben",
   "moveCategoryDown": "Kategorie nach unten",
-  "listHint": "Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt",
+  "listHint": "Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt",
   "listHintDismiss": "Verstanden",
   "reorderNeedsConnection": "Die Reihenfolge lässt sich nur mit Verbindung ändern.",
   "suggestion": "Vorschlag: {label}",

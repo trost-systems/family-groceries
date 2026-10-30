@@ -144,6 +144,72 @@ export async function saveEdit(page: Page): Promise<void> {
   await expect(editSheet(page)).toHaveCount(0);
 }
 
+type Point = { x: number; y: number };
+
+/**
+ * One finger on a phone's browser (job 29c): it lands on the first point, waits [hold] ms, slides
+ * through the others in [steps] moves each, and lifts after [pause] ms more. Chromium gets real
+ * touch events over CDP. WebKit has no touch driver in Playwright, so it gets the pointer events
+ * Safari sends for a finger (`pointerType: 'touch'`), which is what Flutter web listens to:
+ * pointerdown on the view, then pointermove and pointerup reaching its global target.
+ * [onMove] runs while the finger is still down, after the last move.
+ */
+export async function finger(
+  page: Page,
+  points: Point[],
+  { hold = 0, steps = 10, pause = 50, onMove }: { hold?: number; steps?: number; pause?: number; onMove?: () => Promise<void> } = {},
+): Promise<void> {
+  const path: Point[] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const [a, b] = [points[i - 1], points[i]];
+    for (let s = 1; s <= steps; s++) path.push({ x: a.x + ((b.x - a.x) * s) / steps, y: a.y + ((b.y - a.y) * s) / steps });
+  }
+  const last = path[path.length - 1];
+  if (page.context().browser()?.browserType().name() === 'chromium') {
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', at?: Point) =>
+      cdp.send('Input.dispatchTouchEvent', { type, touchPoints: at ? [{ x: at.x, y: at.y, id: 1 }] : [] });
+    await touch('touchStart', path[0]);
+    await page.waitForTimeout(hold);
+    for (const at of path.slice(1)) {
+      await touch('touchMove', at);
+      await page.waitForTimeout(16);
+    }
+    await onMove?.();
+    await page.waitForTimeout(pause);
+    await touch('touchEnd');
+    await cdp.detach();
+    return;
+  }
+  const send = (type: string, at: Point) => page.evaluate(([type, x, y]) => {
+    const w = window as unknown as { fingerTarget?: Element };
+    // A finger's events go to the element it landed on. Once that element leaves the page (the
+    // engine rebuilds a row's semantics node when the item lifts), the browser hit-tests again.
+    if (type === 'pointerdown' || !w.fingerTarget?.isConnected) w.fingerTarget = document.elementFromPoint(x, y) ?? document.body;
+    w.fingerTarget!.dispatchEvent(new PointerEvent(type, {
+      pointerId: 29, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, composed: true,
+      clientX: x, clientY: y, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1,
+      width: 20, height: 20, pressure: type === 'pointerup' ? 0 : 0.5,
+    }));
+  }, [type, at.x, at.y] as const);
+  await send('pointerdown', path[0]);
+  await page.waitForTimeout(hold);
+  for (const at of path.slice(1)) {
+    await send('pointermove', at);
+    await page.waitForTimeout(16);
+  }
+  await onMove?.();
+  await page.waitForTimeout(pause);
+  await send('pointerup', last);
+}
+
+/** A finger swipe to the left across most of [target]'s width, along its middle. */
+export async function swipeLeft(page: Page, target: Locator, options: { onMove?: () => Promise<void> } = {}): Promise<void> {
+  const b = (await target.boundingBox())!;
+  const y = b.y + b.height / 2;
+  await finger(page, [{ x: b.x + b.width - 30, y }, { x: b.x + 30, y }], options);
+}
+
 /** Resolves once the page has drawn two more frames, so Flutter has drawn the frame it had scheduled. */
 export async function nextFrames(page: Page): Promise<void> {
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));

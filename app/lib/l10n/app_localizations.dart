@@ -983,7 +983,7 @@ abstract class AppLocalizations {
   /// No description provided for @listHint.
   ///
   /// In de, this message translates to:
-  /// **'Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt'**
+  /// **'Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt'**
   String get listHint;
 
   /// No description provided for @listHintDismiss.

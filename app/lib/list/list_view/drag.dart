@@ -1,5 +1,6 @@
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 /// What is being dragged.
@@ -55,9 +56,16 @@ class DragSession() {
   }
 }
 
-/// How far a held pointer may move and still be a long press (prototype:
+/// How far a held mouse may move and still be a long press (prototype:
 /// 8 px).
 const dragSlop = 8.0;
+
+/// How far a held pointer of [kind] may move and still be a long press. A
+/// finger drifts while it waits for the hold, and nothing shows on lift, so
+/// it gets Flutter's touch slop (18 px): with 8 px a hold on a phone's
+/// browser kept turning into a drag (job 29c).
+double holdSlop(PointerDeviceKind kind) =>
+    kind == PointerDeviceKind.mouse ? dragSlop : kTouchSlop;
 
 /// How long a press is held before it lifts (prototype: 300 ms). On web
 /// the engine holds a press on a tappable semantics node back for 200 ms

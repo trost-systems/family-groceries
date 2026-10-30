@@ -178,7 +178,7 @@
   "moveStoreDown": "Move store down",
   "moveCategoryUp": "Move category up",
   "moveCategoryDown": "Move category down",
-  "listHint": "Tap ticks off · Hold edits · Hold and drag moves",
+  "listHint": "Tap ticks off · Swipe left edits · Hold and drag moves",
   "listHintDismiss": "Got it",
   "reorderNeedsConnection": "Reordering needs a connection.",
   "suggestion": "Suggestion: {label}",

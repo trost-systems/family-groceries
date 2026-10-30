@@ -555,7 +555,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveCategoryDown => 'Move category down';
 
   @override
-  String get listHint => 'Tap ticks off · Hold edits · Hold and drag moves';
+  String get listHint =>
+      'Tap ticks off · Swipe left edits · Hold and drag moves';
 
   @override
   String get listHintDismiss => 'Got it';

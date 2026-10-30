@@ -36,6 +36,9 @@ class const StoreDivider({
 class _StoreDividerState() extends State<StoreDivider> {
   var _travel = Offset.zero;
 
+  /// [holdSlop] of the pointer that pressed last.
+  var _slop = dragSlop;
+
   String get _key => widget.section.key;
 
   void _hover(DragTargetDetails<Dragged> details) {
@@ -88,37 +91,40 @@ class _StoreDividerState() extends State<StoreDivider> {
     );
     final body = store == null
         ? head
-        : LongPressDraggable<Dragged>(
-            data: DraggedStore(store.id),
-            delay: holdDelay(tappable: true),
-            dragAnchorStrategy: pointerDragAnchorStrategy,
-            onDragStarted: () {
-              _travel = Offset.zero;
-              widget.session.active.value = DraggedStore(store.id);
-            },
-            onDragUpdate: (details) {
-              _travel += details.delta;
-              if (_travel.distance >= dragSlop) {
-                widget.session.moved.value = true;
-              }
-            },
-            onDragEnd: (details) {
-              final moved = widget.session.moved.value;
-              widget.session.end();
-              if (!moved && !details.wasAccepted) {
-                widget.onMenu();
-              }
-            },
-            feedback: _DragPill(
-              session: widget.session,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 10,
-                children: [StoreBadge(store), Text(name)],
+        : Listener(
+            onPointerDown: (event) => _slop = holdSlop(event.kind),
+            child: LongPressDraggable<Dragged>(
+              data: DraggedStore(store.id),
+              delay: holdDelay(tappable: true),
+              dragAnchorStrategy: pointerDragAnchorStrategy,
+              onDragStarted: () {
+                _travel = Offset.zero;
+                widget.session.active.value = DraggedStore(store.id);
+              },
+              onDragUpdate: (details) {
+                _travel += details.delta;
+                if (_travel.distance >= _slop) {
+                  widget.session.moved.value = true;
+                }
+              },
+              onDragEnd: (details) {
+                final moved = widget.session.moved.value;
+                widget.session.end();
+                if (!moved && !details.wasAccepted) {
+                  widget.onMenu();
+                }
+              },
+              feedback: _DragPill(
+                session: widget.session,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 10,
+                  children: [StoreBadge(store), Text(name)],
+                ),
               ),
+              childWhenDragging: Opacity(opacity: 0.6, child: head),
+              child: head,
             ),
-            childWhenDragging: Opacity(opacity: 0.6, child: head),
-            child: head,
           );
     final label = l10n.storeSectionLabel(name, section.count);
     return Semantics(
@@ -339,6 +345,9 @@ class const CategoryDivider({
 class _CategoryDividerState() extends State<CategoryDivider> {
   var _travel = Offset.zero;
 
+  /// [holdSlop] of the pointer that pressed last.
+  var _slop = dragSlop;
+
   String get _key => '${widget.sectionKey}/${widget.block.category?.id}';
 
   void _hover(DragTargetDetails<Dragged> details) {
@@ -401,36 +410,39 @@ class _CategoryDividerState() extends State<CategoryDivider> {
     final line = _Line(label: label, hover: widget.session.hover, id: _key);
     final body = category == null
         ? line
-        : LongPressDraggable<Dragged>(
-            data: DraggedCategory(
-              sectionKey: widget.sectionKey,
-              categoryId: category.id,
-            ),
-            delay: holdDelay(tappable: false),
-            dragAnchorStrategy: pointerDragAnchorStrategy,
-            onDragStarted: () {
-              _travel = Offset.zero;
-              widget.session.active.value = DraggedCategory(
+        : Listener(
+            onPointerDown: (event) => _slop = holdSlop(event.kind),
+            child: LongPressDraggable<Dragged>(
+              data: DraggedCategory(
                 sectionKey: widget.sectionKey,
                 categoryId: category.id,
-              );
-            },
-            onDragUpdate: (details) {
-              _travel += details.delta;
-              if (_travel.distance >= dragSlop) {
-                widget.session.moved.value = true;
-              }
-            },
-            onDragEnd: (details) {
-              final moved = widget.session.moved.value;
-              widget.session.end();
-              if (!moved && !details.wasAccepted) {
-                widget.onMenu();
-              }
-            },
-            feedback: _DragPill(session: widget.session, child: Text(label)),
-            childWhenDragging: Opacity(opacity: 0.5, child: line),
-            child: line,
+              ),
+              delay: holdDelay(tappable: false),
+              dragAnchorStrategy: pointerDragAnchorStrategy,
+              onDragStarted: () {
+                _travel = Offset.zero;
+                widget.session.active.value = DraggedCategory(
+                  sectionKey: widget.sectionKey,
+                  categoryId: category.id,
+                );
+              },
+              onDragUpdate: (details) {
+                _travel += details.delta;
+                if (_travel.distance >= _slop) {
+                  widget.session.moved.value = true;
+                }
+              },
+              onDragEnd: (details) {
+                final moved = widget.session.moved.value;
+                widget.session.end();
+                if (!moved && !details.wasAccepted) {
+                  widget.onMenu();
+                }
+              },
+              feedback: _DragPill(session: widget.session, child: Text(label)),
+              childWhenDragging: Opacity(opacity: 0.5, child: line),
+              child: line,
+            ),
           );
     return Semantics(
       container: true,

@@ -111,7 +111,7 @@ The bottom band (input plus tabs) is 134 px plus the safe-area bottom. The More 
 ### 2.6 Explainer card
 
 - **Box.** A margin of 8 by 12 px. Padding is 8 px right and 14 px left, with 8 px top and bottom. Radius 12. `tertiaryContainer` background, `onTertiaryContainer` text at 13 px, line height 1.35.
-- **Contents.** "👆", then "Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt", then a "Verstanden" text button: min height 36 px, radius 18, weight 700.
+- **Contents.** "👆", then "Tippen hakt ab · Halten bearbeitet · Halten und ziehen verschiebt" (since job 29c "Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt": the swipe edits), then a "Verstanden" text button: min height 36 px, radius 18, weight 700.
 - **Behaviour.** It sits in the list flow, not as an overlay. Dismissing it is persisted.
 
 ### 2.7 Bottom composer: input bar, tabs, sheet
