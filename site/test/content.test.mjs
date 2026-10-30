@@ -9,7 +9,7 @@ const listed = (doc) => doc.querySelectorAll('main li').map((li) => ({ href: li.
 test('real content builds every route', () => {
   const { outDir } = buildSite();
   const routes = htmlRoutes(outDir);
-  for (const route of ['/', '/de/anleitungen/siri-kurzbefehl', '/en/guides/siri-shortcut', '/de/anleitungen', '/en/guides', '/impressum', '/en/imprint']) {
+  for (const route of ['/', '/de/anleitungen/siri-kurzbefehl', '/en/guides/siri-shortcut', '/de/anleitungen/alexa', '/en/guides/alexa', '/de/anleitungen', '/en/guides', '/impressum', '/en/imprint']) {
     assert.ok(routes.includes(route), `${route} is built`);
   }
 });
@@ -17,15 +17,16 @@ test('real content builds every route', () => {
 test('each index lists only its own locale with title and description', () => {
   const { page } = buildSite();
   const de = listed(page('/de/anleitungen'));
-  assert.equal(de.length, 1);
-  assert.equal(de[0].href, '/de/anleitungen/siri-kurzbefehl');
-  assert.match(de[0].text, /Hummlist per Siri: Kurzbefehl einrichten/);
-  assert.match(de[0].text, /Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Hummlist/);
+  assert.deepEqual(de.map((g) => g.href), ['/de/anleitungen/alexa', '/de/anleitungen/siri-kurzbefehl']);
+  assert.match(de[0].text, /Hummlist per Alexa: Skill einrichten/);
+  assert.match(de[0].text, /Mit dem Alexa-Skill „Hummlist“ setzt du Sachen per Sprache auf deine Hummlist/);
+  assert.match(de[1].text, /Hummlist per Siri: Kurzbefehl einrichten/);
+  assert.match(de[1].text, /Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Hummlist/);
   const en = listed(page('/en/guides'));
-  assert.equal(en.length, 1);
-  assert.equal(en[0].href, '/en/guides/siri-shortcut');
-  assert.match(en[0].text, /Hummlist with Siri \(German only for now\)/);
-  assert.match(en[0].text, /works in German only for now/);
+  assert.deepEqual(en.map((g) => g.href), ['/en/guides/alexa', '/en/guides/siri-shortcut']);
+  assert.match(en[0].text, /Hummlist with Alexa \(German only for now\)/);
+  assert.match(en[1].text, /Hummlist with Siri \(German only for now\)/);
+  assert.match(en[1].text, /works in German only for now/);
 });
 
 test('a new guide file appears at its route and on its index', () => {
@@ -34,7 +35,7 @@ test('a new guide file appears at its route and on its index', () => {
   });
   assert.equal(page('/de/anleitungen/einkauf-teilen').querySelector('h1').text, 'Einkauf teilen');
   const de = listed(page('/de/anleitungen'));
-  assert.deepEqual(de.map((g) => g.href), ['/de/anleitungen/einkauf-teilen', '/de/anleitungen/siri-kurzbefehl'], 'sorted by title');
+  assert.deepEqual(de.map((g) => g.href), ['/de/anleitungen/einkauf-teilen', '/de/anleitungen/alexa', '/de/anleitungen/siri-kurzbefehl'], 'sorted by title');
   assert.match(de[0].text, /So teilst du die Liste\./);
   assert.ok(!hrefs(page('/en/guides')).includes('/de/anleitungen/einkauf-teilen'));
 });
@@ -67,6 +68,12 @@ test('the EN stub says German only and links to the German guide', () => {
   const doc = buildSite().page('/en/guides/siri-shortcut');
   assert.match(doc.querySelector('main').text, /only works in German/);
   assert.ok(hrefs(doc, 'main a').includes('/de/anleitungen/siri-kurzbefehl'));
+});
+
+test('the EN Alexa stub says German only and links to the German guide', () => {
+  const doc = buildSite().page('/en/guides/alexa');
+  assert.match(doc.querySelector('main').text, /only works in German/);
+  assert.ok(hrefs(doc, 'main a').includes('/de/anleitungen/alexa'));
 });
 
 test('the dialogue renders as separate lines and other paragraphs get no line break', () => {
