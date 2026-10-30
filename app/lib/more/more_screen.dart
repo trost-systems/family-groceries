@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/guides.dart';
-import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
@@ -13,6 +12,7 @@ import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/settings/account_screen.dart';
+import 'package:family_groceries/settings/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -30,9 +30,15 @@ enum MorePage() {
 
   /// The draft privacy page while none is published (`/more/privacy`).
   privacy,
+
+  /// Theme and language (`/more/settings`).
+  settings,
+
+  /// The language list below [settings] (`/more/settings/language`).
+  language,
 }
 
-/// The More tab: household, access, account, language, sign-out and the
+/// The More tab: household, access, account, sign-out, settings and the
 /// legal pages, then the app version.
 class const MoreScreen({super.key, final MorePage? page})
     extends StatelessWidget {
@@ -60,9 +66,20 @@ class const MoreScreen({super.key, final MorePage? page})
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                    child: Text(
-                      _title(l10n, shown),
-                      style: Theme.of(context).textTheme.titleLarge,
+                    child: Row(
+                      spacing: 8,
+                      children: [
+                        // The language list sits below Einstellungen, also
+                        // beside the list.
+                        if (shown == MorePage.language)
+                          BackButton(
+                            onPressed: () => context.go(appSettingsPath),
+                          ),
+                        Text(
+                          _title(l10n, shown),
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(child: _Page(shown)),
@@ -91,6 +108,8 @@ class const MoreScreen({super.key, final MorePage? page})
     MorePage.access => l10n.accessTitle,
     MorePage.account => l10n.account,
     MorePage.privacy => l10n.privacy,
+    MorePage.settings => l10n.settingsTitle,
+    MorePage.language => l10n.language,
   };
 }
 
@@ -100,6 +119,8 @@ class const _Page(final MorePage page) extends StatelessWidget {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
     MorePage.privacy => const _PrivacyDraft(),
+    MorePage.settings => const SettingsScreen(),
+    MorePage.language => const LanguageScreen(),
   };
 }
 
@@ -174,8 +195,16 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           detail: l10n.feedbackRowHint,
           onTap: () => unawaited(showFeedbackSheet(context)),
         ),
-        _Section(l10n.language),
-        const _LanguagePicker(),
+        _Section(l10n.settingsTitle),
+        _Row(
+          key: const ValueKey('more-settings'),
+          icon: Icons.settings_outlined,
+          label: l10n.settingsTitle,
+          detail: l10n.settingsRowHint,
+          selected:
+              selected == MorePage.settings || selected == MorePage.language,
+          onTap: () => context.go(appSettingsPath),
+        ),
         if (context.read<Analytics>().enabled) ...[
           _Section(l10n.analyticsSection),
           const _AnalyticsSwitch(),
@@ -269,52 +298,6 @@ class const _Row({
     selected: selected,
     onTap: onTap,
   );
-}
-
-/// System, Deutsch, English: applied at once and kept on the device.
-class const _LanguagePicker() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final picked = context.watch<LanguageCubit>().state;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: SegmentedButton<AppLanguage?>(
-        key: const ValueKey('more-language'),
-        showSelectedIcon: false,
-        style: const ButtonStyle(
-          visualDensity: VisualDensity.standard,
-          minimumSize: WidgetStatePropertyAll(Size(0, 44)),
-        ),
-        segments: [
-          ButtonSegment(
-            value: null,
-            label: Text(
-              l10n.languageSystem,
-              key: const ValueKey('language-system'),
-            ),
-          ),
-          ButtonSegment(
-            value: AppLanguage.de,
-            label: Text(
-              l10n.languageGerman,
-              key: const ValueKey('language-de'),
-            ),
-          ),
-          ButtonSegment(
-            value: AppLanguage.en,
-            label: Text(
-              l10n.languageEnglish,
-              key: const ValueKey('language-en'),
-            ),
-          ),
-        ],
-        selected: {picked},
-        onSelectionChanged: (choice) =>
-            context.read<LanguageCubit>().pick(choice.single),
-      ),
-    );
-  }
 }
 
 /// The analytics consent of this install (job 19): off stops sending at

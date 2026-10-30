@@ -11,8 +11,6 @@ const sameInBothLanguages = {
   'tokenHint': 'only an ellipsis and the token hint',
   'tokenName': '"Name" is English too',
   'categoryName': '"Name" is English too',
-  'languageGerman': 'a language is named in its own language',
-  'languageEnglish': 'a language is named in its own language',
   'appVersion': '"Version" is English too',
   'feedbackSection': '"Feedback" is German too',
   'feedbackCategoryBug': '"Bug" is what German testers say',

@@ -5,6 +5,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
@@ -70,6 +71,7 @@ typedef More = ({
   FakeRepository repo,
   DeviceCache cache,
   LanguageCubit language,
+  ThemeCubit theme,
   GoRouter router,
   Analytics analytics,
   FakeFeedbackRepository feedback,
@@ -77,12 +79,17 @@ typedef More = ({
 });
 
 /// More's routes as `buildRouter` has them, without the shell (whose list
-/// scope needs the real backend), wired to the language like `App`.
+/// scope needs the real backend), wired to the language and theme like
+/// `App`.
 Future<More> pumpMore(
   WidgetTester tester, {
   String location = morePath,
   Size size = const Size(390, 844),
   AppLanguage? language,
+  ThemeMode theme = ThemeMode.system,
+
+  /// The device's light or dark setting.
+  Brightness deviceBrightness = Brightness.light,
 
   /// The device's preferred languages.
   List<Locale> device = const [Locale('de', 'DE')],
@@ -96,11 +103,15 @@ Future<More> pumpMore(
   addTearDown(tester.view.reset);
   tester.platformDispatcher.localesTestValue = device;
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+  tester.platformDispatcher.platformBrightnessTestValue = deviceBrightness;
+  addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
   SharedPreferencesAsyncPlatform.instance =
       InMemorySharedPreferencesAsync.empty();
   final cache = DeviceCache(SharedPreferencesAsync());
   final languageCubit = LanguageCubit(cache, language);
   addTearDown(languageCubit.close);
+  final themeCubit = ThemeCubit(cache, theme);
+  addTearDown(themeCubit.close);
   final shownAnalytics = analytics ?? Analytics.off(cache);
   addTearDown(shownAnalytics.close);
   final session = FakeSession();
@@ -146,14 +157,21 @@ Future<More> pumpMore(
         providers: [
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider.value(value: languageCubit),
+          BlocProvider.value(value: themeCubit),
           BlocProvider.value(value: shownAnalytics),
           BlocProvider.value(value: feedbackCubit),
         ],
-        child: BlocBuilder<LanguageCubit, AppLanguage?>(
-          builder: (context, picked) => MaterialApp.router(
+        child: Builder(
+          builder: (context) => MaterialApp.router(
+            theme: appTheme(Brightness.light),
+            darkTheme: appTheme(Brightness.dark),
+            themeMode: context.watch<ThemeCubit>().state,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: picked == null ? null : Locale(picked.code),
+            locale: switch (context.watch<LanguageCubit>().state) {
+              final picked? => Locale(picked.code),
+              null => null,
+            },
             localeListResolutionCallback: (preferred, _) =>
                 resolveLocale(preferred, null),
             routerConfig: router,
@@ -167,6 +185,7 @@ Future<More> pumpMore(
     repo: repo,
     cache: cache,
     language: languageCubit,
+    theme: themeCubit,
     router: router,
     analytics: shownAnalytics,
     feedback: feedback,

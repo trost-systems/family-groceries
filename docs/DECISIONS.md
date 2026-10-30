@@ -3193,3 +3193,73 @@ The job's own calls:
     removes the notes with the user (spec engineering Q7), `household_id ... on delete set null`
     keeps other people's notes when a household goes. pgTAP covers the household-kept and
     household-deleted paths and a former member's note, e2e the app's deletion.
+
+## Job 29e (Einstellungen: theme and a scalable language list), 2026-10-30
+
+Peter (2026-10-29): "the language selector isn't scalable once we add many
+languages. Move it a settings submenu and make it more scalable like a
+dropdown or another pattern if one is nicer than that. Also add a menu where
+we can put the light/dark/system mode switch and add dark+light mode."
+
+1. **One Einstellungen page under More** (`/more/settings`, row
+   `more-settings` where the Sprache section was). It holds what belongs to
+   the device rather than the account: Darstellung and Sprache. Zugänge and
+   Konto stay their own pages (job 29d); Nutzungsdaten stays on More, since
+   job 19's recipes and specs find it there and it is a consent, not a
+   preference.
+2. **Language: a list page, not a dropdown.** `/more/settings/language`
+   lists "Wie Gerät" first (its line names what the device gives now,
+   "Gerade Deutsch") and then every `AppLanguage` in its own name, as radio
+   rows. Against a dropdown: a menu hides the options until opened, shows
+   few at a time on a phone and is clumsy with a screen reader; a list page
+   takes any number of languages, shows the pick at a glance and is the
+   pattern iOS and Android settings use. Segments (the old control) stop
+   fitting at four. No search field yet: with two languages it is noise;
+   add one above the list when it no longer fits a screen (about 12). The
+   Sprache row on Einstellungen names the pick, so the page is one tap away
+   only when changing it. A pick applies at once and the page stays open,
+   so the change is seen where it was made.
+3. **Language names live in `AppLanguage`, not the ARB files.** A language
+   is shown in its own name in every UI language (`nativeName`), so the
+   ARB keys `languageGerman`/`languageEnglish` went: every new ARB would
+   have had to repeat every name unchanged. A new language is now one enum
+   value plus its `app_<code>.arb`.
+4. **Theme: Wie Gerät / Hell / Dunkel as radio rows**, default Wie Gerät,
+   stored per device in `DeviceCache` (key `theme`, `light` or `dark`,
+   absent = device; kept across sign-out like the language) and read before
+   the first frame in `main.dart`, so a dark pick never starts light.
+   `ThemeCubit` in `app/lib/app/theme.dart`.
+5. **The dark theme is design H's own scheme in dark.** Design SPEC 2 makes
+   every colour a `ColorScheme` role of the seed 0xFF2E7D32's tonal-spot
+   scheme, so `appTheme(Brightness.dark)` from the same seed is the design
+   in dark; no second token set to drift. The light and dark `ThemeData` are
+   built once in `App`. `test/app/theme_test.dart` checks WCAG AA for every
+   text role pair the app uses (surface, sheets, dialogs, snackbars,
+   containers, error) and 3:1 for outlines in both themes.
+6. **Store colours on dark.** The fixed store colours are the one exception
+   to roles (design SPEC 2.9). Aldi's navy (#00005F) and Edeka's blue on a
+   near-black surface fall below 3:1, so the divider rule would vanish.
+   `storeTint(store, surface)` now mixes the brand colour toward white (on
+   dark) or black (on light) in 5 % steps until it reaches 3:1 (WCAG
+   1.4.11); a colour that already reads stays the brand colour (all of
+   them on light). The badge's 8 % black ring is invisible on dark, so the
+   dark theme rings badges in white at 20 %. The badges' own colours stay:
+   they are the chains' logos.
+7. **The web page behind the app follows the device** (`<meta
+   name="color-scheme" content="light dark">` in `web/index.html`), so a
+   dark device does not flash white before Flutter's first frame. A user
+   who picked Hell on a dark device sees a dark blank for that moment; the
+   pick is in the app's storage, which the page cannot read before Flutter
+   starts.
+8. **`accountDeleteExportHint`** said the export was "in den Einstellungen";
+   since job 29d it is on Konto, so it says "unter Konto" / "under Account".
+9. **The iOS launch screen follows the device too.** Its background was a
+   fixed white, so a dark iPhone flashed white before the first frame. It
+   is now `systemBackgroundColor` (white on light, black on dark), compiled
+   by the CI `ios` gate. Android's launch theme already had a
+   `values-night` variant.
+10. **Two new screen names** (job 21's `screenNames` in `router.dart`):
+   `settings` for `/more/settings` and `language` for its list, so feedback
+   sent from either page names it rather than `other`. Both match the
+   `feedback.screen` check (`^[a-z][a-z_]{0,39}$`); the analytics
+   allow-list takes them from the same set.

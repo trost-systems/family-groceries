@@ -613,7 +613,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeleteExportHint =>
-      'To keep a copy first, use “Export my data” in Settings.';
+      'To keep a copy first, use “Export my data” under Account.';
 
   @override
   String get accountDeleteConfirmLabel => 'Type DELETE to confirm';
@@ -754,16 +754,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountRowHint => 'Export your data, delete your account';
 
   @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsRowHint => 'Appearance and language';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'Device';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
   String get language => 'Language';
 
   @override
   String get languageSystem => 'Device';
 
   @override
-  String get languageGerman => 'Deutsch';
+  String languageSystemNow(String language) {
+    return 'Currently $language';
+  }
 
   @override
-  String get languageEnglish => 'English';
+  String languageSystemPicked(String language) {
+    return 'Device ($language)';
+  }
 
   @override
   String get legal => 'Legal';

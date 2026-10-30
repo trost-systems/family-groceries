@@ -1,3 +1,4 @@
+import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 
@@ -35,11 +36,25 @@ _Look _lookOf(Store store) {
   return (bg: bg, fg: fg, label: first.isEmpty ? '?' : first);
 }
 
-/// The store's accent: its badge colour, or the letter colour when the
-/// badge is white.
-Color storeTint(Store store) {
+/// The store's accent on [surface]: its badge colour, or the letter colour
+/// when the badge is white. Where that is too dark (or light) to read as a
+/// line on [surface] (Aldi's navy on the dark theme), it is mixed with
+/// white (or black) until it has the 3:1 a control part needs (WCAG 1.4.11).
+Color storeTint(Store store, Color surface) {
   final (:bg, :fg, label: _) = _lookOf(store);
-  return bg == const Color(0xFFFFFFFF) ? fg : bg;
+  final base = bg == const Color(0xFFFFFFFF) ? fg : bg;
+  final toward = surface.computeLuminance() < 0.5
+      ? const Color(0xFFFFFFFF)
+      : const Color(0xFF000000);
+  var tint = base;
+  for (
+    var mix = 0.05;
+    contrastRatio(tint, surface) < 3 && mix <= 1;
+    mix += 0.05
+  ) {
+    tint = Color.lerp(base, toward, mix)!;
+  }
+  return tint;
 }
 
 /// A store's logo-like square: its letter in its colours. Decorative; the
@@ -58,7 +73,13 @@ class const StoreBadge(final Store store, {final double size = 24, super.key})
         decoration: BoxDecoration(color: bg, borderRadius: shape),
         foregroundDecoration: BoxDecoration(
           borderRadius: shape,
-          border: Border.all(color: const Color(0x14000000)),
+          // Design H's ring is black at 8 %; on the dark theme a white one
+          // keeps a dark badge (Aldi, Edeka) apart from the surface.
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0x33FFFFFF)
+                : const Color(0x14000000),
+          ),
         ),
         child: Text(
           label,

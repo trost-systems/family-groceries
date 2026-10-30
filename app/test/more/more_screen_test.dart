@@ -58,7 +58,7 @@ void main() {
       'menu-account',
       'more-sign-out',
       'more-feedback',
-      'more-language',
+      'more-settings',
     ]) {
       // In order, top to bottom: the list is taller than a phone.
       await tester.scrollUntilVisible(key(row), 200);

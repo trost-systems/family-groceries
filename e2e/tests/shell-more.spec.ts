@@ -126,23 +126,34 @@ test('old /settings links open the right page; back from a deep link goes to Mor
   await expect(page).toHaveURL(/\/more$/);
 });
 
-test('switching to English changes the whole UI at once and survives a reload', async ({ page }) => {
+test('switching to English in Einstellungen changes the whole UI at once and survives a reload', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('lang'));
   await addItem(page, 'Milch');
   await page.keyboard.press('Escape');
   await openMore(page);
-  await page.getByRole('button', { name: 'English' }).click();
-  await expect(page.getByRole('heading', { name: 'More' }), 'live, without a restart').toBeVisible();
+  // Job 29e: the language is a list below Einstellungen, each language in its own name.
+  await page.getByRole('button', { name: /^Einstellungen/ }).click();
+  await expect(page).toHaveURL(/\/more\/settings$/);
+  await page.getByRole('button', { name: /^Sprache Wie Gerät \(Deutsch\)/ }).click();
+  await expect(page).toHaveURL(/\/more\/settings\/language$/);
+  await expect(page.getByRole('radio', { name: /^Wie Gerät/ })).toBeChecked();
+  await page.getByRole('radio', { name: 'English', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Language' }), 'live, without a restart').toBeVisible();
+  await expect(page.getByRole('radio', { name: 'English', exact: true })).toBeChecked();
   await expect(page.getByRole('tab', { name: 'List' })).toBeVisible();
   await screenshot(page, 'more-03-english');
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'More' }), 'kept on the device').toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Language' }), 'kept on the device').toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('button', { name: /^Language English/ }), 'Settings names the pick').toBeVisible();
   await page.getByRole('tab', { name: 'List' }).click();
   await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
   await expect(page.getByText('Chilled'), 'a seeded category shows its English name').toBeVisible();
   await page.getByRole('tab', { name: 'More' }).click();
-  await page.getByRole('button', { name: 'Deutsch' }).click();
-  await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
+  await expect(page).toHaveURL(/\/more\/settings$/);
+  await page.getByRole('button', { name: /^Language/ }).click();
+  await page.getByRole('radio', { name: 'Deutsch', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sprache' })).toBeVisible();
 });
 
 /** German UI texts: every app_de.arb message that English words differently, as literal pieces. */
@@ -224,6 +235,14 @@ test.describe('with an English browser', () => {
     await expect(page.getByRole('button', { name: 'Delete account' })).toBeVisible();
     await expectNoGerman(page, 'account', german);
     await screenshot(page, 'en-03-settings');
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: /^Settings/ }).click();
+    await expect(page.getByRole('radio', { name: 'Dark', exact: true })).toBeVisible();
+    await expectNoGerman(page, 'settings', german);
+    await page.getByRole('button', { name: /^Language Device \(English\)/ }).click();
+    // The row's line, what the device gives, is part of the radio's name.
+    await expect(page.getByRole('radio', { name: 'Device Currently English', exact: true })).toBeChecked();
+    await expectNoGerman(page, 'language list', german);
   });
 });
 
@@ -260,6 +279,18 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await page.getByRole('button', { name: /^Zugänge/ }).click();
   await expect(page).toHaveURL(/\/more\/access$/);
   await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();
+
+  // Job 29e: Einstellungen beside the list, its language list too, with a way back to it.
+  await page.getByRole('button', { name: /^Einstellungen/ }).click();
+  await expect(page).toHaveURL(/\/more\/settings$/);
+  await expect(page.getByRole('radio', { name: 'Dunkel', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /^Sprache Wie Gerät/ }).click();
+  await expect(page).toHaveURL(/\/more\/settings\/language$/);
+  await expect(page.getByRole('radio', { name: 'English', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Konto Daten/ }), 'the list stays').toBeVisible();
+  await screenshot(page, 'wide-04-language-1366');
+  await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more\/settings$/);
 
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.getByRole('tab', { name: 'Liste' }).click();
