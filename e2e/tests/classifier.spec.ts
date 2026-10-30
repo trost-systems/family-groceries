@@ -81,3 +81,41 @@ test('seed dictionary spot checks: compounds, plurals, quantities, umlauts', asy
   }
   await screenshot(page, '04-seed-dictionary');
 });
+
+test('SPELLING VARIANTS (job 32a): typos, regional and English words land with the word they mean', async ({ browser }) => {
+  const email = newEmail('variants');
+  const peter = await (await browser.newContext()).newPage();
+  await signUpWithHousehold(peter, email);
+  const expected: Record<string, [group: string, via: string]> = {
+    'Karrotten': ['Obst & Gemüse', 'exact'],
+    'Paradeiser': ['Obst & Gemüse', 'synonym'],
+    'Semmeln': ['Brot & Backwaren', 'exact'],
+    'Mlich': ['Kühlregal', 'fuzzy'],
+    'Schokolde': ['Süßes & Snacks', 'fuzzy'],
+    'toilet paper': ['Haushalt', 'synonym'],
+  };
+  for (const item of Object.keys(expected)) await addItem(peter, item);
+  for (const [item, [group]] of Object.entries(expected)) await expectGroup(peter, item, group);
+  await screenshot(peter, '32a-01-variants-in-their-groups');
+
+  // The text stays as typed; the server noted how it found each category (analytics only).
+  const api = await apiAs(email);
+  const { data: rows } = await api.from('items').select('name, categorized_via').in('name', Object.keys(expected));
+  expect(Object.fromEntries(rows!.map((r) => [r.name, r.categorized_via])))
+    .toEqual(Object.fromEntries(Object.entries(expected).map(([item, [, via]]) => [item, via])));
+
+  // A correction of the typo holds for the word's synonyms and spellings, in this household only.
+  await openEdit(peter, 'Karrotten');
+  await pickInSheet(peter, 'Kategorie', 'Getränke');
+  await saveEdit(peter);
+  await expectGroup(peter, 'Karrotten', 'Getränke');
+  await addItem(peter, 'Möhren');
+  await expectGroup(peter, 'Möhren', 'Getränke');
+  await screenshot(peter, '32a-02-correction-holds-for-moehren');
+
+  const lea = await (await browser.newContext()).newPage();
+  await signUpWithHousehold(lea, newEmail('variants-other'));
+  await addItem(lea, 'Möhren');
+  await expectGroup(lea, 'Möhren', 'Obst & Gemüse');
+  await screenshot(lea, '32a-03-other-household-unaffected');
+});

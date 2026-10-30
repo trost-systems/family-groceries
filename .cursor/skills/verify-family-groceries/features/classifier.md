@@ -1,6 +1,6 @@
 # Classifier
 
-Every new item lands in a category without the user choosing one. The list groups items under small category dividers: inside a store in that store's order, under "Ohne Laden" in the household's route order (Obst & Gemüse first, Sonstiges last). The user can move an item to another category in its edit sheet or by dragging it onto a category divider, and the household remembers the move: the next time that item is added, it lands in the category it was moved to. Classification runs on the server (`classify_item`: learned corrections, then a German dictionary of about 1200 terms, then "Sonstiges"), so the app, MCP and Siri agree.
+Every new item lands in a category without the user choosing one. The list groups items under small category dividers: inside a store in that store's order, under "Ohne Laden" in the household's route order (Obst & Gemüse first, Sonstiges last). The user can move an item to another category in its edit sheet or by dragging it onto a category divider, and the household remembers the move: the next time that item is added, it lands in the category it was moved to. Classification runs on the server (`classify_item`: learned corrections, then a German dictionary of about 1200 terms, spelling variants, synonyms and typos (job 32a), then "Sonstiges"), so the app, MCP, Siri and voice agree.
 
 ## Sub-features
 
@@ -10,6 +10,8 @@ Every new item lands in a category without the user choosing one. The list group
 - `cls-move` moves an item to another category through the edit sheet's category chip ("Fertig").
 - `cls-drag` moves an item by holding it and dropping it on another category divider (the end of that category); the household learns it like a move in the edit sheet.
 - `cls-learn` puts a re-added item into the category it was last moved to.
+- `cls-variants` puts a misspelling, a regional word or an English word with the word it means ("Karrotten", "Paradeiser", "Semmeln", "Schokolde", "toilet paper"); the name stays as typed (job 32a).
+- `cls-variant-learn` sends a word's spellings and synonyms where the household moved one of them ("Karrotten" moved to Getränke, then "Möhren" lands there), in that household only.
 
 ## How to get to it (user POV)
 
@@ -30,6 +32,8 @@ Preconditions:
 - **Move.** Run `fg marionette -- long-press --text Xylophon`, then `fg wait --key edit-sheet` (the sheet is open). Run `fg tap --key chip-category` (`chip-store` is the store chip), `fg wait --key category-option-<Süßes & Snacks id>` (`fg db query "select id from categories where name = 'Süßes & Snacks'" --as peter`), `fg tap --key category-option-<id>`, `fg tap --key edit-done` and `fg wait --key edit-sheet --gone`. `fg wait --text "SÜSSES & SNACKS"` matches (ß turns into SS on the divider), Xylophon shows under it, and the category query above returns that category for it. `fg db query "select c.name, m.corrections from category_memory m join categories c on c.id = m.category_id where m.item_key = 'xylophon'" --as peter` returns Süßes & Snacks with a count.
 - **Learn.** Tick Xylophon (`fg tap --text Xylophon`, then `fg wait --text Xylophon --gone`) and add it again with `fg type --key add-item-field --input Xylophon --submit` and `fg press escape`. It lands under "Süßes & Snacks". `fg db query "select c.name from items i join categories c on c.id = i.category_id where i.name = 'Xylophon' and i.status = 'active'" --as peter` returns Süßes & Snacks.
 - **Drag.** Run `fg drag --from-text Ziegenmilch --to-text DROGERIE`. Ziegenmilch now shows last under DROGERIE, `fg db query "select c.name from items i join categories c on c.id = i.category_id where i.name = 'Ziegenmilch' and i.status = 'active'" --as peter` returns 👶 Drogerie, and `fg db query "select c.name, m.corrections from category_memory m join categories c on c.id = m.category_id where m.item_key = item_key('Ziegenmilch')" --as peter` returns 👶 Drogerie with a count. Take `fg screenshot --name cls-drag`.
+- **Variants.** Run `fg type --key add-item-field --input Karrotten --submit`, then the same for `Paradeiser`, `Semmeln`, `Schokolde` and `toilet paper`, then `fg press escape`. Each shows under its divider (OBST & GEMÜSE, BROT & BACKWAREN, SÜSSES & SNACKS, HAUSHALT) with its name as typed. `fg db query "select i.name, c.name as category, i.categorized_via, i.canonical_key from items i join categories c on c.id = i.category_id where i.status = 'active' and i.name in ('Karrotten', 'Paradeiser', 'Semmeln', 'Schokolde', 'toilet paper') order by i.name" --as peter` returns the categories with via exact, synonym, exact, fuzzy, synonym; Karrotten's canonical key is `mor`, the same as `select canonical_key('Möhren')`. Take `fg screenshot --name cls-variants`.
+- **Variant learn.** Move Karrotten to Getränke as in **Move**, then add `Möhren`: it lands under GETRÄNKE, and the query above for it returns via `household`. Take `fg screenshot --name cls-variant-learn`.
 - **Proof.** Take `fg screenshot --name cls-after-add` and `--name cls-after-move`, and save the category query output for both states.
 
 ## Gotchas
@@ -43,4 +47,6 @@ Preconditions:
 - Learning is per household and survives `fg up` but not `fg up --fresh`. A move taught in an earlier run changes where the item lands. Start from `--fresh` when the first category matters.
 - New items briefly show under "Wird einsortiert …" until the server returns the category, and can't be dragged until then. Wait with `fg wait --contains "Wird einsortiert" --gone` before you assert or drag.
 - A new item that store memory knows lands in that store's section, not in "Ohne Laden"; its category divider then follows the store's order.
+- `supabase/classifier/wordlist.sh` and `latency.sh` (job 32a) print the word list's rates (misspellings right, false matches) and the classifier's p50/p95 against the one before job 32a, on the checkout's own stack; the db gate runs them. `CLASSIFIER_PSQL="psql -h … -d …"` points them at another database. Synonyms are `supabase/classifier/synonyms.tsv` (`generate_synonyms.ts`); a dictionary or synonym migration ends with `refresh_classifier_lexicon()`.
+- Typo matching is deliberately shy: never under 5 letters, the same first letter, one edit up to 7 letters (two from 8), and only when the nearest words agree on a category. "Mehk" or "Kaffe" stay in Sonstiges; that is intended, not a bug.
 - The edit sheet's fields have keys (`edit-name`, `edit-quantity`, …; `features/edit-item.md`).

@@ -89,7 +89,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   row in `docs/ANALYTICS.md`. Never list text, names or free text.
 - Categorization runs server-side in `public.classify_item(household, name)`
   (called by the items insert trigger). The app, MCP and Siri all go through
-  it; change the function, not the callers.
+  it; change the function, not the callers. Spelling variants, synonyms
+  (`supabase/classifier/synonyms.tsv`) and typos are its job too; the shared
+  key for them is `items.canonical_key` (job 32a).
 - Flutter web e2e: semantics are enabled on web, so Playwright finds widgets
   by role and label. Type with `typeInto` (`e2e/tests/helpers.ts`); synthetic
   key events drop umlauts. A snackbar with an action (undo) keeps its text in

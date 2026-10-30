@@ -49,6 +49,20 @@ export function parseDictionary(tsv: string): Term[] {
   return terms;
 }
 
+/**
+ * What every generated classifier migration ends with (job 32a): the lexicon of folded forms and
+ * synonyms is rebuilt from the new data, and so is every stored canonical key. Item rows are
+ * updated with their triggers off: a new canonical key is not an edit.
+ */
+export const refreshLexicon = [
+  "select public.refresh_classifier_lexicon();",
+  "",
+  "alter table public.items disable trigger user;",
+  "update public.items set canonical_key = public.canonical_key(name);",
+  "alter table public.items enable trigger user;",
+  "",
+].join("\n");
+
 export function toMigration(terms: Term[]): string {
   const rows = [...terms]
     .sort((a, b) => a.term < b.term ? -1 : a.term > b.term ? 1 : 0)
@@ -62,6 +76,7 @@ export function toMigration(terms: Term[]): string {
     "insert into public.classifier_terms (term, category) values",
     rows.join(",\n") + ";",
     "",
+    refreshLexicon,
   ].join("\n");
 }
 

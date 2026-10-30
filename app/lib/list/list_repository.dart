@@ -97,7 +97,8 @@ class SupabaseListRepository(
 ) implements ListRepository {
   static const _itemColumns =
       'id, name, quantity, brand, properties, category_id, store_id, '
-      'sort_key, status, created_at, updated_at, bought_at, added_by';
+      'sort_key, status, created_at, updated_at, bought_at, added_by, '
+      'categorized_via';
 
   @override
   Future<Catalog> fetchCatalog() async {

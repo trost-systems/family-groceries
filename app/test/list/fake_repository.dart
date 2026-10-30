@@ -68,6 +68,12 @@ class FakeRepository() implements ListRepository {
 
   Completer<void>? gate;
 
+  /// What the items trigger reports as `categorized_via` for a new row.
+  String? categorizedVia;
+
+  /// Applies the next op, then fails as if its answer was lost.
+  var loseNextAnswer = false;
+
   /// How many times the list subscribed to realtime.
   var watches = 0;
 
@@ -240,6 +246,7 @@ class FakeRepository() implements ListRepository {
               createdAt: _tick(),
               updatedAt: _clock,
               addedBy: me,
+              categorizedVia: categorizedVia,
             ),
       PlaceItem(:final anchorId, :final edge) => _place(
         current,
@@ -275,8 +282,13 @@ class FakeRepository() implements ListRepository {
       updatedAt: _tick(),
       boughtAt: next.boughtAt,
       addedBy: next.addedBy,
+      categorizedVia: next.categorizedVia,
     );
     rows[op.itemId] = stamped;
+    if (loseNextAnswer) {
+      loseNextAnswer = false;
+      throw Exception('answer lost');
+    }
     return stamped;
   }
 

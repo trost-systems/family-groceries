@@ -94,6 +94,8 @@ retried batch is not counted twice), `household_id` (null before joining), `plat
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
 | `feedback_submitted` | the server stored a feedback note (job 21, docs/FEEDBACK.md); once per note, also after a Retry whose first answer was lost | `category` (`bug`, `idea`, `other`, `none`), `entry_point` (`settings`; More is the only entry), `screen` (a name from `screenNames` in `router.dart`, e.g. `list`), `contact_ok` (true, false). Never the note's text |
+| `item_categorized` | the server confirmed an add from the app (job 32a); once per added item, also after a retry whose first answer was lost; not for a restored deletion | `via`: how the server chose the category (`items.categorized_via`): `household` (a correction of this household, also for the item's spelling variants and synonyms), `exact` (the dictionary, also after folding spelling: Karrotten), `synonym` (Paradeiser), `fuzzy` (a typo: Schokolde), `fallback` (Sonstiges), `picked` (the add brought another category than the guess). Never the name or the canonical key |
+| `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored` | job 32b's duplicate hint ("Möhren steht schon auf der Liste"): shown, merged with one tap, or ignored. Listed by 32a; 32b emits them | `actor_role`, `household_size`. Never the item names |
 | `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id`, `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
 | `purchase_restored` | server only | `product_id`, `app_store` |
 
@@ -111,6 +113,8 @@ Rules that keep it one event per user action (AC3, AC9):
   leaves the order as it was, one refused offline, or one the server rejected: nothing.
 - Hiding a category in a store's layout is not a reorder.
 - MCP and Siri adds and ticks are not counted (PM, 2026-10-25): the app only.
+- `item_categorized` is the one list event sent on the server's answer, not on the tap: only the
+  server knows how it categorized. An op is acknowledged once, so it is still one event per add.
 
 Adding an event (jobs 21 and 22): add it to `eventCatalog` with a rule per property, a case to
 `app/test/analytics/events_test.dart`, and a row here. Free text can't be added by accident: a

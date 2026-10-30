@@ -3309,3 +3309,92 @@ we can put the light/dark/system mode switch and add dark+light mode."
    heading. The verify recipes (`SKILL.md`, `auth.md`, `household.md`,
    `live-sync.md`) stop reading `list-title`; `list-walk-order.md` has
    `lw-top-bar`.
+
+## Job 32a (spelling variants and synonyms in the classifier, Spec #8 Part A), 2026-10-30
+
+Peter's decisions (2026-10-29, verbatim):
+
+- "Split it: category fix right after the feedback job, before Alexa; duplicate hint with or after onboarding"
+- "Show a hint with a one-tap merge, still add by default" (applies to 32b; this job adds no UI)
+
+The job's own calls:
+
+1. **Where it lives.** Everything is in the database, new migrations only:
+   `20261030110000_classifier_variants.sql` (functions, tables, columns, the redefined trigger
+   functions), `20261030110001_classifier_dictionary_variants.sql` (the dictionary, regenerated
+   unchanged, now ending with the lexicon refresh) and `20261030110002_classifier_synonyms.sql`
+   (generated from `supabase/classifier/synonyms.tsv`). `classify_item`, `suggest_store`,
+   `dictionary_category`, `items_before_write` and `items_learn_insert` keep their signatures, so
+   the app, `add_item`/`add_items` (MCP, Siri, voice), `parse_item` and `suggest_entries` (the add
+   sheet) and the coming Alexa skill get the new behaviour without a change on their side.
+2. **The order of the rules** (`classify_item_detail`): the household's correction for the item
+   key, then for its canonical key; the dictionary's rules as before (phrase, whole key, frozen
+   marker, compound ending); the lexicon after folding spelling, or a synonym; a household
+   correction a typo away; the lexicon's typo match; the dictionary's weakest rule (a word starts
+   with a term); Sonstiges. The dictionary still wins over everything new, except where its
+   compound-ending rule matched a short head and the lexicon recognizes a longer form: a folded
+   exact one (Erdnusbutter is Erdnussbutter, Vorrat, not "Butter") or one a single edit away
+   whose ending differs (Feuchttüscher is Feuchttücher, not "Schere"; Spültücher stays "Tücher"
+   because Spucktücher ends the same: the typo would not be in the head). With these rules every
+   one of the 1,202 dictionary terms, every brand product and all 345 items of the job-2 sweep
+   classify exactly as before (checked by the pgTAP suite, `sweep.sh` and a one-off comparison).
+3. **Normalization** (`fold_word`, on top of `item_key`'s case, umlauts, ß and plurals): doubled
+   letters single, ph/th/gh, c to k (not in ch/ce/ci), ck/dt/tz, an h after a vowel before a
+   consonant. A word under 5 letters is not folded, and neither is one that drops under 5 by
+   losing its doubled letters: otherwise Kasse folds to Käse and Hack to Haken (both seen in the
+   word list). No two dictionary terms of different categories share a folded form (pgTAP).
+4. **Fuzzy match** (`lexicon_fuzzy`): Levenshtein from `fuzzystrmatch` (an adjacent swap counts
+   as one edit), same first letter, never under 5 letters; two 5-letter words only by a swap
+   (Mlich), one edit once the longer word has 6+ letters, two when both have 8+; the nearest forms
+   must agree on the category, else nothing is guessed. Stricter than the spec's "under 4 letters
+   exact only": with one edit at 5 letters, Tisch became Tusche (Drogerie).
+5. **"Household history" is the household's corrections** (`category_memory`), matched by their
+   canonical key and, a typo away, fuzzily. Items the household added without correcting them
+   carry the dictionary's category already, so they would add nothing but cost.
+6. **A correction holds for the canonical key**, not only the typed spelling: moving "Karrotten"
+   to Getränke also sends "Möhren" and "Karotten" there in that household (Spec Part A item 4,
+   "its normalized variants"; synonyms are "categorized the same"). An exact correction of the
+   other spelling still wins, as the item key is checked first.
+7. **The canonical key** (`public.canonical_key(name)`, column `items.canonical_key`): the item
+   key, folded, every synonym replaced by its canonical term, every recognized typo by the word
+   it means. "Karotten", "Karrotten", "Möhren", "Mohrrüben", "Gelbe Rüben" and "carrots" all give
+   `mor`. It also sits on `category_memory` and `item_store_memory` (kept by a trigger), so a
+   store remembered for Mohrrüben is guessed for Karotten (`suggest_store`, and so `guess_store`
+   and `parse_item`). Job 32b's duplicate hint matches on `items.canonical_key`.
+8. **The synonym table.** Regional German (DE/AT/CH, the spec's pairs and about 70 more) and
+   common English words, 160 variants, each pointing to a dictionary term. Left out because they
+   end other words or collide: Randen (Swiss Rote Bete; "Deodorand" ended in it), Brause
+   (Duschbrause), Kraut (Sauerkraut), Pfannkuchen (Berliner in Berlin, a crêpe elsewhere) and
+   English "beer" (stems to "beer", the dictionary's Beere). `generate_synonyms.ts` refuses a
+   variant whose dictionary category differs from its canonical's.
+9. **AC4 word list** (`supabase/classifier/wordlist.tsv`): 210 common words, 138 realistic
+   misspellings, 47 regional and English variants, 26 non-groceries. Local run: words 210/210,
+   variants 47/47, misspellings 130/138 (94.2%), false matches 2/421 (0.48%). The two false
+   matches are the dictionary's compound-ending rule from job 2, unchanged by this job:
+   "Fahrradschlauch" ends in "lauch" (Obst & Gemüse) and "Nagel" in "gel" (Drogerie). They stay
+   in the list so the rate is honest. The eight misses stay in Sonstiges (no wrong guess):
+   Kartoffen, Knoblauh, Mören, Nudlen, Essich, Kaffe, Kakau, Rotwien (too short after stemming,
+   or two edits in a short word). Four negatives of a first draft (Geburtstagskarte,
+   Kugelschreiber, Blumenerde, Druckerpapier) were dropped: the dictionary lists them as Haushalt
+   on purpose.
+10. **AC8 latency.** `latency.sh` times `classify_item` against main's classifier from before this
+    job (copied verbatim into temp functions) word by word, alternating, in one session, so both
+    see the same machine. The first version was 3 times slower (p95 2.4 ms vs 0.7 ms): SQL
+    functions are planned on every call in Postgres 17 and the LIKE joins scanned every term. The
+    rules are now PL/pgSQL (cached plans) and each one an index lookup of the key's endings,
+    beginnings and word runs (the same matches as the LIKEs), so the new classifier is faster than
+    the old one: locally p50 0.13 ms vs 0.57 ms, p95 0.21 ms vs 0.71 ms. CI's numbers are in the
+    PR. No network call either way.
+11. **`categorized_via` and the event.** The items trigger runs the classifier on every insert (it
+    did already for inserts without a category, and `items_learn_insert` ran it for the others; it
+    now reads `categorized_via = 'picked'` instead, so the classifier runs once per insert). The
+    column says household, exact (also after folding), synonym, fuzzy, fallback, or picked (the
+    add brought a category other than the guess). The app sends `item_categorized {via}` once per
+    added item when the server confirms the add, also after a retry whose first answer was lost
+    (an op is acknowledged once); not for a restored deletion (`AddItem.restored`, kept in the
+    queue's JSON) or a realtime echo. Unlike the other list events it fires on the server's answer,
+    because only the server knows how it categorized. MCP, Siri and voice adds send nothing, as
+    for `item_added` (PM, 2026-10-25). `dedupe_hint_shown`, `_merged` and `_ignored` are in the
+    allow-list with `actor_role` and `household_size` for 32b to emit.
+12. **No text changes.** Typed text is stored and shown as entered; only the category and the
+    hidden `canonical_key`/`categorized_via` are the server's. Nothing is auto-corrected or merged.

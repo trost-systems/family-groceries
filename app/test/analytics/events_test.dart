@@ -12,6 +12,10 @@ void main() {
       'category_reordered',
       'store_reordered',
       'feedback_submitted',
+      'item_categorized',
+      'dedupe_hint_shown',
+      'dedupe_hint_merged',
+      'dedupe_hint_ignored',
     });
   });
 
@@ -50,7 +54,14 @@ void main() {
       },
     ),
   ];
-  for (final (event, properties) in allowed) {
+  final allowed32a = <(String, Map<String, Object>)>[
+    for (final via in categorizedVia) ('item_categorized', {'via': via}),
+    for (final hint in ['shown', 'merged', 'ignored']) ...[
+      ('dedupe_hint_$hint', <String, Object>{}),
+      ('dedupe_hint_$hint', {'actor_role': 'member', 'household_size': 2}),
+    ],
+  ];
+  for (final (event, properties) in [...allowed, ...allowed32a]) {
     test('allows $event $properties', () {
       expect(() => checkEvent(event, properties), returnsNormally);
     });
@@ -78,6 +89,11 @@ void main() {
     ('feedback_submitted', {'screen': '/join/ABCD2345'}, 'a path as screen'),
     ('feedback_submitted', {'screen': 'Milch'}, 'an item as screen'),
     ('feedback_submitted', {'contact_ok': 'yes'}, 'contact as text'),
+    ('item_categorized', {'via': 'Karotten'}, 'an item name as via'),
+    ('item_categorized', {'name': 'Möhren'}, 'an item name property'),
+    ('item_categorized', {'via': 'mor'}, 'a canonical key'),
+    ('dedupe_hint_shown', {'item': 'Möhren'}, 'the matched item'),
+    ('dedupe_hint_merged', {'quantity': '2'}, 'a quantity'),
     ('feedback_submitted', {'email': 'max@gmail.com'}, 'an e-mail'),
   ];
   for (final (event, properties, why) in refused) {

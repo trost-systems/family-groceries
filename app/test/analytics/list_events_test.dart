@@ -213,6 +213,52 @@ void main() {
     });
   });
 
+  group('categorized via (job 32a)', () {
+    test('a confirmed add says how the server categorized it', () async {
+      repo.categorizedVia = 'synonym';
+      await reset();
+      cubit.addEntry(parseEntry('Paradeiser'));
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['item_added', 'item_categorized']);
+      expect(props(events.last)['via'], 'synonym');
+      expect(jsonEncode(events), isNot(contains('Paradeiser')));
+    });
+
+    test('an add whose answer was lost is categorized once', () async {
+      repo
+        ..categorizedVia = 'fuzzy'
+        ..loseNextAnswer = true;
+      await reset();
+      cubit.addEntry(parseEntry('Kartofeln'));
+      await settle();
+      expect(await names(), ['item_added']);
+      await cubit.resync();
+      await settle();
+      await cubit.resync();
+      await settle();
+      expect(repo.sent.whereType<AddItem>(), hasLength(2));
+      expect(await names(), ['item_added', 'item_categorized']);
+    });
+
+    test('a restore, a realtime echo or an unknown via sends none', () async {
+      repo.categorizedVia = 'exact';
+      final id = await addedId('Zucker');
+      final item = cubit.state.items[id]!;
+      cubit.delete(id);
+      await settle();
+      await reset();
+      cubit.restore(item);
+      await settle();
+      repo.emitItem!(repo.rows[id]!);
+      await settle();
+      repo.categorizedVia = 'Karotten';
+      cubit.addEntry(parseEntry('Karotten'));
+      await settle();
+      expect(await names(), ['item_added']);
+    });
+  });
+
   group('the tick undone from recently used', () {
     test('a re-add within ten minutes of the tick sends nothing', () async {
       final id = await addedId('Butter');
