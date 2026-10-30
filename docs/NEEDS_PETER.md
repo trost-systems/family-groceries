@@ -879,7 +879,12 @@ hummlist.com's production build fails while a `[PETER: …]` is left.
   yourself, support mail deletion period, and the transfer basis for the AI
   support provider. (Job 33d filled the Google Workspace contracting entity
   and the transfer basis for Supabase, Vercel, GitHub, PostHog and Google;
-  DECISIONS "Job 33d".) hummlist.com publishes the policy only once all are
+  DECISIONS "Job 33d". Job 33e filled your answers of 2026-10-30 14:21 and the
+  provider Anysphere, Inc., USA; DECISIONS "Job 33e".) **One left: the
+  transfer basis for Anysphere** (section 13). Anysphere is not
+  DPF-certified, and its DPA with SCCs covers Teams/Enterprise contracts
+  (MSA), not an individual subscription. Pick the basis, e.g. a plan with
+  the DPA, then tell the lead the exact wording. hummlist.com publishes the policy only once all are
   filled (Vercel's production build refuses otherwise); merging alone does
   not.
 - **Google Play payments profile:** change the address from Yalovastraße 7
