@@ -44,3 +44,13 @@ scripts/ci-e2e.sh --spec "tests/edit-sheet.spec.ts tests/iphone.spec.ts" --no-db
 - The verify-skill recipe isn't run live: the Mac runner has no Docker. The widget tests and e2e cover the same steps.
 - Locally the `lint` gate's shellcheck step fails on scripts this job doesn't touch (SC2218, shellcheck 0.11 on the Mac); its other steps (ast-grep rules, e2e tsc, actionlint, gate wiring, landing test) pass locally, and the gate passes on CI.
 - On web, a mouse swipe whose press and release fall within 200 ms ticks the item instead of opening edit. That's Flutter web's click debouncer on tappable semantics nodes (DECISIONS 29c, 7), and it was the same for the old swipe-to-delete. Finger swipes and mouse drags at a normal pace are unaffected. The app never sees the dropped drag, so it can't be fixed here.
+
+## Review follow-up (PR #101)
+
+Review 0 found recipes and help text that still described swipe-to-delete and would fail if followed. Fixed:
+
+- `features/quick-add.md` (intro, `qa-delete`, the user path, the steps: swipe, `fg wait --key edit-sheet`, `fg tap --key edit-delete`, then gone), `features/live-sync.md` ("Delete on one" goes through the sheet; the peer-watch note), `SKILL.md` (the `fg swipe` row), `cli/drive.ts` (`fg swipe` help).
+- `docs/design/h-satz-final/SPEC.md`: the `dismiss-<id>` row (key kept, the swipe now edits) and the 8 px slop line (18 px for a finger).
+- `docs/NEEDS_PETER.md`: an optional 2-minute check on Peter's iPhone on the preview (swipe edits; a still hold edits, not moves).
+- Already covered, no change: the widget test "an item still being sorted opens the sheet on a swipe too" is the `categoryId == null` swipe case. The divider slop change is outside the brief's files; it is recorded in DECISIONS 29c (4).
+- Checks: the `fg-cli` gate's fmt, lint and type-check pass locally (its `sync_lock_test.ts` needs Linux `/proc`, a known macOS failure); full CI on the PR.

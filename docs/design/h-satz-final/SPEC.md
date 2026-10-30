@@ -98,7 +98,7 @@ The bottom band (input plus tabs) is 134 px plus the safe-area bottom. The More 
 - **Gestures.**
   - A tap ticks the item.
   - Press for 300 ms and release within 8 px opens edit. A right click with a mouse does the same.
-  - Press and then move more than 8 px drags. A quick swipe passes 8 px before the hold completes, so the list still scrolls.
+  - Press and then move more than 8 px drags (a finger: 18 px since job 29c, `holdSlop`). A quick swipe passes the slop before the hold completes, so the list still scrolls.
   - The click that ends a drag is swallowed for 250 ms.
 - **Tick animation.** The row goes to 0.35 opacity on `primaryContainer`. A 2.5 px `primary` strike line grows from left to right across the name over 200 ms ease. The tick commits after 260 ms, then the Undo snackbar shows.
 - **Drag.**
@@ -349,7 +349,7 @@ Job 16 built everything between the header and the add bar. The code is in `app/
 | Key | Widget |
 | --- | --- |
 | `<item id>` | an item row (`ItemRow`) |
-| `dismiss-<id>`, `new-<id>`, `bought-<id>` | swipe to delete, the unseen tint, a recently bought row (unchanged) |
+| `dismiss-<id>`, `new-<id>`, `bought-<id>` | the swipe (to delete here; since job 29c it opens the edit sheet, key kept), the unseen tint, a recently bought row (unchanged) |
 | `drop-line-<id or section key>` | the insertion line while a drag hovers a row or divider |
 | `store-<store id>`, `store-none` | a store divider, and the one for no store |
 | `category-<section key>-<category id>` | a category divider |

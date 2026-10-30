@@ -223,10 +223,10 @@ export const driveCommands: Command[] = [
   },
   {
     name: 'swipe',
-    summary: 'Swipe a widget or row in a direction (e.g. swipe an item left to delete it).',
+    summary: 'Swipe a widget or row in a direction (e.g. swipe an item left to open its edit sheet).',
     usage: 'fg swipe (--key K | --text T | --row TEXT) --direction left|right|up|down [--distance PX] [--client NAME]',
     description:
-      'List rows are Dismissible: swiping left far enough deletes the item (with an undo snackbar). --row swipes the whole row that shows the text.',
+      'List rows are Dismissible: swiping left far enough opens the edit sheet and the row springs back (job 29c); delete there with `fg tap --key edit-delete`. --row swipes the whole row that shows the text.',
     flags: [
       ...matcherFlags.filter((f) => ['key', 'text', 'type', 'row'].includes(f.name)),
       { name: 'direction', help: 'left, right, up or down.', choices: ['left', 'right', 'up', 'down'] },

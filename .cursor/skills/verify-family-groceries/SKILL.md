@@ -60,7 +60,7 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `--key list-title` (household name in capitals), `list-count` ("N Artikel"), `new-items-subtitle` | The list header |
 | `--text "<row text>"` | Tick an item: a tap on its row. The row text reads the quantity first ("2 l Milch", "6× Bananen"); a row without a quantity reads the name. The row's key is the item id. |
 | `fg marionette -- long-press --text "<row text>"` (or `secondary-tap`, a right click) | Open an item's edit sheet (key `edit-sheet`; fields `--key edit-name`, `edit-brand`, `edit-quantity`, `edit-properties`; `--key chip-store` / `chip-category` fold out `store-option-<id>` (`store-option-none` is "Ohne Laden") / `category-option-<id>`; `--key edit-done` saves only what changed, `edit-cancel`, `edit-delete`) |
-| `fg swipe --row "<row text>" --direction left` | Delete an item (undo snackbar) |
+| `fg swipe --row "<row text>" --direction left` | Open an item's edit sheet (the row stays); `fg tap --key edit-delete` there deletes it (undo snackbar) |
 | `--key store-<store id>`, `--key store-none` ("Ohne Laden") | A store divider: a tap folds or unfolds it; `fg marionette -- long-press` or `secondary-tap` on it opens its menu (`section-menu`, `section-menu-up`, `section-menu-down`, `section-menu-layout`) |
 | `--key category-<store id or none>-<category id>` | A category divider (text in capitals, semantics label the full name); long-press opens the same menu with "Kategorie nach oben/unten" |
 | `fg drag --from-text <row or divider text> --to-text <...> [--edge before\|after]` | Hold and drag a row or divider onto a row, a category divider or a store divider (linux surface) |
