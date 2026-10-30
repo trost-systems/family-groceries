@@ -7,15 +7,22 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!(?:assets|canvaskit|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)", "destination": "/index.html" }
+    { "source": "/((?!(?:assets|canvaskit|fonts|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://jdwqrallbpdbshrdhenk.supabase.co wss://jdwqrallbpdbshrdhenk.supabase.co https://eu.i.posthog.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'" }
+      ]
     },
     {
-      "source": "/((?!(?:assets|canvaskit|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)",
+      "source": "/fonts/(.*)\\.woff2",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/((?!(?:assets|canvaskit|fonts|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     },
     {

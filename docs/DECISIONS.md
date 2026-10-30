@@ -3723,3 +3723,89 @@ job 24's policy part.
    custom SMTP starts at 30 an hour), so „über unseren Dienstleister Supabase“
    stays without the SMTP question. The other `[PETER: …]` stay; Vercel's
    production build keeps refusing to publish until Peter fills them.
+
+## Job 33c (self-host CanvasKit and fonts, legal review H-02), 2026-10-30
+
+1. **The loader takes the engine and fonts from our origin.**
+   `app/web/flutter_bootstrap.js` passes
+   `config: { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/' }`
+   (review H-02's redline, Flutter's web initialization docs). One base URL
+   covers both apps of the job 28 `--wasm` build. The same object also goes
+   to `engineInitializer.initializeEngine(config)`: the loader reads
+   `canvasKitBaseUrl` from `load()`, but the engine reads
+   `fontFallbackBaseUrl` only from `initializeEngine()`. Our own
+   `onEntrypointLoaded` (the boot retry) called it with no argument, so the
+   first CI run still fetched the Noto fonts from fonts.gstatic.com, and the
+   CSP blocked them (DECISIONS 33c.5). Flutter's loader takes
+   `canvaskit.js`/`chromium/canvaskit.js` (JS app) and `skwasm.js` or
+   `skwasm_heavy.js` (wasm app) from it. `flutter build web` always puts every
+   variant in `build/web/canvaskit/`, so the Vercel output had them before
+   this job too, unused. `vercel.json` already kept `/canvaskit/` out of the
+   SPA rewrite and serves `.wasm` as `application/wasm`. Measured before the
+   change on a local Vercel-style build, login screen, no interaction:
+   Chromium fetched `skwasm.js` and `skwasm.wasm` from www.gstatic.com and
+   Roboto from fonts.gstatic.com, and Firefox fetched `canvaskit.js`,
+   `canvaskit.wasm` and Roboto. That matches the lead's live baseline.
+2. **Roboto comes from Flutter's own local build, not from a pubspec font.**
+   The brief asked for Roboto in `app/pubspec.yaml` as the theme's font. A
+   `--no-web-resources-cdn` build already does that for the web only: Flutter
+   adds the engine's Roboto 2 Regular (Apache 2.0) to `FontManifest.json` as
+   the family `Roboto`, and the engine then never fetches its own Roboto.
+   `scripts/vercel.sh` now builds with that flag, like the web-prod and e2e
+   gates and `fg sync` already did. A pubspec font would have gone into the
+   iOS and Android apps too. On Android the family name `Roboto` would have
+   replaced the system font, whose real 600/800/900 weights the app uses,
+   with a bundled file. On the web the default typography already resolves
+   to the manifest's Roboto, so no theme change is needed.
+3. **Every fallback font is shipped, not a subset.** The engine names 724
+   Noto fallback fonts (emoji in 12 slices, CJK in about 100 slices per
+   language, symbols, every other script) plus Roboto, 21.7 MB in total. A
+   browser downloads only the slices for glyphs it has to draw, so the size
+   costs no first load, and no script ends up as tofu. `app/web/fonts/`
+   mirrors the fonts.gstatic.com/s/ paths the engine asks for.
+   `scripts/web-fonts.sh` reads the list from the Flutter SDK
+   (`font_fallback_data.dart`), downloads what is missing, deletes what the
+   engine no longer names, and writes `LICENSES.md` (the copyright line of
+   every family from google/fonts, all SIL OFL 1.1, plus `OFL.txt`) and
+   `Roboto-LICENSE.txt`. The files are committed (about 24 MB in git, once
+   per Flutter font roll), so a build never depends on Google's servers. If a
+   font were missing, the engine treats the 404 as permanent for that font
+   (no retry) and draws tofu for its glyphs only. The web-prod gate fails
+   when `main.dart.js` names a font `app/web/fonts/` lacks, or when the
+   bootstrap config or a CanvasKit variant is missing. Font files get
+   `Cache-Control: public, max-age=31536000, immutable`, since each path
+   carries the font version and a hash.
+4. **No in-app license entry for the web fonts.** OFL condition 2 is met by
+   the license files served next to the fonts (`/fonts/OFL.txt`,
+   `/fonts/LICENSES.md`) and the copyright fields inside each font file. The
+   bundled Roboto is the engine's own file, like CanvasKit.
+5. **A CSP guards against a regression.** `vercel.json` sends
+   `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://jdwqrallbpdbshrdhenk.supabase.co wss://jdwqrallbpdbshrdhenk.supabase.co https://eu.i.posthog.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'`.
+   `wasm-unsafe-eval` compiles the engine and `main.dart.wasm`, and
+   `unsafe-inline` styles cover the `<style>` elements Flutter injects.
+   Google and Apple sign-in on the web are redirects (`SignInFlow.redirect`,
+   Supabase's `/authorize`), and so is the OAuth consent's `_self` launch.
+   CSP does not govern top-level navigation, so neither provider needs an
+   origin. On preview deployments the CSP also blocks Vercel's comment
+   toolbar (vercel.live), which only Vercel team members see. A new host the
+   app fetches from must be added here.
+6. **The whole e2e suite runs under that CSP.** `e2e/serve.mjs --csp
+   <supabase-url> <posthog-host>` sends vercel.json's policy with the
+   production Supabase and PostHog origins swapped for the e2e stack's and
+   the stand-in collector's. It also routes like Vercel now: a path the
+   rewrite matches falls back to `index.html`, and any other missing file
+   is a 404 instead of `index.html`.
+7. **The behavior test runs in three engines.** `e2e/tests/no-google.spec.ts`
+   runs in the `chromium` (wasm), `webkit` and a new `firefox` project (both
+   on the JS app, facts-answers #5). It signs in to a list with emoji,
+   umlauts, Chinese, Arabic and Cyrillic names, then opens the add sheet. It
+   fails on any request to a Google host, on any host besides ours,
+   Supabase and the PostHog stand-in, on PostHog before consent, and on any
+   CSP violation. It also checks that the emoji, CJK and Arabic fallback
+   fonts were fetched from `/fonts/`. Cyrillic needs no fallback, since
+   Roboto 2 covers it. CI installs Firefox next to Chromium and WebKit.
+   `e2e/host-census.mjs <url>` runs the same host count against any URL (a
+   deployment, `app.hummlist.com`) for the live check after release.
+8. **Wording.** This job changes no user-facing text. 33a's privacy policy
+   says nothing is loaded from Google, which is true only once this job has
+   reached `app.hummlist.com` (with a dispatched release, `docs/DEPLOY.md`).

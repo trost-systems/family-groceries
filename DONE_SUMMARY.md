@@ -281,3 +281,7 @@ See [docs/done/22-onboarding.md](docs/done/22-onboarding.md).
 See [docs/done/33b-legal-app.md](docs/done/33b-legal-app.md).
 
 - Job 33a, privacy policy on hummlist.com (/datenschutz, /en/privacy), corrected and published deletion page, error reports scrubbed to their shape (wording approved by Peter, lead merges): [docs/done/33a-legal-site.md](docs/done/33a-legal-site.md)
+
+## Job 33c: self-host CanvasKit and fonts, nothing from gstatic.com
+
+See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).

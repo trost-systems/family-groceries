@@ -124,7 +124,7 @@ if [[ $WITH_ANDROID == 1 ]]; then
 fi
 
 log "playwright (e2e/)"
-(cd "$REPO_ROOT/e2e" && npm ci --silent && npx playwright install --with-deps chromium webkit >/dev/null)
+(cd "$REPO_ROOT/e2e" && npm ci --silent && npx playwright install --with-deps chromium webkit firefox >/dev/null)
 
 log "git hooks"
 git -C "$REPO_ROOT" config core.hooksPath .githooks

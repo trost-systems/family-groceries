@@ -34,9 +34,9 @@ export async function wasmAllowList(page: Page, list: { blink?: boolean; webkit?
   await page.route('**/flutter_bootstrap.js', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
-    const call = '_flutter.loader.load({';
-    if (!body.includes(call)) throw new Error(`flutter_bootstrap.js no longer calls ${call}`);
-    await route.fulfill({ response, body: body.replace(call, `${call} config: { wasmAllowList: ${JSON.stringify(list)} },`) });
+    const config = 'const config = {';
+    if (!body.includes(config)) throw new Error(`flutter_bootstrap.js no longer has ${config}`);
+    await route.fulfill({ response, body: body.replace(config, `${config} wasmAllowList: ${JSON.stringify(list)},`) });
   });
 }
 
