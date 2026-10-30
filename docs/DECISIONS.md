@@ -3001,3 +3001,56 @@ only the Monday schedule uploaded. `docs/RELEASE.md` describes the result.
 11. **Release notes unchanged.** `notes.sh` lists the PR titles from the last
     upload to the shipped commit, which for a per-merge run is usually the
     one merged PR.
+
+## Job 29b (no undo snackbar on a tick, "Zuletzt verwendet" with the list's row), 2026-10-30
+
+Peter, 2026-10-29 20:49: "remove the 'undo' snackbar. If someone wants to
+undo a checked off item, they can click on it in the 'recently bought'
+section to bring it back. Let's also rename to 'recently used'." 20:50:
+"for the 'recently used' section let's use the same element with icon as in
+the normal list."
+
+1. **A tick shows nothing.** `_tick` in `shopping_list_view.dart` only ticks;
+   the row's own leave animation (fill, strike line, 260 ms) is the
+   feedback. The string `itemTicked` ("{name} abgehakt") is gone from both
+   ARBs, as nothing shows it. The edit sheet's delete keeps its snackbar with
+   "Rückgängig" (Peter's words are about the tick), and so does the add
+   sheet's note.
+2. **"Zuletzt verwendet" / "Recently used".** The ARB key is now
+   `recentlyUsed`, `recentlyBought()` in `model.dart` is `recentlyUsed()`,
+   the section's key `recently-used`, a row's key `used-<id>`. "Verwendet"
+   because Peter said "used"; the German follows the app's style of short
+   plain labels ("Zuletzt gekauft" before). The MCP `tick_items` description
+   and the docs say the new name too. The database keeps `bought`.
+3. **The list's own row.** Each item there is an `ItemRow`, the same widget
+   as the list (icon from `itemIcon` with the item's category, quantity,
+   brand and details, the same rules between rows), wrapped in
+   `shopping_list_view.dart` so `item_row.dart` (29c's) is unchanged:
+   `Opacity(0.55)` marks it as used, `IgnorePointer` turns off the row's
+   own gestures (its tap would tick, its swipe and hold edit, its hold and
+   drag move, its DragTarget take drops), and a `GestureDetector` over it
+   puts the item back on a tap. A still hold is a tap there too (only a tap
+   recognizer is in the arena), which also puts it back; a swipe or right
+   click does nothing. The old trailing "+" button is gone: the whole row is
+   the button, as on the list.
+4. **Screen readers.** The used row's own semantics are excluded (they offer
+   tick, edit and delete). It is one button labelled like a list row plus
+   "Wieder auf die Liste" (`readd`), e.g. "Bananen, 2, Wieder auf die
+   Liste", whose tap puts it back. The action is part of the label, not a
+   hint, so a list row and its used row never share a name: e2e's `itemRow`
+   skips names ending in it, `usedRow` finds them.
+5. **Putting back confirms with "<name> steht wieder auf der Liste"**, the
+   plain snackbar from before (no action). The item can come back far above
+   the section, off screen, so the line says it happened.
+6. **The put-back within 10 minutes of the tick is the tick's undo for
+   analytics.** `ListCubit.readd` sends `item_added` (source `suggestion`)
+   only when the item's `bought_at` is more than `ListCubit.undoWindow` (10
+   minutes) ago. That is the window in which `suggest_items` already treats a
+   restore as the undo, not a purchase, and it keeps the rule "undo sends
+   nothing" now that this tap is the only undo. It goes by `bought_at`, so a
+   partner's tick put back right away counts the same. `untick` stays for
+   callers that undo without asking.
+7. **pstack skills.** `~/.claude/skills` (poteto-mode, pstack) does not exist
+   for the Mac runner's user, so the job followed the brief directly: a
+   widget or unit test for each behavior, then the real web build on CI
+   (Playwright) for the proof and the screenshots.

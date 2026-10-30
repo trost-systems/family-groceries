@@ -269,8 +269,8 @@ void main() {
     );
   });
 
-  test('recently bought is newest first', () {
-    final bought = recentlyBought([
+  test('recently used is newest first', () {
+    final bought = recentlyUsed([
       item('old', status: ItemStatus.bought, at: 1),
       item('new', status: ItemStatus.bought, at: 2),
       item('active'),

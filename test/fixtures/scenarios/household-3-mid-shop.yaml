@@ -4,7 +4,7 @@ summary: Three members of one household in the middle of a Lidl trip; eight item
 goodFor:
   - live sync with two or three clients (fg sync household-3-mid-shop --clients 3)
   - ticking off while shopping at one store (the other stores folded)
-  - the recently bought list (Zuletzt gekauft) with fresh ticks, undo
+  - the recently used list (Zuletzt verwendet) with fresh ticks, put back
 users:
   - { handle: mia, name: Mia Brandt }
   - { handle: noah, name: Noah Brandt }

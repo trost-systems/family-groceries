@@ -85,7 +85,7 @@ export function buildServer(auth: Auth): McpServer {
     title: 'Einträge abhaken',
     description:
       'Hakt einen oder mehrere Einträge als gekauft ab; sie verschwinden von der Liste und ' +
-      'landen unter "Zuletzt gekauft". Nicht gefundene oder schon abgehakte Einträge werden ' +
+      'landen unter "Zuletzt verwendet". Nicht gefundene oder schon abgehakte Einträge werden ' +
       'unter "notFound" gemeldet, ein zweiter Aufruf ändert also nichts.',
     inputSchema: z.object({ items: z.array(itemRef).min(1).max(50) }),
     annotations: { destructiveHint: false, idempotentHint: true },

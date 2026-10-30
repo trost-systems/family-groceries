@@ -6,7 +6,7 @@ After the first sign-in on a device, before onboarding or the list, the app asks
 
 - `an-consent` the consent screen (`analytics-consent`, buttons `analytics-consent-decline` "Ablehnen" and `analytics-consent-accept` "Einverstanden", chip "ENTWURF: Freigabe durch Peter") right after the first sign-in on a device, route `/analytics-consent`; an invite link keeps its code through it; an MCP authorization tab is not interrupted.
 - `an-decline` after "Ablehnen" nothing reaches the PostHog host, also after adding and ticking.
-- `an-events` after "Einverstanden": exactly one `first_open` per device, then `household_created` / `invite_accepted` (method `link` or `code`), `item_added` (source `typed`, `spoken`, `suggestion`), `item_ticked` once per tick (undo sends nothing), `category_reordered` (scope `default` or `store`), `store_reordered`; each with `household_id`, none with list text.
+- `an-events` after "Einverstanden": exactly one `first_open` per device, then `household_created` / `invite_accepted` (method `link` or `code`), `item_added` (source `typed`, `spoken`, `suggestion`), `item_ticked` once per tick (undo sends nothing: a put-back from "Zuletzt verwendet" within 10 minutes of the tick is no `item_added`), `category_reordered` (scope `default` or `store`), `store_reordered`; each with `household_id`, none with list text.
 - `an-switch` Mehr → Nutzungsdaten (`more-analytics`) shows the decision and changes it; off stops sending at once.
 - `an-internal` a long press on `more-version` toggles "Interne Installation" (`more-internal`) and the "Testfehler senden" button (`more-test-error`).
 - `an-errors` an uncaught app error and an edge-function exception arrive in PostHog error tracking, scrubbed.

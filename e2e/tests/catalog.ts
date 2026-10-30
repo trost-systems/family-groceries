@@ -73,7 +73,7 @@ export async function outline(page: Page): Promise<Section[]> {
     if (role === 'button' && store) {
       current = { store: store[1], headings: [], items: [] };
       sections.push(current);
-    } else if (role === 'button' && name === 'Zuletzt gekauft') {
+    } else if (role === 'button' && name === 'Zuletzt verwendet') {
       current = undefined;
     } else if (current && role === 'heading') {
       current.headings.push(name);

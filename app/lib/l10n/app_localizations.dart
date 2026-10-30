@@ -128,23 +128,17 @@ abstract class AppLocalizations {
   /// **'Wird einsortiert …'**
   String get sortingItem;
 
-  /// No description provided for @recentlyBought.
+  /// No description provided for @recentlyUsed.
   ///
   /// In de, this message translates to:
-  /// **'Zuletzt gekauft'**
-  String get recentlyBought;
+  /// **'Zuletzt verwendet'**
+  String get recentlyUsed;
 
   /// No description provided for @readd.
   ///
   /// In de, this message translates to:
   /// **'Wieder auf die Liste'**
   String get readd;
-
-  /// No description provided for @itemTicked.
-  ///
-  /// In de, this message translates to:
-  /// **'{name} abgehakt'**
-  String itemTicked(String name);
 
   /// No description provided for @itemDeleted.
   ///

@@ -339,18 +339,28 @@ class ListCubit(
     }
   }
 
-  /// Puts a ticked item back, e.g. the tick's undo: no analytics event.
+  /// Puts a ticked item back: no analytics event.
   void untick(String id) =>
       _enqueue(SetStatus(id, ItemStatus.active, _clock()));
 
-  /// Puts a bought item from "recently bought" back on the list: an add.
+  /// Puts a bought item from "recently used" back on the list: an add, or
+  /// the tick's undo within [undoWindow] of the tick (job 29b: the tick has
+  /// no undo snackbar any more), which sends nothing, as `suggest_items`
+  /// does not count it as a purchase.
   void readd(String id) {
-    final bought = state.items[id]?.status == ItemStatus.bought;
+    final item = state.items[id];
+    final bought = item?.status == ItemStatus.bought;
+    final boughtAt = item?.boughtAt;
+    final undo =
+        boughtAt != null && _clock().difference(boughtAt) <= undoWindow;
     untick(id);
-    if (bought) {
+    if (bought && !undo) {
       _track('item_added', {'source': AddSource.suggestion.name, ..._actor()});
     }
   }
+
+  /// How long after a tick a re-add counts as its undo.
+  static const undoWindow = Duration(minutes: 10);
 
   /// Writes only what [changes] holds; nothing when it holds nothing.
   void edit(String id, ItemChanges changes) {

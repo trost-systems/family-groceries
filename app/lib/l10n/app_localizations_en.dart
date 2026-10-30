@@ -25,15 +25,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortingItem => 'Sorting …';
 
   @override
-  String get recentlyBought => 'Recently bought';
+  String get recentlyUsed => 'Recently used';
 
   @override
   String get readd => 'Back on the list';
-
-  @override
-  String itemTicked(String name) {
-    return '$name ticked off';
-  }
 
   @override
   String itemDeleted(String name) {

@@ -57,7 +57,7 @@ test('suggestions come from the device cache when Supabase is unreachable', asyn
 
   await cutOff(page);
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Zuletzt gekauft' }), 'the cached list is back').toBeVisible();
+  await expect(page.getByRole('button', { name: 'Zuletzt verwendet' }), 'the cached list is back').toBeVisible();
   await typeInto(addField(page), 'ei');
   await suggestion(page, '6× Eier', 'Schon mal gekauft').click();
   await expect(addField(page)).toBeFocused();

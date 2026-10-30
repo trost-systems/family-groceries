@@ -19,6 +19,7 @@ void main() {
   late RecordingSink sink;
   late Analytics analytics;
   late ListCubit cubit;
+  var now = DateTime.utc(2026, 10, 30, 9);
 
   Future<void> settle() => pumpEventQueue();
 
@@ -51,6 +52,7 @@ void main() {
   }
 
   setUp(() async {
+    now = DateTime.utc(2026, 10, 30, 9);
     repo = FakeRepository()
       ..members = const [
         Member(id: 'peter', displayName: 'Peter', role: 'owner'),
@@ -65,6 +67,7 @@ void main() {
       MemoryListCache(),
       userId: 'peter',
       analytics: analytics,
+      clock: () => now,
     )..start();
     await settle();
   });
@@ -190,11 +193,12 @@ void main() {
       expect(await names(), isEmpty);
     });
 
-    test('a re-add from recently bought is an add, a restore is not', () async {
+    test('a re-add from recently used is an add, a restore is not', () async {
       final bought = await addedId('Mehl');
       final deleted = await addedId('Zucker');
       cubit.tick(bought);
       await settle();
+      now = now.add(ListCubit.undoWindow + const Duration(seconds: 1));
       final item = cubit.state.items[deleted]!;
       cubit.delete(deleted);
       await settle();
@@ -206,6 +210,38 @@ void main() {
       final events = await sent();
       expect(events.map((e) => e['event']), ['item_added']);
       expect(props(events.single)['source'], 'suggestion');
+    });
+  });
+
+  group('the tick undone from recently used', () {
+    test('a re-add within ten minutes of the tick sends nothing', () async {
+      final id = await addedId('Butter');
+      cubit.tick(id);
+      await settle();
+      await reset();
+      now = now.add(ListCubit.undoWindow);
+      cubit.readd(id);
+      await settle();
+      expect(cubit.state.items[id]!.status, ItemStatus.active);
+      expect(await names(), isEmpty);
+      cubit.tick(id);
+      await settle();
+      expect(await names(), ['item_ticked'], reason: 'a new action');
+    });
+
+    test('a tick of the partner is undone the same way', () async {
+      final id = await addedId('Quark');
+      final ticked = repo.rows[id] = repo.rows[id]!.copyWith(
+        status: ItemStatus.bought,
+        boughtAt: () => now.subtract(const Duration(minutes: 2)),
+      );
+      repo.emitItem!(ticked);
+      await settle();
+      await reset();
+      cubit.readd(id);
+      await settle();
+      expect(cubit.state.items[id]!.status, ItemStatus.active);
+      expect(await names(), isEmpty);
     });
   });
 

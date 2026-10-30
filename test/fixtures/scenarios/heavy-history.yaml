@@ -4,7 +4,7 @@ summary: Two members with eight weeks of shopping trips at Edeka, Lidl and dm, s
 goodFor:
   - usuals and "Brauchen wir wieder?" (suggest_items, due items)
   - prefix suggestions in the add field
-  - the recently bought history and quick re-add
+  - the recently used history and quick re-add
   - performance of the list with a long history
 users:
   - { handle: jo, name: Jo Weber }

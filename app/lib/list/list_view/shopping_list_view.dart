@@ -24,7 +24,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Everything between the header and the add bar: the explainer card, the
 /// stores as sections with their categories and items in walk order, and
-/// the recently bought items. Ticking, editing, folding and drag and drop
+/// the recently used items. Ticking, editing, folding and drag and drop
 /// happen here; it needs a [ListCubit] above it.
 class const ShoppingListView({
   /// Room under the last row for whatever covers the list's bottom edge
@@ -154,13 +154,11 @@ class _ShoppingListViewState()
     _seenTimers.clear();
   }
 
+  /// No snackbar: a tap on the item under "Zuletzt verwendet" undoes a
+  /// tick (job 29b).
   void _tick(Item item) {
     widget.onInteract?.call();
-    final cubit = _cubit..tick(item.id);
-    _snack(
-      AppLocalizations.of(context).itemTicked(item.name),
-      undo: () => cubit.untick(item.id),
-    );
+    _cubit.tick(item.id);
   }
 
   void _delete(Item item) {
@@ -416,7 +414,7 @@ class _ShoppingListViewState()
     required bool dropping,
   }) {
     final sections = sectionsOf(state.items.values, state.catalog);
-    final bought = recentlyBought(state.items.values);
+    final used = recentlyUsed(state.items.values);
     // The list as it stands without a drag. Columns are cut from it, so no
     // store changes column under the finger, and never more columns than
     // it has sections: one store with items reads as one centred column.
@@ -514,30 +512,20 @@ class _ShoppingListViewState()
                 ),
               const SliverToBoxAdapter(child: SizedBox(height: 4)),
               body,
-              if (bought.isNotEmpty)
+              if (used.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 20),
                     child: ExpansionTile(
-                      key: const ValueKey('recently-bought'),
-                      title: Text(l10n.recentlyBought),
+                      key: const ValueKey('recently-used'),
+                      title: Text(l10n.recentlyUsed),
                       children: [
-                        for (final item in bought)
-                          ListTile(
-                            key: ValueKey('bought-${item.id}'),
-                            dense: true,
-                            title: Text(
-                              item.name,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              tooltip: l10n.readd,
-                              icon: const Icon(Icons.add),
-                              onPressed: () => _readd(item),
-                            ),
-                            onTap: () => _readd(item),
+                        for (final (i, item) in used.indexed)
+                          _usedRow(
+                            state,
+                            item,
+                            used,
+                            last: i == used.length - 1,
                           ),
                       ],
                     ),
@@ -552,6 +540,60 @@ class _ShoppingListViewState()
   }
 
   static const _columnGap = 16.0;
+
+  /// A recently used item as the list's own row, icon included, faded: a
+  /// tap puts it back on the list. The row's own gestures are off (no
+  /// tick, swipe, hold or drop), and so are its semantics, which would
+  /// tick and delete.
+  Widget _usedRow(
+    ListState state,
+    Item item,
+    List<Item> used, {
+    required bool last,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final category = state.catalog.categories
+        .where((c) => c.id == item.categoryId)
+        .firstOrNull;
+    final details = [?item.brand, ?item.properties].join(' · ');
+    return Semantics(
+      key: ValueKey('used-${item.id}'),
+      container: true,
+      button: true,
+      // The name leads, as on the list's rows; the action is part of the
+      // label, so a used row is not taken for a row of the list.
+      label: [
+        item.name,
+        if (details.isNotEmpty) details,
+        ?item.quantity,
+        l10n.readd,
+      ].join('\n'),
+      onTap: () => _readd(item),
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _readd(item),
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: 0.55,
+            child: ItemRow(
+              item: item,
+              category: category,
+              block: used,
+              session: _session,
+              fresh: false,
+              last: last,
+              onVisible: (_) {},
+              onTick: _readd,
+              onEdit: (_) {},
+              onDelete: (_) {},
+              onDrop: (_, _) {},
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   /// More than a folded store divider is tall, with its gap.
   static const _dividerBound = 120.0;
