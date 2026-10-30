@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Token-Sheet: Hummlist, Richtung „Tonal“</title>
+  <link rel="stylesheet" href="/design-prototypes/option-1-tonal/tokens.css">
+  <link rel="stylesheet" href="/design-prototypes/option-1-tonal/styles.css">
+</head>
+<body class="sheet">
+  <a class="skip" href="#inhalt">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="wrap site-header__inner">
+      <a class="brand" href="/design-prototypes/option-1-tonal/index"><span class="brand__mark"></span><span class="brand__name">Hummlist</span></a>
+      <nav class="site-nav site-nav--sheet" aria-label="Token-Sheet">
+        <a class="site-nav__link" href="#farben">Farben</a>
+        <a class="site-nav__link" href="#schrift">Schrift</a>
+        <a class="site-nav__link" href="#flaechen">Flächen</a>
+        <a class="btn btn--tonal btn--small" href="/design-prototypes/option-1-tonal/index">Zur Startseite</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="inhalt">
+    <section class="wrap sheet-intro" aria-labelledby="sheet-title">
+      <h1 id="sheet-title" class="sheet-intro__title">Token-Sheet „Tonal“</h1>
+      <p class="sheet-intro__lead">Ein Token-Satz für App, Website, E-Mail, Store-Screenshots und Alexa. Er bleibt beim Material-3-Schema, das die App heute schon hat.</p>
+      <div class="note">
+        <h2 class="note__title">Aus dem Seed erzeugt, nicht von Hand gesetzt</h2>
+        <p>Alle Farbrollen mit M3-Namen sind genau die Werte, die Flutter aus <code>ThemeData(colorSchemeSeed: Color(0xFF2E7D32))</code> erzeugt (Tonal Spot, hell und dunkel). Die App behält deshalb <code>ColorScheme.fromSeed</code> unverändert. Dazu kommt nur eine <code>ThemeExtension</code> für die Tokens, die M3 nicht kennt: <code>mark</code> und <code>success</code> (der Seed #2E7D32 selbst, das Grün des Icons), <code>warning</code>/<code>onWarning</code> und <code>deviceFrame</code>. Schrift: <code>TextTheme</code> mit Roboto Flex, die Rollen heißen wie in M3.</p>
+        <pre class="code" tabindex="0"><code>ThemeData(
+  colorSchemeSeed: const Color(0xFF2E7D32),
+  fontFamily: 'Roboto Flex',
+  extensions: const [HummlistColors(
+    mark: Color(0xFF2E7D32), success: Color(0xFF2E7D32),
+    warning: Color(0xFF7A5900), onWarning: Color(0xFFFFFFFF),
+  )],
+)</code></pre>
+      </div>
+    </section>
+
+    <section id="farben" class="wrap sheet-section" aria-labelledby="colors-title">
+      <h2 id="colors-title" class="sheet-section__title">Farben</h2>
+      <p class="sheet-section__lead">Rolle, M3-Herkunft, Wert hell und dunkel. „Aa“ zeigt die Textfarbe auf der Fläche, daneben das Kontrastverhältnis nach WCAG 2.1.</p>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Farbtabelle">
+        <table class="swatches">
+          <thead><tr><th scope="col">Rolle</th><th scope="col">Hell</th><th scope="col">Dunkel</th><th scope="col">Geprüftes Paar</th></tr></thead>
+          <tbody>
+          <tr><th scope="row"><span class="swatch-role">brand</span><span class="swatch-desc">M3 primary</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#3c6939" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#3c6939</code><code>#ffffff</code><span class="swatch__ratio">6,42:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#a1d39a" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#0a390f">Aa</text></svg><span class="swatch__meta"><code>#a1d39a</code><code>#0a390f</code><span class="swatch__ratio">7,66:1</span></span></span></td><td class="swatch-pair">on-brand auf brand (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">brand-container</span><span class="swatch-desc">M3 primaryContainer</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#bcf0b4" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#245024">Aa</text></svg><span class="swatch__meta"><code>#bcf0b4</code><code>#245024</code><span class="swatch__ratio">7,23:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#245024" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#bcf0b4">Aa</text></svg><span class="swatch__meta"><code>#245024</code><code>#bcf0b4</code><span class="swatch__ratio">7,23:1</span></span></span></td><td class="swatch-pair">on-brand-container auf brand-container (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">secondary-container</span><span class="swatch-desc">M3 secondaryContainer: tonal buttons, active tab pill, chips</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#d6e8ce" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#3b4b38">Aa</text></svg><span class="swatch__meta"><code>#d6e8ce</code><code>#3b4b38</code><span class="swatch__ratio">7,24:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#3b4b38" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#d6e8ce">Aa</text></svg><span class="swatch__meta"><code>#3b4b38</code><code>#d6e8ce</code><span class="swatch__ratio">7,24:1</span></span></span></td><td class="swatch-pair">on-secondary-container auf secondary-container (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">accent</span><span class="swatch-desc">M3 tertiary</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#38656a" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#38656a</code><code>#ffffff</code><span class="swatch__ratio">6,49:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#a0cfd4" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#00363b">Aa</text></svg><span class="swatch__meta"><code>#a0cfd4</code><code>#00363b</code><span class="swatch__ratio">7,78:1</span></span></span></td><td class="swatch-pair">on-accent auf accent (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">accent-container</span><span class="swatch-desc">M3 tertiaryContainer: explainer card, rows new from the partner</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#bcebf0" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#1f4d52">Aa</text></svg><span class="swatch__meta"><code>#bcebf0</code><code>#1f4d52</code><span class="swatch__ratio">7,26:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#1f4d52" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#bcebf0">Aa</text></svg><span class="swatch__meta"><code>#1f4d52</code><code>#bcebf0</code><span class="swatch__ratio">7,26:1</span></span></span></td><td class="swatch-pair">on-accent-container auf accent-container (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface</span><span class="swatch-desc">M3 surface</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#f7fbf1" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#f7fbf1</code><code>#191d17</code><span class="swatch__ratio">16,29:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#10140f" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#10140f</code><code>#e0e4db</code><span class="swatch__ratio">14,43:1</span></span></span></td><td class="swatch-pair">text auf surface (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface-raised</span><span class="swatch-desc">M3 surfaceContainerLowest</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#ffffff" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#ffffff</code><code>#191d17</code><span class="swatch__ratio">17,08:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#0b0f0a" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#0b0f0a</code><code>#e0e4db</code><span class="swatch__ratio">14,99:1</span></span></span></td><td class="swatch-pair">text auf surface-raised (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface-container-low</span><span class="swatch-desc">M3 surfaceContainerLow: bottom band, hero</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#f1f5eb" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#f1f5eb</code><code>#191d17</code><span class="swatch__ratio">15,45:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#191d17" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#191d17</code><code>#e0e4db</code><span class="swatch__ratio">13,25:1</span></span></span></td><td class="swatch-pair">text auf surface-container-low (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface-container</span><span class="swatch-desc">M3 surfaceContainer: cards, pressed row</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#ecefe6" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#ecefe6</code><code>#191d17</code><span class="swatch__ratio">14,69:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#1d211b" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#1d211b</code><code>#e0e4db</code><span class="swatch__ratio">12,67:1</span></span></span></td><td class="swatch-pair">text auf surface-container (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface-container-high</span><span class="swatch-desc">M3 surfaceContainerHigh</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#e6e9e0" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#e6e9e0</code><code>#191d17</code><span class="swatch__ratio">13,91:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#272b25" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#272b25</code><code>#e0e4db</code><span class="swatch__ratio">11,17:1</span></span></span></td><td class="swatch-pair">text auf surface-container-high (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">surface-container-highest</span><span class="swatch-desc">M3 surfaceContainerHighest</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#e0e4db" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#191d17">Aa</text></svg><span class="swatch__meta"><code>#e0e4db</code><code>#191d17</code><span class="swatch__ratio">13,25:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#323630" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#e0e4db">Aa</text></svg><span class="swatch__meta"><code>#323630</code><code>#e0e4db</code><span class="swatch__ratio">9,55:1</span></span></span></td><td class="swatch-pair">text auf surface-container-highest (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">text</span><span class="swatch-desc">M3 onSurface</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#191d17" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#191d17</code><span class="swatch__ratio">16,29:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#e0e4db" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#e0e4db</code><span class="swatch__ratio">14,43:1</span></span></span></td><td class="swatch-pair">text auf surface (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">text-muted</span><span class="swatch-desc">M3 onSurfaceVariant</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#424940" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#424940</code><span class="swatch__ratio">8,87:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#c2c9bd" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#c2c9bd</code><span class="swatch__ratio">10,97:1</span></span></span></td><td class="swatch-pair">text-muted auf surface (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">border</span><span class="swatch-desc">M3 outlineVariant: dividers, hairlines</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#c2c9bd" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#c2c9bd</code><span class="swatch__ratio">1,62:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#424940" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#424940</code><span class="swatch__ratio">2,00:1</span></span></span></td><td class="swatch-pair">border auf surface</td></tr>
+          <tr><th scope="row"><span class="swatch-role">outline</span><span class="swatch-desc">M3 outline: field and chip borders (3:1)</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#72796f" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#72796f</code><span class="swatch__ratio">4,28:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#8c9388" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#8c9388</code><span class="swatch__ratio">5,88:1</span></span></span></td><td class="swatch-pair">outline auf surface (min. 3:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">inverse-surface</span><span class="swatch-desc">M3 inverseSurface: snackbar</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2d322c" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#eff2e9">Aa</text></svg><span class="swatch__meta"><code>#2d322c</code><code>#eff2e9</code><span class="swatch__ratio">11,56:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#e0e4db" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#2d322c">Aa</text></svg><span class="swatch__meta"><code>#e0e4db</code><code>#2d322c</code><span class="swatch__ratio">10,15:1</span></span></span></td><td class="swatch-pair">inverse-on-surface auf inverse-surface (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">inverse-brand</span><span class="swatch-desc">M3 inversePrimary: snackbar action</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#a1d39a" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#a1d39a</code><span class="swatch__ratio">7,67:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#3c6939" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#3c6939</code><span class="swatch__ratio">4,98:1</span></span></span></td><td class="swatch-pair">inverse-brand auf inverse-surface (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">mark</span><span class="swatch-desc">The seed itself, the app icon's green (ThemeExtension)</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2e7d32" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#2e7d32</code><code>#ffffff</code><span class="swatch__ratio">5,13:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2e7d32" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#2e7d32</code><code>#ffffff</code><span class="swatch__ratio">5,13:1</span></span></span></td><td class="swatch-pair">on-success auf mark (min. 3:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">success</span><span class="swatch-desc">The seed as a fill (ThemeExtension)</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2e7d32" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#2e7d32</code><code>#ffffff</code><span class="swatch__ratio">5,13:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2e7d32" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#2e7d32</code><code>#ffffff</code><span class="swatch__ratio">5,13:1</span></span></span></td><td class="swatch-pair">on-success auf success (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">warning</span><span class="swatch-desc">Not in M3; tone 40 of the seed's yellow complement (ThemeExtension)</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#7a5900" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#7a5900</code><code>#ffffff</code><span class="swatch__ratio">6,45:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#f5bf57" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#412d00">Aa</text></svg><span class="swatch__meta"><code>#f5bf57</code><code>#412d00</code><span class="swatch__ratio">7,79:1</span></span></span></td><td class="swatch-pair">on-warning auf warning (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">error</span><span class="swatch-desc">M3 error</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#ba1a1a" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffffff">Aa</text></svg><span class="swatch__meta"><code>#ba1a1a</code><code>#ffffff</code><span class="swatch__ratio">6,46:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#ffb4ab" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#690005">Aa</text></svg><span class="swatch__meta"><code>#ffb4ab</code><code>#690005</code><span class="swatch__ratio">7,72:1</span></span></span></td><td class="swatch-pair">on-error auf error (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">error-container</span><span class="swatch-desc">M3 errorContainer</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#ffdad6" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#93000a">Aa</text></svg><span class="swatch__meta"><code>#ffdad6</code><code>#93000a</code><span class="swatch__ratio">7,24:1</span></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#93000a" stroke="#72796f" stroke-opacity="0.35"/><text x="20" y="27" font-family="Roboto Flex, sans-serif" font-size="15" font-weight="600" fill="#ffdad6">Aa</text></svg><span class="swatch__meta"><code>#93000a</code><code>#ffdad6</code><span class="swatch__ratio">7,24:1</span></span></span></td><td class="swatch-pair">on-error-container auf error-container (min. 4,50:1)</td></tr>
+          <tr><th scope="row"><span class="swatch-role">device-frame</span><span class="swatch-desc">Phone bezel in mocks (site only): inverseSurface in light</span></th><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#2d322c" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#2d322c</code></span></span></td><td><span class="swatch"><svg class="swatch__chip" viewBox="0 0 56 40" width="56" height="40" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="55" height="39" rx="11.5" fill="#323630" stroke="#72796f" stroke-opacity="0.35"/></svg><span class="swatch__meta"><code>#323630</code></span></span></td><td class="swatch-pair">Rahmen, kein Text</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sheet-small">Ladenfarben liegen außerhalb des Token-Satzes und sind fest: <span class="app-badge app-badge--dm">dm</span> #ffffff/#d6001c, <span class="app-badge app-badge--edeka">E</span> #1d4ea3/#ffd400, <span class="app-badge app-badge--lidl">L</span> #0050aa/#fff000.</p>
+    </section>
+
+    <section id="schrift" class="wrap sheet-section" aria-labelledby="type-title">
+      <h2 id="type-title" class="sheet-section__title">Schrift</h2>
+      <p class="sheet-section__lead">Roboto Flex, variabel (Gewicht 100 bis 1000, optische Größe 8 bis 144), SIL Open Font License 1.1, aus <code>@fontsource-variable/roboto-flex</code> 5.3.0, selbst gehostet (82 KB, Latin). Fallback: Roboto, system-ui, -apple-system, Segoe UI, Arial. In E-Mails greift der Fallback, in der App die Plattformschrift oder die gebündelte Datei.</p>
+      <dl class="ramp">
+        <div class="ramp__row"><dt>display<span>57/64 · 500 · −0,02em · M3 displayLarge</span></dt><dd class="t-display">Alle schreiben mit.</dd></div>
+        <div class="ramp__row"><dt>display-small<span>36/44 · 500 · M3 displaySmall</span></dt><dd class="t-display-small">Einer kauft ein.</dd></div>
+        <div class="ramp__row"><dt>headline<span>32/40 · 500 · M3 headlineLarge</span></dt><dd class="t-headline">Sortiert nach deinem Laufweg</dd></div>
+        <div class="ramp__row"><dt>headline-small<span>24/32 · 500 · M3 headlineSmall</span></dt><dd class="t-headline-small">Eine Liste für alle</dd></div>
+        <div class="ramp__row"><dt>title<span>22/28 · 500 · M3 titleLarge</span></dt><dd class="t-title">Lea hat dich eingeladen</dd></div>
+        <div class="ramp__row"><dt>title-medium<span>16/24 · 600 · M3 titleMedium</span></dt><dd class="t-title-medium">Schnell eingetippt, sofort bei allen</dd></div>
+        <div class="ramp__row"><dt>body<span>17/26 · 400 · M3 bodyLarge, für Lesetext 1 px größer</span></dt><dd class="t-body">Jeder Artikel landet von selbst in seiner Kategorie: Bananen bei Obst &amp; Gemüse, Hafermilch im Kühlregal.</dd></div>
+        <div class="ramp__row"><dt>body-medium<span>14/20 · 400 · M3 bodyMedium</span></dt><dd class="t-body-medium">Babylove · 4er Pack</dd></div>
+        <div class="ramp__row"><dt>label<span>14/20 · 600 · M3 labelLarge</span></dt><dd class="t-label">Im Browser öffnen</dd></div>
+        <div class="ramp__row"><dt>label-small<span>12/16 · 700 · +0,09em · versal</span></dt><dd class="t-label-small">Obst &amp; Gemüse</dd></div>
+      </dl>
+    </section>
+
+    <section id="flaechen" class="wrap sheet-section" aria-labelledby="shape-title">
+      <h2 id="shape-title" class="sheet-section__title">Abstand, Form, Höhe, Bewegung</h2>
+      <div class="sheet-grid">
+        <div class="sheet-card">
+          <h3 class="sheet-card__title">Abstände (4er-Raster)</h3>
+          <ul class="space-scale">
+            <li><span class="space-bar space-bar--1"></span>1 · 4 px</li>
+            <li><span class="space-bar space-bar--2"></span>2 · 8 px</li>
+            <li><span class="space-bar space-bar--3"></span>3 · 12 px</li>
+            <li><span class="space-bar space-bar--4"></span>4 · 16 px</li>
+            <li><span class="space-bar space-bar--5"></span>5 · 24 px</li>
+            <li><span class="space-bar space-bar--6"></span>6 · 32 px</li>
+            <li><span class="space-bar space-bar--7"></span>7 · 48 px</li>
+            <li><span class="space-bar space-bar--8"></span>8 · 64 px</li>
+            <li><span class="space-bar space-bar--9"></span>9 · 96 px</li>
+          </ul>
+        </div>
+        <div class="sheet-card">
+          <h3 class="sheet-card__title">Radien (M3-Formskala)</h3>
+          <ul class="radius-scale">
+            <li><span class="radius-box radius-box--xs"></span>xs · 4</li>
+            <li><span class="radius-box radius-box--s"></span>s · 8</li>
+            <li><span class="radius-box radius-box--m"></span>m · 12</li>
+            <li><span class="radius-box radius-box--l"></span>l · 16</li>
+            <li><span class="radius-box radius-box--xl"></span>xl · 28</li>
+            <li><span class="radius-box radius-box--full"></span>full</li>
+          </ul>
+          <p class="sheet-small">8 Felder und Optionen, 12 Karten und Ladenzeile, 28 Sheets und Hero, full für Knöpfe, Chips und das Eingabefeld.</p>
+        </div>
+        <div class="sheet-card">
+          <h3 class="sheet-card__title">Höhe (M3-Ebenen 1 und 3)</h3>
+          <div class="elev">
+            <div class="elev__box elev__box--1">Ebene 1<span>Karten beim Hover, Store-Badges</span></div>
+            <div class="elev__box elev__box--3">Ebene 3<span>Snackbar, Ziehen, Handy-Mock</span></div>
+          </div>
+          <p class="sheet-small">Sonst trennen Tonflächen (surface-container-low bis -highest), keine Schatten.</p>
+        </div>
+        <div class="sheet-card">
+          <h3 class="sheet-card__title">Bewegung (M3-Tokens)</h3>
+          <ul class="motion-list">
+            <li><code>short-2</code> 100 ms · Hover-Farben</li>
+            <li><code>short-4</code> 200 ms · Abhak-Strich, Pfeile</li>
+            <li><code>medium-1</code> 250 ms · Chips aufklappen</li>
+            <li><code>medium-2</code> 300 ms · Sheet auf und zu</li>
+            <li><code>medium-4</code> 400 ms · große Übergänge</li>
+            <li><code>standard</code> 0.2, 0, 0, 1</li>
+            <li><code>emphasized-decelerate</code> 0.05, 0.7, 0.1, 1 · rein</li>
+            <li><code>emphasized-accelerate</code> 0.3, 0, 0.8, 0.15 · raus</li>
+          </ul>
+          <a class="motion-demo" href="#flaechen"><span class="motion-demo__disc">+</span>Hover oder Fokus: emphasized-decelerate, medium-2</a>
+          <p class="sheet-small">Bei „Bewegung reduzieren“ sind alle Dauern 0.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap sheet-section" aria-labelledby="surfaces-title">
+      <h2 id="surfaces-title" class="sheet-section__title">Ein Satz, fünf Flächen</h2>
+      <div class="surfaces">
+        <figure class="surface-demo">
+          <div class="phone phone--mini" role="img" aria-label="Die Liste „Familieneinkauf“ in der App, verkleinert für einen Store-Screenshot.">
+      <div class="phone__screen">
+        <div class="app-status"><span>9:41</span><span class="app-status__icons"><i></i><i></i><i></i></span></div>
+        <div class="app-header"><span class="app-header__title">Familieneinkauf</span><span class="app-header__count">15 Artikel</span></div>
+        <div class="app-scroll">
+          <div class="app-store"><span class="app-badge app-badge--edeka">E</span><span class="app-store__name">Edeka</span><span class="app-store__rule app-store__rule--edeka"></span><span class="app-store__count"><b>8</b> Artikel</span><span class="app-caret"></span></div>
+          <div class="app-cat"><span>Obst &amp; Gemüse</span></div>
+          <div class="app-row app-row--ticked"><span class="app-row__emoji">🍌</span><span class="app-row__text"><span class="app-row__name"><span class="app-row__qty">6×</span>Bananen</span><span class="app-row__sub">Bio</span></span></div>
+          <div class="app-row"><span class="app-row__emoji">🥒</span><span class="app-row__text"><span class="app-row__name"><span class="app-row__qty">2×</span>Gurken</span></span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🍎</span><span class="app-row__text"><span class="app-row__name">Äpfel</span><span class="app-row__sub">Elstar · 1 kg</span></span></div>
+          <div class="app-cat"><span>Brot &amp; Backwaren</span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🍞</span><span class="app-row__text"><span class="app-row__name">Vollkornbrot</span></span></div>
+          <div class="app-cat"><span>Kühlregal</span></div>
+          <div class="app-row app-row--new"><span class="app-row__emoji">🥛</span><span class="app-row__text"><span class="app-row__name">Hafermilch</span><span class="app-row__sub">Barista</span></span></div>
+          <div class="app-row"><span class="app-row__emoji">🧈</span><span class="app-row__text"><span class="app-row__name">Butter</span></span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🥣</span><span class="app-row__text"><span class="app-row__name"><span class="app-row__qty">500 g</span>Magerquark</span></span></div>
+          <div class="app-cat"><span>Vorrat &amp; Konserven</span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🍝</span><span class="app-row__text"><span class="app-row__name">Spaghetti</span></span></div>
+          <div class="app-store"><span class="app-badge app-badge--dm">dm</span><span class="app-store__name">dm</span><span class="app-store__rule app-store__rule--dm"></span><span class="app-store__count"><b>4</b> Artikel</span><span class="app-caret"></span></div>
+          <div class="app-cat"><span>Drogerie</span></div>
+          <div class="app-row"><span class="app-row__emoji">👶</span><span class="app-row__text"><span class="app-row__name">Windeln</span><span class="app-row__sub">Pampers · Größe 3</span></span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🪥</span><span class="app-row__text"><span class="app-row__name">Zahnpasta</span><span class="app-row__sub">elmex · Kinder</span></span></div>
+          <div class="app-cat"><span>Haushalt</span></div>
+          <div class="app-row app-row--last"><span class="app-row__emoji">🧽</span><span class="app-row__text"><span class="app-row__name">Spülmittel</span></span></div>
+          <div class="app-store app-store--folded"><span class="app-badge app-badge--lidl">L</span><span class="app-store__name">Lidl</span><span class="app-store__rule app-store__rule--lidl"></span><span class="app-store__count"><b>3</b> Artikel</span><span class="app-caret"></span></div>
+        </div>
+        <div class="app-snackbar"><span>Bananen abgehakt</span><span class="app-snackbar__action">Rückgängig</span></div>
+        <div class="app-band">
+          <div class="app-input"><span class="app-input__disc">+</span><span class="app-input__hint">Was brauchst du?</span></div>
+          <div class="app-tabs"><span class="app-tab app-tab--active"><span class="app-tab__pill">🛒</span>Liste</span><span class="app-tab"><span class="app-tab__pill app-tab__pill--glyph">☰</span>Mehr</span></div>
+        </div>
+      </div>
+    </div>
+          <figcaption><b>App</b>, Liste in Design H. Gleiche Rollen wie in Flutter: primary für Mengen, surfaceContainerLow für die untere Leiste, inverseSurface für die Snackbar.</figcaption>
+        </figure>
+
+        <figure class="surface-demo">
+          <div class="email" role="img" aria-label="E-Mail-Mock: Lea hat dich zu Hummlist eingeladen, mit Knopf „Einladung annehmen“ und Code K7QM-4PXR.">
+            <div class="email__chrome"><span>Von: Hummlist</span><span>Betreff: Lea hat dich zu Hummlist eingeladen</span></div>
+            <div class="email__body">
+              <div class="email__head"><span class="brand__mark"></span><span class="email__brand">Hummlist</span></div>
+              <div class="email__card">
+                <div class="email__title">Lea hat dich zu Hummlist eingeladen</div>
+                <p>Lea teilt die Einkaufsliste „Familieneinkauf“ mit dir. Was ihr eintragt, seht ihr beide sofort.</p>
+                <span class="email__button">Einladung annehmen</span>
+                <p class="email__code-label">Oder gib diesen Code in der App ein:</p>
+                <span class="email__code">K7QM-4PXR</span>
+                <p class="email__fine">Die Einladung gilt 7 Tage und für eine Person.</p>
+              </div>
+              <p class="email__footer">Hummlist zeigt keine Werbung und verkauft keine Daten.</p>
+            </div>
+          </div>
+          <figcaption><b>E-Mail</b>: Hex-Werte inline (#f1f5eb Seite, #ffffff Karte, #3c6939 Knopf), Schrift-Fallback statt Webfont, Radius 28 am Knopf.</figcaption>
+        </figure>
+
+        <figure class="surface-demo">
+          <div class="store-shot" role="img" aria-label="Store-Screenshot-Rahmen: Überschrift „Sortiert nach deinem Laufweg“ über einem Handy mit der Liste.">
+            <div class="store-shot__title">Sortiert nach deinem Laufweg</div>
+            <div class="store-shot__sub">Edeka, dm, Lidl: jeder mit eigener Reihenfolge</div>
+            <div class="store-shot__phone"><span class="store-shot__strip store-shot__strip--edeka"><span class="app-badge app-badge--edeka">E</span>Edeka<i></i><b>8</b></span><span class="store-shot__cat">Obst &amp; Gemüse</span><span class="store-shot__row">🍌 <b>6×</b> Bananen</span><span class="store-shot__row">🥒 <b>2×</b> Gurken</span><span class="store-shot__cat">Kühlregal</span><span class="store-shot__row">🥛 Hafermilch</span><span class="store-shot__strip store-shot__strip--dm"><span class="app-badge app-badge--dm">dm</span>dm<i></i><b>4</b></span></div>
+          </div>
+          <figcaption><b>Store-Screenshot</b>: brand-container als Fläche, Überschrift in headline-small, das Handy angeschnitten.</figcaption>
+        </figure>
+
+        <figure class="surface-demo">
+          <div class="alexa" role="img" aria-label="Alexa-Karte auf einem Echo Show: Hummlist, 15 Artikel, die ersten Einträge der Liste.">
+            <div class="alexa__head"><span class="brand__mark"></span>Hummlist<span class="alexa__count">15 Artikel</span></div>
+            <div class="alexa__store"><span class="app-badge app-badge--edeka">E</span>Edeka</div>
+            <div class="alexa__items"><span>🍌 6× Bananen</span><span>🥒 2× Gurken</span><span>🥛 Hafermilch</span><span>🍞 Vollkornbrot</span></div>
+            <div class="alexa__said">„Alexa, frag Hummlist, was auf der Liste steht.“</div>
+          </div>
+          <figcaption><b>Alexa (APL)</b>: dieselben Rollen als Hex aus tokens.json, surface-container-high als Karte, auf dem Echo Show im dunklen Schema.</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer__inner">
+      <div class="site-footer__brand">
+        <span class="brand"><span class="brand__mark"></span><span class="brand__name">Hummlist</span></span>
+        <p>Richtung „Tonal“, Prototyp für den Vergleich am 31. Oktober 2026.</p>
+      </div>
+      <nav class="site-footer__nav" aria-label="Rechtliches und Hilfe">
+        <a href="/design-prototypes/option-1-tonal/index">Startseite</a>
+        <a href="#">Impressum</a>
+        <a href="#">Datenschutz</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
