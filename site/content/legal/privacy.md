@@ -74,18 +74,25 @@ Legal basis: Art. 6(1)(f) GDPR (data security, Art. 32 GDPR).
 
 These service providers process data on our behalf and on our instructions (Art. 28 GDPR):
 
-- Supabase Inc. (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU)
+- Supabase Pte. Ltd., Singapore (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU)
 - Vercel Inc. (hosting of hummlist.com, app.hummlist.com and mcp.hummlist.com; domain and DNS)
 - PostHog Inc. (usage data and error reports, servers in the EU; only as described in section 9)
 - GitHub Inc. (encrypted backups)
-- Google (Google Workspace, e-mail; [PETER: contracting entity per the Workspace agreement, e.g. "Google Cloud EMEA Limited, Ireland"?])
+- Google Cloud EMEA Limited, Dublin, Ireland (Google Workspace, e-mail)
 - [PETER: provider of the AI support assistant (name, location)]
 
 Independent controllers: Google or Apple when you sign in with them; Google, as long as the web app loads program libraries and fonts from gstatic.com (section 3); the provider of your operating system's speech recognition; AI assistants you connect yourself; Apple and Google as app stores.
 
 ## 13. Transfers outside the EU
 
-Some providers are based in the USA or belong to US companies. Supabase's server functions can also run in data centres outside the EU (see section 12). Where data is transferred to the USA or other third countries or US authorities could access it, we rely on [PETER: confirm the basis per provider (Supabase, Vercel, GitHub, PostHog, Google, AI support): EU-US Data Privacy Framework adequacy decision (Art. 45 GDPR) where certified, or Standard Contractual Clauses (Art. 46(2)(c) GDPR)]. You can get a copy of the safeguards from support@hummlist.com.
+Some providers are based in the USA or belong to US companies. Supabase's server functions can also run in data centres outside the EU (see section 12). Where data is transferred to the USA or other third countries or US authorities could access it, we rely on the following:
+
+- Vercel Inc., GitHub Inc., PostHog Inc. and Google LLC (the US parent to which Google Cloud EMEA Limited passes data) are certified under the EU-US Data Privacy Framework. The European Commission's adequacy decision applies to them (Art. 45 GDPR). Vercel and PostHog have also agreed Standard Contractual Clauses (Art. 46(2)(c) GDPR) in their data processing agreements; for Google, Standard Contractual Clauses apply if Google stops relying on the Data Privacy Framework.
+- PostHog stores the data in Frankfurt am Main. Under its contract, PostHog may also process it in the USA, for example through sub-processors; the above applies to that.
+- Supabase Pte. Ltd. (Singapore) is not certified under the Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of Supabase's data processing agreement.
+- AI support assistant: [PETER: basis for the AI support assistant's provider (Data Privacy Framework or Standard Contractual Clauses)]
+
+You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
