@@ -876,8 +876,10 @@ hummlist.com's production build fails while a `[PETER: …]` is left.
   "Peter must fill before merge"; Vercel address, Vercel log retention and
   the auth mailer were filled by the lead, DECISIONS 33a 9): AI support
   assistant provider and location, whether you send every support reply
-  yourself, support mail deletion period, Google Workspace contracting entity,
-  and the transfer basis per provider. hummlist.com publishes the policy only once all are
+  yourself, support mail deletion period, and the transfer basis for the AI
+  support provider. (Job 33d filled the Google Workspace contracting entity
+  and the transfer basis for Supabase, Vercel, GitHub, PostHog and Google;
+  DECISIONS "Job 33d".) hummlist.com publishes the policy only once all are
   filled (Vercel's production build refuses otherwise); merging alone does
   not.
 - **Google Play payments profile:** change the address from Yalovastraße 7

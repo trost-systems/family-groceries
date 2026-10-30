@@ -87,18 +87,25 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherheit, Art. 32 DSGVO).
 
 Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach unseren Weisungen verarbeiten (Art. 28 DSGVO):
 
-- Supabase Inc. (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU)
+- Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU)
 - Vercel Inc. (Hosting von hummlist.com, app.hummlist.com, mcp.hummlist.com; Domain und DNS)
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
-- Google (Google Workspace, E-Mail; [PETER: Vertragspartner laut Workspace-Vertrag, z. B. „Google Cloud EMEA Limited, Irland“?])
+- Google Cloud EMEA Limited, Dublin, Irland (Google Workspace, E-Mail)
 - [PETER: Anbieter des KI-Support-Assistenten (Name, Sitz)]
 
 Eigenständig verantwortlich sind: Google bzw. Apple, wenn du dich darüber anmeldest; Google, solange die Web-App Programmbibliotheken und Schriften von gstatic.com lädt (Abschnitt 3); der Anbieter der Spracherkennung deines Betriebssystems; KI-Assistenten, die du selbst verbindest; Apple und Google als App-Stores.
 
 ## 13. Übermittlung in Drittländer
 
-Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen. Die Server-Funktionen von Supabase können auch in Rechenzentren außerhalb der EU laufen (siehe Abschnitt 12). Soweit dabei Daten in die USA oder andere Drittländer übermittelt werden oder US-Behörden darauf zugreifen könnten, stützen wir uns auf [PETER: je Anbieter (Supabase, Vercel, GitHub, PostHog, Google, KI-Support) die Grundlage bestätigen: Angemessenheitsbeschluss EU-US Data Privacy Framework (Art. 45 DSGVO) bei Zertifizierung oder Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)]. Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
+Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen. Die Server-Funktionen von Supabase können auch in Rechenzentren außerhalb der EU laufen (siehe Abschnitt 12). Soweit dabei Daten in die USA oder andere Drittländer übermittelt werden oder US-Behörden darauf zugreifen könnten, stützen wir uns auf folgende Grundlagen:
+
+- Vercel Inc., GitHub Inc., PostHog Inc. und Google LLC (die US-Muttergesellschaft, an die Google Cloud EMEA Limited weitergibt) sind nach dem EU-US Data Privacy Framework zertifiziert. Für sie gilt der Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO). Vercel und PostHog haben in ihren Auftragsverarbeitungsverträgen zusätzlich Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO) vereinbart; bei Google gelten Standardvertragsklauseln, falls Google sich nicht mehr auf das Data Privacy Framework stützt.
+- PostHog speichert die Daten in Frankfurt am Main. Laut Vertrag kann PostHog sie auch in den USA verarbeiten, etwa durch Unterauftragsverarbeiter; dafür gilt das eben Gesagte.
+- Supabase Pte. Ltd. (Singapur) ist nicht nach dem Data Privacy Framework zertifiziert. Hier gelten die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags von Supabase sind.
+- KI-Support-Assistent: [PETER: Grundlage für den Anbieter des KI-Support-Assistenten (Data Privacy Framework oder Standardvertragsklauseln)]
+
+Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 
 ## 14. Speicherdauer
 

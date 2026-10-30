@@ -3918,3 +3918,29 @@ Calls made here:
     an install that never had one under the nil UUID (one row per user for all such installs). An
     answer the user gives (`p_answered`) always becomes their newest; a sign-in or start records
     only a new or changed answer. A yes without an install id is refused: events need one.
+
+## Job 33d (verified facts in the privacy policy, sections 12 and 13), 2026-10-30
+
+The lead filled only facts checked against official sources on 2026-10-30 (sources in PR #119):
+
+1. **DPF status** (dataprivacyframework.gov participant API, status Active, EU-US, non-HR data):
+   Vercel Inc. (6847, until 2027-04-29), GitHub (6174, until 2027-08-03), PostHog Inc (2915, until
+   2027-03-10), Google LLC (5780, until 2027-09-13). Supabase: no entry, active or inactive.
+2. **Supabase's contracting entity is Supabase Pte. Ltd., Singapore**, not Supabase Inc.: the
+   Supabase Terms name Supabase, Inc. only for AWS Marketplace purchases; our org is on the free
+   plan, bought directly. Its DPA (clause 12, Schedule 2) incorporates the 2021 SCCs, module 2, with
+   Supabase Pte. Ltd. as data importer. Section 12 now names Pte. Ltd.; section 13 relies on SCCs.
+3. **SCCs as a second basis only where the DPA says so:** Vercel DPA (Schedule 3, applies to Pro)
+   and PostHog DPA (10.4, "notwithstanding" its DPF clause 10.3) incorporate SCCs. Google's Cloud
+   Data Processing Addendum (4.1) applies SCCs only if Google has no Alternative Transfer Solution;
+   Google adopted the DPF as that on 2023-09-01, so the text says SCCs apply if Google stops relying
+   on the DPF. GitHub: DPF only in the text; its DPA (7.B) also offers SCCs, but it covers
+   Enterprise/Team/Copilot and our plan could not be read, so we do not claim it.
+4. **PostHog EU** stores data in Frankfurt (AWS eu-central-1, PostHog handbook "Security"), but
+   its DPA 10.2 allows processing in the US through sub-processors; section 13 says so.
+5. **Google Workspace contracting entity: Google Cloud EMEA Limited, Dublin, Ireland**
+   (cloud.google.com/terms/google-entity: Workspace agreements, EMEA except France, Italy, Poland;
+   the petertrost.com Workspace invoice of 2026-10-02 is issued by the same entity). The archived
+   2020 EEA Workspace agreement naming Google Ireland Limited is superseded.
+6. Left as `[PETER: …]`: AI support provider and location, who sends replies, support-mail
+   deletion period (section 10) and the AI provider's transfer basis (section 13).
