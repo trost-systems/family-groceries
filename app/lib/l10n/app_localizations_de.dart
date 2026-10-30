@@ -618,7 +618,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDeleteExportHint =>
-      'Mit „Meine Daten exportieren“ in den Einstellungen kannst du vorher eine Kopie sichern.';
+      'Mit „Meine Daten exportieren“ unter Konto kannst du vorher eine Kopie sichern.';
 
   @override
   String get accountDeleteConfirmLabel => 'Zum Bestätigen LÖSCHEN eingeben';
@@ -761,16 +761,38 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountRowHint => 'Daten exportieren, Konto löschen';
 
   @override
+  String get settingsTitle => 'Einstellungen';
+
+  @override
+  String get settingsRowHint => 'Darstellung und Sprache';
+
+  @override
+  String get appearance => 'Darstellung';
+
+  @override
+  String get themeSystem => 'Wie Gerät';
+
+  @override
+  String get themeLight => 'Hell';
+
+  @override
+  String get themeDark => 'Dunkel';
+
+  @override
   String get language => 'Sprache';
 
   @override
   String get languageSystem => 'Wie Gerät';
 
   @override
-  String get languageGerman => 'Deutsch';
+  String languageSystemNow(String language) {
+    return 'Gerade $language';
+  }
 
   @override
-  String get languageEnglish => 'English';
+  String languageSystemPicked(String language) {
+    return 'Wie Gerät ($language)';
+  }
 
   @override
   String get legal => 'Rechtliches';

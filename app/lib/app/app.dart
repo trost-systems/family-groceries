@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
@@ -27,8 +28,12 @@ class const App({
   /// Build and device facts for feedback; the plugins by default.
   final FeedbackDevice? feedbackDevice,
 
-  /// The language picked under More, read before the first frame.
+  /// The language picked under More's Einstellungen, read before the
+  /// first frame.
   final AppLanguage? language,
+
+  /// The theme picked there; the device's setting by default.
+  final ThemeMode theme = ThemeMode.system,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -38,6 +43,11 @@ class const App({
 class _AppState() extends State<App> {
   late final GoRouter _router = buildRouter(widget.session, widget.analytics);
   late final _language = LanguageCubit(widget.cache, widget.language);
+  late final _theme = ThemeCubit(widget.cache, widget.theme);
+
+  /// Built once: a theme change only switches between them.
+  final _light = appTheme(Brightness.light);
+  final _dark = appTheme(Brightness.dark);
   final _screens = ScreenTracker();
   late final _feedback = FeedbackCubit(
     widget.feedback,
@@ -76,51 +86,51 @@ class _AppState() extends State<App> {
     _router.dispose();
     unawaited(_language.close());
     unawaited(_feedback.close());
+    unawaited(_theme.close());
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    const seed = Color(0xFF2E7D32);
-    return MultiRepositoryProvider(
+  Widget build(BuildContext context) => MultiRepositoryProvider(
+    providers: [
+      RepositoryProvider.value(value: widget.social),
+      RepositoryProvider.value(value: widget.cache),
+      RepositoryProvider.value(value: widget.account),
+      RepositoryProvider.value(value: _screens),
+      RepositoryProvider.value(value: _device),
+    ],
+    child: MultiBlocProvider(
       providers: [
-        RepositoryProvider.value(value: widget.social),
-        RepositoryProvider.value(value: widget.cache),
-        RepositoryProvider.value(value: widget.account),
-        RepositoryProvider.value(value: _screens),
-        RepositoryProvider.value(value: _device),
+        BlocProvider.value(value: widget.session),
+        BlocProvider.value(value: widget.analytics),
+        BlocProvider.value(value: _language),
+        BlocProvider.value(value: _feedback),
+        BlocProvider.value(value: _theme),
       ],
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: widget.session),
-          BlocProvider.value(value: widget.analytics),
-          BlocProvider.value(value: _language),
-          BlocProvider.value(value: _feedback),
-        ],
-        child: BlocBuilder<LanguageCubit, AppLanguage?>(
-          builder: (context, picked) => MaterialApp.router(
-            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-            theme: ThemeData(colorSchemeSeed: seed),
-            darkTheme: ThemeData(
-              colorSchemeSeed: seed,
-              brightness: Brightness.dark,
-            ),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            locale: picked == null ? null : Locale(picked.code),
-            localeListResolutionCallback: (preferred, _) =>
-                resolveLocale(preferred, null),
-            routerConfig: _router,
-            builder: (context, child) => BlocBuilder<SessionCubit, Session>(
-              builder: (context, session) => session is SessionLoading
-                  ? const Scaffold(
-                      body: Center(child: CircularProgressIndicator()),
-                    )
-                  : child!,
-            ),
+      child: Builder(
+        builder: (context) => MaterialApp.router(
+          onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+          theme: _light,
+          darkTheme: _dark,
+          themeMode: context.watch<ThemeCubit>().state,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: switch (context.watch<LanguageCubit>().state) {
+            final picked? => Locale(picked.code),
+            null => null,
+          },
+          localeListResolutionCallback: (preferred, _) =>
+              resolveLocale(preferred, null),
+          routerConfig: _router,
+          builder: (context, child) => BlocBuilder<SessionCubit, Session>(
+            builder: (context, session) => session is SessionLoading
+                ? const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  )
+                : child!,
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

@@ -28,9 +28,14 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   static const _seenPrefix = 'seen.';
   static const _prefsPrefix = 'listprefs.';
 
-  /// The app language picked under More; absent follows the device. Kept
-  /// across sign-outs: it belongs to the device, not the account.
+  /// The app language picked under More's Einstellungen; absent follows the
+  /// device. Kept across sign-outs: it belongs to the device, not the
+  /// account.
   static const _languageKey = 'language';
+
+  /// The theme picked under More's Einstellungen, `light` or `dark`; absent
+  /// follows the device. Kept across sign-outs like the language.
+  static const _themeKey = 'theme';
 
   /// Analytics (job 19): the install id, the consent decision, the install
   /// id `first_open` went out for, and the internal-install mark. Kept
@@ -64,6 +69,15 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
     () => code == null
         ? _prefs.remove(_languageKey)
         : _prefs.setString(_languageKey, code),
+  );
+
+  /// `light`, `dark`, or null for the device's setting.
+  Future<String?> theme() => _readString(_themeKey);
+
+  Future<void> saveTheme(String? name) => _write(
+    () => name == null
+        ? _prefs.remove(_themeKey)
+        : _prefs.setString(_themeKey, name),
   );
 
   @override

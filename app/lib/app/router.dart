@@ -31,6 +31,12 @@ const accessPath = '/more/access';
 /// More's Konto: export and account deletion.
 const accountPath = '/more/account';
 
+/// More's Einstellungen: theme and language.
+const appSettingsPath = '/more/settings';
+
+/// The language list below Einstellungen.
+const languagePath = '/more/settings/language';
+
 /// Before job 29d both were one page here (Konto at `?section=account`);
 /// old links redirect ([legacySettingsRedirect]).
 const settingsPath = '/settings';
@@ -46,6 +52,8 @@ const screenNames = {
   'privacy',
   'access',
   'account',
+  'settings',
+  'language',
   'login',
   'welcome',
   'analytics_consent',
@@ -63,6 +71,8 @@ String screenNameOf(Uri location) => switch (location.path) {
   privacyPath => 'privacy',
   accessPath => 'access',
   accountPath => 'account',
+  appSettingsPath => 'settings',
+  languagePath => 'language',
   settingsPath when location.queryParameters['section'] == 'account' =>
     'account',
   settingsPath => 'access',
@@ -83,6 +93,8 @@ bool inMoreTab(Uri location) => const {
   privacyPath,
   accessPath,
   accountPath,
+  appSettingsPath,
+  languagePath,
 }.contains(location.path);
 
 /// The only auth gate. An invite code from a `/join/<code>` link survives
@@ -156,6 +168,16 @@ List<RouteBase> moreTabRoutes() => [
           path: path,
           builder: (_, _) => MoreScreen(page: page),
         ),
+      GoRoute(
+        path: 'settings',
+        builder: (_, _) => const MoreScreen(page: MorePage.settings),
+        routes: [
+          GoRoute(
+            path: 'language',
+            builder: (_, _) => const MoreScreen(page: MorePage.language),
+          ),
+        ],
+      ),
     ],
   ),
   GoRoute(

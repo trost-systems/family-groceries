@@ -1,6 +1,6 @@
 # Shell and More
 
-The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and "Mehr". On phones they sit in a bar at the bottom, which slides away while the add sheet is open; from 840 px wide they become a rail on the left. The More tab gathers what the old list menu held and more: the household (invite, join, categories, stores), Zugänge, Konto and sign-out, the language, and the legal pages, with the app version at the bottom. The language switch (Wie Gerät, Deutsch, English) applies at once and is kept on the device, across restarts and sign-out.
+The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and "Mehr". On phones they sit in a bar at the bottom, which slides away while the add sheet is open; from 840 px wide they become a rail on the left. The More tab gathers what the old list menu held and more: the household (invite, join, categories, stores), Zugänge, Konto and sign-out, Einstellungen (theme and language, `features/settings.md`), and the legal pages, with the app version at the bottom.
 
 ## Sub-features
 
@@ -11,19 +11,19 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 - `sm-account` opens the Konto page (`menu-account` → `account-screen`, route `/more/account`: the signed-in email, export, deletion; `features/account.md`). Zugänge and Konto are two pages (job 29d); each has a back arrow to More.
 - `sm-old-links` the routes of the one page they were before keep working: `/settings` redirects to `/more/access`, `/settings?section=account` to `/more/account`.
 - `sm-sign-out` signs out (`more-sign-out`, "Abmelden") and shows the login screen (`features/auth.md`).
-- `sm-feedback` opens the feedback form (`more-feedback`, "Feedback senden", section "Feedback" before Sprache): `features/feedback.md`.
-- `sm-language` switches the whole UI with `language-system` ("Wie Gerät"), `language-de` ("Deutsch") or `language-en` ("English") in `more-language`. The pick survives `fg restart` and sign-out.
+- `sm-feedback` opens the feedback form (`more-feedback`, "Feedback senden", section "Feedback" before Einstellungen): `features/feedback.md`.
+- `sm-settings` opens Einstellungen (`more-settings` → `settings-screen`, route `/more/settings`): the theme and the language list (job 29e; `features/settings.md`). The language is no longer on the More list itself.
 - `sm-imprint` opens the imprint on the web (`more-imprint`, external: https://hummlist.com/impressum).
 - `sm-privacy` shows the draft privacy page (`more-privacy` → `privacy-draft`, chip "Entwurf", "Die Datenschutzerklärung von Hummlist wird gerade geschrieben …") while no privacy URL is configured.
 - `sm-licenses` opens Flutter's license page for "Hummlist" with the version (`more-licenses`).
 - `sm-version` shows "Version <version> (<build>)" at the bottom (`more-version`). A long press marks the device internal for analytics (`features/analytics.md`, `an-internal`).
-- `sm-analytics` "Nutzungsdaten" (`more-analytics`) between Sprache and Rechtliches, only in builds with a PostHog key (not fg builds): `features/analytics.md`, `an-switch`.
+- `sm-analytics` "Nutzungsdaten" (`more-analytics`) between Einstellungen and Rechtliches, only in builds with a PostHog key (not fg builds): `features/analytics.md`, `an-switch`.
 - `sm-wide` from 840 px: a NavigationRail instead of the bar, the add sheet as wide as the list column, and More in two panes (the list on the left, Zugänge or the picked page on the right, without a back arrow).
 
 ## How to get to it (user POV)
 
 - Tap "Mehr" in the tab bar (or the rail on a wide screen). Tap "Liste" to go back.
-- Scroll down the More list for Konto, Abmelden, Sprache and Rechtliches.
+- Scroll down the More list for Konto, Abmelden, Einstellungen and Rechtliches.
 
 ## Driving it with fg
 
@@ -41,16 +41,16 @@ Preconditions:
 - **`sm-privacy`.** `fg marionette -- scroll-to --key more-licenses`, `fg tap --key more-privacy`, `fg wait --key privacy-draft`. `fg find --text Entwurf` counts 1 and `fg find --contains Datenschutzerklärung` counts 1; `fg screenshot --name sm-privacy`. `fg back` returns to More (`fg wait --key more-screen`).
 - **`sm-licenses`, `sm-version`.** `fg marionette -- scroll-to --key more-licenses`, then `fg find --key more-version` shows "Version 0.1.0 (1)" (the checkout's `pubspec.yaml` version). `fg tap --key more-licenses`, `fg wait --text Hummlist`, and `fg find --contains 0.1.0` returns "0.1.0 (1)"; `fg screenshot --name sm-licenses`. `fg back`, `fg wait --key more-screen`.
 - **`sm-imprint`.** `fg tap --key more-imprint` (after the scroll-to above). The app hands the URL to the desktop: on the build box `pgrep -af hummlist.com/impressum` shows `google-chrome-stable https://hummlist.com/impressum`. Stop that browser with `kill <pid>` from that line; the app stays on More.
-- **`sm-language`.** `fg marionette -- scroll-to --key more-licenses`, `fg screenshot --name sm-language-before` ("Wie Gerät" is picked), `fg tap --key language-en`, `fg wait --text More`: the app bar, every entry and the tabs read English at once ("Sign out", "Language", "List"). Run `fg restart` and `fg wait --key add-item-field`: `fg find --key add-item-field` has the label "What do you need?". Run `fg logout`, then `fg find --type Text` lists "Sign in": the pick outlives the session. `fg login peter`, `fg tap --key tab-more`, `fg marionette -- scroll-to --key more-licenses`, `fg tap --key language-system`, `fg wait --text Mehr` restore German.
+- **`sm-settings`.** `fg marionette -- scroll-to --key more-settings`, `fg tap --key more-settings`, `fg wait --key settings-screen`; `fg back` returns to More (`fg wait --key more-screen`). The theme and language steps are in `features/settings.md`.
 - **`sm-sign-out`.** `fg tap --key tab-more`, `fg marionette -- scroll-to --key more-sign-out`, `fg tap --key more-sign-out`, `fg wait --key login-email`. `fg logout` does the same. `fg login peter` signs in again.
 - **`sm-wide`.** Not drivable on linux: the client's Xvfb screen is fixed at 412×892, below the 840 px breakpoint. Report it as skipped; the web e2e test "wide screens: a rail, a sheet as wide as the list column, More in two panes" (`e2e/tests/shell-more.spec.ts`) covers it.
-- **Proof.** Screenshots `sm-more`, `sm-access`, `sm-account`, `sm-privacy`, `sm-licenses`, the language before and after, and the login screen in English.
+- **Proof.** Screenshots `sm-more`, `sm-access`, `sm-account`, `sm-privacy`, `sm-licenses`; the theme and language proofs are in `features/settings.md`.
 
 ## Gotchas
 
-- More is a lazy ListView. On a 412×892 client, `menu-account`, `more-sign-out`, the language buttons and the legal entries are not built until you scroll: `fg tap --key more-privacy` fails with `not_found` before `fg marionette -- scroll-to --key more-licenses`.
+- More is a lazy ListView. On a 412×892 client, `menu-account`, `more-sign-out`, `more-settings` and the legal entries are not built until you scroll: `fg tap --key more-privacy` fails with `not_found` before `fg marionette -- scroll-to --key more-licenses`.
 - `fg back` on the More list itself closes the Linux app ("Back button pressed, no route to pop (app may exit)"; `fg doctor` then shows `peter.process: not running`, `fg up` relaunches it). Since job 29d Zugänge and Konto are routes below `/more` like the privacy draft, so `fg back` (and Android's back button) there returns to the More list. `fg back` is also safe on the licenses, the stores and categories screens and in dialogs.
-- The language buttons' texts are not listed by `fg find`; tap them by key. After a switch every text match changes language: `fg logout` and `fg login` use keys and work in both, but recipes that match German text need `language-system` (or `language-de`) back.
+- After a language switch (`features/settings.md`) every text match changes language: `fg logout` and `fg login` use keys and work in both, but recipes that match German text need `language-system` (or `language-de`) back.
 - The open add sheet hides the tabs: tap `add-sheet-close` or `fg press escape` before `fg tap --key tab-more`. `fg logout` does that for you.
 - `more-invite` shows only while the user is in a household.
 - The More list keeps its scroll position while the app runs. Scroll to an entry at the top (`more-invite`) as well as to one at the bottom.

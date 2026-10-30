@@ -257,3 +257,7 @@ See [docs/done/30-release-on-merge.md](docs/done/30-release-on-merge.md).
 ## Job 21: in-app feedback for beta testers
 
 See [docs/done/21-feedback.md](docs/done/21-feedback.md).
+
+## Job 29e: Einstellungen with light/dark/system theme and a language list
+
+See [docs/done/29e-settings-theme.md](docs/done/29e-settings-theme.md).

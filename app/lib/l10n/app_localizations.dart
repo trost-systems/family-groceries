@@ -1073,7 +1073,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeleteExportHint.
   ///
   /// In de, this message translates to:
-  /// **'Mit „Meine Daten exportieren“ in den Einstellungen kannst du vorher eine Kopie sichern.'**
+  /// **'Mit „Meine Daten exportieren“ unter Konto kannst du vorher eine Kopie sichern.'**
   String get accountDeleteExportHint;
 
   /// No description provided for @accountDeleteConfirmLabel.
@@ -1298,7 +1298,43 @@ abstract class AppLocalizations {
   /// **'Daten exportieren, Konto löschen'**
   String get accountRowHint;
 
-  /// More: section
+  /// More: the settings page (theme, language)
+  ///
+  /// In de, this message translates to:
+  /// **'Einstellungen'**
+  String get settingsTitle;
+
+  /// More: under Einstellungen
+  ///
+  /// In de, this message translates to:
+  /// **'Darstellung und Sprache'**
+  String get settingsRowHint;
+
+  /// Settings: section with the light/dark switch
+  ///
+  /// In de, this message translates to:
+  /// **'Darstellung'**
+  String get appearance;
+
+  /// Theme option: follow the device's light or dark setting
+  ///
+  /// In de, this message translates to:
+  /// **'Wie Gerät'**
+  String get themeSystem;
+
+  /// Theme option: always light
+  ///
+  /// In de, this message translates to:
+  /// **'Hell'**
+  String get themeLight;
+
+  /// Theme option: always dark
+  ///
+  /// In de, this message translates to:
+  /// **'Dunkel'**
+  String get themeDark;
+
+  /// Settings: section, row and page title
   ///
   /// In de, this message translates to:
   /// **'Sprache'**
@@ -1310,17 +1346,17 @@ abstract class AppLocalizations {
   /// **'Wie Gerät'**
   String get languageSystem;
 
-  /// Language option, in its own language
+  /// Under the device option: the language the device gives now, in its own name
   ///
   /// In de, this message translates to:
-  /// **'Deutsch'**
-  String get languageGerman;
+  /// **'Gerade {language}'**
+  String languageSystemNow(String language);
 
-  /// Language option, in its own language
+  /// Settings: the language row while it follows the device
   ///
   /// In de, this message translates to:
-  /// **'English'**
-  String get languageEnglish;
+  /// **'Wie Gerät ({language})'**
+  String languageSystemPicked(String language);
 
   /// More: section
   ///

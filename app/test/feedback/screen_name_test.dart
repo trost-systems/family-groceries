@@ -11,6 +11,8 @@ void main() {
       '/more/privacy': 'privacy',
       '/more/access': 'access',
       '/more/account': 'account',
+      '/more/settings': 'settings',
+      '/more/settings/language': 'language',
       '/settings': 'access',
       '/settings?section=account': 'account',
       '/settings?section=Milch': 'access',

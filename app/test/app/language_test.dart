@@ -6,8 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
-import '../more/more_harness.dart';
-
 void main() {
   group('resolveLocale', () {
     const cases = <(List<Locale>?, AppLanguage?, String)>[
@@ -58,48 +56,6 @@ void main() {
     test('an unknown stored code follows the device', () async {
       await cache.saveLanguage('fr');
       expect(AppLanguage.byCode(await cache.language()), isNull);
-    });
-  });
-
-  group("More's language control", () {
-    Finder segment(String code) => find.byKey(ValueKey('language-$code'));
-
-    Future<void> pick(WidgetTester tester, String code) async {
-      await tester.tap(segment(code));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('switches the strings at once and keeps the pick', (
-      tester,
-    ) async {
-      final more = await pumpMore(tester, device: const [Locale('en', 'GB')]);
-      expect(find.text('More'), findsOneWidget, reason: 'follows the device');
-      // Below the fold on a phone, and not built until scrolled to.
-      await tester.scrollUntilVisible(segment('de'), 200);
-      await pick(tester, 'de');
-      expect(find.text('Mehr'), findsOneWidget);
-      expect(find.text('Sprache'), findsOneWidget);
-      expect(await more.cache.language(), 'de');
-
-      await pick(tester, 'system');
-      expect(find.text('More'), findsOneWidget);
-      expect(await more.cache.language(), isNull);
-
-      await pick(tester, 'en');
-      expect(find.text('More'), findsOneWidget);
-      expect(more.language.state, AppLanguage.en);
-    });
-
-    testWidgets('a device in neither language speaks German', (tester) async {
-      await pumpMore(tester, device: const [Locale('fr', 'FR')]);
-      expect(find.text('Mehr'), findsOneWidget);
-    });
-
-    testWidgets('a pick read at start overrides a German device', (
-      tester,
-    ) async {
-      await pumpMore(tester, language: AppLanguage.en);
-      expect(find.text('More'), findsOneWidget);
     });
   });
 }

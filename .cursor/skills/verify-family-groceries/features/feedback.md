@@ -4,7 +4,7 @@ Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes
 
 ## Sub-features
 
-- `fb-open` `more-feedback` (section "Feedback", between Konto/Abmelden and Sprache) opens `feedback-sheet`.
+- `fb-open` `more-feedback` (section "Feedback", between Konto/Abmelden and Einstellungen) opens `feedback-sheet`.
 - `fb-send` `feedback-message` takes the note; `feedback-send` ("Senden") is enabled once it has a non-blank character. One row lands; the sheet closes; the snackbar `feedback-thanks` reads "Danke!".
 - `fb-options` `feedback-category-bug` / `-idea` / `-other` (a second tap unpicks), `feedback-contact` (off by default). `feedback-attached` names what goes along.
 - `fb-limits` from 1,800 characters `feedback-counter` shows "N / 2000"; over 2,000 the field says "Höchstens 2000 Zeichen" and Send is disabled. Blank notes can't be sent.

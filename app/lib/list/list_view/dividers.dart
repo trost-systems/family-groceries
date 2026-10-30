@@ -172,7 +172,9 @@ class const _Head({
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final store = section.store;
-    final tint = store == null ? scheme.outline : storeTint(store);
+    final tint = store == null
+        ? scheme.outline
+        : storeTint(store, scheme.surface);
     final reduce = MediaQuery.disableAnimationsOf(context);
     final key = section.key;
     return ValueListenableBuilder(
@@ -229,7 +231,9 @@ class const _Head({
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final store = section.store;
-    final tint = store == null ? scheme.outline : storeTint(store);
+    final tint = store == null
+        ? scheme.outline
+        : storeTint(store, scheme.surface);
     final reduce = MediaQuery.disableAnimationsOf(context);
     return Row(
       spacing: 10,
