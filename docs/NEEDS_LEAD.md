@@ -268,3 +268,80 @@ Status: waiting for Peter's OK on the text (docs/NEEDS_PETER.md, Job 24).
      **Save**.
 3. Check: `curl -sI https://hummlist.com/support | head -1` gives 200 and the page has no
    "ENTWURF" banner.
+
+## Job 25: Hummlist Lifetime store setup (browser; Peter only signs in)
+
+Order matters: items 1 and 5 wait for NEEDS_PETER Job 25 items 1 and 2. Nothing here submits
+anything for review. Docs: `docs/PURCHASES.md`.
+
+### P1: The product in App Store Connect (after the Paid Apps agreement, or try before)
+
+On the box (the ASC key is there):
+`ASC_KEY_ID=4J3N457M89 ASC_ISSUER_ID=<issuer> ASC_KEY_PATH=~/groceries-ops/AuthKey_4J3N457M89.p8 deno run --allow-env --allow-read --allow-net scripts/iap/apple_product.ts`
+(dry run), then the same with `--apply`. Copy the printed "equalized price AUT/CHE" lines into
+DECISIONS 25.1. If Apple refuses (for example because the agreement is not active), do it by hand:
+App Store Connect → Apps → Hummlist → Monetization → In-App Purchases → "+": type
+Non-Consumable, Reference Name `Hummlist Lifetime`, Product ID `com.hummlist.app.lifetime`;
+Availability: all countries; Price Schedule: Germany, 9,99 €, keep the automatic prices; App
+Store Localization: German and English (U.S.), display name `Hummlist Lifetime`, descriptions
+from `scripts/iap/product.ts`; Family Sharing: leave off. Review information: no screenshot,
+do not submit.
+
+### P2: In-App Purchase key and function secrets
+
+1. App Store Connect → Users and Access → Integrations → In-App Purchase → Generate In-App
+   Purchase Key (name "Hummlist purchases"). Download the .p8 once to
+   `~/groceries-ops/secrets/apple-iap/` (chmod 600). Note the Key ID and the Issuer ID shown there.
+2. Set the hosted function secrets (you, not a job):
+   `supabase secrets set --project-ref jdwqrallbpdbshrdhenk APPLE_IAP_KEY_ID=… APPLE_IAP_ISSUER_ID=… APPLE_IAP_PRIVATE_KEY="$(cat <file>.p8)" PURCHASES_ENVIRONMENTS=Sandbox PURCHASES_CRON_SECRET=<openssl rand -hex 32>`
+   and the same cron value as repository secret: `gh secret set PURCHASES_CRON_SECRET`.
+   `PURCHASES_ENVIRONMENTS=Sandbox` while TestFlight testers buy; switch to
+   `Production,Sandbox` before the App Store review (App Review buys in the sandbox).
+3. Check: `curl https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/purchases` answers
+   `{"configured":true,"environments":["Sandbox"]}`.
+
+### P3: App Store Server Notifications V2
+
+App Store Connect → Apps → Hummlist → App Information → App Store Server Notifications: Production
+Server URL and Sandbox Server URL both
+`https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/purchases/apple/notifications`, Version 2.
+Then send Apple's test notification ("Request a Test Notification", or the App Store Server API
+`POST /inApps/v1/notifications/test` with the P2 key): the function answers 200 `ignored`.
+
+### P4: Sandbox tester
+
+App Store Connect → Users and Access → Sandbox → Test Accounts → "+": an address Peter chooses
+(an alias on hummlist.com works; never a real person's Apple ID without his OK), region Germany.
+On the test iPhone: Settings → App Store → Sandbox Account → sign in.
+
+### P5: Google Play (after the payments profile)
+
+1. Google Cloud project `family-groceries-ci`: a service account `play-purchases` with a JSON key
+   (edge functions cannot use the keyless GitHub federation of `play-release`). Save the key to
+   `~/groceries-ops/secrets/` (600), set it as function secret
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON="$(cat <key>.json)"`.
+2. Play Console → Users and permissions → invite that service account for Hummlist with "View
+   financial data", "Manage orders and subscriptions" and "Manage store presence".
+3. The product: `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH=<key> deno run --allow-env --allow-read --allow-net scripts/iap/google_product.ts`
+   (dry run, prints Play's AT and CH prices for DECISIONS 25.1), then `--apply`. By hand
+   instead: Play Console → Monetize with Play → Products → One-time products → Create:
+   Product ID `com.hummlist.app.lifetime`, name and description DE and EN, purchase option `buy`,
+   price 9,99 € in Germany, other countries from the converted prices, Activate.
+4. Play Console → Settings → License testing: add the Google accounts Peter names, response
+   LICENSED. Their purchases are test purchases (Sandbox) and never charged.
+5. Check the poll: Actions → "Purchases voided poll" → Run workflow: green, log shows
+   `{"checked":0,"revoked":0}`.
+
+### P6: Device checklist (TestFlight build from release.yml, with Peter)
+
+On the iPhone with the sandbox tester (and on Android with a license tester after P5):
+1. More → Hummlist Lifetime shows "9,99 €" from the store; buy; "Freigeschaltet". The partner's
+   phone shows "Freigeschaltet" without buying.
+2. Kill the app right after confirming the purchase; open it again: unlocked.
+3. Delete and reinstall; "Käufe wiederherstellen": unlocked.
+4. Ask to Buy is not testable without a family; Play: buy with the license tester's "slow test
+   card, approves after a few minutes": "Wartet auf Bestätigung", then unlocked.
+5. Refund: App Store Connect sandbox → the tester → "Clear Purchase History" does not refund;
+   use Play Console → Order management → refund (test order) for Google, and for Apple check
+   P3's test notification. The next poll (or a REFUND notification) shows the household locked.
+6. Report the result on BOARD.md.

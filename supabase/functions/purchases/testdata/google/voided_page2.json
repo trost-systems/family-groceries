@@ -1,0 +1,15 @@
+{
+  "_comment": "Built from Google's documented voidedpurchases.list response (last page: no nextPageToken), not recorded from a live API.",
+  "pageInfo": { "totalResults": 3, "resultPerPage": 2, "startIndex": 2 },
+  "tokenPagination": { "previousPageToken": "page-1" },
+  "voidedPurchases": [
+    {
+      "kind": "androidpublisher#voidedPurchase",
+      "purchaseToken": "voided-token-3",
+      "purchaseTimeMillis": "1761000000000",
+      "voidedTimeMillis": "1761700000000",
+      "voidedSource": 1,
+      "voidedReason": 9
+    }
+  ]
+}

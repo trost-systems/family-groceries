@@ -29,6 +29,15 @@ void main() {
     more.screens
       ..visit(Uri.parse('/'))
       ..visit(Uri.parse('/more'));
+    // The row may sit below what the list has built yet.
+    await tester.scrollUntilVisible(
+      key('more-feedback'),
+      200,
+      scrollable: find.descendant(
+        of: key('more-screen'),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tapKey(tester, 'more-feedback');
     expect(key('feedback-sheet'), findsOneWidget);
     return more;

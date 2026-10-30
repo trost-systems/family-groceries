@@ -1,0 +1,44 @@
+{
+  "identifier" : "4A6F9C2E-25A1-4E25-9B25-25D0C0FFEE25",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "6826922725",
+      "localizations" : [
+        {
+          "description" : "Ein Kauf für den ganzen Haushalt.",
+          "displayName" : "Hummlist Lifetime",
+          "locale" : "de"
+        },
+        {
+          "description" : "One purchase for the whole household.",
+          "displayName" : "Hummlist Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hummlist.app.lifetime",
+      "referenceName" : "Hummlist Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "de",
+    "_storefront" : "DEU",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

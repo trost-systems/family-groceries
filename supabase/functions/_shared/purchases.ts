@@ -1,8 +1,8 @@
 // Purchase events for the lifetime unlock (docs/ANALYTICS.md, "Purchases"). Revenue reaches
 // PostHog only from here, after the store verified the transaction; the app never reports a
-// price. The real verifiers (App Store Server API / signed notifications, Google Play Developer
-// API and Orders API) come with the in-app purchase job; this is the interface they implement,
-// the mapping from what the stores return, and the event, proven with a fake verifier.
+// price. The real verifiers are the purchases function's (purchases/apple.ts, purchases/google.ts,
+// job 25), which sends its events through [sendPurchaseEvent]; [recordPurchase] and the fake
+// verifier are job 19's harness for the same mapping.
 import { Subject, Telemetry } from './telemetry.ts';
 
 export type AppStore = 'apple' | 'google';
@@ -70,7 +70,9 @@ export interface GoogleOrder {
   productId: string;
   total: Money;
   tax?: Money;
-  /** Alpha-2, e.g. DE. */
+  /** Where the buyer is: alpha-2, e.g. DE (the Orders API's buyerAddress). */
+  buyerAddress?: { buyerCountry?: string };
+  /** Older stand-in for the buyer's country; products.get's regionCode. */
   regionCode?: string;
 }
 
@@ -95,7 +97,8 @@ export function fromApple(t: AppleTransaction, kind: PurchaseKind): VerifiedTran
   };
 }
 
-const major = (m: Money) => Number(m.units) + (m.nanos ?? 0) / 1e9;
+/** A Money amount in major units: units 4, nanos 990000000 is 4.99. */
+export const major = (m: Money) => Number(m.units) + (m.nanos ?? 0) / 1e9;
 
 export function fromGoogle(o: GoogleOrder, kind: PurchaseKind): VerifiedTransaction {
   return {
@@ -105,7 +108,8 @@ export function fromGoogle(o: GoogleOrder, kind: PurchaseKind): VerifiedTransact
     originalTransactionId: o.orderId,
     price: major(o.total),
     currency: o.total.currencyCode,
-    country: o.regionCode && /^[A-Z]{2}$/.test(o.regionCode) ? o.regionCode : null,
+    country: [o.buyerAddress?.buyerCountry, o.regionCode].find((c) => c && /^[A-Z]{2}$/.test(c)) ??
+      null,
     tax: o.tax ? major(o.tax) : null,
   };
 }
@@ -121,15 +125,22 @@ export const defaultStoreFee = 0.15;
  * else the country's VAT rate. Null when neither is known. Estimated: the stores' monthly
  * financial reports are the real proceeds (docs/ANALYTICS.md).
  */
-export function netAmount(t: VerifiedTransaction, storeFee = defaultStoreFee): number | null {
+export function netAmount(
+  t: Pick<Revenue, 'price' | 'country' | 'tax'>,
+  storeFee = defaultStoreFee,
+): number | null {
+  if (t.price === null) return null;
+  const price = t.price;
   const rate = t.country ? vatRates[t.country] : undefined;
-  const tax = t.tax ?? (rate === undefined ? null : t.price - t.price / (1 + rate));
+  const tax = t.tax ?? (rate === undefined ? null : price - price / (1 + rate));
   if (tax === null) return null;
-  return Math.round((t.price - tax) * (1 - storeFee) * 100) / 100;
+  return Math.round((price - tax) * (1 - storeFee) * 100) / 100;
 }
 
 /** A stable pseudonymous reference to the original transaction (no raw store id). */
-export async function transactionRef(t: VerifiedTransaction): Promise<string> {
+export async function transactionRef(
+  t: Pick<VerifiedTransaction, 'store' | 'originalTransactionId'>,
+): Promise<string> {
   const data = new TextEncoder().encode(`${t.store}:${t.originalTransactionId}`);
   const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
   return Array.from(hash.slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
@@ -161,17 +172,38 @@ export async function recordPurchase(
     : t.kind === 'refund'
     ? 'purchase_refunded'
     : 'purchase_restored';
+  return await sendPurchaseEvent(deps.telemetry, name, t, subject) ? name : null;
+}
+
+export type PurchaseEvent = 'purchase_completed' | 'purchase_refunded' | 'purchase_restored';
+
+/** What a purchase event says about the money; price and currency may be unknown (Google). */
+export type Revenue = Omit<VerifiedTransaction, 'kind' | 'price' | 'currency'> & {
+  price: number | null;
+  currency: string | null;
+};
+
+/**
+ * Queues [name] for [subject]: purchase_completed and purchase_refunded with price, currency and
+ * net amount when known, country and the hashed transaction_ref; purchase_restored with the
+ * product and store only. False when nothing was queued (telemetry off, refused by the catalog).
+ */
+export async function sendPurchaseEvent(
+  telemetry: Telemetry,
+  name: PurchaseEvent,
+  t: Revenue,
+  subject: Subject,
+): Promise<boolean> {
   const net = netAmount(t);
-  const properties: Record<string, unknown> = t.kind === 'restore'
+  const properties: Record<string, unknown> = name === 'purchase_restored'
     ? { product_id: t.productId, app_store: t.store }
     : {
       product_id: t.productId,
-      price: t.price,
-      currency: t.currency,
       app_store: t.store,
+      ...(t.price === null || t.currency === null ? {} : { price: t.price, currency: t.currency }),
       ...(t.country ? { country: t.country } : {}),
-      ...(net === null ? {} : { net_amount: net }),
+      ...(net === null || t.currency === null ? {} : { net_amount: net }),
       transaction_ref: await transactionRef(t),
     };
-  return deps.telemetry.event(name, subject, properties) ? name : null;
+  return telemetry.event(name, subject, properties);
 }

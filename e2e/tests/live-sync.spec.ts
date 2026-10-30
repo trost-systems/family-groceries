@@ -128,8 +128,10 @@ test('a change made before the channel is live still shows up', async ({ page })
     ws.onMessage((message) => server.send(message));
     server.onMessage((message) => {
       const frame = String(message);
-      if (!live && frame.includes('Subscribed to PostgreSQL')) ready = frame;
-      else if (!live && frame.includes('"postgres_changes",{"data"')) return;
+      // Only the list's channel: other channels (job 25's entitlements) pass through untouched.
+      const list = frame.includes('"realtime:household:');
+      if (!live && list && frame.includes('Subscribed to PostgreSQL')) ready = frame;
+      else if (!live && list && frame.includes('"postgres_changes",{"data"')) return;
       else ws.send(message);
     });
     release = () => {

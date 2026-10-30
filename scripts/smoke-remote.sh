@@ -60,6 +60,29 @@ else
   fail "alexa without a signature: want 400 {\"error\":\"missing_signature\"}; $(got alexa)"
 fi
 
+# Job 25: the purchases function answers its status, never signs test transactions on a hosted
+# project, and refuses a verification without the app's session (503 while it is not configured).
+request purchases "$fn/purchases"
+if [[ $(status purchases) == 200 ]] && jq -e '.configured | type == "boolean"' "$work/purchases.body" >/dev/null 2>&1; then
+  pass "purchases: 200, configured=$(jq -r .configured "$work/purchases.body")"
+else
+  fail "purchases: want 200 with a configured flag; $(got purchases)"
+fi
+request purchases_sign -X POST "$fn/purchases/test/sign" -H 'content-type: application/json' \
+  -d '{"transactionId":"smoke"}'
+if [[ $(status purchases_sign) == 404 ]]; then
+  pass 'purchases test signer: 404 on a hosted project'
+else
+  fail "purchases test signer: want 404; $(got purchases_sign)"
+fi
+request purchases_verify -X POST "$fn/purchases/verify" -H "authorization: Bearer $bad_token" \
+  -H 'content-type: application/json' -d '{"store":"apple","source":"purchase","jws":"x"}'
+if [[ $(status purchases_verify) == 401 || $(status purchases_verify) == 503 ]]; then
+  pass "purchases verify with a bad token: $(status purchases_verify)"
+else
+  fail "purchases verify with a bad token: want 401 (or 503 unconfigured); $(got purchases_verify)"
+fi
+
 if ((failures > 0)); then
   echo "$failures check(s) failed against $fn"
   exit 1

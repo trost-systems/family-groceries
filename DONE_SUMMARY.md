@@ -311,3 +311,12 @@ restores both items exactly. MCP and Siri report the similar item. Details:
 ## Job 34: the first key after a tap on a text field is kept
 
 On the web a key typed right after tapping an unfocused text field was erased by the engine's late hand-over of the DOM input ("rot" for "Brot" in the add field after Schließen). `EarlyKeys` (app-wide, web only) types those keys through Flutter's key events. Before: 1/30 of the original test and 60/60 of the frame-held test failed; after: 0. Details: [docs/done/34-add-sheet-first-key.md](docs/done/34-add-sheet-first-key.md).
+
+## Job 25: Hummlist Lifetime in-app purchase (sandbox)
+
+One non-consumable (`com.hummlist.app.lifetime`, EUR 9.99 in Germany) that unlocks the buyer's
+household, verified by the new `purchases` edge function (Apple JWS chain to the pinned Apple root,
+App Store Server API with a key, Server Notifications V2; Google Play Developer API, Orders API,
+daily voided poll) before `entitlements` unlocks it; More → Hummlist Lifetime in the iOS and
+Android app, a note plus the unlock on the web. Inert until NEEDS_PETER/NEEDS_LEAD "Job 25" are
+done. Details, tests, screenshots: `docs/done/25-iap-sandbox.md`; design: `docs/PURCHASES.md`.

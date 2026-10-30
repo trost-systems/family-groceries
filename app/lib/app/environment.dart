@@ -76,6 +76,14 @@ abstract final class Environment() {
     defaultValue: kDebugMode,
   );
 
+  /// Replaces the App Store and Play Store with a fake one in debug and
+  /// profile builds (release builds ignore it): `ok`, `pending` (Ask to Buy,
+  /// approved after 8 s), `cancel`, `error`, `unavailable` (product not
+  /// loadable) or `offline` (store unreachable). Its purchases are signed by
+  /// the local stack's test CA, so it sells on Linux desktop for fg; the web
+  /// app never sells (lib/purchases/setup.dart).
+  static const fakeStore = String.fromEnvironment('FAKE_STORE');
+
   /// The MCP server endpoint:for the production project its public URL,
   /// a Vercel proxy to the edge function (docs/MCP.md); for any other
   /// project (the local stack) the edge function itself.

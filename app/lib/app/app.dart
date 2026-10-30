@@ -13,6 +13,8 @@ import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
@@ -28,6 +30,12 @@ class const App({
   required final Analytics analytics,
   required final FeedbackRepository feedback,
   required final InviteRepository invites,
+
+  /// Whether the household has Hummlist Lifetime.
+  required final Entitlements entitlements,
+
+  /// Hummlist Lifetime's purchase, listening to the store since start.
+  required final PurchaseCubit purchases,
 
   /// The invite link waiting for an answer, loaded before the first frame.
   required final PendingInvite pendingInvite,
@@ -120,6 +128,8 @@ class _AppState() extends State<App> {
     child: MultiBlocProvider(
       providers: [
         BlocProvider.value(value: widget.session),
+        BlocProvider.value(value: widget.entitlements),
+        BlocProvider.value(value: widget.purchases),
         BlocProvider.value(value: widget.analytics),
         BlocProvider.value(value: _language),
         BlocProvider.value(value: _feedback),

@@ -50,7 +50,7 @@ collector.
 | Consent screen | `app/lib/analytics/consent_screen.dart`, route `/analytics-consent` |
 | More switch, internal install | `app/lib/more/more_screen.dart` (`more-analytics`, long press on `more-version`) |
 | Edge-function error tracking | `supabase/functions/_shared/telemetry.ts` (`withTelemetry`, `Telemetry`) |
-| Purchase events (skeleton) | `supabase/functions/_shared/purchases.ts` |
+| Purchase events | `supabase/functions/purchases/` (job 25), `supabase/functions/_shared/purchases.ts` |
 | HogQL and its reference | `analytics/queries/*.sql`, `analytics/metrics.ts`, tests in `analytics/metrics_test.ts` |
 
 ## Consent
@@ -243,47 +243,31 @@ Definitions:
 - **Net revenue:** completed minus refunded `net_amount`, in the month each happened; restores
   add nothing. Gross (`price`) the same way.
 
-## Purchases (AC8, partial)
+## Purchases (AC8)
 
-Nothing is sold yet; the lifetime unlock comes with the in-app purchase job. This job built what
-the revenue metrics need, so that job only has to plug real verification in:
+Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md).
+Revenue reaches PostHog only from the `purchases` function, after the store confirmed it:
 
-- **Revenue only from the server, after the store confirmed it.** The app never reports a price.
-  `recordPurchase(payload, buyer, {verifier, telemetry})` in `_shared/purchases.ts` verifies, and
-  for a buyer whose install said yes (`consent` and `install_id` come from the app with the
-  purchase) queues `purchase_completed`, `purchase_refunded` or `purchase_restored` with the
-  install as `distinct_id`. An unverified payload throws; nothing is sent.
-- `PurchaseVerifier` is the interface; `FakePurchaseVerifier` accepts test payloads only. The
-  mapping from what the stores return is real code: `fromApple` (a decoded
-  `JWSTransactionDecodedPayload`: `price` in milliunits, `currency`, alpha-3 `storefront`) and
-  `fromGoogle` (an Orders API order: `total`, `tax`, `regionCode`).
+- **Who.** The app sends no install id or price. The function sends an event only for a buyer
+  whose newest analytics answer in the app is yes (`analytics_consents`, job 31), under that
+  install id, with the household the purchase unlocks. No answer or a no: no event.
+- **Which.** `purchase_completed` when a store transaction is verified for the first time;
+  `purchase_restored` when the user restores (Käufe wiederherstellen) a purchase already known,
+  never for a retry of the same purchase; `purchase_refunded` once, when Apple's `REFUND`/`REVOKE`
+  notification, Play's voided purchases or a verification reports it taken back. Properties as
+  in the table above (`sendPurchaseEvent` in `_shared/purchases.ts`, allow-listed in
+  `telemetry.ts`); `transaction_ref` is a hash, never the store's id.
+- **Sandbox is never revenue.** A Sandbox transaction (TestFlight, Apple sandbox testers, App
+  Review, Play license testers) is sent with `is_internal: true`. The internal filter then drops
+  that whole household from every gate insight (`analytics/fixtures.ts` H8).
+- **Amounts.** Apple's JWS carries price (milliunits), currency and storefront; Google's Orders
+  API total, tax and buyer country (`fromGoogle`). Without Google's order the event has no price.
 - **Net amount** (`netAmount`): the store-reported tax (Google's Orders API) or else the country's
   VAT rate (DE 19 %, AT 20 %, CH/LI 8.1 %), then the store fee (15 %, both stores' small-business
-  rate; 30 % above $1M). Apple reports the customer price incl. VAT, not the tax. Unknown country
-  and no tax: no `net_amount`. It is an estimate; the real proceeds are in App Store Connect's and
-  Play Console's monthly financial reports, to reconcile monthly.
-- `transaction_ref` is the first 16 bytes of SHA-256(`<store>:<original transaction id>`): stable
-  across purchase, refund and restore, not the raw store id.
-
-What the IAP job adds (needs Peter's store credentials, NEEDS_PETER Job 19):
-
-1. **Apple.** The app sends the StoreKit 2 transaction's JWS (`jwsRepresentation`) with its
-   install id and consent to a `purchases` edge function. The function verifies the JWS: the
-   `x5c` chain up to Apple Root CA - G3 (pinned), signature ES256, `bundleId`, `productId`,
-   environment; or asks the App Store Server API (`GET /inApps/v1/transactions/{id}`, a JWT signed
-   with an App Store Connect in-app purchase key). Refunds arrive as App Store Server Notifications
-   v2 (`REFUND`, `REVOKE`; signed payload verified the same way) at a second endpoint; they carry
-   no install id, so the function keeps `original_transaction_id → install_id, consent` in a
-   service-role-only table written at purchase time.
-2. **Google.** The app sends the purchase token. The function calls
-   `purchases.productsv2.getproductpurchasev2` (Play Developer API, service account) to verify it
-   and `orders.get` (Orders API) for `total`, `tax` and `regionCode`. Refunds come from Real-time
-   Developer Notifications via Pub/Sub push (`VoidedPurchaseNotification`), mapped through the
-   same table.
-3. **Restore** is a re-verified transaction the table already has: `purchase_restored`, no
-   revenue.
-4. Tests: the stores' sample payloads and a test certificate chain made in the test (a self-made
-   root, intermediate and leaf), so the chain check runs without Apple.
+  rate; 30 % above $1M). Unknown country and no tax: no `net_amount`. It is an estimate; the real
+  proceeds are in App Store Connect's and Play Console's monthly financial reports, to reconcile
+  monthly.
+- `recordPurchase` and `FakePurchaseVerifier` remain job 19's harness for the same mapping.
 
 ## Verifying
 

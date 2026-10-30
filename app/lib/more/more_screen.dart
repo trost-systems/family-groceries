@@ -10,6 +10,8 @@ import 'package:family_groceries/household/invites_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/more/stores_screen.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/lifetime_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/settings/account_screen.dart';
@@ -30,6 +32,9 @@ enum MorePage() {
 
   /// Invite the partner, the open invites, revoke (`/more/invites`).
   invites,
+
+  /// Hummlist Lifetime's purchase and restore (`/more/lifetime`).
+  lifetime,
 
   /// Theme and language (`/more/settings`).
   settings,
@@ -116,6 +121,7 @@ class const MoreScreen({
     MorePage.access => l10n.accessTitle,
     MorePage.account => l10n.account,
     MorePage.invites => l10n.invitesTitle,
+    MorePage.lifetime => l10n.lifetimeTitle,
     MorePage.settings => l10n.settingsTitle,
     MorePage.language => l10n.language,
   };
@@ -127,6 +133,7 @@ class const _Page(final MorePage page) extends StatelessWidget {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
     MorePage.invites => const InvitesPage(),
+    MorePage.lifetime => const LifetimeScreen(),
     MorePage.settings => const SettingsScreen(),
     MorePage.language => const LanguageScreen(),
   };
@@ -172,6 +179,16 @@ class const _MoreList({required final bool showHelp, final MorePage? selected})
           label: l10n.storesTitle,
           detail: l10n.storesRowHint,
           onTap: () => unawaited(openStores(context)),
+        ),
+        _Row(
+          key: const ValueKey('more-lifetime'),
+          icon: Icons.favorite_outline,
+          label: l10n.lifetimeTitle,
+          detail: context.select<Entitlements, bool>((e) => e.isUnlocked)
+              ? l10n.lifetimeUnlocked
+              : l10n.lifetimeRowHint,
+          selected: selected == MorePage.lifetime,
+          onTap: () => context.go(lifetimePath),
         ),
         _Section(l10n.accessTitle),
         _Row(

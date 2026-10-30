@@ -47,6 +47,10 @@ void main() {
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),
     (SignedOut(), '/more/account', '/login'),
     (household, '/more/settings', null),
+    // Hummlist Lifetime is for a household: never signed out or before one.
+    (household, '/more/lifetime', null),
+    (SignedOut(), '/more/lifetime', '/login'),
+    (NeedsHousehold('u'), '/more/lifetime', '/welcome'),
     (household, '/more/settings/language', null),
     (SignedOut(), '/more/settings/language', '/login'),
     (NeedsHousehold('u'), '/more/access', '/welcome'),

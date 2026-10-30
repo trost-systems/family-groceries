@@ -1098,4 +1098,87 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get retry => 'Erneut versuchen';
+
+  @override
+  String get lifetimeTitle => 'Hummlist Lifetime';
+
+  @override
+  String get lifetimeRowHint => 'Hummlist unterstützen';
+
+  @override
+  String get lifetimeBody =>
+      'Ein Kauf, für euren ganzen Haushalt: Hummlist Lifetime unterstützt die Entwicklung von Hummlist.';
+
+  @override
+  String lifetimeBuy(String price) {
+    return 'Für $price kaufen';
+  }
+
+  @override
+  String get lifetimeRestore => 'Käufe wiederherstellen';
+
+  @override
+  String get lifetimeUnlocked => 'Freigeschaltet';
+
+  @override
+  String get lifetimeUnlockedBody =>
+      'Hummlist Lifetime ist für euren ganzen Haushalt freigeschaltet. Danke!';
+
+  @override
+  String get lifetimePending => 'Wartet auf Bestätigung';
+
+  @override
+  String get lifetimePendingBody =>
+      'Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern.';
+
+  @override
+  String get lifetimeVerifying => 'Kauf wird geprüft …';
+
+  @override
+  String get lifetimeCanceled => 'Kauf abgebrochen.';
+
+  @override
+  String get lifetimeComingSoon => 'Hummlist Lifetime ist bald verfügbar.';
+
+  @override
+  String get lifetimeStoreOffline =>
+      'Der Store ist gerade nicht erreichbar. Prüfe die Verbindung.';
+
+  @override
+  String get lifetimeUsedElsewhere =>
+      'Dieser Kauf ist schon in einem anderen Haushalt freigeschaltet.';
+
+  @override
+  String get lifetimeNothingRestored => 'Kein früherer Kauf gefunden.';
+
+  @override
+  String get lifetimeRefunded =>
+      'Dieser Kauf wurde erstattet und ist nicht mehr freigeschaltet.';
+
+  @override
+  String lifetimeStoreFailed(String code) {
+    return 'Der Kauf hat nicht geklappt ($code).';
+  }
+
+  @override
+  String get lifetimeVerifyOffline =>
+      'Keine Verbindung. Der Kauf bleibt gespeichert und wird geprüft, sobald du online bist.';
+
+  @override
+  String get lifetimeRateLimited =>
+      'Zu viele Versuche. Versuche es später erneut.';
+
+  @override
+  String lifetimeRefused(String code) {
+    return 'Der Beleg des Stores wurde nicht angenommen ($code).';
+  }
+
+  @override
+  String lifetimeServerFailed(String code) {
+    return 'Der Kauf konnte nicht geprüft werden ($code). Er bleibt gespeichert; versuche es später erneut.';
+  }
+
+  @override
+  String get lifetimeWeb =>
+      'Hummlist Lifetime gibt es in der iOS- und Android-App.';
 }

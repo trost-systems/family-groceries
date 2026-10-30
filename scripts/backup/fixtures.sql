@@ -112,4 +112,10 @@ select public.merge_items(gen_random_uuid(),
   (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Karotten'));
 reset role;
 
+-- Job 25: Peter bought Hummlist Lifetime (sandbox) for the household; the purchases function
+-- writes through the service connection only.
+select public.purchase_grant('apple', '2000000999000001', 'com.hummlist.app.lifetime', 'Sandbox', now(), null,
+  9.99, 'EUR', 'DE', (select id from auth.users where email = 'peter@backup.test'), (select id from fx where key = 'home'));
+select public.purchase_take_call((select id from auth.users where email = 'peter@backup.test'));
+
 commit;

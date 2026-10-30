@@ -62,7 +62,7 @@ interest.
 | Context on every event: random install id (`distinct_id`), household id, platform, app version, internal flag; `$geoip_disable: true`, `$process_person_profile: false` | PostHog EU | Counting installs and households | (a) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `_enqueue` |
 | App errors (`$exception`, scrubbed stack) | PostHog EU | Fixing crashes | (a), only when consent is yes (`_live`) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `captureException`, `exceptions.dart` |
 | Server function errors (function, error type, scrubbed message, stack; no user, household, install id or IP) | PostHog EU | Fixing server errors | (f) | 1 year | PostHog EU | n/a | `supabase/functions/_shared/telemetry.ts` |
-| Purchase events (planned, job 25): product, store, revenue | PostHog EU | Revenue | to be decided in job 25 | | PostHog EU | | `serverEventCatalog` in `telemetry.ts` |
+| Purchase events (job 25): `purchase_completed`/`purchase_refunded` with product, store, price, currency, country, net amount, hashed transaction ref; `purchase_restored` with product and store | PostHog EU, sent by the purchases function | Revenue (kill gate, LTV) | (a), only while the buyer's newest answer in the app is yes (`analytics_consents`) | 1 year | PostHog EU | As above | `supabase/functions/purchases/handler.ts`, `_shared/purchases.ts` `sendPurchaseEvent` |
 | Consent decision per install (user, install id, yes/no, internal, decided at) | `public.analytics_consents` (service only) | Server events (e.g. Alexa adds) follow the user's newest answer; proof of consent | (c)/(f) proof of consent (Art. 7(1)) | 20 newest installs per user; deleted with the account | Supabase EU | Cascades with the account; in the export as `analytics_decisions` | `20261030140000_alexa.sql` |
 | On the device: install id, consent decision, first_open sent, internal flag | `DeviceCache` (shared preferences) | Remember the choice | (a)/§25(2) TDDDG for the decision | Until uninstall | Device | Uninstall; no install id is made without a yes, and an old one is deleted on "no" (33b, `analytics.dart`) | `app/lib/app/device_cache.dart` |
 
@@ -80,11 +80,20 @@ code. Device only, needed for the app to work (TDDDG §25(2) no. 2), gone on sig
 | Web hosting request logs (IP, time, path, user agent) for app.hummlist.com and hummlist.com | Vercel | Serving the site, security | (f) | Max. 30 days (policy §2) | Vercel Inc., USA | Automatic | `vercel.json`, `site/vercel.json` |
 | Database and API logs | Supabase | Operation | (f) | Max. 1 day on the free plan (policy §14) | Supabase EU | Automatic | `docs/DEPLOY.md` |
 
-## In-app purchases (planned, job 25)
+## In-app purchases (job 25)
 
-Apple and Google process payments as independent controllers; Hummlist stores only the verified
-entitlement (product, store, validity), no payment data. Not built yet: job 25 updates this row and
-the policy section if its design differs.
+Apple and Google take the payment as independent controllers (Apple as commissionaire, Google as
+merchant of record); Hummlist gets no payment data and no store account name or email. Docs:
+`docs/PURCHASES.md`. Policy text: draft section 5a (`site/content/legal/datenschutz-kaeufe.md`,
+`privacy-purchases.md`), until Peter approves it into the policy.
+
+| Data | Where | Purpose | Basis | Kept | Processor / region | Deletion | Source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Store transaction: store, product, transaction id, environment (Sandbox/Production), purchased, verified and revoked at, price, currency, country, buyer (user id) | `public.purchases` (service only) | Grant the unlock, match refunds, stop replays in other households | (b); (f) for the transaction id after deletion | While Hummlist runs; the buyer link only while the account exists | Supabase EU | Account deletion nulls `user_id` (FK); in the export as `purchases` | `20261030190000_purchases.sql` |
+| Household unlock: purchase, household, product, store, environment, granted by, granted at | `public.entitlements` (members read, Realtime) | Show "Freigeschaltet" to every member | (b) | While the household exists | Supabase EU | Household deletion cascades; refund deletes; `granted_by` nulled on account deletion | `20261030190000_purchases.sql` |
+| Verification calls per user and minute | `public.purchase_rate` (service only) | Rate limit | (f) | One row per user, overwritten | Supabase EU | Cascades with the account | `20261030190000_purchases.sql` |
+| Receipt check with the store: the JWS or purchase token, sent to Apple (App Store Server API) or Google (Play Developer API, Orders API, voided purchases) | Apple, Google | Verify before granting, learn refunds | (b) | Per Apple, Google | Apple, Google (independent controllers) | n/a | `supabase/functions/purchases/apple.ts`, `google.ts` |
+| On the device: unfinished store transactions | StoreKit, Play Billing | Retried until the server answered | (b) | Until finished | Apple, Google | Finished after verification | `app/lib/purchases/` |
 
 ## Processors and regions
 
@@ -106,7 +115,8 @@ the policy section if its design differs.
 - Mehr → Konto → Meine Daten exportieren (`export_my_data`, latest definition in
   `20261030120000_onboarding_invites.sql`): profile, providers, name, household, items_added,
   history, access_tokens, connected_apps, feedback, invites_created, and since job 31
-  analytics_decisions and alexa_links (`20261030140000_alexa.sql`).
+  analytics_decisions and alexa_links (`20261030140000_alexa.sql`), since job 25 purchases
+  (`20261030190000_purchases.sql`).
 
 ## Not collected
 
@@ -115,6 +125,8 @@ analytics without consent, no cookies or trackers on hummlist.com (`site/test/pr
 
 ## Differences to the privacy policy (`site/content/legal/datenschutz.md`)
 
-None found (Alexa is in the policy since job 33f; 33g removed the AI support assistant). Not named
+One open: the in-app purchase (job 25) is in the draft section 5a, not yet in the policy; Hummlist
+sells nothing until it is (NEEDS_PETER Job 25). Otherwise none (Alexa is in the policy since job
+33f; 33g removed the AI support assistant). Not named
 in the policy, both short-lived: the `invite_attempts` rate-limit rows (deleted after about a day)
 and the function error logs.

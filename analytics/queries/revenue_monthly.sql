@@ -1,4 +1,6 @@
--- AC8 (partial until the in-app purchase job): unlock revenue per Berlin month and currency.
+-- AC8: unlock revenue per Berlin month and currency. Sandbox purchases (TestFlight, Apple sandbox
+-- testers, Play license testers) arrive with is_internal = true from the purchases function (job
+-- 25), so the internal filter below drops them with the rest of their household.
 -- Completed purchases add, refunds subtract in the month the refund happened, restores add
 -- nothing. net = after VAT and the store fee, as the edge function estimates it (purchases.ts);
 -- the stores' monthly financial reports are the real proceeds. metrics.ts revenueByMonth().

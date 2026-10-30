@@ -4213,3 +4213,136 @@ The job's own calls:
    1ac2a11, `--repeat-each=40`: 120 passed, 0 failed, 0 flaky. The app-wide version, run 41066142423 on d95bc72, the
    add sheet and login tests (`-g "Schließen|next frame"`), `--repeat-each=40`: 200 passed, 0
    failed, 0 flaky.
+## Job 25: Hummlist Lifetime in-app purchase (sandbox), 2026-10-30
+
+The brief's calls are the Lead's defaults; each is in NEEDS_PETER "Job 25" as "confirm or
+change". Overview: docs/PURCHASES.md.
+
+1. **Product.** One non-consumable, `com.hummlist.app.lifetime` on both stores (Play allows dots
+   in product ids, so no separate `lifetime`), reference and display name "Hummlist Lifetime"
+   (DE and EN), EUR 9.99 with Germany as the base territory; every other territory uses the
+   stores' automatic prices. The AT and CH prices cannot be read before the product exists (both
+   need the Paid Apps agreement or the payments profile); `scripts/iap/apple_product.ts` and
+   `google_product.ts` print them, and the Lead adds them here (NEEDS_LEAD P1, P5). Single source
+   of id, names and price: `scripts/iap/product.ts`, pinned to the StoreKit file and the
+   function by `product_test.ts`.
+2. **The unlock is the household's, per purchase.** `purchases` holds each store transaction once
+   (unique per store and transaction id); `entitlements` maps a purchase to at most one household
+   (`purchase_id` is its key), and a household is unlocked while it has at least one row. It stays
+   with the household where it was bought when the buyer joins another household or deletes the
+   account. Restoring it elsewhere answers `used_elsewhere` while that household exists; once it
+   is deleted (its last member left), the purchase unlocks the household it is restored in. A
+   second purchase in the same household (the partner on another store account) adds a second
+   row, so refunding one keeps the other's unlock.
+3. **Family Sharing off** (`familySharable: false`, the StoreKit file too).
+4. **Nothing gated.** `Entitlements.isUnlocked` exists; no feature reads it yet.
+5. **Web never sells**, the fake store included; More shows the iOS/Android note and the unlock.
+6. **Apple: verified locally, then with Apple when a key exists.** The chain check follows Apple's
+   App Store Server Library (pinned G3 root by bytes, WWDR and receipt-signing OIDs, validity at
+   `signedDate`, ES256). No OCSP: with the In-App Purchase key, Get Transaction Info is asked on
+   the environment's host (from the JWS), and Apple's current record decides; without the key a
+   refund still arrives as a notification. Forum reports show sandbox ids against the production
+   host failing, so the host follows the JWS's `environment`, not a fallback on 404.
+7. **Which environments unlock is configuration.** `PURCHASES_ENVIRONMENTS` lists them; a Sandbox
+   JWS against a Production-only configuration is refused (the brief's case, tested). The hosted
+   project needs `Sandbox` for TestFlight now and `Production,Sandbox` from the App Store review
+   on, because App Review buys in the sandbox; sandbox purchases never count as revenue (8, 12).
+8. **Google: a JSON key, and a daily poll for refunds.** The edge function cannot use the keyless
+   GitHub federation of job 23's `play-release` account, so a separate service account with a
+   JSON key, set only as a function secret by the Lead. Real-time developer notifications need a
+   Pub/Sub topic, which needs Cloud billing (not allowed), so `purchases-voided.yml` polls the
+   Voided Purchases API daily, 7 days back (idempotent). The function acknowledges after the
+   unlock (Play refunds unacknowledged purchases after 3 days); the app's `completePurchase`
+   acknowledges too. `purchaseType` 0 (license test) is Sandbox; promo and rewarded grants are
+   Production. A canceled purchase counts as revoked. A test purchase without an order id gets
+   `token:` plus a hash of the token as its transaction id. Google fixtures are built from the
+   documented response shapes, not recorded (no Play access yet); the first live run checks them.
+9. **Account deletion and tax.** The purchase row loses its buyer (`user_id` set null) and stays,
+   without a person, to match refunds and stop a second unlock; the household keeps its unlock;
+   a deleted household takes it along. Hummlist issues no invoices and keeps no tax records about
+   buyers: Apple sells as commissionaire (Schedule 2 exhibits of the Apple Developer Program
+   License Agreement), Google as merchant of record and remits EU VAT (Google Play Payments
+   Center help, "Region and country-specific guidelines"). The export has a `purchases` section.
+10. **Inert until configured.** Without `PURCHASES_ENVIRONMENTS` every route but `GET` answers 503
+    `not_configured`; without a Google key Google answers 503; a key Apple or Google refuses is a
+    503 that reaches error tracking. A deploy before the store setup unlocks nothing.
+11. **Idempotent and replay-safe.** `purchase_grant` inserts on conflict nothing, then locks the
+    row, so a double tap, a retry after a lost answer and a restart mid-purchase all converge on
+    one row and one unlock (`restored` the second time). `purchase_revoke` acts only on the
+    `revoked_at` null → set transition, so `purchase_refunded` goes out once however often Apple
+    or the poll repeat themselves. 20 verifications a minute per user.
+12. **Analytics from the server, for the buyer's consent.** Job 19 planned the app to send its
+    install id and consent with the purchase; since job 31 the server knows each user's newest
+    answer (`analytics_consents`), so the function uses that, also for refunds, which carry no
+    install id. `purchase_restored` only when the user restored (the app says `source: restore`),
+    never for a retry. A Sandbox purchase is `is_internal`, which takes its household out of the
+    gate insights (`analytics/fixtures.ts` H8): a household that buys in the sandbox is a tester.
+13. **Refund reversed.** Apple's `REFUND_REVERSED` clears `revoked_at`; the household it unlocked
+    is no longer known, so it unlocks again on the next restore.
+14. **Local testing without Apple.** `scripts/iap-test-ca.sh` makes an Apple-like CA (same OIDs)
+    for the local stack, and the function serves `POST /purchases/test/sign` only when it trusts
+    that CA, which `config.ts` allows only for the local stack's URL (the Alexa pattern). The app's
+    fake store, fg and the e2e spec play the App Store through it; the real verify path runs.
+15. **Privacy text as a draft page.** The policy is live on hummlist.com; unapproved text must not
+    go there. The purchase section is draft section 5a on preview-only pages
+    (`datenschutz-kaeufe.md`, `privacy-purchases.md`), moved into the policy after Peter's OK.
+16. **StoreKit tests: written, not in CI yet.** `RunnerTests.swift` holds StoreKitTest XCTests
+    (`SKTestSession` with `Hummlist.storekit`): product, purchase, restore, refund, Ask to Buy.
+    In the `ios` gate on GitHub's macOS runner the test host app did not launch (run 41106494074:
+    "(ipc/mig) server died" after 930 s; run 41110616634, one simulator booted, no parallel
+    testing: all three failed after 290 s with no assertion run). Two CI rounds spent; the gate is
+    back to its compile check and `scripts/ios-storekit-test.sh` runs the tests on a Mac with
+    Xcode (issue #130). Xcode signs those transactions with a local certificate (environment
+    Xcode), which the server refuses, as it must; the server's own chain is proven with the test
+    CA.
+17. **No `appAccountToken`.** It would hand Apple our user id; the server ties purchases to the
+    session that verifies them instead.
+18. **ASC product creation is a Lead step.** The App Store Connect API key is not on the job
+    runners (Mac, Hetzner), so whether the API creates an in-app purchase before the Paid Apps
+    agreement is active could not be tried here; `apple_product.ts` runs on the box (dry run
+    first) and the manual steps are in NEEDS_LEAD P1.
+19. **Plugin.** `in_app_purchase` 3.3.1 (resolves `in_app_purchase_storekit` 0.4.x, where StoreKit 2
+    is the default and `serverVerificationData` is the transaction's JWS, and
+    `in_app_purchase_android` 0.5.x on Play Billing), behind `PurchaseRepository` with the plugin,
+    an unsupported (web, desktop) and a fake implementation (`app/lib/purchases/`).
+20. **Finish only after the server's final word.** The app finishes a store transaction after
+    `granted`, `restored`, `used_elsewhere`, `revoked` or `refunded`. Offline, 429, 401/403, 5xx,
+    503 and also 400/422 keep it unfinished: StoreKit hands it over again at every start, and an
+    unacknowledged Play purchase is refunded by Google after three days, which is right for a
+    proof our server refused.
+21. **Android start-up recovery.** Play does not hand unacknowledged purchases to the listener at
+    start as StoreKit 2 does, so the app restores silently once per start in a household; only
+    purchases Play has not acknowledged, or all of them after a tap on Restore, are verified.
+22. **Ask to Buy does not block Buy.** iOS never reports a declined request, so Buy stays
+    available while a purchase waits for approval (asking again is harmless); the first draft
+    blocked it until the next start, changed in review.
+23. **"Nothing to restore"** is shown 2 s after the store's restore call returned without a
+    transaction: the plugin has no "restore found nothing" signal.
+24. **Fake store** (`FAKE_STORE`, non-release builds, never on the web): scenarios `ok`, `pending`,
+    `cancel`, `error`, `unavailable`, `offline`; it keeps what it sold in `fake_store.json` (app
+    support directory), so a purchase interrupted by a killed app is verified at the next start
+    like StoreKit's. fg builds pass `FG_FAKE_STORE` (default `ok`).
+25. **One semantics node per block** on the Lifetime page, so a screen reader (and Flutter web's
+    DOM) reads "Freigeschaltet …" as its own line instead of the whole page as one.
+26. **Screenshots of native states** come from `app/test/purchases/screenshots_test.dart` (the
+    real page in More with the fake store, Roboto and Material icons from the SDK): the Hetzner
+    runner has no clang, CMake or GTK headers for a Linux desktop build. The web states come from
+    the e2e spec on a real web build.
+27. **Sandbox unlocks are marked.** `entitlements.environment` copies the purchase's. From App
+    Review on the hosted project accepts Sandbox (7), so TestFlight testers and App Review get a
+    real, lasting unlock; with nothing gated that costs nothing today. At launch Peter decides
+    whether tester unlocks stay (NEEDS_PETER Job 25, item 8); dropping them is one statement:
+    `delete from public.entitlements where environment = 'Sandbox'`.
+28. **A refund before the first verification is recorded** (review finding). `purchase_revoke`
+    inserts the unknown transaction as revoked (product, environment and purchase date from the
+    notification; for Play's voided list, which names neither, the one product and Production),
+    so a receipt saved before its refund never unlocks later, also when the first grant and the
+    refund race (the insert waits for the concurrent one, then the revoke finds its row).
+29. **Review fixes in the app and function.** A store `finish` that throws no longer leaves the
+    page on "verifying" (the store hands the transaction over again at the next start); a user who
+    left the household between the session check and the grant gets 403, not 500.
+30. **A second Realtime channel.** `Entitlements` subscribes to `entitlements:<household>` next to
+    the list's `household:<household>`. The live-sync spec "a change made before the channel is
+    live" intercepted every channel's "Subscribed to PostgreSQL" frame and released whichever came
+    first; when the entitlements channel won, the list never caught up (CI run 41116236878). The
+    spec now holds back only the list channel's frames.

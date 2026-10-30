@@ -8,6 +8,7 @@ const id = (n: number) => `10000000-0000-4000-8000-${String(n).padStart(12, '0')
 const household = (n: number) => `20000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 export const I1 = id(1), I2 = id(2), I3 = id(3), I4 = id(4), I5 = id(5), I6 = id(6), I7 = id(7);
+export const I8 = id(8), H8 = household(8);
 export const H1 = household(1),
   H2 = household(2),
   H4 = household(4),
@@ -40,7 +41,7 @@ function ev(
 }
 
 const lifetime = (ref: string) => ({
-  product_id: 'lifetime',
+  product_id: 'com.hummlist.app.lifetime',
   price: 9.99,
   currency: 'EUR',
   app_store: 'apple',
@@ -83,7 +84,7 @@ export const events: Event[] = [
   ev('household_created', '2026-11-09T10:01:00Z', I4, H4),
   ev('item_added', '2026-11-09T10:05:00Z', I4, H4, { source: 'typed' }),
   ev('purchase_restored', '2026-11-10T10:00:00Z', I4, H4, {
-    product_id: 'lifetime',
+    product_id: 'com.hummlist.app.lifetime',
     app_store: 'apple',
   }),
 
@@ -98,6 +99,13 @@ export const events: Event[] = [
   ev('household_created', '2026-11-02T10:01:00Z', I6, H6, {}, true),
   ev('item_added', '2026-11-02T10:02:00Z', I6, H6, { source: 'typed' }, true),
   ev('purchase_completed', '2026-11-03T10:00:00Z', I6, H6, lifetime('d'), true),
+
+  // Job 25: a TestFlight tester's household. Its sandbox purchase reaches PostHog with
+  // is_internal (purchases/handler.ts), which takes the whole household out, the add included.
+  ev('first_open', '2026-11-05T09:00:00Z', I8, null),
+  ev('household_created', '2026-11-05T09:01:00Z', I8, H8),
+  ev('item_added', '2026-11-05T09:02:00Z', I8, H8, { source: 'typed' }),
+  ev('purchase_completed', '2026-11-06T09:00:00Z', I8, H8, lifetime('e'), true),
 
   // Peter's household, listed internal.
   ev('item_added', '2026-11-04T10:00:00Z', I7, HP, { source: 'typed' }, true),
