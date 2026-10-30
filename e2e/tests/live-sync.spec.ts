@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, createInviteCode, editField, editSheet, itemRow, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
+  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, editSheet, itemRow, joinWithCode, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -12,8 +12,7 @@ test('two members of one household see each other\'s changes live', async ({ bro
   const code = await createInviteCode(peter);
 
   await signUp(lea, newEmail('lea'));
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code, 'Unser Haushalt');
   await expect(addField(lea)).toBeFocused();
   await expect(itemRow(lea, 'Milch'), 'the joiner sees the existing list').toBeVisible();
 
@@ -48,9 +47,16 @@ test('an invite link takes a new user through sign-up straight into the househol
   const code = await createInviteCode(peter);
 
   await signUp(lea, newEmail('lea'), `/join/${code}`);
-  await expect(lea.getByRole('textbox', { name: 'Einladungscode' })).toHaveValue(code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  // Job 22: the link skips Step 1; the join screen names the household before joining.
+  await expect(lea).toHaveURL(new RegExp(`/join/${code}$`));
+  // The household's name shows: the screen looked the code up (a field's value is not in the DOM).
+  await confirmJoin(lea, 'Unser Haushalt');
   await expect(itemRow(lea, 'Kaffee')).toBeVisible();
+  // AC4: the same list, live, both ways.
+  await addItem(peter, 'Milch');
+  await within(2_000, (timeout) => expect(itemRow(lea, 'Milch'), 'an add by the inviter appears for the joiner').toBeVisible({ timeout }));
+  await addItem(lea, 'Brot');
+  await within(2_000, (timeout) => expect(itemRow(peter, 'Brot'), 'and the other way').toBeVisible({ timeout }));
 });
 
 test('a member of another household joins with a code from the menu', async ({ browser }) => {
@@ -66,11 +72,14 @@ test('a member of another household joins with a code from the menu', async ({ b
   await addItem(lea, 'Tee');
 
   await openMore(lea, 'Anderem Haushalt beitreten');
+  await expect(lea).toHaveURL(/\/join$/);
   await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code.toLowerCase());
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
-  await expect(lea, 'the code goes to the confirm screen').toHaveURL(new RegExp(`/join/${code}$`));
+  await lea.getByRole('button', { name: 'Weiter', exact: true }).click();
+  // Job 22: in a household, the screen says so first; switching takes the explicit Join.
+  await expect(lea.getByText('Du bist schon in einem Haushalt')).toBeVisible();
+  await expect(lea.getByText(/Du bist das einzige Mitglied von „Unser Haushalt“/)).toBeVisible();
   await screenshot(lea, '07-join-confirm');
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await confirmJoin(lea, 'Unser Haushalt');
 
   await expect(itemRow(lea, 'Kaffee'), 'the joiner sees the new household\'s list').toBeVisible();
   await expect(itemRow(lea, 'Tee'), 'the old list is gone').toHaveCount(0);
@@ -90,7 +99,7 @@ test('a tick made while offline syncs when the connection returns', async ({ bro
   await addItem(peter, 'Brot');
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('lea'), `/join/${code}`);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await confirmJoin(lea);
   await expect(itemRow(lea, 'Brot')).toBeVisible();
 
   await peterContext.setOffline(true);

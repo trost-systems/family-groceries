@@ -1,150 +1,96 @@
 import 'dart:async';
 
-import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-/// First sign-in: create a household or join one with an invite code.
-class const WelcomeScreen({super.key, final String? invite})
-    extends StatefulWidget {
-  @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
-}
-
-class _WelcomeScreenState() extends State<WelcomeScreen> {
-  late final _name = TextEditingController();
-  late final _code = TextEditingController(text: widget.invite ?? '');
-  var _busy = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _code.dispose();
-    super.dispose();
-  }
-
-  Future<void> _run(Future<void> Function(SessionCubit session) action) async {
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final session = context.read<SessionCubit>();
-    setState(() => _busy = true);
-    try {
-      await action(session);
-    } on HouseholdError catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            e.code == 'invalid_invite'
-                ? l10n.invalidInvite
-                : l10n.genericError(e.code),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-
+/// Onboarding Step 1, after sign-in and the analytics consent, for someone
+/// without a household: create one or accept an invite. An invite link
+/// skips this step (the router opens the join screen).
+class const WelcomeScreen({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final hasInvite = widget.invite != null;
-    final join = [
-      TextField(
-        key: const ValueKey('invite-code'),
-        controller: _code,
-        autofocus: hasInvite,
-        textCapitalization: TextCapitalization.characters,
-        decoration: InputDecoration(labelText: l10n.inviteCode),
-        onSubmitted: (_) => unawaited(_join()),
-      ),
-      const SizedBox(height: 12),
-      FilledButton.tonal(
-        onPressed: _busy ? null : () => unawaited(_join()),
-        child: Text(l10n.joinHousehold),
-      ),
-    ];
-    final create = [
-      TextField(
-        key: const ValueKey('household-name'),
-        controller: _name,
-        decoration: InputDecoration(
-          labelText: l10n.householdName,
-          hintText: l10n.householdNameDefault,
+    final theme = Theme.of(context);
+    return OnboardingPage(
+      title: l10n.onboardingTitle,
+      listKey: const ValueKey('welcome'),
+      actions: [
+        IconButton(
+          tooltip: l10n.signOut,
+          icon: const Icon(Icons.logout),
+          onPressed: () => unawaited(context.read<SessionCubit>().signOut()),
         ),
-      ),
-      const SizedBox(height: 12),
-      FilledButton(
-        onPressed: _busy
-            ? null
-            : () => unawaited(
-                _run(
-                  (s) => s.createHousehold(
-                    _name.text.trim().isEmpty
-                        ? l10n.householdNameDefault
-                        : _name.text.trim(),
-                  ),
-                ),
-              ),
-        child: Text(l10n.createHousehold),
-      ),
-    ];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.onboardingTitle),
-        actions: [
-          IconButton(
-            tooltip: l10n.signOut,
-            icon: const Icon(Icons.logout),
-            onPressed: () => unawaited(context.read<SessionCubit>().signOut()),
-          ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            shrinkWrap: true,
-            children: [
-              Text(l10n.onboardingBody),
-              const SizedBox(height: 24),
-              // With an invite link, joining is what the user came for.
-              ...hasInvite ? join : create,
-              const Divider(height: 48),
-              ...hasInvite ? create : join,
-              const SizedBox(height: 32),
-              Align(
-                child: TextButton(
-                  key: const ValueKey('account-delete'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: _busy
-                      ? null
-                      : () => unawaited(deleteAccount(context)),
-                  child: Text(l10n.accountDelete),
-                ),
-              ),
-            ],
+      ],
+      children: [
+        Icon(Icons.home_outlined, size: 48, color: theme.colorScheme.primary),
+        const SizedBox(height: 16),
+        Text(l10n.onboardingBody, textAlign: TextAlign.center),
+        const SizedBox(height: 24),
+        _Choice(
+          key: const ValueKey('onboarding-create'),
+          icon: Icons.add_home_outlined,
+          label: l10n.createHousehold,
+          hint: l10n.onboardingCreateHint,
+          onTap: () => context.go(_keepNext(context, createHouseholdPath)),
+        ),
+        const SizedBox(height: 12),
+        _Choice(
+          key: const ValueKey('onboarding-join'),
+          icon: Icons.group_add_outlined,
+          label: l10n.onboardingJoin,
+          hint: l10n.onboardingJoinHint,
+          onTap: () => context.go(_keepNext(context, joinCodePath)),
+        ),
+        const SizedBox(height: 32),
+        Align(
+          child: TextButton(
+            key: const ValueKey('account-delete'),
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            onPressed: () => unawaited(deleteAccount(context)),
+            child: Text(l10n.accountDelete),
           ),
         ),
-      ),
+      ],
     );
   }
+}
 
-  /// A link's code still in the field, as it came, is a join by link.
-  Future<void> _join() => _run(
-    (s) => s.join(
-      _code.text,
-      method: widget.invite != null && _code.text.trim() == widget.invite
-          ? JoinMethod.link
-          : JoinMethod.code,
+/// [path] with the MCP authorization this onboarding is on the way to, if
+/// any (the router vetted it).
+String _keepNext(BuildContext context, String path) => switch (GoRouterState.of(
+  context,
+).uri.queryParameters['next']) {
+  final next? => Uri(path: path, queryParameters: {'next': next}).toString(),
+  null => path,
+};
+
+/// One of Step 1's two ways, as a card-sized button.
+class const _Choice({
+  required final IconData icon,
+  required final String label,
+  required final String hint,
+  required final VoidCallback onTap,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Card.outlined(
+    margin: EdgeInsets.zero,
+    clipBehavior: Clip.antiAlias,
+    child: ListTile(
+      minTileHeight: 72,
+      leading: Icon(icon),
+      title: Text(label),
+      subtitle: Text(hint),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     ),
   );
 }

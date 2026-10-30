@@ -13,7 +13,7 @@ export const clientFlag: FlagSpec = {
 
 const matcherFlags: FlagSpec[] = [
   { name: 'key', help: 'ValueKey<String> of the widget (most stable). Keys: see features/README.md.' },
-  { name: 'text', help: 'Exact visible text, e.g. "Haushalt anlegen" or an item name.' },
+  { name: 'text', help: 'Exact visible text, e.g. "Haushalt erstellen" or an item name.' },
   { name: 'type', help: 'Widget type name, e.g. IconButton, FilledButton.' },
   { name: 'identifier', help: 'Semantics identifier.' },
   { name: 'tooltip', help: 'Tooltip of an icon button, e.g. "Kopieren" (tapped at its center).' },
@@ -149,7 +149,7 @@ export const driveCommands: Command[] = [
     description:
       'Taps through Marionette\'s gesture dispatcher, the same path as a finger. Text must match exactly. A tap on an item row ticks it: `fg tap --text "2 l Milch"` (the row reads the quantity first). Hold without moving opens the edit sheet: `fg marionette -- long-press --key <item id>`; to drag, use `fg drag`.',
     flags: [...matcherFlags, clientFlag],
-    examples: ['fg tap --text "Haushalt anlegen"', 'fg tap --text Milch', 'fg tap --key tab-more', 'fg tap --tooltip Kopieren'],
+    examples: ['fg tap --text "Haushalt erstellen"', 'fg tap --text Milch', 'fg tap --key tab-more', 'fg tap --tooltip Kopieren'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const r = (await resolve(m, args))!;

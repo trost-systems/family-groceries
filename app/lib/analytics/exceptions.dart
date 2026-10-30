@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/analytics/chunk_ids.dart';
-import 'package:family_groceries/session/session_cubit.dart';
+import 'package:family_groceries/household/invite_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:stack_trace/stack_trace.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -179,7 +179,7 @@ String? _codeOf(Object error) => switch (error) {
   PostgrestException(:final code) => code,
   AuthException(:final code, :final statusCode) => code ?? statusCode,
   FunctionException(:final status) => '$status',
-  HouseholdError(:final code) => code,
+  HouseholdError(:final problem) => problem.name,
   _ => null,
 };
 

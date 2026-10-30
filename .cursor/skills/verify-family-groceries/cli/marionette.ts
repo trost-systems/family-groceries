@@ -102,7 +102,7 @@ export function rowKeyFor(elements: Element[], text: string): string {
 }
 
 /** Which top-level screen shows, told apart by the key of its main field. */
-export const SCREEN_KEYS = { list: 'add-item-field', welcome: 'household-name', login: 'login-email' } as const;
+export const SCREEN_KEYS = { list: 'add-item-field', welcome: 'welcome', login: 'login-email' } as const;
 export type Screen = keyof typeof SCREEN_KEYS | 'other';
 
 export function screenOf(elements: Element[]): Screen {

@@ -116,7 +116,7 @@
       "additionalProperties": false,
       "properties": {
         "by": { "$ref": "#/$defs/handle", "description": "Member who creates it; default: the owner." },
-        "expires": { "type": "string", "pattern": "^(-|\\+)\\d+[hd]$", "description": "Override expiry, e.g. +2d or -1d (expired); default: 14 days." },
+        "expires": { "type": "string", "pattern": "^(-|\\+)\\d+[hd]$", "description": "Override expiry, e.g. +2d or -1d (expired); default: 7 days (single use since job 22)." },
         "revoked": { "type": "boolean" }
       }
     },

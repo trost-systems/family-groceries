@@ -36,6 +36,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="com.hummlist.app" android:host="login-callback"/>
             </intent-filter>
+            <!-- Invite links (job 22): https://app.hummlist.com/join/<code> opens the
+                 app's join screen; app/web/.well-known/assetlinks.json verifies it. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="app.hummlist.com" android:pathPrefix="/join/"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

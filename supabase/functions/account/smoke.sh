@@ -60,6 +60,8 @@ check 'three users signed up' "$([[ $A != null && $B != null && $C != null ]] &&
 HH=$(rpc "$A" create_household '{"p_name":"Smoke"}' | jq -r .id)
 CODE=$(rpc "$A" create_invite "{\"p_household\":\"$HH\"}" | jq -r .code)
 check 'Bob joins' "$(rpc "$B" join_household "{\"p_code\":\"$CODE\"}" | jq -r .)" "$HH"
+# Invites are single use (job 22): Carl gets his own.
+CODE=$(rpc "$A" create_invite "{\"p_household\":\"$HH\"}" | jq -r .code)
 check 'Carl joins' "$(rpc "$C" join_household "{\"p_code\":\"$CODE\"}" | jq -r .)" "$HH"
 
 rest "$A" POST items "{\"household_id\":\"$HH\",\"name\":\"Milch\"}" >/dev/null

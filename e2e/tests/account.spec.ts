@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import {
-  addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
+  addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, joinWithCode, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
 } from './helpers';
 
 const deletedNotice = (page: Page) => page.getByText('Dein Konto wurde gelöscht.');
@@ -91,8 +91,7 @@ test('a member deletes their account; the household and their items stay for the
   await signUpWithHousehold(a, emailA);
   const code = await createInviteCode(a);
   await signUp(b, emailB);
-  await typeInto(b.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await b.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(b, code);
   await addItem(b, 'Hafer');
   await addItem(a, 'Milch');
   await expect(itemRow(b, 'Milch')).toBeVisible();
@@ -162,6 +161,11 @@ test('the last member deletes their account; the household goes with every row i
 
   const api = await apiAs(email);
   const id = (await api.auth.getUser()).data.user!.id;
+  // Job 22: a mistyped code is a row of the rate limit's log (invite_attempts), the user's own.
+  expect((await api.rpc('accept_invite', { p_code: 'FALSCH22' })).data).toEqual({ status: 'invalid_invite', household_id: null });
+  const attempts = async () =>
+    (await adminClient().from('invite_attempts').select('*', { count: 'exact', head: true }).eq('user_id', id)).count;
+  expect(await attempts(), 'the failed attempt is recorded').toBe(1);
   const { data: member } = await api.from('household_members').select('household_id').single();
   const householdId = (member as { household_id: string }).household_id;
   const { data: categories } = await api.from('categories').select('id, name').order('name');
@@ -188,6 +192,7 @@ test('the last member deletes their account; the household goes with every row i
   expect(count, 'the profile is gone').toBe(0);
   expect(await userExists(id)).toBe(false);
   expect(await feedbackOf(id), 'their feedback is gone').toEqual([]);
+  expect(await attempts(), 'their failed invite attempts are gone').toBe(0);
 });
 
 test('offline, deletion is refused and the account stays; back online it goes through', async ({ page }) => {
@@ -244,7 +249,7 @@ test('Meine Daten exportieren downloads the user\'s own data as JSON, without to
 test('a user without a household deletes their account from the welcome screen', async ({ page }) => {
   const email = newEmail('acct-welcome');
   await signUp(page, email);
-  await expect(page.getByRole('button', { name: 'Haushalt anlegen' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Haushalt erstellen/ })).toBeVisible();
   const id = await userId(email);
 
   await openDeleteDialog(page);

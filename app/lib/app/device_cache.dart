@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -12,7 +13,7 @@ import 'package:shared_preferences_linux/shared_preferences_linux.dart';
 /// value that cannot be read counts as missing, and a failed write is
 /// dropped.
 class DeviceCache(final SharedPreferencesAsync _prefs)
-    implements SessionCache, AnalyticsStore {
+    implements SessionCache, AnalyticsStore, PendingInviteStore {
   /// On Linux, supabase_flutter's legacy SharedPreferences and
   /// SharedPreferencesAsync each rewrite the whole file from their own copy,
   /// so sharing shared_preferences.json loses the session. The other
@@ -44,6 +45,11 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   static const _consentKey = 'analytics.consent';
   static const _firstOpenKey = 'analytics.first_open';
   static const _internalKey = 'analytics.internal';
+
+  /// The invite link the user opened and has not answered yet (job 22):
+  /// `{code, at}`. Not under [forget]'s prefixes: a signed-out start (which
+  /// forgets) must keep the link that is about to be signed in for.
+  static const _pendingInviteKey = 'invite.pending';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -119,6 +125,39 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   @override
   Future<void> saveInternalInstall({required bool internal}) =>
       _write(() => _prefs.setBool(_internalKey, internal));
+
+  @override
+  Future<({String code, DateTime at})?> pendingInvite() async =>
+      switch (await _readString(_pendingInviteKey)) {
+        final json? => _parsePendingInvite(json),
+        null => null,
+      };
+
+  static ({String code, DateTime at})? _parsePendingInvite(String json) {
+    try {
+      return switch (jsonDecode(json)) {
+        {'code': final String code, 'at': final String at} => (
+          code: code,
+          at: DateTime.parse(at),
+        ),
+        _ => null,
+      };
+    } on FormatException {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> savePendingInvite(({String code, DateTime at})? invite) =>
+      _write(
+        () => switch (invite) {
+          (:final code, :final at) => _prefs.setString(
+            _pendingInviteKey,
+            jsonEncode({'code': code, 'at': at.toUtc().toIso8601String()}),
+          ),
+          null => _prefs.remove(_pendingInviteKey),
+        },
+      );
 
   Future<String?> _readString(String key) async {
     try {

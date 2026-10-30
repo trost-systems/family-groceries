@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
   addField, addItem, answerConsent, apiAs, itemRow, newEmail, openMore, screenshot, signUpWithHousehold, supabaseUrl, typeInto,
-  viaFakeProvider,
+  viaFakeProvider, createHousehold, skipInvite,
 } from './helpers';
 
 const google = (page: Page) => page.getByRole('button', { name: 'Mit Google anmelden' });
@@ -63,10 +63,9 @@ test('a first provider sign-in goes through household onboarding', async ({ page
   // Job 19: the analytics consent comes first, then onboarding.
   await answerConsent(page);
 
-  await expect(page.getByRole('button', { name: 'Haushalt anlegen' })).toBeVisible();
   await expect(page).toHaveURL(/\/welcome$/);
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
-  await expect(addField(page)).toBeFocused();
+  await createHousehold(page);
+  await skipInvite(page);
   await addItem(page, 'Hafermilch');
   await expect(itemRow(page, 'Hafermilch')).toBeVisible();
 });

@@ -95,7 +95,7 @@ grant select on inv to authenticated;
 select matches((select code from inv), '^[A-HJ-NP-Z2-9]{8}$', 'invite codes are 8 unambiguous characters');
 
 select pg_temp.login('00000000-0000-0000-0000-00000000000b');
-select throws_ok($$ select public.join_household('NOPE2345') $$, 'P0001', 'invalid_invite', 'an unknown code is rejected');
+select is(public.join_household('NOPE2345'), null, 'an unknown code joins nothing (job 22: null, no raise)');
 select lives_ok(
   format($$ select public.join_household(%L) $$, lower(substr((select code from inv), 1, 4)) || '-' || lower(substr((select code from inv), 5))),
   'a code joins case-insensitively and ignores separators'
@@ -114,8 +114,7 @@ select pg_temp.logout();
 update public.invites set expires_at = now() - interval '1 second';
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000c', 'late@example.com');
 select pg_temp.login('00000000-0000-0000-0000-00000000000c');
-select throws_ok(format($$ select public.join_household(%L) $$, (select code from inv)),
-  'P0001', 'invalid_invite', 'an expired code is rejected');
+select is(public.join_household((select code from inv)), null, 'an expired code is rejected');
 
 select pg_temp.login('00000000-0000-0000-0000-00000000000b');
 select public.leave_current_household();

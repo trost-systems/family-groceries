@@ -73,6 +73,30 @@ void main() {
   String path(More more) =>
       more.router.routerDelegate.currentConfiguration.uri.toString();
 
+  testWidgets('Partner einladen opens Einladungen; back returns to More', (
+    tester,
+  ) async {
+    final more = await pumpMore(tester);
+    await tapKey(tester, 'more-invite');
+    expect(path(more), '/more/invites');
+    expect(find.text('Einladungen'), findsOneWidget);
+    expect(key('invite-new'), findsOneWidget);
+    expect(find.text('Keine offenen Einladungen.'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(path(more), '/more');
+  });
+
+  testWidgets('wide, Einladungen sits beside the list', (tester) async {
+    await pumpMore(
+      tester,
+      location: '/more/invites',
+      size: const Size(1366, 1024),
+    );
+    expect(key('more-screen'), findsOneWidget);
+    expect(key('invites-page'), findsOneWidget);
+  });
+
   testWidgets('Zugänge opens its own page; back returns to More', (
     tester,
   ) async {

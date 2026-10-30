@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/analytics/exceptions.dart';
-import 'package:family_groceries/session/session_cubit.dart';
+import 'package:family_groceries/household/invite_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,12 +31,8 @@ void main() {
         '<redacted>',
       );
       expect(
-        scrubMessage(const HouseholdError('invalid_invite')),
-        'invalid_invite',
-      );
-      expect(
-        scrubMessage(const HouseholdError('Familie Trost is full')),
-        '<redacted>',
+        scrubMessage(const HouseholdError(HouseholdProblem.invalidInvite)),
+        'invalidInvite',
       );
     });
 
@@ -116,7 +112,10 @@ void main() {
       expect(typeOf(StateError('x')), 'StateError');
       expect(typeOf(RangeError.index(3, [1], 'l')), 'IndexError');
       expect(typeOf(const FormatException('x')), 'FormatException');
-      expect(typeOf(const HouseholdError('x')), 'HouseholdError');
+      expect(
+        typeOf(const HouseholdError(HouseholdProblem.other)),
+        'HouseholdError',
+      );
       expect(typeOf(_AppError()), '_AppError');
     });
 

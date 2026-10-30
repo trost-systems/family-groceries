@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ void main() {
     analytics.setUser(const AnalyticsUser(email: 'neu@gmail.com'));
     final session = FakeSession();
     whenListen(session, const Stream<Session>.empty(), initialState: state);
-    final router = buildRouter(session, analytics);
+    final router = buildRouter(session, analytics, PendingInvite(cache));
     addTearDown(router.dispose);
     addTearDown(analytics.close);
     await tester.pumpWidget(
@@ -65,7 +66,7 @@ void main() {
   final consent = find.byKey(const ValueKey('analytics-consent'));
   final accept = find.byKey(const ValueKey('analytics-consent-accept'));
   final decline = find.byKey(const ValueKey('analytics-consent-decline'));
-  final welcome = find.byKey(const ValueKey('household-name'));
+  final welcome = find.byKey(const ValueKey('welcome'));
 
   testWidgets('a first sign-in asks before onboarding; yes sends first_open', (
     tester,

@@ -9,6 +9,9 @@ import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
+import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/invite_share.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -26,6 +29,8 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 import '../feedback/fakes.dart';
+import '../household/harness.dart'
+    show FakeInvites, FakeSharer, MemoryPendingStore;
 import '../list/fake_repository.dart';
 import '../settings/fake_account.dart';
 
@@ -152,6 +157,9 @@ Future<More> pumpMore(
         ),
         RepositoryProvider.value(value: screens),
         RepositoryProvider<FeedbackDevice>.value(value: FakeFeedbackDevice()),
+        RepositoryProvider<InviteRepository>.value(value: FakeInvites()),
+        RepositoryProvider<InviteSharer>.value(value: FakeSharer()),
+        RepositoryProvider.value(value: PendingInvite(MemoryPendingStore())),
       ],
       child: MultiBlocProvider(
         providers: [

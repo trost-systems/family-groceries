@@ -61,16 +61,19 @@ insert into auth.users (id, email) values
 -- Alice owns the household; Carl joined before Bob.
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 create temp table h as select id from public.create_household('WG');
+-- Invites are single use (job 22): one per person who joins.
 create temp table inv as select code from public.create_invite((select id from h));
+create temp table inv2 as select code from public.create_invite((select id from h));
+create temp table inv3 as select code from public.create_invite((select id from h));
 create temp table pat_a as select token from public.create_personal_access_token('Siri');
-grant select on h, inv, pat_a to authenticated;
+grant select on h, inv, inv2, inv3, pat_a to authenticated;
 insert into public.items (household_id, name) select id, 'Milch' from h;
 insert into public.items (household_id, name) select id, 'Kaffee' from h;
 update public.items set status = 'bought' where name = 'Kaffee';
 select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
 select public.join_household((select code from inv));
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
-select public.join_household((select code from inv));
+select public.join_household((select code from inv2));
 insert into public.items (household_id, name) select id, 'Brot' from h;
 select pg_temp.feedback('40000000-0000-4000-8000-0000000000b1', 'Bob');
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
@@ -79,7 +82,7 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
 select pg_temp.feedback('40000000-0000-4000-8000-0000000000c1', 'Carl');
 -- Gina sent a note while in the household and left it since.
 select pg_temp.login('00000000-0000-0000-0000-0000000000a2');
-select public.join_household((select code from inv));
+select public.join_household((select code from inv3));
 select pg_temp.feedback('40000000-0000-4000-8000-0000000000a2', 'Gina');
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
 update public.items set status = 'bought' where name = 'Milch';
@@ -260,7 +263,7 @@ create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
   array['access_tokens', 'account', 'connected_apps', 'exported_at', 'feedback', 'format', 'history',
-        'household', 'items_added', 'profile', 'version'],
+        'household', 'invites_created', 'items_added', 'profile', 'version'],
   'the export has the documented sections'
 );
 select is(
@@ -281,6 +284,9 @@ select is(
     'access_tokens', jsonb_build_array(jsonb_build_object('name', 'Kurzbefehl',
       'token_hint', (select token_hint from public.personal_access_tokens where name = 'Kurzbefehl'),
       'created_at', now(), 'last_used_at', null, 'revoked_at', null)),
+    -- Job 22: Emil's invite, which Frida used; not who used it.
+    'invites_created', jsonb_build_array(jsonb_build_object('code', (select code from inv_e),
+      'created_at', now(), 'expires_at', now() + interval '7 days', 'used_at', now(), 'revoked_at', null)),
     'feedback', jsonb_build_array(jsonb_build_object('created_at', now(), 'message', 'Bitte dunkles Design',
       'category', 'idea', 'contact_ok', true, 'screen', 'list', 'platform', 'ios', 'app_version', '0.1.0',
       'build', '7', 'os_version', 'iOS 18.1', 'locale', 'de', 'household_id', (select id from he),

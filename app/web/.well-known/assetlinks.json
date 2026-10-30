@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hummlist.app",
+      "sha256_cert_fingerprints": [
+        "27:0E:40:2B:04:1D:4D:C8:E7:65:10:C6:B4:36:FE:E8:51:D9:08:E6:00:43:89:7F:4E:AF:B9:2F:BC:7B:E4:2A",
+        "2C:9B:48:6D:AF:1B:94:AB:3F:92:38:49:CC:0F:C3:42:EF:09:64:2C:32:40:74:97:69:25:61:74:0C:BA:84:F5"
+      ]
+    }
+  }
+]

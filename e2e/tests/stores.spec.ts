@@ -1,7 +1,7 @@
 import { expect, type Page, test } from './fixtures';
 import { dragHandle, dragItemToStore, groupHeadings, openStoreLayout, sectionHeadings, storeOf } from './catalog';
 import {
-  addedNote, addField, addItem, addSheet, closeSheet, createInviteCode, enterItem, itemRow, newEmail, openEdit, openMore,
+  addedNote, addField, addItem, addSheet, closeSheet, createInviteCode, enterItem, itemRow, joinWithCode, newEmail, openEdit, openMore,
   openTab, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold, storeDivider, tick, typeInto, within,
 } from './helpers';
 
@@ -99,8 +99,7 @@ test('category and store layout changes sync live to the other member', async ({
   await expect.poll(() => storeOf(peter, 'Brot')).toBe('Lidl');
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('lea-cat'));
-  await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code);
-  await lea.getByRole('button', { name: 'Beitreten' }).click();
+  await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Spülmittel')).toBeVisible();
   await expect.poll(() => sectionHeadings(lea, 'Lidl')).toEqual(['Brot & Backwaren', 'Haushalt']);
 

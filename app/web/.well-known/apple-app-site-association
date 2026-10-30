@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["VCZSHMZY25.com.hummlist.app"],
+        "components": [{ "/": "/join/*", "comment": "Invite links open the app's join screen." }]
+      }
+    ]
+  }
+}

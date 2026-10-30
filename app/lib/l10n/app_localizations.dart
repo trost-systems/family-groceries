@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteMember.
   ///
   /// In de, this message translates to:
-  /// **'Mitglied einladen'**
+  /// **'Partner einladen'**
   String get inviteMember;
 
   /// No description provided for @joinOtherHousehold.
@@ -383,7 +383,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteBody.
   ///
   /// In de, this message translates to:
-  /// **'Gib diesen Code in der App ein oder teile den Link. Er ist 14 Tage gültig.'**
+  /// **'Gib diesen Code in der App ein oder teile den Link. Die Einladung gilt 7 Tage und für eine Person.'**
   String get inviteBody;
 
   /// No description provided for @inviteCodeLabel.
@@ -509,13 +509,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle.
   ///
   /// In de, this message translates to:
-  /// **'Willkommen'**
+  /// **'Willkommen bei Hummlist'**
   String get onboardingTitle;
 
   /// No description provided for @onboardingBody.
   ///
   /// In de, this message translates to:
-  /// **'Lege einen Haushalt an oder tritt mit einem Einladungscode bei.'**
+  /// **'Hummlist teilt eine Einkaufsliste mit allen in deinem Haushalt. Erstelle einen neuen Haushalt oder nimm eine Einladung an.'**
   String get onboardingBody;
 
   /// No description provided for @householdName.
@@ -533,7 +533,7 @@ abstract class AppLocalizations {
   /// No description provided for @createHousehold.
   ///
   /// In de, this message translates to:
-  /// **'Haushalt anlegen'**
+  /// **'Haushalt erstellen'**
   String get createHousehold;
 
   /// No description provided for @inviteCode.
@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinHousehold.
   ///
   /// In de, this message translates to:
-  /// **'Beitreten'**
+  /// **'Haushalt beitreten'**
   String get joinHousehold;
 
   /// No description provided for @invalidInvite.
@@ -1657,6 +1657,216 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Schließen'**
   String get feedbackClose;
+
+  /// No description provided for @onboardingCreateHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Eine neue Liste, zu der du danach deinen Partner einlädst.'**
+  String get onboardingCreateHint;
+
+  /// No description provided for @onboardingJoin.
+  ///
+  /// In de, this message translates to:
+  /// **'Einladung annehmen'**
+  String get onboardingJoin;
+
+  /// No description provided for @onboardingJoinHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast einen Link oder einen Code bekommen.'**
+  String get onboardingJoinHint;
+
+  /// No description provided for @householdNameInvalid.
+  ///
+  /// In de, this message translates to:
+  /// **'Gib einen Namen mit 1 bis 80 Zeichen ein.'**
+  String get householdNameInvalid;
+
+  /// No description provided for @storesChoice.
+  ///
+  /// In de, this message translates to:
+  /// **'Läden'**
+  String get storesChoice;
+
+  /// No description provided for @defaultStores.
+  ///
+  /// In de, this message translates to:
+  /// **'Deutsche Standard-Läden hinzufügen'**
+  String get defaultStores;
+
+  /// No description provided for @defaultStoresHint.
+  ///
+  /// In de, this message translates to:
+  /// **'dm, Lidl und Edeka, jeweils in ihrer Gangfolge'**
+  String get defaultStoresHint;
+
+  /// No description provided for @skipStores.
+  ///
+  /// In de, this message translates to:
+  /// **'Überspringen'**
+  String get skipStores;
+
+  /// No description provided for @skipStoresHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Ohne Läden starten. Du kannst sie später unter Mehr anlegen.'**
+  String get skipStoresHint;
+
+  /// No description provided for @householdOffline.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Internetverbindung. Versuche es erneut, sobald du online bist.'**
+  String get householdOffline;
+
+  /// No description provided for @tooManyAttempts.
+  ///
+  /// In de, this message translates to:
+  /// **'Zu viele Versuche. Bitte später noch einmal.'**
+  String get tooManyAttempts;
+
+  /// No description provided for @alreadyInHousehold.
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist schon in einem Haushalt'**
+  String get alreadyInHousehold;
+
+  /// No description provided for @switchHouseholdAlone.
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist das einzige Mitglied von „{household}“. Trittst du bei, wird „{household}“ mit seiner Liste gelöscht.'**
+  String switchHouseholdAlone(String household);
+
+  /// No description provided for @switchHouseholdShared.
+  ///
+  /// In de, this message translates to:
+  /// **'Trittst du bei, verlässt du „{household}“. Die anderen Mitglieder behalten die Liste.'**
+  String switchHouseholdShared(String household);
+
+  /// No description provided for @inviteCheck.
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter'**
+  String get inviteCheck;
+
+  /// No description provided for @invitePreview.
+  ///
+  /// In de, this message translates to:
+  /// **'Einladung in den Haushalt'**
+  String get invitePreview;
+
+  /// No description provided for @invitePartnerBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Teile den Link oder den Code mit der Person, mit der du einkaufst. Die Einladung gilt 7 Tage und für eine Person.'**
+  String get invitePartnerBody;
+
+  /// No description provided for @later.
+  ///
+  /// In de, this message translates to:
+  /// **'Später'**
+  String get later;
+
+  /// No description provided for @toTheList.
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter zur Liste'**
+  String get toTheList;
+
+  /// No description provided for @inviteShareText.
+  ///
+  /// In de, this message translates to:
+  /// **'Komm in unseren Hummlist-Haushalt: {link} · Code: {code}'**
+  String inviteShareText(String link, String code);
+
+  /// No description provided for @inviteShareTextCodeOnly.
+  ///
+  /// In de, this message translates to:
+  /// **'Komm in unseren Hummlist-Haushalt. Code: {code}'**
+  String inviteShareTextCodeOnly(String code);
+
+  /// No description provided for @share.
+  ///
+  /// In de, this message translates to:
+  /// **'Teilen'**
+  String get share;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In de, this message translates to:
+  /// **'Link kopieren'**
+  String get copyLink;
+
+  /// No description provided for @copyCode.
+  ///
+  /// In de, this message translates to:
+  /// **'Code kopieren'**
+  String get copyCode;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Link kopiert'**
+  String get linkCopied;
+
+  /// No description provided for @codeCopied.
+  ///
+  /// In de, this message translates to:
+  /// **'Code kopiert'**
+  String get codeCopied;
+
+  /// No description provided for @invitesTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Einladungen'**
+  String get invitesTitle;
+
+  /// No description provided for @invitesOpen.
+  ///
+  /// In de, this message translates to:
+  /// **'Offene Einladungen'**
+  String get invitesOpen;
+
+  /// No description provided for @invitesEmpty.
+  ///
+  /// In de, this message translates to:
+  /// **'Keine offenen Einladungen.'**
+  String get invitesEmpty;
+
+  /// No description provided for @newInvite.
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Einladung'**
+  String get newInvite;
+
+  /// No description provided for @inviteValidUntil.
+  ///
+  /// In de, this message translates to:
+  /// **'gültig bis {date}, {time} Uhr'**
+  String inviteValidUntil(DateTime date, DateTime time);
+
+  /// No description provided for @inviteRevoke.
+  ///
+  /// In de, this message translates to:
+  /// **'Widerrufen'**
+  String get inviteRevoke;
+
+  /// No description provided for @inviteRevokeLabel.
+  ///
+  /// In de, this message translates to:
+  /// **'Einladung {code} widerrufen'**
+  String inviteRevokeLabel(String code);
+
+  /// No description provided for @inviteRevoked.
+  ///
+  /// In de, this message translates to:
+  /// **'Einladung widerrufen. Link und Code gelten nicht mehr.'**
+  String get inviteRevoked;
+
+  /// No description provided for @retry.
+  ///
+  /// In de, this message translates to:
+  /// **'Erneut versuchen'**
+  String get retry;
 }
 
 class _AppLocalizationsDelegate

@@ -7,7 +7,7 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!(?:assets|canvaskit|icons)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)", "destination": "/index.html" }
+    { "source": "/((?!(?:assets|canvaskit|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -15,12 +15,16 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {
-      "source": "/((?!(?:assets|canvaskit|icons)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)",
+      "source": "/((?!(?:assets|canvaskit|icons|\\.well-known)/)(?!.*\\.(?:html|js|mjs|json|wasm|symbols|css|map|png|jpe?g|gif|webp|svg|ico|ttf|otf|woff2?|frag|bin|txt)$).*)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     },
     {
       "source": "/(index\\.html|flutter_service_worker\\.js|flutter_bootstrap\\.js|version\\.json|manifest\\.json)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/.well-known/apple-app-site-association",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
     },
     {
       "source": "/(.*)\\.wasm",

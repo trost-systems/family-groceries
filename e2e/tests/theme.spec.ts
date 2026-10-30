@@ -1,7 +1,7 @@
 import { expect, test, type Page } from './fixtures';
 import {
   apiAs, closeSheet, editSheet, enterItem, itemRow, newEmail, openEdit, openMore, openTab, screenshot,
-  signUpWithHousehold, storeDivider,
+  signUpWithHousehold, storeDivider, inviteCodeLabel,
 } from './helpers';
 
 // Job 29e: Einstellungen (More) holds the theme, Wie Gerät / Hell / Dunkel, kept on the device,
@@ -91,10 +91,12 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await editSheet(page).getByRole('button', { name: 'Abbrechen' }).click();
   await expect(editSheet(page)).toHaveCount(0);
 
-  await openMore(page, 'Mitglied einladen');
-  await expect(page.getByRole('group', { name: /^Code [A-HJ-NP-Z2-9]{8}$/ })).toBeVisible();
-  await shot('04', 'dialog');
-  await page.getByRole('button', { name: 'Schließen' }).click();
+  // Job 22: the invite dialog became More's Einladungen page.
+  await openMore(page, 'Partner einladen');
+  await page.getByRole('button', { name: 'Neue Einladung' }).click();
+  await expect(inviteCodeLabel(page).first()).toBeVisible();
+  await shot('04', 'invites');
+  await page.getByRole('button', { name: 'Zurück' }).click();
   await expectTheme(page, theme, 'More');
   await shot('05', 'more');
 

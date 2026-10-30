@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/consent_screen.dart';
-import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/household/create_household_screen.dart';
+import 'package:family_groceries/household/invite_partner_screen.dart';
 import 'package:family_groceries/household/join_screen.dart';
+import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
@@ -16,7 +18,16 @@ import 'package:go_router/go_router.dart';
 
 const listPath = '/';
 const loginPath = '/login';
+
+/// Onboarding (job 22): Step 1 chooses, Step 2a creates, Step 3 invites
+/// the partner; Step 2b is the join screen ([joinCodePath], [joinPath]).
 const welcomePath = '/welcome';
+const createHouseholdPath = '/welcome/create';
+const invitePartnerPath = '/welcome/invite';
+
+/// The join screen for a typed code: onboarding's "Einladung annehmen" and
+/// More's "Anderem Haushalt beitreten".
+const joinCodePath = '/join';
 
 /// The analytics consent (job 19), asked once per install right after the
 /// first sign-in. Not [consentPath], which is MCP's OAuth consent.
@@ -30,6 +41,9 @@ const accessPath = '/more/access';
 
 /// More's Konto: export and account deletion.
 const accountPath = '/more/account';
+
+/// More's Einladungen: invite the partner, the open invites, revoke one.
+const invitesPath = '/more/invites';
 
 /// More's Einstellungen: theme and language.
 const appSettingsPath = '/more/settings';
@@ -52,17 +66,21 @@ const screenNames = {
   'privacy',
   'access',
   'account',
+  'invites',
   'settings',
   'language',
   'login',
   'welcome',
+  'onboarding_create',
+  'onboarding_invite',
   'analytics_consent',
   'oauth_consent',
   'join',
   'other',
 };
 
-/// The screen name of a router [location]: `/join/<code>` is `join`, an
+/// The screen name of a router [location]: `/join/<code>` (and `/join`) is
+/// `join`, an
 /// unknown path `other`. Query parameters are ignored, except an old
 /// `/settings` link's section (it redirects to Zugänge or Konto).
 String screenNameOf(Uri location) => switch (location.path) {
@@ -71,6 +89,7 @@ String screenNameOf(Uri location) => switch (location.path) {
   privacyPath => 'privacy',
   accessPath => 'access',
   accountPath => 'account',
+  invitesPath => 'invites',
   appSettingsPath => 'settings',
   languagePath => 'language',
   settingsPath when location.queryParameters['section'] == 'account' =>
@@ -78,6 +97,8 @@ String screenNameOf(Uri location) => switch (location.path) {
   settingsPath => 'access',
   loginPath => 'login',
   welcomePath => 'welcome',
+  createHouseholdPath => 'onboarding_create',
+  invitePartnerPath => 'onboarding_invite',
   analyticsConsentPath => 'analytics_consent',
   consentPath => 'oauth_consent',
   _ when location.pathSegments.firstOrNull == 'join' => 'join',
@@ -93,29 +114,52 @@ bool inMoreTab(Uri location) => const {
   privacyPath,
   accessPath,
   accountPath,
+  invitesPath,
   appSettingsPath,
   languagePath,
 }.contains(location.path);
 
+/// The invite code in [uri]: a `/join/<code>` link's or one carried as
+/// `?invite=`.
+String? inviteIn(Uri uri) {
+  final segments = uri.pathSegments;
+  return segments.length == 2 && segments.first == 'join'
+      ? segments[1]
+      : uri.queryParameters['invite'];
+}
+
+/// Where someone without a household may be: onboarding's steps before
+/// there is one.
+const _beforeHousehold = {welcomePath, createHouseholdPath, joinCodePath};
+
 /// The only auth gate. An invite code from a `/join/<code>` link survives
 /// sign-in, the analytics consent and onboarding as the `invite` query
-/// parameter, an OAuth consent URL as the `next` query parameter.
+/// parameter and as [pendingInvite] (kept on the device, for when the
+/// location loses it: the mobile apps' sign-in callback, an app kill), an
+/// OAuth consent URL as the `next` query parameter.
 ///
 /// [askConsent]: this install has not decided on analytics yet. Signed in,
 /// it goes to the analytics consent first, before onboarding and before the
 /// list; a browser tab authorizing an MCP client (`next`) is not
 /// interrupted and the app asks the next time it is opened.
-String? authRedirect(Session session, Uri uri, {bool askConsent = false}) {
-  final segments = uri.pathSegments;
-  final invite = segments.length == 2 && segments.first == 'join'
-      ? segments[1]
-      : uri.queryParameters['invite'];
+///
+/// Without a household: Step 1 ([welcomePath]), or the join screen at once
+/// for an invite. In one: the list, the More tab, Step 3 right after
+/// creating ([invitePartnerPath]), or the join screen for an invite (which
+/// warns before switching).
+String? authRedirect(
+  Session session,
+  Uri uri, {
+  bool askConsent = false,
+  String? pendingInvite,
+}) {
+  final invite = inviteIn(uri) ?? pendingInvite;
   final next = uri.path == consentPath
       ? uri.toString()
       : _consentOnly(uri.queryParameters['next']);
   String carry(String path) => next != null
       ? Uri(path: path, queryParameters: {'next': next}).toString()
-      : invite != null
+      : invite != null && inviteIn(Uri(path: path)) == null
       ? '$path?invite=$invite'
       : path;
   final target = switch (session) {
@@ -124,13 +168,22 @@ String? authRedirect(Session session, Uri uri, {bool askConsent = false}) {
     NeedsHousehold() || InHousehold() when askConsent && next == null => carry(
       analyticsConsentPath,
     ),
+    NeedsHousehold() when invite != null => carry(joinPath(invite)),
+    // An MCP authorization (`next`) rides along onboarding's steps.
+    NeedsHousehold() when _beforeHousehold.contains(uri.path) => carry(
+      uri.path,
+    ),
     NeedsHousehold() => carry(welcomePath),
     InHousehold() when next != null => next,
-    InHousehold() when invite == null && inMoreTab(uri) => uri.toString(),
-    // Onboarding is done once in a household; only a link or a fresh
-    // sign-in from a link still asks to switch households.
-    InHousehold() when invite == null || uri.path == welcomePath => listPath,
-    InHousehold() => joinPath(invite!),
+    InHousehold() when invite != null => joinPath(invite),
+    // Created just now: Step 3, inviting the partner.
+    InHousehold() when uri.path == createHouseholdPath => invitePartnerPath,
+    InHousehold()
+        when uri.path == invitePartnerPath ||
+            uri.path == joinCodePath ||
+            inMoreTab(uri) =>
+      uri.toString(),
+    InHousehold() => listPath,
   };
   return target == null || target == uri.toString() ? null : target;
 }
@@ -163,6 +216,7 @@ List<RouteBase> moreTabRoutes() => [
         ('privacy', MorePage.privacy),
         ('access', MorePage.access),
         ('account', MorePage.account),
+        ('invites', MorePage.invites),
       ])
         GoRoute(
           path: path,
@@ -186,13 +240,27 @@ List<RouteBase> moreTabRoutes() => [
   ),
 ];
 
-GoRouter buildRouter(SessionCubit session, Analytics analytics) => GoRouter(
+GoRouter buildRouter(
+  SessionCubit session,
+  Analytics analytics,
+  PendingInvite pendingInvite,
+) => GoRouter(
   refreshListenable: Listenable.merge([
     _StreamListenable(session.stream),
     _StreamListenable(analytics.stream),
   ]),
-  redirect: (context, state) =>
-      authRedirect(session.state, state.uri, askConsent: analytics.asksConsent),
+  redirect: (context, state) {
+    // A link's code is kept the moment it arrives, before sign-in.
+    if (inviteIn(state.uri) case final code?) {
+      pendingInvite.remember(code);
+    }
+    return authRedirect(
+      session.state,
+      state.uri,
+      askConsent: analytics.asksConsent,
+      pendingInvite: pendingInvite.code,
+    );
+  },
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (_, _, shell) => AppShell(shell: shell),
@@ -218,8 +286,14 @@ GoRouter buildRouter(SessionCubit session, Analytics analytics) => GoRouter(
     ),
     GoRoute(
       path: welcomePath,
-      builder: (_, state) =>
-          WelcomeScreen(invite: state.uri.queryParameters['invite']),
+      builder: (_, _) => const WelcomeScreen(),
+      routes: [
+        GoRoute(
+          path: 'create',
+          builder: (_, _) => const CreateHouseholdScreen(),
+        ),
+        GoRoute(path: 'invite', builder: (_, _) => const InvitePartnerScreen()),
+      ],
     ),
     GoRoute(
       path: consentPath,
@@ -227,14 +301,10 @@ GoRouter buildRouter(SessionCubit session, Analytics analytics) => GoRouter(
         authorizationId: state.uri.queryParameters['authorization_id'],
       ),
     ),
+    GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
     GoRoute(
       path: '/join/:code',
-      builder: (_, state) => JoinScreen(
-        code: state.pathParameters['code']!,
-        method: state.extra == JoinMethod.code
-            ? JoinMethod.code
-            : JoinMethod.link,
-      ),
+      builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
     ),
   ],
 );

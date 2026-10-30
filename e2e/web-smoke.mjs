@@ -49,6 +49,14 @@ if (httpChecks) {
   check(wasm.status === 200 && wasm.type.startsWith('application/wasm') && /max-age=0/.test(wasm.cache), `/main.dart.wasm ${wasm.status}, ${wasm.type}, Cache-Control: ${wasm.cache}`);
   const mjs = await head('/main.dart.mjs');
   check(mjs.status === 200 && mjs.type.includes('javascript') && /max-age=0/.test(mjs.cache), `/main.dart.mjs ${mjs.status}, ${mjs.type}, Cache-Control: ${mjs.cache}`);
+  // Job 22: universal links (iOS) and App Links (Android) for /join/<code>. Apple fetches the
+  // association without following redirects and wants JSON.
+  const aasa = await head('/.well-known/apple-app-site-association');
+  check(aasa.status === 200 && aasa.type.startsWith('application/json') && JSON.parse(aasa.body).applinks.details[0].appIDs.includes('VCZSHMZY25.com.hummlist.app'),
+    `/.well-known/apple-app-site-association ${aasa.status}, ${aasa.type}`);
+  const links = await head('/.well-known/assetlinks.json');
+  check(links.status === 200 && links.type.startsWith('application/json') && JSON.parse(links.body)[0].target.package_name === 'com.hummlist.app',
+    `/.well-known/assetlinks.json ${links.status}, ${links.type}`);
   for (const path of ['/does-not-exist.js', '/missing.js', '/assets/x.png', '/canvaskit/missing.wasm']) {
     const missing = await head(path);
     check(missing.status === 404, `${path} is a 404, not index.html (${missing.status})`);

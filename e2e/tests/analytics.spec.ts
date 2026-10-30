@@ -17,7 +17,7 @@ import {
   signUp,
   signUpWithHousehold,
   tick,
-  typeInto,
+  typeInto, createHousehold, skipInvite, confirmJoin,
 } from './helpers';
 
 // Job 19: analytics to PostHog EU, asked for right after the first sign-in (Peter, 2026-10-27).
@@ -87,8 +87,8 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   await answerConsent(page, 'decline');
   await expect(page).toHaveURL(/\/welcome$/);
   await screenshot(page, 'analytics-02-declined-then-welcome');
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
-  await expect(addField(page)).toBeFocused();
+  await createHousehold(page);
+  await skipInvite(page);
   await addItem(page, 'Hafermilch');
   await tick(page, 'Hafermilch');
   await quietFor(page, collector, 0);
@@ -108,9 +108,8 @@ test('accepting sends first_open once, then one event per action, no list text; 
   const email = newEmail('consent-yes');
   await signUp(page, email, '/', { consent: 'accept' });
   await expect(page).toHaveURL(/\/welcome$/);
-  await typeInto(page.getByRole('textbox', { name: 'Name des Haushalts' }), 'Familie Geheim');
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
-  await expect(addField(page)).toBeFocused();
+  await createHousehold(page, { name: 'Familie Geheim' });
+  await skipInvite(page);
   await received(collector, ['first_open', 'household_created']);
 
   await addItem(page, 'Hafermilch');
@@ -191,8 +190,9 @@ test('an invite link survives sign-in and consent, ends on joining, and counts a
   await page.getByRole('button', { name: 'Registrieren' }).click();
   await expect(page).toHaveURL(new RegExp(`/analytics-consent\\?invite=${code}$`));
   await answerConsent(page, 'accept');
-  await expect(page).toHaveURL(new RegExp(`/welcome\\?invite=${code}$`));
-  await page.getByRole('button', { name: 'Beitreten' }).click();
+  // Job 22: the invite skips Step 1 and opens the join screen with the household's name.
+  await expect(page).toHaveURL(new RegExp(`/join/${code}$`));
+  await confirmJoin(page, 'Unser Haushalt');
   await expect(addField(page)).toBeFocused();
   await received(collector, ['first_open', 'invite_accepted']);
   const joined = collector.events.find((e) => e.event === 'invite_accepted')!;
@@ -235,8 +235,8 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
   const collector = await fakeCollector(context);
   const page = await context.newPage();
   await signUp(page, newEmail('errors'), '/', { consent: 'accept' });
-  await page.getByRole('button', { name: 'Haushalt anlegen' }).click();
-  await expect(addField(page)).toBeFocused();
+  await createHousehold(page);
+  await skipInvite(page);
   await openTab(page, 'Mehr');
   await expect(page).toHaveURL(/\/more$/);
   // More is a lazy list: wheel down to the version line at its end.

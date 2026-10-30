@@ -1,5 +1,5 @@
 begin;
-select plan(55);
+select plan(57);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -77,6 +77,14 @@ select throws_ok(
 select throws_ok(
   $$ select public.create_invite((select id from ha)) $$,
   '42501', 'not_a_member', 'creating an invite for another household is denied'
+);
+select throws_ok(
+  $$ select public.revoke_invite((select id from inv)) $$,
+  '42501', 'not_a_member', 'revoking an invite of another household is denied (job 22)'
+);
+select throws_ok(
+  $$ select * from public.invite_attempts $$,
+  '42501', null, 'the invite rate-limit log is not readable by clients'
 );
 select throws_ok(
   $$ insert into public.household_members (household_id, user_id) select id, '00000000-0000-0000-0000-0000000000b1' from ha $$,

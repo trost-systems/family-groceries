@@ -5,7 +5,7 @@ import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
-import 'package:family_groceries/household/invite_dialog.dart';
+import 'package:family_groceries/household/invites_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/more/stores_screen.dart';
@@ -27,6 +27,9 @@ enum MorePage() {
 
   /// The signed-in email, export and account deletion (`/more/account`).
   account,
+
+  /// Invite the partner, the open invites, revoke (`/more/invites`).
+  invites,
 
   /// The draft privacy page while none is published (`/more/privacy`).
   privacy,
@@ -107,6 +110,7 @@ class const MoreScreen({super.key, final MorePage? page})
   static String _title(AppLocalizations l10n, MorePage page) => switch (page) {
     MorePage.access => l10n.accessTitle,
     MorePage.account => l10n.account,
+    MorePage.invites => l10n.invitesTitle,
     MorePage.privacy => l10n.privacy,
     MorePage.settings => l10n.settingsTitle,
     MorePage.language => l10n.language,
@@ -118,6 +122,7 @@ class const _Page(final MorePage page) extends StatelessWidget {
   Widget build(BuildContext context) => switch (page) {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
+    MorePage.invites => const InvitesPage(),
     MorePage.privacy => const _PrivacyDraft(),
     MorePage.settings => const SettingsScreen(),
     MorePage.language => const LanguageScreen(),
@@ -141,14 +146,15 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
             icon: Icons.person_add_outlined,
             label: l10n.inviteMember,
             detail: household.name,
-            onTap: () => unawaited(showInviteDialog(context, household)),
+            selected: selected == MorePage.invites,
+            onTap: () => context.go(invitesPath),
           ),
         ],
         _Row(
           key: const ValueKey('more-join'),
           icon: Icons.group_add_outlined,
           label: l10n.joinOtherHousehold,
-          onTap: () => unawaited(showJoinCodeDialog(context)),
+          onTap: () => context.go(joinCodePath),
         ),
         _Row(
           key: const ValueKey('more-categories'),

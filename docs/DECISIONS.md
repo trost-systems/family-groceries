@@ -3398,3 +3398,124 @@ The job's own calls:
     allow-list with `actor_role` and `household_size` for 32b to emit.
 12. **No text changes.** Typed text is stored and shown as entered; only the category and the
     hidden `canonical_key`/`categorized_via` are the server's. Nothing is auto-corrected or merged.
+## Job 22 (onboarding: create or join a household, invite a partner, Spec #3), 2026-10-30
+
+Peter's decisions (2026-10-27), as given:
+
+1. **Invites last 7 days and are single use.** Once one person has joined with an invite, its link
+   and code stop working. Any member can revoke one.
+2. **The analytics consent (job 19) comes right after sign-in, before onboarding**, so
+   `household_created` can be counted. Declined, onboarding works the same and sends nothing.
+3. **Specs #1 (analytics), #2 (feedback) and #3 (this) are all live before the friends-and-family
+   beta.**
+4. **Someone in a household who opens an invite may switch after a warning** (Join or Cancel;
+   Cancel is the prominent answer). If they are the last member, the old household is deleted
+   with its list, and the warning says so.
+
+Calls made in this job:
+
+5. **Server: one migration, `20261030120000_onboarding_invites.sql`.** `invites.expires_at`
+   defaults to 7 days; open invites made under the old 14-day rule were clamped to
+   `least(expires_at, created_at + 7 days)`. New columns `used_at` and `used_by` (set null when that
+   account is deleted). `accept_invite(p_code)` consumes an invite with one conditional `UPDATE ...
+   WHERE used_at IS NULL AND revoked_at IS NULL AND expires_at > now()`. Of two people racing for
+   one code, the second waits for the row lock, finds `used_at` set and gets `invalid_invite`.
+   e2e "two people racing for one code" runs that race through two real sessions; pgTAP runs in
+   one transaction, so it covers the sequence. A double tap by the same user loses the race to
+   themselves and is answered `member`.
+6. **One answer for every bad code.** Made-up, expired, revoked and used codes all answer
+   `invalid_invite`, from `preview_invite` and from `accept_invite`. A member of the code's
+   household gets `member` whatever state the invite is in, without using it up, and lands on the
+   list. Nobody else learns whether the household exists.
+7. **The rate limit records failures without raising.** A plpgsql `raise` would roll back the row
+   it just wrote. So `check_invite` (internal) returns a status: `too_many_attempts` once the user
+   has 10 failures in `invite_attempts` within the last hour, `member`, `invalid_invite` (recorded),
+   or `ok`. `preview_invite` and `accept_invite` return `{status, ...}` jsonb, and a bad code
+   never raises. Refused attempts are not recorded, so the window clears an hour after the 10th
+   failure. Even a valid code waits until then. A per-user advisory lock counts a burst of
+   parallel guesses one by one. Rows older than a day are purged whenever a failure is
+   recorded. The table has RLS with no policy and no grants, and cascades with the user.
+8. **The old `join_household(text)` stays, but returns null for a bad code** instead of raising
+   `invalid_invite` (old apps then show no error; a valid code still joins). It raises only
+   `too_many_attempts`, because a raise on a bad code would drop the recorded failure and leave
+   this path without a rate limit. Every caller in the repo (scripts/fg, fixtures, smoke,
+   backup fixtures, pgTAP) still works. Since job 30, every green merge ships new store builds,
+   and the web app follows each store release, so old clients are short-lived.
+9. **`revoke_invite(p_invite)`; the column grant `update (revoked_at)` and its policy are gone.**
+   Members can no longer set `revoked_at` back to null. Revoking twice keeps the first time.
+10. **`create_household(p_name, p_default_stores default true)` replaces `create_household(text)`**
+    in the same migration (drop and create, with `squawk-ignore ban-drop-function` and its
+    reason). A second overload would have made every one-argument call ambiguous; the one
+    function takes every old call. `seed_household(uuid, boolean)` seeds the 11 categories
+    (with the fallback `Sonstiges`) always, and dm, Lidl and Edeka with their layouts only with
+    stores. `seed_household(uuid)` stays as a wrapper.
+11. **A double tap or a retry after a lost answer makes one household.** The server answers
+    the second create with `already_in_household`; the app takes that as success and loads the
+    household. `household_created` goes out once. When the first answer was lost, it goes out
+    with the retry, with the store choice of the first try (`SessionCubit._unansweredCreate`).
+    Joins work the same way (`_unansweredJoin`: a `member` answer to the same code after a
+    lost answer sends the one `invite_accepted`). e2e drops the first response of both RPCs.
+12. **Austrian and Swiss users get the same default stores for now.** dm and Lidl exist there;
+    Edeka is Germany-only and can be deleted. NEEDS_PETER asks about country sets later.
+13. **The flow.** The router (`authRedirect`) is the only gate. After sign-in, consent comes
+    first if undecided. Without a household: `/welcome` (Step 1), `/welcome/create` (2a),
+    `/join` (2b, typed code), or `/join/<code>` at once for an invite. In a household,
+    `/welcome/create` turns into `/welcome/invite` (Step 3, "Später" goes to the list), and an
+    invite opens `/join/<code>`, which warns first. An MCP authorization (`next`) rides along
+    every onboarding step and wins once there is a household. The join screen previews the
+    household name before joining. A preview of the user's own household's link lands on the
+    list. Onboarding screens leave through the list (`leaveStep`), which the router turns into
+    Step 1; only `router.dart` names `/welcome` (lint `auth-navigation-only-in-router`).
+14. **Pending invite on the device (AC6 on all platforms).** `PendingInvite`, stored in
+    `DeviceCache` as `invite.pending` = `{code, at}`, deliberately outside `forget()`'s prefixes,
+    because a signed-out start forgets. It is kept the moment the router sees `/join/<code>` or
+    `?invite=` and lasts 7 days. It survives the custom-scheme sign-in return
+    (`com.hummlist.app://login-callback`, whose location has no invite), app kills, the consent
+    and onboarding. A join, a Cancel or an invalid code answers it. An answered code is not kept
+    again this run (the router still sees `/join/<code>` while the screen hands over to the
+    list); a sign-out clears it all. The router reads it synchronously when the location has no
+    invite. It is never logged, sent to analytics or crash reports, or named in a screen name
+    (`/join/<code>` is `join`).
+15. **Universal links and App Links were possible without placeholders.** Both browser steps
+    from the brief were already done: the Lead enabled Associated Domains on
+    `com.hummlist.app` and `renew_profile` made profile `5T4AGK7RF2` with associated domains
+    (NEEDS_LEAD L6, 2026-10-27). The Play App Signing SHA-256 is in RELEASE.md (L3,
+    2026-10-28). So `Runner.entitlements` gets `applinks:app.hummlist.com`, the manifest an
+    `autoVerify` https filter for `/join/`, and `app/web/.well-known/` holds the AASA
+    (`VCZSHMZY25.com.hummlist.app`, `/join/*`) and `assetlinks.json`. It lists the Play app
+    signing key, which signs what testers install, and the upload key, which signs CI's own
+    APK/AAB artifacts. `vercel.json` keeps `.well-known/` out of the SPA rewrite and serves
+    the AASA as `application/json`. `deep_links_config_test.dart` checks that the five files
+    agree and that the fingerprints are RELEASE.md's; `web-prod.sh` checks that the build
+    copies both; `e2e/web-smoke.mjs` checks them on a deployed URL. They reach app.hummlist.com
+    with the next dispatched store release (web follows the release, job web-release-align).
+16. **Share.** iOS and Android open the system share sheet right after the invite exists. On
+    the web, the invite shows with its code, its link, "Link kopieren" and "Code kopieren",
+    plus "Teilen" where the browser has the Web Share API. The sheet is not opened by itself
+    there: Web Share needs a fresh tap, which the server's answer outlasts. share_plus's
+    mailto fallback is off. The share text is ARB `inviteShareText` (DE: "Komm in unseren
+    Hummlist-Haushalt: <link> · Code: <code>"). Each share or copy tap is one `invite_sent`.
+17. **Invite management** is More, Haushalt, "Partner einladen" (`/more/invites`): a new
+    invite, the open ones with "gültig bis <Datum>, <Uhrzeit> Uhr", and revoke per invite.
+    Used, revoked and expired invites are not listed (the list reloads when the page opens).
+    The old invite dialog and More's join dialog are gone; "Anderem Haushalt beitreten" opens
+    the join screen.
+18. **The data export lists `invites_created`** (code, created, expires, used and revoked
+    times): household data the user made. Who used an invite is someone else's data and is
+    left out. `invite_attempts` is not exported; it holds nothing but the user's id and a time,
+    and it lasts a day.
+19. **Mobile proof without devices.** No emulator or simulator on the runner. Router tests feed
+    the URIs the platforms deliver (`https://app.hummlist.com/join/ABCD2345`,
+    `com.hummlist.app://login-callback?code=…`), with and without a pending invite (a cold start
+    reads it back from the store). The Linux app via scripts/fg needs a local Supabase stack,
+    which the Mac runner does not run (no Docker); the web e2e on CI drives the same Flutter
+    code. The device check is a NEEDS_PETER checklist.
+20. **Review fixes (an independent read of the diff before the Sonnet review).** After a join, the
+    join screen leaves through the list with the MCP `next` kept (`leaveStep`), so an
+    authorization on the way is not dropped. A refused code answers the pending invite only if it
+    is that code: a typo after opening a link keeps the link. The cubit's lost-answer marks are
+    reset on sign-out and account deletion, so one user's retry state never sends an event for
+    another. `create_household` turns the unique violation of a create racing on the user's
+    other device into `already_in_household`, which the app answers by loading the household.
+    Kept as decided: old builds get null for a bad code (8). The export lists codes the user made
+    also for a household they left (their own data).

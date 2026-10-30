@@ -72,8 +72,15 @@ const _householdSize = IntIn(1, 100);
 /// so is a property not listed for it.
 final eventCatalog = <String, Map<String, PropertyRule>>{
   'first_open': const {},
-  'household_created': const {},
+  // Job 22: whether it started with dm, Lidl and Edeka.
+  'household_created': const {'default_stores': IsBool()},
   'invite_accepted': {'method': _namesOf(JoinMethod.values)},
+  // Job 22: an invite handed out (share sheet opened, link or code
+  // copied). Never the code, the link or the household's name.
+  'invite_sent': const {
+    'channel': OneOf({'share_sheet', 'copy_link', 'copy_code'}),
+    'context': OneOf({'onboarding', 'settings'}),
+  },
   'item_added': {
     'source': _namesOf(AddSource.values),
     'actor_role': _roles,
