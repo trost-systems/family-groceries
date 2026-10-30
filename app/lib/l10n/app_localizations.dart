@@ -1501,6 +1501,126 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Testfehler senden'**
   String get sendTestError;
+
+  /// More: section heading above Feedback senden
+  ///
+  /// In de, this message translates to:
+  /// **'Feedback'**
+  String get feedbackSection;
+
+  /// More: opens the feedback form; also the form's title
+  ///
+  /// In de, this message translates to:
+  /// **'Feedback senden'**
+  String get feedbackRow;
+
+  /// More: under Feedback senden
+  ///
+  /// In de, this message translates to:
+  /// **'Fehler, Ideen und Fragen an Peter'**
+  String get feedbackRowHint;
+
+  /// Feedback form: label of the text field
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Nachricht'**
+  String get feedbackMessage;
+
+  /// Feedback form: hint in the empty text field
+  ///
+  /// In de, this message translates to:
+  /// **'Was ist dir aufgefallen?'**
+  String get feedbackMessageHint;
+
+  /// Feedback form: category chip
+  ///
+  /// In de, this message translates to:
+  /// **'Bug'**
+  String get feedbackCategoryBug;
+
+  /// Feedback form: category chip
+  ///
+  /// In de, this message translates to:
+  /// **'Idee'**
+  String get feedbackCategoryIdea;
+
+  /// Feedback form: category chip
+  ///
+  /// In de, this message translates to:
+  /// **'Sonstiges'**
+  String get feedbackCategoryOther;
+
+  /// Feedback form: label above the category chips
+  ///
+  /// In de, this message translates to:
+  /// **'Art (optional)'**
+  String get feedbackCategories;
+
+  /// Feedback form: checkbox, off by default
+  ///
+  /// In de, this message translates to:
+  /// **'Peter darf mich dazu kontaktieren'**
+  String get feedbackContact;
+
+  /// Feedback form: what is sent along with the note
+  ///
+  /// In de, this message translates to:
+  /// **'App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.'**
+  String get feedbackAttached;
+
+  /// Feedback form: before the attached line
+  ///
+  /// In de, this message translates to:
+  /// **'Wird mitgeschickt:'**
+  String get feedbackAttachedTitle;
+
+  /// Feedback form: send button
+  ///
+  /// In de, this message translates to:
+  /// **'Senden'**
+  String get feedbackSend;
+
+  /// Feedback form: button after a failed send
+  ///
+  /// In de, this message translates to:
+  /// **'Erneut senden'**
+  String get feedbackRetry;
+
+  /// Feedback form: while the note is on its way (screen readers)
+  ///
+  /// In de, this message translates to:
+  /// **'Wird gesendet …'**
+  String get feedbackSending;
+
+  /// Snackbar after the note arrived
+  ///
+  /// In de, this message translates to:
+  /// **'Danke!'**
+  String get feedbackThanks;
+
+  /// Feedback form: error after a failed send; text, category and checkbox stay
+  ///
+  /// In de, this message translates to:
+  /// **'Nicht gesendet. Prüfe die Verbindung und versuch es noch einmal.'**
+  String get feedbackFailed;
+
+  /// Feedback form: the note is too long
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens {max} Zeichen'**
+  String feedbackTooLong(int max);
+
+  /// Feedback form: characters used, shown near the limit
+  ///
+  /// In de, this message translates to:
+  /// **'{count} / {max}'**
+  String feedbackCounter(int count, int max);
+
+  /// Feedback form: close button
+  ///
+  /// In de, this message translates to:
+  /// **'Schließen'**
+  String get feedbackClose;
 }
 
 class _AppLocalizationsDelegate

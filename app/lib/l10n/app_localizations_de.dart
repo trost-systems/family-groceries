@@ -868,4 +868,70 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get sendTestError => 'Testfehler senden';
+
+  @override
+  String get feedbackSection => 'Feedback';
+
+  @override
+  String get feedbackRow => 'Feedback senden';
+
+  @override
+  String get feedbackRowHint => 'Fehler, Ideen und Fragen an Peter';
+
+  @override
+  String get feedbackMessage => 'Deine Nachricht';
+
+  @override
+  String get feedbackMessageHint => 'Was ist dir aufgefallen?';
+
+  @override
+  String get feedbackCategoryBug => 'Bug';
+
+  @override
+  String get feedbackCategoryIdea => 'Idee';
+
+  @override
+  String get feedbackCategoryOther => 'Sonstiges';
+
+  @override
+  String get feedbackCategories => 'Art (optional)';
+
+  @override
+  String get feedbackContact => 'Peter darf mich dazu kontaktieren';
+
+  @override
+  String get feedbackAttached =>
+      'App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.';
+
+  @override
+  String get feedbackAttachedTitle => 'Wird mitgeschickt:';
+
+  @override
+  String get feedbackSend => 'Senden';
+
+  @override
+  String get feedbackRetry => 'Erneut senden';
+
+  @override
+  String get feedbackSending => 'Wird gesendet …';
+
+  @override
+  String get feedbackThanks => 'Danke!';
+
+  @override
+  String get feedbackFailed =>
+      'Nicht gesendet. Prüfe die Verbindung und versuch es noch einmal.';
+
+  @override
+  String feedbackTooLong(int max) {
+    return 'Höchstens $max Zeichen';
+  }
+
+  @override
+  String feedbackCounter(int count, int max) {
+    return '$count / $max';
+  }
+
+  @override
+  String get feedbackClose => 'Schließen';
 }

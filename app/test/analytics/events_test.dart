@@ -11,6 +11,7 @@ void main() {
       'item_ticked',
       'category_reordered',
       'store_reordered',
+      'feedback_submitted',
     });
   });
 
@@ -30,6 +31,24 @@ void main() {
     ('category_reordered', {'scope': 'default'}),
     ('category_reordered', {'scope': 'store'}),
     ('store_reordered', {}),
+    (
+      'feedback_submitted',
+      {
+        'category': 'bug',
+        'entry_point': 'settings',
+        'screen': 'list',
+        'contact_ok': true,
+      },
+    ),
+    (
+      'feedback_submitted',
+      {
+        'category': 'none',
+        'entry_point': 'settings',
+        'screen': 'account',
+        'contact_ok': false,
+      },
+    ),
   ];
   for (final (event, properties) in allowed) {
     test('allows $event $properties', () {
@@ -53,6 +72,13 @@ void main() {
     ('category_reordered', {'scope': 'Obst & Gemüse'}, 'a category name'),
     ('store_reordered', {'ids': 'a,b'}, 'a list of ids'),
     ('first_open', {'email': 'peter@example.com'}, 'an e-mail'),
+    ('feedback_submitted', {'message': 'Der Haken hängt'}, 'the note'),
+    ('feedback_submitted', {'category': 'Bug'}, 'a label as category'),
+    ('feedback_submitted', {'entry_point': 'shake'}, 'an entry not built'),
+    ('feedback_submitted', {'screen': '/join/ABCD2345'}, 'a path as screen'),
+    ('feedback_submitted', {'screen': 'Milch'}, 'an item as screen'),
+    ('feedback_submitted', {'contact_ok': 'yes'}, 'contact as text'),
+    ('feedback_submitted', {'email': 'max@gmail.com'}, 'an e-mail'),
   ];
   for (final (event, properties, why) in refused) {
     if (event == 'invite_accepted' && properties.isEmpty) {

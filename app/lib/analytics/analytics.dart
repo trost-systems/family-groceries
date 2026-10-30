@@ -114,6 +114,18 @@ class Analytics(
   /// Whether this build can send at all.
   bool get enabled => _sink != null;
 
+  /// Whether this install, the signed-in user and their household are
+  /// internal now ([isInternal]); also for feedback (job 21), which is
+  /// stored with or without consent and with or without a project key.
+  bool get internalNow => isInternal(
+    releaseBuild: _config.releaseBuild,
+    internalInstall: state.internalInstall,
+    householdId: _user?.householdId,
+    email: _user?.email,
+    internalHouseholds: _config.internalHouseholds,
+    internalEmailDomains: _config.internalEmailDomains,
+  );
+
   /// Whether the consent screen is due: the build can send and this
   /// install has not decided yet.
   bool get asksConsent => enabled && state.loaded && state.consent == null;
@@ -275,14 +287,7 @@ class Analytics(
       'household_id': user.householdId,
       'platform': _config.platform,
       'app_version': _config.appVersion,
-      'is_internal': isInternal(
-        releaseBuild: _config.releaseBuild,
-        internalInstall: state.internalInstall,
-        householdId: user.householdId,
-        email: user.email,
-        internalHouseholds: _config.internalHouseholds,
-        internalEmailDomains: _config.internalEmailDomains,
-      ),
+      'is_internal': internalNow,
       r'$geoip_disable': true,
       r'$process_person_profile': false,
       r'$lib': 'hummlist-app',

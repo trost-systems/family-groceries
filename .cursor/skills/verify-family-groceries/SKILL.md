@@ -66,7 +66,8 @@ Every drive command takes `--client peter|lea` (default peter). Prefer stable ha
 | `fg drag --from-text <row or divider text> --to-text <...> [--edge before\|after]` | Hold and drag a row or divider onto a row, a category divider or a store divider (linux surface) |
 | `--key list-hint-dismiss` | "Verstanden" on the explainer card (`list-hint`); `list-empty` is the empty state |
 | `--key tab-list` ("Liste"), `--key tab-more` ("Mehr") | The tabs (a NavigationRail from 840 px wide). Each reopens its last page; a tap on the current tab goes to its first page. The open add sheet hides them |
-| `more-invite`, `more-join`, `more-categories`, `more-stores`, `more-access` (→ `access-screen`, `/more/access`), `menu-account` (→ `account-screen`, `/more/account`, `account-email`), `more-sign-out`, `language-system` / `language-de` / `language-en`, `more-imprint`, `more-privacy`, `more-licenses`, `more-version` | Entries of the More tab (`more-screen`, a lazy list: `fg marionette -- scroll-to --key <entry>` first). Recipe: `features/shell-more.md` |
+| `more-invite`, `more-join`, `more-categories`, `more-stores`, `more-access` (→ `access-screen`, `/more/access`), `menu-account` (→ `account-screen`, `/more/account`, `account-email`), `more-sign-out`, `more-feedback`, `language-system` / `language-de` / `language-en`, `more-imprint`, `more-privacy`, `more-licenses`, `more-version` | Entries of the More tab (`more-screen`, a lazy list: `fg marionette -- scroll-to --key <entry>` first). Recipe: `features/shell-more.md` |
+| `feedback-sheet`, `feedback-message`, `feedback-category-bug` / `-idea` / `-other`, `feedback-contact`, `feedback-send`, `feedback-retry`, `feedback-error`, `feedback-counter`, `feedback-close`, `feedback-thanks` | The feedback form from `more-feedback`. Recipe: `features/feedback.md` |
 
 ```bash
 scripts/fg find --contains Milch            # what is on screen, as JSON (type, key, text, label, tooltip, bounds)

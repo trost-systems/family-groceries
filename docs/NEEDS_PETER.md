@@ -784,3 +784,26 @@ release `hummlist-web@job19-proof` and 2 events from `proof-ac11@fg.test` (DECIS
      open, not a move. If a still hold still turns into a move, tell the next
      job: the drift tolerance (18 px for a finger, DECISIONS 29c 4) wasn't the
      cause. The swipe works either way.
+
+## Job 21: in-app feedback
+
+Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDBACK.md).
+
+1. **Privacy policy entry for in-app feedback** (with the Job 17 and Job 19 items). Suggested
+   content: under Mehr → "Feedback senden" a user can send a note to the developer. Stored with
+   it: the text, an optional kind (Bug, Idee, Sonstiges), whether they agree to be contacted, the
+   app version and build, platform and OS version (on the web the browser family and OS), the
+   app language, the name of the screen they came from, their account id and household id. No
+   list items, no screenshots, no device model; the e-mail is not copied. Stored at Supabase
+   (EU, Frankfurt), readable only by Peter and the Hummlist PM. Deleted 12 months after sending
+   (daily cleanup), at once when the account is deleted; the encrypted nightly backups keep a
+   deleted note up to 90 more days. Contact happens only by Peter and only when the user ticked
+   "Peter darf mich dazu kontaktieren". Legal basis: the user sends it on purpose (Art. 6(1)(b)
+   or (f) GDPR; your lawyer's call). Notes are part of "Meine Daten exportieren".
+2. **Your household as internal.** Notes from your family count as internal only through the
+   `ANALYTICS_INTERNAL_HOUSEHOLDS` build define (Job 19, item 6). Until it is set in the release
+   and Vercel builds, your own notes show in the Monday summary's external part (debug builds and
+   test accounts are internal regardless).
+3. **After the deploy (lead)**: check the cleanup is scheduled on the hosted project:
+   `select jobname, schedule, active from cron.job where jobname = 'purge-old-feedback';` should
+   return one active row with `17 3 * * *`.

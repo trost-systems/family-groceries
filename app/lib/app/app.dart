@@ -4,6 +4,10 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/feedback/feedback_context.dart';
+import 'package:family_groceries/feedback/feedback_cubit.dart';
+import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:family_groceries/feedback/screen_tracker.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -18,6 +22,10 @@ class const App({
   required final DeviceCache cache,
   required final AccountRepository account,
   required final Analytics analytics,
+  required final FeedbackRepository feedback,
+
+  /// Build and device facts for feedback; the plugins by default.
+  final FeedbackDevice? feedbackDevice,
 
   /// The language picked under More, read before the first frame.
   final AppLanguage? language,
@@ -30,6 +38,13 @@ class const App({
 class _AppState() extends State<App> {
   late final GoRouter _router = buildRouter(widget.session, widget.analytics);
   late final _language = LanguageCubit(widget.cache, widget.language);
+  final _screens = ScreenTracker();
+  late final _feedback = FeedbackCubit(
+    widget.feedback,
+    analytics: widget.analytics,
+  );
+  late final FeedbackDevice _device =
+      widget.feedbackDevice ?? PluginFeedbackDevice();
 
   /// Sends what analytics has queued when the app goes to the background
   /// or the tab is hidden: it may not come back.
@@ -41,13 +56,26 @@ class _AppState() extends State<App> {
     _lifecycle = AppLifecycleListener(
       onHide: () => unawaited(widget.analytics.flush()),
     );
+    _router.routerDelegate.addListener(_onRoute);
+    // The first location may be set before anyone listens (a reload on
+    // `/more`): take it once the first frame is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onRoute());
+  }
+
+  void _onRoute() {
+    final configuration = _router.routerDelegate.currentConfiguration;
+    if (configuration.isNotEmpty) {
+      _screens.visit(configuration.uri);
+    }
   }
 
   @override
   void dispose() {
     _lifecycle.dispose();
+    _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
     unawaited(_language.close());
+    unawaited(_feedback.close());
     super.dispose();
   }
 
@@ -59,12 +87,15 @@ class _AppState() extends State<App> {
         RepositoryProvider.value(value: widget.social),
         RepositoryProvider.value(value: widget.cache),
         RepositoryProvider.value(value: widget.account),
+        RepositoryProvider.value(value: _screens),
+        RepositoryProvider.value(value: _device),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider.value(value: widget.session),
           BlocProvider.value(value: widget.analytics),
           BlocProvider.value(value: _language),
+          BlocProvider.value(value: _feedback),
         ],
         child: BlocBuilder<LanguageCubit, AppLanguage?>(
           builder: (context, picked) => MaterialApp.router(

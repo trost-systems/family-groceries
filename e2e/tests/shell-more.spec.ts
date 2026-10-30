@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from './fixtures';
+import { expect, type Locator, test, type Page } from './fixtures';
 import {
   addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto,
 } from './helpers';
@@ -11,12 +11,33 @@ async function openMore(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
 }
 
+/**
+ * Wheels More's lazy list until [target] is fully on screen above the tab bar. A row far off
+ * screen is not in the page until the list nears it: looked for downwards first, then upwards.
+ */
+async function wheelTo(page: Page, target: Locator): Promise<void> {
+  const size = page.viewportSize()!;
+  const tabs = await page.getByRole('tab', { name: 'Liste', exact: true }).boundingBox();
+  const bottom = tabs ? tabs.y : size.height;
+  await page.mouse.move(size.width / 2, size.height / 3);
+  for (let i = 0; i < 40; i++) {
+    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
+    if (box && box.y >= 0 && box.y + box.height <= bottom) return;
+    const down = box ? box.y + box.height > bottom : i < 20;
+    await page.mouse.wheel(0, down ? 250 : -250);
+    await page.waitForTimeout(150);
+  }
+  throw new Error(`could not scroll ${target} into view`);
+}
+
 test('More opens every entry; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
   const email = newEmail('more');
   await signUpWithHousehold(page, email);
   await openMore(page);
-  await expect(page.getByText(/^Version \d+\.\d+\.\d+/), 'the version sits at the bottom').toBeVisible();
   await screenshot(page, 'more-01-phone');
+  // More is a lazy list taller than the window (job 21 added Feedback): wheel to what is below.
+  await wheelTo(page, page.getByText(/^Version \d+\.\d+\.\d+/));
+  await wheelTo(page, page.getByRole('button', { name: /^Mitglied einladen/ }));
 
   await page.getByRole('button', { name: /^Mitglied einladen/ }).click();
   await expect(page.getByRole('group', { name: /^Code [A-HJ-NP-Z2-9]{8}$/ })).toBeVisible();
@@ -63,22 +84,26 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
+  await wheelTo(page, page.getByRole('button', { name: /^Datenschutz/ }));
   await page.getByRole('button', { name: /^Datenschutz/ }).click();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'no privacy policy yet: a marked draft' })
     .toMatch(/Entwurf[\s\S]*Datenschutzerklärung von Hummlist wird gerade geschrieben/);
   await page.getByRole('button', { name: 'Zurück' }).click();
 
   const popup = page.waitForEvent('popup');
+  await wheelTo(page, page.getByRole('button', { name: /^Impressum/ }));
   await page.getByRole('button', { name: /^Impressum/ }).click();
   expect((await popup).url(), 'the imprint is the site page').toContain('hummlist.com/impressum');
   await (await popup).close();
 
+  await wheelTo(page, page.getByRole('button', { name: /^Lizenzen/ }));
   await page.getByRole('button', { name: /^Lizenzen/ }).click();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the licenses page names the app and lists packages' })
     .toMatch(/Hummlist[\s\S]*Flutter[\s\S]*bloc/);
   await screenshot(page, 'more-02-licenses');
   await page.getByRole('button', { name: 'Zurück' }).click();
 
+  await wheelTo(page, page.getByRole('button', { name: /^Abmelden/ }));
   await page.getByRole('button', { name: /^Abmelden/ }).click();
   await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
   await expect(page).toHaveURL(/\/login/);

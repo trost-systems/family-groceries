@@ -11,6 +11,7 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 - `sm-account` opens the Konto page (`menu-account` → `account-screen`, route `/more/account`: the signed-in email, export, deletion; `features/account.md`). Zugänge and Konto are two pages (job 29d); each has a back arrow to More.
 - `sm-old-links` the routes of the one page they were before keep working: `/settings` redirects to `/more/access`, `/settings?section=account` to `/more/account`.
 - `sm-sign-out` signs out (`more-sign-out`, "Abmelden") and shows the login screen (`features/auth.md`).
+- `sm-feedback` opens the feedback form (`more-feedback`, "Feedback senden", section "Feedback" before Sprache): `features/feedback.md`.
 - `sm-language` switches the whole UI with `language-system` ("Wie Gerät"), `language-de` ("Deutsch") or `language-en` ("English") in `more-language`. The pick survives `fg restart` and sign-out.
 - `sm-imprint` opens the imprint on the web (`more-imprint`, external: https://hummlist.com/impressum).
 - `sm-privacy` shows the draft privacy page (`more-privacy` → `privacy-draft`, chip "Entwurf", "Die Datenschutzerklärung von Hummlist wird gerade geschrieben …") while no privacy URL is configured.

@@ -6,6 +6,7 @@ import 'package:family_groceries/app/app.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -92,6 +93,7 @@ Future<void> _main() async {
       social: social,
       cache: cache,
       account: account,
+      feedback: SupabaseFeedbackRepository(client),
     ),
   );
 }

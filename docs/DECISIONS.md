@@ -3093,3 +3093,103 @@ Peter: "In 'More' access and account lead to the same page. Split them up."
 6. **The scroll-to-section code goes.** `showAccount`, the `GlobalKey` and
    the listener that re-scrolled when tokens loaded only existed to land on
    the Konto section of the shared page. Zugänge is a lazy `ListView` again.
+
+## Job 21 (in-app feedback for beta testers, Spec #2), 2026-10-30
+
+Overview: [FEEDBACK.md](FEEDBACK.md). Peter's decisions of 2026-10-27, which close the spec's
+open questions 1-5:
+
+- **D1. No notification of any kind** on new feedback: no e-mail digest, push, Slack or function
+  that sends anything. The PM reads the table every Monday (FEEDBACK.md, "Monday summary").
+- **D2. No shake-to-open and no long press on a title.** Mehr → "Feedback senden" is the only
+  entry point; spec AC13 does not apply. `entry_point` stays an enum (`settings`) for later.
+- **D3. No screenshots**, now or as a hidden option: the typed note and the context fields only.
+- **D4. Feedback ships in the public release (DACH)**, not only in beta builds; no flag.
+- **D5. Rows are deleted 12 months after `created_at`** by a scheduled cleanup in the database.
+
+The job's own calls:
+
+1. **A direct insert, not an RPC.** RLS policy `feedback_insert_own` (`user_id = auth.uid()` and
+   the household, if any, the caller's own), a column grant without `created_at` and
+   `household_id`, and a `before insert` trigger that sets `household_id` from
+   `household_members`, `created_at`, the trimmed message, and `is_internal` for test accounts.
+   With a direct insert the spec's AC5 holds literally (own insert yes, another `user_id` refused,
+   select/update/delete refused, anon refused), which an RPC could only imitate. The insert policy
+   calls `is_household_member(household_id)`, which is also what the schema check asks of a
+   table with `household_id`.
+2. **Idempotency in the trigger.** A repeat of the signed-in sender's own id is skipped (the
+   trigger returns null: no error, no second row, nothing read back). Someone else's id fails on
+   the primary key (23505). Two requests with one id in flight at once: the second waits on the
+   key and gets 23505; the app then sends once more, which the trigger skips. A second 23505 is a
+   foreign id (practically impossible with v4 UUIDs): the app takes a new id and offers Retry.
+   PostgREST's upsert was not an option: it needs a select or update policy.
+3. **"Empty" and "2,000 characters" mean the same in the app and the database.** Postgres'
+   `btrim` strips only spaces, Dart's `trim()` all Unicode white space, and Dart's `length`
+   counts UTF-16 units while `char_length` counts code points. `public.feedback_trim` strips
+   Dart's white-space set, the check is `char_length(feedback_trim(message)) between 1 and 2000`,
+   and the app counts `trim().runes`. So `'\n\t '` is empty for both, and 2,000 emoji are 2,000
+   characters for both (pgTAP and widget tests).
+4. **No hard input limit; the counter shows from 1,800 characters** ("1950 / 2000"), and over
+   2,000 the field says "Höchstens 2000 Zeichen" and Send is disabled. A pasted long text stays
+   editable instead of being cut silently.
+5. **The note survives closing the form.** `FeedbackCubit` lives in the app (like the language),
+   so a sheet swiped away after a failure, or by accident, comes back with the text, the category,
+   the checkbox and the same id; a Retry later is still one row. It starts blank after a send
+   and when another account opens it. Changing the note after a failed send gives it a new id: if
+   the first try did arrive, the corrected text is not dropped as its repeat (the PM may then see
+   both versions, which is honest).
+6. **Screen name** (the spec's engineering Q6, the lead's rule). `screenNameOf` and
+   `screenNames` in `app/lib/app/router.dart` (route literals may only live there, lint rule
+   `auth-navigation-only-in-router`) map a router location to a fixed name: `list`, `more`,
+   `privacy`, `access`, `account`, `login`, `welcome`, `analytics_consent`,
+   `oauth_consent`, `join` (never the code), `other`. `ScreenTracker` (`app/lib/feedback/`)
+   follows the router delegate. Since More is the only entry, `screen` is the last screen before
+   the More tab (`list` from the list, AC3's "opened from the list stores list"); More's own pages
+   in between do not count; when the form opens beside a More page (wide layouts, where More's
+   list stays next to the page), that page's name (`account`, `access`; an old `/settings` link redirects and maps to the same). Job 29d moved Zugänge and Konto to `/more/access` and `/more/account` while this job was open; the names follow the routes. Categories and stores
+   are pages pushed above `/more`, and sheets (add, edit) are not routes: they report the route
+   under them. A reload straight on `/more` reports `more` (the app reads the first location after the first frame too, since the router may set it before the tracker listens; found by the review). No `name:` was added to the GoRoutes
+   and no NavigatorObserver: the map keys on paths the router already has.
+7. **Context fields.** App version and build from package_info_plus (the source of More's
+   version line), the build `none` where a platform has none. OS version from device_info_plus
+   (new dependency): `Android 14 (SDK 34)`, `iOS 18.1`, `macOS 15.1`, Linux's pretty name,
+   Windows' product name; on the web only `<browser family> on <OS>` parsed from the user agent
+   (`webOsVersion`), never the user agent itself. Locale is the app's language (`de`/`en`), not
+   the device's list. Each value is cleaned of control characters and capped as the database
+   checks it. The device model is not sent.
+8. **`is_internal`** comes from 19's `isInternal` (new `Analytics.internalNow`, which works with
+   or without consent and without a PostHog key, since feedback is stored either way). The
+   database adds the reserved test domains from `internal.dart` (`.test`, `.invalid`,
+   `.example`, `.localhost`, `example.com/.net/.org`: `fg.test`, `fg-test.invalid`, e2e's
+   `example.test`), so a client can't mark those external. Peter's household is internal through
+   the `ANALYTICS_INTERNAL_HOUSEHOLDS` define (NEEDS_PETER Job 19); the database does not know
+   his household id, so a build without that define reports his notes as external until he sets
+   it (NEEDS_PETER Job 21).
+9. **The event `feedback_submitted`** goes through 19's `Analytics.track` only after the insert
+   succeeded, once per note id (the cubit remembers ids it tracked), with `category` (`none` when
+   unpicked), `entry_point`, `screen` (a `OneOf(screenNames)` rule, so no free text) and
+   `contact_ok`. Without consent nothing is sent and the row is stored.
+10. **Confirmation**: the sheet closes and a snackbar says "Danke!"; there is nothing else to do
+    on the form. **Failure**: "Nicht gesendet. Prüfe die Verbindung und versuch es noch einmal."
+    under the form, Send becomes "Erneut senden". Nothing is queued or sent later; job 8's
+    offline op queue is not used (it is for list items, and a note must not go out unseen).
+    A send without an answer within 15 s counts as failed.
+11. **Place in More**: its own section "Feedback" after Konto/Abmelden and before Sprache, with
+    the hint "Fehler, Ideen und Fragen an Peter", so testers find it without scrolling far.
+12. **Retention with pg_cron.** `create extension if not exists pg_cron with schema pg_catalog`
+    (Supabase's documented form, free tier) and `cron.schedule('purge-old-feedback',
+    '17 3 * * *', 'select public.purge_old_feedback()')`; the same name replaces the job, so a
+    second apply keeps one (pgTAP). `purge_old_feedback()` is security definer, revoked from
+    anon and authenticated, and returns the count. No keepalive fallback was needed: pg_cron
+    runs on the local stack (CI's db gate) and is available on the hosted free tier.
+13. **Data export**: the user's own notes are their data (GDPR Art. 15), so `export_my_data`
+    gained a `feedback` section (all columns but `user_id`); additions keep version 1.
+14. **Monday summary**: "the last 7 days (Europe/Berlin week)" is the previous full calendar
+    week in Berlin time, Monday 00:00 to Monday 00:00, so Mondays never overlap or miss a note.
+    No view or function: two plain queries (notes, counts) and a contact lookup.
+    `scripts/feedback-monday.sh` (db gate) runs them straight from FEEDBACK.md on fake notes
+    around the week's edges and checks the result, so the doc and the SQL can't drift.
+15. **Account deletion** needs no change in `delete_account`: `user_id ... on delete cascade`
+    removes the notes with the user (spec engineering Q7), `household_id ... on delete set null`
+    keeps other people's notes when a household goes. pgTAP covers the household-kept and
+    household-deleted paths and a former member's note, e2e the app's deletion.

@@ -253,3 +253,7 @@ See [docs/done/19-analytics-killgate.md](docs/done/19-analytics-killgate.md).
 ## Job 30: every green merge to main reaches the internal testers
 
 See [docs/done/30-release-on-merge.md](docs/done/30-release-on-merge.md).
+
+## Job 21: in-app feedback for beta testers
+
+See [docs/done/21-feedback.md](docs/done/21-feedback.md).

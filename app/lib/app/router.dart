@@ -36,6 +36,55 @@ const accountPath = '/more/account';
 const settingsPath = '/settings';
 String joinPath(String code) => '/join/$code';
 
+/// The fixed screen names feedback and analytics report (job 21): a
+/// route's name, never its path, so an invite code or anything typed can't
+/// get in. Pages pushed on top of a route (categories, stores) and sheets
+/// (add, edit) report the route under them.
+const screenNames = {
+  'list',
+  'more',
+  'privacy',
+  'access',
+  'account',
+  'login',
+  'welcome',
+  'analytics_consent',
+  'oauth_consent',
+  'join',
+  'other',
+};
+
+/// The screen name of a router [location]: `/join/<code>` is `join`, an
+/// unknown path `other`. Query parameters are ignored, except an old
+/// `/settings` link's section (it redirects to Zugänge or Konto).
+String screenNameOf(Uri location) => switch (location.path) {
+  listPath || '' => 'list',
+  morePath => 'more',
+  privacyPath => 'privacy',
+  accessPath => 'access',
+  accountPath => 'account',
+  settingsPath when location.queryParameters['section'] == 'account' =>
+    'account',
+  settingsPath => 'access',
+  loginPath => 'login',
+  welcomePath => 'welcome',
+  analyticsConsentPath => 'analytics_consent',
+  consentPath => 'oauth_consent',
+  _ when location.pathSegments.firstOrNull == 'join' => 'join',
+  _ => 'other',
+};
+
+/// Whether [location] is in the More tab (More itself or one of its
+/// pages); the list is `/` itself. Signed in, any other shell path goes to
+/// the list.
+bool inMoreTab(Uri location) => const {
+  settingsPath,
+  morePath,
+  privacyPath,
+  accessPath,
+  accountPath,
+}.contains(location.path);
+
 /// The only auth gate. An invite code from a `/join/<code>` link survives
 /// sign-in, the analytics consent and onboarding as the `invite` query
 /// parameter, an OAuth consent URL as the `next` query parameter.
@@ -65,7 +114,7 @@ String? authRedirect(Session session, Uri uri, {bool askConsent = false}) {
     ),
     NeedsHousehold() => carry(welcomePath),
     InHousehold() when next != null => next,
-    InHousehold() when invite == null && _inShell(uri.path) => uri.toString(),
+    InHousehold() when invite == null && inMoreTab(uri) => uri.toString(),
     // Onboarding is done once in a household; only a link or a fresh
     // sign-in from a link still asks to switch households.
     InHousehold() when invite == null || uri.path == welcomePath => listPath,
@@ -73,16 +122,6 @@ String? authRedirect(Session session, Uri uri, {bool askConsent = false}) {
   };
   return target == null || target == uri.toString() ? null : target;
 }
-
-/// The More tab's pages; the list is `/` itself. Any other path goes to
-/// the list.
-bool _inShell(String path) => const {
-  settingsPath,
-  morePath,
-  privacyPath,
-  accessPath,
-  accountPath,
-}.contains(path);
 
 /// Where an old `/settings` link goes now: Konto for `?section=account`,
 /// Zugänge otherwise.

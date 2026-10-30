@@ -9,6 +9,8 @@
 /// docs/ANALYTICS.md.
 library;
 
+import 'package:family_groceries/app/router.dart' show screenNames;
+
 /// Where an added item came from, as the app knows it.
 enum AddSource() {
   /// Typed into the add field and taken as typed (Enter or the first row).
@@ -69,6 +71,13 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'scope': OneOf({for (final s in ReorderScope.values) s.wire}),
   },
   'store_reordered': const {},
+  // Job 21: after the server took a note, once per note. Never its text.
+  'feedback_submitted': {
+    'category': const OneOf({'bug', 'idea', 'other', 'none'}),
+    'entry_point': const OneOf({'settings'}),
+    'screen': const OneOf(screenNames),
+    'contact_ok': const IsBool(),
+  },
 };
 
 OneOf _namesOf(List<Enum> values) => OneOf({for (final v in values) v.name});

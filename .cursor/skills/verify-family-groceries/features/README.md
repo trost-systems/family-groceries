@@ -59,6 +59,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", tagging items to a store by drag or edit sheet and remembering it, and each store's layout screen.
 - [Categories](./categories.md) covers Mehr → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
 - [Analytics and error tracking](./analytics.md) covers the analytics question after the first sign-in (before onboarding or the list), what is sent after a yes and that nothing is sent after a no, Mehr → Nutzungsdaten, the internal device mark with "Testfehler senden", and error tracking from the app and the edge functions.
+- [Feedback](./feedback.md) covers Mehr → Feedback senden: the note with optional kind and contact, what is attached, the length limits, the error with Retry, and the row in `public.feedback` (insert-only).
 - [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Mehr → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
 - [Account](./account.md) covers Mehr → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.

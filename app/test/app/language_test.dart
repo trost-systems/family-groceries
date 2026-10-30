@@ -74,7 +74,8 @@ void main() {
     ) async {
       final more = await pumpMore(tester, device: const [Locale('en', 'GB')]);
       expect(find.text('More'), findsOneWidget, reason: 'follows the device');
-      await tester.ensureVisible(segment('de'));
+      // Below the fold on a phone, and not built until scrolled to.
+      await tester.scrollUntilVisible(segment('de'), 200);
       await pick(tester, 'de');
       expect(find.text('Mehr'), findsOneWidget);
       expect(find.text('Sprache'), findsOneWidget);
