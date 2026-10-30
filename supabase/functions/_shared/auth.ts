@@ -13,7 +13,12 @@ import { householdOf, resolvePersonalAccessToken, sessionActive, userExists } fr
 
 export type Auth =
   & { userId: string; householdId: string }
-  & ({ via: 'oauth'; clientId: string } | { via: 'pat' } | { via: 'session' });
+  & (
+    /** sessionId: the Supabase session behind the token (Alexa revokes it, job 31). */
+    | { via: 'oauth'; clientId: string; sessionId: string }
+    | { via: 'pat' }
+    | { via: 'session' }
+  );
 
 export type Via = Auth['via'];
 
@@ -72,7 +77,7 @@ export async function authenticate(req: Request, deps: AuthDeps = defaultDeps): 
   if (!active) throw new AuthError('invalid_token', 'Sitzung beendet oder Zugang getrennt.');
   if (!householdId) throw new AuthError('no_household', 'Dieses Konto gehört zu keinem Haushalt.');
   return clientId
-    ? { userId: claims.sub, householdId, via: 'oauth', clientId }
+    ? { userId: claims.sub, householdId, via: 'oauth', clientId, sessionId: claims.session_id }
     : { userId: claims.sub, householdId, via: 'session' };
 }
 

@@ -17,9 +17,10 @@ supabase/classifier/sweep.sh
 supabase/classifier/wordlist.sh
 supabase/classifier/latency.sh
 # Job 32a: the MCP and voice/Siri add code against this stack classifies like the app (AC7).
+# Job 31: the alexa function's wiring (add, read, households, rate limit, revocation, consent).
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
-  deno test --allow-env --allow-net _shared/add_paths_integration_test.ts)
+  deno test --allow-env --allow-net _shared/add_paths_integration_test.ts alexa/store_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

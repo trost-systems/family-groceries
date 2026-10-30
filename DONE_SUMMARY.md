@@ -285,3 +285,7 @@ See [docs/done/33b-legal-app.md](docs/done/33b-legal-app.md).
 ## Job 33c: self-host CanvasKit and fonts, nothing from gstatic.com
 
 See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
+
+## Job 31: Alexa skill "Hummlist" (Spec #7)
+
+"Alexa, sag Hummlist, füg Milch und Eier hinzu" adds to the linked household, read back in German; ReadListIntent reads the list; account linking through Supabase's OAuth server (confidential client, PKCE). Live after the Amazon steps in NEEDS_PETER. Details: [docs/done/31-alexa.md](docs/done/31-alexa.md).

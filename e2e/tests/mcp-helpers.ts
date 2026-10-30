@@ -145,6 +145,7 @@ export async function openAuthorization(
   page: Page,
   authorizationUrl: URL,
   appBaseUrl: string,
+  callback: string = callbackUrl,
 ): Promise<void> {
   const app = new URL(appBaseUrl);
   // Route handlers do not see redirect hops, so rewrite the authorize response's Location.
@@ -157,13 +158,13 @@ export async function openAuthorization(
     }
     await route.fulfill({ response, headers: { ...response.headers(), location: location.toString() } });
   });
-  await page.route(`${callbackUrl}**`, (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<h1>MCP-Client: Anmeldung abgeschlossen</h1>' }));
+  await page.route(`${callback}**`, (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<h1>Client: Anmeldung abgeschlossen</h1>' }));
   await page.goto(authorizationUrl.toString());
 }
 
 /** Waits for the redirect to the client's callback and returns its query parameters. */
-export async function callbackParams(page: Page): Promise<URLSearchParams> {
-  await page.waitForURL(`${callbackUrl}**`);
+export async function callbackParams(page: Page, callback: string = callbackUrl): Promise<URLSearchParams> {
+  await page.waitForURL(`${callback}**`);
   return new URL(page.url()).searchParams;
 }

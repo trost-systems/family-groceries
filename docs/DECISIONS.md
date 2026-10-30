@@ -3809,3 +3809,112 @@ job 24's policy part.
 8. **Wording.** This job changes no user-facing text. 33a's privacy policy
    says nothing is loaded from Google, which is true only once this job has
    reached `app.hummlist.com` (with a dispatched release, `docs/DEPLOY.md`).
+
+
+## Job 31 (Alexa skill "Hummlist", add items by voice, de-DE, Spec #7), 2026-10-30
+
+Peter's decisions (2026-10-29 22:10 CET, his words), closing the spec's open questions 1-3:
+
+1. "Yes, build Alexa right after the feedback job" (slot after 21).
+2. "Use hello@hummlist.com for the Amazon Developer account" (Peter/Hummlist Ops create it; this
+   job does not).
+3. "Include list read-back now if it fits" (ReadListIntent in this job if it fits; otherwise the
+   very next follow-up). **It fit: ReadListIntent is in this job.**
+
+Beta invites and certification each need Peter's separate yes later; this job does neither and
+took no action at Amazon (no account, no ASK CLI or SMAPI call, no upload).
+
+Calls made here:
+
+1. **Account linking reuses Supabase Auth's OAuth 2.1 server; no shim.** Read in
+   `supabase/auth` (`internal/api/oauthserver`: `client_auth.go`, `authorize.go`, `service.go`)
+   and proven end to end on the CI stack (e2e `alexa.spec.ts`, transcript in the PR): it registers
+   confidential clients (`client_secret_basic`/`_post`, also by dynamic registration), checks the
+   secret at the token endpoint, matches redirect URIs exactly, issues refresh tokens, and
+   **requires PKCE** on every authorization. Alexa sends PKCE (S256) when the skill enables it
+   (`pkceConfiguration`, documented in Amazon's account-linking schema), so PKCE must be on in the
+   skill; without it Supabase refuses the authorization. The production client is registered by
+   `scripts/alexa-oauth-client.sh` (dynamic registration, prints the secret once for the Alexa
+   console). Scopes: none (Supabase's default).
+2. **The linked token's user, their current household.** The function resolves the access token
+   with the shared `authenticate()` (JWT, issuer, audience, and the session must still exist) and
+   takes the household from `household_members` at request time; nothing in the request names a
+   household. Only `via: 'oauth'` counts as a link (a PAT or an app session in Alexa's token slot
+   is refused as unlinked). `Auth`'s OAuth variant gained `sessionId` for that.
+3. **Revocation.** A revoked or expired token is unlinked (LinkAccount card, nothing added).
+   Revoked are: disconnecting "Amazon Alexa" under Zugänge, account deletion, sign-out
+   everywhere, and two skill events subscribed in `skill.json`: `SkillDisabled` (only Alexa's
+   user id in it, so the function keeps `alexa_links`: SHA-256 of the Alexa user id → the session
+   it holds, written on every request, service connection only) deletes those sessions;
+   `SkillAccountLinked` revokes the sessions the same Alexa account held before. A plain "unlink"
+   in the Alexa app sends no event (Amazon has none); Alexa deletes the only copy of the tokens,
+   so the next request is unlinked, and the grant stays visible in Zugänge until removed. Not
+   expired by a timer: a linked user who does not talk to Alexa for months must not be unlinked.
+4. **Request verification is our own code** (`verify.ts`, `@peculiar/x509` 1.14.3 on WebCrypto, no
+   Node TLS store in the edge runtime). The chain must reach a pinned root: Amazon Root CA 1-4 and
+   Starfield Services Root CA G2 (Amazon's published chains end there; a real chain is a test
+   fixture). Skill events get one hour of timestamp skew (Amazon delivers and retries them later;
+   the ASK SDK allows the same), everything else 150 s. `@peculiar/x509` 3.x needs a
+   `reflect-metadata` polyfill at the entry point, so 1.14.3 is pinned.
+5. **Tests sign with a test CA, only in a local stack.** `scripts/alexa-test-ca.sh` (run by
+   `supabase_up`) makes a CA with openssl, keeps the key in `supabase/.temp/alexa-test/`
+   (gitignored), and puts the public root and chain plus the test skill id into
+   `supabase/functions/.env`, which `supabase start` loads. The function honours them only when
+   `SUPABASE_URL` is the local stack's `http://kong:8000`; the hosted project has
+   `https://<ref>.supabase.co` and trusts Amazon's roots only (`config_test.ts`). No private key is
+   committed (Deno tests make theirs in memory).
+6. **The slot is `AMAZON.SearchQuery`**, the one free-text type, so whatever Alexa heard reaches
+   the Siri splitter unchanged ("zwei Liter Milch und Eier"). Each intent sample has a carrier
+   phrase; the slot samples may be the slot alone, which lets "Milch" answer "Was soll auf die
+   Liste?" (`Dialog.ElicitSlot` on Launch and on the re-prompt). One SearchQuery per intent.
+7. **Parsing and adding are the Siri path, imported, not copied.** `alexa` imports
+   `voice/parse.ts` (`parseSentence`), `voice/items.ts` (`addItems` through `public.add_item`) and
+   `mcp/list.ts` (`listItems` for the read-back, the app's aisle order). Edge function deploys
+   bundle relative imports, as `_shared` already relies on. Duplicates behave as for Siri: an open
+   item is named ("Schon auf der Hummlist: Milch.") and not added again.
+8. **Replies.** Spec: "Milch und Eier sind auf der Hummlist." for several items. A single item is
+   "Ich habe Milch auf die Hummlist gesetzt.", which is grammatical for plural names too ("Eier
+   ist auf der Hummlist" would not be). Units are said in words (2 l → "2 Liter", 1 kg → "1
+   Kilo"). The read-back says at most 10 items, then "und N weitere" (PM). Every reply ends the
+   session except Launch, Help and the one re-prompt.
+9. **Re-prompt once, never a guess.** Nothing understood (an empty or filler-only slot, the
+   fallback intent, or the server's parser finding no item) asks once ("Das habe ich nicht
+   verstanden. Was soll auf die Liste?", session attribute `retry`); the second time ends with
+   "… Ich habe nichts auf die Hummlist gesetzt." An unlinked user is asked to link instead.
+10. **Rate limit: 30 items a minute per user** (PM's figure), a fixed window in `alexa_rate`
+    (`alexa_take_adds`, service connection), counted per item asked for. MCP and voice have no
+    limit to reuse; this one is Alexa's own. More than 30 items in one phrase: the first 30 are
+    added and Alexa says so (the Siri rule); over 1000 characters nothing is added.
+11. **Analytics: the existing `item_added` with `source: alexa`** (the app's event, so retention
+    and the gate queries count Alexa adds as activity), added to the server catalog in
+    `telemetry.ts` with `actor_role` and `household_size` only. Consent is per install and lives
+    on the device, so the server could not know it: the app now records each install's answer
+    (`record_analytics_consent(p_install, p_consent, p_internal)`, table `analytics_consents`)
+    when the user answers, switches, or signs in. An Alexa add is counted only while the user's
+    newest answer (by when it last changed, not when an app last started) is yes, under that
+    install id (`is_internal` from that install too). A build without a PostHog key records
+    nothing. The table keeps the 20 newest installs per user and goes with the account; it is in
+    "Meine Daten exportieren". This reverses "MCP and Siri adds are not counted" (PM 2026-10-25)
+    for Alexa only, as Spec #7 asks.
+12. **Error tracking**: the function runs under `withTelemetry('alexa')`; caught failures
+    (database, auth lookup, bookkeeping) go to `telemetry.exception`, whose scrubber drops names
+    and tokens (a test throws an error naming an item and checks the payload).
+13. **Skill package files**, deployable with ASK CLI v2 (`ask deploy --target skill-metadata`):
+    `skill.json` (de-DE only; distribution DE, AT, CH, LU, LI; category SHOPPING; privacy URL
+    `https://hummlist.com/datenschutz`), the de-DE model, icons made from the app icon (108 and
+    512 px), `ask-resources.json`, and `account-linking.json` without the secret. Validated by
+    `skill_package_test.ts` (Amazon publishes no JSON schema for these; the test checks the rules
+    certification applies: example phrases match samples, carrier phrases, built-ins present,
+    one SearchQuery, prompts exist, no "Humm" alone).
+14. **`export_my_data` gains `analytics_decisions` and `alexa_links`** (last use only, no hash).
+    Job 22 redefines the same function in parallel; whichever lands second keeps both additions.
+15. **German capitals for a lowercase utterance.** Alexa's recognizer may hand the slot over in
+    lowercase ("milch ohne laktose"). The Siri splitter already capitalizes an item's first
+    letter; when the whole phrase has no capital letter, the function also capitalizes the other
+    words of each name except small words ("Milch ohne Laktose"), as German nouns are typed. A
+    phrase that has capitals is left as heard.
+16. **A no without an install id (after job 33b).** Since 33b an install has an id only after a
+    yes and deletes it on a no. The app records a no under the id it had (before deleting it), and
+    an install that never had one under the nil UUID (one row per user for all such installs). An
+    answer the user gives (`p_answered`) always becomes their newest; a sign-in or start records
+    only a new or changed answer. A yes without an install id is refused: events need one.

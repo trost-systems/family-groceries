@@ -51,6 +51,15 @@ fi
 
 "$(dirname "$0")/mcp-smoke.sh" "$fn/mcp" || fail 'mcp: scripts/mcp-smoke.sh (above)'
 
+# Job 31: Alexa signs every request; an unsigned one is refused before anything is read.
+request alexa -X POST "$fn/alexa" -H 'content-type: application/json' \
+  -d '{"version":"1.0","request":{"type":"LaunchRequest","timestamp":"2026-01-01T00:00:00Z"}}'
+if [[ $(status alexa) == 400 ]] && jq -e '.error == "missing_signature"' "$work/alexa.body" >/dev/null 2>&1; then
+  pass 'alexa without a signature: 400 missing_signature'
+else
+  fail "alexa without a signature: want 400 {\"error\":\"missing_signature\"}; $(got alexa)"
+fi
+
 if ((failures > 0)); then
   echo "$failures check(s) failed against $fn"
   exit 1

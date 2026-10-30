@@ -96,7 +96,7 @@ retried batch is not counted twice), `household_id` (null before joining), `plat
 | `household_created` | the server created the household; once, also when a retry finds the household a lost answer made (job 22) | `default_stores` (true: dm, Lidl and Edeka; false: Skip) |
 | `invite_accepted` | the server confirmed a new membership from an invite (`accept_invite` answered `joined`; not when the user was a member already, except as the answer to a try whose answer was lost) | `method`: `link` (the code came from `/join/<code>`, `?invite=` or the pending invite kept on the device, and was not edited) or `code` (typed) |
 | `invite_sent` | job 22: an invite was handed out: the share sheet opened, or its link or code was copied; once per tap | `channel` (`share_sheet`, `copy_link`, `copy_code`), `context` (`onboarding`: Step 3 after creating; `settings`: More, Einladungen). Never the code, the link or the household's name |
-| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick); `actor_role` (`owner`, `member`); `household_size` |
+| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick), `alexa` (server only, job 31: added through the Alexa skill, sent by the `alexa` function); `actor_role` (`owner`, `member`); `household_size` |
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
@@ -119,7 +119,8 @@ Rules that keep it one event per user action (AC3, AC9):
 - A tick of an item that is not on the list, an add of something already on it, a reorder that
   leaves the order as it was, one refused offline, or one the server rejected: nothing.
 - Hiding a category in a store's layout is not a reorder.
-- MCP and Siri adds and ticks are not counted (PM, 2026-10-25): the app only.
+- MCP and Siri adds and ticks are not counted (PM, 2026-10-25): the app only. Alexa adds are
+  (Spec #7, job 31): see "Alexa" below.
 - `item_categorized` is the one list event sent on the server's answer, not on the tap: only the
   server knows how it categorized. An op is acknowledged once, so it is still one event per add.
 
@@ -127,6 +128,24 @@ Adding an event (jobs 21 and 22): add it to `eventCatalog` with a rule per prope
 `app/test/analytics/events_test.dart`, and a row here. Free text can't be added by accident: a
 property needs an explicit rule (`OneOf`, `IntIn`, `IsBool`), and `checkContext` refuses any other
 key. Server events: `serverEventCatalog` in `telemetry.ts`.
+
+## Alexa (job 31)
+
+An item added through the Alexa skill is `item_added` with `source: alexa`, `actor_role` and
+`household_size`, sent by the `alexa` edge function (`serverEventCatalog` in `telemetry.ts`, which
+allows nothing else), once per item that was not on the list yet.
+
+Consent is per install and lives on the device, so the app tells the server each install's answer
+(`record_analytics_consent(p_install, p_consent, p_internal)`, table `analytics_consents`, no
+client may read it): when the user answers, switches it under More, marks the install internal,
+or signs in (an account new on an install that already answered). A no is recorded under the
+install id it had before job 33b's no deletes it, or, for an install that never had one, under the
+nil UUID. An answer the user gives is always their newest; a start or sign-in only records a new or
+changed answer, so it never outranks a newer answer on another device. The function
+counts an Alexa add only while the user's newest answer is yes, with that install as
+`distinct_id` and its internal mark as `is_internal`; otherwise nothing is sent. A build without a
+key never records an answer, so its users' Alexa adds are never counted. Item names, the
+utterance, Alexa's user id and tokens are never sent.
 
 ## Never sent
 

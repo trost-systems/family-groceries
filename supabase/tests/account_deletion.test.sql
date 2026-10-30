@@ -262,8 +262,8 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
 create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
-  array['access_tokens', 'account', 'connected_apps', 'exported_at', 'feedback', 'format', 'history',
-        'household', 'invites_created', 'items_added', 'profile', 'version'],
+  array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'connected_apps', 'exported_at',
+        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'profile', 'version'],
   'the export has the documented sections'
 );
 select is(
@@ -292,7 +292,9 @@ select is(
       'build', '7', 'os_version', 'iOS 18.1', 'locale', 'de', 'household_id', (select id from he),
       'is_internal', true)),
     'connected_apps', jsonb_build_array(jsonb_build_object('client_name', 'Claude', 'scopes', 'openid email',
-      'granted_at', now(), 'revoked_at', null))
+      'granted_at', now(), 'revoked_at', null)),
+    'analytics_decisions', '[]'::jsonb,
+    'alexa_links', '[]'::jsonb
   ),
   'the export holds the user''s own data and nothing of the other member''s'
 );

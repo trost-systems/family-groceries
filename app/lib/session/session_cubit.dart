@@ -62,6 +62,23 @@ class SessionCubit(
   final PendingInvite? pendingInvite,
 }) extends Cubit<Session> {
   this : super(const SessionLoading()) {
+    // Job 31: the server learns each install's analytics answer, so an add
+    // over Alexa is counted only after a yes (docs/ANALYTICS.md).
+    analytics?.recordConsent =
+        ({
+          required installId,
+          required consent,
+          required internal,
+          required answered,
+        }) => _client.rpc<void>(
+          'record_analytics_consent',
+          params: {
+            'p_install': installId,
+            'p_consent': consent,
+            'p_internal': internal,
+            'p_answered': answered,
+          },
+        );
     // Also replays a failed browser sign-in that supabase_flutter read from
     // the return URL before this cubit existed.
     _auth = _client.auth.onAuthStateChange.listen(

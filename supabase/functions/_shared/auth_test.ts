@@ -56,7 +56,13 @@ async function failsWith(req: Request, reason: AuthFailure) {
 
 Deno.test('an OAuth access token authenticates as its user, household and client', async () => {
   const auth = await authenticate(bearer(await token({ client_id: 'c-1', scope: 'openid' })), deps);
-  assertEquals(auth, { userId: USER, householdId: HOUSEHOLD, via: 'oauth', clientId: 'c-1' });
+  assertEquals(auth, {
+    userId: USER,
+    householdId: HOUSEHOLD,
+    via: 'oauth',
+    clientId: 'c-1',
+    sessionId: SESSION,
+  });
 });
 
 Deno.test('an app session token authenticates as a session', async () => {

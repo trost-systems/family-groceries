@@ -53,6 +53,18 @@ abstract interface class AnalyticsStore() {
 @immutable
 class const AnalyticsUser({final String? email, final String? householdId});
 
+/// Records this install's answer for the signed-in user on the server
+/// (`record_analytics_consent`, job 31), so server events such as an add over
+/// Alexa follow the same consent. [installId] is null for an install that
+/// said no and so has none; [answered] is true when the user just answered,
+/// which makes it the user's newest answer.
+typedef ConsentRecorder = Future<void> Function({
+  required String? installId,
+  required bool consent,
+  required bool internal,
+  required bool answered,
+});
+
 /// Build facts every event carries.
 @immutable
 class const AnalyticsConfig({
@@ -110,6 +122,13 @@ class Analytics(
   Timer? _flushTimer;
   Future<void>? _inFlight;
   var _failures = 0;
+
+  /// Set by the session: where this install's answer goes for the signed-in
+  /// user.
+  ConsentRecorder? recordConsent;
+
+  /// The answer last recorded, so a token refresh does not record it again.
+  String? _recorded;
 
   /// The install id `first_open` went out for, claimed before the write so
   /// two quick yeses send one.
@@ -169,7 +188,9 @@ class Analytics(
     if (user == null) {
       // Nothing from one account is sent under the next.
       _dropQueue();
+      _recorded = null;
     }
+    _syncConsent();
   }
 
   /// The user's answer on the consent screen or the More toggle. Yes makes
@@ -179,6 +200,8 @@ class Analytics(
   Future<void> decide({required bool granted}) async {
     emit(_with(consent: granted));
     if (!granted) {
+      // The server learns the no under the id it had (job 31) before it goes.
+      _syncConsent(answered: true, installId: _installId);
       _dropQueue();
       _installId = null;
       _firstOpenFor = null;
@@ -188,6 +211,7 @@ class Analytics(
     }
     await _store.saveConsent(granted: true);
     final id = _installId ?? await _ownInstallId();
+    _syncConsent(answered: true);
     if (_firstOpenFor != id && _live) {
       _firstOpenFor = id;
       track('first_open');
@@ -204,6 +228,7 @@ class Analytics(
   /// More's switch for test devices: every event then says internal.
   Future<void> markInternalInstall({required bool internal}) async {
     emit(_with(internalInstall: internal));
+    _syncConsent();
     await _store.saveInternalInstall(internal: internal);
   }
 
@@ -358,6 +383,44 @@ class Analytics(
     _queue.clear();
     _flushTimer?.cancel();
     _flushTimer = null;
+  }
+
+  /// Records the answer of this install for the signed-in user: always when
+  /// the user just [answered], otherwise (sign-in, start) once per change. A
+  /// failure is retried on the next sign-in or app start.
+  void _syncConsent({bool answered = false, String? installId}) {
+    final record = recordConsent;
+    final consent = state.consent;
+    final user = _user;
+    if (!enabled || record == null || consent == null || user == null) {
+      return;
+    }
+    // A yes always has an install id; a no keeps the one it had, if any.
+    final id = answered ? installId ?? _installId : _installId;
+    if (consent && id == null) {
+      return;
+    }
+    final internal = internalNow;
+    final key = '${user.email}|$consent|$internal|$id';
+    if (!answered && key == _recorded) {
+      return;
+    }
+    _recorded = key;
+    unawaited(
+      Future.sync(
+        () => record(
+          installId: id,
+          consent: consent,
+          internal: internal,
+          answered: answered,
+        ),
+      ).catchError((Object e) {
+        if (_recorded == key) {
+          _recorded = null;
+        }
+        debugPrint('analytics: consent not recorded: ${e.runtimeType}');
+      }),
+    );
   }
 
   AnalyticsState _with({bool? consent, bool? internalInstall}) =>

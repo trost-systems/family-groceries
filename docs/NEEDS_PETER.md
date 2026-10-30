@@ -892,3 +892,36 @@ hummlist.com's production build fails while a `[PETER: …]` is left.
   eu-central-1 (`x-region` / `forceFunctionRegion`) if you want "EU only";
   the MCP consent text naming the AI provider (H-17, job 33b or a
   follow-up).
+
+## Job 31: Alexa skill "Hummlist"
+
+Everything on our side is built and tested on the CI stack ([ALEXA.md](ALEXA.md)). These steps
+need you or Hummlist Ops at Amazon; nothing was done there.
+
+1. **Amazon Developer account on hello@hummlist.com** (decided). You create it and do the
+   sign-in and 2FA once; Hummlist Ops takes over the console after that.
+2. **Create and deploy the skill (Hummlist Ops, after 1).** The exact commands are in
+   [ALEXA.md, "Deploy"](ALEXA.md#deploy-after-peters-amazon-developer-sign-in): `ask configure`,
+   `ask deploy --target skill-metadata` from `alexa/`, `scripts/alexa-oauth-client.sh <vendor id>`
+   (registers the account-linking client; prints its secret once, straight into the Alexa
+   console), `ask smapi update-account-linking-info` with PKCE on, then the lead sets the skill id
+   for the function: `supabase secrets set ALEXA_SKILL_ID=<skill id> --project-ref
+   jdwqrallbpdbshrdhenk`. Until that secret is set, the deployed function refuses every request
+   (400), which is safe.
+3. **Beta invites: Peter, Lea, Max and Barbie first (needs your yes).** Console → Distribution →
+   Beta Test, up to 500 testers by e-mail, no certification needed. Then the beta checklist in
+   [ALEXA.md, "Beta and certification"](ALEXA.md#beta-and-certification) on a real Echo: AC1
+   (Milch visible in the app within 5 s), AC3 (spoken read-back), AC12 (the four of you use it
+   through the invite).
+4. **Certification (needs your yes, and the public privacy policy naming the skill).** Job 24's
+   privacy page must say: the Alexa skill "Hummlist" sends what you say to Amazon, which turns it
+   into text; Hummlist receives only that text for the items to add or the request to read the
+   list, from the account you linked, and stores the items like any others; the link can be
+   removed in the Alexa app or under Mehr → Zugänge; with analytics consent in the app, an add
+   over Alexa is counted without its content. Hummlist Ops prepares the certification form
+   (privacy URL, testing instructions draft in ALEXA.md, a test account) as a draft for your
+   review. Amazon may ask why the invocation name is one word: "Hummlist" is the app's brand.
+5. **Approve the skill name and invocation name "Hummlist"** (`hummlist`), as in
+   `alexa/skill-package/skill.json` and `interactionModels/custom/de-DE.json`, and the example
+   phrases "Alexa, sag Hummlist, füg Milch und Eier hinzu", "Alexa, frag Hummlist, was auf der
+   Liste steht", "Alexa, öffne Hummlist".

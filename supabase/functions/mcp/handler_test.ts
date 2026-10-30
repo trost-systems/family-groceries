@@ -109,7 +109,12 @@ Deno.test('app session tokens are not accepted as MCP credentials', async () => 
 });
 
 Deno.test('OAuth and PAT credentials reach the MCP server', async () => {
-  for (const auth of [{ ...USER, via: 'oauth', clientId: 'c' }, { ...USER, via: 'pat' }] as const) {
+  for (
+    const auth of [{ ...USER, via: 'oauth', clientId: 'c', sessionId: 's' }, {
+      ...USER,
+      via: 'pat',
+    }] as const
+  ) {
     const res = await handle(post(), deps(auth));
     assertEquals(await res.json(), { served: auth.via });
   }

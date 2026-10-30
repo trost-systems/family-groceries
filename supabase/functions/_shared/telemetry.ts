@@ -29,6 +29,8 @@ const oneOf = (...values: string[]): Rule => (v) => typeof v === 'string' && val
 const matches = (re: RegExp): Rule => (v) => typeof v === 'string' && re.test(v);
 const amount: Rule = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v < 10_000;
 const uuid = matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+const intIn = (min: number, max: number): Rule => (v) =>
+  typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 
 const revenue: Record<string, Rule> = {
   product_id: matches(/^[a-z0-9_.]{1,64}$/),
@@ -48,6 +50,13 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
   purchase_completed: revenue,
   purchase_refunded: revenue,
   purchase_restored: { product_id: revenue.product_id, app_store: revenue.app_store },
+  // Job 31: an item added over Alexa, the app's item_added with source alexa; once per added
+  // item, never for one already on the list. Never the name.
+  item_added: {
+    source: oneOf('alexa'),
+    actor_role: oneOf('owner', 'member'),
+    household_size: intIn(1, 100),
+  },
 };
 
 /** Properties every server event carries besides its own. */
@@ -81,6 +90,8 @@ export function checkServerEvent(event: string, properties: Record<string, unkno
 export interface Subject {
   installId: string;
   householdId: string | null;
+  /** The install is internal (app/lib/analytics/internal.dart); the deployment's flag also counts. */
+  internal?: boolean;
 }
 
 export class Telemetry {
@@ -141,7 +152,7 @@ export class Telemetry {
       event_id: id,
       platform: 'server',
       app_version: 'server',
-      is_internal: this.config.internal,
+      is_internal: this.config.internal || subject.internal === true,
       $geoip_disable: true,
       $process_person_profile: false,
       $lib: 'hummlist-edge',
