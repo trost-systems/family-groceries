@@ -40,8 +40,13 @@ enum MorePage() {
 
 /// The More tab: household, access, account, sign-out, settings and the
 /// legal pages, then the app version.
-class const MoreScreen({super.key, final MorePage? page})
-    extends StatelessWidget {
+class const MoreScreen({
+  super.key,
+  final MorePage? page,
+
+  /// Shows "Hilfe & Kontakt"; tests pass false to see a release build.
+  @visibleForTesting final bool showHelp = supportLinkShown,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -58,7 +63,10 @@ class const MoreScreen({super.key, final MorePage? page})
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(width: 360, child: _MoreList(selected: shown)),
+            SizedBox(
+              width: 360,
+              child: _MoreList(showHelp: showHelp, selected: shown),
+            ),
             const VerticalDivider(width: 1),
             Expanded(
               child: Column(
@@ -100,7 +108,7 @@ class const MoreScreen({super.key, final MorePage? page})
     }
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabMore)),
-      body: const _MoreList(),
+      body: _MoreList(showHelp: showHelp),
     );
   }
 
@@ -124,7 +132,8 @@ class const _Page(final MorePage page) extends StatelessWidget {
   };
 }
 
-class const _MoreList({final MorePage? selected}) extends StatelessWidget {
+class const _MoreList({required final bool showHelp, final MorePage? selected})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -196,6 +205,19 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           detail: l10n.feedbackRowHint,
           onTap: () => unawaited(showFeedbackSheet(context)),
         ),
+        if (showHelp)
+          _Row(
+            key: const ValueKey('more-help'),
+            icon: Icons.help_outline,
+            label: l10n.helpRow,
+            detail: l10n.helpRowHint,
+            external: true,
+            onTap: () => unawaited(
+              openLegalPage(
+                supportUrl(Localizations.localeOf(context).languageCode),
+              ),
+            ),
+          ),
         _Section(l10n.settingsTitle),
         _Row(
           key: const ValueKey('more-settings'),

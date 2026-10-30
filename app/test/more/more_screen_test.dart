@@ -1,6 +1,11 @@
+import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/guides.dart';
+import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/more/more_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../app/fake_launcher.dart';
@@ -191,6 +196,54 @@ void main() {
       expect(key('more-screen'), findsOneWidget, reason: 'More stays open');
     });
   }
+
+  group('Hilfe & Kontakt (job 24)', () {
+    for (final (device, url) in const [
+      (Locale('de', 'DE'), 'https://hummlist.com/support'),
+      (Locale('en', 'US'), 'https://hummlist.com/en/support'),
+    ]) {
+      testWidgets('opens the ${device.languageCode} page in the browser', (
+        tester,
+      ) async {
+        final launcher = fakeLauncher();
+        final more = await pumpMore(tester, device: [device]);
+        await tester.scrollUntilVisible(key('more-help'), 200);
+        expect(
+          find.text(
+            device.languageCode == 'de' ? 'Hilfe & Kontakt' : 'Help & contact',
+          ),
+          findsOneWidget,
+        );
+        await tapKey(tester, 'more-help');
+        expect(launcher.opened, [
+          (url, PreferredLaunchMode.externalApplication),
+        ]);
+        expect(path(more), morePath, reason: 'not the app router');
+      });
+    }
+
+    testWidgets('is shown while drafts are wanted, not before publishing', (
+      tester,
+    ) async {
+      // Debug builds and tests show drafts; release builds don't.
+      expect(supportPagePublished, isFalse, reason: 'Peter has not approved');
+      expect(supportLinkShown, Environment.legalDrafts);
+      expect(Environment.legalDrafts, kDebugMode);
+      await pumpMore(
+        tester,
+        routes: [
+          GoRoute(
+            path: morePath,
+            builder: (_, _) => const MoreScreen(showHelp: false),
+          ),
+        ],
+      );
+      await tester.scrollUntilVisible(key('more-version'), 200);
+      expect(key('more-feedback'), findsOneWidget);
+      expect(key('more-help'), findsNothing);
+      expect(find.text('Hilfe & Kontakt'), findsNothing);
+    });
+  });
 
   group('from 840 px', () {
     testWidgets('More shows the list beside the access page', (tester) async {

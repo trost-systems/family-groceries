@@ -1544,6 +1544,18 @@ abstract class AppLocalizations {
   /// **'Fehler, Ideen und Fragen an Peter'**
   String get feedbackRowHint;
 
+  /// More: opens the help and contact page on hummlist.com in the browser
+  ///
+  /// In de, this message translates to:
+  /// **'Hilfe & Kontakt'**
+  String get helpRow;
+
+  /// More: under Hilfe & Kontakt
+  ///
+  /// In de, this message translates to:
+  /// **'Fragen, Anleitungen und unsere E-Mail-Adresse'**
+  String get helpRowHint;
+
   /// Feedback form: label of the text field
   ///
   /// In de, this message translates to:

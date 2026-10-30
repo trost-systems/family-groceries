@@ -67,4 +67,5 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Alexa skill](./alexa.md) covers adding and reading the list by voice through the Alexa skill "Hummlist": read-back, duplicates, the one re-prompt, account linking through the consent page, revocation under Zugänge or by disabling the skill, and refused unsigned or stale requests (locally through `scripts/alexa-say.sh`).
 - [Account](./account.md) covers Mehr → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
 - [Hosted backend](./hosted-backend.md) covers the hosted project: the health check that reads Postgres, the smoke test after every deploy, the daily keepalive, nightly encrypted backups with their restore drill, and rolling edge functions back.
+- [Help page and legal links](./legal.md) covers the help and contact page on hummlist.com (draft until Peter's OK) and the More entry that opens it.
 - [Hosted web app](./web-hosting.md) covers the production web app on Vercel: deep links, cache headers, the Google and Apple sign-in pages, and the build Vercel runs.

@@ -932,3 +932,22 @@ need you or Hummlist Ops at Amazon; nothing was done there.
    `alexa/skill-package/skill.json` and `interactionModels/custom/de-DE.json`, and the example
    phrases "Alexa, sag Hummlist, füg Milch und Eier hinzu", "Alexa, frag Hummlist, was auf der
    Liste steht", "Alexa, öffne Hummlist".
+
+## Job 24: help and contact page (2026-10-30)
+
+Not legal advice. The privacy policy itself is job 33a's (#105); this is the help page and the
+data map behind the store forms.
+
+- **Approve the text** of the help page, German and English: `site/content/legal/support.md`
+  and `support-en.md` (screenshots in `docs/screenshots/job-24/`, live on the hummlist-site
+  preview the Lead sends you). Each page shows "ENTWURF: Freigabe durch Peter" until you OK it.
+- **Support address:** the page uses support@hummlist.com, as the Impressum does. Keep it, or
+  name another (hello@ / feedback@ exist per 33a's policy). No placeholder is left on the page.
+- **OK to publish** (a small PR by the Lead, also needs your OK): remove `draft: true` from both
+  files, turn on the footer link (`supportPublished` in `site/config.json`), set `supportPagePublished = true` in `app/lib/app/guides.dart` so More
+  shows "Hilfe & Kontakt" in release builds. Until then hummlist.com/support answers 404 and the
+  row is only in debug and test builds.
+- **Data map:** `docs/PRIVACY_DATA_MAP.md` collects what is stored where, why and how long. Job
+  14 fills the App Store privacy label and Play's data safety form from it. Its one
+  open `[PETER: …]` is the policy's own (transfer basis for the AI support assistant).
+- Optional: have a lawyer or a generator check the policy and this page.

@@ -55,7 +55,7 @@ test('OG and Twitter tags equal the frontmatter', () => {
 
 test('guides show the localized updated date', () => {
   const { page } = buildSite();
-  assert.match(page('/de/anleitungen/siri-kurzbefehl').querySelector('main').text, /Aktualisiert: 27\. Oktober 2026/);
+  assert.match(page('/de/anleitungen/siri-kurzbefehl').querySelector('main').text, /Aktualisiert: 30\. Oktober 2026/);
   assert.match(page('/en/guides/siri-shortcut').querySelector('main').text, /Updated: October 27, 2026/);
 });
 

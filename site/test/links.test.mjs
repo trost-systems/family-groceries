@@ -56,7 +56,7 @@ test('the site name links to the locale index', () => {
 
 const footer = (doc) => doc.querySelectorAll('footer a').map((a) => [a.text, a.getAttribute('href')]);
 
-const LEGAL_PATHS = ['/datenschutz', '/en/privacy', '/privacy', '/support'];
+const LEGAL_PATHS = ['/datenschutz', '/en/privacy', '/privacy', '/support', '/en/support'];
 
 test('with nothing published the footer links only the imprint', () => {
   const { outDir, page } = buildSite({ config: { privacyPublished: false, supportPublished: false } });
@@ -95,11 +95,12 @@ test('with support published and its page present the footer links it too', () =
     files: { 'legal/support.md': legal({ locale: 'de', path: '/support', key: 'support' }) },
   });
   assert.deepEqual(footer(page('/de/anleitungen')), [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Hilfe', '/support']]);
-  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ['Support', '/support']]);
+  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ['Support', '/en/support']]);
 });
 
 test('a published flag without its page fails the build on the broken link', () => {
-  assert.throws(() => buildSite({ config: { supportPublished: true } }), /broken internal link \/support/);
+  // Production leaving the drafts out breaks the link the same way (draft.test.mjs).
+  assert.throws(() => buildSite({ config: { supportPublished: true }, files: { 'legal/support.md': null, 'legal/support-en.md': null } }), /broken internal link \/(en\/)?support/);
   assert.throws(
     () => buildSite({ config: { privacyPublished: true }, files: { 'legal/privacy.md': null } }),
     /broken internal link \/en\/privacy/,

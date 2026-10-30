@@ -38,12 +38,22 @@ or a link to a page that doesn't exist fails the build with the file and the rea
 - `content/indexes/<locale>.md`: the index intro (`title`, `description`, `locale`); the guide list
   is generated.
 - `content/legal/*.md`: pages at a fixed `path` (`title`, `description`, `locale`, `path`,
-  `translation_key`, `updated`), such as `/impressum` and `/en/imprint`, `/datenschutz` and
-  `/en/privacy` (`/privacy` redirects there, `vercel.json`). Job 24 adds `/support`. A heading
-  ending in `{#id}` gets that anchor: `/datenschutz#rechte` is the stores' privacy-choices URL.
+  `translation_key`, `updated`, optional `draft`), such as `/impressum` and `/en/imprint`,
+  `/datenschutz` and `/en/privacy` (`/privacy` redirects there, `vercel.json`), and the help
+  pages `/support` and `/en/support` (job 24). A heading ending in `{#id}` gets that anchor:
+  `/datenschutz#rechte` is the stores' privacy-choices URL.
 - `config.json`: `privacyPublished` shows the Datenschutz/Privacy footer links,
   `supportPublished` the Hilfe/Support one. Set a flag to `true` only together with its pages;
   a footer link to a missing page fails the build. Impressum is always linked.
+
+## Drafts
+
+`draft: true` in a page's or guide's frontmatter keeps it unpublished: preview and local builds
+show it with a banner ("ENTWURF: Freigabe durch Peter" / "DRAFT: pending Peter's approval"), an
+HTML comment and `noindex`; Vercel production builds (`VERCEL_ENV=production`) leave it out, so
+its path stays a 404. The help pages `/support` and `/en/support` are drafts until Peter approves
+them (job 24). To publish, delete the `draft: true` line and then set the footer flag; a footer
+link to a draft fails the production build.
 
 ## Placeholders
 

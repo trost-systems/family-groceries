@@ -894,6 +894,12 @@ class AppLocalizationsDe extends AppLocalizations {
   String get feedbackRowHint => 'Fehler, Ideen und Fragen an Peter';
 
   @override
+  String get helpRow => 'Hilfe & Kontakt';
+
+  @override
+  String get helpRowHint => 'Fragen, Anleitungen und unsere E-Mail-Adresse';
+
+  @override
   String get feedbackMessage => 'Deine Nachricht';
 
   @override

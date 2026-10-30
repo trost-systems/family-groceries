@@ -29,7 +29,7 @@ Der Kurzbefehl meldet sich mit einem persönlichen Zugriffstoken an, nicht
 mit deinem Passwort.
 
 1. Öffne die Hummlist-App.
-2. Tippe oben rechts auf **Menü** (⋮) und dann auf **Zugänge**.
+2. Tippe auf **Mehr** und dann auf **Zugänge**.
 3. Tippe unter **Zugriffstoken** auf **Token erstellen**.
 4. Gib als Name `Siri` ein und tippe auf **Erstellen**.
 5. Kopiere den Token. Er beginnt mit `fgp_`.
@@ -45,7 +45,7 @@ bekommt danach keinen Zugriff mehr.
 
 > **Achtung:** Teile den fertigen Kurzbefehl nicht mit anderen. Er
 > enthält deinen persönlichen Token. Wenn er doch in fremde Hände gerät,
-> widerrufe den Token in der App unter **Menü** → **Zugänge** (der Knopf
+> widerrufe den Token in der App unter **Mehr** → **Zugänge** (der Knopf
 > heißt **<Tokenname> widerrufen**, zum Beispiel **Siri widerrufen**).
 
 ## 2. Kurzbefehl anlegen
@@ -83,7 +83,7 @@ Füge dann die drei Aktionen in dieser Reihenfolge hinzu. Suche jede über
 
        > **Achtung:** Teile den fertigen Kurzbefehl nicht mit anderen. Er
        > enthält deinen persönlichen Token. Wenn er doch in fremde Hände gerät,
-       > widerrufe den Token in der App unter **Menü** → **Zugänge** (der Knopf
+       > widerrufe den Token in der App unter **Mehr** → **Zugänge** (der Knopf
        > heißt **<Tokenname> widerrufen**, zum Beispiel **Siri widerrufen**).
    - **Hauptteil der Anfrage:** JSON
      - Tippe auf **Neues Feld hinzufügen** und wähle **Text**.
