@@ -5,28 +5,19 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/settings/access_cubit.dart';
 import 'package:family_groceries/settings/access_repository.dart';
-import 'package:family_groceries/settings/account_repository.dart';
-import 'package:family_groceries/settings/delete_account_dialog.dart';
-import 'package:family_groceries/settings/export_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Ways in from outside the app: the MCP endpoint, personal access tokens
-/// and OAuth-connected apps. At the bottom, exporting and deleting the
-/// account. A page of the More tab, which gives it its frame.
-class const SettingsScreen({
+/// and OAuth-connected apps (`/more/access`). A page of the More tab, which
+/// gives it its frame.
+class const AccessScreen({
   super.key,
 
   /// Overrides the Supabase repository, for tests.
   final AccessRepository? repository,
-
-  /// Opens scrolled to the account section (`/settings?section=account`).
-  final bool showAccount = false,
-
-  /// Overrides the platform's download or share sheet, for tests.
-  final ExportSaver saveExport = platformSaveExport,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider(
@@ -37,111 +28,59 @@ class const SettingsScreen({
       unawaited(cubit.load());
       return cubit;
     },
-    child: _Settings(showAccount: showAccount, saveExport: saveExport),
+    child: const _Access(),
   );
 }
 
-class const _Settings({
-  required final bool showAccount,
-  required final ExportSaver saveExport,
-}) extends StatefulWidget {
-  @override
-  State<_Settings> createState() => _SettingsState();
-}
-
-class _SettingsState() extends State<_Settings> {
-  final _account = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.showAccount) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _revealAccount());
-    }
-  }
-
-  void _revealAccount() {
-    if (_account.currentContext case final context?) {
-      Scrollable.ensureVisible(context);
-    }
-  }
-
+class const _Access() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = context.watch<AccessCubit>().state;
-    return BlocListener<AccessCubit, AccessState>(
-      // Loaded tokens and apps push the section down; follow it.
-      listenWhen: (_, _) => widget.showAccount,
-      listener: (_, _) =>
-          WidgetsBinding.instance.addPostFrameCallback((_) => _revealAccount()),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          // Not a lazy ListView: the account section must exist to scroll
-          // to it.
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _Header(l10n.mcpServer),
-                ListTile(
-                  title: const SelectionArea(child: Text(Environment.mcpUrl)),
-                  subtitle: Text(l10n.mcpServerBody),
-                  trailing: IconButton(
-                    tooltip: l10n.copy,
-                    icon: const Icon(Icons.copy),
-                    onPressed: () => _copy(context, Environment.mcpUrl),
-                  ),
-                ),
-                _Header(l10n.accessTokens),
-                ..._section(
-                  context,
-                  state.tokens,
-                  empty: l10n.noTokens,
-                  tile: (token) => _TokenTile(token: token),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.add),
-                      label: Text(l10n.createToken),
-                      onPressed: () => unawaited(_createToken(context)),
-                    ),
-                  ),
-                ),
-                _Header(l10n.connectedApps),
-                ..._section(
-                  context,
-                  state.apps,
-                  empty: l10n.noConnectedApps,
-                  tile: (app) => _AppTile(app: app),
-                ),
-                _Header(l10n.account, key: _account),
-                Builder(
-                  builder: (tile) => ListTile(
-                    key: const ValueKey('account-export'),
-                    leading: const Icon(Icons.download),
-                    title: Text(l10n.accountExport),
-                    subtitle: Text(l10n.accountExportBody),
-                    onTap: () => unawaited(_export(tile, widget.saveExport)),
-                  ),
-                ),
-                ListTile(
-                  key: const ValueKey('account-delete'),
-                  leading: const Icon(Icons.delete_forever),
-                  iconColor: Theme.of(context).colorScheme.error,
-                  textColor: Theme.of(context).colorScheme.error,
-                  title: Text(l10n.accountDelete),
-                  onTap: () => unawaited(deleteAccount(context)),
-                ),
-              ],
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: ListView(
+          key: const ValueKey('access-screen'),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            _Header(l10n.mcpServer),
+            ListTile(
+              title: const SelectionArea(child: Text(Environment.mcpUrl)),
+              subtitle: Text(l10n.mcpServerBody),
+              trailing: IconButton(
+                tooltip: l10n.copy,
+                icon: const Icon(Icons.copy),
+                onPressed: () => _copy(context, Environment.mcpUrl),
+              ),
             ),
-          ),
+            _Header(l10n.accessTokens),
+            ..._section(
+              context,
+              state.tokens,
+              empty: l10n.noTokens,
+              tile: (token) => _TokenTile(token: token),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.createToken),
+                  onPressed: () => unawaited(_createToken(context)),
+                ),
+              ),
+            ),
+            _Header(l10n.connectedApps),
+            ..._section(
+              context,
+              state.apps,
+              empty: l10n.noConnectedApps,
+              tile: (app) => _AppTile(app: app),
+            ),
+          ],
         ),
       ),
     );
@@ -221,31 +160,6 @@ Future<void> _attempt(
   }
 }
 
-Future<void> _export(BuildContext tile, ExportSaver save) async {
-  final l10n = AppLocalizations.of(tile);
-  final messenger = ScaffoldMessenger.of(tile);
-  final box = tile.findRenderObject() as RenderBox?;
-  final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
-  final message = await () async {
-    try {
-      final json = await tile.read<AccountRepository>().export();
-      final path = await save(
-        exportFileName(DateTime.now()),
-        json,
-        origin: origin,
-      );
-      return path == null ? l10n.exportDone : l10n.exportDoneAt(path);
-    } on AccountError catch (e) {
-      return switch (e) {
-        AccountOffline() => l10n.exportOffline,
-        AccountFailed(:final code) => l10n.exportFailed(code),
-        AppleReauthCanceled() => l10n.exportFailed('canceled'),
-      };
-    }
-  }();
-  messenger.showSnackBar(SnackBar(content: Text(message)));
-}
-
 Future<void> _createToken(BuildContext context) async {
   final cubit = context.read<AccessCubit>();
   final name = await showDialog<String>(
@@ -267,7 +181,7 @@ Future<void> _createToken(BuildContext context) async {
   });
 }
 
-class const _Header(final String text, {super.key}) extends StatelessWidget {
+class const _Header(final String text) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),

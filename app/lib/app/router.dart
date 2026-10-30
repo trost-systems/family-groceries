@@ -22,9 +22,18 @@ const welcomePath = '/welcome';
 /// first sign-in. Not [consentPath], which is MCP's OAuth consent.
 const analyticsConsentPath = '/analytics-consent';
 const consentPath = '/oauth/consent';
-const settingsPath = '/settings';
 const morePath = '/more';
 const privacyPath = '/more/privacy';
+
+/// More's Zugänge: the MCP server, tokens and connected apps.
+const accessPath = '/more/access';
+
+/// More's Konto: export and account deletion.
+const accountPath = '/more/account';
+
+/// Before job 29d both were one page here (Konto at `?section=account`);
+/// old links redirect ([legacySettingsRedirect]).
+const settingsPath = '/settings';
 String joinPath(String code) => '/join/$code';
 
 /// The only auth gate. An invite code from a `/join/<code>` link survives
@@ -67,8 +76,18 @@ String? authRedirect(Session session, Uri uri, {bool askConsent = false}) {
 
 /// The More tab's pages; the list is `/` itself. Any other path goes to
 /// the list.
-bool _inShell(String path) =>
-    path == settingsPath || path == morePath || path == privacyPath;
+bool _inShell(String path) => const {
+  settingsPath,
+  morePath,
+  privacyPath,
+  accessPath,
+  accountPath,
+}.contains(path);
+
+/// Where an old `/settings` link goes now: Konto for `?section=account`,
+/// Zugänge otherwise.
+String legacySettingsRedirect(Uri uri) =>
+    uri.queryParameters['section'] == 'account' ? accountPath : accessPath;
 
 /// A same-origin consent URL, or null: `next` must not become an open
 /// redirect.
@@ -81,6 +100,30 @@ String? _consentOnly(String? next) {
       ? next
       : null;
 }
+
+/// The More tab's routes: the list at `/more` with its pages below it, so
+/// back pops to the list, and the redirect for old `/settings` links.
+List<RouteBase> moreTabRoutes() => [
+  GoRoute(
+    path: morePath,
+    builder: (_, _) => const MoreScreen(),
+    routes: [
+      for (final (path, page) in const [
+        ('privacy', MorePage.privacy),
+        ('access', MorePage.access),
+        ('account', MorePage.account),
+      ])
+        GoRoute(
+          path: path,
+          builder: (_, _) => MoreScreen(page: page),
+        ),
+    ],
+  ),
+  GoRoute(
+    path: settingsPath,
+    redirect: (_, state) => legacySettingsRedirect(state.uri),
+  ),
+];
 
 GoRouter buildRouter(SessionCubit session, Analytics analytics) => GoRouter(
   refreshListenable: Listenable.merge([
@@ -98,28 +141,7 @@ GoRouter buildRouter(SessionCubit session, Analytics analytics) => GoRouter(
             GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
           ],
         ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: morePath,
-              builder: (_, _) => const MoreScreen(),
-              routes: [
-                GoRoute(
-                  path: 'privacy',
-                  builder: (_, _) => const MoreScreen(page: MorePage.privacy),
-                ),
-              ],
-            ),
-            GoRoute(
-              path: settingsPath,
-              builder: (_, state) => MoreScreen(
-                page: state.uri.queryParameters['section'] == 'account'
-                    ? MorePage.account
-                    : MorePage.access,
-              ),
-            ),
-          ],
-        ),
+        StatefulShellBranch(routes: moreTabRoutes()),
       ],
     ),
     GoRoute(

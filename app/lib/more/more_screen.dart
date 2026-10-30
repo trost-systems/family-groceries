@@ -10,7 +10,8 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:family_groceries/settings/settings_screen.dart';
+import 'package:family_groceries/settings/access_screen.dart';
+import 'package:family_groceries/settings/account_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -20,11 +21,10 @@ import 'package:url_launcher/url_launcher.dart';
 /// The pages More opens: beside its list on wide screens, on their own
 /// on phones.
 enum MorePage() {
-  /// The MCP server, tokens and connected apps (`/settings`).
+  /// The MCP server, tokens and connected apps (`/more/access`).
   access,
 
-  /// The same page at export and account deletion
-  /// (`/settings?section=account`).
+  /// The signed-in email, export and account deletion (`/more/account`).
   account,
 
   /// The draft privacy page while none is published (`/more/privacy`).
@@ -42,7 +42,12 @@ class const MoreScreen({super.key, final MorePage? page})
     if (wide) {
       final shown = page ?? MorePage.access;
       return Scaffold(
-        appBar: AppBar(title: Text(l10n.tabMore)),
+        // The pages sit below `/more`; beside the list there is nothing to
+        // go back to.
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: Text(l10n.tabMore),
+        ),
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -68,22 +73,11 @@ class const MoreScreen({super.key, final MorePage? page})
       );
     }
     if (page case final page?) {
-      // `/settings` is not below `/more`, so there is nothing to pop: back
-      // (the app bar's or the system's) goes to More instead of leaving.
-      return PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) {
-            context.go(morePath);
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: BackButton(onPressed: () => context.go(morePath)),
-            title: Text(_title(l10n, page)),
-          ),
-          body: _Page(page),
-        ),
+      // Every page is a route below `/more`, so back (the app bar's or the
+      // system's) pops to the list, also after a deep link.
+      return Scaffold(
+        appBar: AppBar(title: Text(_title(l10n, page))),
+        body: _Page(page),
       );
     }
     return Scaffold(
@@ -93,7 +87,8 @@ class const MoreScreen({super.key, final MorePage? page})
   }
 
   static String _title(AppLocalizations l10n, MorePage page) => switch (page) {
-    MorePage.access || MorePage.account => l10n.accessTitle,
+    MorePage.access => l10n.accessTitle,
+    MorePage.account => l10n.account,
     MorePage.privacy => l10n.privacy,
   };
 }
@@ -101,11 +96,8 @@ class const MoreScreen({super.key, final MorePage? page})
 class const _Page(final MorePage page) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (page) {
-    // A new key re-scrolls when the wide layout switches between the two.
-    MorePage.access || MorePage.account => SettingsScreen(
-      key: ValueKey(page),
-      showAccount: page == MorePage.account,
-    ),
+    MorePage.access => const AccessScreen(),
+    MorePage.account => const AccountScreen(),
     MorePage.privacy => const _PrivacyDraft(),
   };
 }
@@ -156,7 +148,7 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           label: l10n.accessTitle,
           detail: l10n.accessRowHint,
           selected: selected == MorePage.access,
-          onTap: () => context.go(settingsPath),
+          onTap: () => context.go(accessPath),
         ),
         _Section(l10n.account),
         _Row(
@@ -165,7 +157,7 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           label: l10n.account,
           detail: l10n.accountRowHint,
           selected: selected == MorePage.account,
-          onTap: () => context.go('$settingsPath?section=account'),
+          onTap: () => context.go(accountPath),
         ),
         _Row(
           key: const ValueKey('more-sign-out'),

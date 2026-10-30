@@ -18,6 +18,7 @@
 - Job 17b, hide stores with no items on the list (they show only during an item drag, as drop targets): [docs/done/17b-hide-empty-stores.md](docs/done/17b-hide-empty-stores.md)
 - Job 29c, swipe left opens edit instead of delete; no item action needs a hold; a finger hold tolerates 18 px of drift (plus the review follow-up: recipes and fg help): [docs/done/29c-swipe-edit.md](docs/done/29c-swipe-edit.md)
 - Job 29b, no undo snackbar on a tick; "Zuletzt verwendet" shows the list's own rows, a tap puts an item back: [docs/done/29b-recently-used.md](docs/done/29b-recently-used.md)
+- Job 29d, More: Zugänge (`/more/access`) and Konto (`/more/account`) on separate pages, old `/settings` links redirect: [docs/done/29d-more-access-account.md](docs/done/29d-more-access-account.md)
 
 ## Job 1: foundation (2026-10-22)
 

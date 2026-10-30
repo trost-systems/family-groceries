@@ -1,6 +1,6 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/access_repository.dart';
-import 'package:family_groceries/settings/settings_screen.dart';
+import 'package:family_groceries/settings/access_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,7 +50,7 @@ class FakeAccessRepository() implements AccessRepository {
 void main() {
   late FakeAccessRepository repo;
 
-  Future<void> pumpSettings(
+  Future<void> pumpAccess(
     WidgetTester tester, {
     void Function(FakeAccessRepository repo)? seed,
   }) async {
@@ -61,7 +61,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('de'),
-        home: Scaffold(body: SettingsScreen(repository: repo)),
+        home: Scaffold(body: AccessScreen(repository: repo)),
       ),
     );
     await tester.pumpAndSettle();
@@ -75,7 +75,7 @@ void main() {
   const secret = 'fgp_secretsecretsecretsecretsecretsecret1234';
 
   testWidgets('shows the MCP endpoint and empty sections', (tester) async {
-    await pumpSettings(tester);
+    await pumpAccess(tester);
     expect(find.text('MCP-Server'), findsOneWidget);
     // Tests build for the production project, whose MCP URL is the proxy.
     expect(find.text('https://mcp.hummlist.com'), findsOneWidget);
@@ -84,7 +84,7 @@ void main() {
   });
 
   testWidgets('a new token is shown once, then only its hint', (tester) async {
-    await pumpSettings(tester);
+    await pumpAccess(tester);
     await tapText(tester, 'Token erstellen');
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Claude');
     await tapText(tester, 'Erstellen');
@@ -107,7 +107,7 @@ void main() {
   });
 
   testWidgets('the token limit is explained', (tester) async {
-    await pumpSettings(tester, seed: (r) => r.limitReached = true);
+    await pumpAccess(tester, seed: (r) => r.limitReached = true);
     await tapText(tester, 'Token erstellen');
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Siri');
     await tapText(tester, 'Erstellen');
@@ -116,7 +116,7 @@ void main() {
   });
 
   testWidgets('revoking asks first, then removes the token', (tester) async {
-    await pumpSettings(
+    await pumpAccess(
       tester,
       seed: (r) => r.tokens.add(
         AccessToken(
@@ -148,7 +148,7 @@ void main() {
   });
 
   testWidgets('connected apps can be disconnected', (tester) async {
-    await pumpSettings(
+    await pumpAccess(
       tester,
       seed: (r) => r.apps.add(
         ConnectedApp(

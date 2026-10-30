@@ -1,10 +1,10 @@
 # Account (export and deletion)
 
-Every signed-in user can export their data and delete their account. Both live in the "Konto" section at the bottom of the Zugänge page, which Mehr → Konto opens at that section; a user without a household also finds "Konto löschen" on the welcome screen. The deletion dialog says what happens to the household before anything is deleted, and deletes only after the user types `LÖSCHEN` (or `LOESCHEN`) and taps "Endgültig löschen". Afterwards the app shows the sign-in screen with "Dein Konto wurde gelöscht." A shared household stays for the other members with the deleted user's items, now without their name. A household whose last member deletes goes with everything in it.
+Every signed-in user can export their data and delete their account. Both live on the Konto page (Mehr → Konto, route `/more/account`), which also shows the signed-in email address; the MCP server, tokens and connected apps are on the separate Zugänge page (`/more/access`, `features/mcp-access.md`); a user without a household also finds "Konto löschen" on the welcome screen. The deletion dialog says what happens to the household before anything is deleted, and deletes only after the user types `LÖSCHEN` (or `LOESCHEN`) and taps "Endgültig löschen". Afterwards the app shows the sign-in screen with "Dein Konto wurde gelöscht." A shared household stays for the other members with the deleted user's items, now without their name. A household whose last member deletes goes with everything in it.
 
 ## Sub-features
 
-- `acct-entry` opens Zugänge scrolled to "Konto" from the More tab's entry "Konto" (key `menu-account`, route `/settings?section=account`), with "Meine Daten exportieren" and "Konto löschen".
+- `acct-entry` opens the Konto page (`account-screen`) from the More tab's entry "Konto" (key `menu-account`, route `/more/account`; the old link `/settings?section=account` redirects there), with the signed-in email (`account-email`), "Meine Daten exportieren" and "Konto löschen", and nothing of Zugänge.
 - `acct-fate-kept` tells a member of a shared household that "Der Haushalt „<name>“ bleibt für <other members> mit der ganzen Liste erhalten."
 - `acct-fate-deleted` tells the last member "Du bist das letzte Mitglied. Deshalb wird der Haushalt „<name>“ … gelöscht."
 - `acct-confirm-word` keeps "Endgültig löschen" disabled until the field holds `LÖSCHEN` or `LOESCHEN` (any case).
@@ -56,10 +56,10 @@ Preconditions:
 - Never delete the seeded peter or lea. Deleting lea (or peter) breaks the baseline, and only `fg up --fresh` restores it. Use a throwaway user on the lea client.
 - Deleting the last member deletes the household. Never let a throwaway that created its own household stand in for a test of the shared case.
 - On the Linux desktop the export writes the file to the Downloads folder (`xdg-user-dir DOWNLOAD`), or to the temp directory when there is none: on the build box that is `/tmp/einkauf-daten-<date>.json`. Read the path from the snackbar instead of guessing it, and delete the file afterwards; it holds the user's email.
-- More is a lazy list: scroll to `menu-account` before tapping it. `fg back` on Konto closes the Linux app (see `features/shell-more.md`); leave with `fg tap --key tab-list`.
+- More is a lazy list: scroll to `menu-account` before tapping it. Konto is a route below `/more`, so `fg back` returns to the More list (job 29d; before, it closed the Linux app).
 - The dialog loads the household's fate from the server first. Wait for `account-delete-confirm-field` before typing; until then the dialog shows a spinner.
 - Button labels inside the dialog ("Endgültig löschen", "Abbrechen") are not listed by `fg find`. Use the keys `account-delete-confirm` and `account-delete-cancel`.
-- `account-delete` is the key on both the settings tile and the welcome screen button.
+- `account-delete` is the key on both the Konto page's tile and the welcome screen button.
 - `--as lea` in `fg db query` means the seeded lea, not the throwaway signed in on the lea client.
 - A fresh partner item's text carries the semantics label "<name>\nNeu" (job 8). Marionette prints it across two lines; `fg` before job 9 failed every `find`/`wait` on such a screen with "Unterminated string in JSON". Fixed in `cli/marionette.ts` (`parseElements`).
 - `journeys/account-deletion.sh` runs this whole recipe (shared and last-member deletion, export) and prints `PASS` or `FAIL: <step>`. Clean throwaways from aborted runs with `fg db query "delete from auth.users where email like 'konto-%@fg.test'" --write`.
