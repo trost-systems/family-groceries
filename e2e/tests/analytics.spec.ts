@@ -1,6 +1,5 @@
 import { expect, type Page, test } from './fixtures';
 import {
-  actionSnackBar,
   addField,
   addItem,
   answerConsent,
@@ -13,6 +12,7 @@ import {
   openMore,
   openTab,
   password,
+  putBack,
   screenshot,
   signUp,
   signUpWithHousehold,
@@ -118,10 +118,10 @@ test('accepting sends first_open once, then one event per action, no list text; 
   await tick(page, 'Hafermilch');
   await received(collector, ['first_open', 'household_created', 'item_added', 'item_added', 'item_ticked']);
 
-  // Undo sends nothing; ticking again is a new action.
+  // Putting it back right away under "Zuletzt verwendet" is the undo and sends nothing; ticking
+  // again is a new action.
   await tick(page, 'Brot');
-  await actionSnackBar(page, 'Brot abgehakt').getByRole('button', { name: 'Rückgängig' }).click();
-  await expect(itemRow(page, 'Brot')).toBeVisible();
+  await putBack(page, 'Brot');
   await tick(page, 'Brot');
   await received(collector, [
     'first_open', 'household_created', 'item_added', 'item_added', 'item_ticked', 'item_ticked', 'item_ticked',

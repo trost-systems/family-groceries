@@ -89,7 +89,7 @@ retried batch is not counted twice), `household_id` (null before joining), `plat
 | `first_open` | the first yes on an install | none |
 | `household_created` | the server created the household | none |
 | `invite_accepted` | the server confirmed a new membership from an invite (not when the user was a member already) | `method`: `link` (the code came from `/join/<code>` or `?invite=` and was not edited) or `code` (typed) |
-| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from recently bought); `actor_role` (`owner`, `member`); `household_size` |
+| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick); `actor_role` (`owner`, `member`); `household_size` |
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
@@ -101,7 +101,9 @@ Rules that keep it one event per user action (AC3, AC9):
 - Events fire where the user acts (`ListCubit.tick`, `addParsed`, `readd`, the reorder methods,
   `SessionCubit.createHousehold` and `join`), never where ops are sent. An op retried after a
   reconnect, a realtime echo, or a resync sends nothing.
-- Undo sends nothing: the tick's "Rückgängig" calls `untick`, the add sheet's undo deletes, a
+- Undo sends nothing: the tick has no snackbar since job 29b, and a tap on the item under "Zuletzt
+  verwendet" within 10 minutes of the tick (`ListCubit.undoWindow`, the window in which
+  `suggest_items` drops the purchase too) is its undo, no `item_added`; the add sheet's undo deletes, a
   restored deletion re-inserts; none is an event. Ticking again after an undo is a new action and
   sends a new `item_ticked`.
 - A tick of an item that is not on the list, an add of something already on it, a reorder that

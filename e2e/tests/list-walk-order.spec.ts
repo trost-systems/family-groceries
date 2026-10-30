@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Page, test } from './fixtures';
 import { dragItemToStore, holdAndDrop, outline, sectionHeadings, sectionItems, storeOf } from './catalog';
 import {
-  actionSnackBar, adminClient, apiAs, createInviteCode, editSheet, itemRow, newEmail, reveal, screenshot, signUp,
-  signUpWithHousehold, storeDivider, tick, typeInto, within,
+  adminClient, apiAs, createInviteCode, editSheet, itemRow, newEmail, reveal, screenshot, signUp,
+  signUpWithHousehold, storeDivider, putBack, tick, typeInto, within,
 } from './helpers';
 
 type Seed = { name: string; store?: string; category: string; brand?: string; properties?: string; quantity?: string; key: number };
@@ -258,7 +258,7 @@ test('categories and stores reorder by drag, for good and live for the other mem
   await expect.poll(() => sectionHeadings(peter, 'Lidl')).toEqual(['Kühlregal', 'Obst & Gemüse']);
 });
 
-test('a tap ticks with undo back in place, a hold or right click edits, names wrap, no added-by badge', async ({ browser }) => {
+test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold or right click edits, names wrap, no added-by badge', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const email = newEmail('walk-rows');
   await signUpWithHousehold(peter, email);
@@ -266,10 +266,9 @@ test('a tap ticks with undo back in place, a hold or right click edits, names wr
   await seed(peter, email, [...lidl, { name: long, store: 'Lidl', category: 'Brot & Backwaren', key: 1024 }]);
 
   await tick(peter, 'Bananen');
-  await expect(actionSnackBar(peter, 'Bananen abgehakt')).toBeVisible();
   await expect(itemRow(peter, 'Bananen')).toHaveCount(0);
-  await actionSnackBar(peter, 'Bananen abgehakt').getByRole('button', { name: 'Rückgängig' }).click();
-  await expect.poll(() => sectionItems(peter, 'Lidl'), { message: 'undo puts it back where it was' })
+  await putBack(peter, 'Bananen');
+  await expect.poll(() => sectionItems(peter, 'Lidl'), { message: 'putting it back puts it where it was' })
     .toEqual([long, 'Äpfel Elstar 1 kg', 'Bananen Bio 6', 'Gurke', 'Milch Milbona · 1,5 % 2 l', 'Joghurt']);
 
   await itemRow(peter, 'Gurke').click({ button: 'right' });

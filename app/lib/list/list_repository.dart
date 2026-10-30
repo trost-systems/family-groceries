@@ -14,7 +14,7 @@ enum ConnectionStatus() {
 abstract interface class ListRepository() {
   Future<Catalog> fetchCatalog();
 
-  /// Active items plus the most recently bought ones.
+  /// Active items plus the most recently bought ones ("Zuletzt verwendet").
   Future<List<Item>> fetchItems();
 
   /// What the household buys again and again, best first, without what is

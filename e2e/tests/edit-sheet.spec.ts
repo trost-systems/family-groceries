@@ -208,7 +208,7 @@ test.describe('on a phone browser', () => {
     await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
 
     await itemRow(page, 'Brot').tap();
-    await expect(actionSnackBar(page, 'Brot abgehakt')).toBeVisible();
+    await expect(itemRow(page, 'Brot'), 'ticked').toHaveCount(0);
     await page.reload();
     await expect(page.getByText(/^\d+ Artikel$/)).toBeVisible({ timeout: 30_000 });
     await expect(itemRow(page, 'Zahnpasta'), 'deleted on the server').toHaveCount(0);

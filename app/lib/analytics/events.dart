@@ -18,7 +18,7 @@ enum AddSource() {
   spoken,
 
   /// A row the app suggested: bought before, a pack or size, a brand, a
-  /// dictionary word, a due usual, or a re-add from recently bought.
+  /// dictionary word, a due usual, or a re-add from recently used.
   suggestion,
 }
 

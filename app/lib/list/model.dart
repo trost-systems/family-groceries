@@ -661,8 +661,8 @@ Map<String, Item> mergeServerRow(Map<String, Item> server, Item row) {
   return {...server, row.id: row};
 }
 
-/// Bought items, most recent first.
-List<Item> recentlyBought(Iterable<Item> items, {int limit = 20}) {
+/// Bought items, most recent first: the list's "Zuletzt verwendet".
+List<Item> recentlyUsed(Iterable<Item> items, {int limit = 20}) {
   final bought = items.where((i) => i.status == ItemStatus.bought).toList()
     ..sort(
       (a, b) =>

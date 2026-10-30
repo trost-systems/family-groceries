@@ -4,6 +4,7 @@ import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -104,6 +105,25 @@ void main() {
       find.text(text.toUpperCase().replaceAll('ß', 'SS'));
   Item itemNamed(String name) =>
       repo.rows.values.firstWhere((i) => i.name == name);
+
+  /// An item's row under "Zuletzt verwendet", and the list's row inside it.
+  Finder usedRow(String name) =>
+      find.byKey(ValueKey('used-${itemNamed(name).id}'));
+  Finder usedTile(String name) =>
+      find.descendant(of: usedRow(name), matching: row(name));
+
+  /// Opens "Zuletzt verwendet" if it is closed and scrolls to [name] there.
+  Future<void> showUsed(WidgetTester tester, String name) async {
+    final title = find.text('Zuletzt verwendet');
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+    if (usedRow(name).evaluate().isEmpty) {
+      await tester.tap(title);
+      await tester.pumpAndSettle();
+    }
+    await tester.ensureVisible(usedRow(name));
+    await tester.pumpAndSettle();
+  }
 
   /// Rows top to bottom, then left to right.
   List<String> rowOrder(WidgetTester tester) {
@@ -257,9 +277,8 @@ void main() {
     expect(find.text('Ohne Laden'), findsOneWidget);
   });
 
-  testWidgets('a tap ticks with undo; undo puts it back in its place', (
-    tester,
-  ) async {
+  testWidgets('a tap ticks without a snackbar; a tap on it under "Zuletzt '
+      'verwendet" puts it back in its place', (tester) async {
     await pumpList(
       tester,
       seed: (repo) => repo
@@ -272,13 +291,99 @@ void main() {
     expect(row('Bohnen'), findsOneWidget, reason: 'it leaves first');
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
-    expect(find.text('Bohnen abgehakt'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('Rückgängig'), findsNothing);
     expect(row('Bohnen'), findsNothing);
     expect(itemNamed('Bohnen').status, ItemStatus.bought);
 
-    await tester.tap(find.text('Rückgängig'));
+    await showUsed(tester, 'Bohnen');
+    await tester.tap(usedRow('Bohnen'));
     await tester.pumpAndSettle();
+    expect(itemNamed('Bohnen').status, ItemStatus.active);
     expect(rowOrder(tester), ['Erbsen', 'Bohnen', 'Linsen']);
+    expect(find.text('Zuletzt verwendet'), findsNothing, reason: 'none left');
+    expect(find.text('Bohnen steht wieder auf der Liste'), findsOneWidget);
+  });
+
+  testWidgets('"Zuletzt verwendet" shows the list\'s own row with its icon, '
+      'faded, most recent first', (tester) async {
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Bananen', categoryId: 'produce', quantity: '6')
+        ..remoteAdd('Brot', categoryId: 'bakery'),
+    );
+    final listed = tester.widget<ItemRow>(row('Bananen'));
+    final icon = itemIcon(listed.item, listed.category);
+    for (final name in ['Bananen', 'Brot']) {
+      await tester.tap(row(name));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Zuletzt gekauft'), findsNothing);
+    await showUsed(tester, 'Bananen');
+
+    final used = tester.widget<ItemRow>(usedTile('Bananen'));
+    expect(used.category?.id, 'produce');
+    expect(used.fresh, isFalse);
+    expect(
+      find.descendant(of: usedTile('Bananen'), matching: find.text(icon)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: usedRow('Bananen'),
+        matching: find.byWidgetPredicate((w) => w is Opacity && w.opacity < 1),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(usedRow('Brot')).dy,
+      lessThan(tester.getTopLeft(usedRow('Bananen')).dy),
+      reason: 'the last tick first',
+    );
+  });
+
+  testWidgets('a used row only puts back: a swipe or right click does '
+      'nothing, a hold puts it back too', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
+    await tester.tap(row('Brot'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    await showUsed(tester, 'Brot');
+
+    await tester.drag(usedRow('Brot'), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(usedRow('Brot'), buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('edit-sheet')), findsNothing);
+    expect(itemNamed('Brot').status, ItemStatus.bought);
+    expect(repo.rows, hasLength(1));
+
+    expect(
+      tester.getSemantics(usedRow('Brot')),
+      isSemantics(
+        label: 'Brot\nWieder auf die Liste',
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
+    expect(find.semantics.byLabel('Brot'), findsNothing);
+    tester.semantics.tap(find.semantics.byLabel('Brot\nWieder auf die Liste'));
+    await tester.pumpAndSettle();
+    expect(itemNamed('Brot').status, ItemStatus.active);
+    expect(row('Brot'), findsOneWidget);
+
+    await tester.tap(row('Brot'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    await showUsed(tester, 'Brot');
+    await tester.longPress(usedRow('Brot'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('edit-sheet')), findsNothing);
+    expect(itemNamed('Brot').status, ItemStatus.active);
+    handle.dispose();
   });
 
   testWidgets('with animations off a tap ticks at once', (tester) async {
@@ -736,8 +841,8 @@ void main() {
     expect(tester.getSemantics(storeNode('lidl')).label, 'Lidl, 2 Artikel');
   });
 
-  testWidgets('ticking the last item hides its store, undo brings it back; '
-      'with every store empty the empty list shows', (tester) async {
+  testWidgets('ticking the last item hides its store, putting it back shows '
+      'it again; with every store empty the empty list shows', (tester) async {
     await pumpList(
       tester,
       seed: (repo) => repo
@@ -750,9 +855,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
     expect(storeDivider('dm'), findsNothing);
-    await tester.tap(find.text('Rückgängig'));
+    await showUsed(tester, 'Seife');
+    await tester.tap(usedRow('Seife'));
     await tester.pumpAndSettle();
     expect(row('Seife'), findsOneWidget);
+    expect(storeDivider('dm'), findsOneWidget);
 
     for (final name in ['Seife', 'Milch']) {
       await tester.tap(row(name));

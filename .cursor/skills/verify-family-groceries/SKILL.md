@@ -75,7 +75,7 @@ scripts/fg press escape                     # closes the add sheet, so the list 
 scripts/fg tap --text "2 l Milch" --client lea   # ticks Milch: the row reads the quantity first
 scripts/fg drag --from-text Gurke --to-text "1 kg Äpfel" --edge before   # a real held drag (xdotool on the client's display)
 scripts/fg wait --text Milch --gone         # never sleep; wait polls (default 15 s) and reports elapsedMs
-scripts/fg marionette -- scroll-to --text "Zuletzt gekauft"   # any other Marionette command
+scripts/fg marionette -- scroll-to --text "Zuletzt verwendet"   # any other Marionette command
 scripts/fg marionette -- swipe --start-x 368 --start-y 116 --end-x 368 --end-y 230   # a drag by coordinates (reorder handles, which need no hold)
 ```
 

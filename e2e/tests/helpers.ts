@@ -29,9 +29,34 @@ export async function apiAs(email: string): Promise<SupabaseClient> {
 export const addField = (page: Page) => page.getByRole('textbox', { name: 'Was brauchst du?' });
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** A list row; its accessible name is the item name, a space, then the quantity. */
+/**
+ * A list row; its accessible name is the item name, a space, then the quantity. A row under
+ * "Zuletzt verwendet" ends in "Wieder auf die Liste" and is not one (`usedRow`).
+ */
 export const itemRow = (page: Page, name: string) =>
-  page.getByRole('button', { name: new RegExp(`^${escape(name)}( |$)`) });
+  page.getByRole('button', { name: new RegExp(`^(?!.* ${usedAction}$)${escape(name)}( |$)`) });
+
+const usedAction = 'Wieder auf die Liste';
+
+/**
+ * A ticked item's row under "Zuletzt verwendet" (job 29b): the list's own row, faded, named like
+ * it plus "Wieder auf die Liste". A tap puts the item back on the list.
+ */
+export const usedRow = (page: Page, name: string) =>
+  page.getByRole('button', { name: new RegExp(`^${escape(name)}( .*)? ${usedAction}$`) });
+
+/**
+ * Puts a ticked item back with a tap on it under "Zuletzt verwendet", the tick's undo since the
+ * tick has no snackbar (job 29b); opens the section first if it is closed.
+ */
+export async function putBack(page: Page, name: string): Promise<void> {
+  const section = page.getByRole('button', { name: 'Zuletzt verwendet' });
+  await reveal(page, section);
+  if (await usedRow(page, name).count() === 0) await section.click();
+  await reveal(page, usedRow(page, name));
+  await usedRow(page, name).click();
+  await expect(itemRow(page, name)).toBeVisible();
+}
 
 /**
  * A snackbar with an action (undo): Flutter puts its text in the aria-label of a group, so
@@ -73,13 +98,14 @@ export async function reveal(page: Page, target: Locator): Promise<void> {
 
 /**
  * Ticks an item off: a tap on its row (design H has no check box). The row leaves for 260 ms
- * before the tick commits, so this waits for the "<name> abgehakt" snackbar: an add of the same
- * name before then finds the item still on the list.
+ * before the tick commits, so this waits for the row to go (the tick has no snackbar since job
+ * 29b): an add of the same name before then finds the item still on the list.
  */
 export async function tick(page: Page, name: string): Promise<void> {
   await reveal(page, itemRow(page, name));
+  const rows = await itemRow(page, name).count();
   await itemRow(page, name).click();
-  await expect(actionSnackBar(page, `${name} abgehakt`)).toBeVisible();
+  await expect(itemRow(page, name)).toHaveCount(rows - 1);
 }
 
 /** A store's divider by its name; its accessible name is "<store>, <n> Artikel". */

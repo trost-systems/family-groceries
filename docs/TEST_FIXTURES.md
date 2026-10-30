@@ -38,7 +38,7 @@ scripts/fg sync household-3-mid-shop --clients 3 \
 | --- | --- | --- |
 | `empty-new-user` | One confirmed user, no household | Onboarding: the welcome screen, create a household, join with a code, deleting an account without data |
 | `solo-long-list` | One person, 64 items over Lidl, Edeka, dm and no store, every category | Scrolling and grouping, store sections with many items, offline start with a big cache |
-| `household-3-mid-shop` | Three members; 8 items ticked 12 minutes ago at Lidl, 10 open; Noah's client has every store but Lidl folded | Live sync with 2 or 3 clients, ticking while shopping at one store, fresh "Zuletzt gekauft" |
+| `household-3-mid-shop` | Three members; 8 items ticked 12 minutes ago at Lidl, 10 open; Noah's client has every store but Lidl folded | Live sync with 2 or 3 clients, ticking while shopping at one store, fresh "Zuletzt verwendet" |
 | `heavy-history` | Two members, 8 weeks of trips at Edeka (weekly), Lidl (weekly), dm (every 2 weeks) | Usuals and "Brauchen wir wieder?": Milch, Brot, Eier, Windeln, Duschgel are due; Hafermilch, Gurken, Tomaten, Nudeln are usuals but not due |
 | `many-stores` | Nine stores (dm, Lidl, Edeka, Rewe, Aldi Süd, Kaufland, Netto, Rossmann, Wochenmarkt, Fressnapf) with distinct walk orders and hidden categories, a "Tiernahrung" category | The store picker with many chips, store layouts, hidden categories, item→store memory |
 | `edge-cases` | A German and an English user; a 120-character name, a 40-character quantity, emoji, umlauts, quotes, duplicates (Milch twice, milch) | Text layout, duplicates, quantity display, an `en` user |

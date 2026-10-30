@@ -1,8 +1,8 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
 import {
-  actionSnackBar, addedNote, addField, addItem, closeSheet, editField, enterItem, editSheet, itemRow, newEmail, openEdit, pickInSheet, saveEdit, screenshot, signUpWithHousehold,
-  tick, typeInto,
+  addedNote, addField, addItem, closeSheet, editField, enterItem, editSheet, itemRow, newEmail, openEdit, pickInSheet, putBack, saveEdit, screenshot,
+  signUpWithHousehold, tick, typeInto, usedRow,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -22,27 +22,35 @@ test('adds are grouped by category in route order', async ({ page }) => {
   await screenshot(page, '02-grouped-list');
 });
 
-test('ticking removes the item, undo brings it back, and it lands in recently bought', async ({ page }) => {
+test('ticking removes the item without an undo snackbar; a tap on it under "Zuletzt verwendet" brings it back', async ({ page }) => {
   await addItem(page, 'Joghurt');
+  await addItem(page, '2 Bananen');
   await expect(itemRow(page, 'Joghurt')).toBeVisible();
 
   await tick(page, 'Joghurt');
   await expect(itemRow(page, 'Joghurt')).toHaveCount(0);
-  await expect(actionSnackBar(page, 'Joghurt abgehakt')).toBeVisible();
-  await screenshot(page, '03-ticked-undo-snackbar');
+  await expect(page.getByRole('button', { name: 'Rückgängig' }), 'no undo snackbar').toHaveCount(0);
+  await expect(page.getByText('Joghurt abgehakt')).toHaveCount(0);
+  await tick(page, 'Bananen');
+  await page.getByRole('button', { name: 'Zuletzt verwendet' }).click();
+  await expect(usedRow(page, 'Bananen'), 'the row reads like the list\'s, quantity included').toHaveAccessibleName('Bananen 2 Wieder auf die Liste');
+  await expect(usedRow(page, 'Joghurt')).toBeVisible();
+  await screenshot(page, '03-recently-used');
 
-  await page.getByRole('button', { name: 'Rückgängig' }).click();
+  await usedRow(page, 'Joghurt').click();
   await expect(itemRow(page, 'Joghurt')).toBeVisible();
+  await expect(usedRow(page, 'Joghurt')).toHaveCount(0);
+  await screenshot(page, '03b-put-back');
 
   await tick(page, 'Joghurt');
-  await expect(itemRow(page, 'Joghurt')).toHaveCount(0);
   await page.reload();
   await expect(addField(page)).toBeFocused();
   await expect(itemRow(page, 'Joghurt'), 'the tick persisted on the server').toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Zuletzt gekauft' }).click();
-  await page.getByRole('button', { name: 'Wieder auf die Liste' }).click();
-  await expect(itemRow(page, 'Joghurt')).toBeVisible();
+  await putBack(page, 'Joghurt');
+  await page.reload();
+  await expect(addField(page)).toBeFocused();
+  await expect(itemRow(page, 'Joghurt'), 'putting it back persisted on the server').toBeVisible();
 });
 
 test('adding an item that is already on the list does not duplicate it', async ({ page }) => {
