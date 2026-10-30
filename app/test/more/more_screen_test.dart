@@ -222,13 +222,14 @@ void main() {
       });
     }
 
-    testWidgets('is shown while drafts are wanted, not before publishing', (
+    testWidgets('is shown in every build once published, hidden when not', (
       tester,
     ) async {
-      // Debug builds and tests show drafts; release builds don't.
-      expect(supportPagePublished, isFalse, reason: 'Peter has not approved');
-      expect(supportLinkShown, Environment.legalDrafts);
+      // Peter approved the page on 2026-10-30, so release builds show it too.
+      expect(supportPagePublished, isTrue, reason: 'Peter approved');
+      expect(supportLinkShown, isTrue);
       expect(Environment.legalDrafts, kDebugMode);
+      // Unpublished, the link is hidden: More without the help entry.
       await pumpMore(
         tester,
         routes: [

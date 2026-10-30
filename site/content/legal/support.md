@@ -5,7 +5,7 @@ locale: de
 path: /support
 translation_key: support
 updated: 2026-10-30
-draft: true
+draft: false
 ---
 
 # Hilfe und Kontakt
