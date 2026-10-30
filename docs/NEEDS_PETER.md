@@ -933,6 +933,24 @@ need you or Hummlist Ops at Amazon; nothing was done there.
    phrases "Alexa, sag Hummlist, füg Milch und Eier hinzu", "Alexa, frag Hummlist, was auf der
    Liste steht", "Alexa, öffne Hummlist".
 
+## Job 31b: Alexa skill deployed (2026-10-30)
+
+Job 31's steps 1, 2 and 5 are done: the skill "Hummlist" (invocation `hummlist`, de-DE) is on
+your Amazon Developer account in the development stage, account linking and development testing
+are on, the function has the skill id, and a beta test is running with no testers
+([done/31b-alexa-deploy.md](done/31b-alexa-deploy.md)). Still open:
+
+1. **Check the Test tab once (you, in the browser).** developer.amazon.com → Alexa → Hummlist →
+   Test → "Skill testing is enabled in: Development", language Deutsch, type "öffne hummlist".
+   Expected: "Bitte verknüpfe zuerst dein Hummlist-Konto …" (you have not linked yet). From the
+   CLI, the simulation API (`ask dialog`, `simulate-skill`) answers "This utterance did not
+   resolve to any intent in your skill": Alexa recognises the launch but never calls the
+   skill, while Amazon-signed requests through `invoke-skill-end-point` reach it and pass. If
+   the console says the same, your amazon.com account probably has no Alexa setup yet: sign in
+   once in the Alexa app (or alexa.amazon.com) with that account, then try again.
+2. **Beta invites** stay with Hummlist Ops (job 31 step 3), after your yes to the tester list.
+3. **Certification** stays off until you say yes (job 31 step 4).
+
 ## Job 24: help and contact page (2026-10-30)
 
 Not legal advice. The privacy policy itself is job 33a's (#105); this is the help page and the

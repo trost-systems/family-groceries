@@ -289,6 +289,7 @@ See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
 ## Job 31: Alexa skill "Hummlist" (Spec #7)
 
 "Alexa, sag Hummlist, füg Milch und Eier hinzu" adds to the linked household, read back in German; ReadListIntent reads the list; account linking through Supabase's OAuth server (confidential client, PKCE). Live after the Amazon steps in NEEDS_PETER. Details: [docs/done/31-alexa.md](docs/done/31-alexa.md).
+- Job 31b, Alexa skill deployed to the developer account (de-DE, beta running, no testers): [docs/done/31b-alexa-deploy.md](docs/done/31b-alexa-deploy.md)
 
 ## Job 24: help and contact page (draft) and the privacy data map
 

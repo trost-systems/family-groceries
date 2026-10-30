@@ -4143,3 +4143,26 @@ The job's own calls:
 14. **No local stack on the Mac runner.** The SQL was developed against Postgres 17 binaries
     without Docker (the 32a recipe); CI's db gate (pgTAP, `supabase db lint`, the integration
     tests) and the e2e shards are the proof.
+
+## Job 31b (deploy the Alexa skill, de-DE beta, no certification), 2026-10-30
+
+1. **Reused what the cut-off attempt left.** It had created the skill, the OAuth client
+   "Amazon Alexa" (redirects for the vendor id), the linking, the enablement, the beta test and
+   the `ALEXA_SKILL_ID` secret. Checked each against the repo and SMAPI instead of creating
+   anything twice: one skill for the vendor, one live confidential client (wrong secret refused,
+   stored secret accepted by the token endpoint), the model identical to `de-DE.json`.
+2. **Converged with the repo's own path.** `ask deploy --target skill-metadata` against the
+   existing skill id (a gitignored `ask-states.json`), and the linking sent again with the stored
+   secret, so the live skill is what the repo says and the documented redeploy is proven.
+3. **`manifestVersion` moved into `manifest`.** ask deploy uploaded only `manifest`, so the
+   live manifest lost `manifestVersion`. Restored it live, fixed `skill.json`, and a test fails
+   on the old layout.
+4. **Smoke test through `invoke-skill-end-point`.** The simulation API never dispatched to the
+   skill (see NEEDS_PETER "Job 31b"). Ruled out by trying each: waiting about 15 min after the build,
+   an explicit model rebuild (all steps SUCCEEDED), adding US to the distribution countries,
+   `skipOnEnablement`, restoring `manifestVersion`; each reverted. Amazon-signed requests via
+   `invoke-skill-end-point` reach the function, pass verification and get the link prompt.
+5. **Beta left as found: running, 0 testers, no invites.** It was already started by the cut-off
+   attempt; starting a beta needs no certification, and the brief allowed it. The invitation
+   link stays out of the repo and the board.
+
