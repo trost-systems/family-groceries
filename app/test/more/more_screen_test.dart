@@ -7,7 +7,7 @@ void main() {
   setUpAll(fakeSupabase);
   setUp(serverTokens.clear);
 
-  /// Enough tokens to push the account section below a phone screen.
+  /// Enough tokens to fill a phone screen, were they on the account page.
   void manyTokens() => serverTokens.addAll([
     for (var i = 0; i < 12; i++)
       {
@@ -67,33 +67,72 @@ void main() {
     expect(find.text('Version 1.2.3 (45)'), findsOneWidget);
   });
 
-  testWidgets('Konto opens the access page scrolled to the account section; '
-      'back returns to More', (tester) async {
-    manyTokens();
-    await pumpMore(tester);
-    await tapKey(tester, 'menu-account');
+  String path(More more) =>
+      more.router.routerDelegate.currentConfiguration.uri.toString();
+
+  testWidgets('Zugänge opens its own page; back returns to More', (
+    tester,
+  ) async {
+    final more = await pumpMore(tester);
+    await tapKey(tester, 'more-access');
+    expect(path(more), '/more/access');
     expect(find.text('Zugänge'), findsOneWidget, reason: 'the page title');
-    expect(onScreen(tester, 'account-delete'), isTrue);
+    expect(find.text('MCP-Server'), findsOneWidget);
+    expect(find.text('Verbundene Apps'), findsOneWidget);
+    expect(key('account-delete'), findsNothing, reason: 'Konto is apart');
+    expect(key('account-export'), findsNothing);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    expect(path(more), '/more');
     expect(key('more-screen'), findsOneWidget);
   });
 
-  testWidgets('Zugänge starts at the top', (tester) async {
+  testWidgets('Konto opens its own page; back returns to More', (tester) async {
     manyTokens();
-    await pumpMore(tester);
-    await tapKey(tester, 'more-access');
-    expect(find.text('MCP-Server'), findsOneWidget);
-    expect(onScreen(tester, 'account-delete'), isFalse);
+    final more = await pumpMore(tester);
+    await tapKey(tester, 'menu-account');
+    expect(path(more), '/more/account');
+    expect(find.text('Konto'), findsOneWidget, reason: 'the page title');
+    expect(find.text('peter@fg.test'), findsOneWidget);
+    expect(onScreen(tester, 'account-export'), isTrue);
+    expect(onScreen(tester, 'account-delete'), isTrue);
+    expect(find.text('MCP-Server'), findsNothing, reason: 'Zugänge is apart');
+    expect(find.text('Token 0'), findsNothing);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(path(more), '/more');
+    expect(key('more-screen'), findsOneWidget);
   });
 
-  testWidgets('the account link /settings?section=account scrolls there', (
-    tester,
-  ) async {
-    manyTokens();
-    await pumpMore(tester, location: '/settings?section=account');
-    expect(onScreen(tester, 'account-delete'), isTrue);
+  testWidgets('the system back pops a page to More', (tester) async {
+    final more = await pumpMore(tester);
+    await tapKey(tester, 'menu-account');
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(path(more), '/more');
+    expect(key('more-screen'), findsOneWidget);
   });
+
+  for (final (link, shown, title, absent) in const [
+    ('/more/access', '/more/access', 'Zugänge', 'account-delete'),
+    ('/more/account', '/more/account', 'Konto', 'access-screen'),
+    ('/settings', '/more/access', 'Zugänge', 'account-delete'),
+    ('/settings?section=account', '/more/account', 'Konto', 'access-screen'),
+    ('/settings?section=other', '/more/access', 'Zugänge', 'account-delete'),
+  ]) {
+    testWidgets('the link $link opens $shown; back goes to More', (
+      tester,
+    ) async {
+      final more = await pumpMore(tester, location: link);
+      expect(path(more), shown);
+      expect(find.text(title), findsOneWidget);
+      expect(key(absent), findsNothing);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(path(more), '/more');
+      expect(key('more-screen'), findsOneWidget);
+    });
+  }
 
   testWidgets('Datenschutz shows the draft while none is published', (
     tester,
@@ -121,26 +160,37 @@ void main() {
       );
     });
 
-    testWidgets('Konto switches the right pane to the account section', (
+    testWidgets('Konto and Zugänge switch the right pane; no back arrow', (
       tester,
     ) async {
       manyTokens();
-      await pumpMore(tester, size: const Size(1024, 600));
-      expect(onScreen(tester, 'account-delete'), isFalse);
-      Future<void> revealAccountRow() => tester.scrollUntilVisible(
-        key('menu-account'),
+      final more = await pumpMore(tester, size: const Size(1024, 600));
+      expect(find.byType(BackButton), findsNothing);
+      Future<void> reveal(String row) => tester.scrollUntilVisible(
+        key(row),
         100,
         scrollable: find.descendant(
           of: key('more-screen'),
           matching: find.byType(Scrollable),
         ),
       );
-      await revealAccountRow();
+      await reveal('menu-account');
       await tapKey(tester, 'menu-account');
+      expect(path(more), '/more/account');
       expect(key('more-screen'), findsOneWidget, reason: 'the list stays');
       expect(onScreen(tester, 'account-delete'), isTrue);
-      await revealAccountRow();
+      expect(find.text('MCP-Server'), findsNothing);
+      expect(find.byType(BackButton), findsNothing, reason: 'nothing to pop');
+      await reveal('menu-account');
       expect(selected(tester, 'menu-account'), isTrue);
+      expect(selected(tester, 'more-access'), isFalse);
+
+      await reveal('more-access');
+      await tapKey(tester, 'more-access');
+      expect(path(more), '/more/access');
+      expect(find.text('MCP-Server'), findsOneWidget);
+      expect(key('account-delete'), findsNothing);
+      expect(selected(tester, 'more-access'), isTrue);
     });
   });
 }

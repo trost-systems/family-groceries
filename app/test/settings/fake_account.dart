@@ -5,6 +5,8 @@ import 'package:family_groceries/settings/account_repository.dart';
 /// Answers with [fateResult] and [deleteResult], or throws the matching
 /// error; counts every call.
 class FakeAccountRepository() implements AccountRepository {
+  @override
+  String? email = 'peter@fg.test';
   HouseholdFate fateResult = const FateKept('Zuhause', ['Lea']);
   AccountError? fateError;
   var deleteResult = const AccountDeleted(AppleUnlink.notLinked);

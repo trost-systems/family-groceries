@@ -27,6 +27,11 @@ void main() {
     (household, '/settings?invite=ABCD2345', '/join/ABCD2345'),
     (household, '/more', null),
     (household, '/more/privacy', null),
+    (household, '/more/access', null),
+    (household, '/more/account', null),
+    (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),
+    (SignedOut(), '/more/account', '/login'),
+    (NeedsHousehold('u'), '/more/access', '/welcome'),
     (household, '/more/nothing-here', '/'),
     (SignedOut(), '/more', '/login'),
     (SignedOut(), '/settings', '/login'),
@@ -49,6 +54,19 @@ void main() {
   for (final (session, from, to) in cases) {
     test('${session.runtimeType} at $from goes to ${to ?? 'stays'}', () {
       expect(authRedirect(session, Uri.parse(from)), to);
+    });
+  }
+
+  // Job 29d: Zugänge and Konto are two pages; the links of the one page
+  // they were before go to the right one.
+  for (final (from, to) in const [
+    ('/settings', '/more/access'),
+    ('/settings?section=account', '/more/account'),
+    ('/settings?section=access', '/more/access'),
+    ('/settings?section=', '/more/access'),
+  ]) {
+    test('the old link $from goes to $to', () {
+      expect(legacySettingsRedirect(Uri.parse(from)), to);
     });
   }
 

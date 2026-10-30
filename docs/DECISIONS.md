@@ -3054,3 +3054,42 @@ the normal list."
    for the Mac runner's user, so the job followed the brief directly: a
    widget or unit test for each behavior, then the real web build on CI
    (Playwright) for the proof and the screenshots.
+
+## Job 29d (More: Zugänge and Konto on separate pages), 2026-10-30
+
+Peter: "In 'More' access and account lead to the same page. Split them up."
+
+1. **What each page holds.** Zugänge (`/more/access`, `AccessScreen`) keeps
+   what the shared page had above its Konto section: the MCP server, the
+   personal access tokens and the connected apps. Konto (`/more/account`,
+   `AccountScreen`) holds the signed-in email address, "Meine Daten
+   exportieren" and "Konto löschen". The brief glossed access as "household
+   members/sharing"; in this app those live in More's Haushalt section
+   (invite, join), and Zugänge has always meant ways in for other apps, so
+   the split follows the page that existed. Abmelden stays a row of More's
+   Konto section (one tap, and every recipe and spec uses it there).
+2. **The email on Konto.** A page called Konto with only two actions did not
+   say whose account it is. `AccountRepository.email` (the Supabase user's
+   email) feeds a read-only row (`account-email`), left out for a sign-in
+   without an email. No new UI text, so no ARB change in 29b's files.
+3. **Routes below `/more`.** Both are child routes of `/more`, like
+   `/more/privacy`, so the app bar's back arrow and the system back pop to
+   the More list, also after a deep link (go_router builds `/more` beneath
+   it). That removes the `PopScope` + `go(morePath)` workaround the
+   top-level `/settings` route needed, and `fg back` no longer closes the
+   Linux app on these pages. From 840 px the two-pane More hides the back
+   arrow: beside the list there is nothing to go back to.
+4. **Old links redirect.** `/settings` goes to `/more/access`,
+   `/settings?section=account` to `/more/account` (route-level redirect,
+   `legacySettingsRedirect`). `authRedirect` still runs first, so an invite
+   on an old link (`/settings?invite=…`) still opens the join page and a
+   signed-out user still gets the login. Keys are unchanged (`more-access`,
+   `menu-account`, `account-export`, `account-delete`); new ones are
+   `access-screen`, `account-screen`, `account-email`.
+5. **One route table.** `moreTabRoutes()` in `router.dart` is the More
+   branch for `buildRouter` and for the widget-test harness
+   (`test/more/more_harness.dart`), which used to copy the routes by hand
+   and could drift from the app.
+6. **The scroll-to-section code goes.** `showAccount`, the `GlobalKey` and
+   the listener that re-scrolled when tokens loaded only existed to land on
+   the Konto section of the shared page. Zugänge is a lazy `ListView` again.

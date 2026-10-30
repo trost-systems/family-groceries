@@ -6,11 +6,12 @@ reasons behind the choices are in `docs/DECISIONS.md`, job 9.
 
 ## Where in the app
 
-- **Einstellungen (Zugänge) › Konto › Konto löschen.** This is the menu on
-  the list, then "Zugänge". The screen is `app/lib/settings/settings_screen.dart`.
+- **Mehr › Konto › Konto löschen.** The Konto page (`/more/account`, its
+  own page since job 29d; the MCP access is on Mehr › Zugänge). The screen
+  is `app/lib/settings/account_screen.dart`.
 - **Welcome screen.** A signed-in user without a household finds
   "Konto löschen" below the onboarding form.
-- **Einstellungen › Konto › Meine Daten exportieren.** This downloads a JSON
+- **Mehr › Konto › Meine Daten exportieren.** This downloads a JSON
   file on the web. On iOS and Android it opens the share sheet.
 
 The dialog says what happens to the shared household before anything is

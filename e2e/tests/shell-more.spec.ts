@@ -12,7 +12,8 @@ async function openMore(page: Page): Promise<void> {
 }
 
 test('More opens every entry; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
-  await signUpWithHousehold(page, newEmail('more'));
+  const email = newEmail('more');
+  await signUpWithHousehold(page, email);
   await openMore(page);
   await expect(page.getByText(/^Version \d+\.\d+\.\d+/), 'the version sits at the bottom').toBeVisible();
   await screenshot(page, 'more-01-phone');
@@ -40,16 +41,27 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: 'Zurück' }).click();
 
+  // Job 29d: Zugänge and Konto are two pages, each with its own route.
   await page.getByRole('button', { name: /^Zugänge/ }).click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page).toHaveURL(/\/more\/access$/);
+  await expect(page.getByRole('heading', { name: 'Zugänge' })).toBeVisible();
   await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Konto löschen', exact: true }), 'Konto is its own page').toHaveCount(0);
+  await screenshot(page, 'more-04-access');
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
   await page.getByRole('button', { name: /^Konto Daten/ }).click();
-  await expect(page).toHaveURL(/\/settings\?section=account$/);
-  await expect(page.getByRole('button', { name: 'Konto löschen', exact: true }), 'scrolled to the account section').toBeInViewport();
+  await expect(page).toHaveURL(/\/more\/account$/);
+  await expect(page.getByRole('heading', { name: 'Konto' })).toBeVisible();
+  // Selectable text is a group named by its text on web, like the MCP URL.
+  await expect(page.getByRole('group', { name: email, exact: true }), 'who is signed in').toBeVisible();
+  await expect(page.getByRole('button', { name: /^Meine Daten exportieren/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeVisible();
+  await expect(page.getByText('MCP-Server', { exact: true }), 'Zugänge is its own page').toHaveCount(0);
+  await screenshot(page, 'more-05-account');
   await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
 
   await page.getByRole('button', { name: /^Datenschutz/ }).click();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'no privacy policy yet: a marked draft' })
@@ -72,11 +84,21 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await expect(page).toHaveURL(/\/login/);
 });
 
-test('the account deep link opens settings at the account section', async ({ page }) => {
+test('old /settings links open the right page; back from a deep link goes to More', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('deeplink'));
   await page.goto('/settings?section=account');
-  await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeInViewport();
+  await expect(page).toHaveURL(/\/more\/account$/);
+  await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeVisible();
   await expect(moreTab(page), 'inside the More tab').toBeVisible();
+  await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
+  await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
+
+  await page.goto('/settings');
+  await expect(page).toHaveURL(/\/more\/access$/);
+  await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
 });
 
 test('switching to English changes the whole UI at once and survives a reload', async ({ page }) => {
@@ -171,8 +193,9 @@ test.describe('with an English browser', () => {
     await expectNoGerman(page, 'More', german);
     await page.getByRole('button', { name: /^Access/ }).click();
     await expect(page.getByText('MCP server')).toBeVisible();
-    await expectNoGerman(page, 'settings', german);
-    await page.goto('/settings?section=account');
+    await expectNoGerman(page, 'access', german);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: /^Account/ }).click();
     await expect(page.getByRole('button', { name: 'Delete account' })).toBeVisible();
     await expectNoGerman(page, 'account', german);
     await screenshot(page, 'en-03-settings');
@@ -204,8 +227,14 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   const detail = (await page.getByText('MCP-Server', { exact: true }).boundingBox())!;
   expect(detail.x, 'two panes side by side').toBeGreaterThan(list.x + list.width - 1);
   await page.getByRole('button', { name: /^Konto Daten/ }).click();
+  await expect(page).toHaveURL(/\/more\/account$/);
   await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeInViewport();
+  await expect(page.getByText('MCP-Server', { exact: true }), 'the pane shows Konto alone').toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Zurück' }), 'beside the list there is nothing to go back to').toHaveCount(0);
   await screenshot(page, 'wide-02-more-1366');
+  await page.getByRole('button', { name: /^Zugänge/ }).click();
+  await expect(page).toHaveURL(/\/more\/access$/);
+  await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();
 
   await page.setViewportSize({ width: 820, height: 1180 });
   await page.getByRole('tab', { name: 'Liste' }).click();

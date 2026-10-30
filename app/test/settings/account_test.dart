@@ -5,9 +5,8 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
-import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/account_repository.dart';
-import 'package:family_groceries/settings/settings_screen.dart';
+import 'package:family_groceries/settings/account_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +14,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 import '../session/fake_auth.dart';
 import 'fake_account.dart';
-import 'settings_screen_test.dart' show FakeAccessRepository;
 
 typedef SavedExport = ({String fileName, String json, Rect? origin});
 
@@ -68,18 +66,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// The access page as More frames it.
-  Widget settings({bool showAccount = false, AccessRepository? access}) =>
-      Scaffold(
-        body: SettingsScreen(
-          repository: access ?? FakeAccessRepository(),
-          showAccount: showAccount,
-          saveExport: (fileName, json, {origin}) async {
-            saved.add((fileName: fileName, json: json, origin: origin));
-            return savedPath;
-          },
-        ),
-      );
+  /// The account page as More frames it.
+  Widget settings() => Scaffold(
+    body: AccountScreen(
+      saveExport: (fileName, json, {origin}) async {
+        saved.add((fileName: fileName, json: json, origin: origin));
+        return savedPath;
+      },
+    ),
+  );
 
   Future<void> tapKey(WidgetTester tester, String key) async {
     await tester.ensureVisible(find.byKey(ValueKey(key)));
@@ -349,39 +344,25 @@ void main() {
     );
   });
 
-  group('the account section (More: Konto)', () {
-    FakeAccessRepository manyTokens() {
-      final access = FakeAccessRepository();
-      for (var i = 0; i < 12; i++) {
-        access.tokens.add(
-          AccessToken(
-            id: 't$i',
-            name: 'Token $i',
-            hint: '000$i',
-            createdAt: DateTime(2026, 10, 2),
-          ),
-        );
-      }
-      return access;
-    }
-
-    bool onScreen(WidgetTester tester, String key) {
-      final finder = find.byKey(ValueKey(key));
-      return finder.evaluate().isNotEmpty &&
-          tester.getRect(finder).bottom <=
-              tester.view.physicalSize.height / tester.view.devicePixelRatio;
-    }
-
-    testWidgets('opens settings scrolled to the account section', (
+  group('the account page (More: Konto)', () {
+    testWidgets('shows who is signed in, export and deletion only', (
       tester,
     ) async {
-      await pump(tester, settings(showAccount: true, access: manyTokens()));
-      expect(onScreen(tester, 'account-delete'), isTrue);
+      await pump(tester, settings());
+      expect(find.text('peter@fg.test'), findsOneWidget);
+      expect(find.byKey(const ValueKey('account-export')), findsOneWidget);
+      expect(find.byKey(const ValueKey('account-delete')), findsOneWidget);
+      expect(find.text('MCP-Server'), findsNothing);
+      expect(find.text('Zugriffstoken'), findsNothing);
     });
 
-    testWidgets('plain settings start at the top', (tester) async {
-      await pump(tester, settings(access: manyTokens()));
-      expect(onScreen(tester, 'account-delete'), isFalse);
+    testWidgets('a sign-in without an email shows no address row', (
+      tester,
+    ) async {
+      account.email = null;
+      await pump(tester, settings());
+      expect(find.byKey(const ValueKey('account-email')), findsNothing);
+      expect(find.byKey(const ValueKey('account-delete')), findsOneWidget);
     });
   });
 }

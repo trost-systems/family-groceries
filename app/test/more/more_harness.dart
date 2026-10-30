@@ -7,7 +7,6 @@ import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
-import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -114,26 +113,7 @@ Future<More> pumpMore(
       // As in the app, the list sits above the tabs (AppShell's ListScope).
       ShellRoute(
         builder: (_, _, child) => ListScope(repository: repo, child: child),
-        routes: [
-          GoRoute(
-            path: morePath,
-            builder: (_, _) => const MoreScreen(),
-            routes: [
-              GoRoute(
-                path: 'privacy',
-                builder: (_, _) => const MoreScreen(page: MorePage.privacy),
-              ),
-            ],
-          ),
-          GoRoute(
-            path: settingsPath,
-            builder: (_, state) => MoreScreen(
-              page: state.uri.queryParameters['section'] == 'account'
-                  ? MorePage.account
-                  : MorePage.access,
-            ),
-          ),
-        ],
+        routes: [...moreTabRoutes()],
       ),
     ],
   );

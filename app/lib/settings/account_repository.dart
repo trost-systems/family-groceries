@@ -76,6 +76,9 @@ typedef AppleAuthorizationCode = Future<String?> Function();
 
 /// The account section's only door to the backend.
 abstract interface class AccountRepository() {
+  /// The signed-in user's email address, or null when the sign-in has none.
+  String? get email;
+
   /// Throws [AccountError].
   Future<HouseholdFate> fate();
 
@@ -98,6 +101,9 @@ class SupabaseAccountRepository(
   /// The wait before the one retry of a delete the edge gateway dropped.
   final Duration _retryDelay = const Duration(seconds: 1),
 }) implements AccountRepository {
+  @override
+  String? get email => _client.auth.currentUser?.email;
+
   @override
   Future<HouseholdFate> fate() => _guard(() async {
     final userId = _client.auth.currentUser!.id;

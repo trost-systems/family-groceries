@@ -413,7 +413,7 @@ export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> 
 export async function openMore(page: Page, entry: string): Promise<void> {
   await openTab(page, 'Mehr');
   // The tab comes back to the page it was left on; a second tap goes to its first page, More's list.
-  await expect(page).toHaveURL(/\/(more|settings)\b/);
+  await expect(page).toHaveURL(/\/more\b/);
   if (new URL(page.url()).pathname !== '/more') await openTab(page, 'Mehr');
   await expect(page).toHaveURL(/\/more$/);
   await page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) }).click();
