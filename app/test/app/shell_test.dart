@@ -2,7 +2,6 @@ import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
-import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,9 +36,7 @@ void main() {
                     MemoryListCache(),
                     userId: 'peter',
                   )..start(),
-                  child: const ShoppingList(
-                    household: Household(id: 'h', name: 'Trost'),
-                  ),
+                  child: const ShoppingList(),
                 )
               : const SizedBox(),
         ),

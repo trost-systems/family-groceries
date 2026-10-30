@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { anonClient, answerConsent, apiAs, password, typeInto } from './helpers';
+import { addField, anonClient, answerConsent, apiAs, password, typeInto } from './helpers';
 
 /**
  * Job 28: the web build is `flutter build web --wasm`, which holds two apps. flutter_bootstrap.js
@@ -61,5 +61,5 @@ export async function signIn(page: Page, email: string): Promise<void> {
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await answerConsent(page);
-  await expect(page.getByText(/^\d+ Artikel$/)).toBeVisible({ timeout: 30_000 });
+  await expect(addField(page)).toBeVisible({ timeout: 30_000 });
 }

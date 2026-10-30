@@ -66,16 +66,15 @@ export async function putBack(page: Page, name: string): Promise<void> {
 export const actionSnackBar = (page: Page, text: string) => page.getByRole('group', { name: text, exact: true });
 
 /**
- * The list's visible band: from the header's bottom (8 px below the "N Artikel" line, or below the
- * sync icon while it shows) to the top of the add bar, 12 px above its field.
+ * The height of the bar above the list (`_Header.height` in app/lib/list/list_screen.dart): the
+ * same in every sync state, and the web has no top inset.
  */
+export const listBarHeight = 44;
+
+/** The list's visible band: from the bar above it to the top of the add bar, 12 px above its field. */
 export async function listArea(page: Page): Promise<{ top: number; bottom: number }> {
-  const count = (await page.getByText(/^\d+ Artikel$/).boundingBox())!;
-  const sync = await page.getByText(/^Offline: |^\d+ Änderung(en)? w(ird|erden) synchronisiert$/)
-    .boundingBox({ timeout: 100 }).catch(() => null);
-  const header = Math.max(count.y + count.height, sync ? sync.y + sync.height : 0) + 8;
   const field = (await addField(page).boundingBox())!;
-  return { top: header, bottom: field.y - 12 };
+  return { top: listBarHeight, bottom: field.y - 12 };
 }
 
 /**

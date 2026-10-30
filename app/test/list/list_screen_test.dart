@@ -1,13 +1,16 @@
+import 'dart:async';
+
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
+import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -47,9 +50,7 @@ void main() {
         home: BlocProvider(
           key: UniqueKey(),
           create: (_) => ListCubit(repo, cache, userId: 'peter')..start(),
-          child: const ShoppingList(
-            household: Household(id: 'h', name: 'Trost'),
-          ),
+          child: const ShoppingList(),
         ),
       ),
     );
@@ -1432,6 +1433,111 @@ void main() {
       await tester.pump();
       expect(sheetRow('Gurkensalat, Schon mal gekauft'), findsNothing);
       expect(sheetRow('Gurken, Wie getippt'), findsOneWidget);
+    });
+  });
+
+  group('the bar above the list', () {
+    Finder header() => find.byKey(const ValueKey('list-header'));
+    Finder syncIcon(IconData icon) =>
+        find.descendant(of: header(), matching: find.byIcon(icon));
+
+    /// The cubit's stream answers a microtask later: one frame to see it,
+    /// one to build it.
+    Future<void> frames(WidgetTester tester) async {
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('keeps its height in every sync state', (tester) async {
+      phone(tester);
+      // A notch: the bar starts below it.
+      tester.view.padding = const FakeViewPadding(top: 47 * 3);
+      await pumpList(
+        tester,
+        seed: (repo) => repo
+          ..remoteAdd('Brot')
+          ..remoteAdd('Milch'),
+      );
+      final cubit = BlocProvider.of<ListCubit>(tester.element(header()));
+      final list = find.byType(ShoppingListView);
+      final height = tester.getSize(header()).height;
+      final listTop = tester.getTopLeft(list).dy;
+      expect(height, 47 + 44);
+      expect(listTop, height);
+
+      void same(String state) {
+        expect(tester.getSize(header()).height, height, reason: state);
+        expect(tester.getTopLeft(list).dy, listTop, reason: state);
+      }
+
+      same('synced');
+      expect(syncIcon(Icons.cloud_upload_outlined), findsNothing);
+      expect(syncIcon(Icons.cloud_off), findsNothing);
+
+      final held = repo.gate = Completer<void>();
+      cubit.tick(repo.rows.values.firstWhere((i) => i.name == 'Milch').id);
+      await frames(tester);
+      expect(syncIcon(Icons.cloud_upload_outlined), findsOneWidget);
+      same('pending');
+
+      repo.online = false;
+      repo.emitStatus!(ConnectionStatus.offline);
+      await frames(tester);
+      expect(syncIcon(Icons.cloud_off), findsOneWidget);
+      same('offline with a pending change');
+
+      repo.emitStatus!(ConnectionStatus.connecting);
+      await frames(tester);
+      expect(syncIcon(Icons.cloud_upload_outlined), findsOneWidget);
+      same('reconnecting with a pending change');
+
+      repo
+        ..online = true
+        ..gate = null;
+      held.complete();
+      repo.emitStatus!(ConnectionStatus.online);
+      await frames(tester);
+      await tester.pump(const Duration(seconds: 1));
+      expect(cubit.state.pending, isEmpty);
+      expect(syncIcon(Icons.cloud_upload_outlined), findsNothing);
+      expect(syncIcon(Icons.cloud_off), findsNothing);
+      same('synced again');
+
+      repo.emitItem!(repo.remoteAdd('Tee'));
+      await frames(tester);
+      expect(find.byKey(const ValueKey('new-items-subtitle')), findsOneWidget);
+      same('a partner add');
+      repo.emitStatus!(ConnectionStatus.offline);
+      await frames(tester);
+      expect(syncIcon(Icons.cloud_off), findsOneWidget);
+      same('a partner add, offline');
+      await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('shows neither the household name nor the item count', (
+      tester,
+    ) async {
+      await pumpList(
+        tester,
+        seed: (repo) => repo
+          ..remoteAdd('Brot')
+          ..remoteAdd('Milch'),
+      );
+      expect(
+        find.descendant(of: header(), matching: find.byType(Text)),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('list-title')), findsNothing);
+      expect(find.byKey(const ValueKey('list-count')), findsNothing);
+      expect(
+        find.descendant(
+          of: header(),
+          matching: find.byWidgetPredicate(
+            (w) => w is Semantics && (w.properties.header ?? false),
+          ),
+        ),
+        findsNothing,
+      );
     });
   });
 }

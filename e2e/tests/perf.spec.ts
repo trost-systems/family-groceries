@@ -1,5 +1,5 @@
 import { chromium, expect, test, type Browser, type Page } from './fixtures';
-import { newEmail } from './helpers';
+import { newEmail, storeDivider } from './helpers';
 import { householdWithItems, signIn, wasmAllowList, watchBuild, type Build } from './web-build';
 
 // Job 28: what "clunky" costs, per build, in the same browser and the same run. For each build:
@@ -39,11 +39,11 @@ function stats(intervals: number[]): Frames {
   };
 }
 
-/** Milliseconds from navigation to the frame that shows the list's "200 Artikel". */
+/** Milliseconds from navigation to the frame that shows the list's divider "Ohne Laden, 200 Artikel". */
 async function timeToList(page: Page): Promise<number> {
   const at = await page.waitForFunction(
-    // Semantics texts run together in textContent ("Messung200 Artikel"): no word boundaries.
-    () => (document.body.textContent ?? '').includes('200 Artikel') && performance.now(),
+    // The divider's name is an aria-label, so look in the markup, not only the text.
+    () => document.body.innerHTML.includes('200 Artikel') && performance.now(),
     undefined,
     { polling: 'raf', timeout: 60_000 },
   );
@@ -119,7 +119,7 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
     }
     expect([...new Set(loaded())], `every load ran the ${build} build`).toEqual([build]);
     expect(await page.evaluate(() => window.crossOriginIsolated), 'cross-origin isolated').toBe(!!isolated);
-    const list = await page.getByText(/^200 Artikel$/).boundingBox();
+    const list = await storeDivider(page, 'Ohne Laden').boundingBox();
     await page.mouse.move(196, (list?.y ?? 100) + 300);
     const first = await scrollPass(page);
     const second = await scrollPass(page);
