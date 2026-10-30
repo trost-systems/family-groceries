@@ -57,11 +57,31 @@ test('the JSON answer names each item with its category', async ({ page }) => {
   expect(JSON.parse(said.body)).toEqual({
     speech: 'Hinzugefügt: 1 Packung Eier, Windeln.',
     items: [
-      { name: 'Eier', brand: null, properties: null, quantity: '1 Packung', category: 'Kühlregal', alreadyOnList: false },
-      { name: 'Windeln', brand: null, properties: null, quantity: null, category: '👶 Drogerie', alreadyOnList: false },
+      { name: 'Eier', brand: null, properties: null, quantity: '1 Packung', category: 'Kühlregal', alreadyOnList: false,
+        similarOnList: [] },
+      { name: 'Windeln', brand: null, properties: null, quantity: null, category: '👶 Drogerie', alreadyOnList: false,
+        similarOnList: [] },
     ],
     truncated: false,
   });
+});
+
+test('Siri adds Karotten with Möhren open and says Möhren is on the list (job 32b, AC10)', async ({ page }) => {
+  const email = newEmail('voice-similar');
+  await signUpWithHousehold(page, email);
+  const token = await sessionToken(email);
+  await say(token, '500 Gramm Möhren', '?format=text');
+  const said = await say(token, 'ein Kilo Karotten und Milch');
+  expect(said.status).toBe(200);
+  const body = JSON.parse(said.body);
+  expect(body.speech).toBe('Hinzugefügt: 1 kg Karotten, Milch. Möhren steht schon auf der Liste.');
+  expect(body.items.map((i: { name: string; similarOnList: string[] }) => [i.name, i.similarOnList]))
+    .toEqual([['Karotten', ['Möhren']], ['Milch', []]]);
+  // Nothing is dropped or merged: both carrots are on the list, as said.
+  await expect(itemRow(page, 'Möhren')).toBeVisible();
+  await expect(itemRow(page, 'Karotten')).toBeVisible();
+  // No hint in the app for an add it did not make.
+  await expect(page.getByRole('group', { name: 'Möhren steht schon auf der Liste', exact: true })).toHaveCount(0);
 });
 
 test('errors come back as German sentences Siri can speak', async ({ page }) => {

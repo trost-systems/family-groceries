@@ -103,4 +103,13 @@ select encode(sha256('amzn1.ask.account.BACKUP'::bytea), 'hex'), gen_random_uuid
 from auth.users where email = 'peter@backup.test';
 select public.alexa_take_adds((select id from auth.users where email = 'peter@backup.test'), 2);
 
+-- Job 32b: Lea adds Karotten while Möhren is open and merges them (item_merges keeps both rows
+-- for the undo).
+select pg_temp.login('lea@backup.test');
+select public.add_items((select id from fx where key = 'home'), array['500 g Möhren', '1 kg Karotten']);
+select public.merge_items(gen_random_uuid(),
+  (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Möhren'),
+  (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Karotten'));
+reset role;
+
 commit;

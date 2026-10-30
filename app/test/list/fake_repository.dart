@@ -5,6 +5,7 @@ import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/quantity.dart';
 
 /// An in-memory server. [online] false makes every call fail like a dropped
 /// connection; [reject] makes the next write fail like a refused one.
@@ -220,8 +221,12 @@ class FakeRepository() implements ListRepository {
     return usuals;
   }
 
+  /// The merges the fake server did, by merge id, with both rows as they
+  /// were (for the undo) and whether they were undone.
+  final merges = <String, ({Item kept, Item merged, bool undone})>{};
+
   @override
-  Future<Item?> send(ItemOp op) async {
+  Future<Map<String, Item?>> send(ItemOp op) async {
     await gate?.future;
     _ensureOnline();
     if (reject) {
@@ -229,6 +234,96 @@ class FakeRepository() implements ListRepository {
       throw const RejectedOp('denied');
     }
     sent.add(op);
+    final Map<String, Item?> touched;
+    switch (op) {
+      case MergeItems(:final mergeId, :final otherId):
+        touched = _merge(op, mergeId, otherId);
+      case UnmergeItems(:final mergeId, :final merged):
+        touched = _unmerge(op, mergeId, merged.id);
+      default:
+        return {op.itemId: _sendOne(op)};
+    }
+    if (loseNextAnswer) {
+      loseNextAnswer = false;
+      throw Exception('answer lost');
+    }
+    return touched;
+  }
+
+  /// As `merge_items`: once per merge id, both open; the kept row takes the
+  /// merged quantity (the app's mirror of the server's rule).
+  Map<String, Item?> _merge(MergeItems op, String mergeId, String otherId) {
+    final (kept, other) = (rows[op.itemId], rows[otherId]);
+    if (!merges.containsKey(mergeId)) {
+      if (kept == null || other == null) {
+        return {op.itemId: kept, otherId: other};
+      }
+      if (kept.status != ItemStatus.active ||
+          other.status != ItemStatus.active) {
+        throw const RejectedOp('not_open');
+      }
+      final String quantity;
+      try {
+        quantity = mergeQuantities(kept.quantity, other.quantity);
+      } on QuantityTooLong {
+        throw const RejectedOp('merged_quantity_too_long');
+      }
+      merges[mergeId] = (kept: kept, merged: other, undone: false);
+      rows[op.itemId] = _stamp(
+        kept.copyWith(
+          quantity: () => quantity,
+          brand: () => kept.brand ?? other.brand,
+          properties: () => kept.properties ?? other.properties,
+        ),
+      );
+      rows.remove(otherId);
+    }
+    return {op.itemId: rows[op.itemId], otherId: rows[otherId]};
+  }
+
+  Map<String, Item?> _unmerge(UnmergeItems op, String mergeId, String otherId) {
+    final merge = merges[mergeId];
+    if (merge != null && !merge.undone) {
+      merges[mergeId] = (kept: merge.kept, merged: merge.merged, undone: true);
+      if (rows[op.itemId] case final kept?) {
+        rows[op.itemId] = _stamp(
+          kept.copyWith(
+            quantity: () => merge.kept.quantity,
+            brand: () => merge.kept.brand,
+            properties: () => merge.kept.properties,
+          ),
+        );
+      }
+      rows[otherId] = _stamp(merge.merged);
+    }
+    return {op.itemId: rows[op.itemId], otherId: rows[otherId]};
+  }
+
+  Item _stamp(Item item) => Item(
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    brand: item.brand,
+    properties: item.properties,
+    categoryId: item.categoryId,
+    storeId: item.storeId,
+    sortKey: item.sortKey,
+    status: item.status,
+    createdAt: item.createdAt,
+    updatedAt: _tick(),
+    boughtAt: item.boughtAt,
+    addedBy: item.addedBy,
+    categorizedVia: item.categorizedVia,
+    canonicalKey: item.canonicalKey,
+  );
+
+  /// What the items trigger sets as `canonical_key` for a name: here the
+  /// test's [canonical] table, else the folded name.
+  final canonical = <String, String>{};
+
+  String canonicalOf(String name) => canonical[name] ?? foldName(name);
+
+  Item? _sendOne(ItemOp op) {
     final current = rows[op.itemId];
     final next = switch (op) {
       AddItem(:final item) =>
@@ -247,6 +342,7 @@ class FakeRepository() implements ListRepository {
               updatedAt: _clock,
               addedBy: me,
               categorizedVia: categorizedVia,
+              canonicalKey: canonicalOf(item.name),
             ),
       PlaceItem(:final anchorId, :final edge) => _place(
         current,
@@ -283,6 +379,9 @@ class FakeRepository() implements ListRepository {
       boughtAt: next.boughtAt,
       addedBy: next.addedBy,
       categorizedVia: next.categorizedVia,
+      canonicalKey: next.name == current?.name
+          ? next.canonicalKey
+          : canonicalOf(next.name),
     );
     rows[op.itemId] = stamped;
     if (loseNextAnswer) {
@@ -366,6 +465,7 @@ class FakeRepository() implements ListRepository {
       createdAt: _tick(),
       updatedAt: _clock,
       addedBy: addedBy,
+      canonicalKey: canonicalOf(name),
     );
     return rows[item.id] = item.copyWith(sortKey: () => _endOf(item));
   }

@@ -158,6 +158,24 @@ abstract class AppLocalizations {
   /// **'{name} steht schon auf der Liste'**
   String alreadyOnList(String name);
 
+  /// No description provided for @dedupeMerge.
+  ///
+  /// In de, this message translates to:
+  /// **'Zusammenführen'**
+  String get dedupeMerge;
+
+  /// No description provided for @dedupeMerged.
+  ///
+  /// In de, this message translates to:
+  /// **'Zusammengeführt: {item}'**
+  String dedupeMerged(String item);
+
+  /// No description provided for @mergeRefused.
+  ///
+  /// In de, this message translates to:
+  /// **'{name} konnte nicht zusammengeführt werden'**
+  String mergeRefused(String name);
+
   /// No description provided for @dictationStart.
   ///
   /// In de, this message translates to:

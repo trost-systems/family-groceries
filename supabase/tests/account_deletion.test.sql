@@ -1,5 +1,5 @@
 begin;
-select plan(41);
+select plan(43);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -38,7 +38,8 @@ language sql as $$
   union all select 'item_store_memory', count(*)::int from public.item_store_memory where household_id = p_household
   union all select 'personal_access_tokens', count(*)::int from public.personal_access_tokens where household_id = p_household
   union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household
-  union all select 'feedback', count(*)::int from public.feedback where household_id = p_household;
+  union all select 'feedback', count(*)::int from public.feedback where household_id = p_household
+  union all select 'item_merges', count(*)::int from public.item_merges where household_id = p_household;
 $$;
 
 select is(
@@ -185,11 +186,26 @@ select is(
   'real edits are still history'
 );
 
+-- Job 32b: Bob merged his Karotten into his Möhren; the merge keeps both rows for its undo.
+insert into public.items (id, household_id, name) select '32b00000-0000-4000-8000-0000000000b1', id, 'Möhren' from h;
+insert into public.items (id, household_id, name) select '32b00000-0000-4000-8000-0000000000b2', id, 'Karotten' from h;
+do $$ begin perform public.merge_items('32b00000-0000-4000-8000-0000000000bb',
+  '32b00000-0000-4000-8000-0000000000b1', '32b00000-0000-4000-8000-0000000000b2'); end $$;
+
 -- The dashboard and the admin API delete straight from auth.users.
 select pg_temp.as_postgres();
 select lives_ok(
   $$ delete from auth.users where id = '00000000-0000-0000-0000-0000000000b1' $$,
   'a user who added and bought items can be deleted directly'
+);
+select is(
+  (select count(*)::int from public.item_merges
+   where merged_by is not null or merged_row ->> 'added_by' is not null or kept_before ->> 'added_by' is not null),
+  0, 'stored merges forget the deleted user'
+);
+select is(
+  (select merged_row ->> 'name' from public.item_merges where id = '32b00000-0000-4000-8000-0000000000bb'),
+  'Karotten', 'and keep the item for the household''s undo'
 );
 select results_eq(
   $$ select count(*)::int from public.items where added_by is not null or bought_by is not null $$,

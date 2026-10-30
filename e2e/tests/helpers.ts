@@ -470,7 +470,8 @@ export async function enterItem(page: Page, text: string): Promise<void> {
   // The row for what was typed shows once the app has the text.
   await expect(addSheet(page).getByRole('button', { name: /, Wie getippt(,|$)/ })).toBeVisible();
   await page.keyboard.press('Enter');
-  await expect(addedNote(page)).toBeVisible();
+  // First: a duplicate hint (job 32b, "Möhren steht schon auf der Liste") may follow the line.
+  await expect(addedNote(page).first()).toBeVisible();
 }
 
 /**

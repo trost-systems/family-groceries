@@ -7,6 +7,7 @@ import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/quantity.dart';
 import 'package:flutter/foundation.dart' show immutable, listEquals, setEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -71,11 +72,28 @@ final class const ItemRejected(final String itemName) extends Rejected;
 
 final class const NameTaken(final String name) extends Rejected;
 
+/// A duplicate-hint merge could not be done: an item is gone or no longer
+/// open, or the merged quantity would be too long. Both items stay.
+final class const MergeRefused(final String name) extends Rejected;
+
 /// A category or layout change did not save; the catalog was reloaded.
 final class const CatalogRejected() extends Rejected;
 
 /// A store or category order change made offline; nothing changed.
 final class const NeedsConnection() extends Rejected;
+
+/// Job 32b: [added] just landed, and [onList] (open, another spelling or a
+/// synonym of it) was on the list already. The UI offers to merge them.
+final class const DedupeHint(final Item added, final Item onList);
+
+/// A merge the UI can undo: both items as they were before it, and the kept
+/// item as the merge shows it.
+final class const Merge(
+  final String id, {
+  required final Item kept,
+  required final Item merged,
+  required final Item result,
+});
 
 const _maxResubscribe = Duration(seconds: 30);
 
@@ -96,6 +114,7 @@ class ListCubit(
 
   final DateTime Function() _clock = clock ?? DateTime.now;
   final _rejections = StreamController<Rejected>.broadcast();
+  final _hints = StreamController<DedupeHint>.broadcast();
   Future<void> Function()? _unwatch;
   Timer? _retry;
   Timer? _catalogReload;
@@ -126,6 +145,11 @@ class ListCubit(
   var _seenLoaded = false;
 
   Stream<Rejected> get rejections => _rejections.stream;
+
+  /// A new add of something already open under another spelling, once its
+  /// add is acknowledged (the server sets the canonical key). Never for a
+  /// restore, a retry or a partner's add.
+  Stream<DedupeHint> get hints => _hints.stream;
 
   /// Shows the cached list, if any, then connects. Ops queued before the
   /// cache answers go after the cached ones.
@@ -407,6 +431,62 @@ class ListCubit(
 
   void delete(String id) => _enqueue(DeleteItem(id));
 
+  /// The UI showed [DedupeHint]s once.
+  void hintShown() => _track('dedupe_hint_shown', _actor());
+
+  /// The hint went away without a merge.
+  void hintIgnored() => _track('dedupe_hint_ignored', _actor());
+
+  /// Folds the hint's new item into the open one: the open item keeps its
+  /// text, the quantities merge (`public.merge_quantities`), the new item
+  /// goes. Null, with a [MergeRefused], when an item is gone or ticked by now
+  /// or the merged quantity would not fit.
+  Merge? merge(DedupeHint hint) {
+    final items = state.items;
+    final kept = items[hint.onList.id];
+    final other = items[hint.added.id];
+    if (kept == null ||
+        other == null ||
+        kept.status != ItemStatus.active ||
+        other.status != ItemStatus.active) {
+      _report(MergeRefused(hint.onList.name));
+      return null;
+    }
+    final String quantity;
+    try {
+      quantity = mergeQuantities(kept.quantity, other.quantity);
+    } on QuantityTooLong {
+      _report(MergeRefused(kept.name));
+      return null;
+    }
+    final op = MergeItems(
+      kept.id,
+      mergeId: const Uuid().v4(),
+      otherId: other.id,
+      quantity: quantity,
+      brand: kept.brand ?? other.brand,
+      properties: kept.properties ?? other.properties,
+    );
+    _enqueue(op);
+    _track('dedupe_hint_merged', _actor());
+    return Merge(
+      op.mergeId,
+      kept: kept,
+      merged: other,
+      result: op.apply(kept)!,
+    );
+  }
+
+  /// Puts both items back as they were before [merge].
+  void unmerge(Merge merge) => _enqueue(
+    UnmergeItems(
+      merge.kept.id,
+      mergeId: merge.id,
+      kept: merge.kept,
+      merged: merge.merged,
+    ),
+  );
+
   /// Puts a deleted item back, keeping its id, category and place.
   void restore(Item item) => _enqueue(
     AddItem(
@@ -634,7 +714,11 @@ class ListCubit(
           _ack(op, await _repo.send(op));
         } on RejectedOp {
           _drop(op);
-          _report(ItemRejected(_nameOf(op)));
+          _report(
+            op is MergeItems
+                ? MergeRefused(_nameOf(op))
+                : ItemRejected(_nameOf(op)),
+          );
           unawaited(resync());
         } on Object {
           _goOffline();
@@ -646,10 +730,11 @@ class ListCubit(
     }
   }
 
-  void _ack(ItemOp op, Item? row) {
+  void _ack(ItemOp op, Map<String, Item?> rows) {
     for (final acked in _resyncAcks) {
-      acked[op.itemId] = row;
+      acked.addAll(rows);
     }
+    final row = rows[op.itemId];
     // Job 32a: how the server categorized a new add, once per add (an op is
     // acknowledged once, also after a retry whose first answer was lost).
     if (op case AddItem(restored: false)) {
@@ -658,9 +743,12 @@ class ListCubit(
         _track('item_categorized', {'via': via});
       }
     }
-    final server = row == null
-        ? ({...state.server}..remove(op.itemId))
-        : mergeServerRow(state.server, row);
+    var server = state.server;
+    for (final MapEntry(:key, :value) in rows.entries) {
+      server = value == null
+          ? ({...server}..remove(key))
+          : mergeServerRow(server, value);
+    }
     emit(
       state.copyWith(
         server: server,
@@ -668,6 +756,17 @@ class ListCubit(
         connection: ConnectionStatus.online,
       ),
     );
+    // Job 32b: once the server has keyed a new add, name an open item that
+    // is another spelling of it (the add itself went through).
+    if (op case AddItem(restored: false)) {
+      final added = state.items[op.itemId];
+      if (added != null && added.status == ItemStatus.active) {
+        final similar = similarItems(added, state.items.values);
+        if (similar.isNotEmpty && !_hints.isClosed) {
+          _hints.add(DedupeHint(added, similar.first));
+        }
+      }
+    }
   }
 
   void _drop(ItemOp op) => emit(
@@ -757,6 +856,7 @@ class ListCubit(
     _usualsReload?.cancel();
     await _unwatch?.call();
     await _rejections.close();
+    await _hints.close();
     await super.close();
   }
 }

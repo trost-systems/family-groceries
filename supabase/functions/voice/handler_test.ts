@@ -1,6 +1,13 @@
 import { assertEquals, assertMatch } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
-import { type Added, type Caller, confirmation, createHandler, type Deps } from './handler.ts';
+import {
+  type Added,
+  type Caller,
+  confirmation,
+  createHandler,
+  type Deps,
+  similarNote,
+} from './handler.ts';
 import type { ParsedItem } from './parse.ts';
 
 const caller: Caller = { userId: 'u1', householdId: 'h1' };
@@ -23,6 +30,7 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
         properties: null,
         category: 'Sonstiges',
         alreadyOnList: item.name === 'Milch',
+        similarOnList: [],
       })));
     },
     ...overrides,
@@ -54,6 +62,7 @@ Deno.test('adds the split items and confirms them in German', async () => {
     quantity: '2',
     category: 'Sonstiges',
     alreadyOnList: false,
+    similarOnList: [],
   });
 });
 
@@ -191,11 +200,67 @@ Deno.test('confirmation lists only what was said back', () => {
     quantity,
     category: 'Kühlregal',
     alreadyOnList,
+    similarOnList: [],
   });
   assertEquals(confirmation([item('Milch', true)]), 'Schon auf der Liste: Milch.');
   assertEquals(
     confirmation([item('Mehl', false, '1 kg'), item('Eier', false)]),
     'Hinzugefügt: 1 kg Mehl, Eier.',
+  );
+});
+
+Deno.test('a new item with a similar one open is added, and Siri says what is open (job 32b)', async () => {
+  const { handle } = fakeDeps({
+    addItems: () =>
+      Promise.resolve([
+        {
+          name: 'Karotten',
+          brand: null,
+          properties: null,
+          quantity: '500 g',
+          category: 'Obst & Gemüse',
+          alreadyOnList: false,
+          similarOnList: ['Möhren'],
+        },
+        {
+          name: 'Milch',
+          brand: null,
+          properties: null,
+          quantity: null,
+          category: 'Kühlregal',
+          alreadyOnList: false,
+          similarOnList: [],
+        },
+      ]),
+  });
+  const body = await (await handle(post({ text: '500 g Karotten und Milch' }))).json();
+  assertEquals(
+    body.speech,
+    'Hinzugefügt: 500 g Karotten, Milch. Möhren steht schon auf der Liste.',
+  );
+  assertEquals(body.items[0].similarOnList, ['Möhren']);
+  assertEquals(body.items[0].alreadyOnList, false);
+});
+
+Deno.test('the similar note names several open items once each', () => {
+  assertEquals(similarNote(['Möhren']), 'Möhren steht schon auf der Liste.');
+  assertEquals(similarNote(['Möhren', 'Milch']), 'Möhren und Milch stehen schon auf der Liste.');
+  assertEquals(
+    similarNote(['Möhren', 'Milch', 'Semmeln']),
+    'Möhren, Milch und Semmeln stehen schon auf der Liste.',
+  );
+  const item = (name: string, similarOnList: string[]): Added => ({
+    name,
+    brand: null,
+    properties: null,
+    quantity: null,
+    category: 'Obst & Gemüse',
+    alreadyOnList: false,
+    similarOnList,
+  });
+  assertEquals(
+    confirmation([item('Karotten', ['Möhren']), item('Mohrrüben', ['Möhren'])]),
+    'Hinzugefügt: Karotten, Mohrrüben. Möhren steht schon auf der Liste.',
   );
 });
 
@@ -210,6 +275,7 @@ Deno.test('the confirmation reads brand and properties back after the name', asy
           quantity: null,
           category: '👶 Drogerie',
           alreadyOnList: false,
+          similarOnList: [],
         },
         {
           name: 'Milch',
@@ -218,6 +284,7 @@ Deno.test('the confirmation reads brand and properties back after the name', asy
           quantity: '2 l',
           category: 'Kühlregal',
           alreadyOnList: false,
+          similarOnList: [],
         },
       ]),
   });

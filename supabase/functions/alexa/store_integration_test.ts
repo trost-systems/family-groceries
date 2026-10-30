@@ -225,3 +225,24 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: 'job 32b: Alexa adds Karotten with Möhren open, keeps both and names Möhren',
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withUsers(1, async ([peter]) => {
+      await ask(peter.userId, add('500 Gramm Möhren'));
+      const said = await ask(peter.userId, add('ein Kilo Karotten'));
+      assertEquals(
+        said.response.outputSpeech.text,
+        'Ich habe 1 Kilo Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.',
+      );
+      assertEquals((await open(peter.householdId)).map(([n, q]) => [n, q]), [
+        ['Möhren', '500 g'],
+        ['Karotten', '1 kg'],
+      ]);
+    });
+  },
+});

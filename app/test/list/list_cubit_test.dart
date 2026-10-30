@@ -667,4 +667,155 @@ void main() {
       });
     });
   });
+
+  group('duplicate hint (job 32b)', () {
+    late List<DedupeHint> hints;
+    late StreamSubscription<DedupeHint> listening;
+
+    setUp(() {
+      repo.canonical.addAll({'Möhren': 'mohr', 'Karotten': 'mohr'});
+      hints = [];
+      listening = cubit.hints.listen(hints.add);
+    });
+
+    tearDown(() => listening.cancel());
+
+    Future<Item> addMoehren() async {
+      final added = cubit.addEntry(const Entry('Möhren', '500 g')) as Added;
+      await settle();
+      return cubit.state.items[added.item.id]!;
+    }
+
+    test('an own add of another spelling is added and hinted once the server '
+        'keyed it', () async {
+      final moehren = await addMoehren();
+      expect(hints, isEmpty);
+      repo.gate = Completer();
+      final result = cubit.addEntry(const Entry('Karotten', '1 kg'));
+      expect(result, isA<Added>(), reason: 'never refused as a duplicate');
+      await settle();
+      expect(hints, isEmpty, reason: 'the key comes with the acknowledgement');
+      repo.gate!.complete();
+      await settle();
+      expect(activeNames(), ['Möhren', 'Karotten']);
+      expect(hints.single.onList.id, moehren.id);
+      expect(hints.single.added.name, 'Karotten');
+    });
+
+    test("no hint for a partner's add or a restored delete", () async {
+      await addMoehren();
+      repo.emitItem!(repo.remoteAdd('Karotten'));
+      await settle();
+      final karotten = cubit.state.items.values.firstWhere(
+        (i) => i.name == 'Karotten',
+      );
+      cubit.delete(karotten.id);
+      await settle();
+      cubit.restore(karotten);
+      await settle();
+      expect(activeNames(), ['Möhren', 'Karotten']);
+      expect(hints, isEmpty);
+    });
+
+    test(
+      'a merge and its undo made offline land in order once online',
+      () async {
+        final moehren = await addMoehren();
+        cubit.addEntry(const Entry('Karotten', '1 kg'));
+        await settle();
+        final karotten = repo.rows.values.firstWhere(
+          (i) => i.name == 'Karotten',
+        );
+        repo.online = false;
+        final merge = cubit.merge(hints.single)!;
+        expect(merge.result.quantity, '1,5 kg');
+        expect(activeNames(), ['Möhren']);
+        expect(cubit.state.items[moehren.id]!.quantity, '1,5 kg');
+        cubit.unmerge(merge);
+        expect(activeNames(), ['Möhren', 'Karotten']);
+        expect(cubit.state.items[moehren.id]!.quantity, '500 g');
+
+        repo.online = true;
+        await cubit.resync();
+        await settle();
+        expect(cubit.state.pending, isEmpty);
+        expect(repo.rows[moehren.id]!.quantity, '500 g');
+        expect(repo.rows[karotten.id]!.quantity, '1 kg');
+        expect(repo.rows[karotten.id]!.addedBy, karotten.addedBy);
+        expect(repo.sent.whereType<MergeItems>(), hasLength(1));
+        expect(repo.sent.whereType<UnmergeItems>(), hasLength(1));
+      },
+    );
+
+    test('a merge whose answer is lost is retried as the same merge', () async {
+      final moehren = await addMoehren();
+      cubit.addEntry(const Entry('Karotten', '1 kg'));
+      await settle();
+      repo.loseNextAnswer = true;
+      cubit.merge(hints.single);
+      await settle();
+      await cubit.resync();
+      await settle();
+      expect(repo.rows[moehren.id]!.quantity, '1,5 kg');
+      expect(repo.merges, hasLength(1));
+      expect(repo.sent.whereType<MergeItems>(), hasLength(2));
+      expect(activeNames(), ['Möhren']);
+    });
+
+    test(
+      'merging after an item was ticked is refused; nothing is lost',
+      () async {
+        final moehren = await addMoehren();
+        cubit.addEntry(const Entry('Karotten', '1 kg'));
+        await settle();
+        final refused = <Rejected>[];
+        final sub = cubit.rejections.listen(refused.add);
+        addTearDown(sub.cancel);
+        cubit.tick(moehren.id);
+        await settle();
+        expect(cubit.merge(hints.single), isNull);
+        await settle();
+        expect(refused.single, isA<MergeRefused>());
+        expect(repo.sent.whereType<MergeItems>(), isEmpty);
+      },
+    );
+
+    test('a merge too long for the quantity column is refused', () async {
+      repo.canonical.addAll({
+        'Klopapier': 'klopapier',
+        'Toilettenpapier': 'klopapier',
+      });
+      cubit.addEntry(const Entry('Klopapier', 'Großpackung mit vielen Rollen'));
+      await settle();
+      cubit.addEntry(
+        const Entry('Toilettenpapier', 'Kleinpackung mit vielen Rollen'),
+      );
+      await settle();
+      final refused = <Rejected>[];
+      final sub = cubit.rejections.listen(refused.add);
+      addTearDown(sub.cancel);
+      expect(cubit.merge(hints.single), isNull);
+      await settle();
+      expect(refused.single, isA<MergeRefused>());
+      expect(activeNames(), ['Klopapier', 'Toilettenpapier']);
+    });
+
+    test('pending merges survive a restart', () async {
+      await addMoehren();
+      cubit.addEntry(const Entry('Karotten', '1 kg'));
+      await settle();
+      repo.online = false;
+      cubit.merge(hints.single);
+      await settle();
+      await cubit.close();
+      cubit = ListCubit(repo, cache, userId: 'peter')..start();
+      await settle();
+      expect(cubit.state.pending.single, isA<MergeItems>());
+      expect(activeNames(), ['Möhren']);
+      repo.online = true;
+      await cubit.resync();
+      await settle();
+      expect(repo.rows.values.map((i) => i.quantity), ['1,5 kg']);
+    });
+  });
 }

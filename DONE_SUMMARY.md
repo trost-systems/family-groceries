@@ -296,3 +296,10 @@ See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
 production until Peter's OK), More → "Hilfe & Kontakt" (debug/test builds only until then),
 `docs/PRIVACY_DATA_MAP.md` for the store privacy forms, stale "Menü" directions fixed in the Siri
 texts. The privacy policy itself is 33a's. See [docs/done/24-privacy-page.md](docs/done/24-privacy-page.md).
+
+## Job 32b: duplicate hint with one-tap merge (Spec #8 Part B)
+
+"Karotten" with "Möhren" open is added and the list offers "Zusammenführen"; the merge runs on
+the server in one transaction (500 g + 1 kg = 1,5 kg, else "1 Bund + 500 g") and Rückgängig
+restores both items exactly. MCP and Siri report the similar item. Details:
+[docs/done/32b-dedupe-hint.md](docs/done/32b-dedupe-hint.md).

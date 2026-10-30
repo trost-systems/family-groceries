@@ -1,5 +1,5 @@
 begin;
-select plan(57);
+select plan(59);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -36,6 +36,11 @@ create temp table alice_item as select id, sort_key from public.items where hous
 insert into public.items (household_id, name) select id, 'Kaffee' from ha;
 update public.items set status = 'bought' where household_id = (select id from ha) and name = 'Kaffee';
 delete from public.items where household_id = (select id from ha) and name = 'Kaffee';
+-- Job 32b: a duplicate-hint merge (Möhren + Karotten) in Alice's household.
+insert into public.items (id, household_id, name) select '32b00000-0000-4000-8000-000000000001', id, 'Möhren' from ha;
+insert into public.items (id, household_id, name) select '32b00000-0000-4000-8000-000000000002', id, 'Karotten' from ha;
+do $$ begin perform public.merge_items('32b00000-0000-4000-8000-0000000000a1',
+  '32b00000-0000-4000-8000-000000000001', '32b00000-0000-4000-8000-000000000002'); end $$;
 
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
 create temp table hb as select id from public.create_household('Bob');
@@ -62,6 +67,10 @@ select is((select count(*)::int from public.item_events where household_id = (se
 select is((select count(*)::int from public.profiles), 1, 'profiles outside the household are invisible');
 select is((select count(*)::int from public.suggest_items((select id from ha), '', 200)), 0,
   'suggestions from another household''s history are empty');
+select is((select count(*)::int from public.item_merges where household_id = (select id from ha)), 0,
+  'duplicate-hint merges of another household are invisible');
+select throws_ok($$ select public.unmerge_items('32b00000-0000-4000-8000-0000000000a1') $$, '42501', null,
+  'undoing another household''s merge is denied');
 
 select throws_ok(
   $$ insert into public.items (household_id, name) select id, 'Fremd' from ha $$,
@@ -162,8 +171,8 @@ select results_eq(
 select is((select count(*)::int from public.store_category_order where store_id = (select id from alice_store) and hidden), 0,
   'the other user''s layout update changed nothing');
 select results_eq(
-  $$ select name from public.items where household_id = (select id from ha) $$,
-  $$ values ('Milch') $$,
+  $$ select name from public.items where household_id = (select id from ha) order by name $$,
+  $$ values ('Milch'), ('Möhren') $$,
   'the other user''s update and delete attempts changed nothing'
 );
 select is((select count(*)::int from public.categories where household_id = (select id from ha)), 11,
