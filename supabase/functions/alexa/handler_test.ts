@@ -9,7 +9,7 @@ import type { Added } from '../voice/handler.ts';
 import type { ParsedItem } from '../voice/parse.ts';
 import { countAdds } from './analytics.ts';
 import { createHandler, type Deps, type Linked } from './handler.ts';
-import { readLimit, speech } from './speech.ts';
+import { confirmation, readLimit, speech } from './speech.ts';
 import type { AnalyticsSubject } from './store.ts';
 import { makeTestCa, testCertUrl, testSkillId } from './test_ca.ts';
 import { type Envelope, verifyRequest } from './verify.ts';
@@ -94,6 +94,7 @@ class World {
             properties: null,
             category: categoryOf[item.name.toLowerCase()] ?? 'Sonstiges',
             alreadyOnList: existing !== undefined,
+            similarOnList: [],
           });
         }
         return Promise.resolve(added);
@@ -662,6 +663,7 @@ const added = (name: string, alreadyOnList = false): Added => ({
   properties: null,
   category: 'Kühlregal',
   alreadyOnList,
+  similarOnList: [],
 });
 
 Deno.test('AC10: with consent, one item_added (source alexa) per new item, no names', async () => {
@@ -759,4 +761,25 @@ Deno.test('a lowercase utterance (as Alexa may hear it) is stored with German ca
     }),
   );
   assertEquals(asHeard.rows.map((r) => r.name), ['Rote Paprika', 'Milch von der Weide']);
+});
+
+Deno.test('job 32b: a new item with another spelling open is added, and Alexa names the open one', () => {
+  const karotten = { ...added('Karotten'), similarOnList: ['Möhren'] };
+  assertEquals(
+    confirmation([karotten]),
+    'Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.',
+  );
+  assertEquals(
+    confirmation([
+      karotten,
+      { ...added('Mohrrüben'), similarOnList: ['Möhren'] },
+      added('Milch', true),
+    ]),
+    'Karotten und Mohrrüben sind auf der Hummlist. Schon auf der Hummlist: Milch. ' +
+      'Möhren steht schon auf der Hummlist.',
+  );
+  assertEquals(
+    confirmation([{ ...added('Karotten'), similarOnList: ['Möhren', 'Gelbe Rüben'] }]),
+    'Ich habe Karotten auf die Hummlist gesetzt. Möhren und Gelbe Rüben stehen schon auf der Hummlist.',
+  );
 });

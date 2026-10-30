@@ -26,6 +26,12 @@ class const AddSheetState({
 
   /// The last add, shown with Undo until the next keystroke.
   final AddResult? added,
+
+  /// Job 32b: an open item that is another spelling of [added] ("Möhren"
+  /// for "Karotten"), offered for a merge in the note while the sheet is
+  /// open; and the merge once taken, with its undo.
+  final DedupeHint? hint,
+  final Merge? merge,
 }) {
   /// Whether [suggestions] answer what is typed now.
   bool get fresh => answered.isNotEmpty && answered == text.trim();
@@ -158,6 +164,72 @@ class AddSheetCubit(
     }
   }
 
+  /// Shows [hint] in the note, if the note is about its new item and the
+  /// sheet is open. Whether it took it; otherwise the list shows it.
+  bool offer(DedupeHint hint) {
+    if (state.open && state.merge == null) {
+      if (state.added case Added(:final item) when item.id == hint.added.id) {
+        _list.hintShown();
+        emit(_with(hint: () => hint));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Takes [hint] out of the note: its items are no longer both open.
+  void drop(DedupeHint hint) {
+    if (state.hint == hint && state.merge == null) {
+      emit(_with(hint: () => null));
+    }
+  }
+
+  /// Zusammenführen in the note.
+  void mergeHint() {
+    if (state.hint case final hint?) {
+      final merge = _list.merge(hint);
+      emit(merge == null ? _with(hint: () => null) : _with(merge: () => merge));
+    }
+  }
+
+  /// Rückgängig after a merge: both items come back, the note says what was
+  /// added again.
+  void undoMerge() {
+    if (state.merge case final merge?) {
+      _list.unmerge(merge);
+      emit(_with(hint: () => null, merge: () => null));
+    }
+  }
+
+  /// The sheet closes with a hint or a merge in its note: the list takes
+  /// them over (as snackbars), so they are not lost or counted as ignored.
+  (DedupeHint?, Merge?) handOver() {
+    final open = (state.merge == null ? state.hint : null, state.merge);
+    if (open != (null, null)) {
+      _handingOver = true;
+      emit(_with(hint: () => null, merge: () => null));
+      _handingOver = false;
+    }
+    return open;
+  }
+
+  var _handingOver = false;
+
+  /// A hint that leaves the note without a merge (typing on, the add's
+  /// undo, a new add) was ignored.
+  @override
+  void onChange(Change<AddSheetState> change) {
+    super.onChange(change);
+    final before = change.currentState;
+    if (before.hint != null &&
+        before.merge == null &&
+        change.nextState.hint != before.hint &&
+        change.nextState.merge == null &&
+        !_handingOver) {
+      _list.hintIgnored();
+    }
+  }
+
   Future<List<Suggestion>> _fetch(String key) {
     if (_loading case (final text, final future) when text == key) {
       return future;
@@ -228,6 +300,8 @@ class AddSheetCubit(
     List<Suggestion>? suggestions,
     String? answered,
     AddResult? Function()? added,
+    DedupeHint? Function()? hint,
+    Merge? Function()? merge,
   }) => AddSheetState(
     open: open ?? state.open,
     text: text ?? state.text,
@@ -236,6 +310,8 @@ class AddSheetCubit(
     suggestions: suggestions ?? state.suggestions,
     answered: answered ?? state.answered,
     added: added == null ? state.added : added(),
+    hint: hint == null ? (added == null ? state.hint : null) : hint(),
+    merge: merge == null ? (added == null ? state.merge : null) : merge(),
   );
 
   @override

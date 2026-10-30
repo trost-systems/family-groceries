@@ -43,7 +43,7 @@ Invocation: "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öf
 
 | Intent | Examples (de-DE.json has them all) | Answer |
 | --- | --- | --- |
-| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | one item: "Ich habe Milch auf die Hummlist gesetzt." · several: "Milch und Eier sind auf der Hummlist." · open already: "Schon auf der Hummlist: Milch." |
+| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | one item: "Ich habe Milch auf die Hummlist gesetzt." · several: "Milch und Eier sind auf der Hummlist." · open already: "Schon auf der Hummlist: Milch." · another spelling open (job 32b): "… Möhren steht schon auf der Hummlist." (added anyway) |
 | `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Hummlist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Hummlist ist leer." |
 | LaunchRequest | "Alexa, öffne Hummlist" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
 | `AMAZON.HelpIntent` | "Hilfe" | what the skill does, with the two examples; the session stays open |

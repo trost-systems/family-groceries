@@ -1,0 +1,54 @@
+# public.merge_quantities(open, other) and app/lib/list/quantity.dart mergeQuantities: one table
+# for both (tested by app/test/list/quantity_test.dart and the db gate's
+# supabase/functions/_shared/add_paths_integration_test.ts). Tab-separated; an empty cell is no
+# quantity; "!too_long" means the merge is refused (over the 40-character column).
+# open	other	merged
+500 g	1 kg	1,5 kg
+1 kg	500 g	1,5 kg
+200 g	300 g	500 g
+0,5 kg	200 g	700 g
+0.5 kg	200 g	700 g
+1 kg	1 kg	2 kg
+333 g	1 kg	1,333 kg
+500 Gramm	500 g	1 kg
+1 Kilo	250 g	1,25 kg
+1.000 g	1 kg	2 kg
+250 ml	250 ml	500 ml
+1,5 l	500 ml	2 l
+1 l	1 Liter	2 l
+750 ml	0,5 l	1,25 l
+2	3	5
+2	3 Stück	5 Stück
+3 Stück	2	5 Stück
+1 Stk	2 Stk	3 Stk
+6 Stk.	6	12 Stk.
+		2
+	2	3
+2		3
+	2 Stück	3 Stück
+	500 g	500 g
+500 g		500 g
+1 Bund		1 Bund
+1 Bund	500 g	1 Bund + 500 g
+500 g	1 Bund	500 g + 1 Bund
+1 Bund + 500 g	200 g	1 Bund + 700 g
+1 Bund + 500 g	1 Bund	2 Bund + 500 g
+1 Bund	2 Bund	3 Bund
+2 Packungen	1 Packung	3 Packungen
+1 Packung	1 Packung	2 Packungen
+1 packung	1 packung	2 packungen
+1 Dose	2 Dosen	3 Dosen
+1 Glas	1 Glas	2 Gläser
+2	500 g	2 + 500 g
+500 g	2	500 g + 2
+2 Stück	1 kg	2 Stück + 1 kg
+1 l	500 g	1 l + 500 g
+2 cl	2 cl	4 cl
+2 cl	100 ml	2 cl + 100 ml
+etwas	2	etwas + 2
+etwas		etwas
+2x500 g	1 kg	2x500 g + 1 kg
+1,25 kg	1,25 kg	2,5 kg
+0,1 l	0,2 l	300 ml
+1234,5 g	1 g	1,2355 kg
+Großpackung mit vielen Rollen	Kleinpackung mit vielen Rollen	!too_long

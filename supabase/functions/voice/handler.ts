@@ -20,6 +20,11 @@ export interface Added extends ParsedItem {
   category: string;
   /** True when the item was active already and nothing was added. */
   alreadyOnList: boolean;
+  /**
+   * Open items that are another spelling or a synonym of this new one ("Möhren" for
+   * "Karotten"), by name; it was added anyway (job 32b). Empty when there are none.
+   */
+  similarOnList: string[];
 }
 
 export interface Deps<C extends Caller = Caller> {
@@ -63,10 +68,20 @@ export function confirmation(results: Added[]): string {
   const list = (items: Added[]) => items.map(said).join(', ');
   const added = results.filter((r) => !r.alreadyOnList);
   const existing = results.filter((r) => r.alreadyOnList);
+  const similar = [...new Set(added.flatMap((r) => r.similarOnList ?? []))];
   return [
     added.length ? `Hinzugefügt: ${list(added)}.` : '',
     existing.length ? `Schon auf der Liste: ${list(existing)}.` : '',
+    similar.length ? similarNote(similar) : '',
   ].filter(Boolean).join(' ');
+}
+
+/** "Möhren steht schon auf der Liste.", "Möhren und Milch stehen schon auf der Liste." */
+export function similarNote(names: string[]): string {
+  const joined = names.length === 1
+    ? names[0]
+    : `${names.slice(0, -1).join(', ')} und ${names[names.length - 1]}`;
+  return `${joined} ${names.length === 1 ? 'steht' : 'stehen'} schon auf der Liste.`;
 }
 
 interface Body {

@@ -124,13 +124,19 @@ const given = (value: string | undefined) => value?.trim() || null;
  * with the household's learned corrections, picks the store, and returns the existing row for an
  * item already on the list ("Gurke" is "2 Gurken"). An explicit quantity, brand, properties or
  * store replaces the parsed one. An explicit category is applied as an update, so the classifier
- * learns it like a correction in the app.
+ * learns it like a correction in the app. A new item whose spelling variant or synonym is already
+ * open ("Karotten" with "Möhren", public.similar_items) is still added and reported under
+ * `similarOnList` with the open items; nothing is merged (job 32b).
  */
 export async function addItems(
   tx: Tx,
   household: string,
   wanted: readonly NewItem[],
-): Promise<{ added: Item[]; alreadyOnList: Item[] }> {
+): Promise<{
+  added: Item[];
+  alreadyOnList: Item[];
+  similarOnList: { added: string; onList: Item[] }[];
+}> {
   const [cats, shops, active] = await Promise.all([
     categories(tx, household),
     stores(tx, household),
@@ -157,9 +163,18 @@ export async function addItems(
       await tx`update public.items set category_id = ${category} where id = ${row.id}`;
     }
   }
-  const rows = await itemsById(tx, [...added, ...existing]);
+  const similar: { added: string; onList: string[] }[] = [];
+  for (const id of added) {
+    const open = await tx<{ id: string }[]>`select id from public.similar_items(${id})`;
+    if (open.length) similar.push({ added: id, onList: open.map((o) => o.id) });
+  }
+  const rows = await itemsById(tx, [...added, ...existing, ...similar.flatMap((s) => s.onList)]);
   const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id)!);
-  return { added: pick(added), alreadyOnList: pick(existing) };
+  return {
+    added: pick(added),
+    alreadyOnList: pick(existing),
+    similarOnList: similar.map((s) => ({ added: pick([s.added])[0].name, onList: pick(s.onList) })),
+  };
 }
 
 export async function tickItems(

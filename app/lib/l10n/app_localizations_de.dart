@@ -46,6 +46,19 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get dedupeMerge => 'Zusammenführen';
+
+  @override
+  String dedupeMerged(String item) {
+    return 'Zusammengeführt: $item';
+  }
+
+  @override
+  String mergeRefused(String name) {
+    return '$name konnte nicht zusammengeführt werden';
+  }
+
+  @override
   String get dictationStart => 'Diktieren';
 
   @override

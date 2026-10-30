@@ -213,6 +213,40 @@ void main() {
     });
   });
 
+  group('duplicate hint (job 32b)', () {
+    test('shown, merged and ignored carry only role and household size; an '
+        'undo sends nothing', () async {
+      repo.canonical.addAll({'Möhren': 'mohr', 'Karotten': 'mohr'});
+      final hints = <DedupeHint>[];
+      final sub = cubit.hints.listen(hints.add);
+      addTearDown(sub.cancel);
+      await addedId('500 g Möhren');
+      await addedId('1 kg Karotten');
+      await reset();
+      cubit
+        ..hintShown()
+        ..hintIgnored()
+        ..hintShown();
+      final merge = cubit.merge(hints.single)!;
+      await settle();
+      cubit.unmerge(merge);
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), [
+        'dedupe_hint_shown',
+        'dedupe_hint_ignored',
+        'dedupe_hint_shown',
+        'dedupe_hint_merged',
+      ]);
+      for (final event in events) {
+        expect(props(event)['actor_role'], 'owner');
+        expect(props(event)['household_size'], 2);
+      }
+      expect(jsonEncode(events), isNot(contains('hren')));
+      expect(jsonEncode(events), isNot(contains('Karotten')));
+    });
+  });
+
   group('categorized via (job 32a)', () {
     test('a confirmed add says how the server categorized it', () async {
       repo.categorizedVia = 'synonym';

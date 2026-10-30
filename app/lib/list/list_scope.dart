@@ -77,6 +77,7 @@ class _ScopeState() extends State<_Scope> {
         NameTaken(:final name) => l10n.categoryNameTaken(name),
         CatalogRejected() => l10n.catalogSaveFailed,
         NeedsConnection() => l10n.reorderNeedsConnection,
+        MergeRefused(:final name) => l10n.mergeRefused(name),
       };
       if (!(_notices.listTab?.call(text) ?? false)) {
         ScaffoldMessenger.maybeOf(context)

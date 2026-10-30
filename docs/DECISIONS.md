@@ -4043,3 +4043,96 @@ The lead filled only facts checked against official sources on 2026-10-30 (sourc
     skill. Job 33f (#121) added that section ("### Amazon Alexa" in section 7) while this job
     was landing, so job 24 adds nothing to the policy; the data map has the Alexa and
     `analytics_consents` rows.
+
+## Job 32b (duplicate hint with one-tap merge, Spec #8 Part B), 2026-10-30
+
+Peter's decisions (2026-10-29, verbatim):
+
+- "Split it: category fix right after the feedback job, before Alexa; duplicate hint with or after onboarding"
+- "Show a hint with a one-tap merge, still add by default"
+
+The PM's merge rule (2026-10-29) and unit ruling (22:50), as built: g/kg and ml/l convert and
+sum; Stück sums only with Stück; two items without a quantity merge as 2; anything else keeps the
+open item's text and adds the other quantity as a note ("1 Bund + 500 g"); the merge runs on the
+server in one transaction and is always undoable, also after other members synced.
+
+The job's own calls:
+
+1. **When the hint shows.** After the server acknowledges the user's own add: the server sets
+   `items.canonical_key` (job 32a), so the app knows only then that "Karotten" is "mohr". The add
+   itself never waits and is never refused for it. No hint for a partner's add (it is theirs to
+   merge), a delete's undo, a retry or a realtime echo. An add made offline hints when it syncs.
+2. **What counts as similar** (`public.similar_items`, mirrored by `similarItems` in
+   `app/lib/list/model.dart`): another open item in the household with the same non-empty
+   canonical key, unless brand or properties are set on both and differ ("Windeln Größe 3" and
+   "Windeln Größe 4" are two things; "Milch" and "Milch Weihenstephan" may be one). The exact same
+   text is still caught earlier and not added at all (job 2's duplicate check, unchanged). With
+   several similar items the hint names the oldest.
+3. **The hint lives where the eyes are.** While the add sheet is open it is a line under the
+   added note ("✓ Hinzugefügt: Karotten", then "Möhren steht schon auf der Liste" with
+   "Zusammenführen"; after a merge "Zusammengeführt: 1,5 kg Möhren" with "Rückgängig"), and the
+   sheet may grow for it: a snackbar there would cover the sheet's own rows and its Rückgängig
+   (a widget test tapped the wrong button that way). Typing the next item, the add's undo or a
+   new add drop it (ignored). When the sheet closes with a hint or merge still open, it goes on
+   as a snackbar (the existing `alreadyOnList` string with "Zusammenführen", six seconds,
+   `persist: false` like the delete undo; the merge as "Zusammengeführt: …" with "Rückgängig",
+   the actionSnackBar pattern). Adds made with the sheet closed (dictation, an offline add that
+   syncs later) get the snackbar directly; it queues behind one already showing. A hint whose
+   items are no longer both open (the add undone, a partner ticked one) goes away. The snackbar's
+   action closes the hint itself: hiding it from the handler too would, with animations off (the
+   web's semantics, screen readers), close the "Zusammengeführt" snackbar instead (seen on CI;
+   a widget test with accessible navigation covers it).
+4. **Merge = keep the open item.** It keeps its name, brand and properties; a brand or properties
+   only the new item had fill the gap (nothing is lost; the hint only pairs items whose details
+   do not conflict). The new item is deleted. Learning is off for the merge and its undo
+   (`family_groceries.learning`): a merge is not a correction, and deleting the merged item must
+   not take back what its add taught (store memory).
+5. **Quantity terms.** A quantity is a list of "number unit" terms joined by " + ", so a second
+   merge sums into the matching term ("1 Bund + 500 g" + "200 g" = "1 Bund + 700 g"). Sums of
+   g/ml show in kg/l from 1000 up ("1,5 kg"), German decimal comma, at most four decimals.
+   "1.000 g" (a point and three digits, not after a lone 0) is a thousand. Units other than
+   g/kg/ml/l sum only with themselves, singular and plural as one ("1 Packung" + "2 Packungen" =
+   "3 Packungen", case as the open item wrote it); cl is not converted (not in the ruling).
+   Terms that are not a number and a unit ("etwas", "2x500 g") are kept as text.
+6. **"1 + 1 = 2 Stück" is written "2".** The app stores a count as a bare number ("2 Gurken" is
+   quantity "2"), so two items without a quantity merge to "2", and "2" + "3 Stück" to
+   "5 Stück" (the word stays when one side wrote it). A bare number and Stück are both counts;
+   the ruling's "unit" is a measuring unit.
+7. **A missing quantity** is one piece only when the other side counts pieces ("" + "2" = "3");
+   next to a measured quantity it adds nothing ("" + "500 g" = "500 g"): the note rule adds the
+   other quantity, and there is none.
+8. **Too long.** A merged quantity over the 40-character column is refused (22001), on the device
+   before sending and on the server; both items stay and the list says "Möhren konnte nicht
+   zusammengeführt werden". Nothing is cut.
+9. **One rule, two places.** The server decides (`public.merge_quantities`); the app computes the
+   same (`app/lib/list/quantity.dart`) only to show the merge at once, also offline. Both are
+   tested against one table, `supabase/tests/merge_quantities.tsv` (the Dart test reads it, the
+   db gate's `dedupe_integration_test.ts` runs it through Postgres), so they cannot drift.
+10. **Undo storage.** `item_merges` keeps both rows as JSON (members read, nobody writes but the
+    two functions; 30 days, pruned on the next merge in the household). `unmerge_items` puts the
+    merged row back with its id, name, quantity, details, category, store, sort key, author,
+    created time and `categorized_via`; a category or store deleted since is left out like any
+    deleted one, an author whose account is gone too. The kept item gets its quantity and
+    details back only if nobody changed them since the merge (a partner's later edit wins); a
+    kept item deleted since stays deleted. Merge and undo are idempotent by the client's merge
+    id, so retries after a lost answer change nothing.
+    Account deletion: `merged_by` is set null by its foreign key, and a trigger on `auth.users`
+    deletes clears the user's id from the stored rows (`added_by`, `bought_by`), for
+    `delete_account` and for a delete from the dashboard alike; a deleted household takes its
+    merges with it.
+11. **App ops.** `MergeItems` and `UnmergeItems` are new `ItemOp`s, queued, retried and cached
+    like every write; they fold over two items (`ItemOp.applyTo`). `ListRepository.send` now
+    answers the rows an op touched by id, so a merge acknowledges both items at once.
+12. **Non-UI paths (AC10).** MCP `add_items` returns `similarOnList: [{added, onList: [item]}]`
+    next to `added` and `alreadyOnList`, and its description tells the model to mention it.
+    Voice/Siri items carry `similarOnList: [names]` and Siri adds "Möhren steht schon auf der
+    Liste." to the confirmation. Alexa (job 31, which landed while this was in review) adds
+    through the same `voice/items.ts` and says "Möhren steht schon auf der Hummlist." (its own
+    word for the list). All of them add normally; nothing merges.
+13. **Analytics (AC11).** `dedupe_hint_shown` when the snackbar shows, then exactly one of
+    `dedupe_hint_merged` (the action) or `dedupe_hint_ignored` (any other close: timeout, swipe,
+    replaced); the undo sends nothing. Properties are only `actor_role` and `household_size`
+    (job 19's allow-list, listed by 32a); never item names.
+14. **No local stack on the Mac runner.** The SQL was developed against Postgres 17 binaries
+    without Docker (the 32a recipe); CI's db gate (pgTAP, `supabase db lint`, the integration
+    tests) and the e2e shards are the proof.

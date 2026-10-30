@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show immutable, mapEquals;
+import 'package:flutter/foundation.dart' show immutable, listEquals, mapEquals;
 
 enum ItemStatus() {
   active,
@@ -273,6 +273,11 @@ class const Item({
   /// household, exact, synonym, fuzzy, fallback, picked); null until it
   /// confirms the add, and on rows from before job 32a. For analytics only.
   final String? categorizedVia,
+
+  /// `items.canonical_key` (job 32a): spelling variants and synonyms share
+  /// it ("Karotten" and "Möhren" give "mohr"). Null until the server confirms
+  /// the add; the duplicate hint matches on it (job 32b).
+  final String? canonicalKey,
 }) {
   factory fromJson(Map<String, Object?> json) => Item(
     id: json['id']! as String,
@@ -293,6 +298,7 @@ class const Item({
     },
     addedBy: json['added_by'] as String?,
     categorizedVia: json['categorized_via'] as String?,
+    canonicalKey: json['canonical_key'] as String?,
   );
 
   /// The same keys as a server row, so [Item.fromJson] reads it back.
@@ -311,6 +317,7 @@ class const Item({
     'bought_at': boughtAt?.toIso8601String(),
     'added_by': addedBy,
     'categorized_via': categorizedVia,
+    'canonical_key': canonicalKey,
   };
 
   Item copyWith({
@@ -338,6 +345,7 @@ class const Item({
     boughtAt: boughtAt == null ? this.boughtAt : boughtAt(),
     addedBy: addedBy,
     categorizedVia: categorizedVia,
+    canonicalKey: canonicalKey,
   );
 
   /// Added by another member (not by [userId], and not still unconfirmed).
@@ -527,12 +535,37 @@ sealed class const ItemOp(final String itemId) {
         sortKey: (json['sort_key'] as num?)?.toDouble(),
       ),
       'delete' => DeleteItem(id),
+      'merge' => MergeItems(
+        id,
+        mergeId: json['merge_id']! as String,
+        otherId: json['other_id']! as String,
+        quantity: json['quantity'] as String?,
+        brand: json['brand'] as String?,
+        properties: json['properties'] as String?,
+      ),
+      'unmerge' => UnmergeItems(
+        id,
+        mergeId: json['merge_id']! as String,
+        kept: Item.fromJson(json['kept']! as Map<String, Object?>),
+        merged: Item.fromJson(json['merged']! as Map<String, Object?>),
+      ),
       final op => throw FormatException('unknown op', op),
     };
   }
 
   /// The item as the user should see it once this op lands.
   Item? apply(Item? current);
+
+  /// Folds this op into [view], the items by id. Ops on one item apply to
+  /// it; a merge or its undo touches two.
+  void applyTo(Map<String, Item> view) {
+    final next = apply(view[itemId]);
+    if (next == null) {
+      view.remove(itemId);
+    } else {
+      view[itemId] = next;
+    }
+  }
 
   Map<String, Object?> toJson() => {
     'item_id': itemId,
@@ -573,6 +606,27 @@ sealed class const ItemOp(final String itemId) {
           'sort_key': sortKey,
         },
       DeleteItem() => {'op': 'delete'},
+      MergeItems(
+        :final mergeId,
+        :final otherId,
+        :final quantity,
+        :final brand,
+        :final properties,
+      ) =>
+        {
+          'op': 'merge',
+          'merge_id': mergeId,
+          'other_id': otherId,
+          'quantity': quantity,
+          'brand': brand,
+          'properties': properties,
+        },
+      UnmergeItems(:final mergeId, :final kept, :final merged) => {
+        'op': 'unmerge',
+        'merge_id': mergeId,
+        'kept': kept.toJson(),
+        'merged': merged.toJson(),
+      },
     },
   };
 }
@@ -652,6 +706,56 @@ final class const DeleteItem(super.itemId) extends ItemOp {
   Item? apply(Item? current) => null;
 }
 
+/// Folds the open item [otherId] into the open item [itemId] with
+/// `merge_items` (job 32b): the kept item keeps its name and takes the merged
+/// [quantity] and details (computed in the app for the optimistic view; the
+/// server merges by the same rule), the other one goes. [mergeId] makes a
+/// retry the same merge.
+final class const MergeItems(
+  super.itemId, {
+  required final String mergeId,
+  required final String otherId,
+  required final String? quantity,
+  required final String? brand,
+  required final String? properties,
+}) extends ItemOp {
+  @override
+  Item? apply(Item? current) => current?.copyWith(
+    quantity: () => quantity,
+    brand: () => brand,
+    properties: () => properties,
+  );
+
+  @override
+  void applyTo(Map<String, Item> view) {
+    super.applyTo(view);
+    view.remove(otherId);
+  }
+}
+
+/// Undoes the merge [mergeId] with `unmerge_items`: [merged] comes back and
+/// the kept item gets its quantity and details back, as both were before the
+/// merge (the server decides; DECISIONS, Job 32b).
+final class const UnmergeItems(
+  super.itemId, {
+  required final String mergeId,
+  required final Item kept,
+  required final Item merged,
+}) extends ItemOp {
+  @override
+  Item? apply(Item? current) => current?.copyWith(
+    quantity: () => kept.quantity,
+    brand: () => kept.brand,
+    properties: () => kept.properties,
+  );
+
+  @override
+  void applyTo(Map<String, Item> view) {
+    super.applyTo(view);
+    view[merged.id] ??= merged;
+  }
+}
+
 /// Server truth plus the pending ops folded on top: what the list shows.
 Map<String, Item> visibleItems(
   Map<String, Item> server,
@@ -659,14 +763,49 @@ Map<String, Item> visibleItems(
 ) {
   final view = Map.of(server);
   for (final op in pending) {
-    final next = op.apply(view[op.itemId]);
-    if (next == null) {
-      view.remove(op.itemId);
-    } else {
-      view[op.itemId] = next;
-    }
+    op.applyTo(view);
   }
   return view;
+}
+
+/// The other open items the duplicate hint names for [item], oldest first:
+/// the same non-empty canonical key and details that do not tell them apart,
+/// as `public.similar_items` finds them for MCP and Siri.
+List<Item> similarItems(Item item, Iterable<Item> items) {
+  final key = item.canonicalKey;
+  if (key == null || key.isEmpty) {
+    return const [];
+  }
+  return [
+    for (final other in items)
+      if (other.id != item.id &&
+          other.status == ItemStatus.active &&
+          other.canonicalKey == key &&
+          !detailsDiffer(item, other))
+        other,
+  ]..sort((a, b) {
+    final byCreated = a.createdAt.compareTo(b.createdAt);
+    return byCreated != 0 ? byCreated : a.id.compareTo(b.id);
+  });
+}
+
+/// Brand or properties set on both and different: "Windeln Größe 3" and
+/// "Windeln Größe 4" are two things, "Milch" and "Milch Weihenstephan" may be
+/// one (`public.details_differ`).
+bool detailsDiffer(Item a, Item b) {
+  final (brandA, brandB) = (foldName(a.brand ?? ''), foldName(b.brand ?? ''));
+  if (brandA.isNotEmpty && brandB.isNotEmpty && brandA != brandB) {
+    return true;
+  }
+  List<String> parts(String? properties) =>
+      (properties ?? '')
+          .split(',')
+          .where((p) => p.trim().isNotEmpty)
+          .map(foldName)
+          .toList()
+        ..sort();
+  final (propsA, propsB) = (parts(a.properties), parts(b.properties));
+  return propsA.isNotEmpty && propsB.isNotEmpty && !listEquals(propsA, propsB);
 }
 
 /// Merges a server row, ignoring echoes older than what is already known.

@@ -64,7 +64,8 @@ export const speech = {
 /**
  * The read-back after an add: "Milch und Eier sind auf der Hummlist." One item reads "Ich habe
  * Milch auf die Hummlist gesetzt.", which holds for "Eier" too (a single name can be plural).
- * Items that were open already: "Schon auf der Hummlist: Milch."
+ * Items that were open already: "Schon auf der Hummlist: Milch." A new item with another spelling
+ * or synonym open (job 32b): "Möhren steht schon auf der Hummlist."
  */
 export function confirmation(results: readonly Added[]): string {
   const added = results.filter((r) => !r.alreadyOnList).map(said);
@@ -73,6 +74,15 @@ export function confirmation(results: readonly Added[]): string {
   if (added.length === 1) parts.push(`Ich habe ${added[0]} auf die Hummlist gesetzt.`);
   if (added.length > 1) parts.push(`${enumerate(added)} sind auf der Hummlist.`);
   if (existing.length) parts.push(`Schon auf der Hummlist: ${enumerate(existing)}.`);
+  // Job 32b: a new item whose other spelling or synonym is open was added anyway; say which.
+  const similar = [
+    ...new Set(results.flatMap((r) => (r.alreadyOnList ? [] : r.similarOnList ?? []))),
+  ];
+  if (similar.length) {
+    parts.push(
+      `${enumerate(similar)} ${similar.length === 1 ? 'steht' : 'stehen'} schon auf der Hummlist.`,
+    );
+  }
   return parts.join(' ');
 }
 

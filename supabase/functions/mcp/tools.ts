@@ -62,7 +62,10 @@ export function buildServer(auth: Auth): McpServer {
       '"store" bekommt er den Laden, in dem er zuletzt gekauft wurde, sonst den Laden einer ' +
       'Eigenmarke (Balea → dm) oder dm für Drogerieartikel. Was schon auf der Liste steht ("Gurke" ' +
       '= "2 Gurken"; eine andere Größe oder Marke ist ein anderer Eintrag), wird nicht doppelt ' +
-      'angelegt und unter "alreadyOnList" gemeldet.',
+      'angelegt und unter "alreadyOnList" gemeldet. Steht schon eine andere Schreibweise oder ein ' +
+      'Synonym auf der Liste ("Karotten" und "Möhren"), wird der Eintrag trotzdem angelegt und unter ' +
+      '"similarOnList" gemeldet (added: der neue Name, onList: die offenen Einträge); sag dem Nutzer ' +
+      'dann, dass etwas Ähnliches schon auf der Liste steht. Zusammengeführt wird nichts.',
     inputSchema: z.object({
       items: z.array(z.object({
         name: z.string().min(1).max(120).describe('Was gekauft werden soll, z. B. "Milch"'),

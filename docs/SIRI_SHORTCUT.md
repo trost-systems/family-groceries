@@ -145,6 +145,10 @@ Liste“ und Artikel lässt der Server weg. Zahlwörter werden zu Ziffern
 („zwei“ → 2). Mengen mit Einheit bleiben als Menge am Eintrag
 („1 kg“, „2 Flaschen“). Was schon auf der Liste steht, kommt nicht doppelt
 dazu; Siri sagt dann „Schon auf der Liste: Milch.“
+Steht eine andere Schreibweise oder ein Synonym schon auf der Liste
+(„Karotten“, während „Möhren“ offen ist), kommt der Eintrag trotzdem dazu,
+und Siri sagt zusätzlich „Möhren steht schon auf der Liste.“ Zusammenführen
+geht in der App.
 
 ## Was Siri bei Problemen sagt
 
@@ -168,7 +172,7 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
 - Anfrage: JSON `{"text": "Milch, zwei Gurken und Klopapier"}`; ein
   reiner Text-Hauptteil geht auch.
 - Antwort ohne `?format=text`: JSON mit `speech` (der Satz für Siri) und
-  `items` (Name, Marke, Eigenschaften, Menge, Kategorie, `alreadyOnList`). Mit `?format=text`
+  `items` (Name, Marke, Eigenschaften, Menge, Kategorie, `alreadyOnList`, `similarOnList`). Mit `?format=text`
   nur der Satz als `text/plain`. Fehler haben einen HTTP-Status
   (400, 401, 403, 405, 413, 422, 500) und ebenfalls einen deutschen Satz.
 - Test von der Kommandozeile:

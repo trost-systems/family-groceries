@@ -123,7 +123,11 @@ class _AddSheetState() extends State<AddSheet> {
         builder: (context, constraints) {
           final media = MediaQuery.of(context);
           var max = constraints.maxHeight - media.padding.top - _topGap;
-          if (sheet.text.trim().isEmpty) {
+          // A duplicate hint or merge note (job 32b) needs its row in
+          // view, so the sheet may grow for it.
+          if (sheet.text.trim().isEmpty &&
+              sheet.hint == null &&
+              sheet.merge == null) {
             final first =
                 media.size.height * _firstOpenShare - widget.bandHeight;
             // Never below the room the header and chips need.
@@ -292,6 +296,30 @@ class const _Content({
           catalog: catalog,
           onUndo: () {
             context.read<AddSheetCubit>().undo();
+            onPicked();
+          },
+        ),
+      if (sheet.merge case final merge?)
+        _DedupeNote(
+          key: const ValueKey('dedupe-merged'),
+          text: l10n.dedupeMerged(
+            [?merge.result.quantity, merge.result.name].join(' '),
+          ),
+          action: l10n.undo,
+          actionKey: const ValueKey('dedupe-undo'),
+          onAction: () {
+            context.read<AddSheetCubit>().undoMerge();
+            onPicked();
+          },
+        )
+      else if (sheet.hint case final hint?)
+        _DedupeNote(
+          key: const ValueKey('dedupe-hint'),
+          text: l10n.alreadyOnList(hint.onList.name),
+          action: l10n.dedupeMerge,
+          actionKey: const ValueKey('dedupe-merge'),
+          onAction: () {
+            context.read<AddSheetCubit>().mergeHint();
             onPicked();
           },
         ),
@@ -646,6 +674,57 @@ class const _AddedNote(
                 child: Text(l10n.undo),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Job 32b, under the added note while the sheet is open: "Möhren steht
+/// schon auf der Liste" with Zusammenführen, then "Zusammengeführt: 1,5 kg
+/// Möhren" with Rückgängig.
+class const _DedupeNote({
+  required final String text,
+  required final String action,
+  required final Key actionKey,
+  required final VoidCallback onAction,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 12, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              container: true,
+              liveRegion: true,
+              child: Text(
+                text,
+                style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
+              ),
+            ),
+          ),
+          // Exposed like the added note's Rückgängig: a tap on a web
+          // semantics button node takes the text input's connection with it.
+          Semantics(
+            container: true,
+            button: true,
+            label: action,
+            excludeSemantics: true,
+            onTap: onAction,
+            child: TextButton(
+              key: actionKey,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.standard,
+                minimumSize: const Size(0, 44),
+              ),
+              onPressed: onAction,
+              child: Text(action),
+            ),
+          ),
         ],
       ),
     );

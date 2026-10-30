@@ -12,6 +12,7 @@ import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -74,6 +75,11 @@ class _ShoppingListState() extends State<_ShoppingList> {
   final _inputFocus = FocusNode();
   RejectionNotices? _notices;
   SheetOpenNotifier? _sheetOpen;
+  StreamSubscription<DedupeHint>? _hints;
+
+  /// The duplicate hint on screen, until it closes.
+  (DedupeHint, ScaffoldFeatureController<SnackBar, SnackBarClosedReason>)?
+  _openHint;
   var _listening = false;
 
   /// Phones get the keyboard only when asked; with a hardware keyboard
@@ -86,6 +92,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   void initState() {
     super.initState();
     _notices = context.read<RejectionNotices?>()?..listTab = _rejected;
+    _hints = context.read<ListCubit>().hints.listen(_hint);
   }
 
   @override
@@ -116,9 +123,90 @@ class _ShoppingListState() extends State<_ShoppingList> {
     if (_notices?.listTab == _rejected) {
       _notices?.listTab = null;
     }
+    unawaited(_hints?.cancel());
     _input.dispose();
     _inputFocus.dispose();
     super.dispose();
+  }
+
+  /// Job 32b: "Möhren steht schon auf der Liste" with Zusammenführen, after
+  /// "Karotten" went on the list anyway. While the add sheet is open it is
+  /// part of the sheet's note (a snackbar would cover the sheet); otherwise,
+  /// and once the sheet closes, a snackbar. That queues behind one already
+  /// showing (a dictation summary) instead of cutting it short. Every hint
+  /// shown ends merged or ignored, once; [counted] when the sheet showed it
+  /// already.
+  void _hint(DedupeHint hint, {bool counted = false}) {
+    if (!mounted) {
+      return;
+    }
+    if (!counted && context.read<AddSheetCubit>().offer(hint)) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    final cubit = context.read<ListCubit>();
+    if (!counted) {
+      cubit.hintShown();
+    }
+    var merged = false;
+    final shown = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        key: const ValueKey('dedupe-hint'),
+        content: Text(l10n.alreadyOnList(hint.onList.name)),
+        persist: false,
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          key: const ValueKey('dedupe-merge'),
+          label: l10n.dedupeMerge,
+          onPressed: () {
+            merged = true;
+            // Closing on its own now; `close` would hit the next snackbar.
+            _openHint = null;
+            if (mounted) {
+              _showMerged(context.read<ListCubit>().merge(hint));
+            }
+          },
+        ),
+      ),
+    );
+    _openHint = (hint, shown);
+    unawaited(
+      shown.closed.then((_) {
+        if (_openHint?.$2 == shown) {
+          _openHint = null;
+        }
+        if (!merged) {
+          cubit.hintIgnored();
+        }
+      }),
+    );
+  }
+
+  /// Says what the open item holds after [merge], with Rückgängig. The
+  /// action closes the hint itself, after this: hiding it here too would,
+  /// with animations off (screen readers, the web's semantics), close the
+  /// new snackbar instead.
+  void _showMerged(Merge? merge) {
+    if (!mounted || merge == null) {
+      return;
+    }
+    final cubit = context.read<ListCubit>();
+    final result = merge.result;
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        key: const ValueKey('dedupe-merged'),
+        content: Text(
+          l10n.dedupeMerged([?result.quantity, result.name].join(' ')),
+        ),
+        persist: false,
+        action: SnackBarAction(
+          key: const ValueKey('dedupe-undo'),
+          label: l10n.undo,
+          onPressed: () => cubit.unmerge(merge),
+        ),
+      ),
+    );
   }
 
   /// A refused write, in the list's own messenger while the list is on
@@ -194,9 +282,42 @@ class _ShoppingListState() extends State<_ShoppingList> {
     final tabs = media.size.width >= wideLayout ? 0.0 : 62.0;
     return MultiBlocListener(
       listeners: [
+        // A hint whose items are no longer both open (the add undone, a
+        // partner ticked one) has nothing left to merge: it goes.
+        BlocListener<ListCubit, ListState>(
+          listenWhen: (a, b) =>
+              !identical(a.server, b.server) ||
+              !identical(a.pending, b.pending),
+          listener: (context, list) {
+            final items = list.items;
+            bool stale(DedupeHint hint) => [
+              hint.added,
+              hint.onList,
+            ].any((i) => items[i.id]?.status != ItemStatus.active);
+            if (_openHint case (final hint, final bar) when stale(hint)) {
+              bar.close();
+            }
+            final sheet = context.read<AddSheetCubit>();
+            if (sheet.state.hint case final hint? when stale(hint)) {
+              sheet.drop(hint);
+            }
+          },
+        ),
         BlocListener<AddSheetCubit, AddSheetState>(
           listenWhen: (a, b) => a.open != b.open,
           listener: (_, sheet) => _sheetOpen?.value = sheet.open,
+        ),
+        // A hint or merge in the closing sheet's note goes on as a snackbar.
+        BlocListener<AddSheetCubit, AddSheetState>(
+          listenWhen: (a, b) => a.open && !b.open,
+          listener: (context, _) {
+            final (hint, merge) = context.read<AddSheetCubit>().handOver();
+            if (merge != null) {
+              _showMerged(merge);
+            } else if (hint != null) {
+              _hint(hint, counted: true);
+            }
+          },
         ),
         // A sheet that starts over (closed, or opened again) clears the
         // input too.

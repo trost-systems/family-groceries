@@ -46,6 +46,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dedupeMerge => 'Merge';
+
+  @override
+  String dedupeMerged(String item) {
+    return 'Merged: $item';
+  }
+
+  @override
+  String mergeRefused(String name) {
+    return 'Couldn\'t merge $name';
+  }
+
+  @override
   String get dictationStart => 'Dictate';
 
   @override

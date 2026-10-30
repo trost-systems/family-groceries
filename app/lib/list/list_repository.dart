@@ -21,9 +21,10 @@ abstract interface class ListRepository() {
   /// on the list now.
   Future<List<Usual>> fetchUsuals();
 
-  /// Applies [op] on the server and returns the resulting row, or null when
-  /// the item no longer exists.
-  Future<Item?> send(ItemOp op);
+  /// Applies [op] on the server and returns the rows it touched, by id: the
+  /// resulting row, or null when the item no longer exists. One row for most
+  /// ops; a merge and its undo answer for both items.
+  Future<Map<String, Item?>> send(ItemOp op);
 
   Future<void> renameCategory(String id, String name);
 
@@ -98,7 +99,7 @@ class SupabaseListRepository(
   static const _itemColumns =
       'id, name, quantity, brand, properties, category_id, store_id, '
       'sort_key, status, created_at, updated_at, bought_at, added_by, '
-      'categorized_via';
+      'categorized_via, canonical_key';
 
   @override
   Future<Catalog> fetchCatalog() async {
@@ -249,7 +250,52 @@ class SupabaseListRepository(
   }
 
   @override
-  Future<Item?> send(ItemOp op) => _refusable(() async {
+  Future<Map<String, Item?>> send(ItemOp op) async => switch (op) {
+    MergeItems(:final mergeId, :final otherId) => await _merge(
+      'merge_items',
+      {'p_merge': mergeId, 'p_keep': op.itemId, 'p_other': otherId},
+      kept: op.itemId,
+      merged: otherId,
+    ),
+    UnmergeItems(:final mergeId, :final merged) => await _merge(
+      'unmerge_items',
+      {'p_merge': mergeId},
+      kept: op.itemId,
+      merged: merged.id,
+    ),
+    _ => {op.itemId: await _sendOne(op)},
+  };
+
+  /// `merge_items` and `unmerge_items` answer `{kept, merged}`, each the row
+  /// or null. `P0002`: an item (or the merge, when it never landed) is gone;
+  /// both items' current rows acknowledge the op.
+  Future<Map<String, Item?>> _merge(
+    String function,
+    Map<String, Object?> params, {
+    required String kept,
+    required String merged,
+  }) => _refusable(() async {
+    try {
+      final Object? result = await _client.rpc<dynamic>(
+        function,
+        params: params,
+      );
+      Item? row(Object? json) =>
+          json is Map<String, Object?> ? Item.fromJson(json) : null;
+      return switch (result) {
+        {'kept': final k, 'merged': final m} => {kept: row(k), merged: row(m)},
+        _ => throw const RejectedOp('unexpected answer'),
+      };
+    } on PostgrestException catch (e) {
+      if (e.code == 'P0002') {
+        final (k, m) = await (_fetchItem(kept), _fetchItem(merged)).wait;
+        return {kept: k, merged: m};
+      }
+      rethrow;
+    }
+  });
+
+  Future<Item?> _sendOne(ItemOp op) => _refusable(() async {
     final items = _client.rest.from('items');
     final List<Map<String, dynamic>> rows;
     switch (op) {
@@ -295,6 +341,9 @@ class SupabaseListRepository(
       case DeleteItem():
         await items.delete().eq('id', op.itemId).select('id');
         return null;
+      case MergeItems() || UnmergeItems():
+        // Two rows each; send answers them through _merge.
+        throw StateError('$op goes through _merge');
     }
     // No row back: the item is gone, or an upsert hit an existing id.
     return rows.isEmpty

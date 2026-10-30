@@ -218,6 +218,15 @@ void main() {
         sortKey: null,
       ),
       const DeleteItem('x'),
+      const MergeItems(
+        'x',
+        mergeId: 'm',
+        otherId: 'y',
+        quantity: '1,5 kg',
+        brand: null,
+        properties: 'Bio',
+      ),
+      UnmergeItems('x', mergeId: 'm', kept: item('x'), merged: item('y')),
       AddItem(item('x'), restored: true),
     ];
     for (final op in ops) {
@@ -239,6 +248,99 @@ void main() {
       2048.0,
       reason: 'PostgREST sends a whole double as an int',
     );
+  });
+
+  group('duplicate hint (job 32b)', () {
+    Item named(
+      String id,
+      String name, {
+      String? key,
+      String? brand,
+      String? properties,
+      String? quantity,
+      ItemStatus status = ItemStatus.active,
+      int at = 0,
+    }) => Item(
+      id: id,
+      name: name,
+      quantity: quantity,
+      brand: brand,
+      properties: properties,
+      categoryId: 'a',
+      status: status,
+      createdAt: DateTime.utc(2026).add(minutes(at)),
+      updatedAt: DateTime.utc(2026),
+      canonicalKey: key,
+    );
+
+    test('similar items share the canonical key, open, oldest first', () {
+      final karotten = named('k', 'Karotten', key: 'mohr', at: 5);
+      final items = [
+        named('m2', 'Mohrrüben', key: 'mohr', at: 2),
+        named('m1', 'Möhren', key: 'mohr', at: 1),
+        named('t', 'Möhren', key: 'mohr', status: ItemStatus.bought),
+        named('x', 'Milch', key: 'milch'),
+        karotten,
+      ];
+      expect(similarItems(karotten, items).map((i) => i.id), ['m1', 'm2']);
+      expect(similarItems(named('n', 'Neu'), items), isEmpty);
+      expect(similarItems(named('e', 'Emoji', key: ''), items), isEmpty);
+    });
+
+    test('details set on both and different tell items apart', () {
+      final size3 = named('3', 'Windeln', key: 'windel', properties: 'Größe 3');
+      final size4 = named('4', 'Windeln', key: 'windel', properties: 'Größe 4');
+      final plain = named('p', 'Windeln', key: 'windel');
+      expect(detailsDiffer(size3, size4), isTrue);
+      expect(detailsDiffer(size3, plain), isFalse);
+      expect(
+        detailsDiffer(
+          named('a', 'x', properties: 'Bio, 1 l'),
+          named('b', 'x', properties: '1 L,bio'),
+        ),
+        isFalse,
+      );
+      expect(
+        detailsDiffer(
+          named('a', 'x', brand: 'Ja!'),
+          named('b', 'x', brand: 'Rewe'),
+        ),
+        isTrue,
+      );
+      expect(
+        detailsDiffer(named('a', 'x', brand: 'Ja!'), named('b', 'x')),
+        isFalse,
+      );
+      expect(similarItems(size4, [size3, size4, plain]).map((i) => i.id), [
+        'p',
+      ]);
+    });
+
+    test('a pending merge shows one item at once; its undo shows both', () {
+      final moehren = named('m', 'Möhren', key: 'mohr', quantity: '500 g');
+      final karotten = named('k', 'Karotten', key: 'mohr', quantity: '1 kg');
+      final server = {'m': moehren, 'k': karotten};
+      const merge = MergeItems(
+        'm',
+        mergeId: 'x',
+        otherId: 'k',
+        quantity: '1,5 kg',
+        brand: null,
+        properties: null,
+      );
+      final merged = visibleItems(server, [merge]);
+      expect(merged.keys, ['m']);
+      expect(merged['m']!.quantity, '1,5 kg');
+      expect(merged['m']!.name, 'Möhren');
+
+      final undone = visibleItems(server, [
+        merge,
+        UnmergeItems('m', mergeId: 'x', kept: moehren, merged: karotten),
+      ]);
+      expect(undone.keys.toSet(), {'m', 'k'});
+      expect(undone['m']!.quantity, '500 g');
+      expect(undone['k']!.quantity, '1 kg');
+    });
   });
 
   test('a parsed entry reads the parse_item row', () {
