@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# The guides site on hummlist.com (site/, job 24a): build checks and tests, a production build
-# (fails on a `[PETER:` placeholder), and no real access token anywhere in the repo.
+# The guides site on hummlist.com (site/, job 24a): build checks and tests, a build, and no real
+# access token anywhere in the repo. The build only warns on a `[PETER:` placeholder; Vercel's
+# production build fails on one, so a page with open facts never reaches hummlist.com (job 33a).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"
@@ -11,4 +12,4 @@ fi
 cd site
 npm ci --no-audit --no-fund
 npm test
-VERCEL_ENV=production npm run build
+npm run build

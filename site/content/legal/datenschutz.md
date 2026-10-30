@@ -1,0 +1,126 @@
+---
+title: Datenschutzerklärung
+description: "Datenschutzerklärung von Hummlist: welche Daten die App und die Website verarbeiten, wozu, an wen sie gehen und welche Rechte du hast."
+locale: de
+path: /datenschutz
+translation_key: privacy
+updated: 2026-10-30
+---
+
+# Datenschutzerklärung
+
+Stand: 30. Oktober 2026
+
+Hier steht, welche personenbezogenen Daten Hummlist verarbeitet, wozu, auf welcher Rechtsgrundlage, an wen sie gehen und welche Rechte du hast. Hummlist ist eine Einkaufslisten-App für Haushalte für iPhone, Android und Browser (app.hummlist.com) mit der Website hummlist.com.
+
+## 1. Verantwortlicher
+
+Peter Trost
+Yalovastr. 5
+72108 Rottenburg am Neckar
+Deutschland
+E-Mail: [support@hummlist.com](mailto:support@hummlist.com)
+
+Ein Datenschutzbeauftragter ist nicht benannt.
+
+## 2. Website hummlist.com
+
+Die Website setzt keine Cookies, lädt keine Inhalte von anderen Servern und nutzt keine Analyse-Werkzeuge. Die Seiten werden als statische Dateien ausgeliefert. Beim Aufruf verarbeitet unser Hosting-Anbieter Vercel Inc. (440 N Barranca Ave #4133, Covina, CA 91723, USA) technisch notwendige Daten: IP-Adresse, Zeitpunkt, aufgerufene Seite, Browser-Kennung. Das ist nötig, um die Seite auszuliefern und vor Angriffen zu schützen (Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse ist ein sicherer Betrieb). Speicherdauer der Server-Protokolle: höchstens 30 Tage.
+
+## 3. Web-App app.hummlist.com
+
+Die Web-App wird ebenfalls von Vercel als statische Dateien ausgeliefert (siehe Abschnitt 2). Die Web-App lädt derzeit Programmbibliotheken und Schriften von Servern von Google (gstatic.com); dabei erhält Google deine IP-Adresse. Wir stellen das in Kürze um.
+
+Im Speicher deines Browsers (Local Storage) bzw. auf deinem Gerät legt Hummlist ab:
+
+- deine Anmeldesitzung,
+- eine Kopie deiner Liste und deine Listeneinstellungen, damit die App schnell startet und offline funktioniert,
+- die gewählte Sprache,
+- deine Entscheidung zu Nutzungsdaten (Abschnitt 9).
+
+Diese Einträge sind unbedingt erforderlich, damit die App funktioniert, die du nutzen willst (§ 25 Abs. 2 Nr. 2 TDDDG). Ein Service Worker speichert die App-Dateien zwischen. Eine zufällige Installationskennung wird nur gespeichert, wenn du Nutzungsdaten erlaubst (Abschnitt 9).
+
+## 4. Konto und Anmeldung
+
+Für ein Konto verarbeiten wir deine E-Mail-Adresse, ein Passwort (nur verschlüsselt gespeichert) oder deine Anmeldung über Google oder Apple sowie einen Anzeigenamen. Wenn du dich mit Google oder Apple anmeldest, erhalten wir von dort deine Konto-Kennung, deine E-Mail-Adresse (bei Apple ggf. eine Weiterleitungsadresse) und, falls übermittelt, deinen Namen; Google bzw. Apple erfahren dabei, dass du dich bei Hummlist anmeldest. Für Anmeldelinks und Bestätigungen senden wir dir E-Mails über unseren Dienstleister Supabase.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Nutzungsvertrags).
+
+## 5. Einkaufsliste und Haushalt
+
+Wir speichern, was du in Hummlist eingibst: Haushaltsname, Mitglieder und ihre Rolle, Einladungen, Einträge (Artikelname, Menge, wer ihn hinzugefügt und gekauft hat, Zeitpunkte), einen Verlauf der Änderungen sowie, was Hummlist für deinen Haushalt lernt (Kategorien, Läden, Marken). Alle Mitglieder deines Haushalts sehen die Liste, den Verlauf und die Anzeigenamen der anderen Mitglieder. Einladungslinks laufen nach 14 Tagen ab.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+
+## 6. Spracheingabe
+
+Wenn du in der App für iPhone oder Android einen Eintrag diktierst, wandelt die Spracherkennung deines Betriebssystems die Sprache in Text um. Das geschieht nur auf deinem Gerät: Kann das Gerät Deutsch nicht ohne Internet erkennen, bietet Hummlist die Spracheingabe nicht an. Im Browser gibt es keine Spracheingabe. Den erkannten Text schickt die App an unseren Server, der daraus Einträge macht; Audio erhalten wir nicht.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+
+## 7. Siri und KI-Assistenten
+
+Du kannst Hummlist mit Siri oder mit KI-Assistenten (zum Beispiel über das Model Context Protocol unter mcp.hummlist.com) verbinden. Das geschieht nur, wenn du selbst einen Zugangsschlüssel erstellst oder eine Verbindung erlaubst. Der verbundene Dienst kann dann die Einträge deiner Liste lesen und ändern; sein Anbieter verarbeitet diese Inhalte nach seinen eigenen Datenschutzbestimmungen. Wir speichern zu jedem Schlüssel einen Namen, einen Hash und den Zeitpunkt der letzten Nutzung. Du kannst Schlüssel und Verbindungen jederzeit in der App widerrufen.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+
+## 8. Daten exportieren und Konto löschen
+
+Unter Konto › Meine Daten exportieren erhältst du deine Daten als JSON-Datei. Unter Konto › Konto löschen löschst du dein Konto sofort. Was dabei mit gemeinsamen Haushalten passiert, steht unter [https://app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html).
+
+## 9. Nutzungsdaten und Fehlerberichte (nur mit Einwilligung)
+
+Nur wenn du zustimmst, speichert Hummlist eine zufällige Installationskennung auf deinem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Auftragsverarbeiter PostHog Inc. (Server in der EU, Frankfurt). Gesendet werden: die Installationskennung, die Kennung deines Haushalts, Plattform, App-Version, Aktionen wie „App zum ersten Mal geöffnet“, „Haushalt erstellt“, „Einladung angenommen“, „Eintrag hinzugefügt/abgehakt“, „Kategorie/Laden umsortiert“ (mit Angaben wie der Rolle im Haushalt, der Zahl der Mitglieder und ob ein Eintrag getippt, diktiert oder vorgeschlagen wurde), sowie bereinigte Fehlerberichte. Bei Käufen in der App senden unsere Server mit derselben Installations- und Haushaltskennung den Kaufvorgang (Kauf, Erstattung oder Wiederherstellung) mit Produkt, Preis, Währung, Store, Land und einer pseudonymisierten Kaufreferenz (Hash), aber ohne Zahlungsdaten; auch das nur, wenn du zugestimmt hast. Nicht gesendet werden: Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort. PostHog legt kein Personenprofil an und ermittelt keinen Standort aus der IP-Adresse. Die Daten sind pseudonym.
+Zweck: verstehen, welche Funktionen genutzt werden, Fehler finden und messen, ob sich Hummlist wirtschaftlich trägt.
+Rechtsgrundlage: deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; für das Speichern der Kennung § 25 Abs. 1 TDDDG). Du kannst sie jederzeit unter Mehr › Nutzungsdaten widerrufen; das gilt für die Zukunft.
+Speicherdauer bei PostHog: 1 Jahr.
+
+Unabhängig davon melden unsere Server Fehler in Server-Funktionen an PostHog. Eine solche Meldung enthält den Namen der Server-Funktion, die Art des Fehlers, eine gekürzte und bereinigte Fehlermeldung und die Stellen im Programmcode, an denen der Fehler auftrat. Sie enthält keine Nutzer-, Haushalts- oder Installationskennung, keine E-Mail-Adressen, keine Listeninhalte, keine Inhalte der Anfrage und keine IP-Adresse. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am fehlerfreien Betrieb). Speicherdauer bei PostHog: 1 Jahr.
+
+## 10. Kontakt und Support
+
+Wenn du an support@hummlist.com, hello@hummlist.com oder feedback@hummlist.com schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Die Postfächer betreibt Google (Google Workspace). Eingehende Nachrichten werden zusätzlich von einem KI-Assistenten ([PETER: Anbieter und Sitz des KI-Support-Assistenten]) vorsortiert und für Antwortentwürfe ausgewertet; Antworten prüft und sendet Peter Trost selbst [PETER: stimmt das? Prüfst und sendest du jede Antwort selbst?].
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO, soweit es um dein Konto geht, sonst Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, Anfragen zu beantworten). Wir löschen Support-E-Mails [PETER: Frist für das Löschen von Support-E-Mails, z. B. „12 Monate nach Abschluss der Anfrage“].
+
+## 11. Sicherungskopien
+
+Jede Nacht wird eine verschlüsselte Sicherungskopie der Datenbank erstellt und nach 90 Tagen automatisch gelöscht. Sie dient nur der Wiederherstellung nach einem Fehler. Speicherort: GitHub Inc., USA (als verschlüsselte Datei).
+Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherheit, Art. 32 DSGVO).
+
+## 12. Empfänger und Auftragsverarbeiter
+
+Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach unseren Weisungen verarbeiten (Art. 28 DSGVO):
+
+- Supabase Inc. (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU)
+- Vercel Inc. (Hosting von hummlist.com, app.hummlist.com, mcp.hummlist.com; Domain und DNS)
+- PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
+- GitHub Inc. (verschlüsselte Sicherungskopien)
+- Google (Google Workspace, E-Mail; [PETER: Vertragspartner laut Workspace-Vertrag, z. B. „Google Cloud EMEA Limited, Irland“?])
+- [PETER: Anbieter des KI-Support-Assistenten (Name, Sitz)]
+
+Eigenständig verantwortlich sind: Google bzw. Apple, wenn du dich darüber anmeldest; Google, solange die Web-App Programmbibliotheken und Schriften von gstatic.com lädt (Abschnitt 3); der Anbieter der Spracherkennung deines Betriebssystems; KI-Assistenten, die du selbst verbindest; Apple und Google als App-Stores.
+
+## 13. Übermittlung in Drittländer
+
+Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen. Die Server-Funktionen von Supabase können auch in Rechenzentren außerhalb der EU laufen (siehe Abschnitt 12). Soweit dabei Daten in die USA oder andere Drittländer übermittelt werden oder US-Behörden darauf zugreifen könnten, stützen wir uns auf [PETER: je Anbieter (Supabase, Vercel, GitHub, PostHog, Google, KI-Support) die Grundlage bestätigen: Angemessenheitsbeschluss EU-US Data Privacy Framework (Art. 45 DSGVO) bei Zertifizierung oder Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)]. Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
+
+## 14. Speicherdauer
+
+Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften und Zugangsschlüssel sofort. Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
+
+## 15. Deine Rechte {#rechte}
+
+Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (Art. 7 Abs. 3). Schreib dafür an [support@hummlist.com](mailto:support@hummlist.com).
+
+**Widerspruchsrecht (Art. 21 DSGVO):** Soweit wir Daten auf Grundlage berechtigter Interessen (Art. 6 Abs. 1 lit. f DSGVO) verarbeiten, kannst du aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit widersprechen.
+
+Du kannst dich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77 DSGVO), zum Beispiel bei der für uns zuständigen Behörde:
+Der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Baden-Württemberg, Heilbronner Straße 35, 70191 Stuttgart (Postanschrift: Postfach 10 29 32, 70025 Stuttgart).
+
+## 16. Pflicht zur Bereitstellung, keine automatisierten Entscheidungen
+
+Ohne E-Mail-Adresse oder Google-/Apple-Anmeldung kannst du kein Konto anlegen; alle anderen Angaben sind freiwillig. Wir treffen keine automatisierten Entscheidungen und erstellen keine Profile im Sinne von Art. 22 DSGVO. Hummlist zeigt keine Werbung und verkauft keine Daten.
+
+## 17. Mindestalter
+
+Hummlist ist für Personen ab 16 Jahren.
+
+## 18. Änderungen
+
+Wir passen diese Erklärung an, wenn sich Hummlist ändert. Es gilt die hier veröffentlichte Fassung.

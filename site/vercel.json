@@ -19,7 +19,8 @@
       "destination": "/en/guides",
       "permanent": false
     },
-    { "source": "/", "destination": "/de/anleitungen", "permanent": false }
+    { "source": "/", "destination": "/de/anleitungen", "permanent": false },
+    { "source": "/privacy", "destination": "/en/privacy", "permanent": true }
   ],
   "headers": [
     {

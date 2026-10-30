@@ -44,6 +44,17 @@ test('the root redirects by Accept-Language', async () => {
   }
 });
 
+test('the privacy policy pages are served and /privacy goes to the English one', async () => {
+  for (const [path, h1] of [['/datenschutz', 'Datenschutzerklärung'], ['/en/privacy', 'Privacy policy']]) {
+    const res = await get(path);
+    assert.equal(res.status, 200, path);
+    assert.match(await res.text(), new RegExp(`<h1>${h1}</h1>`), path);
+  }
+  const old = await get('/privacy');
+  assert.equal(old.status, 308);
+  assert.equal(old.headers.get('location'), '/en/privacy');
+});
+
 test('clean URLs, trailing slashes and 404', async () => {
   const page = await get('/de/anleitungen/siri-kurzbefehl');
   assert.equal(page.status, 200);

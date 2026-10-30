@@ -262,5 +262,8 @@ test('the public deletion page is served', async ({ page }) => {
   const response = await page.goto('/konto-loeschen.html');
   expect(response!.status()).toBe(200);
   await expect(page).toHaveTitle('Hummlist: Konto und Daten löschen');
-  await expect(page.locator('#draft')).toContainText('ENTWURF');
+  await expect(page.getByText('ENTWURF')).toHaveCount(0);
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'support@hummlist.com' })).toHaveAttribute('href', /^mailto:support@hummlist\.com/);
+  await expect(page.getByRole('link', { name: 'Datenschutzerklärung' })).toHaveAttribute('href', 'https://hummlist.com/datenschutz');
 });

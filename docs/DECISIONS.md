@@ -3609,3 +3609,117 @@ his legal OK and is not merged by the job.
    code is unchanged for this. Why a wheel-scrolled consent page breaks
    the next page's focus on an emulated iPhone is not known; a guess is the
    engine behavior of 19.20.
+
+## Job 33a (privacy policy on hummlist.com, corrected deletion page), 2026-10-30
+
+Source: the legal review of 2026-10-30, sections B.1, B.2, H-05, H-06, H-19,
+and the engineering facts answers of the same day (both kept off the repo).
+Where the answers correct the review, the answers win. This job supersedes
+job 24's policy part.
+
+1. **Paths.** `/datenschutz` (German, authoritative) and `/en/privacy`
+   (English). `/privacy` is a permanent redirect to `/en/privacy` in
+   `site/vercel.json`; the headers stay as they were, `X-Robots-Tag: noindex`
+   included.
+2. **Footer flags split.** `legalPublished` turned on both the privacy and
+   the support link, and the build fails without a `/support` page. Now
+   `privacyPublished` (true in this PR) and `supportPublished` (false until
+   job 24 adds `/support`). The flag only takes effect when the PR merges,
+   and the merge waits for Peter.
+3. **Heading anchors.** A heading ending in `{#id}` gets that id (a small
+   markdown-it rule in `build.mjs`). Section 15 is `/datenschutz#rechte`
+   (Apple's User Privacy Choices URL) and `/en/privacy#rights`.
+4. **The site gate builds in preview mode.** The gate ran
+   `VERCEL_ENV=production npm run build`, which fails on a `[PETER:`
+   placeholder, so a PR carrying the policy's open facts could never get
+   `ci-ok`. The gate now runs `npm run build` (every check, placeholders
+   only warn), and a test fills the placeholders and builds in production
+   mode, so everything else stays checked. Vercel's production build of
+   hummlist-site still fails on a placeholder: that is the second publish
+   gate, and hummlist.com keeps its last good deploy until they are filled.
+5. **Texts are §B verbatim except for these fact fixes** (facts answers
+   wins over the review):
+   - §2/§3: no Vercel Functions in any of the three projects, so "statische
+     Dateien"; log retention depends on the plan, a placeholder.
+   - §3 uses the interim sentence (lead's update 08:05, Peter approved the
+     wording at 07:51): „Die Web-App lädt derzeit Programmbibliotheken und
+     Schriften von Servern von Google (gstatic.com); dabei erhält Google
+     deine IP-Adresse. Wir stellen das in Kürze um.“ So 33a does not wait for
+     job 33c, which swaps back to „Alle Programmdateien und Schriften kommen
+     von unserem eigenen Server“ when self-hosted CanvasKit and fonts reach
+     app.hummlist.com. §12 lists Google as independent controller for those
+     loads while they last. §2's "keine Inhalte von anderen Servern" is about
+     hummlist.com, which loads none, so it stays.
+   - §4: the repo configures no SMTP (`supabase/config.toml`), so the auth
+     mails go "über unseren Dienstleister Supabase", with a placeholder for
+     Peter to confirm in the dashboard.
+   - §5: invites expire after 14 days:
+     `supabase/migrations/20261022150000_foundation.sql` line 62
+     (`expires_at … default now() + interval '14 days'`); no later
+     migration changes it. Job 24's brief said 7.
+   - §6: no online fallback. `app/lib/list/dictation.dart` refuses unless
+     `MainActivity.kt` `offlineGerman` confirms on-device German (Android)
+     and iOS asks with `onDevice: true`; `list_screen.dart` `dictationFor`
+     offers no dictation on the web. The ⟦Android Online-Erkennung⟧
+     sentence is gone; the text says recognition happens only on the
+     device and the browser has none (H-16).
+   - §9 written as active (keys set 2026-10-30 07:33), accurate to
+     `app/lib/analytics/events.dart` (events and their properties, adding
+     `first_open`) and to `$geoip_disable` / `$process_person_profile:false`.
+     "Installationskennung nur mit Einwilligung" relies on job 33b (H-08:
+     today `Analytics.load()` writes the id on every start); 33a must not
+     go live without 33b. Purchase events carry install and household id
+     and are sent only with consent (`supabase/functions/_shared/purchases.ts`
+     `recordPurchase`), so they sit in the consent paragraph, not under
+     legitimate interest; the review's H-05 premise was wrong there.
+   - §9 server error reports (H-05): the payload was checked in
+     `_shared/telemetry.ts`: `$exception` with `distinct_id`
+     `edge-function-<fn>`, no user, household or install id, no request,
+     `$geoip_disable`. Unquoted words in a runtime error's message passed
+     the scrub (`cannot parse Hafermilch 2 Liter`), so a runtime error's
+     message is now reduced to its shape: only words of the runtime's own
+     error templates stay, any other word becomes `<w>`, digits `<n>`, at
+     most 120 characters. `telemetry_test.ts` proves no personal value from
+     the request or the message reaches PostHog. The app's own scrubber
+     (`app/lib/analytics/exceptions.dart`) had the same gap and gets the
+     same rule, since §9 promises no item names in any error report. The
+     ⟦bestätigen⟧ marker is gone; retention 1 year like the rest.
+   - §11: backups are on GitHub Inc. (USA), encrypted, 90 days. Moving them
+     (H-11) is Peter's decision, not this job.
+   - §12/§13: Supabase functions run at the edge location nearest the
+     caller, also outside the EU; only the database is in Frankfurt. Both
+     sections say so. Transfer basis, the Google contracting entity and the
+     AI support provider are placeholders.
+   - §14 (H-12): "so lange der Haushalt besteht", the history included. Job
+     21 (feedback, with a 12-month purge) is not on main yet (PR #103 open).
+     [LEAD: Feedback-Abschnitt nach Job 21] Once 21 lands, the policy needs
+     a feedback paragraph (what is stored, deleted after 12 months).
+   - "Stand: 30. Oktober 2026" / "Last updated: 30 October 2026" (lead's
+     update 08:05), the same as the front matter's `updated`.
+6. **Name and address without placeholders.** "Peter Trost" (Peter, 07:50;
+   the review's H-23 says the full name is not required) and Yalovastr. 5
+   (confirmed 07:50). The Impressum already says both and is unchanged.
+7. **Deletion page.** H-06 redlines verbatim (backups, entries and history
+   kept for the others), `peter@petertrost.com` replaced by
+   `support@hummlist.com` (H-19), a link to the policy added. Peter approved
+   the wording (07:51), so the ENTWURF banner, its CSS and the page's
+   `noindex` meta are gone (lead's update 08:05); `account.spec.ts` checks
+   the page has neither. hummlist.com's site-wide `X-Robots-Tag: noindex`
+   stays.
+8. **One line beyond the approved text on the deletion page.** Step 2 said
+   „Tippe oben rechts auf das Menü und dann auf Konto“, but the app has had a
+   „Mehr“ tab (bottom bar, a side rail on wide windows, `app/lib/app/shell.dart`)
+   since job 29a/29d. It now says „Tippe auf **Mehr** und dann auf
+   **Konto**.“, true on both layouts. The PR body flags it for Peter.
+9. **Facts the lead filled before merge (2026-10-30, after Peter's OK).**
+   Vercel's address „440 N Barranca Ave #4133, Covina, CA 91723, USA“ (Vercel
+   privacy notice and DPF listing). Log retention „höchstens 30 Tage“: the team
+   is on Vercel Pro (team API, billing.plan = pro), whose runtime logs keep 1 day,
+   or 30 days with Observability Plus (vercel.com/docs/logs/runtime), so 30 days
+   is the upper bound either way. Auth mail: no custom SMTP in the repo, no
+   hummlist.com domain in Resend, SPF of hummlist.com allows only Google, and the
+   hosted auth log answered the third mail request within two minutes with
+   `429: email rate limit exceeded` (the built-in mailer's tiny hourly limit;
+   custom SMTP starts at 30 an hour), so „über unseren Dienstleister Supabase“
+   stays without the SMTP question. The other `[PETER: …]` stay; Vercel's
+   production build keeps refusing to publish until Peter fills them.

@@ -864,3 +864,31 @@ every changed text in German and English under "Wording (approved by Peter
    switches. Not built; say if you want it.
 3. Still yours from the review, outside the app: H-11 (where the backups
    live), H-14 (the Play payments profile address 7 → 5).
+
+## Job 33a: privacy policy and deletion page (2026-10-30)
+
+PR: see BOARD.md (`33a-legal-site`). Nothing is live until the PR merges, and
+hummlist.com's production build fails while a `[PETER: …]` is left.
+
+- Wording approved 2026-10-30 07:51. The deletion page is published with
+  the next web release (no ENTWURF banner, no noindex).
+- **Fill the placeholders** (listed with their questions in the PR body,
+  "Peter must fill before merge"; Vercel address, Vercel log retention and
+  the auth mailer were filled by the lead, DECISIONS 33a 9): AI support
+  assistant provider and location, whether you send every support reply
+  yourself, support mail deletion period, Google Workspace contracting entity,
+  and the transfer basis per provider. hummlist.com publishes the policy only once all are
+  filled (Vercel's production build refuses otherwise); merging alone does
+  not.
+- **Google Play payments profile:** change the address from Yalovastraße 7
+  to Yalovastraße 5 (H-14).
+- **USt-IdNr:** do you have one? Then the Impressum needs it (DDG §5 Nr. 6).
+- **After merge:** enter https://hummlist.com/datenschutz in Play Console
+  (App content, Privacy policy) and App Store Connect (Privacy Policy URL);
+  https://hummlist.com/datenschutz#rechte is the User Privacy Choices URL.
+- **Follow-ups, your decisions:** move the backups off the public repo (H-11:
+  make the repo private, or private EU storage); a retention period and cron
+  for the list history `item_events` (H-12); pin the edge functions to
+  eu-central-1 (`x-region` / `forceFunctionRegion`) if you want "EU only";
+  the MCP consent text naming the AI provider (H-17, job 33b or a
+  follow-up).

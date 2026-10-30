@@ -1,5 +1,6 @@
 {
   "siteUrl": "https://hummlist.com",
   "defaultLocale": "de",
-  "legalPublished": false
+  "privacyPublished": true,
+  "supportPublished": false
 }

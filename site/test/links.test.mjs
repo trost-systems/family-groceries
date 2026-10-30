@@ -56,32 +56,54 @@ test('the site name links to the locale index', () => {
 
 const footer = (doc) => doc.querySelectorAll('footer a').map((a) => [a.text, a.getAttribute('href')]);
 
-test('with legalPublished false the footer links only the imprint', () => {
-  const { outDir, page } = buildSite({ config: { legalPublished: false } });
+const LEGAL_PATHS = ['/datenschutz', '/en/privacy', '/privacy', '/support'];
+
+test('with nothing published the footer links only the imprint', () => {
+  const { outDir, page } = buildSite({ config: { privacyPublished: false, supportPublished: false } });
   assert.deepEqual(footer(page('/de/anleitungen/siri-kurzbefehl')), [['Impressum', '/impressum']]);
   assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint']]);
   for (const route of htmlRoutes(outDir)) {
-    const links = hrefs(page(route));
-    for (const path of ['/datenschutz', '/privacy', '/support']) assert.ok(!links.includes(path), `${route} links ${path}`);
+    const links = page(route).querySelectorAll('footer a').map((a) => a.getAttribute('href'));
+    for (const path of LEGAL_PATHS) assert.ok(!links.includes(path), `${route} links ${path} in the footer`);
     assert.equal(page(route).querySelectorAll('footer li').filter((li) => !li.text.trim()).length, 0, `${route} has empty footer items`);
   }
 });
 
-test('with legalPublished true and the pages present the footer links them', () => {
-  const { page } = buildSite({
-    config: { legalPublished: true },
-    files: {
-      'legal/datenschutz.md': legal({ locale: 'de', path: '/datenschutz', key: 'privacy' }),
-      'legal/privacy.md': legal({ locale: 'en', path: '/privacy', key: 'privacy' }),
-      'legal/support.md': legal({ locale: 'de', path: '/support', key: 'support' }),
-    },
-  });
-  assert.deepEqual(footer(page('/de/anleitungen')), [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Hilfe', '/support']]);
-  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/privacy'], ['Support', '/support']]);
+test('the published privacy policy is in the footer of every page, support is not', () => {
+  const { outDir, page } = buildSite({ config: { privacyPublished: true, supportPublished: false } });
+  for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
+    const locale = page(route).querySelector('html').getAttribute('lang');
+    const expected = locale === 'de'
+      ? [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz']]
+      : [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy']];
+    assert.deepEqual(footer(page(route)), expected, route);
+  }
 });
 
-test('with legalPublished true but no pages the build fails on the broken link', () => {
-  assert.throws(() => buildSite({ config: { legalPublished: true } }), /broken internal link \/(datenschutz|privacy|support)/);
+test('the privacy policy pair switches language and has the rights anchor', () => {
+  const { page } = buildSite();
+  assert.equal(switchLink(page('/datenschutz')).href, '/en/privacy');
+  assert.equal(switchLink(page('/en/privacy')).href, '/datenschutz');
+  assert.deepEqual(alternates(page('/en/privacy')), { de: `${SITE}/datenschutz`, en: `${SITE}/en/privacy`, 'x-default': `${SITE}/datenschutz` });
+  assert.match(page('/datenschutz').querySelector('#rechte').text, /^15\. Deine Rechte$/);
+  assert.match(page('/en/privacy').querySelector('#rights').text, /^15\. Your rights$/);
+});
+
+test('with support published and its page present the footer links it too', () => {
+  const { page } = buildSite({
+    config: { privacyPublished: true, supportPublished: true },
+    files: { 'legal/support.md': legal({ locale: 'de', path: '/support', key: 'support' }) },
+  });
+  assert.deepEqual(footer(page('/de/anleitungen')), [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Hilfe', '/support']]);
+  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ['Support', '/support']]);
+});
+
+test('a published flag without its page fails the build on the broken link', () => {
+  assert.throws(() => buildSite({ config: { supportPublished: true } }), /broken internal link \/support/);
+  assert.throws(
+    () => buildSite({ config: { privacyPublished: true }, files: { 'legal/privacy.md': null } }),
+    /broken internal link \/en\/privacy/,
+  );
 });
 
 test('a broken internal link in content fails the build', () => {

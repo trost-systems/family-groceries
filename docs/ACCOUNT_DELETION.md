@@ -137,5 +137,5 @@ in the app itself can call the export, never an MCP OAuth token.
   `supabase/functions/account/smoke.sh` (curl against the local stack).
 - The verify recipe is `.cursor/skills/verify-family-groceries/features/account.md`.
 - The public page for Google Play is `app/web/konto-loeschen.html`
-  (`https://app.hummlist.com/konto-loeschen.html`). It is a
-  draft until Peter approves it.
+  (`https://app.hummlist.com/konto-loeschen.html`). Peter approved it
+  on 2026-10-30 (job 33a); it has no draft banner and no noindex.

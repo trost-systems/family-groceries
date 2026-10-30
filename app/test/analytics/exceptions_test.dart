@@ -46,15 +46,26 @@ void main() {
       expect(scrubMessage('Hafermilch'), '<redacted>');
     });
 
-    test('runtime errors keep their text, quotes and addresses removed', () {
+    test('runtime errors keep the shape of their text, nothing else', () {
       expect(scrubMessage(StateError('No element')), 'Bad state: No element');
       expect(
         scrubMessage(StateError('item "Hafermilch" from peter@example.com')),
-        'Bad state: item <redacted> from <email>',
+        'Bad state: <w> <redacted> from <email>',
       );
       expect(
         scrubMessage(RangeError.index(5, [1, 2], 'items')),
-        contains('RangeError'),
+        'RangeError (<w>): Index out of range: index should be less than <n>: '
+        '<n>',
+      );
+      expect(
+        scrubMessage(RangeError.range(5, 0, 1)),
+        'RangeError: Invalid value: Not in inclusive range <n>..<n>: <n>',
+      );
+      expect(
+        scrubMessage(
+          FlutterError('A RenderFlex overflowed by 42.0 pixels on the right.'),
+        ),
+        'A RenderFlex overflowed by <n> pixels on the right.',
       );
       expect(
         scrubMessage(
@@ -63,7 +74,7 @@ void main() {
             'id 0f8fad5b-d9cb-469f-a165-70867728950e 1234567',
           ),
         ),
-        'Bad state: at <url> id <uuid> <n>',
+        'Bad state: at <url> <w> <uuid> <n>',
       );
       expect(
         scrubMessage(FlutterError('A RenderFlex overflowed.\nText("Milch")')),
@@ -75,8 +86,35 @@ void main() {
       );
     });
 
+    test('errors the runtime raises stay readable', () {
+      Object caught(void Function() body) {
+        try {
+          body();
+        } on Object catch (e) {
+          return e;
+        }
+        return fail('no error');
+      }
+
+      const String? missing = null;
+      const Object? notAString = null;
+      expect(
+        scrubMessage(caught(() => missing!.length)),
+        'Null check operator used on a null value',
+      );
+      expect(
+        scrubMessage(caught(() => (notAString as dynamic) as String)),
+        'type <redacted> is not a subtype of type <redacted> in type cast',
+      );
+      expect(
+        scrubMessage(caught(() => <int>[].first)),
+        'Bad state: No element',
+      );
+    });
+
     test('a long message is cut', () {
-      expect(scrubMessage(StateError('x' * 1000)).length, 300);
+      expect(scrubMessage(StateError('x' * 1000)), 'Bad state: <w>');
+      expect(scrubMessage(StateError('cannot set ' * 40)).length, 120);
     });
   });
 
@@ -91,7 +129,7 @@ void main() {
       );
       final item = list.single;
       expect(item['type'], 'StateError');
-      expect(item['value'], 'Bad state: forced');
+      expect(item['value'], 'Bad state: <w>');
       expect(item['mechanism'], {
         'handled': false,
         'synthetic': false,
@@ -104,6 +142,30 @@ void main() {
       expect(frames.last['lineno'], isA<int>());
       expect(frames.last['in_app'], isTrue);
       expect((item['stacktrace']! as Map)['type'], 'raw');
+    });
+
+    test('a report carries no item text or address, only the error type', () {
+      for (final error in [
+        StateError('cannot parse Hafermilch 2 Liter for peter@example.com'),
+        TypeError(),
+        FlutterError('Hafermilch 2 Liter for peter@example.com'),
+      ]) {
+        final item = exceptionList(error, null, handled: true).single;
+        final value = item['value']! as String;
+        expect(value, isNot(contains('Hafermilch')));
+        expect(value, isNot(contains('Liter')));
+        expect(value, isNot(contains('peter')));
+        expect(value, isNot(contains('example.com')));
+        expect(item['type'], anyOf('StateError', 'TypeError', 'FlutterError'));
+      }
+      expect(
+        exceptionList(
+          StateError('cannot parse Hafermilch 2 Liter for peter@example.com'),
+          null,
+          handled: true,
+        ).single['value'],
+        'Bad state: cannot <w> <n> <w> for <email>',
+      );
     });
 
     test('common types are named, whatever the build did to type names', () {
