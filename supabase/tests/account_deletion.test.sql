@@ -1,5 +1,5 @@
 begin;
-select plan(36);
+select plan(41);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -12,6 +12,12 @@ begin
   perform set_config('role', 'postgres', true);
   perform set_config('request.jwt.claims', '', true);
 end $$;
+
+-- One feedback note as the app sends it (job 21).
+create function pg_temp.feedback(p_id uuid, p_message text) returns void language sql as $$
+  insert into public.feedback (id, message, app_version, build, platform, os_version, locale, screen)
+  values (p_id, p_message, '0.1.0', '1', 'web', 'Chrome on macOS', 'de', 'list');
+$$;
 
 create function pg_temp.hash(token text) returns text language sql as $$
   select encode(extensions.digest(token, 'sha256'), 'hex');
@@ -31,7 +37,8 @@ language sql as $$
   union all select 'category_memory', count(*)::int from public.category_memory where household_id = p_household
   union all select 'item_store_memory', count(*)::int from public.item_store_memory where household_id = p_household
   union all select 'personal_access_tokens', count(*)::int from public.personal_access_tokens where household_id = p_household
-  union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household;
+  union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household
+  union all select 'feedback', count(*)::int from public.feedback where household_id = p_household;
 $$;
 
 select is(
@@ -48,7 +55,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c1', 'carl@example.com'),
   ('00000000-0000-0000-0000-0000000000d1', 'dora@example.com'),
   ('00000000-0000-0000-0000-0000000000e1', 'emil@example.com'),
-  ('00000000-0000-0000-0000-0000000000f1', 'frida@example.com');
+  ('00000000-0000-0000-0000-0000000000f1', 'frida@example.com'),
+  ('00000000-0000-0000-0000-0000000000a2', 'gina@example.com');
 
 -- Alice owns the household; Carl joined before Bob.
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
@@ -64,6 +72,16 @@ select public.join_household((select code from inv));
 select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
 select public.join_household((select code from inv));
 insert into public.items (household_id, name) select id, 'Brot' from h;
+select pg_temp.feedback('40000000-0000-4000-8000-0000000000b1', 'Bob');
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select pg_temp.feedback('40000000-0000-4000-8000-0000000000a1', 'Alice');
+select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.feedback('40000000-0000-4000-8000-0000000000c1', 'Carl');
+-- Gina sent a note while in the household and left it since.
+select pg_temp.login('00000000-0000-0000-0000-0000000000a2');
+select public.join_household((select code from inv));
+select pg_temp.feedback('40000000-0000-4000-8000-0000000000a2', 'Gina');
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
 update public.items set status = 'bought' where name = 'Milch';
 update public.items set added_by = null where name = 'Milch';
 select is((select added_by from public.items where name = 'Milch'),
@@ -74,6 +92,7 @@ update public.household_members set joined_at = now() - interval '2 days'
 where user_id = '00000000-0000-0000-0000-0000000000c1';
 update public.household_members set joined_at = now() - interval '1 day'
 where user_id = '00000000-0000-0000-0000-0000000000b1';
+delete from public.household_members where user_id = '00000000-0000-0000-0000-0000000000a2';
 -- Backdate without triggers so a bump of updated_at is visible inside this transaction.
 set local session_replication_role = replica;
 update public.items set updated_at = updated_at - interval '1 hour';
@@ -108,6 +127,12 @@ select is((select count(*)::int from auth.users where id = '00000000-0000-0000-0
   'the user is gone');
 select is((select count(*)::int from public.profiles where id = '00000000-0000-0000-0000-0000000000a1'), 0,
   'and so is their profile');
+select is((select count(*)::int from public.feedback where user_id = '00000000-0000-0000-0000-0000000000a1'), 0,
+  'and their feedback');
+select results_eq(
+  $$ select message, household_id from public.feedback order by message $$,
+  $$ values ('Bob', (select id from h)), ('Carl', (select id from h)), ('Gina', (select id from h)) $$,
+  'the other members'' feedback stays');
 select results_eq(
   $$ select name, added_by from public.items order by name $$,
   $$ values ('Brot', '00000000-0000-0000-0000-0000000000b1'::uuid), ('Kaffee', null), ('Milch', null) $$,
@@ -168,6 +193,8 @@ select results_eq(
   $$ values (0) $$,
   'which leaves their items without author and buyer'
 );
+select is((select count(*)::int from public.feedback where user_id = '00000000-0000-0000-0000-0000000000b1'), 0,
+  'and takes their feedback with them');
 
 -- The last member: Carl, now the owner, with learned memories and a token.
 select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
@@ -189,6 +216,12 @@ select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n > 0),
   null, 'after: no household table has a row left'
 );
+select is((select count(*)::int from public.feedback where user_id = '00000000-0000-0000-0000-0000000000c1'), 0,
+  'the last member''s feedback is gone');
+select results_eq(
+  $$ select user_id, household_id from public.feedback $$,
+  $$ values ('00000000-0000-0000-0000-0000000000a2'::uuid, null::uuid) $$,
+  'a former member''s note stays, without the deleted household''s id');
 select is_empty(
   $$ select * from public.authenticate_personal_access_token(pg_temp.hash((select token from pat_c))) $$,
   'the last member''s tokens stop working'
@@ -208,6 +241,9 @@ create temp table inv_e as select code from public.create_invite((select id from
 grant select on he, inv_e to authenticated;
 select public.create_personal_access_token('Kurzbefehl');
 insert into public.items (household_id, name, brand, properties, quantity) select id, 'Äpfel', 'Elstar', 'Bio', '1 kg' from he;
+insert into public.feedback (id, message, category, contact_ok, app_version, build, platform, os_version, locale, screen)
+values ('40000000-0000-4000-8000-0000000000e1', 'Bitte dunkles Design', 'idea', true, '0.1.0', '7', 'ios', 'iOS 18.1',
+  'de', 'list');
 select pg_temp.login('00000000-0000-0000-0000-0000000000f1');
 select public.join_household((select code from inv_e));
 insert into public.items (household_id, name) select id, 'Fridas Geheimnis' from he;
@@ -223,8 +259,8 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
 create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
-  array['access_tokens', 'account', 'connected_apps', 'exported_at', 'format', 'history', 'household',
-        'items_added', 'profile', 'version'],
+  array['access_tokens', 'account', 'connected_apps', 'exported_at', 'feedback', 'format', 'history',
+        'household', 'items_added', 'profile', 'version'],
   'the export has the documented sections'
 );
 select is(
@@ -245,6 +281,10 @@ select is(
     'access_tokens', jsonb_build_array(jsonb_build_object('name', 'Kurzbefehl',
       'token_hint', (select token_hint from public.personal_access_tokens where name = 'Kurzbefehl'),
       'created_at', now(), 'last_used_at', null, 'revoked_at', null)),
+    'feedback', jsonb_build_array(jsonb_build_object('created_at', now(), 'message', 'Bitte dunkles Design',
+      'category', 'idea', 'contact_ok', true, 'screen', 'list', 'platform', 'ios', 'app_version', '0.1.0',
+      'build', '7', 'os_version', 'iOS 18.1', 'locale', 'de', 'household_id', (select id from he),
+      'is_internal', true)),
     'connected_apps', jsonb_build_array(jsonb_build_object('client_name', 'Claude', 'scopes', 'openid email',
       'granted_at', now(), 'revoked_at', null))
   ),

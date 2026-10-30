@@ -10,6 +10,8 @@ else
   supabase_up
 fi
 supabase test db
+# Job 21: the PM's Monday feedback summary, exactly as docs/FEEDBACK.md has it, on fake notes.
+scripts/feedback-monday.sh
 supabase/classifier/sweep.sh
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh

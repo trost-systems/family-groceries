@@ -5,6 +5,9 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/feedback/feedback_context.dart';
+import 'package:family_groceries/feedback/feedback_cubit.dart';
+import 'package:family_groceries/feedback/screen_tracker.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -21,6 +24,7 @@ import 'package:shared_preferences_platform_interface/in_memory_shared_preferenc
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
+import '../feedback/fakes.dart';
 import '../list/fake_repository.dart';
 import '../settings/fake_account.dart';
 
@@ -68,6 +72,8 @@ typedef More = ({
   LanguageCubit language,
   GoRouter router,
   Analytics analytics,
+  FakeFeedbackRepository feedback,
+  ScreenTracker screens,
 });
 
 /// More's routes as `buildRouter` has them, without the shell (whose list
@@ -107,6 +113,10 @@ Future<More> pumpMore(
     ),
   );
   final repo = FakeRepository();
+  final feedback = FakeFeedbackRepository();
+  final feedbackCubit = FeedbackCubit(feedback, analytics: shownAnalytics);
+  addTearDown(feedbackCubit.close);
+  final screens = ScreenTracker();
   final router = GoRouter(
     initialLocation: location,
     routes: [
@@ -118,6 +128,10 @@ Future<More> pumpMore(
     ],
   );
   addTearDown(router.dispose);
+  // As App does: the tracker follows the router.
+  void visit() => screens.visit(router.routerDelegate.currentConfiguration.uri);
+  router.routerDelegate.addListener(visit);
+  addTearDown(() => router.routerDelegate.removeListener(visit));
   await tester.pumpWidget(
     MultiRepositoryProvider(
       providers: [
@@ -125,12 +139,15 @@ Future<More> pumpMore(
         RepositoryProvider<AccountRepository>.value(
           value: FakeAccountRepository(),
         ),
+        RepositoryProvider.value(value: screens),
+        RepositoryProvider<FeedbackDevice>.value(value: FakeFeedbackDevice()),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<SessionCubit>.value(value: session),
           BlocProvider.value(value: languageCubit),
           BlocProvider.value(value: shownAnalytics),
+          BlocProvider.value(value: feedbackCubit),
         ],
         child: BlocBuilder<LanguageCubit, AppLanguage?>(
           builder: (context, picked) => MaterialApp.router(
@@ -152,5 +169,7 @@ Future<More> pumpMore(
     language: languageCubit,
     router: router,
     analytics: shownAnalytics,
+    feedback: feedback,
+    screens: screens,
   );
 }

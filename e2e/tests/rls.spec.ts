@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { addItem, apiAs, itemRow, newEmail, signUpWithHousehold } from './helpers';
+import { addItem, adminClient, anonClient, apiAs, itemRow, newEmail, password, signUpWithHousehold } from './helpers';
 
 test('a user from another household can neither see nor change the list', async ({ browser }) => {
   const peterEmail = newEmail('peter');
@@ -51,4 +51,45 @@ test('a user from another household can neither see nor change the list', async 
   await peter.waitForTimeout(1_500);
   expect(received, 'no realtime events leak across households').toEqual([]);
   await eveApi.removeAllChannels();
+});
+
+test('feedback is insert-only: own note yes, another user_id no, no read, change or delete, anon nothing (job 21, AC5)', async () => {
+  const [annaEmail, benEmail] = [newEmail('fb-anna'), newEmail('fb-ben')];
+  const admin = adminClient();
+  for (const email of [annaEmail, benEmail]) {
+    const { error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    expect(error).toBeNull();
+  }
+  const anna = await apiAs(annaEmail);
+  const ben = await apiAs(benEmail);
+  const annaId = (await anna.auth.getUser()).data.user!.id;
+  const benId = (await ben.auth.getUser()).data.user!.id;
+  const note = (extra: Record<string, unknown> = {}) => ({
+    id: crypto.randomUUID(), message: 'Notiz', app_version: '0.1.0', build: '1', platform: 'web',
+    os_version: 'Chrome on Linux', locale: 'de', screen: 'list', ...extra,
+  });
+
+  const own = note();
+  expect((await anna.from('feedback').insert(own)).error, 'own note').toBeNull();
+  expect((await anna.from('feedback').insert({ ...own, message: 'Nochmal' })).error, 'a repeat of its id').toBeNull();
+  const asBen = await anna.from('feedback').insert(note({ user_id: benId }));
+  expect(asBen.error?.code, 'in another user\'s name').toBe('42501');
+
+  const read = await anna.from('feedback').select('*');
+  expect(read.error?.code, 'not even the sender reads it').toBe('42501');
+  const update = await anna.from('feedback').update({ message: 'Geändert' }).eq('id', own.id);
+  expect(update.error?.code, 'nor changes it').toBe('42501');
+  const del = await anna.from('feedback').delete().eq('id', own.id);
+  expect(del.error?.code, 'nor deletes it').toBe('42501');
+  const benRead = await ben.from('feedback').select('*').eq('user_id', annaId);
+  expect(benRead.error?.code, 'nor does anyone else').toBe('42501');
+  const reused = await ben.from('feedback').insert(note({ id: own.id }));
+  expect(reused.error?.code, 'Anna\'s id is not Ben\'s').toBe('23505');
+
+  const anon = anonClient();
+  expect((await anon.from('feedback').insert(note())).error?.code, 'anon cannot send').toBe('42501');
+  expect((await anon.from('feedback').select('*')).error?.code, 'nor read').toBe('42501');
+
+  const { data: rows } = await admin.from('feedback').select('user_id, message').in('user_id', [annaId, benId]);
+  expect(rows, 'one row, Anna\'s first text, untouched').toEqual([{ user_id: annaId, message: 'Notiz' }]);
 });

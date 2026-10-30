@@ -93,6 +93,7 @@ retried batch is not counted twice), `household_id` (null before joining), `plat
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
+| `feedback_submitted` | the server stored a feedback note (job 21, docs/FEEDBACK.md); once per note, also after a Retry whose first answer was lost | `category` (`bug`, `idea`, `other`, `none`), `entry_point` (`settings`; More is the only entry), `screen` (a name from `screenNames` in `router.dart`, e.g. `list`), `contact_ok` (true, false). Never the note's text |
 | `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id`, `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
 | `purchase_restored` | server only | `product_id`, `app_store` |
 

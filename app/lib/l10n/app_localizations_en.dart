@@ -860,4 +860,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sendTestError => 'Send a test error';
+
+  @override
+  String get feedbackSection => 'Feedback';
+
+  @override
+  String get feedbackRow => 'Send feedback';
+
+  @override
+  String get feedbackRowHint => 'Bugs, ideas and questions for Peter';
+
+  @override
+  String get feedbackMessage => 'Your message';
+
+  @override
+  String get feedbackMessageHint => 'What did you notice?';
+
+  @override
+  String get feedbackCategoryBug => 'Bug';
+
+  @override
+  String get feedbackCategoryIdea => 'Idea';
+
+  @override
+  String get feedbackCategoryOther => 'Other';
+
+  @override
+  String get feedbackCategories => 'Kind (optional)';
+
+  @override
+  String get feedbackContact => 'Peter may contact me about this';
+
+  @override
+  String get feedbackAttached =>
+      'App version, device, language and current screen. No list items.';
+
+  @override
+  String get feedbackAttachedTitle => 'Sent along:';
+
+  @override
+  String get feedbackSend => 'Send';
+
+  @override
+  String get feedbackRetry => 'Retry';
+
+  @override
+  String get feedbackSending => 'Sending …';
+
+  @override
+  String get feedbackThanks => 'Thanks!';
+
+  @override
+  String get feedbackFailed => 'Not sent. Check your connection and try again.';
+
+  @override
+  String feedbackTooLong(int max) {
+    return '$max characters at most';
+  }
+
+  @override
+  String feedbackCounter(int count, int max) {
+    return '$count / $max';
+  }
+
+  @override
+  String get feedbackClose => 'Close';
 }

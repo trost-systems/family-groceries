@@ -57,8 +57,11 @@ void main() {
       'more-access',
       'menu-account',
       'more-sign-out',
+      'more-feedback',
       'more-language',
     ]) {
+      // In order, top to bottom: the list is taller than a phone.
+      await tester.scrollUntilVisible(key(row), 200);
       expect(key(row), findsOneWidget, reason: row);
     }
     expect(find.text('MCP-Server'), findsNothing, reason: 'no second pane');

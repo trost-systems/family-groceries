@@ -67,6 +67,10 @@ select public.reorder_stores((select id from fx where key = 'home'),
         pg_temp.store((select id from fx where key = 'home'), 'lidl'),
         pg_temp.store((select id from fx where key = 'home'), 'dm')]);
 select public.create_personal_access_token('Claude Desktop');
+-- Job 21: feedback as the app sends it; household_id and is_internal come from the trigger.
+insert into public.feedback (id, message, category, contact_ok, app_version, build, platform, os_version, locale, screen)
+values (gen_random_uuid(), 'Der Haken reagiert erst beim zweiten Tippen.', 'bug', true, '0.1.0', '42', 'android',
+  'Android 14 (SDK 34)', 'de', 'list');
 reset role;
 
 -- Lea ticks two items (bought_by and bought_at come from the trigger) and deletes one.
@@ -80,6 +84,8 @@ reset role;
 select pg_temp.login('carl@backup.test');
 insert into fx (key, id) select 'other', id from public.create_household('Nachbarn');
 select public.add_items((select id from fx where key = 'other'), array['Bier', 'Chips']);
+insert into public.feedback (id, message, app_version, build, platform, os_version, locale, screen)
+values (gen_random_uuid(), 'Gibt es das auch auf Englisch?', '0.1.0', '42', 'web', 'Safari on iOS', 'en', 'more');
 reset role;
 
 commit;

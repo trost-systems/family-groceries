@@ -14,6 +14,9 @@ const sameInBothLanguages = {
   'languageGerman': 'a language is named in its own language',
   'languageEnglish': 'a language is named in its own language',
   'appVersion': '"Version" is English too',
+  'feedbackSection': '"Feedback" is German too',
+  'feedbackCategoryBug': '"Bug" is what German testers say',
+  'feedbackCounter': 'only numbers',
 };
 
 Map<String, Object?> readArb(String path) =>

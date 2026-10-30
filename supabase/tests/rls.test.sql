@@ -1,5 +1,5 @@
 begin;
-select plan(51);
+select plan(55);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -187,6 +187,24 @@ select pg_temp.anon();
 select throws_ok($$ select count(*) from public.items $$, '42501', null, 'anon cannot read items');
 select throws_ok($$ select count(*) from public.brands $$, '42501', null, 'anon cannot read brands');
 select throws_ok($$ select public.create_household('x') $$, '42501', null, 'anon cannot call household RPCs');
+
+-- Job 21: feedback is insert-only. Bob's note lands in his own household whatever he claims,
+-- he cannot send as Alice, and nobody reads notes back, Alice's included.
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+insert into public.feedback (id, message, app_version, build, platform, os_version, locale, screen)
+values ('30000000-0000-4000-8000-0000000000b1', 'Bobs Notiz', '0.1.0', '1', 'web', 'Firefox on Linux', 'de', 'list');
+select throws_ok(
+  $$ insert into public.feedback (id, user_id, message, app_version, build, platform, os_version, locale, screen)
+     values (gen_random_uuid(), '00000000-0000-0000-0000-0000000000a1', 'Als Alice', '0.1.0', '1', 'web',
+       'Firefox on Linux', 'de', 'list') $$,
+  '42501', null, 'feedback cannot be sent in another household member''s name');
+select throws_ok($$ select count(*) from public.feedback $$, '42501', null, 'feedback is not readable by clients');
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select throws_ok($$ select count(*) from public.feedback where household_id = (select id from hb) $$, '42501', null,
+  'not across households either');
+set local role postgres;
+select is((select household_id from public.feedback where id = '30000000-0000-4000-8000-0000000000b1'),
+  (select id from hb), 'a note carries the sender''s household, not another one');
 
 select * from finish();
 rollback;

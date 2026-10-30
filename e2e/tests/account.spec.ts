@@ -28,6 +28,21 @@ async function userId(email: string): Promise<string> {
   return (await (await apiAs(email)).auth.getUser()).data.user!.id;
 }
 
+/** A feedback note as the app sends it (job 21), through the user's own API client. */
+async function sendFeedback(email: string, message: string): Promise<void> {
+  const { error } = await (await apiAs(email)).from('feedback').insert({
+    id: crypto.randomUUID(), message, app_version: '0.1.0', build: '1', platform: 'web',
+    os_version: 'Chrome on Linux', locale: 'de', screen: 'list',
+  });
+  expect(error).toBeNull();
+}
+
+async function feedbackOf(userId: string): Promise<{ message: string; household_id: string | null }[]> {
+  const { data, error } = await adminClient().from('feedback').select('message, household_id').eq('user_id', userId);
+  if (error) throw error;
+  return data;
+}
+
 async function userExists(id: string): Promise<boolean> {
   const { data, error } = await adminClient().auth.admin.getUserById(id);
   if (error && error.status !== 404) throw error;
@@ -52,7 +67,7 @@ async function voiceStatus(token: string): Promise<number> {
 
 const householdTables = [
   'households', 'household_members', 'invites', 'categories', 'stores', 'store_category_order', 'items',
-  'item_events', 'category_memory', 'item_store_memory', 'personal_access_tokens',
+  'item_events', 'category_memory', 'item_store_memory', 'personal_access_tokens', 'feedback',
 ] as const;
 
 async function householdRowCounts(householdId: string): Promise<Record<string, number>> {
@@ -92,6 +107,11 @@ test('a member deletes their account; the household and their items stay for the
   expect(await addedBy('Hafer'), 'before: B\'s item records B as its author').toBe(idB);
   const tokenB = await personalAccessToken(emailB);
   expect(await voiceStatus(tokenB), 'B\'s token works before deletion').toBe(200);
+  // Job 21 (AC12): both sent feedback; only B's goes with B.
+  await sendFeedback(emailA, 'Von A');
+  await sendFeedback(emailB, 'Von B');
+  const idA = await userId(emailA);
+  expect(await feedbackOf(idB)).toHaveLength(1);
 
   await openAccount(b);
   await screenshot(b, 'account-01-settings-konto');
@@ -123,6 +143,10 @@ test('a member deletes their account; the household and their items stay for the
   await expect(b.getByText(/Anmeldung fehlgeschlagen/).first(), 'B cannot sign in again').toBeVisible();
 
   expect(await userExists(idB), 'B is gone from auth').toBe(false);
+  expect(await feedbackOf(idB), 'B\'s feedback is gone').toEqual([]);
+  const kept = await feedbackOf(idA);
+  expect(kept.map((f) => f.message), 'A\'s feedback stays').toEqual(['Von A']);
+  expect(kept[0].household_id, 'with the household it was sent from').not.toBeNull();
   expect(await voiceStatus(tokenB), 'B\'s token is dead').toBe(401);
 });
 
@@ -134,6 +158,7 @@ test('the last member deletes their account; the household goes with every row i
   await expect(itemRow(page, 'Brot')).toBeVisible();
   await createInviteCode(page);
   await personalAccessToken(email);
+  await sendFeedback(email, 'Bevor ich gehe');
 
   const api = await apiAs(email);
   const id = (await api.auth.getUser()).data.user!.id;
@@ -162,6 +187,7 @@ test('the last member deletes their account; the household goes with every row i
   const { count } = await adminClient().from('profiles').select('*', { count: 'exact', head: true }).eq('id', id);
   expect(count, 'the profile is gone').toBe(0);
   expect(await userExists(id)).toBe(false);
+  expect(await feedbackOf(id), 'their feedback is gone').toEqual([]);
 });
 
 test('offline, deletion is refused and the account stays; back online it goes through', async ({ page }) => {
@@ -191,6 +217,7 @@ test('Meine Daten exportieren downloads the user\'s own data as JSON, without to
   await addItem(page, 'Kaffee');
   await expect(itemRow(page, 'Kaffee')).toBeVisible();
   const token = await personalAccessToken(email);
+  await sendFeedback(email, 'Meine Rückmeldung');
 
   await openAccount(page);
   const [download] = await Promise.all([
@@ -203,11 +230,13 @@ test('Meine Daten exportieren downloads the user\'s own data as JSON, without to
   const text = readFileSync((await download.path())!, 'utf8');
   const data = JSON.parse(text) as {
     format: string; account: { email: string }; items_added: { name: string }[]; access_tokens: { name: string }[];
+    feedback: { message: string; screen: string }[];
   };
   expect(data.format).toBe('family-groceries-export');
   expect(data.account.email).toBe(email);
   expect(data.items_added.map((i) => i.name).sort()).toEqual(['Kaffee', 'Milch']);
   expect(data.access_tokens.map((t) => t.name)).toEqual(['Siri']);
+  expect(data.feedback, 'their own feedback (job 21)').toMatchObject([{ message: 'Meine Rückmeldung', screen: 'list' }]);
   expect(text).not.toContain('token_hash');
   expect(text, 'nor the token itself').not.toContain(token);
 });

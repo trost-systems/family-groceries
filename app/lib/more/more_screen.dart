@@ -5,6 +5,7 @@ import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/feedback/feedback_sheet.dart';
 import 'package:family_groceries/household/invite_dialog.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
@@ -164,6 +165,14 @@ class const _MoreList({final MorePage? selected}) extends StatelessWidget {
           icon: Icons.logout,
           label: l10n.signOut,
           onTap: () => unawaited(context.read<SessionCubit>().signOut()),
+        ),
+        _Section(l10n.feedbackSection),
+        _Row(
+          key: const ValueKey('more-feedback'),
+          icon: Icons.feedback_outlined,
+          label: l10n.feedbackRow,
+          detail: l10n.feedbackRowHint,
+          onTap: () => unawaited(showFeedbackSheet(context)),
         ),
         _Section(l10n.language),
         const _LanguagePicker(),

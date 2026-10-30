@@ -1,0 +1,20 @@
+[feedback-monday] seed fake notes
+[feedback-monday] Monday summary: notes of last week (fake data)
+ audience |  created_berlin  | category |                      message                      | screen  | platform | app_version |     os_version      | locale |             household_id             |               user_id                | contact_ok 
+----------+------------------+----------+---------------------------------------------------+---------+----------+-------------+---------------------+--------+--------------------------------------+--------------------------------------+------------
+ external | 2026-10-19 00:00 | none     | Beim Abhaken springt die Liste nach oben.         | account | web      | 0.1.0 (42)  | Chrome on Android   | de     | 00000000-0000-4000-8000-00000000fa01 | 00000000-0000-4000-8000-00000000fe01 | f
+ external | 2026-10-20 08:15 | bug      | Die App stürzt ab, wenn ich offline etwas lösche. | list    | android  | 0.1.0 (42)  | Android 14 (SDK 34) | de     | 00000000-0000-4000-8000-00000000fa01 | 00000000-0000-4000-8000-00000000fe01 | t
+ external | 2026-10-24 21:40 | idea     | Could the list remember my usual Saturday shop?   | list    | android  | 0.1.0 (42)  | Android 15 (SDK 35) | en     | 00000000-0000-4000-8000-00000000fa01 | 00000000-0000-4000-8000-00000000fe02 | f
+ internal | 2026-10-21 12:00 | other    | Interner Test: Feedback aus dem Familienhaushalt. | list    | ios      | 0.1.0 (42)  | iOS 18.1            | de     | 00000000-0000-4000-8000-00000000fa03 | 00000000-0000-4000-8000-00000000fe03 | f
+[feedback-monday] Monday summary: counts (fake data)
+ audience |    by    |  value  | notes 
+----------+----------+---------+-------
+ external | category | bug     |     1
+ external | category | idea    |     1
+ external | category | none    |     1
+ external | platform | android |     2
+ external | platform | web     |     1
+ internal | category | other   |     1
+ internal | platform | ios     |     1
+[feedback-monday] checks
+feedback-monday: PASS: notes, counts and the contact lookup as docs/FEEDBACK.md has them
