@@ -259,7 +259,8 @@ jobs:
 
   # Job 13: GitHub never turns a schedule back on that it disabled for 60 days of inactivity, so
   # every push to main re-enables the keepalive (docs/DEPLOY.md, Keepalive). Job 13b: and the
-  # nightly backup (docs/BACKUP.md). Job 23: and the weekly release (docs/RELEASE.md).
+  # nightly backup (docs/BACKUP.md). Job 23: and the release, whose per-merge workflow_run
+  # trigger stops too while it is disabled (docs/RELEASE.md).
   keepalive-schedule:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest

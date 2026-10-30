@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Keeps one open issue "Weekly release failed" in step with the Release runs, like backup.yml.
+# Keeps one open issue "Internal release failed" in step with the Release runs, like backup.yml.
 #   report.sh decide   prints open, close or none (pure, from the environment below)
 #   report.sh apply    does it with gh
-# EVENT, SIMULATE (true/false), UPLOAD (plan output; empty when plan failed), BLOCKED and REASON
-# (plan outputs), PLAN, IOS, ANDROID, UPLOADED, WEB (the jobs' results: success, failure, cancelled,
-# skipped), ANDROID_UPLOADED (the android job's uploaded output), plus GITHUB_* for links.
-# Scheduled runs, and dispatches with simulate_failure, report failures; a run that uploaded, or
-# found main unchanged since the last upload, closes the issue. A dry run (upload=false) never
-# touches it.
+# EVENT, SIMULATE (true/false), UPLOAD (plan output; empty when plan failed), BLOCKED, CURRENT,
+# REASON and SHA (plan outputs), PLAN, IOS, ANDROID, UPLOADED, WEB (the jobs' results: success,
+# failure, cancelled, skipped), ANDROID_UPLOADED (the android job's uploaded output), plus
+# GITHUB_* for links.
+# Automatic runs (after CI on main, the weekly catch-up) and dispatches with simulate_failure
+# report failures, every one on the same open issue; a run that uploaded, or found that the
+# testers already have the newest green main (CURRENT), closes it. A dry run (upload=false)
+# never touches it.
 set -euo pipefail
-title='Weekly release failed'
+title='Internal release failed'
 
 failing() {
   local pair list=()
@@ -40,7 +42,9 @@ outcome() {
       failure | cancelled) stores+=("the Android job stopped, so Play internal may not have this build") ;;
     esac
   fi
-  if [[ ${UPLOADED:-} != success ]]; then
+  if [[ ${EVENT:-} != workflow_dispatch ]]; then
+    web="The web app (app.hummlist.com) does not move with internal releases."
+  elif [[ ${UPLOADED:-} != success ]]; then
     web="The web app (app.hummlist.com) stays on the last store release."
   elif [[ ${WEB:-} == success ]]; then
     web="The web app (app.hummlist.com) moves to this commit."
@@ -65,8 +69,8 @@ decide() {
   local failed
   failed="$(failing)"
   if [[ -n $failed ]]; then
-    if [[ $EVENT == schedule || ${SIMULATE:-false} == true ]]; then echo open; else echo none; fi
-  elif [[ ${UPLOAD:-} == true && ($UPLOADED == success || ${REASON:-} == "main is unchanged since"*) ]]; then
+    if [[ $EVENT != workflow_dispatch || ${SIMULATE:-false} == true ]]; then echo open; else echo none; fi
+  elif [[ ${UPLOAD:-} == true && ($UPLOADED == success || ${CURRENT:-} == true) ]]; then
     echo close
   else
     echo none
@@ -74,8 +78,9 @@ decide() {
 }
 
 apply() {
-  local action run open n
+  local action run open n sha
   action="$(decide)"
+  sha="${SHA:-$GITHUB_SHA}"
   run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   open="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
     --jq "map(select(.title == \"$title\")) | .[].number")"
@@ -83,7 +88,7 @@ apply() {
     open)
       local body failed
       failed="$(failing)"
-      body="Release run $run ($EVENT) on ${GITHUB_SHA:0:7} failed: ${failed//;/; }. $(outcome) docs/RELEASE.md, section Failures, says what to do; the next green upload run closes this issue."
+      body="Release run $run ($EVENT) on ${sha:0:7} failed: ${failed//;/; }. $(outcome) docs/RELEASE.md, section Failures, says what to do; the next run that uploads, or finds the testers on the newest green main, closes this issue."
       if [[ -n $open ]]; then
         gh issue comment "${open%%$'\n'*}" --repo "$GITHUB_REPOSITORY" --body "$body"
       else

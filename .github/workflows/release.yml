@@ -1,12 +1,22 @@
-# Builds green main and ships it every Monday: iOS to TestFlight (internal group only), Android
-# to the Play internal track. docs/RELEASE.md describes the run; the lanes are in
-# app/fastlane/Fastfile, the decisions in scripts/release/. A dispatch with the default inputs
-# takes the same path as the schedule. A platform whose secrets are missing is skipped with a
-# notice; a failed scheduled run opens the "Weekly release failed" issue.
+# Ships every green commit on main to the internal testers: iOS to TestFlight (internal group
+# only), Android to the Play internal track. It starts when CI succeeds on a push to main and
+# ships the newest green main commit; docs/RELEASE.md describes the run, the lanes are in
+# app/fastlane/Fastfile, the decisions in scripts/release/. Only a dispatch moves the web app
+# (app.hummlist.com). There is no public store release here (no production track, no App Store
+# review). A platform whose secrets are missing is skipped with a notice; a failed automatic run
+# opens or comments on the "Internal release failed" issue.
 name: Release
 
 on:
-  # Mondays 03:00 UTC: after the 02:30 backup, before the 05:23 keepalive.
+  # A finished CI run on main. Only a green push run of this repository starts the plan (job
+  # `if` below): a red one, a PR from a fork whose branch is named main, or a dispatched CI run
+  # leaves every job skipped.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Mondays 03:00 UTC, a catch-up: ships nothing when the testers have the newest green main,
+  # but re-ships before TestFlight's 90-day expiry or after Apple expired the builds.
   schedule:
     - cron: '0 3 * * 1'
   workflow_dispatch:
@@ -21,7 +31,7 @@ on:
         type: boolean
         default: true
       force:
-        description: Ship even if main is unchanged since the last upload
+        description: Ship even if the testers already have this app
         type: boolean
         default: false
       simulate_failure:
@@ -29,6 +39,8 @@ on:
         type: boolean
         default: false
 
+# One run at a time and never cancelled mid-upload. GitHub keeps one pending run and cancels an
+# older pending one when a newer arrives; that is fine, every run ships the newest green commit.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -56,6 +68,10 @@ jobs:
   # Environment secrets are visible only to jobs in the environment, so the plan runs in
   # `release` too (main only).
   plan:
+    if: >-
+      github.event_name != 'workflow_run'
+      || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+          && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: release
@@ -66,6 +82,9 @@ jobs:
       ship: ${{ steps.decide.outputs.ship }}
       blocked: ${{ steps.decide.outputs.blocked }}
       reason: ${{ steps.decide.outputs.reason }}
+      current: ${{ steps.decide.outputs.current }}
+      # The commit this run builds: main's tip for a dispatch, else the newest green main commit.
+      sha: ${{ steps.decide.outputs.sha }}
       upload: ${{ steps.inputs.outputs.upload }}
       ios: ${{ steps.secrets.outputs.ios }}
       android: ${{ steps.secrets.outputs.android }}
@@ -76,13 +95,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      # A scheduled run has no inputs; it gets the dispatch defaults here, so both events take
-      # the same path from this step on.
+      # A workflow_run or scheduled run has no inputs; it gets the dispatch defaults here, so
+      # every event takes the same path from this step on.
       - id: inputs
         env:
           PLATFORM: ${{ inputs.platform || 'both' }}
           UPLOAD: ${{ inputs.upload }}
           FORCE: ${{ inputs.force }}
+          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           upload="${UPLOAD:-true}" force="${FORCE:-false}"
           {
@@ -91,7 +111,8 @@ jobs:
             echo "force=$force"
             echo "build_number=$((BUILD_NUMBER_OFFSET + GITHUB_RUN_NUMBER))"
           } | tee -a "$GITHUB_OUTPUT"
-          echo "Release plan ($GITHUB_EVENT_NAME): platform=$PLATFORM upload=$upload force=$force commit=$GITHUB_SHA"
+          echo "Release plan ($GITHUB_EVENT_NAME): platform=$PLATFORM upload=$upload force=$force" \
+            "main=$GITHUB_SHA trigger=${TRIGGER_SHA:-none}"
       - name: Simulate a failure
         if: inputs.simulate_failure
         run: |
@@ -144,16 +165,25 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
         run: bundle exec fastlane ios preflight
+      # A dispatch ships the commit it was started on. Any other run starts from main as it is
+      # now, which may be past the commit whose CI started it (github.sha is main's tip when the
+      # run was created).
       - name: Gather the facts
         env:
           GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           FORCE: ${{ steps.inputs.outputs.force }}
           UPLOAD: ${{ steps.inputs.outputs.upload }}
-          HEAD_SHA: ${{ github.sha }}
+          TRIGGER_SHA: ${{ github.event.workflow_run.head_sha }}
           BUILD_NUMBER: ${{ steps.inputs.outputs.build_number }}
           TESTFLIGHT_JSON: ${{ runner.temp }}/testflight.json
-        run: scripts/release/plan.sh gather | tee "$RUNNER_TEMP/facts.json"
+        run: |
+          main="$GITHUB_SHA"
+          if [ "$EVENT" != workflow_dispatch ]; then
+            git fetch -q origin main
+            main="$(git rev-parse origin/main)"
+          fi
+          MAIN_SHA="$main" scripts/release/plan.sh gather | tee "$RUNNER_TEMP/facts.json"
       - id: decide
         run: |
           if ! scripts/release/plan.sh decide "$RUNNER_TEMP/facts.json" > "$RUNNER_TEMP/decision"; then
@@ -172,12 +202,13 @@ jobs:
         if: steps.decide.outputs.ship == 'true'
         env:
           PREVIOUS: ${{ steps.decide.outputs.previous_sha }}
+          SHA: ${{ steps.decide.outputs.sha }}
         run: |
           eof="NOTES_$(openssl rand -hex 8)"
           for lang in de en; do
-            { echo "$lang<<$eof"; scripts/release/notes.sh "$lang" "$PREVIOUS" "$GITHUB_SHA"; echo "$eof"; } >> "$GITHUB_OUTPUT"
+            { echo "$lang<<$eof"; scripts/release/notes.sh "$lang" "$PREVIOUS" "$SHA"; echo "$eof"; } >>"$GITHUB_OUTPUT"
           done
-          scripts/release/notes.sh de "$PREVIOUS" "$GITHUB_SHA"
+          scripts/release/notes.sh de "$PREVIOUS" "$SHA"
 
   ios:
     needs: plan
@@ -195,6 +226,8 @@ jobs:
       RELEASE_UPLOAD: ${{ needs.plan.outputs.upload }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
@@ -253,6 +286,8 @@ jobs:
       PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -318,9 +353,10 @@ jobs:
           bundle exec fastlane android internal
           if [ "$RELEASE_UPLOAD" = true ]; then echo "uploaded=true" >> "$GITHUB_OUTPUT"; fi
 
-  # The plan job finds the last upload by this job's name; it runs only after a real upload.
+  # The plan job finds the last upload by this job's name, which carries the shipped commit; it
+  # runs only after a real upload.
   uploaded:
-    name: Uploaded
+    name: Uploaded ${{ needs.plan.outputs.sha }}
     needs: [plan, ios, android]
     if: >-
       !cancelled() && needs.plan.outputs.ship == 'true' && needs.plan.outputs.upload == 'true'
@@ -331,21 +367,23 @@ jobs:
     steps:
       - env:
           BUILD_NUMBER: ${{ needs.plan.outputs.build_number }}
+          SHA: ${{ needs.plan.outputs.sha }}
           IOS: ${{ needs.ios.result }}
           ANDROID: ${{ needs.android.outputs.uploaded == 'true' && 'uploaded' || needs.android.result }}
         run: |
-          echo "Build $BUILD_NUMBER of $GITHUB_SHA: TestFlight $IOS, Play internal $ANDROID." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Build $BUILD_NUMBER of $SHA: TestFlight $IOS, Play internal $ANDROID." | tee -a "$GITHUB_STEP_SUMMARY"
 
-  # The web app ships with the store builds: app.hummlist.com is Vercel's production, and Vercel's
-  # production branch is `release` (docs/DEPLOY.md, section "Web app"). Moving `release` to this
-  # run's commit makes Vercel build it and assign app.hummlist.com. A rerun of an older run is a
-  # no-op, and the plain push only fast-forwards, so production never moves back from here.
-  # Pushes to `main` build previews only (preview.app.hummlist.com, behind Vercel Authentication).
-  # No branch protection or ruleset may block github-actions from pushing `release`.
+  # The web app ships with a dispatched store release only: app.hummlist.com is public and is
+  # Vercel's production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). The
+  # automatic per-merge runs reach internal testers only, so they leave it alone. Moving `release`
+  # to this run's commit makes Vercel build it and assign app.hummlist.com. A rerun of an older
+  # run is a no-op, and the plain push only fast-forwards, so production never moves back from
+  # here. Pushes to `main` build previews only (preview.app.hummlist.com, behind Vercel
+  # Authentication). No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
-    needs: uploaded
-    if: ${{ !cancelled() && needs.uploaded.result == 'success' }}
+    needs: [plan, uploaded]
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.uploaded.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -355,21 +393,24 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fast-forward the release branch
+        env:
+          SHA: ${{ needs.plan.outputs.sha }}
         run: |
           before="$(git rev-parse -q --verify origin/release || echo none)"
           # Already there, or release is already past this commit (a rerun of an older run).
-          if [ "$before" != none ] && git merge-base --is-ancestor "$GITHUB_SHA" "$before"; then
-            echo "release (${before:0:7}) already contains ${GITHUB_SHA:0:7}; production unchanged." \
+          if [ "$before" != none ] && git merge-base --is-ancestor "$SHA" "$before"; then
+            echo "release (${before:0:7}) already contains ${SHA:0:7}; production unchanged." \
               | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          git push origin "$GITHUB_SHA:refs/heads/release"
-          echo "release: ${before:0:7} -> ${GITHUB_SHA:0:7}. Vercel builds it for app.hummlist.com." \
+          git push origin "$SHA:refs/heads/release"
+          echo "release: ${before:0:7} -> ${SHA:0:7}. Vercel builds it for app.hummlist.com." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
+  # Not after a red or foreign CI run (plan skipped by its `if`): there is nothing to report.
   report:
     needs: [plan, ios, android, uploaded, web]
-    if: always()
+    if: always() && needs.plan.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -383,7 +424,9 @@ jobs:
           SIMULATE: ${{ inputs.simulate_failure || false }}
           UPLOAD: ${{ needs.plan.outputs.upload }}
           BLOCKED: ${{ needs.plan.outputs.blocked }}
+          CURRENT: ${{ needs.plan.outputs.current }}
           REASON: ${{ needs.plan.outputs.reason }}
+          SHA: ${{ needs.plan.outputs.sha }}
           PLAN: ${{ needs.plan.result }}
           IOS: ${{ needs.ios.result }}
           ANDROID: ${{ needs.android.result }}

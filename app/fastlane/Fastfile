@@ -207,7 +207,7 @@ platform :ios do
   # Sets What to Test (RELEASE_NOTES_DE/_EN) as soon as the build shows up,
   # then waits until Apple has processed it. A build that ends INVALID or
   # FAILED, is still processing after WAIT_MINUTES, or comes out already
-  # expired fails the run, which opens the "Weekly release failed" issue.
+  # expired fails the run, which opens the "Internal release failed" issue.
   desc "Set What to Test on BUILD_NUMBER and wait until TestFlight processed it"
   lane :wait_processing do
     asc_api_key
