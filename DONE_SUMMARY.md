@@ -247,3 +247,7 @@ See [docs/done/28-web-wasm-ios.md](docs/done/28-web-wasm-ios.md).
 ## Job 19: kill-gate and LTV analytics, error tracking (PostHog EU)
 
 See [docs/done/19-analytics-killgate.md](docs/done/19-analytics-killgate.md).
+
+## Job 30: every green merge to main reaches the internal testers
+
+See [docs/done/30-release-on-merge.md](docs/done/30-release-on-merge.md).
