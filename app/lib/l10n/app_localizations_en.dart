@@ -992,6 +992,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No internet connection. Try again once you\'re online.';
 
   @override
+  String get householdArchiveDisabled =>
+      'Archiving isn\'t available right now. Your household stays as it is.';
+
+  @override
   String get tooManyAttempts => 'Too many attempts. Please try again later.';
 
   @override
@@ -1096,12 +1100,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'One purchase for your whole household: Hummlist Lifetime supports the development of Hummlist.';
 
   @override
-  String lifetimeBuy(String price) {
-    return 'Buy for $price';
-  }
+  String get lifetimeBuy => 'Continue to purchase';
 
   @override
-  String get lifetimeRestore => 'Restore purchases';
+  String get lifetimePriceInStore =>
+      'The App Store or Google Play shows you the price before you buy.';
+
+  @override
+  String get lifetimeRestore => 'Restore purchase';
 
   @override
   String get lifetimeUnlocked => 'Unlocked';
@@ -1126,7 +1132,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifetimeBoughtTwice =>
-      'Your household bought Hummlist Lifetime more than once. Apple or Google can refund one of the purchases.';
+      'Your household bought Hummlist Lifetime more than once. One of the purchases can be refunded.';
 
   @override
   String get lifetimeCanceled => 'Purchase canceled.';
@@ -1167,7 +1173,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refundHelpBody =>
-      'Hummlist Lifetime always belongs to the household it was bought in. We can\'t refund purchases ourselves: Apple and Google do, and they decide.';
+      'Hummlist Lifetime always belongs to the household it was bought in. Only Apple refunds App Store purchases. For Google Play, ask Google within 48 hours of buying; after that, email us at support@hummlist.com and we\'ll look at your request. Your statutory rights are not affected.';
 
   @override
   String get refundHelpApple =>
@@ -1175,7 +1181,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refundHelpGoogle =>
-      'Android: open Google Play, tap your profile picture, then “Payments & subscriptions”, “Budget & order history”, choose Hummlist Lifetime and “Report a problem”.';
+      'Android, within 48 hours: open Google Play, tap your profile picture, then “Payments & subscriptions”, “Budget & order history”, choose Hummlist Lifetime and “Report a problem”. After that, email us with the order number (it starts with “GPA.”) or your Google account\'s email address.';
 
   @override
   String get refundHelpReason =>
@@ -1188,6 +1194,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refundHelpGoogleLink => 'Ask Google';
 
   @override
+  String get refundHelpFaqLink => 'More in the FAQ';
+
+  @override
   String get joinTargetUnlocked =>
       'This household has Hummlist Lifetime. You don\'t need to buy anything.';
 
@@ -1197,7 +1206,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String joinLifetimeEnds(String household) {
-    return '“$household” has Hummlist Lifetime. You\'re its last member: if you join, the household is deleted. Its Hummlist Lifetime ends with it and is not refunded, because a purchase belongs to its household and doesn\'t move with you.';
+    return '“$household” has Hummlist Lifetime. You\'re its last member: if you join, the household is deleted. Its Hummlist Lifetime ends with it, because a purchase belongs to its household and doesn\'t move with you.';
   }
 
   @override
@@ -1208,7 +1217,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String joinArchiveOffer(String household) {
-    return '“$household” has Hummlist Lifetime. You\'re its last member. Archive the household instead of deleting it: its list and Hummlist Lifetime are kept, and you can bring it back later under “More”.';
+    return '“$household” has Hummlist Lifetime. You\'re its last member. Archive the household instead of deleting it: its list and Hummlist Lifetime are kept, and you can bring it back later under “More”. If you don\'t bring it back within 24 months, it is deleted.';
   }
 
   @override
@@ -1230,6 +1239,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get archivedUnlocked => 'With Hummlist Lifetime';
+
+  @override
+  String archivedDeletesOn(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Will be deleted on $dateString';
+  }
 
   @override
   String get archivedRestore => 'Bring back';

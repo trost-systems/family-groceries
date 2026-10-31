@@ -148,7 +148,9 @@ export async function run(query: Query, command: Command): Promise<string[]> {
   if (command.apply) {
     await query(`delete from public.lifetime_testers where user_id = ${user}`);
   }
-  return [`${dry}remove ${id}; the ${used} unlock(s) already given stay${suffix}`];
+  return [
+    `${dry}remove ${id}; the ${used} unlock(s) already given stay, without the tester mark${suffix}`,
+  ];
 }
 
 async function directQuery(url: string): Promise<{ query: Query; end: () => Promise<void> }> {

@@ -617,3 +617,91 @@ these are the sentences and steps for you.
 - Proposed fix: map the core error and exception types by `is` checks before falling back to
   `runtimeType` (Hummlist's `errorType` in `app/lib/analytics/exceptions.dart` does this), and let
   the app add its own types.
+
+## Job 47: purchase legal fixes, Legal Review K.11 (2026-10-31)
+
+Nothing here is live for users: `REVENUECAT_PURCHASES` and `HOUSEHOLD_ARCHIVE` stay off, and the
+new server switch is seeded off. Decisions: DECISIONS "Job 47". Behavior: docs/PURCHASES.md.
+
+### Steps
+
+1. **The deletions cron secret (must, or the daily workflow fails).** `POST
+   /purchases/revenuecat/deletions` now needs `x-deletions-secret`; while the function secret is
+   unset it answers 503 and `revenuecat-delete.yml` fails (and opens its issue "RevenueCat
+   customer deletion failed") until both secrets below are set. Generate one value and set it in
+   both places without printing it:
+   ```
+   v="$(openssl rand -hex 32)"
+   printf '%s' "$v" | gh secret set REVENUECAT_DELETIONS_SECRET --repo trost-systems/family-groceries
+   supabase secrets set --project-ref jdwqrallbpdbshrdhenk REVENUECAT_DELETIONS_SECRET="$v"
+   unset v
+   ```
+   Then run the workflow by hand once (`gh workflow run revenuecat-delete.yml`); it should end
+   green with `{"status":"not_configured"}` until `REVENUECAT_SECRET_KEY` is set, or the
+   deletion counts after.
+2. **Archiving for real users (H-70), when you and Peter decide to offer it** (the 24-month texts
+   are live since #147).
+   Two switches, both needed, in this order:
+   - Server (the database, service role), in the SQL editor or with the Management API:
+     ```sql
+     update public.app_switches set enabled = true, changed_at = now() where key = 'household_archive';
+     ```
+     Off again: the same with `false`. While it is off, every archiving call
+     (`leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household(id, true)`
+     when it would archive the household left) fails with `archive_disabled` and changes nothing;
+     re-enabling an archived household keeps working.
+   - App: `"HOUSEHOLD_ARCHIVE": "true"` in `app/config/auth.json` (Job 43 step 4).
+   Turn the server switch on first: an app with the define on and the switch off shows "Archivieren
+   ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist." on the archive choice.
+3. **Migration `20261031194500_purchase_legal_fixes.sql`** deploys with the normal pipeline. It
+   deletes the nil-bound `Sandbox` purchases from before job 43 (H-69). It does not touch a
+   nil-bound `Production` row; there should be none (nothing was sold). Check after the deploy:
+   `select environment, count(*) from public.purchases where bound_household = '00000000-0000-0000-0000-000000000000' group by 1;`
+   should return no rows.
+
+### For Legal Review (re-check against the texts #147 put live; this job did not edit them)
+
+- **H-67, done.** The SDK starts only on "Weiter zum Kauf" or "Kauf wiederherstellen" (tests:
+  `app/test/purchases/no_sdk_before_tap_test.dart` with the real repository over the SDK's mocked
+  channel; the web e2e checks no request goes to RevenueCat). The page shows no price (option a;
+  DECISIONS 47.1). One fact for 5a ("Erst wenn du … einen Kauf startest oder einen Kauf
+  wiederherstellst, verbindet sich die App mit RevenueCat"): after that tap the SDK stays
+  configured for the rest of that app run, and on each return to the foreground it refreshes the
+  household's CustomerInfo and offerings from RevenueCat when its cache is older than 5 minutes
+  (purchases-ios `applicationWillEnterForeground` → `updateAllCachesIfNeeded`). A later app start
+  contacts RevenueCat only after the next tap.
+- **H-68, verified, matches draft 5a.** From the source of purchases-ios 5.99.0 and
+  purchases-android 11.0.0 (pinned by purchases_flutter 11.0.0; links in docs/PURCHASES.md "What
+  Apple and Google receive"): Apple gets the household id with every purchase (StoreKit 2
+  `appAccountToken`; StoreKit 1 on iOS 15 `applicationUsername`), Google gets
+  Base64(SHA-256(household id)) as `obfuscatedAccountId`, never `obfuscatedProfileId`. Note: the
+  hash is unsalted, so whoever knows the household id can compute it; the household id is a
+  random UUID that only the household's members, our server and RevenueCat know.
+- **H-73, device storage.** The data map has the row (iOS UserDefaults suite
+  `com.revenuecat.user_defaults`, Android SharedPreferences `com_revenuecat_purchases_preferences`,
+  contents, cache times). Decision 47.6: sign-out and account deletion leave it on the device; the
+  SDK has no call to clear it except `logOut`, which creates an anonymous RevenueCat customer and
+  contacts RevenueCat. It goes when the app is uninstalled, or is replaced at the next Buy or
+  Restore for another household. Draft 5a says the library stores the household id and the unlock
+  status once a purchase or restore starts; it does not say how long. Please decide whether 5a
+  needs a sentence on that.
+- **Android Auto Backup (new finding, app-wide).** `app/android/app/src/main/AndroidManifest.xml`
+  sets no `android:allowBackup`, so Android's default (on) applies: Auto Backup may copy the app's
+  SharedPreferences, RevenueCat's file included (and the app's own DeviceCache and the Supabase
+  session), to the user's Google account backup and to a new phone. Not changed here (it is
+  app-wide, not purchase-specific). Options: `android:allowBackup="false"`, or backup rules that
+  exclude RevenueCat's file and the session. Your call; a small app PR either way.
+- **H-50.** Archived households are deleted 24 months after archiving; "Archivierte Haushalte"
+  shows "Wird am <Datum> gelöscht", and the join screen's archive offer names the 24 months. No
+  reminder e-mail: Hummlist sends no e-mails of its own (DECISIONS 47.3). If the texts promise a
+  reminder, that needs a mail sender first.
+- **The buyer's claim (job 43 review).** It now names the purchase's household and counts for a
+  member at the purchase time, also one who left within the hour. That needs a new, short-lived
+  record: `household_departures` (household, user, joined, left), kept one hour, service only.
+  Draft 5a does not mention it; it is in the data map. Please check whether 5a needs it.
+- **H-72.** Removing a tester (`testers.ts remove`) or their account deletion now clears their
+  mark on the households they unlocked (`entitlements.tester`), as 5a says.
+- **H-74 (optional), not done.** A refunded transaction whose household is deleted still gets a
+  tombstone after 30 days, like any purged purchase. Leaving refunds out needs a decision whether a
+  refunded-then-reversed purchase may then bind elsewhere, so it waits for Legal Review.
+

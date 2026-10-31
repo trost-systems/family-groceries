@@ -29,6 +29,11 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   const peterEmail = newEmail('iap-peter');
   const leaEmail = newEmail('iap-lea');
   const peter = await newPage(browser);
+  // H-67: nothing on the page (or before it) talks to RevenueCat.
+  const revenueCat: string[] = [];
+  peter.on('request', (r) => {
+    if (/revenuecat/i.test(new URL(r.url()).hostname)) revenueCat.push(r.url());
+  });
   await peter.setViewportSize({ width: 390, height: 844 });
   await signUpWithHousehold(peter, peterEmail);
   const household = await householdOf(peterEmail);
@@ -41,9 +46,10 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await openMore(peter, 'Hummlist Lifetime');
   await expect(peter).toHaveURL(/\/more\/lifetime$/);
   await expect(webNote(peter)).toBeVisible();
-  await expect(peter.getByRole('button', { name: /kaufen/ }), 'no buy button on the web').toHaveCount(0);
-  await expect(peter.getByRole('button', { name: 'Käufe wiederherstellen' }), 'no restore on the web').toHaveCount(0);
+  await expect(peter.getByRole('button', { name: /Weiter zum Kauf|kaufen/ }), 'no buy button on the web').toHaveCount(0);
+  await expect(peter.getByRole('button', { name: 'Kauf wiederherstellen' }), 'no restore on the web').toHaveCount(0);
   await expect(unlocked(peter)).toHaveCount(0);
+  expect(revenueCat, 'no request to RevenueCat from app start or the Lifetime page').toEqual([]);
   await screenshot(peter, 'job25-web-de-390');
   await peter.setViewportSize({ width: 1366, height: 1024 });
   await expect(webNote(peter)).toBeVisible();
@@ -127,7 +133,7 @@ test.describe('in English', () => {
     await page.goto('/more/lifetime');
     const note = page.getByText(/^You can buy Hummlist Lifetime in the iPhone or Android app\./);
     await expect(note).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Restore purchases' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Restore purchase' })).toHaveCount(0);
     await screenshot(page, 'job25-web-en-390');
     await page.setViewportSize({ width: 1366, height: 1024 });
     await screenshot(page, 'job25-web-en-1366');

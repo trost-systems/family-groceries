@@ -366,3 +366,7 @@ The app's hand-written PostHog client is replaced by PostHog's SDK: posthog_flut
 - NEEDS_LEAD "Job 44": Legal Review sentences, store labels, three upstream issue drafts (none filed), flags to create in 319492.
 
 Details: [docs/done/44-posthog-sdk.md](docs/done/44-posthog-sdk.md).
+
+## Job 47: purchase legal fixes (Legal Review K.11) and job 43 review leftovers
+
+RevenueCat's SDK starts only on a tap on "Weiter zum Kauf" or "Kauf wiederherstellen" (no price on the page; the store's sheet shows it). Archived households are deleted 24 months after archiving, with the date in "Archivierte Haushalte", and archiving needs a server switch that is seeded off. Nil-bound sandbox purchases are deleted. What Apple and Google receive and what the SDK keeps on the device were read from the pinned SDK sources and match draft 5a. The deletions route takes a cron secret, routes match exactly, the claim names the purchase's household, and removing a tester clears their mark. The refund help, the bought-twice note and the join warning use Legal Review's R-8 refund texts (H-76), with a link to the FAQ. Nothing is live for users. Details: [docs/done/47-purchase-legal-fixes.md](docs/done/47-purchase-legal-fixes.md).

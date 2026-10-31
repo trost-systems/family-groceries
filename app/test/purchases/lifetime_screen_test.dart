@@ -1,4 +1,5 @@
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -16,7 +17,6 @@ void main() {
 
   /// Every state key the page can show; each test names the ones it expects.
   const stateKeys = {
-    'lifetime-loading',
     'lifetime-unlocked',
     'lifetime-pending',
     'lifetime-unlocking',
@@ -27,7 +27,6 @@ void main() {
     'lifetime-used-elsewhere',
     'lifetime-nothing-restored',
     'lifetime-web',
-    'lifetime-retry',
     'lifetime-checking',
     'lifetime-bought-twice',
   };
@@ -60,7 +59,7 @@ void main() {
     language: language,
   );
 
-  testWidgets('offers the purchase at the store price, and restore', (
+  testWidgets('offers Buy and Restore without asking the store (H-67)', (
     tester,
   ) async {
     final more = await openLifetime(tester);
@@ -70,27 +69,16 @@ void main() {
       find.textContaining('Ein Kauf, für euren ganzen Haushalt'),
       findsOneWidget,
     );
-    expect(
-      tester.widget<Text>(key('lifetime-price')).data,
-      'Für 9,99 € kaufen',
-    );
+    expect(find.text('Weiter zum Kauf'), findsOneWidget);
     expect(enabled(tester, 'lifetime-buy'), isTrue);
-    expect(find.text('Käufe wiederherstellen'), findsOneWidget);
-    expect(more.purchases.repository.loads, ['home']);
-    shows({});
-  });
-
-  testWidgets('the price is whatever the store says', (tester) async {
-    await openLifetime(
-      tester,
-      store: FakePurchaseRepository(
-        product: const ProductLoaded(
-          'home',
-          Product(id: lifetimeProductId, price: 'CHF 10.00'),
-        ),
-      ),
+    expect(find.text('Kauf wiederherstellen'), findsOneWidget);
+    expect(
+      tester.widget<Text>(key('lifetime-price-note')).data,
+      'Den Preis zeigen dir der App Store oder Google Play, bevor du kaufst.',
     );
-    expect(find.text('Für CHF 10.00 kaufen'), findsOneWidget);
+    expect(find.textContaining('€'), findsNothing, reason: 'no price');
+    expect(more.purchases.repository.calls, isEmpty);
+    shows({});
   });
 
   testWidgets('buy, unlocking, unlocked for the household', (tester) async {
@@ -148,56 +136,54 @@ void main() {
     expect(enabled(tester, 'lifetime-buy'), isTrue);
   });
 
-  testWidgets('the store refuses: error with its code, retry', (tester) async {
-    await openLifetime(
+  testWidgets('the store refuses: error with its code, Buy tries again', (
+    tester,
+  ) async {
+    final more = await openLifetime(
       tester,
       store: FakePurchaseRepository(bought: const StoreFailed('E42')),
     );
     await tester.tap(key('lifetime-buy'));
     await tester.pump();
-    shows({'lifetime-error', 'lifetime-retry'});
+    shows({'lifetime-error'});
     expect(find.text('Der Kauf hat nicht geklappt (E42).'), findsOneWidget);
-    await tester.tap(key('lifetime-retry'));
+    expect(enabled(tester, 'lifetime-buy'), isTrue);
+    await tester.tap(key('lifetime-buy'));
     await tester.pump();
-    shows({});
+    expect(more.purchases.repository.buys, hasLength(2));
   });
 
-  testWidgets('the store is offline while buying', (tester) async {
+  testWidgets('the store is offline: says so after the tap', (tester) async {
     await openLifetime(
       tester,
       store: FakePurchaseRepository(bought: const StoreOffline()),
     );
+    shows({});
     await tester.tap(key('lifetime-buy'));
     await tester.pump();
-    shows({'lifetime-error', 'lifetime-retry'});
+    shows({'lifetime-offline'});
     expect(
       find.text('Der Store ist gerade nicht erreichbar. Prüfe die Verbindung.'),
       findsOneWidget,
     );
+    expect(enabled(tester, 'lifetime-buy'), isTrue);
   });
 
-  testWidgets('not in the store yet: coming soon, retry', (tester) async {
-    final store = FakePurchaseRepository(product: const ProductNotFound());
+  testWidgets('not in the store yet: coming soon after the tap', (
+    tester,
+  ) async {
+    final store = FakePurchaseRepository(bought: const ProductMissing());
     await openLifetime(tester, store: store);
-    shows({'lifetime-unavailable', 'lifetime-retry'});
-    expect(find.text('Hummlist Lifetime ist bald verfügbar.'), findsOneWidget);
-    expect(key('lifetime-buy'), findsNothing);
-    expect(key('lifetime-restore'), findsOneWidget);
-
-    store.product = null;
-    await tester.tap(key('lifetime-retry'));
-    await tester.pumpAndSettle();
     shows({});
-    expect(key('lifetime-buy'), findsOneWidget);
-  });
-
-  testWidgets('store unreachable: offline, retry', (tester) async {
-    await openLifetime(
-      tester,
-      store: FakePurchaseRepository(product: const StoreUnavailable()),
-    );
-    shows({'lifetime-offline', 'lifetime-retry'});
-    expect(key('lifetime-buy'), findsNothing);
+    await tester.tap(key('lifetime-buy'));
+    await tester.pump();
+    shows({'lifetime-unavailable'});
+    expect(find.text('Hummlist Lifetime ist bald verfügbar.'), findsOneWidget);
+    expect(key('lifetime-restore'), findsOneWidget);
+    store.bought = const Canceled();
+    await tester.tap(key('lifetime-buy'));
+    await tester.pump();
+    shows({'lifetime-canceled'});
   });
 
   testWidgets('the purchase define off: coming soon, no Buy, no Restore', (
@@ -209,19 +195,7 @@ void main() {
     expect(find.text('Hummlist Lifetime ist bald verfügbar.'), findsOneWidget);
     expect(key('lifetime-buy'), findsNothing);
     expect(key('lifetime-restore'), findsNothing);
-    expect(store.loads, isEmpty, reason: 'no store is asked');
-  });
-
-  testWidgets('a product loaded for another household offers no Buy', (
-    tester,
-  ) async {
-    await openLifetime(
-      tester,
-      store: FakePurchaseRepository(
-        product: const ProductLoaded('other', lifetime),
-      ),
-    );
-    expect(key('lifetime-buy'), findsNothing);
+    expect(store.calls, isEmpty, reason: 'no store is asked');
   });
 
   for (final (what, store) in [
@@ -272,7 +246,7 @@ void main() {
     await tester.pumpAndSettle();
     shows({'lifetime-unlocked'});
     expect(key('lifetime-buy'), findsNothing, reason: 'the partner bought');
-    expect(more.purchases.repository.loads, isEmpty);
+    expect(more.purchases.repository.calls, isEmpty);
   });
 
   testWidgets('a member who did not buy never sees Buy once unlocked', (
@@ -294,7 +268,7 @@ void main() {
       entitlements: FakeEntitlementsSource(unlockedNow: true),
     );
     shows({'lifetime-unlocked'});
-    expect(more.purchases.repository.loads, isEmpty);
+    expect(more.purchases.repository.calls, isEmpty);
   });
 
   testWidgets('bought twice: a note, and the refund help', (tester) async {
@@ -310,7 +284,7 @@ void main() {
     expect(
       find.text(
         'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen '
-        'der Käufe können Apple oder Google erstatten.',
+        'der Käufe kannst du dir erstatten lassen.',
       ),
       findsOneWidget,
     );
@@ -319,17 +293,38 @@ void main() {
     expect(key('refund-help'), findsOneWidget);
     expect(find.text('Kauf zurückfordern'), findsOneWidget);
     expect(
-      find.textContaining('Erstatten können wir selbst nichts'),
+      find.text(
+        'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft '
+        'wurde. Käufe im App Store erstattet nur Apple. Bei Google Play '
+        'beantragst du die Erstattung in den ersten 48 Stunden bei Google; '
+        'danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage '
+        'einzeln. Deine gesetzlichen Rechte bleiben unberührt.',
+      ),
       findsOneWidget,
     );
+    expect(find.textContaining('Erstatten können wir'), findsNothing);
     expect(find.textContaining('reportaproblem.apple.com'), findsOneWidget);
-    expect(find.textContaining('„Problem melden“'), findsOneWidget);
+    expect(
+      find.text(
+        'Android, in den ersten 48 Stunden: Öffne Google Play, tippe auf dein '
+        'Profilbild, dann „Zahlungen und Abos“, „Budget und '
+        'Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“. '
+        'Danach schreib uns mit der Bestellnummer (beginnt mit „GPA.“) oder '
+        'der E-Mail-Adresse deines Google-Kontos.',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('Mein Haushalt war schon freigeschaltet'),
       findsOneWidget,
     );
     expect(key('refund-apple'), findsOneWidget);
     expect(key('refund-google'), findsOneWidget);
+    expect(find.text('Mehr in den häufigen Fragen'), findsOneWidget);
+    expect(
+      tester.widget<LegalLink>(key('refund-faq')).url,
+      Uri.parse('https://hummlist.com/support'),
+    );
   });
 
   testWidgets('a tester grant and a purchase are not bought twice', (
@@ -358,8 +353,8 @@ void main() {
     );
     expect(
       find.text(
-        'Your household bought Hummlist Lifetime more than once. Apple or '
-        'Google can refund one of the purchases.',
+        'Your household bought Hummlist Lifetime more than once. One of the '
+        'purchases can be refunded.',
       ),
       findsOneWidget,
     );
@@ -371,11 +366,33 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Request a refund'), findsOneWidget);
     expect(
-      find.textContaining("We can't refund purchases ourselves"),
+      find.text(
+        'Hummlist Lifetime always belongs to the household it was bought in. '
+        'Only Apple refunds App Store purchases. For Google Play, ask Google '
+        'within 48 hours of buying; after that, email us at '
+        "support@hummlist.com and we'll look at your request. Your statutory "
+        'rights are not affected.',
+      ),
       findsOneWidget,
     );
+    expect(
+      find.text(
+        'Android, within 48 hours: open Google Play, tap your profile picture, '
+        'then “Payments & subscriptions”, “Budget & order history”, choose '
+        'Hummlist Lifetime and “Report a problem”. After that, email us with '
+        "the order number (it starts with “GPA.”) or your Google account's "
+        'email address.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining("We can't refund"), findsNothing);
     expect(find.text('Ask Apple'), findsOneWidget);
     expect(find.text('Ask Google'), findsOneWidget);
+    expect(find.text('More in the FAQ'), findsOneWidget);
+    expect(
+      tester.widget<LegalLink>(key('refund-faq')).url,
+      Uri.parse('https://hummlist.com/en/support'),
+    );
   });
 
   testWidgets('restore finds nothing', (tester) async {
@@ -415,7 +432,7 @@ void main() {
     );
     expect(key('lifetime-buy'), findsNothing);
     expect(key('lifetime-restore'), findsNothing);
-    expect(store.loads, isEmpty);
+    expect(store.calls, isEmpty);
   });
 
   testWidgets('the web app in English says where to buy', (tester) async {
@@ -446,8 +463,14 @@ void main() {
     final store = FakePurchaseRepository()..hold = true;
     await openLifetime(tester, language: AppLanguage.en, store: store);
     expect(find.text('Hummlist Lifetime'), findsOneWidget);
-    expect(find.text('Buy for 9,99 €'), findsOneWidget);
-    expect(find.text('Restore purchases'), findsOneWidget);
+    expect(find.text('Continue to purchase'), findsOneWidget);
+    expect(find.text('Restore purchase'), findsOneWidget);
+    expect(
+      find.text(
+        'The App Store or Google Play shows you the price before you buy.',
+      ),
+      findsOneWidget,
+    );
     await tester.tap(key('lifetime-buy'));
     store.held.single.complete(const Bought(null));
     await tester.pump();
@@ -461,16 +484,25 @@ void main() {
     );
   });
 
-  testWidgets('leaving the page and coming back asks the store once', (
+  testWidgets('opening, rebuilding, leaving and coming back ask no store', (
     tester,
   ) async {
     final more = await openLifetime(tester);
+    more.purchases.rows.change();
+    await tester.pumpAndSettle();
     more.router.go(morePath);
     await tester.pumpAndSettle();
     more.router.go(lifetimePath);
     await tester.pumpAndSettle();
-    expect(more.purchases.repository.loads, ['home']);
+    expect(more.purchases.repository.calls, isEmpty);
     expect(key('lifetime-buy'), findsOneWidget);
+    await tester.tap(key('lifetime-restore'));
+    await tester.pump();
+    await tester.tap(key('lifetime-buy'));
+    await tester.pump();
+    expect(more.purchases.repository.calls, ['restore home', 'buy home']);
+    // "Unlocking" waits for an unlock that never comes here.
+    await tester.pump(unlockWait);
   });
 
   group('More', () {

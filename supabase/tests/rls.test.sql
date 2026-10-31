@@ -1,5 +1,5 @@
 begin;
-select plan(59);
+select plan(61);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -222,6 +222,13 @@ select throws_ok($$ select count(*) from public.feedback where household_id = (s
 set local role postgres;
 select is((select household_id from public.feedback where id = '30000000-0000-4000-8000-0000000000b1'),
   (select id from hb), 'a note carries the sender''s household, not another one');
+
+-- Job 47: ended memberships (for the buyer's claim) are service-only, in any household.
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select throws_ok($$ select count(*) from public.household_departures where household_id = (select id from ha) $$,
+  '42501', null, 'departures of another household are not readable');
+select throws_ok($$ select count(*) from public.household_departures where household_id = (select id from hb) $$,
+  '42501', null, 'nor of one''s own');
 
 select * from finish();
 rollback;

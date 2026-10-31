@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -16,9 +17,12 @@ Uri googleRefundUrl(String language) => Uri.https(
   {'hl': language},
 );
 
-/// The refund help (DECISIONS 43.5): Hummlist cannot refund a purchase,
-/// Apple and Google decide. A sheet rather than a page, so the join screen
-/// keeps its state and it works before the user has a household.
+/// The refund help (DECISIONS 43.5, H-76): Apple alone refunds App Store
+/// purchases; Google Play refunds go to Google in the first 48 hours, after
+/// that to our support, which looks at each case in the Play Console. Links
+/// to Apple, Google and the FAQ on hummlist.com. A sheet rather than a page,
+/// so the join screen keeps its state and it works before the user has a
+/// household.
 Future<void> showRefundHelp(BuildContext context) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
@@ -74,6 +78,11 @@ class const RefundHelp({super.key}) extends StatelessWidget {
                   'refund-google',
                   l10n.refundHelpGoogleLink,
                   googleRefundUrl(language),
+                ),
+                store(
+                  'refund-faq',
+                  l10n.refundHelpFaqLink,
+                  supportUrl(language),
                 ),
               ],
             ),

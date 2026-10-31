@@ -19,6 +19,10 @@ class const ArchivedHousehold({
   required final String name,
   required final DateTime archivedAt,
   required final bool unlocked,
+
+  /// When it is deleted unless brought back: 24 months after archiving
+  /// (the server's date). Null from a server before job 47.
+  final DateTime? deletesAt,
 });
 
 /// What a code leads to, before joining (`preview_invite`).
@@ -66,6 +70,9 @@ enum HouseholdProblem() {
   /// Create found the user in a household already (a double tap, a retry).
   alreadyInHousehold,
 
+  /// The server's archive switch is off: nothing was archived or changed.
+  archiveDisabled,
+
   /// Anything else the server refused.
   other,
 }
@@ -78,6 +85,7 @@ final class const HouseholdError(final HouseholdProblem problem)
     'invalid_invite' => HouseholdProblem.invalidInvite,
     'too_many_attempts' => HouseholdProblem.tooManyAttempts,
     'already_in_household' => HouseholdProblem.alreadyInHousehold,
+    'archive_disabled' => HouseholdProblem.archiveDisabled,
     _ => HouseholdProblem.other,
   });
 
@@ -193,6 +201,10 @@ class SupabaseInviteRepository(final SupabaseClient _client)
           name: row['name']! as String,
           archivedAt: DateTime.parse(row['archived_at']! as String),
           unlocked: row['unlocked'] == true,
+          deletesAt: switch (row['deletes_at']) {
+            final String at => DateTime.parse(at),
+            _ => null,
+          },
         ),
     ];
   });

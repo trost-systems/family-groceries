@@ -1,7 +1,7 @@
 // The handler's dependencies in production: the database, the shared auth and telemetry. Kept out
 // of index.ts so the database integration test runs the same wiring.
 import { authenticateSession, AuthError } from '../_shared/auth.ts';
-import { householdOf, serviceDb } from '../_shared/db.ts';
+import { serviceDb } from '../_shared/db.ts';
 import { sendPurchaseEvent } from '../_shared/purchases.ts';
 import type { Telemetry } from '../_shared/telemetry.ts';
 import { analyticsSubject } from '../alexa/store.ts';
@@ -20,12 +20,10 @@ import {
   takeDeletions,
 } from './store.ts';
 
-/** The app's own session, in a household (purchases unlock households). */
-export async function sessionInHousehold(req: Request) {
+/** The app's own session; the claim names the household it bought for. */
+export async function appSession(req: Request) {
   const { userId } = await authenticateSession(req);
-  const householdId = await householdOf(userId);
-  if (!householdId) throw new AuthError('no_household', 'Dieses Konto gehört zu keinem Haushalt.');
-  return { userId, householdId };
+  return { userId };
 }
 
 export function productionDeps(
@@ -38,7 +36,8 @@ export function productionDeps(
     webhook,
     local: config.local,
     region: config.region,
-    authenticate: options.authenticate ?? sessionInHousehold,
+    deletionsSecret: config.deletionsSecret,
+    authenticate: options.authenticate ?? appSession,
     takeCall: (userId) => takeCall(serviceDb(), userId),
     once: async (event, work) => {
       const result = await serviceDb().begin(async (tx) => {
@@ -56,9 +55,12 @@ export function productionDeps(
       try {
         return await claim(serviceDb(), userId, householdId, store, transactionId);
       } catch (e) {
-        // purchase_claim's not_a_member.
+        // purchase_claim's not_a_member: no member of that household when buying.
         if ((e as { code?: string }).code === '42501') {
-          throw new AuthError('no_household', 'Dieses Konto gehört zu keinem Haushalt.');
+          throw new AuthError(
+            'no_household',
+            'Dieses Konto gehörte beim Kauf nicht zu diesem Haushalt.',
+          );
         }
         throw e;
       }

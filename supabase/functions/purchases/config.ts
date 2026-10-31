@@ -9,6 +9,8 @@
 //     purchase (purchase_tombstones).
 //   REVENUECAT_SECRET_KEY, REVENUECAT_PROJECT_ID: a v2 secret key and the project, for deleting
 //     the customers of deleted households (deletions.ts); without them that route does nothing.
+//   REVENUECAT_DELETIONS_SECRET: what the daily workflow sends as x-deletions-secret; without it
+//     the deletion route answers 503 and deletes nothing (fail closed).
 // Without the first or the last the webhook answers 503 not_configured; the app's claim works.
 import type { Env } from '../_shared/telemetry.ts';
 import { localStackUrl } from '../alexa/config.ts';
@@ -29,6 +31,8 @@ export interface PurchasesConfig {
   region: string | null;
   /** Null: the deletion route skips. */
   revenueCat: RevenueCatKey | null;
+  /** Null: the deletion route refuses every call (503). */
+  deletionsSecret: string | null;
 }
 
 export function configFrom(env: Env): PurchasesConfig {
@@ -44,5 +48,6 @@ export function configFrom(env: Env): PurchasesConfig {
     local: env.get('SUPABASE_URL') === localStackUrl,
     region: value('SB_REGION'),
     revenueCat: secretKey && projectId ? { secretKey, projectId } : null,
+    deletionsSecret: value('REVENUECAT_DELETIONS_SECRET'),
   };
 }

@@ -22,7 +22,7 @@ enum FakeStoreMode() {
   /// The store fails the purchase.
   error,
 
-  /// The product cannot be loaded (no Paid Apps agreement yet).
+  /// The store has no product (no Paid Apps agreement yet).
   unavailable,
 
   /// The store cannot be reached.
@@ -56,28 +56,16 @@ class FakeStore(
   required final FakeLedgerStore ledger,
   final Duration approval = const Duration(seconds: 8),
 }) implements PurchaseRepository {
-  static const price = '9,99 €';
-
   Future<Map<String, String>>? _loaded;
 
   /// Transaction id to the household it was bought for.
   Future<Map<String, String>> get _owned => _loaded ??= _read(ledger);
 
   @override
-  ProductLoad? get withoutStore => null;
+  NoSale? get withoutStore => null;
 
   @override
-  Future<ProductLoad> loadProduct(String householdId) async => switch (_mode) {
-    FakeStoreMode.offline => const StoreUnavailable(),
-    FakeStoreMode.unavailable => const ProductNotFound(),
-    _ => ProductLoaded(
-      householdId,
-      const Product(id: lifetimeProductId, price: price),
-    ),
-  };
-
-  @override
-  Future<BuyOutcome> buy(String householdId, Product product) async {
+  Future<BuyOutcome> buy(String householdId) async {
     switch (_mode) {
       case FakeStoreMode.cancel:
         return const Canceled();
@@ -85,10 +73,12 @@ class FakeStore(
         return const StoreFailed('fake_error');
       case FakeStoreMode.offline:
         return const StoreOffline();
+      case FakeStoreMode.unavailable:
+        return const ProductMissing();
       case FakeStoreMode.pending:
         Timer(approval, () => unawaited(_sell(householdId)));
         return const Pending();
-      case FakeStoreMode.ok || FakeStoreMode.unavailable:
+      case FakeStoreMode.ok:
         return await _sell(householdId);
     }
   }

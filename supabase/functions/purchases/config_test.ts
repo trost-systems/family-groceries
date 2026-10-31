@@ -54,3 +54,9 @@ Deno.test('customer deletion needs both the v2 secret key and the project id', (
     { secretKey: 'sk_x', projectId: '9cb4a72e' },
   );
 });
+
+Deno.test('the deletion route has a secret only when REVENUECAT_DELETIONS_SECRET is set', () => {
+  assertEquals(configFrom(env({})).deletionsSecret, null);
+  assertEquals(configFrom(env({ REVENUECAT_DELETIONS_SECRET: '  ' })).deletionsSecret, null);
+  assertEquals(configFrom(env({ REVENUECAT_DELETIONS_SECRET: 'abc' })).deletionsSecret, 'abc');
+});

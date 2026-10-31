@@ -3,75 +3,7 @@ import 'package:family_groceries/purchases/revenuecat_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// RevenueCat's SDK as its platform channel sees it: the calls the app makes
-/// and the answers of the native side. The SDK itself is not imported here
-/// (rule purchases-flutter-only-in-revenuecat-repository).
-class FakeRevenueCat() {
-  final calls = <MethodCall>[];
-  var appUserId = '';
-
-  /// Thrown by the next purchase or restore, as RevenueCat's error code.
-  int? fail;
-  var transactionId = '2000000123';
-  var owned = <String>[];
-
-  Map<String, Object?> get customerInfo => {
-    'entitlements': {'all': <String, Object?>{}, 'active': <String, Object?>{}},
-    'allPurchaseDates': <String, Object?>{},
-    'activeSubscriptions': <Object?>[],
-    'allPurchasedProductIdentifiers': owned,
-    'nonSubscriptionTransactions': <Object?>[],
-    'firstSeen': '2026-10-31T12:00:00Z',
-    'originalAppUserId': appUserId,
-    'allExpirationDates': <String, Object?>{},
-    'requestDate': '2026-10-31T12:00:00Z',
-  };
-
-  Future<Object?> handle(MethodCall call) async {
-    calls.add(call);
-    final args = call.arguments as Map<Object?, Object?>?;
-    if (fail case final code? when call.method != 'getAppUserID') {
-      fail = null;
-      throw PlatformException(code: '$code', message: 'RevenueCat error');
-    }
-    switch (call.method) {
-      case 'setupPurchases':
-        appUserId = args!['appUserId']! as String;
-        return null;
-      case 'getAppUserID':
-        return appUserId;
-      case 'logIn':
-        appUserId = args!['appUserID']! as String;
-        return {'customerInfo': customerInfo, 'created': false};
-      case 'getProductInfo':
-        return [
-          {
-            'identifier': lifetimeProductId,
-            'description': 'Hummlist Lifetime',
-            'title': 'Hummlist Lifetime',
-            'price': 9.99,
-            'priceString': '9,99 €',
-            'currencyCode': 'EUR',
-            'productCategory': 'NON_SUBSCRIPTION',
-          },
-        ];
-      case 'purchaseProduct':
-        return {
-          'customerInfo': customerInfo,
-          'transaction': {
-            'transactionIdentifier': transactionId,
-            'productIdentifier': lifetimeProductId,
-            'purchaseDate': '2026-10-31T12:00:00Z',
-          },
-        };
-      case 'restorePurchases':
-        return customerInfo;
-    }
-    throw MissingPluginException(call.method);
-  }
-
-  List<String> get methods => [for (final c in calls) c.method];
-}
+import 'fake_revenuecat.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -102,17 +34,16 @@ void main() {
     expect(native.calls, isEmpty);
   });
 
-  test('configured on the first call, with the household and no device '
-      'identifiers', () async {
-    final load = await repository().loadProduct('home');
-    expect(
-      load,
-      isA<ProductLoaded>()
-          .having((l) => l.householdId, 'for', 'home')
-          .having((l) => l.product.price, 'price', '9,99 €'),
-    );
+  test('Buy: configured with the household and no device identifiers, then '
+      'the product, then the purchase', () async {
+    final bought = await repository().buy('home');
+    expect(bought, isA<Bought>());
+    expect(native.methods, [
+      'setupPurchases',
+      'getProductInfo',
+      'purchaseProduct',
+    ]);
     final setup = native.calls.first;
-    expect(setup.method, 'setupPurchases');
     expect(setup.arguments, containsPair('apiKey', 'appl_public'));
     expect(setup.arguments, containsPair('appUserId', 'home'));
     expect(
@@ -127,34 +58,52 @@ void main() {
     );
   });
 
-  test('another household logs in as that household first', () async {
-    final store = repository();
-    await store.loadProduct('home');
-    await store.loadProduct('home');
-    expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(1));
-    expect(native.methods, isNot(contains('logIn')));
-    await store.restore('other');
-    final logIn = native.calls.singleWhere((c) => c.method == 'logIn');
-    expect(logIn.arguments, {'appUserID': 'other'});
-    expect(
-      native.methods.indexOf('logIn'),
-      lessThan(native.methods.indexOf('restorePurchases')),
-    );
+  test('Restore: configured with the household, then the restore', () async {
+    await repository().restore('home');
+    expect(native.methods, ['setupPurchases', 'restorePurchases']);
+    expect(native.calls.first.arguments, containsPair('appUserId', 'home'));
   });
 
-  test('two loads at once configure once', () async {
+  test('another household logs in as that household first', () async {
     final store = repository();
-    await Future.wait([store.loadProduct('home'), store.loadProduct('home')]);
+    await store.buy('home');
+    await store.buy('home');
     expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(1));
     expect(native.methods, isNot(contains('logIn')));
+    native.calls.clear();
+    await store.restore('other');
+    expect(native.methods, ['getAppUserID', 'logIn', 'restorePurchases']);
+    expect(native.calls[1].arguments, {'appUserID': 'other'});
+    native.calls.clear();
+    await store.buy('home');
+    expect(native.methods, [
+      'getAppUserID',
+      'logIn',
+      'getProductInfo',
+      'purchaseProduct',
+    ]);
+  });
+
+  test('two taps at once configure once', () async {
+    final store = repository();
+    await Future.wait([store.restore('home'), store.restore('home')]);
+    expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(1));
+    expect(native.methods, isNot(contains('logIn')));
+  });
+
+  test('a failed configure is tried again on the next tap', () async {
+    final store = repository();
+    native
+      ..fail = 10
+      ..failAt = 'setupPurchases';
+    expect(await store.buy('home'), isA<StoreOffline>());
+    expect(await store.buy('home'), isA<Bought>());
+    expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(2));
   });
 
   test('bought: the store transaction the webhook names', () async {
-    final store = repository();
-    final load = await store.loadProduct('home') as ProductLoaded;
-    final bought = await store.buy('home', load.product);
     expect(
-      bought,
+      await repository().buy('home'),
       isA<Bought>()
           .having((b) => b.transaction?.store, 'store', AppStore.apple)
           .having((b) => b.transaction?.id, 'id', '2000000123'),
@@ -163,10 +112,8 @@ void main() {
 
   test('bought without a transaction id: nothing to claim', () async {
     native.transactionId = '';
-    final store = repository();
-    final load = await store.loadProduct('home') as ProductLoaded;
     expect(
-      await store.buy('home', load.product),
+      await repository().buy('home'),
       isA<Bought>().having((b) => b.transaction, 'transaction', isNull),
     );
   });
@@ -181,19 +128,19 @@ void main() {
   };
   for (final MapEntry(key: code, value: outcome) in buyErrors.entries) {
     test('a purchase failing with RevenueCat error $code', () async {
-      final store = repository();
-      final load = await store.loadProduct('home') as ProductLoaded;
-      native.fail = code;
-      expect(await store.buy('home', load.product), outcome);
+      native
+        ..fail = code
+        ..failAt = 'purchaseProduct';
+      expect(await repository().buy('home'), outcome);
     });
   }
 
   test('any other error keeps its name', () async {
-    final store = repository();
-    final load = await store.loadProduct('home') as ProductLoaded;
-    native.fail = 2;
+    native
+      ..fail = 2
+      ..failAt = 'purchaseProduct';
     expect(
-      await store.buy('home', load.product),
+      await repository().buy('home'),
       isA<StoreFailed>().having((f) => f.code, 'code', 'storeProblemError'),
     );
   });
@@ -203,23 +150,29 @@ void main() {
     expect(await store.restore('home'), isA<NothingToRestore>());
     native.owned = [lifetimeProductId];
     expect(await store.restore('home'), isA<Restored>());
-    native.fail = 7;
+    native
+      ..fail = 7
+      ..failAt = 'restorePurchases';
     expect(await store.restore('home'), isA<BelongsElsewhere>());
   });
 
-  test('the product offline or missing', () async {
-    native.fail = 10;
-    expect(await repository().loadProduct('home'), isA<StoreUnavailable>());
-    native.fail = 23;
-    expect(await repository().loadProduct('home'), isA<ProductNotFound>());
+  test('the product offline or missing: no purchase sheet', () async {
+    native
+      ..fail = 10
+      ..failAt = 'getProductInfo';
+    expect(await repository().buy('home'), isA<StoreOffline>());
+    native
+      ..fail = 23
+      ..failAt = 'getProductInfo';
+    expect(await repository().buy('home'), isA<ProductMissing>());
+    expect(native.methods, isNot(contains('purchaseProduct')));
   });
 
   test(
     'only these calls, never attributes, identifiers, logOut or sync',
     () async {
       final store = repository();
-      final load = await store.loadProduct('home') as ProductLoaded;
-      await store.buy('home', load.product);
+      await store.buy('home');
       await store.restore('other');
       expect(native.methods.toSet(), {
         'setupPurchases',

@@ -85,9 +85,9 @@ final List<Scene> _scenes = [
   (
     name: 'unavailable',
     location: lifetimePath,
-    store: () => FakePurchaseRepository(product: const ProductNotFound()),
+    store: () => FakePurchaseRepository(bought: const ProductMissing()),
     unlocked: false,
-    act: null,
+    act: _buy,
   ),
   (
     name: 'not-yet',
@@ -99,9 +99,9 @@ final List<Scene> _scenes = [
   (
     name: 'offline',
     location: lifetimePath,
-    store: () => FakePurchaseRepository(product: const StoreUnavailable()),
+    store: () => FakePurchaseRepository(bought: const StoreOffline()),
     unlocked: false,
-    act: null,
+    act: _buy,
   ),
   (
     name: 'error',

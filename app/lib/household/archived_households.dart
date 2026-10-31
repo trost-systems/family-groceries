@@ -160,9 +160,7 @@ class _ArchivedHouseholdsState() extends State<ArchivedHouseholds> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.inventory_2_outlined),
                 title: Text(household.name),
-                subtitle: household.unlocked
-                    ? Text(l10n.archivedUnlocked)
-                    : null,
+                subtitle: _subtitle(l10n, household),
                 trailing: TextButton(
                   key: const ValueKey('archived-restore'),
                   onPressed: () => unawaited(_restore(household)),
@@ -172,5 +170,20 @@ class _ArchivedHouseholdsState() extends State<ArchivedHouseholds> {
         ],
       ),
     );
+  }
+
+  /// With Hummlist Lifetime, and when it is deleted unless brought back.
+  static Widget? _subtitle(AppLocalizations l10n, ArchivedHousehold household) {
+    final deletesAt = household.deletesAt;
+    final lines = [
+      if (household.unlocked) l10n.archivedUnlocked,
+      if (deletesAt != null) l10n.archivedDeletesOn(deletesAt.toLocal()),
+    ];
+    return lines.isEmpty
+        ? null
+        : Text(
+            lines.join('\n'),
+            key: ValueKey('archived-deletes-${household.id}'),
+          );
   }
 }
