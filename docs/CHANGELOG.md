@@ -5,7 +5,8 @@ stores' "What's new" text and the pages
 [hummlist.com/de/changelog](https://hummlist.com/de/changelog) and
 [hummlist.com/en/changelog](https://hummlist.com/en/changelog). Each PR
 writes its own note, so nobody has to reconstruct a release afterwards.
-Decisions and reasons are in [`DECISIONS.md`](DECISIONS.md), "Job 39".
+Decisions and reasons are in [`DECISIONS.md`](DECISIONS.md), "Job 39" and
+"Job 40".
 
 ## The note in every PR
 
@@ -19,6 +20,7 @@ category, then one German and one English sentence.
 new
 de: Mit Alexa fügst du Artikel per Sprache hinzu: „Alexa, sag Hummlist, füg Milch hinzu“.
 en: Add items with Alexa: "Alexa, tell Hummlist to add milk".
+hold: alexa-certification
 
 fixed
 de: Die Liste springt beim Abhaken nicht mehr nach oben.
@@ -26,6 +28,10 @@ en: The list no longer jumps to the top when you check off an item.
 ```
 
 If users see no change, the whole section is the single word `none`.
+
+An item may also have a `flag:` line, a `hold:` line, or both, when users
+don't get it yet ("Gated items" below). The Alexa item above has a hold,
+because the skill is not certified yet.
 
 | Category | For |
 | --- | --- |
@@ -58,6 +64,9 @@ It rejects these, each with a message:
 
 - an unknown category
 - an item without a `de:` or an `en:` line
+- a line that is not `de:`, `en:`, `flag:` or `hold:`
+- two `flag:` or two `hold:` lines in one item, or a key that is not
+  `[a-z0-9][a-z0-9._-]*`
 - an empty line or a duplicate line
 - `none` together with items
 - an empty section
@@ -91,10 +100,141 @@ are ignored.
   push-pr.sh has no section in its message yet; then the PR description in
   the event counts. The same gate checks every draft in `releases/changelog/`
   (`changelog.mjs drafts`): each must be valid, be named `<version>.json`,
-  and have store texts that match its title and items.
+  and have store texts that match its title and items (or its override).
+  It also checks `releases/flags.json`, `pending.json` and every
+  `<version>.override.md`, and that every flag and hold they name is in
+  `flags.json`. A flag can't leave the file while an item still waits for it.
 
 Commits without a section count as `none`. These are everything before job
 39, release record commits and Dependabot PRs. Older PRs are not backfilled.
+
+## Gated items (job 40)
+
+Peter's rule: a feature that is behind a feature flag, or not ready for
+everyone (the Alexa skill is a beta and not certified), stays out of the
+public changelog until everyone has it. Its item says why it waits:
+
+```
+new
+de: Listen sortieren sich nach deinem Einkauf.
+en: Lists sort themselves after your shopping trip.
+flag: smart-sort
+```
+
+- `flag: <key>`: the item ships behind the feature flag `<key>`.
+- `hold: <key>`: the item waits for something else, such as
+  `hold: alexa-certification`.
+
+[`releases/flags.json`](../releases/flags.json) says which gates are open:
+
+```json
+{
+  "flags": { "smart-sort": { "rollout": "partial", "note": "half the households" } },
+  "holds": { "alexa-certification": { "released": false, "note": "the Alexa skill is in beta and not certified by Amazon yet", "match": ["alexa"] } }
+}
+```
+
+An item is public only when its flag's `rollout` is `full` (not `partial`
+or `off`) and its hold is `released: true`. A key that is not in the file is
+an error everywhere: in push-pr.sh, in the CI gate and in `draft`. A typo
+never makes an item public, and a PR that adds a flagged item adds its flag to
+the file. `match` lists words: while the hold is not released, an item that
+mentions one of them (at the start of a word, so "Alexas" and "Alexa-Skill"
+count, in German or English) must carry that hold. push-pr.sh and the gate
+refuse such an item without the line. If one reaches `main` anyway, `draft`
+holds it back and warns.
+
+What a draft or an override would publish is checked again, in the
+changelog gate and in `record.mjs`: every item's gate must still be open, and
+no title or store text may mention a held word. A flag set back to `partial`
+after the draft, an item moved out of `held` by hand, or an override that
+names Alexa fails with the reason. Redraft with `--force` after fixing
+`flags.json`.
+
+The app has no feature-flag system yet. PostHog is used for analytics only,
+and the collector makes no network calls. So `flags.json` is updated by hand,
+in a PR, when a rollout changes. If the app later uses PostHog flags, the
+file is still updated by hand when a flag reaches 100 %. A later job may
+add a read-only check that compares the two.
+
+What happens to a gated item:
+
+1. **`draft`** puts an item whose gate is closed under `held` in the draft,
+   with its category, flag, hold, PR and commit. `held` is never shown and
+   is in no store text. The dry run lists it under "held, not public".
+2. **`record.mjs add`** writes the held items into
+   `releases/changelog/pending.json` in the release commit. Items merged after
+   the draft's commit that carry a gate go there too, so nothing is lost.
+3. **The next `draft`** reads `pending.json` first. An item whose gate is open
+   now joins the draft in its category, ahead of the new items, and keeps its
+   `flag` / `hold` field for tracing. The dry run lists it under "from
+   pending.json, gate open now". An item whose gate is still closed stays
+   under `held`.
+4. **The next `record.mjs add`** drops the published items from
+   `pending.json`. It refuses a draft that neither publishes nor holds an item
+   of `pending.json`, so a hand edit can't lose one.
+
+`record.mjs` also refuses a draft collected at a commit that is not the
+release commit or one before it (another branch, or past the release), since
+it would drop or repeat items. A draft without `held` (from before job 40)
+is refused while `pending.json` has items.
+
+`draft` never writes `pending.json`. A draft that is thrown away or redrafted
+with `--force` costs nothing (DECISIONS, "Job 40").
+
+## Override (job 40)
+
+For a release whose "What's new" should not be the list of items (the 1.0
+launch, written for people who don't know Hummlist yet), write
+`releases/changelog/<version>.override.md`:
+
+```markdown
+status: draft — pending Peter's review
+
+# Hummlist 1.0.0
+
+## de
+title: Willkommen bei Hummlist
+
+### play
+Kurzer Text für Google Play.
+
+### app_store
+Längerer Text für den App Store.
+
+## en
+title: Welcome to Hummlist
+
+One text for both stores.
+```
+
+- `## de` and `## en` are both required. Each starts with a `title:` line,
+  the headline on hummlist.com and in the draft.
+- Then comes one text for both stores, or a `### play` and an
+  `### app_store` block (both, not just one). One text must fit Play's 500.
+- The text is the whole "What's new", as written. The title is not added to
+  it, so start the text with the headline if the store should show one.
+  Emoji and `<` are removed, as for generated texts. A text over its limit
+  fails, with its length.
+- A `# ` heading and HTML comments are allowed. A `status: draft` line
+  before `## de` marks the text as not approved.
+
+`draft` and `store` take the title and both store texts from the override.
+The items stay as collected, and hummlist.com lists them under the title.
+To leave an item off the page, delete it from the draft during the review.
+The changelog gate and `record.mjs` refuse a draft whose title or store texts
+differ from its override; run `store` after editing the override.
+
+**Approval.** While the override has `status: draft`, `record.mjs add`
+refuses to record the version as a public release (a dry run only warns).
+Peter approves the text by deleting that line in a PR. `record.mjs` deletes
+the override together with the draft, since the record holds the texts
+from then on. An override without its draft can't be recorded: run `draft`
+first.
+
+The 1.0.0 launch text is
+[`releases/changelog/1.0.0.override.md`](../releases/changelog/1.0.0.override.md),
+waiting for Peter's review.
 
 ## Collecting a release
 
@@ -112,6 +252,8 @@ GitHub API, no network, no LLM.
 What `draft` does with the notes:
 
 - It drops `none` and commits without a section.
+- It holds back an item whose flag or hold is closed (above) and adds the
+  items of `pending.json` whose gate is open now.
 - It groups the items as new, improved, fixed, in merge order (oldest first)
   within each group.
 - It drops an item whose German and English sentences are identical to an

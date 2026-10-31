@@ -13,20 +13,42 @@
 //   node scripts/release/changelog.mjs store --version X [--file F]
 //     Rewrites a draft's store texts from its (edited) title and items.
 //   node scripts/release/changelog.mjs drafts [--dir D]
-//     Checks every draft in releases/changelog/: valid, named <version>.json, store texts current.
+//     Checks releases/flags.json and releases/changelog/: every draft valid, named <version>.json,
+//     store texts current; pending.json and the <version>.override.md files valid.
+//
+// Job 40: an item with a `flag:` or `hold:` line stays out of the draft until releases/flags.json
+// opens its gate. The draft lists it under `held`; record.mjs keeps it in
+// releases/changelog/pending.json, and a later draft takes it once the gate is open. An override
+// releases/changelog/<version>.override.md replaces the draft's title and store texts.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { CATEGORIES, DRAFT_STATUS, RecordError, STORE_LIMITS, compareVersions, isVersion, parseDraft, parseRecord, publicReleases } from '../../site/releases.mjs';
+import {
+  CATEGORIES,
+  DRAFT_STATUS,
+  GATE_KEY,
+  PENDING_FILE,
+  RecordError,
+  STORE_LIMITS,
+  compareVersions,
+  draftFileNames,
+  isVersion,
+  parseDraft,
+  parseGates,
+  parsePending,
+  parseRecord,
+  publicReleases,
+} from '../../site/releases.mjs';
 
 export class NoteError extends Error {}
 
 const HEADING = /^##[ \t]+changelog[ \t]*$/i;
 const CATEGORY_WORDS = { new: 'new', neu: 'new', improved: 'improved', verbessert: 'improved', fixed: 'fixed', behoben: 'fixed' };
 const TEXT_LINE = /^(?:[-*][ \t]+)?(de|en)[ \t]*:[ \t]*(.*)$/i;
+const GATE_LINE = /^(?:[-*][ \t]+)?(flag|hold)[ \t]*:[ \t]*(.*)$/i;
 
 // The word a category or `none` line holds, without Markdown around it, a trailing colon or full
 // stop, or a remark in brackets: "**New:**", "`none`", "None.", "none (docs only)".
@@ -73,7 +95,7 @@ export function parseNote(message) {
   for (const paragraph of paragraphs.filter((p) => p.length > 0)) {
     const [first, ...rest] = paragraph;
     const head = word(first);
-    const looksLikeItem = paragraph.some((line) => TEXT_LINE.test(line)) || /^[\p{L}-]+$/u.test(head);
+    const looksLikeItem = paragraph.some((line) => TEXT_LINE.test(line) || GATE_LINE.test(line)) || /^[\p{L}-]+$/u.test(head);
     if (ended !== null) {
       if (looksLikeItem) throw new NoteError(`"${first}" comes after "${ended}", which is no item; put the items first, one after another`);
       continue;
@@ -90,20 +112,230 @@ export function parseNote(message) {
       continue;
     }
     const texts = {};
+    const gates = {};
     for (const line of rest) {
+      const gate = GATE_LINE.exec(line);
+      if (gate) {
+        const kind = gate[1].toLowerCase();
+        const key = gate[2].trim().replace(/^`(.*)`$/, '$1');
+        if (kind in gates) throw new NoteError(`${category} item: two "${kind}:" lines; an item has at most one flag: and one hold: line`);
+        if (!GATE_KEY.test(key)) throw new NoteError(`${category} item: ${kind} "${key}" is not a key: lower-case letters, digits, ".", "_" and "-", starting with a letter or digit`);
+        gates[kind] = key;
+        continue;
+      }
       const match = TEXT_LINE.exec(line);
-      if (!match) throw new NoteError(`${category} item: "${line}" is not a "de: ..." or "en: ..." line`);
+      if (!match) throw new NoteError(`${category} item: "${line}" is not a "de: ..." or "en: ..." line (or "flag: ..." / "hold: ...")`);
       const lang = match[1].toLowerCase();
       if (lang in texts) throw new NoteError(`${category} item: two "${lang}:" lines; one item has one de: and one en: line`);
       if (match[2].trim() === '') throw new NoteError(`${category} item: the "${lang}:" line is empty`);
       texts[lang] = match[2].trim();
     }
     for (const lang of ['de', 'en']) if (!(lang in texts)) throw new NoteError(`${category} item${texts.de || texts.en ? ` "${texts.de ?? texts.en}"` : ''} has no "${lang}:" line`);
-    items.push({ category, de: texts.de, en: texts.en });
+    items.push({ category, de: texts.de, en: texts.en, ...gates });
   }
   if (none && items.length > 0) throw new NoteError('"none" and items in one section; write either items or just "none"');
   if (!none && items.length === 0) throw new NoteError('the "## Changelog" section is empty; add items (new, improved or fixed with a de: and an en: line) or "none"');
   return none ? 'none' : items;
+}
+
+// --- gates (job 40) -----------------------------------------------------------------------------
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// At a word start only, so "Alexas" and "Alexaskill" count too; a soft hyphen doesn't hide it.
+const mentions = (word, text) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegExp(word)}`, 'iu').test(text.replace(/\u00AD/g, ''));
+
+// The word of a hold not released yet that a public text mentions, as { key, word }, or null.
+export function heldWordIn(text, gates) {
+  for (const [key, hold] of Object.entries(gates.holds)) {
+    if (hold.released) continue;
+    const word = (hold.match ?? []).find((w) => mentions(w, text));
+    if (word) return { key, word };
+  }
+  return null;
+}
+
+// What a draft or an override would publish while a gate is closed: an item whose flag or hold is
+// closed now (flipped back since the draft, or moved there by hand), or a title or store text
+// that mentions a held word. The changelog gate and record.mjs refuse it.
+export function closedInPublic({ title, items = {}, store }, gates) {
+  const problems = [];
+  for (const category of CATEGORIES) {
+    for (const item of items[category] ?? []) {
+      let gate;
+      try {
+        gate = gateOf(item, gates);
+      } catch (error) {
+        if (!(error instanceof NoteError)) throw error;
+        problems.push(`"${item.en}": ${error.message}`);
+        continue;
+      }
+      if (!gate.open) problems.push(`"${item.en}" is public, but ${gate.matched ? `it mentions "${gate.matched.word}" (hold ${gate.matched.key})` : gateLabel(item)} is not open in releases/flags.json`);
+    }
+  }
+  const texts = [...Object.entries(title ?? {}).map(([lang, t]) => [`title.${lang}`, t]), ...Object.entries(store ?? {}).flatMap(([name, langs]) => Object.entries(langs).map(([lang, t]) => [`${name}.${lang}`, t]))];
+  for (const [path, text] of texts) {
+    const hit = heldWordIn(text, gates);
+    if (hit) problems.push(`${path} mentions "${hit.word}", held by ${hit.key} (${gates.holds[hit.key].note})`);
+  }
+  return problems;
+}
+
+// Whether an item may be public now. A flag must be `full` and a hold `released`; a key that
+// releases/flags.json doesn't know is an error, so a typo never makes an item public. An item
+// that mentions a word of a hold not released yet (`match`, the Alexa skill) stays back even
+// without that hold's line: `matched` names the hold and the word.
+export function gateOf(item, gates) {
+  if (item.flag && !Object.hasOwn(gates.flags, item.flag)) throw new NoteError(`flag "${item.flag}" is not in releases/flags.json; add it under "flags" with its rollout (full, partial or off), or fix the key`);
+  if (item.hold && !Object.hasOwn(gates.holds, item.hold)) throw new NoteError(`hold "${item.hold}" is not in releases/flags.json; add it under "holds" with "released": false, or fix the key`);
+  let matched = null;
+  for (const [key, hold] of Object.entries(gates.holds)) {
+    if (hold.released || item.hold === key) continue;
+    const word = (hold.match ?? []).find((w) => mentions(w, item.de) || mentions(w, item.en));
+    if (word) {
+      matched = { key, word };
+      break;
+    }
+  }
+  const flagOpen = !item.flag || gates.flags[item.flag].rollout === 'full';
+  const holdOpen = !item.hold || gates.holds[item.hold].released;
+  return { open: flagOpen && holdOpen && matched === null, matched };
+}
+
+// The check push-pr.sh and the gate run on a PR's items: keys known, and an item about something
+// held back (Alexa) carries that hold's line, so its author sees it stays out of the changelog.
+export function checkGates(items, gates) {
+  for (const item of items) {
+    const { matched } = gateOf(item, gates);
+    if (matched) throw new NoteError(`${item.category} item "${item.en}" mentions "${matched.word}": add the line "hold: ${matched.key}" (${gates.holds[matched.key].note}); it stays out of the public changelog until releases/flags.json releases that hold`);
+  }
+}
+
+// The draft's items and the held-back ones, from pending.json (older, first) and the collected
+// items. Within a category, merge order; an item with the German and English sentences of an
+// earlier one is dropped. Released items keep their flag or hold for tracing.
+export function plan(collected, pending, gates) {
+  const items = Object.fromEntries(CATEGORIES.map((c) => [c, []]));
+  const held = [];
+  const released = [];
+  const matched = [];
+  const seen = new Set();
+  for (const [fromPending, item] of [...pending.map((i) => [true, i]), ...collected.map((i) => [false, i])]) {
+    const key = `${item.de}\n${item.en}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const gate = gateOf(item, gates);
+    const { category, de, en, pr, sha } = item;
+    const flag = item.flag ?? null;
+    const hold = item.hold ?? (gate.open ? null : gate.matched?.key) ?? null;
+    if (gate.open) {
+      items[category].push({ de, en, pr, sha, ...(flag ? { flag } : {}), ...(hold ? { hold } : {}) });
+      if (fromPending) released.push({ category, de, en, flag, hold, pr, sha });
+    } else {
+      held.push({ category, de, en, flag, hold, pr, sha });
+      if (gate.matched && item.hold == null) matched.push({ item: held.at(-1), word: gate.matched.word });
+    }
+  }
+  return { items, held, released, matched };
+}
+
+export function loadGates(file) {
+  if (!existsSync(file)) refuse(`${relative(process.cwd(), file) || file} is missing; it lists the feature flags and holds (docs/CHANGELOG.md, "Gated items")`);
+  return parseGates(readFileSync(file, 'utf8'), relative(process.cwd(), file) || file);
+}
+
+export function loadPending(dir) {
+  const file = join(dir, PENDING_FILE);
+  return existsSync(file) ? parsePending(readFileSync(file, 'utf8'), relative(process.cwd(), file) || file) : { items: [] };
+}
+
+export const serializePending = (pending) => `${JSON.stringify(pending, null, 2)}\n`;
+
+// --- override (job 40) -------------------------------------------------------------------------
+
+export const overrideName = (version) => `${version}.override.md`;
+const OVERRIDE_FILE = /^(.+)\.override\.md$/;
+
+// releases/changelog/<version>.override.md: a hand-written title and "What's new" texts that
+// replace the generated ones (docs/CHANGELOG.md, "Override"). `## de` and `## en`, each a
+// `title:` line, then one text for both stores or a `### play` and an `### app_store` block.
+// A `status: draft` line before them marks it as not approved: record.mjs refuses to publish it.
+export function parseOverride(text, source) {
+  const fail = (reason) => {
+    throw new RecordError(`${source}: ${reason}`);
+  };
+  let status = null;
+  let current = null;
+  const sections = {};
+  for (const line of text.replace(/\r/g, '').replace(/<!--[\s\S]*?-->/g, '').split('\n')) {
+    const h2 = /^##[ \t]+(.*?)[ \t]*$/.exec(line);
+    if (h2) {
+      const lang = h2[1].toLowerCase();
+      if (!['de', 'en'].includes(lang)) fail(`"${line}": a section is "## de" or "## en"`);
+      if (lang in sections) fail(`two "## ${lang}" sections`);
+      current = sections[lang] = [];
+    } else if (current) {
+      current.push(line);
+    } else if (/^status[ \t]*:/i.test(line)) {
+      if (!/^status[ \t]*:[ \t]*draft\b/i.test(line)) fail(`"${line}": the only status is "draft"; remove the line once the text is approved`);
+      if (status) fail('two status lines');
+      status = 'draft';
+    } else if (line.trim() !== '' && !/^#[ \t]/.test(line)) {
+      fail(`"${line}" comes before "## de"; only a "# " heading and a "status: draft" line may`);
+    }
+  }
+  const block = (lines) => sanitize(lines.map((l) => l.trimEnd()).join('\n')).replace(/\n{3,}/g, '\n\n');
+  const title = {};
+  const store = { app_store: {}, play: {} };
+  const where = {};
+  for (const lang of ['de', 'en']) {
+    const body = sections[lang] ?? fail(`no "## ${lang}" section; both languages are required`);
+    const first = body.findIndex((l) => l.trim() !== '');
+    const heading = first < 0 ? null : /^title[ \t]*:[ \t]*(.*)$/i.exec(body[first].trim());
+    if (!heading || heading[1].trim() === '') fail(`## ${lang}: the first line is "title: <headline>"`);
+    title[lang] = heading[1].trim();
+    const blocks = {};
+    const free = [];
+    let target = free;
+    for (const line of body.slice(first + 1)) {
+      const h3 = /^###[ \t]+(.*?)[ \t]*$/.exec(line);
+      if (h3) {
+        const name = h3[1].toLowerCase();
+        if (!(name in store)) fail(`## ${lang}: "${line}": a block is "### play" or "### app_store"`);
+        if (name in blocks) fail(`## ${lang}: two "### ${name}" blocks`);
+        target = blocks[name] = [];
+      } else if (/^#/.test(line)) {
+        fail(`## ${lang}: "${line}": only "### play" and "### app_store" headings go here`);
+      } else {
+        target.push(line);
+      }
+    }
+    if (Object.keys(blocks).length === 0) {
+      const one = block(free);
+      if (one === '') fail(`## ${lang}: no text after the title`);
+      store.play[lang] = store.app_store[lang] = one;
+      where[lang] = { play: `## ${lang} (one text for both stores, so it must fit Play)`, app_store: `## ${lang}` };
+    } else {
+      if (block(free) !== '') fail(`## ${lang}: text outside the blocks; with blocks, all text goes into "### play" and "### app_store"`);
+      for (const name of Object.keys(store)) {
+        if (!(name in blocks)) fail(`## ${lang}: "### ${name}" is missing; write both blocks, or one text without blocks for both stores`);
+        store[name][lang] = block(blocks[name]);
+        if (store[name][lang] === '') fail(`## ${lang}: "### ${name}" is empty`);
+      }
+      where[lang] = { play: `## ${lang} ### play`, app_store: `## ${lang} ### app_store` };
+    }
+    for (const [name, { limit, unit, length }] of Object.entries(STORE_LIMITS)) {
+      const n = length(store[name][lang]);
+      if (n > limit) fail(`${where[lang][name]}: ${n} ${unit}, above ${name}'s limit of ${limit}`);
+    }
+  }
+  return { status, title, store };
+}
+
+export function loadOverride(dir, version) {
+  const file = join(dir, overrideName(version));
+  if (!existsSync(file)) return null;
+  const label = relative(process.cwd(), file) || file;
+  return { ...parseOverride(readFileSync(file, 'utf8'), label), file, label };
 }
 
 // --- store texts -------------------------------------------------------------------------------
@@ -149,19 +381,24 @@ export function storeText(changelog, store, lang, version) {
   return text;
 }
 
-// Store texts that are not what title and items give, as "store.lang" paths: a draft edited without
-// running the store command afterwards.
-export const staleStoreTexts = (changelog, version) => {
-  const fresh = storeTexts(changelog, version);
-  return Object.entries(fresh).flatMap(([store, langs]) => Object.keys(langs).filter((lang) => changelog.store[store][lang] !== langs[lang]).map((lang) => `${store}.${lang}`));
+// Store texts that are not what title and items give (or, with an override, the title and store
+// texts that are not the override's), as "store.lang" paths: a draft edited without running the
+// store command afterwards.
+export const staleStoreTexts = (changelog, version, override = null) => {
+  const fresh = override ? override.store : storeTexts(changelog, version);
+  const titles = override ? ['de', 'en'].filter((lang) => changelog.title[lang] !== override.title[lang]).map((lang) => `title.${lang}`) : [];
+  return [...titles, ...Object.entries(fresh).flatMap(([store, langs]) => Object.keys(langs).filter((lang) => changelog.store[store][lang] !== langs[lang]).map((lang) => `${store}.${lang}`))];
 };
+
+export const staleMessage = (label, stale, version, override) =>
+  `${label}: ${override ? `the ${stale.join(', ')} are not what ${override.label} gives` : `the store texts ${stale.join(', ')} are not what its title and items give`}; run: node scripts/release/changelog.mjs store --version ${version}`;
 
 export const storeTexts = (changelog, version) =>
   Object.fromEntries(Object.keys(STORE_LIMITS).map((store) => [store, { de: storeText(changelog, store, 'de', version), en: storeText(changelog, store, 'en', version) }]));
 
 // --- collecting from git ------------------------------------------------------------------------
 
-class Refusal extends Error {}
+export class Refusal extends Error {}
 const refuse = (message) => {
   throw new Refusal(message);
 };
@@ -191,14 +428,13 @@ const isAncestor = (ancestor, descendant) => {
   }
 };
 
-// main's commits in previous..sha (from the root without previous), oldest first, with the items
-// of their notes. Commits without a section (before job 39, release records, Dependabot) and
-// `none` give no items.
+// The items of the notes of main's commits in previous..sha (from the root without previous),
+// oldest first, each with its category, flag or hold, PR and commit. Commits without a section
+// (before job 39, release records, Dependabot) and `none` give no items.
 export function collect({ previous, sha, skip = [] }) {
   const range = previous ? [`${previous}..${sha}`] : [sha];
   const log = git('log', '--first-parent', '--reverse', '--format=%x1e%H%x00%s%x00%B', ...range);
-  const items = Object.fromEntries(CATEGORIES.map((c) => [c, []]));
-  const seen = new Set();
+  const items = [];
   const problems = [];
   for (const chunk of log.split('\x1e').slice(1)) {
     const [hash, subject, message] = chunk.split('\x00');
@@ -213,12 +449,7 @@ export function collect({ previous, sha, skip = [] }) {
     }
     if (note === null || note === 'none') continue;
     const pr = Number(/\(#(\d+)\)$/.exec(subject)?.[1]) || null;
-    for (const { category, de, en } of note) {
-      const key = `${de}\n${en}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      items[category].push({ de, en, pr, sha: hash });
-    }
+    for (const item of note) items.push({ ...item, pr, sha: hash });
   }
   if (problems.length) {
     refuse(`invalid ## Changelog sections on main (fix the wording in the draft by hand and rerun with --skip <sha> for each):\n  ${problems.join('\n  ')}`);
@@ -227,11 +458,15 @@ export function collect({ previous, sha, skip = [] }) {
 }
 
 const repoRoot = () => git('rev-parse', '--show-toplevel').trim();
-const draftPath = (version) => resolve(repoRoot(), 'releases/changelog', `${version}.json`);
+const changelogDir = () => resolve(repoRoot(), 'releases/changelog');
+const draftPath = (version) => join(changelogDir(), `${version}.json`);
+const gateLabel = (item) => [item.flag && `flag: ${item.flag}`, item.hold && `hold: ${item.hold}`].filter(Boolean).join(', ');
+const itemLine = (item) => `  ${item.category} [${gateLabel(item)}] ${item.en} (${item.pr ? `#${item.pr} ` : ''}${item.sha.slice(0, 7)})`;
 export const serializeDraft = (draft) => `${JSON.stringify(draft, null, 2)}\n`;
 
-function report(draft, file) {
+function report(draft, file, { released = [], override = null } = {}) {
   const lines = [];
+  if (override) lines.push(`--- title and store texts from ${override.label}${override.status ? ' (status: draft, so record.mjs add refuses to publish it until that line is removed)' : ''}`);
   for (const [store, langs] of Object.entries(draft.store)) {
     for (const [lang, text] of Object.entries(langs)) {
       const { limit, unit, length } = STORE_LIMITS[store];
@@ -239,10 +474,13 @@ function report(draft, file) {
     }
   }
   const count = CATEGORIES.reduce((n, c) => n + draft.items[c].length, 0);
-  if (count === 0) {
+  const held = draft.held ?? [];
+  if (held.length) lines.push(`--- held, not public (${held.length}): record.mjs keeps them in releases/changelog/${PENDING_FILE} until releases/flags.json opens their gate`, ...held.map(itemLine));
+  if (released.length) lines.push(`--- from ${PENDING_FILE}, gate open now (${released.length}): in this draft; record.mjs removes them from ${PENDING_FILE}`, ...released.map(itemLine));
+  if (count === 0 && !override) {
     console.error(`WARNING: ${file}: no user-visible change in this range, so the store texts say only "${STORE_WORDS.en.nothing}". A release without anything users notice is suspicious: check the range and the PRs' ## Changelog sections.`);
   }
-  if (!draft.title.de || !draft.title.en) lines.push(`--- title is empty: add a headline naming the 2-3 biggest things (title.de, title.en), then run: node scripts/release/changelog.mjs store --version ${draft.version}`);
+  if (!override && (!draft.title.de || !draft.title.en)) lines.push(`--- title is empty: add a headline naming the 2-3 biggest things (title.de, title.en), then run: node scripts/release/changelog.mjs store --version ${draft.version}`);
   return lines.join('\n');
 }
 
@@ -274,16 +512,30 @@ function draftCommand(argv) {
   const previous = opts['previous-sha'] !== undefined ? commitOf(opts['previous-sha'], '--previous-sha') : (newest?.sha ?? null);
   if (previous && !isAncestor(previous, sha)) refuse(`${previous} (${opts['previous-sha'] ? '--previous-sha' : `release ${newest.version}`}) is not an ancestor of ${sha}`);
 
-  const items = collect({ previous, sha, skip: opts.skip });
-  const changelog = { title: { de: '', en: '' }, items };
-  const draft = { version: opts.version, status: DRAFT_STATUS, generated_from: { previous_sha: previous, sha }, ...changelog, store: storeTexts(changelog, opts.version) };
+  const root = repoRoot();
+  const dir = changelogDir();
+  const gates = loadGates(resolve(root, 'releases/flags.json'));
+  const { items, held, released, matched } = plan(collect({ previous, sha, skip: opts.skip }), loadPending(dir).items, gates);
+  for (const { item, word } of matched) {
+    console.error(`WARNING: "${item.en}" (${item.sha.slice(0, 7)}) mentions "${word}" but has no "hold: ${item.hold}" line; held anyway until releases/flags.json releases that hold`);
+  }
+  const override = loadOverride(dir, opts.version);
+  const changelog = { title: override?.title ?? { de: '', en: '' }, items };
+  const draft = {
+    version: opts.version,
+    status: DRAFT_STATUS,
+    generated_from: { previous_sha: previous, sha },
+    ...changelog,
+    held,
+    store: override?.store ?? storeTexts(changelog, opts.version),
+  };
   const text = serializeDraft(draft);
   const file = opts.out ? resolve(opts.out) : draftPath(opts.version);
   const label = relative(process.cwd(), file) || file;
   parseDraft(text, label);
   if (opts['dry-run']) {
     console.log(text.trimEnd());
-    console.log(report(draft, label));
+    console.log(report(draft, label, { released, override }));
     console.log(`dry run: ${label} not written`);
     return;
   }
@@ -292,9 +544,9 @@ function draftCommand(argv) {
   }
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, text);
-  console.log(report(draft, label));
+  console.log(report(draft, label, { released, override }));
   const count = CATEGORIES.reduce((n, c) => n + items[c].length, 0);
-  console.log(`wrote ${label}: ${count} items from ${previous ? previous.slice(0, 7) : 'the root commit'}..${sha.slice(0, 7)}`);
+  console.log(`wrote ${label}: ${count} items${held.length ? ` (${held.length} held)` : ''} from ${previous ? previous.slice(0, 7) : 'the root commit'}..${sha.slice(0, 7)}`);
 }
 
 function storeCommand(argv) {
@@ -305,28 +557,59 @@ function storeCommand(argv) {
   if (!existsSync(file)) refuse(`${label} does not exist; run the draft command first`);
   const draft = parseDraft(readFileSync(file, 'utf8'), label);
   if (draft.version !== opts.version) refuse(`${label} is the draft of ${draft.version}, not ${opts.version}`);
-  draft.store = storeTexts(draft, draft.version);
+  const override = loadOverride(changelogDir(), draft.version);
+  if (override) draft.title = override.title;
+  draft.store = override?.store ?? storeTexts(draft, draft.version);
   const text = serializeDraft(draft);
   parseDraft(text, label);
   writeFileSync(file, text);
-  console.log(report(draft, label));
+  console.log(report(draft, label, { override }));
   console.log(`updated the store texts in ${label}`);
 }
 
-// Every draft in releases/changelog/ parses, is named after its version and has current store
-// texts. The changelog gate runs it, so a draft PR can't land with stale "What's new" texts.
+// releases/flags.json and everything in releases/changelog/: every draft parses, is named after
+// its version and has current store texts; pending.json and the overrides parse, and every flag
+// and hold they name is in flags.json. The changelog gate runs it, so a draft PR can't land with
+// stale "What's new" texts, and a flag can't leave flags.json while an item still waits for it.
 function draftsCommand(argv) {
   const { values: opts } = parseArgs({ args: argv, strict: true, options: { dir: { type: 'string' } } });
-  const dir = opts.dir ? resolve(opts.dir) : resolve(repoRoot(), 'releases/changelog');
-  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.json')) : [];
-  for (const f of files) {
+  const dir = opts.dir ? resolve(opts.dir) : changelogDir();
+  const gates = loadGates(resolve(dir, '../flags.json'));
+  const names = existsSync(dir) ? readdirSync(dir) : [];
+  const keysKnown = (items, label) => {
+    for (const item of items) {
+      try {
+        gateOf(item, gates);
+      } catch (error) {
+        if (error instanceof NoteError) refuse(`${label}: "${item.en}": ${error.message}`);
+        throw error;
+      }
+    }
+  };
+  const overrides = names.filter((f) => f.endsWith('.override.md'));
+  for (const f of overrides) {
+    const version = OVERRIDE_FILE.exec(f)[1];
+    if (!isVersion(version)) refuse(`${relative(process.cwd(), join(dir, f)) || f}: name it <version>.override.md (MAJOR.MINOR.PATCH)`);
+    const override = loadOverride(dir, version);
+    const closed = closedInPublic(override, gates);
+    if (closed.length) refuse(`${override.label} would publish what is held back:\n  ${closed.join('\n  ')}`);
+  }
+  const pending = loadPending(dir);
+  const drafts = draftFileNames(names);
+  for (const f of drafts) {
     const label = relative(process.cwd(), join(dir, f)) || f;
     const draft = parseDraft(readFileSync(join(dir, f), 'utf8'), label);
     if (f !== `${draft.version}.json`) refuse(`${label} holds version ${draft.version}; name it ${draft.version}.json`);
-    const stale = staleStoreTexts(draft, draft.version);
-    if (stale.length) refuse(`${label}: the store texts ${stale.join(', ')} are not what its title and items give; run: node scripts/release/changelog.mjs store --version ${draft.version}`);
+    keysKnown(draft.held ?? [], label);
+    if (!draft.held && pending.items.length) refuse(`${label} has no "held" (a draft from before job 40) while ${PENDING_FILE} has items; redraft it with --force`);
+    const closed = closedInPublic(draft, gates);
+    if (closed.length) refuse(`${label} would publish what is held back; redraft with --force (or fix releases/flags.json):\n  ${closed.join('\n  ')}`);
+    const override = loadOverride(dir, draft.version);
+    const stale = staleStoreTexts(draft, draft.version, override);
+    if (stale.length) refuse(staleMessage(label, stale, draft.version, override));
   }
-  console.log(`changelog drafts: ${files.length} checked`);
+  keysKnown(pending.items, relative(process.cwd(), join(dir, PENDING_FILE)) || PENDING_FILE);
+  console.log(`changelog drafts: ${drafts.length} checked, ${overrides.length} overrides, ${pending.items.length} pending items`);
 }
 
 function checkCommand(argv) {
@@ -337,7 +620,9 @@ function checkCommand(argv) {
     console.error('no "## Changelog" section');
     process.exit(3);
   }
-  console.log(note === 'none' ? 'changelog: none (nothing users see)' : `changelog: ${note.map((i) => `${i.category}: ${i.en}`).join(' | ')}`);
+  if (note !== 'none') checkGates(note, loadGates(resolve(repoRoot(), 'releases/flags.json')));
+  const gated = (i) => (i.flag || i.hold ? ` (${gateLabel(i)})` : '');
+  console.log(note === 'none' ? 'changelog: none (nothing users see)' : `changelog: ${note.map((i) => `${i.category}${gated(i)}: ${i.en}`).join(' | ')}`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

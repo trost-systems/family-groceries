@@ -1015,3 +1015,10 @@ below are done the purchase flow is inert: the app says "not available yet", the
 8. **Tester unlocks after launch.** TestFlight testers, App Review and Play license testers unlock
    their households with sandbox purchases, which cost nothing. Keep those unlocks after the
    public launch, or drop them then (DECISIONS 25.27, one database statement by the Lead)?
+
+## Job 40: approve the 1.0 launch "What's new" (2026-10-31)
+
+1. Read `releases/changelog/1.0.0.override.md`. It holds the German and English texts for Play (500 characters max) and the App Store. The full text is also in `docs/done/40-changelog-flags.md`.
+2. Change the wording in a PR if you like. `node scripts/release/changelog.mjs drafts` checks the limits.
+3. To approve it, delete the first line (`status: draft — pending Peter's review`) in that PR. Until then, `record.mjs add` refuses to record 1.0.0 as a public release.
+4. When the Alexa skill is certified, set `"released": true` for `alexa-certification` in `releases/flags.json`. The next release draft then takes the held Alexa items.

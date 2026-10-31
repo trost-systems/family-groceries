@@ -2,7 +2,8 @@
 // Adds a public release to releases/releases.json (releases/README.md), with its stats from git.
 // Run by .github/workflows/public-release-record.yml; plain node, no packages. The reviewed
 // changelog draft releases/changelog/<version>.json, if there is one, goes into the entry as
-// `changelog`, and the draft file is deleted (job 39).
+// `changelog`, and the draft file is deleted (job 39). Its override <version>.override.md goes
+// too, and releases/changelog/pending.json keeps the items still held back (job 40).
 //
 //   node scripts/release/record.mjs add --version 1.0.0 --sha <commit> --build 1100 [--dry-run]
 //     [--date YYYY-MM-DD] [--channel public] [--stores app_store,play,web]
@@ -13,13 +14,12 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { staleStoreTexts } from './changelog.mjs';
-import { CHANNELS, RecordError, compareVersions, dayNumber, isDate, isVersion, parseDraft, parseRecord, serializeRecord } from '../../site/releases.mjs';
+import { NoteError, Refusal, closedInPublic, collect, gateOf, loadGates, loadOverride, loadPending, serializePending, staleMessage, staleStoreTexts } from './changelog.mjs';
+import { CATEGORIES, CHANNELS, PENDING_FILE, RecordError, compareVersions, dayNumber, isDate, isVersion, parseDraft, parseRecord, serializeRecord } from '../../site/releases.mjs';
 
 const STORES = ['app_store', 'play', 'web'];
 const NOREPLY = /^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/i;
 
-class Refusal extends Error {}
 const refuse = (message) => {
   throw new Refusal(message);
 };
@@ -186,26 +186,47 @@ function add(argv) {
     ? rangeStats(previousSha, sha, [`${previousSha}..${sha}`], record.identities)
     : rangeStats(git('hash-object', '-t', 'tree', '/dev/null').trim(), sha, [sha], record.identities);
   // The draft sits next to the record: releases/changelog/<version>.json.
-  const draftFile = opts.changelog ? resolve(opts.changelog) : join(dirname(file), 'changelog', `${version}.json`);
+  const dir = join(dirname(file), 'changelog');
+  const draftFile = opts.changelog ? resolve(opts.changelog) : join(dir, `${version}.json`);
   const draftLabel = opts.changelog ?? `${dirname(fileLabel)}/changelog/${version}.json`;
+  const override = loadOverride(dir, version);
+  if (override?.status === 'draft') {
+    const why = `${override.label} says "status: draft": its launch text is not approved yet. Peter approves it by removing that line`;
+    if (!opts['dry-run']) refuse(`${why}; until then ${version} can't be recorded as a public release`);
+    console.warn(`warning: ${why}; without --dry-run this refuses`);
+  }
+  const gates = loadGates(join(dirname(file), 'flags.json'));
+  const pendingBefore = loadPending(dir).items;
   let changelog;
+  let draft = null;
   if (existsSync(draftFile)) {
-    const draft = parseDraft(readFileSync(draftFile, 'utf8'), draftLabel);
+    draft = parseDraft(readFileSync(draftFile, 'utf8'), draftLabel);
     if (draft.version !== version) refuse(`${draftLabel} is the changelog of ${draft.version}, not ${version}`);
-    const stale = staleStoreTexts(draft, version);
-    if (stale.length) refuse(`${draftLabel}: the store texts ${stale.join(', ')} are not what its title and items give (edited after the store command?); run: node scripts/release/changelog.mjs store --version ${version}`);
+    const stale = staleStoreTexts(draft, version, override);
+    if (stale.length) refuse(`${staleMessage(draftLabel, stale, version, override)} (edited after the store command?)`);
+    const closed = closedInPublic(draft, gates);
+    if (closed.length) refuse(`${draftLabel} would publish what is held back; redraft it with --force (or fix releases/flags.json):\n  ${closed.join('\n  ')}`);
+    // A draft collected elsewhere or past the release would drop or repeat items.
+    if (!isAncestor(draft.generated_from.sha, sha)) {
+      refuse(`${draftLabel} was collected up to ${draft.generated_from.sha.slice(0, 7)}, which is not ${sha.slice(0, 7)} or before it; redraft with --sha ${sha} --force`);
+    }
+    if (!draft.held && pendingBefore.length) refuse(`${draftLabel} has no "held" (a draft from before job 40) while ${PENDING_FILE} has items; redraft it with --force`);
     if (draft.generated_from.previous_sha !== previousSha) {
       console.warn(`warning: ${draftLabel} was collected from ${draft.generated_from.previous_sha?.slice(0, 7) ?? 'the root commit'}, the previous release is ${previousSha?.slice(0, 7) ?? 'none'}`);
     }
     if (draft.generated_from.sha !== sha) {
-      console.warn(`warning: ${draftLabel} was collected up to ${draft.generated_from.sha.slice(0, 7)}, the release is ${sha.slice(0, 7)}; commits in between are not in its changelog`);
+      console.warn(`warning: ${draftLabel} was collected up to ${draft.generated_from.sha.slice(0, 7)}, the release is ${sha.slice(0, 7)}; commits in between are not in its changelog (their gated items go to ${PENDING_FILE})`);
     }
     changelog = { title: draft.title, items: draft.items, store: draft.store };
   } else if (opts.changelog) {
     refuse(`--changelog ${opts.changelog} does not exist`);
+  } else if (override) {
+    refuse(`${override.label} has the store texts of ${version}, but there is no ${draftLabel}; run: node scripts/release/changelog.mjs draft --version ${version} --sha ${sha}`);
   } else {
     console.warn(`warning: no ${draftLabel}, so ${version} has no changelog (hummlist.com shows "Bug fixes and improvements.")`);
   }
+
+  const pendingAfter = heldAfter({ draft, draftLabel, pendingBefore, previousSha, sha, gates });
 
   const entry = {
     version,
@@ -225,6 +246,7 @@ function add(argv) {
   parseRecord(after, `${fileLabel} with ${version}`);
   if (opts['dry-run']) {
     console.log(JSON.stringify(entry, null, 2));
+    console.log(`${PENDING_FILE}: ${pendingAfter.length} items held back after ${version} (now ${pendingBefore.length})`);
     console.log(`dry run: ${fileLabel} not changed${changelog ? `, ${draftLabel} kept` : ''}`);
     return;
   }
@@ -233,7 +255,61 @@ function add(argv) {
     rmSync(draftFile);
     console.log(`moved the changelog from ${draftLabel} into the record`);
   }
+  if (override) {
+    rmSync(override.file);
+    console.log(`removed ${override.label}: its title and store texts are in the record`);
+  }
+  if (pendingAfter.length || pendingBefore.length || existsSync(join(dir, PENDING_FILE))) {
+    writeFileSync(join(dir, PENDING_FILE), serializePending({ items: pendingAfter }));
+    console.log(`${PENDING_FILE}: ${pendingAfter.length} items held back after ${version} (was ${pendingBefore.length})`);
+  }
   console.log(`recorded ${version} (day ${entry.day}, ${stats.commits} commits, ${stats.contributors.length} contributors)`);
+}
+
+// pending.json after the release: what the reviewed draft held back, plus the gated items of
+// commits it never saw (merged after its sha, or the whole range without a draft), which the next
+// draft looks at. pending.json is written here and not by the draft command, so a draft that is
+// thrown away loses nothing; every item pending before must be either published by the draft or
+// held by it (DECISIONS, "Job 40").
+function heldAfter({ draft, draftLabel, pendingBefore, previousSha, sha, gates }) {
+  const key = (i) => `${i.sha}\0${i.flag ?? ''}\0${i.hold ?? ''}`;
+  // The draft's dedupe by sentence (a reverted and relanded PR) applies to pending.json too.
+  const text = (i) => `${i.de}\n${i.en}`;
+  pendingBefore = pendingBefore.filter((i, n) => pendingBefore.findIndex((j) => text(j) === text(i)) === n);
+  let base = pendingBefore;
+  let from = previousSha;
+  if (draft) {
+    from = draft.generated_from.sha;
+    // A job 39 draft has no `held`: it saw no gates, so pending.json stays as it is.
+    if (draft.held) {
+      base = draft.held;
+      const accounted = [...draft.held, ...CATEGORIES.flatMap((c) => draft.items[c]).filter((i) => i.flag || i.hold)].map(key);
+      const lost = pendingBefore.filter((i) => {
+        const at = accounted.indexOf(key(i));
+        if (at >= 0) accounted.splice(at, 1);
+        return at < 0;
+      });
+      if (lost.length) {
+        refuse(`${draftLabel} neither publishes nor holds ${lost.length} item(s) of ${PENDING_FILE}, which would be lost: ${lost.map((i) => `"${i.en}" (${i.sha.slice(0, 7)})`).join(', ')}; put them back under "held", or redraft with --force`);
+      }
+    }
+  }
+  if (from === sha) return base;
+  const late = [];
+  for (const item of collect({ previous: from, sha })) {
+    let matched;
+    try {
+      ({ matched } = gateOf(item, gates));
+    } catch (error) {
+      if (error instanceof NoteError) refuse(`${item.sha.slice(0, 7)} "${item.en}": ${error.message}`);
+      throw error;
+    }
+    if (!item.flag && !item.hold && !matched) continue;
+    late.push({ category: item.category, de: item.de, en: item.en, flag: item.flag ?? null, hold: item.hold ?? matched?.key ?? null, pr: item.pr, sha: item.sha });
+  }
+  if (late.length) console.warn(`warning: ${late.length} gated item(s) merged after ${draft ? `${draftLabel} was collected` : 'the previous release'} wait in ${PENDING_FILE} for the next draft`);
+  const seen = new Set(base.map(text));
+  return [...base, ...late.filter((i) => !seen.has(text(i)) && seen.add(text(i)))];
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -241,7 +317,7 @@ try {
   if (command !== 'add') refuse(`unknown command ${command ?? '(none)'}; usage: record.mjs add --version X --sha S --build N [--dry-run]`);
   add(rest);
 } catch (error) {
-  if (!(error instanceof Refusal || error instanceof RecordError || error.code?.startsWith('ERR_PARSE_ARGS'))) throw error;
+  if (!(error instanceof Refusal || error instanceof RecordError || error instanceof NoteError || error.code?.startsWith('ERR_PARSE_ARGS'))) throw error;
   console.error(`record: ${error.message}`);
   process.exit(1);
 }

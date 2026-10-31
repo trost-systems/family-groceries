@@ -4575,3 +4575,74 @@ changes users notice. Format and flow: `docs/CHANGELOG.md`.
     deployments are behind Vercel's login anyway, and `site/vercel.json` is unchanged.
 13. **This PR's own note is `none`.** It adds a page to the site and tooling around the release;
     the site is not an app release, and nothing in the app changes.
+
+## Job 40: flag- and hold-gated changelog items, the 1.0 launch text, 2026-10-31
+
+Peter decided on 2026-10-31: (1) 1.0 gets its own "What's new" for first-time users, short, the
+standout features, no "improved/fixed" against the beta; (2) a feature behind a feature flag, or
+not certified yet (the Alexa skill), stays out of the public changelog until everyone has it.
+Format and flow: `docs/CHANGELOG.md`, "Gated items" and "Override".
+
+1. **The gate source is a repo file, `releases/flags.json`.** The app has no feature-flag
+   mechanism: `grep -rniE "featureflag|feature_flag|isFeatureEnabled|getFeatureFlag|remote.?config"`
+   over `app/lib`, `supabase/functions` and `alexa/` finds nothing. PostHog is analytics only, and
+   job 19 chose not to load its SDK partly so that no flags are fetched (Job 19, item 1). The
+   collector stays offline, so the file is edited by hand when a rollout changes. If the app
+   later adopts PostHog flags, the file is still set by hand when a flag reaches 100 %. A later
+   job may add a read-only comparison, never against project 262464.
+2. **Unknown keys are errors at every step, PR time included.** `changelog.mjs check` (push-pr.sh,
+   the CI gate) refuses a `flag:` or `hold:` key that `flags.json` doesn't list, and so do
+   `draft`, `drafts` and `record.mjs`. So a PR that adds a flagged item adds its flag in the same
+   PR, a typo can't make an item public, and a flag can't leave the file while an item in a
+   draft or `pending.json` still names it.
+3. **`pending.json` is written by `record.mjs add`, not by `draft`.** Had `draft` moved items
+   in and out of `pending.json`, a draft that took an item out (its gate open) and was then thrown
+   away or redrafted would lose that item for good: its commit is before the previous release,
+   so no later range sees it again. `draft` only reads `pending.json` and lists the closed items
+   in the draft's `held`. `record.mjs`, in the one release commit, sets `pending.json` to the
+   draft's `held` plus the gated items of commits after the draft's `--sha` (never reviewed; without
+   a draft, the whole range plus what was pending). It refuses when an item pending before is
+   neither published nor held by the draft (matched by commit, flag and hold, so reworded items
+   still count). A job 39 draft without `held` leaves `pending.json` as it is. Throwing a draft
+   away therefore costs nothing, and the record and `pending.json` change together.
+4. **Released items keep their `flag` / `hold` field** in the draft and the record, for tracing;
+   the site never renders it. Within a category, items from `pending.json` come first (older
+   merges), then the new range, in merge order; the job 39 dedupe by sentence runs over both.
+5. **Alexa is held by `match` words, not only by the author remembering `hold:`.** The hold
+   `alexa-certification` (`released: false`) lists `match: ["alexa"]`. While it is not released,
+   `check` refuses an item that mentions Alexa as a whole word (German or English) without that
+   hold. `draft` and `record.mjs` hold back such an item if one reaches `main` anyway, and `draft`
+   warns. No item on `main` has a note yet besides `none` (the 1.0.0 dry run collects 0 items),
+   so no existing Alexa note needed changing. The examples in the template, `docs/CHANGELOG.md`
+   and push-pr.sh's format message now carry `hold: alexa-certification`.
+6. **The override replaces the title and both store texts, and the items stay.** The site keeps
+   listing the collected items under the override's title. A version's page is its history, and
+   the items are what Peter reviews in the draft anyway. For 1.0 he can delete items there (beta
+   fixes, for example). A separate site summary would have been a third text to keep in sync.
+   The store text is used exactly as written. The title is not put in front of it, so the
+   writer decides what the store shows first. One text without `### play` / `### app_store`
+   blocks serves both stores and must fit Play's 500. Limits and stripping are job 39's
+   (Play 500 code points, App Store 4000 UTF-8 bytes, emoji and `<` removed).
+7. **`status: draft` blocks `record.mjs add`, and a dry run only warns.** Peter's approval is
+   deleting that line in a PR. The Public release record workflow's dry run still shows the
+   entry while the text waits for him. The override is deleted with the draft when the version
+   is recorded, because the record holds the texts from then on. An override without a draft
+   can't be recorded, since the release would silently lose its texts.
+8. **The 1.0.0 text was checked against the app on main.** Stores are grouped, but the order
+   through the shop is set by the user ("Reihenfolge bearbeiten"), not learned, so the text says
+   "in the order you walk through the shop". Siri needs a Shortcut on iPhone ("auf dem iPhone
+   auch mit Siri", "a Siri Shortcut"). The in-app mic exists on iOS and Android, which is what the
+   store texts are for. AI assistants (MCP: Claude, ChatGPT) can read, add and check off.
+   Suggestions are "Schon mal gekauft" / "Wieder fällig". Offline sync exists. No Alexa, no beta
+   comparison. The test `the 1.0.0 launch text` checks the limits, that it is still a draft, and
+   that it contains none of Alexa, beta, improved or fixed.
+9. **What gets published is checked again at the end, not only at draft time** (from the
+   independent review). The changelog gate and `record.mjs` run every published item through the
+   gates again and scan titles, store texts and overrides for held words. They refuse a draft
+   collected at a commit that is not the release commit or an ancestor, and a draft without
+   `held` while `pending.json` has items. Before this, a flag set back to `partial`, a hand edit,
+   an "Alexa" in the override or a draft from another branch could publish a held item or lose a
+   pending one. Held words match at a word start (soft hyphens removed), so German forms such as
+   "Alexas" and "Alexaskill" are caught. A name such as "Alexandra" would be held too, which fails
+   safe. A note reverted and relanded is pending once, not twice.
+10. **This PR's own note is `none`.** It changes release tooling and docs; nothing in the app.

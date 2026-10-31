@@ -7,11 +7,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { STORE_LIMITS, parseDraft, parseRecord } from '../../site/releases.mjs';
-import { NoteError, parseNote, sanitize, storeText, storeTexts } from './changelog.mjs';
+import { RecordError, STORE_LIMITS, parseDraft, parseRecord } from '../../site/releases.mjs';
+import { NoteError, parseNote, parseOverride, sanitize, storeText, storeTexts } from './changelog.mjs';
 
 const cli = fileURLToPath(new URL('changelog.mjs', import.meta.url));
+const recordCli = fileURLToPath(new URL('record.mjs', import.meta.url));
 const realRecord = readFileSync(fileURLToPath(new URL('../../releases/releases.json', import.meta.url)), 'utf8');
+const realFlags = readFileSync(fileURLToPath(new URL('../../releases/flags.json', import.meta.url)), 'utf8');
 
 const note = (...paragraphs) => `## What\n\nSomething.\n\n## Changelog\n${paragraphs.join('\n\n')}\n`;
 const item = (category, de, en) => `${category}\nde: ${de}\nen: ${en}`;
@@ -65,6 +67,22 @@ Co-authored-by: Peter Trost <peter@petertrost.com>`;
     rejects('## Changelog\n<!-- the template, untouched -->\n', /section is empty/);
     rejects(`${note('none')}\n## Changelog\nnone\n`, /several "## Changelog" sections/);
     rejects(note('Thanks to Lea for the idea.', item('new', 'A.', 'B.')), /comes after "Thanks to Lea/);
+  });
+
+  test('job 40: an item may carry one flag: and one hold: line', () => {
+    assert.deepEqual(parseNote(note(`${item('new', 'A.', 'B.')}\nflag: smart-lists\nhold: alexa-certification`, item('fixed', 'C.', 'D.'))), [
+      { category: 'new', de: 'A.', en: 'B.', flag: 'smart-lists', hold: 'alexa-certification' },
+      { category: 'fixed', de: 'C.', en: 'D.' },
+    ]);
+    assert.deepEqual(parseNote(note('new\n- Hold: `ios.widget_2`\n- de: A.\n- en: B.')), [{ category: 'new', de: 'A.', en: 'B.', hold: 'ios.widget_2' }], 'any order, list dashes, backticks');
+    rejects(note(`${item('new', 'A.', 'B.')}\nflag: Smart Lists`), /new item: flag "Smart Lists" is not a key: lower-case letters/);
+    rejects(note(`${item('new', 'A.', 'B.')}\nhold: -x`), /hold "-x" is not a key/);
+    rejects(note(`${item('new', 'A.', 'B.')}\nflag:`), /flag "" is not a key/);
+    rejects(note(`${item('new', 'A.', 'B.')}\nflag: a\nflag: b`), /two "flag:" lines; an item has at most one flag: and one hold: line/);
+    rejects(note(`${item('new', 'A.', 'B.')}\nhold: a\nhold: a`), /two "hold:" lines/);
+    rejects(note(`${item('new', 'A.', 'B.')}\nowner: lea`), /"owner: lea" is not a "de: \.\.\." or "en: \.\.\." line/);
+    rejects(note('none\nflag: x'), /"none" stands alone/);
+    rejects(note('flag: x'), /unknown category "flag: x"/);
   });
 });
 
@@ -155,8 +173,9 @@ describe('draft and store commands', () => {
     git('init', '-q', '-b', 'main');
     mkdirSync(join(repo, 'releases'));
     writeFileSync(join(repo, 'releases/releases.json'), realRecord);
+    writeFileSync(join(repo, 'releases/flags.json'), realFlags);
     commit('Job 1: foundation (#1)', 'Before job 39, no section.\n\nCo-authored-by: Peter Trost <peter@petertrost.com>');
-    commit('Add Alexa (#2)', `${note(item('new', 'Mit Alexa fügst du Artikel hinzu.', 'Add items with Alexa.'), item('fixed', 'Die Liste springt nicht mehr.', 'The list no longer jumps.'))}\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-authored-by: Peter Trost <peter@petertrost.com>`);
+    commit('Add voice (#2)', `${note(item('new', 'Per Sprache fügst du Artikel hinzu.', 'Add items by voice.'), item('fixed', 'Die Liste springt nicht mehr.', 'The list no longer jumps.'))}\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-authored-by: Peter Trost <peter@petertrost.com>`);
     commit('CI: faster gates (#3)', note('none'));
     commit('Release 0.9.0: public release record');
     commit('Bump actions/checkout (#4)', 'Bumps actions/checkout.\n\nSigned-off-by: dependabot[bot] <support@github.com>');
@@ -173,37 +192,37 @@ describe('draft and store commands', () => {
     assert.equal(draft.status, 'draft');
     assert.deepEqual(draft.title, { de: '', en: '' });
     assert.deepEqual(draft.items, {
-      new: [{ de: 'Mit Alexa fügst du Artikel hinzu.', en: 'Add items with Alexa.', pr: 2, sha: shas['Add Alexa (#2)'] }],
+      new: [{ de: 'Per Sprache fügst du Artikel hinzu.', en: 'Add items by voice.', pr: 2, sha: shas['Add voice (#2)'] }],
       improved: [{ de: 'Listen laden schneller.', en: 'Lists load faster.', pr: 5, sha: shas['Faster lists (#5)'] }],
       fixed: [
-        { de: 'Die Liste springt nicht mehr.', en: 'The list no longer jumps.', pr: 2, sha: shas['Add Alexa (#2)'] },
+        { de: 'Die Liste springt nicht mehr.', en: 'The list no longer jumps.', pr: 2, sha: shas['Add voice (#2)'] },
         { de: 'Haken bleiben gesetzt.', en: 'Checks stay set.', pr: null, sha: shas['Merged without a PR number'] },
       ],
     });
-    assert.equal(draft.store.play.en, 'New:\n• Add items with Alexa.\n\nImproved:\n• Lists load faster.\n\nFixed:\n• The list no longer jumps.\n• Checks stay set.');
+    assert.equal(draft.store.play.en, 'New:\n• Add items by voice.\n\nImproved:\n• Lists load faster.\n\nFixed:\n• The list no longer jumps.\n• Checks stay set.');
     assert.match(r.stdout, /wrote releases\/changelog\/1\.0\.0\.json: 4 items from the root commit/);
   });
 
   test('a draft is never overwritten without --force', () => {
     const edited = readDraft('1.0.0');
-    edited.title = { de: 'Alexa', en: 'Alexa' };
+    edited.title = { de: 'Sprache', en: 'Voice' };
     writeFileSync(draftFile('1.0.0'), `${JSON.stringify(edited, null, 2)}\n`);
     const r = run('draft', '--version', '1.0.0', '--sha', 'main');
     assert.equal(r.code, 1);
     assert.match(r.stderr, /exists and may hold reviewed wording; .*--force/);
-    assert.equal(readDraft('1.0.0').title.de, 'Alexa');
+    assert.equal(readDraft('1.0.0').title.de, 'Sprache');
     assert.equal(run('draft', '--version', '1.0.0', '--sha', 'main', '--force').code, 0);
     assert.equal(readDraft('1.0.0').title.de, '');
   });
 
   test('the store command rewrites the store texts from edited wording', () => {
     const edited = readDraft('1.0.0');
-    edited.title = { de: 'Alexa ist da', en: 'Alexa is here' };
-    edited.items.new[0].en = 'Add items by voice with Alexa.';
+    edited.title = { de: 'Sprache ist da', en: 'Voice is here' };
+    edited.items.new[0].en = 'Add items by voice, in one sentence.';
     writeFileSync(draftFile('1.0.0'), `${JSON.stringify(edited, null, 2)}\n`);
     assert.equal(run('store', '--version', '1.0.0').code, 0);
-    assert.match(readDraft('1.0.0').store.app_store.en, /^Alexa is here\n\nNew:\n• Add items by voice with Alexa\.\n/);
-    assert.equal(readDraft('1.0.0').items.new[0].en, 'Add items by voice with Alexa.', 'items are kept');
+    assert.match(readDraft('1.0.0').store.app_store.en, /^Voice is here\n\nNew:\n• Add items by voice, in one sentence\.\n/);
+    assert.equal(readDraft('1.0.0').items.new[0].en, 'Add items by voice, in one sentence.', 'items are kept');
     rmSync(draftFile('1.0.0'));
   });
 
@@ -218,7 +237,7 @@ describe('draft and store commands', () => {
       assert.ok(!existsSync(draftFile('1.0.0')), 'a dry run writes nothing');
       const draft = JSON.parse(r.stdout.slice(0, r.stdout.indexOf('\n}\n') + 2));
       assert.equal(draft.generated_from.previous_sha, shas['Release 0.9.0: public release record']);
-      assert.deepEqual(draft.items.new, [], 'Alexa shipped in 0.9.0');
+      assert.deepEqual(draft.items.new, [], 'voice shipped in 0.9.0');
       assert.deepEqual(draft.items.fixed.map((i) => i.pr), [5, null], 'the jump fix is listed again: it is a new PR');
       assert.equal(run('draft', '--version', '0.9.0', '--sha', 'main').code, 1, 'a recorded version');
       assert.match(run('draft', '--version', '0.8.0', '--sha', 'main').stderr, /must be above the newest public release 0\.9\.0/);
@@ -231,7 +250,7 @@ describe('draft and store commands', () => {
   });
 
   test('an empty range warns loudly and uses the neutral sentence', () => {
-    const r = run('draft', '--version', '1.0.0', '--sha', shas['CI: faster gates (#3)'], '--previous-sha', shas['Add Alexa (#2)'], '--dry-run');
+    const r = run('draft', '--version', '1.0.0', '--sha', shas['CI: faster gates (#3)'], '--previous-sha', shas['Add voice (#2)'], '--dry-run');
     assert.equal(r.code, 0, r.stderr);
     assert.match(r.stderr, /^WARNING: .*no user-visible change in this range.*suspicious/m);
     assert.match(r.stdout, /"de": "Fehlerbehebungen und Verbesserungen\."/);
@@ -275,5 +294,352 @@ describe('draft and store commands', () => {
     assert.equal(bad.status, 1);
     assert.match(bad.stderr, /has no "en:" line/);
     assert.equal(check('## What\n').status, 3);
+  });
+});
+
+// Job 40: items behind a flag or hold stay out of drafts, store texts and the site until
+// releases/flags.json opens the gate; record.mjs keeps them in pending.json meanwhile.
+describe('gated items, pending.json and the override', () => {
+  let repo;
+  const shas = {};
+  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  const commit = (subject, body = '') => {
+    writeFileSync(join(repo, 'f.txt'), subject);
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', subject, ...(body ? ['-m', body] : []));
+    shas[subject] = git('rev-parse', 'HEAD');
+  };
+  const run = (...args) => {
+    const r = spawnSync('node', [cli, ...args], { cwd: repo, encoding: 'utf8' });
+    return { code: r.status, stdout: r.stdout, stderr: r.stderr };
+  };
+  const record = (...args) => {
+    const r = spawnSync('node', [recordCli, 'add', '--main', 'main', '--file', 'releases/releases.json', ...args], { cwd: repo, encoding: 'utf8' });
+    return { code: r.status, stdout: r.stdout, stderr: r.stderr };
+  };
+  const path = (name) => join(repo, 'releases/changelog', name);
+  const readDraft = (version) => parseDraft(readFileSync(path(`${version}.json`), 'utf8'), version);
+  const pending = () => JSON.parse(readFileSync(path('pending.json'), 'utf8')).items;
+  const dryDraft = (stdout) => JSON.parse(stdout.slice(0, stdout.indexOf('\n}\n') + 2));
+  const flags = (patch = {}) => {
+    const data = {
+      flags: { 'smart-lists': { rollout: 'partial', note: 'half the households' }, 'dark-mode': { rollout: 'full', note: '' } },
+      holds: {
+        'alexa-certification': { released: false, note: 'the Alexa skill is in beta and not certified by Amazon yet', match: ['alexa'] },
+        'ios-widget': { released: true, note: '' },
+      },
+    };
+    for (const [k, v] of Object.entries(patch)) Object.assign(k in data.flags ? data.flags[k] : data.holds[k], v);
+    writeFileSync(join(repo, 'releases/flags.json'), `${JSON.stringify(data, null, 2)}\n`);
+  };
+  const smart = 'Listen sortieren sich selbst.';
+  const alexa = 'Mit Alexa fügst du Artikel hinzu.';
+
+  before(() => {
+    repo = mkdtempSync(join(tmpdir(), 'changelog-gates-'));
+    git('init', '-q', '-b', 'main');
+    mkdirSync(join(repo, 'releases/changelog'), { recursive: true });
+    writeFileSync(join(repo, 'releases/releases.json'), realRecord);
+    writeFileSync(path('pending.json'), '{\n  "items": []\n}\n');
+    flags();
+    commit('Base (#1)', note('none'));
+    commit('Smart lists (#2)', note(`${item('new', smart, 'Lists sort themselves.')}\nflag: smart-lists`, item('fixed', 'Haken bleiben gesetzt.', 'Checks stay set.')));
+    commit('Alexa skill (#3)', note(`${item('new', alexa, 'Add items with Alexa.')}\nhold: alexa-certification`));
+    commit('Alexa fix (#4)', note(item('fixed', 'Alexa versteht dich besser.', 'Alexa understands you better.')));
+    commit('Widget (#5)', note(`${item('new', 'Ein Widget zeigt die Liste.', 'A widget shows the list.')}\nhold: ios-widget`));
+    commit('Dark mode (#6)', note(`${item('improved', 'Dunkles Design.', 'Dark theme.')}\nflag: dark-mode`));
+  });
+  after(() => rmSync(repo, { recursive: true, force: true }));
+
+  test('a partial flag and an unreleased hold keep items out of the draft and the store texts; full and released let them in', () => {
+    const r = run('draft', '--version', '1.0.0', '--sha', 'main', '--dry-run');
+    assert.equal(r.code, 0, r.stderr);
+    const draft = dryDraft(r.stdout);
+    assert.deepEqual(draft.items.new, [{ de: 'Ein Widget zeigt die Liste.', en: 'A widget shows the list.', pr: 5, sha: shas['Widget (#5)'], hold: 'ios-widget' }]);
+    assert.deepEqual(draft.items.improved, [{ de: 'Dunkles Design.', en: 'Dark theme.', pr: 6, sha: shas['Dark mode (#6)'], flag: 'dark-mode' }]);
+    assert.deepEqual(draft.items.fixed.map((i) => i.pr), [2]);
+    assert.deepEqual(
+      draft.held.map((i) => [i.category, i.flag, i.hold, i.pr]),
+      [
+        ['new', 'smart-lists', null, 2],
+        ['new', null, 'alexa-certification', 3],
+        ['fixed', null, 'alexa-certification', 4],
+      ],
+    );
+    for (const text of Object.values(draft.store).flatMap(Object.values)) {
+      assert.doesNotMatch(text, /alexa|sortieren|sort themselves/i, 'no held item in a store text');
+    }
+    assert.match(r.stderr, /WARNING: "Alexa understands you better\." \([0-9a-f]{7}\) mentions "alexa" but has no "hold: alexa-certification" line; held anyway/);
+    assert.match(r.stdout, /--- held, not public \(3\): record\.mjs keeps them in releases\/changelog\/pending\.json/);
+    assert.match(r.stdout, /  new \[flag: smart-lists\] Lists sort themselves\. \(#2 [0-9a-f]{7}\)/);
+    assert.ok(!existsSync(path('1.0.0.json')), 'a dry run writes nothing');
+    assert.deepEqual(pending(), [], 'the draft command never writes pending.json');
+  });
+
+  test('a flag or hold that releases/flags.json does not know is an error, not public', () => {
+    for (const [line, pattern] of [
+      ['flag: smart-list', /flag "smart-list" is not in releases\/flags\.json; add it under "flags"/],
+      ['hold: alexa-cert', /hold "alexa-cert" is not in releases\/flags\.json; add it under "holds"/],
+    ]) {
+      commit('Typo (#9)', note(`${item('new', 'A.', 'B.')}\n${line}`));
+      try {
+        const r = run('draft', '--version', '1.0.0', '--sha', 'main', '--dry-run');
+        assert.equal(r.code, 1, line);
+        assert.match(r.stderr, pattern);
+      } finally {
+        git('reset', '-q', '--hard', 'HEAD~1');
+      }
+    }
+  });
+
+  test('check: unknown keys and an Alexa item without its hold fail; with the hold it passes', () => {
+    const check = (text) => spawnSync('node', [cli, 'check'], { cwd: repo, input: text, encoding: 'utf8' });
+    let r = check(note(`${item('new', 'A.', 'B.')}\nflag: nope`));
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /flag "nope" is not in releases\/flags\.json/);
+    r = check(note(item('fixed', 'Der Alexa-Skill antwortet schneller.', 'The skill answers faster.')));
+    assert.equal(r.status, 1, 'German text mentions Alexa');
+    assert.match(r.stderr, /mentions "alexa": add the line "hold: alexa-certification" \(the Alexa skill is in beta and not certified by Amazon yet\)/);
+    r = check(note(`${item('new', alexa, 'Add items with Alexa.')}\nhold: alexa-certification`));
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /changelog: new \(hold: alexa-certification\): Add items with Alexa\./);
+    for (const de of ['Alexas Antworten sind schneller.', 'Der Alexaskill.', 'Ale\u00ADxa hört zu.', 'Siehe alexa.amazon.de.']) {
+      assert.equal(check(note(item('fixed', de, 'Faster.'))).status, 1, `${de}: matched at a word start`);
+    }
+    assert.equal(check(note(item('new', 'Die Lexa-Liste.', 'The Lexa list.'))).status, 0, 'not inside a word');
+  });
+
+  test('record keeps the held items in pending.json; once the flag is full the next draft takes them and they leave pending.json', () => {
+    assert.equal(run('draft', '--version', '1.0.0', '--sha', 'main').code, 0);
+    let r = record('--version', '1.0.0', '--sha', 'main', '--build', '1', '--date', '2026-11-01');
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /pending\.json: 3 items held back after 1\.0\.0 \(was 0\)/);
+    const entry = JSON.parse(readFileSync(join(repo, 'releases/releases.json'), 'utf8')).releases[0];
+    assert.doesNotMatch(JSON.stringify(entry.changelog), /alexa|sort themselves/i, 'nothing held reaches the record');
+    assert.deepEqual(pending().map((i) => [i.pr, i.flag, i.hold]), [[2, 'smart-lists', null], [3, null, 'alexa-certification'], [4, null, 'alexa-certification']]);
+    assert.ok(!existsSync(path('1.0.0.json')));
+
+    flags({ 'smart-lists': { rollout: 'full' } });
+    commit('Later (#7)', note(item('fixed', 'Neu sortiert.', 'Sorted anew.')));
+    r = run('draft', '--version', '1.1.0', '--sha', 'main');
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stdout, /--- from pending\.json, gate open now \(1\): in this draft/);
+    const draft = readDraft('1.1.0');
+    assert.deepEqual(draft.items.new, [{ de: smart, en: 'Lists sort themselves.', pr: 2, sha: shas['Smart lists (#2)'], flag: 'smart-lists' }], 'in its category, with its flag');
+    assert.deepEqual(draft.items.fixed.map((i) => i.pr), [7]);
+    assert.match(draft.store.play.en, /• Lists sort themselves\./);
+    assert.deepEqual(draft.held.map((i) => i.pr), [3, 4]);
+    assert.equal(pending().length, 3, 'pending.json changes only when the release is recorded');
+    assert.match(run('drafts').stdout, /1 checked, 0 overrides, 3 pending items/);
+
+    r = record('--version', '1.1.0', '--sha', 'main', '--build', '2', '--date', '2026-11-02');
+    assert.equal(r.code, 0, r.stderr);
+    assert.deepEqual(pending().map((i) => i.pr), [3, 4], 'the released item left pending.json; Alexa waits');
+    const released = JSON.parse(readFileSync(join(repo, 'releases/releases.json'), 'utf8')).releases[1].changelog;
+    assert.equal(released.items.new[0].flag, 'smart-lists');
+    assert.doesNotMatch(JSON.stringify(released), /alexa/i);
+  });
+
+  test('the Alexa items reach a draft only after the hold is released', () => {
+    commit('More (#8)', note(item('new', 'Mehr.', 'More.')));
+    assert.equal(run('draft', '--version', '1.2.0', '--sha', 'main').code, 0);
+    assert.deepEqual(readDraft('1.2.0').held.map((i) => i.pr), [3, 4]);
+    assert.doesNotMatch(JSON.stringify({ items: readDraft('1.2.0').items, store: readDraft('1.2.0').store }), /alexa/i);
+    flags({ 'alexa-certification': { released: true } });
+    assert.equal(run('draft', '--version', '1.2.0', '--sha', 'main', '--force').code, 0);
+    const draft = readDraft('1.2.0');
+    assert.deepEqual(draft.items.new.map((i) => i.pr), [3, 8]);
+    assert.deepEqual(draft.items.fixed.map((i) => [i.pr, i.hold]), [[4, 'alexa-certification']], 'the slipped Alexa fix carries the hold it was held by');
+    assert.deepEqual(draft.held, []);
+    rmSync(path('1.2.0.json'));
+    flags({ 'smart-lists': { rollout: 'full' } });
+  });
+
+  test('record refuses a draft that would lose a pending item; without a draft pending.json keeps everything', () => {
+    assert.equal(run('draft', '--version', '1.2.0', '--sha', 'main').code, 0);
+    const draft = readDraft('1.2.0');
+    draft.held = draft.held.slice(1);
+    writeFileSync(path('1.2.0.json'), `${JSON.stringify(draft, null, 2)}\n`);
+    let r = record('--version', '1.2.0', '--sha', 'main', '--build', '3', '--date', '2026-11-03', '--dry-run');
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /neither publishes nor holds 1 item\(s\) of pending\.json, which would be lost: "Add items with Alexa\." /);
+    rmSync(path('1.2.0.json'));
+    commit('Gated late (#10)', note(`${item('new', 'Später.', 'Later.')}\nflag: smart-lists`, `${item('new', 'Halb.', 'Half.')}\nhold: alexa-certification`));
+    r = record('--version', '1.2.0', '--sha', 'main', '--build', '3', '--date', '2026-11-03');
+    assert.equal(r.code, 0, r.stderr);
+    assert.match(r.stderr, /2 gated item\(s\) merged after the previous release wait in pending\.json for the next draft/);
+    assert.deepEqual(pending().map((i) => i.pr), [3, 4, 10, 10], 'nothing published, nothing lost');
+  });
+
+  test('review: what a draft publishes is checked again against flags.json, and a draft must not reach past the release', () => {
+    const head = git('rev-parse', 'HEAD');
+    try {
+      assert.equal(run('draft', '--version', '1.3.0', '--sha', 'main').code, 0);
+      const good = readFileSync(path('1.3.0.json'), 'utf8');
+      const collectedUpTo = (sha) => {
+        const d = JSON.parse(good);
+        d.generated_from.sha = sha;
+        return `${JSON.stringify(d, null, 2)}\n`;
+      };
+      flags({ 'smart-lists': { rollout: 'partial' } });
+      const flipped = readDraft('1.3.0');
+      flipped.items.new.push({ de: smart, en: 'Lists sort themselves.', pr: 2, sha: shas['Smart lists (#2)'], flag: 'smart-lists' });
+      writeFileSync(path('1.3.0.json'), `${JSON.stringify(flipped, null, 2)}\n`);
+      assert.equal(run('store', '--version', '1.3.0').code, 0);
+      let r = run('drafts');
+      assert.equal(r.code, 1, 'a flag set back to partial after the draft');
+      assert.match(r.stderr, /would publish what is held back; redraft with --force[^]*\n  "Lists sort themselves\." is public, but flag: smart-lists is not open/);
+      r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04', '--dry-run');
+      assert.equal(r.code, 1);
+      assert.match(r.stderr, /would publish what is held back/);
+      flags({ 'smart-lists': { rollout: 'full' } });
+
+      const moved = JSON.parse(good);
+      moved.title = { de: 'Alexa ist da', en: 'Alexa is here' };
+      writeFileSync(path('1.3.0.json'), `${JSON.stringify(moved, null, 2)}\n`);
+      assert.equal(run('store', '--version', '1.3.0').code, 0);
+      r = run('drafts');
+      assert.equal(r.code, 1, 'a title edited by hand to mention Alexa');
+      assert.match(r.stderr, /title\.de mentions "alexa", held by alexa-certification/);
+      writeFileSync(path('1.3.0.json'), good);
+
+      writeFileSync(path('1.3.0.override.md'), '## de\ntitle: Neu\n\nJetzt mit Alexa.\n\n## en\ntitle: New\n\nNow with Alexa.\n');
+      r = run('drafts');
+      assert.equal(r.code, 1, 'an override that names Alexa');
+      assert.match(r.stderr, /1\.3\.0\.override\.md would publish what is held back:\n  app_store\.de mentions "alexa", held by alexa-certification/);
+      rmSync(path('1.3.0.override.md'));
+
+      commit('After the draft (#11)', note(item('fixed', 'Danach.', 'After.')));
+      writeFileSync(path('1.3.0.json'), collectedUpTo(git('rev-parse', 'HEAD')));
+      r = record('--version', '1.3.0', '--sha', head, '--build', '4', '--date', '2026-11-04', '--dry-run');
+      assert.equal(r.code, 1, 'a draft collected past the release would publish too much');
+      assert.match(r.stderr, /was collected up to [0-9a-f]{7}, which is not [0-9a-f]{7} or before it; redraft with --sha/);
+      const side = git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit-tree', `${head}^{tree}`, '-p', head, '-m', 'Side (#12)');
+      writeFileSync(path('1.3.0.json'), collectedUpTo(side));
+      r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04', '--dry-run');
+      assert.equal(r.code, 1, 'a draft from another branch');
+      assert.match(r.stderr, /which is not [0-9a-f]{7} or before it/);
+
+      const old = JSON.parse(good);
+      delete old.held;
+      writeFileSync(path('1.3.0.json'), `${JSON.stringify(old, null, 2)}\n`);
+      assert.match(run('drafts').stderr, /has no "held" \(a draft from before job 40\) while pending\.json has items; redraft it with --force/);
+    } finally {
+      git('reset', '-q', '--hard', head);
+      rmSync(path('1.3.0.json'), { force: true });
+      rmSync(path('1.3.0.override.md'), { force: true });
+      flags({ 'smart-lists': { rollout: 'full' } });
+    }
+  });
+
+  test('review: the same note pending twice (reverted and relanded) does not block the next release', () => {
+    const before = readFileSync(path('pending.json'), 'utf8');
+    const head = git('rev-parse', 'HEAD');
+    const relanded = { category: 'new', de: 'Zweimal.', en: 'Twice.', flag: 'smart-lists', hold: null, pr: 13, sha: head };
+    writeFileSync(path('pending.json'), `${JSON.stringify({ items: [...pending(), relanded, { ...relanded, pr: 14, sha: shas['Base (#1)'] }] }, null, 2)}\n`);
+    flags({ 'smart-lists': { rollout: 'partial' } });
+    const d = run('draft', '--version', '1.3.0', '--sha', 'main');
+    assert.equal(d.code, 0, d.stderr);
+    assert.equal(readDraft('1.3.0').held.filter((i) => i.en === 'Twice.').length, 1, 'the draft dedupes by sentence');
+    const r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04', '--dry-run');
+    assert.equal(r.code, 0, r.stderr);
+    rmSync(path('1.3.0.json'));
+    writeFileSync(path('pending.json'), before);
+    flags({ 'smart-lists': { rollout: 'full' } });
+  });
+
+  test('an override replaces title and store texts; status: draft blocks the public release until removed', () => {
+    const text = (de, en) => `# Hummlist 1.3.0\nstatus: draft — pending Peter's review\n\n## de\ntitle: Willkommen\n\n${de}\n\n## en\ntitle: Welcome\n\n${en}\n`;
+    writeFileSync(path('1.3.0.override.md'), text('Deine Liste, mit allen geteilt.\n\n• Sofort synchron', 'Your list, shared.\n\n• Syncs instantly'));
+    let r = run('draft', '--version', '1.3.0', '--sha', 'main', '--dry-run');
+    assert.equal(r.code, 0, r.stderr);
+    let draft = dryDraft(r.stdout);
+    assert.deepEqual(draft.title, { de: 'Willkommen', en: 'Welcome' });
+    assert.equal(draft.store.play.de, 'Deine Liste, mit allen geteilt.\n\n• Sofort synchron');
+    assert.equal(draft.store.app_store.en, 'Your list, shared.\n\n• Syncs instantly', 'one text serves both stores');
+    assert.match(r.stdout, /--- title and store texts from releases\/changelog\/1\.3\.0\.override\.md \(status: draft, so record\.mjs add refuses/);
+    assert.match(r.stdout, /--- play de \(50 of 500 Unicode characters\)/);
+    assert.doesNotMatch(r.stdout, /title is empty/);
+
+    assert.equal(run('draft', '--version', '1.3.0', '--sha', 'main').code, 0);
+    draft = readDraft('1.3.0');
+    assert.ok(draft.items.new.length > 0, 'items stay as collected, for the site');
+    assert.equal(run('drafts').code, 0);
+    writeFileSync(path('1.3.0.override.md'), text('Anders.', 'Different.'));
+    r = run('drafts');
+    assert.equal(r.code, 1, 'the draft no longer matches its override');
+    assert.match(r.stderr, /the title\.de|the app_store\.de|play\.de/);
+    assert.match(r.stderr, /are not what releases\/changelog\/1\.3\.0\.override\.md gives; run: node scripts\/release\/changelog\.mjs store --version 1\.3\.0/);
+    assert.equal(run('store', '--version', '1.3.0').code, 0);
+    assert.equal(readDraft('1.3.0').store.play.en, 'Different.');
+
+    r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04');
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /1\.3\.0\.override\.md says "status: draft": its launch text is not approved yet\. Peter approves it by removing that line; until then 1\.3\.0 can't be recorded/);
+    r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04', '--dry-run');
+    assert.equal(r.code, 0, 'a dry run shows the entry and warns');
+    assert.match(r.stderr, /without --dry-run this refuses/);
+
+    writeFileSync(path('1.3.0.override.md'), text('Anders.', 'Different.').replace(/^status:.*\n/m, ''));
+    r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04');
+    assert.equal(r.code, 0, r.stderr);
+    assert.ok(!existsSync(path('1.3.0.override.md')) && !existsSync(path('1.3.0.json')), 'draft and override leave with the release');
+    const entry = JSON.parse(readFileSync(join(repo, 'releases/releases.json'), 'utf8')).releases.at(-1);
+    assert.deepEqual(entry.changelog.store.play, { de: 'Anders.', en: 'Different.' });
+    assert.deepEqual(entry.changelog.title, { de: 'Willkommen', en: 'Welcome' });
+  });
+
+  test('an override without its draft cannot be recorded', () => {
+    writeFileSync(path('1.4.0.override.md'), '## de\ntitle: A\n\nB\n\n## en\ntitle: C\n\nD\n');
+    const r = record('--version', '1.4.0', '--sha', 'main', '--build', '5', '--date', '2026-11-05', '--dry-run');
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /has the store texts of 1\.4\.0, but there is no .*1\.4\.0\.json; run: node scripts\/release\/changelog\.mjs draft/);
+    rmSync(path('1.4.0.override.md'));
+  });
+});
+
+describe('parseOverride', () => {
+  const parse = (text) => parseOverride(text, 'x.override.md');
+  const fails = (text, pattern) => assert.throws(() => parse(text), (e) => e instanceof RecordError && pattern.test(e.message), String(pattern));
+  const both = (de, en) => `## de\ntitle: T\n\n${de}\n\n## en\ntitle: T\n\n${en}\n`;
+
+  test('separate play and app_store blocks; comments, emoji and "<" go', () => {
+    const o = parse('<!-- guidance -->\n# Heading\n\n## de\ntitle: Hallo\n### play\nKurz 🎉.\n### app_store\nLänger <b>.\n\n\n\nMehr.\n## en\ntitle: Hi\n### app_store\nLonger.\n### play\nShort.\n');
+    assert.equal(o.status, null);
+    assert.deepEqual(o.store, { app_store: { de: 'Länger b>.\n\nMehr.', en: 'Longer.' }, play: { de: 'Kurz.', en: 'Short.' } });
+  });
+
+  test('limits: one text must fit Play, a play block 500, an app_store block 4000 bytes', () => {
+    assert.doesNotThrow(() => parse(both('x'.repeat(500), 'y')));
+    fails(both('x'.repeat(501), 'y'), /## de \(one text for both stores, so it must fit Play\): 501 Unicode characters, above play's limit of 500/);
+    fails('## de\ntitle: T\n### play\nok\n### app_store\n' + 'ä'.repeat(2001) + '\n## en\ntitle: T\nok\n', /## de ### app_store: 4002 UTF-8 bytes, above app_store's limit of 4000/);
+    fails('## de\ntitle: T\nok\n## en\ntitle: T\n### play\n' + 'ü'.repeat(501) + '\n### app_store\nok\n', /## en ### play: 501 Unicode characters/);
+  });
+
+  test('structure errors', () => {
+    fails('## de\ntitle: T\n\nText\n', /no "## en" section; both languages are required/);
+    fails('## de\nText\n## en\ntitle: T\nText\n', /## de: the first line is "title: <headline>"/);
+    fails('## de\ntitle:\nText\n## en\ntitle: T\nText\n', /## de: the first line is "title: <headline>"/);
+    fails(both('Text', '') , /## en: no text after the title/);
+    fails('## fr\ntitle: T\n', /"## fr": a section is "## de" or "## en"/);
+    fails(`${both('a', 'b')}## de\ntitle: T\nc\n`, /two "## de" sections/);
+    fails('## de\ntitle: T\n### play\nok\n## en\ntitle: T\nok\n', /## de: "### app_store" is missing/);
+    fails('## de\ntitle: T\nvorher\n### play\nok\n### app_store\nok\n## en\ntitle: T\nok\n', /## de: text outside the blocks/);
+    fails('## de\ntitle: T\n### web\nok\n## en\ntitle: T\nok\n', /"### web": a block is "### play" or "### app_store"/);
+    fails(`status: approved\n${both('a', 'b')}`, /the only status is "draft"/);
+    fails(`Hallo\n${both('a', 'b')}`, /"Hallo" comes before "## de"/);
+    assert.equal(parse(`status: draft — pending Peter's review\n${both('a', 'b')}`).status, 'draft');
+  });
+
+  test('the 1.0.0 launch text: both languages within the limits, no Alexa, no improved/fixed list, still a draft', () => {
+    const file = fileURLToPath(new URL('../../releases/changelog/1.0.0.override.md', import.meta.url));
+    const o = parse(readFileSync(file, 'utf8'));
+    assert.equal(o.status, 'draft', "Peter's review is pending");
+    for (const [store, langs] of Object.entries(o.store)) {
+      for (const [lang, text] of Object.entries(langs)) {
+        assert.ok(STORE_LIMITS[store].length(text) <= STORE_LIMITS[store].limit, `${store} ${lang}`);
+        assert.doesNotMatch(text, /alexa|humm\b|verbessert|behoben|improved|fixed|beta/i, `${store} ${lang}`);
+      }
+    }
   });
 });

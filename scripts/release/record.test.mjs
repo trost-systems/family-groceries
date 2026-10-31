@@ -68,6 +68,7 @@ before(() => {
 
   const real = parseRecord(readFileSync(realRecord, 'utf8'));
   record = join(repo, 'record.json');
+  writeFileSync(join(repo, 'flags.json'), readFileSync(fileURLToPath(new URL('../../releases/flags.json', import.meta.url))));
   writeFileSync(record, serializeRecord({ ...real, project: { ...real.project, day_zero: '2026-10-22' }, releases: [] }));
 });
 

@@ -137,6 +137,24 @@ test('preview and local builds put a draft for an unrecorded version on top with
   }
 });
 
+// Job 40: held items (a draft's `held`, pending.json) and the store-text override never reach a page.
+test('held items, pending.json and an override are never rendered, preview included', () => {
+  const held = { category: 'new', de: 'Mit Alexa fügst du Artikel hinzu.', en: 'Add items with Alexa.', flag: null, hold: 'alexa-certification', pr: 152, sha: SHA('7') };
+  const body = changelog({ items: { new: [{ ...item('Widget', 'Widget', 153, SHA('6')), hold: 'ios-widget' }] } });
+  const drafts = {
+    '1.2.0.json': draft('1.2.0', { ...body, held: [held] }),
+    'pending.json': `${JSON.stringify({ items: [held] }, null, 2)}\n`,
+    '1.2.0.override.md': '## de\ntitle: Alexa\n\nAlexa\n\n## en\ntitle: Alexa\n\nAlexa\n',
+  };
+  for (const env of [{}, { VERCEL_ENV: 'preview' }, PROD]) {
+    const { page } = buildSite({ env, repo: { record: RECORD, drafts } });
+    for (const route of [DE, EN]) {
+      assert.doesNotMatch(page(route).toString(), /Alexa|alexa-certification|ios-widget/, `${env.VERCEL_ENV ?? 'local'} ${route}`);
+    }
+    if (env !== PROD) assert.deepEqual(sections(page(EN))[0].categories, [['New', ['Widget']]], 'the open item shows, without its hold');
+  }
+});
+
 test('a draft without items shows the neutral sentence; drafts sort by version', () => {
   const drafts = { '1.10.0.json': draft('1.10.0'), '1.9.0.json': draft('1.9.0') };
   const de = sections(buildSite({ repo: { drafts } }).page(DE));

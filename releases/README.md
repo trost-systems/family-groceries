@@ -40,7 +40,7 @@ Each release:
 | `stores` | Which stores got it: `app_store`, `play`, `web` (app.hummlist.com). |
 | `stats` | From git at record time, over `previous_sha..sha` (the first release counts from the root commit). `commits`; `additions`, `deletions`, `files_changed` of the net diff; `contributors`. |
 | `notes` | Short release notes, `de` and `en` (may be empty), from the workflow's inputs. The changelog is `changelog`. |
-| `changelog` | Optional (job 39). The reviewed changelog: `title` (`de`, `en`, may be empty), `items` (`new`, `improved`, `fixed`, each a list of `{de, en, pr, sha}`), `store` (`app_store` and `play`, each `{de, en}`, the "What's new" texts within the stores' limits). A release without it shows "Fehlerbehebungen und Verbesserungen." on hummlist.com. |
+| `changelog` | Optional (job 39). The reviewed changelog: `title` (`de`, `en`, may be empty), `items` (`new`, `improved`, `fixed`, each a list of `{de, en, pr, sha}`, plus `flag` or `hold` for an item that waited for one, job 40), `store` (`app_store` and `play`, each `{de, en}`, the "What's new" texts within the stores' limits). A release without it shows "Fehlerbehebungen und Verbesserungen." on hummlist.com. |
 
 A contributor is every commit author and every `Co-authored-by:` trailer, merged by identity, so a
 commit by the bot with Peter as co-author counts once for each of them. Each contributor has
@@ -60,3 +60,26 @@ reviews the wording ([`docs/CHANGELOG.md`](../docs/CHANGELOG.md)). When `record.
 that version, it copies `title`, `items` and `store` into the entry and deletes the draft file in
 the same commit, so the record is the one copy afterwards. Preview builds of hummlist.com show
 drafts with a banner; production shows only the record.
+
+A draft also has `held` (job 40): the items whose flag or hold in `flags.json` is still closed,
+each `{category, de, en, flag, hold, pr, sha}` (`flag` or `hold` may be `null`, not both). They
+are not in the store texts, and the site never shows them. Drafts from job 39 have no `held`.
+
+## Gates and pending items (job 40)
+
+`flags.json` lists every feature flag (`rollout`: `full`, `partial` or `off`, and a `note`) and
+every hold (`released`: true or false, a `note`, and optional `match` words). An item with a
+`flag:` or `hold:` line in its PR note is public only when its flag is `full` and its hold
+released. While `alexa-certification` is not released, every item that mentions Alexa is held
+back. The file is edited by hand in a PR when a rollout changes ([`docs/CHANGELOG.md`](../docs/CHANGELOG.md),
+"Gated items").
+
+`changelog/pending.json` holds the items held back by earlier releases, `{"items": [...]}` in
+the `held` format, oldest first. Only `record.mjs add` writes it, in the release commit: the new
+release's held items go in, the ones it published go out. The next draft takes those whose gate
+is open now. The site never reads it.
+
+`changelog/<version>.override.md` is a hand-written title and "What's new" text for one version
+(the 1.0 launch). `draft` and `store` use it instead of the generated texts. While it says
+`status: draft`, `record.mjs add` refuses to record that version. On recording, the override
+is deleted with the draft.

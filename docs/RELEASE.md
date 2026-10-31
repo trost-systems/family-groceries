@@ -55,9 +55,20 @@ Each public release has a user-facing changelog, collected from the
    release and the "What's new" texts: App Store up to 4000 (counted as UTF-8
    bytes), Google Play up to 500 Unicode characters, in German and English.
    Commit the draft in a PR.
+   The dry run (`--dry-run`) also lists the items held back by a flag or a
+   hold, and the items of `releases/changelog/pending.json` whose gate is
+   open now (job 40, [`CHANGELOG.md`](CHANGELOG.md), "Gated items").
 2. **Review.** Peter reviews and edits the wording in that PR. He fills in the
    headline (`title`) and approves the release; a public release needs his yes
-   anyway. After any edit, run
+   anyway. He also checks:
+   - **Held items** (the draft's `held`): is each one still not out for
+     everyone? If a flag reached 100 % or a hold is over (Alexa certified),
+     the same PR sets it in `releases/flags.json` and redrafts with `--force`.
+   - **The override**, if the version has one
+     (`releases/changelog/X.override.md`, the 1.0 launch text): he approves
+     it by deleting its `status: draft` line. Until then `record.mjs add`
+     refuses to record the version.
+   After any edit, run
    `node scripts/release/changelog.mjs store --version X`. Preview builds of
    hummlist.com show the draft on the changelog page with the banner
    "Entwurf, noch nicht im Store". Production does not show it.
@@ -66,8 +77,9 @@ Each public release has a user-facing changelog, collected from the
    metadata upload, no review submission.
 4. **Publish.** After both stores accept the build, the public release step
    runs the Public release record workflow (above). `record.mjs` puts the
-   draft into the new entry as `changelog` and deletes the draft file in the
-   same commit. That push to `main` redeploys hummlist.com, so the changelog
+   draft into the new entry as `changelog` and deletes the draft file (and
+   the override) in the same commit. In that commit it also writes the
+   still-held items to `releases/changelog/pending.json`. That push to `main` redeploys hummlist.com, so the changelog
    page shows the version only once it is live in the stores.
 
 Without a draft, the release is recorded without a changelog: the workflow

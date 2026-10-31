@@ -1,0 +1,10 @@
+{
+  "flags": {},
+  "holds": {
+    "alexa-certification": {
+      "released": false,
+      "note": "the Alexa skill is in beta and not certified by Amazon yet",
+      "match": ["alexa"]
+    }
+  }
+}

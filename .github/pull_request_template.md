@@ -23,11 +23,17 @@ Leave out what users don't see: typo and copy fixes, refactors, CI, docs, tests,
 server internals. Add a fix only if a user could have noticed the bug. If nothing here is
 visible to users, write only: none
 
+Not everyone has it yet? Add "flag: <key>" when the item ships behind a feature flag, or
+"hold: <key>" when it waits for something else (the Alexa skill: hold: alexa-certification).
+The key must be in releases/flags.json; the item stays out of the public changelog until that
+file opens its gate.
+
 Example:
 
 new
 de: Mit Alexa fügst du Artikel per Sprache hinzu: „Alexa, sag Hummlist, füg Milch hinzu“.
 en: Add items with Alexa: "Alexa, tell Hummlist to add milk".
+hold: alexa-certification
 
 fixed
 de: Die Liste springt beim Abhaken nicht mehr nach oben.
