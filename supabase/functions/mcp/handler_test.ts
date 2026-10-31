@@ -8,6 +8,13 @@ const ISSUER = 'https://ref.supabase.co/auth/v1';
 const PUBLIC = 'https://mcp.hummlist.com';
 const PUBLIC_METADATA = `${PUBLIC}/.well-known/oauth-protected-resource`;
 const USER = { userId: 'u', householdId: 'h' };
+const AS_METADATA = {
+  issuer: ISSUER,
+  authorization_endpoint: `${ISSUER}/oauth/authorize`,
+  token_endpoint: `${ISSUER}/oauth/token`,
+  registration_endpoint: `${ISSUER}/oauth/clients/register`,
+  grant_types_supported: ['authorization_code', 'refresh_token'],
+};
 
 function deps(auth: Auth | AuthError): Deps {
   return {
@@ -18,6 +25,7 @@ function deps(auth: Auth | AuthError): Deps {
         authorizationServer: ISSUER,
       }),
     publicOrigin: () => PUBLIC,
+    authServerMetadata: () => Promise.resolve(AS_METADATA),
     authenticate: () => auth instanceof AuthError ? Promise.reject(auth) : Promise.resolve(auth),
     serve: (_req, a) => Promise.resolve(Response.json({ served: a.via })),
     allowedOriginHosts: () => ['inspector.example'],
@@ -233,4 +241,46 @@ Deno.test('CORS preflight answers without auth', async () => {
   );
   assertEquals(res.status, 204);
   assertMatch(res.headers.get('access-control-allow-headers')!, /mcp-protocol-version/);
+});
+
+// 2026-10-31: a connector on the supabase.co URL refreshes without the 401's resource_metadata hint.
+// Its RFC 9728 probe (/.well-known/oauth-protected-resource/functions/v1/mcp) and the root-level
+// RFC 8414 / OIDC probes hit Supabase's gateway (401, no apikey); only
+// <mcp>/.well-known/openid-configuration reaches the function. It got 401, found no token
+// endpoint and never refreshed. These discovery documents must be public.
+Deno.test('serves Supabase Auth metadata at the discovery paths without a token', async () => {
+  for (const base of ['http://edge/mcp', 'http://edge/mcp/']) {
+    for (
+      const suffix of ['.well-known/openid-configuration', '.well-known/oauth-authorization-server']
+    ) {
+      for (const query of ['', '?via=mcp-hummlist']) {
+        const url = `${base.replace(/\/$/, '')}/${suffix}${query}`;
+        const res = await handle(
+          new Request(url),
+          deps(new AuthError('missing_token', 'fehlt')),
+        );
+        assertEquals(res.status, 200, url);
+        assertEquals(res.headers.get('access-control-allow-origin'), '*');
+        assertEquals(res.headers.get('www-authenticate'), null);
+        const body = await res.json();
+        assertEquals(body.token_endpoint, `${ISSUER}/oauth/token`);
+        assertEquals(body.grant_types_supported, ['authorization_code', 'refresh_token']);
+      }
+    }
+  }
+});
+
+Deno.test('auth metadata: other methods get 405, an upstream failure 502', async () => {
+  const d = deps({ ...USER, via: 'pat' });
+  const put = await handle(
+    new Request('http://edge/mcp/.well-known/openid-configuration', { method: 'POST', body: '{}' }),
+    d,
+  );
+  assertEquals(put.status, 405);
+  const down = await handle(new Request('http://edge/mcp/.well-known/openid-configuration'), {
+    ...d,
+    authServerMetadata: () => Promise.reject(new Error('down')),
+  });
+  assertEquals(down.status, 502);
+  assertEquals((await down.json()).error, 'temporarily_unavailable');
 });

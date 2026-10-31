@@ -107,6 +107,19 @@ else
   fail "authorization server metadata: want 200 with issuer \"$issuer\" and authorization/token/registration endpoints; $(got as)"
 fi
 
+# A client refreshing without the 401's resource_metadata hint treats the MCP URL as the
+# authorization server and probes <endpoint>/.well-known/openid-configuration (the root-level
+# probes on supabase.co hit Supabase's gateway). It must find a token endpoint there without a
+# token, or the refresh never starts (incident 2026-10-31, docs/MCP.md).
+request asfallback "$base/.well-known/openid-configuration"
+if [[ $(status asfallback) == 200 ]] && jq -e --arg iss "$issuer" '.issuer == $iss and
+    (.token_endpoint | type == "string") and (.grant_types_supported | index("refresh_token"))' \
+  "$work/asfallback.body" >/dev/null 2>&1; then
+  pass "hint-less discovery: $base/.well-known/openid-configuration names the token endpoint"
+else
+  fail "hint-less discovery: want 200 with issuer \"$issuer\" and a refresh_token token endpoint at $base/.well-known/openid-configuration; $(got asfallback)"
+fi
+
 if [[ -z ${MCP_SMOKE_TOKEN:-} ]]; then
   skip 'initialize + tools/list: MCP_SMOKE_TOKEN not set'
 else

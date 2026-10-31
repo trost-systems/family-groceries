@@ -175,6 +175,18 @@ The function (`supabase/functions/mcp/handler.ts`):
    supabase.co, so clients find the document through the
    `WWW-Authenticate` header, which the MCP specification lists first. On
    mcp.hummlist.com the proxy serves it at the root path as well.
+   It also serves Supabase Auth's Authorization Server Metadata, unchanged,
+   at `<endpoint>/.well-known/openid-configuration` and
+   `<endpoint>/.well-known/oauth-authorization-server`, without a token.
+   Some clients refresh without the `WWW-Authenticate` hint: they probe the
+   RFC 9728 root path (`supabase.co/.well-known/oauth-protected-resource/functions/v1/mcp`),
+   which Supabase's gateway answers with 401 (no apikey), then treat the MCP
+   URL as the authorization server and probe those paths. Until 2026-10-31
+   that last probe got 401 too, so such a connector on the supabase.co URL
+   lost access about an hour after connecting (access tokens live one hour)
+   and could not start a new sign-in either. `https://mcp.hummlist.com`
+   never had this problem (its root `/.well-known/oauth-protected-resource`
+   works), so it stays the URL to connect with.
 2. Answers requests without a valid credential with `401` and
    `WWW-Authenticate: Bearer resource_metadata="…", scope="openid email"`,
    plus `error="invalid_token"` when a token was sent but rejected. A valid
