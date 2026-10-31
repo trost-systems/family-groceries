@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Tests push-pr.sh and merge-pr.sh against a scratch remote and a fake gh: the landed message is
 # the PR title and description with the co-author trailers (MODEL_CO_AUTHOR optional, Peter's
-# last), and MERGE_WAIT_MINUTES takes whole minutes only. Run by the lint gate.
+# last), the description's `## Changelog` section (job 39; "none" added when no app build
+# changes), and MERGE_WAIT_MINUTES takes whole minutes only. Run by the lint gate.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -15,8 +16,10 @@ expect_eq() {
 
 git init -q --bare -b main "$tmp/origin.git"
 git clone -q "$tmp/origin.git" "$tmp/work" 2>/dev/null
-mkdir "$tmp/work/scripts" "$tmp/bin" "$tmp/pr"
+mkdir -p "$tmp/work/scripts/release" "$tmp/work/site" "$tmp/bin" "$tmp/pr"
 cp "$REPO_ROOT"/scripts/{lib,push-pr,merge-pr}.sh "$tmp/work/scripts/"
+cp "$REPO_ROOT"/scripts/release/{changelog.mjs,plan.sh} "$tmp/work/scripts/release/"
+cp "$REPO_ROOT"/site/releases.mjs "$tmp/work/site/"
 export GIT_AUTHOR_NAME=dev GIT_AUTHOR_EMAIL=dev@example.com GIT_COMMITTER_NAME=dev GIT_COMMITTER_EMAIL=dev@example.com
 cd "$tmp/work"
 git commit -q --allow-empty -m init
@@ -40,6 +43,9 @@ case "$1 $2" in
       *) echo "fake gh: no answer for $*" >&2; exit 1 ;;
     esac ;;
   "pr checks") cat "$pr/ci" ;;
+  "pr edit")
+    cp "${*: -1}" "$pr/body"
+    echo edited >>"$pr/edited" ;;
   "pr merge")
     head="${*: -1}"
     git --git-dir="$FAKE_REMOTE" update-ref refs/heads/main "$head"
@@ -74,6 +80,9 @@ Lists load in one query.
 ## Tests
 - list.spec.ts
 
+## Changelog
+none
+
 Co-authored-by: Bob <bob@example.com>
 Co-authored-by: Alice <alice@example.com>
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -102,7 +111,10 @@ expect_eq "a MODEL_CO_AUTHOR a commit already names appears once" \
 open_pr p4
 printf '' >"$tmp/pr/body"
 scripts/push-pr.sh >/dev/null
-expect_eq "an empty description leaves subject and trailers" "$(body_of p4)" "Make lists faster (#7)
+expect_eq "an empty description leaves subject, the added changelog and trailers" "$(body_of p4)" "Make lists faster (#7)
+
+## Changelog
+none
 
 Co-authored-by: Alice <alice@example.com>
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
@@ -115,6 +127,50 @@ if MODEL_CO_AUTHOR="Claude" scripts/push-pr.sh >/dev/null 2>"$tmp/err"; then
 fi
 grep -q "MODEL_CO_AUTHOR must look like 'Name <email>'" "$tmp/err" || fail "no MODEL_CO_AUTHOR error: $(cat "$tmp/err")"
 expect_eq "a bad MODEL_CO_AUTHOR pushes nothing" "$(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p5)" "$before"
+
+# Job 39: the changelog section. p1 above had none and only non-app files: "none" was added.
+expect_eq "push-pr.sh adds none once, also after a description edit" "$(body_of p1 | grep -c '^## Changelog$')" 1
+app_pr() {
+  open_pr "$1"
+  mkdir -p app && echo x >app/main.dart && git add app && git commit -q -m "app change"
+  printf '%s' "$2" >"$tmp/pr/body"
+  rm -f "$tmp/pr/edited"
+}
+expect_refused() {
+  local before
+  before="$(git --git-dir="$tmp/origin.git" rev-parse "refs/heads/$(git symbolic-ref --short HEAD)")"
+  if scripts/push-pr.sh >/dev/null 2>"$tmp/err"; then fail "$1: push-pr.sh pushed"; fi
+  grep -qF -- "$2" "$tmp/err" || fail "$1: expected '$2' in: $(cat "$tmp/err")"
+  grep -qF -- "en: Add items by voice with Alexa." "$tmp/err" || fail "$1: no format example in: $(cat "$tmp/err")"
+  expect_eq "$1: nothing pushed" "$(git --git-dir="$tmp/origin.git" rev-parse "refs/heads/$(git symbolic-ref --short HEAD)")" "$before"
+  [[ ! -e $tmp/pr/edited ]] || fail "$1: the PR description was edited"
+}
+app_pr c1 $'Adds a screen.\r\n'
+expect_refused "an app change without a section" "this PR changes the app or its backend: add a ## Changelog section"
+open_pr c1b
+mkdir -p supabase/functions/alexa && echo x >supabase/functions/alexa/index.ts && git add supabase && git commit -q -m "alexa"
+printf 'Alexa learns a word.\n' >"$tmp/pr/body"
+rm -f "$tmp/pr/edited"
+expect_refused "a backend change without a section" "this PR changes the app or its backend"
+app_pr c2 $'Adds a screen.\n\n## Changelog\nnew\nde: Ein neuer Bildschirm.\n'
+expect_refused "an item without en:" 'invalid: new item "Ein neuer Bildschirm." has no "en:" line'
+app_pr c3 $'Adds a screen.\n\n## Changelog\nnone\n\nfixed\nde: A.\nen: B.\n'
+expect_refused "none with items" '"none" and items in one section'
+app_pr dependabot/npm/x $'Bumps x.\n'
+scripts/push-pr.sh >/dev/null 2>&1 || fail "a Dependabot PR without a section was refused"
+expect_eq "a Dependabot PR gets none" "$(body_of dependabot/npm/x | sed -n '3,6p')" "Bumps x.
+
+## Changelog
+none"
+app_pr c4 $'Adds a screen.\n\n## Changelog\nnew\nde: Ein neuer Bildschirm.\nen: A new screen.\n'
+scripts/push-pr.sh >/dev/null
+expect_eq "a valid section lands unchanged" "$(body_of c4 | sed -n '3,8p')" "Adds a screen.
+
+## Changelog
+new
+de: Ein neuer Bildschirm.
+en: A new screen."
+[[ ! -e $tmp/pr/edited ]] || fail "a valid section: the PR description was edited"
 
 open_pr p6
 scripts/merge-pr.sh 7 >/dev/null 2>&1 && status=0 || status=$?

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests scripts/release/ offline: when a Release run ships or skips (fixture facts), how it finds
 # the last upload (fake gh), the TestFlight notes (scratch repo), the failure issue (fake gh), the
-# AAB signer check (throwaway keystore) and the public release record (record.test.mjs). Run by
-# the lint gate.
+# AAB signer check (throwaway keystore), the public release record (record.test.mjs), the
+# changelog collector (changelog.test.mjs) and the CI changelog gate (scratch merge commits). Run
+# by the lint gate.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 
@@ -437,6 +438,44 @@ fi
 
 # --- record.mjs -----------------------------------------------------------------------------
 node --test "$here/record.test.mjs" >"$tmp/record.log" 2>&1 || fail "record.test.mjs"$'\n'"$(cat "$tmp/record.log")"
+
+# --- changelog.mjs and gates/changelog.sh -----------------------------------------------------
+node --test "$here/changelog.test.mjs" >"$tmp/changelog.log" 2>&1 || fail "changelog.test.mjs"$'\n'"$(cat "$tmp/changelog.log")"
+
+root="$(cd "$here/../.." && pwd)"
+gate_repo="$tmp/gate"
+mkdir -p "$gate_repo/scripts/gates" "$gate_repo/scripts/release" "$gate_repo/site"
+cp "$root/scripts/lib.sh" "$gate_repo/scripts/"
+cp "$root/scripts/gates/changelog.sh" "$gate_repo/scripts/gates/"
+cp "$root/scripts/release/"{changelog.mjs,plan.sh} "$gate_repo/scripts/release/"
+cp "$root/site/releases.mjs" "$gate_repo/site/"
+(cd "$gate_repo" && git init -q -b main && git add -A && git -c user.name=t -c user.email=t@example.com commit -q -m base)
+# gate <changed path> <PR head message> <PR description>: the gate on a pull_request run, on the
+# merge commit of a PR head that changes the path.
+gate() {
+  (
+    cd "$gate_repo"
+    git checkout -q -B pr main
+    mkdir -p "$(dirname "$1")" && echo x >"$1" && git add -A
+    git -c user.name=t -c user.email=t@example.com commit -q -m "$2"
+    git checkout -q --detach main
+    git -c user.name=t -c user.email=t@example.com merge -q --no-ff -m merge pr
+    jq -n --arg body "$3" '{pull_request: {body: $body}}' >"$tmp/event.json"
+    GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH="$tmp/event.json" scripts/gates/changelog.sh 2>&1
+  )
+}
+broken=$'Title (#9)\n\n## Changelog\nfixd\nde: A.\nen: B.'
+if out="$(gate app/a.dart "$broken" '')"; then fail "changelog gate: a broken section on the PR head must fail"; fi
+expect_match "changelog gate: names the problem" "$out" 'unknown category "fixd"'
+out="$(gate app/b.dart $'Title (#9)\n\n## Changelog\nnone\n\nCo-authored-by: Peter Trost <peter@petertrost.com>' '')" || fail "changelog gate: none on the PR head passes"$'\n'"$out"
+expect_match "changelog gate: none" "$out" 'changelog: none'
+out="$(gate app/c.dart 'wip' $'## Changelog\r\nfixed\r\nde: A.\r\nen: B.\r\n')" || fail "changelog gate: a head without a section falls back to the PR description"$'\n'"$out"
+expect_match "changelog gate: reads the description" "$out" 'changelog: fixed: B\.'
+if out="$(gate app/d.dart 'wip' 'No section.')"; then fail "changelog gate: an app change without any section must fail"; fi
+expect_match "changelog gate: asks for the section" "$out" 'this PR changes the app or its backend: add a ## Changelog section'
+if out="$(gate supabase/functions/voice/parse.ts 'wip' 'No section.')"; then fail "changelog gate: a backend change without any section must fail"; fi
+out="$(gate docs/e.md 'wip' 'No section.')" || fail "changelog gate: a docs change without a section passes"$'\n'"$out"
+expect_match "changelog gate: push-pr.sh adds none" "$out" 'push-pr.sh adds "none"'
 
 if [[ $failures -gt 0 ]]; then
   echo "release tests: $failures failed" >&2

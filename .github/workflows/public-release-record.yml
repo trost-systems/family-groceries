@@ -1,6 +1,7 @@
 # Records a public store release in releases/releases.json (releases/README.md) and pushes that one
 # change to main. Run it, or call it from the public release step, once the stores have accepted
-# the build. The record is the site's source for the live version, so hummlist.com shows a release
+# the build. The reviewed changelog draft releases/changelog/<version>.json goes into the entry and
+# the draft file is deleted in the same commit (job 39, docs/CHANGELOG.md). The record is the site's source for the live version, so hummlist.com shows a release
 # only after this run. Dry run by default: it prints the entry and changes nothing.
 name: Public release record
 
@@ -99,7 +100,7 @@ jobs:
         run: |
           git config user.name petertrost-bot
           git config user.email 341616691+petertrost-bot@users.noreply.github.com
-          git add releases/releases.json
+          git add -A releases
           git commit -q -m "Release $VERSION: public release record" -m "Co-authored-by: Peter Trost <peter@petertrost.com>"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then exit 0; fi

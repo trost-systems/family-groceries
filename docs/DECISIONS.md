@@ -4475,3 +4475,103 @@ Job 25's review 0 (PASS) listed nice-to-haves that are real behavior gaps; these
    `notes.en` follows the page locale. A totals row sums the entries, and "Tag N" since `day_zero`
    is shown in the header. Every page's footer gets a "Versionen" / "History" link once the page
    exists; with an empty record it would say "Noch keine öffentliche Version".
+
+## Job 39: user-facing changelog from the PRs' notes, 2026-10-31
+
+Peter asked for a changelog for the stores' "What's new" field and for interested users, like
+x.ai/changelog/bot. He wants it automated, published only once a version is live, and limited to
+changes users notice. Format and flow: `docs/CHANGELOG.md`.
+
+1. **The note lives in the PR description, and the collector reads it from git.** push-pr.sh
+   already lands the description as the body of the one commit `main` takes. So
+   `changelog.mjs draft` reads the notes with `git log --first-parent` and needs neither the GitHub
+   API nor a token. This also covers PRs that GitHub shows as Closed after a landed merge (#118),
+   and the tests run against a scratch repository. A commit without a section counts as `none`.
+   Old PRs are not backfilled.
+2. **The format is strict in structure and lenient in wording.** An item is a paragraph: a
+   category line, a `de:` line and an `en:` line, or the section is just `none`. Case, a trailing
+   colon, list dashes and the German category words (`neu`, `verbessert`, `behoben`, `keine`) are
+   accepted. An unknown category, a missing language, an empty or duplicate line, `none` with
+   items, an empty section or two sections are errors with a message. A paragraph that is neither
+   an item nor `none` ends the section, because the agents' "Generated with" line and trailers
+   follow it. But a later paragraph that looks like an item is an error, so a note can't be lost
+   silently. An untouched template (only the comment) is an empty section, so an error: the author
+   has to choose. The wording itself (one sentence, user words) is guidance for the author, not a
+   check.
+3. **A missing section means `none` only when nothing users could notice changes.** The brief
+   ties this to the Release run's rule (`plan.sh ships-app`: `app/` or `release.yml`), and that
+   rule is reused. The review showed the rule alone gives `none` silently to an Alexa, Siri, MCP
+   or classifier change: those go live from `main` without an app release, and the brief's own
+   example item is an Alexa feature. So `supabase/` and `alexa/` also need a written section
+   (deviation from the brief). For an internal backend change, the author writes `none`, one
+   word. Such a note lands in the next release's changelog, the first store version that
+   carries it. A Dependabot branch gets `none` as well, matching the CI
+   skip, since a dependency bump is no change users see. push-pr.sh adds the line to the PR description with
+   `gh pr edit` before it squashes, so the description and the landed commit agree, and
+   merge-pr.sh's stale-description check still holds.
+4. **The CI check is a small gate of its own, `changelog`.** `check-gates.sh` requires every check
+   to be a gate script with a job of the same name in `ci-ok`'s needs, so it can't be a step in an
+   existing job. The job is a checkout (depth 2) and node, which the runner already has, and takes
+   seconds. It runs on `pull_request` only, and is skipped by job-level `if` for Dependabot (actor
+   or `dependabot/` head ref). A skipped job is neither failure nor cancelled, so `ci-ok` stays
+   green on #33 and #34. It checks the PR head's message (`HEAD^2` of the merge checkout). When
+   that message has no section (a head pushed with plain `git push`), it checks the description in
+   the event payload instead, which is what merge-pr.sh's squash would land. A non-app PR without
+   a section passes there, as push-pr.sh will add `none`. Locally (verify.sh) the gate checks
+   HEAD's message only if it has a section, because branch commits are working commits until
+   push-pr.sh squashes them.
+5. **Store limits are counted the strict way.** Apple documents "4000 characters", but fastlane's
+   pilot cuts at 4000 UTF-8 bytes, so the App Store text is counted in bytes ("ä" counts 2). Google
+   Play documents "500 Unicode characters per language", counted as code points after NFC. That is
+   never fewer than the characters a person sees. When a text is too long, whole items go from the
+   end, fixed first, then improved, then new, and a line with the anchored URL
+   (`hummlist.com/de/changelog#v1-0-0`) follows. Sentences are never cut. Emoji and `<` are
+   stripped from both stores' texts, like pilot's `sanitize_changelog`, so both texts are built by
+   one rule. "Emoji" is what renders as one: emoji presentation, or a pictograph with the emoji
+   selector U+FE0F. That is close to pilot's RGI emoji set. ©, ™, arrows and a plain ✔ are text
+   and stay. A space left before punctuation is removed, and an item that is only emoji gets no
+   line. The site keeps the items as written. `parseRecord` and `parseDraft` reject any store
+   text over its limit, also one edited by hand. Bullets are `•`, plain text, no Markdown, since
+   neither store renders it.
+6. **Order and duplicates.** Within a category, items keep merge order, oldest first, so a release
+   reads like its history. A second item with the same German and English sentence is dropped, even
+   in another category; the first one wins. Each item keeps `pr` and `sha` for tracing; the site
+   never renders them.
+7. **A draft is never overwritten.** `draft` refuses an existing file unless `--force`. Detecting
+   "edited" would need a fingerprint field, and merging regenerated items into reviewed ones has
+   no right answer when wording changed. Rather than regenerate, a reviewer edits the file by hand
+   and runs `changelog.mjs store --version X`, which rewrites only the store texts from the edited
+   title and items. The changelog gate (`changelog.mjs drafts`) and `record.mjs` refuse a draft
+   whose store texts don't match its title and items. Without this, a reviewed item could show
+   on hummlist.com while the stores say "Bug fixes and improvements." (found in review). The
+   title starts empty: the script doesn't propose one, because a headline
+   built from item sentences would be invented wording. `draft` prints a reminder instead.
+8. **An invalid note on main stops the draft.** CI makes this unlikely, but if it happens,
+   `draft` names every bad commit. `--skip <sha>` passes over one after its item has been written
+   into the draft by hand. A silent skip would lose a user-visible change.
+9. **Handover: the draft moves into the record and the file is deleted.** `record.mjs add` copies
+   `title`, `items` (with `pr` and `sha`) and `store` into the entry as `changelog`, and deletes
+   `releases/changelog/<version>.json` in the same commit. The workflow stages all of `releases/`.
+   Keeping the file with `status: released` would leave two copies to keep in sync. With `pr` and
+   `sha` in the record, nothing is lost. Without a draft the release is recorded without
+   `changelog`, with a warning. A draft collected from another range than the release's warns but
+   doesn't stop: the reviewed text is what Peter approved. `notes` keeps its job 38 meaning (free
+   text from the workflow inputs) and is not filled from the changelog, so no 38 field changes
+   meaning or shape.
+10. **History compatibility.** `changelog` is an optional, additive field, and `parseRecord` is
+    strict only when it is present. Job 38's entries and tests pass unchanged, and no 38 field was
+    renamed or restructured. The planned `/history` page can read `changelog.title` as each
+    entry's headline next to the stats.
+11. **The site lists every public release.** The brief says both "only releases that have a
+    changelog" and "a public release without a changelog shows version, date and 'Fehlerbehebungen
+    und Verbesserungen.'". The second is the more specific rule, and hiding a public release would
+    make the list look like versions are missing, so every public release is listed. Drafts are
+    validated in every build, production included. A broken draft fails the build loudly instead
+    of disappearing. CI's site gate builds the same files before anything reaches main.
+12. **Footer.** The link „Neuigkeiten“ / "What's new" is the last item in the existing footer nav.
+    That nav is labelled "Rechtliches" / "Legal" and already holds "Hilfe". Relabelling it would
+    change every page beyond the one added line, so it stays for now. The page carries no
+    page-level noindex: like job 38's unreleased sections, a draft is marked by its banner. Preview
+    deployments are behind Vercel's login anyway, and `site/vercel.json` is unchanged.
+13. **This PR's own note is `none`.** It adds a page to the site and tooling around the release;
+    the site is not an app release, and nothing in the app changes.

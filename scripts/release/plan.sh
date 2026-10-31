@@ -2,6 +2,8 @@
 # Decides whether a Release run ships, and which commit (docs/RELEASE.md, "When a run ships").
 #   plan.sh gather            facts as JSON on stdout, from git, the Actions API and ASC (network)
 #   plan.sh decide <facts>    ship/blocked/current/reason/sha as key=value lines for $GITHUB_OUTPUT (pure)
+#   plan.sh ships-app         true when a changed path on stdin (one per line) goes into the app
+#                             builds, else false (pure; push-pr.sh's changelog check, job 39)
 # gather reads EVENT, FORCE, UPLOAD, MAIN_SHA (main's tip: now, or for a dispatch when it was
 # started), TRIGGER_SHA (the commit whose CI started a workflow_run run, else empty), BUILD_NUMBER, GITHUB_REPOSITORY, GH_TOKEN and
 # TESTFLIGHT_JSON (the `ios preflight` lane's output, absent without iOS), and runs in a clone
@@ -145,8 +147,22 @@ decide() {
   }
 }
 
+ships_app() {
+  local path app
+  while IFS= read -r path; do
+    for app in "${app_paths[@]}"; do
+      if [[ $path == "$app" || $path == "$app"/* ]]; then
+        echo true
+        return
+      fi
+    done
+  done
+  echo false
+}
+
 case "${1:-}" in
   gather) gather ;;
   decide) decide "$2" ;;
-  *) echo "usage: $0 gather | decide <facts.json>" >&2; exit 2 ;;
+  ships-app) ships_app ;;
+  *) echo "usage: $0 gather | decide <facts.json> | ships-app <paths" >&2; exit 2 ;;
 esac

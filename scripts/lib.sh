@@ -154,6 +154,44 @@ squash_commit() {
       git commit-tree "$(git rev-parse "$head^{tree}")" -p origin/main
 }
 
+# Job 39: may a PR whose description (or commit message) is in file $1 and whose changed paths
+# are in file $2 land as far as its `## Changelog` section goes (docs/CHANGELOG.md)? Prints "ok",
+# or "add-none" when there is no section and the PR changes nothing users could notice, or the
+# branch $3 is Dependabot's (then the section is just "none"). Users notice the app builds
+# (`plan.sh ships-app`) and the backend they talk to: supabase/ (functions, migrations, the
+# classifier) and the Alexa skill (alexa/), which go live from main without an app release.
+# Otherwise prints why on stderr, with the format, and fails.
+changelog_verdict() {
+  local out code=0
+  out="$(node "$REPO_ROOT/scripts/release/changelog.mjs" check --file "$1" 2>&1)" || code=$?
+  if [[ $code == 0 ]]; then
+    echo ok
+  elif [[ $code == 3 && ( ${3:-} == dependabot/* || ( "$("$REPO_ROOT/scripts/release/plan.sh" ships-app <"$2")" == false \
+    && "$(grep -cE '^(supabase|alexa)/' "$2")" == 0 ) ) ]]; then
+    echo add-none
+  else
+    if [[ $code == 3 ]]; then
+      echo "this PR changes the app or its backend: add a ## Changelog section to the PR description (category + de + en, or none), then rerun" >&2
+    else
+      echo "the PR description's ## Changelog section is invalid: ${out#changelog: }" >&2
+    fi
+    cat >&2 <<'FORMAT'
+Format (docs/CHANGELOG.md): one item per paragraph, a category (new, improved or fixed) and one
+sentence per language, in user words; or the single word none when users see no change.
+
+## Changelog
+new
+de: Mit Alexa fügst du Artikel per Sprache hinzu.
+en: Add items by voice with Alexa.
+
+fixed
+de: Die Liste springt beim Abhaken nicht mehr nach oben.
+en: The list no longer jumps to the top when you check off an item.
+FORMAT
+    return 1
+  fi
+}
+
 # Rebases the current branch onto origin/main, carrying local edits of skip-worktree files (a
 # checkout's port block in supabase/config.toml, COORDINATION.md) across: git refuses to rebase
 # over them once main changes such a file.

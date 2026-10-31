@@ -82,6 +82,25 @@ live version: 1.4.0 (from public release record)
 A missing or invalid file fails the build and names it. On Vercel the project setting "Include
 files outside the root directory in the Build Step" must stay on, or the build can't read them.
 
+## Changelog
+
+`/de/changelog` („Neuigkeiten“) and `/en/changelog` ("What's new") are generated, not Markdown.
+The build reads two sources from outside `site/` (`../releases/README.md` explains both formats):
+
+- `../releases/releases.json`: every public release, newest first, with version, date and its
+  `changelog` (title, then the items under Neu / Verbessert / Behoben, New / Improved / Fixed).
+  A release without a changelog, or with no items, shows "Fehlerbehebungen und
+  Verbesserungen." / "Bug fixes and improvements.". PR numbers and commit shas are never shown.
+- `../releases/changelog/<version>.json`: drafts of the next release. Preview and local builds
+  show each draft whose version the record doesn't have yet on top, with the banner "Entwurf,
+  noch nicht im Store" / "Draft, not in the stores yet" and no date. Production never shows them.
+
+Every build checks every draft, production included: an invalid draft, or a file whose name isn't
+its `version` plus `.json`, fails the build and names the file. Other files in that folder are
+ignored, and the folder may be missing. Each release has the anchor `#v1-4-0` for version 1.4.0.
+With nothing to show, the page says the first version is coming soon. Every page's footer links
+the changelog of its language.
+
 ## Other pages
 
 - `content/indexes/<locale>.md`: the index intro (`title`, `description`, `locale`); the guide list

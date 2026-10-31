@@ -15,6 +15,7 @@ the same things.
 | --- | --- | --- |
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
 | `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh` | yes |
+| `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/` ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
 | `site` | The guides site in `site/`: build checks, tests, a production build; no real access token in the repo | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
@@ -203,8 +204,23 @@ edited after the last push can't land stale. Trailers follow the body:
   nothing is added. A value that is not `Name <email>` stops the push.
 - Peter's trailer, always last.
 
+The description needs a `## Changelog` section ([`CHANGELOG.md`](CHANGELOG.md)).
+push-pr.sh checks it before it squashes. When the section is missing and the
+PR changes nothing in the app builds, `supabase/` or `alexa/`, it adds
+`## Changelog` + `none` to the PR description. When the section is missing
+and one of those changes, or the
+section is invalid, it stops and prints the format. The `changelog` gate
+checks the same section on the PR head in CI. On a pull request, CI checks out
+the merge commit: `HEAD^1` is the base and `HEAD^2` the PR head. The gate
+reads `HEAD^2`'s message. A head pushed with plain `git push` has no section
+in its message, so the gate reads the PR description from the event instead.
+The job is skipped for Dependabot, by actor or by a `dependabot/` head branch,
+so its PRs stay green without a note. It is also skipped on pushes to `main`.
+A skipped job does not fail `ci-ok`.
+
 `scripts/landing-test.sh` (run by the lint gate) covers these rules against
-a scratch remote and a fake `gh`.
+a scratch remote and a fake `gh`. The gate's own cases (scratch merge
+commits) are in `scripts/release/test.sh`.
 
 If `main` moved after your last push, the commit is no longer on top of
 `main`. merge-pr.sh then stops and says so. Run `scripts/push-pr.sh` again

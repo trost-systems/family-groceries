@@ -1,12 +1,13 @@
 // record.mjs against a scratch git repository: stats, contributors, refusals. Run by scripts/release/test.sh.
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { parseRecord, serializeRecord } from '../../site/releases.mjs';
+import { RecordError, parseRecord, serializeRecord } from '../../site/releases.mjs';
+import { storeTexts } from './changelog.mjs';
 
 const cli = fileURLToPath(new URL('record.mjs', import.meta.url));
 const realRecord = fileURLToPath(new URL('../../releases/releases.json', import.meta.url));
@@ -171,4 +172,82 @@ test('refuses a commit the previous release is not part of', () => {
   const out = run('--version', '1.2.0', '--build', '20', '--sha', shas.c5);
   assert.equal(out.code, 1);
   assert.match(out.stderr, /^record: 1\.1\.0's sha .* is not an ancestor/);
+});
+
+// Job 39: the reviewed changelog draft next to the record goes into the entry.
+const draftOf = (version, sha, previous, items = { new: [{ de: 'Neu.', en: 'New.', pr: 7, sha }], improved: [], fixed: [] }) => {
+  const changelog = { title: { de: 'Titel', en: 'Title' }, items };
+  return { version, status: 'draft', generated_from: { previous_sha: previous, sha }, ...changelog, store: storeTexts(changelog, version) };
+};
+const draftPath = (version) => join(repo, 'changelog', `${version}.json`);
+const writeDraft = (draft) => {
+  mkdirSync(join(repo, 'changelog'), { recursive: true });
+  writeFileSync(draftPath(draft.version), `${JSON.stringify(draft, null, 2)}\n`);
+};
+
+test('a dry run shows the draft in the entry and keeps the draft file', () => {
+  writeDraft(draftOf('1.2.0', shas.c6, shas.c6));
+  const out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--dry-run');
+  assert.equal(out.code, 0, out.stderr);
+  const entry = JSON.parse(out.stdout.slice(0, out.stdout.lastIndexOf('}') + 1));
+  assert.deepEqual(entry.changelog.items.new, [{ de: 'Neu.', en: 'New.', pr: 7, sha: shas.c6 }]);
+  assert.match(out.stdout, /changelog\/1\.2\.0\.json kept/);
+  assert.ok(existsSync(draftPath('1.2.0')));
+});
+
+test('without a draft the release has no changelog, with a warning', () => {
+  rmSync(draftPath('1.2.0'));
+  const out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--dry-run');
+  assert.equal(out.code, 0, out.stderr);
+  assert.match(out.stderr, /no .*changelog\/1\.2\.0\.json, so 1\.2\.0 has no changelog/);
+  assert.ok(!('changelog' in JSON.parse(out.stdout.slice(0, out.stdout.lastIndexOf('}') + 1))));
+});
+
+test('refuses a draft of another version and a malformed draft', () => {
+  writeDraft({ ...draftOf('1.3.0', shas.c6, shas.c6), version: '1.3.0' });
+  writeFileSync(draftPath('1.2.0'), readFileSync(draftPath('1.3.0')));
+  let out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--dry-run');
+  assert.equal(out.code, 1);
+  assert.match(out.stderr, /is the changelog of 1\.3\.0, not 1\.2\.0/);
+  writeDraft({ ...draftOf('1.2.0', shas.c6, shas.c6), items: { new: [{ de: 'Neu.', pr: 7, sha: shas.c6 }], improved: [], fixed: [] } });
+  out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--dry-run');
+  assert.equal(out.code, 1);
+  assert.match(out.stderr, /items\.new\[0\]\.en: missing/);
+  rmSync(draftPath('1.3.0'));
+  const stale = draftOf('1.2.0', shas.c6, shas.c6);
+  stale.items.new[0].de = 'Anders.';
+  writeDraft(stale);
+  out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--dry-run');
+  assert.equal(out.code, 1, 'store texts edited away from the items');
+  assert.match(out.stderr, /store texts app_store\.de, play\.de are not what its title and items give/);
+});
+
+test('records the changelog and deletes the draft file', () => {
+  writeDraft(draftOf('1.2.0', shas.c6, shas.c6));
+  const out = run('--version', '1.2.0', '--sha', shas.c6, '--build', '12', '--date', '2026-10-31');
+  assert.equal(out.code, 0, out.stderr);
+  assert.match(out.stdout, /moved the changelog from .*1\.2\.0\.json into the record/);
+  assert.ok(!existsSync(draftPath('1.2.0')));
+  const r = release('1.2.0');
+  assert.deepEqual(r.changelog.title, { de: 'Titel', en: 'Title' });
+  assert.equal(r.changelog.store.play.en, 'Title\n\nNew:\n• New.');
+  assert.deepEqual(release('1.1.0').changelog, undefined, 'earlier entries keep their shape');
+});
+
+test('parseRecord: entries without changelog pass, a malformed changelog fails', () => {
+  const data = JSON.parse(readFileSync(record, 'utf8'));
+  const rejects = (patch, pattern) => {
+    const copy = structuredClone(data);
+    patch(copy.releases.at(-1).changelog);
+    assert.throws(() => parseRecord(JSON.stringify(copy)), (e) => e instanceof RecordError && pattern.test(e.message), String(pattern));
+  };
+  assert.doesNotThrow(() => parseRecord(JSON.stringify(data)));
+  rejects((c) => delete c.store, /changelog\.store: missing/);
+  rejects((c) => (c.items.wow = []), /changelog\.items\.wow: unknown field/);
+  rejects((c) => (c.items.new[0].de = ''), /items\.new\[0\]\.de: must not be empty/);
+  rejects((c) => (c.items.new[0].en = 'two\nlines'), /items\.new\[0\]\.en: must be one line/);
+  rejects((c) => (c.items.new[0].sha = 'abc'), /items\.new\[0\]\.sha: must be a full commit sha/);
+  rejects((c) => (c.items.new[0].pr = '7'), /items\.new\[0\]\.pr: must be a PR number or null/);
+  rejects((c) => (c.store.play.de = 'x'.repeat(501)), /store\.play\.de: is 501 Unicode characters, above the store's limit of 500/);
+  rejects((c) => (c.store.app_store.de = 'ä'.repeat(2001)), /store\.app_store\.de: is 4002 UTF-8 bytes/);
 });

@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
 import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
-import { RecordError, compareVersions, isVersion, parseRecord, publicReleases } from './releases.mjs';
+import { CATEGORIES, RecordError, compareVersions, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(SITE_DIR, '..');
@@ -20,6 +20,7 @@ export const LOCALES = {
       imprint: { label: 'Impressum', href: '/impressum' },
       privacy: { label: 'Datenschutz', href: '/datenschutz' },
       support: { label: 'Hilfe', href: '/support' },
+      changelog: { label: 'Neuigkeiten', href: '/de/changelog' },
     },
     ui: {
       updated: 'Aktualisiert',
@@ -28,6 +29,15 @@ export const LOCALES = {
       draft: 'ENTWURF: Freigabe durch Peter',
       unreleased: (v) => `Ab Version ${v}, noch nicht im Store`,
       since: (v) => `Ab App-Version ${v}`,
+      changelog: {
+        title: 'Neuigkeiten',
+        description: 'Was jede Version von Hummlist neu bringt, verbessert und behebt.',
+        version: (v) => `Version ${v}`,
+        categories: { new: 'Neu', improved: 'Verbessert', fixed: 'Behoben' },
+        neutral: 'Fehlerbehebungen und Verbesserungen.',
+        draft: 'Entwurf, noch nicht im Store',
+        empty: 'Die erste Version von Hummlist ist bald in den Stores. Hier steht dann, was jede neue Version bringt.',
+      },
     },
   },
   en: {
@@ -38,6 +48,7 @@ export const LOCALES = {
       imprint: { label: 'Imprint', href: '/en/imprint' },
       privacy: { label: 'Privacy', href: '/en/privacy' },
       support: { label: 'Support', href: '/en/support' },
+      changelog: { label: "What's new", href: '/en/changelog' },
     },
     ui: {
       updated: 'Updated',
@@ -46,6 +57,15 @@ export const LOCALES = {
       draft: "DRAFT: pending Peter's approval",
       unreleased: (v) => `From version ${v}, not in the stores yet`,
       since: (v) => `From app version ${v}`,
+      changelog: {
+        title: "What's new",
+        description: 'What each version of Hummlist adds, improves and fixes.',
+        version: (v) => `Version ${v}`,
+        categories: { new: 'New', improved: 'Improved', fixed: 'Fixed' },
+        neutral: 'Bug fixes and improvements.',
+        draft: 'Draft, not in the stores yet',
+        empty: "Hummlist's first version is coming to the stores soon. This page will then list what each new version brings.",
+      },
     },
   },
 };
@@ -57,6 +77,7 @@ const FOOTER_LINKS = [
   { key: 'imprint', shown: () => true },
   { key: 'privacy', shown: (config) => config.privacyPublished },
   { key: 'support', shown: (config) => config.supportPublished },
+  { key: 'changelog', shown: () => true },
 ];
 
 // `draft: true` in the frontmatter: built with a banner and noindex in preview and local builds,
@@ -462,6 +483,61 @@ export function liveVersion(repoDir = REPO_DIR) {
   return { live: version, firstPublic: null, source: 'app/pubspec.yaml, no public release yet' };
 }
 
+// The changelog's releases, newest first: every public release of the record and, outside
+// production, the drafts in releases/changelog/ for versions the record doesn't have yet.
+// Every draft is checked in every build, so a broken one fails before it could go live.
+function changelogEntries(repoDir, production) {
+  const releases = publicReleases(parseRecord(readRepoFile(repoDir, 'releases/releases.json')));
+  const recorded = new Set(releases.map((r) => r.version));
+  const dir = join(repoDir, 'releases/changelog');
+  const drafts = (existsSync(dir) ? readdirSync(dir) : [])
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => {
+      const source = `releases/changelog/${f}`;
+      const draft = parseDraft(readFileSync(join(dir, f), 'utf8'), source);
+      if (f !== `${draft.version}.json`) fail(source, `holds version ${draft.version}, so the file must be named ${draft.version}.json`);
+      return draft;
+    });
+  return [
+    ...(production ? [] : drafts.filter((d) => !recorded.has(d.version)).map((d) => ({ version: d.version, date: null, changelog: d }))),
+    ...releases.map((r) => ({ version: r.version, date: r.date, changelog: r.changelog ?? null })),
+  ].sort((a, b) => compareVersions(b.version, a.version));
+}
+
+function changelogBody(entries, locale) {
+  const ui = LOCALES[locale].ui.changelog;
+  const sections = entries.map(({ version, date, changelog }) => {
+    const title = changelog?.title[locale] ?? '';
+    const categories = CATEGORIES.filter((c) => changelog?.items[c].length > 0).map(
+      (c) => `<h3>${escapeHtml(ui.categories[c])}</h3>\n<ul>\n${changelog.items[c].map((item) => `<li>${escapeHtml(item[locale])}</li>`).join('\n')}\n</ul>\n`,
+    );
+    return [
+      `<section id="v${version.replaceAll('.', '-')}">\n<h2>${escapeHtml(ui.version(version))}</h2>\n`,
+      date === null ? banner(ui.draft) : `<p class="release-date"><time datetime="${date}">${formatDate(date, locale)}</time></p>\n`,
+      title.trim() === '' ? '' : `<p class="release-title">${escapeHtml(title)}</p>\n`,
+      ...(categories.length > 0 ? categories : [`<p>${escapeHtml(ui.neutral)}</p>\n`]),
+      '</section>\n',
+    ].join('');
+  });
+  return `<h1>${escapeHtml(ui.title)}</h1>\n${sections.length > 0 ? sections.join('') : `<p>${escapeHtml(ui.empty)}</p>\n`}`;
+}
+
+function changelogPages(repoDir, production) {
+  const entries = changelogEntries(repoDir, production);
+  return Object.keys(LOCALES).map((locale) => ({
+    kind: 'changelog',
+    file: `(changelog ${locale})`,
+    route: LOCALES[locale].footer.changelog.href,
+    group: 'changelog',
+    ogType: 'website',
+    locale,
+    title: LOCALES[locale].ui.changelog.title,
+    description: LOCALES[locale].ui.changelog.description,
+    notices: [],
+    body: changelogBody(entries, locale),
+  }));
+}
+
 export function build({
   contentDir = join(SITE_DIR, 'content'),
   outDir = join(SITE_DIR, 'dist'),
@@ -473,7 +549,8 @@ export function build({
   const versions = { live: live.live, firstPublic: live.firstPublic, production: isProduction(env) };
   const pages = Object.keys(KINDS)
     .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir, versions)))
-    .filter((page) => !(versions.production && page.notices.length > 0));
+    .filter((page) => !(versions.production && page.notices.length > 0))
+    .concat(changelogPages(repoDir, versions.production));
 
   const byRoute = new Map([['/', { file: '(root page)' }], ['/404', { file: '(404 page)' }]]);
   for (const page of pages) {

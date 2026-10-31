@@ -41,6 +41,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   record, `releases/README.md`), else `app/pubspec.yaml`.
   `public-release-record.yml` (`scripts/release/record.mjs`) appends a
   release there and pushes it to main, which redeploys the site.
+  `/de/changelog` and `/en/changelog` list the public releases' changelogs
+  (job 39, `docs/CHANGELOG.md`): `scripts/release/changelog.mjs` collects
+  them from the PRs' `## Changelog` notes into `releases/changelog/<v>.json`
+  drafts with the store "What's new" texts; `record.mjs` moves a draft into
+  the record.
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
   `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).
@@ -67,7 +72,7 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   removed with `fg teardown <run>`), multi-client sync proofs from
   `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
 - Run `scripts/verify.sh` before pushing. It runs the same
-  `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, site,
+  `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, changelog, site,
   db, functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
   some, `--only e2e -- <spec>` one spec. A check goes into a gate script,
   never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
@@ -105,6 +110,12 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   key events drop umlauts. A snackbar with an action (undo) keeps its text in
   a group's aria-label: find it with `actionSnackBar`, since `getByText`
   only hits the screen-reader announcement, which the engine soon clears.
+- Every PR description has a `## Changelog` section: items (`new`,
+  `improved` or `fixed`, then a `de:` and an `en:` sentence in user words)
+  or just `none` when users see no change (`docs/CHANGELOG.md`, the PR
+  template). push-pr.sh adds `none` for PRs that change neither the app nor
+  `supabase/` or `alexa/`, and stops the others without one; the
+  `changelog` gate checks the structure.
 - `main` takes one commit per PR with `ci-ok` green. To land a PR:
   1. Push the branch once (`git push -u origin HEAD`) and `gh pr create`.
   2. From then on push only with `scripts/push-pr.sh`, fix rounds included.

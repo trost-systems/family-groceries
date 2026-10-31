@@ -60,8 +60,8 @@ const LEGAL_PATHS = ['/datenschutz', '/en/privacy', '/privacy', '/support', '/en
 
 test('with nothing published the footer links only the imprint', () => {
   const { outDir, page } = buildSite({ config: { privacyPublished: false, supportPublished: false } });
-  assert.deepEqual(footer(page('/de/anleitungen/siri-kurzbefehl')), [['Impressum', '/impressum']]);
-  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint']]);
+  assert.deepEqual(footer(page('/de/anleitungen/siri-kurzbefehl')), [['Impressum', '/impressum'], ['Neuigkeiten', '/de/changelog']]);
+  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ["What's new", '/en/changelog']]);
   for (const route of htmlRoutes(outDir)) {
     const links = page(route).querySelectorAll('footer a').map((a) => a.getAttribute('href'));
     for (const path of LEGAL_PATHS) assert.ok(!links.includes(path), `${route} links ${path} in the footer`);
@@ -74,8 +74,8 @@ test('the published privacy policy is in the footer of every page, support is no
   for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
     const locale = page(route).querySelector('html').getAttribute('lang');
     const expected = locale === 'de'
-      ? [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz']]
-      : [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy']];
+      ? [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Neuigkeiten', '/de/changelog']]
+      : [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ["What's new", '/en/changelog']];
     assert.deepEqual(footer(page(route)), expected, route);
   }
 });
@@ -94,8 +94,8 @@ test('with support published and its page present the footer links it too', () =
     config: { privacyPublished: true, supportPublished: true },
     files: { 'legal/support.md': legal({ locale: 'de', path: '/support', key: 'support' }) },
   });
-  assert.deepEqual(footer(page('/de/anleitungen')), [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Hilfe', '/support']]);
-  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ['Support', '/en/support']]);
+  assert.deepEqual(footer(page('/de/anleitungen')), [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz'], ['Hilfe', '/support'], ['Neuigkeiten', '/de/changelog']]);
+  assert.deepEqual(footer(page('/en/guides')), [['Imprint', '/en/imprint'], ['Privacy', '/en/privacy'], ['Support', '/en/support'], ["What's new", '/en/changelog']]);
 });
 
 test('a published flag without its page fails the build on the broken link', () => {
