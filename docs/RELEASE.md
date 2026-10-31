@@ -29,6 +29,21 @@ manual gate: a build that the internal testers have had, after a full
 end-to-end pass on it, weekly or more often once that is quick and reliable.
 It needs its own job and Peter's go.
 
+What is public is recorded in [`releases/releases.json`](../releases/README.md),
+empty until the first public release. The public release step, once it exists,
+must end like this: after both stores have accepted the build, it calls the
+**Public release record** workflow
+(`.github/workflows/public-release-record.yml`, `workflow_call` or a
+dispatch) with `version`, `sha` (the released `main` commit), `build` and
+`dry_run: false`. The workflow computes the release's day and git stats
+(`scripts/release/record.mjs`), commits the entry to `main` as
+`Release <version>: public release record` and pushes it. That push
+redeploys hummlist.com, whose guides then show what the new version has
+([`DEPLOY.md`](DEPLOY.md), "Guides site"). It starts no store upload: a push
+with the workflow's token starts no other workflow, and `plan.sh` counts only
+`app/` and `release.yml` as app changes. A dispatch defaults to
+`dry_run: true`, which prints the entry and changes nothing.
+
 ## When a run ships
 
 Three events start a run:

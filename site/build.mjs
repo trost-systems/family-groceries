@@ -3,9 +3,12 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
+import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
+import { RecordError, compareVersions, isVersion, parseRecord, publicReleases } from './releases.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_DIR = join(SITE_DIR, '..');
 const PUBLIC_DIR = join(SITE_DIR, 'public');
 
 export const LOCALES = {
@@ -18,7 +21,14 @@ export const LOCALES = {
       privacy: { label: 'Datenschutz', href: '/datenschutz' },
       support: { label: 'Hilfe', href: '/support' },
     },
-    ui: { updated: 'Aktualisiert', languageNav: 'Sprache', footerNav: 'Rechtliches', draft: 'ENTWURF: Freigabe durch Peter' },
+    ui: {
+      updated: 'Aktualisiert',
+      languageNav: 'Sprache',
+      footerNav: 'Rechtliches',
+      draft: 'ENTWURF: Freigabe durch Peter',
+      unreleased: (v) => `Ab Version ${v}, noch nicht im Store`,
+      since: (v) => `Ab App-Version ${v}`,
+    },
   },
   en: {
     name: 'English',
@@ -29,7 +39,14 @@ export const LOCALES = {
       privacy: { label: 'Privacy', href: '/en/privacy' },
       support: { label: 'Support', href: '/en/support' },
     },
-    ui: { updated: 'Updated', languageNav: 'Language', footerNav: 'Legal', draft: "DRAFT: pending Peter's approval" },
+    ui: {
+      updated: 'Updated',
+      languageNav: 'Language',
+      footerNav: 'Legal',
+      draft: "DRAFT: pending Peter's approval",
+      unreleased: (v) => `From version ${v}, not in the stores yet`,
+      since: (v) => `From app version ${v}`,
+    },
   },
 };
 
@@ -46,20 +63,114 @@ const FOOTER_LINKS = [
 // left out of Vercel production builds, so the path answers 404 there as before.
 const isProduction = (env) => env.VERCEL_ENV === 'production';
 
+// Content tagged `since` a version above the live one is not in the stores yet: production leaves
+// it out, preview and local builds show it with a banner, like a draft.
+const released = (since, versions) => since === undefined || compareVersions(since, versions.live) <= 0;
+// Before the first public release everything is day-one content, so nothing gets the note.
+const noted = (since, versions) =>
+  since !== undefined && versions.firstPublic !== null && compareVersions(since, versions.firstPublic) > 0;
+const banner = (text) => `<p class="draft-banner" role="note"><strong>${escapeHtml(text)}</strong></p>\n`;
+
+function checkSince(value, file, kind, where) {
+  if (kind !== 'guide') fail(file, `${where} "since" is only allowed on guides (legal texts and indexes are not versioned)`);
+  if (!isVersion(value)) fail(file, `${where} "since" must be a version MAJOR.MINOR.PATCH, got ${JSON.stringify(value)}`);
+  return value;
+}
+
+// `## Heading {#id since=1.4.0}`: `#id` gives the heading a stable anchor, e.g. /datenschutz#rechte
+// for the stores; `since=` versions the section up to the next heading of the same or a higher level.
+// Braces holding anything else stay text.
+const HEADING_ATTRS = /\s*\{([^{}]*)\}$/;
+function headingAttrs(text) {
+  const match = HEADING_ATTRS.exec(text);
+  const parts = match?.[1].trim().split(/\s+/).filter(Boolean) ?? [];
+  if (parts.length === 0 || !parts.every((p) => /^#[a-z0-9-]+$/.test(p) || p.startsWith('since='))) return null;
+  return {
+    index: match.index,
+    id: parts.find((p) => p.startsWith('#'))?.slice(1),
+    since: parts.find((p) => p.startsWith('since='))?.slice('since='.length),
+  };
+}
+
 const md = new MarkdownIt({ html: false, linkify: false, typographer: false, breaks: true });
 
-// `## Heading {#id}` gives the heading a stable anchor, e.g. /datenschutz#rechte for the stores.
-const HEADING_ID = /\s*\{#([a-z0-9-]+)\}$/;
-md.core.ruler.push('heading_id', (state) => {
-  state.tokens.forEach((token, i) => {
-    if (token.type !== 'heading_open') return;
-    const inline = state.tokens[i + 1];
-    const last = inline.children.at(-1);
-    const match = last?.type === 'text' && HEADING_ID.exec(last.content);
-    if (!match) return;
-    token.attrSet('id', match[1]);
-    last.content = last.content.slice(0, match.index);
+// `::: since 1.4.0` ... `:::` versions the blocks between; the `since` core rule decides what renders.
+md.use(container, 'since', {
+  validate: (params) => /^since\b/.test(params.trim()),
+  render: (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options),
+});
+
+md.core.ruler.push('since', (state) => {
+  const { file, kind, locale, versions, since: pageSince } = state.env;
+  const { tokens } = state;
+  const lines = state.src.split('\n');
+  const ui = LOCALES[locale].ui;
+  const html = (content) => Object.assign(new state.Token('html_block', '', 0), { content });
+  const note = (since) => (noted(since, versions) ? [html(`<p class="since-note">${escapeHtml(ui.since(since))}</p>\n`)] : []);
+  // A section or block repeats no note its guide already shows; unreleased content shows the banner instead.
+  const inner = (since) => (pageSince !== undefined && compareVersions(since, pageSince) <= 0 ? [] : note(since));
+  const notices = (since) => (released(since, versions) ? inner(since) : [html(banner(ui.unreleased(since)))]);
+  const hidden = new Set();
+  const unwrapped = new Set();
+  const after = new Map();
+  const insert = (i, list) => after.set(i, [...(after.get(i) ?? []), ...list]);
+  const hide = (from, to) => {
+    for (let j = from; j <= to; j++) hidden.add(j);
+  };
+  let h1Seen = false;
+  tokens.forEach((token, i) => {
+    if (token.type === 'paragraph_open' && tokens[i + 1].content.startsWith(':::')) {
+      fail(file, `"${tokens[i + 1].content.split('\n')[0]}" is not a block this site knows; a versioned block is "::: since 1.4.0" up to a line ":::"`);
+    }
+    if (token.type === 'heading_open') {
+      const last = tokens[i + 1].children.at(-1);
+      const attrs = last?.type === 'text' ? headingAttrs(last.content) : null;
+      if (attrs) {
+        if (attrs.id) token.attrSet('id', attrs.id);
+        last.content = last.content.slice(0, attrs.index);
+      }
+      if (attrs?.since !== undefined) {
+        const since = checkSince(attrs.since, file, kind, 'heading attribute');
+        if (token.level !== 0) fail(file, `heading attribute "since" only works on headings outside lists, quotes and blocks`);
+        const depth = Number(token.tag[1]);
+        const next = tokens.findIndex((t, j) => j > i && t.type === 'heading_open' && t.level === 0 && Number(t.tag[1]) <= depth);
+        if (!released(since, versions) && versions.production) hide(i, (next === -1 ? tokens.length : next) - 1);
+        else insert(i + 2, notices(since));
+      }
+      if (token.tag === 'h1' && !h1Seen) {
+        h1Seen = true;
+        if (pageSince !== undefined) insert(i + 2, note(pageSince));
+      }
+    }
+    if (token.type === 'container_since_open') {
+      const since = checkSince(token.info.trim().slice('since'.length).trim(), file, kind, 'block');
+      // The plugin closes an unclosed block silently at its parent's end.
+      if (!/^[\s>]*:{3,}\s*$/.test(lines[token.map[1]] ?? '')) fail(file, `"::: ${token.info.trim()}" is not closed; end it with a line ":::"`);
+      const close = tokens.findIndex((t, j) => j > i && t.type === 'container_since_close' && t.level === token.level);
+      // The plugin's search for the closing line doesn't skip code fences, so a ":::" line in a
+      // fence ends the block there and leaves the fence open up to it.
+      const cut = tokens.slice(i, close).find((t) => {
+        if (t.type !== 'fence') return false;
+        const end = t.map[1] - 1;
+        const closer = (lines[end] ?? '').replace(/^[\s>]*/, '');
+        return end === t.map[0] || !closer.startsWith(t.markup) || closer.replace(/^[`~]+/, '').trim() !== '';
+      });
+      if (cut) fail(file, `a code fence inside "::: ${token.info.trim()}" holds a ":::" line, which ends the block; open and close the block with more colons ("::::")`);
+      if (released(since, versions)) {
+        unwrapped.add(i).add(close);
+        insert(i, inner(since));
+      } else if (versions.production) hide(i, close);
+      else {
+        token.attrSet('class', 'since-block');
+        insert(i, notices(since));
+      }
+    }
   });
+  const kept = tokens.flatMap((t, j) => (hidden.has(j) ? [] : [...(unwrapped.has(j) ? [] : [t]), ...(after.get(j) ?? [])]));
+  // A quote or list whose only content was hidden would render empty.
+  const empty = (t, next) => t.nesting === 1 && next?.nesting === -1 && next.type === t.type.replace(/_open$/, '_close');
+  for (let k = kept.length - 2; k >= 0; k--) if (empty(kept[k], kept[k + 1])) kept.splice(k, 2);
+  state.tokens = kept;
 });
 
 function markdownFiles(dir) {
@@ -116,7 +227,7 @@ function normalizeDate(value, file) {
   fail(file, `frontmatter field "updated" must be a date (YYYY-MM-DD), got ${JSON.stringify(value)}`);
 }
 
-function loadPage(kindName, { file, expect }, contentDir) {
+function loadPage(kindName, { file, expect }, contentDir, versions) {
   const kind = KINDS[kindName];
   const name = relative(contentDir, file);
   const { data, content } = matter(readFileSync(file, 'utf8'));
@@ -134,7 +245,9 @@ function loadPage(kindName, { file, expect }, contentDir) {
     if (fm[field] !== expected) fail(name, `frontmatter field "${field}" is "${fm[field]}" but the file location requires "${expected}"`);
   }
   if (fm.draft !== undefined && typeof fm.draft !== 'boolean') fail(name, `frontmatter field "draft" must be true or false, got ${JSON.stringify(fm.draft)}`);
+  if (fm.since !== undefined) checkSince(fm.since, name, kindName, 'frontmatter field');
   if (kindName === 'page' && !/^\/[a-z0-9/-]*[a-z0-9]$/.test(fm.path)) fail(name, `frontmatter field "path" must look like /some/path, got "${fm.path}"`);
+  const ui = LOCALES[fm.locale].ui;
   return {
     kind: kindName,
     file: name,
@@ -145,8 +258,9 @@ function loadPage(kindName, { file, expect }, contentDir) {
     title: fm.title,
     description: fm.description,
     updated: fm.updated,
-    draft: fm.draft === true,
-    body: md.render(content),
+    // Why the page is not published: production leaves out a page with any notice.
+    notices: [...(fm.draft === true ? [ui.draft] : []), ...(released(fm.since, versions) ? [] : [ui.unreleased(fm.since)])],
+    body: md.render(content, { file: name, kind: kindName, locale: fm.locale, versions, since: fm.since }),
   };
 }
 
@@ -193,13 +307,13 @@ function renderPage(page, { config, groups, guidesByLocale }) {
     .join('');
   const title = escapeHtml(page.title);
   const description = escapeHtml(page.description);
-  const draft = page.draft ? escapeHtml(locale.ui.draft) : null;
+  const comments = page.notices.map((text) => `<!-- ${text} -->\n`).join('');
   return `<!doctype html>
 <html lang="${page.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${draft ? `<!-- ${locale.ui.draft} -->\n<meta name="robots" content="noindex">\n` : ''}<title>${title} | ${SITE_NAME}</title>
+${page.notices.length > 0 ? `${comments}<meta name="robots" content="noindex">\n` : ''}<title>${title} | ${SITE_NAME}</title>
 <meta name="description" content="${description}">
 <link rel="canonical" href="${url}">
 ${alternates}
@@ -216,7 +330,7 @@ ${alternates}
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-${draft ? `<p class="draft-banner" role="note"><strong>${draft}</strong></p>\n` : ''}<header class="site-header">
+${page.notices.map(banner).join('')}<header class="site-header">
 <a class="site-name" href="${locale.guidesBase}">${SITE_NAME}</a>
 <nav aria-label="${locale.ui.languageNav}">${switches}</nav>
 </header>
@@ -326,10 +440,40 @@ export function readConfig(siteDir = SITE_DIR) {
   return JSON.parse(readFileSync(join(siteDir, 'config.json'), 'utf8'));
 }
 
-export function build({ contentDir = join(SITE_DIR, 'content'), outDir = join(SITE_DIR, 'dist'), env = {}, config = readConfig() } = {}) {
+const OUTSIDE_SITE =
+  'the site build needs releases/releases.json and app/pubspec.yaml from outside site/ (on Vercel the project setting "Include files outside the root directory in the Build Step" must stay on)';
+
+function readRepoFile(repoDir, rel) {
+  const path = join(repoDir, rel);
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (error) {
+    throw new BuildError(`cannot read ${path} (${error.code}): ${OUTSIDE_SITE}`);
+  }
+}
+
+// The newest version in the stores, from the public release record; before the first public
+// release, the version on this commit, which is what TestFlight and Play internal testers get.
+export function liveVersion(repoDir = REPO_DIR) {
+  const releases = publicReleases(parseRecord(readRepoFile(repoDir, 'releases/releases.json')));
+  if (releases.length > 0) return { live: releases.at(-1).version, firstPublic: releases[0].version, source: 'public release record' };
+  const version = /^version:\s*([^\s+]*)/m.exec(readRepoFile(repoDir, 'app/pubspec.yaml'))?.[1];
+  if (!isVersion(version)) throw new BuildError(`${join(repoDir, 'app/pubspec.yaml')}: needs a line "version: MAJOR.MINOR.PATCH+BUILD", got ${JSON.stringify(version ?? null)}`);
+  return { live: version, firstPublic: null, source: 'app/pubspec.yaml, no public release yet' };
+}
+
+export function build({
+  contentDir = join(SITE_DIR, 'content'),
+  outDir = join(SITE_DIR, 'dist'),
+  repoDir = REPO_DIR,
+  env = {},
+  config = readConfig(),
+} = {}) {
+  const live = liveVersion(repoDir);
+  const versions = { live: live.live, firstPublic: live.firstPublic, production: isProduction(env) };
   const pages = Object.keys(KINDS)
-    .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir)))
-    .filter((page) => !(page.draft && isProduction(env)));
+    .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir, versions)))
+    .filter((page) => !(versions.production && page.notices.length > 0));
 
   const byRoute = new Map([['/', { file: '(root page)' }], ['/404', { file: '(404 page)' }]]);
   for (const page of pages) {
@@ -378,16 +522,17 @@ export function build({ contentDir = join(SITE_DIR, 'content'), outDir = join(SI
 
   for (const file of htmlFiles(outDir)) checkHtml(file, readFileSync(file, 'utf8'), outDir, config.siteUrl);
 
-  return { routes: ['/', ...pages.map((p) => p.route)], warnings };
+  return { routes: ['/', ...pages.map((p) => p.route)], warnings, live };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    const { routes, warnings } = build({ env: { VERCEL_ENV: process.env.VERCEL_ENV } });
+    const { routes, warnings, live } = build({ env: { VERCEL_ENV: process.env.VERCEL_ENV } });
     for (const w of warnings) console.warn(`warning: ${w}`);
+    console.log(`live version: ${live.live} (from ${live.source})`);
     console.log(`built ${routes.length} pages into dist/`);
   } catch (error) {
-    if (!(error instanceof BuildError)) throw error;
+    if (!(error instanceof BuildError || error instanceof RecordError)) throw error;
     console.error(`build failed: ${error.message}`);
     process.exit(1);
   }

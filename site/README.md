@@ -33,6 +33,55 @@ starts with exactly one `# ` heading and must not skip heading levels; images ne
 missing field, a second h1, a skipped level, an image without alt, a script, an external resource
 or a link to a page that doesn't exist fails the build with the file and the reason.
 
+### Versioned content
+
+Content for an app version the stores don't have yet carries `since` with a version
+`MAJOR.MINOR.PATCH`. Three places:
+
+~~~markdown
+since: 1.4.0                        # frontmatter: the whole guide
+
+## Einkaufen per Uhr {#uhr since=1.4.0}
+
+The heading and everything up to the next heading of the same or a higher level.
+`{since=1.4.0}`, `{#uhr since=1.4.0}` and `{since=1.4.0 #uhr}` all work.
+
+::: since 1.4.0
+Any blocks, also inside a list item (indent the markers like the item's text).
+:::
+~~~
+
+Content whose version is above the live version (below) is not in the stores yet. Vercel
+production builds leave it out: a guide like a draft (404, not on the index, no language switch
+or hreflang to it), a section or block without a trace. Preview and local builds show it with a
+banner ("Ab Version 1.4.0, noch nicht im Store" / "From version 1.4.0, not in the stores yet");
+a whole guide also gets `noindex`. Once released, content newer than the first public release
+shows the note "Ab App-Version 1.4.0" / "From app version 1.4.0" under its heading, unless its
+guide already shows that version or a newer one; before the first public release nothing gets the
+note. Unreleased content shows the banner instead of the note. A link to a guide production leaves out fails the
+production build.
+
+A version that isn't `MAJOR.MINOR.PATCH` (`since: 1.4` too), an unclosed `::: since` block or a
+paragraph starting with `:::` (`::: sinse`) fails the build. Legal texts and indexes are not
+versioned: `since` there fails too. Markers inside code fences stay text. A block whose code fence
+holds a `:::` line fails too, because that line would end the block: mark such a block with four
+colons, `:::: since 1.4.0` up to `::::`.
+
+## Live version
+
+The build reads the live version from outside `site/`: the newest public release in
+`../releases/releases.json`, or, before the first one, the version in `../app/pubspec.yaml` on the
+built commit (what TestFlight and Play internal testers get), so today everything the testers
+have shows. `../releases/README.md` explains the record. It logs the version before the page count:
+
+~~~text
+live version: 0.1.0 (from app/pubspec.yaml, no public release yet)
+live version: 1.4.0 (from public release record)
+~~~
+
+A missing or invalid file fails the build and names it. On Vercel the project setting "Include
+files outside the root directory in the Build Step" must stay on, or the build can't read them.
+
 ## Other pages
 
 - `content/indexes/<locale>.md`: the index intro (`title`, `description`, `locale`); the guide list
@@ -62,7 +111,13 @@ Write open facts as `[PETER: what is missing]`. Preview builds warn; a productio
 
 ## Vercel
 
-Project settings: Root Directory `site`; everything else comes from `vercel.json` (install
+Every push to `main` is a production deployment and goes live on hummlist.com; other branches get
+preview deployments behind Vercel Authentication. When a public release is recorded, the
+**Public release record** workflow pushes the record to `main`, and that build shows the content
+of the new version (`docs/DEPLOY.md`, "Guides site").
+
+Project settings: Root Directory `site`, "Include files outside the root directory in the Build
+Step" on; everything else comes from `vercel.json` (install
 `npm ci`, build `npm run build`, output `dist`). `/` redirects by `Accept-Language`: `de…` to
 `/de/anleitungen`, any other language to `/en/guides`, no header to `/de/anleitungen`.
 `dist/index.html` (meta refresh) only serves hosts without these redirects. Every response

@@ -328,3 +328,7 @@ A receipt the server refuses for good is finished with the store and shown once,
 ## Job 37: stale "Menü" directions, health comment, debug-entrypoint Zone mismatch
 
 The debug app launches without Flutter's "Zone mismatch" EXCEPTION block, and a regression now fails the launch. The docs point to Mehr → Zugänge, the health comment no longer duplicates the response, and the unused `menu` string is gone. The voice 401 text was already right. Details: [docs/done/37-voice-error-copy.md](docs/done/37-voice-error-copy.md).
+
+## Job 38: hummlist.com guides follow the live store version; public release record
+
+Guides, sections and blocks tagged `since` an unreleased version stay off hummlist.com until a public release; preview shows them with a banner. `releases/releases.json` records public releases (empty today) with History-ready git stats; `public-release-record.yml` appends one and its push redeploys the site. Details: [docs/done/38-site-deploy-versioning.md](docs/done/38-site-deploy-versioning.md).

@@ -2,9 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { request } from 'node:http';
-import { buildSite, htmlRoutes, legal, alternates, meta, CONTENT_DIR } from './helpers.mjs';
-import { startPreview } from '../scripts/preview.mjs';
+import { buildSite, htmlRoutes, legal, alternates, meta, serve, CONTENT_DIR } from './helpers.mjs';
 
 const PROD = { VERCEL_ENV: 'production' };
 
@@ -20,24 +18,6 @@ const filled = (files = {}) => ({
 });
 const SUPPORT = ['/support', '/en/support'];
 const BANNER = { '/support': 'ENTWURF: Freigabe durch Peter', '/en/support': "DRAFT: pending Peter's approval" };
-
-const get = (base, path) =>
-  new Promise((resolve, reject) => {
-    request(base + path, (res) => {
-      let body = '';
-      res.setEncoding('utf8').on('data', (c) => (body += c)).on('end', () => resolve({ status: res.statusCode, headers: res.headers, body }));
-    }).on('error', reject).end();
-  });
-
-async function serve(outDir, paths) {
-  const server = await startPreview({ dir: outDir, port: 0 });
-  try {
-    const base = `http://127.0.0.1:${server.address().port}`;
-    return Object.fromEntries(await Promise.all(paths.map(async (p) => [p, await get(base, p)])));
-  } finally {
-    server.close();
-  }
-}
 
 const read = (f) => readFileSync(join(CONTENT_DIR, f), 'utf8');
 const published = (text) => text.replace(/^draft: (true|false)\n/m, '');

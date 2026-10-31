@@ -10,6 +10,7 @@ The public guides site (`site/`, its own Vercel project, static HTML from Markdo
 - `gd-translation` every guide names its other language (`hreflang` de and en) and links it, such as `/de/anleitungen/alexa` → `/en/guides/alexa`.
 - `gd-language-redirect` `/` answers 307 to `/de/anleitungen` for `Accept-Language: de…` (and without the header), and to `/en/guides` for any other language (`site/vercel.json`).
 - `gd-noindex` every response carries `X-Robots-Tag: noindex` until the beta launch.
+- `gd-since` content tagged `since` a version above the live version (newest public release in `releases/releases.json`, else `app/pubspec.yaml`) is left out of production and shown with a banner ("Ab Version X, noch nicht im Store") in preview and local builds; guide frontmatter `since:`, heading suffix `{since=X}`, block `::: since X` (`site/README.md`, "Versioned content"). Today no content is tagged.
 
 ## How to get to it (user POV)
 
@@ -24,7 +25,8 @@ Preconditions: no app and no Supabase. `curl` for the live site; for a local bui
 - **Redirect.** `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -H 'Accept-Language: de' https://hummlist.com/` prints `307 https://hummlist.com/de/anleitungen`; with `Accept-Language: en` it prints `307 https://hummlist.com/en/guides`.
 - **Translation link.** `curl -s https://hummlist.com/de/anleitungen/alexa | grep -o -E 'href="/en/guides/[^"]*"|hreflang="[a-z]+"' | sort -u` lists `href="/en/guides/alexa"`, `hreflang="de"` and `hreflang="en"`.
 - **No index.** `curl -sI https://hummlist.com/de/anleitungen | grep -i x-robots` reads `noindex`.
-- **Local build.** `cd site && npm test` passes (52 tests on 2026-10-31: content rules, links, drafts, placeholders, the preview server). `npm run build`, then `PORT=<port from your block> node scripts/preview.mjs` serves `dist/` with `vercel.json`'s redirects: the pages above answer 200 on `http://127.0.0.1:<port>/`, and `/` with `Accept-Language: en-US` answers 307 to `/en/guides`. Stop the preview by its pid.
+- **Local build.** `cd site && npm test` passes (69 tests on 2026-10-31: content rules, links, drafts, placeholders, versioned content, the preview server). `npm run build`, then `PORT=<port from your block> node scripts/preview.mjs` serves `dist/` with `vercel.json`'s redirects: the pages above answer 200 on `http://127.0.0.1:<port>/`, and `/` with `Accept-Language: en-US` answers 307 to `/en/guides`. Stop the preview by its pid.
+- **Live version.** `cd site && VERCEL_ENV=production node build.mjs` prints `live version: 0.1.0 (from app/pubspec.yaml, no public release yet)` before the page count while the record has no public release. `node --test test/versions.test.mjs` covers hidden guides, sections and blocks against fixture records.
 - **Proof.** The curl output; for a page's look, a screenshot of the local preview in a browser.
 
 ## Gotchas

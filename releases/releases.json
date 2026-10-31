@@ -1,0 +1,35 @@
+{
+  "project": {
+    "name": "Hummlist",
+    "repo": "trost-systems/family-groceries",
+    "day_zero": "2026-10-22"
+  },
+  "identities": [
+    {
+      "name": "Peter Trost",
+      "github": "peter-trost",
+      "bot": false,
+      "emails": [
+        "peter@petertrost.com"
+      ]
+    },
+    {
+      "name": "petertrost-bot",
+      "github": "petertrost-bot",
+      "bot": true,
+      "emails": [
+        "341616691+petertrost-bot@users.noreply.github.com",
+        "bot@petertrost.com"
+      ]
+    },
+    {
+      "name": "Claude",
+      "github": null,
+      "bot": true,
+      "emails": [
+        "noreply@anthropic.com"
+      ]
+    }
+  ],
+  "releases": []
+}

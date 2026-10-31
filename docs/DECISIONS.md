@@ -4415,3 +4415,63 @@ Job 25's review 0 (PASS) listed nice-to-haves that are real behavior gaps; these
    release app.
 2. **The l10n string `menu` is gone.** Nothing read it after the More tab replaced the list
    menu (job 29d).
+
+## Job 38: hummlist.com guides follow the live store version; public release record, 2026-10-31
+
+1. **The record is `releases/releases.json`, checked by one module.** `site/releases.mjs`
+   (`parseRecord`) is the format: the site build, the site tests and
+   `scripts/release/record.mjs` all go through it, and it rejects unknown fields. It lives in
+   `site/` because the site is the record's reader and its build must start even when Vercel can't
+   see files outside `site/`, so that the missing record fails with our message instead of a
+   module-not-found trace. The brief's shape stays, with two changes. `identities` (name, GitHub
+   login, bot flag, e-mail addresses) is added: main's 98 commits carry the bot under two addresses
+   (`…+petertrost-bot@users.noreply.github.com` and `bot@petertrost.com`) and `Co-Authored-By:
+   Claude <noreply@anthropic.com>` trailers on 68 commits. Neither dedupe by address nor a name
+   heuristic would merge the bot and mark Claude as a bot. Peter's login `peter-trost` is the repo
+   collaborator of that name. `channel` allows only `public` so far, so a typo can't hide a release.
+2. **Consistency is checked, not trusted.** `day` must equal the days from `day_zero` (day 0,
+   2026-10-22, the first commit) to `date`. Versions are strict `MAJOR.MINOR.PATCH`, unique and
+   ascending. Builds go up and dates don't go back. `previous_sha` must be the previous
+   release's `sha` (`null` for the first). The file is sorted oldest first and written in one
+   canonical form, so a record commit's diff is just the new entry.
+3. **Stats are computed once, at record time.** `commits` counts `previous_sha..sha` (everything
+   up to `sha` for the first release). `additions`, `deletions` and `files_changed` are the net
+   diff of that range, the numbers GitHub's compare view shows. Each contributor gets the commits
+   they authored or co-authored (`Co-authored-by:` matched case-insensitively), deduplicated per
+   commit, with those commits' added and deleted lines. A commit by the bot with Peter as
+   co-author counts for both, so per-person lines can add up to more than the net diff.
+4. **Live version.** It is the newest `public` release's version. Before the first public release
+   it is the version in `app/pubspec.yaml` on the built commit, which is what TestFlight and Play
+   internal testers get from `main`, so today everything that has reached the testers shows. The
+   record must always be readable, and the pubspec whenever there is no public release. A missing
+   file fails the build and names the Vercel setting, so a project that stops seeing files outside
+   `site/` fails loudly instead of showing everything. The build logs one `live version:` line.
+5. **One tag, three levels.** It is `since: X` in a guide's frontmatter, `{since=X}` in a heading
+   suffix (with `{#id}`), and a `::: since X` container (markdown-it-container) for blocks. The
+   container is a block rule, so it never fires inside a code fence; the hiding runs as a core
+   rule over tokens, not as text preprocessing. Production leaves unreleased content out
+   entirely, and a link to an unreleased guide fails the production build like a link to a draft.
+   Preview and local builds show it with the draft banner ("Ab Version X, noch nicht im Store").
+   `since` is refused on legal pages and indexes, which aren't versioned.
+6. **The "Ab App-Version X" note** shows only for content newer than the first public release.
+   Before that there is no public version to compare against, so it never shows today.
+   A section or block shows no note when its guide's own note already names that version or a
+   newer one, and unreleased content in preview shows the banner instead (screenshots showed
+   the same version two or three times on one page).
+7. **Redeploy by commit, not by hook.** `public-release-record.yml` (dispatch and `workflow_call`,
+   `dry_run` default true) runs `record.mjs` and pushes the entry to `main`. Vercel builds
+   hummlist-site's production from every push to `main`, so that commit is the redeploy, with no
+   deploy hook and no new secret. It can't start a store upload. A push with `GITHUB_TOKEN` starts
+   no workflow (so no CI run and no Release run), and `plan.sh` counts only `app/` and
+   `release.yml` as app changes (fixture test in `scripts/release/test.sh`). Unproven until the
+   first real release: whether Vercel builds a push made by the Actions token. It builds every
+   push by this author today, and the workflow commits as petertrost-bot. If it doesn't, the next
+   merge to `main` builds the site anyway.
+8. **History page (not built).** `/history` will render `releases` newest first from the record
+   alone, with no git at build time. Each entry shows the date, `version`, "Tag N" / "Day N" from
+   `day`, `stats.commits`, the net `+additions / -deletions` and `files_changed`, the contributor
+   count, and the top contributors: `stats.contributors` sorted by `commits` (the record keeps
+   that order), with humans and bots marked by `bot` and avatars from `github`. `notes.de` or
+   `notes.en` follows the page locale. A totals row sums the entries, and "Tag N" since `day_zero`
+   is shown in the header. Every page's footer gets a "Versionen" / "History" link once the page
+   exists; with an empty record it would say "Noch keine öffentliche Version".

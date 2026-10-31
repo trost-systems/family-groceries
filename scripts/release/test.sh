@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Tests scripts/release/*.sh offline: when a Release run ships or skips (fixture facts), how it
-# finds the last upload (fake gh), the TestFlight notes (scratch repo), the failure issue
-# (fake gh) and the AAB signer check (throwaway keystore). Run by the lint gate.
+# Tests scripts/release/ offline: when a Release run ships or skips (fixture facts), how it finds
+# the last upload (fake gh), the TestFlight notes (scratch repo), the failure issue (fake gh), the
+# AAB signer check (throwaway keystore) and the public release record (record.test.mjs). Run by
+# the lint gate.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 
@@ -258,6 +259,19 @@ JSON
 expect_eq "gather: a docs-only commit is no app change" \
   "$(gather MAIN_SHA="$c2" | jq -c '[.candidates[].app_changed]')" '[false]'
 
+# A public release record commit (record.mjs, pushed by public-release-record.yml) after the
+# last upload never starts a store upload.
+c4="$(hcommit "Release 1.0.0: public release record" releases/releases.json)"
+fixture "$r/actions/runs/40/jobs?per_page=100" <<JSON
+{"jobs": [{"name": "Uploaded $c3", "conclusion": "success"}]}
+JSON
+ci_fixture "$c4" '{"workflow_runs": [{"created_at": "2026-11-01T13:00:00Z", "status": "completed", "conclusion": "success", "html_url": "https://ci/c4"}]}'
+gathered="$(gather MAIN_SHA="$c4" TRIGGER_SHA="$c4")"
+expect_eq "gather: a release record commit is no app change" "$(jq -c '[.candidates[] | [.sha, .app_changed]]' <<<"$gathered")" "[[\"$c4\",false]]"
+"$here/plan.sh" decide <(echo "$gathered") >"$tmp/out"
+expect_eq "gather + decide: a release record commit skips, the testers are current" \
+  "$(field ship "$(cat "$tmp/out")"),$(field current "$(cat "$tmp/out")")" "false,true"
+
 # Runs from before job 30 named the job "Uploaded" and shipped their head_sha.
 fixture "$r/actions/runs/40/jobs?per_page=100" <<'JSON'
 {"jobs": [{"name": "Uploaded", "conclusion": "success"}]}
@@ -420,6 +434,9 @@ if command -v keytool >/dev/null && command -v jarsigner >/dev/null && command -
 else
   echo "check-aab: skipped, no keytool/jarsigner"
 fi
+
+# --- record.mjs -----------------------------------------------------------------------------
+node --test "$here/record.test.mjs" >"$tmp/record.log" 2>&1 || fail "record.test.mjs"$'\n'"$(cat "$tmp/record.log")"
 
 if [[ $failures -gt 0 ]]; then
   echo "release tests: $failures failed" >&2
