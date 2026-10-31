@@ -106,7 +106,7 @@ class _Db(final FakeAuth fakeAuth) extends Fake implements SupabaseClient {
 void main() {
   late FakeAuth auth;
   late _Db db;
-  late RecordingSink sink;
+  late NativePostHog sink;
   late Analytics analytics;
   late SessionCubit cubit;
 
@@ -121,8 +121,8 @@ void main() {
         email: 'kunde@gmail.com',
       );
     db = _Db(auth);
-    sink = RecordingSink();
-    analytics = await loadedAnalytics(sink, MemoryAnalyticsStore());
+    sink = NativePostHog()..install();
+    analytics = await loadedAnalytics(MemoryAnalyticsStore());
     cubit = SessionCubit(db, MemorySessionCache(), analytics: analytics);
     await cubit.refresh();
     await analytics.decide(granted: true);

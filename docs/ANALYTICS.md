@@ -1,9 +1,10 @@
-# Analytics and error tracking (job 19)
+# Analytics, error tracking and feature flags (jobs 19 and 44)
 
-Hummlist measures its DACH kill gates and lifetime value in PostHog, and reports app and
-edge-function errors there. Spec #1 "Kill-gate and LTV analytics"; decisions in
-[DECISIONS.md](DECISIONS.md), "Job 19"; what Peter still has to do in
-[NEEDS_PETER.md](NEEDS_PETER.md), "Job 19".
+Hummlist measures its DACH kill gates and lifetime value in PostHog, reports app and
+edge-function errors there, and takes its runtime toggles from PostHog feature flags. PostHog is
+the only vendor for all three (Peter, 2026-10-31). Spec #1 "Kill-gate and LTV analytics";
+decisions in [DECISIONS.md](DECISIONS.md), "Job 19" and "Job 44"; open steps in
+[NEEDS_PETER.md](NEEDS_PETER.md), "Job 19", and [NEEDS_LEAD.md](NEEDS_LEAD.md), "Job 44".
 
 | Metric | Question | Query |
 | --- | --- | --- |
@@ -32,26 +33,46 @@ edge-function errors there. Spec #1 "Kill-gate and LTV analytics"; decisions in
   profiles are off (`$process_person_profile: false`), so events stay personless and cheap.
 - Project-side settings Peter set (IP anonymization, no autocapture, replay, surveys, heatmaps,
   web vitals; exception autocapture; Europe/Berlin; EUR; test-account filter) are a second line.
-  The app enforces its own rules regardless.
+  The app enforces its own rules regardless: it switches every SDK feature it does not use off
+  in its own config, and on the web the browser never loads the project's remote config (the
+  CSP allows `https://eu.i.posthog.com` only, not `eu-assets.i.posthog.com`). The native SDKs
+  do read it; only native exception autocapture depends on it (on in the project).
 
 ## How it is built
 
-The app does not use the posthog_flutter SDK or posthog-js (DECISIONS Job 19.1). It sends to
-PostHog's public capture API (`POST /batch/`) itself, so every byte goes through the allow-list
-below, the same code runs on iOS, Android and web, and e2e can answer the host with a fake
-collector.
+Since job 44 the app runs PostHog's official SDK, **posthog_flutter 5.58.3** (pinned), with
+posthog-ios and posthog-android under it, and on the web **posthog-js 1.444.0**, served from the
+app's own origin (`app/web/posthog/array.js`, `scripts/posthog-js.sh <version>` updates it).
+Our guarantees sit on top of it (DECISIONS Job 44):
+
+- **No yes, no SDK.** `Posthog().setup()` runs only once this install said yes; a no calls
+  `close()`. The SDKs' own opt-out does not stop their remote-config and flag requests, so it
+  is not used as the gate. Before the yes nothing at all is requested or stored by PostHog's
+  code; on the web `posthog/array.js` is not even fetched. `AUTO_INIT` is false in the Android
+  manifest and the iOS Info.plist.
+- **Two allow-list checks.** `track` checks every event against `eventCatalog`; the SDK's
+  `beforeSend` (`Analytics._admit`) checks it and the context again, drops it if analytics is
+  no longer live, and removes `$screen_name`. Error reports are rebuilt there from the
+  scrubbed type and message. On the web posthog-js' own `before_send` then drops every
+  property outside `webEventKeys` (`events.dart`), its URL, referrer, user agent, session and
+  device ids among them.
+- **One file talks to the SDK.** `app/lib/analytics/posthog_client.dart`; the ast-grep rule
+  `posthog-flutter-only-in-posthog-client` fails any other import.
 
 | Part | Where |
 | --- | --- |
-| Consent gate, install id, queue, sending | `app/lib/analytics/analytics.dart` (`Analytics`, a cubit) |
-| Event catalog and allow-list | `app/lib/analytics/events.dart` (`eventCatalog`, `checkEvent`) |
+| Consent gate, install id, context, the SDK's `beforeSend` | `app/lib/analytics/analytics.dart` (`Analytics`, a cubit) |
+| The SDK: setup, capture, flags, super properties | `app/lib/analytics/posthog_client.dart` (`PostHogClient`) |
+| posthog-js on the web: loading, `init`, `before_send` | `app/lib/analytics/posthog_platform_web.dart` (`loadPostHogJs`), the pinned build in `app/web/posthog/` |
+| Deleting the native SDK's files at an off | `app/lib/analytics/posthog_platform_io.dart` (`forgetPostHogState`), Android: `MainActivity.forgetPostHog` (`familygroceries/posthog`) |
+| Event catalog and allow-list | `app/lib/analytics/events.dart` (`eventCatalog`, `checkEvent`, `contextKeys`, `webEventKeys`) |
 | `is_internal` rules | `app/lib/analytics/internal.dart` (`isInternal`) |
-| Exception shape and scrubber | `app/lib/analytics/exceptions.dart` (`exceptionList`, `scrubMessage`) |
-| The sink (the one network call) | `app/lib/analytics/sink.dart` (`PostHogSink`, `allowedHost`) |
-| Start-up from the build defines | `app/lib/analytics/setup.dart`; defines in `app/lib/app/environment.dart` |
+| Error type names and the scrubber | `app/lib/analytics/exceptions.dart` (`errorType`, `scrubMessage`, `scrubException`) |
+| Uncaught-error hooks, start-up from the build defines | `app/lib/analytics/setup.dart` (`reportUncaughtErrors`, `startAnalytics`, `allowedHost`); defines in `app/lib/app/environment.dart` |
+| Feature flags | `app/lib/analytics/flags.dart` (`Flags`, read as `Analytics.flags`) |
 | Consent screen | `app/lib/analytics/consent_screen.dart`, route `/analytics-consent` |
 | More switch, internal install | `app/lib/more/more_screen.dart` (`more-analytics`, long press on `more-version`) |
-| Edge-function error tracking | `supabase/functions/_shared/telemetry.ts` (`withTelemetry`, `Telemetry`) |
+| Edge-function error tracking | `supabase/functions/_shared/telemetry.ts` (`withTelemetry`, `Telemetry`); its own sender, not posthog-node (DECISIONS Job 44, item 16) |
 | Purchase events | `supabase/functions/purchases/` (job 25), `supabase/functions/_shared/purchases.ts` |
 | HogQL and its reference | `analytics/queries/*.sql`, `analytics/metrics.ts`, tests in `analytics/metrics_test.ts` |
 
@@ -67,8 +88,12 @@ collector.
   asks the next time it is opened. Signed out, nothing is captured, not even errors: the login
   screen sends nothing.
 - **Per install**: a later sign-in on the same install (another account included) is not asked
-  again. More → Nutzungsdaten switches it. Off stops sending at once, drops whatever still waits
-  in the queue and deletes the install id; nothing captured before a yes is ever sent later.
+  again. More → Nutzungsdaten switches it. Off stops the SDK at once and deletes the install id,
+  ours and the SDK's: after `close()` the app deletes the native SDK's files (ids, queue, flags;
+  DECISIONS Job 44, item 3), and a start with a stored no deletes them again. Nothing captured
+  before a yes is ever sent later; an event handed to the SDK just before the off is sent if
+  `close()` gets it out at once, else deleted. Nothing captured after the off is taken. At
+  sign-out the SDK keeps running: what it holds is sent, nothing new is taken.
 - **The install id exists only after a yes** (job 33b, legal review H-08, TDDDG §25): a yes
   makes and stores it, a no or off deletes it together with the `first_open` mark, and a later
   yes makes a new one. Without a yes the device holds only the decision (`analytics.consent`),
@@ -84,13 +109,15 @@ collector.
 
 ## Event catalog
 
-Every event carries `distinct_id` = `install_id` (a random UUID made on the device at the yes,
-new on a reinstall or after switching off and on; never an e-mail or name, no `identify`), `event_id` (UUID, also PostHog's `uuid`, so a
-retried batch is not counted twice), `household_id` (null before joining), `platform`
-(`ios`, `android`, `web`), `app_version` (`0.1.0+1023`), `is_internal`, `$geoip_disable: true`,
-`$process_person_profile: false`, `$lib: hummlist-app`, `$lib_version`. No `$ip`. With
-`ANALYTICS_HOUSEHOLD_GROUPS=true` (off; group analytics is paid) it also sends
-`$groups: {household: <id>}`.
+Every event carries `install_id` (a random UUID made at the yes, also the event's
+`distinct_id`; new on a reinstall or after switching off and on; never an e-mail or name, no
+`identify`), `household_id` (absent before joining), `platform` (`ios`, `android`, `web`),
+`app_version` (`0.1.0+1023`), `is_internal`, `$geoip_disable: true`,
+`$process_person_profile: false`. PostHog's `uuid` comes from the SDK, which sends it again on a
+retry, so a retried batch is not counted twice. No `$ip`. With `ANALYTICS_HOUSEHOLD_GROUPS=true`
+(off; group analytics is paid) it also sends `$groups: {household: <id>}`. The SDK adds its own
+properties (next section). Until job 44 events also carried `event_id`, `distinct_id` as a
+property and `$lib: hummlist-app`; no query reads them.
 
 | Event | When | Properties |
 | --- | --- | --- |
@@ -130,6 +157,33 @@ Adding an event (jobs 21 and 22): add it to `eventCatalog` with a rule per prope
 `app/test/analytics/events_test.dart`, and a row here. Free text can't be added by accident: a
 property needs an explicit rule (`OneOf`, `IntIn`, `IsBool`), and `checkContext` refuses any other
 key. Server events: `serverEventCatalog` in `telemetry.ts`.
+
+## What the SDKs add (job 44)
+
+The SDK adds properties after our `beforeSend`, so the allow-list does not cover them:
+
+- **Web (posthog-js)**: only what `webEventKeys` admits: `$os`, `$os_version`, `$browser`,
+  `$browser_version`, `$browser_language`, `$device_type`, `$screen_height`, `$screen_width`,
+  `$viewport_height`, `$viewport_width`, `$timezone`, `$lib` (`posthog-flutter`),
+  `$lib_version`, `token`, `distinct_id`. Never the URL, path, referrer, user agent, session
+  or device id. posthog-js keeps everything in memory: no cookie, no localStorage.
+- **iOS (posthog-ios)**: `$app_name`, `$app_version`, `$app_build`, `$app_namespace`,
+  `$is_testflight`, `$is_sideloaded`, `$device_manufacturer`, `$device_model`, `$device_name`
+  (the model, such as "iPhone", not the name the user gave the phone), `$device_type`,
+  `$is_emulator`, `$os_name`, `$os_version`, `$screen_width`, `$screen_height`, `$locale`,
+  `$timezone`, `$network_wifi`, `$network_cellular`, `$lib`, `$lib_version`, `$session_id`
+  (random, in memory, new after 30 minutes idle), `$is_identified`, debug counters.
+- **Android (posthog-android)**: the same app, device, OS and screen properties plus
+  `$screen_density`, `$network_bluetooth`, `$network_carrier` (the mobile network's name) and
+  `$user_agent`/`$raw_user_agent` (the system HTTP agent: Android version and device model).
+- **Linux desktop** (fg only): app name and version, OS, screen, time zone, session id.
+
+Neither native SDK lets Dart strip these (the plugin passes no native `beforeSend`), which is
+the upstream issue drafted in NEEDS_LEAD "Job 44". The flag request (`/flags`) carries the install
+id, the SDK's device id (the same id), the time zone and the SDK's name and version.
+`privacy_scan.sql` lists all of them, so anything else that shows up is a finding. The context
+is also registered as super properties, so what the native SDKs build themselves (crash
+reports) carries `install_id`, `household_id`, `is_internal` and `$geoip_disable: true` too.
 
 ## Alexa (job 31)
 
@@ -179,10 +233,20 @@ so the filter is this pair of lists in each query rather than a saved cohort.
 
 ## Error tracking
 
-- **App:** `FlutterError.onError`, `PlatformDispatcher.instance.onError` and the zone around
-  `main` hand uncaught errors to `Analytics.captureException`, under the same rules as events
-  (consent, signed in, `is_internal`). The event is `$exception` with `$exception_list` in
-  posthog_flutter's shape (type, value, mechanism, raw frames).
+- **App, Dart:** `reportUncaughtErrors` hooks `FlutterError.onError` (still presented as before)
+  and `PlatformDispatcher.instance.onError`, and `main` runs in a zone; all three hand uncaught
+  errors to `Analytics.captureException`, under the same rules as events (consent, signed in,
+  `is_internal`). It hands the error to posthog_flutter's `captureException`, which builds
+  `$exception_list` (type, value, mechanism, raw frames; on the web each frame's `chunk_id`);
+  `beforeSend` then puts our readable type and scrubbed message into the first item, gives every
+  cause `<redacted>`, keeps code locations only in frames, and drops the rest (the SDK's
+  `flutter_error_details` included). The SDK's own Dart error hooks stay off: they would hand
+  `beforeSend` strings, and the scrubber needs the error. An `AsyncError` is unwrapped.
+- **App, native:** `captureNativeExceptions` and `captureNativeCrashes` are on. iOS: uncaught
+  NSExceptions, Mach exceptions and signals through PLCrashReporter (experimental at PostHog),
+  sent at the next launch. Android: uncaught JVM exceptions, and from Android 12 native (NDK)
+  crashes read from the system's exit records at the next launch. Both need the project's
+  exception autocapture setting (on since job 19).
 - **Scrubbing** (`scrubMessage`): errors the Dart runtime and Flutter raise themselves (type,
   range, null-check, state, layout errors) keep the shape of their message's first line, at most
   120 characters: anything quoted, e-mail addresses, URLs, UUIDs and numbers are replaced, and
@@ -197,14 +261,58 @@ so the filter is this pair of lists in each query rather than a saved cohort.
   other non-Chromium browsers run `main.dart.js`: with `POSTHOG_PERSONAL_API_KEY` and
   `POSTHOG_PROJECT_ID` in the Vercel project, `scripts/vercel.sh` builds with `--source-maps`, runs
   `posthog-cli sourcemap process` (chunk ids into `main.dart.js`, the map uploaded, then deleted
-  from the deployment), and the app sends each frame's `chunk_id`, so PostHog maps it back to Dart.
-  Chromium runs the wasm build (job 28): its frames name Dart functions but carry no lines, and
-  PostHog has no wasm symbolication.
+  from the deployment), and posthog_flutter sends each frame's `chunk_id`, so PostHog maps it
+  back to Dart. Chromium runs the wasm build (job 28): its frames name Dart functions but carry
+  no lines, and PostHog has no wasm symbolication.
+- **Gaps** (job 44), what the SDKs do not cover or what we cannot shape:
+  - **Native crash reports are not scrubbed.** They are built natively and never pass the Dart
+    `beforeSend`: an NSException reason or a Java exception message goes as the platform wrote
+    it. The app's own native code is two small speech checks; plugin crashes carry technical
+    messages. Upstream draft in NEEDS_LEAD "Job 44".
+  - **iOS keeps its crash handler after an off.** PLCrashReporter's signal handler cannot be
+    removed once installed, so a crash after switching off is written to disk and sent if the
+    user says yes again later (read in posthog-ios, not observed). Android does not install its
+    handlers while the SDK is off; a native crash from that time is read from the system's exit
+    records after a later yes (inferred).
+  - **Native symbols.** iOS dSYMs and Android mapping or `.so` symbols are not uploaded (no
+    obfuscation, so Dart frames read; native frames of a native crash stay addresses). The
+    upload needs PostHog's Xcode build phase and Gradle plugin with the personal key on CI, a
+    release-pipeline change left for a later job.
+  - **No isolate hook.** The app spawns no isolate; errors in the main isolate reach the zone or
+    `PlatformDispatcher`.
+  - **Web:** `PlatformDispatcher.onError` does not exist there, so uncaught async errors arrive
+    through the zone only; release builds minify type names, so types outside `errorType`'s list
+    read as `minified:…` (upstream draft in NEEDS_LEAD).
+  - **Linux and Windows:** no native crash capture (fg's Linux app only).
 - **Edge functions:** every function is wrapped in `withTelemetry(<name>, handler)`: an uncaught
   exception is reported (tagged `function_name`) and answered with 500, and the voice and account
   functions also report the failures they catch and answer with 500. The event is sent before the
   response returns (3 s cap) and never carries the request, headers, tokens or item text. Its
   `distinct_id` is `edge-function-<name>`: no user, so no consent is involved (DECISIONS Job 19).
+  It stays on its own sender (DECISIONS Job 44, item 16).
+
+## Feature flags (job 44)
+
+Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.isOn('<key>')`
+(`Flags`, a cubit, so a widget can `select` it). Nothing else in the app reads PostHog flags.
+
+- **Off unless PostHog said on.** `isOn` is false for an unknown key, before the yes (the SDK
+  does not run, so no flag request is made), after a no (every flag back to off at once), in a
+  build without a project key (CI, fg, local debug), and offline until a first answer. After
+  the first answer the SDK serves what it received last, also offline and at the next start
+  (native SDKs keep it on disk; posthog-js asks again at every page load).
+- **Only installs that said yes get flags.** The flag request carries the install id, so a
+  rollout through a flag never reaches users who declined. A change that must reach everyone
+  ships without a flag.
+- **Reading a flag sends nothing** (`sendFeatureFlagEvent` off, no `$feature_flag_called`).
+  Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new
+  ones.
+- **Keys and rollouts live in PostHog** (project 319492); the Lead creates them. No flag exists
+  yet. A flag gates code paths only; it never gates consent, data or legal texts.
+- **`releases/flags.json` is not this.** It only says which changelog items wait for a rollout
+  or a hold (job 40, docs/CHANGELOG.md, "Gated items"). A feature behind a PostHog flag gets its
+  key there too (`"rollout": "off"`, `partial`, `full`), set by hand when the PostHog rollout
+  changes, so its changelog item goes public once everyone has it.
 
 ## Configuration
 
@@ -296,14 +404,23 @@ that function, after RevenueCat confirmed the purchase:
 
 ## Verifying
 
-- `flutter test app/test/analytics` (events, consent gate, payload, internal rules, scrubber,
-  list and session events, consent flow, More switch); `deno test` in `supabase/functions`
-  (`telemetry_test.ts`, `purchases_test.ts`, voice reporting) and in `analytics/`.
+- `flutter test app/test/analytics` (events, consent gate, the SDK set up only after the yes and
+  closed at a no, the setup arguments, payload, internal rules, scrubber and error reports
+  through the SDK, the uncaught-error hooks, flags, list and session events, consent flow, More
+  switch). The tests run the real `Posthog()` facade and its `beforeSend` against a recorded
+  method channel (`NativePostHog` in `fakes.dart`): what they see is what iOS and Android would
+  receive. `deno test` in `supabase/functions` (`telemetry_test.ts`, `purchases_test.ts`, voice
+  reporting) and in `analytics/`.
 - `e2e/tests/analytics.spec.ts` drives the web build against the local stack with a fake
-  collector on the PostHog host: sign-in → consent → onboarding or list (with screenshots), zero
-  requests before consent and after declining or switching off, one event per action, no list
-  text, invite links through consent. Every other spec answers the consent through `signUp` or
-  `answerConsent` (declined).
+  collector on the PostHog host that speaks posthog-js' wire format (`/e/`, `/flags/`; remote
+  config refused as the CSP refuses it): sign-in → consent → onboarding or list (with
+  screenshots), zero requests and posthog-js not even fetched before consent and after
+  declining, nothing after switching off, one event per action, only allow-listed keys, no
+  PostHog cookie or storage, no list text or invite code in any request. Every other spec
+  answers the consent through `signUp` or `answerConsent` (declined).
+- Native: fg's Linux app with `FG_POSTHOG_HOST` against `cli/posthog_collector.ts`
+  (`.cursor/skills/verify-family-groceries/features/analytics.md`); job 44's run is in
+  `docs/screenshots/44/native-linux-collector.txt`.
 - Manual proofs against project 319492 (never from CI): `e2e/analytics-proof.mjs` (AC11, a local
   release web build raising the internal test error) and `analytics/proofs/edge_exception.ts`
   (AC12). Steps in `.cursor/skills/verify-family-groceries/features/analytics.md`; evidence in

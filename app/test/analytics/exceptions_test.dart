@@ -1,20 +1,23 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/exceptions.dart';
+import 'package:family_groceries/analytics/setup.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'fakes.dart';
 
 class _AppError() implements Exception {
   @override
   String toString() => 'could not tick Hafermilch for peter@example.com';
 }
 
-List<Map<Object?, Object?>> framesOf(List<Map<String, Object?>> list) =>
-    ((list.single['stacktrace']! as Map)['frames']! as List).cast();
-
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('scrubMessage', () {
     test('a server error keeps only its code', () {
       expect(
@@ -118,116 +121,140 @@ void main() {
     });
   });
 
-  group('exceptionList', () {
-    test('has the PostHog shape with raw dart frames, crash site last', () {
-      final stack = StackTrace.current;
-      final list = exceptionList(
-        StateError('forced'),
-        stack,
-        handled: false,
-        web: false,
-      );
-      final item = list.single;
+  group('error reports', () {
+    late NativePostHog native;
+    late Analytics analytics;
+
+    setUp(() async {
+      native = NativePostHog()..install();
+      analytics = await loadedAnalytics(MemoryAnalyticsStore())
+        ..setUser(customer);
+      await analytics.decide(granted: true);
+    });
+
+    tearDown(() => analytics.close());
+
+    Future<Map<String, Object?>> reportOf(Object error, [StackTrace? s]) async {
+      analytics.captureException(error, s);
+      await analytics.flush();
+      final event = native.events.last;
+      expect(event['event'], r'$exception');
+      return propsOf(event);
+    }
+
+    Map<Object?, Object?> itemOf(Map<String, Object?> report) =>
+        (report[r'$exception_list']! as List).first as Map;
+
+    List<Map<Object?, Object?>> framesOf(Map<String, Object?> report) =>
+        ((itemOf(report)['stacktrace']! as Map)['frames']! as List).cast();
+
+    test('the scrubbed type and message, uncaught, raw dart frames', () async {
+      final report = await reportOf(StateError('forced'), StackTrace.current);
+      final item = itemOf(report);
       expect(item['type'], 'StateError');
       expect(item['value'], 'Bad state: <w>');
-      expect(item['mechanism'], {
-        'handled': false,
-        'synthetic': false,
-        'type': 'generic',
-      });
-      final frames = framesOf(list);
-      expect(frames, isNotEmpty);
-      expect(frames.last['platform'], 'dart');
-      expect(frames.last['filename'], 'exceptions_test.dart');
-      expect(frames.last['lineno'], isA<int>());
-      expect(frames.last['in_app'], isTrue);
+      expect(item['mechanism'], containsPair('handled', false));
       expect((item['stacktrace']! as Map)['type'], 'raw');
+      final here = framesOf(report)
+          .where((f) => f['filename'] == 'exceptions_test.dart');
+      expect(here, isNotEmpty);
+      expect(here.first['platform'], 'dart');
+      expect(here.first['lineno'], isA<int>());
+      expect(report[r'$exception_level'], 'error');
     });
 
-    test('a report carries no item text or address, only the error type', () {
-      for (final error in [
-        StateError('cannot parse Hafermilch 2 Liter for peter@example.com'),
-        TypeError(),
-        FlutterError('Hafermilch 2 Liter for peter@example.com'),
-      ]) {
-        final item = exceptionList(error, null, handled: true).single;
-        final value = item['value']! as String;
-        expect(value, isNot(contains('Hafermilch')));
-        expect(value, isNot(contains('Liter')));
-        expect(value, isNot(contains('peter')));
-        expect(value, isNot(contains('example.com')));
-        expect(item['type'], anyOf('StateError', 'TypeError', 'FlutterError'));
-      }
-      expect(
-        exceptionList(
+    test(
+      'carries the context and nothing of the error but its report',
+      () async {
+        final report = await reportOf(
           StateError('cannot parse Hafermilch 2 Liter for peter@example.com'),
-          null,
-          handled: true,
-        ).single['value'],
-        'Bad state: cannot <w> <n> <w> for <email>',
-      );
-    });
+        );
+        expect(report.keys.toSet(), {
+          r'$exception_list',
+          r'$exception_level',
+          'install_id',
+          'household_id',
+          'platform',
+          'app_version',
+          'is_internal',
+          r'$geoip_disable',
+          r'$process_person_profile',
+        });
+        expect(
+          itemOf(report)['value'],
+          'Bad state: cannot <w> <n> <w> for <email>',
+        );
+        final text = '$report';
+        for (final secret in ['Hafermilch', 'Liter', 'peter', 'example.com']) {
+          expect(text, isNot(contains(secret)));
+        }
+      },
+    );
 
-    test('common types are named, whatever the build did to type names', () {
-      String typeOf(Object e) =>
-          exceptionList(e, null, handled: true).single['type']! as String;
-      expect(typeOf(StateError('x')), 'StateError');
-      expect(typeOf(RangeError.index(3, [1], 'l')), 'IndexError');
-      expect(typeOf(const FormatException('x')), 'FormatException');
-      expect(
-        typeOf(const HouseholdError(HouseholdProblem.other)),
-        'HouseholdError',
-      );
-      expect(typeOf(_AppError()), '_AppError');
-    });
+    test(
+      'common types are named, whatever the build did to type names',
+      () async {
+        Future<Object?> typeOf(Object e) async =>
+            itemOf(await reportOf(e))['type'];
+        expect(await typeOf(RangeError.index(3, [1], 'l')), 'IndexError');
+        expect(await typeOf(const FormatException('x')), 'FormatException');
+        expect(
+          await typeOf(const HouseholdError(HouseholdProblem.other)),
+          'HouseholdError',
+        );
+        expect(await typeOf(_AppError()), '_AppError');
+      },
+    );
 
-    test('web frames are javascript frames with their chunk id', () {
-      final stack = StackTrace.fromString(
-        'Error\n    at Object.a (https://app.hummlist.com/main.dart.js?v=1:12:34)',
-      );
-      final frames = framesOf(
-        exceptionList(
-          StateError('x'),
-          stack,
-          handled: true,
-          web: true,
-          chunkIds: {
-            'https://app.hummlist.com/main.dart.js_1.part.js': 'part',
-            'https://app.hummlist.com/main.dart.js': 'c1',
-          },
+    test('an async error is unwrapped', () async {
+      final item = itemOf(
+        await reportOf(
+          AsyncError(const FormatException('Milch'), StackTrace.empty),
         ),
       );
-      expect(frames.single['platform'], 'web:javascript');
-      expect(frames.single['abs_path'], 'main.dart.js');
-      expect(frames.single['lineno'], 12);
-      expect(frames.single['colno'], 34);
-      expect(frames.single['chunk_id'], 'c1');
+      expect(item['type'], 'FormatException');
+      expect(item['value'], '<redacted>');
     });
 
-    test('an async error is unwrapped; no trace is marked synthetic', () {
-      final list = exceptionList(
-        AsyncError(const FormatException('Milch'), StackTrace.empty),
-        null,
-        handled: true,
-      );
-      expect(list.single['type'], 'FormatException');
-      expect(list.single['value'], '<redacted>');
-      expect((list.single['mechanism']! as Map)['synthetic'], isTrue);
-      expect(list.single.containsKey('stacktrace'), isFalse);
-    });
-
-    test('no frame carries a device path or query', () {
-      final stack = StackTrace.fromString(
-        '#0      main (file:///Users/peter/app/lib/main.dart:3:5)\n'
-        '#1      f (package:family_groceries/list/x.dart:9:1)',
-      );
+    test('no frame carries a device path', () async {
       final frames = framesOf(
-        exceptionList(StateError('x'), stack, handled: true, web: false),
+        await reportOf(
+          StateError('x'),
+          StackTrace.fromString(
+            '#0      main (file:///Users/peter/app/lib/main.dart:3:5)\n'
+            '#1      f (package:family_groceries/list/x.dart:9:1)',
+          ),
+        ),
       );
-      expect(frames.map((f) => f['abs_path']), [
-        'package:family_groceries/list/x.dart',
-        'main.dart',
-      ]);
+      expect(
+        frames.map((f) => f['abs_path']),
+        containsAll(['package:family_groceries/list/x.dart', 'main.dart']),
+      );
+      expect('$frames', isNot(contains('peter')));
+    });
+
+    test('uncaught framework and platform errors are reported', () async {
+      final presented = <FlutterErrorDetails>[];
+      final (framework, platform) = (
+        FlutterError.onError,
+        PlatformDispatcher.instance.onError,
+      );
+      addTearDown(() {
+        FlutterError.onError = framework;
+        PlatformDispatcher.instance.onError = platform;
+      });
+      FlutterError.onError = presented.add;
+      reportUncaughtErrors(analytics);
+
+      FlutterError.onError!(
+        FlutterErrorDetails(exception: StateError('build Hafermilch')),
+      );
+      PlatformDispatcher.instance.onError!(TypeError(), StackTrace.current);
+      await analytics.flush();
+
+      expect(presented, hasLength(1), reason: 'still presented as before');
+      expect(native.names, ['first_open', r'$exception', r'$exception']);
+      expect('${native.events}', isNot(contains('Hafermilch')));
     });
   });
 }

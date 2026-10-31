@@ -151,11 +151,15 @@ after the draft, an item moved out of `held` by hand, or an override that
 names Alexa fails with the reason. Redraft with `--force` after fixing
 `flags.json`.
 
-The app has no feature-flag system yet. PostHog is used for analytics only,
-and the collector makes no network calls. So `flags.json` is updated by hand,
-in a PR, when a rollout changes. If the app later uses PostHog flags, the
-file is still updated by hand when a flag reaches 100 %. A later job may
-add a read-only check that compares the two.
+Two kinds of flags, two places (job 44). Runtime toggles in the app are
+PostHog feature flags, read through `Analytics.flags.isOn(key)`
+([`docs/ANALYTICS.md`](ANALYTICS.md), "Feature flags"); the Lead creates
+them in PostHog. `flags.json` only gates the changelog: it says whether a
+feature's changelog item is public yet. A feature behind a PostHog flag gets
+a key of the same name here, and `flags.json` is updated by hand, in a PR,
+when the PostHog rollout changes (`full` once everyone has it). Release and
+changelog holds (`hold:`) live only here. The changelog tooling never
+reads PostHog. A later job may add a read-only check that compares the two.
 
 What happens to a gated item:
 

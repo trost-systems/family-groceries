@@ -205,7 +205,7 @@ typedef Onboarding = ({
   FakeSharer sharer,
   PendingInvite pending,
   GoRouter router,
-  RecordingSink sink,
+  NativePostHog sink,
   Analytics analytics,
 });
 
@@ -234,9 +234,9 @@ Future<Onboarding> pumpOnboarding(
   if (pendingCode != null) {
     pending.remember(pendingCode);
   }
-  final sink = RecordingSink();
+  final sink = NativePostHog()..install();
   final analytics = await tester.runAsync(
-    () => loadedAnalytics(sink, MemoryAnalyticsStore()),
+    () => loadedAnalytics(MemoryAnalyticsStore()),
   );
   await tester.runAsync(() => analytics!.decide(granted: true));
   analytics!.setUser(const AnalyticsUser(email: 'neu@gmail.com'));

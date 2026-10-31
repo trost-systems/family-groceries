@@ -1,0 +1,25 @@
+id: posthog-flutter-only-in-posthog-client
+valid:
+  # The app goes through Analytics.
+  - |
+    import 'package:family_groceries/analytics/analytics.dart';
+  # A package whose name only starts the same.
+  - |
+    import 'package:posthog_flutter_extras/extras.dart';
+  # Named in a comment or a string, nothing is imported.
+  - |
+    /// posthog_flutter lives in posthog_client.dart.
+    const uri = 'package:posthog_flutter/posthog_flutter.dart';
+invalid:
+  # A screen that wants PosthogObserver or a flag straight from the SDK.
+  - |
+    import 'package:posthog_flutter/posthog_flutter.dart';
+  - |
+    import "package:posthog_flutter/posthog_flutter.dart" as ph;
+  - |
+    import 'package:posthog_flutter/posthog_flutter.dart' show Posthog;
+  - |
+    export 'package:posthog_flutter/posthog_flutter.dart';
+  - |
+    import 'package:family_groceries/analytics/none.dart'
+        if (dart.library.io) 'package:posthog_flutter/posthog_flutter.dart';

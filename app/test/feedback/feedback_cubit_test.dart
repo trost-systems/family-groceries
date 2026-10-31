@@ -10,21 +10,21 @@ import 'fakes.dart';
 
 void main() {
   late FakeFeedbackRepository repo;
-  late RecordingSink sink;
+  late NativePostHog sink;
   late Analytics analytics;
   late FeedbackCubit cubit;
   var ids = 0;
 
   Future<void> start({bool? consent = true}) async {
     repo = FakeFeedbackRepository();
-    sink = RecordingSink();
-    analytics = await loadedAnalytics(sink, MemoryAnalyticsStore());
+    sink = NativePostHog()..install();
+    analytics = await loadedAnalytics(MemoryAnalyticsStore());
     if (consent != null) {
       await analytics.decide(granted: consent);
     }
     analytics.setUser(customer);
     await analytics.flush();
-    sink.batches.clear();
+    sink.calls.clear();
     cubit = FeedbackCubit(
       repo,
       analytics: analytics,

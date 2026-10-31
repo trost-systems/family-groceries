@@ -1,0 +1,22 @@
+# The PostHog SDK is used in one file, app/lib/analytics/posthog_client.dart (job 44): Analytics
+# sets it up only after the user's yes and puts every Dart-side event through its allow-list as
+# the SDK's beforeSend. A second file with Posthog() at hand could set the SDK up before consent,
+# capture past the allow-list, or call screen() or identify(), whose routes and ids the gate never
+# sees (docs/ANALYTICS.md). Tests may drive the facade to prove the gate holds.
+#
+# Matched on the import or export URI, conditional ones included.
+id: posthog-flutter-only-in-posthog-client
+language: dart
+severity: error
+files:
+  - app/**
+ignores:
+  - app/lib/analytics/posthog_client.dart
+  - app/test/**
+rule:
+  kind: import_or_export
+  has:
+    stopBy: end
+    kind: uri
+    regex: '^[''"]package:posthog_flutter/'
+message: 'posthog_flutter is imported outside app/lib/analytics/posthog_client.dart: go through Analytics (events, errors) or Analytics.flags; only PostHogClient may touch the SDK (docs/ANALYTICS.md)'

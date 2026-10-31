@@ -9,6 +9,7 @@ import android.speech.SpeechRecognizer
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -17,6 +18,29 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 if (call.method == "offlineGerman") offlineGerman(result::success) else result.notImplemented()
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "familygroceries/posthog")
+            .setMethodCallHandler { call, result ->
+                val token = call.argument<String>("projectToken")
+                if (call.method == "forget" && token != null) {
+                    forgetPostHog(token)
+                    result.success(null)
+                } else {
+                    result.notImplemented()
+                }
+            }
+    }
+
+    /**
+     * Deletes what posthog-android keeps after PostHog.close(): its preferences
+     * (anonymous and device ids, flags, super properties), cleared through
+     * Android's API because they are cached in memory too, and its queues.
+     * Analytics calls it when the user switches analytics off (job 44).
+     */
+    private fun forgetPostHog(token: String) {
+        getSharedPreferences("posthog-android-$token", MODE_PRIVATE).edit().clear().commit()
+        listOf("posthog-disk-queue", "posthog-disk-replay-queue", "posthog-disk-logs-queue")
+            .forEach { File(cacheDir, it).deleteRecursively() }
+        getDir("app_posthog-disk-queue", MODE_PRIVATE).deleteRecursively()
     }
 
     /**

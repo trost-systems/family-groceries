@@ -16,7 +16,7 @@ import 'fakes.dart';
 /// for an op's retry, a realtime echo or an undo.
 void main() {
   late FakeRepository repo;
-  late RecordingSink sink;
+  late NativePostHog sink;
   late Analytics analytics;
   late ListCubit cubit;
   var now = DateTime.utc(2026, 10, 30, 9);
@@ -35,7 +35,7 @@ void main() {
   /// Forgets what was sent so far, the setup's adds included.
   Future<void> reset() async {
     await analytics.flush();
-    sink.batches.clear();
+    sink.calls.clear();
   }
 
   Future<List<String>> names() async => [
@@ -58,8 +58,8 @@ void main() {
         Member(id: 'peter', displayName: 'Peter', role: 'owner'),
         Member(id: 'lea', displayName: 'Lea', role: 'member'),
       ];
-    sink = RecordingSink();
-    analytics = await loadedAnalytics(sink, MemoryAnalyticsStore())
+    sink = NativePostHog()..install();
+    analytics = await loadedAnalytics(MemoryAnalyticsStore())
       ..setUser(customer);
     await analytics.decide(granted: true);
     cubit = ListCubit(

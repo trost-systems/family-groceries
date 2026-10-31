@@ -1,0 +1,54 @@
+id: posthog-flutter-only-in-posthog-client
+snapshots:
+  "export 'package:posthog_flutter/posthog_flutter.dart';\n":
+    labels:
+    - source: export 'package:posthog_flutter/posthog_flutter.dart';
+      style: primary
+      start: 0
+      end: 54
+    - source: "'package:posthog_flutter/posthog_flutter.dart'"
+      style: secondary
+      start: 7
+      end: 53
+  "import \"package:posthog_flutter/posthog_flutter.dart\" as ph;\n":
+    labels:
+    - source: import "package:posthog_flutter/posthog_flutter.dart" as ph;
+      style: primary
+      start: 0
+      end: 60
+    - source: "\"package:posthog_flutter/posthog_flutter.dart\""
+      style: secondary
+      start: 7
+      end: 53
+  "import 'package:family_groceries/analytics/none.dart'\n    if (dart.library.io) 'package:posthog_flutter/posthog_flutter.dart';\n":
+    labels:
+    - source: |-
+        import 'package:family_groceries/analytics/none.dart'
+            if (dart.library.io) 'package:posthog_flutter/posthog_flutter.dart';
+      style: primary
+      start: 0
+      end: 126
+    - source: "'package:posthog_flutter/posthog_flutter.dart'"
+      style: secondary
+      start: 79
+      end: 125
+  "import 'package:posthog_flutter/posthog_flutter.dart' show Posthog;\n":
+    labels:
+    - source: import 'package:posthog_flutter/posthog_flutter.dart' show Posthog;
+      style: primary
+      start: 0
+      end: 67
+    - source: "'package:posthog_flutter/posthog_flutter.dart'"
+      style: secondary
+      start: 7
+      end: 53
+  "import 'package:posthog_flutter/posthog_flutter.dart';\n":
+    labels:
+    - source: import 'package:posthog_flutter/posthog_flutter.dart';
+      style: primary
+      start: 0
+      end: 54
+    - source: "'package:posthog_flutter/posthog_flutter.dart'"
+      style: secondary
+      start: 7
+      end: 53

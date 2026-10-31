@@ -58,9 +58,13 @@ interest.
 
 | Data | Where | Purpose | Basis | Kept | Processor / region | Deletion | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Events from `eventCatalog`: first_open, household_created, invite_accepted, invite_sent, item_added, item_ticked, category_reordered, store_reordered, item_categorized, dedupe_hint_*, feedback_submitted, with only the listed properties (no item names, no text) | PostHog EU | Product decisions | (a) consent on the consent screen after sign-in; TDDDG §25 for the install id on the device | 1 year at PostHog (policy) | PostHog, EU cloud (Frankfurt) | Withdraw: Mehr → Nutzungsdaten switch off (stops sending, drops the queue) | `app/lib/analytics/events.dart` |
-| Context on every event: random install id (`distinct_id`), household id, platform, app version, internal flag; `$geoip_disable: true`, `$process_person_profile: false` | PostHog EU | Counting installs and households | (a) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `_enqueue` |
-| App errors (`$exception`, scrubbed stack) | PostHog EU | Fixing crashes | (a), only when consent is yes (`_live`) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `captureException`, `exceptions.dart` |
+| Events from `eventCatalog`: first_open, household_created, invite_accepted, invite_sent, item_added, item_ticked, category_reordered, store_reordered, item_categorized, dedupe_hint_*, feedback_submitted, with only the listed properties (no item names, no text) | PostHog EU | Product decisions | (a) consent on the consent screen after sign-in; TDDDG §25 for the install id on the device | 1 year at PostHog (policy) | PostHog, EU cloud (Frankfurt) | Withdraw: Mehr → Nutzungsdaten switch off (stops the SDK and deletes its ids and queue on the device, job 44) | `app/lib/analytics/events.dart` |
+| Context on every event: random install id (`install_id`, also the `distinct_id`), household id, platform, app version, internal flag; `$geoip_disable: true`, `$process_person_profile: false`; also kept by the SDK as super properties for the events it builds itself | PostHog EU | Counting installs and households | (a) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `_context`, `_registerContext` |
+| Added by PostHog's SDK (job 44): iOS and Android: app name, version, build and bundle id, device maker, model and type, emulator/TestFlight/sideloaded flags, OS name and version, screen size (Android: density), locale, time zone, Wi-Fi/cellular (Android: Bluetooth, carrier name, the system HTTP user agent), a random in-memory session id; web: browser and OS name and version, device type, screen and window size, language, time zone (URL, referrer, user agent, session and device ids stripped by our `before_send`); the SDK's name and version | PostHog EU | Sent by the SDK with every event; used to tell platforms and versions apart in error tracking | (a) | 1 year | PostHog EU | As above | `docs/ANALYTICS.md` "What the SDKs add"; web: `app/lib/analytics/posthog_platform_web.dart` |
+| Feature-flag requests (job 44): install id (as distinct id and device id), time zone, SDK name and version; the answer is cached by the native SDKs on the device | PostHog EU | Runtime toggles (`Analytics.flags`) | (a), only after the yes; no request before it | Not stored as events | PostHog EU | Off stops the SDK; no further requests | `app/lib/analytics/flags.dart`, `posthog_client.dart` |
+| App errors (`$exception`, scrubbed type, message and stack: Dart errors) | PostHog EU | Fixing crashes | (a), only when consent is yes (`_live`) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `captureException`, `exceptions.dart` |
+| Native crash reports (job 44): iOS NSException/signal and Android JVM/native crashes with type, message as the platform wrote it (not scrubbed) and native stack, sent at the next launch | PostHog EU | Fixing crashes | (a), only while the SDK runs after a yes (iOS: a crash after an off is sent after a later yes) | 1 year | PostHog EU | As above | `app/lib/analytics/posthog_client.dart` (`captureNativeExceptions`, `captureNativeCrashes`) |
+| PostHog SDK state on the device (job 44): iOS and Android SDK files (anonymous id = install id, device id, queued events, cached flags and remote config, super properties), written at the first start after a yes; web: nothing (memory only) | Device | Running the SDK | TDDDG §25 (1) with the consent | Until the off | n/a | Deleted at the off (`forgetPostHogState`, Android via `MainActivity.forgetPostHog`) and again at a start with a stored no | `app/lib/analytics/posthog_platform_io.dart` |
 | Server function errors (function, error type, scrubbed message, stack; no user, household, install id or IP) | PostHog EU | Fixing server errors | (f) | 1 year | PostHog EU | n/a | `supabase/functions/_shared/telemetry.ts` |
 | Purchase events (job 25): `purchase_completed`/`purchase_refunded` with product, store, price, currency, country, net amount, hashed transaction ref; `purchase_restored` with product and store | PostHog EU, sent by the purchases function | Revenue (kill gate, LTV) | (a), only while the buyer's newest answer in the app is yes (`analytics_consents`) | 1 year | PostHog EU | As above | `supabase/functions/purchases/handler.ts`, `_shared/purchases.ts` `sendPurchaseEvent` |
 | Consent decision per install (user, install id, yes/no, internal, decided at) | `public.analytics_consents` (service only) | Server events (e.g. Alexa adds) follow the user's newest answer; proof of consent | (c)/(f) proof of consent (Art. 7(1)) | 20 newest installs per user; deleted with the account | Supabase EU | Cascades with the account; in the export as `analytics_decisions` | `20261030140000_alexa.sql` |
@@ -127,11 +131,14 @@ merchant of record); Hummlist gets no payment data and no store account name or 
 
 No advertising, no sale of data, no location (PostHog GeoIP off), no contacts, no tracking or
 analytics without consent, no cookies or trackers on hummlist.com (`site/test/preview.test.mjs`).
+The web app's posthog-js sets no cookie and no localStorage key (job 44, memory persistence).
 
 ## Differences to the privacy policy (`site/content/legal/datenschutz.md`)
 
-One open: the in-app purchase (job 25) is in the draft section 5a, not yet in the policy; Hummlist
-sells nothing until it is (NEEDS_PETER Job 25). Otherwise none (Alexa is in the policy since job
-33f; 33g removed the AI support assistant). Not named
-in the policy, both short-lived: the `invite_attempts` rate-limit rows (deleted after about a day)
-and the function error logs.
+Two open. The in-app purchase (job 25) is in the draft section 5a, not yet in the policy; Hummlist
+sells nothing until it is (NEEDS_PETER Job 25). And job 44 (PostHog SDK) adds device and app
+properties, flag requests, native crash reports and SDK files on the device that the policy and
+the consent text do not name yet; the sentences for the Legal Review are in NEEDS_LEAD "Job 44"
+(legal texts unchanged). Otherwise none (Alexa is in the policy since job 33f; 33g removed the AI
+support assistant). Not named in the policy, both short-lived: the `invite_attempts` rate-limit
+rows (deleted after about a day) and the function error logs.

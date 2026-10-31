@@ -3,17 +3,33 @@
 -- be empty except where noted.
 
 -- 1. Property keys outside the allow-list, with how often they occur. PostHog adds a few keys at
---    ingestion ($lib is ours; $sent_at etc. may appear): judge each one listed.
+--    ingestion ($sent_at etc. may appear): judge each one listed. Since job 44 the SDKs add their
+--    own (docs/ANALYTICS.md, "What the SDK adds"); those are listed in the second half.
 SELECT key, count() AS events
 FROM events
 ARRAY JOIN JSONExtractKeys(properties) AS key
 WHERE timestamp > now() - INTERVAL 90 DAY
   AND key NOT IN (
+    -- The app's context and events (app/lib/analytics/events.dart) and the server's
+    -- (supabase/functions/_shared/telemetry.ts).
     'distinct_id', 'event_id', 'install_id', 'household_id', 'platform', 'app_version',
     'is_internal', '$geoip_disable', '$process_person_profile', '$lib', '$lib_version',
-    '$groups', 'source', 'actor_role', 'household_size', 'scope', 'method',
+    '$groups', 'source', 'actor_role', 'household_size', 'scope', 'method', 'default_stores',
+    'channel', 'context', 'via', 'category', 'entry_point', 'screen', 'contact_ok',
     'product_id', 'price', 'currency', 'app_store', 'country', 'net_amount', 'transaction_ref',
-    'function_name', '$exception_list', '$exception_level'
+    'function_name', '$exception_list', '$exception_level',
+    -- posthog-js on the web, after its before_send (webSdkKeys).
+    'token', '$os', '$os_version', '$browser', '$browser_version', '$browser_language',
+    '$device_type', '$screen_height', '$screen_width', '$viewport_height', '$viewport_width',
+    '$timezone',
+    -- posthog-ios and posthog-android (no hook strips them; job 44's research).
+    '$app_name', '$app_version', '$app_build', '$app_namespace', '$is_testflight',
+    '$is_sideloaded', '$device_manufacturer', '$device_model', '$device_name', '$is_emulator',
+    '$is_ios_running_on_mac', '$is_mac_catalyst_app', '$os_name', '$screen_density',
+    '$hinge_status', '$locale', '$network_wifi', '$network_cellular', '$network_bluetooth',
+    '$network_carrier', '$user_agent', '$raw_user_agent', '$session_id', '$is_identified',
+    '$recording_status', '$sdk_debug_pending_queue_size', '$sdk_debug_current_session_duration',
+    '$sdk_debug_session_start', '$exception_source', '$debug_images'
   )
 GROUP BY key
 ORDER BY events DESC;

@@ -1,21 +1,21 @@
-import 'dart:async';
-
-import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:posthog_flutter/posthog_flutter.dart';
 
 import 'fakes.dart';
 
 void main() {
-  late RecordingSink sink;
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late NativePostHog native;
   late MemoryAnalyticsStore store;
   late Analytics analytics;
 
   setUp(() async {
-    sink = RecordingSink();
+    native = NativePostHog()..install();
     store = MemoryAnalyticsStore();
-    analytics = await loadedAnalytics(sink, store);
+    analytics = await loadedAnalytics(store);
   });
 
   tearDown(() => analytics.close());
@@ -26,82 +26,138 @@ void main() {
       expect(analytics.asksConsent, isTrue);
     });
 
-    test('before the decision nothing is queued or sent', () async {
+    test('before the decision the SDK is not even set up', () async {
       analytics
         ..setUser(customer)
         ..track('item_ticked')
         ..captureException(StateError('boom'), StackTrace.current);
       await analytics.flush();
-      expect(analytics.queued, isEmpty);
-      expect(sink.batches, isEmpty);
+      expect(native.calls, isEmpty, reason: 'no setup, no flags, no event');
     });
 
-    test('yes sends exactly one first_open per install id', () async {
+    test('yes sets the SDK up and sends one first_open per install', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
       await analytics.decide(granted: true);
       await analytics.flush();
-      expect(sink.names, ['first_open']);
+      expect(native.methods.where((m) => m == 'setup'), hasLength(1));
+      expect(native.names, ['first_open']);
       expect(store.firstOpen, store.id);
 
       // The next start of the same install sends none.
-      final again = await loadedAnalytics(sink, store);
+      final again = await loadedAnalytics(store);
       again.setUser(customer);
       await again.decide(granted: true);
       await again.flush();
-      expect(sink.names, ['first_open']);
+      expect(native.names, ['first_open']);
       expect(again.asksConsent, isFalse);
       await again.close();
     });
 
-    test('no sends nothing, now or later', () async {
+    test('no never sets the SDK up, now or at the next start', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: false);
       analytics
         ..track('item_added', {'source': 'typed'})
         ..captureException(StateError('boom'), null);
       await analytics.flush();
-      expect(sink.batches, isEmpty);
+      final again = await loadedAnalytics(store);
+      again.setUser(customer);
+      await again.flush();
+      expect(native.calls, isEmpty);
       expect(store.decided, isFalse);
-      expect(store.firstOpen, isNull);
-      expect(analytics.asksConsent, isFalse);
+      expect(again.asksConsent, isFalse);
+      await again.close();
     });
 
-    test('turning it off drops what waits and stops at once', () async {
+    test('turning it off stops the SDK at once', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
-      await analytics.flush();
+      await analytics.decide(granted: false);
+      expect(native.methods.last, 'close');
+      final before = native.calls.length;
       analytics
         ..track('item_ticked')
-        ..track('item_ticked');
-      expect(analytics.queued, hasLength(2));
-
-      await analytics.decide(granted: false);
-      expect(analytics.queued, isEmpty);
-      analytics.track('item_ticked');
+        ..captureException(StateError('boom'), null);
       await analytics.flush();
-      expect(sink.names, ['first_open']);
+      expect(native.calls, hasLength(before));
     });
 
-    test(
-      'a no during a send drops the failed batch instead of keeping it',
-      () async {
-        analytics.setUser(customer);
-        await analytics.decide(granted: true);
-        sink.fail = true;
-        final sending = analytics.flush();
-        await analytics.decide(granted: false);
-        await sending;
-        expect(analytics.queued, isEmpty);
-      },
-    );
+    test('turning it off deletes what the SDK keeps on the device', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      expect(native.forgotten, isEmpty);
+      await analytics.decide(granted: false);
+      expect(native.forgotten, ['phc_unit_test']);
+    });
+
+    test('a start with a stored no deletes it again, without setting the SDK '
+        'up', () async {
+      store.decided = false;
+      final again = await loadedAnalytics(store);
+      expect(native.forgotten, ['phc_unit_test']);
+      expect(native.calls, isEmpty);
+      await again.close();
+    });
 
     test('a later yes from More sends first_open then', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: false);
       await analytics.decide(granted: true);
       await analytics.flush();
-      expect(sink.names, ['first_open']);
+      expect(native.names, ['first_open']);
+    });
+
+    test('an event right after the yes, while the SDK starts, is sent '
+        'with the install id', () async {
+      analytics.setUser(customer);
+      final yes = analytics.decide(granted: true);
+      analytics.track('item_ticked');
+      await yes;
+      await analytics.flush();
+      expect(native.names, containsAll(['first_open', 'item_ticked']));
+      expect(
+        propsOf(
+          native.events.firstWhere((e) => e['event'] == 'item_ticked'),
+        )['install_id'],
+        store.id,
+      );
+    });
+
+    test('an event at app start, while the SDK starts, is sent', () async {
+      await analytics.decide(granted: true);
+      final again = Analytics(testClient(), store, releaseConfig);
+      await again.load();
+      again
+        ..setUser(customer)
+        ..track('store_reordered');
+      await again.flush();
+      expect(native.names.last, 'store_reordered');
+      await again.close();
+    });
+
+    test('two quick yeses send one first_open', () async {
+      analytics.setUser(customer);
+      await Future.wait([
+        analytics.decide(granted: true),
+        analytics.decide(granted: true),
+      ]);
+      await analytics.flush();
+      expect(native.names, ['first_open']);
+    });
+
+    test('a no while the SDK starts leaves it stopped', () async {
+      analytics.setUser(customer);
+      final yes = analytics.decide(granted: true);
+      await analytics.decide(granted: false);
+      await yes;
+      await analytics.flush();
+      final lifecycle = native.methods.where(
+        (m) => m == 'setup' || m == 'close',
+      );
+      expect(lifecycle.lastOrNull, isNot('setup'));
+      expect(native.names, isEmpty);
+      expect(store.id, isNull);
     });
 
     test('a build without a key never asks and never sends', () async {
@@ -113,9 +169,72 @@ void main() {
       await off.decide(granted: true);
       off.track('item_ticked');
       await off.flush();
-      expect(off.queued, isEmpty);
+      expect(native.calls, isEmpty);
       await off.close();
     });
+  });
+
+  group('what the SDK is set up to do', () {
+    late Map<Object?, Object?> setup;
+
+    setUp(() async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      setup = native.setup;
+    });
+
+    test('only the EU host or a stand-in, personless', () {
+      expect(setup['apiKey'], 'phc_unit_test');
+      expect(setup['host'], 'https://posthog.invalid');
+      expect(setup['personProfiles'], 'never');
+    });
+
+    test('nothing it would capture by itself', () {
+      expect(setup['captureApplicationLifecycleEvents'], isFalse);
+      expect(setup['sessionReplay'], isFalse);
+      expect(setup['surveys'], isFalse);
+      expect(setup['sendFeatureFlagEvents'], isFalse);
+      expect(setup['capturePushNotificationSubscriptions'], isFalse);
+      expect(setup['capturePushNotificationOpened'], isFalse);
+      expect(setup['rageClickConfig'], containsPair('enabled', false));
+    });
+
+    test('native crashes on, its Dart error hooks off', () {
+      expect(setup['errorTrackingConfig'], {
+        ...setup['errorTrackingConfig']! as Map,
+        'captureNativeExceptions': true,
+        'captureNativeCrashes': true,
+        'captureFlutterErrors': false,
+        'capturePlatformDispatcherErrors': false,
+        'captureIsolateErrors': false,
+      });
+    });
+  });
+
+  test('the context goes to the SDK as super properties, for native '
+      'crash reports', () async {
+    Map<String, Object?> registered() => {
+      for (final c in native.calls)
+        if (c.method == 'register')
+          (c.arguments as Map)['key'] as String: (c.arguments as Map)['value']
+        else if (c.method == 'unregister')
+          (c.arguments as Map)['key'] as String: null,
+    };
+    await analytics.decide(granted: true);
+    await analytics.flush();
+    expect(registered(), {
+      'install_id': store.id,
+      'household_id': null,
+      'platform': 'web',
+      'app_version': '0.1.0+7',
+      'is_internal': false,
+      r'$geoip_disable': true,
+    });
+    analytics.setUser(customer);
+    await analytics.markInternalInstall(internal: true);
+    await analytics.flush();
+    expect(registered(), containsPair('household_id', householdA));
+    expect(registered(), containsPair('is_internal', true));
   });
 
   group('the install id exists only while the answer is yes', () {
@@ -124,16 +243,18 @@ void main() {
       expect(store.firstOpen, isNull);
     });
 
-    test('yes stores one and every event carries it', () async {
+    test('yes stores the SDK distinct id and every event carries it', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
       analytics.track('item_ticked');
       await analytics.flush();
       expect(store.id, matches(uuidPattern));
-      expect(sink.events.map((e) => e['properties']! as Map), [
-        for (final _ in ['first_open', 'item_ticked'])
-          containsPair('install_id', store.id),
-      ]);
+      expect(native.storedId, store.id);
+      expect((native.setup['bootstrap']! as Map)['distinctId'], store.id);
+      expect(
+        [for (final e in native.events) propsOf(e)['install_id']],
+        [store.id, store.id],
+      );
     });
 
     test('no stores none', () async {
@@ -142,39 +263,42 @@ void main() {
       expect(store.id, isNull);
     });
 
-    test('turning it off deletes it; a later yes makes a new one', () async {
+    test('turning it off deletes it; a later yes makes a new one, '
+        'also where the SDK kept the old one', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
-      await analytics.flush();
       final first = store.id;
-      analytics.track('item_ticked');
 
       await analytics.decide(granted: false);
       expect(store.id, isNull);
       expect(store.firstOpen, isNull);
-      expect(analytics.queued, isEmpty);
+      expect(native.storedId, first, reason: 'the native SDK keeps its own');
 
       await analytics.decide(granted: true);
       await analytics.flush();
-      expect(store.id, allOf(matches(uuidPattern), isNot(first)));
-      expect(sink.names, ['first_open', 'first_open']);
-      expect((sink.events.last['properties']! as Map)['install_id'], store.id);
+      expect(native.methods, contains('reset'));
+      expect(store.id, allOf(isNotNull, isNot(first)));
+      expect(native.storedId, store.id);
+      expect(native.names, ['first_open', 'first_open']);
+      expect(propsOf(native.events.last)['install_id'], store.id);
     });
 
-    test('a yes from an older build keeps its id', () async {
+    test('a stored yes starts the SDK with its id at the next start', () async {
       const kept = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
       final older = MemoryAnalyticsStore()
         ..id = kept
         ..decided = true
         ..firstOpen = kept;
-      final a = await loadedAnalytics(sink, older);
+      final a = await loadedAnalytics(older);
       a
         ..setUser(customer)
         ..track('item_ticked');
       await a.flush();
+      expect((native.setup['bootstrap']! as Map)['distinctId'], kept);
+      expect(native.methods, isNot(contains('reset')));
       expect(older.id, kept);
-      expect(sink.names, ['item_ticked'], reason: 'no second first_open');
-      expect((sink.events.single['properties']! as Map)['install_id'], kept);
+      expect(native.names, ['item_ticked'], reason: 'no second first_open');
+      expect(propsOf(native.events.single)['install_id'], kept);
       await a.close();
     });
 
@@ -185,10 +309,11 @@ void main() {
           ..id = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc'
           ..decided = decided
           ..firstOpen = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
-        final a = await loadedAnalytics(sink, older);
+        final a = await loadedAnalytics(older);
         expect(older.id, isNull);
         expect(older.firstOpen, isNull);
         expect(a.state.consent, decided);
+        expect(native.calls, isEmpty);
         await a.close();
       });
     }
@@ -209,21 +334,22 @@ void main() {
         ..track('item_ticked')
         ..captureException(StateError('login screen'), StackTrace.current);
       await analytics.flush();
-      expect(sink.batches, isEmpty);
+      expect(native.events, isEmpty);
     });
 
-    test('signing out drops the queue', () async {
+    test('nothing after signing out', () async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
       analytics
-        ..track('item_ticked')
-        ..setUser(null);
-      expect(analytics.queued, isEmpty);
+        ..setUser(null)
+        ..track('item_ticked');
+      await analytics.flush();
+      expect(native.names, ['first_open']);
     });
   });
 
   group('payload', () {
-    late Map<String, Object?> event;
+    late Map<String, Object?> properties;
 
     setUp(() async {
       analytics.setUser(customer);
@@ -233,16 +359,13 @@ void main() {
         'household_size': 2,
       });
       await analytics.flush();
-      event = sink.events.last;
+      properties = propsOf(native.events.last);
     });
 
     test('carries the context and nothing else', () {
-      final properties = event['properties']! as Map<String, Object?>;
       expect(properties.keys.toSet(), {
         'actor_role',
         'household_size',
-        'distinct_id',
-        'event_id',
         'install_id',
         'household_id',
         'platform',
@@ -250,12 +373,9 @@ void main() {
         'is_internal',
         r'$geoip_disable',
         r'$process_person_profile',
-        r'$lib',
-        r'$lib_version',
       });
       expect(properties[r'$geoip_disable'], isTrue);
-      expect(properties, isNot(contains(r'$ip')));
-      expect(properties['distinct_id'], store.id);
+      expect(properties[r'$process_person_profile'], isFalse);
       expect(properties['install_id'], store.id);
       expect(properties['household_id'], householdA);
       expect(properties['is_internal'], isFalse);
@@ -263,26 +383,17 @@ void main() {
       expect(properties['app_version'], '0.1.0+7');
     });
 
-    test('the PostHog uuid is the event_id, for dedup', () {
-      final properties = event['properties']! as Map<String, Object?>;
-      expect(event['uuid'], properties['event_id']);
-      expect(event['uuid'], matches(uuidPattern));
-      expect(DateTime.parse(event['timestamp']! as String).isUtc, isTrue);
-    });
-
-    test('no household yet sends household_id null', () async {
+    test('no household yet sends no household_id', () async {
       analytics
         ..setUser(const AnalyticsUser(email: 'neu@gmail.com'))
         ..track('household_created');
       await analytics.flush();
-      final properties = sink.events.last['properties']! as Map;
-      expect(properties.containsKey('household_id'), isTrue);
-      expect(properties['household_id'], isNull);
+      expect(propsOf(native.events.last), isNot(contains('household_id')));
     });
 
     test('the household group goes only with its flag', () async {
+      expect(properties, isNot(contains(r'$groups')));
       final grouped = await loadedAnalytics(
-        sink,
         store,
         config: const AnalyticsConfig(
           releaseBuild: true,
@@ -291,33 +402,46 @@ void main() {
           householdGroups: true,
         ),
       );
-      grouped.setUser(customer);
-      await grouped.decide(granted: true);
-      grouped.track('store_reordered');
+      grouped
+        ..setUser(customer)
+        ..track('store_reordered');
       await grouped.flush();
-      final properties = sink.events.last['properties']! as Map;
-      expect(properties[r'$groups'], {'household': householdA});
+      expect(propsOf(native.events.last)[r'$groups'], {
+        'household': householdA,
+      });
       await grouped.close();
     });
   });
 
-  group('the allow-list at the door', () {
+  group('the allow-list', () {
     setUp(() async {
       analytics.setUser(customer);
       await analytics.decide(granted: true);
-      await analytics.flush();
     });
 
-    test('an unknown event is dropped', () {
+    test('an unknown event is dropped', () async {
       analytics.track('item_name_typed', {'source': 'typed'});
-      expect(analytics.queued, isEmpty);
+      await analytics.flush();
+      expect(native.names, ['first_open']);
     });
 
-    test('an item name in a property is dropped', () {
+    test('an item name in a property is dropped', () async {
       analytics
         ..track('item_added', {'source': 'Hafermilch'})
         ..track('item_ticked', {'name': 'Hafermilch'});
-      expect(analytics.queued, isEmpty);
+      await analytics.flush();
+      expect(native.names, ['first_open']);
+    });
+
+    test('the SDK drops what passes Posthog() by Analytics', () async {
+      await Posthog().capture(
+        eventName: 'item_ticked',
+        properties: {'name': 'Hafermilch'},
+      );
+      await Posthog().screen(screenName: '/join/ABCD-1234');
+      await Posthog().captureException(error: StateError('Hafermilch'));
+      await analytics.flush();
+      expect(native.names, ['first_open']);
     });
   });
 
@@ -327,15 +451,14 @@ void main() {
       AnalyticsConfig config = releaseConfig,
       bool install = false,
     }) async {
-      final s = RecordingSink();
-      final a = await loadedAnalytics(s, store, config: config);
+      final a = await loadedAnalytics(store, config: config);
       await a.markInternalInstall(internal: install);
       a.setUser(user);
       await a.decide(granted: true);
       a.track('store_reordered');
       await a.flush();
       await a.close();
-      return (s.events.last['properties']! as Map)['is_internal']! as bool;
+      return propsOf(native.events.last)['is_internal']! as bool;
     }
 
     test('a customer in a release build is not internal', () async {
@@ -395,104 +518,28 @@ void main() {
     });
   });
 
-  group('sending', () {
-    test('batches go out after the flush interval', () {
-      fakeAsync((async) {
-        late Analytics a;
-        unawaited(loadedAnalytics(sink, store).then((loaded) => a = loaded));
-        async.flushMicrotasks();
-        a.setUser(customer);
-        unawaited(a.decide(granted: true));
-        async.flushMicrotasks();
-        expect(sink.batches, isEmpty);
-        async.elapse(const Duration(seconds: 5));
-        expect(sink.names, ['first_open']);
-        unawaited(a.close());
-      });
-    });
-
-    test('a failed batch is sent again with the same uuids', () async {
-      analytics.setUser(customer);
-      await analytics.decide(granted: true);
-      sink.fail = true;
-      await analytics.flush();
-      final uuid = analytics.queued.single['uuid'];
-      sink.fail = false;
-      await analytics.flush();
-      expect(sink.events.single['uuid'], uuid);
-    });
-
-    test('a full queue drops the oldest', () async {
-      final small = await loadedAnalytics(
-        sink,
-        store,
-        config: const AnalyticsConfig(
-          releaseBuild: true,
-          householdGroups: false,
-          platform: 'web',
-          appVersion: '0.1.0',
-          maxQueue: 3,
-          flushAt: 100,
-        ),
-      );
-      small.setUser(customer);
-      await small.decide(granted: true);
-      sink.fail = true;
-      for (var i = 0; i < 5; i++) {
-        small.track('item_ticked');
-      }
-      expect(small.queued, hasLength(3));
-      expect(small.queued.map((e) => e['event']), everyElement('item_ticked'));
-      await small.close();
-    });
-  });
-
   test('checkContext refuses an unknown or malformed property', () {
+    const id = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
     expect(
-      () => checkContext({r'$ip': '1.2.3.4'}),
+      () => checkContext({'install_id': id, r'$ip': '1.2.3.4'}),
       throwsA(isA<RefusedEvent>()),
     );
     expect(
-      () => checkContext({'household_id': 'Familie Trost'}),
+      () => checkContext({'install_id': id, 'household_id': 'Familie Trost'}),
       throwsA(isA<RefusedEvent>()),
     );
     expect(
-      () => checkContext({'app_version': 'Milch'}),
+      () => checkContext({'install_id': id, 'app_version': 'Milch'}),
       throwsA(isA<RefusedEvent>()),
     );
     expect(
-      () => checkContext({r'$geoip_disable': false}),
+      () => checkContext({'install_id': id, r'$geoip_disable': false}),
       throwsA(isA<RefusedEvent>()),
     );
-  });
-
-  test('two quick yeses send one first_open', () async {
-    analytics.setUser(customer);
-    await Future.wait([
-      analytics.decide(granted: true),
-      analytics.decide(granted: true),
-    ]);
-    await analytics.flush();
-    expect(sink.names, ['first_open']);
-  });
-
-  test('a flush during a send waits for it, then sends the rest', () async {
-    final slow = _SlowSink();
-    final a = await loadedAnalytics(RecordingSink(), store);
-    final b = Analytics(slow, store, releaseConfig);
-    await b.load();
-    await a.close();
-    b.setUser(customer);
-    await b.decide(granted: true);
-    final first = b.flush();
-    b.track('item_ticked');
-    final second = b.flush();
-    expect(b.queued, hasLength(1), reason: 'not dropped while one is sent');
-    slow.release();
-    await first;
-    await second;
-    expect(slow.names, ['first_open', 'item_ticked']);
-    await b.close();
+    expect(
+      () => checkContext({'platform': 'web'}),
+      throwsA(isA<RefusedEvent>()),
+    );
   });
 
   // Job 31: the server keeps each install's answer, so an add over Alexa is
@@ -536,7 +583,7 @@ void main() {
         expect(recorded.last, '$id false false true');
         expect(store.id, isNull, reason: 'job 33b: a no deletes the id');
         // The next start of this install: a no without an id, not an answer.
-        final again = await loadedAnalytics(sink, store);
+        final again = await loadedAnalytics(store);
         again
           ..recordConsent = record
           ..setUser(customer);
@@ -612,16 +659,4 @@ void main() {
       await off.close();
     });
   });
-}
-
-class _SlowSink() extends RecordingSink {
-  final _gate = Completer<void>();
-
-  void release() => _gate.complete();
-
-  @override
-  Future<void> send(List<Map<String, Object?>> batch) async {
-    await _gate.future;
-    await super.send(batch);
-  }
 }

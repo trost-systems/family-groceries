@@ -66,3 +66,11 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// posthog_flutter takes posthog-android [3.72.9, 4.0.0); a release build gets
+// the version job 44 checked (docs/DECISIONS.md, Job 44).
+dependencies {
+    constraints {
+        implementation("com.posthog:posthog-android") { version { strictly("3.75.0") } }
+    }
+}

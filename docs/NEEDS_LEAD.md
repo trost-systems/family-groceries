@@ -527,3 +527,93 @@ Plain facts from the code; what the law requires is Legal Review's call.
   `purchases-flutter-only-in-revenuecat-repository` and `no-revenuecat-customer-data` fail the build otherwise.
 - **RevenueCat's retention** after a deletion request follows its DPA ("subject to standard data
   backup and archival practices"), RevenueCat's statement.
+
+## Job 44: PostHog SDK, error tracking, feature flags (2026-10-31)
+
+The app now runs PostHog's official SDK (posthog_flutter 5.58.3, posthog-js 1.444.0 on the web;
+DECISIONS Job 44, ANALYTICS.md). Nothing changes before the analytics yes: no request, no file.
+After the yes, more data goes to PostHog than the legal texts name. Legal texts are unchanged;
+these are the sentences and steps for you.
+
+### For the Legal Review (privacy policy, consent text, store labels)
+
+1. **Device and app data on every event (iOS, Android).** Proposed policy sentence (DE): "Mit
+   jedem Ereignis übermittelt das PostHog-SDK außerdem technische Angaben zum Gerät und zur App:
+   App-Version und -Build, Gerätehersteller, -modell und -typ, Betriebssystem und Version,
+   Bildschirmgröße, Sprache und Zeitzone, ob WLAN oder Mobilfunk genutzt wird (Android zusätzlich
+   Bluetooth, den Namen des Mobilfunkanbieters und die technische Kennung des Systembrowsers) und
+   eine zufällige Sitzungskennung, die nach 30 Minuten ohne Nutzung wechselt." EN: "With every
+   event the PostHog SDK also sends technical details of the device and the app: app version and
+   build, device maker, model and type, operating system and version, screen size, language and
+   time zone, whether Wi-Fi or mobile data is used (on Android also Bluetooth, the mobile
+   network's name and the system's HTTP user agent) and a random session id that changes after 30
+   minutes without use." Web: "Im Browser: Browser und Betriebssystem mit Version, Gerätetyp,
+   Bildschirm- und Fenstergröße, Sprache und Zeitzone; nie die aufgerufene Adresse, die
+   verweisende Seite oder die vollständige Browserkennung." The consent screen says "zum
+   Beispiel ... Plattform und App-Version": please judge whether "Geräte- und App-Angaben" must be
+   named there.
+2. **Crash reports from the phone's own code.** "Stürzt die App ab, sendet sie beim nächsten Start
+   einen Absturzbericht (Fehlerart, Fehlermeldung des Systems, technische Aufrufliste) an
+   PostHog." Unlike Dart errors these system messages are not scrubbed by the app (ANALYTICS.md,
+   "Gaps"); they normally hold no user content. iOS keeps its crash handler after switching
+   analytics off: a crash after the off is sent only after a new yes.
+3. **Feature flags.** "Nach Ihrer Einwilligung fragt die App PostHog mit der zufälligen Kennung,
+   welche Funktionen für Ihre Installation freigeschaltet sind." No new purpose beyond running the
+   app; same consent, same id.
+4. **Storage on the device (TDDDG §25).** With the yes the PostHog SDK stores the install id, a
+   device id (the same random value), queued events and the flag answer on the device; switching
+   off deletes them (the More text "Ausschalten löscht die Kennung auf diesem Gerät" stays true).
+   The web stores nothing (no cookie, no localStorage).
+5. **Store labels.** App Store "App Privacy" and Play "Data safety" (NEEDS_LEAD Job 14 row): add
+   Crash data / Diagnostics and "Device or other IDs" (the random install id), linked to no
+   identity, not used for tracking, collected only with consent. Answers in PRIVACY_DATA_MAP.md.
+
+### Steps in PostHog project 319492 (read-only from here; never 262464)
+
+1. When a feature needs a runtime toggle: create the flag (key as in the code,
+   `Analytics.flags.isOn('<key>')`, default off), roll it out there, and set the same key in
+   `releases/flags.json` (`off`/`partial`/`full`) for its changelog item. No flag exists yet.
+2. After the first SDK events from a release: run `analytics/queries/privacy_scan.sql` (block 1
+   now lists the SDK's keys; anything else is a finding) and check that `$lib` reads
+   `posthog-flutter`, `posthog-ios` or `posthog-android`.
+3. Error tracking: the first native crash report arrives at the launch after a crash; exception
+   autocapture must stay on in the project settings. Symbol upload (iOS dSYMs, Android mappings)
+   is not set up (ANALYTICS.md, "Gaps").
+
+### Upstream issue drafts (not filed; Peter: contribute upstream rather than add a vendor)
+
+**A. posthog_flutter: let `beforeSend` see and strip what the native SDKs add**
+- Repro: posthog_flutter 5.58.3 on Android or iOS, `config.beforeSend = [(e) { e.properties?.remove(r'$network_carrier'); return e; }]`, capture any event.
+- Expected: the event goes out without `$network_carrier` (and the app can drop `$device_model`,
+  `$raw_user_agent`, `$session_id` ...).
+- Actual: the Dart callback sees only the caller's properties; posthog-android and posthog-ios
+  add device, app, network and session properties afterwards, and those are sent. Both native
+  SDKs have a `beforeSend` that sees the final properties, but the plugin sets none.
+- Proposed fix: a Dart-side `PostHogConfig.propertyDenylist` (or `systemPropertiesBeforeSend`)
+  that the plugin applies in the native `beforeSend` it registers at setup, and in posthog-js'
+  `property_denylist` on the web; exposing the full native property map to the Dart callback
+  would be the general form.
+
+**B. posthog-ios and posthog-android: opting out does not stop network or storage**
+- Repro: `PostHogConfig(optOut: true)` (or `optOut()` after setup), fresh install, watch the
+  network and the app's files.
+- Expected: an opted-out SDK makes no request and writes no id, so it can be set up before the
+  user's consent.
+- Actual: setup fetches `/array/<token>/config` and `/flags` (posthog-ios
+  `PostHogRemoteConfig.swift` 157-209, no opt-out check; posthog-android `PostHog.kt` 397-412),
+  writes an anonymous id and a device id (`PostHogStorageManager.swift` 72-104, `PostHog.kt`
+  363, 660-689), and already queued events still flush. `reset()` keeps the device id and
+  requests `/flags` at once under a new id, so there is no way to delete the SDK's state on the
+  device without deleting its files.
+- Proposed fix: opt-out gates remote config, flags and queue flushes, and defers id creation
+  until opt-in; plus a `wipe()` (or `reset(keepDeviceId: false, reloadFlags: false)`) that
+  deletes ids, queue and caches without a request.
+
+**C. posthog_flutter: exception types are minified on Flutter web release builds**
+- Repro: a `flutter build web --release` (dart2js) app calls `Posthog().captureException(error: StateError('x'))`.
+- Expected: `$exception_list[0].type` is `StateError`.
+- Actual: `minified:hm` (`DartExceptionProcessor._getExceptionType` uses `runtimeType`), so
+  PostHog groups issues by meaningless names.
+- Proposed fix: map the core error and exception types by `is` checks before falling back to
+  `runtimeType` (Hummlist's `errorType` in `app/lib/analytics/exceptions.dart` does this), and let
+  the app add its own types.

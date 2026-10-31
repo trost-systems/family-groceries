@@ -1,51 +1,12 @@
 import 'dart:async';
 
-import 'package:family_groceries/analytics/chunk_ids.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:flutter/foundation.dart';
-import 'package:stack_trace/stack_trace.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Builds PostHog's `$exception_list` for [error], the same shape
-/// posthog_flutter sends (type, value, mechanism, raw frames), with the
-/// message scrubbed by [scrubMessage]. Frames carry code locations only.
-List<Map<String, Object?>> exceptionList(
-  Object error,
-  StackTrace? stack, {
-  required bool handled,
-  bool web = kIsWeb,
-  Map<String, String> chunkIds = const {},
-}) {
-  final inner = error is AsyncError ? error.error : error;
-  final trace = switch (stack) {
-    final s? when s.toString().trim().isNotEmpty => s,
-    _ =>
-      error is AsyncError
-          ? error.stackTrace
-          : inner is Error
-          ? inner.stackTrace
-          : null,
-  };
-  final frames = trace == null || trace.toString().trim().isEmpty
-      ? const <Map<String, Object?>>[]
-      : _frames(trace, web: web, chunkIds: chunkIds);
-  return [
-    {
-      'type': _typeOf(inner),
-      'value': scrubMessage(inner),
-      'mechanism': {
-        'handled': handled,
-        'synthetic': frames.isEmpty,
-        'type': 'generic',
-      },
-      if (frames.isNotEmpty) 'stacktrace': {'type': 'raw', 'frames': frames},
-    },
-  ];
-}
-
-/// The error's type. Release web builds minify type names (`minified:hm`),
-/// so the common ones are named here.
-String _typeOf(Object error) => switch (error) {
+/// The error's type for `$exception_list`. Release web builds minify type
+/// names (`minified:hm`), so the common ones are named here.
+String errorType(Object error) => switch (error) {
   StateError() => 'StateError',
   IndexError() => 'IndexError',
   RangeError() => 'RangeError',
@@ -71,73 +32,6 @@ String _typeOf(Object error) => switch (error) {
 String _runtimeName(Object error) {
   final name = '${error.runtimeType}';
   return name.isEmpty ? 'Error' : name;
-}
-
-/// At most this many frames per exception, the crash site's end kept.
-const maxFrames = 80;
-
-/// The crash site last, as PostHog expects.
-List<Map<String, Object?>> _frames(
-  StackTrace stack, {
-  required bool web,
-  required Map<String, String> chunkIds,
-}) {
-  // Parsed from the text: forTrace would add the current zone's chain.
-  final chain = Chain.parse(stack.toString());
-  final frames = <Map<String, Object?>>[];
-  for (final (index, trace) in chain.traces.indexed) {
-    for (final frame in trace.frames) {
-      frames.add(_frame(frame, web: web, chunkIds: chunkIds));
-    }
-    if (index < chain.traces.length - 1) {
-      frames.add(const {
-        'platform': 'dart',
-        'abs_path': '<asynchronous suspension>',
-        'in_app': false,
-        'synthetic': true,
-      });
-    }
-  }
-  final innermost = frames.length > maxFrames
-      ? frames.sublist(0, maxFrames)
-      : frames;
-  return innermost.reversed.toList();
-}
-
-Map<String, Object?> _frame(
-  Frame frame, {
-  required bool web,
-  required Map<String, String> chunkIds,
-}) {
-  final uri = frame.uri;
-  final segments = uri.pathSegments;
-  final fileName = segments.isEmpty ? null : segments.last;
-  // The file's own id: `main.dart.js` is not `main.dart.js_1.part.js`.
-  final chunkId = fileName == null
-      ? null
-      : chunkIds.entries
-            .where(
-              (e) => Uri.tryParse(e.key)?.pathSegments.lastOrNull == fileName,
-            )
-            .firstOrNull;
-  // A file on a device or a web URL keeps its name only: no user paths,
-  // no query strings.
-  final absPath = uri.scheme == 'dart' || uri.scheme == 'package'
-      ? uri.toString()
-      : (fileName ?? '');
-  return {
-    'platform': web ? 'web:javascript' : 'dart',
-    'abs_path': absPath,
-    'in_app': !frame.isCore && frame.package != 'flutter',
-    if (frame.package case final package? when package.isNotEmpty)
-      'package': package,
-    if (frame.member case final member? when member.isNotEmpty)
-      'function': _clip(member, 200),
-    if (fileName != null && fileName.isNotEmpty) 'filename': fileName,
-    'lineno': ?frame.line,
-    'colno': ?frame.column,
-    if (chunkId != null) 'chunk_id': chunkId.value,
-  };
 }
 
 /// What may be said about [error] without personal data or list content.
@@ -263,5 +157,73 @@ String _shape(String text) => text
 String _clip(String text, int max) =>
     text.length <= max ? text : text.substring(0, max);
 
-/// posthog-cli's chunk ids on web, none elsewhere.
-Map<String, String> currentChunkIds() => chunkIds();
+/// One `$exception_list` item as posthog_flutter built it, reduced to what
+/// may be sent: [report]'s scrubbed type and message ([errorType],
+/// [scrubMessage]) for the error itself, the first item; `<redacted>` for a
+/// cause, which has no report. Frames keep code locations only: a device
+/// path or a web URL keeps its file name.
+Map<String, Object> scrubException(
+  Map<Object?, Object?> item,
+  Map<String, Object>? report,
+) {
+  final mechanism = item['mechanism'];
+  final threadId = item['thread_id'];
+  return {
+    'type': report?['type'] ?? _text(item['type']) ?? 'Error',
+    'value': report?['value'] ?? '<redacted>',
+    'mechanism': {
+      'type': _text(mechanism is Map ? mechanism['type'] : null) ?? 'generic',
+      'handled':
+          report?['handled'] ??
+          (mechanism is Map && mechanism['handled'] == true),
+      'synthetic': mechanism is Map && mechanism['synthetic'] == true,
+    },
+    if (item['stacktrace'] case {'frames': final List<Object?> frames})
+      'stacktrace': {
+        'type': 'raw',
+        'frames': [
+          for (final frame in frames)
+            if (frame is Map) _frame(frame),
+        ],
+      },
+    if (threadId is int) 'thread_id': threadId,
+  };
+}
+
+String? _text(Object? value) =>
+    value is String && value.isNotEmpty ? _clip(value, 200) : null;
+
+const _frameKeys = {
+  'platform',
+  'abs_path',
+  'filename',
+  'function',
+  'module',
+  'package',
+  'lineno',
+  'colno',
+  'in_app',
+  'synthetic',
+  'chunk_id',
+  'lang',
+  'instruction_addr',
+  'image_addr',
+};
+
+Map<String, Object> _frame(Map<Object?, Object?> frame) => {
+  for (final MapEntry(:key, :value) in frame.entries)
+    if (key is String && _frameKeys.contains(key) && value != null)
+      key: key == 'abs_path' && value is String ? _location(value) : value,
+};
+
+/// A `dart:` or `package:` location as it is, any other its file name.
+String _location(String path) {
+  final uri = Uri.tryParse(path);
+  if (uri == null) {
+    return '';
+  }
+  if (uri.scheme == 'dart' || uri.scheme == 'package' || !path.contains('/')) {
+    return path;
+  }
+  return uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
+}

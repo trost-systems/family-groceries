@@ -21,10 +21,11 @@ import {
 } from './helpers';
 
 // Job 19: analytics to PostHog EU, asked for right after the first sign-in (Peter, 2026-10-27).
+// Job 44: through posthog_flutter, posthog-js under it on the web, loaded only after the yes.
 // The e2e build points at https://posthog.invalid (app/config/e2e.json), which fakeCollector
-// answers: nothing ever leaves the machine. The app flushes every 5 s.
+// answers: nothing ever leaves the machine. posthog-js sends every 3 s.
 
-/** Long enough for the app's 5 s flush to have happened, had it anything to send. */
+/** Long enough for posthog-js' 3 s flush to have happened, had it anything to send. */
 const flushWindow = 7_000;
 
 async function quietFor(page: Page, collector: Collector, before: number) {
@@ -75,6 +76,40 @@ async function storedInstallId(page: Page): Promise<string | null> {
   if (raw === null) return null;
   const value: unknown = JSON.parse(raw);
   return (typeof value === 'string' && value.startsWith('"') ? JSON.parse(value) : value) as string;
+}
+
+/**
+ * Every property key a web event may leave the browser with (`webEventKeys` in
+ * app/lib/analytics/events.dart): the context, the event's own, the error report's, and what
+ * posthog-js adds about the browser. Never its URL, referrer, user agent, session or device id.
+ */
+const allowedKeys = new Set([
+  'install_id', 'household_id', 'platform', 'app_version', 'is_internal', '$geoip_disable',
+  '$process_person_profile', '$groups', '$exception_list', '$exception_level',
+  'token', 'distinct_id', '$lib', '$lib_version', '$os', '$os_version', '$browser', '$browser_version',
+  '$browser_language', '$device_type', '$screen_height', '$screen_width', '$viewport_height',
+  '$viewport_width', '$timezone',
+  'source', 'actor_role', 'household_size', 'default_stores', 'method', 'channel', 'context', 'scope',
+  'via', 'category', 'entry_point', 'screen', 'contact_ok',
+]);
+
+function expectAllowedKeys(collector: Collector) {
+  for (const e of collector.events) {
+    expect(Object.keys(e.properties).filter((k) => !allowedKeys.has(k)), `${e.event}: keys off the list`).toEqual([]);
+    expect(Object.keys(e).sort(), `${e.event}: no $set`).toEqual(['event', 'properties', 'timestamp', 'uuid']);
+  }
+}
+
+/** Whether posthog-js was fetched or runs in [page]: never before the yes. */
+async function posthogJsLoaded(page: Page): Promise<boolean> {
+  return page.evaluate(() => 'posthog' in window ||
+    performance.getEntriesByType('resource').some((r) => r.name.includes('posthog/array.js')));
+}
+
+/** No PostHog cookie or storage key in [page]: posthog-js keeps its state in memory. */
+async function expectNoPostHogStorage(page: Page) {
+  const keys = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage), document.cookie]);
+  expect(keys.filter((k) => /ph_|posthog/i.test(k))).toEqual([]);
 }
 
 async function received(collector: Collector, names: string[]) {
@@ -131,6 +166,7 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   await expect(page, 'still asking').toHaveURL(/\/analytics-consent$/);
   expect(collector.requests, 'the login screen sent nothing').toEqual([]);
   expect(await storedInstallId(page), 'no install id before the answer').toBeNull();
+  expect(await posthogJsLoaded(page), 'posthog-js is not even fetched before the answer').toBe(false);
 
   await answerConsent(page, 'decline');
   await expect(page).toHaveURL(/\/welcome$/);
@@ -141,6 +177,7 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   await addItem(page, 'Hafermilch');
   await tick(page, 'Hafermilch');
   await quietFor(page, collector, 0);
+  expect(await posthogJsLoaded(page), 'nor after a no').toBe(false);
 
   // The switch under More shows the decision.
   await expect(await analyticsSwitch(page)).not.toBeChecked();
@@ -185,23 +222,26 @@ test('accepting sends first_open once, then one event per action, no list text; 
   const household = ticked.properties.household_id as string;
   expect(household).toMatch(/^[0-9a-f-]{36}$/);
   expect(byName('first_open')).toHaveLength(1);
-  expect(byName('first_open')[0].properties.household_id).toBeNull();
+  expect(byName('first_open')[0].properties.household_id).toBeUndefined();
   expect(byName('household_created')[0].properties.household_id).toBe(household);
   expect(byName('item_added').map((e) => e.properties.source)).toEqual(['typed', 'typed']);
   expect(ticked.properties.actor_role).toBe('owner');
   expect(ticked.properties.household_size).toBe(1);
   for (const e of collector.events) {
     expect(e.properties.install_id, 'every event carries the stored install id').toBe(installId);
-    expect(e.uuid).toBe(e.properties.event_id);
+    expect(e.uuid).toMatch(/^[0-9a-f-]{36}$/);
     expect(e.properties.distinct_id).toBe(e.properties.install_id);
+    expect(e.properties.$process_person_profile).toBe(false);
     expect(e.properties.$geoip_disable).toBe(true);
     expect(e.properties.platform).toBe('web');
     // A test account: e2e mail domains are reserved test domains.
     expect(e.properties.is_internal).toBe(true);
     expect('$ip' in e.properties).toBe(false);
   }
-  const sent = JSON.stringify(collector.events);
-  for (const secret of ['Hafermilch', 'Brot', 'Familie Geheim', email, email.split('@')[0]]) {
+  expectAllowedKeys(collector);
+  await expectNoPostHogStorage(page);
+  const sent = JSON.stringify(collector.events) + collector.bodies.join('');
+  for (const secret of ['Hafermilch', 'Brot', 'Familie Geheim', email, email.split('@')[0], '127.0.0.1']) {
     expect(sent, `no "${secret}" in what was sent`).not.toContain(secret);
   }
 
@@ -306,7 +346,8 @@ test('an invite link survives sign-in and consent, ends on joining, and counts a
   const joined = collector.events.find((e) => e.event === 'invite_accepted')!;
   expect(joined.properties.method).toBe('link');
   expect(joined.properties.household_id).toMatch(/^[0-9a-f-]{36}$/);
-  expect(JSON.stringify(collector.events)).not.toContain(code);
+  expect(JSON.stringify(collector.events) + collector.bodies.join(''), 'no invite code, not even in a URL').not.toContain(code);
+  expectAllowedKeys(collector);
 });
 
 test('a member with a household is asked once on a new install, then goes to the list', async ({ browser }) => {
@@ -381,6 +422,6 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
   expect(exception.stacktrace?.frames.length ?? 0).toBeGreaterThan(0);
   expect(error.properties.is_internal).toBe(true);
   expect(error.properties.household_id).toMatch(/^[0-9a-f-]{36}$/);
-  expect(error.uuid).toBe(error.properties.event_id);
+  expectAllowedKeys(collector);
   expect(collector.leaks).toEqual([]);
 });

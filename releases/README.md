@@ -74,6 +74,11 @@ released. While `alexa-certification` is not released, every item that mentions 
 back. The file is edited by hand in a PR when a rollout changes ([`docs/CHANGELOG.md`](../docs/CHANGELOG.md),
 "Gated items").
 
+`flags.json` is only for the changelog and release holds. The app's runtime toggles are PostHog
+feature flags (job 44, [`docs/ANALYTICS.md`](../docs/ANALYTICS.md), "Feature flags"); a feature
+behind one gets a key of the same name here, set to `full` by hand once its PostHog rollout
+reaches everyone.
+
 `changelog/pending.json` holds the items held back by earlier releases, `{"items": [...]}` in
 the `held` format, oldest first. Only `record.mjs add` writes it, in the release commit: the new
 release's held items go in, the ones it published go out. The next draft takes those whose gate

@@ -82,15 +82,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
   );
   final cache = DeviceCache.onDevice();
   final analytics = _analytics = await startAnalytics(cache);
-  final presentError = FlutterError.onError;
-  FlutterError.onError = (details) {
-    presentError?.call(details);
-    analytics.captureException(details.exception, details.stack);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    analytics.captureException(error, stack);
-    return false;
-  };
+  reportUncaughtErrors(analytics);
   final account = SupabaseAccountRepository(
     client,
     // Only iOS has Apple's own dialog; elsewhere the server answers

@@ -4874,3 +4874,143 @@ Migration `20261031123504_household_bound_lifetime.sql`; docs/PURCHASES.md has t
     racing someone else for the same single invite can still deadlock; Postgres aborts one join,
     which the app shows as a failed join to try again.
 
+
+## Job 44: all-in on PostHog: posthog_flutter, error tracking, feature flags, 2026-10-31
+
+Peter decided on 2026-10-31: PostHog only, no Sentry or other vendor; what PostHog lacks goes
+upstream. This reverses Job 19, item 1. Overview: [ANALYTICS.md](ANALYTICS.md); open steps:
+[NEEDS_LEAD.md](NEEDS_LEAD.md), "Job 44".
+
+1. **Versions.** `posthog_flutter: 5.58.3` (pub.dev, published 2026-10-30, the newest), pinned
+   exactly in `app/pubspec.yaml`. Under it on the web posthog-js 1.444.0 (npm, 2026-10-30),
+   vendored as `app/web/posthog/array.js` by `scripts/posthog-js.sh` (version and sha256 in
+   `app/web/posthog/VERSION`). The plugin asks for posthog-android `[3.72.9, 4.0.0)`;
+   `app/android/app/build.gradle.kts` pins 3.75.0 strictly, the version this job's research
+   read. posthog-ios comes through Swift Package Manager as `3.92.3 ..< 4.0.0` with no
+   committed lockfile, so an iOS build takes the newest 3.x (3.93.1 today; its diff to 3.92.3
+   touches replay and stack frames only).
+2. **The SDK is set up only after the yes, never before.** I read posthog-ios 3.92.3 and
+   posthog-android 3.72.9/3.75.0: `optOut` does not stop the remote config
+   (`/array/<token>/config`) or `/flags` requests, setup writes an anonymous id and a device id
+   to disk even while opted out, and already queued events still go out. So opting out is no
+   consent gate. `Analytics` calls `Posthog().setup()` only once the install's answer is yes,
+   and `Posthog().close()` at a no. Before the yes the SDK makes no request and writes nothing:
+   `analytics_test.dart` checks that not even `setup` reaches the native side, and the e2e spec
+   checks that `posthog/array.js` is not even fetched. `com.posthog.posthog.AUTO_INIT` is false
+   in the Android manifest and the iOS Info.plist, and iOS's push-open prewarm
+   (`CAPTURE_PUSH_NOTIFICATION_OPENED`) is off, so nothing starts from the platform side.
+3. **Off: close the SDK, then delete what it keeps on the device.** The More switch promises
+   that off deletes the install id on the device (legal review H-08). `close()` keeps the native
+   SDK's files: its anonymous id, a separate device id, queued events, cached flags and remote
+   config, super properties. `reset()` cannot help: it keeps the device id and requests flags at
+   once under a new id. So after `close()` the app deletes them itself (`forgetPostHogState`):
+   on iOS the `posthog.*` files in `Application Support/<bundle id>`, on Android through
+   `MainActivity` (`familygroceries/posthog`, `forget`) the `posthog-android-<token>`
+   preferences, cleared with Android's API because the SDK also holds them in memory, and its
+   queue folders; on Linux the SDK's folder. A start with a stored no deletes them again, so an
+   off whose clean-up was cut short converges. The web keeps nothing (item 9). An event handed
+   to the SDK just before the off is sent if `close()` gets it out at once, else deleted with
+   the queue (Job 19, item 6 dropped it always). Nothing captured after the off is taken.
+   Sign-out (Job 19, item 5) stops nothing: what the SDK holds is sent, and nothing is taken
+   while signed out.
+4. **The install id is the SDK's distinct id.** A yes makes a random id and seeds it as the SDK's
+   bootstrap id. If the native SDK kept an id from an earlier yes on this device (bootstrap only
+   applies while none is stored), `reset()` gives a new one and that is the install id. At a
+   start with a stored yes the stored id is the bootstrap, so installs from job 19 builds keep
+   their id and their cohort. The id is a UUIDv4 or, after a reset, a UUIDv7; both are accepted.
+   The `DeviceCache` keys are unchanged (`analytics.install_id` etc.).
+5. **Two gates on every Dart-side event.** `track` checks the event against `eventCatalog`;
+   then the SDK's `beforeSend` (`Analytics._admit`) checks it and the context again, drops it if
+   analytics is no longer live, and removes `$screen_name` (the facade adds the last screen it
+   was told of; a route can carry an invite code; the app never calls `screen()`).
+   `posthog-flutter-only-in-posthog-client` (ast-grep) keeps the SDK in
+   `app/lib/analytics/posthog_client.dart`, so no other file can call `screen()`, `identify()`
+   or `capture()` past the gate.
+6. **Context changes.** `distinct_id`, `$lib` and `$lib_version` are no longer our properties:
+   the SDK sets the event's distinct id and its own `$lib` (`posthog-flutter`, `posthog-ios`,
+   `posthog-android`; `posthog-flutter` on the web). `event_id` is gone: its one use was PostHog's
+   dedup by `uuid`, which the SDK now does itself (its uuid, sent again on a retry). No query
+   reads either (`analytics/queries/`). `household_id` before a household is absent instead of
+   null; HogQL reads both as null. Every other event and property name is unchanged; the job
+   19/43 fixtures in `analytics/metrics_test.ts` pass unchanged.
+7. **The context is also registered as super properties** (`install_id`, `household_id`,
+   `platform`, `app_version`, `is_internal`, `$geoip_disable`), kept current on sign-in, household
+   change and the internal mark. Events the native SDK builds itself, the native crash reports,
+   never pass the Dart gate; this way they still carry `$geoip_disable: true` and `is_internal`.
+8. **What the native SDKs add cannot be stripped from Dart.** `beforeSend` sees only our
+   properties; posthog-ios and posthog-android add device and app properties afterwards (list
+   in ANALYTICS.md, "What the SDKs add"), among them device model, OS version, locale, time zone,
+   screen size, network type and, on Android, the carrier and the HTTP user agent, plus an
+   in-memory `$session_id`. Both native SDKs have a `beforeSend` that could strip them, but the
+   plugin exposes none. That is a change in what is sent: the sentences for the Legal Review are
+   in NEEDS_LEAD "Job 44", and an upstream issue draft too. On the web we do strip them (item 9).
+9. **Web: posthog-js from our origin, after the yes, stripped by our own `before_send`.**
+   `loadPostHogJs` (`posthog_platform_web.dart`) injects `posthog/array.js` and calls `posthog.init`
+   at the first start of the SDK: persistence `memory` (no cookie, no localStorage; the install
+   id comes from our store as bootstrap at every page load), no autocapture, pageviews,
+   pageleave, replay, surveys, heatmaps, dead clicks, rage clicks, web vitals or exception
+   autocapture, `disable_external_dependency_loading`, no compression. Its `before_send` drops
+   every event outside the catalog and every property outside `webEventKeys` (events.dart),
+   which removes `$current_url`, `$pathname`, `$host`, `$referrer`, the user agent, `$session_id`,
+   `$window_id` and `$device_id`. `opt_out_useragent_filter` is on: posthog-js otherwise drops
+   events from user agents that look like bots (the e2e browser's "HeadlessChrome" among them),
+   and only a signed-in user's yes loads it, so no crawler gets there.
+10. **Web: remote config stays blocked.** For the EU host posthog-js fetches remote config from
+    `https://eu-assets.i.posthog.com`. The app's CSP (`vercel.json`, `connect-src`) allows only
+    `https://eu.i.posthog.com`, so that request fails and posthog-js runs on the local config
+    above; it then loads flags itself. The CSP stays as it is: project settings cannot switch
+    anything on in the browser. The e2e collector refuses the request the same way.
+11. **Error tracking.** Dart errors go through our own hooks (`reportUncaughtErrors`: the
+    framework's `FlutterError.onError`, still presented as before, and `PlatformDispatcher`; and
+    the zone in `main`) into `Analytics.captureException`, which hands the error to PostHog's
+    `captureException` with the scrubbed type and message (`errorType`, `scrubMessage`) next to
+    it; `_admit` then replaces the SDK's `$exception_list` values with them, gives every cause
+    `<redacted>`, keeps code locations only in frames, and drops everything else (also the SDK's
+    `flutter_error_details`, whose text can hold widget descriptions such as `Text("Milch")`).
+    The SDK's own Dart hooks (`captureFlutterErrors`, `capturePlatformDispatcherErrors`,
+    `captureIsolateErrors`) are off: they would hand `beforeSend` only strings, and the scrubber
+    needs the error. Native exceptions and crashes are on (`captureNativeExceptions`,
+    `captureNativeCrashes`): iOS through PLCrashReporter (experimental at PostHog), Android for
+    JVM exceptions and, from Android 12, native crashes read on the next launch. They need the
+    project's exception autocapture setting, which Peter turned on in job 19. Gaps:
+    ANALYTICS.md, "Error tracking".
+12. **No isolate hook.** The app spawns no isolate (`grep -rn "Isolate\.\|compute(" app/lib`
+    finds none). Errors in the main isolate reach the zone or `PlatformDispatcher`. A listener
+    on the isolate would only get strings, which the scrubber reduces to `<redacted>`.
+13. **Events captured while the SDK starts are kept.** Found on the Linux run: an item added right
+    after the yes, while `setup` ran, was dropped. `track` and `captureException` now take the
+    event at once, and hand it to the SDK after the start, with the context of that moment, or
+    drop it if analytics is no longer live by then.
+14. **Feature flags: `Analytics.flags`** (`Flags`, `app/lib/analytics/flags.dart`), the one place
+    the app reads PostHog flags: `isOn(key)` is false for an unknown key, before the yes, after a
+    no, in a build without a key, and offline until a first answer; later the SDK serves what it
+    received last, also offline. Flags are read with `getAllFeatureFlags()` after the start and
+    whenever the SDK reports new ones; `sendFeatureFlagEvent` is off, so reading a flag sends
+    nothing. Only installs that said yes get flags at all: the flag request carries the install
+    id. A rollout through a flag therefore never reaches users who declined; a feature that
+    must reach everyone needs a release, not a flag. No flag exists yet; the Lead creates them in
+    project 319492.
+15. **`releases/flags.json` stays for the changelog.** It records which changelog items wait for a
+    rollout or a hold (job 40); PostHog flags switch app behavior at runtime. When a feature
+    behind a PostHog flag reaches 100 %, its key is set to `full` in `flags.json` by hand, as
+    job 40 item 1 foresaw. Written down in CHANGELOG.md, releases/README.md and ANALYTICS.md.
+16. **Edge functions keep their own sender** (brief item 6). A prototype ran posthog-node 5.61.1
+    (`npm:posthog-node@5.61.1/edge`) in Supabase's edge runtime image v1.77.8 against a local
+    collector. It works, but: `captureException` sends the raw message (an item name, an e-mail)
+    and the node build adds source lines around each frame, so we would skip it and send our own
+    `$exception_list` through `capture`; `$lib` cannot be set; by default a flush against a
+    collector that answers 503 took 9 s and one that never answers 21 s (3 retries), so it needs
+    `fetchRetryCount: 0` and `requestTimeout` plus our own try/catch for the never-throws
+    contract; 6.4 MB of packages, rxjs and OpenTelemetry included, released almost daily, on the
+    privacy path. For one POST to `/batch/` that is mostly configuration that switches the SDK
+    off. Revisit for server-side flags.
+17. **Verification surfaces.** The web build runs posthog-js in Chromium against the e2e
+    collector. The native proof is the Linux desktop app (fg's `linux` surface), where
+    posthog_flutter runs its Dart core against `cli/posthog_collector.ts` (`FG_POSTHOG_HOST`, new
+    in the verify skill). iOS and Android are built in CI (`android` and `ios` gates) but not run:
+    this runner has no Android SDK and no access to `/dev/kvm`, and the Mac has no simulators. Their
+    request behavior is from reading the SDK source (item 2), and the method-channel tests prove
+    what Dart hands to the native side.
+18. **Not deleted at an off:** posthog-android's `posthog-native-crash` preferences (timestamps
+    of the native crashes already reported, no id; deleting them would report old crashes
+    again), and iOS PLCrashReporter's pending crash report (see item 11 and ANALYTICS.md, "Gaps").

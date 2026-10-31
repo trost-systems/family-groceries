@@ -1,0 +1,22 @@
+Linux desktop debug app (posthog_flutter 5.58.3, Dart core) against cli/posthog_collector.ts on 127.0.0.1:57588, job 44.
+Login screen, sign-in and consent screen: 0 requests. Then: Einverstanden, add Hafermilch at once, tick it, Mehr (two
+uncaught Marionette harness errors happened there), switch Nutzungsdaten off, add and tick Brot, wait 45 s: nothing more.
+
+2026-10-31T19:55:28.872Z POST /flags/
+  body keys: $anon_distinct_id, $device_id, distinct_id, group_properties, groups, person_properties, timezone, token
+2026-10-31T19:55:58.868Z POST /batch/
+  first_open {"app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux"}
+  item_added {"actor_role": "owner", "app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "household_size": 2, "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux", "source": "typed"}
+  item_categorized {"app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux", "via": "exact"}
+  item_ticked {"actor_role": "owner", "app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "household_size": 2, "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux"}
+  $exception {"app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux"}
+    $exception_list: StateError | Bad state: <w> not <w> after <n> <w> | handled False | 8 frames, e.g. {"abs_path": "package:marionette_flutter/src/services/scroll_simulator.dart", "function": "ScrollSimulator.scrollUntilVisible.fail", "lineno": 88}
+  $exception {"app_version": "0.1.0+1", "household_id": "8e2bfa5b-39b0-4a69-a0e8-1fd489abc9f8", "install_id": "1849e1b3-23d5-482c-b7bf-8859c7cecb72", "is_internal": true, "platform": "linux"}
+    $exception_list: _Exception | <redacted> | handled False | 5 frames, e.g. {"abs_path": "package:marionette_flutter/src/services/gesture_dispatcher.dart", "function": "GestureDispatcher.tap", "lineno": 43}
+  SDK keys on every event: $app_build, $app_name, $app_version, $device_type, $geoip_disable, $is_identified, $lib, $lib_version, $os_name, $os_version, $process_person_profile, $recording_status, $screen_density, $screen_height, $screen_width, $sdk_debug_current_session_duration, $sdk_debug_pending_queue_size, $sdk_debug_session_start, $session_id, $timezone
+
+Second run (same build plus the off clean-up): after the yes the SDK keeps
+data/com.hummlist.app/posthog/phc_fg_local_collector/{posthog_data.json (anonymous_id = device_id =
+the install id), posthog_queue/, posthog.lock, posthog_app_version.json}. fg restart (stored yes): one
+POST /flags/ at launch. Switching Nutzungsdaten off: close() sent the queued batch (POST /batch/), then
+the folder phc_fg_local_collector was gone; no request in the 40 s after.

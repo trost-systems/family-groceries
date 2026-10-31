@@ -14,9 +14,9 @@ void main() {
   late MemoryAnalyticsStore store;
   setUp(() => store = MemoryAnalyticsStore());
 
-  Future<(Analytics, RecordingSink)> consented() async {
-    final sink = RecordingSink();
-    final analytics = await loadedAnalytics(sink, store)
+  Future<(Analytics, NativePostHog)> consented() async {
+    final sink = NativePostHog()..install();
+    final analytics = await loadedAnalytics(store)
       ..setUser(customer);
     await analytics.decide(granted: true);
     await analytics.flush();
@@ -38,14 +38,11 @@ void main() {
     expect(toggle, findsOneWidget);
     expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
 
-    analytics
-      ..track('item_ticked')
-      ..track('item_ticked');
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(analytics.state.consent, isFalse);
     expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
-    expect(analytics.queued, isEmpty);
+    expect(sink.methods.last, 'close', reason: 'off stops the SDK');
     expect(store.id, isNull, reason: 'off deletes the install id');
     analytics.track('item_ticked');
     await analytics.flush();
