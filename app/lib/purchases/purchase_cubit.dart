@@ -21,268 +21,256 @@ final class const FlowRestoring() extends PurchaseFlow;
 /// Ask to Buy or a Play payment that completes later.
 final class const FlowAwaitingApproval() extends PurchaseFlow;
 
-/// The server checks the store's proof.
-final class const FlowVerifying() extends PurchaseFlow;
+/// Bought or restored: waiting for the unlock from Supabase, which arrives
+/// once RevenueCat's webhook has recorded it.
+final class const FlowUnlocking() extends PurchaseFlow;
+
+/// The unlock takes longer than [unlockWait] (RevenueCat's webhook is late
+/// or retrying). Buy stays off for this visit: the purchase is done and
+/// another one would be paid twice.
+final class const FlowUnlockDelayed() extends PurchaseFlow;
 
 final class const FlowCanceled() extends PurchaseFlow;
 
-/// The store or the server failed for now; a store transaction, if any,
-/// stays unfinished and is verified again on [PurchaseCubit.retry] and at the
-/// next start.
 final class const FlowFailed(final FailureKind kind, final String code)
     extends PurchaseFlow;
 
-/// The server refused the store's proof for good. The store transaction is
-/// finished; only a restore the user asks for sends it again.
-final class const FlowNotAccepted(final String code) extends PurchaseFlow;
-
-/// The purchase is already unlocked for another household.
+/// The store purchase belongs to another household, for good (H-56).
 final class const FlowUsedElsewhere() extends PurchaseFlow;
-
-/// The store took the purchase back (refund, revoke).
-final class const FlowRefunded() extends PurchaseFlow;
 
 /// A restore found no purchase.
 final class const FlowNothingRestored() extends PurchaseFlow;
 
 enum FailureKind() {
-  /// The store refused or failed.
+  /// The store or RevenueCat refused or failed.
   store,
 
-  /// The server could not be reached.
+  /// The store or RevenueCat could not be reached.
   offline,
-
-  /// Too many verifications; later.
-  rateLimited,
-
-  /// The server failed, or did not accept the session.
-  server,
 }
 
 @immutable
 class const PurchaseState({
-  /// Null while loading.
+  /// Null until loaded for the household, which happens only on the
+  /// Lifetime page of a household known to lack Lifetime.
   final ProductLoad? product,
   final PurchaseFlow flow = const FlowIdle(),
 }) {
   /// A purchase or restore is under way: Buy does nothing. Awaiting approval
   /// is not: iOS never reports a declined Ask to Buy, so Buy asks again.
   bool get busy => switch (flow) {
-    FlowBuying() || FlowRestoring() || FlowVerifying() => true,
+    FlowBuying() ||
+    FlowRestoring() ||
+    FlowUnlocking() ||
+    FlowUnlockDelayed() => true,
     _ => false,
-  };
-
-  /// A restore may start: also while a purchase awaits approval.
-  bool get canRestore => switch (flow) {
-    FlowBuying() || FlowRestoring() || FlowVerifying() => false,
-    _ => true,
   };
 }
 
-/// How long a restore waits for the store's transactions after it returns
-/// before it says there were none.
-const restoreGrace = Duration(seconds: 2);
+/// How long "unlocking" waits for Supabase's unlock after a purchase.
+const unlockWait = Duration(seconds: 60);
 
-/// Hummlist Lifetime's purchase, app-wide from start: a transaction an
-/// earlier session left unfinished arrives as soon as the store is heard.
-///
-/// A store transaction is finished only after the server's final word
-/// ([Verified], or [VerificationRefused] for a proof it never accepts);
-/// without one it stays unfinished and is verified again on [retry], when the
-/// session gets a household, and at the next start.
+/// The claim's waits between tries when it got no answer.
+const claimBackoff = [
+  Duration(seconds: 2),
+  Duration(seconds: 5),
+  Duration(seconds: 15),
+];
+
+/// Hummlist Lifetime's purchase and restore. It talks to the store only
+/// while the Lifetime page is open ([pageOpened]) in a household the server
+/// confirmed has no Lifetime ([Entitlements.canOffer]): no other member and
+/// no unlocked household ever reaches RevenueCat (Legal Review K.9.9). The
+/// unlock it shows comes only from Supabase ([Entitlements]).
 class PurchaseCubit(
   final PurchaseRepository _store,
-  final PurchaseApi _api,
+  final ClaimApi _claims,
   final Entitlements _entitlements,
   final SessionCubit _session,
 ) extends Cubit<PurchaseState> {
-  this : super(const PurchaseState()) {
-    _updates = _store.updates.listen(_onUpdate);
-    _sessions = _session.stream.listen((_) => _onSession());
-    unawaited(_loadProduct());
-    _onSession();
+  this : super(PurchaseState(product: _store.withoutStore)) {
+    _household = _householdOf(_session.state);
+    _sessions = _session.stream.listen(_onSession);
+    _unlocks = _entitlements.stream.listen((_) => _onEntitlements());
   }
 
-  late final StreamSubscription<StoreUpdate> _updates;
   late final StreamSubscription<Session> _sessions;
+  late final StreamSubscription<EntitlementsState> _unlocks;
+  String? _household;
+  var _pages = 0;
 
-  /// Store transactions without the server's final word, by proof.
-  final _unverified = <String, StorePurchased>{};
+  /// The household the product was asked for.
+  String? _loadedFor;
+  Timer? _unlockTimeout;
 
-  /// The verification running now; one at a time.
-  Future<void>? _verifying;
-  var _recovered = false;
-  Timer? _restoreGrace;
+  static String? _householdOf(Session session) => switch (session) {
+    InHousehold(:final household) => household.id,
+    _ => null,
+  };
 
-  /// From a restore the user asked for until its grace is over.
-  var _restoreAsked = false;
+  bool get _offer => _entitlements.canOffer(Entitlement.lifetime);
 
-  bool get _inHousehold => _session.state is InHousehold;
+  /// The Lifetime page is shown; [pageClosed] when it goes.
+  void pageOpened() {
+    _pages++;
+    _ask();
+  }
 
-  void _onSession() {
-    if (!_inHousehold) {
+  void pageClosed() => _pages--;
+
+  /// Loads the product for the session's household once the page is open
+  /// and Lifetime may be offered there.
+  void _ask() {
+    final household = _household;
+    if (isClosed ||
+        _pages <= 0 ||
+        _store.withoutStore != null ||
+        household == null ||
+        !_offer ||
+        _loadedFor == household) {
       return;
     }
-    if (!_recovered) {
-      _recovered = true;
-      unawaited(_store.recoverUnfinished());
-    }
-    unawaited(_verifyAll());
+    _loadedFor = household;
+    _emitProduct(null);
+    unawaited(_load(household));
   }
 
-  Future<void> _loadProduct() async {
-    final product = await _store.loadProduct();
-    if (!isClosed) {
-      emit(PurchaseState(product: product, flow: state.flow));
+  Future<void> _load(String household) async {
+    final load = await _store.loadProduct(household);
+    if (!isClosed && _loadedFor == household) {
+      _emitProduct(load);
     }
   }
 
-  /// Ignored while a purchase or restore is under way.
+  void _onSession(Session session) {
+    final household = _householdOf(session);
+    if (household == _household) {
+      return;
+    }
+    _household = household;
+    _loadedFor = null;
+    _unlockTimeout?.cancel();
+    emit(PurchaseState(product: _store.withoutStore));
+    _ask();
+  }
+
+  void _onEntitlements() {
+    if ((state.flow is FlowUnlocking || state.flow is FlowUnlockDelayed) &&
+        _entitlements.has(Entitlement.lifetime)) {
+      _unlockTimeout?.cancel();
+      _emit(flow: const FlowIdle());
+    }
+    _ask();
+  }
+
+  /// Only for the household the product was loaded for, and only while
+  /// Lifetime may be offered there.
   Future<void> buy() async {
-    if (state.busy) {
-      return;
-    }
+    final household = _household;
     final load = state.product;
-    if (load is! ProductLoaded) {
+    if (state.busy ||
+        !_offer ||
+        load is! ProductLoaded ||
+        load.householdId != household) {
       return;
     }
     _emit(flow: const FlowBuying());
-    try {
-      await _store.buy(load.product);
-    } on StoreError catch (e) {
-      if (state.flow is FlowBuying) {
-        _emit(flow: FlowFailed(FailureKind.store, e.code));
-      }
+    final outcome = await _store.buy(load.householdId, load.product);
+    if (isClosed) {
+      return;
+    }
+    switch (outcome) {
+      case Bought(:final transaction):
+        _unlocking();
+        if (transaction != null) {
+          unawaited(_claim(transaction));
+        }
+      case Canceled():
+        _emit(flow: const FlowCanceled());
+      case Pending():
+        _emit(flow: const FlowAwaitingApproval());
+      case StoreProblem():
+        _failed(outcome);
     }
   }
 
   Future<void> restore() async {
-    if (!state.canRestore) {
+    final household = _household;
+    if (state.busy || !_offer || household == null) {
       return;
     }
     _emit(flow: const FlowRestoring());
-    _restoreAsked = true;
-    try {
-      await _store.restore();
-    } on StoreError catch (e) {
-      _restoreAsked = false;
-      if (state.flow is FlowRestoring) {
-        _emit(flow: FlowFailed(FailureKind.store, e.code));
-      }
+    final outcome = await _store.restore(household);
+    if (isClosed) {
       return;
     }
-    // Restored transactions arrive on the update stream; without any the
-    // flow is still restoring after the grace.
-    _restoreGrace?.cancel();
-    _restoreGrace = Timer(restoreGrace, () {
-      _restoreAsked = false;
-      if (state.flow is FlowRestoring) {
+    switch (outcome) {
+      case Restored():
+        _unlocking();
+      case NothingToRestore():
         _emit(flow: const FlowNothingRestored());
+      case StoreProblem():
+        _failed(outcome);
+    }
+  }
+
+  void _failed(StoreProblem problem) => _emit(
+    flow: switch (problem) {
+      BelongsElsewhere() => const FlowUsedElsewhere(),
+      StoreFailed(:final code) => FlowFailed(FailureKind.store, code),
+      StoreOffline() => const FlowFailed(FailureKind.offline, 'offline'),
+    },
+  );
+
+  void _unlocking() {
+    if (_entitlements.has(Entitlement.lifetime)) {
+      _emit(flow: const FlowIdle());
+      return;
+    }
+    _emit(flow: const FlowUnlocking());
+    _unlockTimeout?.cancel();
+    _unlockTimeout = Timer(unlockWait, () {
+      if (state.flow is FlowUnlocking) {
+        _emit(flow: const FlowUnlockDelayed());
       }
     });
   }
 
-  /// Loads the product again if it failed to load, and verifies what is
-  /// still unverified.
-  Future<void> retry() async {
-    if (state.product case ProductNotFound() || StoreUnavailable()) {
-      emit(PurchaseState(flow: state.flow));
-      await _loadProduct();
-    }
-    if (state.flow is FlowFailed) {
-      _emit(flow: const FlowIdle());
-    }
-    await _verifyAll();
-  }
-
-  void _onUpdate(StoreUpdate update) {
-    switch (update) {
-      case StorePending():
-        _emit(flow: const FlowAwaitingApproval());
-      case StoreCanceled():
-        _emit(flow: const FlowCanceled());
-      case StoreFailed(:final code):
-        _emit(flow: FlowFailed(FailureKind.store, code));
-      case StorePurchased(:final source, :final alreadyFinished):
-        // A start-up recovery also finds purchases the store already
-        // completed; only a restore the user asked for verifies those.
-        if (source == PurchaseSource.purchase ||
-            !alreadyFinished ||
-            _restoreAsked) {
-          _unverified[update.proof.data] = update;
-          unawaited(_verifyAll());
-        }
-    }
-  }
-
-  /// Verifies every unverified transaction, one at a time; a second call
-  /// while one runs waits for it and goes again.
-  Future<void> _verifyAll() async {
-    for (var running = _verifying; running != null; running = _verifying) {
-      await running;
-    }
-    final run = _verifyEach();
-    _verifying = run;
-    try {
-      await run;
-    } finally {
-      _verifying = null;
-    }
-  }
-
-  Future<void> _verifyEach() async {
-    for (final purchase in [..._unverified.values]) {
-      if (isClosed || !_inHousehold) {
-        return;
-      }
-      _emit(flow: const FlowVerifying());
-      final answer = await _api.verify(purchase.proof, purchase.source);
+  /// Records this member as the buyer (H-55), once, trying again while there
+  /// is no answer. Without a claim the unlock still comes; only the buyer
+  /// stays unknown.
+  Future<void> _claim(StoreTransactionRef transaction) async {
+    for (var attempt = 0; ; attempt++) {
+      final result = await _claims.claim(transaction);
       if (isClosed) {
         return;
       }
-      switch (answer) {
-        case Verified(:final outcome):
-          await _finish(purchase);
-          if (outcome == VerifyOutcome.granted ||
-              outcome == VerifyOutcome.restored) {
-            await _entitlements.refresh();
+      switch (result) {
+        case Claimed(status: ClaimStatus.elsewhere):
+          if (state.flow is FlowUnlocking || state.flow is FlowUnlockDelayed) {
+            _unlockTimeout?.cancel();
+            _emit(flow: const FlowUsedElsewhere());
           }
-          _emit(
-            flow: switch (outcome) {
-              VerifyOutcome.granted ||
-              VerifyOutcome.restored => const FlowIdle(),
-              VerifyOutcome.usedElsewhere => const FlowUsedElsewhere(),
-              VerifyOutcome.revoked ||
-              VerifyOutcome.refunded => const FlowRefunded(),
-            },
-          );
-        case VerificationPending():
-          _emit(flow: const FlowAwaitingApproval());
-        case VerificationRefused(:final code):
-          await _finish(purchase);
-          _emit(flow: FlowNotAccepted(code));
-        case VerificationFailed(:final problem, :final code):
-          _emit(
-            flow: FlowFailed(switch (problem) {
-              VerifyProblem.offline => FailureKind.offline,
-              VerifyProblem.rateLimited => FailureKind.rateLimited,
-              VerifyProblem.session ||
-              VerifyProblem.server => FailureKind.server,
-            }, code),
-          );
+          return;
+        case Claimed():
+          return;
+        case ClaimFailed(:final problem):
+          if (!problem.transient || attempt >= claimBackoff.length) {
+            return;
+          }
+          await Future<void>.delayed(claimBackoff[attempt]);
       }
     }
   }
 
-  /// After the server's final word: never sent again in this session.
-  Future<void> _finish(StorePurchased purchase) async {
-    _unverified.remove(purchase.proof.data);
-    try {
-      await _store.finish(purchase);
-    } on Object {
-      // The server's answer stands; the store hands the unfinished
-      // transaction over again at the next start, which verifies it again
-      // and finishes it then.
+  /// Loads the product again if it failed to load; clears a failure.
+  void retry() {
+    if (state.product case ProductNotFound() || StoreUnavailable()) {
+      _loadedFor = null;
+      _ask();
+    }
+    if (state.flow is FlowFailed) {
+      _emit(flow: const FlowIdle());
     }
   }
 
@@ -292,11 +280,17 @@ class PurchaseCubit(
     }
   }
 
+  void _emitProduct(ProductLoad? product) {
+    if (!isClosed) {
+      emit(PurchaseState(product: product, flow: state.flow));
+    }
+  }
+
   @override
   Future<void> close() async {
-    _restoreGrace?.cancel();
-    await _updates.cancel();
+    _unlockTimeout?.cancel();
     await _sessions.cancel();
+    await _unlocks.cancel();
     await super.close();
   }
 }

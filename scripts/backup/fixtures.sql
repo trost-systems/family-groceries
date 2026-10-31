@@ -112,10 +112,21 @@ select public.merge_items(gen_random_uuid(),
   (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Karotten'));
 reset role;
 
--- Job 25: Peter bought Hummlist Lifetime (sandbox) for the household; the purchases function
--- writes through the service connection only.
-select public.purchase_grant('apple', '2000000999000001', 'com.hummlist.app.lifetime', 'Sandbox', now(), null,
-  9.99, 'EUR', 'DE', (select id from auth.users where email = 'peter@backup.test'), (select id from fx where key = 'home'));
+-- Job 25 (job 43: through RevenueCat): Peter bought Hummlist Lifetime (sandbox) for the household;
+-- the purchases function writes through the service connection only. His claim came first; a
+-- second claim waits for its webhook (purchase_claims). Carl is a tester; one webhook event id is
+-- remembered; one purged purchase left its tombstone; one deleted household waits for RevenueCat.
+select public.purchase_claim((select id from auth.users where email = 'peter@backup.test'),
+  (select id from fx where key = 'home'), 'apple', '2000000999000001');
+select public.purchase_claim((select id from auth.users where email = 'peter@backup.test'),
+  (select id from fx where key = 'home'), 'apple', '2000000999000002');
+select public.purchase_record('apple', '2000000999000001', '2000000999000001', repeat('b', 64),
+  'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from fx where key = 'home'));
 select public.purchase_take_call((select id from auth.users where email = 'peter@backup.test'));
+insert into public.lifetime_testers (user_id, grants, note)
+select id, 1, 'backup drill' from auth.users where email = 'carl@backup.test';
+insert into public.revenuecat_events (id, type) values ('backup-drill-event', 'NON_RENEWING_PURCHASE');
+insert into public.purchase_tombstones (transaction_hmac) values (repeat('c', 64));
+insert into public.revenuecat_deletions (app_user_id, due_at) values (gen_random_uuid(), now() + interval '30 days');
 
 commit;

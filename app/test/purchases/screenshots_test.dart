@@ -1,4 +1,4 @@
-// Job 25: PR screenshots of the Hummlist Lifetime page in its native states
+// Job 25, 43: PR screenshots of the Hummlist Lifetime page in its native states
 // (the web build only shows the web state). Renders More's real page with
 // the fake store and the app's theme, in Roboto and the Material icons from
 // the Flutter SDK. Skipped unless SCREENSHOT_DIR is set:
@@ -8,7 +8,7 @@ import 'dart:io';
 
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
+import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,14 +48,9 @@ typedef Scene = ({
   Future<void> Function(WidgetTester, More)? act,
 });
 
-Future<void> _buyThen(
-  WidgetTester tester,
-  More more,
-  StoreUpdate update,
-) async {
+Future<void> _buy(WidgetTester tester, More more) async {
   await tester.tap(find.byKey(const ValueKey('lifetime-buy')));
-  more.purchases.repository.send(update);
-  await tester.pumpAndSettle();
+  await tester.pump();
 }
 
 final List<Scene> _scenes = [
@@ -69,9 +64,16 @@ final List<Scene> _scenes = [
   (
     name: 'pending',
     location: lifetimePath,
+    store: () => FakePurchaseRepository(bought: const Pending()),
+    unlocked: false,
+    act: _buy,
+  ),
+  (
+    name: 'unlocking',
+    location: lifetimePath,
     store: FakePurchaseRepository.new,
     unlocked: false,
-    act: (t, m) => _buyThen(t, m, const StorePending()),
+    act: _buy,
   ),
   (
     name: 'unlocked',
@@ -88,6 +90,13 @@ final List<Scene> _scenes = [
     act: null,
   ),
   (
+    name: 'not-yet',
+    location: lifetimePath,
+    store: () => FakePurchaseRepository(withoutStore: const PurchasesNotYet()),
+    unlocked: false,
+    act: null,
+  ),
+  (
     name: 'offline',
     location: lifetimePath,
     store: () => FakePurchaseRepository(product: const StoreUnavailable()),
@@ -97,19 +106,16 @@ final List<Scene> _scenes = [
   (
     name: 'error',
     location: lifetimePath,
-    store: FakePurchaseRepository.new,
+    store: () => FakePurchaseRepository(bought: const StoreFailed('E42')),
     unlocked: false,
-    act: (t, m) => _buyThen(t, m, const StoreFailed('E42')),
+    act: _buy,
   ),
   (
-    name: 'not-accepted',
+    name: 'used-elsewhere',
     location: lifetimePath,
-    store: FakePurchaseRepository.new,
+    store: () => FakePurchaseRepository(bought: const BelongsElsewhere()),
     unlocked: false,
-    act: (t, m) async {
-      m.purchases.server.answer = const VerificationRefused('bad_signature');
-      await _buyThen(t, m, paid('jws-1'));
-    },
+    act: _buy,
   ),
   (
     name: 'more',
@@ -151,6 +157,8 @@ void main() {
             find.byType(MaterialApp),
             matchesGoldenFile(Uri.file('$_dir/$name.png')),
           );
+          // "Unlocking" waits for an unlock that never comes here.
+          await tester.pump(unlockWait);
         });
       }
     }

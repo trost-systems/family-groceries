@@ -29,9 +29,12 @@ enum FakeStoreMode() {
   offline,
 }
 
-/// Signs a StoreKit 2 transaction the way the App Store does; the local
-/// stack's `/purchases/test/sign` route.
-typedef SignTransaction = Future<String> Function(String transactionId);
+/// Plays RevenueCat's webhook for a purchase of the household
+/// [appUserId]: the local stack's `/purchases/test/event` route.
+typedef SendTestEvent = Future<void> Function({
+  required String appUserId,
+  required String transactionId,
+});
 
 /// Where the fake store keeps its purchases across starts.
 abstract interface class FakeLedgerStore() {
@@ -42,155 +45,115 @@ abstract interface class FakeLedgerStore() {
 /// A file in the app's support directory.
 FakeLedgerStore fileLedger() => platform.fileLedger();
 
-/// The App Store as debug builds and fg play it, where no store exists
-/// (Linux desktop): purchases are StoreKit 2 transactions signed by the
-/// local stack's test CA, so the server verifies them like Apple's. It keeps
-/// what it sold and what is unfinished across starts and hands the
-/// unfinished ones over again at the next start, as StoreKit 2 does.
+/// The App Store and RevenueCat as debug builds and fg play them, where no
+/// store exists (Linux desktop). A purchase sends the webhook event
+/// RevenueCat would send, through the local stack, so the server grants it
+/// like a real one. Its ledger remembers which household each transaction
+/// was bought for, as RevenueCat's "Keep with original App User ID" does.
 class FakeStore(
   final FakeStoreMode _mode, {
-  required final SignTransaction sign,
+  required final SendTestEvent send,
   required final FakeLedgerStore ledger,
   final Duration approval = const Duration(seconds: 8),
 }) implements PurchaseRepository {
   static const price = '9,99 €';
 
-  late final _updates = StreamController<StoreUpdate>(
-    onListen: () => unawaited(_redeliver()),
-  );
-  Future<_Ledger>? _loaded;
+  Future<Map<String, String>>? _loaded;
 
-  Future<_Ledger> get _book => _loaded ??= _Ledger.read(ledger);
+  /// Transaction id to the household it was bought for.
+  Future<Map<String, String>> get _owned => _loaded ??= _read(ledger);
 
   @override
-  Stream<StoreUpdate> get updates => _updates.stream;
+  ProductLoad? get withoutStore => null;
 
   @override
-  Future<ProductLoad> loadProduct() async => switch (_mode) {
+  Future<ProductLoad> loadProduct(String householdId) async => switch (_mode) {
     FakeStoreMode.offline => const StoreUnavailable(),
     FakeStoreMode.unavailable => const ProductNotFound(),
-    _ => const ProductLoaded(Product(id: lifetimeProductId, price: price)),
+    _ => ProductLoaded(
+      householdId,
+      const Product(id: lifetimeProductId, price: price),
+    ),
   };
 
   @override
-  Future<void> buy(Product product) async {
+  Future<BuyOutcome> buy(String householdId, Product product) async {
     switch (_mode) {
       case FakeStoreMode.cancel:
-        _updates.add(const StoreCanceled());
+        return const Canceled();
       case FakeStoreMode.error:
-        _updates.add(const StoreFailed('fake_error'));
+        return const StoreFailed('fake_error');
+      case FakeStoreMode.offline:
+        return const StoreOffline();
       case FakeStoreMode.pending:
-        _updates.add(const StorePending());
-        Timer(approval, () => unawaited(_sell()));
-      case FakeStoreMode.ok ||
-          FakeStoreMode.unavailable ||
-          FakeStoreMode.offline:
-        await _sell();
+        Timer(approval, () => unawaited(_sell(householdId)));
+        return const Pending();
+      case FakeStoreMode.ok || FakeStoreMode.unavailable:
+        return await _sell(householdId);
     }
   }
 
-  Future<void> _sell() async {
+  Future<BuyOutcome> _sell(String householdId) async {
     final id = 'fake-${const Uuid().v4()}';
-    final book = await _book;
-    book.owned.add(id);
-    book.unfinished.add(id);
-    await book.save(ledger);
-    await _hand(id, PurchaseSource.purchase, alreadyFinished: false);
-  }
-
-  @override
-  Future<void> restore() async {
-    final book = await _book;
-    for (final id in [...book.owned]) {
-      await _hand(
-        id,
-        PurchaseSource.restore,
-        alreadyFinished: !book.unfinished.contains(id),
-      );
-    }
-  }
-
-  @override
-  Future<void> recoverUnfinished() async {}
-
-  @override
-  Future<void> finish(StorePurchased purchase) async {
-    final book = await _book;
-    if (book.unfinished.remove(purchase.handle)) {
-      await book.save(ledger);
-    }
-  }
-
-  Future<void> _redeliver() async {
-    final book = await _book;
-    for (final id in [...book.unfinished]) {
-      await _hand(id, PurchaseSource.purchase, alreadyFinished: false);
-    }
-  }
-
-  Future<void> _hand(
-    String id,
-    PurchaseSource source, {
-    required bool alreadyFinished,
-  }) async {
-    final String jws;
+    final owned = await _owned;
+    owned[id] = householdId;
+    await ledger.write(jsonEncode({'owned': owned}));
     try {
-      jws = await sign(id);
+      await send(appUserId: householdId, transactionId: id);
     } on Object {
-      _updates.add(const StoreFailed('fake_sign_failed'));
-      return;
+      // Sold; a restore sends the event again, as RevenueCat retries.
+      return const StoreFailed('fake_event_failed');
     }
-    _updates.add(
-      StorePurchased(
-        proof: StoreProof(
-          store: AppStore.apple,
-          data: jws,
-          productId: lifetimeProductId,
-        ),
-        source: source,
-        alreadyFinished: alreadyFinished,
-        handle: id,
-      ),
-    );
+    return Bought(StoreTransactionRef(AppStore.apple, id));
   }
-}
 
-class _Ledger(final Set<String> owned, final Set<String> unfinished) {
-  static Future<_Ledger> read(FakeLedgerStore store) async {
-    final Object? json;
+  @override
+  Future<RestoreOutcome> restore(String householdId) async {
+    if (_mode == FakeStoreMode.offline) {
+      return const StoreOffline();
+    }
+    final owned = await _owned;
+    final mine = [
+      for (final MapEntry(:key, :value) in owned.entries)
+        if (value == householdId) key,
+    ];
+    if (mine.isEmpty) {
+      return owned.isEmpty
+          ? const NothingToRestore()
+          : const BelongsElsewhere();
+    }
     try {
-      json = jsonDecode(await store.read() ?? '{}');
-    } on FormatException {
-      return _Ledger({}, {});
+      for (final id in mine) {
+        await send(appUserId: householdId, transactionId: id);
+      }
+    } on Object {
+      return const StoreFailed('fake_event_failed');
     }
-    Set<String> ids(Object? list) => {
-      if (list is List<Object?>) ...list.whereType<String>(),
-    };
-    return switch (json) {
-      {'owned': final owned, 'unfinished': final unfinished} => _Ledger(
-        ids(owned),
-        ids(unfinished),
-      ),
-      _ => _Ledger({}, {}),
-    };
+    return const Restored();
   }
-
-  Future<void> save(FakeLedgerStore store) => store.write(
-    jsonEncode({
-      'owned': [...owned],
-      'unfinished': [...unfinished],
-    }),
-  );
 }
 
-/// The local stack's test signer (404 on a hosted project).
-SignTransaction localTestSigner(SupabaseClient client) => (id) async {
-  final response = await client.functions.invoke(
-    'purchases/test/sign',
-    body: {'transactionId': id},
-  );
-  return switch (response.data) {
-    {'jws': final String jws} => jws,
-    _ => throw StateError('no jws'),
+Future<Map<String, String>> _read(FakeLedgerStore store) async {
+  final Object? json;
+  try {
+    json = jsonDecode(await store.read() ?? '{}');
+  } on FormatException {
+    return {};
+  }
+  return switch (json) {
+    {'owned': final Map<String, Object?> owned} => {
+      for (final MapEntry(:key, :value) in owned.entries)
+        if (value is String) key: value,
+    },
+    _ => {},
   };
-};
+}
+
+/// The local stack's RevenueCat stand-in (404 on a hosted project).
+SendTestEvent localTestEvent(SupabaseClient client) =>
+    ({required appUserId, required transactionId}) async {
+      await client.functions.invoke(
+        'purchases/test/event',
+        body: {'appUserId': appUserId, 'transactionId': transactionId},
+      );
+    };

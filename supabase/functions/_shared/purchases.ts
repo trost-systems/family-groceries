@@ -1,8 +1,8 @@
 // Purchase events for the lifetime unlock (docs/ANALYTICS.md, "Purchases"). Revenue reaches
 // PostHog only from here, after the store verified the transaction; the app never reports a
-// price. The real verifiers are the purchases function's (purchases/apple.ts, purchases/google.ts,
-// job 25), which sends its events through [sendPurchaseEvent]; [recordPurchase] and the fake
-// verifier are job 19's harness for the same mapping.
+// price. The purchases function (RevenueCat's webhook, job 43) sends its events through
+// [sendPurchaseEvent]; [recordPurchase] and the fake verifier are job 19's harness for the same
+// mapping.
 import { Subject, Telemetry } from './telemetry.ts';
 
 export type AppStore = 'apple' | 'google';

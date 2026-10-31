@@ -5,6 +5,11 @@
       "released": false,
       "note": "the Alexa skill is in beta and not certified by Amazon yet",
       "match": ["alexa"]
+    },
+    "premium-launch": {
+      "released": false,
+      "note": "Hummlist Lifetime is not on sale yet: nothing is sold or gated",
+      "match": ["lifetime"]
     }
   }
 }

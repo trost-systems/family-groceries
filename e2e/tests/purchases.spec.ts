@@ -11,43 +11,19 @@ import {
   signUpWithHousehold,
   typeInto,
 } from './helpers';
+import { buy, claim, householdOf, rcEvent, report } from './iap';
 
-// Job 25: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More shows that
-// the purchase is in the iOS and Android app, and the household's unlock. The App Store's part
-// is played by the local stack's /purchases/test/sign (scripts/iap-test-ca.sh's CA), so the
-// purchase runs through the real /purchases/verify, Postgres, RLS and Realtime.
+// Job 25, as of job 43: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
+// shows that the purchase is in the iPhone or Android app, and the household's unlock. RevenueCat's
+// part is played by events posted to the real webhook with the local secret (iap.ts), so the
+// purchase runs through the function, Postgres, RLS and Realtime (with the H-55 column grants).
 
 const newPage = async (browser: Browser) => await (await browser.newContext()).newPage();
 
 const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Hummlist Lifetime/ });
-const webNote = (page: Page) => page.getByText('Hummlist Lifetime gibt es in der iOS- und Android-App.');
+const webNote = (page: Page) => page.getByText(/^Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App\./);
 /** The unlocked tile: title and text are one node ("Freigeschaltet Hummlist Lifetime ist …"). */
 const unlocked = (page: Page) => page.getByText(/^Freigeschaltet/);
-
-async function sign(body: Record<string, unknown>): Promise<Record<string, string>> {
-  const res = await fetch(`${functionsUrl}/purchases/test/sign`, { method: 'POST', body: JSON.stringify(body) });
-  expect(res.status, 'the local stack plays the App Store').toBe(200);
-  return await res.json();
-}
-
-/** What the iPhone app sends after a StoreKit purchase, as [email]. */
-async function verify(email: string, jws: string, source = 'purchase') {
-  const api = await apiAs(email);
-  const { data } = await api.auth.getSession();
-  const res = await fetch(`${functionsUrl}/purchases/verify`, {
-    method: 'POST',
-    headers: { authorization: `Bearer ${data.session!.access_token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ store: 'apple', source, jws }),
-  });
-  return { status: res.status, body: await res.json() };
-}
-
-async function householdOf(email: string): Promise<string> {
-  const api = await apiAs(email);
-  const { data, error } = await api.from('household_members').select('household_id').single();
-  if (error) throw error;
-  return data.household_id as string;
-}
 
 test('the web shows the unlock live for both partners, sells nothing, and a refund locks again', async ({ browser }) => {
   const peterEmail = newEmail('iap-peter');
@@ -78,8 +54,8 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
 
   // Peter buys on his iPhone; both web pages show it without a reload.
   const transactionId = `2000${Date.now()}`;
-  const { jws } = await sign({ transactionId });
-  expect(await verify(peterEmail, jws)).toEqual({ status: 200, body: { status: 'granted', unlocked: true } });
+  const peterHousehold = await householdOf(peterEmail);
+  expect(await buy(peterEmail, transactionId)).toBe('granted');
   await expect(unlocked(peter), 'the buyer sees it live').toBeVisible({ timeout: 10_000 });
   await expect(unlocked(lea), 'the partner sees it live, without buying').toBeVisible({ timeout: 10_000 });
   await screenshot(peter, 'job25-unlocked-web-de-390');
@@ -87,42 +63,36 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await screenshot(peter, 'job25-unlocked-web-de-1366');
   await peter.setViewportSize({ width: 390, height: 844 });
 
-  // The same transaction again (a retry, a double tap) only restores.
-  expect((await verify(peterEmail, jws)).body).toEqual({ status: 'restored', unlocked: true });
-  expect((await verify(leaEmail, jws, 'restore')).body, 'Lea restores the purchase on her phone').toEqual({
-    status: 'restored',
-    unlocked: true,
-  });
+  // The same transaction again (a restore on Lea's phone) only restores; a retried event does nothing.
+  expect(await report(leaEmail, transactionId), 'Lea restores the purchase on her phone').toBe('restored');
+  const id = crypto.randomUUID();
+  await rcEvent('NON_RENEWING_PURCHASE', peterHousehold, transactionId, { id });
+  expect((await rcEvent('NON_RENEWING_PURCHASE', peterHousehold, transactionId, { id })).body).toEqual({ status: 'duplicate' });
+  expect((await claim(leaEmail, transactionId)).body, 'Peter claimed it first').toEqual({ status: 'taken' });
 
-  // Max replays Peter's transaction from his own household: refused.
+  // Peter's transaction reported for Max's household (a transfer, a replay): refused.
   const maxEmail = newEmail('iap-max');
   const max = await newPage(browser);
   await signUpWithHousehold(max, maxEmail);
-  expect((await verify(maxEmail, jws, 'restore')).body).toEqual({ status: 'used_elsewhere', unlocked: false });
+  expect(await report(maxEmail, transactionId)).toBe('used_elsewhere');
+  expect((await rcEvent('TRANSFER', await householdOf(maxEmail), transactionId)).body).toEqual({ status: 'ignored' });
   await openMore(max, 'Hummlist Lifetime');
   await expect(webNote(max)).toBeVisible();
   await expect(unlocked(max), 'Max stays locked').toHaveCount(0);
 
-  // A forged JWS (another key, same claims) is refused.
-  const [header, payload] = jws.split('.');
-  const { jws: other } = await sign({ transactionId: `${transactionId}9` });
-  const forged = `${header}.${payload}.${other.split('.')[2]}`;
-  expect(await verify(maxEmail, forged)).toEqual({ status: 422, body: { error: 'refused', reason: 'bad_signature' } });
+  // Without RevenueCat's secret nothing is recorded.
+  expect(await rcEvent('NON_RENEWING_PURCHASE', await householdOf(maxEmail), `${transactionId}9`, { authorization: 'Bearer forged' }))
+    .toEqual({ status: 401, body: { error: 'invalid_token' } });
+  await expect(unlocked(max)).toHaveCount(0);
 
-  // Apple refunds it: the unlock goes for both, live.
-  const { signedPayload } = await sign({ transactionId, notificationType: 'REFUND' });
-  const notify = () =>
-    fetch(`${functionsUrl}/purchases/apple/notifications`, { method: 'POST', body: JSON.stringify({ signedPayload }) })
-      .then((r) => r.json());
-  expect(await notify()).toEqual({ status: 'revoked' });
-  expect(await notify(), 'a repeated notification changes nothing').toEqual({ status: 'unchanged' });
+  // Apple refunds it (RevenueCat's CANCELLATION): the unlock goes for both, live.
+  expect((await rcEvent('CANCELLATION', peterHousehold, transactionId)).body).toEqual({ status: 'revoked' });
+  expect((await rcEvent('CANCELLATION', peterHousehold, transactionId)).body, 'a repeated refund changes nothing')
+    .toEqual({ status: 'unchanged' });
   await expect(unlocked(peter)).toHaveCount(0, { timeout: 10_000 });
   await expect(unlocked(lea)).toHaveCount(0, { timeout: 10_000 });
   await expect(webNote(lea)).toBeVisible();
-  expect((await verify(peterEmail, jws, 'restore')).body, 'a refunded purchase does not unlock again').toEqual({
-    status: 'revoked',
-    unlocked: false,
-  });
+  expect(await report(peterEmail, transactionId), 'a refunded purchase does not unlock again').toBe('revoked');
 });
 
 test('More shows the row, and Freigeschaltet once the household has it', async ({ page }) => {
@@ -132,8 +102,7 @@ test('More shows the row, and Freigeschaltet once the household has it', async (
   await page.getByRole('tab', { name: 'Mehr' }).click();
   await expect(lifetimeRow(page)).toContainText('Hummlist unterstützen');
   await screenshot(page, 'job25-more-de-390');
-  const { jws } = await sign({ transactionId: `2001${Date.now()}` });
-  expect((await verify(email, jws)).status).toBe(200);
+  expect(await buy(email, `2001${Date.now()}`)).toBe('granted');
   await expect(lifetimeRow(page), 'the row says so, live').toContainText('Freigeschaltet', { timeout: 10_000 });
   await screenshot(page, 'job25-more-unlocked-de-390');
   await page.setViewportSize({ width: 1366, height: 1024 });
@@ -156,14 +125,13 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page).toHaveURL(/\/welcome\/invite$/);
     await page.goto('/more/lifetime');
-    const note = page.getByText('Hummlist Lifetime is available in the iOS and Android apps.');
+    const note = page.getByText(/^You can buy Hummlist Lifetime in the iPhone or Android app\./);
     await expect(note).toBeVisible();
     await expect(page.getByRole('button', { name: 'Restore purchases' })).toHaveCount(0);
     await screenshot(page, 'job25-web-en-390');
     await page.setViewportSize({ width: 1366, height: 1024 });
     await screenshot(page, 'job25-web-en-1366');
-    const { jws } = await sign({ transactionId: `2002${Date.now()}` });
-    expect((await verify(email, jws)).status).toBe(200);
+    expect(await buy(email, `2002${Date.now()}`)).toBe('granted');
     await expect(page.getByText(/^Unlocked/)).toBeVisible({ timeout: 10_000 });
     await screenshot(page, 'job25-unlocked-web-en-1366');
     await page.setViewportSize({ width: 390, height: 844 });

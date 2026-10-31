@@ -3,7 +3,8 @@
   "specifiers": {
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "npm:jose@6.2.13": "6.2.13"
+    "npm:jose@6.2.13": "6.2.13",
+    "npm:postgres@3.4.9": "3.4.9"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -19,6 +20,9 @@
   "npm": {
     "jose@6.2.13": {
       "integrity": "sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ=="
+    },
+    "postgres@3.4.9": {
+      "integrity": "sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw=="
     }
   }
 }

@@ -112,17 +112,23 @@ Future<void> _main(WidgetsBinding Function() binding) async {
     SupabaseEntitlementsSource(client),
     session,
   );
+  // Offline the last answer stands; it names its household, so it never
+  // marks another one.
+  entitlements.stream.listen((state) {
+    if (state case EntitlementsKnown(:final householdId, :final unlocks)) {
+      analytics.testerHousehold = unlocks.tester ? householdId : null;
+    }
+  });
   runApp(
     App(
       language: language,
       theme: theme,
       session: session,
       entitlements: entitlements,
-      // Created before the first frame: the store hands over transactions
-      // an earlier session left unfinished as soon as it is listened to.
+      // Asks no store until the Lifetime page needs it.
       purchases: PurchaseCubit(
         purchaseRepository(client),
-        SupabasePurchaseApi(client),
+        SupabaseClaimApi(client),
         entitlements,
         session,
       ),

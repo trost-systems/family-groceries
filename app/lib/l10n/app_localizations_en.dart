@@ -1118,7 +1118,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hummlist Lifetime is unlocked as soon as the purchase is approved. This can take a while.';
 
   @override
-  String get lifetimeVerifying => 'Checking the purchase …';
+  String get lifetimeUnlocking => 'Unlocking …';
+
+  @override
+  String get lifetimeUnlockDelayed =>
+      'Your purchase went through; unlocking just takes longer than usual. It appears here by itself, so please don\'t buy again.';
+
+  @override
+  String get lifetimeBoughtTwice =>
+      'Your household bought Hummlist Lifetime more than once. Apple or Google can refund one of the purchases.';
 
   @override
   String get lifetimeCanceled => 'Purchase canceled.';
@@ -1132,14 +1140,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifetimeUsedElsewhere =>
-      'This purchase is already unlocked in another household.';
+      'This purchase belongs to another, earlier household and stays there. It unlocks nothing here.';
 
   @override
   String get lifetimeNothingRestored => 'No earlier purchase found.';
-
-  @override
-  String get lifetimeRefunded =>
-      'This purchase was refunded and is no longer unlocked.';
 
   @override
   String lifetimeStoreFailed(String code) {
@@ -1147,23 +1151,101 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get lifetimeVerifyOffline =>
-      'No connection. The purchase is kept and checked as soon as you\'re online.';
-
-  @override
-  String get lifetimeRateLimited => 'Too many attempts. Try again later.';
-
-  @override
-  String lifetimeRefused(String code) {
-    return 'The store\'s receipt was not accepted ($code). If you bought Hummlist Lifetime, tap “Restore purchases” later.';
-  }
-
-  @override
-  String lifetimeServerFailed(String code) {
-    return 'The purchase couldn\'t be checked ($code). It is kept; try again later.';
-  }
-
-  @override
   String get lifetimeWeb =>
-      'Hummlist Lifetime is available in the iOS and Android apps.';
+      'You can buy Hummlist Lifetime in the iPhone or Android app. It\'s then unlocked here too, for your whole household.';
+
+  @override
+  String get lifetimeChecking =>
+      'Checking whether your household has Hummlist Lifetime already …';
+
+  @override
+  String get lifetimeRefundLink =>
+      'Bought it twice? How to get your money back';
+
+  @override
+  String get refundHelpTitle => 'Request a refund';
+
+  @override
+  String get refundHelpBody =>
+      'Hummlist Lifetime always belongs to the household it was bought in. We can\'t refund purchases ourselves: Apple and Google do, and they decide.';
+
+  @override
+  String get refundHelpApple =>
+      'iPhone: open reportaproblem.apple.com, sign in with your Apple Account, choose “Request a refund”, then Hummlist Lifetime.';
+
+  @override
+  String get refundHelpGoogle =>
+      'Android: open Google Play, tap your profile picture, then “Payments & subscriptions”, “Budget & order history”, choose Hummlist Lifetime and “Report a problem”.';
+
+  @override
+  String get refundHelpReason =>
+      'As the reason you can write: “My household was already unlocked.”';
+
+  @override
+  String get refundHelpAppleLink => 'Ask Apple';
+
+  @override
+  String get refundHelpGoogleLink => 'Ask Google';
+
+  @override
+  String get joinTargetUnlocked =>
+      'This household has Hummlist Lifetime. You don\'t need to buy anything.';
+
+  @override
+  String get joinRefundLink =>
+      'Bought Hummlist Lifetime recently? How to request a refund';
+
+  @override
+  String joinLifetimeEnds(String household) {
+    return '“$household” has Hummlist Lifetime. You\'re its last member: if you join, the household is deleted. Its Hummlist Lifetime ends with it and is not refunded, because a purchase belongs to its household and doesn\'t move with you.';
+  }
+
+  @override
+  String get joinAnyway => 'Join anyway';
+
+  @override
+  String get joinLifetimeRefundLink => 'Ask Apple or Google for a refund';
+
+  @override
+  String joinArchiveOffer(String household) {
+    return '“$household” has Hummlist Lifetime. You\'re its last member. Archive the household instead of deleting it: its list and Hummlist Lifetime are kept, and you can bring it back later under “More”.';
+  }
+
+  @override
+  String get joinArchive => 'Archive and join';
+
+  @override
+  String get joinDelete => 'Delete and join';
+
+  @override
+  String joinDeleteTitle(String household) {
+    return 'Delete “$household”?';
+  }
+
+  @override
+  String get archivedTitle => 'Archived households';
+
+  @override
+  String get archivedEmpty => 'You haven\'t archived a household.';
+
+  @override
+  String get archivedUnlocked => 'With Hummlist Lifetime';
+
+  @override
+  String get archivedRestore => 'Bring back';
+
+  @override
+  String archivedRestoreTitle(String household) {
+    return 'Bring back “$household”?';
+  }
+
+  @override
+  String archivedRestoreBody(String household) {
+    return 'You switch to “$household” and are its member again.';
+  }
+
+  @override
+  String archivedRestoreArchivesCurrent(String household) {
+    return 'You\'re the last member of “$household”. As it has Hummlist Lifetime, it is archived, not deleted.';
+  }
 }

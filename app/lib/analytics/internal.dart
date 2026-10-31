@@ -6,6 +6,8 @@
 /// - a debug or profile build ([releaseBuild] false);
 /// - an install flagged internal under More (long press on the version);
 /// - a household listed in the `ANALYTICS_INTERNAL_HOUSEHOLDS` define;
+/// - a household unlocked by a tester's grant ([testerHousehold], job 43:
+///   testers get Hummlist Lifetime free, their households never count);
 /// - a user whose e-mail domain is a test domain: the reserved top-level
 ///   domains `.test`, `.invalid`, `.example`, `.localhost` (the fixtures'
 ///   `fg.test`, `fg-test.invalid`, the e2e `example.test`) and the
@@ -22,10 +24,12 @@ bool isInternal({
   required String? email,
   Set<String> internalHouseholds = const {},
   Set<String> internalEmailDomains = const {},
+  String? testerHousehold,
 }) =>
     !releaseBuild ||
     internalInstall ||
     (householdId != null && internalHouseholds.contains(householdId)) ||
+    (householdId != null && householdId == testerHousehold) ||
     (email != null && _testDomain(email, internalEmailDomains));
 
 const _reservedTopLevel = {'test', 'invalid', 'example', 'localhost'};

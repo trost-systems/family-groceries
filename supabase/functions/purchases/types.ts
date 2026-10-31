@@ -1,62 +1,61 @@
-// What the purchases function's store verifiers return (docs/PURCHASES.md). Apple (apple.ts) and
-// Google (google.ts) each turn what their store signed or answered into a [StorePurchase]; the
-// handler grants, restores or revokes the household's unlock from it.
+// What the purchases function knows about a purchase (docs/PURCHASES.md). RevenueCat checks it with
+// the store; its webhook (revenuecat.ts) turns each event into one of these.
 import type { AppStore } from '../_shared/purchases.ts';
 
-/** The one product: Hummlist Lifetime, a non-consumable, same id on both stores. */
+/** Hummlist Lifetime, a non-consumable, same id on both stores (scripts/iap/product.ts). */
 export const lifetimeProductId = 'com.hummlist.app.lifetime';
 
-/** The iOS bundle id and the Android application id. */
-export const appId = 'com.hummlist.app';
+/**
+ * What an unlock grants (`entitlements.kind`). A later subscription adds its own kind next to
+ * lifetime, never instead of it (docs/PURCHASES.md, "A second entitlement").
+ */
+export type EntitlementKind = 'lifetime';
+
+/** Every product this function records and the kind it unlocks. Events for others are ignored. */
+const productKinds: Readonly<Record<string, EntitlementKind>> = {
+  [lifetimeProductId]: 'lifetime',
+};
+
+export const kindOf = (productId: string): EntitlementKind | null =>
+  Object.hasOwn(productKinds, productId) ? productKinds[productId] : null;
 
 /**
  * Where a transaction happened. Sandbox is Apple's sandbox and TestFlight, and Google Play's
- * license-test purchases; Production is a real sale. Apple's local "Xcode" StoreKit testing never
- * verifies (its chain is not Apple's).
+ * license-test purchases; Production is a real sale.
  */
 export type StoreEnvironment = 'Production' | 'Sandbox';
 
-/** A purchase as its store confirmed it. */
-export interface StorePurchase {
+/** What analytics says about a purchase (purchase_completed, purchase_refunded). */
+export interface Sale {
   store: AppStore;
-  productId: string;
-  /**
-   * The store's id of the original purchase, stable across restores and refunds: Apple's
-   * originalTransactionId, Google's orderId (GPA.…).
-   */
+  /** The original transaction: Apple's originalTransactionId, Google's order id (GPA.…). */
   transactionId: string;
+  productId: string;
   environment: StoreEnvironment;
-  purchasedAt: Date;
-  /** The store took it back (refund, revoke, chargeback); null while it stands. */
-  revokedAt: Date | null;
-  /** Paid but not complete yet (Google pending payment); never granted. */
-  pending: boolean;
-  /** What the customer paid in major units, VAT included; null when the store did not say. */
+  /** What the customer paid in major units, VAT included; null when unknown. */
   price: number | null;
   /** ISO 4217, e.g. EUR. */
   currency: string | null;
   /** ISO 3166-1 alpha-2, e.g. DE. */
   country: string | null;
-  /** VAT in [price], when the store reports it (Google's Orders API). */
-  tax: number | null;
+  householdId: string | null;
 }
 
-/** Why a payload was refused; logged as is (no ids, no personal data). */
-export type Refusal =
-  | 'malformed'
-  | 'bad_signature'
-  | 'untrusted_chain'
-  | 'wrong_app'
-  | 'wrong_product'
-  | 'wrong_environment'
-  | 'environment_mismatch'
-  | 'unknown_purchase';
-
-export class Refused extends Error {
-  constructor(readonly reason: Refusal) {
-    super(`purchase refused: ${reason}`);
-  }
+/** A purchase RevenueCat reports for a household (its App User ID). */
+export interface StorePurchase extends Sale {
+  householdId: string;
+  /** The event's own transaction; the app's claim may name it instead of the original. */
+  latestTransactionId: string;
+  kind: EntitlementKind;
+  purchasedAt: Date;
 }
 
-/** The store could not be asked right now (network, 5xx, quota): the app retries later. */
-export class StoreUnavailable extends Error {}
+/** A refund: the store took [transactionId] back at [revokedAt]. */
+export interface Refund {
+  store: AppStore;
+  transactionId: string;
+  productId: string;
+  environment: StoreEnvironment;
+  purchasedAt: Date | null;
+  revokedAt: Date;
+}

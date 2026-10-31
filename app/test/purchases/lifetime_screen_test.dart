@@ -19,17 +19,17 @@ void main() {
     'lifetime-loading',
     'lifetime-unlocked',
     'lifetime-pending',
-    'lifetime-verifying',
+    'lifetime-unlocking',
     'lifetime-unavailable',
     'lifetime-offline',
     'lifetime-error',
-    'lifetime-not-accepted',
     'lifetime-canceled',
     'lifetime-used-elsewhere',
     'lifetime-nothing-restored',
-    'lifetime-refunded',
     'lifetime-web',
     'lifetime-retry',
+    'lifetime-checking',
+    'lifetime-bought-twice',
   };
 
   void shows(Set<String> expected) {
@@ -48,7 +48,7 @@ void main() {
   Future<More> openLifetime(
     WidgetTester tester, {
     FakePurchaseRepository? store,
-    FakePurchaseApi? api,
+    FakeClaimApi? api,
     FakeEntitlementsSource? entitlements,
     AppLanguage? language,
   }) => pumpMore(
@@ -63,7 +63,7 @@ void main() {
   testWidgets('offers the purchase at the store price, and restore', (
     tester,
   ) async {
-    await openLifetime(tester);
+    final more = await openLifetime(tester);
     expect(key('lifetime-screen'), findsOneWidget);
     expect(find.text('Hummlist Lifetime'), findsOneWidget);
     expect(
@@ -76,6 +76,7 @@ void main() {
     );
     expect(enabled(tester, 'lifetime-buy'), isTrue);
     expect(find.text('Käufe wiederherstellen'), findsOneWidget);
+    expect(more.purchases.repository.loads, ['home']);
     shows({});
   });
 
@@ -84,6 +85,7 @@ void main() {
       tester,
       store: FakePurchaseRepository(
         product: const ProductLoaded(
+          'home',
           Product(id: lifetimeProductId, price: 'CHF 10.00'),
         ),
       ),
@@ -91,34 +93,39 @@ void main() {
     expect(find.text('Für CHF 10.00 kaufen'), findsOneWidget);
   });
 
-  testWidgets('buy, verify, unlocked for the household', (tester) async {
-    final rows = FakeEntitlementsSource();
-    final api = FakePurchaseApi()..hold = true;
-    final more = await openLifetime(tester, api: api, entitlements: rows);
+  testWidgets('buy, unlocking, unlocked for the household', (tester) async {
+    final store = FakePurchaseRepository()..hold = true;
+    final more = await openLifetime(tester, store: store);
     await tester.tap(key('lifetime-buy'));
     await tester.pump();
-    expect(more.purchases.repository.buys, 1);
+    expect(store.buys, ['home']);
     expect(enabled(tester, 'lifetime-buy'), isFalse);
     await tester.tap(key('lifetime-buy'), warnIfMissed: false);
-    expect(more.purchases.repository.buys, 1, reason: 'no second purchase');
+    expect(store.buys, hasLength(1), reason: 'no second purchase');
 
-    more.purchases.repository.send(paid('jws-1'));
+    store.held.single.complete(
+      const Bought(StoreTransactionRef(AppStore.apple, '2000000123')),
+    );
     await tester.pump();
-    shows({'lifetime-verifying'});
+    shows({'lifetime-unlocking'});
+    expect(find.text('Wird freigeschaltet …'), findsOneWidget);
+    expect(enabled(tester, 'lifetime-buy'), isFalse);
+    expect(more.purchases.server.calls.single.id, '2000000123');
 
-    rows.unlockedNow = true;
-    api.pending.single.complete(const Verified(VerifyOutcome.granted));
+    more.purchases.unlock();
     await tester.pumpAndSettle();
     shows({'lifetime-unlocked'});
     expect(find.text('Freigeschaltet'), findsOneWidget);
     expect(key('lifetime-buy'), findsNothing);
-    expect(key('lifetime-restore'), findsOneWidget);
+    expect(key('lifetime-restore'), findsNothing);
   });
 
   testWidgets('Ask to Buy: waiting for approval', (tester) async {
-    final more = await openLifetime(tester);
+    final more = await openLifetime(
+      tester,
+      store: FakePurchaseRepository(bought: const Pending()),
+    );
     await tester.tap(key('lifetime-buy'));
-    more.purchases.repository.send(const StorePending());
     await tester.pump();
     shows({'lifetime-pending'});
     expect(find.text('Wartet auf Bestätigung'), findsOneWidget);
@@ -126,49 +133,47 @@ void main() {
     expect(enabled(tester, 'lifetime-buy'), isTrue);
     expect(enabled(tester, 'lifetime-restore'), isTrue);
     await tester.tap(key('lifetime-buy'));
-    expect(more.purchases.repository.buys, 2);
+    expect(more.purchases.repository.buys, hasLength(2));
+    expect(more.purchases.server.calls, isEmpty);
   });
 
   testWidgets('canceled quietly, buy again', (tester) async {
-    final more = await openLifetime(tester);
+    await openLifetime(
+      tester,
+      store: FakePurchaseRepository(bought: const Canceled()),
+    );
     await tester.tap(key('lifetime-buy'));
-    more.purchases.repository.send(const StoreCanceled());
     await tester.pump();
     shows({'lifetime-canceled'});
     expect(enabled(tester, 'lifetime-buy'), isTrue);
   });
 
-  testWidgets('a verification without answer: error, retry verifies', (
-    tester,
-  ) async {
-    final api = FakePurchaseApi(
-      answer: const VerificationFailed(VerifyProblem.server, 'not_configured'),
+  testWidgets('the store refuses: error with its code, retry', (tester) async {
+    await openLifetime(
+      tester,
+      store: FakePurchaseRepository(bought: const StoreFailed('E42')),
     );
-    final more = await openLifetime(tester, api: api);
-    more.purchases.repository.send(paid('jws-1'));
-    await tester.pumpAndSettle();
+    await tester.tap(key('lifetime-buy'));
+    await tester.pump();
     shows({'lifetime-error', 'lifetime-retry'});
-    expect(find.textContaining('not_configured'), findsOneWidget);
-    expect(more.purchases.repository.finished, isEmpty);
-
-    api.answer = const Verified(VerifyOutcome.granted);
+    expect(find.text('Der Kauf hat nicht geklappt (E42).'), findsOneWidget);
     await tester.tap(key('lifetime-retry'));
-    await tester.pumpAndSettle();
-    expect(more.purchases.repository.finished, hasLength(1));
-    expect(key('lifetime-error'), findsNothing);
+    await tester.pump();
+    shows({});
   });
 
-  testWidgets('offline verification says the purchase is kept', (tester) async {
-    final more = await openLifetime(
+  testWidgets('the store is offline while buying', (tester) async {
+    await openLifetime(
       tester,
-      api: FakePurchaseApi(
-        answer: const VerificationFailed(VerifyProblem.offline, 'offline'),
-      ),
+      store: FakePurchaseRepository(bought: const StoreOffline()),
     );
-    more.purchases.repository.send(paid('jws-1'));
-    await tester.pumpAndSettle();
+    await tester.tap(key('lifetime-buy'));
+    await tester.pump();
     shows({'lifetime-error', 'lifetime-retry'});
-    expect(find.textContaining('bleibt gespeichert'), findsOneWidget);
+    expect(
+      find.text('Der Store ist gerade nicht erreichbar. Prüfe die Verbindung.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('not in the store yet: coming soon, retry', (tester) async {
@@ -179,7 +184,7 @@ void main() {
     expect(key('lifetime-buy'), findsNothing);
     expect(key('lifetime-restore'), findsOneWidget);
 
-    store.product = const ProductLoaded(lifetime);
+    store.product = null;
     await tester.tap(key('lifetime-retry'));
     await tester.pumpAndSettle();
     shows({});
@@ -195,124 +200,277 @@ void main() {
     expect(key('lifetime-buy'), findsNothing);
   });
 
-  testWidgets('a refused proof: not accepted, restore later, no retry', (
+  testWidgets('the purchase define off: coming soon, no Buy, no Restore', (
     tester,
   ) async {
-    final more = await openLifetime(
-      tester,
-      api: FakePurchaseApi(answer: const VerificationRefused('bad_signature')),
-    );
-    more.purchases.repository.send(paid('jws-1'));
-    await tester.pumpAndSettle();
-    shows({'lifetime-not-accepted'});
-    expect(
-      find.text(
-        'Der Beleg des Stores wurde nicht angenommen (bad_signature). Falls '
-        'du Hummlist Lifetime gekauft hast, tippe später auf „Käufe '
-        'wiederherstellen“.',
-      ),
-      findsOneWidget,
-    );
-    expect(enabled(tester, 'lifetime-buy'), isTrue);
-    expect(enabled(tester, 'lifetime-restore'), isTrue);
+    final store = FakePurchaseRepository(withoutStore: const PurchasesNotYet());
+    await openLifetime(tester, store: store);
+    shows({'lifetime-unavailable'});
+    expect(find.text('Hummlist Lifetime ist bald verfügbar.'), findsOneWidget);
+    expect(key('lifetime-buy'), findsNothing);
+    expect(key('lifetime-restore'), findsNothing);
+    expect(store.loads, isEmpty, reason: 'no store is asked');
   });
 
-  testWidgets('used in another household', (tester) async {
-    final more = await openLifetime(
+  testWidgets('a product loaded for another household offers no Buy', (
+    tester,
+  ) async {
+    await openLifetime(
       tester,
-      api: FakePurchaseApi(answer: const Verified(VerifyOutcome.usedElsewhere)),
+      store: FakePurchaseRepository(
+        product: const ProductLoaded('other', lifetime),
+      ),
     );
-    more.purchases.repository.send(paid('jws-1'));
+    expect(key('lifetime-buy'), findsNothing);
+  });
+
+  for (final (what, store) in [
+    ('bought', FakePurchaseRepository(bought: const BelongsElsewhere())),
+    ('restored', FakePurchaseRepository(restored: const BelongsElsewhere())),
+  ]) {
+    testWidgets('$what in another household: says so, refund help', (
+      tester,
+    ) async {
+      await openLifetime(tester, store: store);
+      await tester.tap(
+        key(what == 'bought' ? 'lifetime-buy' : 'lifetime-restore'),
+      );
+      await tester.pumpAndSettle();
+      shows({'lifetime-used-elsewhere'});
+      expect(
+        find.text(
+          'Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt '
+          'dort. Hier schaltet er nichts frei.',
+        ),
+        findsOneWidget,
+      );
+      expect(key('lifetime-refund-help'), findsOneWidget);
+    });
+  }
+
+  testWidgets("the claim says the purchase is elsewhere's", (tester) async {
+    await openLifetime(
+      tester,
+      api: FakeClaimApi(answers: const [Claimed(ClaimStatus.elsewhere)]),
+    );
+    await tester.tap(key('lifetime-buy'));
     await tester.pumpAndSettle();
     shows({'lifetime-used-elsewhere'});
+  });
+
+  testWidgets('while the unlock is unknown there is no Buy and no Restore', (
+    tester,
+  ) async {
+    final rows = FakeEntitlementsSource(unlockedNow: true)..offline = true;
+    final more = await openLifetime(tester, entitlements: rows);
+    shows({'lifetime-checking'});
+    expect(key('lifetime-buy'), findsNothing);
+    expect(key('lifetime-restore'), findsNothing);
+    rows
+      ..offline = false
+      ..change();
+    await tester.pumpAndSettle();
+    shows({'lifetime-unlocked'});
+    expect(key('lifetime-buy'), findsNothing, reason: 'the partner bought');
+    expect(more.purchases.repository.loads, isEmpty);
+  });
+
+  testWidgets('a member who did not buy never sees Buy once unlocked', (
+    tester,
+  ) async {
+    final more = await openLifetime(tester);
+    expect(key('lifetime-buy'), findsOneWidget);
+    // The partner's purchase arrives over Realtime.
+    more.purchases.unlock();
+    await tester.pumpAndSettle();
+    shows({'lifetime-unlocked'});
+    expect(key('lifetime-buy'), findsNothing);
+    expect(key('lifetime-restore'), findsNothing);
+  });
+
+  testWidgets('an unlocked household never asks the store', (tester) async {
+    final more = await openLifetime(
+      tester,
+      entitlements: FakeEntitlementsSource(unlockedNow: true),
+    );
+    shows({'lifetime-unlocked'});
+    expect(more.purchases.repository.loads, isEmpty);
+  });
+
+  testWidgets('bought twice: a note, and the refund help', (tester) async {
+    await openLifetime(
+      tester,
+      entitlements: FakeEntitlementsSource()
+        ..rowsNow = [
+          {'kind': 'lifetime', 'source': 'purchase'},
+          {'kind': 'lifetime', 'source': 'purchase'},
+        ],
+    );
+    shows({'lifetime-unlocked', 'lifetime-bought-twice'});
     expect(
       find.text(
-        'Dieser Kauf ist schon in einem anderen Haushalt freigeschaltet.',
+        'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen '
+        'der Käufe können Apple oder Google erstatten.',
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(key('lifetime-refund-help'));
+    await tester.pumpAndSettle();
+    expect(key('refund-help'), findsOneWidget);
+    expect(find.text('Kauf zurückfordern'), findsOneWidget);
+    expect(
+      find.textContaining('Erstatten können wir selbst nichts'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('reportaproblem.apple.com'), findsOneWidget);
+    expect(find.textContaining('„Problem melden“'), findsOneWidget);
+    expect(
+      find.textContaining('Mein Haushalt war schon freigeschaltet'),
+      findsOneWidget,
+    );
+    expect(key('refund-apple'), findsOneWidget);
+    expect(key('refund-google'), findsOneWidget);
+  });
+
+  testWidgets('a tester grant and a purchase are not bought twice', (
+    tester,
+  ) async {
+    await openLifetime(
+      tester,
+      entitlements: FakeEntitlementsSource()
+        ..rowsNow = [
+          {'kind': 'lifetime', 'source': 'purchase'},
+          {'kind': 'lifetime', 'source': 'tester'},
+        ],
+    );
+    shows({'lifetime-unlocked'});
+  });
+
+  testWidgets('bought twice in English', (tester) async {
+    await openLifetime(
+      tester,
+      language: AppLanguage.en,
+      entitlements: FakeEntitlementsSource()
+        ..rowsNow = [
+          {'kind': 'lifetime', 'source': 'purchase'},
+          {'kind': 'lifetime', 'source': 'purchase'},
+        ],
+    );
+    expect(
+      find.text(
+        'Your household bought Hummlist Lifetime more than once. Apple or '
+        'Google can refund one of the purchases.',
       ),
       findsOneWidget,
     );
   });
 
-  testWidgets('refunded', (tester) async {
-    final more = await openLifetime(
-      tester,
-      api: FakePurchaseApi(answer: const Verified(VerifyOutcome.refunded)),
-    );
-    more.purchases.repository.send(paid('jws-1'));
+  testWidgets('the refund help in English', (tester) async {
+    await openLifetime(tester, language: AppLanguage.en);
+    await tester.tap(key('lifetime-refund-help'));
     await tester.pumpAndSettle();
-    shows({'lifetime-refunded'});
+    expect(find.text('Request a refund'), findsOneWidget);
+    expect(
+      find.textContaining("We can't refund purchases ourselves"),
+      findsOneWidget,
+    );
+    expect(find.text('Ask Apple'), findsOneWidget);
+    expect(find.text('Ask Google'), findsOneWidget);
   });
 
   testWidgets('restore finds nothing', (tester) async {
     await openLifetime(tester);
     await tester.tap(key('lifetime-restore'));
     await tester.pump();
-    expect(enabled(tester, 'lifetime-restore'), isFalse);
-    await tester.pump(restoreGrace);
     shows({'lifetime-nothing-restored'});
     expect(find.text('Kein früherer Kauf gefunden.'), findsOneWidget);
   });
 
   testWidgets('restore unlocks an earlier purchase', (tester) async {
-    final rows = FakeEntitlementsSource();
-    final store = FakePurchaseRepository()
-      ..owned = [
-        paid('jws-old', source: PurchaseSource.restore, alreadyFinished: true),
-      ];
-    await openLifetime(
+    final more = await openLifetime(
       tester,
-      store: store,
-      entitlements: rows,
-      api: FakePurchaseApi(answer: const Verified(VerifyOutcome.restored))
-        ..onGrant = () => rows.unlockedNow = true,
+      store: FakePurchaseRepository(restored: const Restored()),
     );
     await tester.tap(key('lifetime-restore'));
+    await tester.pump();
+    shows({'lifetime-unlocking'});
+    expect(more.purchases.repository.restores, ['home']);
+    more.purchases.unlock();
     await tester.pumpAndSettle();
-    await tester.pump(restoreGrace);
     shows({'lifetime-unlocked'});
   });
 
-  testWidgets('the store refuses: error with its code, retry', (tester) async {
-    final more = await openLifetime(tester);
-    await tester.tap(key('lifetime-buy'));
-    more.purchases.repository.send(const StoreFailed('E42'));
-    await tester.pump();
-    shows({'lifetime-error', 'lifetime-retry'});
-    expect(find.textContaining('E42'), findsOneWidget);
-  });
-
   testWidgets('the web app sells nothing, says where to buy', (tester) async {
-    await openLifetime(
-      tester,
-      store: FakePurchaseRepository(product: const PurchasesUnsupported()),
+    final store = FakePurchaseRepository(
+      withoutStore: const PurchasesUnsupported(),
     );
+    await openLifetime(tester, store: store);
     shows({'lifetime-web'});
     expect(
-      find.text('Hummlist Lifetime gibt es in der iOS- und Android-App.'),
+      find.text(
+        'Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. '
+        'Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.',
+      ),
       findsOneWidget,
     );
     expect(key('lifetime-buy'), findsNothing);
     expect(key('lifetime-restore'), findsNothing);
+    expect(store.loads, isEmpty);
+  });
+
+  testWidgets('the web app in English says where to buy', (tester) async {
+    await openLifetime(
+      tester,
+      store: FakePurchaseRepository(withoutStore: const PurchasesUnsupported()),
+      language: AppLanguage.en,
+    );
+    expect(
+      find.text(
+        "You can buy Hummlist Lifetime in the iPhone or Android app. It's "
+        'then unlocked here too, for your whole household.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the web app shows the unlock the household has', (tester) async {
     await openLifetime(
       tester,
-      store: FakePurchaseRepository(product: const PurchasesUnsupported()),
+      store: FakePurchaseRepository(withoutStore: const PurchasesUnsupported()),
       entitlements: FakeEntitlementsSource(unlockedNow: true),
     );
     shows({'lifetime-web', 'lifetime-unlocked'});
   });
 
   testWidgets('English', (tester) async {
-    final more = await openLifetime(tester, language: AppLanguage.en);
+    final store = FakePurchaseRepository()..hold = true;
+    await openLifetime(tester, language: AppLanguage.en, store: store);
     expect(find.text('Hummlist Lifetime'), findsOneWidget);
     expect(find.text('Buy for 9,99 €'), findsOneWidget);
     expect(find.text('Restore purchases'), findsOneWidget);
     await tester.tap(key('lifetime-buy'));
-    more.purchases.repository.send(const StorePending());
+    store.held.single.complete(const Bought(null));
     await tester.pump();
-    expect(find.text('Waiting for approval'), findsOneWidget);
+    expect(find.text('Unlocking …'), findsOneWidget);
+    await tester.pump(unlockWait);
+    expect(find.textContaining('takes longer than usual'), findsOneWidget);
+    expect(
+      tester.widget<ButtonStyleButton>(key('lifetime-buy')).onPressed,
+      isNull,
+      reason: 'a late unlock never invites a second purchase',
+    );
+  });
+
+  testWidgets('leaving the page and coming back asks the store once', (
+    tester,
+  ) async {
+    final more = await openLifetime(tester);
+    more.router.go(morePath);
+    await tester.pumpAndSettle();
+    more.router.go(lifetimePath);
+    await tester.pumpAndSettle();
+    expect(more.purchases.repository.loads, ['home']);
+    expect(key('lifetime-buy'), findsOneWidget);
   });
 
   group('More', () {
@@ -359,6 +517,18 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the row asks for nothing while the unlock is unknown', (
+      tester,
+    ) async {
+      await pumpMore(
+        tester,
+        entitlements: FakeEntitlementsSource()..offline = true,
+      );
+      await showRow(tester);
+      expect(find.text('Hummlist unterstützen'), findsNothing);
+      expect(find.text('Freigeschaltet'), findsNothing);
     });
 
     testWidgets('wide: the page beside the list, its row selected', (

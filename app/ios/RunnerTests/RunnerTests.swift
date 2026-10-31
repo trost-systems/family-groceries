@@ -59,7 +59,7 @@ final class LifetimeStoreKitTests: XCTestCase {
     guard case .success(let verification) = result, case .verified(let t) = verification else {
       return XCTFail("purchase did not succeed: \(result)")
     }
-    // What the app sends to the purchases function: a compact JWS with an ES256 x5c header.
+    // StoreKit's signed transaction (RevenueCat reads it on device): a compact JWS with an ES256 x5c header.
     let parts = verification.jwsRepresentation.split(separator: ".")
     XCTAssertEqual(parts.count, 3)
     var b64 = String(parts[0]).replacingOccurrences(of: "-", with: "+")
@@ -69,7 +69,7 @@ final class LifetimeStoreKitTests: XCTestCase {
     XCTAssertEqual(header["alg"] as? String, "ES256")
     XCTAssertNotNil(header["x5c"], "the header carries the certificate chain")
     XCTAssertEqual(t.productID, productId)
-    // Xcode's own signing: the server refuses these (purchases/apple.ts, wrong_environment).
+    // Xcode's own signing: a local StoreKit test transaction, not one from the App Store.
     XCTAssertEqual(t.environment, .xcode)
     await t.finish()
 

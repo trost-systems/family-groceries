@@ -1,0 +1,26 @@
+# RevenueCat learns the household id and the store purchase, nothing else (Legal Review
+# K.9.9 C3, job 43): no customer attributes (setAttributes, setEmail, setPhoneNumber,
+# setDisplayName, the set*ID integrations, setAd*, setCampaign, setMediaSource, ...), no
+# device or ad identifiers (collectDeviceIdentifiers, enableAdServices*), never logOut
+# (it makes an anonymous id), and no sync* (it would bind store purchases to whatever
+# customer is current without the user's restore). Every `Purchases.set*` is out, so a
+# new SDK setter is refused until someone decides about it.
+#
+# Called or torn off, through an import prefix or not. Only `Purchases.` members are
+# matched: our own setters elsewhere pass.
+id: no-revenuecat-customer-data
+language: dart
+severity: error
+files:
+  - app/**
+rule:
+  pattern: $E
+  kind: member_expression
+  all:
+    - has:
+        field: property
+        regex: '^(?:set\w*|collectDeviceIdentifiers|enableAdServices\w*|logOut|sync\w*)$'
+    - has:
+        field: object
+        regex: '^(?:\w+\s*\.\s*)?Purchases$'
+message: '"$E" sends RevenueCat customer or device data, or changes its customer: RevenueCat gets the household id and the purchase only (Legal Review K.9.9 C3); configure with appUserID = household id, switch households with logIn'

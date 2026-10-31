@@ -1,0 +1,56 @@
+id: purchases-flutter-only-in-revenuecat-repository
+snapshots:
+  "export 'package:purchases_flutter/errors.dart';\n":
+    labels:
+    - source: export 'package:purchases_flutter/errors.dart';
+      style: primary
+      start: 0
+      end: 47
+    - source: "'package:purchases_flutter/errors.dart'"
+      style: secondary
+      start: 7
+      end: 46
+  "import \"package:purchases_flutter/purchases_flutter.dart\" as rc;\n":
+    labels:
+    - source: import "package:purchases_flutter/purchases_flutter.dart" as rc;
+      style: primary
+      start: 0
+      end: 64
+    - source: "\"package:purchases_flutter/purchases_flutter.dart\""
+      style: secondary
+      start: 7
+      end: 57
+  "import 'package:family_groceries/purchases/none.dart'\n    if (dart.library.io) 'package:purchases_flutter/purchases_flutter.dart';\n":
+    labels:
+    - source: |-
+        import 'package:family_groceries/purchases/none.dart'
+            if (dart.library.io) 'package:purchases_flutter/purchases_flutter.dart';
+      style: primary
+      start: 0
+      end: 130
+    - source: "'package:purchases_flutter/purchases_flutter.dart'"
+      style: secondary
+      start: 79
+      end: 129
+  "import 'package:purchases_flutter/models/store_transaction.dart' show StoreTransaction;\n":
+    labels:
+    - source: >-
+        import 'package:purchases_flutter/models/store_transaction.dart' show
+        StoreTransaction;
+      style: primary
+      start: 0
+      end: 87
+    - source: "'package:purchases_flutter/models/store_transaction.dart'"
+      style: secondary
+      start: 7
+      end: 64
+  "import 'package:purchases_flutter/purchases_flutter.dart';\n":
+    labels:
+    - source: import 'package:purchases_flutter/purchases_flutter.dart';
+      style: primary
+      start: 0
+      end: 58
+    - source: "'package:purchases_flutter/purchases_flutter.dart'"
+      style: secondary
+      start: 7
+      end: 57

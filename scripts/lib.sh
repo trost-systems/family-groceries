@@ -55,8 +55,8 @@ supabase_up() {
   reserve_port_block
   # Job 31: the alexa function's test CA and skill id, in supabase/functions/.env before the start.
   "$REPO_ROOT/scripts/alexa-test-ca.sh" >/dev/null
-  # Job 25: the purchases function's test CA (a StoreKit stand-in), also in supabase/functions/.env.
-  "$REPO_ROOT/scripts/iap-test-ca.sh" >/dev/null
+  # Job 43: the purchases function's fake RevenueCat secrets, also in supabase/functions/.env.
+  "$REPO_ROOT/scripts/iap-local-env.sh" >/dev/null
   (
     cd "$REPO_ROOT" && flock 7
     stack_running && exit 0

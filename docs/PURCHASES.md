@@ -2,116 +2,276 @@
 
 Hummlist sells one thing: **Hummlist Lifetime**, a non-consumable in-app purchase (EUR 9.99 in
 Germany) that unlocks the buyer's whole household. Nothing in the app is gated by it yet (product
-decision 4, NEEDS_PETER Job 25); the plumbing, the purchase screen and `Entitlements.isUnlocked`
-are in place. Built in job 25, sandbox only. Decisions: DECISIONS.md "Job 25".
+decision 4, NEEDS_PETER Job 25), and nothing is sold: the purchase screen is behind the build
+define `REVENUECAT_PURCHASES`, off by default, until Peter approves the new legal texts. Built in
+job 25 (sandbox, our own store verification) and rebuilt in job 43 on RevenueCat. Decisions:
+DECISIONS.md "Job 25", "Job 25b" and "Job 43".
+
+**Model A (Peter, 2026-10-31).** One member pays once; the whole household has it. A purchase
+belongs to the household it was bought in, for good: it stays there when the buyer leaves, hands
+the household over or deletes the account, and it never unlocks another household, also not after
+its own is deleted. Nothing moves with the user. The app offers Buy only to a household it knows
+has no Lifetime, so no member pays twice. Someone who paid and then joins an unlocked household is
+pointed to the refund help (Apple and Google decide; we refund nothing ourselves). Testers get it
+free. A later subscription for running-cost features (model D) would be a second entitlement kind
+next to Lifetime ("A second entitlement" below).
+
+**RevenueCat (Peter, 2026-10-31 14:03; Legal Review's conditions, ADDENDUM 5).** RevenueCat
+verifies purchases with Apple and Google; our server no longer talks to either store. The
+RevenueCat customer is the **household**: the App User ID is the household's UUID, never a user
+id, never anonymous.
 
 ## How it works
 
-1. The app (iOS or Android) shows the store's price and buys through the `in_app_purchase`
-   plugin (StoreKit 2 on iOS, Play Billing on Android). Web never sells.
-2. The store hands the app a proof: on iOS the transaction's JWS (`jwsRepresentation`), on
-   Android the purchase token. The app sends it to the edge function `purchases`
-   (`POST /functions/v1/purchases/verify`) with its own session.
-3. The function verifies with the store before anything is unlocked (below), then records the
-   transaction (`public.purchases`, unique per store transaction) and unlocks the caller's
-   household (`public.entitlements`). It answers `granted`, `restored`, `used_elsewhere`,
-   `revoked` or `refunded`; Google payments still in progress answer `pending` (202).
-4. Only after such a definitive answer does the app finish the store transaction. A network
-   error, the store or the function being down, or a 503 keeps it unfinished: the store hands it
-   over again on the next start, so a purchase interrupted by a killed app is granted then. A
-   refusal (400, 422) is definitive too: the app finishes the transaction, says the receipt was
-   not accepted and sends it again only on a restore the user asks for (DECISIONS 25b.1).
-5. Every member's app reads the household's `entitlements` rows (RLS: members only) and hears new
-   ones over Realtime: the partner's phone shows "Freigeschaltet" without buying.
-6. Refunds: Apple sends App Store Server Notifications V2 (`REFUND`, `REVOKE`) to
-   `/purchases/apple/notifications`; Google's refunds come from the Voided Purchases API, polled
-   daily by `.github/workflows/purchases-voided.yml` through `/purchases/google/voided`. The
-   unlock goes and `purchase_refunded` is sent once. Apple's `REFUND_REVERSED` reinstates the
-   purchase; a restore unlocks again.
+1. A member opens Mehr → Hummlist Lifetime. Only once the household's rows are read from
+   Supabase and hold no Lifetime (`Entitlements.canOffer(Entitlement.lifetime)`) does the app
+   start the RevenueCat SDK (`purchases_flutter`), configured with the household id as App User
+   ID (`logIn(householdId)` when it was configured for another household). Members who never open
+   the page to buy never talk to RevenueCat. While the rows load or the phone is offline the page
+   says "Wir prüfen, ob dein Haushalt Hummlist Lifetime schon hat …" and has no Buy; More's row
+   shows no "Hummlist unterstützen" then either. Buy and Restore are enabled only when the SDK's
+   App User ID is the household shown.
+2. Buy runs the store's sheet through RevenueCat, which verifies the purchase with the store,
+   acknowledges Play purchases and finishes the transaction. The app then **claims** it:
+   `POST /functions/v1/purchases/claim` with its own session and `{store, transactionId}` (the
+   StoreKit transaction id; on Android the Play order id `GPA.…`, which is what RevenueCat's
+   `transactionIdentifier` holds there), pinned to `eu-central-1`. The claim records the buyer
+   (H-55); it never unlocks anything. Until Supabase shows the unlock, the page says "Wird
+   freigeschaltet …".
+3. RevenueCat calls our webhook (`POST /functions/v1/purchases/revenuecat/webhook`, the `purchases` function) with
+   `NON_RENEWING_PURCHASE`. The function checks the `Authorization` header (constant time) and,
+   when configured, RevenueCat's HMAC signature, ignores event ids it already processed, and
+   records the transaction for the household `app_user_id` names (`purchase_record`): a row in
+   `purchases` bound to that household and a row in `entitlements`.
+4. Every member's app reads the household's `entitlements` rows (RLS: members only; the columns
+   that say who paid or granted it are not readable, H-55) and hears new ones over Realtime: the
+   partner's phone shows "Freigeschaltet" without buying. The app asks for a kind
+   (`has(Entitlement.lifetime)`), never for "any row". The unlock the app shows comes only from
+   Supabase, never from RevenueCat's `CustomerInfo`.
+5. Refunds: RevenueCat's `CANCELLATION` takes that purchase's unlock away (`purchase_revoke`) and
+   sends `purchase_refunded` once; `REFUND_REVERSED` reinstates it in its own household. A
+   `TRANSFER` never moves anything.
+6. Restore (Käufe wiederherstellen) calls `restorePurchases()` under the household's App User ID.
+   With the project's restore behavior **Keep with original App User ID** (an Ops setting),
+   RevenueCat refuses a purchase that belongs to another household; the app says "Dieser Kauf
+   gehört zu einem anderen, früheren Haushalt und bleibt dort." with the refund help. The server
+   refuses it too, whatever RevenueCat does (`purchase_record`: bound household, tombstones).
 
 | Case | What happens |
 | --- | --- |
-| Double tap on Buy, app killed mid-purchase | One store purchase; the transaction stays unfinished until the server answered, so the next start verifies it |
-| Restore on a new phone or the partner's phone | Household already unlocked: shown at once. Restore re-verifies (`restored`, `purchase_restored`) |
-| Forged or modified JWS, other app, other product, a JWS from an environment not configured | 422 `refused` with the reason, nothing stored, logged by reason only; the app finishes it and a restore sends it again |
-| `PURCHASES_ENVIRONMENTS=Production` without Sandbox | Inert (503 `not_configured`): App Review's sandbox purchases stay queued in the app instead of being refused (DECISIONS 25b.2) |
-| Apple notification whose transaction is from another environment than the notification | 400 `environment_mismatch`, nothing changed |
-| The same transaction from another household | `used_elsewhere`: one household per purchase |
-| Refund or revoke | Unlock removed, `purchase_refunded` once (the `revoked_at` transition). A refund of a transaction never verified is recorded as revoked, so its receipt never unlocks later |
-| Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; it completes when the store delivers the approved transaction |
-| Products not loadable (agreement inactive), offline, store down | A "not available yet" or offline state with retry; no crash |
-| Buyer leaves the household or deletes the account | The unlock stays with the household. The purchase loses its buyer link. It can unlock another household only once its household is gone |
-| Web | No buy button; "Hummlist Lifetime gibt es in der iOS- und Android-App." and the unlocked state |
-| Signed out, no household | The page is under More, which `authRedirect` only lets households reach; the function answers 401/403 |
+| Double tap on Buy, app killed mid-purchase | RevenueCat owns the transaction and finishes it; its webhook records it. A claim lost with a killed app leaves the buyer unknown: the unlock stands, `purchase_completed` is not sent (analytics undercount) |
+| Restore on a new phone or the partner's phone | Household already unlocked: shown at once, no Buy, no Restore (nothing to restore) |
+| The same purchase in another household (restore, re-buy, a RevenueCat `TRANSFER`) | Refused by RevenueCat (Keep with original App User ID) and by `purchase_record` (`used_elsewhere`): one household per purchase, for good. "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and the refund help link |
+| Restore after its household was deleted | Refused (`used_elsewhere` with `household_gone`; after the 30-day purge `tombstoned`). Nothing unlocks anywhere else (H-56) |
+| A second purchase in an unlocked household (two phones, Ask to Buy, a race) | Its own row; refunding one keeps the other's unlock. Every member's page then shows "Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe können Apple oder Google erstatten." with the refund help |
+| Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; RevenueCat's webhook records it when the store completes it |
+| Products not loadable, offline, store down | A "not available yet" or offline state with retry; no crash |
+| Payer leaves the household, hands it over or deletes the account | The unlock stays with the household. Account deletion removes the buyer link; the purchase keeps its household (`bound_household`) |
+| Last member leaves an unlocked household (joins another) | Joining asks first. With `HOUSEHOLD_ARCHIVE` on: "Archivieren und beitreten" keeps the household archived (list and unlock kept, re-enabled under Mehr → Archivierte Haushalte); "Löschen und beitreten" asks once more ("… wird nicht erstattet", refund help). With it off (releases, until the legal texts say so): that warning and "Trotzdem beitreten". Never blocked |
+| Joiner into an unlocked household | The join screen says "Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen." With their own purchase from the last 30 days that stands: a link to the refund help |
+| Tester | Their grant (1 by default, `scripts/iap/testers.ts`) unlocks a household they are in that has none; it stays with that household like a purchase. No RevenueCat involved. Internal for analytics |
+| Archived household | No members, not readable by anyone, its invites lead nowhere; the archiving user alone sees and re-enables it (`archived_households`, `unarchive_household`). Deleted with that user's account. Its purchases restore nowhere else, and in it again after re-enabling |
+| Family Sharing | Off at Apple; a webhook event with `is_family_share` is ignored |
+| An App User ID that is no household (anonymous, unknown) | Ignored: nothing recorded, nothing unlocked |
+| Web | No buy button and no external purchase link; "Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet." and the unlocked state |
+| `REVENUECAT_PURCHASES` off (every build until Peter's OK) or no SDK key | "Hummlist Lifetime ist bald verfügbar.", no Buy, no Restore; unlocks (testers) still show |
+| Signed out, no household | The page is under More, which `authRedirect` only lets households reach; the claim route answers 401/403 |
 
-## Verification on the server
+## The webhook
 
-**Apple** (`supabase/functions/purchases/apple.ts`), as Apple's App Store Server Library does it:
-ES256 header with a three-certificate `x5c`; the root byte-equal to the pinned Apple Root CA - G3
-(`apple_roots.ts`, SHA-256 `63:34:3A:…:91:79`); the intermediate a CA signed by it with the WWDR
-OID `1.2.840.113635.100.6.2.1`; the leaf signed by the intermediate with the receipt-signing OID
-`1.2.840.113635.100.6.11.1`; every certificate valid at the payload's `signedDate`; the signature;
-`bundleId` `com.hummlist.app`, `productId`, `environment`, `revocationDate`. With an In-App
-Purchase key, `GET /inApps/v1/transactions/{id}` on the environment's host (production or
-sandbox) is asked as well, and Apple's current record wins (refunds the app cannot know). The
-same chain check covers the notifications' `signedPayload` and the transaction inside it.
+`supabase/functions/purchases/handler.ts`. Routes:
 
-**Google** (`google.ts`): `purchases.products.get` with the service account (purchase state,
-`purchaseType` 0 = license test = Sandbox, order id), the Orders API for price, tax and country
-when it answers, `acknowledge` after the household is unlocked (Play refunds a purchase that is
-not acknowledged within three days), and `voidedpurchases.list` for refunds.
+| Route | Caller | What it does |
+| --- | --- | --- |
+| `GET /purchases` | smoke checks | `{configured}` |
+| `POST /purchases/revenuecat/webhook` | RevenueCat | The webhook (above). `Authorization` must equal `REVENUECAT_WEBHOOK_AUTH` whole (it includes `Bearer `). 401 without the right `Authorization` (or, with `REVENUECAT_WEBHOOK_HMAC_SECRET`, a bad or stale `X-RevenueCat-Webhook-Signature`: `t=…,v1=…`, HMAC-SHA256 over `"<t>.<raw body>"`, 5 minutes). 200 for everything it processed or ignores, 500 when the database fails so RevenueCat retries (5 times over about 80 minutes). The event id is stored in the same transaction as the writes |
+| `POST /purchases/revenuecat/deletions` | the daily workflow | Deletes due RevenueCat customers ("Retention"); takes no input, so a call only runs the scheduled work early; at most 25 per run, each customer at most once an hour |
+| `POST /purchases/claim` | the app, signed in | Records the buyer of a transaction in the caller's household (first member wins); 20 a minute per user |
+| `POST /purchases/test/event` | local stack only (404 elsewhere) | Builds a RevenueCat event and processes it like the webhook, without the secret: the debug fake store, fg and e2e use it |
 
-**Abuse limits.** 20 verifications a minute per user (`purchase_rate`); bodies are size-checked;
-only the app's own session may verify (PATs and OAuth apps get 403).
+Events: `NON_RENEWING_PURCHASE` (and `INITIAL_PURCHASE`) for a product in `productKinds` record
+and unlock; `CANCELLATION` revokes; `REFUND_REVERSED` reinstates; `TRANSFER`, `TEST`,
+`TEMPORARY_ENTITLEMENT_GRANT`, `EXPIRATION` and anything else are acknowledged and change nothing.
+Stores: `APP_STORE` is `apple`, `PLAY_STORE` `google`; others are ignored. The purchase's key is
+`original_transaction_id` (`transaction_id` when absent); the claim may name either.
+
+**Analytics.** `purchase_completed` goes out once, when both the webhook's record and the buyer's
+claim are in (whichever comes second), under the buyer's consent; `purchase_refunded` on a refund
+of a purchase with a known buyer. Without a claim, or without consent, nothing is sent (the paying
+share is a lower bound, docs/ANALYTICS.md). Sandbox purchases, testers' purchases and purchases
+in households a tester unlocked are `is_internal`. `purchase_restored` is no longer sent: a
+RevenueCat restore produces no event for us.
+
+### Who receives what (Legal Review H-53)
+
+Our server calls neither Apple nor Google. The recipient is **RevenueCat, Inc.** (processor under
+its DPA, part of RevenueCat's terms, https://www.revenuecat.com/dpa/; SCCs module 2 for EEA
+transfers). The app's `purchases_flutter` SDK talks to RevenueCat (`api.revenuecat.com`), and
+RevenueCat talks to Apple (App Store Server API with the In-App Purchase key) and Google (Play
+Developer API through a service account; real-time developer notifications).
+
+Data RevenueCat receives: the household UUID as App User ID (also sent to Apple as
+`appAccountToken`, because it is a UUID), store transaction ids and the Play purchase token,
+product id, price, currency, storefront or country code, purchase and refund dates, sandbox or
+production, platform, app and SDK version, the device locale, and the requesting IP address
+(network level). No e-mail, no name, no Supabase user id, no list or household content; the app
+sets no customer attributes and collects no advertising or device identifiers (enforced by the
+lint rules `purchases-flutter-only-in-revenuecat-repository` and `no-revenuecat-customer-data`). RevenueCat states customer
+data "is sent to AWS data centers located in the United States" (https://www.revenuecat.com/privacy/);
+the DPA's subprocessors are all in the USA (AWS, Google, Snowflake, ScyllaDB, ClickHouse, Elastic,
+Sentry, Honeycomb, Cloudflare, Fastly, Hex, OpenAI, Anthropic); the docs name no EU hosting
+option. RevenueCat AI features stay off (an Ops setting, C4). These are facts with sources; the
+legal assessment is Legal Review's.
+
+The one call we make to RevenueCat: `DELETE https://api.revenuecat.com/v2/projects/{project_id}/customers/{household_id}`
+and the `GET` that confirms it (404), for deleted households ("Retention"; API v2,
+https://www.revenuecat.com/docs/api-v2/customer, read 2026-10-31).
+
+### Where it runs (Legal Review H-54)
+
+Edge Functions run in the region nearest the caller unless pinned (Supabase "Regional
+Invocations", https://supabase.com/docs/guides/functions/regional-invocation, read 2026-10-31).
+RevenueCat calls from the US and can't set the `x-region` header, so the webhook URL Ops
+registers carries the query parameter:
+`https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/purchases/revenuecat/webhook?forceFunctionRegion=eu-central-1`
+(`eu-central-1` is Frankfurt, the project's region). The app's claim call passes
+`region: 'eu-central-1'` (`x-region` header and the same parameter). The function logs `SB_REGION`
+once per request, nothing else from it. A pinned call is not rerouted during a regional outage;
+RevenueCat retries, the app retries the claim.
 
 ## Data
 
 | Table | Who reads | Who writes | Rows |
 | --- | --- | --- | --- |
-| `purchases` | service connection | `purchase_grant`, `purchase_revoke`, `purchase_reinstate` | store, transaction id, product, environment, buyer (null after their deletion), purchased/verified/revoked at, price, currency, country |
-| `entitlements` | household members (RLS), Realtime | `purchase_grant` (insert), `purchase_revoke` (delete) | purchase, household, product, store, environment (Sandbox unlocks are testers'), granted by, granted at |
-| `purchase_rate` | service connection | `purchase_take_call` | per-user window |
+| `purchases` | service connection | `purchase_record`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind, environment, buyer (from the claim; null after their deletion), bound household (set at the first record, never changed), purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted |
+| `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at`), Realtime | `purchase_record`, `purchase_reinstate`, `tester_grant_apply` (insert), `purchase_revoke` (delete) | one row per unlock: a purchase's (`source` purchase) or a tester's grant (`source` tester, `tester` the granting user, null after their deletion); kind; granted by (not member-readable) |
+| `purchase_claims` | service connection | `purchase_claim`, `purchase_record` | a claim waiting for its webhook: store, transaction id, claimant, their household, when (30 days at most) |
+| `revenuecat_events` | service connection | the webhook | processed event ids and types, 90 days |
+| `purchase_tombstones` | service connection | `purge_purchases` | HMAC-SHA256 of purged store transaction ids under `REVENUECAT_TOMBSTONE_HMAC_KEY`, nothing else |
+| `revenuecat_deletions` | service connection | trigger on household deletion (every one: opening the purchase page creates the customer), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' ids (RevenueCat App User IDs), due 30 days later |
+| `lifetime_testers` | service connection | `scripts/iap/testers.ts`, `tester_grant_apply` | user id, grants (free unlocks, default 1), used, note, added at |
+| `households.archived_at`, `archived_by` | nobody but `archived_households()` for the archiving user | `leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household` | when and by whom the last member archived it |
+| `purchase_rate` | service connection | `purchase_take_call` | per-user window for claims |
 
-Migration `20261030190000_purchases.sql`; pgTAP `supabase/tests/purchases.test.sql`; the data map
-`docs/PRIVACY_DATA_MAP.md`. Account deletion keeps the purchase without the buyer (for refunds
-and against replays) and the household's unlock; a deleted household takes its unlock with it.
-`export_my_data` has a `purchases` section.
+Migrations `20261030190000_purchases.sql` and `20261031123504_household_bound_lifetime.sql`;
+pgTAP `supabase/tests/purchases.test.sql` and `household_bound.test.sql`; the data map
+`docs/PRIVACY_DATA_MAP.md`. `export_my_data` has `purchases` (with `belongs_to_household`),
+`lifetime_tester` and `archived_households` sections.
+
+### Retention
+
+- **Household deleted** (its last member left without archiving, or deleted their account): its
+  unlock rows go at once (cascade). Its purchase rows are kept 30 days (support and refund window),
+  then `purge_purchases` (pg_cron, daily 03:41) deletes them and keeps only each transaction's
+  HMAC in `purchase_tombstones`, so the purchase never binds to a household again. The household's
+  RevenueCat customer is queued in `revenuecat_deletions` and deleted by the function
+  (`purchases/deletions.ts`, started daily by `.github/workflows/revenuecat-delete.yml`): API v2
+  `DELETE` then a `GET` that must answer 404, retried at most hourly until it does; logs counts
+  only; does nothing while `REVENUECAT_SECRET_KEY` or `REVENUECAT_PROJECT_ID` is unset. A failure opens the issue "RevenueCat customer deletion
+  failed"; rerun the workflow once RevenueCat answers.
+- **Tombstones** are kept while Hummlist Lifetime is sold or its unlocks are honoured, reviewed
+  yearly (NEEDS_LEAD Job 43). One HMAC key for all of them (`REVENUECAT_TOMBSTONE_HMAC_KEY`):
+  changing it would make the old tombstones useless.
+- **Buyer deletes their account:** the buyer link is nulled (`purchases.user_id`,
+  `entitlements.granted_by`); the household keeps its unlock. Nothing is deleted at RevenueCat:
+  it never had a user id.
+- **Webhook event ids:** 90 days. **Claims** that never met their webhook: 30 days.
+- **Archived households** keep everything until re-enabled or their archiver's account is deleted
+  (`delete_account`); one whose archiver vanished another way is deleted by the daily purge.
+- RevenueCat's own retention after deletion follows its DPA ("subject to standard data backup and
+  archival practices").
+- Purchases from before job 43 that unlocked nothing are bound to the nil UUID (never bind again);
+  they have no HMAC and are not purged (sandbox only, no buyer data beyond job 25's).
+
+### Testers
+
+`lifetime_testers` lists users who get Lifetime free, with a number of grants (1 by default). A
+grant unlocks a household the tester is in that has no Lifetime: at once when the Lead adds them or
+raises the count, otherwise when they next create or join such a household. The unlock is an
+`entitlements` row with `source` tester and then behaves like a purchase: it stays when the tester
+leaves, survives an archive, never moves; lowering the count or removing the tester keeps it, and
+a deleted household doesn't give its grant back (`used` is counted). Testers don't use RevenueCat
+promotional entitlements: those would send tester and household data to RevenueCat. Sandbox
+purchases (TestFlight, App Review, Play license testers) stay as they are (Peter, 2026-10-31).
+Both are internal for analytics: the function marks a tester's purchase and any purchase in a
+household a tester unlocked `is_internal`, and the app marks every event from a household whose
+rows include a tester grant (`isInternal`'s `testerHousehold`).
+
+```
+deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts list
+deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts add --email a@b.de [--grants 2] [--note "TestFlight"] [--apply]
+deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts set-grants --email a@b.de --grants 3 [--apply]
+deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts remove --email a@b.de [--apply]
+```
+
+Dry run unless `--apply`. Hosted: `SUPABASE_ACCESS_TOKEN` (Management API, on the box); local:
+`SUPABASE_DB_URL`. The e-mail is resolved to the user id at run time, never stored or printed
+back.
+
+### A second entitlement (model D, not built)
+
+What a later subscription (AI meal plans, price feeds) adds, without touching Lifetime:
+
+1. A product id in `scripts/iap/product.ts` and a kind in `productKinds`
+   (`supabase/functions/purchases/types.ts`), e.g. `'com.hummlist.app.plus': 'plus'`. Every product
+   check (`kindOf`) then accepts it.
+2. The kind in the `purchases_kind` and `entitlements_kind` checks (a migration) and in
+   `Entitlement` (`app/lib/purchases/entitlements.dart`). An unknown kind unlocks nothing in an
+   older app (`Entitlement.parse` drops it), so a `plus` row never unlocks Lifetime features.
+3. Subscription events: `INITIAL_PURCHASE`, `RENEWAL` and `EXPIRATION` with an end date on the
+   entitlement; `purchase_record` keys everything by purchase and kind already.
+4. Paywalls ask `canOffer(Entitlement.plus)`. Apps from before job 43 (TestFlight) read any row as
+   unlocked; they gate nothing, but no store build from before job 43 should be live when a
+   second kind ships.
+5. **RevenueCat's restore behavior is project-wide.** "Keep with original App User ID" would pin a
+   subscription bought with the same Apple ID to the first household as well. Revisit when D is
+   built (e.g. a separate RevenueCat project or entitlement).
 
 ## Configuration
 
-Function secrets (the Lead sets them; NEEDS_LEAD Job 25). Without `PURCHASES_ENVIRONMENTS` the
-function is inert: everything but `GET /purchases` answers 503 `not_configured`.
+RevenueCat (set up by the Lead, ADDENDUM 6): entitlement `lifetime`, offering `default`, package
+`$rc_lifetime`, product `com.hummlist.app.lifetime` (non-consumable). The app loads the product by
+its id. Function secrets (set by the Lead on the hosted project; NEEDS_LEAD "Job 43 – RevenueCat
+setup"). Without
+`REVENUECAT_WEBHOOK_AUTH` and `REVENUECAT_TOMBSTONE_HMAC_KEY` the webhook answers 503
+`not_configured`; the claim route works regardless.
 
 | Secret | Meaning |
 | --- | --- |
-| `PURCHASES_ENVIRONMENTS` | `Sandbox` while only TestFlight and testers buy; `Production,Sandbox` from App Store review on (App Review buys in the sandbox). `Production` alone leaves the function inert |
-| `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY` | In-App Purchase key (Users and Access > Integrations > In-App Purchase), not the App Store Connect API key. Optional: without it Apple is verified from the signature alone |
-| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | The Play service account's JSON key. Without it Google answers 503 |
-| `PURCHASES_CRON_SECRET` | Bearer token of the voided poll; the same value as the repository secret of that name |
+| `REVENUECAT_WEBHOOK_AUTH` | The `Authorization` header value set in RevenueCat's webhook integration |
+| `REVENUECAT_WEBHOOK_HMAC_SECRET` | Optional: RevenueCat's webhook signing secret; when set, the signature is required |
+| `REVENUECAT_TOMBSTONE_HMAC_KEY` | The one key for the tombstone HMACs; never rotate it while tombstones count |
+| `REVENUECAT_SECRET_KEY` | A v2 secret key (`customer_information:customers:read_write`) for deleting customers; never in the app |
+| `REVENUECAT_PROJECT_ID` | The RevenueCat project (Hummlist) |
 
-App Store Server Notifications V2 URL, production and sandbox:
-`https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/purchases/apple/notifications`.
+App build defines (public SDK keys, from the build environment, never committed):
+`REVENUECAT_APPLE_API_KEY` (`appl_…`), `REVENUECAT_GOOGLE_API_KEY` (`goog_…`), and
+`REVENUECAT_PURCHASES=true` to show the purchase screen (off by default; turn it on only for
+Peter's own builds until he approves the legal texts, then for everyone).
+
+Gone with job 43 (the Lead deletes them from the hosted secrets and the repository):
+`PURCHASES_ENVIRONMENTS`, `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`,
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `PURCHASES_CRON_SECRET`.
 
 ## Testing locally
 
-- `scripts/iap-test-ca.sh` (run by `supabase_up`) makes a throwaway Apple-like CA and puts it in
-  the gitignored `supabase/functions/.env`. The function trusts it only when `SUPABASE_URL` is the
-  local stack, and only then serves `POST /purchases/test/sign` (`{transactionId}` → `{jws}`,
-  with `notificationType` → `{signedPayload}`). A hosted project answers 404 there
-  (`scripts/smoke-remote.sh` checks).
+- `scripts/iap-local-env.sh` (run by `supabase_up`) writes local stand-ins for the function's
+  secrets into the gitignored `supabase/functions/.env`. On the local stack the function also
+  serves `POST /purchases/test/event`, which plays RevenueCat.
 - The app's fake store: build with `--dart-define=FAKE_STORE=ok` (or `pending`, `cancel`,
-  `error`, `unavailable`, `offline`) in a debug build on a desktop or phone; its purchases are
-  signed by the local route, so the real verify path runs. Recipe:
+  `error`, `unavailable`, `offline`) in a debug build on a desktop or phone; its purchases go
+  through the local `test/event` route and the real claim route. Recipe:
   `.cursor/skills/verify-family-groceries/features/purchases.md`.
-- `e2e/tests/purchases.spec.ts`: the web page, then a purchase signed by the local route unlocks
-  the household live for both members, and a refund notification locks it again.
-- `app/ios/Hummlist.storekit`: the product for Xcode's StoreKit testing (Scheme > Run > Options >
-  StoreKit Configuration). Xcode signs its transactions with a local certificate, so the server
-  refuses them (as it must); that is for UI work on a Mac. `scripts/ios-storekit-test.sh` runs
-  the StoreKitTest XCTests (`RunnerTests.swift`) there; not in CI yet (issue #130).
-- Tests: `supabase/functions/purchases/*_test.ts` (own test CA, Google fixtures built from the
-  documented shapes), `store_integration_test.ts` (db gate), pgTAP, `scripts/iap/product_test.ts`,
-  `app/test/purchases/`.
+- `e2e/tests/purchases.spec.ts`: the web page, then a purchase reported through the real webhook
+  (local secret) unlocks the household live for both members, and a refund locks it again.
+- `e2e/tests/household-bound.spec.ts`: joining an unlocked household (nothing to buy, the refund
+  help, the delete warning), restore after the household is gone, archive and bring back, a
+  household bought twice, the web copy. The e2e build has `HOUSEHOLD_ARCHIVE` on
+  (`app/config/e2e.json`).
+- `app/ios/Hummlist.storekit`: the product for Xcode's StoreKit testing (RevenueCat supports
+  StoreKit configuration files for local UI work on a Mac).
+- Tests: `supabase/functions/purchases/*_test.ts`, `store_integration_test.ts` (db gate), pgTAP,
+  `scripts/iap/*_test.ts`, `app/test/purchases/`.
 
 ## Store setup
 
@@ -124,14 +284,14 @@ Scripted where the APIs allow it, never submitted for review:
 - `scripts/iap/google_product.ts`: Play Developer API `monetization.onetimeproducts`, dry run by
   default; prints Play's converted AT and CH prices. Needs the payments profile first.
 - `scripts/iap/product.ts` holds id, names and price for both; `product_test.ts` pins the
-  StoreKit file and the function's product id to it.
-
-The steps only Peter or the Lead can take are in NEEDS_PETER.md and NEEDS_LEAD.md, "Job 25".
+  StoreKit file and the function's product id and kind to it.
+- RevenueCat (account, apps, In-App Purchase key, Play service account, products with the Play
+  product NON-CONSUMABLE, the `lifetime` entitlement, restore behavior, the webhook):
+  NEEDS_LEAD "Job 43 – RevenueCat setup".
 
 ## Refunds when something is off
 
-The voided poll opens an issue "Purchases voided poll failed" when it fails. Rerun it from the
-Actions tab once the function or Google answers again; it looks 7 days back and changes nothing
-twice. A missed Apple notification is caught by the next verification of that transaction (the
-App Store Server API reports `revocationDate`, with the In-App Purchase key) or by App Store
-Connect's notification history (resend from there).
+RevenueCat retries a failed webhook 5 times over about 80 minutes; after that, resend it from
+RevenueCat's dashboard (Integrations → Webhooks → the event). A refund whose `CANCELLATION`
+never arrived keeps the household unlocked until it is resent. The deletion workflow opens an
+issue when it fails (see "Retention").

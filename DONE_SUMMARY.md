@@ -341,3 +341,7 @@ PRs carry a `## Changelog` note (de/en items or `none`), checked by push-pr.sh a
 
 PR notes may add `flag:` / `hold:` lines. `releases/flags.json` decides what is public, and the Alexa skill is held. Held items wait in `releases/changelog/pending.json` (written by `record.mjs`) until their gate opens. `releases/changelog/1.0.0.override.md` is the 1.0 launch "What's new", still a draft for Peter's review. Details: [docs/done/40-changelog-flags.md](docs/done/40-changelog-flags.md).
 
+
+## Job 43: Hummlist Lifetime as a household-bound unlock (model A), on RevenueCat
+
+A purchase belongs to the household it was bought in, for good: RevenueCat's App User ID is the household, and the server refuses it anywhere else, also after deletion (a tombstone stays 30 days after the purge of its rows). Our own Apple/Google verification is replaced by RevenueCat's webhook, and the SDK starts only on the purchase page with the household id. The purchase screen is off in every build until Peter approves the legal texts. Buy shows only when the household is known to have no Lifetime, and the join screen explains Lifetime around a join, with archiving behind the default-off `HOUSEHOLD_ARCHIVE`. There is DE/EN refund help, tester grants stay with households, members can't read who paid, and two paying-household queries back the kill gate. Details: [docs/done/43-iap-household-a.md](docs/done/43-iap-household-a.md).

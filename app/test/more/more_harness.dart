@@ -83,6 +83,7 @@ typedef More = ({
   FakeFeedbackRepository feedback,
   ScreenTracker screens,
   TestPurchases purchases,
+  FakeSession session,
 });
 
 /// More's routes as `buildRouter` has them, without the shell (whose list
@@ -107,11 +108,14 @@ Future<More> pumpMore(
   /// Instead of `moreTabRoutes()`, e.g. a More built like a release build.
   List<RouteBase>? routes,
 
-  /// The store, the purchases function and the household's entitlement
+  /// The store, the purchases function's claim and the household's entitlement
   /// rows; a store that sells and a household without Lifetime by default.
   FakePurchaseRepository? store,
-  FakePurchaseApi? api,
+  FakeClaimApi? api,
   FakeEntitlementsSource? entitlements,
+
+  /// The server's invites and archived households.
+  FakeInvites? invites,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -175,7 +179,9 @@ Future<More> pumpMore(
         ),
         RepositoryProvider.value(value: screens),
         RepositoryProvider<FeedbackDevice>.value(value: FakeFeedbackDevice()),
-        RepositoryProvider<InviteRepository>.value(value: FakeInvites()),
+        RepositoryProvider<InviteRepository>.value(
+          value: invites ?? FakeInvites(),
+        ),
         RepositoryProvider<InviteSharer>.value(value: FakeSharer()),
         RepositoryProvider.value(value: PendingInvite(MemoryPendingStore())),
       ],
@@ -219,5 +225,6 @@ Future<More> pumpMore(
     feedback: feedback,
     screens: screens,
     purchases: purchases,
+    session: session,
   );
 }

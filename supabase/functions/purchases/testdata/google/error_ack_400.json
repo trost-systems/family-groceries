@@ -1,8 +1,0 @@
-{
-  "_comment": "Google's standard API error body for a 400; what Google answers to a second acknowledge is not documented, so the code does not rely on this text. Not recorded from a live API.",
-  "error": {
-    "code": 400,
-    "message": "The purchase is not in a valid state to perform the desired operation.",
-    "status": "FAILED_PRECONDITION"
-  }
-}

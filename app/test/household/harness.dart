@@ -32,6 +32,9 @@ class FakeInvites() implements InviteRepository {
 
   /// Codes of the household the user is in.
   final own = <String>{};
+
+  /// What `preview_invite` says about Hummlist Lifetime, by code.
+  final lifetime = <String, JoinLifetime>{};
   final created = <Invite>[];
   final revoked = <String>[];
   final previews = <String>[];
@@ -85,11 +88,22 @@ class FakeInvites() implements InviteRepository {
     if (name == null) {
       throw const HouseholdError(HouseholdProblem.invalidInvite);
     }
-    return own.contains(code) ? InviteMember(name) : InviteOpen(name);
+    return own.contains(code)
+        ? InviteMember(name)
+        : InviteOpen(name, lifetime: lifetime[code] ?? const JoinLifetime());
   }
 
   @override
   Future<int> memberCount(String householdId) async => members;
+
+  /// The user's archived households (job 43).
+  final archivedNow = <ArchivedHousehold>[];
+
+  @override
+  Future<List<ArchivedHousehold>> archived() async {
+    await _answer();
+    return [...archivedNow];
+  }
 }
 
 /// Records what would go to the share sheet and the clipboard.
@@ -112,6 +126,10 @@ class TestSession(super.initialState)
     extends Cubit<Session>
     implements SessionCubit {
   final joins = <(String, JoinMethod)>[];
+
+  /// The joins that asked to archive the household left behind (job 43).
+  final archivingJoins = <String>[];
+  final unarchived = <String>[];
   final creates = <(String, bool)>[];
   HouseholdProblem? fail;
   var refreshes = 0;
@@ -132,10 +150,24 @@ class TestSession(super.initialState)
   }
 
   @override
-  Future<void> join(String code, {JoinMethod method = JoinMethod.code}) async {
+  Future<void> join(
+    String code, {
+    JoinMethod method = JoinMethod.code,
+    bool archive = false,
+  }) async {
     joins.add((code, method));
+    if (archive) {
+      archivingJoins.add(code);
+    }
     await _answer();
     emit(const InHousehold('peter', Household(id: 'other', name: 'Trost')));
+  }
+
+  @override
+  Future<void> unarchive(String householdId) async {
+    unarchived.add(householdId);
+    await _answer();
+    emit(InHousehold('peter', Household(id: householdId, name: 'Archiviert')));
   }
 
   @override
@@ -187,6 +219,7 @@ Future<Onboarding> pumpOnboarding(
   Locale locale = const Locale('de'),
   FakeSharer? sharer,
   FakeInvites? invites,
+  bool archiveOffered = false,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -243,10 +276,16 @@ Future<Onboarding> pumpOnboarding(
           ),
         ],
       ),
-      GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
+      GoRoute(
+        path: joinCodePath,
+        builder: (_, _) => JoinScreen(archiveOffered: archiveOffered),
+      ),
       GoRoute(
         path: '/join/:code',
-        builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
+        builder: (_, state) => JoinScreen(
+          link: state.pathParameters['code'],
+          archiveOffered: archiveOffered,
+        ),
       ),
     ],
   );

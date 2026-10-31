@@ -218,15 +218,21 @@ class SessionCubit(
   /// new membership (status `joined`), not when the server answers that the
   /// user is a member already, unless that answers an earlier try whose
   /// answer was lost. Throws [HouseholdError] for a bad code, the rate
-  /// limit or no connection.
-  Future<void> join(String code, {JoinMethod method = JoinMethod.code}) async {
+  /// limit or no connection. With [archive], the household the user leaves
+  /// as its last member is archived instead of deleted if it has Hummlist
+  /// Lifetime (job 43).
+  Future<void> join(
+    String code, {
+    JoinMethod method = JoinMethod.code,
+    bool archive = false,
+  }) async {
     final normalized = normalizeInviteCode(code);
     final Map<String, dynamic> result;
     try {
       result = await householdCall(
         () => _client.rpc<Map<String, dynamic>>(
           'accept_invite',
-          params: {'p_code': normalized},
+          params: {'p_code': normalized, 'p_archive': archive},
         ),
       );
     } on HouseholdError catch (e) {
@@ -251,6 +257,23 @@ class SessionCubit(
     }
     pendingInvite?.clear();
     await householdCall(refresh);
+  }
+
+  /// Moves the user back into their archived household [householdId] (job
+  /// 43). The household they are in now is left like on a join, archived if
+  /// they are its last member and it has Hummlist Lifetime.
+  Future<void> unarchive(String householdId) async {
+    final result = await householdCall(
+      () => _client.rpc<Map<String, dynamic>>(
+        'unarchive_household',
+        params: {'p_household': householdId, 'p_archive': true},
+      ),
+    );
+    if (result case {'status': 'unarchived'}) {
+      await householdCall(refresh);
+      return;
+    }
+    throw const HouseholdError(HouseholdProblem.other);
   }
 
   /// Tracks [event] in [householdId], which the server just confirmed:

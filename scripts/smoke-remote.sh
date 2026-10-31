@@ -60,27 +60,35 @@ else
   fail "alexa without a signature: want 400 {\"error\":\"missing_signature\"}; $(got alexa)"
 fi
 
-# Job 25: the purchases function answers its status, never signs test transactions on a hosted
-# project, and refuses a verification without the app's session (503 while it is not configured).
+# Job 43: the purchases function answers its status, never serves test events on a hosted
+# project, takes no webhook without RevenueCat's secret (503 while it is not configured) and no
+# claim without the app's session.
 request purchases "$fn/purchases"
 if [[ $(status purchases) == 200 ]] && jq -e '.configured | type == "boolean"' "$work/purchases.body" >/dev/null 2>&1; then
   pass "purchases: 200, configured=$(jq -r .configured "$work/purchases.body")"
 else
   fail "purchases: want 200 with a configured flag; $(got purchases)"
 fi
-request purchases_sign -X POST "$fn/purchases/test/sign" -H 'content-type: application/json' \
-  -d '{"transactionId":"smoke"}'
-if [[ $(status purchases_sign) == 404 ]]; then
-  pass 'purchases test signer: 404 on a hosted project'
+request purchases_test -X POST "$fn/purchases/test/event" -H 'content-type: application/json' \
+  -d '{"appUserId":"smoke","transactionId":"smoke"}'
+if [[ $(status purchases_test) == 404 ]]; then
+  pass 'purchases test events: 404 on a hosted project'
 else
-  fail "purchases test signer: want 404; $(got purchases_sign)"
+  fail "purchases test events: want 404; $(got purchases_test)"
 fi
-request purchases_verify -X POST "$fn/purchases/verify" -H "authorization: Bearer $bad_token" \
-  -H 'content-type: application/json' -d '{"store":"apple","source":"purchase","jws":"x"}'
-if [[ $(status purchases_verify) == 401 || $(status purchases_verify) == 503 ]]; then
-  pass "purchases verify with a bad token: $(status purchases_verify)"
+request purchases_webhook -X POST "$fn/purchases/revenuecat/webhook?forceFunctionRegion=eu-central-1" -H "authorization: Bearer $bad_token" \
+  -H 'content-type: application/json' -d '{"event":{"id":"smoke","type":"TEST"}}'
+if [[ $(status purchases_webhook) == 401 || $(status purchases_webhook) == 503 ]]; then
+  pass "purchases webhook with a bad secret: $(status purchases_webhook)"
 else
-  fail "purchases verify with a bad token: want 401 (or 503 unconfigured); $(got purchases_verify)"
+  fail "purchases webhook with a bad secret: want 401 (or 503 unconfigured); $(got purchases_webhook)"
+fi
+request purchases_claim -X POST "$fn/purchases/claim" -H 'content-type: application/json' \
+  -d '{"store":"apple","transactionId":"smoke"}'
+if [[ $(status purchases_claim) == 401 ]]; then
+  pass 'purchases claim without a session: 401'
+else
+  fail "purchases claim without a session: want 401; $(got purchases_claim)"
 fi
 
 if ((failures > 0)); then

@@ -1,24 +1,50 @@
 import 'dart:async';
 
 import 'package:family_groceries/session/session_cubit.dart';
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
-/// Whether the household has Hummlist Lifetime: at least one row in
-/// `entitlements`. Nothing is gated by it yet.
+/// What a household can have unlocked (`entitlements.kind`). Lifetime now;
+/// a later subscription adds its own kind, which never unlocks Lifetime's
+/// features (docs/PURCHASES.md, "A second entitlement").
+enum Entitlement(final String wire) {
+  lifetime('lifetime');
+
+  /// Null for a kind this build does not know.
+  static Entitlement? parse(Object? wire) =>
+      values.where((v) => v.wire == wire).firstOrNull;
+}
+
+/// What the household has unlocked: its rows in `entitlements`. Nothing is
+/// gated by it yet.
 sealed class const EntitlementsState();
 
-/// No household, or its rows could not be read yet (offline).
+/// No household, or its rows could not be read yet (loading, offline).
 final class const EntitlementsUnknown() extends EntitlementsState;
 
 final class const EntitlementsKnown({
   required final String householdId,
-  required final bool unlocked,
+  required final HouseholdUnlocks unlocks,
 }) extends EntitlementsState;
+
+/// A household's unlocks, as its rows say.
+@immutable
+class const HouseholdUnlocks({
+  final Set<Entitlement> kinds = const {},
+
+  /// One of them is a tester's grant (job 43): the household's events are
+  /// internal.
+  final bool tester = false,
+
+  /// How many store purchases unlock Lifetime; two or more and the household
+  /// paid twice, which only Apple or Google can refund.
+  final int lifetimePurchases = 0,
+});
 
 /// The household's `entitlements` rows. Only the server writes them.
 abstract interface class EntitlementsSource() {
-  Future<bool> unlocked(String householdId);
+  Future<HouseholdUnlocks> unlocks(String householdId);
 
   /// Calls [onChange] when a row may have changed, also after every
   /// (re)connect; returns the cancel.
@@ -39,8 +65,24 @@ class Entitlements(
   String? _householdId;
   Future<void> Function()? _unwatch;
 
-  bool get isUnlocked => switch (state) {
-    EntitlementsKnown(:final unlocked) => unlocked,
+  /// The household has [entitlement]; false while unknown.
+  bool has(Entitlement entitlement) => switch (state) {
+    EntitlementsKnown(:final unlocks) => unlocks.kinds.contains(entitlement),
+    EntitlementsUnknown() => false,
+  };
+
+  /// The household bought Lifetime more than once; false while unknown.
+  bool get boughtLifetimeTwice => switch (state) {
+    EntitlementsKnown(:final unlocks) => unlocks.lifetimePurchases >= 2,
+    EntitlementsUnknown() => false,
+  };
+
+  /// Whether to offer [entitlement] for sale: only when the household is
+  /// known not to have it. While unknown (loading, offline) the answer is
+  /// no, so no member of an unlocked household pays twice. Every paywall
+  /// entry point asks this, never [has].
+  bool canOffer(Entitlement entitlement) => switch (state) {
+    EntitlementsKnown(:final unlocks) => !unlocks.kinds.contains(entitlement),
     EntitlementsUnknown() => false,
   };
 
@@ -69,9 +111,9 @@ class Entitlements(
       return;
     }
     try {
-      final unlocked = await _source.unlocked(householdId);
+      final unlocks = await _source.unlocks(householdId);
       if (!isClosed && householdId == _householdId) {
-        emit(EntitlementsKnown(householdId: householdId, unlocked: unlocked));
+        emit(EntitlementsKnown(householdId: householdId, unlocks: unlocks));
       }
     } on Object {
       // The next (re)connect reads again.
@@ -86,16 +128,29 @@ class Entitlements(
   }
 }
 
+/// The rows' kinds this build knows, whether one is a tester's, and how many
+/// are Lifetime purchases.
+HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) => HouseholdUnlocks(
+  kinds: {for (final row in rows) ?Entitlement.parse(row['kind'])},
+  tester: rows.any((row) => row['source'] == 'tester'),
+  lifetimePurchases: rows
+      .where(
+        (row) =>
+            row['source'] == 'purchase' &&
+            Entitlement.parse(row['kind']) == Entitlement.lifetime,
+      )
+      .length,
+);
+
 class const SupabaseEntitlementsSource(final SupabaseClient _client)
     implements EntitlementsSource {
   @override
-  Future<bool> unlocked(String householdId) async {
+  Future<HouseholdUnlocks> unlocks(String householdId) async {
     final rows = await _client.rest
         .from('entitlements')
-        .select('purchase_id')
-        .eq('household_id', householdId)
-        .limit(1);
-    return rows.isNotEmpty;
+        .select('kind, source')
+        .eq('household_id', householdId);
+    return unlocksOf(rows);
   }
 
   @override

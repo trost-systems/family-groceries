@@ -274,6 +274,12 @@ Status: waiting for Peter's OK on the text (docs/NEEDS_PETER.md, Job 24).
 Order matters: items 1 and 5 wait for NEEDS_PETER Job 25 items 1 and 2. Nothing here submits
 anything for review. Docs: `docs/PURCHASES.md`.
 
+**Since job 43 (RevenueCat):** the steps below that set function secrets for our own Apple/Google
+verification (`PURCHASES_ENVIRONMENTS`, `APPLE_IAP_*`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`,
+`PURCHASES_CRON_SECRET`) and point App Store Server Notifications at our function no longer apply;
+those keys go to RevenueCat instead ("Job 43 – RevenueCat setup" below). Creating the products
+(P1, the Play product) still does.
+
 ### P1: The product in App Store Connect (after the Paid Apps agreement, or try before)
 
 On the box (the ASC key is there):
@@ -345,3 +351,179 @@ On the iPhone with the sandbox tester (and on Android with a license tester afte
    use Play Console → Order management → refund (test order) for Google, and for Apple check
    P3's test notification. The next poll (or a REFUND notification) shows the household locked.
 6. Report the result on BOARD.md.
+
+## Job 43: Hummlist Lifetime, household-bound (2026-10-31)
+
+### Steps
+
+1. **Testers** (on the box, which has `SUPABASE_ACCESS_TOKEN`): `scripts/iap/testers.ts`
+   (docs/PURCHASES.md "Testers"). Dry run first, then `--apply`:
+   `deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts add --email <e> [--grants n] [--note "TestFlight"]`;
+   `set-grants --email <e> --grants n` raises a tester's count case by case; `list`, `remove`.
+   It prints user ids, never keys. Keep notes free of names and e-mail addresses.
+2. **PostHog insights** in project 319492 (read-only for jobs; you create them): paste
+   `analytics/queries/paying_households_d35.sql` and `analytics/queries/paying_share_wah.sql` as
+   HogQL insights. The kill gate is `paying_share_wah`'s `share_percent` ≥ 2 in the Berlin week
+   that contains day 35 after launch (docs/ANALYTICS.md). No PostHog groups.
+3. **No new analytics event is proposed.** The queries work on `purchase_completed`,
+   `purchase_refunded`, `item_added` and `item_ticked` with their existing `household_id`; nothing
+   waits for a privacy-policy section 9 change. `purchase_restored` is no longer sent (RevenueCat
+   restores produce no event for us); its catalog entry stays.
+4. **Archiving for real users** (after Legal Review): add `"HOUSEHOLD_ARCHIVE": "true"` to
+   `app/config/auth.json`, which the store builds (fastlane) and the web build (`scripts/vercel.sh`)
+   read. Until then it is on only in e2e builds (`app/config/e2e.json`).
+5. **The purchase screen** (after Peter approves the legal texts, ADDENDUM 5): builds need
+   `--dart-define=REVENUECAT_PURCHASES=true` plus the public SDK keys `REVENUECAT_APPLE_API_KEY` and
+   `REVENUECAT_GOOGLE_API_KEY` (from `~/groceries-ops/env`). First only for Peter's own builds;
+   then wire them into fastlane's defines (`app/fastlane/Fastfile`, like the analytics defines)
+   for everyone.
+
+### Job 43 – RevenueCat setup (Ops, not done by the job)
+
+**Done by the Lead by 2026-10-31 14:56 (ADDENDUM 6):** project 9cb4a72e with entitlement
+`lifetime`, offering `default`, package `$rc_lifetime`, product `com.hummlist.app.lifetime`
+(non-consumable), and the function secrets `REVENUECAT_WEBHOOK_AUTH` (with `Bearer `),
+`REVENUECAT_SECRET_KEY` (v2), `REVENUECAT_TOMBSTONE_HMAC_KEY`, `REVENUECAT_PROJECT_ID`. After this
+PR lands: point the webhook at the URL in step 7 and send RevenueCat's test event (expect 200
+`ignored`); check steps 3 to 6 and 9 below. The SDK key defines are `REVENUECAT_APPLE_API_KEY`
+and `REVENUECAT_GOOGLE_API_KEY`.
+
+1. RevenueCat account and project "Hummlist" (free up to USD 2,500 monthly tracked revenue, then
+   1 %; confirm webhooks are included on the plan the dashboard shows). Accepting the terms
+   accepts the DPA.
+2. Apps: App Store (`com.hummlist.app`) and Play Store (`com.hummlist.app`). Public SDK keys into
+   `~/groceries-ops/env` as `REVENUECAT_APPLE_API_KEY`, `REVENUECAT_GOOGLE_API_KEY`.
+3. App Store Connect: an In-App Purchase key (Users and Access → Integrations → In-App Purchase),
+   `.p8` and Issuer ID uploaded to RevenueCat; App Store Server Notifications V2, Production and
+   Sandbox, set to the URL RevenueCat shows (replaces our function's URL there).
+4. Google: a service account with Play access, its JSON key uploaded to RevenueCat (validation
+   can take up to 36 h). Real-time developer notifications need a Pub/Sub topic, which needs a
+   Google Cloud project with billing enabled; DECISIONS 25.8 avoided that ("not allowed"). Peter
+   decides (NEEDS_PETER Job 43 item 3); until then RevenueCat learns of Play refunds without
+   notifications only as RevenueCat documents it.
+5. Products: import `com.hummlist.app.lifetime` for both stores, mark the Play product
+   **NON-CONSUMABLE** (otherwise RevenueCat consumes it and Google sells it again), entitlement
+   `lifetime` attached, an offering with a lifetime package.
+6. Project settings → General → Restore behavior: **Keep with original App User ID**, production
+   and sandbox alike. Leave "Track new purchases from server-to-server notifications" off. Leave
+   RevenueCat's AI features off (Legal Review C4). No integrations, no data exports.
+7. Webhook integration: URL
+   `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/purchases/revenuecat/webhook?forceFunctionRegion=eu-central-1`,
+   an `Authorization` header value (a long random string), production and sandbox, all apps;
+   optionally HMAC signing. Then set the function secrets `REVENUECAT_WEBHOOK_AUTH` (that header
+   value), `REVENUECAT_WEBHOOK_HMAC_SECRET` (if signing is on) and `REVENUECAT_TOMBSTONE_HMAC_KEY`
+   (a random 32-byte hex string, never rotated), e.g. `supabase secrets set --project-ref
+   jdwqrallbpdbshrdhenk REVENUECAT_WEBHOOK_AUTH=…`. Send RevenueCat's test event: the function
+   answers 200 `ignored`.
+8. A v2 secret API key with `customer_information:customers:read_write` as the function secret
+   `REVENUECAT_SECRET_KEY`, and `REVENUECAT_PROJECT_ID` (the daily workflow
+   `revenuecat-delete.yml` only starts the function's deletion route).
+9. Afterwards delete what job 43 removed: function secrets `PURCHASES_ENVIRONMENTS`,
+   `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`,
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `PURCHASES_CRON_SECRET`, and the repository secret
+   `PURCHASES_CRON_SECRET`. Update the App Privacy and Data safety answers (Purchases, User ID)
+   once Legal Review and Peter have decided the privacy text (RevenueCat as a new processor).
+
+### Legal Review: draft 5a sentences this job affects
+
+`site/content/legal/datenschutz-kaeufe.md`, `privacy-purchases.md`; not edited here.
+
+- "Du kaufst im App Store von Apple oder bei Google Play. Apple bzw. Google wickeln die Zahlung
+  ab …" / "You buy it in Apple's App Store or on Google Play …": RevenueCat, Inc. (USA) now sits
+  between the app and the stores as our processor: the app's SDK sends it the household UUID as
+  App User ID, transaction ids, product, price, currency, country, dates, environment, platform,
+  app/SDK version, device locale and the IP address; RevenueCat checks with Apple and Google. US
+  transfer under its DPA (SCCs module 2); its subprocessors are all in the USA.
+- "Nach dem Kauf schickt die App den vom Store signierten Kaufbeleg an unseren Server … Wir
+  prüfen ihn, bei Bedarf auch direkt bei Apple … bzw. Google …" / "After the purchase the app
+  sends the receipt … We check it, where needed directly with Apple … or Google …": no longer
+  true. RevenueCat checks; our server receives RevenueCat's webhook and, from the app, the buyer's
+  claim (user id ↔ transaction id). What we store: store, product, the store's transaction id and
+  an HMAC of it, whether it was a test purchase, purchase and refund time, price, currency,
+  country, the buyer (from the claim), and the household it belongs to (kept after that household
+  is deleted, for 30 days; then only the HMAC).
+- "… welches Konto den Kauf zuerst bestätigt hat und welchen Haushalt er freischaltet." / "…
+  which account confirmed the purchase first and which household it unlocks.": now "which member
+  said they bought it (first claim)".
+- "Alle Mitglieder deines Haushalts sehen, dass der Haushalt freigeschaltet ist." / "All members
+  … see that the household is unlocked.": still true; members no longer see who paid (H-55). New:
+  someone with a valid invite sees, before joining, whether the household has Hummlist Lifetime;
+  the joining user's own recent purchase (30 days) is checked to offer the refund help (shown to
+  no one else); members see when the household bought Lifetime more than once.
+- "Rechtsgrundlage: … dass ein Kauf nicht mehrfach oder in fremden Haushalten verwendet wird." /
+  "Legal basis: … not used twice or in other households.": now enforced also after the household
+  is deleted (the kept household id for 30 days, then the HMAC tombstone, kept while Lifetime is
+  sold or honoured, reviewed yearly).
+- "Speicherdauer: Die Freischaltung bleibt beim Haushalt … Löschst du dein Konto, entfernen wir
+  die Verbindung zwischen dem Kauf und deinem Konto; die Transaktion selbst bleibt ohne
+  Personenbezug gespeichert, solange Hummlist betrieben wird … Wird der Haushalt gelöscht, endet
+  seine Freischaltung." / "Retention: …": the transaction is no longer kept while Hummlist runs:
+  30 days after the household's deletion it is deleted (only the HMAC stays) and RevenueCat is
+  asked to delete the household's customer. Account deletion still only removes the buyer link.
+  New: the last member may archive the household instead (once archiving is on), which keeps its
+  data and unlock.
+- Not in 5a yet, new processing: the tester list (user id, number of free unlocks, how many were
+  used, a note, the date) and which households a tester's free unlock went to; analytics marks
+  tester households internal (usage data section; nothing new is sent).
+- Outside 5a: §14 Speicherdauer ("Bist du das letzte Mitglied eines Haushalts, wird der Haushalt
+  mit allem gelöscht."), the support FAQ (`support.md`: "Bist du das letzte Mitglied, wird der
+  ganze Haushalt gelöscht.") and `app/web/konto-loeschen.html` ("Du bist das letzte Mitglied")
+  describe deletion on leaving; with archiving they need the archive case. Account deletion
+  deletes the last member's household and the households they archived.
+
+### Job 43 – privacy/retention notes (Legal Review H-49 to H-56, RevenueCat conditions)
+
+Plain facts from the code; what the law requires is Legal Review's call.
+
+- **H-49, the purchase record after the unlock ends.** While its household exists (archived
+  included) a purchase row keeps: store, transaction id, latest transaction id, the HMAC, product,
+  kind, environment, price, currency, country, purchase/verification/refund times, the bound
+  household, and the buyer's user id until their account is deleted. 30 days after the household
+  is deleted the row is deleted (`purge_purchases`, daily) and only the HMAC stays
+  (`purchase_tombstones`, nothing attached; kept while Lifetime is sold or its unlocks are
+  honoured, reviewed yearly). The financial records Apple and Google keep (8 years, archived by
+  Ops) are the tax records; these rows are not.
+- **H-50, archived households.** An archived household keeps all its data unchanged: name,
+  categories, stores and layouts, items and their history (`item_events`), invites (unusable),
+  entitlements, purchases. It has no members, so no client can read it (RLS) and its invites
+  answer `invalid_invite`. It is kept until the archiving user re-enables it (Mehr → Archivierte
+  Haushalte → Wieder aktivieren, `unarchive_household`) or deletes their account, which deletes
+  it (`delete_account`); one whose archiver was deleted another way goes with the daily purge.
+  Only that user (`households.archived_by`) can re-enable it. Inside it, other former members'
+  rows keep pointing to them as before (e.g. `items.added_by`); their own account deletion nulls
+  those links. There is no time limit: an archived household stays until re-enabled or account
+  deletion. A limit (e.g. after N months, with notice) would be a product and legal decision.
+- **H-51, testers.** `public.lifetime_testers`: user id (cascade-deleted with the account),
+  grants, used, a note (Lead's free text, no names or e-mail), added_at. Service connection only;
+  the Lead's script resolves an e-mail to the id at run time and stores no e-mail. A used grant
+  is an `entitlements` row (`source` tester, `tester` the user id, nulled when the account is
+  deleted); it stays with the household like a purchase, also after launch (Peter, 2026-10-31).
+  No tester data goes to RevenueCat (no promotional entitlements). Sandbox purchases stay after
+  launch too (NEEDS_PETER Job 25 item 8). The store transaction id is kept in
+  `purchases.transaction_id` while the row exists; analytics only ever gets a hash
+  (`transaction_ref`).
+- **H-53, recipients.** docs/PURCHASES.md "Who receives what": our server calls neither Apple nor
+  Google; RevenueCat (US, DPA) receives the household UUID as App User ID and the purchase data
+  listed there and talks to the stores; our one outbound call is RevenueCat's customer deletion.
+- **H-54, region.** RevenueCat calls the webhook from the US, so the registered URL carries
+  `?forceFunctionRegion=eu-central-1`; the app's claim call is pinned with `region:
+  'eu-central-1'` (`app/lib/purchases/purchase_api.dart`); the function logs `SB_REGION`.
+  Supabase "Regional Invocations" (https://supabase.com/docs/guides/functions/regional-invocation,
+  read 2026-10-31).
+- **H-55, the buyer.** RevenueCat knows only the household. The buyer is recorded from the
+  member's claim (`purchase_claim`, through the function, first member wins). Members have
+  column-level select on `entitlements` without `granted_by` and `tester`: migration
+  `20261031123504_household_bound_lifetime.sql`; pgTAP `purchases.test.sql`,
+  `household_bound.test.sql`; the function's integration test; Realtime to the partner checked by
+  `e2e/tests/purchases.spec.ts`.
+- **H-56, restore.** RevenueCat's "Keep with original App User ID" (Ops) plus the server:
+  `purchase_record` unlocks only `purchases.bound_household` (also after archive and
+  re-enabling), refuses every other household (`used_elsewhere`, `household_gone`), ids that are
+  no household, and tombstoned transactions; a `TRANSFER` moves nothing. Purchases from before
+  this migration that unlocked nothing are bound to the nil UUID. Tests: pgTAP,
+  `supabase/functions/purchases/handler_test.ts`, `e2e/tests/household-bound.spec.ts`.
+- **C3 (SDK data).** The SDK starts only on the purchase page of a household known to have no
+  Lifetime, with the household id; no attributes, no device or ad ids, no `logOut`: lint rules
+  `purchases-flutter-only-in-revenuecat-repository` and `no-revenuecat-customer-data` fail the build otherwise.
+- **RevenueCat's retention** after a deletion request follows its DPA ("subject to standard data
+  backup and archival practices"), RevenueCat's statement.

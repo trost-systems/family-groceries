@@ -99,7 +99,8 @@ select is(pg_temp.status(public.accept_invite((select code from codes where k = 
   'an 8-day-old code does not join');
 select is(pg_temp.members(), 1, 'and adds no membership');
 select is(public.preview_invite((select code from codes where k = 'six')),
-  '{"status": "ok", "name": "Familie Test"}'::jsonb, 'a 6-day-old code previews the household name');
+  '{"status": "ok", "name": "Familie Test", "unlocked": false, "leaves_unlocked": false, "recent_purchase": false}'::jsonb,
+  'a 6-day-old code previews the household name (job 43: and that it has no Lifetime)');
 
 -- Single use ------------------------------------------------------------------------------
 
@@ -128,7 +129,7 @@ select is(public.accept_invite((select code from codes where k = 'six')),
   jsonb_build_object('status', 'member', 'household_id', (select id from h)),
   'opening a used link again as its member answers member');
 select is(public.preview_invite((select code from codes where k = 'six')),
-  '{"status": "member", "name": "Familie Test"}'::jsonb, 'its preview too');
+  '{"status": "member", "name": "Familie Test", "unlocked": false}'::jsonb, 'its preview too');
 select is(pg_temp.members(), 2, 'no duplicate membership');
 -- A member opening an expired or a fresh link: success without consuming it.
 select is(pg_temp.status(public.accept_invite((select code from codes where k = 'eight'))), 'member',

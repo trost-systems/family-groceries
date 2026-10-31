@@ -1,88 +1,56 @@
 import { assertEquals } from '@std/assert';
-import { appleNotification, appleTransaction } from './apple.ts';
-import { makeAppleTestCa } from './apple_test_ca.ts';
-import { configFrom } from './config.ts';
-import { createHandler } from './handler.ts';
-import { productionDeps } from './deps.ts';
 import { telemetryFor } from '../_shared/telemetry.ts';
+import { configFrom } from './config.ts';
+import { productionDeps } from './deps.ts';
+import { createHandler } from './handler.ts';
 
 const env = (values: Record<string, string>) => ({ get: (k: string) => values[k] });
-const b64 = (text: string) => btoa(text);
+const secrets = {
+  REVENUECAT_WEBHOOK_AUTH: ' Bearer rc-secret ',
+  REVENUECAT_TOMBSTONE_HMAC_KEY: 'tombstone-key',
+};
 
-async function testCaEnv(url: string) {
-  const ca = await makeAppleTestCa();
-  return {
-    ca,
-    config: configFrom(env({
-      SUPABASE_URL: url,
-      PURCHASES_ENVIRONMENTS: 'Sandbox',
-      PURCHASES_TEST_ROOT_PEM: b64(ca.root.toString('pem')),
-      PURCHASES_TEST_X5C: ca.x5c.join(','),
-      PURCHASES_TEST_KEY: b64(ca.leafKeyPem),
-    })),
+Deno.test('the webhook is configured only with its Authorization value and the tombstone key', () => {
+  assertEquals(configFrom(env({})).webhook, null);
+  assertEquals(configFrom(env({ REVENUECAT_WEBHOOK_AUTH: 'Bearer x' })).webhook, null);
+  assertEquals(configFrom(env({ REVENUECAT_TOMBSTONE_HMAC_KEY: 'k' })).webhook, null);
+  assertEquals(configFrom(env({ ...secrets, REVENUECAT_WEBHOOK_AUTH: '  ' })).webhook, null);
+  assertEquals(configFrom(env(secrets)).webhook, {
+    authorization: 'Bearer rc-secret',
+    signingSecret: null,
+    tombstoneKey: 'tombstone-key',
+  });
+  assertEquals(
+    configFrom(env({ ...secrets, REVENUECAT_WEBHOOK_HMAC_SECRET: 'sign' })).webhook?.signingSecret,
+    'sign',
+  );
+});
+
+Deno.test('only the local stack serves test events', async () => {
+  const call = async (url: string) => {
+    const config = configFrom(env({ ...secrets, SUPABASE_URL: url }));
+    const handler = createHandler(productionDeps(config, telemetryFor('purchases', env({}))));
+    const res = await handler(
+      new Request('http://x/functions/v1/purchases/test/event', { method: 'POST', body: '{}' }),
+    );
+    await res.body?.cancel();
+    return [config.local, res.status];
   };
-}
+  assertEquals(await call('https://jdwqrallbpdbshrdhenk.supabase.co'), [false, 404]);
+  assertEquals(await call('http://kong:8000'), [true, 400]);
+});
 
-Deno.test('unset or unknown environments leave the function inert', () => {
-  assertEquals(configFrom(env({})).environments, []);
-  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Xcode, sandbox' })).environments, []);
+Deno.test('the region comes from SB_REGION', () => {
+  assertEquals(configFrom(env({ SB_REGION: 'eu-central-1' })).region, 'eu-central-1');
+  assertEquals(configFrom(env({})).region, null);
+});
+
+Deno.test('customer deletion needs both the v2 secret key and the project id', () => {
+  assertEquals(configFrom(env({ REVENUECAT_SECRET_KEY: 'sk_x' })).revenueCat, null);
+  assertEquals(configFrom(env({ REVENUECAT_PROJECT_ID: '9cb4a72e' })).revenueCat, null);
   assertEquals(
-    configFrom(env({ PURCHASES_ENVIRONMENTS: 'Production, Sandbox,Production' })).environments,
-    ['Production', 'Sandbox'],
+    configFrom(env({ REVENUECAT_SECRET_KEY: 'sk_x', REVENUECAT_PROJECT_ID: '9cb4a72e' }))
+      .revenueCat,
+    { secretKey: 'sk_x', projectId: '9cb4a72e' },
   );
-});
-
-Deno.test('Production without Sandbox stays inert: App Review buys in the sandbox', () => {
-  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Production' })).environments, []);
-  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Production,Xcode' })).environments, []);
-  assertEquals(configFrom(env({ PURCHASES_ENVIRONMENTS: 'Sandbox' })).environments, ['Sandbox']);
-});
-
-Deno.test('the In-App Purchase key needs all three parts', () => {
-  assertEquals(configFrom(env({ APPLE_IAP_KEY_ID: 'K', APPLE_IAP_ISSUER_ID: 'I' })).appleKey, null);
-  assertEquals(
-    configFrom(
-      env({ APPLE_IAP_KEY_ID: 'K', APPLE_IAP_ISSUER_ID: 'I', APPLE_IAP_PRIVATE_KEY: 'a\\nb' }),
-    )
-      .appleKey,
-    { keyId: 'K', issuerId: 'I', privateKey: 'a\nb' },
-  );
-});
-
-Deno.test('a hosted project ignores the test CA: Apple root only, no signer', async () => {
-  const { config } = await testCaEnv('https://jdwqrallbpdbshrdhenk.supabase.co');
-  assertEquals(config.testSigner, null);
-  assertEquals(config.apple.anchors.map((a) => a.subject.includes('Apple Root CA - G3')), [true]);
-  const handler = createHandler(productionDeps(config, telemetryFor('purchases', env({}))));
-  const res = await handler(
-    new Request('http://x/functions/v1/purchases/test/sign', {
-      method: 'POST',
-      body: JSON.stringify({ transactionId: '1' }),
-    }),
-  );
-  assertEquals(res.status, 404);
-  await res.body?.cancel();
-});
-
-Deno.test('the local stack signs with the test CA, and the same config verifies it', async () => {
-  const { config } = await testCaEnv('http://kong:8000');
-  const handler = createHandler(productionDeps(config, telemetryFor('purchases', env({}))));
-  const sign = async (body: unknown) =>
-    await (await handler(
-      new Request('http://x/functions/v1/purchases/test/sign', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      }),
-    )).json();
-  const { jws } = await sign({ transactionId: '2000000000099001' });
-  const t = await appleTransaction(jws, config.apple);
-  assertEquals([t.originalTransactionId, t.environment, t.revocationDate], [
-    '2000000000099001',
-    'Sandbox',
-    undefined,
-  ]);
-  const { signedPayload } = await sign({ transactionId: '7', notificationType: 'REFUND' });
-  const n = await appleNotification(signedPayload, config.apple);
-  assertEquals([n.notificationType, typeof n.transaction?.revocationDate], ['REFUND', 'number']);
-  assertEquals((await sign({})).error, 'bad_request');
 });

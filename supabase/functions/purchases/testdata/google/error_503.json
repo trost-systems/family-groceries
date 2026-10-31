@@ -1,8 +1,0 @@
-{
-  "_comment": "Google's standard API error body (google.rpc.Status over JSON), not recorded from a live API.",
-  "error": {
-    "code": 503,
-    "message": "The service is currently unavailable.",
-    "status": "UNAVAILABLE"
-  }
-}

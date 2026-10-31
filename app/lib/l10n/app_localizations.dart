@@ -1934,11 +1934,23 @@ abstract class AppLocalizations {
   /// **'Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern.'**
   String get lifetimePendingBody;
 
-  /// No description provided for @lifetimeVerifying.
+  /// Hummlist Lifetime: bought or restored, waiting for the unlock from the server
   ///
   /// In de, this message translates to:
-  /// **'Kauf wird geprüft …'**
-  String get lifetimeVerifying;
+  /// **'Wird freigeschaltet …'**
+  String get lifetimeUnlocking;
+
+  /// Hummlist Lifetime: bought, but the server's unlock has not arrived within a minute
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Kauf ist angekommen, die Freischaltung dauert nur länger als sonst. Sie erscheint hier von selbst; bitte nicht noch einmal kaufen.'**
+  String get lifetimeUnlockDelayed;
+
+  /// Hummlist Lifetime: the household has two or more store purchases; the refund help link is on the page
+  ///
+  /// In de, this message translates to:
+  /// **'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe können Apple oder Google erstatten.'**
+  String get lifetimeBoughtTwice;
 
   /// No description provided for @lifetimeCanceled.
   ///
@@ -1961,7 +1973,7 @@ abstract class AppLocalizations {
   /// No description provided for @lifetimeUsedElsewhere.
   ///
   /// In de, this message translates to:
-  /// **'Dieser Kauf ist schon in einem anderen Haushalt freigeschaltet.'**
+  /// **'Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort. Hier schaltet er nichts frei.'**
   String get lifetimeUsedElsewhere;
 
   /// No description provided for @lifetimeNothingRestored.
@@ -1970,47 +1982,167 @@ abstract class AppLocalizations {
   /// **'Kein früherer Kauf gefunden.'**
   String get lifetimeNothingRestored;
 
-  /// No description provided for @lifetimeRefunded.
-  ///
-  /// In de, this message translates to:
-  /// **'Dieser Kauf wurde erstattet und ist nicht mehr freigeschaltet.'**
-  String get lifetimeRefunded;
-
   /// No description provided for @lifetimeStoreFailed.
   ///
   /// In de, this message translates to:
   /// **'Der Kauf hat nicht geklappt ({code}).'**
   String lifetimeStoreFailed(String code);
 
-  /// No description provided for @lifetimeVerifyOffline.
-  ///
-  /// In de, this message translates to:
-  /// **'Keine Verbindung. Der Kauf bleibt gespeichert und wird geprüft, sobald du online bist.'**
-  String get lifetimeVerifyOffline;
-
-  /// No description provided for @lifetimeRateLimited.
-  ///
-  /// In de, this message translates to:
-  /// **'Zu viele Versuche. Versuche es später erneut.'**
-  String get lifetimeRateLimited;
-
-  /// No description provided for @lifetimeRefused.
-  ///
-  /// In de, this message translates to:
-  /// **'Der Beleg des Stores wurde nicht angenommen ({code}). Falls du Hummlist Lifetime gekauft hast, tippe später auf „Käufe wiederherstellen“.'**
-  String lifetimeRefused(String code);
-
-  /// No description provided for @lifetimeServerFailed.
-  ///
-  /// In de, this message translates to:
-  /// **'Der Kauf konnte nicht geprüft werden ({code}). Er bleibt gespeichert; versuche es später erneut.'**
-  String lifetimeServerFailed(String code);
-
   /// No description provided for @lifetimeWeb.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime gibt es in der iOS- und Android-App.'**
+  /// **'Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
   String get lifetimeWeb;
+
+  /// Hummlist Lifetime: the household's unlock is not known yet (loading or offline); no Buy button meanwhile
+  ///
+  /// In de, this message translates to:
+  /// **'Wir prüfen, ob dein Haushalt Hummlist Lifetime schon hat …'**
+  String get lifetimeChecking;
+
+  /// A small link to the refund help
+  ///
+  /// In de, this message translates to:
+  /// **'Doppelt gekauft? So bekommst du dein Geld zurück'**
+  String get lifetimeRefundLink;
+
+  /// No description provided for @refundHelpTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Kauf zurückfordern'**
+  String get refundHelpTitle;
+
+  /// No description provided for @refundHelpBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde. Erstatten können wir selbst nichts: Das machen Apple und Google, und sie entscheiden darüber.'**
+  String get refundHelpBody;
+
+  /// No description provided for @refundHelpApple.
+  ///
+  /// In de, this message translates to:
+  /// **'iPhone: Öffne reportaproblem.apple.com, melde dich mit deinem Apple Account an, wähle „Rückerstattung anfordern“ und dann Hummlist Lifetime.'**
+  String get refundHelpApple;
+
+  /// No description provided for @refundHelpGoogle.
+  ///
+  /// In de, this message translates to:
+  /// **'Android: Öffne Google Play, tippe auf dein Profilbild, dann „Zahlungen und Abos“, „Budget und Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“.'**
+  String get refundHelpGoogle;
+
+  /// No description provided for @refundHelpReason.
+  ///
+  /// In de, this message translates to:
+  /// **'Als Grund kannst du schreiben: „Mein Haushalt war schon freigeschaltet.“'**
+  String get refundHelpReason;
+
+  /// No description provided for @refundHelpAppleLink.
+  ///
+  /// In de, this message translates to:
+  /// **'Bei Apple anfragen'**
+  String get refundHelpAppleLink;
+
+  /// No description provided for @refundHelpGoogleLink.
+  ///
+  /// In de, this message translates to:
+  /// **'Bei Google anfragen'**
+  String get refundHelpGoogleLink;
+
+  /// No description provided for @joinTargetUnlocked.
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen.'**
+  String get joinTargetUnlocked;
+
+  /// No description provided for @joinRefundLink.
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast Hummlist Lifetime vor Kurzem gekauft? So forderst du den Kauf zurück'**
+  String get joinRefundLink;
+
+  /// No description provided for @joinLifetimeEnds.
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied: Trittst du bei, wird der Haushalt gelöscht. Hummlist Lifetime endet mit ihm und wird nicht erstattet, denn ein Kauf gehört zu seinem Haushalt und zieht nicht mit um.'**
+  String joinLifetimeEnds(String household);
+
+  /// Join, after the warning that the current household's Hummlist Lifetime ends
+  ///
+  /// In de, this message translates to:
+  /// **'Trotzdem beitreten'**
+  String get joinAnyway;
+
+  /// No description provided for @joinLifetimeRefundLink.
+  ///
+  /// In de, this message translates to:
+  /// **'Erstattung bei Apple oder Google anfragen'**
+  String get joinLifetimeRefundLink;
+
+  /// No description provided for @joinArchiveOffer.
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied. Archiviere den Haushalt, statt ihn zu löschen: Liste und Hummlist Lifetime bleiben erhalten, und du kannst ihn später unter „Mehr“ wieder aktivieren.'**
+  String joinArchiveOffer(String household);
+
+  /// No description provided for @joinArchive.
+  ///
+  /// In de, this message translates to:
+  /// **'Archivieren und beitreten'**
+  String get joinArchive;
+
+  /// No description provided for @joinDelete.
+  ///
+  /// In de, this message translates to:
+  /// **'Löschen und beitreten'**
+  String get joinDelete;
+
+  /// No description provided for @joinDeleteTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ löschen?'**
+  String joinDeleteTitle(String household);
+
+  /// No description provided for @archivedTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Archivierte Haushalte'**
+  String get archivedTitle;
+
+  /// No description provided for @archivedEmpty.
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast keinen Haushalt archiviert.'**
+  String get archivedEmpty;
+
+  /// No description provided for @archivedUnlocked.
+  ///
+  /// In de, this message translates to:
+  /// **'Mit Hummlist Lifetime'**
+  String get archivedUnlocked;
+
+  /// No description provided for @archivedRestore.
+  ///
+  /// In de, this message translates to:
+  /// **'Wieder aktivieren'**
+  String get archivedRestore;
+
+  /// No description provided for @archivedRestoreTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ wieder aktivieren?'**
+  String archivedRestoreTitle(String household);
+
+  /// No description provided for @archivedRestoreBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Du wechselst in „{household}“ und bist dort wieder Mitglied.'**
+  String archivedRestoreBody(String household);
+
+  /// No description provided for @archivedRestoreArchivesCurrent.
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist das letzte Mitglied von „{household}“. Weil er Hummlist Lifetime hat, wird er archiviert, nicht gelöscht.'**
+  String archivedRestoreArchivesCurrent(String household);
 }
 
 class _AppLocalizationsDelegate

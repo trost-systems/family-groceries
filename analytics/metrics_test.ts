@@ -1,9 +1,11 @@
 import { assertEquals } from '@std/assert';
-import { events, H1, H2 } from './fixtures.ts';
+import { events, H1, H15, H2, payingEvents } from './fixtures.ts';
 import {
   berlinMonth,
   berlinWeek,
   external,
+  payingHouseholdsByDay35,
+  payingShareOfWah,
   reordersByHousehold,
   retention,
   revenueByMonth,
@@ -47,6 +49,60 @@ Deno.test('day-35 unlock share by install week; late and refunded buys do not co
       ['2026-11-02', { installs: 3, boughtByDay35: 1, share: 33.3 }],
       ['2026-11-09', { installs: 1, boughtByDay35: 0, share: 0 }],
     ]),
+  );
+});
+
+const withPaying = [...events, ...payingEvents];
+
+Deno.test('paying households by day 35, by household cohort week', () => {
+  assertEquals(
+    payingHouseholdsByDay35(withPaying),
+    new Map([
+      // H1 bought on day 19; H2's member bought on day 46 and the other's buy was refunded.
+      ['2026-11-02', { households: 2, payingByDay35: 1, share: 50 }],
+      ['2026-11-09', { households: 1, payingByDay35: 0, share: 0 }],
+      // H10 (two purchases, once) and H14 pay; H11 (refunded), H13 (day 40) and H15 (no
+      // consent) do not; the tester household H12 is in neither count.
+      ['2027-01-04', { households: 5, payingByDay35: 2, share: 40 }],
+    ]),
+  );
+});
+
+Deno.test('paying share of WAH: paid by the end of each Berlin week', () => {
+  assertEquals(
+    payingShareOfWah(withPaying),
+    new Map([
+      ['2026-11-02', { wah: 2, paying: 0, share: 0 }],
+      ['2026-11-09', { wah: 2, paying: 0, share: 0 }],
+      ['2026-11-30', { wah: 1, paying: 1, share: 100 }],
+      // H14 bought at 00:30 on Monday 11 Jan in Berlin: the next week.
+      ['2027-01-04', { wah: 5, paying: 1, share: 20 }],
+      // H13 is active but buys only in February.
+      ['2027-01-11', { wah: 3, paying: 2, share: 66.7 }],
+      ['2027-02-15', { wah: 1, paying: 1, share: 100 }],
+    ]),
+  );
+  // The denominator is WAH itself.
+  for (const [week, w] of payingShareOfWah(withPaying)) {
+    assertEquals(w.wah, weeklyActiveHouseholds(withPaying).get(week));
+  }
+});
+
+Deno.test('paying: a buyer without analytics consent leaves the household unpaid', () => {
+  // Known undercount: no purchase_completed is sent, so H15 counts in WAH and never as paying.
+  assertEquals(payingEvents.some((e) => e.properties.household_id === H15), true);
+  assertEquals(
+    payingEvents.some((e) => e.event.startsWith('purchase_') && e.properties.household_id === H15),
+    false,
+  );
+  const onlyH15 = payingEvents.filter((e) => e.properties.household_id === H15);
+  assertEquals(
+    payingShareOfWah(onlyH15),
+    new Map([['2027-01-04', { wah: 1, paying: 0, share: 0 }]]),
+  );
+  assertEquals(
+    payingHouseholdsByDay35(onlyH15),
+    new Map([['2027-01-04', { households: 1, payingByDay35: 0, share: 0 }]]),
   );
 });
 
@@ -111,6 +167,8 @@ Deno.test('every gate query filters internal installs and households (AC10)', as
     'retention_monthly',
     'revenue_monthly',
     'reorders',
+    'paying_households_d35',
+    'paying_share_wah',
   ];
   const filter = [
     "ifNull(toString(properties.is_internal), '') != 'true'",

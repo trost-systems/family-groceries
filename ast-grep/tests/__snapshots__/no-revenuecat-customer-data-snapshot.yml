@@ -1,0 +1,142 @@
+id: no-revenuecat-customer-data
+snapshots:
+  "Future<void> f() async {\n  await Purchases.collectDeviceIdentifiers();\n}\n":
+    labels:
+    - source: Purchases.collectDeviceIdentifiers
+      style: primary
+      start: 33
+      end: 67
+    - source: collectDeviceIdentifiers
+      style: secondary
+      start: 43
+      end: 67
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.enableAdServicesAttributionTokenCollection();\n}\n":
+    labels:
+    - source: Purchases.enableAdServicesAttributionTokenCollection
+      style: primary
+      start: 33
+      end: 85
+    - source: enableAdServicesAttributionTokenCollection
+      style: secondary
+      start: 43
+      end: 85
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.setAdjustID(id);\n}\n":
+    labels:
+    - source: Purchases.setAdjustID
+      style: primary
+      start: 33
+      end: 54
+    - source: setAdjustID
+      style: secondary
+      start: 43
+      end: 54
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.setAttributes({'user_id': userId});\n}\n":
+    labels:
+    - source: Purchases.setAttributes
+      style: primary
+      start: 33
+      end: 56
+    - source: setAttributes
+      style: secondary
+      start: 43
+      end: 56
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.setDisplayName(name);\n}\n":
+    labels:
+    - source: Purchases.setDisplayName
+      style: primary
+      start: 33
+      end: 57
+    - source: setDisplayName
+      style: secondary
+      start: 43
+      end: 57
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.setEmail(user.email);\n}\n":
+    labels:
+    - source: Purchases.setEmail
+      style: primary
+      start: 33
+      end: 51
+    - source: setEmail
+      style: secondary
+      start: 43
+      end: 51
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.setPhoneNumber(phone);\n}\n":
+    labels:
+    - source: Purchases.setPhoneNumber
+      style: primary
+      start: 33
+      end: 57
+    - source: setPhoneNumber
+      style: secondary
+      start: 43
+      end: 57
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await Purchases.syncPurchases();\n}\n":
+    labels:
+    - source: Purchases.syncPurchases
+      style: primary
+      start: 33
+      end: 56
+    - source: syncPurchases
+      style: secondary
+      start: 43
+      end: 56
+    - source: Purchases
+      style: secondary
+      start: 33
+      end: 42
+  "Future<void> f() async {\n  await rc.Purchases.logOut();\n}\n":
+    labels:
+    - source: rc.Purchases.logOut
+      style: primary
+      start: 33
+      end: 52
+    - source: logOut
+      style: secondary
+      start: 46
+      end: 52
+    - source: rc.Purchases
+      style: secondary
+      start: 33
+      end: 45
+  "final sync = Purchases.syncPurchasesForResult;\n":
+    labels:
+    - source: Purchases.syncPurchasesForResult
+      style: primary
+      start: 13
+      end: 45
+    - source: syncPurchasesForResult
+      style: secondary
+      start: 23
+      end: 45
+    - source: Purchases
+      style: secondary
+      start: 13
+      end: 22

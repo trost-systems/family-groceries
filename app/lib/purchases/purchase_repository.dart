@@ -4,17 +4,10 @@ import 'package:flutter/foundation.dart' show immutable;
 /// (supabase/functions/purchases/types.ts).
 const lifetimeProductId = 'com.hummlist.app.lifetime';
 
-/// The store a proof comes from, as the purchases function names it.
+/// The store a transaction comes from, as the purchases function names it.
 enum AppStore(final String wire) {
   apple('apple'),
   google('google'),
-}
-
-/// Why the store hands over a transaction, as the purchases function names
-/// it.
-enum PurchaseSource(final String wire) {
-  purchase('purchase'),
-  restore('restore'),
 }
 
 /// The product as the store offers it.
@@ -29,7 +22,10 @@ class const Product({
 /// What loading the product found.
 sealed class const ProductLoad();
 
-final class const ProductLoaded(final Product product) extends ProductLoad;
+/// Loaded for [householdId]: RevenueCat's customer is the household, so a
+/// purchase is for the household it was loaded for, and only that one.
+final class const ProductLoaded(final String householdId, final Product product)
+    extends ProductLoad;
 
 /// The store answers but has no such product (e.g. the Paid Apps agreement
 /// is not active yet).
@@ -41,88 +37,81 @@ final class const StoreUnavailable() extends ProductLoad;
 /// This build sells nothing: the web app, desktop builds.
 final class const PurchasesUnsupported() extends ProductLoad;
 
-/// What the server checks: a StoreKit 2 transaction JWS (Apple) or a Play
-/// purchase token (Google).
+/// The purchase is not offered yet in this build: the `REVENUECAT_PURCHASES`
+/// define is off or the platform's SDK key is missing.
+final class const PurchasesNotYet() extends ProductLoad;
+
+/// A store transaction as the purchases function's claim names it: the
+/// same id RevenueCat's webhook sends as `transaction_id`.
 @immutable
-class const StoreProof({
-  required final AppStore store,
-  required final String data,
-  required final String productId,
-});
+class const StoreTransactionRef(final AppStore store, final String id);
 
-/// What the store reports about a purchase, also for one started in an
-/// earlier session.
-sealed class const StoreUpdate();
+/// How a purchase ended.
+sealed class const BuyOutcome();
 
-/// Waiting for someone else: Ask to Buy, a Play payment that completes
-/// later.
-final class const StorePending() extends StoreUpdate;
+/// How a restore ended.
+sealed class const RestoreOutcome();
 
-/// A paid or restored transaction. Unverified until the server says so;
-/// finish it only after a definitive answer.
-final class const StorePurchased({
-  required final StoreProof proof,
-  required final PurchaseSource source,
+/// Paid. The unlock arrives from Supabase once RevenueCat's webhook has
+/// recorded it; [transaction] is what the app claims as the buyer. Null when
+/// the store named no transaction: the unlock still comes, the buyer stays
+/// unknown.
+final class const Bought(final StoreTransactionRef? transaction)
+    extends BuyOutcome;
 
-  /// The store already completed it (an acknowledged Play purchase): a
-  /// restore the user did not ask for can skip it.
-  final bool alreadyFinished = false,
+/// The user closed the store's sheet.
+final class const Canceled() extends BuyOutcome;
 
-  /// The store's own transaction, handed back to
-  /// [PurchaseRepository.finish].
-  final Object? handle,
-}) extends StoreUpdate;
+/// Ask to Buy or a Play payment that completes later. Once it does, the
+/// unlock arrives from Supabase like any other.
+final class const Pending() extends BuyOutcome;
 
-final class const StoreCanceled() extends StoreUpdate;
+/// Why a purchase or a restore did not go through.
+sealed class const StoreProblem() implements BuyOutcome, RestoreOutcome;
 
-final class const StoreFailed(final String code) extends StoreUpdate;
+/// The store purchase belongs to another household and stays there (H-56).
+final class const BelongsElsewhere() extends StoreProblem;
 
-/// The store refused a request before any update (e.g. a purchase of the
-/// same product still unfinished).
-final class const StoreError(final String code) implements Exception;
+/// The store or RevenueCat failed; [code] names why.
+final class const StoreFailed(final String code) extends StoreProblem;
 
-/// The App Store or Play Store, or a stand-in. No plugin type leaves it.
+/// The store or RevenueCat could not be reached.
+final class const StoreOffline() extends StoreProblem;
+
+/// The store has the household's purchase; the unlock arrives from Supabase.
+final class const Restored() extends RestoreOutcome;
+
+final class const NothingToRestore() extends RestoreOutcome;
+
+/// The App Store or Play Store through RevenueCat, or a stand-in. No plugin
+/// type leaves it. Every call names the household it is for.
 abstract interface class PurchaseRepository() {
-  /// Listened to once, from app start: unfinished transactions of earlier
-  /// sessions arrive here too.
-  Stream<StoreUpdate> get updates;
+  /// The answer of a build without a store, known without asking anyone;
+  /// null where a store is asked.
+  ProductLoad? get withoutStore;
 
-  Future<ProductLoad> loadProduct();
+  Future<ProductLoad> loadProduct(String householdId);
 
-  /// Starts a purchase; its outcome arrives on [updates]. Throws
-  /// [StoreError].
-  Future<void> buy(Product product);
+  Future<BuyOutcome> buy(String householdId, Product product);
 
-  /// Hands every owned purchase to [updates] as restored. Throws
-  /// [StoreError].
-  Future<void> restore();
-
-  /// Hands transactions an earlier session left unfinished to [updates],
-  /// where the store does not do so on its own.
-  Future<void> recoverUnfinished();
-
-  /// Tells the store the purchase is delivered.
-  Future<void> finish(StorePurchased purchase);
+  /// Only when the user asks.
+  Future<RestoreOutcome> restore(String householdId);
 }
 
-/// The web app and desktop builds: no store.
-class const UnsupportedPurchaseRepository() implements PurchaseRepository {
+/// A build that sells nothing: always [answer].
+class const NoStoreRepository(final ProductLoad answer)
+    implements PurchaseRepository {
   @override
-  Stream<StoreUpdate> get updates => const Stream.empty();
+  ProductLoad get withoutStore => answer;
 
   @override
-  Future<ProductLoad> loadProduct() async => const PurchasesUnsupported();
+  Future<ProductLoad> loadProduct(String householdId) async => answer;
 
   @override
-  Future<void> buy(Product product) async =>
-      throw const StoreError('unsupported');
+  Future<BuyOutcome> buy(String householdId, Product product) async =>
+      const StoreFailed('unsupported');
 
   @override
-  Future<void> restore() async => throw const StoreError('unsupported');
-
-  @override
-  Future<void> recoverUnfinished() async {}
-
-  @override
-  Future<void> finish(StorePurchased purchase) async {}
+  Future<RestoreOutcome> restore(String householdId) async =>
+      const StoreFailed('unsupported');
 }
