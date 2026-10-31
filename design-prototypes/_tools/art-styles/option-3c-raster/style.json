@@ -1,0 +1,19 @@
+{
+  "label": "Raster",
+  "idea": "als flaches Swiss-Editorial: strenges Raster, große Schrift",
+  "sheet": {
+    "lead": "TODO",
+    "colorNote": "TODO",
+    "shadows": [
+      "sticker-s",
+      "sticker",
+      "sticker-l"
+    ],
+    "shadowNote": "TODO",
+    "captions": {
+      "app": "App: Liste.",
+      "email": "E-Mail: Einladung.",
+      "store": "Store-Bild."
+    }
+  }
+}

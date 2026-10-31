@@ -1,0 +1,19 @@
+{
+  "label": "Riso",
+  "idea": "als Risografie: Korn, zwei Farben im Überdruck",
+  "sheet": {
+    "lead": "TODO",
+    "colorNote": "TODO",
+    "shadows": [
+      "sticker-s",
+      "sticker",
+      "sticker-l"
+    ],
+    "shadowNote": "TODO",
+    "captions": {
+      "app": "App: Liste.",
+      "email": "E-Mail: Einladung.",
+      "store": "Store-Bild."
+    }
+  }
+}

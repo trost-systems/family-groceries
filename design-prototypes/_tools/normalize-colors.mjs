@@ -4,7 +4,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-const file = join(resolve(process.argv[2]), 'tokens.json');
 const toObject = (h) => {
   const n = h.slice(1).toLowerCase();
   const components = [0, 2, 4].map((i) => Math.round((parseInt(n.slice(i, i + 2), 16) / 255) * 10000) / 10000);
@@ -22,6 +21,9 @@ function walk(node, type) {
   }
   for (const [k, v] of Object.entries(node)) if (!k.startsWith('$')) walk(v, t);
 }
-const tokens = JSON.parse(readFileSync(file, 'utf8'));
-walk(tokens);
-writeFileSync(file, `${JSON.stringify(tokens, null, 2)}\n`);
+export const normalize = (tokens) => { walk(tokens); return tokens; };
+
+if (process.argv[1] === new URL(import.meta.url).pathname) {
+  const file = join(resolve(process.argv[2]), 'tokens.json');
+  writeFileSync(file, `${JSON.stringify(normalize(JSON.parse(readFileSync(file, 'utf8'))), null, 2)}\n`);
+}

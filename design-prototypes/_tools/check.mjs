@@ -3,7 +3,7 @@
 // generated from it, no inline style/script or external assets, noindex, size, and in Chromium
 // behind the hummlist-site CSP: no CSP violations, no failed or off-origin requests, fonts load,
 // no horizontal scroll at 390 px, axe WCAG 2 AA clean in light and dark.
-// --shots also writes the screenshots to ../screenshots/.
+// --shots also writes the screenshots to ../screenshots/ (or to the folder after --out).
 import { createServer } from 'node:http';
 import { readFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve, basename, extname, relative, dirname } from 'node:path';
@@ -193,7 +193,8 @@ const axeSource = readFileSync(new URL('./node_modules/axe-core/axe.min.js', imp
 const browser = await chromium.launch();
 const results = [];
 const VIEWPORTS = { mobile: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
-const shotDir = join(root, 'screenshots');
+const outAt = process.argv.indexOf('--out');
+const shotDir = outAt > 0 ? resolve(process.argv[outAt + 1]) : join(root, 'screenshots');
 mkdirSync(shotDir, { recursive: true });
 for (const f of htmls) {
   const rel = relative(dir, f);

@@ -1,0 +1,19 @@
+{
+  "label": "Hex Frische",
+  "idea": "mit den Farbflächen von Frische (5): Kobalt, Zitrone, Mint",
+  "sheet": {
+    "lead": "TODO",
+    "colorNote": "TODO",
+    "shadows": [
+      "sticker-s",
+      "sticker",
+      "sticker-l"
+    ],
+    "shadowNote": "TODO",
+    "captions": {
+      "app": "App: Liste.",
+      "email": "E-Mail: Einladung.",
+      "store": "Store-Bild."
+    }
+  }
+}
