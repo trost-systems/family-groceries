@@ -1,0 +1,40 @@
+{
+  "label": "Hex Frische (Original 5 Farben)",
+  "idea": "mit den Originalfarben von Frische (5): Kobalt, Zitrone, Tomate, Mint",
+  "sheet": {
+    "lead": "Das ist Hex Frische (6), aber in den Originalfarben von Frische (5), so wie Peter es sich gewünscht hat. Waben-Knöpfe mit Navy-Kontur, große runde Blöcke, fette Bricolage Grotesque und ruhige Inter bleiben gleich. Neu ist nur, wie die Farben sitzen: Kobalt ist wieder die große Hauptfläche, Zitrone steht direkt darauf und daneben, Tomate kommt als echter Akzentblock zurück.",
+    "colorNote": "Die Farbwerte sind die von Frische (5), unverändert seit Job 36. Kobalt trägt den Hero und den Block zur Privatsphäre, darauf steht Weiß, und die Zitronen-Knöpfe sitzen direkt auf dem Kobalt. Gleich unter dem Hero folgt ein Zitronen-Block, dann Kobalt-Nebel und Mint als Nebenblöcke. Alexa und Siri bekommen einen Tomaten-Block, und der Abschluss ist wieder Zitrone mit einem Tomaten-Knopf. Auf Zitrone, Mint und Tomate steht immer Navy, auf Kobalt immer Weiß. Der Grund ist Kreideweiß, Mulden sind Blaugrau, der Fuß ist ein Navy-Band. Nachts bleiben die Blöcke farbig: Kobalt wird zu einem helleren Feldblau, Zitrone, Mint und Tomate werden etwas gedämpft, die Schrift darauf ist fast Schwarz.",
+    "colorNotes": {
+      "brand": "Kobalt als Schrift, Linie und Menge („2×“)",
+      "honey": "Zitrone: Knöpfe auf Kobalt, der Block unter dem Hero, der Abschluss",
+      "honey-soft": "Zitrone hell: neue Einträge, Antworten",
+      "accent": "Links und Fokusring auf hellem Grund: Kobalt am Tag, helles Kobalt in der Nacht",
+      "accent-soft": "Kobalt-Nebel: ein Block, Sprechblasen, Avatare",
+      "on-accent-soft": "Tiefes Kobalt auf Kobalt-Nebel",
+      "surface": "Kreideweiß: die Luft zwischen den Blöcken",
+      "surface-sunken": "Blaugrau: Mulden und Bildflächen",
+      "text": "Navy statt Schwarz",
+      "border": "Die 2-px-Kontur in Navy",
+      "divider": "Haarlinien in der Linienfarbe von 5",
+      "ink": "Kontur auf Zitrone, Mint und Tomate, Kante unter Karten",
+      "mint": "Mint: Nebenblock und Häkchen",
+      "mint-edge": "Seitenwand eines Mint-Knopfs",
+      "cobalt": "Kobalt als Fläche: Hero, Privatsphäre, E-Mail-Kopf",
+      "tomato": "Tomate: der Block für Alexa und Siri, der Browser-Knopf im Abschluss",
+      "tomato-edge": "Seitenwand eines Tomaten-Knopfs",
+      "inverse": "Navy-Band: der Fuß",
+      "success": "Abgehakt und synchron"
+    },
+    "shadows": [
+      "sticker-s · 0/2/0 Navy",
+      "sticker · 0/4/0 Navy",
+      "sticker-l · 0/8/0 Navy"
+    ],
+    "shadowNote": "Kante statt Schatten: Karten stehen wie die Knöpfe auf einer harten Navy-Kante, nur nach unten. Dunkel: night-s/night/night-l, dieselbe Kante in Fast-Schwarz plus ein leiser Kobalt-Schein.",
+    "captions": {
+      "app": "App: Liste auf Kreideweiß. Zitronen-Plus, weiße Waben zum Abhaken, abgehakt wird Mint.",
+      "email": "E-Mail: Kobalt-Kopf mit der Hummlist-Marke, darunter Weiß und ein Zitronen-Knopf.",
+      "store": "Store-Bild: Kobalt-Block, weiße Schlagzeile, die Liste als weiße Karte."
+    }
+  }
+}

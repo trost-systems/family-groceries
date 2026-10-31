@@ -4278,3 +4278,46 @@ The job's own calls:
    before the transition starts. A face that never sinks still fails.
 7. **Screenshots are 256-colour PNGs.** The paper and ink grain made the full-page PNGs up
    to 10 MB. Quantized, the 49 files are 51 MB instead of 129 MB, with no visible loss.
+
+## Job 48 (6b Hex Frische and the three favourite icons in option 5's original colours; design branch, not for main), 2026-10-31
+
+1. **Rescoped.** Peter's "6" meant the design system 6 Hex Frische (job 46), not icon #6. The
+   icon #6 Sprechwabe work stays in a stash and is not in any commit. The branch merges
+   `design/46-hex-art-styles` into `design/45-app-icon` and keeps both sides; the published copy
+   is regenerated with `publish.mjs`, not edited by hand.
+2. **"Original 5 colours" means option 5's tokens as job 36 shipped them** (`8a5713a`, unchanged
+   since; `option-5-frische/tokens.css`). The hexes never changed; what 6 changed was how it used
+   them (mint as the main field, cobalt as text plus one block, no tomato). 6b and the icons go
+   back to 5's use: cobalt as the big field, lemon and white on it, tomato as an accent block.
+3. **6b is a new art-style folder over the same generator** (`_tools/art-styles/option-6b-hex-frische-original5/`),
+   so markup, hex controls, navy contour and type stay identical to 6 and only palette and
+   blocking differ. 6 is untouched.
+4. **6b blocking.** Cobalt hero and privacy blocks with white text, lemon store buttons on the
+   cobalt hero, lemon / cobalt mist / mint feature blocks, a tomato voice block with navy text,
+   a lemon CTA, an inverse navy footer. Dark mode keeps real colour fields from 5's dark tokens
+   (`#2448c0` with white; lemon, mint, tomato with `#0b1024`) instead of 6's calmed navy cards.
+5. **Tomato is a block and button colour, never text or links.** Navy on tomato is 5.8:1;
+   tomato on white is about 2.9:1, so links and focus rings stay cobalt (`#9fb6ff` in dark).
+   The 2 px control contour stays navy (dark `#7f8cc4`); 5's `#d3d8e6` is only for hairlines,
+   because as a control edge it falls under 3:1.
+6. **Lidl likeness is accepted, per Peter, for these variants only.** The icon records carry
+   `allowLidlLike: true`, which skips the "blue, yellow and red" and "yellow on a blue field"
+   guard in `render.mjs` `checkVariation` for those records. All 16 job 45 variations still run
+   through it. Shown: without the flag, all three new records fail with "yellow on a blue field".
+7. **The icons reuse the job 45 records.** `ORIGINAL5` in `variations.mjs` spreads the original
+   record and replaces only `colors` (and the prose), so `bg` and `layers` are the same objects;
+   `check.mjs` fails if they ever stop being shared. The sprite sheet stays at 16 variations.
+8. **Icon colours: cobalt `#1b3fae` field, lemon `#ffe24a` shape, white inside, cobalt check**,
+   the three colours of 5's own mark. Dark: deep `#0b1024` with lemon `#e8cb3c` (13o: paper
+   tile with a `#2448c0` check; 5o: a `#9fb6ff` inner hex). No alternatives: the tomato candidates
+   (`screenshots/48/icon-colour-candidates.png`) measured 2.87:1 on cobalt, 2.38:1 on lemon and
+   3.08:1 on white, so a tomato part would be the weakest edge at 16 px.
+9. **Six Apple appearances for every favourite.** Job 45's "clear" and "tinted" previews were
+   the dark variants; they are now `apple-clear-dark` and `apple-tinted-dark` (identical SVG),
+   joined by `apple-clear-light` and `apple-tinted-light`. All four are approximations from the
+   one-colour shape, so new and original look the same there, and the page says so.
+10. **The appearance switch is CSS only.** The site CSP allows no script: one radio group per
+    row, `:has()` shows the matching preview in both columns, with visible focus and arrow-key
+    navigation. Without `:has()` support the switch hides and the Standard view shows.
+11. **The variants list on the app icon page overflowed at 390 px** (`minmax(22rem, 1fr)`, job 45):
+    now `minmax(min(22rem, 100%), 1fr)`.

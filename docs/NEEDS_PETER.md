@@ -982,3 +982,9 @@ data map behind the store forms.
 - **Look at one Android device** with themed icons on. The monochrome layers are checked by
   pixels here, but the real tint comes from the launcher.
 - Nothing goes into the app until a later job wires the chosen icon in.
+
+## Job 48: favourite icons in option 5's original colours (design preview, 2026-10-31)
+
+- If you pick one of 5o, 13o or 14o: assemble its `.icon` on a Mac exactly as for job 45, from
+  `design-prototypes/app-icon/top/<n>o-<slug>/icon-composer/` (README lists Default, Dark and Mono
+  fills per layer). Check the clear and tinted modes there; our previews are approximations.

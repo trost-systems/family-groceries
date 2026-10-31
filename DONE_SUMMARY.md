@@ -323,3 +323,8 @@ Research on Icon Composer, visionOS and adaptive or themed Android icons. A spri
 
 3b in five art styles (Raster, Riso, Papierschnitt, Glas, Marker) and Hex Frische, a merge with option 5. Each has a homepage and a token sheet, in light and dark, with a contact sheet and the preview URLs. Preview only, not merged. Details:
 [docs/done/46-hex-art-styles.md](docs/done/46-hex-art-styles.md).
+
+## Job 48: 6b Hex Frische and the favourite icons in option 5's original colours (design branch only)
+
+6 Hex Frische as 6b, in option 5's original colours (cobalt hero, lemon on it, tomato back). The three favourite icons (5, 13, 14) are recoloured the same way, with all Liquid Glass, visionOS and Android appearances, in a new top section on the app icon page. Preview only, not merged. Details:
+[docs/done/48-icon6-frische.md](docs/done/48-icon6-frische.md).
