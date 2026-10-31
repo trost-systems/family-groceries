@@ -4,7 +4,7 @@ description: "Imprint of Hummlist: provider, address and contact."
 locale: en
 path: /en/imprint
 translation_key: imprint
-updated: 2026-10-28
+updated: 2026-10-31
 ---
 
 # Imprint
@@ -17,6 +17,10 @@ Peter Trost
 Yalovastr. 5
 72108 Rottenburg am Neckar
 Germany
+
+## VAT ID
+
+VAT ID pursuant to § 27a UStG: DE369514299
 
 ## Contact
 

@@ -94,3 +94,13 @@ test('no real access token in content or build output', () => {
   }
   assert.match(`fgp_${'a'.repeat(43)}`, TOKEN, 'the pattern detects a token-shaped value');
 });
+
+test('the imprint pair shows the VAT ID (§ 5 Abs. 1 Nr. 6 DDG) under the personal name, no IAKUVO', () => {
+  const { page } = buildSite();
+  const de = page('/impressum').querySelector('main').text;
+  assert.match(de, /Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE369514299/);
+  assert.match(de, /Peter Trost/);
+  const en = page('/en/imprint').querySelector('main').text;
+  assert.match(en, /VAT ID pursuant to § 27a UStG: DE369514299/);
+  for (const text of [de, en]) assert.doesNotMatch(text, /IAKUVO/);
+});

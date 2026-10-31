@@ -4,7 +4,7 @@ description: "Impressum von Hummlist: Anbieter, Anschrift und Kontakt."
 locale: de
 path: /impressum
 translation_key: imprint
-updated: 2026-10-28
+updated: 2026-10-31
 ---
 
 # Impressum
@@ -15,6 +15,10 @@ Peter Trost
 Yalovastr. 5
 72108 Rottenburg am Neckar
 Deutschland
+
+## Umsatzsteuer-ID
+
+Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE369514299
 
 ## Kontakt
 
