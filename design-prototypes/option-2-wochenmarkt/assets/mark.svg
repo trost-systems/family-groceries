@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hummlist">
+  <rect width="64" height="64" rx="14" fill="#34552a"/>
+  <g fill="none" stroke="#fbf6ec" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.5 27.5c.4-8.6 5.2-14 11.6-14s11.1 5.3 11.5 14"/>
+    <path d="M12.6 28.2h38.9c1 0 1.7.9 1.5 1.9l-4.2 19.4c-.4 1.8-2 3.1-3.9 3.1H19.2c-1.9 0-3.5-1.3-3.9-3.1l-4.2-19.4c-.2-1 .5-1.9 1.5-1.9z"/>
+    <path d="M24.4 34.6l1.3 11.6M32.1 34.5v11.8M39.8 34.6l-1.3 11.6" stroke-width="2.6"/>
+  </g>
+  <circle cx="47.6" cy="17.2" r="3.6" fill="#e8b847"/>
+</svg>

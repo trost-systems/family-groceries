@@ -1,0 +1,26 @@
+name: hummel_hex_poc
+description: Hummel Hex design system proof of concept on package:flutter/widgets.dart only (design job 41, not wired into app/).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_agent_lints: ^1.1.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: false
+  fonts:
+    - family: Baloo 2
+      fonts:
+        - asset: fonts/Baloo2-wght.ttf
+    - family: Nunito
+      fonts:
+        - asset: fonts/Nunito-wght.ttf

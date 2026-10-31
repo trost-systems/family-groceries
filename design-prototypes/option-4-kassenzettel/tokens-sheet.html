@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hummlist Design-Tokens: Kassenzettel</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="logo" href="index.html" aria-label="Hummlist, Startseite">
+      <svg class="logo__mark" viewBox="0 0 40 48" aria-hidden="true" focusable="false"><path class="mark-paper" d="M0 0h40v42l-5 6-5-6-5 6-5-6-5 6-5-6-5 6-5-6z"/><g class="mark-ink"><path d="M14 19l5-9M26 19l-5-9"/><path d="M7 19h26l-3 16H10z"/><path d="M15.5 24v6M20 24v6M24.5 24v6"/></g></svg>
+      <span class="logo__word">Hummlist</span>
+    </a>
+    <nav class="site-nav" aria-label="Token-Abschnitte">
+      <ul>
+        <li><a href="#farben">Farben</a></li>
+        <li><a href="#schrift">Schrift</a></li>
+        <li><a href="#oberflaechen">Oberflächen</a></li>
+      </ul>
+    </nav>
+    <a class="btn site-header__cta" href="index.html">Startseite</a>
+  </div>
+</header>
+
+<main id="inhalt" class="sheet">
+  <div class="wrap">
+    <div class="sheet__intro">
+      <p class="kicker"><span>option-4-kassenzettel</span><span>DTCG 2025.10</span></p>
+      <h1 class="sheet__title">Design-Tokens: Kassenzettel</h1>
+      <p class="sheet__lede">Die Einkaufsliste als sauber gesetzter Kassenbon. Thermopapier, schwarze Tinte, ein Signalorange für Marke und Aktionen, Grün nur für Erfolg. Ein Token-Satz für App, Website, E-Mail, Store-Bilder und Alexa.</p>
+    </div>
+
+    <section id="farben" class="block" aria-labelledby="h-farben">
+      <h2 id="h-farben" class="block__title">Farben</h2>
+      <p class="block__note">Kontrast je Rolle gegen ihr Gegenstück. Text braucht 4,5:1, Bedienelemente 3:1. <code>border</code> ist rein dekorativ, Linien mit Bedeutung nehmen <code>border-strong</code>. Ladenfarben (dm, Edeka, Lidl) sind fest und stehen außerhalb des Token-Satzes.</p>
+      <div class="sw-groups">
+<!-- swatches:start -->
+<div class="sw-group sw-group--light">
+<h3 class="sw-group__title">Hell (Thermopapier)</h3>
+<ul class="sw-list">
+<li class="sw"><span class="sw__chip sw-light-brand" aria-hidden="true">Aa</span><span class="sw__name">brand</span><span class="sw__hex">#c4320a</span><span class="sw__ratio">5.52:1 mit on-brand</span></li>
+<li class="sw"><span class="sw__chip sw-light-on-brand" aria-hidden="true">Aa</span><span class="sw__name">on-brand</span><span class="sw__hex">#ffffff</span><span class="sw__ratio">5.52:1 mit brand</span></li>
+<li class="sw"><span class="sw__chip sw-light-brand-wash" aria-hidden="true">Aa</span><span class="sw__name">brand-wash</span><span class="sw__hex">#fbe6da</span><span class="sw__ratio">15.31:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-light-accent" aria-hidden="true">Aa</span><span class="sw__name">accent</span><span class="sw__hex">#141412</span><span class="sw__ratio">17.97:1 mit on-accent</span></li>
+<li class="sw"><span class="sw__chip sw-light-on-accent" aria-hidden="true">Aa</span><span class="sw__name">on-accent</span><span class="sw__hex">#fdfcf8</span><span class="sw__ratio">17.97:1 mit accent</span></li>
+<li class="sw"><span class="sw__chip sw-light-surface" aria-hidden="true">Aa</span><span class="sw__name">surface</span><span class="sw__hex">#f3f1ea</span><span class="sw__ratio">16.32:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-light-surface-raised" aria-hidden="true">Aa</span><span class="sw__name">surface-raised</span><span class="sw__hex">#fdfcf8</span><span class="sw__ratio">17.97:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-light-surface-sunken" aria-hidden="true">Aa</span><span class="sw__name">surface-sunken</span><span class="sw__hex">#e8e5db</span><span class="sw__ratio">14.63:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-light-text" aria-hidden="true">Aa</span><span class="sw__name">text</span><span class="sw__hex">#141412</span><span class="sw__ratio">16.32:1 mit surface</span></li>
+<li class="sw"><span class="sw__chip sw-light-text-muted" aria-hidden="true">Aa</span><span class="sw__name">text-muted</span><span class="sw__hex">#5c5a52</span><span class="sw__ratio">6.11:1 mit surface</span></li>
+<li class="sw"><span class="sw__chip sw-light-border" aria-hidden="true">Aa</span><span class="sw__name">border</span><span class="sw__hex">#cbc7ba</span><span class="sw__ratio">1.50:1 auf surface</span></li>
+<li class="sw"><span class="sw__chip sw-light-border-strong" aria-hidden="true">Aa</span><span class="sw__name">border-strong</span><span class="sw__hex">#7d796e</span><span class="sw__ratio">3.85:1 auf surface</span></li>
+<li class="sw"><span class="sw__chip sw-light-success" aria-hidden="true">Aa</span><span class="sw__name">success</span><span class="sw__hex">#2e7d32</span><span class="sw__ratio">5.13:1 mit on-success</span></li>
+<li class="sw"><span class="sw__chip sw-light-on-success" aria-hidden="true">Aa</span><span class="sw__name">on-success</span><span class="sw__hex">#ffffff</span><span class="sw__ratio">5.13:1 mit success</span></li>
+<li class="sw"><span class="sw__chip sw-light-warning" aria-hidden="true">Aa</span><span class="sw__name">warning</span><span class="sw__hex">#8a5300</span><span class="sw__ratio">6.33:1 mit on-warning</span></li>
+<li class="sw"><span class="sw__chip sw-light-on-warning" aria-hidden="true">Aa</span><span class="sw__name">on-warning</span><span class="sw__hex">#ffffff</span><span class="sw__ratio">6.33:1 mit warning</span></li>
+<li class="sw"><span class="sw__chip sw-light-error" aria-hidden="true">Aa</span><span class="sw__name">error</span><span class="sw__hex">#a3122a</span><span class="sw__ratio">7.84:1 mit on-error</span></li>
+<li class="sw"><span class="sw__chip sw-light-on-error" aria-hidden="true">Aa</span><span class="sw__name">on-error</span><span class="sw__hex">#ffffff</span><span class="sw__ratio">7.84:1 mit error</span></li>
+</ul>
+</div>
+<div class="sw-group sw-group--dark">
+<h3 class="sw-group__title">Dunkel (schwarzes Papier)</h3>
+<ul class="sw-list">
+<li class="sw"><span class="sw__chip sw-dark-brand" aria-hidden="true">Aa</span><span class="sw__name">brand</span><span class="sw__hex">#ff7a3d</span><span class="sw__ratio">7.51:1 mit on-brand</span></li>
+<li class="sw"><span class="sw__chip sw-dark-on-brand" aria-hidden="true">Aa</span><span class="sw__name">on-brand</span><span class="sw__hex">#1a0800</span><span class="sw__ratio">7.51:1 mit brand</span></li>
+<li class="sw"><span class="sw__chip sw-dark-brand-wash" aria-hidden="true">Aa</span><span class="sw__name">brand-wash</span><span class="sw__hex">#36190c</span><span class="sw__ratio">13.72:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-dark-accent" aria-hidden="true">Aa</span><span class="sw__name">accent</span><span class="sw__hex">#f2ece0</span><span class="sw__ratio">16.42:1 mit on-accent</span></li>
+<li class="sw"><span class="sw__chip sw-dark-on-accent" aria-hidden="true">Aa</span><span class="sw__name">on-accent</span><span class="sw__hex">#0e0e0d</span><span class="sw__ratio">16.42:1 mit accent</span></li>
+<li class="sw"><span class="sw__chip sw-dark-surface" aria-hidden="true">Aa</span><span class="sw__name">surface</span><span class="sw__hex">#0e0e0d</span><span class="sw__ratio">16.42:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-dark-surface-raised" aria-hidden="true">Aa</span><span class="sw__name">surface-raised</span><span class="sw__hex">#1a1918</span><span class="sw__ratio">14.92:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-dark-surface-sunken" aria-hidden="true">Aa</span><span class="sw__name">surface-sunken</span><span class="sw__hex">#050505</span><span class="sw__ratio">17.32:1 mit text</span></li>
+<li class="sw"><span class="sw__chip sw-dark-text" aria-hidden="true">Aa</span><span class="sw__name">text</span><span class="sw__hex">#f2ece0</span><span class="sw__ratio">16.42:1 mit surface</span></li>
+<li class="sw"><span class="sw__chip sw-dark-text-muted" aria-hidden="true">Aa</span><span class="sw__name">text-muted</span><span class="sw__hex">#b4ad9e</span><span class="sw__ratio">8.66:1 mit surface</span></li>
+<li class="sw"><span class="sw__chip sw-dark-border" aria-hidden="true">Aa</span><span class="sw__name">border</span><span class="sw__hex">#3a3832</span><span class="sw__ratio">1.65:1 auf surface</span></li>
+<li class="sw"><span class="sw__chip sw-dark-border-strong" aria-hidden="true">Aa</span><span class="sw__name">border-strong</span><span class="sw__hex">#7f7a6f</span><span class="sw__ratio">4.52:1 auf surface</span></li>
+<li class="sw"><span class="sw__chip sw-dark-success" aria-hidden="true">Aa</span><span class="sw__name">success</span><span class="sw__hex">#7bd17f</span><span class="sw__ratio">8.35:1 mit on-success</span></li>
+<li class="sw"><span class="sw__chip sw-dark-on-success" aria-hidden="true">Aa</span><span class="sw__name">on-success</span><span class="sw__hex">#0a2a0c</span><span class="sw__ratio">8.35:1 mit success</span></li>
+<li class="sw"><span class="sw__chip sw-dark-warning" aria-hidden="true">Aa</span><span class="sw__name">warning</span><span class="sw__hex">#f2b84b</span><span class="sw__ratio">9.89:1 mit on-warning</span></li>
+<li class="sw"><span class="sw__chip sw-dark-on-warning" aria-hidden="true">Aa</span><span class="sw__name">on-warning</span><span class="sw__hex">#231600</span><span class="sw__ratio">9.89:1 mit warning</span></li>
+<li class="sw"><span class="sw__chip sw-dark-error" aria-hidden="true">Aa</span><span class="sw__name">error</span><span class="sw__hex">#ff8a9a</span><span class="sw__ratio">7.76:1 mit on-error</span></li>
+<li class="sw"><span class="sw__chip sw-dark-on-error" aria-hidden="true">Aa</span><span class="sw__name">on-error</span><span class="sw__hex">#3a0410</span><span class="sw__ratio">7.76:1 mit error</span></li>
+</ul>
+</div>
+<!-- swatches:end -->
+      </div>
+    </section>
+
+    <section id="schrift" class="block" aria-labelledby="h-schrift">
+      <h2 id="h-schrift" class="block__title">Schrift</h2>
+      <ul class="fonts">
+        <li class="fonts__item"><p class="fonts__name fonts__name--sans">IBM Plex Sans</p><p class="fonts__meta">Lesetext, Artikelnamen, Überschriften · OFL-1.1 · @fontsource-variable/ibm-plex-sans 5.3.0 · Fallback Helvetica Neue, Arial</p></li>
+        <li class="fonts__item"><p class="fonts__name fonts__name--mono">JetBrains Mono</p><p class="fonts__meta">Zahlen, Mengen, Labels, Trenner, Wortmarke · OFL-1.1 · @fontsource-variable/jetbrains-mono 5.3.0 · Fallback Menlo, Consolas</p></li>
+      </ul>
+      <ul class="ramp">
+        <li class="ramp__row"><span class="ramp__k">display</span><span class="ramp__s t-display">Eine Liste.</span><span class="ramp__v">Plex Sans 700 · 80/78 · −0,035em</span></li>
+        <li class="ramp__row"><span class="ramp__k">headline</span><span class="ramp__s t-headline">Deine Liste gehört dir.</span><span class="ramp__v">Plex Sans 700 · 36/39 · −0,025em</span></li>
+        <li class="ramp__row"><span class="ramp__k">title</span><span class="ramp__s t-title">Sortiert nach Laden und Laufweg.</span><span class="ramp__v">Plex Sans 650 · 22/27,5</span></li>
+        <li class="ramp__row"><span class="ramp__k">item</span><span class="ramp__s t-item"><span class="qty">2×</span>Gurken</span><span class="ramp__v">Plex Sans 600 · 19/26 · Menge Mono 800</span></li>
+        <li class="ramp__row"><span class="ramp__k">body</span><span class="ramp__s t-body">Tippe unten ein, was fehlt.</span><span class="ramp__v">Plex Sans 400 · 17/26</span></li>
+        <li class="ramp__row"><span class="ramp__k">small</span><span class="ramp__s t-small">Pampers · Größe 3</span><span class="ramp__v">Plex Sans 400 · 14/19,6</span></li>
+        <li class="ramp__row"><span class="ramp__k">figure</span><span class="ramp__s t-figure">15 Artikel · 6× · 0,5 l</span><span class="ramp__v">Mono 800 · 17/22 · tabular</span></li>
+        <li class="ramp__row"><span class="ramp__k">label</span><span class="ramp__s t-label">Im Browser öffnen</span><span class="ramp__v">Mono 600 · 13/17 · +0,06em · Versalien</span></li>
+        <li class="ramp__row"><span class="ramp__k">caption</span><span class="ramp__s t-caption">Obst &amp; Gemüse</span><span class="ramp__v">Mono 500 · 12/17 · +0,08em · Versalien</span></li>
+        <li class="ramp__row"><span class="ramp__k">wordmark</span><span class="ramp__s t-wordmark">Hummlist</span><span class="ramp__v">Mono 800 · 20/20 · −0,04em</span></li>
+      </ul>
+    </section>
+
+    <section class="block" aria-labelledby="h-masse">
+      <h2 id="h-masse" class="block__title">Abstände, Ecken, Ebenen, Bewegung</h2>
+      <div class="specs">
+        <div class="spec">
+          <h3 class="spec__title">Abstände</h3>
+          <ul class="space">
+            <li><span class="space__k">space-1</span><span class="space__bar sp-1"></span><span class="space__v">4</span></li>
+            <li><span class="space__k">space-2</span><span class="space__bar sp-2"></span><span class="space__v">8</span></li>
+            <li><span class="space__k">space-3</span><span class="space__bar sp-3"></span><span class="space__v">12</span></li>
+            <li><span class="space__k">space-4</span><span class="space__bar sp-4"></span><span class="space__v">16</span></li>
+            <li><span class="space__k">space-5</span><span class="space__bar sp-5"></span><span class="space__v">24</span></li>
+            <li><span class="space__k">space-6</span><span class="space__bar sp-6"></span><span class="space__v">32</span></li>
+            <li><span class="space__k">space-7</span><span class="space__bar sp-7"></span><span class="space__v">48</span></li>
+            <li><span class="space__k">space-8</span><span class="space__bar sp-8"></span><span class="space__v">64</span></li>
+            <li><span class="space__k">space-9</span><span class="space__bar sp-9"></span><span class="space__v">96</span></li>
+            <li><span class="space__k">space-10</span><span class="space__bar sp-10"></span><span class="space__v">128</span></li>
+          </ul>
+        </div>
+        <div class="spec">
+          <h3 class="spec__title">Ecken</h3>
+          <ul class="radii">
+            <li><span class="radii__box r-none"></span><span class="space__k">none · 0</span><span class="radii__use">Alles: Zeilen, Knöpfe, Sheets, Bons</span></li>
+            <li><span class="radii__box r-xs"></span><span class="space__k">xs · 2</span><span class="radii__use">Tastenkappe, Fokusring</span></li>
+            <li><span class="radii__box r-s"></span><span class="space__k">s · 4</span><span class="radii__use">Laden-Badges, App-Icon</span></li>
+            <li><span class="radii__box r-device"></span><span class="space__k">device · 40</span><span class="radii__use">Nur Telefon-Hardware in Mockups</span></li>
+          </ul>
+        </div>
+        <div class="spec">
+          <h3 class="spec__title">Ebenen</h3>
+          <p class="spec__note">Keine weichen Schatten. Ebenen sind Linien und ein harter Versatz in Tintenfarbe; im Dunkelmodus ist die Tinte warmweiß.</p>
+          <ul class="elev">
+            <li class="elev__box e-1"><span class="space__k">shadow-1</span><span class="radii__use">1 px Kontur</span></li>
+            <li class="elev__box e-2"><span class="space__k">shadow-2</span><span class="radii__use">4 px Versatz · Knöpfe, Eingabe</span></li>
+            <li class="elev__box e-3"><span class="space__k">shadow-3</span><span class="radii__use">8 px Versatz · Sheet, Dialog</span></li>
+          </ul>
+        </div>
+        <div class="spec">
+          <h3 class="spec__title">Bewegung</h3>
+          <ul class="receipt__lines motion">
+            <li><span>instant</span><span class="leader" aria-hidden="true"></span><span>90 ms</span></li>
+            <li><span>short</span><span class="leader" aria-hidden="true"></span><span>120 ms</span></li>
+            <li><span>medium</span><span class="leader" aria-hidden="true"></span><span>160 ms</span></li>
+            <li><span>standard</span><span class="leader" aria-hidden="true"></span><span>0.2, 0, 0, 1</span></li>
+            <li><span>linear</span><span class="leader" aria-hidden="true"></span><span>0, 0, 1, 1</span></li>
+            <li><span>exit</span><span class="leader" aria-hidden="true"></span><span>0.4, 0, 1, 1</span></li>
+          </ul>
+          <p class="spec__note">Knopf drücken: der Versatz fällt in 90 ms weg. Abhaken: der Strich läuft in 120 ms linear durch den Namen.</p>
+          <div class="demo">
+            <a class="btn" href="#farben">Hover und Fokus</a>
+            <a class="btn btn--brand" href="#schrift">Hinzufügen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="oberflaechen" class="block" aria-labelledby="h-surf">
+      <h2 id="h-surf" class="block__title">Ein Token-Satz, fünf Oberflächen</h2>
+      <div class="surfaces">
+
+        <div class="surface-cell">
+          <h3 class="spec__title">App: Liste nach dem Abhaken</h3>
+          <figure class="phone" aria-label="App-Liste mit abgehakter Zeile und Rückgängig-Leiste">
+            <div class="phone__screen">
+              <div class="app-status" aria-hidden="true"><span>17:58</span><span>5G ▮▮▮</span></div>
+              <div class="app-head">
+                <p class="app-head__name">Unser Haushalt</p>
+                <p class="app-head__count"><span class="num">14</span> Artikel</p>
+              </div>
+              <div class="app-list">
+                <div class="store">
+                  <span class="sbadge sbadge--edeka" aria-hidden="true">E</span>
+                  <span class="store__name">Edeka</span>
+                  <span class="store__rule store__rule--edeka" aria-hidden="true"></span>
+                  <span class="store__count"><span class="num">4</span> Artikel</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </div>
+                <p class="cat">Obst &amp; Gemüse</p>
+                <div class="row row--ticked"><span class="row__ico" aria-hidden="true">🍌</span><div class="row__txt"><p class="row__name"><span class="qty">6×</span>Bananen</p><p class="row__sub">Bio</p></div></div>
+                <div class="row"><span class="row__ico" aria-hidden="true">🥒</span><div class="row__txt"><p class="row__name"><span class="qty">2×</span>Gurken</p></div></div>
+                <p class="cat">Kühlregal</p>
+                <div class="row"><span class="row__ico" aria-hidden="true">🥛</span><div class="row__txt"><p class="row__name">Hafermilch</p><p class="row__sub">Barista</p></div></div>
+                <div class="row"><span class="row__ico" aria-hidden="true">🧀</span><div class="row__txt"><p class="row__name"><span class="qty">200 g</span>Bergkäse</p></div></div>
+                <div class="store store--gap">
+                  <span class="sbadge sbadge--dm" aria-hidden="true">dm</span>
+                  <span class="store__name">dm</span>
+                  <span class="store__rule store__rule--dm" aria-hidden="true"></span>
+                  <span class="store__count"><span class="num">3</span> Artikel</span>
+                  <span class="caret" aria-hidden="true"></span>
+                </div>
+                <p class="cat">Drogerie</p>
+                <div class="row"><span class="row__ico" aria-hidden="true">👶</span><div class="row__txt"><p class="row__name">Windeln</p><p class="row__sub">Pampers · Größe 3</p></div></div>
+                <div class="row"><span class="row__ico" aria-hidden="true">🪥</span><div class="row__txt"><p class="row__name">Zahnpasta</p></div></div>
+                <div class="store store--gap store--folded">
+                  <span class="sbadge sbadge--lidl" aria-hidden="true">L</span>
+                  <span class="store__name">Lidl</span>
+                  <span class="store__rule store__rule--lidl" aria-hidden="true"></span>
+                  <span class="store__count"><span class="num">7</span> Artikel</span>
+                  <span class="caret caret--right" aria-hidden="true"></span>
+                </div>
+              </div>
+              <div class="snack"><span>Bananen abgehakt</span><span class="snack__act">Rückgängig</span></div>
+              <div class="app-input"><span class="app-input__plus" aria-hidden="true">+</span><span class="app-input__ph">Was brauchst du?</span></div>
+              <div class="app-tabs" aria-hidden="true">
+                <span class="app-tab app-tab--on"><span class="app-tab__ico">🛒</span>Liste</span>
+                <span class="app-tab"><span class="app-tab__ico">☰</span>Mehr</span>
+              </div>
+            </div>
+          </figure>
+        </div>
+
+        <div class="surface-cell">
+          <h3 class="spec__title">E-Mail: Einladung</h3>
+          <div class="mail" role="group" aria-label="Einladungs-E-Mail">
+            <div class="mail__meta">
+              <p><span class="mail__k">Von</span>Hummlist</p>
+              <p><span class="mail__k">Betreff</span>Lea hat dich zu Hummlist eingeladen</p>
+            </div>
+            <div class="mail__band">
+              <svg class="logo__mark" viewBox="0 0 40 48" aria-hidden="true" focusable="false"><path class="mark-paper" d="M0 0h40v42l-5 6-5-6-5 6-5-6-5 6-5-6-5 6-5-6z"/><g class="mark-ink"><path d="M14 19l5-9M26 19l-5-9"/><path d="M7 19h26l-3 16H10z"/><path d="M15.5 24v6M20 24v6M24.5 24v6"/></g></svg>
+              <span class="logo__word">Hummlist</span>
+            </div>
+            <div class="mail__body">
+              <p class="mail__title">Lea hat dich zu Hummlist eingeladen.</p>
+              <p>Ihr teilt dann eine Einkaufsliste. Was einer einträgt oder abhakt, steht sofort bei euch beiden.</p>
+              <a class="btn btn--brand mail__btn" href="#">Einladung annehmen</a>
+              <ul class="receipt__lines">
+                <li><span>Code</span><span class="leader" aria-hidden="true"></span><span>K7QM-4P2X</span></li>
+                <li><span>Gültig bis</span><span class="leader" aria-hidden="true"></span><span>6. Nov. 2026</span></li>
+              </ul>
+              <p class="mail__fine">Keine Werbung, keine verkauften Daten. Im Mailprogramm fallen die Schriften auf Helvetica, Arial und Menlo, Consolas zurück; Farben stehen als Hex-Werte inline.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="surface-cell">
+          <h3 class="spec__title">Store-Bild</h3>
+          <div class="shot" role="group" aria-label="Store-Screenshot-Rahmen">
+            <p class="shot__k">Hummlist</p>
+            <p class="shot__title">Sortiert nach deinem Laufweg.</p>
+            <div class="shot__paper">
+              <div class="store">
+                <span class="sbadge sbadge--lidl" aria-hidden="true">L</span>
+                <span class="store__name">Lidl</span>
+                <span class="store__rule store__rule--lidl" aria-hidden="true"></span>
+                <span class="store__count"><span class="num">3</span> Artikel</span>
+              </div>
+              <p class="cat">Obst &amp; Gemüse</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">🍎</span><div class="row__txt"><p class="row__name"><span class="qty">4×</span>Äpfel</p></div></div>
+              <p class="cat">Kühlregal</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">🥚</span><div class="row__txt"><p class="row__name"><span class="qty">10×</span>Eier</p></div></div>
+              <div class="row"><span class="row__ico" aria-hidden="true">🧀</span><div class="row__txt"><p class="row__name">Gouda</p></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="surface-cell">
+          <h3 class="spec__title">Alexa: Karte auf dem Echo Show</h3>
+          <div class="alexa" role="group" aria-label="Alexa-Karte">
+            <p class="alexa__k"><span>Hummlist</span><span>Einkaufsliste</span></p>
+            <p class="alexa__say">„Auf der Hummlist stehen 15 Sachen.“</p>
+            <ul class="alexa__lines">
+              <li><span>Bananen</span><span class="leader" aria-hidden="true"></span><span>6×</span></li>
+              <li><span>Gurken</span><span class="leader" aria-hidden="true"></span><span>2×</span></li>
+              <li><span>Hafermilch</span><span class="leader" aria-hidden="true"></span><span>1×</span></li>
+              <li><span>Windeln</span><span class="leader" aria-hidden="true"></span><span>1×</span></li>
+            </ul>
+            <p class="alexa__hint">„Alexa, sag Hummlist, füg Milch und Eier hinzu.“</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__in">
+    <p class="site-footer__word">Hummlist</p>
+    <nav aria-label="Rechtliches und Hilfe">
+      <ul>
+        <li><a href="index.html">Startseite</a></li>
+        <li><a href="#">Hilfe</a></li>
+        <li><a href="#">Impressum</a></li>
+        <li><a href="#">Datenschutz</a></li>
+      </ul>
+    </nav>
+    <p class="site-footer__fine">tokens.json (DTCG 2025.10) erzeugt tokens.css. Dieselben Werte gehen nach Flutter (ThemeData, ThemeExtension), in HTML-Mails und in Alexa APL.</p>
+  </div>
+</footer>
+</body>
+</html>

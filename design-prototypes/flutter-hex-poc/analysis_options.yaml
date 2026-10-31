@@ -1,0 +1,5 @@
+# The app's rule set (app/analysis_options.yaml): flutter_agent_lints, experimental.
+analyzer:
+  exclude:
+    - build/**
+include: package:flutter_agent_lints/experimental.yaml

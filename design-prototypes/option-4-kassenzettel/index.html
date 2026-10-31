@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hummlist: die Einkaufsliste für den ganzen Haushalt</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#inhalt">Zum Inhalt springen</a>
+
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="logo" href="index.html" aria-label="Hummlist, Startseite">
+      <svg class="logo__mark" viewBox="0 0 40 48" aria-hidden="true" focusable="false"><path class="mark-paper" d="M0 0h40v42l-5 6-5-6-5 6-5-6-5 6-5-6-5 6-5-6z"/><g class="mark-ink"><path d="M14 19l5-9M26 19l-5-9"/><path d="M7 19h26l-3 16H10z"/><path d="M15.5 24v6M20 24v6M24.5 24v6"/></g></svg>
+      <span class="logo__word">Hummlist</span>
+    </a>
+    <nav class="site-nav" aria-label="Hauptnavigation">
+      <ul>
+        <li><a href="#funktionen">Funktionen</a></li>
+        <li><a href="#datenschutz">Datenschutz</a></li>
+        <li><a href="tokens-sheet.html">Tokens</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn--ink site-header__cta" href="#">Im Browser öffnen</a>
+  </div>
+</header>
+
+<main id="inhalt">
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <p class="kicker"><span>Einkaufsliste</span><span>iPhone · Android · Browser</span></p>
+        <h1 id="hero-title" class="hero__title">Eine Liste für den ganzen Haushalt.</h1>
+        <p class="hero__sub">Was einer einträgt oder abhakt, steht sofort bei allen. Sortiert nach Laden und Laufweg.</p>
+
+        <ul class="tally" aria-label="Auf einen Blick">
+          <li><span>Live auf allen Handys</span><span class="leader" aria-hidden="true"></span><span class="tally__v">ja</span></li>
+          <li><span>Funktioniert offline</span><span class="leader" aria-hidden="true"></span><span class="tally__v">ja</span></li>
+          <li><span>Sortiert sich selbst</span><span class="leader" aria-hidden="true"></span><span class="tally__v">ja</span></li>
+          <li><span>Werbung</span><span class="leader" aria-hidden="true"></span><span class="tally__v">keine</span></li>
+        </ul>
+
+        <div class="stores">
+          <a class="badge" href="#"><span class="badge__k">Bald im</span><span class="badge__v">App Store</span></a>
+          <a class="badge" href="#"><span class="badge__k">Bald bei</span><span class="badge__v">Google Play</span></a>
+          <a class="badge badge--brand" href="#"><span class="badge__k">Sofort</span><span class="badge__v">Im Browser öffnen</span></a>
+        </div>
+        <p class="fine">Geschlossener Test für Familie und Freunde. Im Browser unter app.hummlist.com.</p>
+      </div>
+
+      <div class="hero__visual">
+        <figure class="phone" aria-label="Die Liste in der App: 15 Artikel bei dm, Edeka und Lidl">
+          <div class="phone__screen">
+            <div class="app-status" aria-hidden="true"><span>9:41</span><span>5G ▮▮▮</span></div>
+            <div class="app-head">
+              <p class="app-head__name">Unser Haushalt</p>
+              <p class="app-head__count"><span class="num">15</span> Artikel</p>
+            </div>
+            <div class="app-list">
+              <div class="store">
+                <span class="sbadge sbadge--dm" aria-hidden="true">dm</span>
+                <span class="store__name">dm</span>
+                <span class="store__rule store__rule--dm" aria-hidden="true"></span>
+                <span class="store__count"><span class="num">3</span> Artikel</span>
+                <span class="caret" aria-hidden="true"></span>
+              </div>
+              <p class="cat">Drogerie</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">👶</span><div class="row__txt"><p class="row__name">Windeln</p><p class="row__sub">Pampers · Größe 3</p></div></div>
+              <div class="row"><span class="row__ico" aria-hidden="true">🪥</span><div class="row__txt"><p class="row__name">Zahnpasta</p><p class="row__sub">elmex · Kinder</p></div></div>
+              <p class="cat">Haushalt</p>
+              <div class="row row--new"><span class="row__ico" aria-hidden="true">🧴</span><div class="row__txt"><p class="row__name">Spülmittel</p></div><span class="row__flag">Neu</span></div>
+
+              <div class="store store--gap">
+                <span class="sbadge sbadge--edeka" aria-hidden="true">E</span>
+                <span class="store__name">Edeka</span>
+                <span class="store__rule store__rule--edeka" aria-hidden="true"></span>
+                <span class="store__count"><span class="num">5</span> Artikel</span>
+                <span class="caret" aria-hidden="true"></span>
+              </div>
+              <p class="cat">Obst &amp; Gemüse</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">🍌</span><div class="row__txt"><p class="row__name"><span class="qty">6×</span>Bananen</p><p class="row__sub">Bio</p></div></div>
+              <div class="row"><span class="row__ico" aria-hidden="true">🥒</span><div class="row__txt"><p class="row__name"><span class="qty">2×</span>Gurken</p></div></div>
+              <p class="cat">Brot &amp; Backwaren</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">🍞</span><div class="row__txt"><p class="row__name">Vollkornbrot</p></div></div>
+              <p class="cat">Kühlregal</p>
+              <div class="row"><span class="row__ico" aria-hidden="true">🥛</span><div class="row__txt"><p class="row__name"><span class="qty">2×</span>Hafermilch</p><p class="row__sub">Barista</p></div></div>
+              <div class="row"><span class="row__ico" aria-hidden="true">🧈</span><div class="row__txt"><p class="row__name">Butter</p></div></div>
+
+              <div class="store store--gap store--folded">
+                <span class="sbadge sbadge--lidl" aria-hidden="true">L</span>
+                <span class="store__name">Lidl</span>
+                <span class="store__rule store__rule--lidl" aria-hidden="true"></span>
+                <span class="store__count"><span class="num">7</span> Artikel</span>
+                <span class="caret caret--right" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="app-input"><span class="app-input__plus" aria-hidden="true">+</span><span class="app-input__ph">Was brauchst du?</span></div>
+            <div class="app-tabs" aria-hidden="true">
+              <span class="app-tab app-tab--on"><span class="app-tab__ico">🛒</span>Liste</span>
+              <span class="app-tab"><span class="app-tab__ico">☰</span>Mehr</span>
+            </div>
+          </div>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="funktionen" class="features" aria-labelledby="f-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="sec-head__no">01–04</p>
+        <h2 id="f-title" class="sec-head__title">Was Hummlist macht</h2>
+        <p class="sec-head__lede">Vier Dinge, und die richtig. Kein Rezeptbuch, kein Kalender, kein Feed.</p>
+      </div>
+
+      <ol class="ledger">
+        <li class="ledger__row">
+          <p class="ledger__no">01</p>
+          <div class="ledger__body">
+            <h3 class="ledger__title">Eine Liste. Live bei allen.</h3>
+            <p>Lea trägt Hafermilch ein, Peter sieht sie im selben Moment im Laden. Wer etwas abhakt, hakt es für alle ab. Ohne Netz geht es weiter, die Liste holt nach, sobald du wieder online bist.</p>
+          </div>
+          <div class="slip" role="group" aria-label="Verlauf: wer was wann geändert hat">
+            <p class="slip__line"><span class="slip__t">18:02</span><span>Lea</span><span class="leader" aria-hidden="true"></span><span>+ Hafermilch</span></p>
+            <p class="slip__line"><span class="slip__t">18:02</span><span>Peter</span><span class="leader" aria-hidden="true"></span><span>sieht es</span></p>
+            <p class="slip__line"><span class="slip__t">18:31</span><span>Peter</span><span class="leader" aria-hidden="true"></span><span class="ok">✓ Bananen</span></p>
+            <p class="slip__line"><span class="slip__t">18:31</span><span>Lea</span><span class="leader" aria-hidden="true"></span><span>sieht es</span></p>
+          </div>
+        </li>
+
+        <li class="ledger__row">
+          <p class="ledger__no">02</p>
+          <div class="ledger__body">
+            <h3 class="ledger__title">Sortiert nach Laden und Laufweg.</h3>
+            <p>Jeder Artikel landet von selbst in seiner Kategorie und beim Laden, in dem du ihn meistens kaufst. dm, Lidl und Edeka sind eingerichtet, jeder mit eigenem Laufweg. Schiebst du „Hafermilch“ einmal um, bleibt sie dort.</p>
+          </div>
+          <div class="slip" role="group" aria-label="Laufweg bei Edeka">
+            <p class="slip__head"><span class="sbadge sbadge--edeka" aria-hidden="true">E</span>Laufweg Edeka</p>
+            <p class="slip__line"><span class="slip__t">1</span><span>Obst &amp; Gemüse</span></p>
+            <p class="slip__line"><span class="slip__t">2</span><span>Brot &amp; Backwaren</span></p>
+            <p class="slip__line"><span class="slip__t">3</span><span>Kühlregal</span></p>
+            <p class="slip__line"><span class="slip__t">4</span><span>Vorrat &amp; Konserven</span></p>
+            <p class="slip__line"><span class="slip__t">5</span><span>Getränke</span></p>
+            <p class="slip__line"><span class="slip__t">6</span><span>Tiefkühl</span></p>
+          </div>
+        </li>
+
+        <li class="ledger__row">
+          <p class="ledger__no">03</p>
+          <div class="ledger__body">
+            <h3 class="ledger__title">Sag es Alexa oder Siri.</h3>
+            <p>Der Alexa-Skill heißt Hummlist. Auf dem iPhone reicht ein Kurzbefehl, in der App das Diktat. Mehrere Dinge in einem Satz sind kein Problem.</p>
+          </div>
+          <div class="slip slip--quotes" role="group" aria-label="Beispielsätze">
+            <p class="say"><span class="say__who">Alexa</span>„Alexa, sag Hummlist, füg Milch und Eier hinzu.“</p>
+            <p class="say"><span class="say__who">Alexa</span>„Alexa, frag Hummlist, was auf der Liste steht.“</p>
+            <p class="say"><span class="say__who">Siri</span>„Hey Siri, Einkaufsliste.“ Dann: „Milch, zwei Gurken und Klopapier.“</p>
+          </div>
+        </li>
+
+        <li class="ledger__row">
+          <p class="ledger__no">04</p>
+          <div class="ledger__body">
+            <h3 class="ledger__title">Aufmachen, tippen, fertig.</h3>
+            <p>Das Eingabefeld ist sofort bereit, unten am Daumen. Vorschläge kommen aus dem, was ihr schon gekauft habt, und was du oft brauchst, ist einen Tipp entfernt. Antippen hakt ab, mit Rückgängig.</p>
+          </div>
+          <div class="slip" role="group" aria-label="Eingabe mit Vorschlägen">
+            <p class="type-in"><span class="type-in__plus" aria-hidden="true">+</span>Hafer<span class="caret-bar" aria-hidden="true"></span></p>
+            <p class="slip__line"><span class="slip__t">↵</span><span>Hafermilch</span><span class="leader" aria-hidden="true"></span><span class="muted">Schon mal gekauft</span></p>
+            <p class="slip__line"><span class="slip__t"></span><span>Haferflocken</span><span class="leader" aria-hidden="true"></span><span class="muted">Schon mal gekauft</span></p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="invite">
+        <p class="invite__k">Partner einladen</p>
+        <p class="invite__t">Per Link oder Code. Die Einladung gilt 7 Tage.</p>
+        <p class="invite__k">Mit KI-Assistenten</p>
+        <p class="invite__t">Wer mag, verbindet Claude oder ChatGPT über MCP mit der Liste.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="datenschutz" class="privacy" aria-labelledby="p-title">
+    <div class="wrap privacy__grid">
+      <div class="privacy__copy">
+        <p class="sec-head__no">05</p>
+        <h2 id="p-title" class="privacy__title">Deine Liste gehört dir.</h2>
+        <p>Hummlist zeigt keine Werbung und verkauft keine Daten. Die Datenbank steht in Frankfurt am Main. Nutzungsdaten gibt es nur, wenn du zustimmst, und du kannst das jederzeit abschalten.</p>
+        <p>Alle deine Daten kannst du als JSON exportieren, dein Konto löschst du direkt in der App.</p>
+      </div>
+      <div class="receipt" role="group" aria-label="Datenschutz als Kassenbon">
+        <div class="receipt__paper">
+          <p class="receipt__brand">Hummlist</p>
+          <p class="receipt__sub">Beleg Datenschutz</p>
+          <ul class="receipt__lines">
+            <li><span>Werbung</span><span class="leader" aria-hidden="true"></span><span>keine</span></li>
+            <li><span>Verkaufte Daten</span><span class="leader" aria-hidden="true"></span><span>keine</span></li>
+            <li><span>Datenbank</span><span class="leader" aria-hidden="true"></span><span>Frankfurt a. M.</span></li>
+            <li><span>Nutzungsdaten</span><span class="leader" aria-hidden="true"></span><span>nur mit Ja</span></li>
+            <li><span>Abschalten</span><span class="leader" aria-hidden="true"></span><span>jederzeit</span></li>
+            <li><span>Export</span><span class="leader" aria-hidden="true"></span><span>JSON</span></li>
+            <li><span>Konto löschen</span><span class="leader" aria-hidden="true"></span><span>in der App</span></li>
+          </ul>
+          <ul class="receipt__lines receipt__lines--sum">
+            <li><span>Cookies auf hummlist.com</span><span class="leader" aria-hidden="true"></span><span class="num">0</span></li>
+            <li><span>Fremde Server</span><span class="leader" aria-hidden="true"></span><span class="num">0</span></li>
+          </ul>
+          <div class="barcode" aria-hidden="true"></div>
+          <p class="receipt__foot">Danke fürs Einkaufen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" aria-labelledby="g-title">
+    <div class="wrap get__grid">
+      <div>
+        <p class="sec-head__no">06</p>
+        <h2 id="g-title" class="sec-head__title">Bald in den Stores.</h2>
+        <p class="get__t">Hummlist läuft gerade als geschlossener Test für Familie und Freunde, über TestFlight und den internen Test von Google Play. Im Browser geht es schon heute.</p>
+      </div>
+      <div class="stores stores--stack">
+        <a class="badge" href="#"><span class="badge__k">Bald im</span><span class="badge__v">App Store</span></a>
+        <a class="badge" href="#"><span class="badge__k">Bald bei</span><span class="badge__v">Google Play</span></a>
+        <a class="badge badge--brand" href="#"><span class="badge__k">app.hummlist.com</span><span class="badge__v">Im Browser öffnen</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__in">
+    <p class="site-footer__word">Hummlist</p>
+    <nav aria-label="Rechtliches und Hilfe">
+      <ul>
+        <li><a href="#">Hilfe</a></li>
+        <li><a href="#">Impressum</a></li>
+        <li><a href="#">Datenschutz</a></li>
+        <li><a href="tokens-sheet.html">Design-Tokens</a></li>
+      </ul>
+    </nav>
+    <p class="site-footer__fine">Keine Cookies. Nichts von fremden Servern. Datenbank in Frankfurt am Main.</p>
+  </div>
+</footer>
+</body>
+</html>

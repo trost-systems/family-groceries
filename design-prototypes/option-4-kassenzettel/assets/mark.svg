@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48">
+  <title>Hummlist</title>
+  <path fill="#c4320a" d="M0 0h40v42l-5 6-5-6-5 6-5-6-5 6-5-6-5 6-5-6z"/>
+  <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square">
+    <path d="M14 19l5-9M26 19l-5-9"/>
+    <path d="M7 19h26l-3 16H10z"/>
+    <path d="M15.5 24v6M20 24v6M24.5 24v6"/>
+  </g>
+</svg>

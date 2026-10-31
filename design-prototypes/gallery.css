@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fbfaf7;
+  --card: #ffffff;
+  --text: #1b1c1a;
+  --muted: #4e514b;
+  --line: #d7d9d2;
+  --link: #2e6b2f;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #121411; --card: #1c1f1b; --text: #e6e8e2; --muted: #b9bdb4; --line: #383c36; --link: #9fd49a; }
+}
+* { box-sizing: border-box; }
+body { margin: 0 auto; max-width: 76rem; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); line-height: 1.15; margin: 0 0 0.5rem; }
+.lede { color: var(--muted); max-width: 44rem; margin: 0 0 2rem; }
+.grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.card img { display: block; width: 100%; height: auto; aspect-ratio: 390 / 600; object-fit: cover; object-position: top; border-bottom: 1px solid var(--line); }
+.card-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+h2 { font-size: 1.2rem; margin: 0; }
+.card p { margin: 0; color: var(--muted); }
+.links { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: auto; padding-top: 0.5rem; }
+a { color: var(--link); font-weight: 600; }
+a:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; border-radius: 2px; }
+footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.9375rem; }
+.mascot-link { margin-top: 2.5rem; padding: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+.mascot-link h2 { margin-bottom: 0.5rem; }
+.mascot-link p { margin: 0 0 0.5rem; color: var(--muted); }
+.hex-compare { margin: 0 0 2.5rem; }
+.hex-compare h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.trio { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+h3 { font-size: 1.1rem; margin: 0; }
+h2.all { margin: 0 0 1rem; }

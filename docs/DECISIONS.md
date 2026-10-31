@@ -4166,3 +4166,33 @@ The job's own calls:
    attempt; starting a beta needs no certification, and the brief allowed it. The invitation
    link stays out of the repo and the board.
 
+
+## Job 41 (Hummel Hex variants + Flutter widgets-only PoC; design branch, not for main), 2026-10-31
+
+1. **One shared token file, two generated variants.** `design-prototypes/_tokens/hummel-hex.tokens.json`
+   (DTCG) holds the tokens option 3 gains. The common tokens are edge colours, `shape.hex.*`,
+   `depth.*`, press/release motion, the focus ring and `size.target`. `variant.sharp` and
+   `variant.soft` hold the only difference, `shape.hex.corner-radius` (0 and 8 px at 48 px height).
+   `build-hex-variants.mjs` merges these into each variant's tokens.json, and Style Dictionary
+   builds the CSS and Dart from that. The two variants share one page source (`_tools/hex-src/`)
+   and one styles.css, so the comparison is fair.
+2. **Corner radius scales with height.** A token in px at a reference height (48 px) keeps
+   chips, avatars and buttons equally round relative to their size. The mask SVGs (web) and
+   `HexBorder` (Flutter) use the same fillet formula. 8 px reads as soft without losing the
+   hexagon.
+3. **Tip = 0.2887 × height.** This makes all corners 120°, the honeycomb angle. Pointier tips
+   cost text room.
+4. **Edge 6 px (8 px for hero controls), press = edge.** At 4 px the edge barely read next to
+   the 2 px ink outline. Pressing sinks the face flush, PostHog style.
+5. **Shapes by CSS mask on inner layers; the control itself is never masked.** The focus ring
+   is drop-shadow layers on the unmasked control, plus a transparent outline for forced-colors
+   mode, so no mask can clip it. `check.mjs` now enforces this for options that declare
+   `size.target`.
+6. **The source tree is committed under `design-prototypes/`.** Job 36 kept the tools only in
+   `/workspace/hummlist/research`. A reviewer has to be able to regenerate the tokens from the
+   branch. The research copy is synced back.
+7. **The gallery on this branch has no mascot section.** Job 42 adds it in the shared research
+   copy and owns it. This branch doesn't carry `mascot/`, so the link would 404 here.
+8. **Flutter split.** On 3.47.8, `material_ui`/`cupertino_ui` exist as opt-in packages, and
+   the SDK libraries are not deprecated yet. The PoC uses `widgets.dart` only, enforced by a
+   test (sources in `design-prototypes/flutter-hex-poc/README.md`).
