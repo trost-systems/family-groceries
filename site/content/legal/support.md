@@ -35,9 +35,13 @@ Tippe auf **Mehr**, dann auf **Konto** und auf **Meine Daten exportieren**. Du b
 
 ### Wie lösche ich mein Konto?
 
-Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
+Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht, auch mit Hummlist Lifetime, und das wird nicht erstattet. Auch Haushalte, die du archiviert hast, werden gelöscht. Bleiben andere im Haushalt, bleibt Hummlist Lifetime bei ihnen. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
 
 Ohne App geht es auch: Die Schritte stehen unter [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html), oder schreib an [support@hummlist.com](mailto:support@hummlist.com).
+
+### Was passiert mit Hummlist Lifetime, wenn ich als letztes Mitglied einen Haushalt verlasse?
+
+Hummlist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, kannst du ihn archivieren: Er bleibt mit Liste und Hummlist Lifetime erhalten, und du kannst ihn unter **Mehr** › **Archivierte Haushalte** wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten, wird er gelöscht. Löschst du ihn statt zu archivieren, endet Hummlist Lifetime ohne Erstattung.
 
 ### Wie schalte ich die Nutzungsdaten aus?
 

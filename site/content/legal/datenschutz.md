@@ -98,7 +98,8 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherheit, Art. 32 DSGVO).
 
 Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach unseren Weisungen verarbeiten (Art. 28 DSGVO):
 
-- Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU)
+- Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU; die Server-Funktion für Käufe läuft immer in Frankfurt am Main)
+- RevenueCat, Inc., Brandon (Florida), USA (Käufe in der App: Prüfung und Verwaltung der Freischaltung, Abschnitt 5a; Server bei Amazon Web Services in den USA)
 - Vercel Inc. (Hosting von hummlist.com, app.hummlist.com, mcp.hummlist.com; Domain und DNS)
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
@@ -108,18 +109,19 @@ Eigenständig verantwortlich sind: Google bzw. Apple, wenn du dich darüber anme
 
 ## 13. Übermittlung in Drittländer
 
-Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen. Die Server-Funktionen von Supabase können auch in Rechenzentren außerhalb der EU laufen (siehe Abschnitt 12). Soweit dabei Daten in die USA oder andere Drittländer übermittelt werden oder US-Behörden darauf zugreifen könnten, stützen wir uns auf folgende Grundlagen:
+Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen. Die Server-Funktionen von Supabase können, außer der Funktion für Käufe, auch in Rechenzentren außerhalb der EU laufen (siehe Abschnitt 12). Soweit dabei Daten in die USA oder andere Drittländer übermittelt werden oder US-Behörden darauf zugreifen könnten, stützen wir uns auf folgende Grundlagen:
 
 - Vercel Inc., GitHub Inc., PostHog Inc. und Google LLC (USA; gehört zum selben Konzern wie Google Cloud EMEA Limited und verarbeitet Daten für sie) sind nach dem EU-US Data Privacy Framework zertifiziert. Für sie gilt der Angemessenheitsbeschluss der EU-Kommission (Art. 45 DSGVO). Vercel und PostHog haben in ihren Auftragsverarbeitungsverträgen zusätzlich Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO) vereinbart; bei Google gelten Standardvertragsklauseln, falls Google sich nicht mehr auf das Data Privacy Framework stützt.
 - PostHog speichert die Daten in Frankfurt am Main. Laut Vertrag kann PostHog sie auch in den USA verarbeiten, etwa durch Unterauftragsverarbeiter; dafür gilt das eben Gesagte.
 - Supabase Pte. Ltd. (Singapur) ist nicht nach dem Data Privacy Framework zertifiziert. Hier gelten die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags von Supabase sind.
+- RevenueCat, Inc. (USA) ist nicht nach dem EU-US Data Privacy Framework zertifiziert. Hier gelten die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags von RevenueCat sind. RevenueCat speichert die Daten bei Amazon Web Services in den USA und setzt weitere Unterauftragsverarbeiter in den USA ein, die an gleichwertige Pflichten gebunden sind. Zur Prüfung eines Kaufs übermittelt RevenueCat den Kaufbeleg und die Kennung deines Haushalts (bei Google einen daraus gebildeten Hashwert) an Apple bzw. Google.
 - Amazon (Alexa) erhält unsere Antworten als eigenständig Verantwortlicher (Abschnitt 7). Soweit Amazon sie an Amazon-Gesellschaften in den USA weitergibt, ist Amazon.com, Inc. (einschließlich Amazon.com Services LLC) nach dem EU-US Data Privacy Framework zertifiziert (Art. 45 DSGVO); wo kein Angemessenheitsbeschluss greift, gelten nach Amazons Entwicklervereinbarung Standardvertragsklauseln zwischen Verantwortlichen.
 
 Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 
 ## 14. Speicherdauer
 
-Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort. Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
+Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa), deine Entscheidungen zu Nutzungsdaten und einen Eintrag in der Testerliste sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto (Abschnitt 5a). Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, kannst du ihn archivieren; wir löschen ihn, wenn er nicht innerhalb von 24 Monaten wieder aktiviert wird (Abschnitt 5a). Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert (Abschnitt 5a). Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
 
 ## 15. Deine Rechte {#rechte}
 

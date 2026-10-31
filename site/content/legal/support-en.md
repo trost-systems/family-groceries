@@ -35,9 +35,13 @@ Tap **More**, then **Account** and **Export my data**. You get everything stored
 
 ### How do I delete my account?
 
-Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
+Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Hummlist Lifetime included, and it is not refunded. Households you archived are deleted too. If others stay in the household, Hummlist Lifetime stays with them. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
 
 Without the app: the steps are at [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html) (German), or write to [support@hummlist.com](mailto:support@hummlist.com).
+
+### What happens to Hummlist Lifetime if I leave a household as its last member?
+
+Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, you can archive it: it is kept with its list and Hummlist Lifetime, and you can re-enable it under **More** › **Archived households**. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Lifetime ends without a refund.
 
 ### How do I turn off usage data?
 
