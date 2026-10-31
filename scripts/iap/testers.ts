@@ -91,9 +91,6 @@ interface Tester {
   added_at: string | Date;
 }
 
-const usedGrants = (user: string) =>
-  `(select count(*) from public.entitlements e where e.source = 'tester' and e.tester = ${user})`;
-
 async function userId(query: Query, email: string): Promise<string | null> {
   const rows = await query(
     `select id from auth.users where lower(email) = lower(${literal(email)})`,
@@ -105,7 +102,7 @@ async function userId(query: Query, email: string): Promise<string | null> {
 export async function run(query: Query, command: Command): Promise<string[]> {
   if (command.action === 'list') {
     const rows = await query(
-      `select t.user_id, t.grants, ${usedGrants('t.user_id')} as used, t.note, t.added_at
+      `select t.user_id, t.grants, t.used, t.note, t.added_at
        from public.lifetime_testers t
        order by t.added_at`,
     ) as Tester[];
@@ -120,7 +117,7 @@ export async function run(query: Query, command: Command): Promise<string[]> {
   if (!id) return [`no account with that e-mail; nothing changed`];
   const user = `${literal(id)}::uuid`;
   const [listed] = await query(
-    `select t.grants, ${usedGrants(user)} as used from public.lifetime_testers t
+    `select t.grants, t.used from public.lifetime_testers t
      where t.user_id = ${user}`,
   ) as { grants: number; used: number | string }[];
   const dry = command.apply ? '' : 'dry run, would ';

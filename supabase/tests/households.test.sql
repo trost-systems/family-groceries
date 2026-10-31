@@ -121,7 +121,8 @@ select public.leave_current_household();
 select pg_temp.login('00000000-0000-0000-0000-00000000000a');
 select public.leave_current_household();
 select pg_temp.logout();
-select is((select count(*)::int from public.households), 0, 'the last member leaving deletes the household');
+select is((select count(*)::int from public.households where id = (select id from h)), 0,
+  'the last member leaving deletes the household');
 
 -- Joining moves a user: a household they were alone in goes, with its list;
 -- a household with other members stays.
