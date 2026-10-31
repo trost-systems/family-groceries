@@ -345,3 +345,24 @@ PR notes may add `flag:` / `hold:` lines. `releases/flags.json` decides what is 
 ## Job 43: Hummlist Lifetime as a household-bound unlock (model A), on RevenueCat
 
 A purchase belongs to the household it was bought in, for good: RevenueCat's App User ID is the household, and the server refuses it anywhere else, also after deletion (a tombstone stays 30 days after the purge of its rows). Our own Apple/Google verification is replaced by RevenueCat's webhook, and the SDK starts only on the purchase page with the household id. The purchase screen is off in every build until Peter approves the legal texts. Buy shows only when the household is known to have no Lifetime, and the join screen explains Lifetime around a join, with archiving behind the default-off `HOUSEHOLD_ARCHIVE`. There is DE/EN refund help, tester grants stay with households, members can't read who paid, and two paying-household queries back the kill gate. Details: [docs/done/43-iap-household-a.md](docs/done/43-iap-household-a.md).
+
+## Job 44: all-in on PostHog: posthog_flutter SDK, error tracking, feature flags
+
+The app's hand-written PostHog client is replaced by PostHog's SDK: posthog_flutter 5.58.3, and posthog-js 1.444.0 on the web, vendored and served from our origin. Our guarantees sit on top of it.
+- **Consent.** The SDK is set up only after the yes, because native opt-out still makes requests and writes ids. A no closes it and deletes what the native SDK kept on the device.
+- **Allow-list.** Every event is checked twice, the second time in the SDK's `beforeSend`, where errors are also re-scrubbed. On the web, posthog-js' own `before_send` strips URL, referrer, user agent, session and device ids.
+- **Error tracking.** Native exception and crash capture are on. Gaps are documented.
+- **Feature flags.** `Analytics.flags.isOn(key)` is the one place the app reads flags. `releases/flags.json` stays for the changelog.
+- **Edge functions.** They keep their own sender; posthog-node was measured and rejected (DECISIONS 44.16).
+- **Removed.** The sink, POST, chunk-id and frame-builder code. In `app/lib/analytics`, 383 lines went and 747 came; code and tests overall +1716 / −750.
+
+**Verified.**
+- `verify.sh --only gitleaks,lint,functions,fg-cli,flutter,web-prod` passed, flutter 1058 tests.
+- Web: the analytics e2e passed 6/6 against a posthog-js collector.
+- Native: the Linux app ran against a local collector (`docs/screenshots/44/`).
+- iOS and Android: built in CI, not run.
+
+**Open.**
+- NEEDS_LEAD "Job 44": Legal Review sentences, store labels, three upstream issue drafts (none filed), flags to create in 319492.
+
+Details: [docs/done/44-posthog-sdk.md](docs/done/44-posthog-sdk.md).

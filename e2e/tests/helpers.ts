@@ -364,27 +364,56 @@ export interface Captured {
 }
 
 /**
- * Answers the e2e build's PostHog host (app/config/e2e.json, a .invalid host) in [context] and
- * keeps every request: nothing leaves the machine. Any request to a real PostHog host fails the
- * spec through [Collector.leaks].
+ * Answers the e2e build's PostHog host (app/config/e2e.json, a .invalid host) in [context] the way
+ * PostHog does for posthog-js (job 44): events (`/e/`, `/batch/`, one or a list, JSON or
+ * `data=<base64>`), and flags (`/flags/`) as [flags] says, all off by default; remote config is
+ * refused as the app's CSP refuses it in production. It keeps every
+ * request: nothing leaves the machine. Any request to a real PostHog host fails the spec through
+ * [Collector.leaks].
  */
-export async function fakeCollector(context: BrowserContext): Promise<Collector> {
-  const collector = { requests: [] as string[], events: [] as Captured[], leaks: [] as string[] };
+export async function fakeCollector(
+  context: BrowserContext,
+  { flags = {} }: { flags?: Record<string, boolean> } = {},
+): Promise<Collector> {
+  const collector = {
+    requests: [] as string[],
+    events: [] as Captured[],
+    leaks: [] as string[],
+    bodies: [] as string[],
+  };
   await context.route('https://posthog.invalid/**', async (route) => {
     const request = route.request();
-    collector.requests.push(`${request.method()} ${new URL(request.url()).pathname}`);
+    const path = new URL(request.url()).pathname;
+    collector.requests.push(`${request.method()} ${path}`);
+    if (path.startsWith('/array/')) {
+      // posthog-js' remote config: in production it comes from eu-assets.i.posthog.com, which the
+      // app's CSP (vercel.json) does not allow, so it never loads; the same here.
+      await route.abort('blockedbyclient');
+      return;
+    }
+    let body = '{"status":1}';
     if (request.method() === 'POST') {
-      const body = request.postDataJSON() as { api_key: string; batch: Captured[] };
-      collector.events.push(...body.batch);
+      const raw = request.postData() ?? '';
+      collector.bodies.push(raw);
+      if (path.startsWith('/flags')) {
+        body = JSON.stringify({
+          flags: Object.fromEntries(Object.entries(flags).map(([key, enabled]) => [key, { key, enabled }])),
+          featureFlags: flags,
+          errorsWhileComputingFlags: false,
+        });
+      } else {
+        collector.events.push(...decodeEvents(raw));
+      }
     }
     await route.fulfill({
       status: 200,
+      contentType: 'application/json',
       headers: {
         'access-control-allow-origin': '*',
-        'access-control-allow-methods': 'POST, OPTIONS',
+        'access-control-allow-methods': 'POST, GET, OPTIONS',
         'access-control-allow-headers': 'content-type',
       },
-      body: '{"status":1}',
+      body,
     });
   });
   await context.route(/^https:\/\/([a-z0-9-]+\.)*posthog\.com\//, async (route) => {
@@ -394,7 +423,18 @@ export async function fakeCollector(context: BrowserContext): Promise<Collector>
   return collector;
 }
 
-export type Collector = { requests: string[]; events: Captured[]; leaks: string[] };
+/** The events in one capture request body: JSON or `data=<base64 JSON>`, one event or a list. */
+function decodeEvents(raw: string): Captured[] {
+  const text = raw.startsWith('data=')
+    ? Buffer.from(decodeURIComponent(raw.slice(5)), 'base64').toString('utf8')
+    : raw;
+  const parsed = JSON.parse(text) as Captured | Captured[] | { batch: Captured[] };
+  if (Array.isArray(parsed)) return parsed;
+  if ('batch' in parsed) return parsed.batch;
+  return [parsed];
+}
+
+export type Collector = { requests: string[]; events: Captured[]; leaks: string[]; bodies: string[] };
 
 /** The names of what [collector] received, in order. */
 export const eventNames = (collector: Collector) => collector.events.map((e) => e.event);

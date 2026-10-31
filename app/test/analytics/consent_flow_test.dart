@@ -25,7 +25,7 @@ import 'fakes.dart';
 void main() {
   setUpAll(fakeSupabase);
 
-  late RecordingSink sink;
+  late NativePostHog sink;
   late Analytics analytics;
   late DeviceCache cache;
 
@@ -41,8 +41,8 @@ void main() {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
     cache = DeviceCache(SharedPreferencesAsync());
-    sink = RecordingSink();
-    analytics = Analytics(sink, cache, releaseConfig);
+    sink = NativePostHog()..install();
+    analytics = Analytics(testClient(), cache, releaseConfig);
     await analytics.load();
     analytics.setUser(const AnalyticsUser(email: 'neu@gmail.com'));
     final session = FakeSession();
@@ -105,7 +105,7 @@ void main() {
     // A titled page: screen readers start on its heading.
     expect(find.widgetWithText(AppBar, 'Nutzungsdaten'), findsOneWidget);
     await analytics.flush();
-    expect(sink.batches, isEmpty);
+    expect(sink.events, isEmpty);
     expect(await cache.installId(), isNull, reason: 'nothing stored yet');
 
     await reach(tester, accept);
@@ -159,7 +159,7 @@ void main() {
     expect(await cache.installId(), isNull);
     analytics.track('household_created');
     await analytics.flush();
-    expect(sink.batches, isEmpty);
+    expect(sink.events, isEmpty);
   });
 
   testWidgets('both answers are the same size: declining is as easy', (
@@ -175,7 +175,7 @@ void main() {
     await reach(tester, decline);
     await tester.tap(decline);
     await tester.pumpAndSettle();
-    final again = Analytics(sink, cache, releaseConfig);
+    final again = Analytics(testClient(), cache, releaseConfig);
     await again.load();
     expect(again.asksConsent, isFalse);
     unawaited(again.close());

@@ -4,6 +4,7 @@ import { COMMANDS, main } from './fg.ts';
 import { loadInstance } from './instance.ts';
 import { parseElements, rowKeyFor } from './marionette.ts';
 import { rewriteConfig } from './stack.ts';
+import { posthogDefines } from './surfaces.ts';
 
 /** In-memory shell: records every call; files live in a map; scripted command output. */
 class FakeShell implements Shell {
@@ -412,4 +413,21 @@ Deno.test('drag lifts first, then finds the target: an empty store shows only du
   const missing = await fg(['drag', '--from-text', 'Brot', '--to-key', 'store-gone'], sh);
   assertEquals(error(missing.json).code, 'not_found');
   assertEquals(sh.calls.filter((c) => c[0] === 'xdotool').at(-1), ['xdotool', 'mouseup', '1']);
+});
+
+Deno.test('FG_POSTHOG_HOST builds analytics on, against this machine only', () => {
+  assertEquals(posthogDefines(undefined), []);
+  assertEquals(posthogDefines('http://127.0.0.1:57588'), [
+    '--dart-define=POSTHOG_PROJECT_API_KEY=phc_fg_local_collector',
+    '--dart-define=POSTHOG_HOST=http://127.0.0.1:57588',
+  ]);
+  for (const host of ['https://eu.i.posthog.com', 'http://10.0.2.2:57588', 'http://127.0.0.1']) {
+    let thrown = false;
+    try {
+      posthogDefines(host);
+    } catch {
+      thrown = true;
+    }
+    assert(thrown, `${host} refused`);
+  }
 });

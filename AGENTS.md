@@ -17,8 +17,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   stack.
 - `analytics/`: the PostHog gate insights as HogQL (`queries/`), a TypeScript
   reference over fixture events that the functions gate tests, and the manual
-  proofs. The app's side is `app/lib/analytics/` (consent, allow-list,
-  sender), the functions' `supabase/functions/_shared/telemetry.ts`
+  proofs. The app's side is `app/lib/analytics/` (consent, allow-list, the
+  posthog_flutter SDK in `posthog_client.dart`, feature flags in
+  `flags.dart`), the functions' `supabase/functions/_shared/telemetry.ts`
   (`docs/ANALYTICS.md`).
 - `app/fastlane/`, `.github/workflows/release.yml`: TestFlight and Play
   internal releases after every green CI on `main` (and by hand), signing
@@ -147,6 +148,7 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | `auth-navigation-only-in-router` | The `/login` or `/welcome` route named outside `router.dart` (path, `loginPath`, `goNamed('login')`) | Auth gating happens only in `authRedirect` |
 | `no-hardcoded-ui-text` | A string literal with letters in `Text(...)` or a `label`/`tooltip`/`hintText`-style argument in `app/lib`, also through a same-file constant, list, map, getter or function | UI text lives in `app/l10n/app_de.arb` |
 | `purchases-flutter-only-in-revenuecat-repository` | Importing `package:purchases_flutter` anywhere in `app/` but `app/lib/purchases/revenuecat_repository.dart` | One file configures RevenueCat, lazily and with the household id only (Legal Review K.9.9 C3) |
+| `posthog-flutter-only-in-posthog-client` | Importing `package:posthog_flutter` anywhere in `app/lib` but `app/lib/analytics/posthog_client.dart` | One file sets the SDK up, only after the analytics yes, with the allow-list as its `beforeSend` (job 44) |
 | `no-revenuecat-customer-data` | `Purchases.set*`, `collectDeviceIdentifiers`, `enableAdServices*`, `logOut` or `sync*`, called or torn off | RevenueCat gets the household id and the purchase: no attributes, no device ids, never an anonymous customer (C3) |
 | `no-wall-time-wait-in-tests` | `Future.delayed` in `app/test` | It races the timers it waits for: after a stall the test resumes mid-reload (DECISIONS 18.17). Use `elapse()` or `fakeAsync` |
 | schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |

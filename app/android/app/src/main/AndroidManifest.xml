@@ -45,6 +45,10 @@
                 <data android:scheme="https" android:host="app.hummlist.com" android:pathPrefix="/join/"/>
             </intent-filter>
         </activity>
+        <!-- PostHog starts only after the analytics yes (docs/ANALYTICS.md), never on its own. -->
+        <meta-data
+            android:name="com.posthog.posthog.AUTO_INIT"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

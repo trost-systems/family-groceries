@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/analytics/exceptions.dart';
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/analytics/internal.dart';
-import 'package:family_groceries/analytics/sink.dart';
+import 'package:family_groceries/analytics/posthog_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -81,25 +82,21 @@ class const AnalyticsConfig({
   required final bool householdGroups,
   final Set<String> internalHouseholds = const {},
   final Set<String> internalEmailDomains = const {},
-
-  final Duration flushEvery = const Duration(seconds: 5),
-  final int flushAt = 20,
-  final int maxQueue = 500,
 });
 
-/// Product analytics and error tracking for PostHog EU (docs/ANALYTICS.md).
+/// Product analytics, error tracking and feature flags for PostHog EU, on
+/// the posthog_flutter SDK (docs/ANALYTICS.md).
 ///
-/// Nothing is captured, queued or sent unless all of these hold: a sink
-/// exists (a project key was built in), the user said yes on this install,
-/// and someone is signed in. Saying no, or turning it off under More,
-/// drops whatever still waits in the queue. Every event passes
-/// [checkEvent] and [checkContext] before it is queued.
+/// The SDK is set up only after a yes on this install and stopped by a no,
+/// so before the yes nothing at all goes to PostHog, flag requests
+/// included. Events and errors also need someone signed in. Every Dart-side
+/// event passes [checkEvent] and [checkContext] twice: here, and in the
+/// SDK's `beforeSend` ([_admit]), which also scrubs error reports.
 class Analytics(
-  final AnalyticsSink? _sink,
+  final PostHogClient? _posthog,
   final AnalyticsStore _store,
-  final AnalyticsConfig _config, {
-  DateTime Function()? clock,
-}) extends Cubit<AnalyticsState> {
+  final AnalyticsConfig _config,
+) extends Cubit<AnalyticsState> {
   this : super(const AnalyticsState());
 
   /// A build without a project key: nothing can be sent and no one is
@@ -115,13 +112,17 @@ class Analytics(
     ),
   );
 
-  final DateTime Function() _clock = clock ?? DateTime.now;
-  final _queue = <Map<String, Object?>>[];
+  /// The runtime toggles PostHog serves this install, all off until then.
+  final flags = Flags();
+
   String? _installId;
   AnalyticsUser? _user;
-  Timer? _flushTimer;
-  Future<void>? _inFlight;
-  var _failures = 0;
+
+  /// The SDK is set up and not stopped.
+  var _running = false;
+
+  /// SDK set-ups and stops, one after the other.
+  Future<void> _lifecycle = Future.value();
 
   /// Set by the session: where this install's answer goes for the signed-in
   /// user.
@@ -135,7 +136,7 @@ class Analytics(
   String? _firstOpenFor;
 
   /// Whether this build can send at all.
-  bool get enabled => _sink != null;
+  bool get enabled => _posthog != null;
 
   /// Whether this install, the signed-in user and their household are
   /// internal now ([isInternal]); also for feedback (job 21), which is
@@ -152,19 +153,21 @@ class Analytics(
 
   /// Set by the household's entitlements: the household a tester's grant
   /// unlocks, if any.
-  String? testerHousehold;
+  String? get testerHousehold => _testerHousehold;
+  set testerHousehold(String? household) {
+    _testerHousehold = household;
+    _registerContext();
+  }
+
+  String? _testerHousehold;
 
   /// Whether the consent screen is due: the build can send and this
   /// install has not decided yet.
   bool get asksConsent => enabled && state.loaded && state.consent == null;
 
-  /// Events waiting to be sent, oldest first; for tests.
-  @visibleForTesting
-  List<Map<String, Object?>> get queued => List.unmodifiable(_queue);
-
-  /// Reads the decision and, after a yes, the install id. Without a yes
-  /// no install id is made, and one stored by an older build is deleted.
-  /// Call once before the first frame.
+  /// Reads the decision; after a yes it starts the SDK with the install id
+  /// in the background. Without a yes no install id is kept, and one stored
+  /// by an older build is deleted. Call once before the first frame.
   Future<void> load() async {
     final (stored, consent, internal, firstOpen) = await (
       _store.installId(),
@@ -174,48 +177,60 @@ class Analytics(
     ).wait;
     if (consent == true) {
       _firstOpenFor = firstOpen;
-      if (stored != null && uuidPattern.hasMatch(stored)) {
-        _installId = stored;
-      } else {
-        await _ownInstallId();
-      }
+      _installId = stored != null && anyUuidPattern.hasMatch(stored)
+          ? stored
+          : null;
     } else if (stored != null || firstOpen != null) {
       await _store.forgetInstallId();
+    }
+    if (consent == false) {
+      // An off whose clean-up did not finish (the app was closed) ends here.
+      unawaited(_serially(_forgetSdkState));
     }
     emit(
       AnalyticsState(loaded: true, consent: consent, internalInstall: internal),
     );
+    if (consent == true) {
+      unawaited(_serially(() => _start(fresh: false)));
+    }
   }
 
   /// Signed in as [user], or signed out (null). Events need a user.
   void setUser(AnalyticsUser? user) {
     _user = user;
     if (user == null) {
-      // Nothing from one account is sent under the next.
-      _dropQueue();
       _recorded = null;
     }
     _syncConsent();
+    _registerContext();
   }
 
-  /// The user's answer on the consent screen or the More toggle. Yes makes
-  /// an install id if there is none and sends `first_open` once per install
-  /// id; no drops the queue at once and deletes the install id, so a later
-  /// yes starts with a new one.
+  /// The user's answer on the consent screen or the More toggle. Yes starts
+  /// the SDK with a new install id (unless it runs already) and sends
+  /// `first_open` once per install id; no stops the SDK and deletes the
+  /// install id, so a later yes starts with a new one.
   Future<void> decide({required bool granted}) async {
     emit(_with(consent: granted));
     if (!granted) {
       // The server learns the no under the id it had (job 31) before it goes.
       _syncConsent(answered: true, installId: _installId);
-      _dropQueue();
       _installId = null;
       _firstOpenFor = null;
+      flags.clear();
       await _store.saveConsent(granted: false);
       await _store.forgetInstallId();
+      await _serially(_stop);
       return;
     }
+    // Queued before the first await, so an event tracked right after the
+    // yes waits for the start.
+    final starting = _serially(() => _start(fresh: true));
     await _store.saveConsent(granted: true);
-    final id = _installId ?? await _ownInstallId();
+    await starting;
+    final id = _installId;
+    if (id == null) {
+      return;
+    }
     _syncConsent(answered: true);
     if (_firstOpenFor != id && _live) {
       _firstOpenFor = id;
@@ -224,23 +239,95 @@ class Analytics(
     }
   }
 
-  Future<String> _ownInstallId() async {
-    final id = _installId = const Uuid().v4();
-    await _store.saveInstallId(id);
-    return id;
+  Future<void> _serially(Future<void> Function() step) =>
+      _lifecycle = _lifecycle.then((_) => step());
+
+  /// Sets the SDK up. A [fresh] yes gets a new install id: the SDK seeds a
+  /// new one, or, if it kept an id from an earlier yes on this device,
+  /// replaces it.
+  Future<void> _start({required bool fresh}) async {
+    final posthog = _posthog;
+    if (posthog == null || _running || state.consent != true || isClosed) {
+      return;
+    }
+    final seed = fresh ? const Uuid().v4() : _installId;
+    try {
+      var id = await posthog.start(
+        installId: seed,
+        admit: _admit,
+        onFlags: () => unawaited(_refreshFlags()),
+      );
+      if (fresh && id != seed) {
+        id = await posthog.newDistinctId();
+      }
+      if (state.consent != true) {
+        // A no came while the SDK started.
+        await posthog.stop();
+        return;
+      }
+      _running = true;
+      if (id != _installId) {
+        _installId = id;
+        await _store.saveInstallId(id);
+        if (!fresh) {
+          _syncConsent();
+        }
+      }
+      _registerContext();
+      unawaited(_refreshFlags());
+    } on Object catch (e) {
+      debugPrint('analytics: PostHog did not start: ${e.runtimeType}');
+    }
+  }
+
+  Future<void> _stop() async {
+    if (!_running) {
+      return;
+    }
+    _running = false;
+    flags.clear();
+    try {
+      await _posthog?.stop();
+    } on Object catch (e) {
+      debugPrint('analytics: PostHog did not stop: ${e.runtimeType}');
+    }
+  }
+
+  Future<void> _forgetSdkState() async {
+    try {
+      await _posthog?.forget();
+    } on Object catch (e) {
+      debugPrint('analytics: PostHog state not deleted: ${e.runtimeType}');
+    }
+  }
+
+  Future<void> _refreshFlags() async {
+    final posthog = _posthog;
+    if (posthog == null || !_running) {
+      return;
+    }
+    try {
+      final values = await posthog.flags();
+      if (_running) {
+        flags.replace(values);
+      }
+    } on Object catch (e) {
+      debugPrint('analytics: flags not read: ${e.runtimeType}');
+    }
   }
 
   /// More's switch for test devices: every event then says internal.
   Future<void> markInternalInstall({required bool internal}) async {
     emit(_with(internalInstall: internal));
     _syncConsent();
+    _registerContext();
     await _store.saveInternalInstall(internal: internal);
   }
 
-  /// Queues [event] if analytics is live; refuses (and drops) anything
-  /// [checkEvent] does not allow.
+  /// Hands [event] to PostHog if analytics is live; refuses (and drops)
+  /// anything [checkEvent] does not allow.
   void track(String event, [Map<String, Object> properties = const {}]) {
-    if (!_live) {
+    if (!_willSend) {
       return;
     }
     try {
@@ -249,145 +336,173 @@ class Analytics(
       debugPrint('analytics: $e');
       return;
     }
-    _enqueue(event, properties);
+    _whenRunning(
+      (posthog, context) => posthog.capture(event, {...properties, ...context}),
+    );
   }
 
-  /// Queues an error for PostHog error tracking, scrubbed
-  /// ([exceptionList]); same rules as events.
+  /// Reports an error to PostHog error tracking, scrubbed
+  /// ([scrubMessage]); same rules as events.
   void captureException(
     Object error,
     StackTrace? stack, {
     bool handled = false,
   }) {
-    if (!_live) {
+    if (!_willSend) {
       return;
     }
+    final (inner, trace) = switch (error) {
+      AsyncError(:final error, :final stackTrace) => (
+        error,
+        stack ?? stackTrace,
+      ),
+      _ => (error, stack),
+    };
+    final Map<String, Object> report;
     try {
-      _enqueue(r'$exception', {
-        r'$exception_level': 'error',
-        r'$exception_list': exceptionList(
-          error,
-          stack,
-          handled: handled,
-          chunkIds: currentChunkIds(),
-        ),
-      });
+      report = {
+        'type': errorType(inner),
+        'value': scrubMessage(inner),
+        'handled': handled,
+      };
     } on Object catch (e) {
       // Reporting an error must never raise one.
       debugPrint('analytics: exception not captured: ${e.runtimeType}');
-    }
-  }
-
-  /// Sends what is queued, after a send already on its way. A failed batch
-  /// goes back to the front and is tried again later; PostHog drops repeats
-  /// by `uuid`.
-  Future<void> flush() async {
-    _flushTimer?.cancel();
-    _flushTimer = null;
-    for (var pending = _inFlight; pending != null; pending = _inFlight) {
-      await pending;
-    }
-    final sink = _sink;
-    if (sink == null || _queue.isEmpty || !_live) {
       return;
     }
-    final batch = [..._queue];
-    _queue.clear();
-    final sending = _send(sink, batch);
-    _inFlight = sending;
-    try {
-      await sending;
-    } finally {
-      _inFlight = null;
-    }
-    _schedule();
+    _whenRunning(
+      (posthog, context) => posthog.captureException(inner, trace, {
+        ...context,
+        _reportKey: report,
+      }),
+    );
   }
 
-  Future<void> _send(
-    AnalyticsSink sink,
-    List<Map<String, Object?>> batch,
-  ) async {
-    try {
-      await sink.send(batch);
-      _failures = 0;
-    } on Object {
-      _failures++;
-      // Only if still allowed: a "no" during the request drops it.
-      if (_live) {
-        _queue.insertAll(0, batch);
-        _trim();
+  /// Hands an event to the SDK once it runs, so one captured while it starts
+  /// (right after the yes, or at app start) is not lost, with the context of
+  /// that moment; dropped if analytics is no longer live by then.
+  void _whenRunning(
+    Future<void> Function(PostHogClient posthog, Map<String, Object> context)
+    send,
+  ) {
+    void now() {
+      if (!_live) {
+        return;
+      }
+      try {
+        final context = _context();
+        checkContext(context);
+        unawaited(send(_posthog!, context));
+      } on Object catch (e) {
+        debugPrint('analytics: not sent: $e');
       }
     }
+
+    if (_live) {
+      now();
+    } else {
+      unawaited(_lifecycle.then((_) => now()));
+    }
   }
 
-  bool get _live =>
-      _sink != null &&
-      state.consent == true &&
-      _user != null &&
-      _installId != null &&
-      !isClosed;
+  /// Keeps the context as the SDK's super properties, so an event the SDK
+  /// builds itself, a native crash report, carries it too: above all
+  /// `$geoip_disable` and `is_internal`.
+  void _registerContext() {
+    final posthog = _posthog;
+    final id = _installId;
+    if (posthog == null || !_running || id == null) {
+      return;
+    }
+    unawaited(
+      posthog
+          .register({
+            'install_id': id,
+            'household_id': _user?.householdId,
+            'platform': _config.platform,
+            'app_version': _config.appVersion,
+            'is_internal': internalNow,
+            r'$geoip_disable': true,
+          })
+          .catchError((Object e) {
+            debugPrint('analytics: context not registered: ${e.runtimeType}');
+          }),
+    );
+  }
 
-  void _enqueue(String event, Map<String, Object> properties) {
-    final id = const Uuid().v4();
+  /// Hands what the SDK holds to PostHog now.
+  Future<void> flush() async {
+    await _lifecycle;
+    if (_running) {
+      await _posthog?.flush();
+    }
+  }
+
+  /// Events are taken: the build can send, the answer is yes, someone is
+  /// signed in.
+  bool get _willSend =>
+      _posthog != null && state.consent == true && _user != null && !isClosed;
+
+  /// And the SDK runs with the install id.
+  bool get _live => _willSend && _running && _installId != null;
+
+  Map<String, Object> _context() {
     final user = _user!;
-    final context = <String, Object?>{
-      'distinct_id': _installId,
-      'event_id': id,
-      'install_id': _installId,
-      'household_id': user.householdId,
+    final household = user.householdId;
+    return {
+      'install_id': _installId!,
+      'household_id': ?household,
       'platform': _config.platform,
       'app_version': _config.appVersion,
       'is_internal': internalNow,
       r'$geoip_disable': true,
       r'$process_person_profile': false,
-      r'$lib': 'hummlist-app',
-      r'$lib_version': _config.appVersion,
-      if (_config.householdGroups && user.householdId != null)
-        r'$groups': {'household': user.householdId},
+      if (_config.householdGroups && household != null)
+        r'$groups': {'household': household},
+    };
+  }
+
+  /// The SDK's `beforeSend`: what of [event] may leave the app, or null.
+  /// Events are checked again, since consent or the user may have changed
+  /// since [track]; an error report keeps its context and the scrubbed
+  /// `$exception_list` only, and comes only from [captureException].
+  Map<String, Object>? _admit(String event, Map<String, Object> captured) {
+    if (!_live) {
+      return null;
+    }
+    // The SDK adds the last screen it was told of; a route can carry an
+    // invite code.
+    final properties = {...captured}..remove(r'$screen_name');
+    final context = {
+      for (final MapEntry(:key, :value) in properties.entries)
+        if (contextKeys.contains(key)) key: value,
     };
     try {
       checkContext(context);
+      if (event != r'$exception') {
+        checkEvent(event, {
+          for (final MapEntry(:key, :value) in properties.entries)
+            if (!contextKeys.contains(key)) key: value,
+        });
+        return properties;
+      }
     } on RefusedEvent catch (e) {
       debugPrint('analytics: $e');
-      return;
+      return null;
     }
-    _queue.add({
-      'event': event,
-      'uuid': id,
-      'timestamp': _clock().toUtc().toIso8601String(),
-      'properties': {...properties, ...context},
-    });
-    _trim();
-    if (_queue.length >= _config.flushAt) {
-      unawaited(flush());
-    } else {
-      _schedule();
+    final report = properties[_reportKey];
+    final list = properties[r'$exception_list'];
+    if (report is! Map<String, Object> || list is! List || list.isEmpty) {
+      return null;
     }
-  }
-
-  void _schedule() {
-    if (_queue.isEmpty || _flushTimer != null || isClosed) {
-      return;
-    }
-    // Backs off to a minute while the host can't be reached.
-    final factor = 1 << (_failures < 4 ? _failures : 4);
-    final delay = _config.flushEvery * factor;
-    _flushTimer = Timer(
-      delay < const Duration(minutes: 1) ? delay : const Duration(minutes: 1),
-      () => unawaited(flush()),
-    );
-  }
-
-  void _trim() {
-    if (_queue.length > _config.maxQueue) {
-      _queue.removeRange(0, _queue.length - _config.maxQueue);
-    }
-  }
-
-  void _dropQueue() {
-    _queue.clear();
-    _flushTimer?.cancel();
-    _flushTimer = null;
+    return {
+      ...context,
+      r'$exception_level': 'error',
+      r'$exception_list': [
+        for (final (index, item) in list.indexed)
+          if (item is Map) scrubException(item, index == 0 ? report : null),
+      ],
+    };
   }
 
   /// Records the answer of this install for the signed-in user: always when
@@ -436,28 +551,28 @@ class Analytics(
       );
 
   @override
-  Future<void> close() {
-    _flushTimer?.cancel();
-    return super.close();
+  Future<void> close() async {
+    await flags.close();
+    await super.close();
   }
 }
 
-/// The properties every event carries, and only those. Throws
-/// [RefusedEvent] for an unknown key or a value of the wrong shape.
+/// Where [Analytics.captureException] hands the scrubbed type and message
+/// to [Analytics._admit]; never sent.
+const _reportKey = 'hummlist_report';
+
+/// The properties every event carries ([contextKeys]), and only those.
+/// Throws [RefusedEvent] for an unknown key, a value of the wrong shape or
+/// a missing install id.
 void checkContext(Map<String, Object?> context) {
   bool ok(String key, Object? value) => switch (key) {
-    'distinct_id' ||
-    'install_id' ||
-    'event_id' => value is String && uuidPattern.hasMatch(value),
-    'household_id' =>
-      value == null || value is String && anyUuidPattern.hasMatch(value),
+    'install_id' => value is String && anyUuidPattern.hasMatch(value),
+    'household_id' => value is String && anyUuidPattern.hasMatch(value),
     'platform' => value is String && platforms.contains(value),
-    'app_version' ||
-    r'$lib_version' => value is String && versionPattern.hasMatch(value),
+    'app_version' => value is String && versionPattern.hasMatch(value),
     'is_internal' => value is bool,
     r'$geoip_disable' => value == true,
     r'$process_person_profile' => value == false,
-    r'$lib' => value == 'hummlist-app',
     r'$groups' =>
       value is Map &&
           value.length == 1 &&
@@ -469,5 +584,8 @@ void checkContext(Map<String, Object?> context) {
     if (!ok(key, value)) {
       throw RefusedEvent('context property $key refused');
     }
+  }
+  if (!context.containsKey('install_id')) {
+    throw const RefusedEvent('context without install_id');
   }
 }

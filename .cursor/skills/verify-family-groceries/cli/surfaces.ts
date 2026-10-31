@@ -35,7 +35,18 @@ export function defines(inst: Instance, env: StackEnv, surface: SurfaceKind): st
     '--dart-define=flutter.inspector.structuredErrors=false',
     // Job 25: the app's fake store (features/purchases.md); FG_FAKE_STORE picks its scenario.
     `--dart-define=FAKE_STORE=${Deno.env.get('FG_FAKE_STORE') || 'ok'}`,
+    // Job 44: analytics against a local stand-in (cli/posthog_collector.ts, features/analytics.md).
+    ...posthogDefines(Deno.env.get('FG_POSTHOG_HOST')),
   ];
+}
+
+/** A stand-in project key and [host], only one on this machine: the app accepts no other stand-in. */
+export function posthogDefines(host: string | undefined): string[] {
+  if (!host) return [];
+  if (!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(host)) {
+    throw new Error(`FG_POSTHOG_HOST is ${host}: only http://127.0.0.1:<port> (cli/posthog_collector.ts)`);
+  }
+  return ['--dart-define=POSTHOG_PROJECT_API_KEY=phc_fg_local_collector', `--dart-define=POSTHOG_HOST=${host}`];
 }
 
 /** Identifies the app source plus build settings, so doctor can tell a stale build from the current one. */

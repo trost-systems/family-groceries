@@ -166,3 +166,51 @@ final versionPattern = RegExp(
 
 /// The platforms the app reports.
 const platforms = {'ios', 'android', 'web', 'macos', 'linux', 'windows'};
+
+/// The properties `Analytics` adds to every event.
+const contextKeys = {
+  'install_id',
+  'household_id',
+  'platform',
+  'app_version',
+  'is_internal',
+  r'$geoip_disable',
+  r'$process_person_profile',
+  r'$groups',
+};
+
+/// What an error report carries besides [contextKeys].
+const exceptionKeys = {r'$exception_list', r'$exception_level'};
+
+/// Every event name the app sends: the catalog and error reports.
+final sentEventNames = {...eventCatalog.keys, r'$exception'};
+
+/// What posthog-js may add on the web (job 44): the browser's kind and
+/// version, the screen, the time zone and language, its own name and
+/// version. Its URL, referrer, user agent, session and device ids are not
+/// among them.
+const webSdkKeys = {
+  'token',
+  'distinct_id',
+  r'$lib',
+  r'$lib_version',
+  r'$os',
+  r'$os_version',
+  r'$browser',
+  r'$browser_version',
+  r'$browser_language',
+  r'$device_type',
+  r'$screen_height',
+  r'$screen_width',
+  r'$viewport_height',
+  r'$viewport_width',
+  r'$timezone',
+};
+
+/// Every property key a web event may leave the browser with.
+final webEventKeys = {
+  ...contextKeys,
+  ...exceptionKeys,
+  ...webSdkKeys,
+  for (final properties in eventCatalog.values) ...properties.keys,
+};
