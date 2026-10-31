@@ -10,6 +10,19 @@ import { buildServer } from './tools.ts';
 
 const PRM_SUFFIXES = ['/.well-known/oauth-protected-resource', '/oauth-protected-resource'];
 
+/**
+ * Authorization Server Metadata (RFC 8414) and OpenID discovery paths under the MCP URL. A client
+ * that cannot read the Protected Resource Metadata treats the MCP URL as the authorization server
+ * and probes these (MCP TypeScript SDK `buildDiscoveryUrls`). On supabase.co the root-level probes
+ * (`/.well-known/...` + path) hit Supabase's API gateway, which answers 401 without an apikey, so
+ * only the path-appended one reaches this function. Serving Supabase Auth's metadata here lets a
+ * connector on the supabase.co URL find the token endpoint and refresh (2026-10-31 incident).
+ */
+const AS_SUFFIXES = [
+  '/.well-known/oauth-authorization-server',
+  '/.well-known/openid-configuration',
+];
+
 /** Scopes Supabase's OAuth server knows; it rejects any other. The tools need none of them. */
 const SCOPES = ['openid', 'email'];
 
@@ -34,6 +47,8 @@ export type Deps = {
   endpoints: () => Promise<Endpoints>;
   /** Origin of the Vercel proxy in front of the function (mcp-proxy/), e.g. https://mcp.hummlist.com. */
   publicOrigin: () => string;
+  /** Supabase Auth's Authorization Server Metadata (RFC 8414), served unchanged. */
+  authServerMetadata: () => Promise<Record<string, unknown>>;
   authenticate: (req: Request) => Promise<Auth>;
   serve: (req: Request, auth: Auth) => Promise<Response>;
   allowedOriginHosts: () => string[];
@@ -57,6 +72,18 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
       resource_documentation:
         'https://github.com/trost-systems/family-groceries/blob/main/docs/MCP.md',
     }));
+  }
+
+  if (AS_SUFFIXES.some((suffix) => path.endsWith(suffix))) {
+    if (req.method !== 'GET') return withCors(new Response(null, { status: 405 }));
+    try {
+      return withCors(Response.json(await deps.authServerMetadata()));
+    } catch {
+      return withCors(Response.json(
+        { error: 'temporarily_unavailable', error_description: 'auth discovery failed' },
+        { status: 502 },
+      ));
+    }
   }
 
   const rejected = originValidationResponse(req, [
@@ -162,8 +189,29 @@ export function publicOriginFromEnv(): string {
   return new URL(Deno.env.get('MCP_PUBLIC_URL') || 'https://mcp.hummlist.com').origin;
 }
 
+let asMetadataCache: Promise<Record<string, unknown>> | undefined;
+
+/** Supabase Auth's own metadata document, fetched once per isolate (retried after a failure). */
+function supabaseAuthServerMetadata(): Promise<Record<string, unknown>> {
+  asMetadataCache ??= (async () => {
+    const internal = Deno.env.get('SUPABASE_URL')!;
+    const res = await fetch(`${internal}/auth/v1/.well-known/oauth-authorization-server`);
+    if (!res.ok) throw new Error(`auth server metadata: ${res.status}`);
+    const body = await res.json() as Record<string, unknown>;
+    if (typeof body.token_endpoint !== 'string') {
+      throw new Error('auth server metadata: no token_endpoint');
+    }
+    return body;
+  })().catch((e) => {
+    asMetadataCache = undefined;
+    throw e;
+  });
+  return asMetadataCache;
+}
+
 const defaultDeps: Deps = {
   endpoints: projectEndpoints,
+  authServerMetadata: supabaseAuthServerMetadata,
   publicOrigin: publicOriginFromEnv,
   authenticate,
   serve: (req, auth) => createMcpHandler(() => buildServer(auth)).fetch(req),
