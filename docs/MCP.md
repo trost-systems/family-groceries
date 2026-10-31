@@ -123,10 +123,64 @@ claude mcp add --transport http einkauf https://mcp.hummlist.com \
 
 ### ChatGPT
 
-Create a custom connector with the endpoint URL and OAuth authentication. If
-ChatGPT asks for a client ID, leave it empty so it registers itself; the
-server supports dynamic client registration. This path is not tested from
-this box (it needs a ChatGPT account and the hosted endpoint).
+Not an officially listed client. ChatGPT connects a custom MCP server only as
+a connector you add yourself, and OpenAI offers full MCP (including write
+tools such as `add_items` and `tick_items`) to Business and Enterprise/Edu
+workspaces only; on those plans admins and owners (Enterprise/Edu: also
+members granted the permission) add it under **Plugins → + → Add custom MCP
+server**. Pro users can connect custom MCP servers with read/fetch
+permissions only
+([OpenAI Help: Connecting custom MCP servers in ChatGPT](https://help.openai.com/en/articles/12584461),
+read 2026-10-31). Use the endpoint URL and OAuth authentication. If ChatGPT
+asks for a client ID, leave it empty so it registers itself; the server
+supports dynamic client registration. This path is not tested from this box
+(it needs a ChatGPT Business or Enterprise account).
+
+### Codex (power users)
+
+Not an officially supported client: a path for people who already use the
+Codex CLI, IDE extension or the ChatGPT desktop app, which share
+`~/.codex/config.toml`. Codex speaks streamable HTTP and supports bearer
+tokens and OAuth with dynamic client registration
+([Codex MCP docs](https://developers.openai.com/codex/mcp),
+[configuration reference](https://developers.openai.com/codex/config-reference),
+read 2026-10-31).
+
+With a personal access token (create it in the app under **Mehr → Zugänge →
+Zugriffstoken → Token erstellen**, route `/more/access`):
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.hummlist]
+url = "https://mcp.hummlist.com"
+bearer_token_env_var = "HUMMLIST_TOKEN"   # export HUMMLIST_TOKEN=fgp_…
+```
+
+The token stays in the environment, not in the file. Revoke it under
+**Zugänge** when you stop using it.
+
+With OAuth instead, leave out `bearer_token_env_var` and sign in once:
+
+```toml
+[mcp_servers.hummlist]
+url = "https://mcp.hummlist.com"
+```
+
+```bash
+codex mcp login hummlist   # registers itself, opens the consent page; tap Erlauben
+codex mcp list             # Auth: "OAuth" (or "Bearer token" with the token)
+```
+
+The connected app then appears under **Zugänge → Verbundene Apps**, where
+**Trennen** ends its access.
+
+Tested on 2026-10-31 with Codex CLI 0.166.0 against `https://mcp.hummlist.com`
+and a test account: both ways list the six tools and run `list_stores`
+through Codex's own MCP client (`codex app-server`, `mcpServerStatus/list`
+and `mcpServer/tool/call`). The OAuth login requested `openid email
+offline_access` and stored a refresh token; a refresh after the one-hour
+access token expiry was not observed. A full run with a model (which needs
+an OpenAI sign-in) is untested.
 
 ### MCP Inspector and scripts
 
