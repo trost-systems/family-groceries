@@ -19,8 +19,11 @@ Run `npm ci` here first (Playwright 1.64.1 uses the Chromium already installed o
 | `node summarize.mjs ../option-N-x` | Markdown token tables for `design-prototypes.md` |
 | `node thumbs.mjs` | Gallery thumbnails |
 | `bash build-widgetbook.sh` | Job 41: regenerates the Widgetbook stories, runs analyze and tests in `flutter-hex-poc/` and its `widgetbook/`, and writes the web build (base href `/design-prototypes/widgetbook/`, engine and fonts local) to `../widgetbook/` |
-| `node publish.mjs <worktree>` | Copies gallery, options and `widgetbook/` to `site/public/design-prototypes/` with absolute links (Vercel cleanUrls); the Flutter build is copied as built |
-| `node preview-check.mjs <worktree>` | Serves `site/dist` like Vercel, each path with its own CSP (`serve-dist.mjs`), and crawls `/design-prototypes`, with axe in light and dark at 390 and 1440 on every page; the Widgetbook must also load CanvasKit from its own folder |
+| `node app-icon/build.mjs` | Job 45: `app-icon/variations.mjs` (every icon as layers of filled paths with colour roles and a monochrome rule) to `../app-icon/`: the sprite sheet (SVG + PNG), the top picks' Icon Composer groups, visionOS layers, Android adaptive icon (vector drawables, PNGs, legacy mipmaps, Play 512), previews and the page |
+| `node app-icon/check.mjs` | Job 45: checks the built files: sizes, opaque visionOS back, foreground inside Android's 66 dp circle (on the PNG), each vector drawable rendered back and compared with its PNG, one-colour monochrome, at most 4 Icon Composer groups, no "Humm" alone |
+| `node app-icon/shots.mjs <worktree>` | Job 45: screenshots of the published app icon page into `../screenshots/45/` |
+| `node publish.mjs <worktree>` | Copies gallery, options, `app-icon/` and `widgetbook/` to `site/public/design-prototypes/` with absolute links (Vercel cleanUrls); the Flutter build is copied as built |
+| `node preview-check.mjs <worktree>` | Serves `site/dist` like Vercel, each path with its own CSP (`serve-dist.mjs`), and crawls `/design-prototypes`, with axe in light and dark at 390 and 1440 on every page, and every linked file must answer 200; the Widgetbook must also load CanvasKit from its own folder |
 | `node widgetbook-shots.mjs <worktree>` | Job 41: Widgetbook screenshots (stories, scenarios, themes, device frames) from `site/dist` into `../screenshots/41/widgetbook/`; fails on any failed, off-origin or CSP-blocked load |
 
 `design-prototypes.template.md` plus `summarize.mjs` output make `../../design-prototypes.md`. `BRIEF.md` is what the option builders worked from; `generators/` keeps their page generators (paths inside point at their original /tmp work dirs).

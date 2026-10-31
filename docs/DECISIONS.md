@@ -4214,3 +4214,38 @@ The job's own calls:
       scripts and external resources still fail.
     - The site footer test skips `/design-prototypes/`, because those mock-ups link their
       footers to `#` on purpose. This makes the inherited failure from job 36 go away.
+
+## Job 45 (app icon research, 16-variation sprite sheet, layered top 3; design branch, not for main), 2026-10-31
+
+1. **Base.** Job 46 (hex art styles) was still waiting when this job started, so the branch is
+   built on `design/41-hummel-hex` as the brief says, and no 46 styles are in the sheet.
+2. **One data source for every format.** Each icon is a record in
+   `design-prototypes/_tools/app-icon/variations.mjs`: a background plus at most two foreground
+   groups of filled paths with colour roles (light and dark) and a monochrome rule per element.
+   `build.mjs` derives the sprite sheet, Icon Composer groups, visionOS layers, Android vector
+   drawables and PNGs and the page from it. Two foreground groups is the visionOS limit (three
+   layers in all) and fits Icon Composer's four.
+3. **Fills only, no strokes or gradients.** Android vector drawables and Icon Composer both read
+   plain path data, Apple asks for flat layers, and a filled check mark can be cut out of the
+   monochrome layer. Strokes are outlined in `geom.mjs`.
+4. **Monochrome by ordered boolean ops** (`polygon-clipping` 0.15.7, pinned): 'fill' adds, 'cut'
+   subtracts. Even-odd holes were tried first and broke where a cut reaches past its fill
+   (variation 13). Shapes that share an edge with the clip are inset by 1 unit of 1024, because
+   the library fails on coincident edges.
+5. **Guards in the data.** The build stops when a foreground leaves Android's 66 dp circle, when
+   an icon pairs blue, yellow and red or puts yellow on a blue field (the brief's "not Lidl"
+   rule), or when "Humm" appears alone. `check.mjs` then checks the written files.
+6. **Vector drawables checked without the Android SDK.** No SDK is on the runner, so `check.mjs`
+   reads each XML back into SVG, renders it and compares it with the PNG (at most 0.2 % of
+   pixels may differ). Shown to fail on a recoloured path.
+7. **Top 3: 5 Wabenstapel, 14 Frische Wabe, 13 Kachelstapel.** One per direction (3b, the 3b × 5
+   merge, 5), each with real depth between its layers. Reasons are on the page and in
+   `docs/done/45-app-icon.md`.
+8. **Clear, tinted and themed previews are approximations** made from the monochrome shape. The
+   real ones come from Icon Composer and a launcher. The page says so.
+9. **No `.icon` file.** Its format is not documented by Apple, and Icon Composer needs a Mac.
+   The groups ship as SVG folders with a README listing the fills per appearance
+   (NEEDS_PETER).
+10. **preview-check follows file links without opening them.** The page links PNG, SVG, XML and
+    Markdown downloads. The crawler used to open them as pages (the Markdown started a
+    download and crashed it). Now it fetches them and requires a 200.

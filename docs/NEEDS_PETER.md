@@ -969,3 +969,16 @@ data map behind the store forms.
   14 fills the App Store privacy label and Play's data safety form from it. It has no open
   `[PETER: …]` items.
 - Optional: have a lawyer or a generator check the policy and this page.
+
+## Job 45: app icon (design preview, 2026-10-31)
+
+- **Pick a direction** on https://hummlist-site-git-design-45-app-icon-peter-trost.vercel.app/design-prototypes/app-icon
+  (Vercel login): one of the 16, or one of the top 3 (5 Wabenstapel, 14 Frische Wabe,
+  13 Kachelstapel).
+- **Assemble the `.icon` on a Mac** (about 10 minutes, needs Xcode 26+ or Icon Composer on macOS
+  Tahoe 26.4+): follow `design-prototypes/app-icon/top/<n>-<name>/icon-composer/README.md`.
+  Then check the clear and tinted modes in Icon Composer against our previews and tune the Mono
+  fills. The runner has no Mac, and Apple does not document the `.icon` format.
+- **Look at one Android device** with themed icons on. The monochrome layers are checked by
+  pixels here, but the real tint comes from the launcher.
+- Nothing goes into the app until a later job wires the chosen icon in.

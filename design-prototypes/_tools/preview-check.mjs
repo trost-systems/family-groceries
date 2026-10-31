@@ -3,8 +3,8 @@
 // trailingSlash false, each path's CSP header) and crawls every page under /design-prototypes
 // in Chromium, following links: each page must load with no 404, failed or off-origin
 // request and no CSP violation, and axe (WCAG 2.1 A/AA) finds nothing in light and dark at
-// 390 and 1440 px. A Flutter app page (the Widgetbook) must also draw its first frame with
-// CanvasKit from its own folder.
+// 390 and 1440 px. Linked files (PNG, SVG, XML, Markdown) must answer 200. A Flutter app
+// page (the Widgetbook) must also draw its first frame with CanvasKit from its own folder.
 import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { serveDist, settleFlutter } from './serve-dist.mjs';
@@ -16,10 +16,18 @@ const browser = await chromium.launch();
 const seen = new Set();
 const queue = ['/design-prototypes'];
 const problems = [];
+let files = 0;
 while (queue.length) {
   const path = queue.shift();
   if (seen.has(path)) continue;
   seen.add(path);
+  // Downloads (images, SVG, XML, Markdown) only have to exist; pages are opened and checked.
+  if (/\.[a-z0-9]+$/i.test(path) && !path.endsWith('.html')) {
+    const r = await fetch(origin + path);
+    if (r.status !== 200) problems.push(`${path}: HTTP ${r.status}`);
+    files++;
+    continue;
+  }
   const page = await browser.newPage();
   const errs = [];
   page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
@@ -68,4 +76,4 @@ while (queue.length) {
 await browser.close();
 close();
 if (problems.length) { console.error(problems.join('\n')); process.exit(1); }
-console.log(`${seen.size} pages under /design-prototypes load cleanly behind the CSP, axe clean in light and dark at 390 and 1440`);
+console.log(`${seen.size - files} pages and ${files} linked files under /design-prototypes load cleanly behind the CSP, axe clean in light and dark at 390 and 1440`);

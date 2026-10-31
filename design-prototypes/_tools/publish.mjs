@@ -14,7 +14,7 @@ const BASE = '/design-prototypes';
 // Flutter web builds (build-widgetbook.sh) are copied as built: their links resolve against
 // their own <base href>, so publish leaves their HTML alone.
 const BUNDLES = ['widgetbook'];
-const entries = ['index.html', 'gallery.css', 'thumbs', ...readdirSync(root).filter((f) => /^option-\d[a-z]?-/.test(f)).sort(), ...BUNDLES];
+const entries = ['index.html', 'gallery.css', 'thumbs', 'app-icon', ...readdirSync(root).filter((f) => /^option-\d[a-z]?-/.test(f)).sort(), ...BUNDLES];
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
 for (const e of entries) {
