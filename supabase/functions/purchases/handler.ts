@@ -17,7 +17,7 @@ import type { AppStore, PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
 import { parseWebhook, sameSecret, signedBy, testEvent, type WebhookEvent } from './revenuecat.ts';
 import type { Claim, Recorded, Revoked } from './store.ts';
-import type { Refund, Sale, StorePurchase } from './types.ts';
+import { type Refund, type Sale, type StorePurchase, webhookPath } from './types.ts';
 import type { DeletionOutcome } from './deletions.ts';
 
 /** The writes one event may make, all in the transaction that records its id. */
@@ -230,7 +230,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
       return json({ configured: deps.webhook !== null });
     }
     if (req.method === 'POST') {
-      if (path.endsWith('/purchases/revenuecat/webhook')) return await webhook(req);
+      if (path.endsWith(webhookPath)) return await webhook(req);
       if (path.endsWith('/purchases/revenuecat/deletions')) {
         if (!deps.deleteDueCustomers) return json({ status: 'not_configured' });
         const outcome = await deps.deleteDueCustomers();

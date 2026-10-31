@@ -2,6 +2,13 @@
 // the store; its webhook (revenuecat.ts) turns each event into one of these.
 import type { AppStore } from '../_shared/purchases.ts';
 
+/**
+ * RevenueCat's webhook, below /functions/v1 (ADDENDUM 6). Registered with
+ * `?forceFunctionRegion=eu-central-1`; scripts/iap/webhook_url_test.ts checks every place that
+ * documents the URL.
+ */
+export const webhookPath = '/purchases/revenuecat/webhook';
+
 /** Hummlist Lifetime, a non-consumable, same id on both stores (scripts/iap/product.ts). */
 export const lifetimeProductId = 'com.hummlist.app.lifetime';
 
