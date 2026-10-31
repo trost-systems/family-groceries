@@ -1,0 +1,476 @@
+/* Papierschnitt: every surface is a sheet of coloured card. Edges come from shadows, not
+   outlines. Light falls from the top left, so every sheet casts its shadow down and to the
+   right, and the layers under a card peek out at its bottom right. */
+:root {
+  --grain: url("assets/paper-light.svg");
+  --scape: url("assets/landscape-light.svg");
+  --shade: 58 42 29;
+  --shade-a: 1;
+  --lift-s: drop-shadow(0 1px 1px rgb(var(--shade) / 0.3)) drop-shadow(1px 2px 3px rgb(var(--shade) / 0.16));
+  --lift: drop-shadow(0 1px 1px rgb(var(--shade) / 0.3)) drop-shadow(2px 4px 5px rgb(var(--shade) / 0.18));
+  --cut: 0 1px 0 rgb(255 255 255 / 0.5), 1px 2px 2px rgb(var(--shade) / 0.18);
+  --window: inset 2px 3px 6px rgb(var(--shade) / 0.2), inset 1px 1px 1px rgb(var(--shade) / 0.18);
+  --flight: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grain: url("assets/paper-dark.svg");
+    --scape: url("assets/landscape-dark.svg");
+    --shade: 5 3 10;
+    --lift-s: drop-shadow(0 1px 1px rgb(var(--shade) / 0.6)) drop-shadow(1px 3px 4px rgb(var(--shade) / 0.45));
+    --lift: drop-shadow(0 1px 1px rgb(var(--shade) / 0.6)) drop-shadow(2px 5px 7px rgb(var(--shade) / 0.5));
+    --cut: 1px 2px 3px rgb(var(--shade) / 0.7);
+    --window: inset 2px 3px 8px rgb(var(--shade) / 0.55), inset 1px 1px 1px rgb(var(--shade) / 0.5);
+  }
+}
+
+body {
+  background-color: var(--hl-color-surface);
+  background-image: var(--grain);
+  background-size: 360px;
+}
+
+/* Type: Fraunces with its SOFT axis all the way up, so the serifs look cut with round scissors. */
+.display,
+.headline,
+.title-l,
+.brand,
+.store-name,
+.store-count b,
+.step,
+.avatar,
+.count-badge,
+.hex--store .face span,
+.font-name--display,
+.r-display,
+.r-headline-l,
+.r-headline,
+.email-title,
+.store-shot-title,
+.alexa-title {
+  font-variation-settings: "SOFT" 100, "WONK" 0;
+}
+
+.display,
+.r-display,
+.store-shot-title {
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
+
+.display,
+.headline,
+.title-l {
+  text-shadow: var(--cut);
+}
+
+.title-l {
+  font-weight: 600;
+  font-size: 1.75rem;
+  letter-spacing: -0.01em;
+}
+
+.brand {
+  font-weight: 650;
+  font-size: 1.375rem;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  font-weight: 450;
+}
+
+strong,
+.checklist strong {
+  font-weight: 700;
+}
+
+/* Static hexagons: a cut edge a shade darker than the sheet, and a soft shadow that follows
+   the mask. Fields keep the 3:1 border colour. */
+.hx {
+  --b: 1px;
+  --line: color-mix(in srgb, var(--face) 84%, var(--hl-color-ink));
+  filter: var(--lift-s);
+}
+
+.hx::after {
+  background-image: var(--grain);
+  background-size: 360px;
+  background-color: var(--face);
+}
+
+.compose,
+.mini-input {
+  --b: 1.5px;
+  --line: var(--hl-color-border);
+}
+
+.hx--edge {
+  margin-bottom: var(--hl-depth-edge);
+  filter: drop-shadow(2px var(--hl-depth-edge) 0 var(--hl-color-sage)) var(--lift-s);
+}
+
+.route li:nth-child(even) {
+  filter: drop-shadow(2px var(--hl-depth-edge) 0 var(--hl-color-apricot)) var(--lift-s);
+}
+
+/* Pointy hexagons: two sheets in one mask. The lower sheet, a shade darker, shows at the
+   bottom right where the upper one stops short. */
+.hxp {
+  --line: color-mix(in srgb, var(--face) 70%, var(--hl-color-ink));
+}
+
+.hxp::before {
+  inset: 0.5px 2px 2.5px 0.5px;
+}
+
+.cb {
+  --line: var(--hl-color-border);
+}
+
+.cb--on,
+.item--done .cb {
+  --line: color-mix(in srgb, var(--hl-color-success) 70%, var(--hl-color-ink));
+}
+
+.tick,
+.chip .dot {
+  --face: var(--hl-color-success);
+  --line: color-mix(in srgb, var(--hl-color-success) 65%, var(--hl-color-ink));
+}
+
+/* Tactile buttons: the face is the top sheet, the side wall the sheet below it. Pressing sets
+   the top sheet down on the lower one, exactly its edge deep. */
+.hex {
+  --b: 1px;
+  --line: color-mix(in srgb, var(--face) 82%, var(--hl-color-ink));
+  --edge: color-mix(in srgb, var(--wall) 80%, var(--hl-color-ink));
+  filter: var(--lift);
+}
+
+.hex::after {
+  background-image: var(--grain);
+  background-size: 360px;
+  background-color: var(--wall);
+}
+
+.hex .face {
+  filter: drop-shadow(0 1px 1px rgb(var(--shade) / 0.35));
+}
+
+.hex .face::after {
+  background-image: var(--grain);
+  background-size: 360px;
+  background-color: var(--face);
+}
+
+.hex--ink {
+  --wall: var(--hl-color-honey);
+}
+
+.hex--light {
+  --line: var(--hl-color-border);
+  --wall: var(--hl-color-surface-edge);
+}
+
+.hex--light[aria-pressed="true"] {
+  --line: color-mix(in srgb, var(--hl-color-honey) 82%, var(--hl-color-ink));
+  --wall: var(--hl-color-honey-edge);
+}
+
+.hex:focus-visible {
+  filter:
+    drop-shadow(var(--g) 0 0 var(--ring-gap)) drop-shadow(calc(-1 * var(--g)) 0 0 var(--ring-gap))
+    drop-shadow(0 var(--g) 0 var(--ring-gap)) drop-shadow(0 calc(-1 * var(--g)) 0 var(--ring-gap))
+    drop-shadow(var(--w) 0 0 var(--ring)) drop-shadow(calc(-1 * var(--w)) 0 0 var(--ring))
+    drop-shadow(0 var(--w) 0 var(--ring)) drop-shadow(0 calc(-1 * var(--w)) 0 var(--ring))
+    var(--lift);
+}
+
+.link-strong {
+  text-decoration-color: var(--hl-color-apricot);
+}
+
+/* Sheets: cards are lighter paper with a layered shadow; --under names the sheet that peeks
+   out beneath them. */
+.sticker,
+.mini-phone,
+.checklist,
+.assistant,
+.cta,
+.email,
+.font-card,
+.swatch,
+.table-wrap,
+.alexa,
+.phone,
+.bubble,
+.snack {
+  border: 0;
+  background-image: var(--grain);
+  background-size: 360px;
+}
+
+.sticker,
+.mini-phone,
+.swatch {
+  background-color: var(--hl-color-surface-raised);
+  box-shadow: var(--sticker);
+}
+
+.sticker--voice {
+  background-color: var(--hl-color-accent-soft);
+}
+
+.checklist,
+.assistant,
+.font-card,
+.email,
+.cta,
+.mini-phone--store {
+  --under: var(--hl-color-sage);
+  box-shadow:
+    var(--sticker),
+    8px 9px 0 -1px var(--under),
+    10px 13px 14px -1px rgb(var(--shade) / 0.2);
+}
+
+.assistant {
+  --under: var(--hl-color-apricot);
+  background-color: var(--hl-color-surface-raised);
+}
+
+.assistant + .assistant {
+  --under: var(--hl-color-lavender);
+}
+
+.font-card + .font-card {
+  --under: var(--hl-color-apricot);
+}
+
+.email {
+  --under: var(--hl-color-lavender);
+}
+
+.cta {
+  --under: var(--hl-color-apricot);
+  box-shadow:
+    var(--sticker-l),
+    12px 12px 0 -2px var(--under),
+    14px 17px 16px -2px rgb(var(--shade) / 0.2),
+    24px 24px 0 -5px var(--hl-color-lavender),
+    26px 30px 22px -5px rgb(var(--shade) / 0.18);
+}
+
+.table-wrap,
+.bubble,
+.snack {
+  box-shadow: var(--sticker-s);
+}
+
+.phone {
+  padding: 9px;
+  background-color: var(--hl-color-ink);
+  box-shadow:
+    var(--sticker-l),
+    14px 14px 0 -3px var(--hl-color-sage),
+    16px 19px 18px -3px rgb(var(--shade) / 0.22),
+    28px 28px 0 -7px var(--hl-color-lavender),
+    30px 34px 24px -7px rgb(var(--shade) / 0.2);
+}
+
+.screen {
+  background-image: var(--grain);
+  background-size: 360px;
+}
+
+.mini-row--new {
+  box-shadow: var(--sticker-s);
+}
+
+/* Sunken surfaces are windows cut into the sheet: the shadow sits inside the top-left edge. */
+.feature-visual,
+.motion-demo {
+  background-image: var(--grain);
+  background-size: 360px;
+  box-shadow: var(--window);
+}
+
+.track {
+  border: 0;
+  background-color: var(--hl-color-surface-sunken);
+  box-shadow: var(--window);
+}
+
+.ball,
+.bar {
+  border: 0;
+  box-shadow: var(--sticker-s);
+}
+
+.rbox,
+.sbox,
+.swatch-chip {
+  border: 0;
+  box-shadow: var(--sticker-s);
+}
+
+.sbox.sh-m {
+  box-shadow: var(--sticker);
+}
+
+.sbox.sh-l {
+  box-shadow: var(--sticker-l);
+}
+
+.hex-specimens,
+.components--static {
+  filter: var(--lift);
+}
+
+/* Hero: a paper landscape of hexagon hills behind the phone, rising to the right. Its front
+   layer is the page colour, so the page itself is the last cut sheet. */
+.hero {
+  padding-bottom: var(--hl-space-9);
+}
+
+.hero::before {
+  background: var(--scape) right bottom / 1440px auto no-repeat;
+  mask-image: none;
+}
+
+@media (min-width: 1441px) {
+  .hero::before {
+    background-size: 100% auto;
+  }
+}
+
+@media (max-width: 719px) {
+  .hero::before {
+    background-size: 1000px auto;
+  }
+}
+
+.flight {
+  display: none;
+}
+
+.bee-flight .bee {
+  width: 104px;
+  height: 87px;
+}
+
+.flight-divider .bee {
+  transform: rotate(-6deg);
+}
+
+.privacy-bee {
+  transform: rotate(6deg);
+}
+
+/* Voice: a honey sheet laid over apricot and lavender strips, each casting its shadow down. */
+.voice {
+  border-block: 0;
+  background-color: var(--hl-color-honey);
+  background-image: var(--grain);
+  background-size: 360px;
+  box-shadow:
+    0 2px 2px rgb(var(--shade) / 0.25),
+    0 6px 10px rgb(var(--shade) / 0.18),
+    0 0 0 12px var(--hl-color-apricot),
+    0 4px 8px 12px rgb(var(--shade) / 0.2),
+    0 0 0 24px var(--hl-color-lavender),
+    0 5px 12px 24px rgb(var(--shade) / 0.18);
+  margin-block: 24px;
+}
+
+.hum {
+  color: var(--hl-color-apricot);
+  opacity: 1;
+  filter: drop-shadow(1px 2px 1px rgb(var(--shade) / 0.25));
+}
+
+/* Footer: the page sheet lies on top of it, so its shadow falls into the footer's top. */
+.site-footer {
+  border-top: 0;
+  background-image: var(--grain);
+  background-size: 360px;
+  box-shadow: inset 0 10px 12px -8px rgb(var(--shade) / 0.3);
+}
+
+/* Token sheet applications */
+.email-head {
+  position: relative;
+  border-bottom: 0;
+  background-image: var(--grain);
+  background-size: 360px;
+  box-shadow: 0 2px 2px rgb(var(--shade) / 0.2), 0 4px 10px rgb(var(--shade) / 0.12);
+}
+
+.email-head .mark--l {
+  width: 64px;
+  height: 64px;
+}
+
+.store-shot {
+  border: 0;
+  background: var(--scape) right bottom / 260% auto no-repeat, var(--grain) 0 0 / 360px, var(--hl-color-honey);
+  box-shadow: var(--sticker);
+}
+
+.alexa {
+  background-color: var(--hl-color-text);
+  background-image: none;
+}
+
+/* 43 px face plus the 5 px lower sheet keeps the chip at the 48 px target. */
+.hex--chip {
+  --h: 43px;
+}
+
+/* Links and tabs without a sheet stay bare paper: no grain, no shadow until hover. */
+.nav a::after,
+.tab i::after {
+  background-image: none;
+}
+
+.nav a,
+.tab:not(.tab--on) i {
+  filter: none;
+}
+
+.nav a:hover {
+  filter: var(--lift-s);
+}
+
+.voice .headline {
+  text-shadow: 1px 2px 2px rgb(58 42 29 / 0.22);
+}
+
+/* The phone's lower sheets reach 28 px past it; keep them off the caption. */
+.surface-fig .phone {
+  margin-bottom: var(--hl-space-6);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta {
+    --under: var(--hl-color-honey);
+    --ring-gap: var(--hl-color-surface-raised);
+    background-color: var(--hl-color-surface-raised);
+  }
+}
+
+@media (max-width: 719px) {
+  .hum {
+    display: none;
+  }
+
+  .cta {
+    box-shadow:
+      var(--sticker-l),
+      7px 8px 0 -1px var(--under),
+      9px 12px 12px -1px rgb(var(--shade) / 0.2),
+      14px 15px 0 -3px var(--hl-color-lavender),
+      16px 20px 18px -3px rgb(var(--shade) / 0.18);
+  }
+}

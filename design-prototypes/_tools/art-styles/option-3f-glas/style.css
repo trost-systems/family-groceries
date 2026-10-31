@@ -1,0 +1,763 @@
+/* Glas: 3b's hexagons as frosted panes over soft light. Every glass surface reads its fill,
+   blur and rim from the variables below, so dark mode and "reduce transparency" only swap
+   variables. Text never sits on a bare glow: it sits on glass opaque enough to carry it. */
+:root {
+  --g-pane: 70%;
+  --g-strong: 86%;
+  --g-soft: 46%;
+  --g-tint: 82%;
+  --glass: color-mix(in srgb, var(--hl-color-surface-raised) var(--g-pane), transparent);
+  --glass-strong: color-mix(in srgb, var(--hl-color-surface-raised) var(--g-strong), transparent);
+  --glass-soft: color-mix(in srgb, var(--hl-color-surface-raised) var(--g-soft), transparent);
+  --blur: blur(22px) saturate(170%);
+  --rim: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 0 0 1px rgb(255 255 255 / 0.6);
+  --hair: 0 0 0 1px rgb(43 31 102 / 0.07);
+  --glass-line: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(255 255 255 / 0.5) 45%, rgb(125 117 145 / 0.45));
+  --gloss: linear-gradient(180deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0) 55%);
+  --honey-face: var(--gloss), linear-gradient(180deg, color-mix(in srgb, var(--hl-color-honey) 72%, #fff), var(--hl-color-honey) 58%, color-mix(in srgb, var(--hl-color-honey) 90%, #e07a00)), var(--hl-color-honey);
+  --honey-rim: linear-gradient(180deg, #fff6d8, color-mix(in srgb, var(--hl-color-honey) 70%, #fff) 40%, var(--hl-color-honey-edge));
+  --glow-h: color-mix(in srgb, var(--hl-color-glow-honey) 50%, transparent);
+  --glow-v: color-mix(in srgb, var(--hl-color-glow-violet) 38%, transparent);
+  --glow-m: color-mix(in srgb, var(--hl-color-glow-mint) 34%, transparent);
+  --ring-gap: var(--hl-color-surface-raised);
+  --page: 1180px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --g-pane: 58%;
+    --g-strong: 80%;
+    --g-soft: 38%;
+    --g-tint: 78%;
+    --blur: blur(20px) saturate(150%);
+    --rim: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 0 0 1px rgb(255 255 255 / 0.09);
+    --hair: 0 0 0 1px rgb(0 0 0 / 0.35);
+    --glass-line: linear-gradient(180deg, rgb(255 255 255 / 0.42), rgb(255 255 255 / 0.1) 55%, rgb(255 255 255 / 0.16));
+    --gloss: linear-gradient(180deg, rgb(255 255 255 / 0.45), rgb(255 255 255 / 0) 55%);
+    --glow-h: color-mix(in srgb, var(--hl-color-glow-honey) 44%, transparent);
+    --glow-v: color-mix(in srgb, var(--hl-color-glow-violet) 56%, transparent);
+    --glow-m: color-mix(in srgb, var(--hl-color-glow-mint) 20%, transparent);
+  }
+}
+
+/* Light behind the glass: four calm glows per 1800 px of page, each inside its tile. */
+body {
+  background-color: var(--hl-color-surface);
+  background-image:
+    radial-gradient(560px 420px at 86% 430px, var(--glow-h), transparent 70%),
+    radial-gradient(620px 460px at 6% 900px, var(--glow-v), transparent 70%),
+    radial-gradient(520px 400px at 78% 1320px, var(--glow-m), transparent 70%),
+    radial-gradient(420px 320px at 30% 1640px, var(--glow-h), transparent 70%);
+  background-size: 100% 1800px;
+  background-repeat: repeat-y;
+  font-feature-settings: "ss01";
+}
+
+/* Frosted panes */
+.site-header .wrap,
+.sticker,
+.phone,
+.mini-phone,
+.feature-visual,
+.checklist,
+.assistant,
+.cta,
+.site-footer,
+.swatch,
+.table-wrap,
+.font-card,
+.motion-demo,
+.email,
+.rbox,
+.sbox,
+.track {
+  border: 0;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--rim), var(--hair), var(--sticker);
+}
+
+/* Header: a floating glass capsule */
+.site-header {
+  padding-block: var(--hl-space-3);
+}
+
+.site-header .wrap {
+  padding: var(--hl-space-2) var(--hl-space-2) var(--hl-space-2) var(--hl-space-3);
+  border-radius: var(--hl-radius-l);
+  background: var(--glass-strong);
+  box-shadow: var(--rim), var(--hair), var(--sticker-s);
+}
+
+.brand {
+  font-family: var(--hl-font-family-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  gap: var(--hl-space-2);
+}
+
+.mark {
+  filter: drop-shadow(0 4px 8px rgb(43 31 102 / 0.18));
+}
+
+.brand:hover .mark {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.nav a {
+  font-weight: 600;
+}
+
+.nav a:hover {
+  --face: color-mix(in srgb, var(--hl-color-honey-soft) var(--g-tint), transparent);
+}
+
+/* Hexagons as glass: a light rim (the outer mask layer) around a nearly opaque face. Small
+   hexagons get no blur of their own: they sit on panes that already blur, and dozens of
+   masked blurs made frames slow enough to delay the press transition. */
+.hx {
+  --line: var(--glass-line);
+  --face: var(--glass-strong);
+}
+
+.hx--honey,
+.tab--on i {
+  --line: var(--honey-rim);
+  --face: var(--honey-face);
+  color: var(--hl-color-on-honey);
+}
+
+.hx--soft {
+  --line: linear-gradient(180deg, rgb(255 255 255 / 0.9), color-mix(in srgb, var(--hl-color-honey) 45%, transparent));
+  --face: color-mix(in srgb, var(--hl-color-honey-soft) var(--g-tint), transparent);
+}
+
+.hx--solid {
+  --line: linear-gradient(180deg, color-mix(in srgb, var(--hl-color-accent) 55%, #fff), var(--hl-color-accent));
+  --face: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 50%), var(--hl-color-accent);
+  color: var(--hl-color-on-accent);
+}
+
+.hx--edge {
+  filter: drop-shadow(0 var(--hl-depth-edge) 0 var(--hl-color-surface-edge)) drop-shadow(0 12px 16px rgb(43 31 102 / 0.12));
+}
+
+.route li {
+  --line: var(--glass-line);
+  --face: var(--glass-strong);
+}
+
+/* Pointy cells: opaque faces, since the mask makes each one its own backdrop. */
+.hxp {
+  --line: var(--honey-rim);
+  --face: var(--honey-face);
+}
+
+.avatar--l {
+  --line: linear-gradient(180deg, #fff, color-mix(in srgb, var(--hl-color-accent) 55%, var(--hl-color-accent-soft)));
+  --face: var(--gloss), var(--hl-color-accent-soft);
+}
+
+.cb {
+  --line: var(--hl-color-border);
+  --face: linear-gradient(180deg, var(--hl-color-surface-raised), var(--hl-color-surface-sunken)), var(--hl-color-surface-raised);
+}
+
+.chip .dot,
+.tick,
+.item--done .cb,
+.cb--on {
+  --line: linear-gradient(180deg, color-mix(in srgb, var(--hl-color-success) 45%, #fff), var(--hl-color-success));
+  --face: linear-gradient(180deg, color-mix(in srgb, var(--hl-color-success) 86%, #fff), var(--hl-color-success) 60%), var(--hl-color-success);
+}
+
+/* Tactile glass buttons. The side wall and edge only paint below the face's middle, so a
+   translucent face shows the page through it, not its own wall. The face still sinks by --d. */
+.hex {
+  --line: var(--honey-rim);
+  --face: var(--honey-face);
+  --wall: var(--hl-color-honey-edge);
+  --edge: var(--hl-color-edge);
+}
+
+.hex::before {
+  background: linear-gradient(transparent calc(var(--h) / 2), var(--edge) 0);
+}
+
+.hex::after {
+  background: linear-gradient(transparent calc(var(--h) / 2), var(--wall) 0);
+}
+
+.hex .face {
+  font-weight: 650;
+}
+
+.hex--ink {
+  --line: linear-gradient(180deg, #8d84ab, #2a2540);
+  --face: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 55%), linear-gradient(180deg, #2f2945, #17141f), #17141f;
+  --on-face: #f7f4ff;
+  --wall: #2a2540;
+  --edge: #0b0a10;
+}
+
+.hex--light {
+  --line: var(--glass-line);
+  --face: var(--gloss), var(--glass-strong);
+  --wall: var(--hl-color-surface-edge);
+  --edge: color-mix(in srgb, var(--hl-color-surface-edge) 70%, var(--hl-color-border));
+}
+
+.hex--light[aria-pressed="true"] {
+  --line: var(--honey-rim);
+  --face: var(--honey-face);
+  --wall: var(--hl-color-honey-edge);
+  --edge: var(--hl-color-edge);
+}
+
+.hex--chip {
+  --h: 44px;
+}
+
+.hex--store .face span {
+  font-family: var(--hl-font-family-display);
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hex--ink {
+    --line: linear-gradient(180deg, #ffffff, #b9b0d6);
+    --face: linear-gradient(180deg, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0) 55%), linear-gradient(180deg, #f4f1fb, #d8d1ec), #e6e1f3;
+    --on-face: #14111d;
+    --wall: #8f86ab;
+    --edge: #2e2945;
+  }
+
+  .hex--light {
+    --edge: #05040a;
+  }
+
+  .hx--edge {
+    filter: drop-shadow(0 var(--hl-depth-edge) 0 var(--hl-color-surface-edge)) drop-shadow(0 12px 18px rgb(0 0 0 / 0.4));
+  }
+}
+
+/* Hero: light pooled behind the phone, large glass cells as the backdrop. */
+.hero {
+  background:
+    radial-gradient(440px 380px at 94% 30%, var(--glow-h), transparent 70%),
+    radial-gradient(420px 340px at 56% 82%, var(--glow-v), transparent 70%);
+}
+
+.hero::before {
+  background: var(--comb) right -80px top 40px / min(820px, 150%) auto no-repeat;
+  mask-image: none;
+}
+
+.chip {
+  font-weight: 600;
+}
+
+.display {
+  text-wrap: balance;
+}
+
+.hero .lead {
+  max-width: 34em;
+}
+
+.flight {
+  display: none;
+}
+
+.bee-flight .bee {
+  width: 88px;
+  height: 74px;
+  filter: drop-shadow(0 10px 14px rgb(43 31 102 / 0.18));
+}
+
+/* The phone is a glass slab: a frosted bezel around a nearly clear screen. */
+.phone {
+  padding: 9px;
+  border-radius: 46px;
+  background: var(--glass-soft);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.95),
+    inset 0 0 0 1px rgb(255 255 255 / 0.55),
+    inset 0 -10px 24px rgb(255 255 255 / 0.18),
+    var(--hair),
+    var(--sticker-l);
+}
+
+.hero .phone {
+  transform: rotate(-3deg);
+}
+
+.screen {
+  border-radius: 37px;
+  background: var(--glass-strong);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+
+.app-head {
+  border-bottom-color: var(--hl-color-divider);
+}
+
+.app-head .hh {
+  font-family: var(--hl-font-family-display);
+  font-variant-caps: normal;
+  letter-spacing: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--hl-color-text);
+}
+
+.store-name {
+  font-family: var(--hl-font-family-display);
+  font-weight: 600;
+}
+
+.item + .item {
+  border-top-color: color-mix(in srgb, var(--hl-color-divider) 80%, transparent);
+}
+
+.item--done {
+  background: color-mix(in srgb, var(--hl-color-success-soft) var(--g-tint), transparent);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.compose {
+  --line: var(--glass-line);
+  --face: var(--hl-color-surface-raised);
+}
+
+/* Stickers float as glass chips. */
+.sticker {
+  border-radius: var(--hl-radius-m);
+  padding: var(--hl-space-2) var(--hl-space-4) var(--hl-space-2) var(--hl-space-2);
+  font-weight: 600;
+}
+
+.sticker--sync {
+  transform: rotate(-2deg);
+}
+
+.sticker--voice {
+  transform: rotate(2deg);
+  background: color-mix(in srgb, var(--hl-color-accent-soft) var(--g-tint), transparent);
+}
+
+.snack {
+  background: color-mix(in srgb, var(--hl-color-text) 90%, transparent);
+  -webkit-backdrop-filter: var(--blur);
+  backdrop-filter: var(--blur);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), var(--sticker-s);
+}
+
+/* Divider between hero and features: a thin refraction line with three cells on it. */
+.flight-divider::before {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--hl-color-glow-honey) 70%, transparent) 35%, color-mix(in srgb, var(--hl-color-glow-violet) 60%, transparent) 70%, transparent);
+}
+
+.flight-divider .bee {
+  top: 8px;
+  right: auto;
+  left: calc(50% - 30px);
+  width: 60px;
+  height: 50px;
+  transform: none;
+}
+
+/* Features */
+.feature + .feature {
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--hl-color-divider) 20%, var(--hl-color-divider) 80%, transparent) 1;
+}
+
+.title-l {
+  font-family: var(--hl-font-family-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.feature-visual {
+  border-radius: var(--hl-radius-xl);
+  background: var(--glass-soft);
+  font-weight: 600;
+}
+
+.visual-sync {
+  background:
+    radial-gradient(220px 160px at 25% 30%, var(--glow-h), transparent 70%),
+    radial-gradient(220px 160px at 80% 75%, var(--glow-m), transparent 70%),
+    var(--glass-soft);
+}
+
+.visual-route {
+  background:
+    radial-gradient(260px 200px at 85% 85%, var(--glow-v), transparent 70%),
+    var(--glass-soft);
+}
+
+.visual-type {
+  background:
+    radial-gradient(260px 200px at 15% 20%, var(--glow-h), transparent 70%),
+    var(--glass-soft);
+}
+
+.mini-phone {
+  border-radius: var(--hl-radius-l);
+  background: var(--glass-strong);
+}
+
+.mini-row--new {
+  background: color-mix(in srgb, var(--hl-color-honey-soft) var(--g-tint), transparent);
+}
+
+.mini-row--done {
+  background: color-mix(in srgb, var(--hl-color-success-soft) var(--g-tint), transparent);
+}
+
+.route-bee {
+  width: 76px;
+  height: 64px;
+}
+
+/* Voice: a band of warm light with two glass cards on it. */
+.voice {
+  border-block: 0;
+  background:
+    radial-gradient(640px 420px at 12% 20%, color-mix(in srgb, var(--hl-color-honey) 75%, transparent), transparent 70%),
+    radial-gradient(560px 420px at 92% 85%, color-mix(in srgb, var(--hl-color-glow-violet) 45%, transparent), transparent 70%),
+    radial-gradient(520px 360px at 70% 10%, color-mix(in srgb, #ff9f2e 40%, transparent), transparent 70%),
+    var(--hl-color-honey-soft);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), inset 0 -1px 0 rgb(255 255 255 / 0.8);
+}
+
+.hum {
+  opacity: 0.1;
+}
+
+.assistant {
+  border-radius: var(--hl-radius-l);
+  background: var(--glass);
+}
+
+.bubble {
+  background: color-mix(in srgb, var(--hl-color-accent-soft) var(--g-tint), transparent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6);
+  font-weight: 600;
+}
+
+.bubble--reply {
+  background: color-mix(in srgb, var(--hl-color-honey-soft) var(--g-tint), transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .voice {
+    background:
+      radial-gradient(640px 420px at 12% 20%, color-mix(in srgb, var(--hl-color-glow-honey) 46%, transparent), transparent 70%),
+      radial-gradient(600px 440px at 92% 85%, color-mix(in srgb, var(--hl-color-glow-violet) 62%, transparent), transparent 70%),
+      #100c1c;
+    color: var(--hl-color-text);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 -1px 0 rgb(255 255 255 / 0.1);
+  }
+
+  .voice .lead {
+    color: var(--hl-color-text-muted);
+  }
+
+  .voice a {
+    color: var(--hl-color-accent);
+  }
+
+  .hum {
+    color: var(--hl-color-glow-honey);
+    opacity: 0.2;
+  }
+}
+
+/* Privacy */
+.privacy-bee {
+  width: 132px;
+  height: 110px;
+  transform: none;
+  filter: drop-shadow(0 14px 20px rgb(43 31 102 / 0.16));
+}
+
+.checklist {
+  border-radius: var(--hl-radius-l);
+}
+
+.checklist li + li {
+  border-top: 1px solid color-mix(in srgb, var(--hl-color-divider) 85%, transparent);
+}
+
+.checklist strong {
+  font-weight: 700;
+}
+
+/* Closed test */
+.section--cta {
+  background:
+    radial-gradient(520px 340px at 20% 50%, var(--glow-h), transparent 70%),
+    radial-gradient(480px 340px at 85% 40%, var(--glow-v), transparent 70%);
+}
+
+.cta {
+  --ring-gap: var(--hl-color-surface-raised);
+  border-radius: var(--hl-radius-xl);
+  background: var(--glass);
+}
+
+.cta-bee {
+  width: 140px;
+  height: 116px;
+  filter: drop-shadow(0 14px 20px rgb(43 31 102 / 0.18));
+}
+
+/* Footer: a frosted sheet with a lit top edge */
+.site-footer {
+  background: var(--glass-soft);
+  border-top: 0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 -1px 0 rgb(43 31 102 / 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .site-footer {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+  }
+
+  .mark,
+  .bee-flight .bee,
+  .privacy-bee,
+  .cta-bee {
+    filter: drop-shadow(0 0 18px rgb(255 194 51 / 0.28));
+  }
+}
+
+/* Token sheet */
+.sheet-section {
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--hl-color-divider) 15%, var(--hl-color-divider) 85%, transparent) 1;
+}
+
+code {
+  background: color-mix(in srgb, var(--hl-color-surface-sunken) var(--g-tint), transparent);
+}
+
+.swatch {
+  border-radius: var(--hl-radius-m);
+}
+
+.swatch-chip {
+  border: 0;
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55), inset 0 0 0 1px rgb(43 31 102 / 0.12);
+  font-family: var(--hl-font-family-display);
+  font-weight: 600;
+}
+
+.swatch-name {
+  font-weight: 700;
+}
+
+.table-wrap {
+  border-radius: var(--hl-radius-l);
+  background: var(--glass-strong);
+}
+
+.pair-sample {
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgb(43 31 102 / 0.12);
+}
+
+.font-card {
+  border-radius: var(--hl-radius-l);
+}
+
+.font-name {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.r-display,
+.r-headline-l,
+.r-headline {
+  letter-spacing: var(--hl-type-headline-tracking);
+}
+
+.bar {
+  border: 0;
+  background: var(--honey-face);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(168 107 0 / 0.3);
+}
+
+.rbox {
+  background: color-mix(in srgb, var(--hl-color-accent-soft) var(--g-pane), transparent);
+}
+
+.sbox {
+  background: var(--glass-strong);
+}
+
+.sh-s {
+  box-shadow: var(--rim), var(--sticker-s);
+}
+
+.sh-m {
+  box-shadow: var(--rim), var(--sticker);
+}
+
+.sh-l {
+  box-shadow: var(--rim), var(--sticker-l);
+}
+
+.motion-demo {
+  background:
+    radial-gradient(300px 200px at 80% 20%, var(--glow-v), transparent 70%),
+    var(--glass-soft);
+}
+
+.track {
+  background: var(--glass-strong);
+}
+
+.ball {
+  border: 0;
+  background: var(--honey-face);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), inset 0 0 0 1px rgb(168 107 0 / 0.35), 0 4px 10px rgb(168 107 0 / 0.3);
+}
+
+.ball--standard {
+  background: var(--gloss), var(--hl-color-accent-soft);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), inset 0 0 0 1px rgb(91 60 196 / 0.3), 0 4px 10px rgb(91 60 196 / 0.25);
+}
+
+.hex-specimen {
+  background: var(--honey-face);
+}
+
+.hex-specimen--l {
+  background: var(--gloss), var(--hl-color-accent);
+}
+
+.hex-specimen--p {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hl-color-success) 75%, #fff), var(--hl-color-success) 65%);
+}
+
+.email {
+  border-radius: var(--hl-radius-l);
+  background: var(--glass-strong);
+}
+
+.email-head {
+  border-bottom: 0;
+  background:
+    radial-gradient(260px 120px at 85% 0%, rgb(255 255 255 / 0.55), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--hl-color-honey) 70%, #fff), var(--hl-color-honey)),
+    var(--hl-color-honey);
+  box-shadow: inset 0 -1px 0 rgb(168 107 0 / 0.3);
+}
+
+.email-title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.email-foot {
+  background: color-mix(in srgb, var(--hl-color-surface-sunken) var(--g-tint), transparent);
+}
+
+/* Store image: honey light with the screen as a glass pane in front. */
+.store-shot {
+  border: 0;
+  border-radius: var(--hl-radius-l);
+  background:
+    radial-gradient(260px 220px at 90% 95%, rgb(163 139 255 / 0.55), transparent 70%),
+    radial-gradient(240px 200px at 10% 0%, rgb(255 255 255 / 0.6), transparent 70%),
+    linear-gradient(170deg, #ffd45c, #ffc233 45%, #ffad1f),
+    #ffc233;
+  color: #17141f;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), var(--sticker);
+}
+
+.store-shot-title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.mini-phone--store {
+  color: var(--hl-color-text);
+}
+
+/* Alexa card: always the night glass, honey and violet light behind it. */
+.alexa {
+  border: 0;
+  background:
+    radial-gradient(300px 200px at 90% 10%, rgb(124 92 255 / 0.5), transparent 70%),
+    radial-gradient(260px 180px at 0% 100%, rgb(255 181 46 / 0.3), transparent 70%),
+    #15121f;
+  color: #f7f4ff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 0 0 1px rgb(255 255 255 / 0.08), var(--sticker);
+}
+
+.alexa-title {
+  font-weight: 600;
+}
+
+.alexa-wave {
+  opacity: 0.8;
+}
+
+/* Desktop: the header capsule turns fully round. */
+@media (min-width: 720px) {
+  .site-header {
+    padding-block: var(--hl-space-4);
+  }
+
+  .site-header .wrap {
+    border-radius: var(--hl-radius-full);
+    padding-inline: var(--hl-space-4) var(--hl-space-2);
+  }
+}
+
+@media (max-width: 719px) {
+  .site-header .wrap {
+    column-gap: var(--hl-space-3);
+  }
+
+  .hero::before {
+    background-position: right -220px bottom 40px;
+    background-size: 640px auto;
+  }
+}
+
+/* Reduce transparency: every pane turns solid and nothing is blurred. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --g-pane: 100%;
+    --g-strong: 100%;
+    --g-soft: 100%;
+    --g-tint: 100%;
+    --blur: none;
+  }
+
+  .feature-visual,
+  .motion-demo {
+    background: var(--hl-color-surface-raised);
+  }
+
+  .snack {
+    background: var(--hl-color-text);
+  }
+}

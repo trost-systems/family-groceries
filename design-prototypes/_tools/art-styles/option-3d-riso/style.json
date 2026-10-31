@@ -1,0 +1,30 @@
+{
+  "label": "Riso",
+  "idea": "als Risografie: Korn, zwei Farben im Überdruck",
+  "sheet": {
+    "lead": "Hummlist, gedruckt mit zwei Farben auf ungestrichenem Papier: Blau für Schrift und Kontur, Gelb als zweite Platte, ein paar Pixel versetzt. Wo sich beide überlagern, wird es grün.",
+    "colorNote": "Zwei Druckfarben, mehr nicht. Alle Schrift steht in Blau, Gelb füllt Flächen und liegt als versetzte Platte hinter Karten und Knöpfen. Hellere Töne sind Halbton-Raster der beiden Farben. Grün entsteht nur im Überdruck und heißt deshalb „erledigt“. Auf dunklem Karton werden die Farben hell: Gelb und Hellblau.",
+    "colorNotes": {
+      "brand": "Riso-Blau für Mengen, Zahlen und Linien.",
+      "honey": "Riso-Gelb, die zweite Platte. Immer mit Blau darauf.",
+      "honey-soft": "Gelb im Halbton für Chips und neue Einträge.",
+      "accent": "Riso-Blau für Links, Stimme und Fokus.",
+      "surface": "Ungestrichenes Papier, mit Korn.",
+      "text": "Alle Schrift ist blaue Druckfarbe.",
+      "success": "Gelb auf Blau gedruckt: Grün für abgehakt.",
+      "edge": "Die blaue Platte unter Knöpfen, versetzt.",
+      "honey-edge": "Wand eines gelben Knopfs: der Überdruck."
+    },
+    "shadows": [
+      "sticker-s · 3/3/0 Gelb",
+      "sticker · 5/5/0 Gelb",
+      "sticker-l · 10/10/0 Gelb"
+    ],
+    "shadowNote": "Schatten sind keine Schatten, sondern die gelbe Platte, falsch eingepasst: ohne Unschärfe, immer nach rechts unten. Knöpfe drehen es um: das Gelb ist die Fläche, die blaue Kante sitzt 3 px daneben.",
+    "captions": {
+      "app": "App: die Liste auf Papierkorn, Abgehaktes im grünen Überdruck, der aktive Reiter als gelbe Wabe.",
+      "email": "E-Mail: gelber Kopf mit ungleichmäßiger Farbe, darunter blaue Schrift auf hellem Papier.",
+      "store": "Store-Bild: gelbe Fläche, ein blaues Halbton-Wabenraster darüber, die App als Karte mit versetzter Platte."
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "label": "Raster",
+  "idea": "als flaches Swiss-Editorial: strenges Raster, große Schrift",
+  "sheet": {
+    "lead": "Papier, Tinte und ein Gelb. Ein sichtbares Raster aus sechs Spalten, linksbündige Schrift in Plakatgröße, nummerierte Abschnitte und Haarlinien statt Karten. Die weiche Wabe bleibt auf jedem Knopf, flach mit einer 4-px-Kante aus Tinte. Diese Seite folgt deinem System, hell oder dunkel; jede Farbe nennt beide Werte.",
+    "colorNote": "Zwei Farben tragen alles: Papier und Tinte. Honig ist die einzige Signalfarbe, für Knöpfe, das Zeichen und ein großes Feld pro Seite, immer mit Tinte darauf. Grün steht nur für abgehakt. Links sind Tinte mit Honig-Unterstrich. Nachts wird das Papier fast schwarz, Honig und Fokusring leuchten gelb.",
+    "colorNotes": {
+      "brand": "Tinte als Marke: Listenkopf, Mengen; nachts Honig",
+      "honey": "Die Signalfarbe: Knöpfe, Zeichen, ein großes Feld",
+      "honey-soft": "Neue Einträge und leise Markierungen",
+      "accent": "Links und Fokusring: Tinte, nachts Honig",
+      "accent-soft": "Grau für leise Flächen",
+      "surface": "Papier, leicht warm",
+      "surface-raised": "Weiß: Bildschirm, Eingabefeld",
+      "surface-sunken": "Mulden und Bildflächen",
+      "text": "Tinte, fast reines Schwarz",
+      "border": "Haarlinie, 1 px",
+      "divider": "Rasterlinien und Trennlinien, nur Dekor",
+      "success": "Nur für abgehakt",
+      "edge": "Die 4-px-Kante unter Knöpfen",
+      "honey-edge": "Seitenwand eines Honigknopfs, hell flach in Tinte",
+      "surface-edge": "Seitenwand eines hellen Knopfs, hell flach in Tinte"
+    },
+    "shadows": [
+      "Linie · 0/1/0 Tinte",
+      "Kante · 0/4/0 Tinte",
+      "Feld · 12/12/0 Honig"
+    ],
+    "shadowNote": "Keine weichen Schatten. Eine Haarlinie trennt, die 4-px-Kante zeigt, was man drücken kann, und ein versetztes Honigfeld hebt höchstens ein Objekt pro Fläche hervor. Nachts wird die Linie grau, die Kante bleibt schwarz.",
+    "captions": {
+      "app": "App: Liste (Design H). Flach, Haarlinien zwischen den Zeilen, der abgehakte Artikel bleibt bis zum Rückgängig-Fenster grün stehen.",
+      "email": "E-Mail: Einladung. Honig als Kopfzeile, sonst Papier und Tinte, Schrift Inter mit Arial-Ersatz.",
+      "store": "Store-Bild: ein Honigfeld, die Schlagzeile groß in Tinte, der Bildschirm flach mit Haarlinie."
+    }
+  }
+}

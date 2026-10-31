@@ -1,0 +1,695 @@
+/* Marker: everything drawn with a black fineliner and coloured with markers.
+   Assets come from draw.mjs: ink-*.svg are outline masks, mk-*.svg marker-stroke masks
+   (both coloured here from tokens); box.svg, swipe.svg, mark.svg and motif.svg switch
+   ink and paper with prefers-color-scheme inside the SVG. */
+
+:root {
+  --pen: var(--hl-color-border);
+  --dot: #ddd4c2;
+  --flight: var(--pen);
+  --ring-gap: var(--hl-color-surface);
+  --ink-img: url("assets/ink-cap-l.svg"), url("assets/ink-cap-r.svg"), url("assets/ink-mid.svg");
+  --box: url("assets/box.svg") 30 / 30px / 4px stretch;
+  --box-b: url("assets/box-b.svg") 30 / 30px / 4px stretch;
+  --hatch: rgb(29 27 26 / 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dot: #383b42;
+    --hatch: rgb(232 227 216 / 0.45);
+  }
+}
+
+body {
+  background:
+    radial-gradient(circle at 1.5px 1.5px, var(--dot) 1.3px, transparent 1.8px) 0 0 / 24px 24px,
+    var(--hl-color-surface);
+}
+
+/* Handwritten display type; Caveat is narrow, so headings get room and no tracking. */
+.display,
+.headline,
+.title-l,
+.store-name,
+.store-count b,
+.alexa-title,
+.email-title,
+.store-shot-title,
+.font-name--display,
+.count-badge,
+.step {
+  font-family: var(--hl-font-family-display);
+}
+
+.title-l {
+  font-size: 2.375rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brand {
+  font-family: var(--hl-font-family-display);
+  font-size: 2rem;
+  font-weight: 700;
+  gap: var(--hl-space-1);
+}
+
+.mark {
+  width: 52px;
+  height: 52px;
+}
+
+/* A honey marker swipe under section headlines, a pen wave under the hero line. */
+.section-head .headline,
+.sheet-section > .headline {
+  justify-self: start;
+  padding-bottom: 0.18em;
+  background: url("assets/swipe.svg") left 0.1em bottom / min(100%, 9.5em) 0.42em no-repeat;
+}
+
+.hero .display {
+  padding-bottom: 0.25em;
+  background: url("assets/pen-wave.svg") left bottom / min(80%, 6.5em) 0.22em no-repeat;
+}
+
+.lead {
+  color: var(--hl-color-text-muted);
+}
+
+.link-strong {
+  text-decoration: none;
+  background: url("assets/swipe.svg") left 0 bottom 6px / 100% 0.55em no-repeat;
+}
+
+.voice .headline {
+  background: none;
+}
+
+/* ---------- Hexagons: marker fill under a hand-drawn ink outline ----------
+   The generated hex masks still define every control's shape. On top of 3b's mechanics:
+   ::before is now the marker fill (stroke texture intersected with the hex, set a little
+   off the outline), ::after the ink outline (three pieces, like the hex mask, so the
+   pointed ends keep their shape at any width). */
+.hx::before,
+.hex .face::before {
+  --mh: var(--h);
+  inset: 1px -2px -1px 2px;
+  background: var(--face);
+  mask-image: url("assets/mk-h.svg"), var(--hex-img);
+  mask-size: 100% 100%, var(--cw) 100%, var(--cw) 100%, calc(100% - 2 * var(--cw) + 2px) 100%;
+  mask-position: center, left center, right center, center;
+  mask-repeat: no-repeat;
+  mask-composite: intersect, add, add, add;
+}
+
+.hx::after,
+.hex .face::after {
+  --mh: calc(var(--h) * 1.125);
+  inset: calc(var(--h) / -16);
+  background: var(--line);
+  mask-image: var(--ink-img);
+  mask-size: var(--cw) 100%, var(--cw) 100%, calc(100% - 2 * var(--cw) + 2px) 100%;
+  mask-position: left center, right center, center;
+  mask-repeat: no-repeat;
+}
+
+.hx {
+  --line: var(--pen);
+  --face: transparent;
+}
+
+.hx--ink {
+  --line: var(--pen);
+}
+
+.hx--honey {
+  --line: var(--hl-color-ink);
+  --face: var(--hl-color-honey);
+}
+
+.hx--soft {
+  --line: transparent;
+  --face: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+}
+
+.hx--solid {
+  --line: var(--pen);
+  --face: var(--hl-color-lavender);
+  color: var(--hl-color-on-lavender);
+}
+
+.hx--edge {
+  filter: drop-shadow(1px var(--hl-depth-edge) 0 var(--hl-color-honey));
+}
+
+/* Pointy hexagons: no element mask any more, so the outline may leave the shape a little. */
+.hxp {
+  --line: var(--pen);
+  background: none;
+  mask: none;
+}
+
+.hxp::before {
+  inset: 1px -1px -1px 1px;
+  background: var(--face);
+  mask-image: url("assets/mk-p.svg"), var(--pointy-img);
+  mask-size: 100% 100%;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+}
+
+.hxp::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--s) / -16);
+  background: var(--line);
+  mask: url("assets/ink-pointy.svg") center / 100% 100% no-repeat;
+}
+
+.cb {
+  --face: transparent;
+  --line: var(--pen);
+}
+
+.item--done .cb,
+.cb--on {
+  --line: var(--pen);
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.tick,
+.chip .dot {
+  --line: var(--pen);
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.avatar--l {
+  --line: var(--pen);
+  --face: var(--hl-color-lavender);
+  color: var(--hl-color-on-lavender);
+}
+
+.plus {
+  --line: var(--pen);
+  --face: var(--hl-color-honey);
+}
+
+/* Tactile buttons: the side wall is hatched paper, the edge a drawn line under it. */
+.hex {
+  --b: 1.5px;
+  --line: var(--pen);
+  --wall: var(--hl-color-honey-edge);
+  --edge: var(--hl-color-edge);
+}
+
+.hex::after {
+  background:
+    repeating-linear-gradient(115deg, transparent 0 3px, var(--hatch) 3px 4px) left bottom / 100% calc(var(--d) + 2px) no-repeat,
+    var(--wall);
+}
+
+.hex--ink {
+  --face: var(--hl-color-lavender);
+  --on-face: var(--hl-color-on-lavender);
+  --wall: var(--hl-color-surface-edge);
+}
+
+.hex--light {
+  --face: transparent;
+  --line: var(--pen);
+  --wall: var(--hl-color-surface-edge);
+}
+
+.hex--light[aria-pressed="true"] {
+  --face: var(--hl-color-honey);
+  --line: var(--pen);
+  --wall: var(--hl-color-surface-edge);
+}
+
+.hex--chip {
+  --h: 43px;
+}
+
+.hex--store .face span {
+  font-family: var(--hl-font-family-display);
+  font-size: 1.625rem;
+  line-height: 1;
+}
+
+/* Nav: plain links that get a marker hex on hover. */
+.nav a:hover {
+  --face: var(--hl-color-honey);
+  --line: var(--pen);
+  color: var(--hl-color-on-honey);
+}
+
+/* ---------- Cards: paper with a drawn frame and a marker shadow ---------- */
+.sticker,
+.mini-phone,
+.checklist,
+.assistant,
+.cta,
+.email,
+.alexa,
+.font-card,
+.table-wrap,
+.phone {
+  border: 2px solid transparent;
+  border-image: var(--box);
+  background-clip: padding-box;
+}
+
+.swatch {
+  border: 0;
+  border-image: none;
+  border-bottom: 1.5px dashed var(--hl-color-divider);
+  border-radius: 0;
+  background: none;
+}
+
+.sticker--voice,
+.mini-phone--tilt,
+.assistant + .assistant,
+.font-card + .font-card {
+  border-image: var(--box-b);
+}
+
+.sticker {
+  border-radius: var(--hl-radius-s);
+  box-shadow: var(--sticker-s);
+}
+
+.sticker--voice {
+  background: var(--hl-color-accent-soft);
+  background-clip: padding-box;
+}
+
+.mini-phone {
+  border-radius: var(--hl-radius-m);
+}
+
+/* Phone mock: a drawn phone on paper instead of a black slab. */
+.phone {
+  padding: 12px 8px 14px;
+  border-width: 3px;
+  border-radius: 34px;
+  background: var(--hl-color-surface-raised);
+  background-clip: padding-box;
+  box-shadow: var(--sticker-l);
+}
+
+.screen {
+  border-radius: 22px;
+  background: var(--hl-color-surface);
+}
+
+.app-head {
+  border-bottom: 0;
+  background: url("assets/pen-wave.svg") left bottom / 100% 6px no-repeat;
+  opacity: 1;
+}
+
+.app-head .hh {
+  font-family: var(--hl-font-family-display);
+  font-variant-caps: normal;
+  letter-spacing: 0;
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.store-name {
+  font-size: 1.625rem;
+  font-weight: 700;
+}
+
+.store-count b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.8em;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: url("assets/ring.svg") center / 100% 100% no-repeat;
+}
+
+.store-rule {
+  height: 3px;
+  border-radius: 2px 6px 3px 8px;
+  transform: rotate(-0.6deg);
+}
+
+.qty {
+  font-family: var(--hl-font-family-display);
+  font-size: 1.3em;
+  line-height: 1;
+}
+
+.cat {
+  color: var(--hl-color-text-muted);
+}
+
+.cat::after {
+  height: 0;
+  border-top: 1.5px dashed var(--hl-color-divider);
+}
+
+.item + .item {
+  border-top: 0;
+}
+
+.item--done {
+  background: none;
+}
+
+.item--done .name {
+  text-decoration-color: var(--pen);
+  text-decoration-thickness: 2px;
+}
+
+.snack {
+  border-radius: 14px 6px 16px 5px / 6px 14px 5px 16px;
+}
+
+.tab--on i {
+  --line: var(--pen);
+  --face: var(--hl-color-honey);
+}
+
+.compose {
+  --face: var(--hl-color-surface-raised);
+}
+
+/* ---------- Feature visuals: marker washes instead of grey wells ---------- */
+.feature-visual {
+  isolation: isolate;
+  background: none;
+}
+
+.feature-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--wash, var(--hl-color-honey-soft));
+  mask: url("assets/mk-wash.svg") 0 0 / 100% 100% no-repeat;
+}
+
+.visual-sync {
+  --wash: var(--hl-color-success-soft);
+}
+
+.visual-route {
+  --wash: var(--hl-color-honey-soft);
+}
+
+.visual-type {
+  --wash: var(--hl-color-accent-soft);
+}
+
+.feature + .feature {
+  border-top: 0;
+  background: url("assets/pen-wave.svg") center top / 180px 10px no-repeat;
+}
+
+.mini-who {
+  border-bottom: 1.5px dashed var(--hl-color-divider);
+}
+
+.mini-row {
+  border-radius: 12px 4px 10px 5px / 5px 10px 4px 12px;
+}
+
+.mini-row--done {
+  background: var(--hl-color-success-soft);
+  text-decoration-color: var(--pen);
+}
+
+.pop {
+  --face: var(--hl-color-lavender);
+}
+
+.sync-arc {
+  color: var(--pen);
+}
+
+.route li {
+  --face: var(--hl-color-surface-raised);
+}
+
+.step {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* ---------- Voice: a band coloured with honey marker ---------- */
+.voice {
+  isolation: isolate;
+  background: none;
+  border-block: 0;
+}
+
+.voice::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--hl-color-honey);
+  mask: url("assets/mk-band.svg") 0 0 / 100% 100% no-repeat;
+}
+
+.hum {
+  opacity: 0.22;
+}
+
+.hum path {
+  stroke-width: 3;
+}
+
+.assistant {
+  border-radius: var(--hl-radius-m);
+  box-shadow: none;
+}
+
+.bubble {
+  border-radius: 18px 8px 16px 4px / 8px 16px 6px 18px;
+  background: var(--hl-color-accent-soft);
+}
+
+.bubble--reply {
+  border-radius: 8px 18px 4px 16px / 16px 8px 18px 6px;
+  background: var(--hl-color-honey-soft);
+}
+
+/* ---------- Privacy, CTA, footer ---------- */
+.checklist {
+  border-radius: var(--hl-radius-m);
+}
+
+.checklist li + li {
+  border-top: 1.5px dashed var(--hl-color-divider);
+}
+
+.cta {
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-surface-raised);
+  background-clip: padding-box;
+  --ring-gap: var(--hl-color-surface-raised);
+}
+
+.site-footer {
+  border-top: 0;
+  background:
+    url("assets/pen-wave.svg") left top / 100% 8px no-repeat,
+    var(--hl-color-surface-sunken);
+}
+
+/* ---------- Motif spots (where 3b's bee was) and the dashed pen arrows ---------- */
+.bee-flight .bee {
+  width: 96px;
+  height: 80px;
+  top: -12px;
+}
+
+.flight path {
+  stroke-width: 2;
+  stroke-dasharray: 7 6 4 6;
+}
+
+.flight--hero {
+  opacity: 0.5;
+}
+
+/* Arrow heads where a pen path ends in open space; each sits on its path's last point,
+   turned along the last segment (path coordinates in hex-src/index.html). */
+.privacy .section-head::after,
+.cta::after,
+.site-footer::after,
+.visual-route::after,
+.visual-type::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: url("assets/arrow-head.svg") center / contain no-repeat;
+  pointer-events: none;
+}
+
+.privacy .section-head::after {
+  left: 259px;
+  bottom: 98px;
+  rotate: -10deg;
+}
+
+.cta::after {
+  left: 203px;
+  top: -37px;
+  rotate: -18deg;
+}
+
+.site-footer::after {
+  right: calc(4% - 10px);
+  top: -28px;
+  rotate: 29deg;
+}
+
+.visual-route::after {
+  right: 30px;
+  bottom: 68px;
+  rotate: 34deg;
+}
+
+.visual-type::after {
+  left: -26px;
+  top: -32px;
+  rotate: 191deg;
+}
+
+.privacy-bee {
+  width: 120px;
+  height: 100px;
+}
+
+/* ---------- Token sheet ---------- */
+/* The shape specimens in marker, like every control. */
+.hex-specimen--h {
+  mask-image: url("assets/mk-h.svg"), var(--hex-img);
+  mask-size: 100% 100%, var(--cw) 100%, var(--cw) 100%, calc(100% - 2 * var(--cw) + 2px) 100%;
+  mask-position: center, left center, right center, center;
+  mask-composite: intersect, add, add, add;
+}
+
+.hex-specimen--p {
+  background: var(--hl-color-mint);
+  mask-image: url("assets/mk-p.svg"), var(--pointy-img);
+  mask-size: 100% 100%;
+  mask-composite: intersect;
+}
+
+.hex-specimen--l {
+  background: var(--hl-color-lavender);
+}
+
+.swatch-chip {
+  border: 0;
+  border-radius: 14px 6px 12px 5px / 6px 12px 5px 14px;
+  box-shadow: inset 0 0 0 2px var(--pen);
+}
+
+.table-wrap {
+  border-radius: var(--hl-radius-m);
+}
+
+.font-card {
+  border-radius: var(--hl-radius-m);
+  box-shadow: var(--sticker);
+}
+
+.font-name--display {
+  font-size: 4rem;
+  font-weight: 700;
+}
+
+.bar {
+  border: 0;
+  border-radius: 8px 3px 7px 2px / 3px 7px 2px 8px;
+  box-shadow: inset 0 0 0 2px var(--pen);
+}
+
+.rbox,
+.sbox {
+  border-color: var(--pen);
+}
+
+.rbox {
+  background: var(--hl-color-lavender);
+}
+
+.track {
+  border-color: var(--pen);
+}
+
+.ball {
+  border-color: var(--pen);
+}
+
+.motion-demo {
+  border-radius: var(--hl-radius-l);
+}
+
+.email-head {
+  border-bottom: 0;
+  background:
+    url("assets/pen-wave.svg") left bottom / 100% 6px no-repeat,
+    var(--hl-color-honey);
+}
+
+.email-title {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.store-shot {
+  border-color: var(--hl-color-ink);
+}
+
+.store-shot-title {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 0.95;
+}
+
+.store-shot-bee {
+  width: 108px;
+  height: 90px;
+}
+
+.alexa {
+  border-radius: var(--hl-radius-m);
+}
+
+.alexa-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+@media (min-width: 1000px) {
+  .hero .display {
+    background-size: min(70%, 6.5em) 0.2em;
+  }
+}
+
+/* On honey or on the light Alexa card the night's white ink would vanish: there the mark and
+   motif are drawn in dark ink (inverted, then turned back to their own hues). */
+@media (prefers-color-scheme: dark) {
+  .email-head .mark,
+  .alexa .mark,
+  .store-shot-bee {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}

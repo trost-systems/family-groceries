@@ -1,0 +1,564 @@
+/* Hex Frische: 3b's soft hexagon controls on option 5's big rounded colour blocks.
+   Mint, lemon and cobalt mist blocks carry navy text; one cobalt block carries white.
+   Cards and controls sit on a hard navy bottom edge, the same edge the buttons sink into. */
+
+:root {
+  --blk-hero: var(--hl-color-mint);
+  --blk-one: var(--hl-color-honey);
+  --blk-two: var(--hl-color-accent-soft);
+  --blk-three: var(--hl-color-mint);
+  --blk-voice: var(--hl-color-cobalt);
+  --blk-cta: var(--hl-color-honey);
+  --on-blk: var(--hl-color-text);
+  --muted-blk: var(--hl-color-text-muted);
+  --blk-deco: url("assets/block-hex.svg");
+  --foot: var(--hl-color-text);
+  --on-foot: var(--hl-color-surface);
+  --muted-foot: #c3cbe6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --blk-hero: #16245e;
+    --blk-one: var(--hl-color-surface-raised);
+    --blk-two: var(--hl-color-surface-raised);
+    --blk-three: var(--hl-color-surface-raised);
+    --blk-voice: #16245e;
+    --foot: var(--hl-color-surface-sunken);
+    --on-foot: var(--hl-color-text);
+    --muted-foot: var(--hl-color-text-muted);
+    --blk-deco: url("assets/block-hex-dark.svg");
+  }
+}
+
+body {
+  letter-spacing: -0.006em;
+}
+
+a {
+  text-decoration-thickness: 2px;
+}
+
+/* Heavy, tight display type */
+.display,
+.headline,
+.title-l,
+.title,
+.brand {
+  letter-spacing: var(--hl-type-headline-tracking);
+}
+
+.display {
+  letter-spacing: var(--hl-type-headline-l-tracking);
+}
+
+@media (max-width: 999px) {
+  .display {
+    font-size: clamp(2.5rem, 6vw + 1rem, 3.5rem);
+  }
+}
+
+@media (min-width: 1000px) {
+  .display {
+    letter-spacing: var(--hl-type-display-tracking);
+  }
+}
+
+.title-l {
+  font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.title {
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.lead {
+  font-weight: var(--hl-font-weight-regular);
+}
+
+.brand {
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+}
+
+.mark {
+  width: 44px;
+  height: 44px;
+}
+
+/* Buttons: lemon face, navy edge; navy buttons get a cobalt wall. Flatter than 3b. */
+.hex--ink {
+  --wall: var(--hl-color-brand);
+}
+
+.hex .face {
+  letter-spacing: 0;
+}
+
+.nav a:hover {
+  --face: var(--hl-color-mint-soft);
+}
+
+/* The bee's flight lines are gone; hexes carry the decoration now. */
+.flight,
+.flight-divider,
+.hum {
+  display: none;
+}
+
+/* Colour blocks */
+.hero {
+  padding-block: var(--hl-space-3) var(--hl-space-4);
+  overflow: visible;
+}
+
+.hero::before {
+  content: none;
+}
+
+.hero .wrap,
+.voice .wrap,
+.feature,
+.cta {
+  --ring-gap: var(--blk);
+  border-radius: var(--hl-radius-l);
+  background: var(--blk);
+  color: var(--on-blk);
+}
+
+.hero .wrap {
+  --blk: var(--blk-hero);
+  padding: var(--hl-space-6) var(--hl-space-5) var(--hl-space-5);
+}
+
+.hero .lead,
+.feature-copy p,
+.voice .lead {
+  color: var(--on-blk);
+}
+
+.hero .chip {
+  --line: var(--hl-color-ink);
+  --face: var(--hl-color-surface-raised);
+  color: var(--hl-color-text);
+}
+
+.chip .dot {
+  --line: var(--hl-color-ink);
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.link-strong {
+  color: var(--on-blk);
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+}
+
+.hero-visual {
+  padding-block: 72px 56px;
+}
+
+.hero .phone {
+  transform: rotate(-3deg);
+}
+
+.phone {
+  border-radius: var(--hl-radius-xl);
+  box-shadow: 0 10px 0 var(--hl-color-ink);
+}
+
+.screen {
+  border-radius: calc(var(--hl-radius-xl) - 10px);
+  background: var(--hl-color-surface-raised);
+}
+
+.bee-flight {
+  top: var(--hl-space-2);
+  right: calc(-1 * var(--hl-space-2));
+  width: 112px;
+}
+
+.bee-flight .bee {
+  width: 112px;
+  height: 80px;
+}
+
+.sticker {
+  border-radius: var(--hl-radius-s);
+}
+
+.sticker--voice {
+  background: var(--hl-color-surface-raised);
+}
+
+.sticker--voice .wave-icon {
+  color: var(--hl-color-brand);
+}
+
+/* App mock: lemon plus and active tab, white hex check boxes, mint when done. */
+.app-head .hh,
+.store-name,
+.name {
+  letter-spacing: -0.02em;
+}
+
+.app-head .hh {
+  font-variant-caps: normal;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.09em;
+}
+
+.cat {
+  letter-spacing: 0.09em;
+}
+
+.item--done,
+.mini-row--done {
+  background: var(--hl-color-mint-soft);
+}
+
+.item--done .cb {
+  --line: var(--hl-color-ink);
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+/* Features: one block each, lemon, cobalt mist, mint; the visual is a white card on it. */
+#funktionen {
+  padding-block: var(--hl-space-8) var(--hl-space-5);
+}
+
+#funktionen .section-head {
+  margin-bottom: var(--hl-space-5);
+}
+
+.feature {
+  --blk: var(--blk-one);
+  padding: var(--hl-space-5);
+}
+
+.feature + .feature {
+  margin-top: var(--hl-space-4);
+  border-top: 0;
+}
+
+.feature:nth-child(3) {
+  --blk: var(--blk-two);
+}
+
+.feature:nth-child(4) {
+  --blk: var(--blk-three);
+}
+
+.feature-copy {
+  gap: var(--hl-space-4);
+}
+
+.feature-visual {
+  border: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-surface-raised);
+  box-shadow: var(--sticker);
+}
+
+.mini-phone {
+  border-radius: var(--hl-radius-m);
+}
+
+.visual-sync {
+  background: var(--hl-color-surface-sunken);
+}
+
+.mini-row--new {
+  background: var(--hl-color-honey-soft);
+}
+
+.sync-arc {
+  color: var(--hl-color-brand);
+}
+
+.route li {
+  --face: var(--hl-color-surface-raised);
+}
+
+.step {
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.route-bee {
+  right: var(--hl-space-4);
+  bottom: var(--hl-space-4);
+  width: 96px;
+  height: 68px;
+}
+
+.suggest .hx--soft {
+  --line: var(--hl-color-mint-soft);
+  --face: var(--hl-color-mint-soft);
+}
+
+.snack {
+  border-radius: var(--hl-radius-s);
+}
+
+/* Voice: the one cobalt block, white type, white cards. */
+.voice {
+  padding-block: var(--hl-space-5);
+  background: none;
+  color: var(--hl-color-text);
+  border-block: 0;
+  overflow: visible;
+}
+
+.voice .wrap {
+  --blk: var(--blk-voice);
+  --on-blk: var(--hl-color-on-cobalt);
+  --ring: var(--hl-color-honey);
+  padding: var(--hl-space-6) var(--hl-space-5);
+}
+
+.voice-more {
+  color: var(--on-blk);
+}
+
+.assistant {
+  border-radius: var(--hl-radius-l);
+  box-shadow: 0 6px 0 var(--hl-color-ink);
+}
+
+.bubble {
+  border-radius: var(--hl-radius-m) var(--hl-radius-m) var(--hl-radius-m) var(--hl-space-1);
+}
+
+.bubble--reply {
+  background: var(--hl-color-mint-soft);
+}
+
+/* Privacy: open air, a white list with mint hex ticks. */
+.checklist {
+  border-radius: var(--hl-radius-l);
+}
+
+.tick {
+  --line: var(--hl-color-ink);
+  --face: var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.checklist li + li {
+  border-top-style: solid;
+}
+
+.privacy-bee {
+  width: 140px;
+  height: 100px;
+  margin-top: var(--hl-space-5);
+  transform: none;
+}
+
+/* CTA: lemon block; the browser button turns mint so it stands off the lemon. */
+.section--cta {
+  padding-block: var(--hl-space-5) var(--hl-space-8);
+}
+
+.cta {
+  --blk: var(--blk-cta);
+  --on-blk: var(--hl-color-on-honey);
+  border-radius: var(--hl-radius-xl);
+  box-shadow: none;
+  border: 0;
+}
+
+.cta .hex:not(.hex--ink) {
+  --face: var(--hl-color-mint);
+  --on-face: var(--hl-color-on-mint);
+  --wall: var(--hl-color-mint-edge);
+}
+
+.cta-bee {
+  width: 132px;
+  height: 94px;
+}
+
+/* Footer: a navy band by day. */
+.site-footer {
+  --ring: var(--hl-color-honey);
+  background: var(--foot);
+  color: var(--on-foot);
+  border-top: 0;
+}
+
+.site-footer a {
+  color: var(--on-foot);
+}
+
+.site-footer small {
+  color: var(--muted-foot);
+}
+
+.site-footer :focus-visible {
+  outline-color: var(--hl-color-honey);
+}
+
+@media (prefers-color-scheme: dark) {
+  .site-footer {
+    border-top: var(--hl-border-width-thin) solid var(--hl-color-divider);
+  }
+
+  .site-footer :focus-visible {
+    outline-color: var(--hl-color-accent);
+  }
+
+  /* Night blocks: deep navy cards with a mint or lemon rim instead of bright fields. */
+  .feature {
+    border: var(--hl-border-width) solid var(--hl-color-honey);
+  }
+
+  .feature:nth-child(3) {
+    border-color: var(--hl-color-brand);
+  }
+
+  .feature:nth-child(4) {
+    border-color: var(--hl-color-mint);
+  }
+
+  .hero .wrap,
+  .voice .wrap {
+    --on-blk: var(--hl-color-text);
+  }
+
+  .voice .wrap {
+    --ring: var(--hl-color-honey);
+  }
+
+  .feature-visual {
+    background: var(--hl-color-surface);
+  }
+
+  .cta {
+    --ring-gap: var(--hl-color-honey);
+  }
+}
+
+/* Token sheet */
+.font-card,
+.email,
+.alexa {
+  border-radius: var(--hl-radius-l);
+}
+
+.bar {
+  background: var(--hl-color-mint);
+}
+
+.rbox {
+  background: var(--hl-color-mint-soft);
+}
+
+.ball {
+  background: var(--hl-color-honey);
+}
+
+.ball--standard {
+  background: var(--hl-color-mint);
+}
+
+.motion-demo {
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-mint-soft);
+}
+
+.hex-specimen--l {
+  background: var(--hl-color-brand);
+}
+
+.hex-specimen--p {
+  background: var(--hl-color-mint);
+}
+
+.email-head {
+  background: var(--hl-color-cobalt);
+  color: var(--hl-color-on-cobalt);
+}
+
+.store-shot {
+  border: 0;
+  border-radius: var(--hl-radius-xl);
+  background: var(--blk-deco) right -120px bottom -110px / 300px auto no-repeat, var(--hl-color-mint);
+  color: var(--hl-color-on-mint);
+}
+
+.store-shot-title {
+  font-size: 2.125rem;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+.alexa-wave {
+  color: var(--hl-color-mint);
+}
+
+/* Desktop: a see-through hex cluster in an empty corner of the big blocks. */
+@media (min-width: 720px) {
+  .hero .wrap,
+  .voice .wrap,
+  .cta {
+    background: var(--blk-deco) no-repeat, var(--blk);
+  }
+
+  .hero .wrap {
+    background-position: left 40px bottom -130px;
+    background-size: 260px auto;
+  }
+
+  .voice .wrap {
+    background-position: right 48px top -60px;
+    background-size: 240px auto;
+  }
+
+  .cta {
+    background-position: right -40px bottom -90px;
+    background-size: 210px auto;
+  }
+
+  .hero .wrap {
+    padding: var(--hl-space-7) var(--hl-space-7) var(--hl-space-6);
+  }
+
+  .feature {
+    padding: var(--hl-space-7);
+  }
+
+  .voice .wrap {
+    padding: var(--hl-space-7);
+  }
+
+  .hero .wrap,
+  .voice .wrap,
+  .feature {
+    border-radius: var(--hl-radius-xl);
+  }
+}
+
+@media (min-width: 1000px) {
+  .hero {
+    padding-block: var(--hl-space-3) var(--hl-space-4);
+  }
+}
+
+/* The edge is 4 px here, so chips grow to keep 48 px targets. */
+.hex--chip {
+  --h: 44px;
+}
+
+@media (max-width: 719px) {
+  .sticker--voice {
+    bottom: calc(-1 * var(--hl-space-3));
+  }
+}

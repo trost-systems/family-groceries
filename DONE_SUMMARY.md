@@ -318,3 +318,8 @@ Hex Sharp and Hex Soft versions of option 3, with tactile hex buttons, a Flutter
 
 Research on Icon Composer, visionOS and adaptive or themed Android icons. A sprite sheet with 16 icon ideas from 3b and 5, and real layered assets for the top 3 (5 Wabenstapel, 14 Frische Wabe, 13 Kachelstapel). Preview only, not merged. Details:
 [docs/done/45-app-icon.md](docs/done/45-app-icon.md).
+
+## Job 46: Hex Weich in art styles + a 3b/5 merge (design branch only)
+
+3b in five art styles (Raster, Riso, Papierschnitt, Glas, Marker) and Hex Frische, a merge with option 5. Each has a homepage and a token sheet, in light and dark, with a contact sheet and the preview URLs. Preview only, not merged. Details:
+[docs/done/46-hex-art-styles.md](docs/done/46-hex-art-styles.md).

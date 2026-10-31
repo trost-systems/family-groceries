@@ -1,0 +1,42 @@
+{
+  "label": "Marker",
+  "idea": "von Hand: Tuschkontur und Markerfarbe",
+  "sheet": {
+    "lead": "Hummlist wie mit Fineliner und Markern ins Skizzenbuch gezeichnet: wackelige, doppelt gezogene Tuschlinien, Farbe in sichtbaren Strichen, die nicht ganz in der Linie bleibt. Die Wabe bleibt die Form der Marke, sie ist hier nur von Hand gezeichnet. Überschriften in Caveat, Text in Nunito, damit alles lesbar bleibt.",
+    "colorNote": "Drei Marker: Honig für die Marke und den Hauptknopf, Minze für Abgehakt, Lavendel für Stimme und zweite Knöpfe. Markerfarbe liegt immer unter Tinte, nie ist sie selbst Schrift. Nachts wird das Papier zur Tafel, die Tinte weiß und die Marker heller.",
+    "colorNotes": {
+      "brand": "Honigbraun: Honig als Schrift, Zahl und Linie auf Papier",
+      "honey": "Honig-Marker: Hauptknopf, Marke, Band hinter der Stimme",
+      "honey-soft": "Heller Honig: neue Einträge, Antwortblasen",
+      "accent": "Lavendel-Tinte: Links, Fokusring",
+      "accent-soft": "Lavendel hell: Sprechblasen, Tipp-Fläche",
+      "surface": "Skizzenbuch: gebrochenes Weiß mit Punktraster",
+      "surface-raised": "Lose Blätter: Karten, Telefon, Sticker",
+      "surface-sunken": "Unterlage: Fußzeile, Mulden",
+      "text": "Fineliner: Fast-Schwarz, nachts weiße Tinte",
+      "border": "Die Tuschlinie um alles, was man anfassen kann",
+      "divider": "Gestrichelte Bleistiftlinien zwischen Zeilen",
+      "ink": "Tinte auf Marker, in beiden Modi dunkel",
+      "success": "Blattgrün als Schrift",
+      "success-soft": "Minze hell: Fläche für Abgehaktes",
+      "edge": "Die gezeichnete Kante unter Knöpfen",
+      "honey-edge": "Seitenwand der Knöpfe: Papier, schraffiert",
+      "surface-edge": "Seitenwand heller Knöpfe: Papier, schraffiert",
+      "mint": "Minz-Marker: abgehakt, synchron, Häkchen",
+      "lavender": "Lavendel-Marker: Store-Knöpfe, Avatar L, „neu“",
+      "on-mint": "Tinte auf Minze",
+      "on-lavender": "Tinte auf Lavendel"
+    },
+    "shadows": [
+      "sticker-s · 3/3/0 Honig 70 %",
+      "sticker · 6/7/0 Honig 60 %",
+      "sticker-l · 10/12/0 Lavendel 70 %"
+    ],
+    "shadowNote": "Schatten sind Markerfarbe neben der Linie, keine Unschärfe. Dunkel: night-s/night/night-l, dieselben Striche in hellerem Honig und Lavendel.",
+    "captions": {
+      "app": "App: die Liste auf Papier. Häkchen-Waben mit Tuschlinie, Abgehaktes in Minze.",
+      "email": "E-Mail: Einladung mit Honig-Marker im Kopf und gezeichnetem Knopf.",
+      "store": "Store-Bild: Handschrift-Titel auf Honigstrichen, dazu das Waben-Motiv."
+    }
+  }
+}

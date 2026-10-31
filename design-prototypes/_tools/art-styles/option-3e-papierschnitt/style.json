@@ -1,0 +1,40 @@
+{
+  "label": "Papierschnitt",
+  "idea": "aus geschnittenem Papier: Lagen mit weichen Schatten",
+  "sheet": {
+    "lead": "Hex Weich aus farbigem Karton geschnitten und gestapelt. Jede Fläche ist eine Papierlage mit weichem Schatten nach rechts unten, das Licht kommt immer von links oben. Knöpfe sind zwei Lagen: Beim Drücken sinkt die obere auf die untere.",
+    "colorNote": "Honig, Aprikose, Salbei und Lavendel sind Kartonlagen, die übereinanderliegen. Schrift steht in Tintenbraun, nie in Schwarz, und Honig ist nie Schrift auf Hell: Dafür gibt es „brand“, das Honigbraun. Kanten entstehen aus Schatten statt aus Konturen; nur Kästchen und Eingabefelder tragen eine Schnittkante mit mindestens 3 : 1. Nachts wird der Karton zu Dämmerpapier in Indigo und Pflaume, Honig bleibt die hellste Lage.",
+    "colorNotes": {
+      "brand": "Honigbraun: Honig als Schrift, Linie und Menge („2×“) auf hellem Papier",
+      "honey": "Honigkarton: die Markenlage, immer mit Tintenbraun darauf",
+      "honey-soft": "Pollenpapier: leise Lage für Chips und neue Einträge",
+      "accent": "Pflaume: Links, Stimme und Fokusring",
+      "accent-soft": "Lavendelpapier: Sprechblasen und Stimme",
+      "surface": "Cremekarton: der Seitengrund, mit Faserstruktur",
+      "surface-raised": "Helles Papier: Karten und Sticker, eine Lage höher",
+      "surface-sunken": "Ausschnitt: ein Fenster in der Lage, Fußzeile",
+      "text": "Tintenbraun: warmer Text statt Schwarz",
+      "border": "Schnittkante an Kästchen und Feldern",
+      "divider": "Falzlinie zwischen Zeilen (dekorativ)",
+      "ink": "Schattenfarbe, nur mit Deckkraft gemischt",
+      "success": "Blattgrün: abgehakt und synchron",
+      "edge": "Schnittkante der unteren Lage unter Knöpfen",
+      "honey-edge": "Untere Lage unter Honigknöpfen: Aprikose",
+      "surface-edge": "Untere Lage unter hellen Knöpfen: Packpapier",
+      "apricot": "Aprikose: zweite Lage im Zeichen und in der Landschaft (nur Fläche)",
+      "sage": "Salbei: dritte Lage, Hügel (nur Fläche)",
+      "lavender": "Lavendel: hinterste Lage der Landschaft (nur Fläche)"
+    },
+    "shadows": [
+      "sticker-s · 2 Lagen",
+      "sticker · 3 Lagen",
+      "sticker-l · 3 Lagen"
+    ],
+    "shadowNote": "Jeder Schatten hat mehrere Lagen: eine scharfe Kontaktkante dicht am Papier (0/1/1) und weiche, weite Streuung bis 5/10/18 und 8/18/32 px, immer nach rechts unten, Tintenbraun mit 11 bis 25 % Deckkraft. Waben bekommen denselben Schatten als drop-shadow, er folgt der Maske. Karten und das Telefon tragen dazu versetzte Kartonlagen. Dunkel: night-s/night/night-l, gleiche Geometrie, fast schwarz und deckender.",
+    "captions": {
+      "app": "App: Liste (Design H) auf Cremepapier im dunklen Kartonrahmen, darunter zwei versetzte Lagen. Der abgehakte Artikel bleibt bis zum Rückgängig-Fenster grün.",
+      "email": "E-Mail: Einladung. Im Mailprogramm bleiben Flächen und eingebettete Hex-Werte, Schatten und Faser fallen weg; Schrift Figtree mit Arial-Ersatz.",
+      "store": "Store-Bild: Honigkarton über einer Landschaft aus Papierwaben, der Bildschirm als aufgelegte Karte."
+    }
+  }
+}
