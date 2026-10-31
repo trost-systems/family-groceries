@@ -81,6 +81,27 @@ flow ([`AUTH.md`](AUTH.md)), so the only setting is the hosted redirect
 allow list, which has `https://preview.app.hummlist.com/**`. The phone apps'
 invite links still point at `https://app.hummlist.com` (`APP_URL`).
 
+## Guides site: hummlist.com from every push to main
+
+The Vercel project `hummlist-site` (Root Directory `site`, `site/vercel.json`)
+builds the guides site from every push. A push to `main` is its production
+deployment and goes live on `https://hummlist.com` without a manual step
+(`www.hummlist.com` and `hummlist-site.vercel.app` redirect there). Every other
+branch gets a preview deployment behind Vercel Authentication; the PR shows it
+as the commit status "Vercel – hummlist-site".
+
+The build reads two files outside `site/`, so the project setting "Include
+files outside the root directory in the Build Step" must stay on: the release
+record `releases/releases.json` and `app/pubspec.yaml`. Their version decides
+which guides and sections production shows (`site/README.md`, "Live
+version"). Without them the build fails and the last deployment stays live.
+
+A public release changes what the site shows through the same path: the
+**Public release record** workflow commits the new entry to `main`
+([`RELEASE.md`](RELEASE.md), "Public releases"), and that push is the
+production build with the new live version. No deploy hook or Vercel token
+is involved.
+
 ## Smoke test
 
 `scripts/smoke-remote.sh [project URL]` checks a deployed project. It

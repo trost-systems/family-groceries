@@ -1,0 +1,115 @@
+# Records a public store release in releases/releases.json (releases/README.md) and pushes that one
+# change to main. Run it, or call it from the public release step, once the stores have accepted
+# the build. The record is the site's source for the live version, so hummlist.com shows a release
+# only after this run. Dry run by default: it prints the entry and changes nothing.
+name: Public release record
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Store version, MAJOR.MINOR.PATCH'
+        type: string
+        required: true
+      sha:
+        description: 'The released commit on main'
+        type: string
+        required: true
+      build:
+        description: 'Store build number'
+        type: string
+        required: true
+      dry_run:
+        description: 'Print the entry, change nothing'
+        type: boolean
+        default: true
+      notes_de:
+        description: 'Release notes, German'
+        type: string
+        required: false
+      notes_en:
+        description: 'Release notes, English'
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+      sha:
+        type: string
+        required: true
+      build:
+        type: string
+        required: true
+      dry_run:
+        type: boolean
+        default: true
+      notes_de:
+        type: string
+        required: false
+      notes_en:
+        type: string
+        required: false
+
+concurrency:
+  group: public-release-record
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+# bash -eo pipefail, so a refused record piped into tee fails the step.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ inputs.version }}
+      SHA: ${{ inputs.sha }}
+      BUILD: ${{ inputs.build }}
+      DRY_RUN: ${{ inputs.dry_run }}
+      NOTES_DE: ${{ inputs.notes_de }}
+      NOTES_EN: ${{ inputs.notes_en }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Add the release to the record
+        run: |
+          args=(add --version "$VERSION" --sha "$SHA" --build "$BUILD" "--notes-de=$NOTES_DE" "--notes-en=$NOTES_EN" --main origin/main)
+          if [ "$DRY_RUN" = true ]; then args+=(--dry-run); fi
+          node scripts/release/record.mjs "${args[@]}" | tee record.out
+          if [ "$DRY_RUN" = true ]; then
+            echo "Dry run: $VERSION at $SHA (build $BUILD) would be recorded; releases/releases.json not changed." >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo "$(tail -1 record.out) at $SHA (build $BUILD)." >>"$GITHUB_STEP_SUMMARY"
+          fi
+      # Vercel builds every push to main for the hummlist-site project, and the site reads its live
+      # version from this record, so this push redeploys hummlist.com. It starts no store upload:
+      # pushes made with GITHUB_TOKEN start no workflows, and plan.sh counts releases/ as no app
+      # change anyway. The bot is author and committer because Vercel builds main commits by it.
+      - name: Push the record to main
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name petertrost-bot
+          git config user.email 341616691+petertrost-bot@users.noreply.github.com
+          git add releases/releases.json
+          git commit -q -m "Release $VERSION: public release record" -m "Co-authored-by: Peter Trost <peter@petertrost.com>"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            if git merge-base --is-ancestor origin/main HEAD; then
+              echo "::error::main rejected the push although it did not move; the token may not be allowed to push to main (branch rules)."
+              exit 1
+            fi
+            echo "Push $attempt rejected, main moved; rebasing onto it."
+            git rebase origin/main
+          done
+          echo "::error::main moved three times while pushing the $VERSION record; run this workflow again."
+          exit 1

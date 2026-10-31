@@ -95,6 +95,7 @@ img { max-width: 100%; height: auto; }
 .guide-list p { margin: 0.25rem 0 0; color: var(--muted); }
 
 .updated { color: var(--muted); font-size: 0.9375rem; margin-top: 2rem; }
+.since-note { color: var(--muted); font-size: 0.9375rem; }
 
 .site-footer { border-top: 1px solid var(--border); padding: 1rem 0 2rem; }
 .site-footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }

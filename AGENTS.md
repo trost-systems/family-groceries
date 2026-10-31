@@ -36,6 +36,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - `site/`: the public guides site on hummlist.com, its own Vercel project
   (Root Directory `site`), static HTML from Markdown in `site/content/`;
   `site/README.md` explains adding a guide. Separate from the app's build.
+  Production hides content tagged `since:` a version above the live one:
+  the newest public release in `releases/releases.json` (the public release
+  record, `releases/README.md`), else `app/pubspec.yaml`.
+  `public-release-record.yml` (`scripts/release/record.mjs`) appends a
+  release there and pushes it to main, which redeploys the site.
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
   `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).
