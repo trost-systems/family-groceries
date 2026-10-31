@@ -4,7 +4,7 @@ Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes
 
 ## Sub-features
 
-- `fb-open` `more-feedback` (section "Feedback", between Konto/Abmelden and Einstellungen) opens `feedback-sheet`.
+- `fb-open` `more-feedback` (section "Feedback", between Konto/Abmelden and Einstellungen, with "Hilfe & Kontakt" below it) opens the sheet. Its key `feedback-sheet` sits on a layout widget that `fg find` and `fg wait` don't list; wait for `feedback-message` instead.
 - `fb-send` `feedback-message` takes the note; `feedback-send` ("Senden") is enabled once it has a non-blank character. One row lands; the sheet closes; the snackbar `feedback-thanks` reads "Danke!".
 - `fb-options` `feedback-category-bug` / `-idea` / `-other` (a second tap unpicks), `feedback-contact` (off by default). `feedback-attached` names what goes along.
 - `fb-limits` from 1,800 characters `feedback-counter` shows "N / 2000"; over 2,000 the field says "Höchstens 2000 Zeichen" and Send is disabled. Blank notes can't be sent.
@@ -19,7 +19,7 @@ Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes
 
 Preconditions: the baseline from `features/README.md`; peter signed in on the list.
 
-- **`fb-open`, `fb-send`.** From the list: `fg tap --key tab-more`, `fg wait --key more-screen`, `fg marionette -- scroll-to --key more-feedback`, `fg screenshot --name fb-more`, `fg tap --key more-feedback`, `fg wait --key feedback-sheet`, `fg screenshot --name fb-empty`. `fg tap --key feedback-message`, `fg type --input "Beim Abhaken springt die Liste."`, `fg screenshot --name fb-filled`, `fg tap --key feedback-send`, `fg wait --text Danke!`, `fg screenshot --name fb-thanks`. Check: `fg db query "select message, category, contact_ok, screen, platform, locale, app_version, build, os_version, is_internal, household_id is not null as has_household from feedback order by created_at desc limit 1"` returns the text, category null, contact_ok false, screen `list`, platform `linux`, locale `de`, is_internal true (fg.test and a debug build).
+- **`fb-open`, `fb-send`.** From the list: `fg tap --key tab-more`, `fg wait --key more-screen`, `fg marionette -- scroll-to --key more-feedback`, `fg screenshot --name fb-more`, `fg tap --key more-feedback`, `fg wait --key feedback-message`, `fg screenshot --name fb-empty`. `fg tap --key feedback-message`, `fg type --input "Beim Abhaken springt die Liste."`, `fg screenshot --name fb-filled`, `fg tap --key feedback-send`, `fg wait --text Danke!`, `fg screenshot --name fb-thanks`. Check: `fg db query "select message, category, contact_ok, screen, platform, locale, app_version, build, os_version, is_internal, household_id is not null as has_household from feedback order by created_at desc limit 1"` returns the text, category null, contact_ok false, screen `list`, platform `linux`, locale `de`, is_internal true (fg.test and a debug build).
 - **`fb-options`.** Open the sheet again (it is blank after a send), type a note, `fg tap --key feedback-category-bug`, `fg tap --key feedback-contact`, `fg tap --key feedback-send`; the newest row has category `bug`, contact_ok true.
 - **`fb-limits`.** `fg tap --key feedback-message`, `fg type --input "   "`: `fg find --key feedback-send` is disabled. A 2,001-character input (`fg type --input "$(printf 'a%.0s' {1..2001})"`) shows `feedback-counter` "2001 / 2000" and "Höchstens 2000 Zeichen".
 - **`fb-retry`.** Not reliably drivable on linux (fg can't cut one client off the local stack); the web e2e tests "offline: …" and "a lost answer: …" (`e2e/tests/feedback.spec.ts`) and the widget test `test/feedback/feedback_sheet_test.dart` cover it. Report it as skipped with that pointer.
@@ -29,5 +29,5 @@ Preconditions: the baseline from `features/README.md`; peter signed in on the li
 ## Gotchas
 
 - The sheet covers the tabs: close it (`feedback-close` or `fg back`) before `fg tap --key tab-list`.
-- The note is kept when the sheet is closed without sending; a recipe that expects a blank form sends first or types over it (`fg type` replaces the field's text only after `fg tap --key feedback-message` and a select-all).
+- The note is kept when the sheet is closed without sending; a recipe that expects a blank form sends first or types over it: `fg type --key feedback-message --input <text>` replaces the field's text.
 - `screen` is taken when the sheet opens: go to the list first, then More, to get `list`.
