@@ -368,12 +368,6 @@ abstract class AppLocalizations {
   /// **'Änderung abgelehnt: {name}'**
   String syncFailed(String name);
 
-  /// No description provided for @menu.
-  ///
-  /// In de, this message translates to:
-  /// **'Menü'**
-  String get menu;
-
   /// No description provided for @inviteMember.
   ///
   /// In de, this message translates to:

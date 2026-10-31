@@ -220,7 +220,7 @@ Still yours:
 
 1. **Connect and disconnect once** (job 3b): connect Claude or ChatGPT to
    `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp`, then
-   disconnect it under Menü → Zugänge. Its next MCP call must get `401`.
+   disconnect it under Mehr → Zugänge. Its next MCP call must get `401`.
    The function reads `auth.sessions` through `SUPABASE_DB_URL` for this; a
    `500` instead would mean the hosted database role lacks that read. Not
    run on production yet: it needs your Google or Apple account.
@@ -241,7 +241,7 @@ Still yours:
    ```
 
 2. On your iPhone, follow `docs/SIRI_SHORTCUT.md` (German): create a token
-   in the app under Menü, Zugänge, then build the three-action Shortcut
+   in the app under Mehr → Zugänge, then build the three-action Shortcut
    "Einkaufsliste". Lea does the same on her phone with her own token.
 
 The Shortcut itself needs no Apple account setting, but creating the token

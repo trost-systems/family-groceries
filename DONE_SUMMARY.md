@@ -324,3 +324,7 @@ done. Details, tests, screenshots: `docs/done/25-iap-sandbox.md`; design: `docs/
 ## Job 25b: Hummlist Lifetime review follow-ups
 
 A receipt the server refuses for good is finished with the store and shown once, not re-sent on every retry and launch. Production-only `PURCHASES_ENVIRONMENTS` is inert, so App Review's sandbox purchases wait instead of being refused. Apple notifications must carry a transaction from their own environment. `scripts/gates/e2e.sh -- <spec>` runs only that spec. Details: [docs/done/25b-iap-followups.md](docs/done/25b-iap-followups.md).
+
+## Job 37: stale "Menü" directions, health comment, debug-entrypoint Zone mismatch
+
+The debug app launches without Flutter's "Zone mismatch" EXCEPTION block, and a regression now fails the launch. The docs point to Mehr → Zugänge, the health comment no longer duplicates the response, and the unused `menu` string is gone. The voice 401 text was already right. Details: [docs/done/37-voice-error-copy.md](docs/done/37-voice-error-copy.md).

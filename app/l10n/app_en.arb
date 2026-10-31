@@ -57,7 +57,6 @@
   "@pendingChanges": {"placeholders": {"count": {"type": "int"}}},
   "syncFailed": "Change refused: {name}",
   "@syncFailed": {"placeholders": {"name": {"type": "String"}}},
-  "menu": "Menu",
   "inviteMember": "Invite your partner",
   "joinOtherHousehold": "Join another household",
   "signOut": "Sign out",

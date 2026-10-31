@@ -107,7 +107,7 @@ scripts/fg record stop                                         # finalizes; repo
 scripts/fg screenshot --native                                 # OS capture (X display / adb screencap)
 ```
 
-Flutter errors, including the cause behind a red error screen, go to the app log: `scripts/fg logs --client lea --grep EXCEPTION`. The CLI builds with `flutter.inspector.structuredErrors=false` so that they print.
+Flutter errors, including the cause behind a red error screen, go to the app log: `scripts/fg logs --client lea --grep EXCEPTION`. The CLI builds with `flutter.inspector.structuredErrors=false` so that they print. A fresh launch logs no EXCEPTION block. The debug entrypoint makes Flutter's "Zone mismatch" fatal (job 37): if a client stays blank and `fg logs --grep Uncaught` shows `Uncaught: Zone mismatch`, the binding was initialized outside the zone `bootstrap` in `app/lib/main.dart` runs the app in.
 
 Proof standards:
 

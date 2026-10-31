@@ -39,14 +39,15 @@ mit deinem Passwort.
    Notiz ab und lösche die Notiz danach.
 
 Wenn das iPhone verloren geht, widerrufe den Token in der App unter
-**Zugänge**: Tippe auf **Siri widerrufen** und bestätige mit
-**Widerrufen**. Der Kurzbefehl
+**Mehr** → **Zugänge**: Tippe neben dem Token auf den Papierkorb
+(**Siri widerrufen**) und bestätige mit **Widerrufen**. Der Kurzbefehl
 bekommt danach keinen Zugriff mehr.
 
 > **Achtung:** Teile den fertigen Kurzbefehl nicht mit anderen. Er
 > enthält deinen persönlichen Token. Wenn er doch in fremde Hände gerät,
-> widerrufe den Token in der App unter **Mehr** → **Zugänge** (der Knopf
-> heißt **<Tokenname> widerrufen**, zum Beispiel **Siri widerrufen**).
+> widerrufe den Token in der App unter **Mehr** → **Zugänge** (der
+> Papierkorb neben dem Token, **<Tokenname> widerrufen**, zum Beispiel
+> **Siri widerrufen**).
 
 ## 2. Kurzbefehl anlegen
 

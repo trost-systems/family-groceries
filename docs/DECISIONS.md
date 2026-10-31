@@ -4401,3 +4401,17 @@ Job 25's review 0 (PASS) listed nice-to-haves that are real behavior gaps; these
    e2e -- <spec>` all run one spec. `scripts/e2e-gate-test.sh` (lint gate) runs the real gate
    with the stack, the build and Playwright stubbed out. It checks the arguments Playwright gets
    and when the fg sync smoke test runs.
+
+## Job 37: stale "Menü" directions, health comment, debug-entrypoint Zone mismatch, 2026-10-31
+
+1. **`bootstrap(binding)` in `lib/main.dart` takes the binding.** The Marionette entrypoint
+   initialized its binding outside the zone `runApp` runs in, and Flutter's "Zone mismatch"
+   assertion printed an EXCEPTION block on every debug launch. `main()` is now
+   `bootstrap(WidgetsFlutterBinding.ensureInitialized)`, and `test_driver/main_marionette.dart`
+   calls `bootstrap(MarionetteBinding.ensureInitialized)`. Each binding starts inside the one
+   `runZonedGuarded` body at the old spot, so the release entrypoint keeps its order and error
+   reporting. Rejected: a second `runZonedGuarded` in the debug entrypoint. It would nest a zone
+   around the app's own zone, and the debug app would report errors differently from the
+   release app.
+2. **The l10n string `menu` is gone.** Nothing read it after the More tab replaced the list
+   menu (job 29d).
