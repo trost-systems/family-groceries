@@ -72,6 +72,16 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   state come from `scripts/fg seed <scenario>` (`test/fixtures/scenarios/`,
   removed with `fg teardown <run>`), multi-client sync proofs from
   `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
+- Make shown UI look finished with the hummlist-ui-craft skill
+  (`.claude/skills/hummlist-ui-craft/`, also `.cursor/skills/`): the 6b look,
+  restraint, framing, motion, loops, poster frames, the 358 px compact design and
+  the film/contact-sheet review loop, for homepage scenes, demo videos, goldens
+  and app screens. Its `film.mjs` films HTML/CSS scenes with Playwright.
+- Make shown UI look finished with the hummlist-ui-craft skill
+  (`.claude/skills/hummlist-ui-craft/`, also `.cursor/skills/`): the 6b look,
+  restraint, framing, motion, loops, poster frames, the 358 px compact design and
+  the film/contact-sheet review loop, for homepage scenes, demo videos, goldens
+  and app screens. Its `film.mjs` films HTML/CSS scenes with Playwright.
 - Run `scripts/verify.sh` before pushing. It runs the same
   `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, changelog, site,
   db, functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
