@@ -307,3 +307,9 @@ map follows 33b/33g, the FAQ covers Alexa; Lighthouse mobile 100/100/100 on the 
 the server in one transaction (500 g + 1 kg = 1,5 kg, else "1 Bund + 500 g") and Rückgängig
 restores both items exactly. MCP and Siri report the similar item. Details:
 [docs/done/32b-dedupe-hint.md](docs/done/32b-dedupe-hint.md).
+
+
+## Job 41: Hummel Hex variants + Flutter widgets-only PoC (design branch only)
+
+Hex Sharp and Hex Soft versions of option 3, with tactile hex buttons, and a Flutter design system on `widgets.dart` only. Preview only, not merged. Details:
+[docs/done/41-hummel-hex.md](docs/done/41-hummel-hex.md).
