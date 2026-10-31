@@ -180,9 +180,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get menu => 'Menü';
-
-  @override
   String get inviteMember => 'Partner einladen';
 
   @override

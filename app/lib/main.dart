@@ -28,20 +28,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Set once analytics is loaded; errors before that are not reported.
 Analytics? _analytics;
 
-Future<void> main() async {
+Future<void> main() => bootstrap(WidgetsFlutterBinding.ensureInitialized);
+
+/// Starts the app with [binding], which `test_driver/main_marionette.dart`
+/// swaps for its own. The binding is initialized in the same zone as
+/// `runApp`; Flutter asserts that ("Zone mismatch").
+Future<void> bootstrap(WidgetsBinding Function() binding) async {
   // Errors no one caught go to error tracking (job 19): those in this zone
   // here, the framework's through FlutterError.onError, the rest through
   // the platform dispatcher. Analytics sends nothing without consent.
-  await runZonedGuarded(_main, (error, stack) {
+  await runZonedGuarded(() => _main(binding), (error, stack) {
     _analytics?.captureException(error, stack);
     Zone.root.print('Uncaught: $error\n$stack');
   });
 }
 
-Future<void> _main() async {
+Future<void> _main(WidgetsBinding Function() binding) async {
   // Path URLs (/join/CODE, later /oauth/consent) instead of #-fragments.
   usePathUrlStrategy();
-  WidgetsFlutterBinding.ensureInitialized();
+  binding();
   if (kIsWeb) {
     // Exposes the widget tree to the DOM for screen readers and Playwright.
     SemanticsBinding.instance.ensureSemantics();

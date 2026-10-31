@@ -10,6 +10,8 @@ Future<void> main() async {
   if (kReleaseMode) {
     throw StateError('main_marionette.dart is for debug and profile builds.');
   }
-  MarionetteBinding.ensureInitialized();
-  await app.main();
+  // A binding started outside the app's zone fails the launch instead of
+  // logging an EXCEPTION block.
+  BindingBase.debugZoneErrorsAreFatal = true;
+  await app.bootstrap(MarionetteBinding.ensureInitialized);
 }

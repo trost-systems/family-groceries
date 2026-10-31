@@ -14,7 +14,7 @@ function `mcp` and speaks MCP over streamable HTTP.
 | Credentials | OAuth 2.1 access token, or a personal access token (`fgp_…`) |
 | Protocol versions | 2026-07-28 (`server/discover`) and 2025-11-25 down to 2024-11-05 (`initialize`) |
 
-The app shows the endpoint under **Menü → Zugänge → MCP-Server**, with a copy
+The app shows the endpoint under **Mehr → Zugänge → MCP-Server**, with a copy
 button: `https://mcp.hummlist.com` in builds for the production project, the
 function URL `<project>/functions/v1/mcp` in builds for any other project
 (the local stack).
