@@ -48,7 +48,8 @@ Preconditions for the Marionette clients (Linux desktop app, peter and lea):
 
 ## Gotchas
 
-- `fg sync`'s browser steps still drive the list before job 16: `tick` clicks the checkbox "<item> abhaken" and `store` and a client's store view click a store chip (`e2e/sync/engine.mjs`). Neither exists in design H, so scripts with `tick`, `store` or a scenario client in a store view (household-3-mid-shop's Noah) fail until the engine taps the row instead. Prove ticks on the Marionette clients meanwhile.
+- `fg sync`'s `tick` taps the item's row, as a user does; `store` and a scenario client's store view (household-3-mid-shop's Noah) fold every other store section by tapping its divider and keep "Ohne Laden" open (`shopAt` in `e2e/sync/engine.mjs`). `journeys/sync-3-clients.fgs` passes with both.
+- `fg sync` needs Playwright in `e2e/`: run `cd e2e && npm ci` once per checkout, or it stops with `missing_tool`.
 - `fg sync` holds `/tmp/fg-e2e.lock` while its browser runs, so it may wait for another job's Playwright run first (`--lock-wait`). Do not wrap it in a second `flock` from another shell; wrapping the same command in `flock /tmp/fg-e2e.lock` is fine (fg sees the parent holds it).
 - `expect ... see` matches rows Flutter has built: on screen plus a small margin. In a long list a row far down is not seen; use a scenario where the rows in play are near the top (household-3-mid-shop fits a 480×900 client) or `--viewport 480x1400`.
 - Latency in `fg sync` is measured from the acting client's server ack to the first rendered frame showing the change (resolution: one frame plus the observer). Catch-up after `online` is reported apart from live propagation.

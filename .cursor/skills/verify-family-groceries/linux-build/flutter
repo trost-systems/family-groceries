@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Put this directory first with FG_EXTRA_PATH: `flutter build linux` then runs in a container that
+# has clang, CMake and the GTK headers, and every other flutter command runs on the host. The bundle
+# it writes runs on any host with the GTK 3 runtime.
+set -euo pipefail
+real="$HOME/flutter/bin/flutter"
+if [[ ${1:-} != build || ${2:-} != linux ]]; then exec "$real" "$@"; fi
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+repo="$(git -C "$here" rev-parse --show-toplevel)"
+image=fg-linux-build:1
+docker image inspect "$image" >/dev/null 2>&1 || docker build -q -t "$image" "$here" >&2
+pub="${PUB_CACHE:-$HOME/.pub-cache}"
+exec docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp/home -e PUB_CACHE="$pub" \
+  -v "$HOME/flutter:$HOME/flutter" -v "$pub:$pub" -v "$repo:$repo" -w "$PWD" "$image" "$real" "$@"

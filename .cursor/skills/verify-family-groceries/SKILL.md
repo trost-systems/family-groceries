@@ -34,7 +34,19 @@ scripts/fg up --clients peter,lea           # stack + seed + build + both apps +
 scripts/fg login peter && scripts/fg login lea
 ```
 
-`fg up` exits 0 only when the instance is usable: Supabase answers, the migrations are applied, `peter@fg.test` and `lea@fg.test` (password `test-password-123`) can sign in and share the household "Familie Test", and Marionette answers in every client. From an empty machine it runs `supabase start` from a generated workdir (`~/.cache/fg/<prefix>/stack`, ports `<prefix>xx`, project `family-groceries-<prefix>`). The tracked `supabase/config.toml` stays untouched. It seeds through the app's own RPCs and builds the debug app (about 30 s warm). Its JSON names the URLs, users, VM service URIs and the evidence directory. Reruns reuse what runs and is current. A changed `app/` rebuilds and relaunches. `--fresh` resets the database.
+`fg up` exits 0 only when the instance is usable: Supabase answers, the migrations are applied, `peter@fg.test` and `lea@fg.test` (password `test-password-123`) can sign in and share the household "Familie Test", and Marionette answers in every client. From an empty machine it runs `supabase start` from a generated workdir (`~/.cache/fg/<prefix>/stack`, ports `<prefix>xx`, project `family-groceries-<prefix>`). The tracked `supabase/config.toml` stays untouched. It seeds through the app's own RPCs and builds the debug app (about 30 s warm). Its JSON names the URLs, users, VM service URIs and the evidence directory. Reruns reuse what runs and is current. A changed `app/` rebuilds and relaunches. `--fresh` resets the database; it doesn't restart the stack. The functions' local secrets come from `supabase/functions/.env`, which `fg up` doesn't write: run `scripts/iap-test-ca.sh` (Hummlist Lifetime, `features/purchases.md`) and `scripts/alexa-test-ca.sh` (`features/alexa.md`) first, and after a change to that file run `fg down`, then `fg up`, so the stack loads it.
+
+### Hosts without the Linux toolchain
+
+`fg setup` installs clang, CMake and the GTK headers with `sudo apt-get`. On a host without sudo but with Docker (the Hetzner runner) skip it and build the app in a container:
+
+```bash
+export FG_EXTRA_PATH="$PWD/.cursor/skills/verify-family-groceries/linux-build"   # dirs fg puts before ~/flutter/bin
+dart pub global activate marionette_cli && flutter config --enable-linux-desktop    # the rest of fg setup
+scripts/fg up --clients peter,lea
+```
+
+`linux-build/flutter` runs `flutter build linux` in an image built from `linux-build/Dockerfile` on first use (`fg-linux-build:1`) and passes every other command to the host's flutter. The bundle runs on the host, which needs only the GTK 3 runtime. For `fg drag`, which needs `xdotool`, unpack it without root: `apt-get download xdotool libxdo3`, `dpkg -x` both into a directory, and put a wrapper that sets `LD_LIBRARY_PATH` to its `usr/lib/x86_64-linux-gnu` on `FG_EXTRA_PATH` too (several directories join with `:`).
 
 Clients start signed out (`fg up` clears their session storage). `fg restart` quits and reopens an app and keeps its stored data. Use it for launch behavior such as autofocus. The session survives it on every surface.
 
@@ -173,7 +185,7 @@ ls "$(scripts/fg env | jq -r .evidenceDir)"      # evidence survives
 
 ## Isolation
 
-One instance per port block. `FG_PORT_PREFIX` sets the Supabase ports (`<prefix>21` API, `22` DB, `24` Mailpit), the project id, the state dir, the X displays (`:<prefix>1`, `:<prefix>2`) and the emulator port. `FG_PROJECT_ID`, `FG_AVD`, `FG_EMU_PORT`, `FG_STATE_DIR` and `FG_EVIDENCE_DIR` override single values. Two agents on different prefixes never touch each other's processes. `scripts/gates/e2e.sh` and `fg sync` take `/tmp/fg-e2e.lock` themselves; never wrap the gate in `flock /tmp/fg-e2e.lock` (it then waits on its own wrapper forever). `node e2e/web-smoke.mjs` takes no lock, so wrap that one. Steps that stop a container of the stack (the health 503 check in `features/hosted-backend.md`) break every drive on that stack, an `fg sync` run included: run them after the other drives. `fg up` refuses a display another live Xvfb holds (`display_taken`). Never drive an instance you did not start.
+One instance per port block. `FG_PORT_PREFIX` sets the Supabase ports (`<prefix>21` API, `22` DB, `24` Mailpit), the project id, the state dir, the X displays (`:<prefix>1`, `:<prefix>2`) and the emulator port. `FG_PROJECT_ID`, `FG_AVD`, `FG_EMU_PORT`, `FG_STATE_DIR` and `FG_EVIDENCE_DIR` override single values; `FG_EXTRA_PATH` puts directories before fg's own tool path. Two agents on different prefixes never touch each other's processes. `scripts/gates/e2e.sh` and `fg sync` take `/tmp/fg-e2e.lock` themselves; never wrap the gate in `flock /tmp/fg-e2e.lock` (it then waits on its own wrapper forever). `node e2e/web-smoke.mjs` takes no lock, so wrap that one. Steps that stop a container of the stack (the health 503 check in `features/hosted-backend.md`) break every drive on that stack, an `fg sync` run included: run them after the other drives. `fg up` refuses a display another live Xvfb holds (`display_taken`). Never drive an instance you did not start.
 
 ## Android (not verified on the build box)
 
@@ -183,6 +195,7 @@ On a machine with a working emulator (KVM on Linux, or a Mac): run `fg setup --s
 
 - `fg` (and `scripts/fg`): the CLI. The source is in `cli/` (Deno). Tests: `cd cli && deno test -A`. CI runs them.
 - `journeys/quick-add-live-sync.sh`: the reference end-to-end proof. `journeys/mcp-disconnect.sh` and `journeys/account-deletion.sh` prove `features/mcp-access.md` and `features/account.md` the same way. Each journey starts with peter on the list and leaves both clients there (lea signed in as the seeded lea), so they run back to back in any order. On a failure, `fail` stops the recordings the journey started: an orphaned recording left running on a client spoils the next recording there (`record stop` then reports `recording_failed`). A new journey keeps that contract.
+- `linux-build/`: the container build for hosts without the Linux toolchain (Launch).
 - `journeys/*.fgs`: `fg sync` scripts (three-client sync with reconnect, a deliberately failing expectation, a hosted sign-in).
 - `features/`: one recipe per user-facing feature. Read `features/README.md` first.
 

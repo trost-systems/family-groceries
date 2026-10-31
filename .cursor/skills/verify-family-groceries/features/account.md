@@ -1,24 +1,23 @@
 # Account (export and deletion)
 
-Every signed-in user can export their data and delete their account. Both live on the Konto page (Mehr → Konto, route `/more/account`), which also shows the signed-in email address; the MCP server, tokens and connected apps are on the separate Zugänge page (`/more/access`, `features/mcp-access.md`); a user without a household also finds "Konto löschen" on the welcome screen. The deletion dialog says what happens to the household before anything is deleted, and deletes only after the user types `LÖSCHEN` (or `LOESCHEN`) and taps "Endgültig löschen". Afterwards the app shows the sign-in screen with "Dein Konto wurde gelöscht." A shared household stays for the other members with the deleted user's items, now without their name. A household whose last member deletes goes with everything in it. The user's feedback notes go with the account either way; other members' notes stay, without the deleted household's id.
+Every signed-in user can export their data and delete their account. Both live on the Konto page (Mehr → Konto, route `/more/account`), which also shows the signed-in email address; the MCP server, tokens and connected apps are on the separate Zugänge page (`/more/access`, `features/mcp-access.md`); a user without a household also finds "Konto löschen" on the welcome screen. The deletion dialog says what happens to the household before anything is deleted, and deletes only after the user types `LÖSCHEN` (or `LOESCHEN`, or `DELETE` as the English app asks) and taps "Endgültig löschen". Afterwards the app shows the sign-in screen with "Dein Konto wurde gelöscht." A shared household stays for the other members with the deleted user's items, now without their name. A household whose last member deletes goes with everything in it. The user's feedback notes go with the account either way; other members' notes stay, without the deleted household's id.
 
 ## Sub-features
 
 - `acct-entry` opens the Konto page (`account-screen`) from the More tab's entry "Konto" (key `menu-account`, route `/more/account`; the old link `/settings?section=account` redirects there), with the signed-in email (`account-email`), "Meine Daten exportieren" and "Konto löschen", and nothing of Zugänge.
 - `acct-fate-kept` tells a member of a shared household that "Der Haushalt „<name>“ bleibt für <other members> mit der ganzen Liste erhalten."
 - `acct-fate-deleted` tells the last member "Du bist das letzte Mitglied. Deshalb wird der Haushalt „<name>“ … gelöscht."
-- `acct-confirm-word` keeps "Endgültig löschen" disabled until the field holds `LÖSCHEN` or `LOESCHEN` (any case).
+- `acct-confirm-word` keeps "Endgültig löschen" disabled until the field holds `LÖSCHEN`, `LOESCHEN` or `DELETE` (any case, spaces around ignored).
 - `acct-delete-shared` deletes the account; the other member keeps the list and the deleted user's items lose their author (`added_by` null). The user can no longer sign in, and their access tokens get 401.
 - `acct-delete-last` deletes the account and the household with its items, history, categories, stores, invites, learned memory, learned brands and tokens.
 - `acct-offline` refuses without a connection ("Keine Internetverbindung. Dein Konto wurde nicht gelöscht. …") and deletes nothing.
-- `acct-export` saves `einkauf-daten-YYYY-MM-DD.json` (format `family-groceries-export`) with the user's account, profile, household, their items and history, token names and hints, their own feedback notes (`feedback`, job 21), never a token hash. The snackbar says "Daten exportiert: <path>" on desktop.
+- `acct-export` saves `einkauf-daten-YYYY-MM-DD.json` (format `family-groceries-export`) with the user's account, profile, household, the items they added (`items_added`, with brand and properties) and history, the invites they made, token names and hints, connected apps (OAuth grants with scopes and dates), their analytics answers, Alexa links, their own feedback notes (`feedback`, job 21) and purchases (`purchases`, job 25), plus `version` and `exported_at`; never a token hash. `jq keys` on the file lists access_tokens, account, alexa_links, analytics_decisions, connected_apps, exported_at, feedback, format, history, household, invites_created, items_added, profile, purchases, version. The snackbar says "Daten exportiert: <path>" on desktop.
 - `acct-welcome` deletes an account that has no household from the welcome screen ("Du bist in keinem Haushalt, geteilte Daten gibt es nicht.").
 - `acct-apple` asks Apple for a fresh authorization after the typed confirmation and revokes the Apple tokens (iOS only). Not drivable on the box: there is no iOS surface. Elsewhere the sign-in screen adds the hint to remove "Hummlist" from the Apple ID only when the server could not revoke.
 
 ## How to get to it (user POV)
 
-- Tap "Mehr" in the tab bar, then "Konto". Zugänge opens scrolled to the "Konto" section.
-- Tap "Mehr", then "Zugänge", and scroll to "Konto" at the bottom.
+- Tap "Mehr" in the tab bar, scroll down and tap "Konto". Zugänge is a separate page without these actions.
 - Signed in without a household, the welcome screen shows "Konto löschen" below the onboarding form.
 - The public page `/konto-loeschen.html` on the web build explains the steps for Google Play (published since job 33a: no ENTWURF banner, no noindex; contact support@hummlist.com, links the privacy policy).
 
