@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
+import 'package:family_groceries/household/archived_households.dart';
 import 'package:family_groceries/household/invites_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
@@ -51,6 +53,9 @@ class const MoreScreen({
 
   /// Shows "Hilfe & Kontakt"; tests pass false to see a release build.
   @visibleForTesting final bool showHelp = supportLinkShown,
+
+  /// Shows "Archivierte Haushalte" (job 43); tests pass true.
+  @visibleForTesting final bool showArchived = Environment.householdArchive,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -70,7 +75,11 @@ class const MoreScreen({
           children: [
             SizedBox(
               width: 360,
-              child: _MoreList(showHelp: showHelp, selected: shown),
+              child: _MoreList(
+                showHelp: showHelp,
+                showArchived: showArchived,
+                selected: shown,
+              ),
             ),
             const VerticalDivider(width: 1),
             Expanded(
@@ -113,7 +122,7 @@ class const MoreScreen({
     }
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabMore)),
-      body: _MoreList(showHelp: showHelp),
+      body: _MoreList(showHelp: showHelp, showArchived: showArchived),
     );
   }
 
@@ -139,8 +148,11 @@ class const _Page(final MorePage page) extends StatelessWidget {
   };
 }
 
-class const _MoreList({required final bool showHelp, final MorePage? selected})
-    extends StatelessWidget {
+class const _MoreList({
+  required final bool showHelp,
+  final bool showArchived = Environment.householdArchive,
+  final MorePage? selected,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -167,6 +179,13 @@ class const _MoreList({required final bool showHelp, final MorePage? selected})
           label: l10n.joinOtherHousehold,
           onTap: () => context.go(joinCodePath),
         ),
+        if (showArchived)
+          _Row(
+            key: const ValueKey('more-archived'),
+            icon: Icons.inventory_2_outlined,
+            label: l10n.archivedTitle,
+            onTap: () => unawaited(showArchivedHouseholds(context)),
+          ),
         _Row(
           key: const ValueKey('more-categories'),
           icon: Icons.category_outlined,
@@ -184,9 +203,14 @@ class const _MoreList({required final bool showHelp, final MorePage? selected})
           key: const ValueKey('more-lifetime'),
           icon: Icons.favorite_outline,
           label: l10n.lifetimeTitle,
-          detail: context.select<Entitlements, bool>((e) => e.isUnlocked)
-              ? l10n.lifetimeUnlocked
-              : l10n.lifetimeRowHint,
+          // The hint asks for a purchase: only where one may be offered.
+          detail: context.select<Entitlements, String?>(
+            (e) => e.has(Entitlement.lifetime)
+                ? l10n.lifetimeUnlocked
+                : e.canOffer(Entitlement.lifetime)
+                ? l10n.lifetimeRowHint
+                : null,
+          ),
           selected: selected == MorePage.lifetime,
           onTap: () => context.go(lifetimePath),
         ),

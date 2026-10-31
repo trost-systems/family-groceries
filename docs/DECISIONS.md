@@ -4646,3 +4646,231 @@ Format and flow: `docs/CHANGELOG.md`, "Gated items" and "Override".
    "Alexas" and "Alexaskill" are caught. A name such as "Alexandra" would be held too, which fails
    safe. A note reverted and relanded is pending once, not twice.
 10. **This PR's own note is `none`.** It changes release tooling and docs; nothing in the app.
+
+## Job 43: Hummlist Lifetime as a household-bound unlock (model A), 2026-10-31
+
+Peter chose model A on 2026-10-31 (relayed by the Hummlist PM, final wording 13:26 CET), with
+five addenda the same afternoon: archive on last leave, tester grants, Legal Review H-49 to H-56,
+RevenueCat instead of our own store verification (Peter, 14:03), and Legal Review's conditions for
+RevenueCat (ADDENDUM 5). Entries 1 to 19 were written for the self-verifying design; where 20 and
+later change them, the later entry wins.
+Migration `20261031123504_household_bound_lifetime.sql`; docs/PURCHASES.md has the behavior.
+
+1. **A purchase is bound to its first household, for good (supersedes 25.2's restore clause).**
+   25.2 let a purchase unlock another household once its own was deleted. Peter: nothing moves
+   with the user; Legal Review H-56: a restore only ever re-applies to the original household.
+   `purchases.bound_household` is set at the first grant and never changed. It is not a foreign
+   key, so deleting the household doesn't make the purchase look unbound. `purchase_grant`
+   answers `used_elsewhere` for any other household, with `household_gone` when the bound one no
+   longer exists (the app then says so instead of "another household"). The re-bind path is
+   gone from the SQL (`purchase_grant` in both signatures), the function and the docs; the job 25
+   migration's comment still describes it, because a migration on main is never edited. A
+   `household_gone` flag rather than a new outcome: apps before job 43 parse an unknown outcome
+   as a server failure and would retry it forever.
+2. **Legacy rows that unlock nothing get the nil UUID.** Before this migration a purchase whose
+   household was deleted, or that was refunded (the refund dropped its row), had no record of its
+   household. Leaving it unbound would let its next restore bind it anywhere, the path H-56 rules
+   out, so it is bound to `00000000-…`, a household that never exists. Only sandbox purchases
+   existed (nothing was sold), so no customer loses anything. A refund reversed later
+   (`REFUND_REVERSED`) now unlocks the purchase's own household again if it still exists.
+3. **A second purchase in an unlocked household keeps its own row** (unchanged from 25), and
+   `purchase_grant` says `already_unlocked` for it. It locks the household row
+   (`for no key update`) so that of two purchases landing at once exactly one is flagged; that lock
+   doesn't block item writes, whose foreign keys take key-share locks.
+4. **Buy only on a known "no Lifetime".** `Entitlements.canOffer(Entitlement.lifetime)` is the one
+   check; `EntitlementsUnknown` (loading, offline) says no, and the page shows a "Wir prüfen …"
+   note. A member of an unlocked household whose phone is offline would otherwise see Buy and could
+   pay twice. Restore stays available while unknown: it costs nothing.
+5. **Refund help is a sheet, not a route.** It opens from the Lifetime page, the
+   `already_unlocked` result, and the join screen. The join screen is also used before the user
+   has a household, where `authRedirect` lets nobody into More, and a route would drop the join's
+   state. Content: we can't refund; Apple's Report a Problem (https://reportaproblem.apple.com/,
+   steps per https://support.apple.com/en-us/118223); Google Play's Budget & order history →
+   Report a problem (https://support.google.com/googleplay/answer/15574897, read 2026-10-31);
+   the reason "Mein Haushalt war schon freigeschaltet." StoreKit's `beginRefundRequest` is not
+   used: `in_app_purchase_storekit` 0.4.15 doesn't expose it, and native code for one sheet isn't
+   worth it.
+6. **"Recent purchase" is 30 days.** `preview_invite`'s `recent_purchase` is the caller's own
+   verified purchase (`purchases.user_id`), not refunded, bought in the last 30 days. Apple names
+   no deadline for refund requests; Google's general rule is 48 hours for self-service and the
+   developer after that, but its EEA and UK page (German buyers,
+   https://support.google.com/googleplay/answer/15575720) offers the Play request form for in-app
+   purchases without a deadline. 30 days keeps the link to cases where a request is plausible,
+   without nagging people who bought long ago. Google buyers outside the EEA after 48 hours are
+   referred to the developer by Google: NEEDS_PETER Job 43 asks whether Hummlist answers those.
+7. **The join screen tells, never blocks.** (a) An unlocked target says "Du musst nichts kaufen."
+   (c) With a recent own purchase it links the refund help. (b) The last member of an unlocked
+   household sees what joining does (below) before joining. `preview_invite` computes all three
+   flags server-side (purchases are service-only), only for a valid invite.
+8. **Archive instead of delete (addendum 1).** When the last member leaves an unlocked household
+   by joining another, `accept_invite(code, true)` archives it: `households.archived_at` and
+   `archived_by` are set, the membership goes, list and unlock stay. Nobody can read an archived
+   household (RLS is membership); its invites answer `invalid_invite` (`check_invite`). The
+   archiving user lists it (`archived_households()`) and re-enables it
+   (`unarchive_household(id, true)`, which leaves their current household like a join and makes
+   them its owner). Only an unlocked household is archived; one without Lifetime is deleted as
+   before, so archiving can't become a way to keep data indefinitely for free. The old signatures
+   (`accept_invite(code)`, `leave_current_household()`) still delete, for apps before job 43.
+9. **Declining the archive asks once more.** "Löschen und beitreten" opens a dialog: the household
+   is deleted and its Lifetime is not refunded, with the refund help link. Cancel is the
+   prominent answer on the join screen, as for every switch.
+10. **The archive UI is off in releases (`HOUSEHOLD_ARCHIVE`, default false).** The live privacy
+    policy §14, the support FAQ and `app/web/konto-loeschen.html` say the household is deleted
+    when the last member leaves; Legal Review owns those texts. With the flag off the join screen
+    shows the decline warning and "Trotzdem beitreten", which matches today's behavior; the
+    server side, its tests and the widget tests for both states ship. e2e builds turn it on
+    (`app/config/e2e.json`, like `LEGAL_DRAFTS`). Turning it on is a NEEDS_LEAD Job 43 step after
+    Legal Review. A build define rather than job 40's `releases/flags.json`: that file is not on
+    main, and it gates changelog notes, not app code.
+11. **An archived household goes with its archiver's account.** `delete_account` deletes the
+    households the user archived before it deletes the user: nobody else could ever re-enable
+    them. `archived_by` is `on delete set null`, not `cascade`: a cascade raced the invites'
+    `created_by` set null and failed the deletion (found by pgTAP). A user deleted outside
+    `delete_account` would leave an unreachable archived household; that path is not used.
+12. **Testers: a grant count; grants stay with households (addendum 2, supersedes the first
+    design).** `lifetime_testers(user_id, grants default 1, note, added_at)`, service-only. A grant
+    applies itself (`tester_grant_apply`, by trigger) to a household the tester is in that has no
+    Lifetime: when they are added or their count is raised, and when they create or join one.
+    Automatic rather than a button: the Lead decides who is a tester, and a button would be one
+    more UI only testers see. Used grants are `entitlements` rows (`source` tester, `tester` the
+    user, `on delete set null`), one per household and tester; lowering the count or removing the
+    tester keeps them, like purchases. The note holds no names or e-mail; the script resolves the
+    e-mail at run time.
+13. **Sandbox and tester unlocks stay after launch (NEEDS_PETER Job 25 item 8, Peter
+    2026-10-31).** Both are internal for analytics: the function marks a tester's purchase, and
+    any purchase in a household a tester unlocked, `is_internal` (as for Sandbox); the app marks
+    every event of a household whose rows include a tester grant (`isInternal`'s
+    `testerHousehold`, fed from `Entitlements`), so the internal filter drops those households from
+    every gate query. No new event or property.
+14. **Members don't read who paid (H-55).** `authenticated` has column-level select on
+    `entitlements` (`id, purchase_id, household_id, kind, source, product_id, store, environment,
+    granted_at`), not on `granted_by` or `tester`. `select *` fails for a member, so the app and
+    tests name their columns. Realtime still delivers inserts and deletes to the partner
+    (`e2e/tests/purchases.spec.ts`, run against the restriction).
+15. **An entitlement kind (forward-compat for model D).** `kind` on purchases and entitlements,
+    checked `in ('lifetime')`; the function derives it from the product id in one map
+    (`productKinds` in `purchases/types.ts`, pinned to `scripts/iap/product.ts` by
+    `product_test.ts`); every product check goes through `kindOf`. The app asks
+    `has(Entitlement.lifetime)`; an unknown kind unlocks nothing. Extension steps:
+    PURCHASES.md "A second entitlement".
+16. **Frankfurt (H-54).** The app's calls to `purchases` (now only the claim) pass
+    `region: 'eu-central-1'` (`x-region` and `forceFunctionRegion`); RevenueCat's webhook URL
+    carries `?forceFunctionRegion=eu-central-1` (entry 24). Supabase documents both
+    (https://supabase.com/docs/guides/functions/regional-invocation, read 2026-10-31). The local
+    stack ignores them.
+17. **Analytics: paying households over WAH, no PostHog groups.** `paying_households_d35.sql`
+    (cohort by the household's first event) and `paying_share_wah.sql` (the kill gate: the share
+    of weekly active households with a non-refunded paid unlock by that week, at least 2 % in the
+    Berlin week containing day 35 after launch) use `properties.household_id`; group analytics
+    stays off. A refunded purchase never counts, as in `unlock_d35`. A buyer who declined analytics
+    sends no `purchase_completed`, so the share is a lower bound. No new event was needed, so
+    nothing waits in NEEDS_LEAD for a privacy-policy change.
+18. **Web copy.** "Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. Danach ist
+    es auch hier für deinen ganzen Haushalt freigeschaltet." No checkout, no external link.
+19. **Changelog: one `new` item on hold `premium-launch`.** Job 40's `hold:` lines reached main
+    while this job ran, so the brief's rule applies: one item describing the household-wide
+    Lifetime and the refund help, held by the new `premium-launch` hold (`released: false` in
+    `releases/flags.json`, `match: ["lifetime"]`, so any later item that mentions Lifetime must
+    carry it). Nothing is sold or gated yet; releasing the hold is the launch's job.
+20. **RevenueCat verifies; our function only listens (ADDENDUM 4, Peter 14:03: "Let's just use
+    RevenueCat and let them handle it").** `apple.ts`, `google.ts`, the test CA and signer, the
+    app's verify call, Apple's notification route, the Play voided poll and its workflow, and the
+    `in_app_purchase` plugin are gone; `purchase_grant` is dropped. `purchases` receives
+    RevenueCat's webhook and the app's claim. Sources (read by the Lead 2026-10-31): pricing
+    https://www.revenuecat.com/pricing/, restore behavior
+    https://www.revenuecat.com/docs/projects/restore-behavior, webhooks
+    https://www.revenuecat.com/docs/integrations/webhooks and
+    https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields (re-read
+    2026-10-31 for the field list, the `X-RevenueCat-Webhook-Signature` format and the retry
+    policy), identity https://www.revenuecat.com/docs/customers/identifying-customers, refunds
+    https://www.revenuecat.com/docs/subscription-guidance/refunds, customer deletion
+    https://www.revenuecat.com/docs/api-v1/customers, DPA https://www.revenuecat.com/dpa/,
+    privacy https://www.revenuecat.com/privacy/.
+21. **The RevenueCat customer is the household.** App User ID = `households.id`, never a user id,
+    never anonymous, never `logOut`. With the project's restore behavior "Keep with original App
+    User ID" (Ops), RevenueCat itself refuses a purchase restored or re-bought under another
+    household; a deleted household's id is never reused. The server checks independently:
+    `purchase_record` binds a transaction to `app_user_id` once (`bound_household`), refuses any
+    other household, refuses an id that is no household, and refuses a tombstoned transaction.
+    The rejected alternative (App User ID = user id, the webhook maps to a household) makes the
+    purchase follow the person, against Peter's rule.
+22. **The SDK starts late and knows nothing but the household (ADDENDUM 5, C3).** Configured only
+    when the Lifetime page is open and Supabase says the household has no Lifetime; never at app
+    start. No customer attributes, no device or ad identifiers, no integrations, no Paywalls or
+    Customer Center. Two ast-grep rules make it structural: `purchases-flutter-only-in-revenuecat-repository` (only
+    `revenuecat_repository.dart` imports the SDK) and `no-revenuecat-customer-data` (no `Purchases.set…`,
+    `collectDeviceIdentifiers`, `enableAdServices…`, `logOut`). `purchases_flutter` ^11.0.0: the
+    iOS app builds with Swift Package Manager (no Podfile), so the CocoaPods delay of 11.0.0 doesn't
+    apply; Kotlin is 2.4 (11.0.0 needs 2.1).
+23. **The buyer comes from a claim through the function, not a plain RPC.** H-55 needs the buyer
+    recorded and hidden from members; analytics needs `purchase_completed` under the buyer's
+    consent, which only the function can send (PostHog, `analytics_consents`). So the app posts
+    `purchases/claim` with its session; `purchase_claim` checks membership and either sets the
+    buyer (first member wins) or keeps the claim until the webhook arrives. `purchase_completed`
+    goes out exactly once, from whichever of webhook and claim comes second
+    (`purchases.completed_sent_at`). No claim: the unlock stands, the buyer stays unknown, no
+    event. The transaction id the app claims is `StoreTransaction.transactionIdentifier`: the
+    StoreKit transaction id on iOS, the Play order id on Android (RevenueCat's hybrid mapper
+    returns `orderId` there, checked in `purchases-hybrid-common`'s `StoreTransactionMapper.kt`),
+    matching the webhook's `transaction_id` (`GPA.…` in RevenueCat's Play samples).
+24. **The webhook's security and region (C7).** The `Authorization` header is compared in
+    constant time with `REVENUECAT_WEBHOOK_AUTH`; with `REVENUECAT_WEBHOOK_HMAC_SECRET` set, the
+    HMAC signature over the raw body and a 5-minute timestamp window are required too. Event ids
+    are stored in the same transaction as the writes, so a failed write (500) lets RevenueCat's
+    retry run again, and a duplicate does nothing. The URL Ops registers ends in
+    `?forceFunctionRegion=eu-central-1`.
+25. **"Bought twice" comes from Supabase.** With RevenueCat there is no verify answer to carry
+    `already_unlocked` to the buyer's phone. Every member's Lifetime page shows a note when the
+    household has more than one purchase row, with the refund help. The SQL still computes
+    `already_unlocked` for logs.
+26. **Retention (ADDENDUM 4 proposal, ADDENDUM 5 conditions).** A deleted household's purchase
+    rows go 30 days later (`purge_purchases`, pg_cron); each leaves only an HMAC-SHA256 of its
+    store transaction id under one key (`REVENUECAT_TOMBSTONE_HMAC_KEY`, not a per-row salt, so a
+    later event can be matched), with nothing attached. The HMAC is computed by the function when
+    it records the purchase and stored with the row, so the database purge never needs the key.
+    The RevenueCat customer is deleted by the function (entry 32). Webhook ids 90 days, unmatched
+    claims 30 days.
+27. **Tester grants count what they used** (review finding): `lifetime_testers.used` instead of
+    counting live rows, which a deleted household would hand back. `tester_grant_apply` takes the
+    same household lock as `purchase_record`.
+28. **Join and archive can't race** (review finding): `accept_invite(code, archive)` takes a share
+    lock on the target household and refuses an archived one before it uses the invite;
+    `leave_current_household(archive)` locks the household it leaves before it counts the
+    members. Without that, a join and the last member's archive could both commit, leaving a
+    member in an archived household.
+29. **The purchase screen is off by default (`REVENUECAT_PURCHASES`, ADDENDUM 5).** Until Peter
+    approves the new legal texts, no build shows Buy or Restore, TestFlight and Play internal
+    included; the page says "Hummlist Lifetime ist bald verfügbar." A build define like
+    `HOUSEHOLD_ARCHIVE`, set only for Peter's own builds first.
+
+30. **A late unlock never invites a second purchase.** After a purchase the page says "Wird
+    freigeschaltet …" until Supabase's unlock arrives. If RevenueCat's webhook takes longer than a
+    minute (retrying, an outage), the page says the purchase arrived and the unlock follows, and Buy
+    stays disabled for that visit, instead of offering Buy again.
+31. **What gets no claim.** A purchase approved later (Ask to Buy, a Play pending payment) and a
+    restore send no claim: the app no longer holds that store transaction. The unlock still comes
+    from the webhook; the buyer stays unknown and `purchase_completed` is not sent (the documented
+    undercount). `productAlreadyPurchasedError` shows as a store error with its code; Restore
+    resolves it.
+32. **ADDENDUM 6 (the Lead's RevenueCat setup).** The webhook route is
+    `/purchases/revenuecat/webhook`; a bare `POST /purchases` is 404. `REVENUECAT_WEBHOOK_AUTH`
+    holds the whole header value, `Bearer ` included, and is compared whole. The app's SDK key
+    defines are `REVENUECAT_APPLE_API_KEY` and `REVENUECAT_GOOGLE_API_KEY`. `REVENUECAT_SECRET_KEY`
+    is a v2 key set as a function secret with `REVENUECAT_PROJECT_ID`, so the function deletes
+    customers itself: `POST /purchases/revenuecat/deletions` calls API v2 `DELETE` and `GET
+    /projects/{project}/customers/{id}` (v1's `GET /subscribers` would create the customer again).
+    The route takes no input and only works the due queue (25 a run, each customer at most hourly),
+    so it needs no auth; a daily workflow calls it. Every deleted household is queued, not only
+    those with a purchase: opening the purchase page already creates the customer at RevenueCat
+    (review finding).
+33. **Second review's SQL findings.** `purchase_claim` takes the household lock that
+    `purchase_record` takes, so a claim and a webhook arriving together always meet. The claim
+    pickup reads one claim, then deletes all for the transaction, so claims for both of its ids
+    can't fail the record. Refund-only rows without a household are purged after 30 days.
+34. **The tester trigger takes no lock for non-testers** (found by CI's "two people racing for one
+    code"). The grant trigger runs on every join; it used to lock the household before checking
+    whether the joiner is a tester, which deadlocked against the other joiner's share lock (entry
+    28). It now returns at once for anyone without an unused grant. Only a tester with grants left
+    racing someone else for the same single invite can still deadlock; Postgres aborts one join,
+    which the app shows as a failed join to try again.
+

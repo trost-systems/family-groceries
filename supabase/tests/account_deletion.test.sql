@@ -226,9 +226,10 @@ set category_id = (select id from public.categories where household_id = (select
     brand = 'Hofbäckerei Kurz'
 where name = 'Brot';
 select pg_temp.as_postgres();
--- Job 25: Carl bought Hummlist Lifetime for the household.
-select public.purchase_grant('apple', '2000000000002501', 'com.hummlist.app.lifetime', 'Sandbox', now(), null,
-  9.99, 'EUR', 'DE', '00000000-0000-0000-0000-0000000000c1', (select id from h));
+-- Job 25 (as of job 43, through RevenueCat): Carl bought Hummlist Lifetime for the household.
+select public.purchase_claim('00000000-0000-0000-0000-0000000000c1', (select id from h), 'apple', '2000000000002501');
+select public.purchase_record('apple', '2000000000002501', '2000000000002501', repeat('a', 64),
+  'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from h));
 select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n = 0),
   null, 'before: every household table has rows'
@@ -286,9 +287,9 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
 create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
-  array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'connected_apps', 'exported_at',
-        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'profile', 'purchases',
-        'version'],
+  array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'archived_households', 'connected_apps', 'exported_at',
+        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'lifetime_tester',
+        'profile', 'purchases', 'version'],
   'the export has the documented sections'
 );
 select is(
@@ -321,7 +322,9 @@ select is(
     'analytics_decisions', '[]'::jsonb,
     'alexa_links', '[]'::jsonb,
     -- Job 25: Emil bought nothing (purchases.test.sql covers a buyer's export).
-    'purchases', '[]'::jsonb
+    'purchases', '[]'::jsonb,
+    'lifetime_tester', null,
+    'archived_households', '[]'::jsonb
   ),
   'the export holds the user''s own data and nothing of the other member''s'
 );

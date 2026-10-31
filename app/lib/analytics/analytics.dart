@@ -147,7 +147,12 @@ class Analytics(
     email: _user?.email,
     internalHouseholds: _config.internalHouseholds,
     internalEmailDomains: _config.internalEmailDomains,
+    testerHousehold: testerHousehold,
   );
+
+  /// Set by the household's entitlements: the household a tester's grant
+  /// unlocks, if any.
+  String? testerHousehold;
 
   /// Whether the consent screen is due: the build can send and this
   /// install has not decided yet.

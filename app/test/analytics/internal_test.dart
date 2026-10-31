@@ -9,6 +9,7 @@ void main() {
     String? email,
     Set<String> households = const {},
     Set<String> domains = const {},
+    String? tester,
   }) => isInternal(
     releaseBuild: release,
     internalInstall: install,
@@ -16,6 +17,7 @@ void main() {
     email: email,
     internalHouseholds: households,
     internalEmailDomains: domains,
+    testerHousehold: tester,
   );
 
   test('a customer is not internal', () {
@@ -36,6 +38,16 @@ void main() {
   test('listed households are internal', () {
     expect(internal(household: 'h1', households: {'h1'}), isTrue);
     expect(internal(household: 'h2', households: {'h1'}), isFalse);
+  });
+
+  test("a household a tester's grant unlocks is internal (job 43)", () {
+    expect(internal(household: 'h1', tester: 'h1'), isTrue);
+    expect(
+      internal(household: 'h2', tester: 'h1'),
+      isFalse,
+      reason: 'moved on',
+    );
+    expect(internal(tester: 'h1'), isFalse, reason: 'no household');
   });
 
   test('test domains are internal', () {

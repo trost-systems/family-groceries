@@ -994,8 +994,9 @@ below are done the purchase flow is inert: the app says "not available yet", the
      Lifetime" (DE and EN), EUR 9.99 with Germany as base; other countries from Apple's and
      Google's automatic prices (AT and CH are printed by the setup scripts once they can run).
    - 25.2 The unlock is the household's (both partners) and stays with the household where it
-     was bought, also when the buyer leaves or deletes the account; restoring it in another
-     household works only after the first household is gone.
+     was bought, also when the buyer leaves or deletes the account. **Answered by Peter
+     2026-10-31 (model A, job 43):** household-bound only; a purchase never unlocks another
+     household, also not after its own is gone (DECISIONS 43.1).
    - 25.3 Apple Family Sharing for the purchase: off (Apple never lets it be turned off again).
    - 25.4 Nothing is behind the unlock yet. **Which features need it, or a free limit?**
    - 25.5 Web: no buying; More shows that it is in the iOS and Android app, and the unlocked state.
@@ -1022,3 +1023,34 @@ below are done the purchase flow is inert: the app says "not available yet", the
 2. Change the wording in a PR if you like. `node scripts/release/changelog.mjs drafts` checks the limits.
 3. To approve it, delete the first line (`status: draft — pending Peter's review`) in that PR. Until then, `record.mjs add` refuses to record 1.0.0 as a public release.
 4. When the Alexa skill is certified, set `"released": true` for `alexa-certification` in `releases/flags.json`. The next release draft then takes the held Alexa items.
+
+   **Answered by Peter 2026-10-31:** keep them; testers also get free grants that stay with their
+   households (DECISIONS 43.12, 43.13).
+
+## Job 43: Hummlist Lifetime, household-bound (model A)
+
+Built as decided on 2026-10-31 (DECISIONS "Job 43"), on RevenueCat. Four calls are left for you:
+
+1. **Google buyers after 48 hours.** Google's general refund rule: within 48 hours the buyer asks
+   Google Play; after that Google sends them to the developer
+   (https://support.google.com/googleplay/answer/15574908). In the EEA and the UK, Google's page
+   offers its own request form for in-app purchases without a deadline
+   (https://support.google.com/googleplay/answer/15575720), so German buyers have a route. Outside
+   the EEA after 48 hours, only the developer can refund (Play Console → Order management).
+   The app's refund help says "we can't refund; Apple and Google decide", as you asked. **Do you
+   want to answer such requests (refund in Play Console), or keep "we never refund"?** Nothing to
+   change if you keep it.
+2. **Turn on archiving for real users** once the legal texts say it (NEEDS_LEAD Job 43). Until
+   then the last member of an unlocked household who joins another sees "deleted, not refunded"
+   and "Trotzdem beitreten"; the archive choice exists on the server and in e2e builds only.
+3. **Google refund notifications need a billed Cloud project.** RevenueCat learns of Play
+   purchases and refunds in real time through a Pub/Sub topic (NEEDS_LEAD "Job 43 – RevenueCat
+   setup", step 4). Pub/Sub needs a Google Cloud project with billing enabled, which job 25 avoided
+   (DECISIONS 25.8: no paid resources). At Hummlist's volume it stays inside Pub/Sub's free tier,
+   but a billing account has to be attached. **Allow it, or launch on Android without real-time
+   notifications** (a Play refund then reaches us only as RevenueCat finds it)?
+4. **Approve the new purchase legal texts, then the purchase screen goes on.** Every build hides
+   Buy and Restore (`REVENUECAT_PURCHASES` off) until you approve Legal Review's text for
+   RevenueCat (NEEDS_LEAD Job 43 lists the affected sentences). Then the Lead turns it on, first in
+   your own build.
+

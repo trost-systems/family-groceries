@@ -11,11 +11,43 @@ class const Invite({
   required final DateTime expiresAt,
 });
 
+/// A household the user archived as its last member (job 43): no members,
+/// its list and Hummlist Lifetime kept, until they re-enable it.
+@immutable
+class const ArchivedHousehold({
+  required final String id,
+  required final String name,
+  required final DateTime archivedAt,
+  required final bool unlocked,
+});
+
 /// What a code leads to, before joining (`preview_invite`).
 sealed class const InvitePreview();
 
-/// An open invite of the household [name].
-final class const InviteOpen(final String name) extends InvitePreview;
+/// An open invite of the household [name], with what Hummlist Lifetime
+/// means for joining it (job 43).
+final class const InviteOpen(
+  final String name, {
+  final JoinLifetime lifetime = const JoinLifetime(),
+}) extends InvitePreview;
+
+/// Hummlist Lifetime around a join, as `preview_invite` tells it.
+@immutable
+class const JoinLifetime({
+  /// The invite's household has it: nothing to buy there.
+  final bool targetUnlocked = false,
+
+  /// The user is the last member of an unlocked household: joining deletes
+  /// it, and its Lifetime ends (it is household-bound, nothing moves).
+  final bool leavesUnlocked = false,
+
+  /// The user verified a purchase in the last 30 days that stands.
+  final bool recentPurchase = false,
+}) {
+  /// Paid recently and moving into a household that has it anyway: the
+  /// refund help is worth a link.
+  bool get refundHelp => targetUnlocked && recentPurchase;
+}
 
 /// The user is in that household already: nothing to join.
 final class const InviteMember(final String name) extends InvitePreview;
@@ -85,6 +117,9 @@ abstract interface class InviteRepository() {
 
   /// How many members [householdId] has, for the switch warning.
   Future<int> memberCount(String householdId);
+
+  /// The user's archived households, newest first (`archived_households`).
+  Future<List<ArchivedHousehold>> archived();
 }
 
 class SupabaseInviteRepository(final SupabaseClient _client)
@@ -123,7 +158,14 @@ class SupabaseInviteRepository(final SupabaseClient _client)
       params: {'p_code': code},
     );
     return switch (result) {
-      {'status': 'ok', 'name': final String name} => InviteOpen(name),
+      {'status': 'ok', 'name': final String name} => InviteOpen(
+        name,
+        lifetime: JoinLifetime(
+          targetUnlocked: result['unlocked'] == true,
+          leavesUnlocked: result['leaves_unlocked'] == true,
+          recentPurchase: result['recent_purchase'] == true,
+        ),
+      ),
       {'status': 'member', 'name': final String name} => InviteMember(name),
       {'status': final String status} => throw HouseholdError.fromStatus(
         status,
@@ -139,6 +181,20 @@ class SupabaseInviteRepository(final SupabaseClient _client)
         .select('user_id')
         .eq('household_id', householdId);
     return rows.length;
+  });
+
+  @override
+  Future<List<ArchivedHousehold>> archived() => householdCall(() async {
+    final rows = await _client.rpc<List<dynamic>>('archived_households');
+    return [
+      for (final row in rows.cast<Map<String, dynamic>>())
+        ArchivedHousehold(
+          id: row['id']! as String,
+          name: row['name']! as String,
+          archivedAt: DateTime.parse(row['archived_at']! as String),
+          unlocked: row['unlocked'] == true,
+        ),
+    ];
   });
 
   static Invite _invite(Map<String, dynamic> row) => Invite(

@@ -9,6 +9,8 @@ edge-function errors there. Spec #1 "Kill-gate and LTV analytics"; decisions in
 | --- | --- | --- |
 | Day-35 unlock share | Which share of an install-week cohort bought the lifetime unlock within 35 days of `first_open`? | [`analytics/queries/unlock_d35.sql`](../analytics/queries/unlock_d35.sql) |
 | WAH | How many households added or ticked at least once in a week (Mon-Sun, Europe/Berlin)? | [`wah.sql`](../analytics/queries/wah.sql) |
+| Paying share of WAH (kill gate, job 43) | Which share of a week's active households has Hummlist Lifetime by the week's end? | [`paying_share_wah.sql`](../analytics/queries/paying_share_wah.sql) |
+| Paying households by day 35 (job 43) | Which share of a household-start-week cohort has Hummlist Lifetime within 35 days of its first event? | [`paying_households_d35.sql`](../analytics/queries/paying_households_d35.sql) |
 | Net unlock revenue | Revenue per month after VAT and store fee, refunds subtracted, restores zero | [`revenue_monthly.sql`](../analytics/queries/revenue_monthly.sql) |
 | Household retention | Share of an install-week cohort still adding or ticking in week 1-12 and month 1-11 | [`retention_weekly.sql`](../analytics/queries/retention_weekly.sql), [`retention_monthly.sql`](../analytics/queries/retention_monthly.sql) |
 | Manual reorders | Category (route order, store layout) and store reorders per household | [`reorders.sql`](../analytics/queries/reorders.sql) |
@@ -221,10 +223,13 @@ so the filter is this pair of lists in each query rather than a saved cohort.
 
 The HogQL lives in `analytics/queries/`; the Engineering Lead creates the insights from it in
 project 319492 through the PostHog connector and runs `privacy_scan.sql` after the first real
-events. `analytics/metrics.ts` computes the same metrics in TypeScript, step by step like the
+events. The two job 43 paying queries are not created yet; the Lead adds them there too.
+`analytics/metrics.ts` computes the same metrics in TypeScript, step by step like the
 SQL, and `analytics/metrics_test.ts` checks them on `analytics/fixtures.ts`: Berlin week edges
 (Sunday 23:30 UTC is Monday in Berlin), a purchase after day 35, a refund in the next month, a
-restore, an install marked internal late, a test account and Peter's household. It also checks
+restore, an install marked internal late, a test account and Peter's household; for job 43
+(`payingEvents`) a household with two purchases, a refunded one, a tester household, a purchase
+on day 40, one at 23:30 UTC on a Sunday and a buyer without consent. It also checks
 that every gate query carries the internal filter. The functions gate runs it.
 
 Definitions:
@@ -240,33 +245,53 @@ Definitions:
   next period. Fixed-length months give every cohort the same windows. Weeks 0-12, months 0-11:
   the free plan keeps a year of data (Peter's override, 2026-10-25); month 12 and beyond need the
   paid retention Peter plans to buy before year end.
+- **Paying household** (job 43): a household with a `purchase_completed` the store has not
+  refunded since (same `transaction_ref`; a refund at any time takes it back, also for the weeks
+  before it). Hummlist Lifetime unlocks the whole household (model A), so a second purchase in
+  the same household counts once. `paying_share_wah.sql` counts a household as paying in every
+  week from the Berlin week of its first such purchase; `paying_households_d35.sql` when that
+  purchase came within 35 × 24 h of the household's start (as in household retention).
+- **Kill gate** (Peter, 2026-10-31, model A): in the Berlin week that contains day 35 after
+  launch, `paying_share_wah`'s `share_percent` is at least 2. `paying_households_d35` is the
+  cohort view of the same question.
 - **Net revenue:** completed minus refunded `net_amount`, in the month each happened; restores
   add nothing. Gross (`price`) the same way.
 
 ## Purchases (AC8)
 
-Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md).
-Revenue reaches PostHog only from the `purchases` function, after the store confirmed it:
+Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md); since
+job 43 RevenueCat verifies it and calls our `purchases` function. Revenue reaches PostHog only from
+that function, after RevenueCat confirmed the purchase:
 
 - **Who.** The app sends no install id or price. The function sends an event only for a buyer
   whose newest analytics answer in the app is yes (`analytics_consents`, job 31), under that
   install id, with the household the purchase unlocks. No answer or a no: no event.
-- **Which.** `purchase_completed` when a store transaction is verified for the first time;
-  `purchase_restored` when the user restores (Käufe wiederherstellen) a purchase already known,
-  never for a retry of the same purchase; `purchase_refunded` once, when Apple's `REFUND`/`REVOKE`
-  notification, Play's voided purchases or a verification reports it taken back. Properties as
+- **Which.** `purchase_completed` once per store transaction, when both RevenueCat's webhook
+  record and the buyer's claim from the app are in (whichever arrives second; without a claim the
+  buyer is unknown and nothing is sent); `purchase_refunded` once, when RevenueCat reports the
+  refund (`CANCELLATION`) of a purchase with a known buyer. `purchase_restored` is no longer sent
+  (a RevenueCat restore produces no event for us); it stays in the catalog. Properties as
   in the table above (`sendPurchaseEvent` in `_shared/purchases.ts`, allow-listed in
   `telemetry.ts`); `transaction_ref` is a hash, never the store's id.
 - **Sandbox is never revenue.** A Sandbox transaction (TestFlight, Apple sandbox testers, App
   Review, Play license testers) is sent with `is_internal: true`. The internal filter then drops
   that whole household from every gate insight (`analytics/fixtures.ts` H8).
-- **Amounts.** Apple's JWS carries price (milliunits), currency and storefront; Google's Orders
-  API total, tax and buyer country (`fromGoogle`). Without Google's order the event has no price.
+- **Amounts.** RevenueCat's event carries the price in the purchase currency, the currency and the
+  country code; no tax, so `net_amount` uses the country's VAT rate.
 - **Net amount** (`netAmount`): the store-reported tax (Google's Orders API) or else the country's
   VAT rate (DE 19 %, AT 20 %, CH/LI 8.1 %), then the store fee (15 %, both stores' small-business
   rate; 30 % above $1M). Unknown country and no tax: no `net_amount`. It is an estimate; the real
   proceeds are in App Store Connect's and Play Console's monthly financial reports, to reconcile
   monthly.
+- **Paying households undercount** (job 43). A buyer who declined analytics, or whose claim never
+  reached us (app killed right after the purchase), sends no `purchase_completed`, so their
+  household never counts as paying, even when another member said yes. Both paying queries are a
+  lower bound (`analytics/fixtures.ts` H15).
+- **Tester households** (job 43). The server grants testers Hummlist Lifetime without a store
+  purchase (no RevenueCat involved). A purchase by a tester or in a household a tester unlocked is
+  sent with `is_internal: true` too. The app sends every event of a household whose unlock comes from that tester grant
+  with `is_internal: true`, so the internal filter drops the household from both the numerator
+  and the denominator of the paying queries (`analytics/fixtures.ts` H12).
 - `recordPurchase` and `FakePurchaseVerifier` remain job 19's harness for the same mapping.
 
 ## Verifying

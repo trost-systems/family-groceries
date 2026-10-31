@@ -9,115 +9,67 @@ import 'package:family_groceries/session/session_cubit.dart';
 
 const lifetime = Product(id: lifetimeProductId, price: '9,99 €');
 
-/// A store whose updates the test sends.
+/// A store that answers what the test set, or holds a purchase in [held]
+/// while [hold] is set. [product] null: loaded for the household asked.
 class FakePurchaseRepository({
-  var ProductLoad product = const ProductLoaded(lifetime),
+  @override final ProductLoad? withoutStore,
+  var ProductLoad? product,
+  var BuyOutcome bought = const Bought(
+    StoreTransactionRef(AppStore.apple, 'tx-1'),
+  ),
+  var RestoreOutcome restored = const NothingToRestore(),
 }) implements PurchaseRepository {
-  final _updates = StreamController<StoreUpdate>.broadcast(sync: true);
-  var buys = 0;
-  var restores = 0;
-  var recoveries = 0;
-  var loads = 0;
-  final finished = <StoreProof>[];
-
-  /// Thrown by [buy] and [restore] when set.
-  StoreError? refuse;
-
-  /// Thrown by [finish] when set (the plugin channel failing).
-  Exception? failFinish;
-
-  /// Sent on [restore], as the store does.
-  List<StoreUpdate> owned = [];
-
-  void send(StoreUpdate update) => _updates.add(update);
+  /// Households [loadProduct] was asked for.
+  final loads = <String>[];
+  final buys = <String>[];
+  final restores = <String>[];
+  var hold = false;
+  final held = <Completer<BuyOutcome>>[];
 
   @override
-  Stream<StoreUpdate> get updates => _updates.stream;
-
-  @override
-  Future<ProductLoad> loadProduct() async {
-    loads++;
-    return product;
+  Future<ProductLoad> loadProduct(String householdId) async {
+    loads.add(householdId);
+    return product ?? ProductLoaded(householdId, lifetime);
   }
 
   @override
-  Future<void> buy(Product product) async {
-    buys++;
-    if (refuse case final error?) {
-      throw error;
+  Future<BuyOutcome> buy(String householdId, Product product) async {
+    buys.add(householdId);
+    if (!hold) {
+      return bought;
     }
+    final answer = Completer<BuyOutcome>();
+    held.add(answer);
+    return await answer.future;
   }
 
   @override
-  Future<void> restore() async {
-    restores++;
-    if (refuse case final error?) {
-      throw error;
-    }
-    owned.forEach(send);
-  }
-
-  @override
-  Future<void> recoverUnfinished() async => recoveries++;
-
-  @override
-  Future<void> finish(StorePurchased purchase) async {
-    if (failFinish case final error?) {
-      throw error;
-    }
-    finished.add(purchase.proof);
+  Future<RestoreOutcome> restore(String householdId) async {
+    restores.add(householdId);
+    return restored;
   }
 }
 
-StorePurchased paid(
-  String data, {
-  PurchaseSource source = PurchaseSource.purchase,
-  bool alreadyFinished = false,
-}) => StorePurchased(
-  proof: StoreProof(
-    store: AppStore.apple,
-    data: data,
-    productId: lifetimeProductId,
-  ),
-  source: source,
-  alreadyFinished: alreadyFinished,
-);
-
-/// A purchases function that answers [answer], or holds every answer in
-/// [pending] while [hold] is set.
-class FakePurchaseApi({
-  var Verification answer = const Verified(VerifyOutcome.granted),
-}) implements PurchaseApi {
-  /// Answers held back until the test completes them.
-  final pending = <Completer<Verification>>[];
-  var hold = false;
-  final calls = <(StoreProof, PurchaseSource)>[];
-
-  /// Called when the server grants: the entitlement row appears.
-  void Function()? onGrant;
+/// A purchases function whose claim answers [answers] in turn, the last one
+/// for good.
+class FakeClaimApi({
+  var List<ClaimResult> answers = const [Claimed(ClaimStatus.recorded)],
+}) implements ClaimApi {
+  final calls = <StoreTransactionRef>[];
 
   @override
-  Future<Verification> verify(StoreProof proof, PurchaseSource source) async {
-    calls.add((proof, source));
-    final Verification result;
-    if (hold) {
-      final completer = Completer<Verification>();
-      pending.add(completer);
-      result = await completer.future;
-    } else {
-      result = answer;
-    }
-    if (result case Verified(
-      outcome: VerifyOutcome.granted || VerifyOutcome.restored,
-    )) {
-      onGrant?.call();
-    }
-    return result;
+  Future<ClaimResult> claim(StoreTransactionRef transaction) async {
+    calls.add(transaction);
+    return answers[(calls.length - 1).clamp(0, answers.length - 1)];
   }
 }
 
 class FakeEntitlementsSource({var bool unlockedNow = false})
     implements EntitlementsSource {
+  /// The household's rows as the server has them; null: one purchase's
+  /// Lifetime row while [unlockedNow].
+  List<Map<String, dynamic>>? rowsNow;
+
   /// Reads fail (offline) while set.
   var offline = false;
   final watching = <String>{};
@@ -127,11 +79,16 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
   void change() => _onChange?.call();
 
   @override
-  Future<bool> unlocked(String householdId) async {
+  Future<HouseholdUnlocks> unlocks(String householdId) async {
     if (offline) {
       throw Exception('offline');
     }
-    return unlockedNow;
+    return unlocksOf(
+      rowsNow ??
+          [
+            if (unlockedNow) {'kind': 'lifetime', 'source': 'purchase'},
+          ],
+    );
   }
 
   @override
@@ -150,12 +107,12 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
 class TestPurchases({
   required final SessionCubit session,
   final FakePurchaseRepository? store,
-  final FakePurchaseApi? api,
+  final FakeClaimApi? api,
   final FakeEntitlementsSource? source,
 }) {
   late final FakePurchaseRepository repository =
       store ?? FakePurchaseRepository();
-  late final FakePurchaseApi server = api ?? FakePurchaseApi();
+  late final FakeClaimApi server = api ?? FakeClaimApi();
   late final FakeEntitlementsSource rows = source ?? FakeEntitlementsSource();
   late final entitlements = Entitlements(rows, session);
   late final purchases = PurchaseCubit(
@@ -164,6 +121,14 @@ class TestPurchases({
     entitlements,
     session,
   );
+
+  /// The partner's purchase, or the webhook after this one: the row
+  /// arrives over Realtime.
+  void unlock() {
+    rows
+      ..unlockedNow = true
+      ..change();
+  }
 
   Future<void> close() async {
     await purchases.close();
@@ -181,6 +146,3 @@ class MemoryLedger() implements FakeLedgerStore {
   @override
   Future<void> write(String contents) async => this.contents = contents;
 }
-
-/// What the local stack's signer would sign, as text the test can read.
-Future<String> fakeSign(String id) async => 'signed:$id';

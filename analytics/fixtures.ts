@@ -1,7 +1,8 @@
 // Sample events for metrics_test.ts, shaped like PostHog's export (event, timestamp in UTC,
 // properties). A small month of four customer households plus the cases the gate insights must
 // get right: Berlin week edges, a purchase after day 35, a refund in the next month, a restore,
-// an install marked internal late, a test account and Peter's household.
+// an install marked internal late, a test account and Peter's household. payingEvents (job 43)
+// adds households in January 2027 for the paying-household gate.
 import type { Event } from './metrics.ts';
 
 const id = (n: number) => `10000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -15,6 +16,12 @@ export const H1 = household(1),
   H5 = household(5),
   H6 = household(6),
   HP = household(99);
+export const H10 = household(10),
+  H11 = household(11),
+  H12 = household(12),
+  H13 = household(13),
+  H14 = household(14),
+  H15 = household(15);
 
 function ev(
   event: string,
@@ -110,4 +117,57 @@ export const events: Event[] = [
   // Peter's household, listed internal.
   ev('item_added', '2026-11-04T10:00:00Z', I7, HP, { source: 'typed' }, true),
   ev('category_reordered', '2026-11-04T11:00:00Z', I7, HP, { scope: 'store' }, true),
+];
+
+// Job 43, the paying-household gate (paying_households_d35.sql, paying_share_wah.sql). Its own
+// weeks from Monday 4 January 2027, so the month above keeps its numbers. 2027-01-04 is a Monday.
+export const payingEvents: Event[] = [
+  // H10: both members buy. The household counts once.
+  ev('first_open', '2027-01-04T09:00:00Z', id(10), null),
+  ev('household_created', '2027-01-04T09:01:00Z', id(10), H10),
+  ev('item_added', '2027-01-04T09:02:00Z', id(10), H10, { source: 'typed' }),
+  ev('purchase_completed', '2027-01-06T10:00:00Z', id(10), H10, lifetime('f')),
+  ev('first_open', '2027-01-05T09:00:00Z', id(11), null),
+  ev('invite_accepted', '2027-01-05T09:01:00Z', id(11), H10, { method: 'code' }),
+  ev('purchase_completed', '2027-01-07T10:00:00Z', id(11), H10, lifetime('g')),
+  ev('item_added', '2027-01-13T10:00:00Z', id(10), H10, { source: 'typed' }),
+
+  // H11: buys, then the store refunds it two weeks later. Never paying, not even in the week
+  // it bought (a refund counts back to the purchase).
+  ev('first_open', '2027-01-05T10:00:00Z', id(12), null),
+  ev('household_created', '2027-01-05T10:01:00Z', id(12), H11),
+  ev('item_added', '2027-01-05T10:02:00Z', id(12), H11, { source: 'typed' }),
+  ev('purchase_completed', '2027-01-06T10:00:00Z', id(12), H11, lifetime('h')),
+  ev('purchase_refunded', '2027-01-20T10:00:00Z', id(12), H11, lifetime('h')),
+
+  // H12: a tester household. The server's tester grant unlocks it without a purchase, and from
+  // then on the app marks the household's events is_internal. Its first event came before the
+  // grant reached the app; it goes too, from both numerator and denominator.
+  ev('first_open', '2027-01-05T11:00:00Z', id(13), null),
+  ev('household_created', '2027-01-05T11:01:00Z', id(13), H12),
+  ev('item_added', '2027-01-05T11:05:00Z', id(13), H12, { source: 'typed' }, true),
+
+  // H13: active from the start, buys on day 40 (Saturday 13 Feb, week of 8 Feb): too late for
+  // day 35, not paying in the week of 11 Jan, paying when it adds again in the week of 15 Feb.
+  ev('first_open', '2027-01-04T08:00:00Z', id(14), null),
+  ev('household_created', '2027-01-04T08:00:00Z', id(14), H13),
+  ev('item_added', '2027-01-04T08:01:00Z', id(14), H13, { source: 'typed' }),
+  ev('item_ticked', '2027-01-12T08:00:00Z', id(14), H13),
+  ev('purchase_completed', '2027-02-13T10:00:00Z', id(14), H13, lifetime('i')),
+  ev('item_added', '2027-02-16T10:00:00Z', id(14), H13, { source: 'typed' }),
+
+  // H14: buys at 23:30 UTC on Sunday 10 Jan, which is 00:30 on Monday 11 Jan in Berlin. Not
+  // paying in the week of 4 Jan, paying in the week of 11 Jan.
+  ev('first_open', '2027-01-06T10:00:00Z', id(15), null),
+  ev('household_created', '2027-01-06T10:01:00Z', id(15), H14),
+  ev('item_added', '2027-01-06T10:02:00Z', id(15), H14, { source: 'typed' }),
+  ev('purchase_completed', '2027-01-10T23:30:00Z', id(15), H14, lifetime('j')),
+  ev('item_ticked', '2027-01-12T10:00:00Z', id(15), H14),
+
+  // H15: the second member bought Hummlist Lifetime but declined analytics, so the purchases
+  // function sent no purchase_completed. The household is active and never paying: the known
+  // undercount (docs/ANALYTICS.md), why the share is a lower bound.
+  ev('first_open', '2027-01-05T12:00:00Z', id(16), null),
+  ev('household_created', '2027-01-05T12:01:00Z', id(16), H15),
+  ev('item_added', '2027-01-05T12:02:00Z', id(16), H15, { source: 'typed' }),
 ];

@@ -4,121 +4,110 @@ import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:http/http.dart' show ClientException;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// The server's final word on a store transaction: finish it.
-enum VerifyOutcome(final String wire) {
-  granted('granted'),
-  restored('restored'),
-  usedElsewhere('used_elsewhere'),
-  revoked('revoked'),
-  refunded('refunded');
+/// What the server did with a claim (`purchase_claim`).
+enum ClaimStatus(final String wire) {
+  /// This member is recorded as the buyer.
+  recorded('recorded'),
 
-  static VerifyOutcome? parse(Object? wire) =>
+  /// Another member claimed it first.
+  taken('taken'),
+
+  /// The store transaction belongs to another household.
+  elsewhere('elsewhere'),
+
+  /// Recorded; RevenueCat's webhook has not arrived yet.
+  waiting('waiting');
+
+  static ClaimStatus? parse(Object? wire) =>
       values.where((v) => v.wire == wire).firstOrNull;
 }
 
-/// Why a verification gave no final word yet: a transient problem. The
-/// transaction stays unfinished and is verified again.
-enum VerifyProblem() {
-  /// No answer: offline, a timeout.
+/// Why a claim got no answer.
+enum ClaimProblem() {
+  /// No answer: offline, a timeout. Worth another try.
   offline,
 
-  /// 429: too many verifications.
+  /// 429. Worth another try, later.
   rateLimited,
 
-  /// 401, 403: the session or household the server saw.
-  session,
-
-  /// 5xx (store unavailable, not configured) or an answer it can't read.
+  /// 5xx or an answer it can't read. Worth another try.
   server,
+
+  /// 400, 401, 403: the same request fails again.
+  refused;
+
+  bool get transient => this != refused;
 }
 
-/// What the purchases function answered.
-sealed class const Verification();
+sealed class const ClaimResult();
 
-final class const Verified(final VerifyOutcome outcome) extends Verification;
+final class const Claimed(final ClaimStatus status) extends ClaimResult;
 
-/// A Play payment not completed yet (202).
-final class const VerificationPending() extends Verification;
+final class const ClaimFailed(
+  final ClaimProblem problem,
 
-/// 400 or 422: the server refused the proof for good (wrong environment,
-/// product or app, forged, malformed). Finished like a final word; a restore
-/// sends it again.
-final class const VerificationRefused(
-  /// The function's `reason` (or `error`) or the HTTP status.
+  /// The function's `error` or the HTTP status.
   final String code,
-) extends Verification;
+) extends ClaimResult;
 
-final class const VerificationFailed(
-  final VerifyProblem problem,
+/// Where the purchases function runs: the project's region (Frankfurt),
+/// next to its database, not the edge region nearest the phone (Legal
+/// Review H-54, docs/PURCHASES.md).
+const purchasesRegion = 'eu-central-1';
 
-  /// The function's `error` (or `reason`) or the HTTP status.
-  final String code,
-) extends Verification;
-
-/// The purchases function (`POST /purchases/verify`).
-abstract interface class PurchaseApi() {
-  Future<Verification> verify(StoreProof proof, PurchaseSource source);
+/// The purchases function's claim (`POST /purchases/claim`): records the
+/// signed-in member as the buyer of a store transaction of their household
+/// (H-55). The unlock does not wait for it; RevenueCat's webhook grants.
+abstract interface class ClaimApi() {
+  Future<ClaimResult> claim(StoreTransactionRef transaction);
 }
 
-class const SupabasePurchaseApi(final SupabaseClient _client)
-    implements PurchaseApi {
+class const SupabaseClaimApi(final SupabaseClient _client) implements ClaimApi {
   @override
-  Future<Verification> verify(StoreProof proof, PurchaseSource source) async {
+  Future<ClaimResult> claim(StoreTransactionRef transaction) async {
     try {
       final response = await _client.functions.invoke(
-        'purchases/verify',
-        body: verifyBody(proof, source),
+        'purchases/claim',
+        body: claimBody(transaction),
+        region: purchasesRegion,
       );
-      return verificationOf(response.status, response.data);
+      return claimOf(response.data);
     } on Object catch (e) {
-      return verificationOfError(e);
+      return claimOfError(e);
     }
   }
 }
 
-Map<String, String> verifyBody(StoreProof proof, PurchaseSource source) => {
-  'store': proof.store.wire,
-  'source': source.wire,
-  ...switch (proof.store) {
-    AppStore.apple => {'jws': proof.data},
-    AppStore.google => {
-      'productId': proof.productId,
-      'purchaseToken': proof.data,
-    },
-  },
+Map<String, String> claimBody(StoreTransactionRef transaction) => {
+  'store': transaction.store.wire,
+  'transactionId': transaction.id,
 };
 
 /// A 2xx answer.
-Verification verificationOf(int status, Object? data) => switch ((
-  status,
-  data,
-)) {
-  (202, _) => const VerificationPending(),
-  (200, {'status': final Object? wire}) => switch (VerifyOutcome.parse(wire)) {
-    final outcome? => Verified(outcome),
-    null => VerificationFailed(VerifyProblem.server, '$wire'),
+ClaimResult claimOf(Object? data) => switch (data) {
+  {'status': final Object? wire} => switch (ClaimStatus.parse(wire)) {
+    final status? => Claimed(status),
+    null => ClaimFailed(ClaimProblem.server, '$wire'),
   },
-  _ => VerificationFailed(VerifyProblem.server, '$status'),
+  _ => const ClaimFailed(ClaimProblem.server, 'unreadable'),
 };
 
 /// What the Supabase client threw.
-Verification verificationOfError(Object error) => switch (error) {
+ClaimResult claimOfError(Object error) => switch (error) {
   // Thrown when the request never got an answer.
-  FunctionsFetchException() || ClientException() || TimeoutException() =>
-    const VerificationFailed(VerifyProblem.offline, 'offline'),
-  FunctionException(:final status, :final details) => switch (status) {
-    400 || 422 => VerificationRefused(_code(status, details)),
-    _ => VerificationFailed(switch (status) {
-      429 => VerifyProblem.rateLimited,
-      401 || 403 => VerifyProblem.session,
-      _ => VerifyProblem.server,
-    }, _code(status, details)),
-  },
-  _ => VerificationFailed(VerifyProblem.server, '${error.runtimeType}'),
-};
-
-String _code(int status, Object? details) => switch (details) {
-  {'error': 'refused', 'reason': final String reason} => reason,
-  {'error': final String code} => code,
-  _ => '$status',
+  FunctionsFetchException() ||
+  ClientException() ||
+  TimeoutException() => const ClaimFailed(ClaimProblem.offline, 'offline'),
+  FunctionException(:final status, :final details) => ClaimFailed(
+    switch (status) {
+      429 => ClaimProblem.rateLimited,
+      400 || 401 || 403 => ClaimProblem.refused,
+      _ => ClaimProblem.server,
+    },
+    switch (details) {
+      {'error': final String code} => code,
+      _ => '$status',
+    },
+  ),
+  _ => ClaimFailed(ClaimProblem.server, '${error.runtimeType}'),
 };

@@ -1,0 +1,57 @@
+# Deletes RevenueCat customers of households deleted 30 days ago (job 43, docs/PURCHASES.md
+# "Retention"): the purchases function drains public.revenuecat_deletions through RevenueCat's API
+# v2 (REVENUECAT_SECRET_KEY, REVENUECAT_PROJECT_ID are function secrets) and confirms each deletion
+# with a GET that answers 404. The route takes no input, so this only starts the scheduled work.
+# Before the Lead set the function secrets it answers not_configured and nothing happens.
+name: RevenueCat customer deletion
+
+on:
+  schedule:
+    - cron: '53 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: revenuecat-delete
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: 'RevenueCat customer deletion failed'
+    steps:
+      - name: Delete due RevenueCat customers
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "::error::Repository variable SUPABASE_PROJECT_REF is missing; nothing was done."
+            exit 1
+          fi
+          url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/purchases/revenuecat/deletions?forceFunctionRegion=eu-central-1"
+          code=$(curl -sS --max-time 120 --retry 2 --retry-delay 15 -o deletions.json -w '%{http_code}' \
+            -X POST "$url") || true
+          echo "Deletions: HTTP ${code:-none} $(head -c 300 deletions.json 2>/dev/null)"
+          [ "$code" = 200 ]
+      - name: Report the failure in an issue
+        if: failure()
+        run: |
+          body="Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID failed. Deleted households' customers stay at RevenueCat until a run succeeds. docs/PURCHASES.md, section Retention, says what to do."
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == env.ISSUE_TITLE))[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --body "$body"
+          fi
+      - name: Close the failure issue
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq '.[] | select(.title == env.ISSUE_TITLE) | .number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID is green again."
+          done

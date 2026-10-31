@@ -217,6 +217,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.1"
+  equatable:
+    dependency: transitive
+    description:
+      name: equatable
+      sha256: ea36e500cbf0ec18361deabca755434f73e42fe53c5130021c7e2d6b5ebe1702
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0"
   fake_async:
     dependency: "direct dev"
     description:
@@ -389,38 +397,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
-  in_app_purchase:
-    dependency: "direct main"
-    description:
-      name: in_app_purchase
-      sha256: d8317ec2ed6fe33199957d67ee67e08a4fd4871ef93b91d7611d8ee560892afc
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.3.1"
-  in_app_purchase_android:
-    dependency: transitive
-    description:
-      name: in_app_purchase_android
-      sha256: b76ab601573f8a848e72d015496257235066ba3479bef6300482239f417e0d72
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.5"
-  in_app_purchase_platform_interface:
-    dependency: transitive
-    description:
-      name: in_app_purchase_platform_interface
-      sha256: "0b0076cac8ce4fa7048f01e76af8b123aeb6a7c4e0dea2a5206d6664454f3e36"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.1"
-  in_app_purchase_storekit:
-    dependency: transitive
-    description:
-      name: in_app_purchase_storekit
-      sha256: de4f86b7bed848cd60a32c93affad868ba06a5276c007e23878855558094ff43
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.4.15"
   intl:
     dependency: "direct main"
     description:
@@ -550,7 +526,7 @@ packages:
     source: hosted
     version: "2.1.0"
   mocktail:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: mocktail
       sha256: "5e1bf53cc7baa8062a33b84424deb61513858ea05c601b8509e683815b5914aa"
@@ -725,6 +701,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  purchases_flutter:
+    dependency: "direct main"
+    description:
+      name: purchases_flutter
+      sha256: dd94bbf6890b87afd6571366531f4b92199f38c40c66818653bb3cee3e5f0891
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.0.0"
   realtime_client:
     dependency: transitive
     description:

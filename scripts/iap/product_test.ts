@@ -1,5 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@^1';
-import { lifetimeProductId } from '../../supabase/functions/purchases/types.ts';
+import { kindOf, lifetimeProductId } from '../../supabase/functions/purchases/types.ts';
 import {
   availabilityBody,
   basePricePoint,
@@ -9,8 +9,11 @@ import {
 import { oneTimeProductBody } from './google_product.ts';
 import { money, product } from './product.ts';
 
-Deno.test('the product id is the one the purchases function sells', () => {
+Deno.test('the product id is the one the purchases function sells, as Lifetime', () => {
   assertEquals(product.id, lifetimeProductId);
+  assertEquals(kindOf(product.id), 'lifetime');
+  assertEquals(kindOf('com.hummlist.app.plus'), null);
+  assertEquals(kindOf('toString'), null);
 });
 
 Deno.test('the StoreKit configuration file mirrors the product', async () => {

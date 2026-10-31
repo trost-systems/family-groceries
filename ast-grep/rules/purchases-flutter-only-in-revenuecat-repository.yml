@@ -1,0 +1,21 @@
+# RevenueCat's SDK is used in one file, app/lib/purchases/revenuecat_repository.dart
+# (Legal Review K.9.9 C3, job 43): there it is configured lazily with the household id
+# only, without device identifiers. A second file with the SDK at hand could configure it
+# at app start, with a user id, or call what no-revenuecat-customer-data forbids where
+# no reviewer looks. Tests included: the repository's test drives the platform channel.
+#
+# Matched on the import or export URI, conditional ones included.
+id: purchases-flutter-only-in-revenuecat-repository
+language: dart
+severity: error
+files:
+  - app/**
+ignores:
+  - app/lib/purchases/revenuecat_repository.dart
+rule:
+  kind: import_or_export
+  has:
+    stopBy: end
+    kind: uri
+    regex: '^[''"]package:purchases_flutter/'
+message: 'purchases_flutter is imported outside app/lib/purchases/revenuecat_repository.dart: go through PurchaseRepository; only RevenueCatRepository may touch the SDK (Legal Review K.9.9 C3)'

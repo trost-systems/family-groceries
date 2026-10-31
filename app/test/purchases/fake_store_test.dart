@@ -8,119 +8,134 @@ import 'package:flutter_test/flutter_test.dart';
 import 'fakes.dart';
 
 void main() {
-  ({FakeStore store, List<StoreUpdate> seen}) open(
+  /// The events the local stack's RevenueCat stand-in got.
+  late List<(String, String)> events;
+  Future<void> send({
+    required String appUserId,
+    required String transactionId,
+  }) async => events.add((appUserId, transactionId));
+
+  setUp(() => events = []);
+
+  FakeStore open(
     FakeStoreMode mode,
     MemoryLedger ledger, {
-    SignTransaction signer = fakeSign,
-  }) {
-    final store = FakeStore(mode, sign: signer, ledger: ledger);
-    final seen = <StoreUpdate>[];
-    final subscription = store.updates.listen(seen.add);
-    addTearDown(subscription.cancel);
-    return (store: store, seen: seen);
-  }
+    SendTestEvent? sender,
+  }) => FakeStore(mode, send: sender ?? send, ledger: ledger);
 
-  test('sells a signed StoreKit 2 transaction at the fake price', () async {
-    final (:store, :seen) = open(FakeStoreMode.ok, MemoryLedger());
-    final load = await store.loadProduct();
+  test(
+    'sells for the household at the fake price, sending the event',
+    () async {
+      final store = open(FakeStoreMode.ok, MemoryLedger());
+      final load = await store.loadProduct('home');
+      expect(
+        load,
+        isA<ProductLoaded>()
+            .having((l) => l.householdId, 'for', 'home')
+            .having((l) => l.product.price, 'price', '9,99 €'),
+      );
+      final bought = await store.buy('home', lifetime);
+      final transaction = (bought as Bought).transaction!;
+      expect(transaction.store, AppStore.apple);
+      expect(transaction.id, startsWith('fake-'));
+      expect(events, [('home', transaction.id)]);
+    },
+  );
+
+  test('restores in its household, across starts', () async {
+    final ledger = MemoryLedger();
+    final bought = await open(FakeStoreMode.ok, ledger).buy('home', lifetime);
+    final id = (bought as Bought).transaction!.id;
+    events.clear();
+    final next = open(FakeStoreMode.ok, ledger);
+    expect(await next.restore('home'), isA<Restored>());
+    expect(events, [('home', id)], reason: 'the event again');
+  });
+
+  test("another household's purchase belongs elsewhere", () async {
+    final ledger = MemoryLedger();
+    await open(FakeStoreMode.ok, ledger).buy('home', lifetime);
+    events.clear();
     expect(
-      load,
-      isA<ProductLoaded>().having((l) => l.product.price, 'price', '9,99 €'),
+      await open(FakeStoreMode.ok, ledger).restore('other'),
+      isA<BelongsElsewhere>(),
     );
-    await store.buy((load as ProductLoaded).product);
-    await pumpEventQueue();
-    final sold = seen.single as StorePurchased;
-    expect(sold.proof.store, AppStore.apple);
-    expect(sold.proof.productId, lifetimeProductId);
-    expect(sold.proof.data, startsWith('signed:fake-'));
-    expect(sold.source, PurchaseSource.purchase);
+    expect(events, isEmpty);
   });
 
-  test('an unfinished purchase comes back at the next start', () async {
-    final ledger = MemoryLedger();
-    final first = open(FakeStoreMode.ok, ledger);
-    await first.store.buy(lifetimeProduct);
-    await pumpEventQueue();
-    final sold = first.seen.single as StorePurchased;
-
-    final second = open(FakeStoreMode.ok, ledger);
-    await pumpEventQueue();
-    expect(second.seen, hasLength(1));
-    expect((second.seen.single as StorePurchased).proof.data, sold.proof.data);
-
-    await second.store.finish(second.seen.single as StorePurchased);
-    final third = open(FakeStoreMode.ok, ledger);
-    await pumpEventQueue();
-    expect(third.seen, isEmpty, reason: 'finished, not handed over again');
-  });
-
-  test('restores what it sold, the same transaction', () async {
-    final ledger = MemoryLedger();
-    final (:store, :seen) = open(FakeStoreMode.ok, ledger);
-    await store.restore();
-    await pumpEventQueue();
-    expect(seen, isEmpty, reason: 'nothing sold yet');
-    await store.buy(lifetimeProduct);
-    await pumpEventQueue();
-    final sold = seen.single as StorePurchased;
-    await store.finish(sold);
-    await store.restore();
-    await pumpEventQueue();
-    final restored = seen.last as StorePurchased;
-    expect(restored.source, PurchaseSource.restore);
-    expect(restored.proof.data, sold.proof.data);
-    expect(restored.alreadyFinished, isTrue);
+  test('nothing bought, nothing to restore', () async {
+    expect(
+      await open(FakeStoreMode.ok, MemoryLedger()).restore('home'),
+      isA<NothingToRestore>(),
+    );
   });
 
   test('Ask to Buy: pending, then sold after the approval', () {
     fakeAsync((async) {
-      final (:store, :seen) = open(FakeStoreMode.pending, MemoryLedger());
-      unawaited(store.buy(lifetimeProduct));
+      final store = open(FakeStoreMode.pending, MemoryLedger());
+      BuyOutcome? outcome;
+      unawaited(store.buy('home', lifetime).then((o) => outcome = o));
       async.flushMicrotasks();
-      expect(seen.single, isA<StorePending>());
+      expect(outcome, isA<Pending>());
       async.elapse(const Duration(seconds: 7));
-      expect(seen, hasLength(1));
+      expect(events, isEmpty);
       async.elapse(const Duration(seconds: 1));
-      expect(seen.last, isA<StorePurchased>());
+      expect(events.single.$1, 'home');
     });
   });
 
-  test('cancel and error modes', () async {
-    final canceled = open(FakeStoreMode.cancel, MemoryLedger());
-    await canceled.store.buy(lifetimeProduct);
-    await pumpEventQueue();
-    expect(canceled.seen.single, isA<StoreCanceled>());
-    final failed = open(FakeStoreMode.error, MemoryLedger());
-    await failed.store.buy(lifetimeProduct);
-    await pumpEventQueue();
-    expect(failed.seen.single, isA<StoreFailed>());
+  test('cancel, error and offline modes', () async {
+    expect(
+      await open(FakeStoreMode.cancel, MemoryLedger()).buy('home', lifetime),
+      isA<Canceled>(),
+    );
+    expect(
+      await open(FakeStoreMode.error, MemoryLedger()).buy('home', lifetime),
+      isA<StoreFailed>(),
+    );
+    expect(
+      await open(FakeStoreMode.offline, MemoryLedger()).restore('home'),
+      isA<StoreOffline>(),
+    );
+    expect(events, isEmpty);
   });
 
   test('unavailable and offline modes load no product', () async {
     expect(
-      await open(FakeStoreMode.unavailable, MemoryLedger()).store.loadProduct(),
+      await open(FakeStoreMode.unavailable, MemoryLedger()).loadProduct('h'),
       isA<ProductNotFound>(),
     );
     expect(
-      await open(FakeStoreMode.offline, MemoryLedger()).store.loadProduct(),
+      await open(FakeStoreMode.offline, MemoryLedger()).loadProduct('h'),
       isA<StoreUnavailable>(),
     );
   });
 
-  test('without the local signer the purchase fails, kept for later', () async {
-    final ledger = MemoryLedger();
-    final (:store, :seen) = open(
-      FakeStoreMode.ok,
-      ledger,
-      signer: (_) async => throw Exception('404'),
+  test(
+    'without the local stand-in the sale fails, a restore sends it',
+    () async {
+      final ledger = MemoryLedger();
+      final failing = open(
+        FakeStoreMode.ok,
+        ledger,
+        sender: ({required appUserId, required transactionId}) async =>
+            throw Exception('404'),
+      );
+      expect(await failing.buy('home', lifetime), isA<StoreFailed>());
+      expect(
+        await open(FakeStoreMode.ok, ledger).restore('home'),
+        isA<Restored>(),
+      );
+      expect(events, hasLength(1));
+    },
+  );
+
+  test("an earlier build's ledger reads as empty", () async {
+    final ledger = MemoryLedger()
+      ..contents = '{"owned":["fake-1"],"unfinished":[]}';
+    expect(
+      await open(FakeStoreMode.ok, ledger).restore('home'),
+      isA<NothingToRestore>(),
     );
-    await store.buy(lifetimeProduct);
-    await pumpEventQueue();
-    expect(seen.single, isA<StoreFailed>());
-    final next = open(FakeStoreMode.ok, ledger);
-    await pumpEventQueue();
-    expect(next.seen.single, isA<StorePurchased>());
   });
 }
-
-const lifetimeProduct = Product(id: lifetimeProductId, price: '9,99 €');

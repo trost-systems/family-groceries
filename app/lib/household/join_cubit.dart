@@ -30,6 +30,9 @@ class const JoinState({
 
   /// The name of the household the code leads to, once previewed.
   final String? household,
+
+  /// What Hummlist Lifetime means for this join, once previewed.
+  final JoinLifetime lifetime = const JoinLifetime(),
   final HouseholdProblem? problem,
 
   /// The members of the user's current household, for the switch warning;
@@ -38,14 +41,17 @@ class const JoinState({
 }) {
   bool get busy => phase == JoinPhase.checking || phase == JoinPhase.joining;
 
+  /// Like [household], [lifetime] goes unless it is passed again.
   JoinState copyWith({
     JoinPhase? phase,
     String? household,
+    JoinLifetime lifetime = const JoinLifetime(),
     HouseholdProblem? problem,
     int? currentMembers,
   }) => JoinState(
     phase: phase ?? this.phase,
     household: household,
+    lifetime: lifetime,
     problem: problem,
     currentMembers: currentMembers ?? this.currentMembers,
   );
@@ -79,6 +85,7 @@ class JoinCubit(
           state.copyWith(
             phase: state.phase,
             household: state.household,
+            lifetime: state.lifetime,
             problem: state.problem,
             currentMembers: count,
           ),
@@ -105,9 +112,15 @@ class JoinCubit(
     emit(state.copyWith(phase: JoinPhase.checking));
     try {
       switch (await _invites.preview(normalized)) {
-        case InviteOpen(:final name):
+        case InviteOpen(:final name, :final lifetime):
           _checked = normalized;
-          emit(state.copyWith(phase: JoinPhase.previewed, household: name));
+          emit(
+            state.copyWith(
+              phase: JoinPhase.previewed,
+              household: name,
+              lifetime: lifetime,
+            ),
+          );
         case InviteMember(:final name):
           // Their own household's link: nothing to join.
           pendingInvite?.clear();
@@ -119,19 +132,30 @@ class JoinCubit(
     }
   }
 
-  Future<void> join() async {
+  /// Joins the previewed household. With [archive], the user's current
+  /// household is archived instead of deleted if they are its last member
+  /// and it has Hummlist Lifetime.
+  Future<void> join({bool archive = false}) async {
     final code = _checked;
     if (state.busy || code == null) {
       return;
     }
     final household = state.household;
-    emit(state.copyWith(phase: JoinPhase.joining, household: household));
+    final lifetime = state.lifetime;
+    emit(
+      state.copyWith(
+        phase: JoinPhase.joining,
+        household: household,
+        lifetime: lifetime,
+      ),
+    );
     try {
       await _session.join(
         code,
         method: link != null && normalizeInviteCode(link!) == code
             ? JoinMethod.link
             : JoinMethod.code,
+        archive: archive,
       );
       pendingInvite?.clear();
       emit(state.copyWith(phase: JoinPhase.joined, household: household));
@@ -142,6 +166,7 @@ class JoinCubit(
           state.copyWith(
             phase: JoinPhase.previewed,
             household: household,
+            lifetime: lifetime,
             problem: e.problem,
           ),
         );

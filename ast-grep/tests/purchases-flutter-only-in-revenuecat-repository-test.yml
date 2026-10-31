@@ -1,0 +1,25 @@
+id: purchases-flutter-only-in-revenuecat-repository
+valid:
+  # The app goes through the repository.
+  - |
+    import 'package:family_groceries/purchases/purchase_repository.dart';
+  # A package whose name only starts the same.
+  - |
+    import 'package:purchases_flutter_ui_kit/kit.dart';
+  # Named in a comment or a string, nothing is imported.
+  - |
+    /// RevenueCat's purchases_flutter lives in revenuecat_repository.dart.
+    const channel = 'package:purchases_flutter/purchases_flutter.dart';
+invalid:
+  # setup.dart configuring the SDK at app start, outside the repository.
+  - |
+    import 'package:purchases_flutter/purchases_flutter.dart';
+  - |
+    import "package:purchases_flutter/purchases_flutter.dart" as rc;
+  - |
+    import 'package:purchases_flutter/models/store_transaction.dart' show StoreTransaction;
+  - |
+    export 'package:purchases_flutter/errors.dart';
+  - |
+    import 'package:family_groceries/purchases/none.dart'
+        if (dart.library.io) 'package:purchases_flutter/purchases_flutter.dart';

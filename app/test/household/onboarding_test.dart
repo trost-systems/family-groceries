@@ -369,6 +369,200 @@ void main() {
     });
   });
 
+  group('Hummlist Lifetime at the join (job 43)', () {
+    const inHome = InHousehold('peter', home);
+    Future<void> showJoinButtons(
+      WidgetTester tester, [
+      String last = 'join-confirm',
+    ]) => tester.scrollUntilVisible(
+      key(last),
+      200,
+      scrollable: find
+          .descendant(of: key('join-screen'), matching: find.byType(Scrollable))
+          .first,
+    );
+    FakeInvites says(JoinLifetime lifetime) =>
+        FakeInvites()..lifetime['ABCD2345'] = lifetime;
+
+    testWidgets('(a) the household has it: nothing to buy', (tester) async {
+      await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        invites: says(const JoinLifetime(targetUnlocked: true)),
+      );
+      expect(
+        find.text(
+          'Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        key('join-refund-help'),
+        findsNothing,
+        reason: 'no recent purchase',
+      );
+      expect(key('join-lifetime-ends'), findsNothing);
+    });
+
+    testWidgets('(c) paid recently and it has it: the refund help', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: says(
+          const JoinLifetime(targetUnlocked: true, recentPurchase: true),
+        ),
+      );
+      expect(key('join-target-unlocked'), findsOneWidget);
+      await tapKey(tester, 'join-refund-help');
+      expect(key('refund-help'), findsOneWidget);
+      expect(find.text('Kauf zurückfordern'), findsOneWidget);
+      // Closing the help keeps the join where it was.
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(key('refund-help'), findsNothing);
+      await tapKey(tester, 'join-confirm');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+    });
+
+    testWidgets('a recent purchase alone links nothing', (tester) async {
+      await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: says(const JoinLifetime(recentPurchase: true)),
+      );
+      expect(key('join-refund-help'), findsNothing);
+      expect(key('join-target-unlocked'), findsNothing);
+    });
+
+    testWidgets('(b) the last member of an unlocked household is warned: '
+        'deleted, not refunded; never stopped', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: says(const JoinLifetime(leavesUnlocked: true)),
+      );
+      expect(
+        find.text(
+          '„Zuhause“ hat Hummlist Lifetime. Du bist das letzte Mitglied: '
+          'Trittst du bei, wird der Haushalt gelöscht. Hummlist Lifetime '
+          'endet mit ihm und wird nicht erstattet, denn ein Kauf gehört zu '
+          'seinem Haushalt und zieht nicht mit um.',
+        ),
+        findsOneWidget,
+      );
+      expect(key('join-archive-offer'), findsNothing, reason: 'flag off');
+      await showJoinButtons(tester);
+      await tapKey(tester, 'join-lifetime-refund-help');
+      expect(key('refund-help'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FilledButton, 'Abbrechen'), findsOneWidget);
+      expect(
+        find.widgetWithText(OutlinedButton, 'Trotzdem beitreten'),
+        findsOneWidget,
+      );
+      await tapKey(tester, 'join-confirm');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+      expect(o.session.archivingJoins, isEmpty);
+    });
+
+    testWidgets('(b) with archiving: archive and join keeps the household', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: says(const JoinLifetime(leavesUnlocked: true)),
+        archiveOffered: true,
+      );
+      expect(
+        find.textContaining('Archiviere den Haushalt, statt ihn zu löschen'),
+        findsOneWidget,
+      );
+      expect(key('join-lifetime-ends'), findsNothing);
+      expect(
+        find.textContaining('mit seiner Liste gelöscht'),
+        findsNothing,
+        reason: 'no contradicting "deleted" line above the archive offer',
+      );
+      await showJoinButtons(tester, 'join-delete');
+      expect(find.widgetWithText(FilledButton, 'Abbrechen'), findsOneWidget);
+      await tapKey(tester, 'join-archive');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+      expect(o.session.archivingJoins, ['ABCD2345']);
+    });
+
+    testWidgets('(b) declining the archive asks once more, then deletes', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: says(const JoinLifetime(leavesUnlocked: true)),
+        archiveOffered: true,
+      );
+      await showJoinButtons(tester, 'join-delete');
+      await tapKey(tester, 'join-delete');
+      expect(key('join-delete-dialog'), findsOneWidget);
+      expect(find.text('„Zuhause“ löschen?'), findsOneWidget);
+      expect(find.textContaining('wird nicht erstattet'), findsOneWidget);
+      expect(key('join-delete-refund-help'), findsOneWidget);
+      await tester.tap(find.text('Abbrechen').last);
+      await tester.pumpAndSettle();
+      expect(o.session.joins, isEmpty, reason: 'cancelled');
+      await tapKey(tester, 'join-delete');
+      await tapKey(tester, 'join-delete-confirm');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+      expect(o.session.archivingJoins, isEmpty);
+    });
+
+    testWidgets('in English', (tester) async {
+      await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        locale: const Locale('en'),
+        invites: says(
+          const JoinLifetime(
+            targetUnlocked: true,
+            leavesUnlocked: true,
+            recentPurchase: true,
+          ),
+        ),
+      );
+      expect(
+        find.text(
+          'This household has Hummlist Lifetime. '
+          "You don't need to buy anything.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining("You're its last member"), findsOneWidget);
+      await tester.scrollUntilVisible(
+        key('join-confirm'),
+        200,
+        scrollable: find
+            .descendant(
+              of: key('join-screen'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.text('Join anyway'), findsOneWidget);
+      expect(
+        find.text('Bought Hummlist Lifetime recently? How to request a refund'),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('Step 3: invite the partner', () {
     const inHome = InHousehold('peter', home);
 

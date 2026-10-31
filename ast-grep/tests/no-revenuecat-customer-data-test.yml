@@ -1,0 +1,56 @@
+id: no-revenuecat-customer-data
+valid:
+  # What RevenueCatRepository does: the household id, then the purchase.
+  - |
+    Future<void> as(String householdId) async {
+      await Purchases.configure(PurchasesConfiguration(key)..appUserID = householdId);
+      await Purchases.logIn(householdId);
+      await Purchases.restorePurchases();
+    }
+  # Our own setters are not RevenueCat's.
+  - |
+    void f() {
+      analytics.setEmail(email);
+      cache.syncAll();
+    }
+invalid:
+  # The buyer's e-mail as a customer attribute (H-55: RevenueCat never learns who paid).
+  - |
+    Future<void> f() async {
+      await Purchases.setEmail(user.email);
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.setAttributes({'user_id': userId});
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.setDisplayName(name);
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.setPhoneNumber(phone);
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.setAdjustID(id);
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.collectDeviceIdentifiers();
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.enableAdServicesAttributionTokenCollection();
+    }
+  # Signing out of the app must not make an anonymous RevenueCat customer.
+  - |
+    Future<void> f() async {
+      await rc.Purchases.logOut();
+    }
+  - |
+    Future<void> f() async {
+      await Purchases.syncPurchases();
+    }
+  - |
+    final sync = Purchases.syncPurchasesForResult;

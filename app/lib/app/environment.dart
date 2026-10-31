@@ -76,11 +76,36 @@ abstract final class Environment() {
     defaultValue: kDebugMode,
   );
 
-  /// Replaces the App Store and Play Store with a fake one in debug and
-  /// profile builds (release builds ignore it): `ok`, `pending` (Ask to Buy,
-  /// approved after 8 s), `cancel`, `error`, `unavailable` (product not
-  /// loadable) or `offline` (store unreachable). Its purchases are signed by
-  /// the local stack's test CA, so it sells on Linux desktop for fg; the web
+  /// Offers the last member of an unlocked household to archive it instead
+  /// of deleting it, and to re-enable it under More (job 43). Off until the
+  /// privacy policy, the support FAQ and the account deletion page say so
+  /// (Legal Review); on in e2e (`config/e2e.json`).
+  static const householdArchive = bool.fromEnvironment('HOUSEHOLD_ARCHIVE');
+
+  /// Offers Hummlist Lifetime's purchase and restore through RevenueCat on
+  /// iOS and Android. Off, the default, the Lifetime page says "coming
+  /// soon": the purchase reaches no one until Peter has approved the new
+  /// legal texts (Legal Review K.9.9, release gate). Turn it on with
+  /// `--dart-define=REVENUECAT_PURCHASES=true` plus the platform's key.
+  static const revenueCatPurchases = bool.fromEnvironment(
+    'REVENUECAT_PURCHASES',
+  );
+
+  /// RevenueCat's public SDK keys (`appl_…`, `goog_…`); empty also means
+  /// "coming soon". Never committed: release builds pass them in.
+  static const revenueCatIosKey = String.fromEnvironment(
+    'REVENUECAT_APPLE_API_KEY',
+  );
+  static const revenueCatAndroidKey = String.fromEnvironment(
+    'REVENUECAT_GOOGLE_API_KEY',
+  );
+
+  /// Replaces RevenueCat and the stores with a fake in debug and profile
+  /// builds (release builds ignore it), also with REVENUECAT_PURCHASES off:
+  /// `ok`, `pending` (Ask to Buy, approved after 8 s), `cancel`, `error`,
+  /// `unavailable` (product not loadable) or `offline` (store unreachable).
+  /// Its purchases go to the local stack's `/purchases/test/event`, which
+  /// plays RevenueCat's webhook, so it sells on Linux desktop for fg; the web
   /// app never sells (lib/purchases/setup.dart).
   static const fakeStore = String.fromEnvironment('FAKE_STORE');
 
