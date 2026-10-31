@@ -20,6 +20,7 @@ mkdir -p "$tmp/work/scripts/release" "$tmp/work/site" "$tmp/bin" "$tmp/pr"
 cp "$REPO_ROOT"/scripts/{lib,push-pr,merge-pr}.sh "$tmp/work/scripts/"
 cp "$REPO_ROOT"/scripts/release/{changelog.mjs,plan.sh} "$tmp/work/scripts/release/"
 cp "$REPO_ROOT"/site/releases.mjs "$tmp/work/site/"
+mkdir -p "$tmp/work/releases" && cp "$REPO_ROOT"/releases/flags.json "$tmp/work/releases/"
 export GIT_AUTHOR_NAME=dev GIT_AUTHOR_EMAIL=dev@example.com GIT_COMMITTER_NAME=dev GIT_COMMITTER_EMAIL=dev@example.com
 cd "$tmp/work"
 git commit -q --allow-empty -m init

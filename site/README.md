@@ -94,9 +94,11 @@ The build reads two sources from outside `site/` (`../releases/README.md` explai
 - `../releases/changelog/<version>.json`: drafts of the next release. Preview and local builds
   show each draft whose version the record doesn't have yet on top, with the banner "Entwurf,
   noch nicht im Store" / "Draft, not in the stores yet" and no date. Production never shows them.
+  A draft's `held` items (behind a feature flag or a hold, job 40) are never shown, nor is
+  `pending.json` or an `<version>.override.md`; the page shows the draft's title and items.
 
 Every build checks every draft, production included: an invalid draft, or a file whose name isn't
-its `version` plus `.json`, fails the build and names the file. Other files in that folder are
+its `version` plus `.json`, fails the build and names the file. `pending.json` and other files in that folder are
 ignored, and the folder may be missing. Each release has the anchor `#v1-4-0` for version 1.4.0.
 With nothing to show, the page says the first version is coming soon. Every page's footer links
 the changelog of its language.

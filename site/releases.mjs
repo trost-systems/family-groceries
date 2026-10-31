@@ -8,6 +8,11 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SHA = /^[0-9a-f]{40}$/;
 const LANGUAGES = ['de', 'en'];
 export const CATEGORIES = ['new', 'improved', 'fixed'];
+// A feature flag or hold key in a `flag:` / `hold:` line and in releases/flags.json (job 40).
+export const GATE_KEY = /^[a-z0-9][a-z0-9._-]*$/;
+export const ROLLOUTS = ['full', 'partial', 'off'];
+// Items held back from the public changelog until their gate opens (docs/CHANGELOG.md, "Gated items").
+export const PENDING_FILE = 'pending.json';
 
 // "What's new" limits per language. Play: "up to 500 Unicode characters per language" (Play Console
 // Help, answer 9859348). App Store: "Limited to 4000 characters" (App Store Connect Help, Platform
@@ -67,6 +72,26 @@ const texts = (c, value, path, { nonEmpty, multiline = false }) => {
   return value;
 };
 
+const itemFields = (c, item, at) => {
+  texts(c, { de: item.de, en: item.en }, at, { nonEmpty: true });
+  c.matches(item.pr === null || (Number.isInteger(item.pr) && item.pr > 0), item.pr, `${at}.pr`, 'a PR number or null');
+  c.matches(SHA.test(c.string(item.sha, `${at}.sha`)), item.sha, `${at}.sha`, 'a full commit sha (40 hex)');
+};
+const gateKey = (c, value, path) => c.matches(typeof value === 'string' && GATE_KEY.test(value), value, path, 'a key ([a-z0-9][a-z0-9._-]*)');
+
+// An item held back by its flag or hold: in a draft's `held` and in pending.json.
+function checkHeld(c, items, path) {
+  c.array(items, path).forEach((item, i) => {
+    const at = `${path}[${i}]`;
+    c.object(item, at, ['category', 'de', 'en', 'flag', 'hold', 'pr', 'sha']);
+    c.matches(CATEGORIES.includes(item.category), item.category, `${at}.category`, `one of ${CATEGORIES.join(', ')}`);
+    itemFields(c, item, at);
+    for (const k of ['flag', 'hold']) if (item[k] !== null) gateKey(c, item[k], `${at}.${k}`);
+    if (item.flag === null && item.hold === null) c.fail(at, 'has neither a flag nor a hold, so nothing holds it back');
+  });
+  return items;
+}
+
 // The user-facing changelog of one release (releases/README.md, "changelog"): in a release of the
 // record, and in a draft file releases/changelog/<version>.json before the release.
 function checkChangelog(c, changelog, path, keys = ['title', 'items', 'store']) {
@@ -76,10 +101,10 @@ function checkChangelog(c, changelog, path, keys = ['title', 'items', 'store']) 
   for (const category of CATEGORIES) {
     c.array(changelog.items[category], `${path}.items.${category}`).forEach((item, i) => {
       const at = `${path}.items.${category}[${i}]`;
-      c.object(item, at, ['de', 'en', 'pr', 'sha']);
-      texts(c, { de: item.de, en: item.en }, at, { nonEmpty: true });
-      c.matches(item.pr === null || (Number.isInteger(item.pr) && item.pr > 0), item.pr, `${at}.pr`, 'a PR number or null');
-      c.matches(SHA.test(c.string(item.sha, `${at}.sha`)), item.sha, `${at}.sha`, 'a full commit sha (40 hex)');
+      // Job 40: an item that waited for a flag or hold keeps it, for tracing; the site never shows it.
+      c.object(item, at, ['de', 'en', 'pr', 'sha', ...['flag', 'hold'].filter((k) => k in item)]);
+      itemFields(c, item, at);
+      for (const k of ['flag', 'hold']) if (k in item) gateKey(c, item[k], `${at}.${k}`);
     });
   }
   c.object(changelog.store, `${path}.store`, Object.keys(STORE_LIMITS));
@@ -178,7 +203,9 @@ export function parseDraft(text, source) {
   } catch (error) {
     throw new RecordError(`${source}: not valid JSON (${error.message})`);
   }
-  checkChangelog(c, data, '$', ['version', 'status', 'generated_from', 'title', 'items', 'store']);
+  // Job 40: `held` lists the items whose gate is closed; drafts from before it have none.
+  checkChangelog(c, data, '$', ['version', 'status', 'generated_from', 'title', 'items', 'store', ...('held' in data ? ['held'] : [])]);
+  if ('held' in data) checkHeld(c, data.held, '$.held');
   c.matches(isVersion(data.version), data.version, '$.version', 'a version MAJOR.MINOR.PATCH');
   c.matches(data.status === DRAFT_STATUS, data.status, '$.status', `"${DRAFT_STATUS}"`);
   c.object(data.generated_from, '$.generated_from', ['previous_sha', 'sha']);
@@ -186,6 +213,51 @@ export function parseDraft(text, source) {
   c.matches(SHA.test(data.generated_from.sha), data.generated_from.sha, '$.generated_from.sha', 'a full commit sha (40 hex)');
   return data;
 }
+
+const parseJson = (text, source) => {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new RecordError(`${source}: not valid JSON (${error.message})`);
+  }
+};
+
+// releases/flags.json: the rollout of each feature flag and the state of each hold. An item is
+// public only when its flag is `full` and its hold `released`. `match` lists words that, while
+// the hold is not released, hold back every item mentioning them (the Alexa skill).
+export function parseGates(text, source = 'releases/flags.json') {
+  const c = checker(source);
+  const data = parseJson(text, source);
+  c.object(data, '$', ['flags', 'holds']);
+  c.object(data.flags, 'flags', Object.keys(data.flags ?? {}));
+  for (const [key, flag] of Object.entries(data.flags)) {
+    gateKey(c, key, `flags.${key}`);
+    c.object(flag, `flags.${key}`, ['rollout', 'note']);
+    c.matches(ROLLOUTS.includes(flag.rollout), flag.rollout, `flags.${key}.rollout`, `one of ${ROLLOUTS.join(', ')}`);
+    c.string(flag.note, `flags.${key}.note`);
+  }
+  c.object(data.holds, 'holds', Object.keys(data.holds ?? {}));
+  for (const [key, hold] of Object.entries(data.holds)) {
+    gateKey(c, key, `holds.${key}`);
+    c.object(hold, `holds.${key}`, ['released', 'note', ...('match' in hold ? ['match'] : [])]);
+    c.boolean(hold.released, `holds.${key}.released`);
+    c.string(hold.note, `holds.${key}.note`);
+    if ('match' in hold) c.array(hold.match, `holds.${key}.match`).forEach((w, i) => c.matches(typeof w === 'string' && /^[\p{L}\p{N}][\p{L}\p{N} -]*$/u.test(w), w, `holds.${key}.match[${i}]`, 'a word'));
+  }
+  return data;
+}
+
+// releases/changelog/pending.json: the items held back so far, oldest first.
+export function parsePending(text, source = `releases/changelog/${PENDING_FILE}`) {
+  const c = checker(source);
+  const data = parseJson(text, source);
+  c.object(data, '$', ['items']);
+  checkHeld(c, data.items, 'items');
+  return data;
+}
+
+// The draft files in releases/changelog/: every .json but pending.json.
+export const draftFileNames = (files) => files.filter((f) => f.endsWith('.json') && f !== PENDING_FILE);
 
 export function serializeRecord(record) {
   return `${JSON.stringify({ ...record, releases: sortReleases(record.releases) }, null, 2)}\n`;

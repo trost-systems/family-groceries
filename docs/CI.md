@@ -15,7 +15,7 @@ the same things.
 | --- | --- | --- |
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
 | `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh` | yes |
-| `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/` ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
+| `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/`, its `pending.json` and overrides, and `releases/flags.json`; the note's `flag:` / `hold:` keys must be in that file ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
 | `site` | The guides site in `site/`: build checks, tests, a production build; no real access token in the repo | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |

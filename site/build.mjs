@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
 import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
-import { CATEGORIES, RecordError, compareVersions, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
+import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(SITE_DIR, '..');
@@ -490,8 +490,8 @@ function changelogEntries(repoDir, production) {
   const releases = publicReleases(parseRecord(readRepoFile(repoDir, 'releases/releases.json')));
   const recorded = new Set(releases.map((r) => r.version));
   const dir = join(repoDir, 'releases/changelog');
-  const drafts = (existsSync(dir) ? readdirSync(dir) : [])
-    .filter((f) => f.endsWith('.json'))
+  // pending.json and the store-text overrides are not drafts and never shown (job 40).
+  const drafts = draftFileNames(existsSync(dir) ? readdirSync(dir) : [])
     .map((f) => {
       const source = `releases/changelog/${f}`;
       const draft = parseDraft(readFileSync(join(dir, f), 'utf8'), source);

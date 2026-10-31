@@ -449,6 +449,7 @@ cp "$root/scripts/lib.sh" "$gate_repo/scripts/"
 cp "$root/scripts/gates/changelog.sh" "$gate_repo/scripts/gates/"
 cp "$root/scripts/release/"{changelog.mjs,plan.sh} "$gate_repo/scripts/release/"
 cp "$root/site/releases.mjs" "$gate_repo/site/"
+mkdir -p "$gate_repo/releases" && cp "$root/releases/flags.json" "$gate_repo/releases/"
 (cd "$gate_repo" && git init -q -b main && git add -A && git -c user.name=t -c user.email=t@example.com commit -q -m base)
 # gate <changed path> <PR head message> <PR description>: the gate on a pull_request run, on the
 # merge commit of a PR head that changes the path.
@@ -471,6 +472,17 @@ out="$(gate app/b.dart $'Title (#9)\n\n## Changelog\nnone\n\nCo-authored-by: Pet
 expect_match "changelog gate: none" "$out" 'changelog: none'
 out="$(gate app/c.dart 'wip' $'## Changelog\r\nfixed\r\nde: A.\r\nen: B.\r\n')" || fail "changelog gate: a head without a section falls back to the PR description"$'\n'"$out"
 expect_match "changelog gate: reads the description" "$out" 'changelog: fixed: B\.'
+# Job 40: the optional flag: and hold: lines.
+out="$(gate app/f.dart $'Title (#9)\n\n## Changelog\nnew\nde: A.\nen: B.\nhold: alexa-certification' '')" || fail "changelog gate: a hold line passes"$'\n'"$out"
+expect_match "changelog gate: names the hold" "$out" 'changelog: new \(hold: alexa-certification\): B\.'
+if out="$(gate app/g.dart $'Title (#9)\n\n## Changelog\nnew\nde: A.\nen: B.\nflag: Big Lists' '')"; then fail "changelog gate: a malformed flag key must fail"; fi
+expect_match "changelog gate: bad key" "$out" 'flag "Big Lists" is not a key'
+if out="$(gate app/h.dart $'Title (#9)\n\n## Changelog\nnew\nde: A.\nen: B.\nflag: a\nflag: b' '')"; then fail "changelog gate: two flag lines must fail"; fi
+expect_match "changelog gate: duplicate flag" "$out" 'two "flag:" lines'
+if out="$(gate app/i.dart $'Title (#9)\n\n## Changelog\nnew\nde: A.\nen: B.\nflag: big-lists' '')"; then fail "changelog gate: a flag missing from releases/flags.json must fail"; fi
+expect_match "changelog gate: unknown flag" "$out" 'flag "big-lists" is not in releases/flags.json'
+if out="$(gate app/j.dart $'Title (#9)\n\n## Changelog\nfixed\nde: Alexa hört besser zu.\nen: Listens better.' '')"; then fail "changelog gate: an Alexa item without its hold must fail"; fi
+expect_match "changelog gate: Alexa needs the hold" "$out" 'add the line "hold: alexa-certification"'
 if out="$(gate app/d.dart 'wip' 'No section.')"; then fail "changelog gate: an app change without any section must fail"; fi
 expect_match "changelog gate: asks for the section" "$out" 'this PR changes the app or its backend: add a ## Changelog section'
 if out="$(gate supabase/functions/voice/parse.ts 'wip' 'No section.')"; then fail "changelog gate: a backend change without any section must fail"; fi
