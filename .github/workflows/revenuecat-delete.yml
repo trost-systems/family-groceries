@@ -2,7 +2,10 @@
 # "Retention"): the purchases function drains public.revenuecat_deletions through RevenueCat's API
 # v2 (REVENUECAT_SECRET_KEY, REVENUECAT_PROJECT_ID are function secrets) and confirms each deletion
 # with a GET that answers 404. The route takes no input, so this only starts the scheduled work.
-# Before the Lead set the function secrets it answers not_configured and nothing happens.
+# It runs only with the cron secret: the repository secret REVENUECAT_DELETIONS_SECRET goes out as
+# x-deletions-secret and must equal the function secret of the same name (NEEDS_LEAD "Job 47").
+# Until both are set the run fails (503 from the function, or the check below). Before the Lead set
+# RevenueCat's key the function answers not_configured and nothing happens.
 name: RevenueCat customer deletion
 
 on:
@@ -25,6 +28,7 @@ jobs:
     env:
       SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
       GH_TOKEN: ${{ github.token }}
+      DELETIONS_SECRET: ${{ secrets.REVENUECAT_DELETIONS_SECRET }}
       ISSUE_TITLE: 'RevenueCat customer deletion failed'
     steps:
       - name: Delete due RevenueCat customers
@@ -33,9 +37,13 @@ jobs:
             echo "::error::Repository variable SUPABASE_PROJECT_REF is missing; nothing was done."
             exit 1
           fi
+          if [ -z "$DELETIONS_SECRET" ]; then
+            echo "::error::Repository secret REVENUECAT_DELETIONS_SECRET is missing; nothing was done (NEEDS_LEAD Job 47)."
+            exit 1
+          fi
           url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/purchases/revenuecat/deletions?forceFunctionRegion=eu-central-1"
           code=$(curl -sS --max-time 120 --retry 2 --retry-delay 15 -o deletions.json -w '%{http_code}' \
-            -X POST "$url") || true
+            -X POST -H "x-deletions-secret: $DELETIONS_SECRET" "$url") || true
           echo "Deletions: HTTP ${code:-none} $(head -c 300 deletions.json 2>/dev/null)"
           [ "$code" = 200 ]
       - name: Report the failure in an issue

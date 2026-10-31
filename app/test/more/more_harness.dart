@@ -14,6 +14,7 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
+import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -111,6 +112,9 @@ Future<More> pumpMore(
   /// The store, the purchases function's claim and the household's entitlement
   /// rows; a store that sells and a household without Lifetime by default.
   FakePurchaseRepository? store,
+
+  /// The real store over a mocked channel, instead of `store`.
+  PurchaseRepository? sdk,
   FakeClaimApi? api,
   FakeEntitlementsSource? entitlements,
 
@@ -146,6 +150,7 @@ Future<More> pumpMore(
   final purchases = TestPurchases(
     session: session,
     store: store,
+    sdk: sdk,
     api: api,
     source: entitlements,
   );

@@ -1,3 +1,4 @@
+import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/more/more_screen.dart';
@@ -19,8 +20,10 @@ void main() {
     WidgetTester tester, {
     FakeInvites? invites,
     FakeEntitlementsSource? entitlements,
+    AppLanguage? language,
   }) => pumpMore(
     tester,
+    language: language,
     invites: invites,
     entitlements: entitlements,
     routes: [
@@ -45,6 +48,36 @@ void main() {
     expect(find.text('Archivierte Haushalte'), findsWidgets);
     expect(find.text('Du hast keinen Haushalt archiviert.'), findsOneWidget);
   });
+
+  for (final (language, text) in [
+    (
+      AppLanguage.de,
+      'Mit Hummlist Lifetime\nWird am 31. Oktober 2028 gelöscht',
+    ),
+    (
+      AppLanguage.en,
+      'With Hummlist Lifetime\nWill be deleted on October 31, 2028',
+    ),
+  ]) {
+    testWidgets('each says when it is deleted (${language.name})', (
+      tester,
+    ) async {
+      final invites = FakeInvites()
+        ..archivedNow.add(
+          ArchivedHousehold(
+            id: 'old',
+            name: 'Altbau',
+            archivedAt: DateTime.utc(2026, 10, 31, 12),
+            unlocked: true,
+            deletesAt: DateTime.utc(2028, 10, 31, 12),
+          ),
+        );
+      await pumpArchiving(tester, invites: invites, language: language);
+      await tester.tap(key('more-archived'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(key('archived-deletes-old')).data, text);
+    });
+  }
 
   testWidgets('bring one back: the current, unlocked household of one is '
       'archived in turn', (tester) async {

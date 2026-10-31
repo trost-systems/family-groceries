@@ -117,7 +117,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       theme: theme,
       session: session,
       entitlements: entitlements,
-      // Asks no store until the Lifetime page needs it.
+      // Asks no store until a tap on Buy or Restore (Legal Review H-67).
       purchases: PurchaseCubit(
         purchaseRepository(client),
         SupabaseClaimApi(client),

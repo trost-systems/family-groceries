@@ -128,5 +128,8 @@ select id, 1, 'backup drill' from auth.users where email = 'carl@backup.test';
 insert into public.revenuecat_events (id, type) values ('backup-drill-event', 'NON_RENEWING_PURCHASE');
 insert into public.purchase_tombstones (transaction_hmac) values (repeat('c', 64));
 insert into public.revenuecat_deletions (app_user_id, due_at) values (gen_random_uuid(), now() + interval '30 days');
+-- Job 47: a membership that ended within the hour (the buyer's claim may still count it).
+insert into public.household_departures (household_id, user_id, joined_at)
+select (select id from fx where key = 'home'), id, now() - interval '1 day' from auth.users where email = 'carl@backup.test';
 
 commit;

@@ -4,9 +4,9 @@ import { assert, assertEquals, assertRejects } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
 import type { PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
-import { createHandler, type Deps, type Ledger, maxBodyBytes } from './handler.ts';
+import { createHandler, type Deps, type Ledger, maxBodyBytes, routes } from './handler.ts';
 import type { Claim, Recorded, Revoked } from './store.ts';
-import { lifetimeProductId, type Sale, type StorePurchase } from './types.ts';
+import { lifetimeProductId, type Sale, type StorePurchase, webhookPath } from './types.ts';
 
 const PETER = '00000000-0000-4000-8000-0000000043a1';
 const LEA = '00000000-0000-4000-8000-0000000043a2';
@@ -16,6 +16,7 @@ const INSTALL = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 const AUTH = 'Bearer rc-webhook-secret-for-tests';
 const SIGNING = 'rc-signing-secret-for-tests';
 const base = 'http://localhost/functions/v1/purchases';
+const DELETIONS_SECRET = 'deletions-secret-for-tests';
 const NOW = new Date('2026-10-31T14:00:00Z');
 
 interface Row {
@@ -120,6 +121,7 @@ class Books implements Ledger {
 }
 
 interface World {
+  deps: Deps;
   books: Books;
   sent: { name: PurchaseEvent; sale: Sale; subject: Subject }[];
   calls: string[];
@@ -144,7 +146,7 @@ function world(overrides: Partial<Deps> = {}): World {
         return Promise.reject(new AuthError('session_required', 'pat'));
       }
       const userId = header === 'Bearer lea' ? LEA : PETER;
-      return Promise.resolve({ userId, householdId: HOME });
+      return Promise.resolve({ userId });
     },
     takeCall: (userId) => {
       calls.push(userId);
@@ -169,6 +171,7 @@ function world(overrides: Partial<Deps> = {}): World {
       sent.push({ name, sale, subject });
       return Promise.resolve();
     },
+    deletionsSecret: DELETIONS_SECRET,
     deleteDueCustomers: null,
     report: (e) => {
       throw e;
@@ -190,6 +193,7 @@ function world(overrides: Partial<Deps> = {}): World {
       }),
     );
   return {
+    deps,
     books,
     sent,
     calls,
@@ -493,7 +497,11 @@ Deno.test('a refund takes the unlock away once, with one purchase_refunded', asy
   const w = world();
   await w.deliver(purchase());
   await expect(
-    await w.handle('/claim', { store: 'apple', transactionId: '2000000812345679' }, {
+    await w.handle('/claim', {
+      store: 'apple',
+      householdId: HOME,
+      transactionId: '2000000812345679',
+    }, {
       authorization: 'Bearer peter',
     }),
     200,
@@ -522,7 +530,7 @@ Deno.test('a refund without a known buyer sends nothing', async () => {
 
 Deno.test('the claim needs the app session in the household and a store transaction', async () => {
   const w = world();
-  const body = { store: 'apple', transactionId: '2000000812345678' };
+  const body = { store: 'apple', householdId: HOME, transactionId: '2000000812345678' };
   await expect(await w.handle('/claim', body), 401, { error: 'missing_token' });
   await expect(await w.handle('/claim', body, { authorization: 'Bearer fgp_x' }), 403, {
     error: 'session_required',
@@ -530,11 +538,14 @@ Deno.test('the claim needs the app session in the household and a store transact
   for (
     const bad of [
       {},
-      { store: 'stripe', transactionId: '1' },
+      { store: 'stripe', householdId: HOME, transactionId: '1' },
       { store: 'apple' },
-      { store: 'apple', transactionId: '' },
-      { store: 'apple', transactionId: 7 },
-      { store: 'google', transactionId: 'x'.repeat(201) },
+      { store: 'apple', householdId: HOME, transactionId: '' },
+      { store: 'apple', householdId: HOME, transactionId: 7 },
+      { store: 'google', householdId: HOME, transactionId: 'x'.repeat(201) },
+      { store: 'apple', transactionId: '1' },
+      { store: 'apple', householdId: 'home', transactionId: '1' },
+      { store: 'apple', householdId: HOME.toUpperCase(), transactionId: '1' },
     ]
   ) {
     await expect(await w.handle('/claim', bad, { authorization: 'Bearer peter' }), 400);
@@ -546,10 +557,36 @@ Deno.test('the claim needs the app session in the household and a store transact
   });
 });
 
+Deno.test('the claim names the household the app bought for, not the one the user is in', async () => {
+  const asked: string[] = [];
+  const w = world();
+  const inner = w.books.claim.bind(w.books);
+  w.books.claim = (user, household, store, tx) => {
+    asked.push(household);
+    return inner(user, household, store, tx);
+  };
+  // Peter bought for OTHER (the fake's membership at the time of buying), then switched to HOME.
+  w.books.members.set(PETER, OTHER);
+  await w.deliver(purchase({ app_user_id: OTHER }));
+  await expect(
+    await w.handle('/claim', {
+      store: 'apple',
+      householdId: OTHER,
+      transactionId: '2000000812345678',
+    }, {
+      authorization: 'Bearer peter',
+    }),
+    200,
+    { status: 'recorded' },
+  );
+  assertEquals(asked, [OTHER]);
+  assertEquals(w.sent.map((e) => [e.name, e.sale.householdId]), [['purchase_completed', OTHER]]);
+});
+
 Deno.test('the claim is rate limited', async () => {
   const w = world({ takeCall: () => Promise.resolve(false) });
   await expect(
-    await w.handle('/claim', { store: 'google', transactionId: 'GPA.1' }, {
+    await w.handle('/claim', { store: 'google', householdId: HOME, transactionId: 'GPA.1' }, {
       authorization: 'Bearer peter',
     }),
     429,
@@ -561,7 +598,7 @@ Deno.test('the claim is rate limited', async () => {
 Deno.test('the claim works while the webhook is not configured', async () => {
   const w = world({ webhook: null });
   await expect(
-    await w.handle('/claim', { store: 'apple', transactionId: '1' }, {
+    await w.handle('/claim', { store: 'apple', householdId: HOME, transactionId: '1' }, {
       authorization: 'Bearer peter',
     }),
     200,
@@ -572,7 +609,9 @@ Deno.test('the claim works while the webhook is not configured', async () => {
 Deno.test('purchase_completed goes out once: claim first, then the webhook', async () => {
   const w = world();
   const claim = (who: string, tx = '2000000812345679') =>
-    w.handle('/claim', { store: 'apple', transactionId: tx }, { authorization: `Bearer ${who}` });
+    w.handle('/claim', { store: 'apple', householdId: HOME, transactionId: tx }, {
+      authorization: `Bearer ${who}`,
+    });
   await expect(await claim('peter'), 200, { status: 'waiting' });
   assertEquals(w.sent, []);
   await expect(await w.deliver(purchase()), 200, { status: 'granted' });
@@ -590,7 +629,7 @@ Deno.test('purchase_completed goes out once: claim first, then the webhook', asy
 Deno.test('purchase_completed goes out once: the webhook first, then the claim', async () => {
   const w = world();
   const claim = () =>
-    w.handle('/claim', { store: 'apple', transactionId: '2000000812345679' }, {
+    w.handle('/claim', { store: 'apple', householdId: HOME, transactionId: '2000000812345679' }, {
       authorization: 'Bearer lea',
     });
   await expect(await w.deliver(purchase()), 200, { status: 'granted' });
@@ -606,7 +645,11 @@ Deno.test("a claim for another household's purchase is not its buyer", async () 
   const w = world();
   await w.deliver(purchase({ app_user_id: OTHER }));
   await expect(
-    await w.handle('/claim', { store: 'apple', transactionId: '2000000812345678' }, {
+    await w.handle('/claim', {
+      store: 'apple',
+      householdId: HOME,
+      transactionId: '2000000812345678',
+    }, {
       authorization: 'Bearer peter',
     }),
     200,
@@ -618,7 +661,7 @@ Deno.test("a claim for another household's purchase is not its buyer", async () 
 Deno.test("production purchases are revenue, unless a tester's", async () => {
   const w = world();
   const claim = () =>
-    w.handle('/claim', { store: 'apple', transactionId: '2000000812345678' }, {
+    w.handle('/claim', { store: 'apple', householdId: HOME, transactionId: '2000000812345678' }, {
       authorization: 'Bearer peter',
     });
   await w.deliver(purchase({ environment: 'PRODUCTION' }));
@@ -626,7 +669,7 @@ Deno.test("production purchases are revenue, unless a tester's", async () => {
   w.books.testers.add(PETER);
   const tx = { transaction_id: 't2', original_transaction_id: 't2' };
   await w.deliver(purchase({ environment: 'PRODUCTION', ...tx }));
-  await w.handle('/claim', { store: 'apple', transactionId: 't2' }, {
+  await w.handle('/claim', { store: 'apple', householdId: HOME, transactionId: 't2' }, {
     authorization: 'Bearer peter',
   });
   await w.deliver(of('CANCELLATION', { environment: 'PRODUCTION', ...tx }));
@@ -640,9 +683,13 @@ Deno.test("production purchases are revenue, unless a tester's", async () => {
 Deno.test('the claim before the webhook makes the buyer a tester: internal', async () => {
   const w = world();
   w.books.testers.add(PETER);
-  await w.handle('/claim', { store: 'apple', transactionId: '2000000812345678' }, {
-    authorization: 'Bearer peter',
-  });
+  await w.handle(
+    '/claim',
+    { store: 'apple', householdId: HOME, transactionId: '2000000812345678' },
+    {
+      authorization: 'Bearer peter',
+    },
+  );
   await w.deliver(purchase({ environment: 'PRODUCTION' }));
   assertEquals(w.sent.map((e) => e.subject.internal), [true]);
 });
@@ -650,9 +697,13 @@ Deno.test('the claim before the webhook makes the buyer a tester: internal', asy
 Deno.test('no event for a buyer without analytics consent', async () => {
   const w = world({ subject: () => Promise.resolve(null) });
   await w.deliver(purchase());
-  await w.handle('/claim', { store: 'apple', transactionId: '2000000812345678' }, {
-    authorization: 'Bearer peter',
-  });
+  await w.handle(
+    '/claim',
+    { store: 'apple', householdId: HOME, transactionId: '2000000812345678' },
+    {
+      authorization: 'Bearer peter',
+    },
+  );
   assertEquals(w.sent, []);
 });
 
@@ -664,7 +715,11 @@ Deno.test('analytics failing never fails the purchase', async () => {
   });
   await w.deliver(purchase());
   await expect(
-    await w.handle('/claim', { store: 'apple', transactionId: '2000000812345678' }, {
+    await w.handle('/claim', {
+      store: 'apple',
+      householdId: HOME,
+      transactionId: '2000000812345678',
+    }, {
       authorization: 'Bearer peter',
     }),
     200,
@@ -742,13 +797,70 @@ Deno.test('the webhook lives at /purchases/revenuecat/webhook only (ADDENDUM 6)'
 });
 
 Deno.test("the deletion route skips without RevenueCat's key, and reports a failed run", async () => {
-  await expect(await world().handle('/revenuecat/deletions', {}), 200, {
+  const cron = { 'x-deletions-secret': DELETIONS_SECRET };
+  await expect(await world().handle('/revenuecat/deletions', {}, cron), 200, {
     status: 'not_configured',
   });
   const ok = { due: 1, deleted: 1, pending: 0, failed: 0 };
   const done = world({ deleteDueCustomers: () => Promise.resolve(ok) });
-  await expect(await done.handle('/revenuecat/deletions', {}), 200, ok);
+  await expect(await done.handle('/revenuecat/deletions', {}, cron), 200, ok);
   const failed = { due: 1, deleted: 0, pending: 0, failed: 1 };
   const broken = world({ deleteDueCustomers: () => Promise.resolve(failed) });
-  await expect(await broken.handle('/revenuecat/deletions', {}), 502, failed);
+  await expect(await broken.handle('/revenuecat/deletions', {}, cron), 502, failed);
+});
+
+Deno.test('the deletion route runs only with the cron secret, and not at all without one', async () => {
+  let runs = 0;
+  const run = () => {
+    runs++;
+    return Promise.resolve({ due: 0, deleted: 0, pending: 0, failed: 0 });
+  };
+  const w = world({ deleteDueCustomers: run });
+  await expect(await w.handle('/revenuecat/deletions', {}), 401, { error: 'invalid_token' });
+  await expect(
+    await w.handle('/revenuecat/deletions', {}, { 'x-deletions-secret': `${DELETIONS_SECRET}x` }),
+    401,
+    { error: 'invalid_token' },
+  );
+  await expect(
+    await w.handle('/revenuecat/deletions', {}, { authorization: `Bearer ${DELETIONS_SECRET}` }),
+    401,
+  );
+  assertEquals(runs, 0);
+  await expect(
+    await w.handle('/revenuecat/deletions', {}, { 'x-deletions-secret': DELETIONS_SECRET }),
+    200,
+  );
+  assertEquals(runs, 1);
+  const unset = world({ deleteDueCustomers: run, deletionsSecret: null });
+  await expect(await unset.handle('/revenuecat/deletions', {}, { 'x-deletions-secret': '' }), 503, {
+    error: 'not_configured',
+  });
+  assertEquals(runs, 1);
+});
+
+Deno.test('routes match exactly: the documented webhook path reaches the webhook, near misses do not', async () => {
+  assertEquals(routes.webhook, webhookPath);
+  const raw = JSON.stringify({ api_version: '1.0', event: purchase() });
+  const at = (url: string) =>
+    createHandler(world().deps)(
+      new Request(url, { method: 'POST', headers: { authorization: AUTH }, body: raw }),
+    );
+  await expect(await at(`http://localhost/functions/v1${webhookPath}`), 200, { status: 'granted' });
+  await expect(await at(`http://localhost${webhookPath}`), 200, { status: 'granted' });
+  await expect(await at(`http://localhost/functions/v1${webhookPath}/`), 200, {
+    status: 'granted',
+  });
+  for (
+    const miss of [
+      `/functions/v1${webhookPath}s`,
+      `/functions/v1${webhookPath}/x`,
+      `/functions/v1/x${webhookPath}`,
+      `/functions/v1/purchases/purchases/revenuecat/webhook`,
+      `/functions/v1/purchases/revenuecat/Webhook`,
+      `/functions/v1/purchases/revenuecat`,
+    ]
+  ) {
+    await expect(await at(`http://localhost${miss}`), 404, { error: 'not_found' });
+  }
 });

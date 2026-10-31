@@ -10,7 +10,7 @@ sealed class const StoreChoice();
 
 /// Sells nothing; the Lifetime page shows [answer] (the web app's note, or
 /// "coming soon").
-final class const NoStore(final ProductLoad answer) extends StoreChoice;
+final class const NoStore(final NoSale answer) extends StoreChoice;
 
 final class const RevenueCatStore(final AppStore store, final String apiKey)
     extends StoreChoice;
@@ -53,7 +53,7 @@ StoreChoice storeChoice({
 }
 
 /// The store of this build. Building it starts nothing: RevenueCat is
-/// configured on the Lifetime page's first call.
+/// configured on the first tap on Buy or Restore (Legal Review H-67).
 PurchaseRepository purchaseRepository(SupabaseClient client) =>
     switch (storeChoice(
       web: kIsWeb,

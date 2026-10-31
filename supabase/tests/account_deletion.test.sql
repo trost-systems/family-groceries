@@ -40,7 +40,8 @@ language sql as $$
   union all select 'household_brands', count(*)::int from public.household_brands where household_id = p_household
   union all select 'feedback', count(*)::int from public.feedback where household_id = p_household
   union all select 'item_merges', count(*)::int from public.item_merges where household_id = p_household
-  union all select 'entitlements', count(*)::int from public.entitlements where household_id = p_household;
+  union all select 'entitlements', count(*)::int from public.entitlements where household_id = p_household
+  union all select 'household_departures', count(*)::int from public.household_departures where household_id = p_household;
 $$;
 
 select is(

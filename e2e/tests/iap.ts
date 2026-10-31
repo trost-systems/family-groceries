@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect } from './fixtures';
-import { apiAs, functionsUrl } from './helpers';
+import { adminClient, apiAs, functionsUrl } from './helpers';
 
 // RevenueCat's side of a purchase against the local stack (docs/PURCHASES.md, "Testing locally"):
 // events go to the real webhook with the local stand-in secret (scripts/iap-local-env.sh), and the
@@ -53,14 +53,15 @@ export async function rcEvent(
   return { status: res.status, body: await res.json() };
 }
 
-/** What the app sends right after RevenueCat's purchase sheet, as [email]. */
+/** What the app sends right after RevenueCat's purchase sheet, as [email], for their household. */
 export async function claim(email: string, transactionId: string) {
+  const householdId = await householdOf(email);
   const api = await apiAs(email);
   const { data } = await api.auth.getSession();
   const res = await fetch(`${functionsUrl}/purchases/claim`, {
     method: 'POST',
     headers: { authorization: `Bearer ${data.session!.access_token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ store: 'apple', transactionId }),
+    body: JSON.stringify({ store: 'apple', householdId, transactionId }),
   });
   return { status: res.status, body: await res.json() };
 }
@@ -85,4 +86,13 @@ export async function householdOf(email: string): Promise<string> {
     .single();
   if (error) throw error;
   return data.household_id as string;
+}
+
+/**
+ * Turns the server's archive switch on (job 47, H-70; seeded off): the service role's update,
+ * as the Lead does it (NEEDS_LEAD "Job 47"). Only ever on, so parallel specs don't race.
+ */
+export async function archiveSwitchOn(): Promise<void> {
+  const { error } = await adminClient().from('app_switches').update({ enabled: true }).eq('key', 'household_archive');
+  if (error) throw error;
 }

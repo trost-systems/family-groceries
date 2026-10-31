@@ -4295,7 +4295,10 @@ change". Overview: docs/PURCHASES.md.
     Xcode (issue #130). Xcode signs those transactions with a local certificate (environment
     Xcode), which the server refuses, as it must; the server's own chain is proven with the test
     CA.
-17. **No `appAccountToken`.** It would hand Apple our user id; the server ties purchases to the
+17. **No `appAccountToken`.** *Superseded by job 43 (DECISIONS 43, RevenueCat with the household
+    id as App User ID): RevenueCat passes the household id to Apple as `appAccountToken`, never a
+    user id; job 47 verified it in the SDK source (docs/PURCHASES.md "What Apple and Google
+    receive").* It would hand Apple our user id; the server ties purchases to the
     session that verifies them instead.
 18. **ASC product creation is a Lead step.** The App Store Connect API key is not on the job
     runners (Mac, Hetzner), so whether the API creates an in-app purchase before the Paid Apps
@@ -5014,3 +5017,92 @@ upstream. This reverses Job 19, item 1. Overview: [ANALYTICS.md](ANALYTICS.md); 
 18. **Not deleted at an off:** posthog-android's `posthog-native-crash` preferences (timestamps
     of the native crashes already reported, no id; deleting them would report old crashes
     again), and iOS PLCrashReporter's pending crash report (see item 11 and ANALYTICS.md, "Gaps").
+
+## Job 47: purchase legal fixes (Legal Review K.11), 2026-10-31
+
+Legal Review K.11 (H-67, H-50, H-70, H-69, H-68/H-73, H-72) and the job 43 review leftovers.
+Migration `20261031194500_purchase_legal_fixes.sql`; docs/PURCHASES.md has the behavior. The new
+legal texts came in #147 (merged as 01ad47c after Peter's approval, while this job ran); this job
+does not touch them.
+
+1. **No price before the tap (H-67, option a).** The SDK may not run before the user asks to buy,
+   and the price came from it (`getProducts`). Of the three options the brief allowed, (a) needs no
+   second price source that could disagree with the store: the page says "Weiter zum Kauf" and
+   "Den Preis zeigen dir der App Store oder Google Play, bevor du kaufst.", and the store's own
+   sheet shows the price before anything is paid. (b) would need a server value per storefront
+   (Apple and Google equalize EUR 9.99 into other currencies) plus a "may differ" note; it can be
+   added later without touching the SDK path.
+2. **One call per tap, `canOffer` still decides.** `PurchaseRepository` lost `loadProduct`;
+   `buy(household)` configures (or `logIn`s), loads the product and opens the sheet in one go, and
+   answers `ProductMissing` or `StoreOffline` when that fails, shown after the tap. The cubit no
+   longer knows whether the page is open (`pageOpened`/`pageClosed` and `retry` are gone; Buy
+   itself retries). Buy and Restore show only where `Entitlements.canOffer(Entitlement.lifetime)`
+   is true, as before. The buy is for the session's household at the moment of the tap.
+3. **24 months, then the normal deletion (H-50); no reminder e-mail.** `purge_purchases` (the
+   existing daily pg_cron job) deletes households archived more than 24 months ago with a plain
+   `delete from households`, the same statement a last member's leave runs, so the existing delete
+   trigger starts the purchases' 30 days and queues the RevenueCat customer. No sibling job: one
+   schedule is easier to reason about. `archive_deletes_at()` is the one formula, used by the purge
+   and by `archived_households()` (`deletes_at`), so the date shown is the date used. Hummlist has
+   no e-mail of its own on main (only Supabase Auth's sign-in mails; no mail provider, no sender
+   in the functions), so there is no reminder; NEEDS_LEAD "Job 47" says so for Legal Review.
+4. **The archive switch refuses only what would archive (H-70).** `app_switches` (public schema,
+   RLS on, no policy, every client grant revoked; the service role writes it) holds
+   `household_archive`, seeded off. The check sits in `leave_current_household`, which
+   `accept_invite` and `unarchive_household` call, at the point where it would archive: it raises
+   `archive_disabled` (P0001, HTTP 400 through PostgREST), which rolls the whole call back (the
+   invite stays unused, the membership stays). A call with `p_archive` that would not archive
+   anyway (others stay, no Lifetime) goes on as without it. Why not refuse every `p_archive =>
+   true`: the app's `unarchive` always passes it, and re-enabling an archived household must keep
+   working with the switch off so no one's data gets stuck. No edge function archives (checked).
+   The app maps the error to its own message.
+5. **Nil-bound sandbox rows go (H-69).** The migration deletes `bound_household` = nil UUID rows
+   with `environment = 'Sandbox'` (all of them were test data from job 25); `purge_purchases`
+   deletes any such row 30 days after `verified_at`, tombstoning it if it has an HMAC. A nil-bound
+   `Production` row is left for a person: it cannot exist, and deleting real purchase data on a
+   guess would be worse than keeping it.
+6. **Sign-out leaves the SDK's storage (H-73).** The SDK keeps the App User ID and the
+   household's CustomerInfo (docs/PURCHASES.md "What the SDK keeps on the device"). The only SDK
+   call that clears them is `logOut`, which creates an anonymous RevenueCat customer and contacts
+   RevenueCat (C3 forbids both; the lint rule stays). Deleting the SDK's files from Dart would race
+   the SDK when it is configured in the same run and depends on its private file layout. So
+   sign-out and account deletion call nothing at RevenueCat (a cubit test checks no store call
+   follows a sign-out); the data stays until the next Buy or Restore for another household
+   replaces it, or uninstall. Legal Review decides whether 5a needs to say so (NEEDS_LEAD).
+7. **SDK facts from source, pinned to the lock (H-68).** purchases_flutter 11.0.0 → hybrid common
+   20.0.0 → purchases-ios 5.99.0, purchases-android 11.0.0, read at those tags. They match draft
+   5a; details and links in docs/PURCHASES.md. `scripts/iap/sdk_version_test.ts` fails when
+   `app/pubspec.lock` moves to another purchases_flutter until both docs name the new version, so
+   the facts get read again.
+8. **The claim names the purchase's household, membership at the purchase time.** The claim
+   body carries `householdId` (the household the app bought for, the App User ID); the function
+   takes only the app session and passes that household to `purchase_claim`. To know who was a
+   member when buying after they left, leaving a household now writes `household_departures`
+   (household, user, joined, left), kept one hour: the app claims seconds after the purchase.
+   `was_member_at(user, household, at)` accepts a current member who joined before `at`, or a
+   departure within the hour whose span holds `at`, with ten minutes either way for the store's
+   clock. A claim before the webhook is taken from a member or someone who left within the hour.
+   The old body without `householdId` is refused (400): no released app sends claims
+   (`REVENUECAT_PURCHASES` was never on).
+9. **The deletions route takes a cron secret.** `x-deletions-secret` against the function secret
+   `REVENUECAT_DELETIONS_SECRET`, compared like the webhook's (SHA-256 of both, then constant
+   time); unset is 503 (fail closed), wrong or missing 401. Not the service role key: the
+   workflow would need the most powerful key in GitHub for a route that needs none of its power.
+   This supersedes 43.32's "needs no auth".
+10. **Routes match exactly.** The handler compares the path, after the gateway's `/functions/v1`,
+    with `routes` (`webhook` is `webhookPath`, which the docs test checks); `endsWith` let
+    `/x/purchases/revenuecat/webhook` through.
+11. **Removing a tester clears their mark (H-72).** A trigger on `lifetime_testers` deletion nulls
+    `entitlements.tester`, so `testers.ts remove` (a plain delete) and any other removal do it;
+    the unlock stays. Account deletion already did (`on delete set null`).
+12. **Not done: H-74** (no tombstone for refunded transactions). Whether a refunded purchase may
+    later bind to another household after a refund reversal is a Legal Review question, so it is
+    listed in NEEDS_LEAD instead of guessed.
+13. **Refund help strings (ADDENDUM 1 and 2, H-76, Peter's decision 2026-10-31 19:59).**
+    `refundHelpBody`, `refundHelpGoogle` (ADDENDUM 2's text with the e-mail option),
+    `lifetimeBoughtTwice` and `joinLifetimeEnds` are Legal Review's R-8 texts word for word, in DE
+    and EN; every old text matched main before the change. The sheet links the FAQ
+    (`supportUrl`, "Mehr in den häufigen Fragen" / "More in the FAQ"); the FAQ's refund question
+    has no anchor and #148's pages stay untouched, so the link opens the page. The longer text
+    makes the sheet taller; it stays scrollable and closes with its drag handle or back.
+

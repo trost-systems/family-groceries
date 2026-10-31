@@ -457,8 +457,9 @@ verify_jwt = false
 
 [functions.purchases]
 import_map = "./functions/deno.json"
-# The app's session is checked in the function (purchases/deps.ts); Apple's notifications and the
-# voided-purchases poll carry no Supabase JWT.
+# No Supabase JWT on two routes: RevenueCat's webhook carries its shared secret (Authorization),
+# the daily deletions run the cron secret (x-deletions-secret); the function checks both, and the
+# app's session for the claim (purchases/deps.ts).
 verify_jwt = false
 
 [functions.voice]

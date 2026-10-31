@@ -7,6 +7,8 @@ import 'package:http/http.dart' show ClientException, Request, Response;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+const household = '3f2a6c1e-0b7d-4c5e-9a8f-1d2e3c4b5a69';
+
 void main() {
   group('the claim', () {
     Future<(ClaimResult, List<Request>)> send(
@@ -28,7 +30,10 @@ void main() {
         }),
       );
       addTearDown(client.dispose);
-      return (await SupabaseClaimApi(client).claim(transaction), sent);
+      return (
+        await SupabaseClaimApi(client).claim(household, transaction),
+        sent,
+      );
     }
 
     test("runs in the project's region, Frankfurt (H-54)", () async {
@@ -48,11 +53,13 @@ void main() {
       expect(request.headers['x-region'], 'eu-central-1');
     });
 
-    test('sends the store and the transaction id, nothing else', () async {
+    test('sends the household bought for, the store and the transaction id, '
+        'nothing else', () async {
       final (_, sent) = await send(
         const StoreTransactionRef(AppStore.google, 'GPA.3312-5'),
       );
       expect(jsonDecode(sent.single.body), {
+        'householdId': household,
         'store': 'google',
         'transactionId': 'GPA.3312-5',
       });

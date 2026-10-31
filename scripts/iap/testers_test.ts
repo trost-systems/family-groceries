@@ -73,10 +73,12 @@ Deno.test('remove only removes a listed tester, and only with --apply', async ()
   assertEquals(
     await run(db.query, parseArgs(['remove', '--email', 'dana@example.com', '--apply'])),
     [
-      `remove ${ID}; the 1 unlock(s) already given stay`,
+      `remove ${ID}; the 1 unlock(s) already given stay, without the tester mark`,
     ],
   );
-  assertEquals(db.writes().length, 1);
+  // The plain delete: the trigger lifetime_testers_removed clears entitlements.tester (H-72;
+  // supabase/tests/household_bound.test.sql runs the same delete against the database).
+  assertEquals(db.writes(), [`delete from public.lifetime_testers where user_id = '${ID}'::uuid`]);
 });
 
 Deno.test('an unknown e-mail changes nothing', async () => {

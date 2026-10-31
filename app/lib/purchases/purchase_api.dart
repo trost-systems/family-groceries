@@ -56,19 +56,28 @@ final class const ClaimFailed(
 const purchasesRegion = 'eu-central-1';
 
 /// The purchases function's claim (`POST /purchases/claim`): records the
-/// signed-in member as the buyer of a store transaction of their household
-/// (H-55). The unlock does not wait for it; RevenueCat's webhook grants.
+/// signed-in member as the buyer of a store transaction bought for
+/// a household, the RevenueCat App User ID of the purchase, not
+/// the household they may have moved to since (H-55). The server takes it
+/// from a member of that household at the time of buying. The unlock does
+/// not wait for it; RevenueCat's webhook grants.
 abstract interface class ClaimApi() {
-  Future<ClaimResult> claim(StoreTransactionRef transaction);
+  Future<ClaimResult> claim(
+    String householdId,
+    StoreTransactionRef transaction,
+  );
 }
 
 class const SupabaseClaimApi(final SupabaseClient _client) implements ClaimApi {
   @override
-  Future<ClaimResult> claim(StoreTransactionRef transaction) async {
+  Future<ClaimResult> claim(
+    String householdId,
+    StoreTransactionRef transaction,
+  ) async {
     try {
       final response = await _client.functions.invoke(
         'purchases/claim',
-        body: claimBody(transaction),
+        body: claimBody(householdId, transaction),
         region: purchasesRegion,
       );
       return claimOf(response.data);
@@ -78,7 +87,11 @@ class const SupabaseClaimApi(final SupabaseClient _client) implements ClaimApi {
   }
 }
 
-Map<String, String> claimBody(StoreTransactionRef transaction) => {
+Map<String, String> claimBody(
+  String householdId,
+  StoreTransactionRef transaction,
+) => {
+  'householdId': householdId,
   'store': transaction.store.wire,
   'transactionId': transaction.id,
 };

@@ -7,34 +7,29 @@ import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 
-const lifetime = Product(id: lifetimeProductId, price: '9,99 €');
-
 /// A store that answers what the test set, or holds a purchase in [held]
-/// while [hold] is set. [product] null: loaded for the household asked.
+/// while [hold] is set. [calls] lists every call, in order: the page and app
+/// start must make none (H-67).
 class FakePurchaseRepository({
-  @override final ProductLoad? withoutStore,
-  var ProductLoad? product,
+  @override final NoSale? withoutStore,
   var BuyOutcome bought = const Bought(
     StoreTransactionRef(AppStore.apple, 'tx-1'),
   ),
   var RestoreOutcome restored = const NothingToRestore(),
 }) implements PurchaseRepository {
-  /// Households [loadProduct] was asked for.
-  final loads = <String>[];
   final buys = <String>[];
   final restores = <String>[];
   var hold = false;
   final held = <Completer<BuyOutcome>>[];
 
-  @override
-  Future<ProductLoad> loadProduct(String householdId) async {
-    loads.add(householdId);
-    return product ?? ProductLoaded(householdId, lifetime);
-  }
+  /// `buy <household>` and `restore <household>`, in order.
+  List<String> get calls => _calls;
+  final _calls = <String>[];
 
   @override
-  Future<BuyOutcome> buy(String householdId, Product product) async {
+  Future<BuyOutcome> buy(String householdId) async {
     buys.add(householdId);
+    _calls.add('buy $householdId');
     if (!hold) {
       return bought;
     }
@@ -46,6 +41,7 @@ class FakePurchaseRepository({
   @override
   Future<RestoreOutcome> restore(String householdId) async {
     restores.add(householdId);
+    _calls.add('restore $householdId');
     return restored;
   }
 }
@@ -57,9 +53,16 @@ class FakeClaimApi({
 }) implements ClaimApi {
   final calls = <StoreTransactionRef>[];
 
+  /// The household each claim named.
+  final households = <String>[];
+
   @override
-  Future<ClaimResult> claim(StoreTransactionRef transaction) async {
+  Future<ClaimResult> claim(
+    String householdId,
+    StoreTransactionRef transaction,
+  ) async {
     calls.add(transaction);
+    households.add(householdId);
     return answers[(calls.length - 1).clamp(0, answers.length - 1)];
   }
 }
@@ -103,10 +106,12 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
 }
 
 /// Entitlements and the purchase cubit over fakes, for screens and
-/// harnesses; closed by [close].
+/// harnesses; closed by [close]. [sdk] instead of the fake store: the real
+/// RevenueCat repository over a mocked platform channel.
 class TestPurchases({
   required final SessionCubit session,
   final FakePurchaseRepository? store,
+  final PurchaseRepository? sdk,
   final FakeClaimApi? api,
   final FakeEntitlementsSource? source,
 }) {
@@ -116,7 +121,7 @@ class TestPurchases({
   late final FakeEntitlementsSource rows = source ?? FakeEntitlementsSource();
   late final entitlements = Entitlements(rows, session);
   late final purchases = PurchaseCubit(
-    repository,
+    sdk ?? repository,
     server,
     entitlements,
     session,

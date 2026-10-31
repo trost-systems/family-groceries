@@ -13,14 +13,12 @@ import 'fakes.dart';
 
 const home = InHousehold('peter', Household(id: 'home', name: 'Zuhause'));
 
-/// The cubit as the app has it, answers settled; [open] opens the Lifetime
-/// page.
+/// The cubit as the app has it, answers settled.
 Future<TestPurchases> started({
   Session session = home,
   FakePurchaseRepository? store,
   FakeClaimApi? api,
   FakeEntitlementsSource? rows,
-  bool open = true,
 }) async {
   final testSession = TestSession(session);
   addTearDown(testSession.close);
@@ -31,82 +29,78 @@ Future<TestPurchases> started({
     source: rows,
   );
   addTearDown(purchases.close);
+  expect(purchases.purchases.state.flow, isA<FlowIdle>());
   await pumpEventQueue();
-  if (open) {
-    purchases.purchases.pageOpened();
-    await pumpEventQueue();
-  }
   return purchases;
 }
 
 void main() {
-  group('the store is asked only on the page, only when locked', () {
-    test('nothing before the page opens', () async {
-      final p = await started(open: false);
-      expect(p.repository.loads, isEmpty);
-      expect(p.purchases.state.product, isNull);
-      p.purchases.pageOpened();
-      await pumpEventQueue();
-      expect(p.repository.loads, ['home']);
-      expect(
-        p.purchases.state.product,
-        isA<ProductLoaded>().having((l) => l.householdId, 'for', 'home'),
+  group('the store is asked only on a tap, only when locked (H-67)', () {
+    test('nothing until Buy or Restore is tapped', () async {
+      final p = await started(
+        store: FakePurchaseRepository(bought: const Canceled()),
       );
+      p.rows.change();
+      await pumpEventQueue();
+      expect(p.repository.calls, isEmpty);
+      await p.purchases.buy();
+      expect(p.repository.calls, ['buy home']);
+      await p.purchases.restore();
+      expect(p.repository.calls, ['buy home', 'restore home']);
     });
 
     test('never for an unlocked household', () async {
       final p = await started(rows: FakeEntitlementsSource(unlockedNow: true));
       await p.purchases.restore();
       await p.purchases.buy();
-      expect(p.repository.loads, isEmpty);
-      expect(p.repository.restores, isEmpty);
-      expect(p.repository.buys, isEmpty);
+      expect(p.repository.calls, isEmpty);
     });
 
     test('not while the unlock is unknown; once it is known locked', () async {
       final rows = FakeEntitlementsSource()..offline = true;
       final p = await started(rows: rows);
       await p.purchases.restore();
-      expect(p.repository.loads, isEmpty);
-      expect(p.repository.restores, isEmpty);
+      await p.purchases.buy();
+      expect(p.repository.calls, isEmpty);
       rows
         ..offline = false
         ..change();
       await pumpEventQueue();
-      expect(p.repository.loads, ['home']);
+      expect(p.repository.calls, isEmpty, reason: 'knowing it asks nothing');
+      await p.purchases.buy();
+      expect(p.repository.calls, ['buy home']);
     });
 
-    test('once per household, again for the next one', () async {
+    test('for the household of the moment of the tap', () async {
       final p = await started();
-      p.purchases
-        ..pageClosed()
-        ..pageOpened();
-      await pumpEventQueue();
-      expect(p.repository.loads, ['home']);
       await (p.session as TestSession).join('ABCD2345');
       await pumpEventQueue();
-      expect(p.repository.loads, ['home', 'other']);
-      expect(
-        p.purchases.state.product,
-        isA<ProductLoaded>().having((l) => l.householdId, 'for', 'other'),
+      expect(p.repository.calls, isEmpty);
+      await p.purchases.buy();
+      expect(p.repository.calls, ['buy other']);
+    });
+
+    test('signing out calls no store: no logOut, nothing to buy', () async {
+      final p = await started(
+        store: FakePurchaseRepository(bought: const Canceled()),
       );
+      await p.purchases.buy();
+      await (p.session as TestSession).signOut();
+      await pumpEventQueue();
+      await p.purchases.buy();
+      await p.purchases.restore();
+      expect(p.repository.calls, ['buy home']);
+      expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
     test('a build without a store answers without asking', () async {
       final p = await started(
         store: FakePurchaseRepository(withoutStore: const PurchasesNotYet()),
       );
-      expect(p.repository.loads, isEmpty);
-      expect(p.purchases.state.product, isA<PurchasesNotYet>());
-    });
-
-    test('retry loads it again once the store has it', () async {
-      final store = FakePurchaseRepository(product: const ProductNotFound());
-      final p = await started(store: store);
-      store.product = null;
-      p.purchases.retry();
-      await pumpEventQueue();
-      expect(p.purchases.state.product, isA<ProductLoaded>());
+      await p.purchases.buy();
+      await p.purchases.restore();
+      expect(p.repository.calls, isEmpty);
+      expect(p.purchases.state.noSale, isA<PurchasesNotYet>());
     });
   });
 
@@ -123,7 +117,7 @@ void main() {
     });
 
     test(
-      'the claim is sent once, with the store and the transaction',
+      'the claim is sent once, with the household, store and transaction',
       () async {
         final api = FakeClaimApi();
         final p = await started(
@@ -139,6 +133,7 @@ void main() {
         expect(api.calls, hasLength(1));
         expect(api.calls.single.store, AppStore.google);
         expect(api.calls.single.id, 'GPA.3312-5');
+        expect(api.households, ['home'], reason: 'the household bought for');
       },
     );
 
@@ -254,8 +249,23 @@ void main() {
       expect(p.entitlements.has(Entitlement.lifetime), isTrue);
     });
 
+    test('the claim names the household bought for, after a switch', () async {
+      final store = FakePurchaseRepository()..hold = true;
+      final p = await started(store: store);
+      unawaited(p.purchases.buy());
+      await pumpEventQueue();
+      await (p.session as TestSession).join('ABCD2345');
+      await pumpEventQueue();
+      store.held.single.complete(
+        const Bought(StoreTransactionRef(AppStore.apple, 'tx-9')),
+      );
+      await pumpEventQueue();
+      expect(p.server.households, ['home']);
+    });
+
     const outcomes = <BuyOutcome, Object>{
       Canceled(): FlowCanceled,
+      ProductMissing(): FlowNotAvailable,
       BelongsElsewhere(): FlowUsedElsewhere,
       StoreFailed('storeProblemError'): FailureKind.store,
       StoreOffline(): FailureKind.offline,
@@ -287,25 +297,6 @@ void main() {
         p.purchases.state.flow,
         isA<FlowFailed>().having((f) => f.code, 'code', 'E42'),
       );
-      p.purchases.retry();
-      expect(p.purchases.state.flow, isA<FlowIdle>());
-    });
-
-    test('a product loaded for another household buys nothing', () async {
-      final store = FakePurchaseRepository(
-        product: const ProductLoaded('other', lifetime),
-      );
-      final p = await started(store: store);
-      await p.purchases.buy();
-      expect(store.buys, isEmpty);
-    });
-
-    test('without a product there is nothing to buy', () async {
-      final p = await started(
-        store: FakePurchaseRepository(product: const ProductNotFound()),
-      );
-      await p.purchases.buy();
-      expect(p.repository.buys, isEmpty);
     });
   });
 

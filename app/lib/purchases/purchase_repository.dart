@@ -10,36 +10,15 @@ enum AppStore(final String wire) {
   google('google'),
 }
 
-/// The product as the store offers it.
-@immutable
-class const Product({
-  required final String id,
-
-  /// The store's localized price, e.g. "9,99 €"; never hard-coded.
-  required final String price,
-});
-
-/// What loading the product found.
-sealed class const ProductLoad();
-
-/// Loaded for [householdId]: RevenueCat's customer is the household, so a
-/// purchase is for the household it was loaded for, and only that one.
-final class const ProductLoaded(final String householdId, final Product product)
-    extends ProductLoad;
-
-/// The store answers but has no such product (e.g. the Paid Apps agreement
-/// is not active yet).
-final class const ProductNotFound() extends ProductLoad;
-
-/// The store cannot be reached (offline, no Play Store, payments off).
-final class const StoreUnavailable() extends ProductLoad;
+/// Why this build sells nothing, known without asking anyone.
+sealed class const NoSale();
 
 /// This build sells nothing: the web app, desktop builds.
-final class const PurchasesUnsupported() extends ProductLoad;
+final class const PurchasesUnsupported() extends NoSale;
 
 /// The purchase is not offered yet in this build: the `REVENUECAT_PURCHASES`
 /// define is off or the platform's SDK key is missing.
-final class const PurchasesNotYet() extends ProductLoad;
+final class const PurchasesNotYet() extends NoSale;
 
 /// A store transaction as the purchases function's claim names it: the
 /// same id RevenueCat's webhook sends as `transaction_id`.
@@ -62,6 +41,10 @@ final class const Bought(final StoreTransactionRef? transaction)
 /// The user closed the store's sheet.
 final class const Canceled() extends BuyOutcome;
 
+/// The store answers but has no such product (e.g. the Paid Apps agreement
+/// is not active yet).
+final class const ProductMissing() extends BuyOutcome;
+
 /// Ask to Buy or a Play payment that completes later. Once it does, the
 /// unlock arrives from Supabase like any other.
 final class const Pending() extends BuyOutcome;
@@ -75,7 +58,8 @@ final class const BelongsElsewhere() extends StoreProblem;
 /// The store or RevenueCat failed; [code] names why.
 final class const StoreFailed(final String code) extends StoreProblem;
 
-/// The store or RevenueCat could not be reached.
+/// The store or RevenueCat could not be reached (offline, no Play Store,
+/// payments off).
 final class const StoreOffline() extends StoreProblem;
 
 /// The store has the household's purchase; the unlock arrives from Supabase.
@@ -84,31 +68,28 @@ final class const Restored() extends RestoreOutcome;
 final class const NothingToRestore() extends RestoreOutcome;
 
 /// The App Store or Play Store through RevenueCat, or a stand-in. No plugin
-/// type leaves it. Every call names the household it is for.
+/// type leaves it. Every call names the household it is for, and only a tap
+/// on Buy or Restore makes one: the store is not asked before (Legal Review
+/// H-67), so the page shows no price; the store's sheet does.
 abstract interface class PurchaseRepository() {
-  /// The answer of a build without a store, known without asking anyone;
-  /// null where a store is asked.
-  ProductLoad? get withoutStore;
+  /// Why a build without a store sells nothing; null where a store is asked.
+  NoSale? get withoutStore;
 
-  Future<ProductLoad> loadProduct(String householdId);
+  /// Loads Hummlist Lifetime and opens the store's sheet for it, for
+  /// [householdId].
+  Future<BuyOutcome> buy(String householdId);
 
-  Future<BuyOutcome> buy(String householdId, Product product);
-
-  /// Only when the user asks.
   Future<RestoreOutcome> restore(String householdId);
 }
 
 /// A build that sells nothing: always [answer].
-class const NoStoreRepository(final ProductLoad answer)
+class const NoStoreRepository(final NoSale answer)
     implements PurchaseRepository {
   @override
-  ProductLoad get withoutStore => answer;
+  NoSale get withoutStore => answer;
 
   @override
-  Future<ProductLoad> loadProduct(String householdId) async => answer;
-
-  @override
-  Future<BuyOutcome> buy(String householdId, Product product) async =>
+  Future<BuyOutcome> buy(String householdId) async =>
       const StoreFailed('unsupported');
 
   @override

@@ -3,7 +3,7 @@
 -- with its household for good, a tester's unlock goes with the tester, the join preview says
 -- what a household has and what joining ends.
 begin;
-select plan(95);
+select plan(96);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -36,6 +36,9 @@ end $$;
 create function pg_temp.unlocks(p_household uuid) returns text language sql as $$
   select coalesce(string_agg(source, ',' order by source), '') from public.entitlements where household_id = p_household
 $$;
+
+-- These cases archive with the server switch on (job 47); household_archive.test.sql has it off.
+update public.app_switches set enabled = true where key = 'household_archive';
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000043a1', 'anna43@example.com'),
@@ -226,6 +229,8 @@ update public.lifetime_testers set grants = 0 where user_id = '00000000-0000-000
 delete from public.lifetime_testers where user_id = '00000000-0000-0000-0000-0000000043d1';
 select is(pg_temp.unlocks((select id from hd)) || '/' || pg_temp.unlocks((select id from hd2)), 'purchase,tester/tester',
   'used grants stay when the count is lowered or the tester is taken off the list');
+select is((select count(*)::int from public.entitlements where tester = '00000000-0000-0000-0000-0000000043d1'), 0,
+  'taking her off the list clears her mark on the households she unlocked (H-72)');
 
 -- Archive ------------------------------------------------------------------------------------
 
@@ -243,7 +248,7 @@ select is(public.preview_invite((select code from inv_c4)) ->> 'leaves_unlocked'
   'Frank is the last member of an unlocked household');
 select is(public.accept_invite((select code from inv_c4), true) - 'household_id',
   '{"status": "joined", "previous": "archived"}'::jsonb, 'he archives it and joins Cleo');
-select is((public.archived_households() -> 0) - 'archived_at',
+select is((public.archived_households() -> 0) - 'archived_at' - 'deletes_at',
   jsonb_build_object('id', (select id from hf), 'name', 'Frank', 'unlocked', true), 'he sees it archived, still unlocked');
 select pg_temp.as_postgres();
 select is(pg_temp.unlocks((select id from hf)), 'purchase', 'the archived household keeps its unlock');
@@ -339,8 +344,8 @@ insert into public.lifetime_testers (user_id, grants, note) values ('00000000-00
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
 select is((public.export_my_data() -> 'lifetime_tester') - 'added_at' - 'used_in_households',
   '{"note": "pgTAP", "grants": 3}'::jsonb, 'a tester''s export shows her grants');
-select is(public.export_my_data() -> 'lifetime_tester' -> 'used_in_households', jsonb_build_array((select id from hd)),
-  'and the household her grant still unlocks (Cleo''s had Lifetime, Dana neu is gone)');
+select is(public.export_my_data() -> 'lifetime_tester' -> 'used_in_households', '[]'::jsonb,
+  'added again, she has no marked households: removal cleared the marks (H-72)');
 select is(
   (select jsonb_agg(p -> 'belongs_to_household') from jsonb_array_elements(public.export_my_data() -> 'purchases') p),
   jsonb_build_array((select id from hd)), 'and names the household her purchase belongs to');

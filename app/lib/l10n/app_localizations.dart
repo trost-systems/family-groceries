@@ -1730,6 +1730,12 @@ abstract class AppLocalizations {
   /// **'Keine Internetverbindung. Versuche es erneut, sobald du online bist.'**
   String get householdOffline;
 
+  /// The server refused to archive a household (its archive switch is off); nothing changed
+  ///
+  /// In de, this message translates to:
+  /// **'Archivieren ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist.'**
+  String get householdArchiveDisabled;
+
   /// No description provided for @tooManyAttempts.
   ///
   /// In de, this message translates to:
@@ -1898,16 +1904,22 @@ abstract class AppLocalizations {
   /// **'Ein Kauf, für euren ganzen Haushalt: Hummlist Lifetime unterstützt die Entwicklung von Hummlist.'**
   String get lifetimeBody;
 
-  /// Hummlist Lifetime: the buy button with the store's price
+  /// Hummlist Lifetime: the buy button; the store's sheet shows the price (no store call before this tap, H-67)
   ///
   /// In de, this message translates to:
-  /// **'Für {price} kaufen'**
-  String lifetimeBuy(String price);
+  /// **'Weiter zum Kauf'**
+  String get lifetimeBuy;
+
+  /// Hummlist Lifetime: under Buy; the page shows no price, the store's sheet does
+  ///
+  /// In de, this message translates to:
+  /// **'Den Preis zeigen dir der App Store oder Google Play, bevor du kaufst.'**
+  String get lifetimePriceInStore;
 
   /// No description provided for @lifetimeRestore.
   ///
   /// In de, this message translates to:
-  /// **'Käufe wiederherstellen'**
+  /// **'Kauf wiederherstellen'**
   String get lifetimeRestore;
 
   /// No description provided for @lifetimeUnlocked.
@@ -1949,7 +1961,7 @@ abstract class AppLocalizations {
   /// Hummlist Lifetime: the household has two or more store purchases; the refund help link is on the page
   ///
   /// In de, this message translates to:
-  /// **'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe können Apple oder Google erstatten.'**
+  /// **'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen.'**
   String get lifetimeBoughtTwice;
 
   /// No description provided for @lifetimeCanceled.
@@ -2015,7 +2027,7 @@ abstract class AppLocalizations {
   /// No description provided for @refundHelpBody.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde. Erstatten können wir selbst nichts: Das machen Apple und Google, und sie entscheiden darüber.'**
+  /// **'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde. Käufe im App Store erstattet nur Apple. Bei Google Play beantragst du die Erstattung in den ersten 48 Stunden bei Google; danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage einzeln. Deine gesetzlichen Rechte bleiben unberührt.'**
   String get refundHelpBody;
 
   /// No description provided for @refundHelpApple.
@@ -2027,7 +2039,7 @@ abstract class AppLocalizations {
   /// No description provided for @refundHelpGoogle.
   ///
   /// In de, this message translates to:
-  /// **'Android: Öffne Google Play, tippe auf dein Profilbild, dann „Zahlungen und Abos“, „Budget und Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“.'**
+  /// **'Android, in den ersten 48 Stunden: Öffne Google Play, tippe auf dein Profilbild, dann „Zahlungen und Abos“, „Budget und Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“. Danach schreib uns mit der Bestellnummer (beginnt mit „GPA.“) oder der E-Mail-Adresse deines Google-Kontos.'**
   String get refundHelpGoogle;
 
   /// No description provided for @refundHelpReason.
@@ -2048,6 +2060,12 @@ abstract class AppLocalizations {
   /// **'Bei Google anfragen'**
   String get refundHelpGoogleLink;
 
+  /// Refund help: opens the FAQ on hummlist.com/support with the refund question (H-76)
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr in den häufigen Fragen'**
+  String get refundHelpFaqLink;
+
   /// No description provided for @joinTargetUnlocked.
   ///
   /// In de, this message translates to:
@@ -2063,7 +2081,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinLifetimeEnds.
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied: Trittst du bei, wird der Haushalt gelöscht. Hummlist Lifetime endet mit ihm und wird nicht erstattet, denn ein Kauf gehört zu seinem Haushalt und zieht nicht mit um.'**
+  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied: Trittst du bei, wird der Haushalt gelöscht. Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt und zieht nicht mit um.'**
   String joinLifetimeEnds(String household);
 
   /// Join, after the warning that the current household's Hummlist Lifetime ends
@@ -2081,7 +2099,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinArchiveOffer.
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied. Archiviere den Haushalt, statt ihn zu löschen: Liste und Hummlist Lifetime bleiben erhalten, und du kannst ihn später unter „Mehr“ wieder aktivieren.'**
+  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied. Archiviere den Haushalt, statt ihn zu löschen: Liste und Hummlist Lifetime bleiben erhalten, und du kannst ihn später unter „Mehr“ wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten wieder, wird er gelöscht.'**
   String joinArchiveOffer(String household);
 
   /// No description provided for @joinArchive.
@@ -2119,6 +2137,12 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Mit Hummlist Lifetime'**
   String get archivedUnlocked;
+
+  /// Archived households: the household is deleted 24 months after archiving unless re-enabled
+  ///
+  /// In de, this message translates to:
+  /// **'Wird am {date} gelöscht'**
+  String archivedDeletesOn(DateTime date);
 
   /// No description provided for @archivedRestore.
   ///

@@ -5,21 +5,19 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// The App Store and Play Store through RevenueCat (`purchases_flutter`),
 /// the only file that may use it (ast-grep rule
 /// `purchases-flutter-only-in-revenuecat-repository`). RevenueCat's customer
-/// is the household: the SDK is configured with the household id on the
-/// first call, never at app start, and switched with `logIn` before any
-/// call for another household. It never learns a user id, an e-mail or a
-/// device identifier (Legal Review K.9.9 C3, rule
+/// is the household. Nothing here runs before the user taps Buy or Restore
+/// (Legal Review H-67): not at app start, not when the Lifetime page opens.
+/// The tap configures the SDK with the household id, or switches to it with
+/// `logIn` when it was configured for another one. It never learns a user
+/// id, an e-mail or a device identifier (Legal Review K.9.9 C3, rule
 /// `no-revenuecat-customer-data`).
 class RevenueCatRepository(final AppStore _store, final String _apiKey)
     implements PurchaseRepository {
-  /// The one configure call; two loads at once share it.
+  /// The one configure call; two taps at once share it.
   Future<void>? _configuring;
 
-  /// What [loadProduct] found, for [buy].
-  final _products = <String, StoreProduct>{};
-
   @override
-  ProductLoad? get withoutStore => null;
+  NoSale? get withoutStore => null;
 
   Future<void> _as(String householdId) async {
     final first = _configuring == null;
@@ -41,45 +39,32 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
   }
 
   @override
-  Future<ProductLoad> loadProduct(String householdId) async {
+  Future<BuyOutcome> buy(String householdId) async {
+    final StoreProduct? product;
     try {
       await _as(householdId);
       final found = await Purchases.getProducts([
         lifetimeProductId,
       ], productCategory: ProductCategory.nonSubscription);
-      final product = found
+      product = found
           .where((p) => p.identifier == lifetimeProductId)
           .firstOrNull;
-      if (product == null) {
-        return const ProductNotFound();
-      }
-      _products[product.identifier] = product;
-      return ProductLoaded(
-        householdId,
-        Product(id: product.identifier, price: product.priceString),
-      );
     } on PlatformException catch (e) {
       return switch (_codeOf(e)) {
         PurchasesErrorCode.networkError ||
         PurchasesErrorCode.offlineConnectionError ||
         PurchasesErrorCode.storeProblemError ||
         PurchasesErrorCode.purchaseNotAllowedError ||
-        PurchasesErrorCode.apiEndpointBlocked => const StoreUnavailable(),
-        _ => const ProductNotFound(),
+        PurchasesErrorCode.apiEndpointBlocked => const StoreOffline(),
+        _ => const ProductMissing(),
       };
     }
-  }
-
-  @override
-  Future<BuyOutcome> buy(String householdId, Product product) async {
-    final storeProduct = _products[product.id];
-    if (storeProduct == null) {
-      return const StoreFailed('not_loaded');
+    if (product == null) {
+      return const ProductMissing();
     }
     try {
-      await _as(householdId);
       final result = await Purchases.purchase(
-        PurchaseParams.storeProduct(storeProduct),
+        PurchaseParams.storeProduct(product),
       );
       final id = result.storeTransaction.transactionIdentifier;
       return Bought(id.isEmpty ? null : StoreTransactionRef(_store, id));

@@ -1,10 +1,13 @@
 import { type Browser, expect, type Page, test } from './fixtures';
 import { apiAs, newEmail, openMore, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
-import { buy, householdOf, report } from './iap';
+import { archiveSwitchOn, buy, householdOf, report } from './iap';
 
 // Job 43: Hummlist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
 // by the local stack's App Store stand-in and verified by the real function, as in
 // purchases.spec.ts; the web shows what every member sees.
+
+// The archive cases need the server's switch on as well as the e2e build's HOUSEHOLD_ARCHIVE.
+test.beforeAll(archiveSwitchOn);
 
 const newPage = async (browser: Browser) => {
   const page = await (await browser.newContext()).newPage();
@@ -13,7 +16,7 @@ const newPage = async (browser: Browser) => {
 };
 
 const unlocked = (page: Page) => page.getByText(/^Freigeschaltet/);
-const buyButton = (page: Page) => page.getByRole('button', { name: /kaufen/ });
+const buyButton = (page: Page) => page.getByRole('button', { name: /Weiter zum Kauf|kaufen/ });
 const BOUGHT_TWICE = /^Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft\./;
 
 async function inviteCode(email: string): Promise<string> {
@@ -48,7 +51,8 @@ test('joining an unlocked household: nothing to buy, the warning, the refund hel
   await screenshot(ben, 'job43-join-unlocked-de-390');
   await refundLink.click();
   await expect(ben.getByText('Kauf zurückfordern', { exact: true })).toBeVisible();
-  await expect(ben.getByText(/^Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde\. Erstatten können wir selbst nichts/)).toBeVisible();
+  await expect(ben.getByText(/^Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde\. Käufe im App Store erstattet nur Apple\./)).toBeVisible();
+  await expect(ben.getByRole('link', { name: 'Mehr in den häufigen Fragen' })).toHaveAttribute('href', 'https://hummlist.com/support');
   await expect(ben.getByRole('link', { name: 'Bei Apple anfragen' })).toHaveAttribute('href', 'https://reportaproblem.apple.com/');
   await expect(ben.getByRole('link', { name: 'Bei Google anfragen' })).toHaveAttribute(
     'href',
@@ -58,9 +62,9 @@ test('joining an unlocked household: nothing to buy, the warning, the refund hel
   await ben.keyboard.press('Escape');
   await expect(ben.getByText('Kauf zurückfordern', { exact: true })).toHaveCount(0);
 
-  // Ben declines the archive: one more warning (deleted, not refunded), then it never blocks.
+  // Ben declines the archive: one more warning (deleted with its Lifetime), then it never blocks.
   await ben.getByRole('button', { name: 'Löschen und beitreten', exact: true }).click();
-  await expect(ben.getByText(/wird nicht erstattet/)).toBeVisible();
+  await expect(ben.getByText(/Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt/)).toBeVisible();
   await screenshot(ben, 'job43-join-delete-confirm-de-390');
   await ben.getByRole('button', { name: 'Löschen und beitreten', exact: true }).last().click();
   await expect(ben).toHaveURL(/\/$/);
@@ -121,8 +125,14 @@ test('the last member archives an unlocked household, its purchase stays its own
 
   await openTab(frank, 'Mehr');
   await frank.getByRole('button', { name: /^Archivierte Haushalte/ }).click();
-  await expect(frank.getByRole('group', { name: /Mit Hummlist Lifetime$/ })).toBeVisible();
+  // Job 47 (H-50): each archived household says when it is deleted, 24 months after archiving.
+  const deletes = new Date();
+  deletes.setMonth(deletes.getMonth() + 24);
+  const date = deletes.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+  await expect(frank.getByRole('group', { name: new RegExp(`Mit Hummlist Lifetime\\s+Wird am ${date} gelöscht$`) }))
+    .toBeVisible();
   await screenshot(frank, 'job43-archived-de-390');
+  await screenshot(frank, 'job47-archived-deletes-de-390');
   await frank.getByRole('button', { name: 'Wieder aktivieren', exact: true }).click();
   await frank.getByRole('button', { name: 'Wieder aktivieren', exact: true }).last().click();
   await expect.poll(() => householdOf(frankEmail)).toBe(frankHousehold);

@@ -92,6 +92,7 @@ Deno.test({
           local: true,
           region: null,
           revenueCat: null,
+          deletionsSecret: null,
         },
         telemetry,
         { authenticate: () => Promise.resolve(caller) },
@@ -139,20 +140,43 @@ Deno.test({
 
         // The buyer's claim, after the webhook: purchase_completed, once.
         assertEquals(
-          (await post('/claim', { store: 'apple', transactionId: tx }, 'Bearer s')).body,
+          (await post('/claim', {
+            store: 'apple',
+            householdId: peter.householdId,
+            transactionId: tx,
+          }, 'Bearer s')).body,
           {
             status: 'recorded',
           },
         );
         assertEquals(
-          (await post('/claim', { store: 'apple', transactionId: tx }, 'Bearer s')).body,
+          (await post('/claim', {
+            store: 'apple',
+            householdId: peter.householdId,
+            transactionId: tx,
+          }, 'Bearer s')).body,
           {
             status: 'recorded',
           },
+        );
+        // Max was never in Peter's household: the claim for it records nothing.
+        caller = max;
+        assertEquals(
+          (await post('/claim', {
+            store: 'apple',
+            householdId: peter.householdId,
+            transactionId: tx,
+          }, 'Bearer s'))
+            .status,
+          403,
         );
         caller = lea;
         assertEquals(
-          (await post('/claim', { store: 'apple', transactionId: tx }, 'Bearer s')).body,
+          (await post('/claim', {
+            store: 'apple',
+            householdId: peter.householdId,
+            transactionId: tx,
+          }, 'Bearer s')).body,
           {
             status: 'taken',
           },
@@ -204,7 +228,11 @@ Deno.test({
 
         for (let i = 0; i < callsPerMinute; i++) await deps.takeCall(lea.userId);
         assertEquals(
-          (await post('/claim', { store: 'apple', transactionId: tx }, 'Bearer s')).status,
+          (await post('/claim', {
+            store: 'apple',
+            householdId: peter.householdId,
+            transactionId: tx,
+          }, 'Bearer s')).status,
           429,
         );
       } finally {

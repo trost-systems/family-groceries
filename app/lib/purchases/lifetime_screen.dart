@@ -11,28 +11,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Hummlist Lifetime: buy it or restore it, for the whole household
 /// (`/more/lifetime`). A page of the More tab, which gives it its frame.
-/// While it is open the purchase cubit may ask the store
-/// ([PurchaseCubit.pageOpened]).
-class const LifetimeScreen({super.key}) extends StatefulWidget {
-  @override
-  State<LifetimeScreen> createState() => _LifetimeScreenState();
-}
-
-class _LifetimeScreenState() extends State<LifetimeScreen> {
-  late final PurchaseCubit _cubit = context.read<PurchaseCubit>();
-
-  @override
-  void initState() {
-    super.initState();
-    _cubit.pageOpened();
-  }
-
-  @override
-  void dispose() {
-    _cubit.pageClosed();
-    super.dispose();
-  }
-
+/// Showing it asks no store: only the Buy and Restore buttons do (Legal
+/// Review H-67), so it shows no price; the store's sheet does.
+class const LifetimeScreen({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -47,25 +28,14 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
     final boughtTwice = context.select<Entitlements, bool>(
       (e) => e.boughtLifetimeTwice,
     );
-    final household = context.select<SessionCubit, String?>(
-      (s) => switch (s.state) {
-        InHousehold(:final household) => household.id,
-        _ => null,
-      },
+    final inHousehold = context.select<SessionCubit, bool>(
+      (s) => s.state is InHousehold,
     );
+    final cubit = context.read<PurchaseCubit>();
     final state = context.watch<PurchaseCubit>().state;
-    final cubit = _cubit;
-    final product = state.product;
-    final sells =
-        product is! PurchasesUnsupported && product is! PurchasesNotYet;
-    final restorable = switch (product) {
-      ProductLoaded() || ProductNotFound() || StoreUnavailable() => offer,
-      _ => false,
-    };
-    final retry = switch ((product, state.flow)) {
-      (ProductNotFound() || StoreUnavailable(), _) || (_, FlowFailed()) => true,
-      _ => false,
-    };
+    final noSale = state.noSale;
+    final sells = noSale == null;
+    final buttons = sells && offer && inHousehold;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -105,28 +75,18 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
             ?_flow(context, state.flow),
             if (!unlocked && !offer && sells)
               _Note('lifetime-checking', Icons.sync, l10n.lifetimeChecking),
-            ?switch (product) {
-              null when offer => const Padding(
-                key: ValueKey('lifetime-loading'),
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              ProductNotFound() || PurchasesNotYet() => _Note(
+            ?switch (noSale) {
+              PurchasesNotYet() => _Note(
                 'lifetime-unavailable',
                 Icons.schedule,
                 l10n.lifetimeComingSoon,
-              ),
-              StoreUnavailable() => _Note(
-                'lifetime-offline',
-                Icons.cloud_off,
-                l10n.lifetimeStoreOffline,
               ),
               PurchasesUnsupported() => _Note(
                 'lifetime-web',
                 Icons.phone_iphone,
                 l10n.lifetimeWeb,
               ),
-              _ => null,
+              null => null,
             },
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -134,23 +94,18 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  if (product
-                      case ProductLoaded(:final householdId, :final product)
-                      when offer && householdId == household)
+                  if (buttons)
                     FilledButton.icon(
                       key: const ValueKey('lifetime-buy'),
                       icon: state.flow is FlowBuying
                           ? const _Spinner()
                           : const Icon(Icons.shopping_bag_outlined),
-                      label: Text(
-                        l10n.lifetimeBuy(product.price),
-                        key: const ValueKey('lifetime-price'),
-                      ),
+                      label: Text(l10n.lifetimeBuy),
                       onPressed: state.busy
                           ? null
                           : () => unawaited(cubit.buy()),
                     ),
-                  if (restorable)
+                  if (buttons)
                     OutlinedButton.icon(
                       key: const ValueKey('lifetime-restore'),
                       icon: state.flow is FlowRestoring
@@ -161,16 +116,18 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
                           ? null
                           : () => unawaited(cubit.restore()),
                     ),
-                  if (retry)
-                    TextButton.icon(
-                      key: const ValueKey('lifetime-retry'),
-                      icon: const Icon(Icons.refresh),
-                      label: Text(l10n.retry),
-                      onPressed: cubit.retry,
-                    ),
                 ],
               ),
             ),
+            if (buttons)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(
+                  l10n.lifetimePriceInStore,
+                  key: const ValueKey('lifetime-price-note'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
               child: RefundHelpLink(
@@ -215,6 +172,11 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
         Icons.close,
         l10n.lifetimeCanceled,
       ),
+      FlowNotAvailable() => _Note(
+        'lifetime-unavailable',
+        Icons.schedule,
+        l10n.lifetimeComingSoon,
+      ),
       FlowUsedElsewhere() => _Note(
         'lifetime-used-elsewhere',
         Icons.home_outlined,
@@ -224,6 +186,11 @@ class _LifetimeScreenState() extends State<LifetimeScreen> {
         'lifetime-nothing-restored',
         Icons.search_off,
         l10n.lifetimeNothingRestored,
+      ),
+      FlowFailed(kind: FailureKind.offline) => _Note(
+        'lifetime-offline',
+        Icons.cloud_off,
+        l10n.lifetimeStoreOffline,
       ),
       FlowFailed(:final kind, :final code) => _Note(
         'lifetime-error',

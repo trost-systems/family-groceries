@@ -419,8 +419,9 @@ void main() {
       await tapKey(tester, 'join-refund-help');
       expect(key('refund-help'), findsOneWidget);
       expect(find.text('Kauf zurückfordern'), findsOneWidget);
-      // Closing the help keeps the join where it was.
-      await tester.tapAt(const Offset(10, 10));
+      // Closing the help (back, or a drag on its handle) keeps the join where
+      // it was.
+      Navigator.of(tester.element(key('refund-help'))).pop();
       await tester.pumpAndSettle();
       expect(key('refund-help'), findsNothing);
       await tapKey(tester, 'join-confirm');
@@ -450,8 +451,8 @@ void main() {
         find.text(
           '„Zuhause“ hat Hummlist Lifetime. Du bist das letzte Mitglied: '
           'Trittst du bei, wird der Haushalt gelöscht. Hummlist Lifetime '
-          'endet mit ihm und wird nicht erstattet, denn ein Kauf gehört zu '
-          'seinem Haushalt und zieht nicht mit um.',
+          'endet mit ihm, denn ein Kauf gehört zu seinem Haushalt und zieht '
+          'nicht mit um.',
         ),
         findsOneWidget,
       );
@@ -459,7 +460,7 @@ void main() {
       await showJoinButtons(tester);
       await tapKey(tester, 'join-lifetime-refund-help');
       expect(key('refund-help'), findsOneWidget);
-      await tester.tapAt(const Offset(10, 10));
+      Navigator.of(tester.element(key('refund-help'))).pop();
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Abbrechen'), findsOneWidget);
       expect(
@@ -483,6 +484,13 @@ void main() {
       );
       expect(
         find.textContaining('Archiviere den Haushalt, statt ihn zu löschen'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Aktivierst du ihn nicht innerhalb von 24 Monaten wieder, wird er '
+          'gelöscht.',
+        ),
         findsOneWidget,
       );
       expect(key('join-lifetime-ends'), findsNothing);
@@ -512,7 +520,11 @@ void main() {
       await tapKey(tester, 'join-delete');
       expect(key('join-delete-dialog'), findsOneWidget);
       expect(find.text('„Zuhause“ löschen?'), findsOneWidget);
-      expect(find.textContaining('wird nicht erstattet'), findsOneWidget);
+      expect(
+        find.textContaining('Hummlist Lifetime endet mit ihm, denn'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('nicht erstattet'), findsNothing);
       expect(key('join-delete-refund-help'), findsOneWidget);
       await tester.tap(find.text('Abbrechen').last);
       await tester.pumpAndSettle();
