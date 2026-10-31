@@ -89,6 +89,18 @@ jobs:
           sudo chmod +x /usr/local/bin/squawk
       - run: scripts/gates/lint.sh
 
+  # Job 39: the PR's `## Changelog` section (docs/CHANGELOG.md), on pull requests only. Dependabot
+  # PRs carry none and need none: their bumps are no user-visible change.
+  changelog:
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 2
+      - run: scripts/gates/changelog.sh
+
   db:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
@@ -279,7 +291,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, db, functions, site, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, changelog, db, functions, site, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

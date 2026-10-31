@@ -5,6 +5,8 @@
 # run on this push is then the one scripts/merge-pr.sh merges on, with no second squash and run.
 # Use it for every push once the PR exists, fix rounds included. Before that, push the branch
 # once with `git push -u origin HEAD` and open the PR with `gh pr create`.
+# The description needs a `## Changelog` section (docs/CHANGELOG.md); when it has none and the PR
+# changes nothing in the app builds (or is Dependabot's), this adds "## Changelog\nnone" to the PR first.
 #
 # Usage: scripts/push-pr.sh
 #   A rebase conflict stops the script; resolve it, `git rebase --continue`, and rerun.
@@ -38,6 +40,18 @@ if [[ "$(git rev-list --count origin/main..HEAD)" == 0 ]]; then
   exit 1
 fi
 description="$(gh pr view "$pr" --json body -q .body)"
+note_dir="$(mktemp -d)"
+trap 'rm -rf "$note_dir"' EXIT
+printf '%s\n' "$description" >"$note_dir/body"
+git diff --name-only origin/main HEAD >"$note_dir/changed"
+verdict="$(changelog_verdict "$note_dir/body" "$note_dir/changed" "$branch")" || exit 1
+if [[ $verdict == add-none ]]; then
+  description="$(tr -d '\r' <<<"$description")"
+  description="${description%"${description##*[![:space:]]}"}"$'\n\n## Changelog\nnone'
+  printf '%s\n' "$description" >"$note_dir/body"
+  gh pr edit "$pr" --body-file "$note_dir/body" >/dev/null
+  log "the PR changes no app build and had no ## Changelog section: added \"none\" to #$pr's description"
+fi
 squashed="$(squash_commit HEAD "$subject" "$description")"
 # Also after an edit of the PR description: the commit main takes carries the current one.
 if [[ -n "$(landing_problem HEAD "$subject")" || "$(git log -1 --format=%B "$squashed")" != "$(git log -1 --format=%B HEAD)" ]]; then

@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 // Adds a public release to releases/releases.json (releases/README.md), with its stats from git.
-// Run by .github/workflows/public-release-record.yml; plain node, no packages.
+// Run by .github/workflows/public-release-record.yml; plain node, no packages. The reviewed
+// changelog draft releases/changelog/<version>.json, if there is one, goes into the entry as
+// `changelog`, and the draft file is deleted (job 39).
 //
 //   node scripts/release/record.mjs add --version 1.0.0 --sha <commit> --build 1100 [--dry-run]
 //     [--date YYYY-MM-DD] [--channel public] [--stores app_store,play,web]
 //     [--notes-de TEXT] [--notes-en TEXT] [--main origin/main] [--file releases/releases.json]
+//     [--changelog releases/changelog/<version>.json]
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import { CHANNELS, RecordError, compareVersions, dayNumber, isDate, isVersion, parseRecord, serializeRecord } from '../../site/releases.mjs';
+import { staleStoreTexts } from './changelog.mjs';
+import { CHANNELS, RecordError, compareVersions, dayNumber, isDate, isVersion, parseDraft, parseRecord, serializeRecord } from '../../site/releases.mjs';
 
 const STORES = ['app_store', 'play', 'web'];
 const NOREPLY = /^(?:\d+\+)?([^@]+)@users\.noreply\.github\.com$/i;
@@ -134,6 +138,7 @@ function add(argv) {
       'notes-en': { type: 'string', default: '' },
       main: { type: 'string', default: 'origin/main' },
       file: { type: 'string' },
+      changelog: { type: 'string' },
       'dry-run': { type: 'boolean', default: false },
     },
   });
@@ -180,6 +185,28 @@ function add(argv) {
   const stats = previousSha
     ? rangeStats(previousSha, sha, [`${previousSha}..${sha}`], record.identities)
     : rangeStats(git('hash-object', '-t', 'tree', '/dev/null').trim(), sha, [sha], record.identities);
+  // The draft sits next to the record: releases/changelog/<version>.json.
+  const draftFile = opts.changelog ? resolve(opts.changelog) : join(dirname(file), 'changelog', `${version}.json`);
+  const draftLabel = opts.changelog ?? `${dirname(fileLabel)}/changelog/${version}.json`;
+  let changelog;
+  if (existsSync(draftFile)) {
+    const draft = parseDraft(readFileSync(draftFile, 'utf8'), draftLabel);
+    if (draft.version !== version) refuse(`${draftLabel} is the changelog of ${draft.version}, not ${version}`);
+    const stale = staleStoreTexts(draft, version);
+    if (stale.length) refuse(`${draftLabel}: the store texts ${stale.join(', ')} are not what its title and items give (edited after the store command?); run: node scripts/release/changelog.mjs store --version ${version}`);
+    if (draft.generated_from.previous_sha !== previousSha) {
+      console.warn(`warning: ${draftLabel} was collected from ${draft.generated_from.previous_sha?.slice(0, 7) ?? 'the root commit'}, the previous release is ${previousSha?.slice(0, 7) ?? 'none'}`);
+    }
+    if (draft.generated_from.sha !== sha) {
+      console.warn(`warning: ${draftLabel} was collected up to ${draft.generated_from.sha.slice(0, 7)}, the release is ${sha.slice(0, 7)}; commits in between are not in its changelog`);
+    }
+    changelog = { title: draft.title, items: draft.items, store: draft.store };
+  } else if (opts.changelog) {
+    refuse(`--changelog ${opts.changelog} does not exist`);
+  } else {
+    console.warn(`warning: no ${draftLabel}, so ${version} has no changelog (hummlist.com shows "Bug fixes and improvements.")`);
+  }
+
   const entry = {
     version,
     channel,
@@ -191,16 +218,21 @@ function add(argv) {
     stores,
     stats,
     notes: { de: opts['notes-de'], en: opts['notes-en'] },
+    ...(changelog ? { changelog } : {}),
   };
 
   const after = serializeRecord({ ...record, releases: [...record.releases, entry] });
   parseRecord(after, `${fileLabel} with ${version}`);
   if (opts['dry-run']) {
     console.log(JSON.stringify(entry, null, 2));
-    console.log(`dry run: ${fileLabel} not changed`);
+    console.log(`dry run: ${fileLabel} not changed${changelog ? `, ${draftLabel} kept` : ''}`);
     return;
   }
   writeFileSync(file, after);
+  if (changelog) {
+    rmSync(draftFile);
+    console.log(`moved the changelog from ${draftLabel} into the record`);
+  }
   console.log(`recorded ${version} (day ${entry.day}, ${stats.commits} commits, ${stats.contributors.length} contributors)`);
 }
 

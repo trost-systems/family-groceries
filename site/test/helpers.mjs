@@ -25,9 +25,11 @@ export function tempDir() {
 }
 
 // The files the build reads from outside site/: the real ones unless given, null for missing.
-export function repoDir({ record = REAL_RECORD, pubspec = REAL_PUBSPEC } = {}) {
+// `drafts` maps a file name in releases/changelog/ to its text (today's repo has none).
+export function repoDir({ record = REAL_RECORD, pubspec = REAL_PUBSPEC, drafts = {} } = {}) {
   const dir = tempDir();
-  for (const [rel, text] of [['releases/releases.json', record], ['app/pubspec.yaml', pubspec]]) {
+  const draftFiles = Object.entries(drafts).map(([name, text]) => [`releases/changelog/${name}`, text]);
+  for (const [rel, text] of [['releases/releases.json', record], ['app/pubspec.yaml', pubspec], ...draftFiles]) {
     if (text === null) continue;
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), text);

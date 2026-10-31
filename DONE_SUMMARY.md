@@ -332,3 +332,7 @@ The debug app launches without Flutter's "Zone mismatch" EXCEPTION block, and a 
 ## Job 38: hummlist.com guides follow the live store version; public release record
 
 Guides, sections and blocks tagged `since` an unreleased version stay off hummlist.com until a public release; preview shows them with a banner. `releases/releases.json` records public releases (empty today) with History-ready git stats; `public-release-record.yml` appends one and its push redeploys the site. Details: [docs/done/38-site-deploy-versioning.md](docs/done/38-site-deploy-versioning.md).
+
+## Job 39: user-facing changelog (store "What's new" + hummlist.com/changelog) from PR notes
+
+PRs carry a `## Changelog` note (de/en items or `none`), checked by push-pr.sh and the `changelog` CI gate. `scripts/release/changelog.mjs` collects the notes from main's commits into a reviewed draft with App Store and Play "What's new" texts. `record.mjs` moves the draft into the public release record, and hummlist.com/de/changelog and /en/changelog show recorded releases (empty state today). Details: [docs/done/39-changelog.md](docs/done/39-changelog.md).

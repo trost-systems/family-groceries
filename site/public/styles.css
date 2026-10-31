@@ -96,6 +96,8 @@ img { max-width: 100%; height: auto; }
 
 .updated { color: var(--muted); font-size: 0.9375rem; margin-top: 2rem; }
 .since-note { color: var(--muted); font-size: 0.9375rem; }
+.release-date { color: var(--muted); font-size: 0.9375rem; margin-top: 0; }
+.release-title { font-weight: 600; }
 
 .site-footer { border-top: 1px solid var(--border); padding: 1rem 0 2rem; }
 .site-footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; }

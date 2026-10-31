@@ -1,0 +1,35 @@
+## What
+
+<!-- What changed, for whom. -->
+
+## Why
+
+## How verified
+
+<!-- Commands and results, the green CI run, screenshots where the UI changed. -->
+
+## Changelog
+
+<!--
+What users of the app notice, for the stores' "What's new" and hummlist.com/changelog
+(docs/CHANGELOG.md). scripts/push-pr.sh lands this section in the commit main takes; CI checks
+its structure.
+
+One paragraph per item: a category line (new, improved or fixed), then one sentence in German
+(de:) and one in English (en:). Write in user words what the user can now do or what now works.
+No job or PR numbers, file, table or tool names.
+
+Leave out what users don't see: typo and copy fixes, refactors, CI, docs, tests, lints, deploys,
+server internals. Add a fix only if a user could have noticed the bug. If nothing here is
+visible to users, write only: none
+
+Example:
+
+new
+de: Mit Alexa fügst du Artikel per Sprache hinzu: „Alexa, sag Hummlist, füg Milch hinzu“.
+en: Add items with Alexa: "Alexa, tell Hummlist to add milk".
+
+fixed
+de: Die Liste springt beim Abhaken nicht mehr nach oben.
+en: The list no longer jumps to the top when you check off an item.
+-->

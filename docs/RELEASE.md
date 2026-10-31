@@ -44,6 +44,37 @@ with the workflow's token starts no other workflow, and `plan.sh` counts only
 `app/` and `release.yml` as app changes. A dispatch defaults to
 `dry_run: true`, which prints the entry and changes nothing.
 
+### Changelog and store texts (job 39)
+
+Each public release has a user-facing changelog, collected from the
+`## Changelog` notes in the PRs ([`CHANGELOG.md`](CHANGELOG.md)). The order:
+
+1. **Cut.** Choose the version and the `main` commit, then run
+   `node scripts/release/changelog.mjs draft --version X --sha S`. It writes
+   `releases/changelog/X.json` with the items since the previous public
+   release and the "What's new" texts: App Store up to 4000 (counted as UTF-8
+   bytes), Google Play up to 500 Unicode characters, in German and English.
+   Commit the draft in a PR.
+2. **Review.** Peter reviews and edits the wording in that PR. He fills in the
+   headline (`title`) and approves the release; a public release needs his yes
+   anyway. After any edit, run
+   `node scripts/release/changelog.mjs store --version X`. Preview builds of
+   hummlist.com show the draft on the changelog page with the banner
+   "Entwurf, noch nicht im Store". Production does not show it.
+3. **Submit.** The store submission uses the draft's `store.app_store` and
+   `store.play` texts as "What's new". That step does not exist yet: no
+   metadata upload, no review submission.
+4. **Publish.** After both stores accept the build, the public release step
+   runs the Public release record workflow (above). `record.mjs` puts the
+   draft into the new entry as `changelog` and deletes the draft file in the
+   same commit. That push to `main` redeploys hummlist.com, so the changelog
+   page shows the version only once it is live in the stores.
+
+Without a draft, the release is recorded without a changelog: the workflow
+warns, and the page shows "Fehlerbehebungen und Verbesserungen.". TestFlight's
+"What to Test" (`scripts/release/notes.sh`) stays as it is: PR titles since
+the last upload, for the internal testers.
+
 ## When a run ships
 
 Three events start a run:

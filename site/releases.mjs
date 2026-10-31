@@ -6,6 +6,17 @@ const STORES = ['app_store', 'play', 'web'];
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SHA = /^[0-9a-f]{40}$/;
+const LANGUAGES = ['de', 'en'];
+export const CATEGORIES = ['new', 'improved', 'fixed'];
+
+// "What's new" limits per language. Play: "up to 500 Unicode characters per language" (Play Console
+// Help, answer 9859348). App Store: "Limited to 4000 characters" (App Store Connect Help, Platform
+// version information); fastlane's pilot enforces it as 4000 UTF-8 bytes, the strictest reading, so
+// that is what counts here.
+export const STORE_LIMITS = {
+  app_store: { limit: 4000, unit: 'UTF-8 bytes', length: (text) => Buffer.byteLength(text.normalize('NFC'), 'utf8') },
+  play: { limit: 500, unit: 'Unicode characters', length: (text) => [...text.normalize('NFC')].length },
+};
 
 export class RecordError extends Error {}
 
@@ -46,6 +57,42 @@ function checker(source) {
   return { fail, object, array, string, nullableString, boolean, count, matches };
 }
 
+const texts = (c, value, path, { nonEmpty, multiline = false }) => {
+  c.object(value, path, LANGUAGES);
+  for (const lang of LANGUAGES) {
+    const text = c.string(value[lang], `${path}.${lang}`);
+    if (nonEmpty && text.trim() === '') c.fail(`${path}.${lang}`, 'must not be empty');
+    if (!multiline && /[\r\n]/.test(text)) c.fail(`${path}.${lang}`, 'must be one line');
+  }
+  return value;
+};
+
+// The user-facing changelog of one release (releases/README.md, "changelog"): in a release of the
+// record, and in a draft file releases/changelog/<version>.json before the release.
+function checkChangelog(c, changelog, path, keys = ['title', 'items', 'store']) {
+  c.object(changelog, path, keys);
+  texts(c, changelog.title, `${path}.title`, { nonEmpty: false });
+  c.object(changelog.items, `${path}.items`, CATEGORIES);
+  for (const category of CATEGORIES) {
+    c.array(changelog.items[category], `${path}.items.${category}`).forEach((item, i) => {
+      const at = `${path}.items.${category}[${i}]`;
+      c.object(item, at, ['de', 'en', 'pr', 'sha']);
+      texts(c, { de: item.de, en: item.en }, at, { nonEmpty: true });
+      c.matches(item.pr === null || (Number.isInteger(item.pr) && item.pr > 0), item.pr, `${at}.pr`, 'a PR number or null');
+      c.matches(SHA.test(c.string(item.sha, `${at}.sha`)), item.sha, `${at}.sha`, 'a full commit sha (40 hex)');
+    });
+  }
+  c.object(changelog.store, `${path}.store`, Object.keys(STORE_LIMITS));
+  for (const [store, { limit, unit, length }] of Object.entries(STORE_LIMITS)) {
+    texts(c, changelog.store[store], `${path}.store.${store}`, { nonEmpty: true, multiline: true });
+    for (const lang of LANGUAGES) {
+      const n = length(changelog.store[store][lang]);
+      if (n > limit) c.fail(`${path}.store.${store}.${lang}`, `is ${n} ${unit}, above the store's limit of ${limit}`);
+    }
+  }
+  return changelog;
+}
+
 // Parses and checks the record; throws RecordError naming `source` and the bad field.
 export function parseRecord(text, source = 'releases/releases.json') {
   const c = checker(source);
@@ -79,7 +126,9 @@ export function parseRecord(text, source = 'releases/releases.json') {
   const previous = {};
   releases.forEach((release, i) => {
     const path = `releases[${i}]`;
-    c.object(release, path, ['version', 'channel', 'date', 'day', 'build', 'sha', 'previous_sha', 'stores', 'stats', 'notes']);
+    const fields = ['version', 'channel', 'date', 'day', 'build', 'sha', 'previous_sha', 'stores', 'stats', 'notes'];
+    // Job 39: `changelog` is optional, so releases recorded before it stay valid.
+    c.object(release, path, 'changelog' in release ? [...fields, 'changelog'] : fields);
     c.matches(isVersion(release.version), release.version, `${path}.version`, 'a version MAJOR.MINOR.PATCH');
     c.matches(CHANNELS.includes(release.channel), release.channel, `${path}.channel`, `one of ${CHANNELS.join(', ')}`);
     c.matches(isDate(release.date), release.date, `${path}.date`, 'a date (YYYY-MM-DD)');
@@ -102,6 +151,7 @@ export function parseRecord(text, source = 'releases/releases.json') {
     const notes = c.object(release.notes, `${path}.notes`, ['de', 'en']);
     c.string(notes.de, `${path}.notes.de`);
     c.string(notes.en, `${path}.notes.en`);
+    if ('changelog' in release) checkChangelog(c, release.changelog, `${path}.changelog`);
 
     const prev = previous[release.channel];
     if (prev) {
@@ -114,6 +164,26 @@ export function parseRecord(text, source = 'releases/releases.json') {
     }
     previous[release.channel] = release;
   });
+  return data;
+}
+
+export const DRAFT_STATUS = 'draft';
+
+// A changelog draft, releases/changelog/<version>.json, written by scripts/release/changelog.mjs.
+export function parseDraft(text, source) {
+  const c = checker(source);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new RecordError(`${source}: not valid JSON (${error.message})`);
+  }
+  checkChangelog(c, data, '$', ['version', 'status', 'generated_from', 'title', 'items', 'store']);
+  c.matches(isVersion(data.version), data.version, '$.version', 'a version MAJOR.MINOR.PATCH');
+  c.matches(data.status === DRAFT_STATUS, data.status, '$.status', `"${DRAFT_STATUS}"`);
+  c.object(data.generated_from, '$.generated_from', ['previous_sha', 'sha']);
+  c.matches(data.generated_from.previous_sha === null || SHA.test(data.generated_from.previous_sha), data.generated_from.previous_sha, '$.generated_from.previous_sha', 'a full commit sha or null');
+  c.matches(SHA.test(data.generated_from.sha), data.generated_from.sha, '$.generated_from.sha', 'a full commit sha (40 hex)');
   return data;
 }
 
