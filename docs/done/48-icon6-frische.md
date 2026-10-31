@@ -7,6 +7,9 @@ system 6 Hex Frische, not icon #6. No Sprechwabe work is in any commit.
 
 ## Preview (Vercel login)
 
+Vercel `hummlist-site` on `bf21701`: "Deployment has completed". The branch alias answers 302 to
+the Vercel login, as expected (a made-up alias answers 404).
+
 - Gallery: https://hummlist-site-git-design-48-icon6-frische-peter-trost.vercel.app/design-prototypes
 - 6b homepage: https://hummlist-site-git-design-48-icon6-frische-peter-trost.vercel.app/design-prototypes/option-6b-hex-frische-original5
 - 6b token sheet: https://hummlist-site-git-design-48-icon6-frische-peter-trost.vercel.app/design-prototypes/option-6b-hex-frische-original5/tokens-sheet
