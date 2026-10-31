@@ -311,5 +311,5 @@ restores both items exactly. MCP and Siri report the similar item. Details:
 
 ## Job 41: Hummel Hex variants + Flutter widgets-only PoC (design branch only)
 
-Hex Sharp and Hex Soft versions of option 3, with tactile hex buttons, and a Flutter design system on `widgets.dart` only. Preview only, not merged. Details:
+Hex Sharp and Hex Soft versions of option 3, with tactile hex buttons, a Flutter design system on `widgets.dart` only, and its Widgetbook 4 catalog. Preview only, not merged. Details:
 [docs/done/41-hummel-hex.md](docs/done/41-hummel-hex.md).

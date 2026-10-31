@@ -71,7 +71,8 @@ test('with nothing published the footer links only the imprint', () => {
 
 test('the published privacy policy is in the footer of every page, support is not', () => {
   const { outDir, page } = buildSite({ config: { privacyPublished: true, supportPublished: false } });
-  for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
+  // Design prototypes (design branches only) are mock-ups whose footers link to # on purpose.
+  for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404' && !r.startsWith('/design-prototypes/'))) {
     const locale = page(route).querySelector('html').getAttribute('lang');
     const expected = locale === 'de'
       ? [['Impressum', '/impressum'], ['Datenschutz', '/datenschutz']]

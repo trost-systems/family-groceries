@@ -26,7 +26,7 @@ What this means here: a hex design system on `widgets.dart` alone works on today
 | --- | --- |
 | `HexTheme` / `HexThemeData` | InheritedWidget with one colour set (light or dark) and one hex variant (sharp or soft). It has no ThemeExtension and no Material `Theme`. |
 | `HexBorder` | An `OutlinedBorder`. It draws a horizontal hexagon (pointed left and right ends) or a pointy-top one, with optional filleted corners. |
-| `HexButton` | Primary (honey), secondary and quiet kinds, in regular and small sizes. It is tactile: it lifts on hover, sinks into its edge on press, and has a hex focus ring. |
+| `HexButton` | Primary (honey), secondary and quiet kinds, in regular and small sizes, with an optional leading `icon` in the label colour. It is tactile: it lifts on hover, sinks into its edge on press, and has a hex focus ring. |
 | `HexChip` | A selectable store filter. A selected chip stays sunk and turns honey, so selection does not rely on colour alone. |
 | `ListRow` | A list item: hex check box, title, optional subtitle, and a store badge or quantity. The whole row is one target. |
 | `HexAvatar`, `HexBadge` | A pointy-top initials avatar, and a small outlined store or count badge. |
@@ -51,7 +51,7 @@ node build-hex-variants.mjs          # option-3a-hex-sharp/ + option-3b-hex-soft
 node build-dart-widgets.mjs ../flutter-hex-poc/lib/src/tokens.g.dart ../option-3a-hex-sharp ../option-3b-hex-soft
 ```
 
-To prove the committed file is current, generate it to a temp path and `diff` the two files. The generator rejects variants that differ anywhere except `shape.hex`.
+`design-prototypes/_tools/check-token-drift.sh` proves that this file, and the web variants' token files and shapes, match the shared token file. The generator rejects variants that differ anywhere except `shape.hex`.
 
 ## Run
 
@@ -63,4 +63,45 @@ flutter test           # widgets, semantics, guidelines, goldens, the no-materia
 flutter test --update-goldens   # after a token or visual change
 ```
 
-Goldens render with the real fonts. Baloo 2 and Nunito are variable TTFs from [google/fonts](https://github.com/google/fonts) under the OFL (see `fonts/OFL-*.txt`), and the tests load them with `FontLoader`. The goldens were generated on Linux, and other platforms may differ by a few pixels. Copies of the gallery and states-grid goldens are in `design-prototypes/screenshots/41/flutter/`.
+Goldens render with the real fonts. Baloo 2 and Nunito are variable TTFs from [google/fonts](https://github.com/google/fonts) under the OFL (see `fonts/OFL-*.txt`), and the tests load them with `FontLoader`. The goldens were generated on Linux with Flutter 3.47.8. They are not stable across platforms: on macOS or Windows, text rendering differs by a few pixels and the golden tests fail. Regenerate them with `--update-goldens` on the platform you compare on, or run them on Linux (the CI runner's OS). Copies of the gallery and states-grid goldens are in `design-prototypes/screenshots/41/flutter/`.
+
+## Widgetbook catalog
+
+`widgetbook/` is a second package, `hummel_hex_widgetbook`, that depends on this one by path. This package does not depend on it, and its `lib/` stays free of material. The catalog itself uses Widgetbook's Material UI.
+
+Preview: https://hummlist-site-git-design-41-hummel-hex-peter-trost.vercel.app/design-prototypes/widgetbook (behind the same Vercel login as the rest of the preview).
+
+### Versions
+
+Checked on pub.dev on 2026-10-31 and pinned exactly:
+
+| Package | Version | Why |
+| --- | --- | --- |
+| `widgetbook` | 4.0.0-beta.14 | The newest release. Stories, args, scenarios and `testWidgetbook` exist only in v4; the stable 3.25.0 has `@UseCase` and knobs. Since 4.0.0-alpha.5 the generator and the test helpers are part of this package. |
+| `build_runner` | 2.16.2 | The newest that resolves: build_runner 2.17.x needs `build` 5, Widgetbook 4 needs `build` 4. |
+
+`widgetbook_generator` (4.0.0-alpha.4) and `widgetbook_annotation` (3.11.0) are the old line and are not used. `build.yaml` turns off Widgetbook's telemetry builder. That builder would otherwise post a hash of the git user's email and the remote's owner URL to Mixpanel on every build.
+
+### What is in it
+
+- Stories mirror `lib/src/`: `hex_button.stories.dart` (Primary, Secondary, Quiet), `hex_chip.stories.dart` (Unselected, Selected), `list_row.stories.dart` (Unchecked, Checked) and `gallery.stories.dart` (all variants).
+- Args: label or title, `shape` (sharp or soft; off follows the theme), kind, size, enabled, `withIcon`, selected or checked, subtitle, store or quantity, and `interaction` (rest, hover, focus, pressed).
+- Scenarios with fixed args for each state: Default, Hover, Focus, Pressed, Disabled, With icon, Small, plus the list row's subtitle, quantity and plain rows.
+- Hover, focus and press come from `InteractionDriver` (`lib/src/interaction.dart`). It sends the widget real input: a synthetic mouse rests on it, a synthetic finger holds it down, or keyboard focus lands on it. So the catalog and the snapshots show the widget's own state rendering, and the PoC needs no "forced state" parameter. The scenarios' `run` waits for that input to land.
+- Addons: Theme (Sharp or Soft, light or dark, over `HexThemeData`), Text Scale, and Viewport (none, iPhone 13, Samsung Galaxy S20). Widgetbook 4 draws a viewport as an outlined frame with the device name, not as a device bezel.
+- Scenario matrix in `testWidgetbook`: every scenario in all four themes, plus one Text x2 and one iPhone 13 scenario per story. Each scenario also has to meet the tap-target, labelled-tap-target and text-contrast guidelines.
+
+The generated `*.g.dart` files are committed, so the folder builds and analyzes without running the generator. Rerun the generator after you change a stories file.
+
+### Run
+
+```sh
+cd design-prototypes/flutter-hex-poc/widgetbook
+flutter pub get
+dart run build_runner build   # regenerates *.stories.g.dart and lib/components.g.dart
+flutter analyze
+flutter test                  # testWidgetbook: one snapshot per scenario in build/.widgetbook/
+flutter run -d chrome
+```
+
+`design-prototypes/_tools/build-widgetbook.sh` runs all of that for both packages. It then builds the web app with `--base-href /design-prototypes/widgetbook/ --no-web-resources-cdn` and writes it to `design-prototypes/widgetbook/`, which `_tools/publish.mjs` publishes. `web/flutter_bootstrap.js` points CanvasKit and the fallback fonts at the app's own folder, so the page makes no request to gstatic.com. The catalog has no emoji and no glyph outside its bundled fonts, so it needs no fallback font.

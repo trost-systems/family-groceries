@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { request } from 'node:http';
-import { buildSite, htmlRoutes } from './helpers.mjs';
+import { buildSite, htmlRoutes, isFlutterBundle } from './helpers.mjs';
 import { startPreview } from '../scripts/preview.mjs';
 
 let server;
@@ -85,7 +85,7 @@ test('every page carries the privacy headers and no cookie', async () => {
 });
 
 test('no file in the build has a script or an external resource', () => {
-  const files = readdirSync(site.outDir, { recursive: true }).filter((f) => /\.(html|css)$/.test(f));
+  const files = readdirSync(site.outDir, { recursive: true }).filter((f) => /\.(html|css)$/.test(f) && !isFlutterBundle(f));
   assert.ok(files.length >= 9);
   for (const file of files) {
     const text = readFileSync(join(site.outDir, file), 'utf8');

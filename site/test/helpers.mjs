@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after } from 'node:test';
 import { parse } from 'node-html-parser';
-import { build, readConfig } from '../build.mjs';
+import { build, readConfig, FLUTTER_BUNDLES } from '../build.mjs';
 
 export const SITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const CONTENT_DIR = join(SITE_DIR, 'content');
@@ -41,9 +41,13 @@ export function readPage(outDir, route) {
   return parse(readFileSync(join(outDir, file), 'utf8'));
 }
 
+// The site's own pages. Flutter app bundles have an index.html too, but it is an app shell that
+// build.mjs checks on its own terms (checkFlutterScripts), not a page with headings and a footer.
+export const isFlutterBundle = (file) => FLUTTER_BUNDLES.some((dir) => file.split('\\').join('/').startsWith(dir));
+
 export function htmlRoutes(outDir) {
   return readdirSync(outDir, { recursive: true })
-    .filter((f) => f.endsWith('.html'))
+    .filter((f) => f.endsWith('.html') && !isFlutterBundle(f))
     .map((f) => (f === 'index.html' ? '/' : `/${f.slice(0, -5)}`));
 }
 

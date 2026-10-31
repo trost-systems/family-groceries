@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      # Widgetbook's telemetry builder posts a hash of the git user's email and
+      # the remote's owner URL to Mixpanel on every build; the catalog sends
+      # nothing anywhere.
+      widgetbook:telemetry:
+        enabled: false

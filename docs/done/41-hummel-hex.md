@@ -21,6 +21,13 @@ Design job. The branch is `design/41-hummel-hex`, built on job 36's `design/36-p
 - **Flutter PoC:** `design-prototypes/flutter-hex-poc/` is a design system on `package:flutter/widgets.dart` only, and it is not wired into `app/`.
   - Components: HexTheme (InheritedWidget), HexBorder, HexButton (sharp and soft, tactile), HexChip, ListRow, HexAvatar and HexBadge.
   - It has 97 widget and golden tests. Its README states what Flutter 3.47.8 offers about the Material/Cupertino split, with sources: `material_ui` and `cupertino_ui` are published as opt-in packages, the SDK libraries are not deprecated yet, and there is no RawButton.
+- **Widgetbook catalog** (the addendum of 2026-10-31 13:43): `design-prototypes/flutter-hex-poc/widgetbook/` is a sibling package on Widgetbook 4.0.0-beta.14, pinned exactly. It depends on the PoC by path, and the PoC never depends on it.
+  - Generated v4 stories for HexButton (Primary, Secondary, Quiet), HexChip, ListRow and a Gallery.
+  - Args for label, shape (sharp or soft), kind, size, enabled, icon and interaction. Fixed-arg scenarios for default, hover, focus, pressed, disabled and with icon.
+  - Addons for theme (Sharp/Soft × Light/Dark), text scale and viewport (iPhone 13, Galaxy S20).
+  - The `testWidgetbook` suite runs 176 scenarios. Each one also passes Flutter's tap-target and contrast guidelines.
+  - HexButton gained an optional `icon`. A teardown crash in `Pressable` turned up and is fixed (PoC tests 99/99).
+  - The static web build is `design-prototypes/widgetbook/`, published at `/design-prototypes/widgetbook` and linked from the gallery. `_tools/build-widgetbook.sh` rebuilds it, and `_tools/widgetbook-shots.mjs` takes the screenshots. CanvasKit and the fonts are served from the same origin, and Widgetbook's telemetry is off.
 - **Checks:**
   - `check.mjs` gains interaction gates: 48 px targets, an unclipped visible focus ring on every tab stop, press depth equal to the edge, and no animation under reduced motion.
   - `contrast-review.mjs` now serves over http, because masks don't load from file://.
@@ -29,7 +36,8 @@ Design job. The branch is `design/41-hummel-hex`, built on job 36's `design/36-p
 
 ## How to verify
 
-- Preview (Vercel login): https://hummlist-site-git-design-41-hummel-hex-peter-trost.vercel.app/design-prototypes, plus `/option-3a-hex-sharp`, `/option-3b-hex-soft` and each one's `/tokens-sheet`.
+- Preview (Vercel login): https://hummlist-site-git-design-41-hummel-hex-peter-trost.vercel.app/design-prototypes, plus `/option-3a-hex-sharp`, `/option-3b-hex-soft`, each one's `/tokens-sheet`, and the catalog at `/widgetbook`.
+- Run `cd design-prototypes/flutter-hex-poc/widgetbook && flutter test`, or `design-prototypes/_tools/build-widgetbook.sh` to rebuild and republish the catalog.
 - Run `cd design-prototypes/_tools && npm ci`. Then run `node check.mjs ../option-3a-hex-sharp` and the same for 3b, and `node contrast-review.mjs ../option-3a-hex-sharp ../option-3b-hex-soft`.
 - Run `node publish.mjs <worktree>`, then `cd site && npm run build`, then `node preview-check.mjs <worktree>`.
 - Run `cd design-prototypes/flutter-hex-poc && flutter analyze && flutter test`.
@@ -40,12 +48,15 @@ Design job. The branch is `design/41-hummel-hex`, built on job 36's `design/36-p
 | --- | --- |
 | `check.mjs`, both variants, 390 and 1440, light and dark | Pass. axe has 0 violations. The new interaction gates pass, and each gate was shown to fail on a real defect. |
 | `contrast-review.mjs` | 0 failures in 16 runs. The lowest median is 5.42:1. |
-| Site build and `preview-check.mjs` with axe | 15 of 15 pages are clean. |
-| Flutter | `flutter analyze` is clean (flutter_agent_lints experimental). `flutter test` passes 97 of 97. |
+| Site build and `preview-check.mjs` with axe | 16 of 16 pages are clean, the Widgetbook catalog included. Each page is served with the CSP its `site/vercel.json` rule sets; the catalog must load CanvasKit from its own folder, with no off-origin request. |
+| Flutter PoC | `flutter analyze` is clean (flutter_agent_lints experimental). `flutter test` passes 99 of 99. |
+| Widgetbook catalog | `flutter analyze` is clean. `flutter test` passes 177 of 177 (176 `testWidgetbook` scenarios). |
+| Site tests (`npm test`) | 52 of 52 pass. The footer test now skips the prototype mock-ups. |
+| Token drift (`_tools/check-token-drift.sh`) | Outputs match the shared token file. A test edit to `depth.edge-l` made it fail. |
 | gitleaks | No leaks. |
 | Vercel `hummlist-site` on `32ecb63` | "Deployment has completed". The alias redirects (302) to the login. |
 
-Screenshots are in `design-prototypes/screenshots/41/`: 16 full pages, 32 state close-ups, the gallery, and the Flutter goldens in `flutter/`.
+Screenshots are in `design-prototypes/screenshots/41/`: 16 full pages, 32 state close-ups, the gallery, the Flutter goldens in `flutter/`, and 13 catalog shots in `widgetbook/` (button in Sharp and Soft, light and dark, pressed, focus, iPhone and Galaxy frames, text ×2, chip, list row, gallery).
 
 ## Review 0 fixes
 
@@ -58,8 +69,17 @@ Screenshots are in `design-prototypes/screenshots/41/`: 16 full pages, 32 state 
 - The gates ran on the published tree, and the "needs review" contrast nodes are resolved by the pixel pass.
 - The state close-up script now waits for the pressed frame. Before, the pressed shots matched the rest shots.
 
+## Review 1 fixes
+
+- The Widgetbook addendum was missing from the build prompt. It is now done (above), with decisions 9 and 10 in `docs/DECISIONS.md` (the v4 prerelease pins and the hosting changes).
+- Nice-to-haves done: the inherited footer test failure is scoped away, the README states that the goldens are Linux-only, and the token drift check exists.
+
+## Hosting changes (design branch only)
+
+- `site/vercel.json` gives `/design-prototypes/widgetbook` its own CSP (WebAssembly and inline styles allowed, `connect-src 'self'`). The site-wide strict CSP excludes that path. No Vercel project setting changed.
+- `site/build.mjs` allows same-folder `<script src>` in that folder only.
+
 ## Known gaps
 
 - Nobody has seen the preview behind Vercel Authentication from this box, because there is no Vercel token here. The local crawl stands in for it, as in job 36.
-- `site/test/consistency.test.mjs` still fails on the prototype footers (`#` links). This is inherited from job 36. CI doesn't run on design branches.
 - The goldens were generated on Linux.

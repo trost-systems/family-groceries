@@ -4196,3 +4196,21 @@ The job's own calls:
 8. **Flutter split.** On 3.47.8, `material_ui`/`cupertino_ui` exist as opt-in packages, and
    the SDK libraries are not deprecated yet. The PoC uses `widgets.dart` only, enforced by a
    test (sources in `design-prototypes/flutter-hex-poc/README.md`).
+9. **Widgetbook 4 prerelease, pinned exactly.** The catalog uses `widgetbook` 4.0.0-beta.14, not
+   stable 3.25.0, because the requested generated stories, args, fixed-arg scenarios and
+   `testWidgetbook` exist only in v4. The v4 package contains the generator, so
+   `widgetbook_generator` and `widgetbook_annotation` are not used. `build_runner` is pinned to
+   2.16.2, because 2.17 needs `build` 5 and widgetbook 4 needs 4. Widgetbook's telemetry builder
+   is off (`build.yaml`), so no build reports to Mixpanel. The catalog package sits beside the
+   PoC and depends on it by path; the PoC stays free of widgetbook and material.
+10. **Hosting the catalog without a Vercel setting change.** The catalog is a static Flutter
+    web build under `/design-prototypes/widgetbook`, built with `--no-web-resources-cdn` so
+    CanvasKit is served from the same origin. The changes below are on this branch only:
+    - `site/vercel.json` scopes the site's strict CSP to everything except that folder. The
+      folder gets the app's own Flutter CSP (`'wasm-unsafe-eval'`, inline styles), with
+      `connect-src 'self'`, no Supabase or PostHog, and each part tested as necessary.
+    - `site/build.mjs` lifts the no-script and one-h1 rules for `FLUTTER_BUNDLES`. Only
+      same-folder `<script src>` with a matching `<base href>` is allowed there; inline
+      scripts and external resources still fail.
+    - The site footer test skips `/design-prototypes/`, because those mock-ups link their
+      footers to `#` on purpose. This makes the inherited failure from job 36 go away.

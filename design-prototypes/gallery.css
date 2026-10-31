@@ -33,6 +33,8 @@ footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.9375rem; }
 .mascot-link p { margin: 0 0 0.5rem; color: var(--muted); }
 .hex-compare { margin: 0 0 2.5rem; }
 .hex-compare h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.catalog { max-width: 44rem; margin: 1.5rem 0 0; }
+.catalog a { display: block; font-weight: 700; margin-bottom: 0.25rem; }
 .trio { list-style: none; padding: 0; margin: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
 h3 { font-size: 1.1rem; margin: 0; }
 h2.all { margin: 0 0 1rem; }

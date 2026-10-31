@@ -1,5 +1,5 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
@@ -286,11 +286,33 @@ function htmlFiles(dir) {
 
 const EXTERNAL = /^(https?:)?\/\//i;
 
+// Flutter web apps published as static folders (design branch only, job 41). Their index.html
+// boots the app with <script src> files from the same folder, and the app draws its headings on
+// a canvas, so the page has none in HTML. Both rules are lifted for these folders only: inline
+// scripts, scripts from anywhere else, iframes and external resources still fail.
+export const FLUTTER_BUNDLES = ['design-prototypes/widgetbook/'];
+
+function checkFlutterScripts(name, doc, dir) {
+  // Relative script URLs resolve against <base href>, so it must be the app's own folder.
+  const base = doc.querySelector('base')?.getAttribute('href');
+  if (base !== undefined && base !== `/${dir}`) fail(name, `<base href="${base}"> must be /${dir}`);
+  for (const script of doc.querySelectorAll('script')) {
+    const src = script.getAttribute('src') ?? '';
+    if (!src || script.text.trim()) fail(name, 'inline <script> is not allowed');
+    if (EXTERNAL.test(src) || src.startsWith('/') || src.split('/').includes('..') || /^[a-z]+:/i.test(src)) {
+      fail(name, `<script src="${src}"> must name a file in the app's own folder`);
+    }
+  }
+}
+
 function checkHtml(file, html, outDir, siteUrl) {
   const name = relative(outDir, file);
   const doc = parse(html);
-  const h1s = doc.querySelectorAll('h1').length;
-  if (h1s !== 1) fail(name, `expected exactly one <h1>, found ${h1s}`);
+  const flutterBundle = FLUTTER_BUNDLES.find((dir) => name.split(sep).join('/').startsWith(dir));
+  if (!flutterBundle) {
+    const h1s = doc.querySelectorAll('h1').length;
+    if (h1s !== 1) fail(name, `expected exactly one <h1>, found ${h1s}`);
+  }
   let previous = 0;
   for (const h of doc.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
     const level = Number(h.tagName[1]);
@@ -300,7 +322,8 @@ function checkHtml(file, html, outDir, siteUrl) {
   for (const img of doc.querySelectorAll('img')) {
     if (!img.getAttribute('alt')?.trim()) fail(name, `<img src="${img.getAttribute('src')}"> has no alt text`);
   }
-  for (const tag of ['script', 'iframe', 'object', 'embed']) {
+  if (flutterBundle) checkFlutterScripts(name, doc, flutterBundle);
+  for (const tag of flutterBundle ? ['iframe', 'object', 'embed'] : ['script', 'iframe', 'object', 'embed']) {
     if (doc.querySelector(tag)) fail(name, `<${tag}> is not allowed`);
   }
   const resources = [

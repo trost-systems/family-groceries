@@ -67,6 +67,10 @@ class _PressableState()
   var _keyPulse = false;
   var _focusVisible = false;
 
+  // Read here, not in _moveFace: a held pointer is cancelled while the tree
+  // tears down, when ancestors can no longer be looked up.
+  var _reduceMotion = false;
+
   bool get _enabled => widget.onPressed != null;
 
   double get _target => switch ((_enabled, _pointerDown || _keyPulse)) {
@@ -74,6 +78,12 @@ class _PressableState()
     (true, true) => HexDepth.press,
     (true, false) => _hovered ? -HexDepth.lift : 0,
   };
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+  }
 
   @override
   void didUpdateWidget(Pressable oldWidget) {
@@ -93,7 +103,7 @@ class _PressableState()
 
   TickerFuture _moveFace() {
     final target = _target;
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (_reduceMotion) {
       _face.value = target;
       return TickerFuture.complete();
     }

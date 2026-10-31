@@ -16,9 +16,9 @@ enum HexButtonKind() {
   quiet,
 }
 
-enum HexButtonSize(final double faceHeight) {
-  regular(48),
-  small(36),
+enum HexButtonSize(final double faceHeight, final double iconSize) {
+  regular(48, 20),
+  small(36, 16),
 }
 
 /// A hexagonal, tactile button. Sharp or soft corners come from the ambient
@@ -28,6 +28,10 @@ class const HexButton({
   required final VoidCallback? onPressed,
   final HexButtonKind kind = HexButtonKind.primary,
   final HexButtonSize size = HexButtonSize.regular,
+
+  /// Shown before the label, tinted with the label colour. Semantics come from
+  /// [label] alone.
+  final Widget? icon,
   final FocusNode? focusNode,
   final bool autofocus = false,
   super.key,
@@ -70,8 +74,28 @@ class const HexButton({
                 ),
                 child: Center(
                   widthFactor: 1,
-                  child: Text(
-                    label,
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        if (icon case final icon?)
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                right: HexSpace.s2,
+                              ),
+                              child: IconTheme.merge(
+                                data: IconThemeData(
+                                  color: colors.content,
+                                  size: size.iconSize,
+                                ),
+                                child: icon,
+                              ),
+                            ),
+                          ),
+                        TextSpan(text: label),
+                      ],
+                    ),
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,

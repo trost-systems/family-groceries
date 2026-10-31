@@ -11,7 +11,10 @@ const root = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const dest = join(resolve(process.argv[2]), 'site/public/design-prototypes');
 const BASE = '/design-prototypes';
 
-const entries = ['index.html', 'gallery.css', 'thumbs', ...readdirSync(root).filter((f) => /^option-\d[a-z]?-/.test(f)).sort()];
+// Flutter web builds (build-widgetbook.sh) are copied as built: their links resolve against
+// their own <base href>, so publish leaves their HTML alone.
+const BUNDLES = ['widgetbook'];
+const entries = ['index.html', 'gallery.css', 'thumbs', ...readdirSync(root).filter((f) => /^option-\d[a-z]?-/.test(f)).sort(), ...BUNDLES];
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
 for (const e of entries) {
@@ -35,6 +38,7 @@ const walk = (d) => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirect
 let n = 0;
 for (const f of walk(dest).filter((f) => f.endsWith('.html'))) {
   const pageDir = relative(dest, dirname(f)).split('\\').join('/');
+  if (BUNDLES.some((b) => pageDir === b || pageDir.startsWith(`${b}/`))) continue;
   writeFileSync(f, absolutize(readFileSync(f, 'utf8'), pageDir));
   n++;
 }

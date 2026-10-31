@@ -1,0 +1,8 @@
+# The PoC's rule set (../analysis_options.yaml): flutter_agent_lints, experimental.
+analyzer:
+  exclude:
+    - build/**
+    # Widgetbook's generator output (build_runner), not hand-written.
+    - lib/**.g.dart
+    - web/**
+include: package:flutter_agent_lints/experimental.yaml

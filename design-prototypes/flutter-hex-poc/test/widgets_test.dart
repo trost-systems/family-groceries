@@ -27,6 +27,51 @@ void main() {
       semantics.dispose();
     });
 
+    testWidgets('an icon sits before the label in the label colour', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      IconThemeData? iconTheme;
+      const iconKey = ValueKey('icon');
+      await pumpHex(
+        tester,
+        HexButton(
+          label: 'Hinzufügen',
+          icon: Builder(
+            builder: (context) {
+              iconTheme = IconTheme.of(context);
+              return const SizedBox.square(key: iconKey, dimension: 20);
+            },
+          ),
+          onPressed: () {},
+        ),
+      );
+      expect(iconTheme?.color, HexColors.light.onHoney);
+      expect(iconTheme?.size, HexButtonSize.regular.iconSize);
+      final face = faceRect(tester, find.byType(HexButton), HexButton.faceKey);
+      final icon = tester.getRect(find.byKey(iconKey));
+      expect(face.contains(icon.center), isTrue);
+      expect(icon.center.dx, lessThan(face.center.dx));
+      expect(
+        tester.getSemantics(find.byType(HexButton)),
+        isSemantics(label: 'Hinzufügen', isButton: true),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('leaving the tree while held down does not throw', (
+      tester,
+    ) async {
+      await pumpHex(tester, HexButton(label: 'Speichern', onPressed: () {}));
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byType(HexButton)),
+      );
+      await tester.pump(kPressTimeout);
+      await tester.pumpWidget(const SizedBox());
+      expect(tester.takeException(), isNull);
+      await gesture.cancel();
+    });
+
     testWidgets('a tap calls onPressed once', (tester) async {
       var presses = 0;
       await pumpHex(

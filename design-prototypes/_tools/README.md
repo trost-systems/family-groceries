@@ -9,6 +9,7 @@ Run `npm ci` here first (Playwright 1.64.1 uses the Chromium already installed o
 | `node build-hex-variants.mjs` | Job 41: `option-3-hummel/tokens.json` + the shared `../_tokens/hummel-hex.tokens.json` (common + `variant.sharp`/`variant.soft`) to `option-3a-hex-sharp/` and `option-3b-hex-soft/` tokens.json and tokens.css |
 | `node build-hex-assets.mjs` | Job 41: the hexagon mask SVGs from each variant's `shape.hex.*`, plus both variants' pages from the single source in `hex-src/` |
 | `node build-dart-widgets.mjs <out.dart> ../option-3a-hex-sharp ../option-3b-hex-soft` | Job 41: widgets-only Dart tokens (no material) for `flutter-hex-poc/` |
+| `./check-token-drift.sh` | Job 41: regenerates every Hummel Hex token output in a temp copy and fails if a committed file differs (variant tokens.json/css, mask SVGs, pages, the PoC's `tokens.g.dart`) |
 | `node hex-closeups.mjs ../option-3a-hex-sharp ../option-3b-hex-soft` | Job 41: rest, hover, pressed and focus close-ups of a button and a chip into `../screenshots/41/` |
 | `node build-css.mjs ../option-N-x` | `tokens.json` to `tokens.css` (Style Dictionary) |
 | `node build-dart.mjs ../option-N-x out.dart` | `tokens.json` to a Flutter ThemeExtension, ColorScheme and constants |
@@ -17,7 +18,9 @@ Run `npm ci` here first (Playwright 1.64.1 uses the Chromium already installed o
 | `node m3-scheme.mjs [#seed]` | The Material 3 tonal-spot roles Flutter's `ColorScheme.fromSeed` builds |
 | `node summarize.mjs ../option-N-x` | Markdown token tables for `design-prototypes.md` |
 | `node thumbs.mjs` | Gallery thumbnails |
-| `node publish.mjs <worktree>` | Copies gallery and options to `site/public/design-prototypes/` with absolute links (Vercel cleanUrls) |
-| `node preview-check.mjs <worktree>` | Serves `site/dist` like Vercel and crawls `/design-prototypes`, with axe in light and dark at 390 and 1440 on every page |
+| `bash build-widgetbook.sh` | Job 41: regenerates the Widgetbook stories, runs analyze and tests in `flutter-hex-poc/` and its `widgetbook/`, and writes the web build (base href `/design-prototypes/widgetbook/`, engine and fonts local) to `../widgetbook/` |
+| `node publish.mjs <worktree>` | Copies gallery, options and `widgetbook/` to `site/public/design-prototypes/` with absolute links (Vercel cleanUrls); the Flutter build is copied as built |
+| `node preview-check.mjs <worktree>` | Serves `site/dist` like Vercel, each path with its own CSP (`serve-dist.mjs`), and crawls `/design-prototypes`, with axe in light and dark at 390 and 1440 on every page; the Widgetbook must also load CanvasKit from its own folder |
+| `node widgetbook-shots.mjs <worktree>` | Job 41: Widgetbook screenshots (stories, scenarios, themes, device frames) from `site/dist` into `../screenshots/41/widgetbook/`; fails on any failed, off-origin or CSP-blocked load |
 
 `design-prototypes.template.md` plus `summarize.mjs` output make `../../design-prototypes.md`. `BRIEF.md` is what the option builders worked from; `generators/` keeps their page generators (paths inside point at their original /tmp work dirs).
