@@ -313,3 +313,8 @@ restores both items exactly. MCP and Siri report the similar item. Details:
 
 Hex Sharp and Hex Soft versions of option 3, with tactile hex buttons, a Flutter design system on `widgets.dart` only, and its Widgetbook 4 catalog. Preview only, not merged. Details:
 [docs/done/41-hummel-hex.md](docs/done/41-hummel-hex.md).
+
+## Job 45: app icon research, 16-variation sprite sheet, layered top 3 (design branch only)
+
+Research on Icon Composer, visionOS and adaptive or themed Android icons. A sprite sheet with 16 icon ideas from 3b and 5, and real layered assets for the top 3 (5 Wabenstapel, 14 Frische Wabe, 13 Kachelstapel). Preview only, not merged. Details:
+[docs/done/45-app-icon.md](docs/done/45-app-icon.md).
