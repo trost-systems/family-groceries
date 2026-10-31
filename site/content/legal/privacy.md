@@ -85,7 +85,8 @@ Legal basis: Art. 6(1)(f) GDPR (data security, Art. 32 GDPR).
 
 These service providers process data on our behalf and on our instructions (Art. 28 GDPR):
 
-- Supabase Pte. Ltd., Singapore (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU)
+- Supabase Pte. Ltd., Singapore (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU; the server function for purchases always runs in Frankfurt am Main)
+- RevenueCat, Inc., Brandon (Florida), USA (in-app purchases: checking and managing the unlock, section 5a; servers at Amazon Web Services in the USA)
 - Vercel Inc. (hosting of hummlist.com, app.hummlist.com and mcp.hummlist.com; domain and DNS)
 - PostHog Inc. (usage data and error reports, servers in the EU; only as described in section 9)
 - GitHub Inc. (encrypted backups)
@@ -95,18 +96,19 @@ Independent controllers: Google or Apple when you sign in with them; Google, as 
 
 ## 13. Transfers outside the EU
 
-Some providers are based in the USA or belong to US companies. Supabase's server functions can also run in data centres outside the EU (see section 12). Where data is transferred to the USA or other third countries or US authorities could access it, we rely on the following:
+Some providers are based in the USA or belong to US companies. Supabase's server functions, except the one for purchases, can also run in data centres outside the EU (see section 12). Where data is transferred to the USA or other third countries or US authorities could access it, we rely on the following:
 
 - Vercel Inc., GitHub Inc., PostHog Inc. and Google LLC (USA; part of the same group as Google Cloud EMEA Limited and processes data for it) are certified under the EU-US Data Privacy Framework. The European Commission's adequacy decision applies to them (Art. 45 GDPR). Vercel and PostHog have also agreed Standard Contractual Clauses (Art. 46(2)(c) GDPR) in their data processing agreements; for Google, Standard Contractual Clauses apply if Google stops relying on the Data Privacy Framework.
 - PostHog stores the data in Frankfurt am Main. Under its contract, PostHog may also process it in the USA, for example through sub-processors; the above applies to that.
 - Supabase Pte. Ltd. (Singapore) is not certified under the Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of Supabase's data processing agreement.
+- RevenueCat, Inc. (USA) is not certified under the EU-US Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of RevenueCat's data processing agreement. RevenueCat stores the data at Amazon Web Services in the USA and uses further sub-processors in the USA that are bound by equivalent obligations. To check a purchase, RevenueCat sends the receipt and your household's ID (to Google a hash value made from it) to Apple or Google.
 - Amazon (Alexa) receives our replies as an independent controller (section 7). Where Amazon passes them to Amazon companies in the USA, Amazon.com, Inc. (including Amazon.com Services LLC) is certified under the EU-US Data Privacy Framework (Art. 45 GDPR); where no adequacy decision applies, Amazon's developer agreement provides for controller-to-controller Standard Contractual Clauses.
 
 You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
-We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included) and your usage-data decisions immediately. We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
+We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included), your usage-data decisions and any entry in the tester list immediately; for purchases we remove the link to your account (section 5a). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, you can archive it; we delete it if it is not re-enabled within 24 months (section 5a). Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included (section 5a). Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
 
 ## 15. Your rights {#rights}
 
