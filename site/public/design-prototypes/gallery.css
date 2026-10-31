@@ -28,3 +28,6 @@ h2 { font-size: 1.2rem; margin: 0; }
 a { color: var(--link); font-weight: 600; }
 a:focus-visible { outline: 3px solid var(--link); outline-offset: 2px; border-radius: 2px; }
 footer { margin-top: 2.5rem; color: var(--muted); font-size: 0.9375rem; }
+.mascot-link { margin-top: 2.5rem; padding: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+.mascot-link h2 { margin-bottom: 0.5rem; }
+.mascot-link p { margin: 0 0 0.5rem; color: var(--muted); }

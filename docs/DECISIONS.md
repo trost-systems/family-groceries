@@ -4166,3 +4166,36 @@ The job's own calls:
    attempt; starting a beta needs no certification, and the brief allowed it. The invitation
    link stays out of the repo and the board.
 
+
+## Job 42 (Hummel mascot directions and design language, preview only), 2026-10-31
+
+1. **Base and scope.** Branch `design/42-hummel-mascot` from `origin/design/36-prototypes`, as
+   the brief says. Only `site/public/design-prototypes/mascot/`, one link on the gallery page and
+   this section change. No PR, no merge; the Vercel branch preview is the deliverable.
+2. **One generator, hand-authored geometry.** Each direction is a module
+   (`research/design-prototypes/mascot/_build/directions/<n>-<slug>.mjs`) with named shapes
+   and coordinates; `build.mjs` emits the 14 SVGs, the reference sheet, the icon PNGs and the page
+   from it, and svgo optimises the files. Six folders of hand-saved SVGs would drift between
+   views; a module makes the turnaround and the four expressions share one construction. Tools
+   stay in the research folder, as in job 36.
+3. **Token colours only, checked.** `check.mjs` fails on any colour that isn't a value in
+   `option-3-hummel/tokens.json`. The current bee's cheek `#f59a8b` is not a token, so no
+   direction uses it.
+4. **Mono is two files.** Ink on white, and the same figure knocked out of an ink tile. Every
+   palette role maps to ink or paper, so the mono files come from the same drawing.
+5. **"Thinking" is "Hört zu".** The brief ties it to voice and Alexa, so the pose shows
+   listening (sound arcs in accent), not puzzling.
+6. **White edge on dark.** Ink parts vanished on the dark surface (`#16131f`). Every
+   direction now carries a thin white underlay under its outer ink parts and effect marks
+   (Sticker: its die-cut rim). The mascot keeps the same colours in light and dark mode; only
+   the edge makes it work on both.
+7. **Prompt in English, docs in German.** LANGUAGE.md is German like the site; the image
+   prompt block is English, because image models follow English prompts most reliably.
+8. **No links to PNG or Markdown files.** A navigation to `sheet.png` opens Chromium's image
+   viewer, whose inline styles the site CSP blocks, and the preview crawl fails. The sheet is
+   embedded in the page instead; `check.mjs` rejects such links in LANGUAGE.md.
+9. **Recommendation: Kulleraugen**, Tropfen second (reasons in the research doc and
+   `docs/done/42-hummel-mascot.md`). Peter decides.
+10. **Known site-test failure stays.** `site/test/consistency.test.mjs` expects the legal footer
+    on every page; the prototype pages have none (job 36's known gap). CI doesn't run on design
+    branches.
