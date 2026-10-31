@@ -631,10 +631,10 @@ describe('parseOverride', () => {
     assert.equal(parse(`status: draft — pending Peter's review\n${both('a', 'b')}`).status, 'draft');
   });
 
-  test('the 1.0.0 launch text: both languages within the limits, no Alexa, no improved/fixed list, still a draft', () => {
+  test('the 1.0.0 launch text: both languages within the limits, no Alexa, no improved/fixed list, approved by Peter', () => {
     const file = fileURLToPath(new URL('../../releases/changelog/1.0.0.override.md', import.meta.url));
     const o = parse(readFileSync(file, 'utf8'));
-    assert.equal(o.status, 'draft', "Peter's review is pending");
+    assert.equal(o.status, null, 'Peter approved the text on 2026-10-31');
     for (const [store, langs] of Object.entries(o.store)) {
       for (const [lang, text] of Object.entries(langs)) {
         assert.ok(STORE_LIMITS[store].length(text) <= STORE_LIMITS[store].limit, `${store} ${lang}`);
