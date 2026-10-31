@@ -166,9 +166,14 @@ async function interactionProblems(page, min) {
     const box = await el.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
-    await page.waitForTimeout(150);
-    const after = (await face.boundingBox()).y;
     const d = await el.evaluate((e) => parseFloat(getComputedStyle(e).getPropertyValue('--d')));
+    // Poll instead of one fixed wait: a style with heavy paint (backdrop blur) can take a few
+    // frames before the press transition starts. A face that never sinks still fails.
+    let after = before;
+    for (let t = 0; t < 20 && Math.abs(after - before - d) > 0.5; t++) {
+      await page.waitForTimeout(50);
+      after = (await face.boundingBox()).y;
+    }
     await page.mouse.move(0, 0);
     await page.mouse.up();
     if (Math.abs(after - before - d) > 0.5) out.push(`press: face of .hex #${i} moved ${(after - before).toFixed(1)}px, expected its edge ${d}px`);

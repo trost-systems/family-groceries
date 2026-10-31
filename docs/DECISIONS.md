@@ -4214,3 +4214,32 @@ The job's own calls:
       scripts and external resources still fail.
     - The site footer test skips `/design-prototypes/`, because those mock-ups link their
       footers to `#` on purpose. This makes the inherited failure from job 36 go away.
+
+## Job 46 (Hex Weich in art styles + a 3b/5 merge; design branch, not for main), 2026-10-31
+
+1. **One generator, six thin style folders.** Every new page is 3b's markup and stylesheet
+   plus a per-style layer: `_tools/art-styles/<folder>/` holds a partial `tokens.json` (merged
+   over 3b's), `style.css` (appended), `assets/` and `fonts/`. `build-art-styles.mjs` writes
+   the page. The comparison with 3b is fair (same content, same hex masks, same interaction
+   gates), and a style cannot drift from the structure Peter asked to keep.
+2. **The token sheet is generated from the merged tokens.** Swatches, contrast pairs, font
+   cards, type ramp, radii and the border note come from `tokens.json`; only the prose is
+   written per style (`style.json`). A hand-copied sheet would have shown 3b's values on
+   every page.
+3. **No bee.** The generator points 3b's bee art at each style's `motif.svg` (a hex motif)
+   and the logo at its `mark.svg` (a soft hexagon with a check or H). The mascot is paused.
+4. **The five styles are the suggested ones.** Swiss (Raster), risograph (Riso), paper-cut
+   (Papierschnitt), glass (Glas) and hand-drawn ink with marker (Marker). No swap: each one
+   came out distinct, and together they span flat to dimensional and precise to handmade.
+5. **Merge page (Hex Frische).** Mint is the main block colour, lemon carries the buttons
+   and one block, cobalt is text and one block. Lemon and cobalt never sit next to each other
+   as big fields, and tomato red is not used. This keeps option 5's freshness without the
+   blue, yellow and red of a discount supermarket.
+6. **Checker fixes found on the way.** `contrast-review.mjs` turns transitions off. Measuring
+   a parent set its colour to transparent, and a colour transition then fed the half-faded
+   value to the next node, its child: `.store-count > b` measured 1.00:1. Proven: 8 false
+   failures without the fix, 0 with it. `check.mjs` polls the press depth for up to 1 s
+   instead of reading it once after 150 ms; the blur-heavy Glas page needs a few frames
+   before the transition starts. A face that never sinks still fails.
+7. **Screenshots are 256-colour PNGs.** The paper and ink grain made the full-page PNGs up
+   to 10 MB. Quantized, the 49 files are 51 MB instead of 129 MB, with no visible loss.

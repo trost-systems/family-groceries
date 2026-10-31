@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Hummlist Token-Sheet – Glas</title>
+  <link rel="stylesheet" href="/design-prototypes/option-3f-glas/tokens.css">
+  <link rel="stylesheet" href="/design-prototypes/option-3f-glas/styles.css">
+</head>
+<body>
+  <a class="skip" href="#inhalt">Zum Inhalt</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/design-prototypes/option-3f-glas/index"><span class="mark" aria-hidden="true"></span>Hummlist</a>
+      <nav class="nav" aria-label="Abschnitte">
+        <ul>
+          <li><a class="hx" href="#farben">Farben</a></li>
+          <li><a class="hx" href="#schrift">Schrift</a></li>
+          <li><a class="hx" href="#form">Form &amp; Tiefe</a></li>
+          <li><a class="hx" href="#masse">Maße</a></li>
+          <li><a class="hx" href="#bewegung">Bewegung</a></li>
+          <li><a class="hx" href="#anwendungen">Anwendungen</a></li>
+        </ul>
+      </nav>
+      <a class="hex" href="/design-prototypes/option-3f-glas/index"><span class="face">Zur Startseite</span></a>
+    </div>
+  </header>
+
+  <main id="inhalt" class="sheet">
+    <div class="wrap">
+      <div class="sheet-intro">
+        <h1 class="display">Glas: ein Token-Satz für alles, was summt</h1>
+        <p class="lead">Hex Weich aus mattiertem Glas. Karten, Sticker und Telefon liegen als durchscheinende Scheiben über ruhigen Lichtern aus Honig, Violett und Minze. Die Wabe bleibt die Markenform: Knöpfe sind Honigglas mit heller Lichtkante, das beim Drücken in seine Kante sinkt.</p>
+        <p class="muted">Quelle: <code>tokens.json</code> (DTCG 2025.10), die Tokens von Hex Weich (3b) plus <code>_tools/art-styles/option-3f-glas/tokens.json</code>; daraus erzeugt <code>tokens.css</code>. Form, Maße und Bewegung sind die von 3b, nur der Kunststil wechselt.</p>
+      </div>
+
+      <section class="sheet-section" id="farben" aria-labelledby="farben-t">
+        <h2 class="headline" id="farben-t">Farben</h2>
+        <p class="sheet-note">Farbe kommt als Licht hinter dem Glas: große, weiche Verläufe aus glow-honey, glow-violet und glow-mint, nie als Fläche unter Text. Text steht immer auf Glas, das deckend genug ist, oder auf dem Perlgrund. Honig füllt Knöpfe und Kerne und trägt Tinte; als Schrift steht dort „brand“. Nachts leuchtet das Licht stärker, das Glas wird dunkel. Bei „Transparenz reduzieren“ wird jedes Glas zur festen Fläche.</p>
+<!-- BEGIN swatches -->
+        <ul class="swatches">
+          <li class="swatch"><span class="swatch-chip bg-brand fg-on-brand">Aa</span><div><p class="swatch-name">brand</p><p class="swatch-hex"><span>hell #8a5800</span> <span>dunkel #ffc94d</span></p><p class="swatch-desc">Honig dunkel: Honig als Schrift und Linie auf Glas</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-brand"></span><div><p class="swatch-name">on-brand</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-honey fg-on-honey">Aa</span><div><p class="swatch-name">honey</p><p class="swatch-hex"><span>hell #ffc233</span> <span>dunkel #ffc233</span></p><p class="swatch-desc">Honig: die Füllung der Knöpfe und Kerne, immer mit Tinte darauf</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-honey"></span><div><p class="swatch-name">on-honey</p><p class="swatch-hex"><span>hell #17141f</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-honey-soft"></span><div><p class="swatch-name">honey-soft</p><p class="swatch-hex"><span>hell #ffe9ad</span> <span>dunkel #3a2d10</span></p><p class="swatch-desc">Pollen: getöntes Glas für neue Einträge und Vorschläge</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-accent fg-on-accent">Aa</span><div><p class="swatch-name">accent</p><p class="swatch-hex"><span>hell #5b3cc4</span> <span>dunkel #c3b2ff</span></p><p class="swatch-desc">Violett: Links, Stimme und Fokusring</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-accent"></span><div><p class="swatch-name">on-accent</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-accent-soft"></span><div><p class="swatch-name">accent-soft</p><p class="swatch-hex"><span>hell #e7e0ff</span> <span>dunkel #2c2452</span></p><p class="swatch-desc">Lavendelglas: Sprechblasen und Avatare</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-surface"></span><div><p class="swatch-name">surface</p><p class="swatch-hex"><span>hell #f5f3f7</span> <span>dunkel #0c0a14</span></p><p class="swatch-desc">Perlgrund: der ruhige Seitengrund unter den Lichtern</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-surface-raised"></span><div><p class="swatch-name">surface-raised</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #1b1729</span></p><p class="swatch-desc">Glas: Karten, Sticker und Telefon, durchscheinend gesetzt</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-surface-sunken"></span><div><p class="swatch-name">surface-sunken</p><p class="swatch-hex"><span>hell #ebe8f1</span> <span>dunkel #08070e</span></p><p class="swatch-desc">Mulden und Code</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-text"></span><div><p class="swatch-name">text</p><p class="swatch-hex"><span>hell #17141f</span> <span>dunkel #f7f4ff</span></p><p class="swatch-desc">Tinte: kühles Fast-Schwarz</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-text-muted"></span><div><p class="swatch-name">text-muted</p><p class="swatch-hex"><span>hell #4d475c</span> <span>dunkel #c2bbd6</span></p><p class="swatch-desc">Zweite Zeile, Erklärungen</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-border"></span><div><p class="swatch-name">border</p><p class="swatch-hex"><span>hell #6a6382</span> <span>dunkel #8a83a3</span></p><p class="swatch-desc">Linie um Häkchen-Waben und Eingaben, mindestens 3 : 1</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-divider"></span><div><p class="swatch-name">divider</p><p class="swatch-hex"><span>hell #e0dbe8</span> <span>dunkel #2a2540</span></p><p class="swatch-desc">Haarlinien zwischen Zeilen (dekorativ)</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-ink"></span><div><p class="swatch-name">ink</p><p class="swatch-hex"><span>hell #17141f</span> <span>dunkel #000000</span></p><p class="swatch-desc">Tiefe Tinte für Schatten</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-success fg-on-success">Aa</span><div><p class="swatch-name">success</p><p class="swatch-hex"><span>hell #1f7a3d</span> <span>dunkel #7ddc94</span></p><p class="swatch-desc">Blatt: abgehakt und synchron</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-success"></span><div><p class="swatch-name">on-success</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-success-soft"></span><div><p class="swatch-name">success-soft</p><p class="swatch-hex"><span>hell #d3f1dc</span> <span>dunkel #173823</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-warning fg-on-warning">Aa</span><div><p class="swatch-name">warning</p><p class="swatch-hex"><span>hell #a34700</span> <span>dunkel #ffb067</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-warning"></span><div><p class="swatch-name">on-warning</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-error fg-on-error">Aa</span><div><p class="swatch-name">error</p><p class="swatch-hex"><span>hell #c0262d</span> <span>dunkel #ff8f88</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-on-error"></span><div><p class="swatch-name">on-error</p><p class="swatch-hex"><span>hell #ffffff</span> <span>dunkel #14111d</span></p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-edge"></span><div><p class="swatch-name">edge</p><p class="swatch-hex"><span>hell #a86b00</span> <span>dunkel #6e4a00</span></p><p class="swatch-desc">Untere Kante des Honig-Knopfs, die Dicke des Glases</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-honey-edge"></span><div><p class="swatch-name">honey-edge</p><p class="swatch-hex"><span>hell #e3a312</span> <span>dunkel #c48a00</span></p><p class="swatch-desc">Seitenwand des Honig-Knopfs</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-surface-edge"></span><div><p class="swatch-name">surface-edge</p><p class="swatch-hex"><span>hell #d6d0e2</span> <span>dunkel #2e2945</span></p><p class="swatch-desc">Seitenwand eines hellen Glasknopfs</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-glow-honey"></span><div><p class="swatch-name">glow-honey</p><p class="swatch-hex"><span>hell #ffc233</span> <span>dunkel #ffa726</span></p><p class="swatch-desc">Honiglicht hinter dem Glas, nur als weicher Verlauf</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-glow-violet"></span><div><p class="swatch-name">glow-violet</p><p class="swatch-hex"><span>hell #a38bff</span> <span>dunkel #7c5cff</span></p><p class="swatch-desc">Violettes Licht hinter dem Glas, nachts die Hauptfarbe</p></div></li>
+          <li class="swatch"><span class="swatch-chip bg-glow-mint"></span><div><p class="swatch-name">glow-mint</p><p class="swatch-hex"><span>hell #7fdcbc</span> <span>dunkel #3fd6a8</span></p><p class="swatch-desc">Minzlicht, sparsam als dritte Stimme</p></div></li>
+        </ul>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Kontrastpaare">
+        <table class="pairs">
+          <caption>Kontrastpaare (vom Checker geprüft)</caption>
+          <thead><tr><th scope="col">Probe</th><th scope="col">Vordergrund</th><th scope="col">Hintergrund</th><th scope="col">Hell</th><th scope="col">Dunkel</th><th scope="col">Mindestens</th></tr></thead>
+          <tbody>
+            <tr><td><span class="pair-sample bg-surface fg-text">Aa</span></td><td>text</td><td>surface</td><td>16,5 : 1</td><td>18,1 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-text">Aa</span></td><td>text</td><td>surface-raised</td><td>18,2 : 1</td><td>16,1 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface fg-text-muted">Aa</span></td><td>text-muted</td><td>surface</td><td>8,0 : 1</td><td>10,6 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-text-muted">Aa</span></td><td>text-muted</td><td>surface-raised</td><td>8,9 : 1</td><td>9,5 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-brand fg-on-brand">Aa</span></td><td>on-brand</td><td>brand</td><td>6,0 : 1</td><td>12,2 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-accent fg-on-accent">Aa</span></td><td>on-accent</td><td>accent</td><td>7,3 : 1</td><td>9,9 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-success fg-on-success">Aa</span></td><td>on-success</td><td>success</td><td>5,4 : 1</td><td>11,1 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-warning fg-on-warning">Aa</span></td><td>on-warning</td><td>warning</td><td>6,1 : 1</td><td>10,3 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-error fg-on-error">Aa</span></td><td>on-error</td><td>error</td><td>5,9 : 1</td><td>8,5 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface fg-brand">Aa</span></td><td>brand</td><td>surface</td><td>5,5 : 1</td><td>12,8 : 1</td><td>3,0 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-honey fg-on-honey">Aa</span></td><td>on-honey</td><td>honey</td><td>11,3 : 1</td><td>11,5 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-honey-soft fg-text">Aa</span></td><td>text</td><td>honey-soft</td><td>15,1 : 1</td><td>12,4 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-accent-soft fg-text">Aa</span></td><td>text</td><td>accent-soft</td><td>14,3 : 1</td><td>13,1 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-success-soft fg-text">Aa</span></td><td>text</td><td>success-soft</td><td>15,0 : 1</td><td>11,9 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-sunken fg-text">Aa</span></td><td>text</td><td>surface-sunken</td><td>15,0 : 1</td><td>18,5 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-sunken fg-text-muted">Aa</span></td><td>text-muted</td><td>surface-sunken</td><td>7,3 : 1</td><td>10,9 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-brand">Aa</span></td><td>brand</td><td>surface-raised</td><td>6,0 : 1</td><td>11,4 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-honey-soft fg-brand">Aa</span></td><td>brand</td><td>honey-soft</td><td>5,0 : 1</td><td>8,8 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface fg-accent">Aa</span></td><td>accent</td><td>surface</td><td>6,6 : 1</td><td>10,4 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-accent">Aa</span></td><td>accent</td><td>surface-raised</td><td>7,3 : 1</td><td>9,3 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-success">Aa</span></td><td>success</td><td>surface-raised</td><td>5,4 : 1</td><td>10,4 : 1</td><td>3,0 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface fg-border">Aa</span></td><td>border</td><td>surface</td><td>5,1 : 1</td><td>5,5 : 1</td><td>3,0 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-surface-raised fg-border">Aa</span></td><td>border</td><td>surface-raised</td><td>5,6 : 1</td><td>4,9 : 1</td><td>3,0 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-accent-soft fg-accent">Aa</span></td><td>accent</td><td>accent-soft</td><td>5,7 : 1</td><td>7,5 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-honey-soft fg-text-muted">Aa</span></td><td>text-muted</td><td>honey-soft</td><td>7,4 : 1</td><td>7,3 : 1</td><td>4,5 : 1</td></tr>
+            <tr><td><span class="pair-sample bg-accent-soft fg-text">Aa</span></td><td>text</td><td>accent-soft</td><td>14,3 : 1</td><td>13,1 : 1</td><td>4,5 : 1</td></tr>
+          </tbody>
+        </table>
+        </div>
+<!-- END swatches -->
+        <p class="sheet-note">Feste Ladenfarben, außerhalb der Tokens: <span class="sb sb--dm">dm</span> dm #ffffff/#d6001c, <span class="sb sb--edeka">E</span> Edeka #1d4ea3/#ffd400, <span class="sb sb--lidl">L</span> Lidl #0050aa/#fff000. Im Dunkeln hellt nur die Trennlinie auf.</p>
+      </section>
+
+      <section class="sheet-section" id="schrift" aria-labelledby="schrift-t">
+        <h2 class="headline" id="schrift-t">Schrift</h2>
+        <div class="fonts">
+          <div class="font-card">
+            <p class="font-name font-name--display">Outfit</p>
+            <p>Überschriften, Zahlen, Ladennamen. Variabel 100–900. SIL Open Font License 1.1; @fontsource-variable/outfit 5.3.0 (Outfitio/Outfit-Fonts).</p>
+          </div>
+          <div class="font-card">
+            <p class="font-name">Figtree</p>
+            <p>Alles andere: Fließtext, Artikel, Knöpfe. Variabel 300–900. SIL Open Font License 1.1; @fontsource-variable/figtree 5.3.0 (erikdkennedy/figtree).</p>
+          </div>
+        </div>
+        <dl class="ramp">
+          <div><dt>display · Outfit 600 · 60/61 · −3 %</dt><dd class="r-display">Was brauchst du?</dd></div>
+          <div><dt>headline-l · Outfit 600 · 42/45 · −2,5 %</dt><dd class="r-headline-l">Eine Liste für alle</dd></div>
+          <div><dt>headline · Outfit 600 · 32/35 · −2 %</dt><dd class="r-headline">Sortiert nach Laufweg</dd></div>
+          <div><dt>title · Figtree 700 · 19/25 · −0,5 %</dt><dd class="r-title">2× Gurken, Vollkornbrot, Hafermilch</dd></div>
+          <div><dt>body-l · Figtree 450 · 19/29</dt><dd class="r-body-l">Einer tippt „Milch“, alle sehen es sofort.</dd></div>
+          <div><dt>body · Figtree 450 · 17/27</dt><dd class="r-body">Verschiebst du „Hafermilch“ einmal ins Kühlregal, bleibt sie dort. Größe, Füße, Äpfel: Umlaute und ß sind dabei.</dd></div>
+          <div><dt>label · Figtree 650 · 15/19 · +0,5 %</dt><dd class="r-label">Einladung annehmen</dd></div>
+          <div><dt>caption · Figtree 650 · 12/16 · +8 %</dt><dd class="r-caption">Obst &amp; Gemüse</dd></div>
+        </dl>
+      </section>
+
+      <section class="sheet-section" id="form" aria-labelledby="form-t">
+        <h2 class="headline" id="form-t">Form &amp; Tiefe</h2>
+        <p class="sheet-note">Jede Ecke der Wabe hat 120°. Die Spitzen links und rechts sind 0,2887 × Höhe breit, die Ecken haben bei 48 px Höhe einen Radius von 8 px und wachsen mit der Höhe mit. Die Formen erzeugt <code>build-hex-assets.mjs</code> aus <code>shape.hex.*</code> als SVG-Masken.</p>
+        <div class="hex-specimens" aria-hidden="true">
+          <span class="hex-specimen hex-specimen--h"></span>
+          <span class="hex-specimen hex-specimen--p"></span>
+          <span class="hex-specimen hex-specimen--h hex-specimen--l"></span>
+        </div>
+        <dl class="motion-list token-list">
+          <div><dt>shape.hex.tip · 0,2887</dt><dd>Spitzenbreite als Anteil der Höhe: 1 / (2 · tan 60°)</dd></div>
+          <div><dt>shape.hex.corner-radius · 8 px</dt><dd>Eckradius bei shape.hex.reference-height (48 px), echte Kreisbögen an allen sechs Ecken</dd></div>
+          <div><dt>depth.edge · 4 px</dt><dd>Sichtbare Kante unter Knöpfen und Chips</dd></div>
+          <div><dt>depth.edge-l · 5 px</dt><dd>Kante unter großen Knöpfen (Store-Abzeichen)</dd></div>
+          <div><dt>depth.lift · 2 px</dt><dd>So weit hebt sich die Fläche beim Überfahren</dd></div>
+          <div><dt>depth.press · = depth.edge</dt><dd>Beim Drücken sinkt die Fläche ganz in ihre Kante</dd></div>
+          <div><dt>focus.ring · 2 px Abstand, 3 px Ring</dt><dd>Wabenförmiger Fokusring, nie von der Maske beschnitten</dd></div>
+          <div><dt>size.target · 48 px</dt><dd>Kleinste Trefferfläche, Fläche plus Kante</dd></div>
+        </dl>
+        <h3 class="title">Knöpfe und Chips</h3>
+        <div class="components">
+          <a class="hex" href="#form"><span class="face">Einladung annehmen</span></a>
+          <a class="hex hex--ink" href="#form"><span class="face">Liste teilen</span></a>
+          <a class="hex hex--light" href="#form"><span class="face">Später</span></a>
+          <a class="hex hex--ink hex--store" href="#form"><span class="face"><small>Bald im</small><span>App Store</span></span></a>
+        </div>
+        <div class="components" role="group" aria-label="Kategorien filtern">
+          <button class="hex hex--light hex--chip" type="button" aria-pressed="true"><span class="face">Obst &amp; Gemüse</span></button>
+          <button class="hex hex--light hex--chip" type="button" aria-pressed="false"><span class="face">Kühlregal</span></button>
+          <button class="hex hex--light hex--chip" type="button" aria-pressed="false"><span class="face">Drogerie</span></button>
+        </div>
+        <p class="sheet-note">Fahr mit der Maus darüber, drück, oder geh mit der Tabulatortaste durch. Der Fokus bewegt nichts, nur der Ring erscheint. Bei „Bewegung reduzieren“ springen die Zustände ohne Übergang.</p>
+        <h3 class="title">Abzeichen, Avatare, Häkchen</h3>
+        <div class="components components--static" aria-hidden="true">
+          <span class="avatar avatar--xl hxp">P</span>
+          <span class="avatar avatar--xl avatar--l hxp">L</span>
+          <span class="cb cb--l hxp"></span>
+          <span class="cb cb--l cb--on hxp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="hx hx--honey count-badge">15</span>
+          <span class="hx hx--solid">neu</span>
+          <span class="hx hx--soft">Hafermilch</span>
+          <span class="sb sb--edeka">E</span>
+          <span class="sb sb--lidl">L</span>
+          <span class="sb sb--dm">dm</span>
+        </div>
+      </section>
+
+      <section class="sheet-section" id="masse" aria-labelledby="masse-t">
+        <h2 class="headline" id="masse-t">Abstände, Radien, Schatten</h2>
+        <div class="measure-grid">
+          <div>
+            <h3 class="title">Abstände (space)</h3>
+            <ul class="spaces">
+              <li><span class="bar sp-1"></span>1 · 4 px</li>
+              <li><span class="bar sp-2"></span>2 · 8 px</li>
+              <li><span class="bar sp-3"></span>3 · 12 px</li>
+              <li><span class="bar sp-4"></span>4 · 16 px</li>
+              <li><span class="bar sp-5"></span>5 · 24 px</li>
+              <li><span class="bar sp-6"></span>6 · 32 px</li>
+              <li><span class="bar sp-7"></span>7 · 48 px</li>
+              <li><span class="bar sp-8"></span>8 · 64 px</li>
+              <li><span class="bar sp-9"></span>9 · 96 px</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="title">Radien (radius)</h3>
+            <ul class="radii">
+              <li><span class="rbox r-s"></span>s · 14</li>
+              <li><span class="rbox r-m"></span>m · 22</li>
+              <li><span class="rbox r-l"></span>l · 30</li>
+              <li><span class="rbox r-xl"></span>xl · 40</li>
+              <li><span class="rbox r-full"></span>full</li>
+            </ul>
+            <p class="sheet-note">Kontur: border.width 1.5 px, Trennlinien 1 px.</p>
+          </div>
+          <div>
+            <h3 class="title">Schatten (shadow)</h3>
+            <ul class="shadows">
+              <li><span class="sbox sh-s"></span>sticker-s · 4/12 weich</li>
+              <li><span class="sbox sh-m"></span>sticker · 14/32 weich</li>
+              <li><span class="sbox sh-l"></span>sticker-l · 28/64 weich</li>
+            </ul>
+            <p class="sheet-note">Weiche, leicht violette Schatten statt harter Versätze (y-Versatz/Unschärfe in px), dazu innen eine 1-px-Lichtkante oben und ringsum. Dunkel: night-s/night/night-l, tiefer schwarzer Schatten plus Schein in Honig oder Violett.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet-section" id="bewegung" aria-labelledby="bewegung-t">
+        <h2 class="headline" id="bewegung-t">Bewegung</h2>
+        <div class="motion-grid">
+          <dl class="motion-list">
+            <div><dt>short · 180 ms</dt><dd>Drücken, Fokus, Farbwechsel</dd></div>
+            <div><dt>medium · 260 ms</dt><dd>Abhaken, Sticker anheben, Chips</dd></div>
+            <div><dt>long · 360 ms</dt><dd>Karten, Sheets, Rückgängig-Leiste</dd></div>
+            <div><dt>bounce · cubic-bezier(0.34, 1.56, 0.64, 1)</dt><dd>Überschwingen beim Ankommen</dd></div>
+            <div><dt>standard · cubic-bezier(0.2, 0, 0, 1)</dt><dd>Ruhige Wege, Scrollen, Summ-Wellen</dd></div>
+            <div><dt>exit · cubic-bezier(0.4, 0, 1, 1)</dt><dd>Gehen ohne Federn</dd></div>
+            <div><dt>press · 70 ms, cubic-bezier(0.3, 0, 0.6, 1)</dt><dd>Die Knopffläche sinkt in ihre Kante</dd></div>
+            <div><dt>release · 160 ms</dt><dd>Die Fläche kommt zurück, nach dem Drücken und beim Überfahren</dd></div>
+          </dl>
+          <div class="motion-demo">
+            <button class="hex demo-btn" type="button"><span class="face">Zeig mir den Hüpfer</span></button>
+            <div class="track" aria-hidden="true"><span class="ball ball--bounce"></span></div>
+            <div class="track" aria-hidden="true"><span class="ball ball--standard"></span></div>
+            <p class="sheet-note">Fahr mit der Maus über den Knopf oder fokussiere ihn. Oben bounce, unten standard. Bei „Bewegung reduzieren“ springen die Kugeln ohne Animation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet-section" id="anwendungen" aria-labelledby="anw-t">
+        <h2 class="headline" id="anw-t">Anwendungen</h2>
+        <p class="sheet-note">Ein Token-Satz für App, E-Mail, Store-Bilder und Alexa.</p>
+        <div class="surfaces">
+          <figure class="surface-fig">
+            <div class="phone" role="img" aria-label="App-Liste im Stil Glas: Familieneinkauf, 15 Artikel, gruppiert nach dm, Edeka und Lidl, mit Rückgängig-Leiste und Eingabefeld.">
+              <div class="screen">
+                <div class="app-head">
+                  <div><p class="hh">Familieneinkauf</p><p class="count">15 Artikel</p></div>
+                  <span class="lang hx">DE</span>
+                </div>
+                <div class="list">
+                  <div class="store"><span class="sb sb--dm">dm</span><span class="store-name">dm</span><span class="store-rule rule--dm"></span><span class="store-count"><b>3</b> Artikel</span></div>
+                  <p class="cat">Drogerie</p>
+                  <div class="item"><span class="emo">👶</span><span class="name">Windeln</span><span class="sub">Pampers · Größe 3</span><span class="cb hxp"></span></div>
+                  <div class="item"><span class="emo">🪥</span><span class="name">Zahnpasta</span><span class="sub">elmex · Kinder</span><span class="cb hxp"></span></div>
+                  <p class="cat">Haushalt</p>
+                  <div class="item"><span class="emo">🧽</span><span class="name">Spülmittel</span><span class="cb hxp"></span></div>
+                  <div class="store"><span class="sb sb--edeka">E</span><span class="store-name">Edeka</span><span class="store-rule rule--edeka"></span><span class="store-count"><b>8</b> Artikel</span></div>
+                  <p class="cat">Obst &amp; Gemüse</p>
+                  <div class="item item--done"><span class="emo">🍌</span><span class="name"><span class="qty">6×</span> Bananen</span><span class="sub">Bio</span><span class="cb hxp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+                  <div class="item"><span class="emo">🥒</span><span class="name"><span class="qty">2×</span> Gurken</span><span class="cb hxp"></span></div>
+                  <p class="cat">Brot &amp; Backwaren</p>
+                  <div class="item"><span class="emo">🍞</span><span class="name">Vollkornbrot</span><span class="cb hxp"></span></div>
+                  <div class="store"><span class="sb sb--lidl">L</span><span class="store-name">Lidl</span><span class="store-rule rule--lidl"></span><span class="store-count"><b>4</b> Artikel</span></div>
+                  <p class="cat">Kühlregal</p>
+                  <div class="item"><span class="emo">🥛</span><span class="name"><span class="qty">2×</span> Hafermilch</span><span class="cb hxp"></span></div>
+                </div>
+                <p class="snack"><span>„Bananen“ abgehakt</span><b>Rückgängig</b></p>
+                <div class="compose hx"><span class="plus hxp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>Was brauchst du?<svg class="mic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+                <div class="tabs">
+                  <span class="tab tab--on"><i class="hx"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7h11M8 12h11M8 17h11M4 7h.01M4 12h.01M4 17h.01" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></i>Liste</span>
+                  <span class="tab"><i class="hx"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg></i>Mehr</span>
+                </div>
+              </div>
+            </div>
+            <figcaption>App: Liste als Glasscheibe. Der abgehakte Artikel bleibt grün getönt stehen, bis das Rückgängig-Fenster schließt.</figcaption>
+          </figure>
+
+          <figure class="surface-fig">
+            <div class="email">
+              <p class="email-meta"><span>Von: Hummlist</span><span>Betreff: Lea hat dich zu Hummlist eingeladen</span></p>
+              <div class="email-head">
+                <span class="mark mark--l" aria-hidden="true"></span>
+                <p class="email-title">Lea hat dich zu Hummlist eingeladen</p>
+              </div>
+              <div class="email-body">
+                <p>Hallo Peter,</p>
+                <p>Lea möchte die Einkaufsliste „Familieneinkauf“ mit dir teilen. Was einer von euch einträgt, sieht der andere sofort.</p>
+                <p><a class="hex" href="#"><span class="face">Einladung annehmen</span></a></p>
+                <p class="muted">Oder gib in der App diesen Code ein: <strong class="code">B7KQ 29XM</strong>. Link und Code gelten sieben Tage.</p>
+              </div>
+              <p class="email-foot">Hummlist zeigt keine Werbung und verkauft keine Daten.</p>
+            </div>
+            <figcaption>E-Mail: Einladung. Im Mailprogramm ohne Unschärfe, mit festen Hex-Werten und Figtree mit Arial-Ersatz.</figcaption>
+          </figure>
+
+          <figure class="surface-fig">
+            <div class="store-shot">
+              <p class="store-shot-title">Einer schreibt. Alle sehen es.</p>
+              <div class="mini-phone mini-phone--store">
+                <p class="mini-who"><span class="avatar avatar--l hxp">L</span>Lea, bei Edeka</p>
+                <p class="mini-row mini-row--new"><span class="emo">🍞</span>Vollkornbrot</p>
+                <p class="mini-row"><span class="emo">🥒</span><span><span class="qty">2×</span> Gurken</span></p>
+                <p class="mini-row mini-row--done"><span class="emo">🍌</span>Bananen</p>
+                <p class="mini-row"><span class="emo">🥛</span>Hafermilch</p>
+              </div>
+              <span class="store-shot-bee" aria-hidden="true"></span>
+            </div>
+            <figcaption>Store-Bild: Honiglicht als Grund, Schlagzeile in Tinte, der Bildschirm als Glasscheibe davor.</figcaption>
+          </figure>
+
+          <figure class="surface-fig">
+            <div class="alexa">
+              <div class="alexa-top"><span class="mark" aria-hidden="true"></span><p>Hummlist</p></div>
+              <p class="alexa-title">Auf eurer Liste</p>
+              <ul class="alexa-items">
+                <li class="hx hx--honey">Milch</li>
+                <li class="hx hx--honey">Eier</li>
+                <li class="hx hx--honey">2× Gurken</li>
+                <li class="hx hx--honey">Klopapier</li>
+              </ul>
+              <svg class="alexa-wave" viewBox="0 0 300 24" aria-hidden="true"><path d="M0 12 Q 12 0 25 12 T 50 12 T 75 12 T 100 12 T 125 12 T 150 12 T 175 12 T 200 12 T 225 12 T 250 12 T 275 12 T 300 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+            </div>
+            <figcaption>Alexa (APL, Echo Show): „Alexa, frag Hummlist, was auf der Liste steht.“</figcaption>
+          </figure>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <svg class="flight flight--footer" viewBox="0 0 260 64" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C 40 10 80 60 120 36 C 150 18 140 4 128 14 C 116 24 150 50 190 40 C 220 32 240 20 258 30"/></svg>
+    <div class="wrap">
+      <a class="brand" href="/design-prototypes/option-3f-glas/index"><span class="mark" aria-hidden="true"></span>Hummlist</a>
+      <nav aria-label="Rechtliches und Hilfe">
+        <ul>
+          <li><a href="#">Hilfe</a></li>
+          <li><a href="#">Impressum</a></li>
+          <li><a href="#">Datenschutz</a></li>
+          <li><a href="/design-prototypes/option-3f-glas/index">Startseite</a></li>
+          <li><a href="/design-prototypes/option-3b-hex-soft/tokens-sheet">Vergleich: Hex Weich (3b)</a></li>
+        </ul>
+      </nav>
+      <small>Glas: Hex Weich (3b) aus Glas: durchscheinende Waben in Schichten. Schriften: Outfit und Figtree, SIL OFL 1.1.</small>
+    </div>
+  </footer>
+</body>
+</html>

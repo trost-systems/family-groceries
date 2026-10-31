@@ -2,18 +2,34 @@
   "label": "Hex Frische",
   "idea": "mit den Farbflächen von Frische (5): Kobalt, Zitrone, Mint",
   "sheet": {
-    "lead": "TODO",
-    "colorNote": "TODO",
+    "lead": "Die Wabe von Hex Weich trifft die Farbblöcke von Frische. Jeder Abschnitt ist ein großer, runder Block in Mint, Zitrone oder Kobalt; darauf stehen weiße Karten und Waben-Knöpfe mit Navy-Kontur. Dazu fette, eng gesetzte Bricolage Grotesque und ruhige Inter.",
+    "colorNote": "Zitrone ersetzt den Honig, Navy die Tinte. Mint ist die Hauptfläche, Kobalt kommt als Schrift und als ein einziger großer Block vor, Zitrone trägt Knöpfe und den Abschluss. Rot gibt es nur als Fehlerfarbe. Auf Mint und Zitrone steht immer Navy, auf Kobalt immer Weiß. Nachts wird der Grund tiefes Navy, Mint und Zitrone bleiben als Akzente.",
+    "colorNotes": {
+      "brand": "Kobalt als Schrift, Linie und Menge („2×“)",
+      "honey": "Zitrone: Knöpfe, Häkchen-Marke, der Abschluss-Block",
+      "honey-soft": "Zitrone hell: neue Einträge, Antworten",
+      "accent": "Links und Fokusring: Kobalt am Tag, Mint in der Nacht",
+      "accent-soft": "Kobalt-Nebel: Sprechblasen, Avatare, ein Block",
+      "surface": "Kreideweiß: die Luft zwischen den Blöcken",
+      "surface-sunken": "Mint-Hauch: Mulden und Bildflächen",
+      "text": "Navy statt Schwarz",
+      "border": "Die 2-px-Kontur in Navy",
+      "ink": "Kontur auf Zitrone, Kante unter Karten",
+      "mint": "Mint: die Hauptfläche, Hero und Häkchen",
+      "mint-edge": "Seitenwand eines Mint-Knopfs",
+      "cobalt": "Kobalt als Fläche: Stimme, E-Mail-Kopf",
+      "success": "Abgehakt und synchron"
+    },
     "shadows": [
-      "sticker-s",
-      "sticker",
-      "sticker-l"
+      "sticker-s · 0/2/0 Navy",
+      "sticker · 0/4/0 Navy",
+      "sticker-l · 0/8/0 Navy"
     ],
-    "shadowNote": "TODO",
+    "shadowNote": "Kante statt Schatten: Karten stehen wie die Knöpfe auf einer harten Navy-Kante, nur nach unten. Dunkel: night-s/night/night-l, dieselbe Kante in Fast-Schwarz plus ein leiser Mint-Schein.",
     "captions": {
-      "app": "App: Liste.",
-      "email": "E-Mail: Einladung.",
-      "store": "Store-Bild."
+      "app": "App: Liste auf Kreideweiß. Zitronen-Plus, weiße Waben zum Abhaken, abgehakt wird Mint.",
+      "email": "E-Mail: Kobalt-Kopf mit der Zitronen-Marke, darunter Weiß und ein Zitronen-Knopf.",
+      "store": "Store-Bild: Mint-Block, schwere Navy-Schlagzeile, die Liste als weiße Karte."
     }
   }
 }

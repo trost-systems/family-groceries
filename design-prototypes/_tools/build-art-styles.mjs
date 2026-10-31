@@ -185,6 +185,8 @@ function build(name) {
   sheet = replaceBlock(sheet, /<!-- BEGIN swatches -->[\s\S]*?<!-- END swatches -->/, swatches(tokens, s.colorNotes ?? {}), 'swatches');
   sheet = replaceBlock(sheet, /<div class="fonts">[\s\S]*?<\/div>\s*<\/div>\s*<dl class="ramp">[\s\S]*?<\/dl>/, `${fontCards(tokens)}\n        ${ramp(tokens)}`, 'fonts and ramp');
   sheet = replaceBlock(sheet, /<ul class="radii">[\s\S]*?<\/ul>/, radii(tokens), 'radii');
+  const bw = (k) => `${tokens.border[k].$value.value} px`;
+  sheet = replaceOnce(sheet, '<p class="sheet-note">Kontur: border.width 2 px, Trennlinien 1 px.</p>', `<p class="sheet-note">Kontur: border.width ${bw('width')}, Trennlinien ${bw('width-thin')}.</p>`, 'border note');
   sheet = replaceBlock(sheet, /<ul class="shadows">[\s\S]*?<\/ul>\s*<p class="sheet-note">[^<]*<\/p>/, `<ul class="shadows">
               <li><span class="sbox sh-s"></span>${s.shadows[0]}</li>
               <li><span class="sbox sh-m"></span>${s.shadows[1]}</li>

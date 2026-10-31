@@ -2,18 +2,40 @@
   "label": "Glas",
   "idea": "aus Glas: durchscheinende Waben in Schichten",
   "sheet": {
-    "lead": "TODO",
-    "colorNote": "TODO",
+    "lead": "Hex Weich aus mattiertem Glas. Karten, Sticker und Telefon liegen als durchscheinende Scheiben über ruhigen Lichtern aus Honig, Violett und Minze. Die Wabe bleibt die Markenform: Knöpfe sind Honigglas mit heller Lichtkante, das beim Drücken in seine Kante sinkt.",
+    "colorNote": "Farbe kommt als Licht hinter dem Glas: große, weiche Verläufe aus glow-honey, glow-violet und glow-mint, nie als Fläche unter Text. Text steht immer auf Glas, das deckend genug ist, oder auf dem Perlgrund. Honig füllt Knöpfe und Kerne und trägt Tinte; als Schrift steht dort „brand“. Nachts leuchtet das Licht stärker, das Glas wird dunkel. Bei „Transparenz reduzieren“ wird jedes Glas zur festen Fläche.",
+    "colorNotes": {
+      "brand": "Honig dunkel: Honig als Schrift und Linie auf Glas",
+      "honey": "Honig: die Füllung der Knöpfe und Kerne, immer mit Tinte darauf",
+      "honey-soft": "Pollen: getöntes Glas für neue Einträge und Vorschläge",
+      "accent": "Violett: Links, Stimme und Fokusring",
+      "accent-soft": "Lavendelglas: Sprechblasen und Avatare",
+      "surface": "Perlgrund: der ruhige Seitengrund unter den Lichtern",
+      "surface-raised": "Glas: Karten, Sticker und Telefon, durchscheinend gesetzt",
+      "surface-sunken": "Mulden und Code",
+      "text": "Tinte: kühles Fast-Schwarz",
+      "text-muted": "Zweite Zeile, Erklärungen",
+      "border": "Linie um Häkchen-Waben und Eingaben, mindestens 3 : 1",
+      "divider": "Haarlinien zwischen Zeilen (dekorativ)",
+      "ink": "Tiefe Tinte für Schatten",
+      "success": "Blatt: abgehakt und synchron",
+      "edge": "Untere Kante des Honig-Knopfs, die Dicke des Glases",
+      "honey-edge": "Seitenwand des Honig-Knopfs",
+      "surface-edge": "Seitenwand eines hellen Glasknopfs",
+      "glow-honey": "Honiglicht hinter dem Glas, nur als weicher Verlauf",
+      "glow-violet": "Violettes Licht hinter dem Glas, nachts die Hauptfarbe",
+      "glow-mint": "Minzlicht, sparsam als dritte Stimme"
+    },
     "shadows": [
-      "sticker-s",
-      "sticker",
-      "sticker-l"
+      "sticker-s · 4/12 weich",
+      "sticker · 14/32 weich",
+      "sticker-l · 28/64 weich"
     ],
-    "shadowNote": "TODO",
+    "shadowNote": "Weiche, leicht violette Schatten statt harter Versätze (y-Versatz/Unschärfe in px), dazu innen eine 1-px-Lichtkante oben und ringsum. Dunkel: night-s/night/night-l, tiefer schwarzer Schatten plus Schein in Honig oder Violett.",
     "captions": {
-      "app": "App: Liste.",
-      "email": "E-Mail: Einladung.",
-      "store": "Store-Bild."
+      "app": "App: Liste als Glasscheibe. Der abgehakte Artikel bleibt grün getönt stehen, bis das Rückgängig-Fenster schließt.",
+      "email": "E-Mail: Einladung. Im Mailprogramm ohne Unschärfe, mit festen Hex-Werten und Figtree mit Arial-Ersatz.",
+      "store": "Store-Bild: Honiglicht als Grund, Schlagzeile in Tinte, der Bildschirm als Glasscheibe davor."
     }
   }
 }

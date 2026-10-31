@@ -25,7 +25,9 @@ for (const dir of process.argv.slice(2).map((d) => resolve(d))) {
       for (const width of [390, 1440]) {
         const p = await browser.newPage({ viewport: { width, height: 900 }, colorScheme, reducedMotion: 'reduce' });
         await p.goto(`${server.origin}/${basename(dir)}/${page}`, { waitUntil: 'networkidle' });
-        await p.addStyleTag({ content: '*, *::before, *::after { background-image: none !important; }' });
+        // No transitions: a colour restored after measuring one node must not still be fading back
+        // (from transparent) when the next node, its child, is read.
+        await p.addStyleTag({ content: '*, *::before, *::after { background-image: none !important; transition: none !important; }' });
         const r = await p.evaluate(async (src) => {
           (0, eval)(src);
           const res = await window.axe.run(document, { runOnly: { type: 'rule', values: ['color-contrast'] } });

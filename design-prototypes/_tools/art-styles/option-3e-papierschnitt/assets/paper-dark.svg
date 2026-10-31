@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" width="360" height="360"><filter id="p" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" stitchTiles="stitch" result="n1"/>
+<feColorMatrix in="n1" type="matrix" values="0 0 0 0 0.96 0 0 0 0 0.93 0 0 0 0 0.85 0.3 0 0 0 -0.12" result="grain"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="9" stitchTiles="stitch" result="n2"/>
+<feColorMatrix in="n2" type="matrix" values="0 0 0 0 0.96 0 0 0 0 0.93 0 0 0 0 0.85 0.07 0 0 0 -0.026" result="mottle"/>
+<feTurbulence type="turbulence" baseFrequency="0.018 0.05" numOctaves="2" seed="21" stitchTiles="stitch" result="n3"/>
+<feComponentTransfer in="n3" result="n3a"><feFuncA type="discrete" tableValues="0 0 0 0 0 0 0 0 0.04 0 0 0 0 0 0 0 0 0 0.03 0"/></feComponentTransfer>
+<feColorMatrix in="n3a" type="matrix" values="0 0 0 0 0.96 0 0 0 0 0.93 0 0 0 0 0.85 0 0 0 1 0" result="fibres"/>
+<feMerge><feMergeNode in="mottle"/><feMergeNode in="fibres"/><feMergeNode in="grain"/></feMerge></filter>
+<rect width="100%" height="100%" filter="url(#p)"/></svg>
