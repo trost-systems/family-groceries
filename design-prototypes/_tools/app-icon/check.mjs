@@ -5,7 +5,8 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { PNG } from 'pngjs';
 import { chromium } from 'playwright';
-import { VARIATIONS, TOP } from './variations.mjs';
+import { VARIATIONS, TOP, ORIGINAL5 } from './variations.mjs';
+import { APPLE_MODES } from './render.mjs';
 
 const root = resolve(dirname(new URL(import.meta.url).pathname), '../../app-icon');
 const problems = [];
@@ -43,8 +44,10 @@ function diff(a, b) {
   return bad / (a.width * a.height);
 }
 
-for (const { n } of TOP) {
-  const v = VARIATIONS.find((x) => x.n === n);
+const originalOf = (v) => VARIATIONS.find((x) => x.n === v.basedOn);
+for (const v of [...TOP.map(({ n }) => VARIATIONS.find((x) => x.n === n)), ...ORIGINAL5]) {
+  // Job 48: a recoloured favourite keeps its original's geometry exactly.
+  if (v.basedOn && (v.layers !== originalOf(v).layers || v.bg !== originalOf(v).bg)) fail(`${v.n} does not share ${v.basedOn}'s layers`);
   const dir = `top/${v.n}-${v.slug}`;
   const size = (rel, w) => {
     if (!existsSync(join(root, rel))) return fail(`missing ${rel}`);
@@ -59,7 +62,8 @@ for (const { n } of TOP) {
     const img = size(`${dir}/visionos/${l}.png`, 1024);
     if (img && alphaAt(img, 0, 0) !== 0) fail(`${dir}/visionos/${l}.png has no transparent corner`);
   }
-  for (const m of ['light', 'dark', 'clear', 'tinted']) size(`${dir}/previews/apple-${m}.png`, 1024);
+  for (const m of APPLE_MODES) size(`${dir}/previews/apple-${m}.png`, 1024);
+  for (const [f, px] of [['apple-29', 29], ['apple-87', 87], ['apple-16', 16], ['android-48', 48], ['android-144', 144]]) for (const m of ['light', 'dark']) size(`${dir}/previews/small/${f}-${m}.png`, px);
   const play = size(`${dir}/android/play-store-512.png`, 512);
   if (play && alphaAt(play, 0, 0) !== 255) fail(`${dir}/android/play-store-512.png must be a full opaque square`);
   for (const [d, s] of Object.entries({ mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 })) size(`${dir}/android/res/mipmap-${d}/ic_launcher.png`, s);
@@ -99,4 +103,4 @@ if (problems.length) {
   console.error(problems.join('\n'));
   process.exit(1);
 }
-console.log(`app-icon ok: ${VARIATIONS.length} variations, top ${TOP.map((t) => t.n).join(', ')}`);
+console.log(`app-icon ok: ${VARIATIONS.length} variations, top ${TOP.map((t) => t.n).join(', ')}, original 5 colours ${ORIGINAL5.map((v) => v.n).join(', ')}`);

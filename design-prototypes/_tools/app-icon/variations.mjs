@@ -13,7 +13,7 @@ import { merge, intersect, hex, check, letterH, roundRect, circle, bar, rotatePo
 
 export const PALETTES = {
   hex: { honey: '#ffc72c', ink: '#1c1a17', cream: '#fff8e6', honeySoft: '#fde7a6', violet: '#5a3fae', violetSoft: '#e5dcff', night: '#16131f', nightRaised: '#221e2e', white: '#ffffff', brand: '#8a5800' },
-  frische: { cobalt: '#1b3fae', cobaltField: '#2448c0', cobaltLight: '#9fb6ff', lemon: '#ffe24a', mint: '#7fe3b8', mintDark: '#62c99d', navy: '#0f1530', deep: '#0b1024', paper: '#f7f7f2', white: '#ffffff', tomato: '#ff5b3a' },
+  frische: { cobalt: '#1b3fae', cobaltField: '#2448c0', cobaltLight: '#9fb6ff', lemon: '#ffe24a', mint: '#7fe3b8', mintDark: '#62c99d', lemonDark: '#e8cb3c', navy: '#0f1530', deep: '#0b1024', paper: '#f7f7f2', white: '#ffffff', tomato: '#ff5b3a' },
 };
 const H = PALETTES.hex;
 const F = PALETTES.frische;
@@ -228,5 +228,39 @@ export const TOP = [
     n: 13,
     reason: 'Der stärkste reine Frische-Entwurf: zwei gekippte Kacheln erzählen „ihr teilt eine Liste“, ohne Wort und ohne Figur. Die vordere Kachel schwebt über der hinteren, das trägt die Tiefe von Glas und visionOS. Navy hält Mint und Weiß ruhig.',
     look: 'eine mintfarbene und eine weiße Kachel übereinander, gekippt, auf Navy, mit kobaltblauem Haken',
+  },
+];
+
+// Job 48: the three favourites in option 5's original colours (cobalt field, lemon, white,
+// like 5's own mark), at Peter's request. Same records, so the same shapes and layers by
+// reference; only `colors` changes. `allowLidlLike` lifts the "not Lidl" colour guard in
+// render.mjs for these records only: Peter said the Lidl likeness is fine (2026-10-31).
+// `pairs` are the colour roles that touch in the art, for the contrast table.
+const original = (n) => VARIATIONS.find((v) => v.n === n);
+export const ORIGINAL5 = [
+  {
+    ...original(5), n: '5o', basedOn: 5, slug: 'wabenstapel-original5', allowLidlLike: true,
+    colors: { light: { bg: F.cobalt, outer: F.lemon, inner: F.white, mark: F.cobalt }, dark: { bg: F.deep, outer: F.lemonDark, inner: F.cobaltLight, mark: F.deep } },
+    pairs: [['bg', 'outer'], ['bg', 'inner'], ['inner', 'mark']],
+    small: 'Bei 29 pt und 48 dp liest sich der Haken klar. Bei 16 px bleibt ein Zitronenring mit weißem Kern und blauem Punkt, heller und lauter als das Original auf Violett.',
+    reason: 'Zitronenring auf Kobalt, darin die weiße Wabe mit dem Kobalt-Haken: genau die drei Farben der Frische-Marke. Die Ebenen bleiben die Idee: Ring, Wabe und Haken bekommen in Glas und visionOS je ihre eigene Tiefe.',
+    look: 'zitronengelber Wabenring auf Kobalt, darin eine weiße Wabe mit kobaltblauem Haken',
+  },
+  {
+    ...original(13), n: '13o', basedOn: 13, slug: 'kachelstapel-original5', allowLidlLike: true,
+    colors: { light: { bg: F.cobalt, back: F.lemon, front: F.white, mark: F.cobalt }, dark: { bg: F.deep, back: F.lemonDark, front: F.paper, mark: F.cobaltField } },
+    pairs: [['bg', 'back'], ['bg', 'front'], ['front', 'mark']],
+    small: 'Bei 29 pt und 48 dp sind beide Kacheln und der Haken da. Bei 16 px bleibt eine weiße Kachel mit gelber Ecke auf Kobalt, der Haken wird zum Strich; die gelbe Ecke trägt mehr als die Mint-Ecke des Originals.',
+    reason: 'Die Zitronenkachel hinten, die weiße vorn, beide auf dem Kobaltblock der Frische-Startseite. Auf Kobalt statt Navy wird das Icon lauter und eindeutig Frische.',
+    look: 'eine zitronengelbe und eine weiße Kachel übereinander, gekippt, auf Kobalt, mit kobaltblauem Haken',
+  },
+  {
+    ...original(14), n: '14o', basedOn: 14, slug: 'frische-wabe-original5', allowLidlLike: true,
+    colors: { light: { bg: F.cobalt, hex: F.lemon, mark: F.cobalt }, dark: { bg: F.deep, hex: F.lemonDark, mark: F.deep } },
+    pairs: [['bg', 'hex'], ['hex', 'mark']],
+    small: 'Das klarste der drei: der ausgestanzte Haken bleibt bei 29 pt, 48 dp und sogar 16 px lesbar, Zitrone auf Kobalt trägt mehr als Kobalt auf Mint.',
+    reason: 'Die Zitronenwabe auf Kobalt, der Haken ausgestanzt: die einfachste Form der Frische-Marke. Nur zwei Farben, darum bei 16 px das klarste der drei.',
+    why: 'Die Verbindung von 3b und 5 in den Originalfarben von 5: Zitronenwabe auf Kobalt, der Haken ausgestanzt.',
+    look: 'zitronengelbe Wabe mit ausgestanztem kobaltblauem Haken auf Kobalt',
   },
 ];

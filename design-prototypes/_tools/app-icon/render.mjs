@@ -105,18 +105,27 @@ const fullArt = (v, appearance) => {
 };
 
 // Previews. Clear and tinted are approximations: the system derives them from the layers, we
-// show the one-colour shape the way Icon Composer's mono previews read.
+// show the one-colour shape the way Icon Composer's mono previews read. Each is a tile and a
+// glyph, [colour, opacity], over the page's wallpaper (`wall`, used for the contrast table).
 export const TINT = '#ffb84a';
+export const GLASS = {
+  'clear-light': { wall: '#e8e2f2', tile: ['#ffffff', 0.5], glyph: ['#1c1c1e', 0.62] },
+  'clear-dark': { wall: '#2b2f52', tile: ['#ffffff', 0.16], glyph: ['#ffffff', 0.9] },
+  'tinted-light': { wall: '#f3eadb', tile: ['#fff1d6', 1], glyph: ['#8f5600', 1] },
+  'tinted-dark': { wall: '#1a1308', tile: ['#1d160b', 1], glyph: [TINT, 1] },
+};
+export const APPLE_MODES = ['light', 'dark', 'clear-light', 'clear-dark', 'tinted-light', 'tinted-dark'];
 export function preview(v, mode, { mask = 'apple', size = CANVAS } = {}) {
   const mono = `<path fill-rule="evenodd" d="${monoD(v)}"`;
+  const glass = GLASS[mode];
+  if (glass) {
+    const op = (a) => (a < 1 ? ` fill-opacity="${a}"` : '');
+    return clipped(mask, `<rect width="1024" height="1024" fill="${glass.tile[0]}"${op(glass.tile[1])}/>${mono} fill="${glass.glyph[0]}"${op(glass.glyph[1])}/>`, size);
+  }
   switch (mode) {
     case 'light':
     case 'dark':
       return clipped(mask, fullArt(v, mode), size);
-    case 'clear':
-      return clipped(mask, `<rect width="1024" height="1024" fill="#ffffff" fill-opacity="0.16"/>${mono} fill="#ffffff" fill-opacity="0.9"/>`, size);
-    case 'tinted':
-      return clipped(mask, `<rect width="1024" height="1024" fill="#1d160b"/>${mono} fill="${TINT}"/>`, size);
     case 'themed-light':
       return clipped(mask, `<rect width="1024" height="1024" fill="#d7e8cd"/>${mono} fill="#102000"/>`, size);
     case 'themed-dark':
@@ -147,7 +156,8 @@ export function checkVariation(v) {
       }
     }
   }
-  for (const appearance of ['light', 'dark']) {
+  // allowLidlLike: Peter's call for the original-5 colour records (job 48), only those.
+  for (const appearance of v.allowLidlLike ? [] : ['light', 'dark']) {
     const c = colorsFor(v, appearance);
     const kinds = new Set(Object.values(c).map(hueKind));
     if (kinds.has('blue') && kinds.has('yellow') && kinds.has('red')) problems.push(`${appearance}: blue, yellow and red together (Lidl)`);
@@ -172,4 +182,21 @@ function hueKind(hexColor) {
   if (h >= 40 && h < 65) return 'yellow';
   if (h >= 200 && h < 245) return 'blue';
   return 'other';
+}
+
+// WCAG contrast; a colour with opacity is composited over what is under it first.
+const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const over = ([c, a], under) => { const t = rgb(c), u = rgb(under); return `#${t.map((x, i) => Math.round(x * a + u[i] * (1 - a)).toString(16).padStart(2, '0')).join('')}`; };
+const luminance = (h) => {
+  const [r, g, b] = rgb(h).map((x) => x / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+export const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+export function glassColors(mode) {
+  const g = GLASS[mode];
+  const tile = over(g.tile, g.wall);
+  return { tile, glyph: over(g.glyph, tile) };
 }

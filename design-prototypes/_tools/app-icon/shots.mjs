@@ -1,12 +1,15 @@
-// Usage: node app-icon/shots.mjs <worktree>
-// Screenshots of the published app icon page (site/dist, served like Vercel) into
-// ../screenshots/45/: full page and the first favourite, mobile and desktop, light and dark.
+// Usage: node app-icon/shots.mjs <worktree> [45|48]
+// Screenshots of the published app icon page (site/dist, served like Vercel), mobile and desktop,
+// light and dark. 45 (default): the full page and each favourite into ../screenshots/45/.
+// 48: the "original 5 colours" section and each of its rows into ../screenshots/48/.
 import { mkdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { serveDist } from '../serve-dist.mjs';
 
-const out = resolve(dirname(new URL(import.meta.url).pathname), '../../screenshots/45');
+const job = process.argv[3] ?? '45';
+const out = resolve(dirname(new URL(import.meta.url).pathname), `../../screenshots/${job}`);
+const ids = job === '48' ? ['original5', 'o-5o', 'o-13o', 'o-14o'] : ['top-5', 'top-14', 'top-13'];
 mkdirSync(out, { recursive: true });
 const { origin, close } = await serveDist(process.argv[2]);
 const browser = await chromium.launch();
@@ -16,9 +19,9 @@ for (const colorScheme of ['light', 'dark']) {
     const page = await ctx.newPage();
     await page.goto(`${origin}/design-prototypes/app-icon`, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.fonts.ready);
-    await page.screenshot({ path: join(out, `app-icon-${name}-${colorScheme}.png`), fullPage: true });
-    for (const id of ['top-5', 'top-14', 'top-13']) await page.locator(`#${id}`).screenshot({ path: join(out, `${id}-${name}-${colorScheme}.png`) });
-    if (name === 'desktop' && colorScheme === 'light') {
+    if (job === '45') await page.screenshot({ path: join(out, `app-icon-${name}-${colorScheme}.png`), fullPage: true });
+    for (const id of ids) await page.locator(`#${id}`).screenshot({ path: join(out, `${id}-${name}-${colorScheme}.png`) });
+    if (job === '45' && name === 'desktop' && colorScheme === 'light') {
       await page.goto(`${origin}/design-prototypes`, { waitUntil: 'networkidle' });
       await page.screenshot({ path: join(out, 'gallery-desktop-light.png') });
     }
