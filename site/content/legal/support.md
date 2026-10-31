@@ -35,13 +35,24 @@ Tippe auf **Mehr**, dann auf **Konto** und auf **Meine Daten exportieren**. Du b
 
 ### Wie lösche ich mein Konto?
 
-Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht, auch mit Hummlist Lifetime, und das wird nicht erstattet. Auch Haushalte, die du archiviert hast, werden gelöscht. Bleiben andere im Haushalt, bleibt Hummlist Lifetime bei ihnen. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
+Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht, auch mit Hummlist Lifetime; der Kauf lässt sich nicht auf einen anderen Haushalt übertragen. Ob du dein Geld zurückbekommen kannst, steht unter „Kann ich Hummlist Lifetime zurückgeben?“. Auch Haushalte, die du archiviert hast, werden gelöscht. Bleiben andere im Haushalt, bleibt Hummlist Lifetime bei ihnen. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
 
 Ohne App geht es auch: Die Schritte stehen unter [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html), oder schreib an [support@hummlist.com](mailto:support@hummlist.com).
 
 ### Was passiert mit Hummlist Lifetime, wenn ich als letztes Mitglied einen Haushalt verlasse?
 
-Hummlist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, kannst du ihn archivieren: Er bleibt mit Liste und Hummlist Lifetime erhalten, und du kannst ihn unter **Mehr** › **Archivierte Haushalte** wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten, wird er gelöscht. Löschst du ihn statt zu archivieren, endet Hummlist Lifetime ohne Erstattung.
+Hummlist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, kannst du ihn archivieren: Er bleibt mit Liste und Hummlist Lifetime erhalten, und du kannst ihn unter **Mehr** › **Archivierte Haushalte** wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten, wird er gelöscht. Löschst du ihn statt zu archivieren, endet Hummlist Lifetime mit ihm. Zu Erstattungen siehe „Kann ich Hummlist Lifetime zurückgeben?“.
+
+### Kann ich Hummlist Lifetime zurückgeben?
+
+Hummlist Lifetime kaufst du bei Apple oder Google, nicht bei uns. Deshalb gilt:
+
+- **iPhone (App Store):** Erstattungen macht nur Apple. Beantrage sie unter [reportaproblem.apple.com](https://reportaproblem.apple.com) („Ich möchte“ › „Eine Rückerstattung beantragen“); so geht's: [Apple Support](https://support.apple.com/de-de/118223). Wir selbst können Käufe im App Store nicht erstatten.
+- **Android (Google Play):** In den ersten 48 Stunden nach dem Kauf beantragst du die Erstattung direkt bei Google; Google entscheidet darüber ([Erstattungsrichtlinien von Google Play](https://support.google.com/googleplay/answer/15574908?hl=de)). Danach schreib uns an [support@hummlist.com](mailto:support@hummlist.com) und nenne die Bestellnummer aus der Kaufbestätigung von Google (sie beginnt mit „GPA.“) oder die E-Mail-Adresse deines Google-Kontos. Wir prüfen jede Anfrage einzeln und erstatten gegebenenfalls über Google Play.
+
+Wird ein Kauf erstattet, endet die Freischaltung des Haushalts, für den er gekauft wurde, für alle Mitglieder, außer der Haushalt hat Hummlist Lifetime ein weiteres Mal gekauft.
+
+Unsere Erstattungen nach den 48 Stunden sind freiwillig. Deine gesetzlichen Rechte bleiben davon unberührt, auch nach den 48 Stunden, etwa wenn Hummlist Lifetime nicht wie beschrieben funktioniert oder du den Kauf widerrufen kannst. Diese Rechte hast du gegenüber Apple bzw. Google, die dir Hummlist Lifetime verkaufen; Einzelheiten stehen in den [Bedingungen von Apple](https://www.apple.com/legal/internet-services/itunes/de/terms.html) bzw. [von Google Play](https://play.google.com/intl/de_de/about/play-terms/). Schreib uns auch dann gern, wir helfen dir weiter.
 
 ### Wie schalte ich die Nutzungsdaten aus?
 

@@ -35,13 +35,24 @@ Tap **More**, then **Account** and **Export my data**. You get everything stored
 
 ### How do I delete my account?
 
-Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Hummlist Lifetime included, and it is not refunded. Households you archived are deleted too. If others stay in the household, Hummlist Lifetime stays with them. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
+Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Hummlist Lifetime included; the purchase can't be moved to another household. Whether you can get your money back is under "Can I get a refund for Hummlist Lifetime?". Households you archived are deleted too. If others stay in the household, Hummlist Lifetime stays with them. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
 
 Without the app: the steps are at [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html) (German), or write to [support@hummlist.com](mailto:support@hummlist.com).
 
 ### What happens to Hummlist Lifetime if I leave a household as its last member?
 
-Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, you can archive it: it is kept with its list and Hummlist Lifetime, and you can re-enable it under **More** › **Archived households**. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Lifetime ends without a refund.
+Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, you can archive it: it is kept with its list and Hummlist Lifetime, and you can re-enable it under **More** › **Archived households**. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Lifetime ends with it. For refunds, see "Can I get a refund for Hummlist Lifetime?".
+
+### Can I get a refund for Hummlist Lifetime?
+
+You buy Hummlist Lifetime from Apple or Google, not from us. So:
+
+- **iPhone (App Store):** only Apple can refund. Request it at [reportaproblem.apple.com](https://reportaproblem.apple.com) ("I'd like to" › "Request a refund"); how it works: [Apple Support](https://support.apple.com/en-us/118223). We can't refund App Store purchases ourselves.
+- **Android (Google Play):** within 48 hours of buying, request the refund from Google directly; Google decides ([Google Play refund policies](https://support.google.com/googleplay/answer/15574908?hl=en)). After that, email us at [support@hummlist.com](mailto:support@hummlist.com) with the order number from Google's purchase confirmation (it starts with "GPA.") or the email address of your Google account. We look at each request individually and, where we agree, refund through Google Play.
+
+If a purchase is refunded, the unlock ends for the household it was bought for, for all its members, unless the household bought Hummlist Lifetime more than once.
+
+Our refunds after the 48 hours are voluntary. They don't affect your statutory rights, also after the 48 hours, for example if Hummlist Lifetime doesn't work as described or if you can withdraw from the purchase. You have these rights against Apple or Google, who sell you Hummlist Lifetime; details are in [Apple's terms](https://www.apple.com/legal/internet-services/itunes/) or [Google Play's terms](https://play.google.com/about/play-terms/). Feel free to write to us in that case too; we'll help.
 
 ### How do I turn off usage data?
 
