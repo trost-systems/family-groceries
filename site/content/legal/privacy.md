@@ -4,13 +4,13 @@ description: "Privacy policy of Hummlist: which data the app and the website pro
 locale: en
 path: /en/privacy
 translation_key: privacy
-updated: 2026-10-30
+updated: 2026-10-31
 ---
 
 # Privacy policy
 
 This is a translation. The [German version](/datenschutz) is authoritative.
-Last updated: 30 October 2026
+Last updated: 31 October 2026
 
 This page explains which personal data Hummlist processes, why, on what legal basis, who receives it and what rights you have. Hummlist is a shopping-list app for households on iPhone, Android and in the browser (app.hummlist.com), with the website hummlist.com.
 
@@ -86,7 +86,7 @@ Legal basis: Art. 6(1)(f) GDPR (data security, Art. 32 GDPR).
 These service providers process data on our behalf and on our instructions (Art. 28 GDPR):
 
 - Supabase Pte. Ltd., Singapore (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU; the server function for purchases always runs in Frankfurt am Main)
-- RevenueCat, Inc., Brandon (Florida), USA (in-app purchases: checking and managing the unlock, section 5a; servers at Amazon Web Services in the USA)
+- RevenueCat, Inc., Brandon (Florida), USA (in-app purchases: checking and managing the unlock; servers at Amazon Web Services in the USA)
 - Vercel Inc. (hosting of hummlist.com, app.hummlist.com and mcp.hummlist.com; domain and DNS)
 - PostHog Inc. (usage data and error reports, servers in the EU; only as described in section 9)
 - GitHub Inc. (encrypted backups)
@@ -108,7 +108,7 @@ You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
-We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included), your usage-data decisions and any entry in the tester list immediately; for purchases we remove the link to your account (section 5a). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, you can archive it; we delete it if it is not re-enabled within 24 months (section 5a). Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included (section 5a). Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
+We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included), your usage-data decisions and any entry in the tester list immediately; for purchases we remove the link to your account. We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, you can archive it; we delete it if it is not re-enabled within 24 months. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year.
 
 ## 15. Your rights {#rights}
 
