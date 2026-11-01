@@ -15,8 +15,8 @@ create function pg_temp.category(p_household uuid, p_seed text) returns uuid lan
   select id from public.categories where household_id = p_household and seed_key = p_seed
 $$;
 
-create function pg_temp.store(p_household uuid, p_seed text) returns uuid language sql as $$
-  select id from public.stores where household_id = p_household and seed_key = p_seed
+create function pg_temp.store(p_household uuid, p_name text) returns uuid language sql as $$
+  select id from public.stores where household_id = p_household and name = p_name
 $$;
 
 create temp table fx (key text primary key, id uuid, code text);
@@ -30,7 +30,7 @@ select 'google-104857600000000000001', id,
 from auth.users where email = 'peter@backup.test';
 
 select pg_temp.login('peter@backup.test');
-insert into fx (key, id) select 'home', id from public.create_household('Familie Trost');
+insert into fx (key, id) select 'home', id from public.create_household(p_name => 'Familie Trost', p_stores => array['Supermarkt', 'Drogerie', 'Wochenmarkt']);
 insert into fx select 'invite', i.id, i.code from public.create_invite((select id from fx where key = 'home')) i;
 reset role;
 
@@ -43,16 +43,16 @@ select pg_temp.login('peter@backup.test');
 select public.create_invite((select id from fx where key = 'home'));
 select public.add_items((select id from fx where key = 'home'),
   array['2 l Milch', 'Vollkornbrot', '6 Äpfel', 'Kaffee', 'Spülmittel', 'Joghurt'],
-  pg_temp.store((select id from fx where key = 'home'), 'lidl'));
+  pg_temp.store((select id from fx where key = 'home'), 'Supermarkt'));
 select public.create_category((select id from fx where key = 'home'), 'Für die Katze');
-select public.set_store_layout(pg_temp.store((select id from fx where key = 'home'), 'edeka'),
+select public.set_store_layout(pg_temp.store((select id from fx where key = 'home'), 'Wochenmarkt'),
   (select array_agg(id order by sort_order desc) from public.categories
     where household_id = (select id from fx where key = 'home')),
   array[pg_temp.category((select id from fx where key = 'home'), 'drinks')]);
 -- A correction the classifier learns from (category_memory) and a store change (item_store_memory).
 update public.items set category_id = pg_temp.category(household_id, 'drugstore')
   where household_id = (select id from fx where key = 'home') and name = 'Spülmittel';
-update public.items set store_id = pg_temp.store(household_id, 'edeka')
+update public.items set store_id = pg_temp.store(household_id, 'Wochenmarkt')
   where household_id = (select id from fx where key = 'home') and name = 'Joghurt';
 -- Job 15: brand and properties from the parser, a brand the household teaches (household_brands),
 -- a drag in the walk order and a new store order.
@@ -63,9 +63,9 @@ select public.place_item(
   (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Äpfel'),
   'before');
 select public.reorder_stores((select id from fx where key = 'home'),
-  array[pg_temp.store((select id from fx where key = 'home'), 'edeka'),
-        pg_temp.store((select id from fx where key = 'home'), 'lidl'),
-        pg_temp.store((select id from fx where key = 'home'), 'dm')]);
+  array[pg_temp.store((select id from fx where key = 'home'), 'Wochenmarkt'),
+        pg_temp.store((select id from fx where key = 'home'), 'Supermarkt'),
+        pg_temp.store((select id from fx where key = 'home'), 'Drogerie')]);
 select public.create_personal_access_token('Claude Desktop');
 -- Job 21: feedback as the app sends it; household_id and is_internal come from the trigger.
 insert into public.feedback (id, message, category, contact_ok, app_version, build, platform, os_version, locale, screen)

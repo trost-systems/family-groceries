@@ -7,6 +7,7 @@ import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -68,8 +69,11 @@ Future<void> pumpShell(
   final purchases = TestPurchases(session: session);
   addTearDown(purchases.close);
   await tester.pumpWidget(
-    RepositoryProvider.value(
-      value: cache,
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(value: cache),
+        RepositoryProvider<PremiumServer>.value(value: purchases.premium),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<SessionCubit>.value(value: session),

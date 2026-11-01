@@ -4,7 +4,7 @@ Hummlist learns what the household buys regularly from its ticked-off history. W
 
 ## Sub-features
 
-- `us-due-rows` the empty-field add sheet lists up to 10 due items, each a button named "<quantity> <name>, Wieder fällig" (for example „Butter, Wieder fällig“, „4× Brötchen, Wieder fällig“).
+- `us-due-rows` the empty-field add sheet lists up to 10 due items; before anything is typed it shows at most three of its rows whole above the input, below the note of the last add, and the others scroll (job 64: on a 360 px phone the wrapped chips used to leave one row, cut by the input). Each is a button named "<quantity> <name>, Wieder fällig" (for example „Butter, Wieder fällig“, „4× Brötchen, Wieder fällig“).
 - `us-rule` the rule behind "due": purchases (ticks) on at least 2 different calendar days (Berlin time) within the last year; the usual gap is the average number of days between the first and last purchase day (at least 1 day); the item is due from one gap after the last purchase until four gaps after it, then it drops out. A tick that was undone within 10 minutes is not a purchase. An item added and deleted without ever being bought does not count. Two ticks on the same day count as one day.
 - `us-off-list` an item already open on the list (same name, any capitalisation) is not offered as due.
 - `us-tap` a tap on a due row adds the item with its usual quantity and the note „✓ Hinzugefügt: <name>“; the field keeps the cursor, and the row is gone afterwards because the item is open.

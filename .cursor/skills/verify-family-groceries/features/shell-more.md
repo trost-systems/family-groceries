@@ -31,7 +31,7 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 
 Preconditions:
 
-- Baseline from `features/README.md`; peter signed in on the list.
+- Baseline from `features/README.md` with the chain stores dm, Lidl and Edeka, added as in `features/README.md` (Baseline); peter signed in on the list.
 - `H="(select id from households where name = 'Familie Test')"`; the store ids from `fg db query "select id, name from stores where household_id = $H order by sort_order" --as peter`.
 
 - **`sm-tabs`.** Run `fg tap --key tab-more` and `fg wait --key more-screen` (if it times out, More reopened its last page: tap `tab-more` again); `fg screenshot --name sm-more`. `fg find --key add-item-field` counts 0. `fg tap --key tab-list` and `fg wait --key add-item-field` return to the list. Leaving closes the sheet: `fg tap --key add-item-field`, `fg wait --key add-sheet`, `fg press escape`; with the sheet open the tabs are out of reach (`fg tap --key tab-more` fails with `not_found`, and `fg find --key add-sheet-hint` shows the hint in their place), so close it first.

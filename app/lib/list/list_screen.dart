@@ -77,6 +77,13 @@ class const _ShoppingList({required final Dictation? dictation})
 class _ShoppingListState() extends State<_ShoppingList> {
   final _input = TextEditingController();
   final _inputFocus = FocusNode();
+
+  /// The add bar around the input: it holds focus between a tap in the
+  /// sheet and the input's refocus, and after a close, and takes Escape
+  /// there (job 64). An Escape right after a tap on a row closed nothing,
+  /// and a focused row going with the closing sheet sent focus back to the
+  /// input, which opened it again.
+  final _barFocus = FocusNode();
   RejectionNotices? _notices;
   SheetOpenNotifier? _sheetOpen;
   StreamSubscription<DedupeHint>? _hints;
@@ -143,8 +150,10 @@ class _ShoppingListState() extends State<_ShoppingList> {
       _notices?.listTab = null;
     }
     unawaited(_hints?.cancel());
+    _refocus?.cancel();
     _input.dispose();
     _inputFocus.dispose();
+    _barFocus.dispose();
     super.dispose();
   }
 
@@ -245,8 +254,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
     ..showSnackBar(SnackBar(content: Text(text), persist: false));
 
   void _close() {
+    _refocus?.cancel();
     context.read<AddSheetCubit>().dismiss();
-    _inputFocus.unfocus();
+    _barFocus.requestFocus();
     _openOnFocus = true;
   }
 
@@ -276,13 +286,16 @@ class _ShoppingListState() extends State<_ShoppingList> {
       _inputFocus.requestFocus();
       return;
     }
-    _inputFocus.unfocus();
-    Timer(const Duration(milliseconds: 50), () {
+    _barFocus.requestFocus();
+    _refocus?.cancel();
+    _refocus = Timer(const Duration(milliseconds: 50), () {
       if (mounted) {
         _inputFocus.requestFocus();
       }
     });
   }
+
+  Timer? _refocus;
 
   /// Acting on the list ends typing, which also drops the soft keyboard
   /// while ticking things off in the store. A tick commits 440 ms after
@@ -297,9 +310,6 @@ class _ShoppingListState() extends State<_ShoppingList> {
   @override
   Widget build(BuildContext context) {
     final open = context.select<AddSheetCubit, bool>((c) => c.state.open);
-    final media = MediaQuery.of(context);
-    // The tabs below the bar: the band the open sheet stands on.
-    final tabs = media.size.width >= wideLayout ? 0.0 : 62.0;
     return MultiBlocListener(
       listeners: [
         // A hint whose items are no longer both open (the add undone, a
@@ -379,11 +389,27 @@ class _ShoppingListState() extends State<_ShoppingList> {
               ),
               Positioned.fill(
                 child: TextFieldTapRegion(
-                  child: AddSheet(
-                    onTake: _take,
-                    onClose: _close,
-                    onPicked: _refocusAfterTap,
-                    bandHeight: addBarHeight + tabs + media.padding.bottom,
+                  // Escape from a row or chip of the sheet; never focused
+                  // itself, and no semantics node: on the web one this
+                  // size would take every tap on the list.
+                  child: Focus(
+                    canRequestFocus: false,
+                    skipTraversal: true,
+                    includeSemantics: false,
+                    onKeyEvent: (_, event) {
+                      if (event is! KeyDownEvent ||
+                          event.logicalKey != LogicalKeyboardKey.escape ||
+                          !open) {
+                        return KeyEventResult.ignored;
+                      }
+                      _close();
+                      return KeyEventResult.handled;
+                    },
+                    child: AddSheet(
+                      onTake: _take,
+                      onClose: _close,
+                      onPicked: _refocusAfterTap,
+                    ),
                   ),
                 ),
               ),
@@ -393,6 +419,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
             child: _AddBar(
               input: _input,
               focus: _inputFocus,
+              barFocus: _barFocus,
               autofocus: _autofocus,
               listening: _listening,
               onSubmit: () => unawaited(_submit()),
@@ -427,6 +454,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
 class const _AddBar({
   required final TextEditingController input,
   required final FocusNode focus,
+
+  /// The bar's own node around the field, which takes Enter and Escape.
+  required final FocusNode barFocus,
   required final bool autofocus,
   required final bool listening,
   required final VoidCallback onSubmit,
@@ -473,6 +503,7 @@ class const _AddBar({
           ),
           Expanded(
             child: Focus(
+              focusNode: barFocus,
               // Hardware Enter (web, desktop) is handled here,
               // because Flutter web's text-input action path
               // blurs the field and leaves it dead for the next

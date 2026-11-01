@@ -28,7 +28,7 @@ An item on the list has a Bezeichnung (name), an optional Marke (brand), Eigensc
 
 Preconditions:
 
-- Baseline from `features/README.md`; peter and lea signed in.
+- Baseline from `features/README.md` with the chain stores dm, Lidl and Edeka, added as in `features/README.md` (Baseline) (the "dm" chip below is the brand default Pampers → dm); peter and lea signed in.
 - No active Windeln or Milch: `fg db query "update items set status = 'bought' where status = 'active' and name in ('Windeln', 'Milch')" --write`.
 
 - **Add split entries the way Siri and MCP do.** Run `fg db query "select name, brand, properties, quantity from public.add_items((select household_id from household_members where user_id = auth.uid()), array['Windeln Pampers Größe 3', '2 l Milch 1,5 %'])" --write --as lea`. The output is `Windeln|Pampers|Größe 3|` and `Milch||1,5 %|2 l`. peter's list shows "Windeln" with "Pampers · Größe 3" under it and no initial (`fg screenshot --name ed-row-details`).

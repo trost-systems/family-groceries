@@ -13,30 +13,30 @@ households:
   - name: Familie Berg
     members: [hanna, jonas]
     stores:
-      - name: Lidl
-        layout: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Getränke]
-      - name: dm
+      - name: Drogerie
         layout: [👶 Drogerie, Haushalt]
-      - name: Edeka
+      - name: Supermarkt
+        layout: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Getränke]
+      - name: Wochenmarkt
         layout: [Kühlregal, Fleisch/Wurst/Fisch, Süßes & Snacks]
     items:
-      # Lidl, Obst & Gemüse: the walk order is not the add order.
-      - { name: Bananen, quantity: "6", store: Lidl, category: Obst & Gemüse, properties: Bio, walkOrder: 2048, by: hanna }
-      - { name: Äpfel, quantity: 1 kg, store: Lidl, category: Obst & Gemüse, properties: Elstar, walkOrder: 1024, by: jonas }
-      - { name: Gurke, store: Lidl, category: Obst & Gemüse, walkOrder: 3072, by: hanna }
-      # Lidl, Kühlregal
-      - { name: Milch, quantity: 2 l, store: Lidl, category: Kühlregal, brand: Milbona, properties: "1,5 %", walkOrder: 1024, by: jonas }
-      - { name: Gouda, store: Lidl, category: Kühlregal, brand: Ja!, properties: gerieben, walkOrder: 2048, by: hanna }
-      - { name: Joghurt, quantity: "4", store: Lidl, category: Kühlregal, properties: Erdbeere, walkOrder: 3072, by: jonas }
-      # Lidl, Getränke
-      - { name: Wasser, quantity: "6", store: Lidl, category: Getränke, properties: "still, 6x1,5 l", walkOrder: 1024, by: hanna }
-      # dm
-      - { name: Windeln, store: dm, category: 👶 Drogerie, brand: Pampers, properties: Größe 3, walkOrder: 1024, by: jonas }
-      - { name: Zahnpasta, store: dm, category: 👶 Drogerie, brand: elmex, walkOrder: 2048, by: hanna }
-      - { name: Spülmittel, store: dm, category: Haushalt, brand: Pril, walkOrder: 1024, by: jonas }
-      # Edeka
-      - { name: Hack, quantity: 500 g, store: Edeka, category: Fleisch/Wurst/Fisch, properties: gemischt, walkOrder: 1024, by: hanna }
-      - { name: Schokolade, store: Edeka, category: Süßes & Snacks, brand: Ritter Sport, properties: Zartbitter, walkOrder: 1024, by: jonas }
+      # Supermarkt, Obst & Gemüse: the walk order is not the add order.
+      - { name: Bananen, quantity: "6", store: Supermarkt, category: Obst & Gemüse, properties: Bio, walkOrder: 2048, by: hanna }
+      - { name: Äpfel, quantity: 1 kg, store: Supermarkt, category: Obst & Gemüse, properties: Elstar, walkOrder: 1024, by: jonas }
+      - { name: Gurke, store: Supermarkt, category: Obst & Gemüse, walkOrder: 3072, by: hanna }
+      # Supermarkt, Kühlregal
+      - { name: Milch, quantity: 2 l, store: Supermarkt, category: Kühlregal, brand: Milbona, properties: "1,5 %", walkOrder: 1024, by: jonas }
+      - { name: Gouda, store: Supermarkt, category: Kühlregal, brand: Ja!, properties: gerieben, walkOrder: 2048, by: hanna }
+      - { name: Joghurt, quantity: "4", store: Supermarkt, category: Kühlregal, properties: Erdbeere, walkOrder: 3072, by: jonas }
+      # Supermarkt, Getränke
+      - { name: Wasser, quantity: "6", store: Supermarkt, category: Getränke, properties: "still, 6x1,5 l", walkOrder: 1024, by: hanna }
+      # Drogerie
+      - { name: Windeln, store: Drogerie, category: 👶 Drogerie, brand: Pampers, properties: Größe 3, walkOrder: 1024, by: jonas }
+      - { name: Zahnpasta, store: Drogerie, category: 👶 Drogerie, brand: elmex, walkOrder: 2048, by: hanna }
+      - { name: Spülmittel, store: Drogerie, category: Haushalt, brand: Pril, walkOrder: 1024, by: jonas }
+      # Wochenmarkt
+      - { name: Hack, quantity: 500 g, store: Wochenmarkt, category: Fleisch/Wurst/Fisch, properties: gemischt, walkOrder: 1024, by: hanna }
+      - { name: Schokolade, store: Wochenmarkt, category: Süßes & Snacks, brand: Ritter Sport, properties: Zartbitter, walkOrder: 1024, by: jonas }
       # No store (Ohne Laden)
       - { name: Brot, category: Brot & Backwaren, properties: Vollkorn, walkOrder: 1024, by: hanna }
       - { name: Eier, quantity: "10", category: Kühlregal, properties: Bio, walkOrder: 1024, by: jonas }

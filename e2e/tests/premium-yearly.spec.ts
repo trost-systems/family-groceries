@@ -6,12 +6,12 @@ import {
   joinWithCode,
   newEmail,
   openMore,
+  openPremium,
   password,
   screenshot,
   signUp,
   signUpWithHousehold,
-  typeInto,
-} from './helpers';
+  typeInto } from './helpers';
 import { buy, householdOf, rcEvent, subscribe, yearlyId } from './iap';
 
 // Job 49: Hummlist Premium as a yearly plan and Lifetime, on the web (docs/PURCHASES.md). The web
@@ -68,8 +68,8 @@ test('a yearly plan: live for both partners, cancelled it runs to its end, expir
   const pat = await (await apiAs(peterEmail)).rpc('create_personal_access_token', { p_name: 'Kurzbefehl' });
   expect(pat.error).toBeNull();
 
-  await openMore(peter, 'Hummlist Premium');
-  await openMore(lea, 'Hummlist Premium');
+  await openPremium(peter);
+  await openPremium(lea);
   await expect(status(lea)).toHaveCount(0);
 
   // Peter subscribes on his iPhone; both pages show it live. The web never offers Buy.
@@ -111,8 +111,8 @@ test('a yearly plan: live for both partners, cancelled it runs to its end, expir
 test('Lifetime while a yearly plan runs: Lifetime wins, the plan keeps billing and the page says '
   + 'so; a TRANSFER moves nothing', async ({ browser }) => {
   const { peter, lea, peterEmail, leaEmail } = await couple(browser, 'upgrade');
-  await openMore(peter, 'Hummlist Premium');
-  await openMore(lea, 'Hummlist Premium');
+  await openPremium(peter);
+  await openPremium(lea);
   const tx = `4901${Date.now()}`;
   expect(await subscribe(peterEmail, tx)).toBe('granted');
   await expect(renews(lea)).toBeVisible({ timeout: 10_000 });
@@ -138,7 +138,7 @@ test('Lifetime while a yearly plan runs: Lifetime wins, the plan keeps billing a
   })).body).toEqual({ status: 'ignored' });
   expect((await rcEvent('RENEWAL', maxHousehold, tx, { productId: yearlyId })).body)
     .toEqual({ status: 'used_elsewhere' });
-  await openMore(max, 'Hummlist Premium');
+  await openPremium(max);
   await expect(max.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)).toBeVisible();
   await expect(status(max), 'Max has no Premium').toHaveCount(0);
 });
@@ -165,7 +165,7 @@ test('deleting the account: the subscriber hears the plan keeps billing, the par
     await peter.getByRole('button', { name: 'Endgültig löschen' }).click();
     await expect(peter.getByText('Dein Konto wurde gelöscht.')).toBeVisible();
     // The household and its plan stay with Lea: deleting cancels nothing.
-    await openMore(lea, 'Hummlist Premium');
+    await openPremium(lea);
     await expect(renews(lea)).toBeVisible({ timeout: 10_000 });
   });
 

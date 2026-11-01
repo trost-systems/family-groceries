@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Page, test } from './fixtures';
 import { dragItemToStore, holdAndDrop, outline, sectionHeadings, sectionItems, storeOf } from './catalog';
 import {
-  adminClient, apiAs, createInviteCode, editSheet, itemRow, joinWithCode, newEmail, reveal, screenshot, signUp,
+  adminClient, apiAs, chainStores, createInviteCode, editSheet, itemRow, joinWithCode, newEmail, reveal, screenshot, signUp,
   signUpWithHousehold, storeDivider, putBack, tick, typeInto, within,
 } from './helpers';
 
@@ -86,7 +86,7 @@ async function householdOf(api: SupabaseClient): Promise<string> {
 
 test('stores and categories are dividers that scroll away, stores fold for good, the explainer goes for good', async ({ page }) => {
   const email = newEmail('walk-dividers');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   await expect(page.getByText('Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt')).toBeVisible();
   await seed(page, email, lidl);
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
@@ -159,7 +159,7 @@ test('stores and categories are dividers that scroll away, stores fold for good,
 test('drag and drop puts items before and after rows, into categories and stores, and it sticks', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const email = newEmail('walk-drag');
-  await signUpWithHousehold(peter, email);
+  await signUpWithHousehold(peter, email, { stores: chainStores });
   const api = await seed(peter, email, lidl);
   const household = await householdOf(api);
   const lea = await (await browser.newContext()).newPage();
@@ -229,7 +229,7 @@ test('drag and drop puts items before and after rows, into categories and stores
 test('categories and stores reorder by drag, for good and live for the other member', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const email = newEmail('walk-reorder');
-  await signUpWithHousehold(peter, email);
+  await signUpWithHousehold(peter, email, { stores: chainStores });
   await seed(peter, email, lidl);
   const lea = await (await browser.newContext()).newPage();
   const code = await createInviteCode(peter);
@@ -259,7 +259,7 @@ test('categories and stores reorder by drag, for good and live for the other mem
 test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold or right click edits, names wrap, no added-by badge', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const email = newEmail('walk-rows');
-  await signUpWithHousehold(peter, email);
+  await signUpWithHousehold(peter, email, { stores: chainStores });
   const long = 'Glutenfreie Dinkel-Vollkorn-Toastbrötchen mit Sonnenblumenkernen und extra viel Kruste';
   await seed(peter, email, [...lidl, { name: long, store: 'Lidl', category: 'Brot & Backwaren', key: 1024 }]);
 
@@ -307,7 +307,7 @@ test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold o
 test('wide screens put the stores in columns, and drag and drop works across them', async ({ page }) => {
   const email = newEmail('walk-wide');
   await page.setViewportSize({ width: 1366, height: 1024 });
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   await page.getByRole('button', { name: 'Verstanden' }).click();
   await seed(page, email, [
     ...lidl,

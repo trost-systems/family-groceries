@@ -1,10 +1,10 @@
 # Hummlist Premium (held: not on sale)
 
-Premium launch is on hold: nothing is sold and nothing is gated. Siri, Alexa and AI assistants work for every household without Premium. Still, Mehr has a row „Hummlist Premium“ in every production build, and its page explains what Premium will unlock and, depending on the platform, says where it will be bought or that it is „bald verfügbar“. There is no price, no buy button and no restore button anywhere. A household that has been given Premium by the team (testers, reviewers, partners: a RevenueCat promotional grant) sees the page flip to a status line and the row to „Freigeschaltet“.
+Premium launch is on hold: nothing is sold and nothing is gated. Siri, Alexa and AI assistants work for every household without Premium. Mehr does not list it before the launch (job 64): the row shows only once Premium may be offered (server switch `premium_offer`, and in the store builds the purchases define) or for a household that has Premium. Its page (`/more/lifetime`) explains what Premium will unlock and, depending on the platform, says where it will be bought or that it is „bald verfügbar“. There is no price, no buy button and no restore button anywhere. A household that has been given Premium by the team (testers, reviewers, partners: a RevenueCat promotional grant) sees the page flip to a status line and the row to „Freigeschaltet“.
 
 ## Sub-features
 
-- `prem-row` the Mehr row „Hummlist Premium“, hint „Siri, Alexa und KI-Assistenten“ (household without Premium) or „Freigeschaltet“ (household with Premium).
+- `prem-row` the Mehr row „Hummlist Premium“: today only for a household that has Premium (a tester grant), hint „Freigeschaltet“. Once offered, every household sees it, hint „Siri, Alexa und KI-Assistenten“ without Premium.
 - `prem-page-web` on the web (app.hummlist.com, the preview) the page says Premium is bought in the iPhone or Android app. Nothing to buy on web, ever.
 - `prem-page-soon` in the iOS and Android store builds today (purchases build define off) the page says „Hummlist Premium ist bald verfügbar.“ No cards, no prices, no buy, no restore.
 - `prem-refund-link` the page always ends with the link „Doppelt gekauft? So bekommst du dein Geld zurück“ (opens „Kauf zurückfordern“ help with the Apple and Google refund steps).
@@ -14,7 +14,7 @@ Premium launch is on hold: nothing is sold and nothing is gated. Siri, Alexa and
 
 ## How to get to it (user POV)
 
-- Tab „Mehr“ / "More" → section „Haushalt“ / "Household" → row „Hummlist Premium“ / "Hummlist Premium" (same name in both languages). Hint: „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants", or „Freigeschaltet“ / "Unlocked" when the household has Premium.
+- Tab „Mehr“ / "More" → section „Haushalt“ / "Household" → row „Hummlist Premium“ / "Hummlist Premium" (same name in both languages), only for a household that has Premium until the launch; hint „Freigeschaltet“ / "Unlocked". Everyone else reaches the page only by its link `/more/lifetime`.
 - Page text for every household, first line: „Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri, Alexa und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.“ / "Hummlist Premium unlocks the connections for your whole household: Siri, Alexa and AI assistants (MCP). Google Assistant and the Apple Watch come later."
 - Web: „Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.“ / "You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household."
 - iOS and Android store builds today: „Hummlist Premium ist bald verfügbar.“ / "Hummlist Premium is coming soon."
@@ -29,8 +29,8 @@ Preconditions:
 - Seeded household „Familie Brandt“, signed in. A second view of the database is needed to grant Premium: the e2e helpers play RevenueCat's webhook (`e2e/tests/iap.ts`: `buy(email, transactionId)` grants Lifetime, `householdOf(email)`; the promotional grant is `promote(householdId)` in `e2e/tests/integration-lock.spec.ts`).
 - Specs: `e2e/tests/purchases.spec.ts`, `e2e/tests/premium-yearly.spec.ts`, `e2e/tests/integration-lock.spec.ts`; run with `scripts/verify.sh --only e2e -- tests/purchases.spec.ts`.
 
-- **Open the row.** `await openTab(page, 'Mehr')`; `page.getByRole('button', { name: /^Hummlist Premium/ })` contains „Siri, Alexa und KI-Assistenten“ for a household without Premium.
-- **Open the page.** Click that button. URL `/more/lifetime`. On web: `page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)` is visible; `page.getByRole('button', { name: 'Kauf wiederherstellen' })` has count 0; no button „Jährlich abschließen“ / „Lifetime kaufen“ (count 0).
+- **No row before the launch.** `await openTab(page, 'Mehr')`; `page.getByRole('button', { name: /^Hummlist Premium/ })` has count 0 for a household without Premium (`premium_offer` is off on the local stack).
+- **Open the page.** `openPremium(page)` (`e2e/tests/helpers.ts`, goes to `/more/lifetime`). On web: `page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)` is visible; `page.getByRole('button', { name: 'Kauf wiederherstellen' })` has count 0; no button „Jährlich abschließen“ / „Lifetime kaufen“ (count 0).
 - **English.** Locale en-US: `getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./)`, no button 'Restore purchase'.
 - **Granted household (testers).** Grant the household through the webhook helper, then the row reads „Freigeschaltet“ (`toContainText('Freigeschaltet')`, live, without reload), and the page shows `page.getByText(/^Hummlist Premium (Lifetime|aktiv|über|geschenkt)/)`. A promotional grant shows „Hummlist Premium geschenkt“.
 - **Nothing gated.** A household without Premium can still add via Siri/MCP/Alexa (see `siri`, `ai-assistants`, `alexa` maps); Zugänge shows no Premium card.

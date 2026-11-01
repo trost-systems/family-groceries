@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: solo-long-list
-summary: One person alone in a household with a 64-item list spread over Lidl, Edeka, dm and no store, every category used.
+summary: One person alone in a household with a 64-item list spread over the Supermarkt, the Wochenmarkt, the Bäckerei, the Drogerie and no store, every category used.
 goodFor:
   - scrolling, grouping and category headers on a long list
   - store sections with many tagged and untagged items
@@ -10,34 +10,41 @@ users:
 households:
   - name: Sams Wohnung
     members: [sam]
+    stores:
+      - name: Supermarkt
+      - name: Wochenmarkt
+      - name: Bäckerei
+      - name: Drogerie
+        layout: [👶 Drogerie, Vorrat & Konserven, Süßes & Snacks, Haushalt, Getränke, Sonstiges]
+        hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl]
     items:
       # Obst & Gemüse
       - { name: Äpfel, quantity: "1 kg" }
       - { name: Bananen, quantity: "6" }
       - Birnen
       - { name: Zitronen, quantity: "3" }
-      - { name: Kartoffeln, quantity: "2 kg", store: Lidl }
+      - { name: Kartoffeln, quantity: "2 kg", store: Supermarkt }
       - Zwiebeln
       - Knoblauch
-      - { name: Paprika, quantity: "3", store: Edeka }
+      - { name: Paprika, quantity: "3", store: Wochenmarkt }
       - Brokkoli
       - Salat
       - { name: Tomaten, quantity: "500 g" }
       - Avocado
       # Brot & Backwaren
-      - { name: Vollkornbrot, store: Edeka }
+      - { name: Vollkornbrot, store: Bäckerei }
       - { name: Brötchen, quantity: "6" }
       - Toastbrot
       - Croissants
       # Kühlregal
-      - { name: Milch, quantity: "2", store: Lidl }
+      - { name: Milch, quantity: "2", store: Supermarkt }
       - Butter
       - { name: Joghurt, quantity: "4" }
       - Quark
       - Gouda
       - Mozzarella
       - Frischkäse
-      - { name: Eier, quantity: "10", store: Lidl }
+      - { name: Eier, quantity: "10", store: Supermarkt }
       - Sahne
       # Fleisch/Wurst/Fisch
       - Hähnchenbrust
@@ -46,7 +53,7 @@ households:
       - Salami
       - Kochschinken
       # Vorrat & Konserven
-      - { name: Nudeln, quantity: "2", store: Lidl }
+      - { name: Nudeln, quantity: "2", store: Supermarkt }
       - Reis
       - Mehl
       - Zucker
@@ -63,7 +70,7 @@ households:
       - Gummibärchen
       - Kekse
       # Getränke
-      - { name: Mineralwasser, quantity: "2 Kisten", store: Edeka }
+      - { name: Mineralwasser, quantity: "2 Kisten", store: Supermarkt }
       - Apfelsaft
       - Orangensaft
       - Bier
@@ -81,7 +88,7 @@ households:
       - Küchenrolle
       - Waschmittel
       # 👶 Drogerie
-      - { name: Zahnpasta, store: dm }
-      - { name: Duschgel, store: dm }
-      - { name: Shampoo, store: dm }
-      - { name: Deo, store: dm }
+      - { name: Zahnpasta, store: Drogerie }
+      - { name: Duschgel, store: Drogerie }
+      - { name: Shampoo, store: Drogerie }
+      - { name: Deo, store: Drogerie }

@@ -447,28 +447,33 @@ export type Collector = { requests: string[]; events: Captured[]; leaks: string[
 /** The names of what [collector] received, in order. */
 export const eventNames = (collector: Collector) => collector.events.map((e) => e.event);
 
-export async function signUpWithHousehold(page: Page, email: string): Promise<void> {
+/** Signs up, creates a household with [stores] (none by default, see [createHousehold]) and goes on to the list. */
+export async function signUpWithHousehold(page: Page, email: string, { stores }: { stores?: string[] } = {}): Promise<void> {
   await signUp(page, email);
-  await createHousehold(page);
+  await createHousehold(page, { stores });
   await skipInvite(page);
 }
 
-/**
- * Onboarding (job 22) from Step 1: "Haushalt erstellen", then Step 2a with [name] (the prefilled
- * "Unser Haushalt" by default) and the default stores unless [stores] is false. Ends on Step 3,
- * inviting the partner.
- */
 /** Onboarding's store offer (app/lib/household/popular_stores.dart). */
 export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord', 'Kaufland', 'Netto', 'Penny', 'dm', 'Rossmann'];
 
 /**
- * Onboarding Step 2a. [stores] are picked in order; a name not on the offer is typed as an own
- * store. The default makes the household the specs know: dm, Lidl and "Edeka" (typed, so it keeps
- * that spelling; the server makes it the Edeka chain with its walking order). [] skips.
+ * The chains with a researched walking order, for specs that test chain behaviour (layouts, dm's
+ * hidden categories, brand defaults such as Pampers -> dm). "Edeka" is typed, so it keeps that
+ * spelling; the server makes it the Edeka chain all the same.
+ */
+export const chainStores = ['dm', 'Lidl', 'Edeka'];
+
+/**
+ * Onboarding (job 22) from Step 1: "Haushalt erstellen", then Step 2a with [name] (the prefilled
+ * "Unser Haushalt" by default) and [stores], picked in order; a name not on the offer is typed as
+ * an own store. The default is none, as in the app, where nothing is preselected: "Überspringen".
+ * Specs that only need some store type generic ones (Supermarkt, Drogerie); [chainStores] are for
+ * chain behaviour. Ends on Step 3, inviting the partner.
  */
 export async function createHousehold(
   page: Page,
-  { name, stores = ['dm', 'Lidl', 'Edeka'] }: { name?: string; stores?: string[] } = {},
+  { name, stores = [] }: { name?: string; stores?: string[] } = {},
 ): Promise<void> {
   await expect(page).toHaveURL(/\/welcome(\?|$)/);
   await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
@@ -613,6 +618,17 @@ export async function openMore(page: Page, entry: string): Promise<void> {
   const target = page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) });
   await wheelTo(page, target);
   await target.click();
+}
+
+/**
+ * The Hummlist Premium page by its link (`/more/lifetime`), the way the integration settings open
+ * it: More lists it only once Premium may be offered or the household has it (job 64), and the
+ * switch `premium_offer` is off on the e2e stack.
+ */
+export async function openPremium(page: Page): Promise<void> {
+  await page.goto('/more/lifetime');
+  await expect(page).toHaveURL(/\/more\/lifetime$/);
+  await expect(page.getByText('Hummlist Premium', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 }
 
 const inviteCode = /^Code [A-HJ-NP-Z2-9]{8}$/;
