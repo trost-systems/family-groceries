@@ -1,5 +1,10 @@
 # Siri: „Hey Siri, Einkaufsliste“
 
+> **Seit Job 51 gibt es natives Siri ohne Einrichtung** (iOS 17 und neuer,
+> Englisch und Deutsch): „Füge etwas zu Hummlist hinzu“. Wie das gebaut
+> ist, steht unten unter [Natives Siri](#natives-siri-job-51). Der
+> Kurzbefehl hier funktioniert weiter, für ältere iPhones und eigene Sätze.
+
 Mit diesem Kurzbefehl diktierst du Einträge per Siri auf dem iPhone.
 Auf der Apple Watch, mit AirPods und in CarPlay kann es über Siri
 ebenfalls klappen, das haben wir aber noch nicht getestet.
@@ -187,3 +192,38 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
 
 Der Quellcode liegt in `supabase/functions/voice/`; die Zerlegung des
 Satzes in `parse.ts`, die Beispielsätze als Tests in `parse_test.ts`.
+
+## Natives Siri (Job 51)
+
+Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
+
+- **Intents** in the Runner target, `app/ios/Runner/AppIntents/`: `AddItemsIntent` (asks for the
+  items when the phrase has none; the `ItemSuggestion` entity makes "Add milk to Hummlist" one
+  utterance for names the app sent), `ReadListIntent`, `HummlistShortcuts` (the App Shortcuts
+  provider), `VoiceClient` (URLSession, 8 s in all, branches on `outcome`), `SiriCredentialStore`
+  (Keychain) and the `hummlist/siri` method channel (`SiriBridge.swift`). iOS 17 and newer, always
+  in the background. Phrases: `en.lproj` and `de.lproj` `AppShortcuts.strings`; dialogs:
+  `Localizable.xcstrings`. The app's list of the phrases for Zugänge is
+  `app/lib/siri/siri_phrases.dart`; keep both in step.
+- **Credential.** After sign-in in a household the app (`app/lib/siri/siri_credentials.dart`)
+  calls `create_siri_credential()` and stores `{token, id, userId, sessionId, url}` in the Keychain
+  (service `com.hummlist.app.siri`, this device only). The row is kind `siri` in
+  `personal_access_tokens`, bound to the Supabase session; it ends with sign-out, account deletion
+  or leaving the household. Only `voice` accepts it (`authenticate(req, deps, { siri: true })`).
+  Zugänge lists it as "Siri (dieses iPhone)".
+- **Request** from the intents: `POST /functions/v1/voice` with `Authorization: Bearer fgp_…` and
+  JSON `{"text", "mode": "add"|"read", "lang": "de"|"en"}`. `lang` comes from the dictated text
+  (`NLLanguageRecognizer`, English or German), else the app's language.
+- **Answer.** A request with `lang` gets `outcome` in every JSON answer: `added`, `nothing_added`,
+  `parsed`, `read`, or the failure code (also in `error`): `method`, `unauthorized`,
+  `no_household`, `no_text`, `too_long`, `nothing_understood`, `server`, and `premium_required`
+  (job 50's lock; not returned yet). `mode: "read"` answers `{outcome, speech, items: [{name,
+  quantity}], total}`, the speech naming the first ten. Requests without `lang`, like this
+  Shortcut, get exactly the answers from before job 51.
+- **English** splitting is `supabase/functions/voice/parse_en.ts` (cases in `parse_en_test.ts`), every
+  sentence in both languages `copy.ts`.
+- **Tests.** Deno: `voice/*_test.ts`, `_shared/auth_test.ts`, `_shared/telemetry_test.ts`. pgTAP:
+  `siri_credentials.test.sql`, `english_groceries.test.sql`. e2e: `e2e/tests/voice.spec.ts`. Swift:
+  `app/ios/RunnerTests/SiriTests.swift`, run by `scripts/gates/ios.sh` on CI's macOS runner.
+  Real Siri voice only on a device (NEEDS_LEAD, "Job 51").
+

@@ -57,6 +57,31 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
     actor_role: oneOf('owner', 'member'),
     household_size: intIn(1, 100),
   },
+  // Job 51: one per Siri add or read through the voice function, native (the app's Siri
+  // credential) or the Shortcut (a PAT). count is how many items, never which.
+  siri_add: {
+    result: oneOf('success', 'fail'),
+    reason: oneOf(
+      'added',
+      'nothing_added',
+      'no_text',
+      'too_long',
+      'nothing_understood',
+      'server',
+      'no_household',
+      'premium_required',
+    ),
+    language: oneOf('en', 'de'),
+    source: oneOf('native', 'shortcut'),
+    count: intIn(0, 30),
+  },
+  siri_read: {
+    result: oneOf('success', 'fail'),
+    reason: oneOf('read', 'server', 'no_household', 'premium_required'),
+    language: oneOf('en', 'de'),
+    source: oneOf('native', 'shortcut'),
+    count: intIn(0, 10_000),
+  },
 };
 
 /** Properties every server event carries besides its own. */

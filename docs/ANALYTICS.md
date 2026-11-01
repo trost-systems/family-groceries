@@ -134,6 +134,8 @@ property and `$lib: hummlist-app`; no query reads them.
 | `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored` | job 32b's duplicate hint ("Möhren steht schon auf der Liste"): `shown` when the snackbar shows, then once either `merged` (Zusammenführen) or `ignored` (any other close); the merge's undo sends nothing. Listed by 32a, sent by `ListCubit` since 32b | `actor_role`, `household_size`. Never the item names |
 | `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id`, `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
 | `purchase_restored` | server only | `product_id`, `app_store` |
+| `siri_add` | server only (job 51): a Siri add reached the `voice` function, signed in with the app's Siri credential or a Shortcut's PAT; once per request, after authentication, for a user whose newest consent answer is yes (the Alexa lookup) | `result` (`success`, `fail`), `reason` (`added`, `nothing_added`, `no_text`, `too_long`, `nothing_understood`, `server`; `no_household` and `premium_required` are allowed but not sent yet), `language` (`en`, `de`), `source` (`native`: the Siri credential, `shortcut`: a PAT), `count` (items understood, 0 to 30). Never a name or the text |
+| `siri_read` | server only (job 51): "What's on my Hummlist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`; `no_household`, `premium_required` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
 
 Rules that keep it one event per user action (AC3, AC9):
 

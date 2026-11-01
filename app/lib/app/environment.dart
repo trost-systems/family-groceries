@@ -115,6 +115,9 @@ abstract final class Environment() {
   static const mcpUrl = supabaseUrl == _productionUrl
       ? 'https://mcp.hummlist.com'
       : '$supabaseUrl/functions/v1/mcp';
+
+  /// Where native Siri's intents send what was said (job 51).
+  static const voiceUrl = '$supabaseUrl/functions/v1/voice';
 }
 
 /// Where this web app lives; it is always served at the domain root.

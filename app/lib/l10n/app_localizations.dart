@@ -743,7 +743,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenNameHint.
   ///
   /// In de, this message translates to:
-  /// **'z. B. Claude oder Siri'**
+  /// **'z. B. Claude oder Kurzbefehle'**
   String get tokenNameHint;
 
   /// No description provided for @tokenCreated.
@@ -805,6 +805,78 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Noch keine App verbunden.'**
   String get noConnectedApps;
+
+  /// No description provided for @siriHeader.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri'**
+  String get siriHeader;
+
+  /// No description provided for @siriThisIphone.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri (dieses iPhone)'**
+  String get siriThisIphone;
+
+  /// No description provided for @siriOtherIphone.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri (anderes iPhone)'**
+  String get siriOtherIphone;
+
+  /// No description provided for @siriWorksWithoutSetup.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zu Hummlist hinzu“.'**
+  String get siriWorksWithoutSetup;
+
+  /// No description provided for @siriShowPhrases.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri-Sätze anzeigen'**
+  String get siriShowPhrases;
+
+  /// No description provided for @siriOldShortcutHint.
+  ///
+  /// In de, this message translates to:
+  /// **'Den alten Kurzbefehl brauchst du nicht mehr. Seinen Token „{name}“ kannst du unten löschen.'**
+  String siriOldShortcutHint(String name);
+
+  /// No description provided for @siriPhrasesTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri-Sätze'**
+  String get siriPhrasesTitle;
+
+  /// No description provided for @siriPhrasesEnglish.
+  ///
+  /// In de, this message translates to:
+  /// **'Auf Englisch'**
+  String get siriPhrasesEnglish;
+
+  /// No description provided for @siriPhrasesGerman.
+  ///
+  /// In de, this message translates to:
+  /// **'Auf Deutsch'**
+  String get siriPhrasesGerman;
+
+  /// No description provided for @siriPhrase.
+  ///
+  /// In de, this message translates to:
+  /// **'„{phrase}“'**
+  String siriPhrase(String phrase);
+
+  /// No description provided for @revokeSiriTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri-Zugang widerrufen?'**
+  String get revokeSiriTitle;
+
+  /// No description provided for @revokeSiriBody.
+  ///
+  /// In de, this message translates to:
+  /// **'Siri kann auf dem iPhone dann nichts mehr hinzufügen. Beim nächsten Start von Hummlist dort wird Siri neu eingerichtet.'**
+  String get revokeSiriBody;
 
   /// No description provided for @connectedOn.
   ///

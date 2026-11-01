@@ -16,6 +16,7 @@ const sameInBothLanguages = {
   'feedbackSection': '"Feedback" is German too',
   'feedbackCategoryBug': '"Bug" is what German testers say',
   'feedbackCounter': 'only numbers',
+  'siriHeader': 'product name',
 };
 
 Map<String, Object?> readArb(String path) =>

@@ -5,11 +5,13 @@
 // Both JWT kinds are accepted only while their Supabase session exists, so disconnecting an app
 // in "Zugänge" (revokeGrant deletes its sessions) or signing out cuts access off at once instead
 // of when the access token expires.
-//   pat     - a personal access token (fgp_...), checked by hash against the database.
+//   pat     - a personal access token (fgp_...), checked by hash against the database;
+//   siri    - the app's "Siri on this iPhone" credential: the same token format, valid while the
+//             session that minted it exists. Only functions that pass { siri: true } take it.
 // authenticateSession accepts only the app's own session token, household or not: for account
 // actions no connected app or token may take.
 import { createRemoteJWKSet, type JWTPayload, jwtVerify } from 'jose';
-import { householdOf, resolvePersonalAccessToken, sessionActive, userExists } from './db.ts';
+import { householdOf, resolveAccessToken, sessionActive, userExists } from './db.ts';
 
 export type Auth =
   & { userId: string; householdId: string }
@@ -17,6 +19,7 @@ export type Auth =
     /** sessionId: the Supabase session behind the token (Alexa revokes it, job 31). */
     | { via: 'oauth'; clientId: string; sessionId: string }
     | { via: 'pat' }
+    | { via: 'siri' }
     | { via: 'session' }
   );
 
@@ -51,12 +54,20 @@ export type AuthDeps = {
   sessionActive: (
     session: { id: string; userId: string; clientId: string | null },
   ) => Promise<boolean>;
-  resolvePat: (tokenHash: string) => Promise<{ userId: string; householdId: string } | null>;
+  resolvePat: (tokenHash: string) => Promise<ResolvedToken | null>;
 };
+
+export type ResolvedToken = { userId: string; householdId: string; kind: 'pat' | 'siri' };
+
+export type AuthOptions = { siri?: boolean };
 
 export const PAT_PREFIX = 'fgp_';
 
-export async function authenticate(req: Request, deps: AuthDeps = defaultDeps): Promise<Auth> {
+export async function authenticate(
+  req: Request,
+  deps: AuthDeps = defaultDeps,
+  options: AuthOptions = {},
+): Promise<Auth> {
   const header = req.headers.get('authorization') ?? '';
   const match = /^Bearer\s+(\S+)\s*$/i.exec(header);
   if (!match) throw new AuthError('missing_token', 'Authorization: Bearer <token> fehlt.');
@@ -64,8 +75,10 @@ export async function authenticate(req: Request, deps: AuthDeps = defaultDeps): 
 
   if (token.startsWith(PAT_PREFIX)) {
     const owner = await deps.resolvePat(await sha256Hex(token));
-    if (!owner) throw new AuthError('invalid_token', 'Token unbekannt oder widerrufen.');
-    return { ...owner, via: 'pat' };
+    if (!owner || (owner.kind === 'siri' && !options.siri)) {
+      throw new AuthError('invalid_token', 'Token unbekannt oder widerrufen.');
+    }
+    return { userId: owner.userId, householdId: owner.householdId, via: owner.kind };
   }
 
   const claims = await verifyJwt(token, deps);
@@ -163,7 +176,7 @@ const defaultDeps: AuthDeps = {
   jwks: (issuer) => (jwksCache ??= createRemoteJWKSet(issuer.jwksUri)),
   householdOf,
   sessionActive,
-  resolvePat: resolvePersonalAccessToken,
+  resolvePat: resolveAccessToken,
 };
 
 const defaultSessionDeps: SessionDeps = { ...defaultDeps, userExists };

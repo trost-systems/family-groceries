@@ -19,6 +19,8 @@ import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
+import 'package:family_groceries/siri/siri_credentials.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -94,12 +96,25 @@ Future<void> _main(WidgetsBinding Function() binding) async {
   final language = AppLanguage.byCode(await cache.language());
   final theme = themeModeOf(await cache.theme());
   final pendingInvite = await PendingInvite.load(cache);
+  final siri = switch (siriChannelFor(
+    web: kIsWeb,
+    platform: defaultTargetPlatform,
+  )) {
+    final channel? => SiriCredentials(
+      SupabaseSiriServer(client),
+      channel,
+      voiceUrl: Environment.voiceUrl,
+    ),
+    null => null,
+  };
   final session = SessionCubit(
     client,
     cache,
     analytics: analytics,
     pendingInvite: pendingInvite,
+    beforeSignOut: siri?.signingOut,
   );
+  siri?.follow(session);
   final entitlements = Entitlements(
     SupabaseEntitlementsSource(client),
     session,

@@ -78,9 +78,10 @@ test('the EN Alexa stub says German only and links to the German guide', () => {
 
 test('the dialogue renders as separate lines and other paragraphs get no line break', () => {
   const doc = buildSite().page('/de/anleitungen/siri-kurzbefehl');
-  const dialogue = doc.querySelector('main blockquote p');
-  assert.equal(dialogue.querySelectorAll('br').length, 3);
-  const others = doc.querySelectorAll('main p').filter((p) => p !== dialogue && p.querySelector('br'));
+  const dialogues = doc.querySelectorAll('main blockquote p').filter((p) => /^Du:/.test(p.text));
+  assert.equal(dialogues.length, 2, 'the Shortcut and the native Siri dialogue');
+  for (const dialogue of dialogues) assert.equal(dialogue.querySelectorAll('br').length, 3);
+  const others = doc.querySelectorAll('main p').filter((p) => !dialogues.includes(p) && p.querySelector('br'));
   assert.deepEqual(others.map((p) => p.text), []);
 });
 

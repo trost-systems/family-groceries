@@ -29,7 +29,9 @@ WHERE timestamp > now() - INTERVAL 90 DAY
     '$hinge_status', '$locale', '$network_wifi', '$network_cellular', '$network_bluetooth',
     '$network_carrier', '$user_agent', '$raw_user_agent', '$session_id', '$is_identified',
     '$recording_status', '$sdk_debug_pending_queue_size', '$sdk_debug_current_session_duration',
-    '$sdk_debug_session_start', '$exception_source', '$debug_images'
+    '$sdk_debug_session_start', '$exception_source', '$debug_images',
+    -- Job 51: siri_add and siri_read.
+    'result', 'reason', 'language', 'count'
   )
 GROUP BY key
 ORDER BY events DESC;
@@ -68,7 +70,16 @@ SELECT 'app_version', toString(properties.app_version), count() FROM events
 GROUP BY toString(properties.app_version)
 UNION ALL
 SELECT 'actor_role', toString(properties.actor_role), count() FROM events
-WHERE event IN ('item_added', 'item_ticked') GROUP BY toString(properties.actor_role);
+WHERE event IN ('item_added', 'item_ticked') GROUP BY toString(properties.actor_role)
+UNION ALL
+SELECT 'siri source', toString(properties.source), count() FROM events
+WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.source)
+UNION ALL
+SELECT 'siri reason', toString(properties.reason), count() FROM events
+WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.reason)
+UNION ALL
+SELECT 'siri language', toString(properties.language), count() FROM events
+WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.language);
 
 -- 5. Error messages: every distinct exception type and value. Values are scrubbed (quoted text,
 --    e-mails, URLs, UUIDs, long numbers replaced; non-runtime errors keep only a code); read

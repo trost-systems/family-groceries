@@ -5106,3 +5106,140 @@ does not touch them.
     has no anchor and #148's pages stay untouched, so the link opens the page. The longer text
     makes the sheet taller; it stays scrollable and closes with its drag handle or back.
 
+## Job 51: native Siri (App Intents, English and German), 2026-10-31
+
+Spec #9 "Native Siri", approved by Peter on 2026-10-31. Migrations
+`20261031213000_siri_credentials.sql` and `20261031213001_classifier_synonyms_english.sql`.
+Apple facts were read on 2026-10-31. The full sheet with quotes is in the job's ops directory
+(`apple-facts.md`). The sources:
+WWDC22 10169 and 10170, WWDC23 10102 (https://developer.apple.com/videos/play/wwdc2023/10102/),
+WWDC25 244, the HIG page "App Shortcuts"
+(https://developer.apple.com/design/human-interface-guidelines/app-shortcuts), the entitlement page
+(https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.siri),
+`supportedModes`/`IntentModes` (https://developer.apple.com/documentation/appintents/intentmodes),
+and the Apple DTS forum answers in threads 777854 and 759909.
+
+1. **No free text in the invocation phrase.** A phrase needs `\(.applicationName)` and at most one
+   parameter, which must be an AppEntity or AppEnum. Apple DTS: "App Shortcuts do not support
+   arbitrary string parameters in the invocation phrase." So "Add milk, eggs and bread to
+   Hummlist" can't be one utterance. `AddItemsIntent` has phrases without a parameter ("Add to
+   Hummlist", "Füge etwas zu Hummlist hinzu"), and Siri asks for the items ("What should I add?",
+   "Was soll auf die Liste?"). The answer may hold several items.
+2. **The one-shot "Add milk to Hummlist" works for known items only.** The phrase "Add
+   \(\.$item) to \(.applicationName)" takes an `ItemSuggestion` entity. The app sends the names to
+   the iPhone: the household's usuals, then what's on the list, then recent purchases, at most
+   50, names only. Every change calls `updateAppShortcutParameters()`. Apple caps the expansion
+   ("can't be unbounded", 1,000 phrases per app including every parameter value), so 50 names
+   times the parameterized phrases stays inside it. An unknown item falls back to the follow-up
+   question. Apple may use entity display names to train its models (App Shortcuts page). That
+   means household grocery names go to Apple: a Legal Review point (NEEDS_LEAD).
+3. **iOS 17 and up.** The intents and the provider are `@available(iOS 17.0, *)`. The deployment
+   target stays 15.0, and iOS 15 and 16 users keep the Shortcut recipe. Why not 16: per-locale
+   phrase sets from the string catalog and flexible matching are documented "only to apps
+   targeting iOS 17" (WWDC23 10102). Without them the German phrases are not proven to work.
+   The phrases are `en.lproj`/`de.lproj` `AppShortcuts.strings`, not the brief's
+   `AppShortcuts.xcstrings`. Xcode 26 refuses the catalog for this app: "AppShortcuts.xcstrings is
+   only supported for iOS 17.0 and above. Use AppShortcuts.strings for previous versions." (CI run
+   41236774729). The deployment target stays 15.0, so each Swift phrase has exactly one German
+   translation and no extra per-locale phrases. CI's "Validate app shortcut strings metadata" step
+   checks the files, and `AppShortcutPhraseTests` checks that every phrase has an entry in both.
+4. **Background only.** With neither `openAppWhenRun` nor `supportedModes` set, an intent
+   "typically" runs in the background (Apple, "Configuring the runtime behavior"). `supportedModes
+   = .background` is set where the iOS 26 SDK has it. Nothing foregrounds the app: HomePod can't,
+   and Siri stays in its sheet. `.lockedHousehold` speaks and offers no "open the app" step.
+5. **No Siri entitlement in this PR.** Apple's entitlement page requires
+   `com.apple.developer.siri` for "Intents app extensions that handle any Siri requests other than
+   shortcut requests". App Intents are not SiriKit extensions. Apple's own App Shortcuts sample has
+   an empty entitlements file and no `NSSiriUsageDescription`. No Apple sentence says so outright
+   (inferred), so Peter's TestFlight device test decides. If Siri doesn't hear the phrases by
+   voice, NEEDS_LEAD "Job 51" has the capability steps. Turning the capability on invalidates
+   the App Store profile (RELEASE.md "Capabilities"), so it can't ride along in a code PR.
+   `NSSiriUsageDescription` belongs to `INPreferences.requestSiriAuthorization`, which the app
+   doesn't call.
+6. **Intents in the Runner target, not an extension.** The Runner target is the same process as
+   the app, with the same Keychain. That means no App Group, no keychain sharing and no new
+   profile. When Siri runs an intent with the app killed, iOS starts the app process in the
+   background. The intents are plain Swift, so they never wait for the Flutter engine.
+7. **Auth: a Siri credential bound to the app's session (chosen over reading the session from
+   Swift).** Reading supabase_flutter's session in Swift would need a refresh from Swift once the
+   access token expires (1 h). Supabase refresh tokens are single-use, so two refreshers sign the
+   app out, and without a refresh Siri fails whenever the app wasn't opened within the hour.
+   Instead, after sign-in the app calls `create_siri_credential()`. That is a
+   `personal_access_tokens` row of kind `siri` with the same `fgp_` format and hash at rest. Its
+   `session_id` is the Supabase session that created it. The app stores it in the Keychain
+   (service `com.hummlist.app.siri`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`).
+   `authenticate_access_token` accepts a Siri row only while that session exists.
+   - What ends the credential: signing out (GoTrue deletes the session; the app also revokes the
+     row first, at most 2 s, and clears the Keychain), signing in again (new session, the app
+     replaces the row with `p_replace`), account deletion (cascade), and leaving the household
+     (membership check).
+   - What the function refuses: OAuth client tokens (`client_id` claim) and a JWT without
+     `session_id`. It keeps at most 5 active Siri rows per user and doesn't count toward the 20
+     PATs.
+   - Only `voice` opts in (`authenticate(req, deps, { siri: true })`). `mcp`, `alexa` and
+     `account` refuse it. `authenticate_personal_access_token` (the pre-job-51 lookup a rolled-back
+     function would use) now refuses Siri rows too.
+   - The session can only age out on a paid plan (time-boxed sessions). On the free plan it lives
+     until sign-out.
+   - The RPC is called through PostgREST, like `create_personal_access_token`, rather than through a
+     session-only edge function. The SQL refuses what the edge function would refuse (OAuth
+     tokens; PATs can't reach PostgREST), so it is one hop less.
+8. **Revoking "Siri (this iPhone)" in Zugänge is a reset, not an off switch.** The app issues a new
+   credential at its next start in the household, and the confirm text says so. Turning Siri off
+   for the app is iOS's per-app Siri setting. A revoke from another device
+   still stops a lost iPhone until someone opens Hummlist on it.
+9. **The server contract stays the Shortcut's.** A request without `lang` gets exactly the old
+   answers: German, the same statuses, no new fields. One e2e test compares the whole JSON body.
+   A request with `lang` (the native client always sends it) gets `outcome` in every JSON answer:
+   `added`, `nothing_added`, `parsed`, `read` or the failure code, which is also `error`. The
+   Swift client branches on `outcome`, never on wording. `list` is accepted and ignored, for a
+   future list id. There is one list per household and one household per user, so the intents
+   have no list parameter.
+10. **English parsing** is `voice/parse_en.ts`, and the copy is `voice/copy.ts`. German behavior and
+    strings are byte-identical. "mac and cheese", "macaroni and cheese" and "half and half" stay
+    one item each. "salt and pepper" is two. English names keep Siri's casing ("milk"), so the
+    read-back says "Added milk, eggs and bread to Hummlist." German names keep their capital
+    letter. "Hummlist" joined the German and English filler ("Füge Milch zu Hummlist hinzu" gives
+    Milch), which helps Alexa too.
+11. **English classification.** 50 common English grocery words go through `add_item` in pgTAP
+    (`english_groceries.test.sql`). fish, chocolate, cereal and bell pepper(s) needed synonyms.
+    Known gaps:
+    - "beer" lands in Obst & Gemüse. The German stemmer folds "beer" and "Beere" into one key, and
+      a synonym would move every berry to drinks. Fixing it needs a dictionary-level exception,
+      left out of this job. The household's category memory fixes it after one move.
+    - "peppers" alone goes to Vorrat (the spice).
+12. **No offline queue.** Siri says "Added" only after the server's 200 with `added` or
+    `nothing_added`. Offline, 5xx, 401 or any refusal gets a sentence saying nothing was added. A
+    timeout (8 s in all), a dropped connection or a reply without a known outcome is different:
+    the server may have added the items. Siri then says "I can't confirm that anything was added.
+    Please check the list." rather than claiming nothing was. A queued item would be a silent
+    maybe (Spec #9 AC4).
+    Analytics: `track()` waits for one consent lookup before the answer. That is one indexed
+    query on the open pool, and it saves keeping the request alive after the response for
+    `withTelemetry`'s flush.
+13. **Which language.** No API on the iOS 26 SDK tells an intent Siri's language
+    (`IntentSystemContext.locale` is newer, and `INPreferences.siriLanguageCode()` is
+    "informational purposes only"). So the intent detects the language of the dictated text with
+    `NLLanguageRecognizer`, constrained to English and German, because Siri transcribes in its own
+    language. When that is unsure, and for "What's on my Hummlist?", it uses the app's
+    localization. The dialogs come from the app's string tables.
+14. **Premium seam only.** `premium_required` is in the copy table (DE exactly job 50's
+    placeholder; EN "Voice commands are part of Hummlist Premium. You can unlock it in the app
+    under More, Hummlist Premium. I didn't add anything.") and in the outcome type, with HTTP 200
+    for the Shortcut. No code path returns it, and a test proves that. The Swift client maps it at
+    any status to `.lockedHousehold`. Job 50's `requirePremium` gate then works for native Siri
+    with no Swift change.
+15. **Analytics.** `siri_add` and `siri_read` are server events with `result`, `reason`,
+    `language`, `source` (`native` for the Siri credential, `shortcut` for a PAT) and `count`. They
+    are sent only after authentication and only under the user's newest analytics yes (job 31's
+    `analytics_consents`). Never a name or text. The voice function's error logs now carry the
+    error type and the scrubbed message only, never the request's items.
+16. **The Shortcut recipe stays (AC9).** It works unchanged through beta and launch. Zugänge shows
+    the native card on iOS. Users whose PAT is named like the recipe's ("Siri", "Kurzbefehl",
+    "Shortcut") get a hint that they can delete the old token; nothing is revoked automatically.
+    The guides put native Siri first, in a `since=1.0.0` section: preview builds show it, and
+    production shows it from the launch release on. Retiring the recipe is a later decision, made
+    on data (`siri_add` with `source: shortcut`).
+17. **Not built:** an Apple Watch app (App Shortcuts from the iPhone "cannot be run on the Watch",
+    WWDC23 10102), a tick-off intent, and a gradual rollout. The changelog item holds on
+    `native-siri` until Hummlist Launch.

@@ -705,3 +705,82 @@ new server switch is seeded off. Decisions: DECISIONS "Job 47". Behavior: docs/P
   tombstone after 30 days, like any purged purchase. Leaving refunds out needs a decision whether a
   refunded-then-reversed purchase may then bind elsewhere, so it waits for Legal Review.
 
+## Job 51: native Siri (2026-10-31)
+
+Nothing here blocks the merge. Native Siri reaches testers with the next TestFlight build after
+the merge. The changelog item waits on the `native-siri` hold in `releases/flags.json`.
+
+### 1. Device test on Peter's iPhone (internal TestFlight, after the merge)
+
+Sign in to Hummlist on the TestFlight build, open the list once, then close the app. Set Siri to
+English (Settings → Siri → Language) for lines 1 to 5, then to German for lines 6 to 9.
+
+1. "Hey Siri, add to Hummlist" → "What should I add?" → "milk, eggs and bread" → Siri: "Added
+   milk, eggs and bread to Hummlist." Lea's phone shows the three items within seconds.
+2. "Hey Siri, add milk to Hummlist" (milk on the list before) → no follow-up question, "Already on
+   the list: milk." or "Added milk …".
+3. "Hey Siri, what's on my Hummlist?" → reads at most ten items, then "and N more".
+4. Airplane mode on, then line 1 → Siri says nothing was added. No item appears after airplane
+   mode goes off again.
+5. HomePod (if one is paired, Personal Requests on): line 1 → the full sentence is spoken.
+6. "Hey Siri, füge etwas zu Hummlist hinzu" → "Was soll auf die Liste?" → "Milch, Eier und Brot"
+   → "Hinzugefügt: Milch, Eier, Brot."
+7. "Hey Siri, füge Milch zu Hummlist hinzu" → no follow-up question.
+8. "Hey Siri, was steht auf meiner Hummlist?" → reads the list.
+9. Mehr → Abmelden, then line 6 → "Öffne Hummlist und melde dich an …", nothing added.
+10. The old Shortcut ("Hey Siri, Einkaufsliste") still answers as before.
+10a. One-word items take the app's language when the word is too short to tell (DECISIONS "Job 51"
+    item 13). With the iPhone in English and Siri in German, say "Füge etwas zu Hummlist hinzu" →
+    "Milch". Note whether the answer comes in German or English. English there is a known
+    limitation, not a failure; the item must still be added.
+11. Later, with job 50's lock on and a locked household: line 6 → the Premium sentence, nothing
+    added, the app stays closed.
+
+If Siri doesn't hear the phrases at all (lines 1 and 6), do section 2 and test again.
+
+### 2. Only if the device test needs it: the Siri capability
+
+Apple requires `com.apple.developer.siri` for SiriKit Intents extensions, not for App Intents
+(DECISIONS "Job 51" item 5). If voice invocation fails anyway:
+
+1. Lead: developer.apple.com → Identifiers → `com.hummlist.app` → enable **Siri** → Save.
+2. On the box, renew the App Store profile (docs/RELEASE.md "Capabilities"): `bundle exec fastlane
+   ios renew_profile` with the env shown there.
+3. A one-line PR adds `<key>com.apple.developer.siri</key><true/>` to
+   `app/ios/Runner/Runner.entitlements`. Its CI `ios` job and the next Release run prove the
+   profile matches.
+
+No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAuthorization`.
+
+### 3. Placeholder copy for Hummlist Launch (Spec #5)
+
+- `premium_required` (voice, not reachable until job 50): de "Sprachbefehle sind Teil von
+  Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." en "Voice
+  commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium.
+  I didn't add anything." The iOS app has the same sentences as a fallback
+  (`app/ios/Runner/AppIntents`).
+- The guides' native Siri sections (`site/content/guides/de/siri-kurzbefehl.md` "Ohne
+  Einrichtung", `en/siri-shortcut.md` "Siri without setup") carry a draft note. They show on
+  production from version 1.0.0. The EN guide's title still says "German only for now". Launch
+  rewrites it once native Siri is public.
+- The Zugänge card text (`siriWorksWithoutSetup`, `siriOldShortcutHint` in `app/l10n/app_*.arb`).
+
+### 4. Legal Review touchpoints (no legal text was edited)
+
+- **New credential.** "Siri (dieses iPhone)" is a token stored hashed on our server and in plain
+  form in the iPhone's Keychain. It is bound to the app session and ends with sign-out. The
+  privacy policy's section on access tokens and voice should name it.
+- **Item names on the device for Siri.** Up to 50 item names of the household go to the iOS App
+  Shortcuts system so that "Add milk to Hummlist" works. Apple states it "may extract anonymized
+  App Shortcuts data such as localized phrases, display representation values … Machine learning
+  models use this data" (https://developer.apple.com/documentation/appintents/app-shortcuts). The
+  display representation values are our item names. The privacy text should say so, or Launch
+  drops the one-shot phrase.
+- **Analytics.** `siri_add` and `siri_read` (docs/ANALYTICS.md) count Siri use per household under
+  the existing consent. No text and no names.
+
+### 5. Known gaps
+
+- English "beer" is classified as produce (DECISIONS "Job 51" item 11). The household's category
+  memory fixes it after one move.
+- iOS 15 and 16 get no native Siri. The Shortcut recipe stays for them.

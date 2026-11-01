@@ -16,6 +16,9 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "OfflineSpeech") {
       OfflineSpeech.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SiriBridge") {
+      SiriBridge.register(with: registrar)
+    }
   }
 }
 

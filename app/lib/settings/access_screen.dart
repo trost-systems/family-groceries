@@ -5,38 +5,68 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/settings/access_cubit.dart';
 import 'package:family_groceries/settings/access_repository.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
+import 'package:family_groceries/siri/siri_phrases.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Ways in from outside the app: the MCP endpoint, personal access tokens
-/// and OAuth-connected apps (`/more/access`). A page of the More tab, which
-/// gives it its frame.
+/// Ways in from outside the app: the MCP endpoint, Siri, personal access
+/// tokens and OAuth-connected apps (`/more/access`). A page of the More
+/// tab, which gives it its frame.
 class const AccessScreen({
   super.key,
 
   /// Overrides the Supabase repository, for tests.
   final AccessRepository? repository,
+
+  /// Overrides the platform's Siri channel (iOS only), for tests.
+  final SiriChannel? siri,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (_) {
-      final cubit = AccessCubit(
-        repository ?? SupabaseAccessRepository(Supabase.instance.client),
-      );
-      unawaited(cubit.load());
-      return cubit;
-    },
-    child: const _Access(),
-  );
+  Widget build(BuildContext context) {
+    final siri =
+        this.siri ??
+        siriChannelFor(web: kIsWeb, platform: defaultTargetPlatform);
+    return BlocProvider(
+      create: (_) {
+        final cubit = AccessCubit(
+          repository ?? SupabaseAccessRepository(Supabase.instance.client),
+          siri: siri,
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: _Access(onIphone: siri != null),
+    );
+  }
 }
 
-class const _Access() extends StatelessWidget {
+/// A user-made token named like the old Shortcut recipe's (`Siri` in
+/// docs/SIRI_SHORTCUT.md), which native Siri replaces.
+bool _isShortcutToken(AccessToken token) =>
+    token.kind == AccessKind.pat &&
+    RegExp(
+      'siri|kurzbefehl|shortcut',
+      caseSensitive: false,
+    ).hasMatch(token.name);
+
+class const _Access({required final bool onIphone}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = context.watch<AccessCubit>().state;
+    final tokens = switch (state.tokens) {
+      SectionLoaded(:final value) => value,
+      _ => const <AccessToken>[],
+    };
+    final siriTokens = [
+      for (final t in tokens)
+        if (t.kind == AccessKind.siri) t,
+    ];
+    final shortcutTokens = tokens.where(_isShortcutToken).toList();
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -55,12 +85,27 @@ class const _Access() extends StatelessWidget {
                 onPressed: () => _copy(context, Environment.mcpUrl),
               ),
             ),
+            if (onIphone || siriTokens.isNotEmpty) _Header(l10n.siriHeader),
+            if (onIphone) _SiriCard(shortcutTokens: shortcutTokens),
+            for (final token in siriTokens)
+              _TokenTile(
+                token: token,
+                label: token.id == state.siriHere
+                    ? l10n.siriThisIphone
+                    : l10n.siriOtherIphone,
+              ),
             _Header(l10n.accessTokens),
             ..._section(
               context,
-              state.tokens,
+              switch (state.tokens) {
+                SectionLoaded(:final value) => SectionLoaded([
+                  for (final t in value)
+                    if (t.kind == AccessKind.pat) t,
+                ]),
+                final other => other,
+              },
               empty: l10n.noTokens,
-              tile: (token) => _TokenTile(token: token),
+              tile: (token) => _TokenTile(token: token, label: token.name),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -196,15 +241,100 @@ class const _Header(final String text) extends StatelessWidget {
   );
 }
 
-class const _TokenTile({required final AccessToken token})
+class const _SiriCard({required final List<AccessToken> shortcutTokens})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    return Card(
+      key: const ValueKey('siri-card'),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.siriWorksWithoutSetup),
+            for (final token in shortcutTokens)
+              Padding(
+                key: const ValueKey('siri-legacy-hint'),
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(l10n.siriOldShortcutHint(token.name)),
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                key: const ValueKey('siri-phrases'),
+                onPressed: () => unawaited(
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => const _SiriPhrasesDialog(),
+                  ),
+                ),
+                child: Text(l10n.siriShowPhrases),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Both languages: Siri listens in the iPhone's, not the app's.
+class const _SiriPhrasesDialog() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final english = (l10n.siriPhrasesEnglish, siriPhrases.en);
+    final german = (l10n.siriPhrasesGerman, siriPhrases.de);
+    final languages = l10n.localeName == 'en'
+        ? [english, german]
+        : [german, english];
+    return AlertDialog(
+      title: Text(l10n.siriPhrasesTitle),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final (language, phrases) in languages) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 4),
+                child: Text(
+                  language,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              for (final phrase in phrases) Text(l10n.siriPhrase(phrase)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.close),
+        ),
+      ],
+    );
+  }
+}
+
+class const _TokenTile({
+  required final AccessToken token,
+
+  /// The token's name, or what a Siri credential is called.
+  required final String label,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final lastUsed = token.lastUsedAt;
+    final siri = token.kind == AccessKind.siri;
     return ListTile(
-      leading: const Icon(Icons.key),
-      title: Text(token.name),
+      leading: Icon(siri ? Icons.mic_none : Icons.key),
+      title: Text(label),
       subtitle: Text(
         [
           l10n.tokenHint(token.hint),
@@ -213,7 +343,7 @@ class const _TokenTile({required final AccessToken token})
         ].join(' · '),
       ),
       trailing: IconButton(
-        tooltip: l10n.revokeToken(token.name),
+        tooltip: l10n.revokeToken(label),
         icon: const Icon(Icons.delete_outline),
         onPressed: () => unawaited(_revoke(context)),
       ),
@@ -223,10 +353,11 @@ class const _TokenTile({required final AccessToken token})
   Future<void> _revoke(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final cubit = context.read<AccessCubit>();
+    final siri = token.kind == AccessKind.siri;
     final confirmed = await _confirm(
       context,
-      title: l10n.revokeTokenTitle,
-      body: l10n.revokeTokenBody,
+      title: siri ? l10n.revokeSiriTitle : l10n.revokeTokenTitle,
+      body: siri ? l10n.revokeSiriBody : l10n.revokeTokenBody,
       action: l10n.revoke,
     );
     if (confirmed && context.mounted) {
