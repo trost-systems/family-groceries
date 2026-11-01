@@ -308,8 +308,37 @@ Personal access tokens live in `public.personal_access_tokens` (migration
 `*_personal_access_tokens.sql`). Only the hash is stored, plus the last four
 characters for the list in the app. `create_personal_access_token(p_name)`
 returns the plaintext once. Clients can read their own rows except the hash,
-and can only set `revoked_at`, which a trigger keeps from being cleared. At
+and can only set `revoked_at`, which a trigger keeps from being cleared (and
+stamps with the server's `now()`, whatever time the client sends). At
 most 20 active tokens exist per user.
+
+### Retention
+
+Every access key, kind `pat` or `siri`, is deleted 30 days after it ended
+(privacy policy §7; Legal Review 2026-11-01, N-4 (b);
+`supabase/migrations/20261101100000_access_key_retention.sql`). A key works
+while all of these hold (`authenticate_access_token`): `revoked_at` is null,
+its creator is a member of the key's household, and for `siri` its session
+is in `auth.sessions` and `not_after` has not passed. It has ended once one
+fails, and `revoked_at` records when:
+
+- **Revoked** (Zugänge, the 5-key Siri cap, a replaced Siri key): set at the
+  time.
+- **Creator left the household:** the `household_members_end_access_tokens`
+  trigger sets it when the membership row goes. Leaving ends a key for good;
+  rejoining the same household no longer revives it. When the household or
+  the account is deleted, the keys go with it by cascade instead.
+- **Siri session ended** (sign-out deletes it; `not_after` passes): there is
+  no event to hook in `auth.sessions` (Supabase's table), so the daily job
+  sets it, at most a day late.
+
+`purge_access_tokens()` runs daily (pg_cron `purge-access-tokens`,
+03:23 UTC). It first ends every active key that fails the membership or
+session rule (the session rule, and a backstop for the trigger), then deletes
+keys with `revoked_at` more than 30 days ago. Zugänge lists only working
+keys; the data export (`access_tokens`) lists every key still stored, so a
+key leaves the export when it is deleted. Check on production:
+`select jobname, schedule, active from cron.job where jobname = 'purge-access-tokens';`
 
 ## Configuration
 
