@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
@@ -10,6 +12,7 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/item_row.dart'
     show quantityLabel;
+import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
@@ -18,10 +21,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// The add bar's height above the tabs; the input never leaves it.
 const addBarHeight = 72.0;
 
-/// The widest the add bar and sheet get, aligned with the list column.
-const addSheetMaxWidth = 640.0;
-
-const _sheetDuration = Duration(milliseconds: 280);
+const _sheetDuration = HlDuration.medium;
 
 /// Room between the open sheet's top and the screen's safe top.
 const _topGap = 28.0;
@@ -116,6 +116,7 @@ class _AddSheetState() extends State<AddSheet> {
   Widget build(BuildContext context) {
     final still = MediaQuery.disableAnimationsOf(context);
     final sheet = context.watch<AddSheetCubit>().state;
+    final list = context.watch<ListCubit>().state;
     final open = sheet.open;
     return BlocListener<AddSheetCubit, AddSheetState>(
       listenWhen: (a, b) => a.open != b.open,
@@ -123,6 +124,7 @@ class _AddSheetState() extends State<AddSheet> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final media = MediaQuery.of(context);
+          final frame = ShoppingListView.frameFor(constraints.maxWidth, list);
           var max = constraints.maxHeight - media.padding.top - _topGap;
           // A duplicate hint or merge note (job 32b) needs its row in
           // view, so the sheet may grow for it.
@@ -157,28 +159,20 @@ class _AddSheetState() extends State<AddSheet> {
                         onTap: widget.onClose,
                         child: AnimatedOpacity(
                           opacity: open ? 1 : 0,
-                          duration: still ? Duration.zero : _sheetDuration,
-                          curve: open
-                              ? Easing.emphasizedDecelerate
-                              : Easing.emphasizedAccelerate,
+                          duration: hlMotion(context, _sheetDuration),
+                          curve: open ? HlEasing.standard : HlEasing.exit,
                           child: const ColoredBox(color: Color(0x66000000)),
                         ),
                       ),
                     ),
                   ),
                 ),
-              Positioned(
-                left: 0,
-                right: 0,
+              // Over the list's first column, like the add field below it.
+              PositionedDirectional(
+                start: frame.side,
+                width: frame.columnWidth,
                 bottom: 0,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: addSheetMaxWidth,
-                    ),
-                    child: _Surface(open: open, still: still, child: content),
-                  ),
-                ),
+                child: _Surface(open: open, still: still, child: content),
               ),
             ],
           );
@@ -215,18 +209,20 @@ class const _Surface({
       key: const ValueKey('add-sheet-surface'),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(HlRadius.l),
+        ),
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(HlRadius.l),
+        ),
         // Reduced motion: the surface takes its size at once.
         child: still
             ? sized
             : AnimatedSize(
                 duration: _sheetDuration,
-                curve: open
-                    ? Easing.emphasizedDecelerate
-                    : Easing.emphasizedAccelerate,
+                curve: open ? HlEasing.standard : HlEasing.exit,
                 alignment: Alignment.topCenter,
                 child: sized,
               ),
@@ -245,7 +241,6 @@ class const _Content({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final still = MediaQuery.disableAnimationsOf(context);
     final sheet = context.watch<AddSheetCubit>().state;
     final list = context.watch<ListCubit>();
     final catalog = list.state.catalog;
@@ -350,10 +345,8 @@ class const _Content({
     ];
     return AnimatedOpacity(
       opacity: sheet.open ? 1 : 0,
-      duration: still
-          ? Duration.zero
-          : Duration(milliseconds: sheet.open ? 180 : 120),
-      curve: sheet.open ? Curves.easeOut : Curves.easeIn,
+      duration: hlMotion(context, HlDuration.short),
+      curve: sheet.open ? HlEasing.standard : HlEasing.exit,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight),
         child: Semantics(
@@ -410,7 +403,7 @@ class const _Header({required final VoidCallback onClose})
               height: 4,
               decoration: BoxDecoration(
                 color: scheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(HlRadius.full),
               ),
             ),
           ),
@@ -481,6 +474,7 @@ class const _SuggestionRow({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
+    final t = HummlistColors.of(Theme.of(context).brightness);
     final entry = suggestion.entry;
     final category = catalog.categories
         .where((c) => c.id == entry.categoryId)
@@ -557,14 +551,7 @@ class const _SuggestionRow({
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
-                              text: source,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: scheme.tertiary,
-                              ),
-                            ),
+                            TextSpan(text: source),
                             for (final part in parts) ...[
                               const TextSpan(text: ' · '),
                               TextSpan(
@@ -582,33 +569,30 @@ class const _SuggestionRow({
                           ],
                         ),
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           height: 1.3,
-                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          color: t.textMuted,
                         ),
                       ),
                     ],
                   ),
                 ),
-                ?(ownStore == null ? null : StoreBadge(ownStore!, size: 20)),
+                ?(ownStore == null
+                    ? null
+                    : StoreBadge(ownStore!, height: 24, maxWidth: 120)),
                 if (first)
                   Container(
-                    width: 32,
+                    width: 36,
                     height: 28,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border(
-                        top: BorderSide(color: scheme.outline),
-                        left: BorderSide(color: scheme.outline),
-                        right: BorderSide(color: scheme.outline),
-                        bottom: BorderSide(color: scheme.outline, width: 2),
-                      ),
+                    decoration: ShapeDecoration(
+                      shape: HexBorder(side: BorderSide(color: t.textMuted)),
                     ),
                     child: Icon(
                       Icons.keyboard_return,
                       size: 16,
-                      color: scheme.onSurfaceVariant,
+                      color: t.textMuted,
                     ),
                   ),
               ],

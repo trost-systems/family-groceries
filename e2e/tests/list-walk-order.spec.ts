@@ -283,7 +283,8 @@ test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold o
 
   const longRow = (await itemRow(peter, long).boundingBox())!;
   const short = (await itemRow(peter, 'Gurke').boundingBox())!;
-  expect(longRow.height, 'a long name wraps: the row grows').toBeGreaterThan(short.height + 20);
+  // A one-line row is the 48 px minimum (job 57); two 21 px lines and the padding make it taller.
+  expect(longRow.height, 'a long name wraps: the row grows').toBeGreaterThan(short.height + 4);
   await expect(itemRow(peter, long)).toHaveAccessibleName(new RegExp(`^${long}`));
 
   const leaEmail = newEmail('walk-rows-lea');

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
@@ -207,7 +208,12 @@ ThemeData appTheme(Brightness brightness) {
     ),
     checkboxTheme: CheckboxThemeData(
       shape: const HexBorder(),
-      side: BorderSide(color: t.border, width: HlBorder.width),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(
+          color: states.contains(WidgetState.selected) ? t.edge : t.border,
+          width: HlBorder.width,
+        ),
+      ),
       fillColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected) ? t.honey : null,
       ),
@@ -217,7 +223,10 @@ ThemeData appTheme(Brightness brightness) {
       color: t.surfaceRaised,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      shape: rounded(HlRadius.m, BorderSide(color: t.divider)),
+      shape: rounded(
+        HlRadius.m,
+        BorderSide(color: t.border, width: HlBorder.width),
+      ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: t.surfaceRaised,
@@ -234,12 +243,13 @@ ThemeData appTheme(Brightness brightness) {
       dragHandleColor: t.textMuted,
     ),
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: scheme.inverseSurface,
-      contentTextStyle: text.bodyMedium!.copyWith(
-        color: scheme.onInverseSurface,
-      ),
-      actionTextColor: scheme.inversePrimary,
-      shape: rounded(HlRadius.s),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: t.surfaceRaised,
+      elevation: 0,
+      contentTextStyle: text.titleSmall!.copyWith(color: t.text),
+      actionTextColor: t.brand,
+      insetPadding: const EdgeInsets.all(HlSpace.s3),
+      shape: rounded(HlRadius.m, contour),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: scheme.surfaceContainer,
@@ -262,8 +272,21 @@ ThemeData appTheme(Brightness brightness) {
         ),
       ),
     ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: scheme.surfaceContainer,
+      indicatorColor: t.honey,
+      indicatorShape: HexBorder(side: contour),
+      selectedIconTheme: IconThemeData(color: t.onHoney),
+      unselectedIconTheme: IconThemeData(color: t.textMuted),
+      selectedLabelTextStyle: text.labelMedium!.copyWith(
+        color: t.text,
+        fontWeight: FontWeight.w700,
+      ),
+      unselectedLabelTextStyle: text.labelMedium!.copyWith(color: t.textMuted),
+    ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: t.brand),
     listTileTheme: ListTileThemeData(iconColor: t.textMuted),
+    inputDecorationTheme: fieldTheme(t, FieldShape.hex),
   );
 }
 

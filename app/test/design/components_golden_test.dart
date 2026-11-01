@@ -2,6 +2,11 @@
 // job 52). After a deliberate look change:
 //   flutter test --update-goldens test/design/components_golden_test.dart
 import 'package:family_groceries/app/theme.dart';
+import 'package:family_groceries/design/field_border.dart';
+import 'package:family_groceries/design/hex_checkbox.dart';
+import 'package:family_groceries/design/hex_segmented.dart';
+import 'package:family_groceries/design/hex_switch.dart';
+import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
@@ -108,6 +113,163 @@ Widget _grid(Brightness brightness) {
                   ),
                 ),
                 Row(
+                  children: [
+                    const SizedBox(width: 90, child: Text('Switch')),
+                    for (final (caption, value, enabled, autofocus) in const [
+                      ('Aus', false, true, false),
+                      ('An', true, true, false),
+                      ('Fokus', true, true, true),
+                      ('Aus, gesperrt', false, false, false),
+                      ('An, gesperrt', true, false, false),
+                    ])
+                      SizedBox(
+                        width: 150,
+                        height: 88,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HexSwitch(
+                              value: value,
+                              onChanged: enabled ? (_) {} : null,
+                              autofocus: autofocus,
+                            ),
+                            Text(
+                              caption,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const SizedBox(width: 90, child: Text('Hex-Box')),
+                    for (final (caption, value, enabled, autofocus) in const [
+                      ('Aus', false, true, false),
+                      ('An', true, true, false),
+                      ('Fokus', true, true, true),
+                      ('Aus, gesperrt', false, false, false),
+                      ('An, gesperrt', true, false, false),
+                    ])
+                      SizedBox(
+                        width: 150,
+                        height: 72,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            HexCheckbox(
+                              value: value,
+                              onChanged: enabled ? (_) {} : null,
+                              autofocus: autofocus,
+                            ),
+                            Text(
+                              caption,
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(
+                      width: 90,
+                      height: 72,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text('Felder'),
+                      ),
+                    ),
+                    for (final field in [
+                      const TextField(
+                        decoration: InputDecoration(labelText: 'E-Mail'),
+                      ),
+                      // The switch and box below hold the one real focus.
+                      InputDecorator(
+                        isFocused: true,
+                        decoration: const InputDecoration(labelText: 'Laden'),
+                        child: Text(
+                          'Lidl',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                      TextField(
+                        controller: TextEditingController(text: 'peter'),
+                        decoration: const InputDecoration(
+                          labelText: 'E-Mail',
+                          errorText: 'Keine E-Mail',
+                        ),
+                      ),
+                      const TextField(
+                        enabled: false,
+                        decoration: InputDecoration(labelText: 'Code'),
+                      ),
+                      const RoundedFields(
+                        child: TextField(
+                          minLines: 2,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            labelText: 'Nachricht',
+                            alignLabelWithHint: true,
+                          ),
+                        ),
+                      ),
+                    ])
+                      Container(
+                        width: 150,
+                        height: 104,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: HlSpace.s3,
+                          vertical: HlSpace.s2,
+                        ),
+                        alignment: AlignmentDirectional.topCenter,
+                        child: field,
+                      ),
+                  ],
+                ),
+                SizedBox(
+                  height: 72,
+                  child: Row(
+                    spacing: HlSpace.s4,
+                    children: [
+                      const SizedBox(width: 74, child: Text('Segmente')),
+                      for (final (value, enabled) in const [
+                        (1, true),
+                        (2, false),
+                      ])
+                        SizedBox(
+                          width: 300,
+                          child: HexSegmented<int>(
+                            value: value,
+                            onChanged: enabled ? (_) {} : null,
+                            segments: const [
+                              HexSegment(
+                                value: 0,
+                                label: 'System',
+                                icon: Icons.brightness_auto_outlined,
+                              ),
+                              HexSegment(
+                                value: 1,
+                                label: 'Hell',
+                                icon: Icons.light_mode_outlined,
+                              ),
+                              HexSegment(
+                                value: 2,
+                                label: 'Dunkel',
+                                icon: Icons.dark_mode_outlined,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Row(
                   spacing: HlSpace.s4,
                   children: [
                     const SizedBox(width: 90, child: Text('Laden')),
@@ -159,6 +321,17 @@ Widget _grid(Brightness brightness) {
                     ),
                   ),
                 ),
+                const SizedBox(height: HlSpace.s2),
+                HlSticker(
+                  child: ListTile(
+                    title: const Text('Sticker'),
+                    subtitle: Text(
+                      'Kontur und harter Schatten',
+                      style: TextStyle(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: HlSpace.s4),
                 Builder(
                   builder: (context) => Text(
                     'Hummlist',
@@ -181,10 +354,25 @@ void main() {
     testWidgets('component states, ${brightness.name}', (tester) async {
       tester.view
         ..devicePixelRatio = 1
-        ..physicalSize = const Size(880, 820);
+        ..physicalSize = const Size(880, 1320);
       addTearDown(tester.view.reset);
+      // The focused switch shows its ring as after keyboard input.
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
       await tester.pumpWidget(_grid(brightness));
       // The spinner never settles.
+      await tester.pump(const Duration(milliseconds: 500));
+      ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).showSnackBar(
+        SnackBar(
+          content: const Text('Butter gelöscht'),
+          action: SnackBarAction(label: 'Rückgängig', onPressed: () {}),
+        ),
+      );
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       await expectLater(
         find.byType(MaterialApp),

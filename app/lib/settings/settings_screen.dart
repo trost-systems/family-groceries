@@ -1,48 +1,61 @@
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
+import 'package:family_groceries/design/hex_radio.dart';
+import 'package:family_groceries/design/hex_segmented.dart';
+import 'package:family_groceries/design/section_label.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-/// More's Einstellungen (`/more/settings`): the theme, light, dark or the
-/// device's, and the language, a row that opens [LanguageScreen]. Both are
-/// kept on the device and apply at once.
+/// More's Einstellungen (`/more/settings`): the theme as one segmented
+/// control, System, Hell or Dunkel; and the language, a row that opens
+/// [LanguageScreen]. Both are kept on the device and apply at once.
 class const SettingsScreen({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final mode = context.watch<ThemeCubit>().state;
+    final theme = context.watch<ThemeCubit>();
     return ListView(
       key: const ValueKey('settings-screen'),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        _Section(l10n.appearance),
-        RadioGroup<ThemeMode>(
-          groupValue: mode,
-          onChanged: (mode) => context.read<ThemeCubit>().pick(mode!),
-          child: Column(
-            children: [
-              for (final (mode, icon, label) in [
-                (
-                  ThemeMode.system,
-                  Icons.brightness_auto_outlined,
-                  l10n.themeSystem,
-                ),
-                (ThemeMode.light, Icons.light_mode_outlined, l10n.themeLight),
-                (ThemeMode.dark, Icons.dark_mode_outlined, l10n.themeDark),
-              ])
-                RadioListTile(
-                  key: ValueKey('theme-${mode.name}'),
-                  value: mode,
-                  title: Text(label),
-                  secondary: Icon(icon),
-                ),
+        HlSectionLabel(l10n.appearance),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: HlSpace.s4,
+            vertical: HlSpace.s2,
+          ),
+          child: HexSegmented<ThemeMode>(
+            key: const ValueKey('theme-mode'),
+            label: l10n.appearance,
+            value: theme.state,
+            onChanged: theme.pick,
+            segments: [
+              HexSegment(
+                key: const ValueKey('theme-system'),
+                value: ThemeMode.system,
+                label: l10n.themeSystem,
+                icon: Icons.brightness_auto_outlined,
+              ),
+              HexSegment(
+                key: const ValueKey('theme-light'),
+                value: ThemeMode.light,
+                label: l10n.themeLight,
+                icon: Icons.light_mode_outlined,
+              ),
+              HexSegment(
+                key: const ValueKey('theme-dark'),
+                value: ThemeMode.dark,
+                label: l10n.themeDark,
+                icon: Icons.dark_mode_outlined,
+              ),
             ],
           ),
         ),
-        _Section(l10n.language),
+        HlSectionLabel(l10n.language),
         ListTile(
           key: const ValueKey('settings-language'),
           minTileHeight: 56,
@@ -78,7 +91,7 @@ class const LanguageScreen({super.key}) extends StatelessWidget {
         key: const ValueKey('language-screen'),
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          RadioListTile<AppLanguage?>(
+          HexRadioTile<AppLanguage?>(
             key: const ValueKey('language-system'),
             value: null,
             title: Text(l10n.languageSystem),
@@ -88,7 +101,7 @@ class const LanguageScreen({super.key}) extends StatelessWidget {
           ),
           const Divider(indent: 16, endIndent: 16),
           for (final language in AppLanguage.values)
-            RadioListTile<AppLanguage?>(
+            HexRadioTile<AppLanguage?>(
               key: ValueKey('language-${language.code}'),
               value: language,
               title: Text(language.nativeName),
@@ -103,21 +116,3 @@ class const LanguageScreen({super.key}) extends StatelessWidget {
 AppLanguage deviceLanguage(BuildContext context) => AppLanguage.byCode(
   resolveLocale(View.of(context).platformDispatcher.locales, null).languageCode,
 )!;
-
-class const _Section(final String title) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-    child: Semantics(
-      header: true,
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
-    ),
-  );
-}

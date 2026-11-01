@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/hex_pill.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -45,42 +49,49 @@ class const StoreLayoutScreen({required final String storeId, super.key})
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.storeLayoutTitle(storeName))),
-      body: ReorderableListView.builder(
-        buildDefaultDragHandles: false,
-        header: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(l10n.storeLayoutHint),
-        ),
-        itemCount: stops.length,
-        onReorderItem: (from, to) {
-          final next = [...stops];
-          next.insert(to, next.removeAt(from));
-          save(next);
-        },
-        itemBuilder: (context, index) {
-          final (:category, hidden: _) = stops[index];
-          return ListTile(
-            key: ValueKey(category.id),
-            title: Text(categoryName(category, l10n)),
-            trailing: ReorderableDragStartListener(
-              index: index,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                // Its own node: merged into the row, its label would
-                // rename the row.
-                child: Semantics(
-                  container: true,
-                  child: Icon(
-                    Icons.drag_handle,
-                    semanticLabel: l10n.dragCategory(
-                      categoryName(category, l10n),
-                    ),
-                  ),
-                ),
-              ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: pageMaxWidth),
+          child: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            proxyDecorator: HexPill.lift,
+            padding: const EdgeInsets.only(bottom: HlSpace.s5),
+            header: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text(l10n.storeLayoutHint),
             ),
-          );
-        },
+            itemCount: stops.length,
+            onReorderItem: (from, to) {
+              final next = [...stops];
+              next.insert(to, next.removeAt(from));
+              save(next);
+            },
+            itemBuilder: (context, index) {
+              final (:category, hidden: _) = stops[index];
+              return HexPill(
+                key: ValueKey(category.id),
+                child: Row(
+                  children: [
+                    HexStep(index + 1),
+                    const SizedBox(width: HlSpace.s3),
+                    ExcludeSemantics(
+                      child: Text(
+                        categoryIcon(category),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                    const SizedBox(width: HlSpace.s2),
+                    Expanded(child: PillTitle(categoryName(category, l10n))),
+                    PillDragHandle(
+                      index: index,
+                      label: l10n.dragCategory(categoryName(category, l10n)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

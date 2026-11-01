@@ -352,6 +352,30 @@ abstract final class HlBorder {
   static const double widthThin = 1;
 }
 
+abstract final class HlShadow {
+  static const stickerS = [
+    BoxShadow(color: Color(0xff0f1530), offset: Offset(0, 2)),
+  ];
+  static const sticker = [
+    BoxShadow(color: Color(0xff0f1530), offset: Offset(0, 4)),
+  ];
+  static const stickerL = [
+    BoxShadow(color: Color(0xff0f1530), offset: Offset(0, 8)),
+  ];
+  static const nightS = [
+    BoxShadow(color: Color(0xff03050f), offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x1f9fb6ff), offset: Offset(0, 0), blurRadius: 12),
+  ];
+  static const night = [
+    BoxShadow(color: Color(0xff03050f), offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x249fb6ff), offset: Offset(0, 0), blurRadius: 24),
+  ];
+  static const nightL = [
+    BoxShadow(color: Color(0xff03050f), offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x2e9fb6ff), offset: Offset(0, 0), blurRadius: 48),
+  ];
+}
+
 abstract final class HlDepth {
   static const double edge = 4;
   static const double edgeL = 6;

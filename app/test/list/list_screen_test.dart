@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_cache.dart';
@@ -174,7 +175,14 @@ void main() {
       find.text('Die Liste ist leer. Tippe unten ein, was fehlt.'),
       findsOneWidget,
     );
-    expect(find.text('🧺'), findsOneWidget);
+    expect(find.text('🧺'), findsNothing, reason: 'no emoji as an icon');
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('list-empty-mark')),
+        matching: find.byIcon(Icons.shopping_cart_outlined),
+      ),
+      findsOneWidget,
+    );
     expect(find.byType(StoreDivider), findsNothing);
 
     await tester.tap(addField());
@@ -306,6 +314,41 @@ void main() {
     expect(find.text('Bohnen steht wieder auf der Liste'), findsOneWidget);
   });
 
+  testWidgets('the last row of a category takes its divider along as it '
+      'closes; put back, the divider is whole again', (tester) async {
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Erbsen', categoryId: 'produce')
+        ..remoteAdd('Milch', categoryId: 'chilled'),
+    );
+    Finder chilled() => find.byWidgetPredicate(
+      (w) => w is CategoryDivider && w.block.category?.id == 'chilled',
+    );
+    final full = tester.getSize(chilled()).height;
+    await tester.tap(row('Milch'));
+    await tester.pump();
+    await tester.pump(HlDuration.short);
+    expect(
+      tester.getSize(chilled()).height,
+      full,
+      reason: 'drawn, not closing',
+    );
+    await tester.pump(HlDuration.medium ~/ 2);
+    expect(
+      tester.getSize(chilled()).height,
+      inExclusiveRange(0, full),
+      reason: 'closing with its row',
+    );
+    await tester.pumpAndSettle();
+    expect(chilled(), findsNothing);
+
+    await showUsed(tester, 'Milch');
+    await tester.tap(usedRow('Milch'));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(chilled()).height, full);
+  });
+
   testWidgets('"Zuletzt verwendet" shows the list\'s own row with its icon, '
       'faded, most recent first', (tester) async {
     await pumpList(
@@ -387,14 +430,18 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('with animations off a tap ticks at once', (tester) async {
+  testWidgets('with animations off a tap shows the struck row, then ticks '
+      'without a close', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     await tester.pump();
     await tester.tap(row('Brot'));
     await tester.pump();
+    expect(itemNamed('Brot').status, ItemStatus.active, reason: 'seen first');
+    await tester.pump(HlDuration.medium);
     expect(itemNamed('Brot').status, ItemStatus.bought);
+    expect(tester.hasRunningAnimations, isFalse);
     tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
     await tester.pumpAndSettle();
   });
@@ -785,7 +832,8 @@ void main() {
     final visible = tester
         .widgetList<ItemRow>(find.byType(ItemRow))
         .map((r) => r.item.name)
-        .where((name) => tester.getBottomLeft(row(name)).dy < 560)
+        // Clear of the add bar over the list's foot.
+        .where((name) => tester.getBottomLeft(row(name)).dy < 500)
         .toList();
     final name = visible.last;
     final before = tester.getTopLeft(row(name)).dy;
@@ -997,7 +1045,7 @@ void main() {
     expect(name.overflow, TextOverflow.clip);
     expect(name.softWrap, isTrue);
     final brot = tester.getSize(row('Brot')).height;
-    expect(brot, greaterThanOrEqualTo(52));
+    expect(brot, greaterThanOrEqualTo(48));
     expect(tester.getSize(row(long)).height, greaterThan(brot + 20));
   });
 
@@ -1260,7 +1308,9 @@ void main() {
               find.descendant(of: row('Tee'), matching: find.byType(Material)),
             )
             .color,
-        Theme.of(tester.element(row('Tee'))).colorScheme.tertiaryContainer,
+        HummlistColors.of(Theme.of(tester.element(row('Tee'))).brightness)
+            .honeySoft,
+        reason: 'new is honey; mint is done',
       );
       handle.dispose();
       await tester.pump(const Duration(seconds: 4));
@@ -1434,6 +1484,32 @@ void main() {
       expect(sheetRow('Gurkensalat, Schon mal gekauft'), findsNothing);
       expect(sheetRow('Gurken, Wie getippt'), findsOneWidget);
     });
+  });
+
+  testWidgets('on a wide screen the add field and sheet sit under the '
+      'first column', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(1280, 800);
+    addTearDown(tester.view.reset);
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Zahnpasta', storeId: 'dm')
+        ..remoteAdd('Butter', storeId: 'lidl'),
+    );
+    final dm = tester.getRect(storeDivider('dm'));
+    final lidl = tester.getRect(storeDivider('lidl'));
+    expect(lidl.left, greaterThan(dm.right), reason: 'two columns');
+    final field = tester.getRect(addField());
+    expect(field.left, greaterThan(dm.left));
+    expect(field.right, lessThan(dm.right));
+
+    await tester.tap(addField());
+    await tester.pumpAndSettle();
+    final sheet = tester.getRect(find.byKey(const ValueKey('add-sheet')));
+    expect(sheet.left, dm.left);
+    expect(sheet.right, dm.right);
   });
 
   group('the bar above the list', () {

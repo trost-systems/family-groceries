@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Locator, test, type Page } from './fixtures';
 import {
-  addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel,
+  addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
 } from './helpers';
 
 const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
@@ -9,25 +9,6 @@ const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
 async function openMore(page: Page): Promise<void> {
   await moreTab(page).click();
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
-}
-
-/**
- * Wheels More's lazy list until [target] is fully on screen above the tab bar. A row far off
- * screen is not in the page until the list nears it: looked for downwards first, then upwards.
- */
-async function wheelTo(page: Page, target: Locator): Promise<void> {
-  const size = page.viewportSize()!;
-  const tabs = await page.getByRole('tab', { name: 'Liste', exact: true }).boundingBox();
-  const bottom = tabs ? tabs.y : size.height;
-  await page.mouse.move(size.width / 2, size.height / 3);
-  for (let i = 0; i < 40; i++) {
-    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
-    if (box && box.y >= 0 && box.y + box.height <= bottom) return;
-    const down = box ? box.y + box.height > bottom : i < 20;
-    await page.mouse.wheel(0, down ? 250 : -250);
-    await page.waitForTimeout(150);
-  }
-  throw new Error(`could not scroll ${target} into view`);
 }
 
 test('More opens every entry; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {

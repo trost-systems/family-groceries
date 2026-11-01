@@ -1469,7 +1469,6 @@ Peter approved the name "Hummlist" and the ID `com.hummlist.app` on
    serving and stays in the redirect allow list, so links already sent and
    bookmarked keep working. The Vercel project keeps its name.
 
-
 ## Job 23 (weekly release pipeline), 2026-10-27
 
 1. **Why no TestFlight build was installable.** App Store Connect (read-only
@@ -2206,7 +2205,6 @@ on purpose, and the interfaces this job ships.
     so Vercel's "reserved" note does not cover this external rewrite and the
     item 8 fallback is not needed. Two fetches of the metadata both came
     back `x-vercel-cache: MISS`.
-
 
 ## Job 16 (design H, part 2: the list), 2026-10-28
 
@@ -3810,7 +3808,6 @@ job 24's policy part.
    says nothing is loaded from Google, which is true only once this job has
    reached `app.hummlist.com` (with a dispatched release, `docs/DEPLOY.md`).
 
-
 ## Job 31 (Alexa skill "Hummlist", add items by voice, de-DE, Spec #7), 2026-10-30
 
 Peter's decisions (2026-10-29 22:10 CET, his words), closing the spec's open questions 1-3:
@@ -4877,7 +4874,6 @@ Migration `20261031123504_household_bound_lifetime.sql`; docs/PURCHASES.md has t
     racing someone else for the same single invite can still deadlock; Postgres aborts one join,
     which the app shows as a failed join to try again.
 
-
 ## Job 44: all-in on PostHog: posthog_flutter, error tracking, feature flags, 2026-10-31
 
 Peter decided on 2026-10-31: PostHog only, no Sentry or other vendor; what PostHog lacks goes
@@ -5244,7 +5240,6 @@ and the Apple DTS forum answers in threads 777854 and 759909.
     WWDC23 10102), a tick-off intent, and a gradual rollout. The changelog item holds on
     `native-siri` until Hummlist Launch.
 
-
 ## Job 52: the design system (6b Hex Frische, option 6's yellow) in the app, app icon #5, 2026-11-01
 
 Peter, 2026-10-31 21:06: "6 has a brighter yellow that I like more, let's use that on 6b. We'll
@@ -5363,7 +5358,6 @@ lock in 6b with 6's yellow now [...] We go with app icon 5." Reference: docs/DES
 17. **`household-bound.spec.ts` formats its expected date in Europe/Berlin**, the browser's zone
     in `playwright.config.ts`. On a UTC runner just before midnight the runner's day and the app's
     day differ ("31. Oktober 2028" against "1. November 2028"); CI hit it at 23:55 UTC.
-
 
 ## Job 49: Hummlist Premium, yearly and Lifetime under one entitlement, 2026-11-01
 
@@ -5928,3 +5922,131 @@ for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a 
     - the analytics key in production builds;
     - the guide URLs;
     - the household name and seed (they had assumed "Familie Demo").
+
+## Job 57: list rows without a check box, a polished strike-through, design alignment, 2026-11-01
+
+1. **No check box in the app's rows, and none added.** The app's rows had none since design H;
+   the brief's hex check box was only in the homepage scenes. Nothing in `app/` or Widgetbook drew
+   one on a list row. The hex `Checkbox` theme and its Widgetbook stories stay, as do the consent
+   and opt-in check boxes elsewhere (Peter, 13:01).
+2. **The line crosses the words, not the row.** `StrikePainter` (`item_row.dart`) lays the name
+   out as its `Text.rich` does, at the width the text got, and draws one line per text line
+   (`HlBorder.width`, 2 px, in `text-muted`, job 56 item 2), as wide as that line's words plus 2 px
+   each side, at 0.28 em above the baseline (the middle of the lowercase letters). A wrapped name
+   is struck on each line, drawn one after the other, so the pen reads left to right. Brand and
+   properties under the name stay unstruck: they describe the item, the line says it is done.
+3. **Timing from the tokens, and the gap closes.** The skill (motion.md: "a ticked item leaves
+   and its gap closes as one eased motion; a struck-through row that vanishes in one frame is a
+   pop") asks for more than the old 260 ms and pop. One `AnimationController` of
+   `HlDuration.short + HlDuration.medium` (440 ms): the line draws, the name turns muted and the
+   row tints in the first 180 ms (`HlEasing.standard`), then the content fades (`HlEasing.exit`)
+   and the height closes (`HlEasing.standard`) in 260 ms, then `onTick` runs. The tick commits
+   180 ms later than before; the tap's feedback is immediate and the rows below move up as the
+   row goes instead of jumping. Ticking the last row of a category or store first closed the row
+   and then popped its heading; now the list's shared session (`DragSession.leaving`) names the
+   closing rows, and a divider whose rows all close closes with them on the same curves.
+4. **Reduced motion keeps the result visible.** With `disableAnimations` the struck, tinted row
+   shows at once and holds for `HlDuration.medium`, then the tick commits without a close (before:
+   the row vanished on the tap with nothing seen). motion.md: drop presentation, keep reading time.
+5. **A checkbox to assistive tech.** The row keeps `button: true` and gains `checked` (false while
+   open, true from the tap), and the tap announces "<Name> abgehakt" / "<name> ticked off"
+   (`itemTicked`); the tick has no snackbar since job 29b, so the announcement is the only spoken
+   confirmation. Flutter web gives a node with a checked state the role `checkbox`, so the e2e
+   helper `itemRow` now finds rows by that role.
+6. **Site scenes left as they are (ADDENDUM 1).** The homepage stills and demo loops are not
+   re-recorded in this job; the scene edits, the stills and loops they change and the effort are
+   in DONE_SUMMARY's "Site follow-up (not done)", with the ready patch in the job's ops directory
+   (`jobs/57-list-tick-align/site-followup/site-scenes.patch`).
+7. **The theme is one segmented control (Peter, 14:20, replacing his 13:02 switches).** "System" /
+   "Hell" / "Dunkel" (EN System / Light / Dark), all three visible, one tap picks, never a cycling
+   button. `HexSegmented<T>` (`app/lib/design/hex_segmented.dart`) sits on Flutter's
+   `RadioGroup`/`RawRadio` like `HexRadio`, so each segment is a radio in a mutually exclusive
+   group with its checked state, Tab focus, arrow keys, Space/Enter and a 48 dp height come from
+   Flutter; the group is named "Darstellung"/"Theme". A hex track with the 2 px contour, a honey
+   hex indicator that slides to the pick (`HlDuration.medium`, `HlEasing.standard`, a jump with
+   reduced motion). Storage is unchanged (key `theme`; none for the system, `light`, `dark`), so an
+   old pick reads 1:1 (`app/test/app/theme_test.dart` per stored value). The two-switch version of
+   13:02 is gone (`themeSwitches` deleted).
+8. **`HexSwitch` and `HexRadio` stay in the design system.** Material's `Switch` cannot change its
+   track shape, so `HexSwitch` sits on Flutter's `ToggleableStateMixin` (switch role, toggled
+   state, keyboard, focus): a 56 × 30 hex track with the contour, a nested hex thumb, 260 ms
+   travel, a jump with reduced motion, 48 dp. More's usage-data row is a `HexSwitchTile`; the
+   language list and the create-household "Läden" choice (job 56 item 5) are `HexRadioTile`s.
+   Section titles on settings use `HlSectionLabel`, the list's category-label style (item 29). The
+   hex `checkboxTheme` stays.
+9. **The done row is mint, like the site (job 56 item 2).** A ticked row tints to `mint-soft`
+   (`tertiaryContainer`) with its text and line in `text-muted`, the site's `.item--done`, instead
+   of the earlier `accent-soft` with a cobalt line and the whole row at 35 %. A partner's new row
+   is honey since addendum 5 (below).
+10. **List density from the site, the tap target kept (item 7).** Names in Bricolage 17/1.25
+    w700, a 28 px emoji column, a 10 px gap, details 13 w500, 16 px sides. The site's rows are 44
+    px; the app keeps 48 (`HlSpace.s7`), because the whole row is the tap target. Rows are 4 px
+    shorter than before (52), and the e2e geometry follows.
+11. **Dividers (items 8, 24), drag pills (22), "Zuletzt verwendet" (19).** Store rules 3 px with
+    full radius, counts 15 px Bricolage over a 13 px label; category labels 11 px w800 with 0.12 em
+    tracking. A lifted row or divider is an `HlSticker` pill (raised face, contour, hard shadow,
+    `HlShadow` tokens now generated into Dart by `design/tokens/build.mjs`). "Zuletzt verwendet"
+    shows each thing once (`canonical_key`, else the folded name), its newest purchase, and nothing
+    that is on the list again.
+12. **Job 56's SAFE items, all 30 in this PR.** Besides the rows: the hex compose field, the
+    household header, the sticker explainer, the wide frame, muted suggestion lines, hex chips and
+    steppers (items 1, 6, 9, 15, 20, 27, 28); the hex checkbox (4), the rail's hex indicator (10),
+    floating sticker snackbars (18), contoured cards and `HlSticker` cards for the welcome choices,
+    Zugänge and the Premium page (21, 25); the consent screen's stacked buttons under 400 px and its
+    icon without sparkles (3, 12); the app icon #5 brand block on login and welcome, exported by
+    `design/app-icon/build.mjs` to `app/assets/brand/`, never redrawn, and the login's repeated
+    "Anmelden" title gone (11); a shorter join title (13); the OAuth error without raw server text
+    (14); store layout, categories and Läden as hex pills with numbered hex steps, clear of the FAB
+    and centred on wide screens (16, 17, 26); section titles in the list's label style (29); equal
+    provider buttons (30); token durations, curves and radii (23). PETER items 31 to 34 are not
+    built here but decided by Peter in addendum 5 (below); SITE-FOLLOWUP items 35 and 36 are in
+    DONE_SUMMARY. Item 6 is left out (below).
+13. **A checked hex box is honey, not the site's mint.** The site's mint `.cb` is the list's done
+    tick; an opt-in is a choice, and every picked control (switch, radio, chip, segment, bottom
+    bar) is honey. `HexCheckbox` (pointy-top 26 px, contour, navy check, 48 dp) serves opt-ins;
+    the Material `checkboxTheme` keeps its hex and now its contour when checked.
+14. **Snackbars and cards get the contour, not the hard shadow, from the theme.** A
+    `SnackBarThemeData` or `CardThemeData` only knows Material's blurred elevation; the hard
+    sticker shadow comes from `HlSticker` where a card matters (welcome, Zugänge, Premium).
+15. **Apple's button is drawn with the package's logo painter.** `sign_in_with_apple` sizes its
+    label at 0.43 × the height (20 px at 48), next to Google's 14 px; the app draws the button
+    itself (`AppleLogoPainter`, black/white per Apple's rules, 15 px label, 48 px) so the two match.
+    Needs one look on a real iOS build (NEEDS_PETER).
+16. **Item 6 (household name, count and member hexes over the list) is left to Peter.** Job 56
+    filed it SAFE, but it reverses Peter's own job 29a call ("no household name, no count": one
+    household per user, and the count repeats the dividers' "N Artikel"). That is a taste call, so
+    the bar stays 29a's: the partner note left, the sync icon right, 44 px in every state, now
+    inside the list's frame (item 27). Built once and dropped: a 56 px band with the name in caps,
+    "N Artikel" and up to four 30 px member hexes. NEEDS_PETER asks.
+17. **Wide screens: one frame (item 27).** `ShoppingListView.frameFor` places the bar, the
+    explainer, the columns, the add field and the sheet; the field and sheet sit over the first
+    column instead of the window's centre. Settings pages (store layout, categories, Läden) cap at
+    `pageMaxWidth` (640, `app/app/shell.dart`).
+
+### Job 57 addendum 5: Peter's calls on job 56 items 31 to 34 (2026-11-01, 15:17)
+
+1. **Empty list (item 31, E1).** The 🧺 emoji is gone: a 72 px pointy honey hex with the navy
+   contour holding `Icons.shopping_cart_outlined` (`PointyHex`, like the site's numbered step
+   hexes), over the unchanged copy. Key `list-empty-mark`.
+2. **Store badges (item 32).** Peter's target is the store's logo in a hexagon, never a first
+   letter. Logos wait for the Legal Review, so `StoreBadge` now shows the store's full name in a
+   horizontal hex pill: raised face, navy contour, Bricolage, one line with an ellipsis, the full
+   name in semantics, the same for chains and own stores. The retailer colour table, the letter
+   squares and `storeTint` are gone; every store's divider rule is the brand cobalt. In the divider
+   the badge is the name (no second name text); the fold-out store chip and its options are already
+   hex pills with the name, so they nest no badge. `StoreBadgeStyle { name, logo }` with a private
+   asset map by seed key is the one switch point for the logo step and job 58's custom stores; only
+   `name` is built. Site follow-up: the scenes show no badge; they can draw the same name pill.
+3. **Text fields (item 33, T2).** Every single-line field is a hex like the compose field (login,
+   join code, household name, dialogs, the edit sheet), from one `InputDecorationTheme`
+   (`app/lib/design/field_border.dart`): raised face, 2 px contour, cobalt contour plus the 3 px
+   focus ring when focused, error colour, faded when disabled, labels inside the face, text clear
+   of the tips, 48 dp. A theme cannot see `maxLines`, so the one multi-line field (the feedback
+   message) wraps itself in `RoundedFields` (radius s). The add field sits under an empty local
+   input theme, which closes every property at once (job 52 item 7 broke on one that got past
+   `InputBorder.none`); a test proves it neither moves nor draws a contour with the theme on.
+   `HexInputBorder` from earlier in this job is gone; the quantity field takes the theme.
+4. **A partner's new row is honey (item 34, F1).** `fresh` rows tint `honey-soft`: yellow is new,
+   mint is done, as on the homepage hero. Site follow-up: `household-sync.html` drops
+   `.item--arrived` (mint plus edge bar) for `.item--fresh` and is re-filmed; the household-sync
+   demo loop shows the new honey once re-taken.

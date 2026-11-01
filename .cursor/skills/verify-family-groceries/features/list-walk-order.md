@@ -1,6 +1,6 @@
 # List and walk order
 
-The list is one scroll of sections, one per store in the household's store order, then "Ohne Laden" for items without a store. Each store starts with a divider "<Store>, N Artikel" and a fold caret. Inside a store, small uppercase category dividers follow that store's walk order, and the rows under each follow the household's walk order (`sort_key`). A row is a full-width button: a tap ticks it, a swipe to the left or a hold without moving opens the edit sheet (job 29c; the swipe used to delete), and a hold that moves (a finger past 18 px, a mouse past 8 px) drags it onto a row, a category divider or a store divider. Store and category dividers can be dragged too (the same 18 px finger slop), or moved through their menu. Folds and the explainer card are kept per device. A partner's adds and moves show live.
+The list is one scroll of sections, one per store in the household's store order, then "Ohne Laden" for items without a store. Each store starts with a divider "<Store>, N Artikel" (the name in a hex badge, a cobalt rule) and a fold caret. Inside a store, small uppercase category dividers follow that store's walk order, and the rows under each follow the household's walk order (`sort_key`). A row is a full-width button: a tap ticks it, a swipe to the left or a hold without moving opens the edit sheet (job 29c; the swipe used to delete), and a hold that moves (a finger past 18 px, a mouse past 8 px) drags it onto a row, a category divider or a store divider. Store and category dividers can be dragged too (the same 18 px finger slop), or moved through their menu. Folds and the explainer card are kept per device. A partner's adds and moves show live.
 
 ## Sub-features
 
@@ -18,7 +18,7 @@ The list is one scroll of sections, one per store in the household's store order
 - `lw-menu` opens a divider's menu (`section-menu`) on a hold without moving or a right click: `section-menu-up`, `section-menu-down` (when there is room), and `section-menu-layout`, which opens "<Store>: Reihenfolge", or "Kategorien" from "Ohne Laden".
 - `lw-fold` folds a store with a tap on its divider (the caret turns from ˅ to ›); the fold survives a restart.
 - `lw-hint` shows the explainer card (key `list-hint`, "Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt", since job 29c) until "Verstanden" (`list-hint-dismiss`); it stays gone after a restart.
-- `lw-empty` shows the empty state (key `list-empty`) when the list has no items.
+- `lw-empty` shows the empty state (key `list-empty`) when the list has no items: a honey pointy hex with the cart icon (`list-empty-mark`, job 57) over "Die Liste ist leer. Tippe unten ein, was fehlt."
 - `lw-partner` tints a partner's new row (key `new-<id>`, label ends in "Neu") with "N neu von <name>" under the title (`new-items-subtitle`) and no initial; the tint clears after 3 s on screen.
 - `lw-partner-move` shows a partner's drag on the other client without a reload.
 - `lw-top-bar` (job 29a): the bar above the list (key `list-header`) is 44 px under the top inset in every state and holds only `new-items-subtitle` (left) and the sync icon (right: cloud_upload while changes are pending, cloud_off offline). No household name, no item count; the list never moves when the icon comes or goes.

@@ -1086,3 +1086,17 @@ push to `main` goes live on hummlist.com.
    every response until you decide on the beta launch.
 4. **Job 54's demo videos** drop into the three slots without a code change
    (`site/public/media/README.md`); until then the slots show stills.
+
+## Job 57: two looks on a phone, and four design calls (2026-11-01)
+
+1. **Sign in with Apple on an iPhone.** The login draws Apple's button itself now (the package's
+   Apple logo, black in light and white in dark, 15 px label, 48 px), so it matches Google's.
+   Open the next TestFlight build signed out and check it looks like Apple's own button. If not,
+   say so and it goes back to the package's button with its larger label.
+2. **Retailer logos in the store badge.** Your calls on job 56 items 31 to 34 (15:17) are built.
+   The badge shows the store's name in a hex until the Legal Review clears retailer logos; then
+   `StoreBadgeStyle.logo` takes the logo files (DECISIONS job 57 addendum 5).
+3. **The household name over the list (job 56 item 6).** The site's app header shows the household
+   name in caps, the open-item count and the members as hex initials. You took name and count out
+   in job 29a. Say if you want the site's header in the app after all; it is built and was left
+   out only because of your 29a call (DECISIONS job 57, 16).

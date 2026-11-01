@@ -1,18 +1,21 @@
+import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
+import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
-/// A section's divider: badge, name, a rule in the store's colour, the count
-/// and a caret. A tap folds the section; a hold that moves drags the store
-/// (not the section without a store); a hold that stays put or a right
-/// click opens [onMenu]. Dragged items dropped on it go to that store.
+/// A section's divider: the store's badge (its name), a brand-coloured
+/// rule, the count and a caret. A tap folds the section; a hold that moves
+/// drags the store (not the section without a store); a hold that stays put
+/// or a right click opens [onMenu]. Dragged items dropped on it go to that
+/// store.
 class const StoreDivider({
   required final StoreSection section,
 
@@ -119,8 +122,7 @@ class _StoreDividerState() extends State<StoreDivider> {
                 session: widget.session,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 10,
-                  children: [StoreBadge(store), Text(name)],
+                  children: [StoreBadge(store)],
                 ),
               ),
               childWhenDragging: Opacity(opacity: 0.6, child: head),
@@ -128,7 +130,7 @@ class _StoreDividerState() extends State<StoreDivider> {
             ),
           );
     final label = l10n.storeSectionLabel(name, section.count);
-    return Semantics(
+    final divider = Semantics(
       container: true,
       button: true,
       expanded: !widget.folded,
@@ -160,6 +162,11 @@ class _StoreDividerState() extends State<StoreDivider> {
         ),
       ),
     );
+    return _ClosesWithRows(
+      items: [for (final block in section.blocks) ...block.items],
+      session: widget.session,
+      child: divider,
+    );
   }
 }
 
@@ -175,7 +182,7 @@ class const _Head({
     final store = section.store;
     final tint = store == null
         ? scheme.outline
-        : storeTint(store, scheme.surface);
+        : HummlistColors.of(scheme.brightness).brand;
     final reduce = MediaQuery.disableAnimationsOf(context);
     final key = section.key;
     return ValueListenableBuilder(
@@ -187,13 +194,11 @@ class const _Head({
           clipBehavior: Clip.none,
           children: [
             AnimatedContainer(
-              duration: reduce
-                  ? Duration.zero
-                  : const Duration(milliseconds: 120),
+              duration: reduce ? Duration.zero : HlDuration.short,
               constraints: const BoxConstraints(minHeight: 52),
               padding: const EdgeInsets.fromLTRB(16, 6, 12, 6),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(HlRadius.s),
                 color: over && line == null
                     ? Color.alphaBlend(
                         tint.withValues(alpha: 0.16),
@@ -217,7 +222,7 @@ class const _Head({
                   key: ValueKey('drop-line-$key'),
                   decoration: BoxDecoration(
                     color: scheme.primary,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(HlRadius.full),
                   ),
                 ),
               ),
@@ -234,58 +239,29 @@ class const _Head({
     final store = section.store;
     final tint = store == null
         ? scheme.outline
-        : storeTint(store, scheme.surface);
+        : HummlistColors.of(scheme.brightness).brand;
     final reduce = MediaQuery.disableAnimationsOf(context);
     return Row(
       spacing: 10,
       children: [
-        if (store == null)
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              Icons.storefront_outlined,
-              size: 16,
-              color: scheme.onSurfaceVariant,
-            ),
-          )
-        else
-          StoreBadge(store),
-        // The name takes what it needs of this space and the rule the rest,
-        // at least 12 px; a name too long for it ends in an ellipsis.
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) => Row(
               spacing: 10,
               children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: (constraints.maxWidth - 22).clamp(0, 1e9),
-                  ),
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: HlFont.display,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      color: scheme.onSurface,
-                    ),
-                  ),
+                // The badge is the store's name; "no store" gets a neutral
+                // one of the same shape.
+                StoreBadge(
+                  store ?? Store(id: '', name: name, sortOrder: 0),
+                  height: 32,
+                  maxWidth: (constraints.maxWidth - 22).clamp(0, 1e9),
                 ),
                 Expanded(
                   child: Container(
-                    height: 2,
+                    height: 3,
                     decoration: BoxDecoration(
                       color: tint,
-                      borderRadius: BorderRadius.circular(1),
+                      borderRadius: BorderRadius.circular(HlRadius.full),
                     ),
                   ),
                 ),
@@ -300,7 +276,7 @@ class const _Head({
                 text: '${section.count}',
                 style: TextStyle(
                   fontFamily: HlFont.display,
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: scheme.onSurface,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -310,14 +286,15 @@ class const _Head({
             ],
           ),
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
             color: scheme.onSurfaceVariant,
           ),
         ),
         AnimatedRotation(
           turns: folded ? -0.25 : 0,
-          duration: reduce ? Duration.zero : const Duration(milliseconds: 220),
+          duration: reduce ? Duration.zero : HlDuration.short,
+          curve: HlEasing.standard,
           child: Icon(
             Icons.expand_more,
             size: 22,
@@ -451,7 +428,7 @@ class _CategoryDividerState() extends State<CategoryDivider> {
               child: line,
             ),
           );
-    return Semantics(
+    final divider = Semantics(
       container: true,
       header: true,
       // The category's full name, as the edit sheet's chip calls it.
@@ -478,7 +455,48 @@ class _CategoryDividerState() extends State<CategoryDivider> {
         ),
       ),
     );
+    return _ClosesWithRows(
+      items: widget.block.items,
+      session: widget.session,
+      child: divider,
+    );
   }
+}
+
+/// A store or category divider closes with its rows when they are all
+/// ticked, so the last row and its heading leave as one motion, not a row
+/// that closes and a heading that pops.
+class const _ClosesWithRows({
+  required final List<Item> items,
+  required final DragSession session,
+  required final Widget child,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder(
+    valueListenable: session.leaving,
+    builder: (context, leaving, child) {
+      final closing =
+          items.isNotEmpty && items.every((i) => leaving.contains(i.id));
+      return TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: closing ? 1 : 0),
+        duration: closing ? rowLeaveDuration : Duration.zero,
+        builder: (context, t, child) => t == 0
+            ? child!
+            : ClipRect(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: 1 - rowLeaveClose.transform(t),
+                  child: Opacity(
+                    opacity: 1 - rowLeaveFade.transform(t),
+                    child: child,
+                  ),
+                ),
+              ),
+        child: child,
+      );
+    },
+    child: child,
+  );
 }
 
 class const _Line({
@@ -514,9 +532,9 @@ class const _Line({
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.035,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 11 * 0.12,
                       color: color,
                     ),
                   ),
@@ -535,7 +553,7 @@ class const _Line({
                   key: ValueKey('drop-line-$id'),
                   decoration: BoxDecoration(
                     color: scheme.primary,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(HlRadius.full),
                   ),
                 ),
               ),
@@ -560,19 +578,24 @@ class const _DragPill({
           Opacity(opacity: moved ? 1 : 0, child: child),
       child: FractionalTranslation(
         translation: const Offset(-0.15, -0.5),
-        child: Material(
-          elevation: 3,
-          color: scheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: DefaultTextStyle.merge(
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
+        child: HlSticker(
+          borderRadius: const BorderRadius.all(Radius.circular(HlRadius.full)),
+          child: Material(
+            type: MaterialType.transparency,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: HlSpace.s4,
+                vertical: HlSpace.s2,
               ),
-              child: child,
+              child: DefaultTextStyle.merge(
+                style: TextStyle(
+                  fontFamily: HlFont.display,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurface,
+                ),
+                child: child,
+              ),
             ),
           ),
         ),

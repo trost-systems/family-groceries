@@ -184,7 +184,7 @@ test('Siri and MCP agree on what is already on the list (plurals fold)', async (
   expect(viaMcp.added).toEqual([]);
   expect(viaMcp.alreadyOnList.map((i) => i.name)).toEqual(['Gurken']);
   await expect(itemRow(page, 'Gurken 2')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Gurke/ })).toHaveCount(1);
+  await expect(page.getByRole('checkbox', { name: /^Gurke/ })).toHaveCount(1);
 });
 
 test('a different size or type is a new item, not "already on the list"', async ({ page }) => {

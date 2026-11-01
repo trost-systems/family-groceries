@@ -155,9 +155,7 @@ class _JoinViewState() extends State<_JoinView> {
         // prominent answer, joining the second one.
         final warn = current != null && previewed;
         return OnboardingPage(
-          title: current == null
-              ? l10n.onboardingJoin
-              : l10n.joinOtherHousehold,
+          title: current == null ? l10n.onboardingJoin : l10n.joinTitle,
           listKey: const ValueKey('join-screen'),
           onBack: _cancel,
           children: [

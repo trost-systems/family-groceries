@@ -187,6 +187,8 @@ const IOS = 'app/ios/Runner';
 const XCASSETS = `${IOS}/Assets.xcassets`;
 const RES = 'app/android/app/src/main/res';
 const WEB = 'app/web';
+const BRAND = 'app/assets/brand';
+const BRAND_SIZE = 56;
 const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
 
 function outputs() {
@@ -234,6 +236,12 @@ function outputs() {
   add(`${RES}/drawable-night/splash_mark.xml`, splashVector('dark'));
   add(`${RES}/values/colors.xml`, colorsXml('light'));
   add(`${RES}/values-night/colors.xml`, colorsXml('dark'));
+
+  // The in-app brand block on login and welcome: the same icon, rounded, 56 dp at 1x/2x/3x.
+  // Flutter picks `2.0x/` and `3.0x/` next to the 1x file by pixel ratio.
+  for (const mode of MODES) {
+    for (const k of scales) add(`${BRAND}/${k > 1 ? `${k}.0x/` : ''}mark-${mode}.png`, icon(mode, BRAND_SIZE * k, { mask: 'rounded' }));
+  }
 
   add(`${WEB}/favicon.svg`, faviconSvg());
   add(`${WEB}/favicon.png`, icon('light', 48, { mask: 'rounded' }));

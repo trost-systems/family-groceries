@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,6 +98,57 @@ Future<void> main() async {
           ].join(' '),
       ];
       expect(shown, file);
+    });
+  });
+
+  group('the ticking story', () {
+    final config = catalogConfig();
+    Story<Widget, StoryArgs<Widget>> story(String name) => config.components
+        .firstWhere((c) => c.name == 'Liste')
+        .stories
+        .firstWhere((s) => s.name == name);
+
+    Future<void> pump(WidgetTester tester, String name) => tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => story(name).buildWithConfig(context, config),
+          ),
+        ),
+      ),
+    );
+
+    Finder painted() => find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.foregroundPainter is StrikePainter,
+    );
+
+    testWidgets('ticks the middle row, closes it and brings it back', (
+      tester,
+    ) async {
+      await pump(tester, 'Abhaken (Animation)');
+      final height = tester.getSize(find.byType(ItemRow).at(1)).height;
+      expect(painted(), findsNothing);
+      await tester.pump(const Duration(milliseconds: 950));
+      await tester.pump(HlDuration.short);
+      expect(painted(), findsOneWidget, reason: 'struck');
+      await tester.pump(HlDuration.medium);
+      await tester.pump();
+      expect(tester.getSize(find.byType(ItemRow).at(1)).height, 0);
+      // The tick lands with the last frame of the close; the row is back
+      // a rest later.
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 1000));
+      expect(painted(), findsNothing, reason: 'back for the next round');
+      expect(tester.getSize(find.byType(ItemRow).at(1)).height, height);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the ticked story stays struck', (tester) async {
+      await pump(tester, 'Abgehakt');
+      await tester.pump(const Duration(milliseconds: 950));
+      await tester.pump(const Duration(seconds: 2));
+      expect(painted(), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 

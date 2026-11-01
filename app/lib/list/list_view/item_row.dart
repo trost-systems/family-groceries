@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/sticker.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
@@ -52,7 +54,7 @@ class const ItemRow({
 
 class _ItemRowState()
     extends State<ItemRow>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   /// Kept alive while lifted: auto-scroll may carry it off screen, and a
   /// disposed source never learns how its drag ended.
   var _lifted = false;
@@ -60,32 +62,59 @@ class _ItemRowState()
 
   /// [holdSlop] of the pointer that pressed last.
   var _slop = dragSlop;
-  var _leaving = false;
-  Timer? _leave;
+
+  /// The way out after a tap, from 0 (open) to 1 (gone): see
+  /// [rowLeaveDuration].
+  /// Null until the row is ticked.
+  AnimationController? _leave;
+  Timer? _still;
 
   @override
   bool get wantKeepAlive => _lifted;
 
   @override
   void dispose() {
-    _leave?.cancel();
+    if (_leave != null) {
+      // Not while the tree is being torn down: the dividers listen.
+      final session = widget.session;
+      final id = widget.item.id;
+      scheduleMicrotask(() => session.left(id));
+    }
+    _leave?.dispose();
+    _still?.cancel();
     super.dispose();
   }
 
+  /// The line draws, the row closes, then the tick commits. With reduced
+  /// motion the struck row shows at once and holds for as long before the
+  /// tick, so the result is still seen.
   void _tick() {
-    if (_leaving || widget.session.active.value != null) {
+    if (_leave != null || widget.session.active.value != null) {
       return;
     }
-    if (MediaQuery.disableAnimationsOf(context)) {
-      widget.onTick(widget.item);
-      return;
-    }
-    setState(() => _leaving = true);
-    _leave = Timer(const Duration(milliseconds: 260), () {
+    final item = widget.item;
+    unawaited(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        AppLocalizations.of(context).itemTicked(item.name),
+        Directionality.of(context),
+      ),
+    );
+    final leave = AnimationController(vsync: this, duration: rowLeaveDuration);
+    setState(() => _leave = leave);
+    void commit() {
       if (mounted) {
-        widget.onTick(widget.item);
+        widget.onTick(item);
       }
-    });
+    }
+
+    if (MediaQuery.disableAnimationsOf(context)) {
+      leave.value = _struck;
+      _still = Timer(HlDuration.medium, commit);
+    } else {
+      widget.session.leave(item.id);
+      unawaited(leave.forward().whenComplete(commit));
+    }
   }
 
   void _lift() {
@@ -178,7 +207,7 @@ class _ItemRowState()
     final session = widget.session;
     final tile = _semantics(
       context,
-      _Tile(row: widget, leaving: _leaving, onTap: _tick),
+      _Tile(row: widget, leave: _leave, onTap: _tick),
     );
     final watched = widget.fresh
         ? VisibilityDetector(
@@ -286,6 +315,7 @@ class _ItemRowState()
     return Semantics(
       container: true,
       button: true,
+      checked: _leave != null,
       label: label,
       onTap: _tick,
       onLongPress: () => widget.onEdit(item),
@@ -299,60 +329,106 @@ class _ItemRowState()
   }
 }
 
+// The way out of a ticked row runs on one controller: the line draws
+// across the name and the row tints ([HlDuration.short]), then the row
+// fades and closes its gap as one eased motion ([HlDuration.medium]), so the
+// rows below move up instead of jumping when the item goes. A category
+// divider whose rows all leave closes on the same curves.
+final rowLeaveDuration = HlDuration.short + HlDuration.medium;
+
+/// Where the line is drawn and the close begins.
+final _struck =
+    HlDuration.short.inMicroseconds / rowLeaveDuration.inMicroseconds;
+final _draw = Interval(0, _struck, curve: HlEasing.standard);
+final rowLeaveFade = Interval(_struck, 1, curve: HlEasing.exit);
+final rowLeaveClose = Interval(_struck, 1, curve: HlEasing.standard);
+
+// The site's `.item`: Bricolage 17/1.25 names, a 28 px emoji column, a
+// 10 px gap, 13 px details in medium.
+const _nameSize = 17.0;
+const _nameLine = 21.25;
+const _iconSize = 18.0;
+const _iconColumn = 28.0;
+const _iconGap = 10.0;
+const _detailSize = 13.0;
+const _rowPadding = 6.0;
+
 class const _Tile({
   required final ItemRow row,
-  required final bool leaving,
+  required final AnimationController? leave,
   required final VoidCallback onTap,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final leave = this.leave;
+    if (leave == null) {
+      return _content(context, 0);
+    }
+    return AnimatedBuilder(
+      animation: leave,
+      builder: (context, _) => ClipRect(
+        child: Align(
+          alignment: Alignment.topCenter,
+          heightFactor: 1 - rowLeaveClose.transform(leave.value),
+          child: _content(context, leave.value),
+        ),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context, double t) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final item = row.item;
     final quantity = quantityLabel(item.quantity);
     final details = [?item.brand, ?item.properties].join(' · ');
-    final reduce = MediaQuery.disableAnimationsOf(context);
-    final fill = leaving
-        ? scheme.primaryContainer
-        : row.fresh
-        ? scheme.tertiaryContainer
-        : scheme.surface;
-    final name = Text.rich(
-      TextSpan(
-        children: [
-          if (quantity != null)
-            TextSpan(
-              text: '$quantity ',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: scheme.primary,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+    final hl = HummlistColors.of(theme.brightness);
+    final drawn = _draw.transform(t);
+    // Yellow means new, mint means done, like the homepage hero (Peter).
+    final base = row.fresh ? hl.honeySoft : scheme.surface;
+    // A ticked name turns muted as its line draws, like the site's done row.
+    final ink = Color.lerp(scheme.onSurface, hl.textMuted, drawn)!;
+    final name = TextSpan(
+      children: [
+        if (quantity != null)
+          TextSpan(
+            text: '$quantity ',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Color.lerp(scheme.primary, hl.textMuted, drawn),
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-          TextSpan(text: item.name),
-        ],
-      ),
-      style: TextStyle(
-        fontSize: 19,
-        height: 26 / 19,
-        fontWeight: const FontWeight(650),
-        letterSpacing: -0.19,
-        color: scheme.onSurface,
+          ),
+        TextSpan(text: item.name),
+      ],
+      style: DefaultTextStyle.of(context).style.merge(
+        TextStyle(
+          fontFamily: HlFont.display,
+          fontSize: _nameSize,
+          height: _nameLine / _nameSize,
+          fontWeight: FontWeight.w700,
+          color: ink,
+        ),
       ),
     );
+    final scaler = MediaQuery.textScalerOf(context);
     return Material(
-      color: fill,
+      color: Color.lerp(base, hl.mintSoft, drawn),
       child: InkWell(
         onTap: onTap,
         onSecondaryTap: () => row.onEdit(item),
         splashFactory: NoSplash.splashFactory,
         highlightColor: scheme.surfaceContainer,
-        child: AnimatedOpacity(
-          opacity: leaving ? 0.35 : 1,
-          duration: reduce ? Duration.zero : const Duration(milliseconds: 240),
+        child: Opacity(
+          opacity: 1 - rowLeaveFade.transform(t),
           child: Container(
-            constraints: const BoxConstraints(minHeight: 52),
-            padding: const EdgeInsets.fromLTRB(20, 12, 16, 11),
+            // 48, not the site's 44: the whole row is the tap target.
+            constraints: const BoxConstraints(minHeight: HlSpace.s7),
+            alignment: AlignmentDirectional.centerStart,
+            padding: const EdgeInsets.symmetric(
+              horizontal: HlSpace.s4,
+              vertical: _rowPadding,
+            ),
             decoration: row.last
                 ? null
                 : BoxDecoration(
@@ -362,14 +438,17 @@ class const _Tile({
                   ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 12,
+              spacing: _iconGap,
               children: [
                 SizedBox(
-                  width: 22,
+                  width: _iconColumn,
                   child: Text(
                     itemIcon(item, row.category),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 18, height: 26 / 18),
+                    style: const TextStyle(
+                      fontSize: _iconSize,
+                      height: _nameLine / _iconSize,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -377,41 +456,30 @@ class const _Tile({
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 1,
                     children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          name,
-                          Positioned(
-                            left: -2,
-                            right: -2,
-                            top: 12,
-                            height: 2.5,
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween(end: leaving ? 1 : 0),
-                              duration: reduce
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 200),
-                              builder: (_, grow, _) => Transform.scale(
-                                scaleX: grow,
-                                alignment: Alignment.centerLeft,
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: scheme.primary,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
+                      CustomPaint(
+                        foregroundPainter: drawn == 0
+                            ? null
+                            : StrikePainter(
+                                text: name,
+                                textScaler: scaler,
+                                textDirection: Directionality.of(context),
+                                progress: drawn,
+                                color: hl.textMuted,
                               ),
-                            ),
-                          ),
-                        ],
+                        child: Text.rich(name, textScaler: scaler),
                       ),
                       if (details.isNotEmpty)
                         Text(
                           details,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: _detailSize,
                             height: 1.3,
-                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                            color: Color.lerp(
+                              scheme.onSurfaceVariant,
+                              hl.textMuted,
+                              drawn,
+                            ),
                           ),
                         ),
                     ],
@@ -424,6 +492,74 @@ class const _Tile({
       ),
     );
   }
+}
+
+/// The strike-through of a ticked name: one line per line of text, as wide
+/// as the words on it, drawn left to right and line after line as
+/// [progress] runs from 0 to 1. It lays [text] out as the [RichText] it
+/// covers does, at the width it was given.
+class const StrikePainter({
+  required final TextSpan text,
+  required final TextScaler textScaler,
+  required final TextDirection textDirection,
+  required final double progress,
+  required final Color color,
+}) extends CustomPainter {
+  static const thickness = HlBorder.width;
+
+  /// Past the first and last letter, so the line reads as crossing out.
+  static const overhang = 2.0;
+
+  /// The full lines at [size], before [progress] cuts them.
+  List<Rect> lines(Size size) {
+    final painter = TextPainter(
+      text: text,
+      textScaler: textScaler,
+      textDirection: textDirection,
+    )..layout(maxWidth: size.width);
+    // Through the middle of the lowercase letters.
+    final lift = textScaler.scale(text.style?.fontSize ?? 14) * 0.28;
+    final lines = [
+      for (final line in painter.computeLineMetrics())
+        if (line.width > 0)
+          Rect.fromCenter(
+            center: Offset(line.left + line.width / 2, line.baseline - lift),
+            width: line.width + 2 * overhang,
+            height: thickness,
+          ),
+    ];
+    painter.dispose();
+    return lines;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final lines = this.lines(size);
+    var left = progress * lines.fold(0.0, (sum, line) => sum + line.width);
+    final paint = Paint()..color = color;
+    for (final line in lines) {
+      if (left <= 0) {
+        break;
+      }
+      final width = left < line.width ? left : line.width;
+      left -= width;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(line.left, line.top, width, line.height),
+          const Radius.circular(thickness),
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(StrikePainter old) =>
+      old.progress != progress ||
+      old.color != color ||
+      old.text != text ||
+      old.textScaler != textScaler ||
+      old.textDirection != textDirection;
 }
 
 /// The 3 px line where a dragged item would land, at the row's top or bottom
@@ -443,7 +579,7 @@ class const _InsertionLine({
         key: ValueKey('drop-line-$id'),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(2),
+          borderRadius: BorderRadius.circular(HlRadius.full),
         ),
       );
       return hover.edge == Edge.before
@@ -470,35 +606,40 @@ class const _Feedback({
           Opacity(opacity: moved ? 1 : 0, child: child),
       child: FractionalTranslation(
         translation: const Offset(-0.15, -0.5),
-        child: Material(
-          elevation: 3,
-          color: scheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: '${itemIcon(item, category)}  '),
-                    if (quantity != null)
-                      TextSpan(
-                        text: '$quantity ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: scheme.primary,
-                        ),
-                      ),
-                    TextSpan(text: item.name),
-                  ],
+        child: HlSticker(
+          borderRadius: const BorderRadius.all(Radius.circular(HlRadius.full)),
+          child: Material(
+            type: MaterialType.transparency,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: HlSpace.s4,
+                  vertical: HlSpace.s2,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: const FontWeight(650),
-                  color: scheme.onSurface,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: '${itemIcon(item, category)}  '),
+                      if (quantity != null)
+                        TextSpan(
+                          text: '$quantity ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: scheme.primary,
+                          ),
+                        ),
+                      TextSpan(text: item.name),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: HlFont.display,
+                    fontSize: _nameSize,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
                 ),
               ),
             ),

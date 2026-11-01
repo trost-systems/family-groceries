@@ -4,8 +4,9 @@ import {
   signUpWithHousehold, storeDivider, inviteCodeLabel,
 } from './helpers';
 
-// Job 29e: Einstellungen (More) holds the theme, Wie Gerät / Hell / Dunkel, kept on the device,
-// and the language list. Every main screen is shot in both themes (docs/screenshots/29e-settings-theme).
+// Job 29e: Einstellungen (More) holds the theme, kept on the device, and the language list. Every
+// main screen is shot in both themes (docs/screenshots/29e-settings-theme). Job 57: the theme is one
+// segmented control, "System", "Hell" and "Dunkel" (radio buttons of one group on web).
 
 /**
  * The relative luminance (0 black, 1 white) of the app's background at a point, read from a
@@ -37,8 +38,7 @@ async function expectTheme(page: Page, theme: 'light' | 'dark', why: string): Pr
   await (theme === 'dark' ? shown.toBeLessThan(0.05) : shown.toBeGreaterThan(0.7));
 }
 
-const themeOption = (page: Page, name: 'Wie Gerät' | 'Hell' | 'Dunkel') =>
-  page.getByRole('radio', { name, exact: true });
+const segment = (page: Page, name: 'System' | 'Hell' | 'Dunkel') => page.getByRole('radio', { name, exact: true });
 
 async function openSettings(page: Page): Promise<void> {
   await openMore(page, 'Einstellungen');
@@ -46,10 +46,12 @@ async function openSettings(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Einstellungen' })).toBeVisible();
 }
 
-async function pickTheme(page: Page, name: 'Wie Gerät' | 'Hell' | 'Dunkel'): Promise<void> {
+/** Picks System, Hell or Dunkel. */
+async function pickTheme(page: Page, theme: 'system' | 'light' | 'dark'): Promise<void> {
   await openSettings(page);
-  await themeOption(page, name).click();
-  await expect(themeOption(page, name)).toBeChecked();
+  const name = { system: 'System', light: 'Hell', dark: 'Dunkel' }[theme] as 'System' | 'Hell' | 'Dunkel';
+  await segment(page, name).click();
+  await expect(segment(page, name)).toBeChecked();
 }
 
 /** Three stores and a row without one, so the store dividers show their tints. */
@@ -135,7 +137,7 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.getByRole('button', { name: 'Zurück' }).click();
 }
 
-test('Dunkel and Hell switch every screen at once and survive a reload; Wie Gerät follows the device live', async ({ page }) => {
+test('Dunkel switches every screen at once and survives a reload; System follows the device live', async ({ page }) => {
   test.setTimeout(240_000);
   const email = newEmail('theme');
   await page.goto('/');
@@ -146,11 +148,15 @@ test('Dunkel and Hell switch every screen at once and survive a reload; Wie Ger�
   await seedStores(page, email);
 
   await openSettings(page);
-  await expect(themeOption(page, 'Wie Gerät'), 'the device setting by default').toBeChecked();
+  await expect(segment(page, 'System'), 'the device setting by default').toBeChecked();
+  await expect(segment(page, 'Hell')).not.toBeChecked();
+  await expect(segment(page, 'Dunkel')).not.toBeChecked();
   await expectTheme(page, 'light', 'a light browser, the default');
   await tour(page, 'light');
 
-  await pickTheme(page, 'Dunkel');
+  await pickTheme(page, 'light');
+  await expectTheme(page, 'light', 'following off keeps what showed');
+  await pickTheme(page, 'dark');
   await expectTheme(page, 'dark', 'at once, without a reload');
   await tour(page, 'dark');
   await page.reload();
@@ -160,15 +166,16 @@ test('Dunkel and Hell switch every screen at once and survive a reload; Wie Ger�
   await expectTheme(page, 'dark', 'kept on the device');
 
   await page.emulateMedia({ colorScheme: 'dark' });
-  await pickTheme(page, 'Hell');
+  await pickTheme(page, 'light');
   await expectTheme(page, 'light', 'Hell wins over a dark device');
 
-  await pickTheme(page, 'Wie Gerät');
+  await pickTheme(page, 'system');
   await expectTheme(page, 'dark', 'follows the dark device');
+  await expect(segment(page, 'System'), 'still System').toBeChecked();
   await page.emulateMedia({ colorScheme: 'light' });
-  await expectTheme(page, 'light', 'and its switch, live');
+  await expectTheme(page, 'light', 'and back, live');
 
-  await pickTheme(page, 'Dunkel');
+  await pickTheme(page, 'dark');
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: /^Abmelden/ }).click();
   await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();

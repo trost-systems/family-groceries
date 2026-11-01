@@ -101,6 +101,18 @@ const dartType = groups(tokens.type).map(([k, n]) => {
 const dims = (cls, node, prefix = '') => groups(node).map(([k, n]) => `${doc(n)}  static const double ${camel(prefix + k)} = ${num(px(value(n)))};`).join('\n');
 const dartDurations = groups(tokens.motion.duration).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = Duration(milliseconds: ${value(n).value});`).join('\n');
 const dartCurves = groups(tokens.motion.easing).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = Cubic(${value(n).map(num).join(', ')});`).join('\n');
+// One shadow per line, as dart format lays them out.
+const dartShadow = (shadows) => shadows.map((s) => {
+  const a = Math.round((s.color.alpha ?? 1) * 255).toString(16).padStart(2, '0');
+  const args = [
+    `color: Color(0x${a}${s.color.hex.slice(1)})`,
+    `offset: Offset(${num(s.offsetX.value)}, ${num(s.offsetY.value)})`,
+    ...(s.blur.value ? [`blurRadius: ${num(s.blur.value)}`] : []),
+    ...(s.spread.value ? [`spreadRadius: ${num(s.spread.value)}`] : []),
+  ];
+  return `    BoxShadow(${args.join(', ')}),`;
+}).join('\n');
+const dartShadows = groups(tokens.shadow).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = [\n${dartShadow(value(n))}\n  ];`).join('\n');
 const hex = tokens.shape.hex;
 
 const dart = `// GENERATED from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.
@@ -161,6 +173,10 @@ ${dims('HlRadius', tokens.radius)}
 
 abstract final class HlBorder {
 ${dims('HlBorder', tokens.border)}
+}
+
+abstract final class HlShadow {
+${dartShadows}
 }
 
 abstract final class HlDepth {

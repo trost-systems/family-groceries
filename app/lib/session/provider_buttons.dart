@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-const _height = 44.0;
+const _height = 48.0;
+const _labelSize = 15.0;
 const _radius = BorderRadius.all(Radius.circular(_height / 2));
 
 /// Google's sign-in button: standard "G" from Google's asset kit, light or
@@ -35,8 +36,8 @@ class const GoogleSignInButton({
           textStyle: const TextStyle(
             fontFamily: 'Google Sans',
             fontFamilyFallback: ['Roboto'],
-            fontSize: 14,
-            height: 20 / 14,
+            fontSize: _labelSize,
+            height: 20 / _labelSize,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -53,27 +54,60 @@ class const GoogleSignInButton({
   }
 }
 
-/// Apple's sign-in button as the sign_in_with_apple package draws it to the
-/// Human Interface Guidelines: black on light, white on dark.
+/// Apple's sign-in button drawn to the Human Interface Guidelines (black on
+/// light, white on dark; system font; the logo from the sign_in_with_apple
+/// package) at the same height and label size as Google's, which the
+/// package's own button cannot do: it sizes the label at 0.43 of its height.
 class const AppleSignInButton({
   required final String label,
   required final VoidCallback? onPressed,
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    enabled: onPressed != null,
-    label: label,
-    onTap: onPressed,
-    excludeSemantics: true,
-    child: SignInWithAppleButton(
-      text: label,
-      borderRadius: _radius,
-      style: Theme.of(context).brightness == Brightness.dark
-          ? SignInWithAppleButtonStyle.white
-          : SignInWithAppleButtonStyle.black,
-      onPressed: onPressed,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final (fill, text) = dark
+        ? (Colors.white, Colors.black)
+        : (Colors.black, Colors.white);
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: SizedBox(
+        height: _height,
+        child: FilledButton(
+          onPressed: onPressed,
+          style: FilledButton.styleFrom(
+            backgroundColor: fill,
+            foregroundColor: text,
+            disabledBackgroundColor: fill.withValues(alpha: 0.38),
+            disabledForegroundColor: text,
+            shape: const RoundedRectangleBorder(borderRadius: _radius),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            textStyle: const TextStyle(
+              fontFamily: '.SF Pro Text',
+              fontFamilyFallback: ['Inter'],
+              fontSize: _labelSize,
+              height: 20 / _labelSize,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 17,
+                child: CustomPaint(painter: AppleLogoPainter(color: text)),
+              ),
+              const SizedBox(width: 10),
+              Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

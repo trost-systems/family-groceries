@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/motion.dart';
+import 'package:family_groceries/design/pointy_hex.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
@@ -281,7 +285,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   }
 
   /// Acting on the list ends typing, which also drops the soft keyboard
-  /// while ticking things off in the store. A tick commits 260 ms after
+  /// while ticking things off in the store. A tick commits 440 ms after
   /// the tap; by then the user may have opened the sheet to type, and the
   /// late call must not take the field away.
   void _leaveField() {
@@ -439,178 +443,200 @@ class const _AddBar({
     final list = context.watch<ListCubit>();
     final open = sheet.open;
     final first = sheetRows(sheet, list).firstOrNull?.entry;
-    return Material(
-      color: scheme.surfaceContainerLow,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: open ? Colors.transparent : scheme.outlineVariant,
-            ),
-          ),
+    final t = HummlistColors.of(Theme.of(context).brightness);
+    // The hex is the container's, never the field's: an InputBorder on the
+    // field changes its padding when focused (DECISIONS, Job 52 item 7).
+    final compose = Container(
+      height: _composeHeight,
+      padding: const EdgeInsets.symmetric(
+        horizontal: HlHex.tip * _composeHeight - HlSpace.s1,
+      ),
+      decoration: ShapeDecoration(
+        color: t.surfaceRaised,
+        shape: HexBorder(
+          side: BorderSide(color: t.border, width: HlBorder.width),
         ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: addBarHeight,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: addSheetMaxWidth),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
-                  child: Row(
-                    spacing: 10,
-                    children: [
-                      _Disc(
-                        open: open,
-                        icon: first == null
-                            ? null
-                            : nameIcon(
-                                first.name,
-                                list.state.catalog.categories
-                                    .where((c) => c.id == first.categoryId)
-                                    .firstOrNull,
-                              ),
+      ),
+      child: Row(
+        spacing: HlSpace.s2,
+        children: [
+          _Disc(
+            open: open,
+            icon: first == null
+                ? null
+                : nameIcon(
+                    first.name,
+                    list.state.catalog.categories
+                        .where((c) => c.id == first.categoryId)
+                        .firstOrNull,
+                  ),
+          ),
+          Expanded(
+            child: Focus(
+              // Hardware Enter (web, desktop) is handled here,
+              // because Flutter web's text-input action path
+              // blurs the field and leaves it dead for the next
+              // Enter. Soft keyboards still submit below.
+              onKeyEvent: (_, event) {
+                final key = event.logicalKey;
+                final enter =
+                    key == LogicalKeyboardKey.enter ||
+                    key == LogicalKeyboardKey.numpadEnter;
+                if (event is KeyUpEvent) {
+                  return KeyEventResult.ignored;
+                }
+                if (key == LogicalKeyboardKey.escape && open) {
+                  onClose();
+                  return KeyEventResult.handled;
+                }
+                if (!enter) {
+                  return KeyEventResult.ignored;
+                }
+                if (event is KeyDownEvent) {
+                  onSubmit();
+                }
+                return KeyEventResult.handled;
+              },
+              child: FocusTraversalOrder(
+                order: const NumericFocusOrder(1),
+                // The bar around it draws the hex; the app's field theme
+                // must not reach this field (DECISIONS job 52, item 7).
+                child: InputDecorationTheme(
+                  data: const InputDecorationThemeData(),
+                  child: TextField(
+                    key: const ValueKey('add-item-field'),
+                    controller: input,
+                    focusNode: focus,
+                    autofocus: autofocus,
+                    // Focus comes back after every tap in the
+                    // sheet; typing goes on where it was.
+                    selectAllOnFocus: false,
+                    // The server caps names at 120 characters.
+                    maxLength: 120,
+                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                    textInputAction: TextInputAction.send,
+                    textCapitalization: TextCapitalization.sentences,
+                    style: TextStyle(fontSize: 18, color: scheme.onSurface),
+                    decoration: InputDecoration(
+                      hintText: listening
+                          ? l10n.dictationListening
+                          : l10n.addFieldHint,
+                      hintStyle: TextStyle(
+                        fontSize: 18,
+                        color: scheme.onSurfaceVariant,
                       ),
-                      Expanded(
-                        child: Focus(
-                          // Hardware Enter (web, desktop) is handled here,
-                          // because Flutter web's text-input action path
-                          // blurs the field and leaves it dead for the next
-                          // Enter. Soft keyboards still submit below.
-                          onKeyEvent: (_, event) {
-                            final key = event.logicalKey;
-                            final enter =
-                                key == LogicalKeyboardKey.enter ||
-                                key == LogicalKeyboardKey.numpadEnter;
-                            if (event is KeyUpEvent) {
-                              return KeyEventResult.ignored;
-                            }
-                            if (key == LogicalKeyboardKey.escape && open) {
-                              onClose();
-                              return KeyEventResult.handled;
-                            }
-                            if (!enter) {
-                              return KeyEventResult.ignored;
-                            }
-                            if (event is KeyDownEvent) {
-                              onSubmit();
-                            }
-                            return KeyEventResult.handled;
-                          },
-                          child: FocusTraversalOrder(
-                            order: const NumericFocusOrder(1),
-                            child: TextField(
-                              key: const ValueKey('add-item-field'),
-                              controller: input,
-                              focusNode: focus,
-                              autofocus: autofocus,
-                              // Focus comes back after every tap in the
-                              // sheet; typing goes on where it was.
-                              selectAllOnFocus: false,
-                              // The server caps names at 120 characters.
-                              maxLength: 120,
-                              maxLengthEnforcement:
-                                  MaxLengthEnforcement.enforced,
-                              textInputAction: TextInputAction.send,
-                              textCapitalization: TextCapitalization.sentences,
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: scheme.onSurface,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: listening
-                                    ? l10n.dictationListening
-                                    : l10n.addFieldHint,
-                                hintStyle: TextStyle(
-                                  fontSize: 18,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                                border: InputBorder.none,
-                                counterText: '',
-                              ),
-                              onTap: () {
-                                cubit.show();
-                                // Text the microphone left behind.
-                                if (input.text.isNotEmpty) {
-                                  cubit.type(input.text);
-                                }
-                              },
-                              onChanged: cubit.type,
-                              // Keeps the soft keyboard up after submitting.
-                              onEditingComplete: () {},
-                              onSubmitted: (_) => onSubmit(),
-                              onTapOutside: (_) {
-                                if (!open) {
-                                  onLeave();
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (open && sheet.text.isNotEmpty)
-                        FocusTraversalOrder(
-                          order: const NumericFocusOrder(5),
-                          child: IconButton(
-                            key: const ValueKey('add-clear'),
-                            tooltip: l10n.clearInput,
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              input.clear();
-                              cubit.type('');
-                              focus.requestFocus();
-                            },
-                          ),
-                        ),
-                      if (dictation case final dictation?)
-                        FocusTraversalOrder(
-                          order: const NumericFocusOrder(6),
-                          child: dictation,
-                        ),
-                    ],
+                      border: InputBorder.none,
+                      counterText: '',
+                    ),
+                    onTap: () {
+                      cubit.show();
+                      // Text the microphone left behind.
+                      if (input.text.isNotEmpty) {
+                        cubit.type(input.text);
+                      }
+                    },
+                    onChanged: cubit.type,
+                    // Keeps the soft keyboard up after submitting.
+                    onEditingComplete: () {},
+                    onSubmitted: (_) => onSubmit(),
+                    onTapOutside: (_) {
+                      if (!open) {
+                        onLeave();
+                      }
+                    },
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          if (open && sheet.text.isNotEmpty)
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(5),
+              child: IconButton(
+                key: const ValueKey('add-clear'),
+                tooltip: l10n.clearInput,
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  input.clear();
+                  cubit.type('');
+                  focus.requestFocus();
+                },
+              ),
+            ),
+          if (dictation case final dictation?)
+            FocusTraversalOrder(
+              order: const NumericFocusOrder(6),
+              child: dictation,
+            ),
+        ],
+      ),
+    );
+    // In the list's first column, where the sheet opens. Closed, the bar is
+    // the page under the field; open, it carries on the sheet above it.
+    return ColoredBox(
+      color: t.surface,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final frame = ShoppingListView.frameFor(
+            constraints.maxWidth,
+            list.state,
+          );
+          return Padding(
+            padding: EdgeInsetsDirectional.only(start: frame.side),
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              heightFactor: 1,
+              child: AnimatedContainer(
+                width: frame.columnWidth,
+                duration: hlMotion(context, HlDuration.short),
+                curve: HlEasing.standard,
+                color: open ? t.surfaceRaised : t.surface,
+                child: SafeArea(
+                  top: false,
+                  child: Container(
+                    height: addBarHeight,
+                    padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
+                    alignment: Alignment.center,
+                    child: compose,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-/// "+" while closed; open, the first row's icon, popping in.
+/// The compose field's height: the site's `.compose`.
+const _composeHeight = 52.0;
+
+/// "+" on lemon while closed; open, the first row's icon, popping in.
 class const _Disc({required final bool open, required final String? icon})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final still = MediaQuery.disableAnimationsOf(context);
+    final t = HummlistColors.of(Theme.of(context).brightness);
     final Widget face = !open
-        ? Icon(Icons.add, size: 24, color: scheme.onPrimary)
+        ? Icon(Icons.add, size: 22, color: t.onHoney)
         : icon == null
-        ? Icon(Icons.search, size: 20, color: scheme.onSecondaryContainer)
-        : Text(icon!, style: const TextStyle(fontSize: 20));
+        ? Icon(Icons.search, size: 18, color: t.text)
+        : Text(icon!, style: const TextStyle(fontSize: 18));
     return ExcludeSemantics(
       child: AnimatedSwitcher(
-        duration: still ? Duration.zero : const Duration(milliseconds: 220),
-        switchInCurve: Easing.emphasizedDecelerate,
+        duration: hlMotion(context, HlDuration.short),
+        switchInCurve: HlEasing.standard,
         transitionBuilder: (child, animation) => ScaleTransition(
           scale: Tween<double>(begin: 0.6, end: 1).animate(animation),
           child: child,
         ),
         layoutBuilder: (current, previous) =>
             Stack(alignment: Alignment.center, children: [?current]),
-        child: Container(
+        child: PointyHex(
           key: ValueKey((open, icon)),
-          width: 38,
-          height: 38,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: open ? scheme.secondaryContainer : scheme.primary,
-          ),
+          face: open ? t.honeySoft : t.honey,
+          size: 38,
           child: face,
         ),
       ),
@@ -619,8 +645,9 @@ class const _Disc({required final bool open, required final String? icon})
 }
 
 /// The bar above the list: how many partner adds are new, and the sync
-/// state. It is [height] tall in every state, so the list below never moves
-/// when either comes or goes (DECISIONS, Job 29a).
+/// state; no household name and no count (Peter, DECISIONS Job 29a). It is
+/// [height] tall in every state, so the list below never moves when either
+/// comes or goes. It sits in the list's frame (job 57).
 class const _Header() extends StatelessWidget {
   /// Below the top safe area; also the sync icon's square tap target.
   static const height = 44.0;
@@ -628,7 +655,7 @@ class const _Header() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
+    final t = HummlistColors.of(Theme.of(context).brightness);
     final cubit = context.watch<ListCubit>();
     final state = cubit.state;
     final fresh = cubit.fresh;
@@ -637,42 +664,53 @@ class const _Header() extends StatelessWidget {
     return DecoratedBox(
       key: const ValueKey('list-header'),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+        border: Border(bottom: BorderSide(color: t.divider)),
       ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          top: MediaQuery.paddingOf(context).top,
-          right: 8,
-        ),
-        child: SizedBox(
-          height: height,
-          child: Row(
-            children: [
-              Expanded(
-                child: fresh.isEmpty
-                    ? const SizedBox.shrink()
-                    : Text(
-                        partner == null
-                            ? l10n.newItems(fresh.length)
-                            : l10n.newItemsFrom(
-                                fresh.length,
-                                partner.displayName,
-                              ),
-                        key: const ValueKey('new-items-subtitle'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: scheme.tertiary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final side = ShoppingListView.frameFor(
+            constraints.maxWidth,
+            state,
+          ).side;
+          return Padding(
+            padding: EdgeInsets.only(
+              left: side + HlSpace.s4 + HlSpace.s1,
+              top: MediaQuery.paddingOf(context).top,
+              right: side + HlSpace.s2,
+            ),
+            child: SizedBox(
+              height: height,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: fresh.isEmpty
+                        ? const SizedBox.shrink()
+                        : Text(
+                            partner == null
+                                ? l10n.newItems(fresh.length)
+                                : l10n.newItemsFrom(
+                                    fresh.length,
+                                    partner.displayName,
+                                  ),
+                            key: const ValueKey('new-items-subtitle'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: t.success,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                  ),
+                  const SizedBox.square(
+                    dimension: height,
+                    child: _SyncIndicator(),
+                  ),
+                ],
               ),
-              const SizedBox.square(dimension: height, child: _SyncIndicator()),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

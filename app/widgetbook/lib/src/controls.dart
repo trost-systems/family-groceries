@@ -174,15 +174,6 @@ final selection = [
     ),
   ),
   Control(
-    name: 'Switch',
-    label: 'Benachrichtigungen',
-    states: _withoutLoading,
-    build: (props, onPressed) => Switch(
-      value: true,
-      onChanged: props.enabled ? (_) => onPressed() : null,
-    ),
-  ),
-  Control(
     name: 'RadioListTile',
     label: 'Deutsch',
     states: _withoutLoading,

@@ -26,6 +26,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// stores as sections with their categories and items in walk order, and
 /// the recently used items. Ticking, editing, folding and drag and drop
 /// happen here; it needs a [ListCubit] above it.
+/// Where the list's columns sit: `side` from either edge, each
+/// `columnWidth` wide.
+typedef ListFrame = ({int columns, double side, double columnWidth});
+
 class const ShoppingListView({
   /// Room under the last row for whatever covers the list's bottom edge
   /// (the add bar, job 17).
@@ -47,6 +51,41 @@ class const ShoppingListView({
 
   /// The widest a column gets in the multi-column layouts.
   static const wideColumnWidth = 560.0;
+
+  static const columnGap = 16.0;
+
+  /// The list's frame at [width] showing [sections] stores: its columns,
+  /// centred. The add bar and sheet line up with its first column.
+  static ListFrame frameOf(double width, int sections) {
+    final columns = math.min(
+      width >= threeColumns
+          ? 3
+          : width >= twoColumns
+          ? 2
+          : 1,
+      math.max(1, sections),
+    );
+    final content = columns == 1
+        ? math.min(width, columnWidth)
+        : math.min(
+            width,
+            columns * wideColumnWidth + (columns - 1) * columnGap,
+          );
+    return (
+      columns: columns,
+      side: width < 600 ? 0.0 : (width - content) / 2,
+      columnWidth: (content - (columns - 1) * columnGap) / columns,
+    );
+  }
+
+  /// [frameOf] for the list as [state] shows it at rest.
+  static ListFrame frameFor(double width, ListState state) => frameOf(
+    width,
+    shownSections(
+      sectionsOf(state.items.values, state.catalog),
+      dropping: false,
+    ).length,
+  );
 
   @override
   State<ShoppingListView> createState() => _ShoppingListViewState();
@@ -420,22 +459,9 @@ class _ShoppingListViewState()
     // it has sections: one store with items reads as one centred column.
     final resting = shownSections(sections, dropping: false);
     final shown = dropping ? shownSections(sections, dropping: true) : resting;
-    final columnCount = math.min(
-      width >= ShoppingListView.threeColumns
-          ? 3
-          : width >= ShoppingListView.twoColumns
-          ? 2
-          : 1,
-      math.max(1, resting.length),
-    );
-    final contentWidth = columnCount == 1
-        ? math.min(width, ShoppingListView.columnWidth)
-        : math.min(
-            width,
-            columnCount * ShoppingListView.wideColumnWidth +
-                (columnCount - 1) * _columnGap,
-          );
-    final side = width < 600 ? 0.0 : (width - contentWidth) / 2;
+    final frame = ShoppingListView.frameOf(width, resting.length);
+    final columnCount = frame.columns;
+    final side = frame.side;
     bool folded(StoreSection s) =>
         s.count == 0 ||
         active is DraggedStore ||
@@ -471,7 +497,7 @@ class _ShoppingListViewState()
               for (final (i, run) in columns.indexed) ...[
                 if (i > 0)
                   const SliverConstrainedCrossAxis(
-                    maxExtent: _columnGap,
+                    maxExtent: ShoppingListView.columnGap,
                     sliver: SliverToBoxAdapter(),
                   ),
                 // One node per column, read before the next one: sorted by
@@ -538,8 +564,6 @@ class _ShoppingListViewState()
       ],
     );
   }
-
-  static const _columnGap = 16.0;
 
   /// A recently used item as the list's own row, icon included, faded: a
   /// tap puts it back on the list. The row's own gestures are off (no

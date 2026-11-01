@@ -17,7 +17,7 @@ A user signs in with email and password, creates an account with "Registrieren",
 
 ## How to get to it (user POV)
 
-- Open the app signed out. The login screen ("Anmelden") shows email and password fields and three buttons (five with the provider buttons).
+- Open the app signed out. The login screen opens on the Hummlist brand block (app icon #5 and the wordmark, no title bar since job 57) and shows email and password fields (hex fields since job 57; a focused field gets a cobalt contour and a ring) and three buttons (five with the provider buttons, both 48 px with 15 px labels).
 - Signed in: tap "Mehr" in the tab bar, scroll down and tap "Abmelden".
 - Open the sign-in email on the phone and tap its link.
 
@@ -43,7 +43,7 @@ Preconditions:
 
 - `fg find` and `fg wait` don't see the form's error messages under the fields. Prove them with a screenshot.
 - Builds with a PostHog key (Vercel, the stores, the web e2e build) ask about analytics right after the first sign-in on a device, before onboarding or the list (`features/analytics.md`, `an-consent`). fg builds have no key and go straight on.
-- The app bar title is also "Anmelden", so `fg tap --text Anmelden` is ambiguous. Press Enter in the password field (`--submit`) or use `fg login`.
+- Since job 57 the login screen has no "Anmelden" title, so `fg tap --text Anmelden` hits the button; Enter in the password field (`--submit`) or `fg login` work as before.
 - `fg login` fails with `not_on_login` when the app is already signed in. Sign out first.
 - The magic link redirects to `com.hummlist.app://login-callback` (builds from before the Hummlist rename use `com.petertrost.familygroceries://login-callback`; both are in the allow list). The Linux desktop build registers no handler for that scheme, so opening the link cannot sign it in. Android handles the scheme (intent filter). The web build uses an http redirect instead: `e2e/tests/auth.spec.ts` "magic link signs in on this device" covers it in CI.
 - The local stack's links point at `127.0.0.1:<prefix>21`. The emulator reaches that as `10.0.2.2:<prefix>21`.

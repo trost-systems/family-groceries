@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/hex_pill.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +21,9 @@ Future<void> openCategories(BuildContext context) {
     ),
   );
 }
+
+/// The extended floating action button's height.
+const _fabHeight = 48.0;
 
 /// The route order: reorder, rename, add and delete categories.
 class const CategoriesScreen({super.key}) extends StatelessWidget {
@@ -42,77 +49,82 @@ class const CategoriesScreen({super.key}) extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: Text(l10n.addCategory),
       ),
-      body: ReorderableListView.builder(
-        buildDefaultDragHandles: false,
-        padding: const EdgeInsets.only(bottom: 96),
-        header: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(l10n.categoriesHint),
-        ),
-        itemCount: categories.length,
-        onReorderItem: (from, to) {
-          final ids = [for (final c in categories) c.id];
-          ids.insert(to, ids.removeAt(from));
-          unawaited(cubit.reorderCategories(ids));
-        },
-        itemBuilder: (context, index) {
-          final category = categories[index];
-          return ListTile(
-            key: ValueKey(category.id),
-            title: Text(categoryName(category, l10n)),
-            onTap: () async {
-              final name = await showNameDialog(
-                context,
-                title: l10n.renameCategory,
-                confirm: l10n.save,
-                initial: categoryName(category, l10n),
-              );
-              if (name != null && name != categoryName(category, l10n)) {
-                await cubit.renameCategory(category.id, name);
-              }
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: pageMaxWidth),
+          child: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
+            proxyDecorator: HexPill.lift,
+            // The button covers the last row's handle otherwise: its height,
+            // its edge and a gap.
+            padding: const EdgeInsets.only(
+              bottom: _fabHeight + HlDepth.edge + HlSpace.s4,
+            ),
+            header: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text(l10n.categoriesHint),
+            ),
+            itemCount: categories.length,
+            onReorderItem: (from, to) {
+              final ids = [for (final c in categories) c.id];
+              ids.insert(to, ids.removeAt(from));
+              unawaited(cubit.reorderCategories(ids));
             },
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (category.seedKey != 'other')
-                  IconButton(
-                    tooltip: l10n.deleteCategory(categoryName(category, l10n)),
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () async {
-                      final target = await _askReassignTarget(
-                        context,
-                        category,
-                        catalog,
-                      );
-                      if (target != null) {
-                        await cubit.deleteCategory(
-                          category.id,
-                          reassignTo: target,
-                        );
-                      }
-                    },
-                  ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    // Its own node: merged into the row, its label would
-                    // rename the row.
-                    child: Semantics(
-                      container: true,
-                      child: Icon(
-                        Icons.drag_handle,
-                        semanticLabel: l10n.dragCategory(
-                          categoryName(category, l10n),
-                        ),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return HexPill(
+                key: ValueKey(category.id),
+                onTap: () async {
+                  final name = await showNameDialog(
+                    context,
+                    title: l10n.renameCategory,
+                    confirm: l10n.save,
+                    initial: categoryName(category, l10n),
+                  );
+                  if (name != null && name != categoryName(category, l10n)) {
+                    await cubit.renameCategory(category.id, name);
+                  }
+                },
+                child: Row(
+                  children: [
+                    ExcludeSemantics(
+                      child: Text(
+                        categoryIcon(category),
+                        style: const TextStyle(fontSize: 20),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: HlSpace.s2),
+                    Expanded(child: PillTitle(categoryName(category, l10n))),
+                    if (category.seedKey != 'other')
+                      IconButton(
+                        tooltip: l10n.deleteCategory(
+                          categoryName(category, l10n),
+                        ),
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () async {
+                          final target = await _askReassignTarget(
+                            context,
+                            category,
+                            catalog,
+                          );
+                          if (target != null) {
+                            await cubit.deleteCategory(
+                              category.id,
+                              reassignTo: target,
+                            );
+                          }
+                        },
+                      ),
+                    PillDragHandle(
+                      index: index,
+                      label: l10n.dragCategory(categoryName(category, l10n)),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }

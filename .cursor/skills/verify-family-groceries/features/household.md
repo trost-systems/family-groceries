@@ -1,6 +1,6 @@
 # Household
 
-A list belongs to a household. A new user goes through onboarding (`features/onboarding.md`): Step 1 offers "Haushalt erstellen" and "Einladung annehmen". Under Mehr, "Partner einladen" opens the Einladungen page (make an invite, see the open ones, revoke one), and "Anderem Haushalt beitreten" opens the join screen, which warns before switching.
+A list belongs to a household. A new user goes through onboarding (`features/onboarding.md`): Step 1 offers "Haushalt erstellen" and "Einladung annehmen". Under Mehr, "Partner einladen" opens the Einladungen page (make an invite, see the open ones, revoke one), and "Anderem Haushalt beitreten" opens the join screen (titled "Haushalt beitreten" since job 57), which warns before switching.
 
 ## Sub-features
 

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_features_card.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/settings/access_cubit.dart';
 import 'package:family_groceries/settings/access_repository.dart';
@@ -86,7 +88,10 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
           children: [
             if (access case IntegrationsLocked(:final offer))
               _PremiumCard(offer: offer),
-            _Header(l10n.mcpServer),
+            HlSectionLabel(
+              l10n.mcpServer,
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            ),
             ListTile(
               title: const SelectionArea(child: Text(Environment.mcpUrl)),
               subtitle: Text(l10n.mcpServerBody),
@@ -96,7 +101,11 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 onPressed: () => _copy(context, Environment.mcpUrl),
               ),
             ),
-            if (onIphone || siriTokens.isNotEmpty) _Header(l10n.siriHeader),
+            if (onIphone || siriTokens.isNotEmpty)
+              HlSectionLabel(
+                l10n.siriHeader,
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              ),
             if (onIphone) _SiriCard(shortcutTokens: shortcutTokens),
             for (final token in siriTokens)
               _TokenTile(
@@ -106,7 +115,10 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                     : l10n.siriOtherIphone,
                 paused: paused,
               ),
-            _Header(l10n.accessTokens),
+            HlSectionLabel(
+              l10n.accessTokens,
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            ),
             ..._section(
               context,
               switch (state.tokens) {
@@ -131,7 +143,10 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 ),
               ),
             ),
-            _Header(l10n.connectedApps),
+            HlSectionLabel(
+              l10n.connectedApps,
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            ),
             ..._section(
               context,
               state.apps,
@@ -255,20 +270,8 @@ Future<void> _createToken(BuildContext context) async {
   });
 }
 
-class const _Header(final String text) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-    child: Semantics(
-      header: true,
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleMedium
-            ?.copyWith(color: Theme.of(context).colorScheme.primary),
-      ),
-    ),
-  );
-}
+/// The list's category label, for a settings group: 11 px heavy caps,
+/// 0.12 em tracking, muted, and a hairline rule after it.
 
 class const _SiriCard({required final List<AccessToken> shortcutTokens})
     extends StatelessWidget {
@@ -475,73 +478,34 @@ class const _PremiumCard({required final LockOffer offer})
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    return Card(
+    return Padding(
       key: const ValueKey('integration-premium'),
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Semantics(
-              // Its own node: without it the header flag merges into the
-              // card and makes all of it one heading.
-              container: true,
-              header: true,
-              child: Text(
-                l10n.integrationPremiumTitle,
-                style: theme.textTheme.titleMedium,
-              ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: PremiumFeaturesCard(
+        title: l10n.integrationPremiumTitle,
+        titleStyle: theme.textTheme.titleMedium,
+        body: l10n.integrationPremiumBody,
+        footer: switch (offer) {
+          LockOffer.buy => FilledButton(
+            key: const ValueKey('integration-buy'),
+            onPressed: () => context.go(
+              Uri(
+                path: premiumPath,
+                queryParameters: {'from': 'integrations'},
+              ).toString(),
             ),
-            const SizedBox(height: 8),
-            Text(l10n.integrationPremiumBody),
-            const SizedBox(height: 8),
-            for (final (icon, included) in [
-              (Icons.mic_none, l10n.integrationPremiumSiri),
-              (Icons.speaker_outlined, l10n.integrationPremiumAlexa),
-              (Icons.smart_toy_outlined, l10n.integrationPremiumAi),
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(icon, size: 20, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(included)),
-                  ],
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                l10n.integrationPremiumLater,
-                style: theme.textTheme.bodySmall,
-              ),
-            ),
-            const SizedBox(height: 12),
-            switch (offer) {
-              LockOffer.buy => FilledButton(
-                key: const ValueKey('integration-buy'),
-                onPressed: () => context.go(
-                  Uri(
-                    path: premiumPath,
-                    queryParameters: {'from': 'integrations'},
-                  ).toString(),
-                ),
-                child: Text(l10n.integrationPremiumBuy),
-              ),
-              LockOffer.soon => Text(
-                l10n.integrationPremiumSoon,
-                key: const ValueKey('integration-soon'),
-                style: theme.textTheme.titleSmall,
-              ),
-              LockOffer.inTheApps => Text(
-                l10n.premiumWeb,
-                key: const ValueKey('integration-in-the-apps'),
-              ),
-            },
-          ],
-        ),
+            child: Text(l10n.integrationPremiumBuy),
+          ),
+          LockOffer.soon => Text(
+            l10n.integrationPremiumSoon,
+            key: const ValueKey('integration-soon'),
+            style: theme.textTheme.titleSmall,
+          ),
+          LockOffer.inTheApps => Text(
+            l10n.premiumWeb,
+            key: const ValueKey('integration-in-the-apps'),
+          ),
+        },
       ),
     );
   }

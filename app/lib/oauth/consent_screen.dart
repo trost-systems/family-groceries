@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -121,7 +124,7 @@ sealed class const _Phase();
 
 final class const _Loading() extends _Phase;
 
-final class const _Failed(final String? detail) extends _Phase;
+final class const _Failed() extends _Phase;
 
 final class const _Asking(final NeedsConsent request) extends _Phase;
 
@@ -136,7 +139,7 @@ class _ConsentViewState() extends State<ConsentView> {
     super.initState();
     final id = widget.authorizationId;
     if (id == null || id.isEmpty) {
-      _phase = const _Failed(null);
+      _phase = const _Failed();
     } else {
       unawaited(
         _guard(() async {
@@ -170,9 +173,11 @@ class _ConsentViewState() extends State<ConsentView> {
     try {
       await action();
     } on AuthException catch (e) {
-      _show(_Failed(e.message));
+      debugPrint('oauth consent: ${e.message}');
+      _show(const _Failed());
     } on Object catch (e) {
-      _show(_Failed('$e'));
+      debugPrint('oauth consent: $e');
+      _show(const _Failed());
     }
   }
 
@@ -184,12 +189,14 @@ class _ConsentViewState() extends State<ConsentView> {
       _Loading() || _Leaving(request: null) => const [
         Center(child: CircularProgressIndicator()),
       ],
-      _Failed(:final detail) => [
-        Text(l10n.consentInvalid, style: theme.textTheme.titleMedium),
-        if (detail != null) ...[
-          const SizedBox(height: 8),
-          Text(detail, style: theme.textTheme.bodySmall),
-        ],
+      _Failed() => [
+        Text(l10n.consentInvalid, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: HlSpace.s5),
+        OutlinedButton(
+          key: const ValueKey('consent-back-to-list'),
+          onPressed: () => context.go(listPath),
+          child: Text(l10n.consentBackToList),
+        ),
       ],
       _Asking(:final request) || _Leaving(:final request?) => _details(
         context,
@@ -199,7 +206,9 @@ class _ConsentViewState() extends State<ConsentView> {
     };
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.consentTitle),
+        title: Text(
+          _phase is _Failed ? l10n.consentErrorTitle : l10n.consentTitle,
+        ),
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(

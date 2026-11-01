@@ -108,6 +108,22 @@ void main() {
     expect(find.text('Anmeldelink per E-Mail senden'), findsOneWidget);
   });
 
+  testWidgets('opens on the brand; both providers are 48 px tall', (
+    tester,
+  ) async {
+    await pumpLogin(tester, size: const Size(360, 780));
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.text('Hummlist'), findsOneWidget);
+    final mark = tester.getSize(find.byType(Image).first);
+    expect(mark, const Size(56, 56));
+    final applePill = find.descendant(
+      of: apple(),
+      matching: find.byType(FilledButton),
+    );
+    expect(tester.getSize(applePill).height, 48);
+    expect(tester.getSize(find.byType(OutlinedButton).first).height, 48);
+  });
+
   testWidgets('hides providers the build has not configured', (tester) async {
     await pumpLogin(tester, flows: const {});
     expect(google(), findsNothing);

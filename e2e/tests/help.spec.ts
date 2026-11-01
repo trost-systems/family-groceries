@@ -1,5 +1,5 @@
 import { expect, type Locator, test, type Page } from './fixtures';
-import { newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { newEmail, screenshot, signUpWithHousehold, wheelTo } from './helpers';
 
 // Job 24: More -> "Hilfe & Kontakt" opens the help page on hummlist.com in a new browser tab, by
 // UI language. The page is a draft until Peter approves it, so release builds hide the row; the
@@ -9,24 +9,6 @@ import { newEmail, screenshot, signUpWithHousehold } from './helpers';
 async function stubSite(page: Page): Promise<void> {
   await page.context().route('https://hummlist.com/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>stub</title>' }));
-}
-
-/** Wheels More's lazy list until [target] is fully on screen above the tab bar. */
-async function wheelTo(page: Page, target: Locator): Promise<void> {
-  const size = page.viewportSize()!;
-  // From 840 px there is no tab bar (a rail): don't wait for one.
-  const tabs = await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 200 }).catch(() => null);
-  const bottom = tabs ? tabs.y : size.height;
-  // From 840 px More's list is the 360 px pane on the left.
-  await page.mouse.move(size.width >= 840 ? 180 : size.width / 2, size.height / 3);
-  for (let i = 0; i < 40; i++) {
-    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
-    if (box && box.y >= 0 && box.y + box.height <= bottom) return;
-    const down = box ? box.y + box.height > bottom : i < 20;
-    await page.mouse.wheel(0, down ? 250 : -250);
-    await page.waitForTimeout(150);
-  }
-  throw new Error(`could not scroll ${target} into view`);
 }
 
 async function opensInNewTab(page: Page, row: Locator, url: string): Promise<void> {
