@@ -1,0 +1,23 @@
+id: no-in-app-purchase
+valid:
+  - |
+    import 'package:family_groceries/purchases/store_prices.dart';
+  # A package whose name only contains the words.
+  - |
+    import 'package:my_in_app_purchase/kit.dart';
+  - |
+    /// Not package:in_app_purchase/in_app_purchase.dart (job 49).
+    const note = 'package:in_app_purchase/in_app_purchase.dart';
+invalid:
+  # The plugin to read prices on the Premium page.
+  - |
+    import 'package:in_app_purchase/in_app_purchase.dart';
+  - |
+    import "package:in_app_purchase_storekit/store_kit_wrappers.dart" as sk;
+  - |
+    import 'package:in_app_purchase_android/billing_client_wrappers.dart' show BillingClient;
+  - |
+    export 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+  - |
+    import 'package:family_groceries/purchases/none.dart'
+        if (dart.library.io) 'package:in_app_purchase/in_app_purchase.dart';

@@ -230,7 +230,7 @@ select pg_temp.as_postgres();
 -- Job 25 (as of job 43, through RevenueCat): Carl bought Hummlist Lifetime for the household.
 select public.purchase_claim('00000000-0000-0000-0000-0000000000c1', (select id from h), 'apple', '2000000000002501');
 select public.purchase_record('apple', '2000000000002501', '2000000000002501', repeat('a', 64),
-  'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from h));
+  'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from h));
 select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n = 0),
   null, 'before: every household table has rows'

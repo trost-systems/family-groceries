@@ -69,6 +69,9 @@ class const RefundHelp({super.key}) extends StatelessWidget {
             paragraph(l10n.refundHelpApple),
             paragraph(l10n.refundHelpGoogle),
             paragraph(l10n.refundHelpReason),
+            // H-76's texts name only Lifetime and stay word for word; the
+            // yearly plan gets its own note (NEEDS_LEAD Job 49).
+            paragraph(l10n.premiumRefundYearly),
             Wrap(
               spacing: 8,
               runSpacing: 8,

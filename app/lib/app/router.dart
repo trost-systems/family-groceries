@@ -44,8 +44,10 @@ const accountPath = '/more/account';
 /// More's Einladungen: invite the partner, the open invites, revoke one.
 const invitesPath = '/more/invites';
 
-/// More's Hummlist Lifetime: the purchase and its restore.
-const lifetimePath = '/more/lifetime';
+/// More's Hummlist Premium: the purchase of either plan, its restore and
+/// the household's premium status. The path and its screen name stay
+/// `lifetime` from before job 49, so links and analytics keep their name.
+const premiumPath = '/more/lifetime';
 
 /// More's Einstellungen: theme and language.
 const appSettingsPath = '/more/settings';
@@ -91,7 +93,7 @@ String screenNameOf(Uri location) => switch (location.path) {
   accessPath => 'access',
   accountPath => 'account',
   invitesPath => 'invites',
-  lifetimePath => 'lifetime',
+  premiumPath => 'lifetime',
   appSettingsPath => 'settings',
   languagePath => 'language',
   settingsPath when location.queryParameters['section'] == 'account' =>
@@ -116,7 +118,7 @@ bool inMoreTab(Uri location) => const {
   accessPath,
   accountPath,
   invitesPath,
-  lifetimePath,
+  premiumPath,
   appSettingsPath,
   languagePath,
 }.contains(location.path);
@@ -218,7 +220,7 @@ List<RouteBase> moreTabRoutes() => [
         ('access', MorePage.access),
         ('account', MorePage.account),
         ('invites', MorePage.invites),
-        ('lifetime', MorePage.lifetime),
+        ('lifetime', MorePage.premium),
       ])
         GoRoute(
           path: path,

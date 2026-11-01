@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../purchases/fakes.dart';
 import 'harness.dart';
 
 String location(Onboarding o) =>
@@ -712,6 +714,157 @@ void main() {
       expect(o.invites.created, hasLength(1));
       final events = await sentEvents(tester, o);
       expect((events.single['properties']! as Map)['context'], 'settings');
+    });
+  });
+
+  group('a yearly plan keeps being billed when leaving (H-85)', () {
+    const inHome = InHousehold('peter', home);
+    Future<void> showJoinButtons(WidgetTester tester, String last) =>
+        tester.scrollUntilVisible(
+          key(last),
+          200,
+          scrollable: find
+              .descendant(
+                of: key('join-screen'),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+    const subscriber = MyYearlyPlan(subscriber: true, renewing: true);
+    FakeInvites lastOfUnlocked() =>
+        FakeInvites()
+          ..lifetime['ABCD2345'] = const JoinLifetime(leavesUnlocked: true);
+
+    testWidgets('leaving: the subscriber hears so, then joins', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        premium: FakePremiumServer(mine: subscriber),
+      );
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      expect(key('premium-billing-continues'), findsOneWidget);
+      expect(
+        find.textContaining('Löschen oder Verlassen kündigt es nicht.'),
+        findsOneWidget,
+      );
+      expect(o.session.joins, isEmpty);
+      await tapKey(tester, 'premium-billing-continue');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+    });
+
+    testWidgets('leaving: Abo verwalten stays', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        premium: FakePremiumServer(mine: subscriber),
+      );
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      await tapKey(tester, 'premium-billing-manage');
+      expect(o.session.joins, isEmpty);
+    });
+
+    testWidgets('archiving: the subscriber hears so first', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: lastOfUnlocked(),
+        archiveOffered: true,
+        premium: FakePremiumServer(mine: subscriber),
+      );
+      await showJoinButtons(tester, 'join-delete');
+      await tapKey(tester, 'join-archive');
+      expect(key('premium-billing-continues'), findsOneWidget);
+      await tapKey(tester, 'premium-billing-continue');
+      expect(o.session.archivingJoins, ['ABCD2345']);
+    });
+
+    testWidgets('deleting: after the delete question, the billing one', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        invites: lastOfUnlocked(),
+        archiveOffered: true,
+        premium: FakePremiumServer(mine: subscriber),
+      );
+      await showJoinButtons(tester, 'join-delete');
+      await tapKey(tester, 'join-delete');
+      await tapKey(tester, 'join-delete-confirm');
+      expect(key('premium-billing-continues'), findsOneWidget);
+      expect(o.session.joins, isEmpty);
+      await tapKey(tester, 'premium-billing-continue');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+      expect(o.session.archivingJoins, isEmpty);
+    });
+
+    testWidgets('another member of a billed household: the short line', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        premium: FakePremiumServer(
+          mine: const MyYearlyPlan(householdBilled: true),
+        ),
+      );
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      expect(key('premium-billing-other'), findsOneWidget);
+      expect(
+        find.text(
+          'Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt '
+          'wird.',
+        ),
+        findsOneWidget,
+      );
+      await tapKey(tester, 'premium-billing-cancel');
+      expect(o.session.joins, isEmpty);
+    });
+
+    testWidgets('in English', (tester) async {
+      await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+        locale: const Locale('en'),
+        premium: FakePremiumServer(mine: subscriber),
+      );
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      expect(
+        find.text(
+          'Your Hummlist Premium yearly plan keeps running and is billed to '
+          'your Apple or Google account until you cancel it. Deleting or '
+          "leaving doesn't cancel it.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Manage subscription'), findsOneWidget);
+      expect(find.text('Continue anyway'), findsOneWidget);
+    });
+
+    testWidgets('no yearly plan: joins at once; without a household nothing '
+        'is asked', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        session: inHome,
+      );
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      expect(o.session.joins, [('ABCD2345', JoinMethod.link)]);
+      final fresh = await pumpOnboarding(tester, location: '/join/ABCD2345');
+      await showJoinButtons(tester, 'join-confirm');
+      await tapKey(tester, 'join-confirm');
+      expect(fresh.premium.calls, isEmpty);
     });
   });
 }

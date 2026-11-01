@@ -1,0 +1,25 @@
+id: store-price-channel-only-in-store-prices
+valid:
+  # A test mocks the channel through the reader's own constant.
+  - |
+    void main() {
+      messenger.setMockMethodCallHandler(ChannelStorePrices.channel, handler);
+    }
+  # Another of the app's channels.
+  - |
+    const offlineGerman = MethodChannel('familygroceries/speech');
+  # Named in a comment only.
+  - |
+    /// AppDelegate.swift answers familygroceries/store_prices.
+    void f() {}
+invalid:
+  # The Premium screen asking the store itself.
+  - |
+    const prices = MethodChannel('familygroceries/store_prices');
+  - |
+    final c = MethodChannel("familygroceries/store_prices", const StandardMethodCodec());
+  # A test opening its own copy of the channel.
+  - |
+    void main() {
+      messenger.setMockMethodCallHandler(const MethodChannel('familygroceries/store_prices'), h);
+    }

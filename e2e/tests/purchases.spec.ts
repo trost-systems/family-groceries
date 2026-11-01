@@ -20,10 +20,10 @@ import { buy, claim, householdOf, rcEvent, report } from './iap';
 
 const newPage = async (browser: Browser) => await (await browser.newContext()).newPage();
 
-const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Hummlist Lifetime/ });
-const webNote = (page: Page) => page.getByText(/^Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App\./);
-/** The unlocked tile: title and text are one node ("Freigeschaltet Hummlist Lifetime ist …"). */
-const unlocked = (page: Page) => page.getByText(/^Freigeschaltet/);
+const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Hummlist Premium/ });
+const webNote = (page: Page) => page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./);
+/** The status tile: its title says which Premium the household has (job 49). */
+const unlocked = (page: Page) => page.getByText(/^Hummlist Premium (Lifetime|aktiv|über)/);
 
 test('the web shows the unlock live for both partners, sells nothing, and a refund locks again', async ({ browser }) => {
   const peterEmail = newEmail('iap-peter');
@@ -43,7 +43,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await signUp(lea, leaEmail);
   await joinWithCode(lea, (Array.isArray(invite) ? invite[0] : invite).code);
 
-  await openMore(peter, 'Hummlist Lifetime');
+  await openMore(peter, 'Hummlist Premium');
   await expect(peter).toHaveURL(/\/more\/lifetime$/);
   await expect(webNote(peter)).toBeVisible();
   await expect(peter.getByRole('button', { name: /Weiter zum Kauf|kaufen/ }), 'no buy button on the web').toHaveCount(0);
@@ -55,7 +55,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await expect(webNote(peter)).toBeVisible();
   await screenshot(peter, 'job25-web-de-1366');
   await peter.setViewportSize({ width: 390, height: 844 });
-  await openMore(lea, 'Hummlist Lifetime');
+  await openMore(lea, 'Hummlist Premium');
   await expect(webNote(lea)).toBeVisible();
 
   // Peter buys on his iPhone; both web pages show it without a reload.
@@ -82,7 +82,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await signUpWithHousehold(max, maxEmail);
   expect(await report(maxEmail, transactionId)).toBe('used_elsewhere');
   expect((await rcEvent('TRANSFER', await householdOf(maxEmail), transactionId)).body).toEqual({ status: 'ignored' });
-  await openMore(max, 'Hummlist Lifetime');
+  await openMore(max, 'Hummlist Premium');
   await expect(webNote(max)).toBeVisible();
   await expect(unlocked(max), 'Max stays locked').toHaveCount(0);
 
@@ -106,7 +106,7 @@ test('More shows the row, and Freigeschaltet once the household has it', async (
   await page.setViewportSize({ width: 390, height: 844 });
   await signUpWithHousehold(page, email);
   await page.getByRole('tab', { name: 'Mehr' }).click();
-  await expect(lifetimeRow(page)).toContainText('Hummlist unterstützen');
+  await expect(lifetimeRow(page)).toContainText('Siri, Alexa und KI-Assistenten');
   await screenshot(page, 'job25-more-de-390');
   expect(await buy(email, `2001${Date.now()}`)).toBe('granted');
   await expect(lifetimeRow(page), 'the row says so, live').toContainText('Freigeschaltet', { timeout: 10_000 });
@@ -131,14 +131,14 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page).toHaveURL(/\/welcome\/invite$/);
     await page.goto('/more/lifetime');
-    const note = page.getByText(/^You can buy Hummlist Lifetime in the iPhone or Android app\./);
+    const note = page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./);
     await expect(note).toBeVisible();
     await expect(page.getByRole('button', { name: 'Restore purchase' })).toHaveCount(0);
     await screenshot(page, 'job25-web-en-390');
     await page.setViewportSize({ width: 1366, height: 1024 });
     await screenshot(page, 'job25-web-en-1366');
     expect(await buy(email, `2002${Date.now()}`)).toBe('granted');
-    await expect(page.getByText(/^Unlocked/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/^Hummlist Premium Lifetime/)).toBeVisible({ timeout: 10_000 });
     await screenshot(page, 'job25-unlocked-web-en-1366');
     await page.setViewportSize({ width: 390, height: 844 });
     await screenshot(page, 'job25-unlocked-web-en-390');

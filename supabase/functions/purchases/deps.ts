@@ -13,6 +13,7 @@ import {
   claim,
   deletionDone,
   firstDelivery,
+  lifecycle,
   record,
   reinstate,
   revoke,
@@ -44,6 +45,7 @@ export function productionDeps(
         if (!await firstDelivery(tx, event.id, event.type)) return { first: false as const };
         const ledger: Ledger = {
           record: async (p) => record(tx, p, await hmacHex(webhook!.tombstoneKey, p.transactionId)),
+          lifecycle: (c) => lifecycle(tx, c),
           revoke: (r) => revoke(tx, r),
           reinstate: (store, transactionId) => reinstate(tx, store, transactionId),
         };
@@ -79,6 +81,7 @@ export function productionDeps(
         currency: sale.currency,
         country: sale.country,
         tax: null,
+        premiumSource: sale.plan,
       }, subject);
     },
     deleteDueCustomers: config.revenueCat

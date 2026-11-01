@@ -1,9 +1,10 @@
 // The purchases function's database work, all through the service connection and the functions
-// in migrations 20261030190000_purchases.sql and 20261031123504_household_bound_lifetime.sql that
-// no client may call. A webhook event's writes take [Tx]: they commit with its id (firstDelivery).
+// in migrations 20261030190000_purchases.sql, 20261031123504_household_bound_lifetime.sql and
+// 20261031214500_premium_yearly.sql that no client may call. A webhook event's writes take [Tx]: they commit with its id (firstDelivery).
 import type { Sql, Tx } from '../_shared/db.ts';
 import type { AppStore } from '../_shared/purchases.ts';
-import type { Refund, Sale, StoreEnvironment, StorePurchase } from './types.ts';
+import type { Lifecycle } from './revenuecat.ts';
+import type { Plan, Refund, Sale, StoreEnvironment, StorePurchase } from './types.ts';
 
 /** purchase_record's outcome (see the migration). */
 export type Outcome =
@@ -27,6 +28,8 @@ export interface Recorded {
   buyer: string | null;
   /** purchase_completed is due now (for [buyer]). */
   sendCompleted: boolean;
+  /** A new yearly plan in a household that had an active one: kept apart, logged (A2-3). */
+  secondYearly: boolean;
 }
 
 /** Records the event id; false when it was recorded before (a retry or a duplicate delivery). */
@@ -42,8 +45,12 @@ export async function record(sql: Tx, p: StorePurchase, hmac: string): Promise<R
   const [row] = await sql<{ r: Record<string, unknown> }[]>`
     select public.purchase_record(
       ${p.store}, ${p.transactionId}, ${p.latestTransactionId}, ${hmac}, ${p.productId}, ${p.kind},
-      ${p.environment}, ${p.purchasedAt.toISOString()}::timestamptz, ${p.price}::numeric,
-      ${p.currency}, ${p.country}, ${p.householdId}::uuid
+      ${p.plan}, ${p.environment}, ${p.purchasedAt.toISOString()}::timestamptz, ${p.price}::numeric,
+      ${p.currency}, ${p.country}, ${p.householdId}::uuid, ${p.eventAt.toISOString()}::timestamptz,
+      ${p.subscription?.expiresAt?.toISOString() ?? null}::timestamptz,
+      ${p.subscription?.autoRenew ?? null}::boolean, ${
+    p.subscription?.billingIssue ?? null
+  }::boolean
     ) as r`;
   const r = row.r;
   return {
@@ -53,7 +60,21 @@ export async function record(sql: Tx, p: StorePurchase, hmac: string): Promise<R
     internal: r.internal === true,
     buyer: typeof r.buyer === 'string' ? r.buyer : null,
     sendCompleted: r.send_completed === true,
+    secondYearly: r.second_yearly === true,
   };
+}
+
+/** purchase_lifecycle's outcome (see the migration). */
+export type LifecycleOutcome = 'updated' | 'stale' | 'unknown' | 'lifetime' | 'revoked';
+
+export async function lifecycle(sql: Tx, c: Lifecycle): Promise<LifecycleOutcome> {
+  const [row] = await sql<{ r: { outcome: LifecycleOutcome } }[]>`
+    select public.purchase_lifecycle(${c.store}, ${c.transactionId},
+      ${c.eventAt.toISOString()}::timestamptz, ${
+    c.state.expiresAt?.toISOString() ?? null
+  }::timestamptz,
+      ${c.state.autoRenew}::boolean, ${c.state.billingIssue}::boolean) as r`;
+  return row.r.outcome;
 }
 
 /** A purchase the store just took back, as purchase_refunded needs it. */
@@ -67,6 +88,7 @@ const saleOf = (r: Record<string, unknown>, store: AppStore, transactionId: stri
   store,
   transactionId,
   productId: r.product_id as string,
+  plan: r.plan as Plan,
   environment: r.environment as StoreEnvironment,
   price: r.price === null || r.price === undefined ? null : Number(r.price),
   currency: (r.currency as string | null) ?? null,
@@ -78,7 +100,7 @@ const saleOf = (r: Record<string, unknown>, store: AppStore, transactionId: stri
 export async function revoke(sql: Tx, f: Refund): Promise<Revoked | null> {
   const [row] = await sql<{ revoked: Record<string, unknown> | null }[]>`
     select public.purchase_revoke(${f.store}, ${f.transactionId},
-      ${f.revokedAt.toISOString()}::timestamptz, ${f.productId}, ${f.environment},
+      ${f.revokedAt.toISOString()}::timestamptz, ${f.productId}, ${f.plan}, ${f.environment},
       ${f.purchasedAt?.toISOString() ?? null}::timestamptz) as revoked`;
   const r = row.revoked;
   if (!r) return null;

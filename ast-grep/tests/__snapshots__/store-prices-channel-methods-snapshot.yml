@@ -1,0 +1,84 @@
+id: store-prices-channel-methods
+snapshots:
+  "Future<List?> details() => channel.invokeListMethod<String>('pricesAll');\n":
+    labels:
+    - source: channel.invokeListMethod<String>('pricesAll')
+      style: primary
+      start: 27
+      end: 72
+    - source: invokeListMethod
+      style: secondary
+      start: 35
+      end: 51
+    - source: channel.invokeListMethod
+      style: secondary
+      start: 27
+      end: 51
+    - source: channel.invokeListMethod<String>
+      style: secondary
+      start: 27
+      end: 59
+  "Future<Map?> details() => channel.invokeMapMethod<String, Object?>('productDetails');\n":
+    labels:
+    - source: channel.invokeMapMethod<String, Object?>('productDetails')
+      style: primary
+      start: 26
+      end: 84
+    - source: invokeMapMethod
+      style: secondary
+      start: 34
+      end: 49
+    - source: channel.invokeMapMethod
+      style: secondary
+      start: 26
+      end: 49
+    - source: channel.invokeMapMethod<String, Object?>
+      style: secondary
+      start: 26
+      end: 66
+  "Future<Object?> buy() => channel.invokeMethod<Object?>('buy', {'product': id});\n":
+    labels:
+    - source: "channel.invokeMethod<Object?>('buy', {'product': id})"
+      style: primary
+      start: 25
+      end: 78
+    - source: invokeMethod
+      style: secondary
+      start: 33
+      end: 45
+    - source: channel.invokeMethod
+      style: secondary
+      start: 25
+      end: 45
+    - source: channel.invokeMethod<Object?>
+      style: secondary
+      start: 25
+      end: 54
+  "Future<Object?> call(String method) => channel.invokeMethod(method);\n":
+    labels:
+    - source: channel.invokeMethod(method)
+      style: primary
+      start: 39
+      end: 67
+    - source: invokeMethod
+      style: secondary
+      start: 47
+      end: 59
+    - source: channel.invokeMethod
+      style: secondary
+      start: 39
+      end: 59
+  "Future<void> restore() => channel.invokeMethod('restore');\n":
+    labels:
+    - source: channel.invokeMethod('restore')
+      style: primary
+      start: 26
+      end: 57
+    - source: invokeMethod
+      style: secondary
+      start: 34
+      end: 46
+    - source: channel.invokeMethod
+      style: secondary
+      start: 26
+      end: 46

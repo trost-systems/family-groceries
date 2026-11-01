@@ -30,7 +30,7 @@ begin
     perform public.purchase_claim(p_user, p_household, 'apple', p_tx);
   end if;
   return public.purchase_record('apple', p_tx, p_tx, pg_temp.hmac(p_tx), 'com.hummlist.app.lifetime',
-    'lifetime', 'Sandbox', p_bought, 9.99, 'EUR', 'DE', p_household) - 'buyer' - 'send_completed';
+    'premium', 'lifetime', 'Sandbox', p_bought, 9.99, 'EUR', 'DE', p_household) - 'buyer' - 'send_completed' - 'plan' - 'second_yearly';
 end $$;
 
 create function pg_temp.unlocks(p_household uuid) returns text language sql as $$
@@ -77,7 +77,7 @@ set local role anon;
 select throws_ok($$ select * from public.lifetime_testers $$, '42501', null, 'anon cannot read it either');
 select pg_temp.login('00000000-0000-0000-0000-0000000043a1');
 select throws_ok(
-  $$ select public.purchase_record('apple', 'x', 'x', repeat('a', 64), 'com.hummlist.app.lifetime', 'lifetime',
+  $$ select public.purchase_record('apple', 'x', 'x', repeat('a', 64), 'com.hummlist.app.lifetime', 'premium', 'lifetime',
        'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from ha)) $$,
   '42501', null, 'clients cannot record a purchase');
 select throws_ok($$ select public.purchase_claim(auth.uid(), (select id from ha), 'apple', 'x') $$,
@@ -102,10 +102,10 @@ select is(pg_temp.grant_('4300000000000001', '00000000-0000-0000-0000-0000000043
 select results_eq(
   $$ select p.kind, p.bound_household, e.kind, e.source, e.household_id from public.purchases p
      join public.entitlements e on e.purchase_id = p.id where p.transaction_id = '4300000000000001' $$,
-  $$ values ('lifetime', (select id from ha), 'lifetime', 'purchase', (select id from ha)) $$,
+  $$ values ('premium', (select id from ha), 'premium', 'purchase', (select id from ha)) $$,
   'the purchase and its unlock carry the kind; the purchase records its household');
 select pg_temp.login('00000000-0000-0000-0000-0000000043b1');
-select results_eq($$ select kind, source from public.entitlements $$, $$ values ('lifetime', 'purchase') $$,
+select results_eq($$ select kind, source from public.entitlements $$, $$ values ('premium', 'purchase') $$,
   'Ben reads the household''s unlock');
 
 -- Ben buys too (his phone, the race, Ask to Buy): a second row, flagged for the refund help.
@@ -116,7 +116,7 @@ select is(pg_temp.grant_('4300000000000002', '00000000-0000-0000-0000-0000000043
   '{"outcome": "restored", "already_unlocked": false, "household_gone": false, "internal": false}'::jsonb,
   'its retry is a plain restore');
 select is(pg_temp.unlocks((select id from ha)), 'purchase,purchase', 'two rows, one per purchase');
-select ok(public.purchase_revoke('apple', '4300000000000002', now(), 'com.hummlist.app.lifetime', 'Sandbox', null) is not null,
+select ok(public.purchase_revoke('apple', '4300000000000002', now(), 'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', null) is not null,
   'Apple refunds Ben''s');
 select is(pg_temp.unlocks((select id from ha)), 'purchase', 'Anna''s keeps the household unlocked');
 
@@ -185,7 +185,7 @@ insert into public.lifetime_testers (user_id, note) values ('00000000-0000-0000-
 select is(pg_temp.unlocks((select id from hd)), 'tester', 'putting Dana on the list uses her one grant on her household');
 select pg_temp.login('00000000-0000-0000-0000-0000000043e1');
 select results_eq($$ select kind, source, purchase_id from public.entitlements $$,
-  $$ values ('lifetime', 'tester', null::uuid) $$, 'Eva reads it like a purchase''s, with its source');
+  $$ values ('premium', 'tester', null::uuid) $$, 'Eva reads it like a purchase''s, with its source');
 select throws_ok($$ select tester from public.entitlements $$, '42501', null, 'but not whose grant it is');
 select throws_ok($$ select granted_by from public.entitlements $$, '42501', null, 'nor who gave it');
 select throws_ok($$ select * from public.entitlements $$, '42501', null, 'so no select *');
@@ -199,7 +199,7 @@ select pg_temp.as_postgres();
 select is(pg_temp.grant_('4300000000000004', '00000000-0000-0000-0000-0000000043d1', (select id from hd)),
   '{"outcome": "granted", "already_unlocked": true, "household_gone": false, "internal": true}'::jsonb,
   'a tester''s purchase is internal, and her household was unlocked already');
-select is((public.purchase_revoke('apple', '4300000000000004', now(), 'com.hummlist.app.lifetime', 'Sandbox', null)) ->> 'internal',
+select is((public.purchase_revoke('apple', '4300000000000004', now(), 'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', null)) ->> 'internal',
   'true', 'so is its refund');
 
 -- Dana moves to Cleo's household: her grant stays with Eva, like a purchase.
@@ -292,7 +292,7 @@ select is(public.accept_invite((select code from inv_c6), true) ->> 'previous', 
 
 select pg_temp.as_postgres();
 create temp table rc as select public.purchase_record('apple', '4300000000000007', '4300000000000007',
-  pg_temp.hmac('4300000000000007'), 'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE',
+  pg_temp.hmac('4300000000000007'), 'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE',
   (select id from hc)) as r;
 select is((select r ->> 'outcome' from rc) || '/' || (select coalesce(r ->> 'buyer', 'none') from rc) || '/' || (select r ->> 'send_completed' from rc),
   'granted/none/false', 'the webhook first: recorded without a buyer, no purchase_completed yet');
@@ -304,7 +304,7 @@ select is(public.purchase_claim('00000000-0000-0000-0000-0000000043c1', (select 
 select is(public.purchase_claim('00000000-0000-0000-0000-0000000043b1', (select id from hc), 'apple', '4300000000000007') ->> 'status',
   'taken', 'a second member''s claim doesn''t change the buyer');
 select is(public.purchase_record('apple', '4300000000000008', '4300000000000008', pg_temp.hmac('4300000000000008'),
-  'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', gen_random_uuid()) ->> 'outcome',
+  'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', gen_random_uuid()) ->> 'outcome',
   'no_household', 'an App User ID that is no household unlocks nothing');
 select is((select count(*)::int from public.purchases where transaction_id = '4300000000000008'), 0, 'and records nothing');
 

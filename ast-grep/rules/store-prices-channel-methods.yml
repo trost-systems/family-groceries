@@ -1,0 +1,35 @@
+# app/lib/purchases/store_prices.dart asks the store price channel for 'prices' and
+# 'manageSubscriptions', nothing else (job 49, Legal Review A2-5): the native side reads product
+# details and opens Apple's subscription sheet, and must never grow a purchase, a restore or a
+# transaction listener next to RevenueCat's. A new method is a decision, not an edit.
+#
+# Matched on invokeMethod, invokeMapMethod and invokeListMethod, with or without type
+# arguments, whose first argument is not one of the two literals (a variable included).
+id: store-prices-channel-methods
+language: dart
+severity: error
+files:
+  - app/lib/purchases/store_prices.dart
+rule:
+  kind: call_expression
+  has:
+    field: function
+    any:
+      - kind: member_expression
+        has:
+          field: property
+          regex: '^invoke(?:Map|List)?Method$'
+      - kind: instantiation_expression
+        has:
+          field: function
+          kind: member_expression
+          has:
+            field: property
+            regex: '^invoke(?:Map|List)?Method$'
+  not:
+    has:
+      field: arguments
+      has:
+        nthChild: 1
+        regex: '^[''"](?:prices|manageSubscriptions)[''"]$'
+message: 'the store price channel only answers "prices" and "manageSubscriptions": purchases go through RevenueCat (PurchaseRepository), never this channel (job 49)'

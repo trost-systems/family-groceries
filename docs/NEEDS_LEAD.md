@@ -784,3 +784,120 @@ No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAutho
 - English "beer" is classified as produce (DECISIONS "Job 51" item 11). The household's category
   memory fixes it after one move.
 - iOS 15 and 16 get no native Siri. The Shortcut recipe stays for them.
+
+
+## Job 49: Hummlist Premium, yearly and Lifetime (2026-11-01)
+
+Nothing here is live for users: `REVENUECAT_PURCHASES` stays off (Peter turns it on, 20:35 CET),
+and the new server switch `premium_offer` is seeded off. Nothing is gated (job 50). Decisions:
+DECISIONS "Job 49". Behavior: docs/PURCHASES.md.
+
+### Done by Ops already (ADDENDUM 2, A2-7), so not listed as steps
+
+RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attached, offering
+`default` with `$rc_annual` and `$rc_lifetime`, the Play base plan `yearly`, Play grace period
+14 days and account hold 46 days, the App Store subscription group "Hummlist Premium"
+(`22532621`) with `com.hummlist.app.yearly` (`6829293557`), the country prices (ADDENDUM 3).
+
+### Steps
+
+1. **Migration `20261031214500_premium_yearly.sql`** deploys with the normal pipeline, together
+   with the `purchases` function (same push to main). In the minutes between the two, a webhook
+   from the old function fails the new kind check (500) and RevenueCat retries; nothing is sold,
+   so none is expected. After the deploy: `select kind, count(*) from public.entitlements group by 1;`
+   shows only `premium`.
+2. **The old `lifetime` entitlement at RevenueCat**: delete it only after every installed app is a
+   job 49 build or later. The webhook reads the product, not `entitlement_ids`, so events naming
+   either work meanwhile. An entitlement's identifier can't be changed through RevenueCat's API v2
+   (only `display_name`; https://www.revenuecat.com/docs/api-v2/entitlement, read 2026-11-01),
+   which is why a new one was created.
+3. **Keep unchanged at RevenueCat:** restore behavior "Keep with original App User ID", "Track new
+   purchases from server-to-server notifications" off, the webhook URL with
+   `?forceFunctionRegion=eu-central-1`. Please confirm in the dashboard that the webhook sends
+   subscription lifecycle events (RENEWAL, CANCELLATION, UNCANCELLATION, BILLING_ISSUE,
+   EXPIRATION, SUBSCRIPTION_PAUSED, SUBSCRIPTION_EXTENDED) for both stores on the current plan,
+   and that App Store Server Notifications V2 and Play RTDN reach RevenueCat for subscriptions.
+4. **Offering the purchase (when Peter says so), in this order:**
+   - The store prices must be confirmed first (launch gate): run the drift check (step 6) green,
+     or the app shows no amount it didn't read from the store anyway; the check proves the stores
+     sell at the planned prices.
+   - Server switch, service role (SQL editor or Management API):
+     ```sql
+     update public.app_switches set enabled = true, changed_at = now() where key = 'premium_offer';
+     ```
+     Off again (also the one command on price drift): the same with `false`. Off: no card, no Buy,
+     no store price query, on every build.
+   - App: `REVENUECAT_PURCHASES=true` (Job 43/47 steps).
+5. **Secrets for the price drift check** (`scripts/iap/price_drift.ts`, `.github/workflows/price-drift.yml`,
+   daily 05:17 UTC; it fails with "SKIPPED: … missing (NEEDS_LEAD Job 49)" until they exist).
+   Repository secrets, set without printing them:
+   - `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (the `.p8` text): an App Store Connect API key;
+     the check only reads (subscription prices, IAP price schedule, availability). The existing
+     App Manager key works; a read-only role may suffice (not tested).
+   - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`: a service account with `androidpublisher` scope that can
+     see the app's products in Play Console (Users and permissions).
+   Not added on purpose: a service-role secret in CI that would turn `premium_offer` off by itself
+   on drift. Propose it if you want automatic switching; today drift opens the issue "Store prices
+   drifted from scripts/iap/product.ts" and a person runs step 4's `false`.
+6. **First run of the drift check:** `deno run --allow-env --allow-net --allow-read scripts/iap/price_drift.ts`
+   on the box (ASC key there), with the Play service account if available. It prints the BR, MX
+   and IN yearly amounts; put them into `expectedPrices` in `scripts/iap/product.ts` (they are
+   `null` now). The 20 euro storefronts all expect 9.99 / 29.99; if a store set one differently,
+   the check says which.
+7. **StoreKit configuration file:** `app/ios/Hummlist.storekit` was written by hand (Xcode format
+   4) with the subscription group; open it once in Xcode on a Mac (or a StoreKit test run) and
+   commit whatever Xcode rewrites.
+8. **PostHog (319492 only):** update the two paying-household insights from
+   `analytics/queries/paying_households_d35.sql` and `paying_share_wah.sql` (both products count;
+   the WAH share counts a yearly purchase for 365 + 14 days). The HogQL was not run here.
+9. **Proposed event (not shipped):** a `subscription_renewed` / `subscription_expired` server
+   event would let the WAH share count active yearly households exactly instead of the 379-day
+   approximation. It needs a privacy policy section 9 change through Legal Review first.
+
+### For Legal Review (via the Lead; this job edited no legal text)
+
+- **5a** (privacy policy): the subscription, its renewal and expiry processing; the new stored
+  facts per household: plan (`yearly`/`lifetime`), the plan's end (`expires_at`), whether it
+  renews (`auto_renew`), whether a billing problem is open (`billing_issue`, with the grace end),
+  the time of the newest RevenueCat event (`state_at`); `premium_source` readable by members.
+  `cancel_reason` and `expiration_reason` are not stored (H-87).
+- **S-8** ("an expired yearly plan can be renewed there under the same transaction number"):
+  Apple: confirmed, `originalTransactionId` stays across renewals and a lapsed resubscribe in the
+  same group (Apple commerce engineer, https://developer.apple.com/forums/thread/732932; a 2025
+  report of a changed id for a few accounts is unanswered). Google: renewals keep RevenueCat's
+  `original_transaction_id` (RevenueCat staff, community answer 2023-08-08); a resubscribe after
+  expiry creates a new purchase token (Google's subscription docs), so on Google an expired plan
+  bought again is a new transaction (it still binds only to the same household's App User ID).
+  The clause holds for Apple, not for Google.
+- **Section 9**: the new `premium_source` property on `purchase_completed` / `purchase_refunded`;
+  the proposed event in step 9.
+- **§12 / §13**: unchanged by this job as far as the code goes; please confirm.
+- **Support FAQ** (S-3, „Wie kündige ich das Jahresabo?“): the app links `/support` and
+  `/en/support` (no anchor exists); the entry is Legal's.
+- **H-76 strings name only Lifetime** (`refundHelpBody`, `refundHelpGoogle`, `refundHelpReason`,
+  `lifetimeBoughtTwice`, `joinLifetimeEnds`): left word for word. The refund sheet now adds the
+  placeholder `premiumRefundYearly` ("Für das Jahresabo gilt dasselbe. Eine Kündigung beendet nur
+  die Verlängerung; das laufende Jahr wird nicht automatisch erstattet.") below them.
+- **S-11**: the rename „Hummlist Lifetime“ → „Hummlist Premium“ in the 26 values of app_de.arb
+  (and app_en.arb) was not applied (legal text change; Peter's approval).
+- **Terms / EULA (H-20, H-93)**: no Hummlist terms exist. The Premium page links Apple's standard
+  EULA on iOS (`appleEulaUrl`) and, as a placeholder, the support page on Android and the web
+  (`termsUrl` in `app/lib/purchases/premium_server.dart`).
+- **Kündigungsbutton (§ 312k BGB)**: built nothing beyond the store-management links
+  ("Abo verwalten oder kündigen"); is that enough for subscriptions sold through Apple/Google?
+- **Store privacy labels (C10)** for subscriptions.
+- **app/web/konto-loeschen.html (S-5)**: not edited; the in-app deletion now warns the subscriber.
+- **Static-price question (ADDENDUM 1)** is moot: the app shows only what the store returns
+  (A2-5). Legal may still want to confirm § 25 TDDDG for the store price query on page open (a
+  StoreKit / Play Billing call, no RevenueCat, no network to us).
+- **Placeholder copy needing final text** (every `premium*` ARB key marked PLACEHOLDER in its
+  description): the page intro, status lines, card titles and price lines, "Einmal zahlen, für
+  immer: so viel wie drei Jahre.", the yearly disclosures (`premiumYearlyTerms`), Buy labels,
+  "nicht verfügbar" / "bald verfügbar", the yearly-elsewhere hint, the two-plans note, the web
+  note, the yearly refund note, and the Lead's generic H-85 line
+  (`premiumBillingContinuesOther`: „Ein Jahresabo für diesen Haushalt läuft weiter, bis es
+  gekündigt wird.“). The EN button "Buy anyway" is the Lead's wording.
+- **Disclosure wording**: Apple's subscription page asks for name, duration, the full renewal
+  price and restore on the sign-up screen and links to the terms and privacy policy; the "24
+  hours" sentence comes from Apple's Media Services Terms. `premiumYearlyTerms` follows that;
+  please confirm or replace.

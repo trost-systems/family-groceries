@@ -121,7 +121,7 @@ select public.purchase_claim((select id from auth.users where email = 'peter@bac
 select public.purchase_claim((select id from auth.users where email = 'peter@backup.test'),
   (select id from fx where key = 'home'), 'apple', '2000000999000002');
 select public.purchase_record('apple', '2000000999000001', '2000000999000001', repeat('b', 64),
-  'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from fx where key = 'home'));
+  'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from fx where key = 'home'));
 select public.purchase_take_call((select id from auth.users where email = 'peter@backup.test'));
 insert into public.lifetime_testers (user_id, grants, note)
 select id, 1, 'backup drill' from auth.users where email = 'carl@backup.test';

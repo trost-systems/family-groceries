@@ -5,7 +5,8 @@ import { AuthError } from '../_shared/auth.ts';
 import type { PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
 import { createHandler, type Deps, type Ledger, maxBodyBytes, routes } from './handler.ts';
-import type { Claim, Recorded, Revoked } from './store.ts';
+import type { Lifecycle } from './revenuecat.ts';
+import type { Claim, LifecycleOutcome, Recorded, Revoked } from './store.ts';
 import { lifetimeProductId, type Sale, type StorePurchase, webhookPath } from './types.ts';
 
 const PETER = '00000000-0000-4000-8000-0000000043a1';
@@ -57,6 +58,7 @@ class Books implements Ledger {
       internal: row.user !== null && this.testers.has(row.user),
       buyer: null,
       sendCompleted: false,
+      secondYearly: false,
       ...more,
     });
     if (row.revoked) return Promise.resolve(answer('revoked'));
@@ -77,6 +79,15 @@ class Books implements Ledger {
       sendCompleted: send,
       internal: row.user !== null && this.testers.has(row.user),
     }));
+  }
+
+  lifecycles: Lifecycle[] = [];
+
+  lifecycle(c: Lifecycle): Promise<LifecycleOutcome> {
+    this.writes++;
+    this.lifecycles.push(c);
+    const row = this.rows.get(`${c.store}:${c.transactionId}`);
+    return Promise.resolve(!row ? 'unknown' : row.revoked ? 'revoked' : 'updated');
   }
 
   revoke(r: { store: 'apple' | 'google'; transactionId: string }): Promise<Revoked | null> {
@@ -371,9 +382,12 @@ Deno.test('a lifetime purchase is recorded for the household, with what RevenueC
     transactionId: '2000000812345678',
     latestTransactionId: '2000000812345679',
     productId: lifetimeProductId,
-    kind: 'lifetime',
+    plan: 'lifetime',
+    kind: 'premium',
     environment: 'Sandbox',
     purchasedAt: new Date(NOW.getTime() - 5_000),
+    eventAt: NOW,
+    subscription: null,
     price: 9.99,
     currency: 'EUR',
     country: 'DE',
@@ -486,7 +500,16 @@ Deno.test('TRANSFER never moves an unlock; it is logged by type alone', async ()
 Deno.test('other event types are acknowledged and ignored', async () => {
   const w = world();
   for (
-    const type of ['TEST', 'TEMPORARY_ENTITLEMENT_GRANT', 'EXPIRATION', 'RENEWAL', 'SOMETHING_NEW']
+    const type of [
+      'TEST',
+      'TEMPORARY_ENTITLEMENT_GRANT',
+      'EXPIRATION',
+      'UNCANCELLATION',
+      'BILLING_ISSUE',
+      'SUBSCRIPTION_PAUSED',
+      'PRODUCT_CHANGE',
+      'SOMETHING_NEW',
+    ]
   ) {
     await expect(await w.deliver(of(type)), 200, { status: 'ignored' });
   }
@@ -755,7 +778,7 @@ Deno.test('test events exist only inside a local stack', async () => {
     { status: 'granted' },
   );
   const play = w.books.rows.get('google:fake-2')!.purchase;
-  assertEquals([play.environment, play.householdId, play.price], ['Production', OTHER, 9.99]);
+  assertEquals([play.environment, play.householdId, play.price], ['Production', OTHER, 29.99]);
   await expect(
     await w.handle('/test/event', { ...body, isFamilyShare: true, transactionId: 'f3' }),
     200,
@@ -863,4 +886,180 @@ Deno.test('routes match exactly: the documented webhook path reaches the webhook
   ) {
     await expect(await at(`http://localhost${miss}`), 404, { error: 'not_found' });
   }
+});
+
+/** A yearly subscription event as RevenueCat sends it. */
+function yearly(type: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return purchase({
+    type,
+    product_id: 'com.hummlist.app.yearly',
+    entitlement_ids: ['premium'],
+    transaction_id: '2000000900000002',
+    original_transaction_id: '2000000900000001',
+    expiration_at_ms: NOW.getTime() + 365 * 86_400_000,
+    ...overrides,
+  });
+}
+
+Deno.test('a yearly plan is recorded with its end; entitlement ids old or new both work', async () => {
+  const w = world();
+  for (const ids of [['premium'], ['lifetime'], []]) {
+    const id = `tx-${ids.join('')}`;
+    await expect(
+      await w.deliver(yearly('INITIAL_PURCHASE', {
+        entitlement_ids: ids,
+        original_transaction_id: id,
+      })),
+      200,
+      { status: 'granted' },
+    );
+    const p = w.books.rows.get(`apple:${id}`)!.purchase;
+    assertEquals([p.plan, p.kind, p.productId], ['yearly', 'premium', 'com.hummlist.app.yearly']);
+    assertEquals(p.subscription, {
+      expiresAt: new Date(NOW.getTime() + 365 * 86_400_000),
+      autoRenew: true,
+      billingIssue: false,
+    });
+  }
+});
+
+Deno.test("Play's subscription:basePlan id is the yearly plan; another base plan is ignored", async () => {
+  const w = world();
+  await expect(
+    await w.deliver(yearly('INITIAL_PURCHASE', {
+      store: 'PLAY_STORE',
+      product_id: 'com.hummlist.app.yearly:yearly',
+      original_transaction_id: 'GPA.1234-5678-9012-34567',
+      transaction_id: 'GPA.1234-5678-9012-34567',
+    })),
+    200,
+    { status: 'granted' },
+  );
+  assertEquals(
+    w.books.rows.get('google:GPA.1234-5678-9012-34567')!.purchase.productId,
+    'com.hummlist.app.yearly',
+  );
+  const logs = await logsOf(async () => {
+    await expect(
+      await w.deliver(
+        yearly('INITIAL_PURCHASE', { product_id: 'com.hummlist.app.yearly:monthly' }),
+      ),
+      200,
+      { status: 'ignored' },
+    );
+  });
+  assertEquals(logs.slice(1), [
+    JSON.stringify({ fn: 'purchases', event: 'INITIAL_PURCHASE', refused: 'product' }),
+  ]);
+});
+
+Deno.test('a renewal is a record of the same transaction, never a second purchase_completed', async () => {
+  const w = world();
+  await w.deliver(yearly('INITIAL_PURCHASE'));
+  await w.handle('/claim', {
+    store: 'apple',
+    householdId: HOME,
+    transactionId: '2000000900000001',
+  }, { authorization: 'Bearer peter' });
+  assertEquals(w.sent.map((e) => e.name), ['purchase_completed']);
+  await expect(
+    await w.deliver(yearly('RENEWAL', { transaction_id: '2000000900000003' })),
+    200,
+    { status: 'restored' },
+  );
+  assertEquals(w.sent.map((e) => e.name), ['purchase_completed']);
+  assertEquals(w.books.rows.size, 1);
+});
+
+Deno.test('lifecycle events update the plan by transaction and log no reasons (H-87)', async () => {
+  const w = world();
+  await w.deliver(yearly('INITIAL_PURCHASE'));
+  const logs = await logsOf(async () => {
+    for (
+      const reason of [
+        'UNSUBSCRIBE',
+        'BILLING_ERROR',
+        'DEVELOPER_INITIATED',
+        'PRICE_INCREASE',
+        'UNKNOWN',
+      ]
+    ) {
+      await expect(await w.deliver(yearly('CANCELLATION', { cancel_reason: reason })), 200, {
+        status: 'updated',
+      });
+    }
+    await expect(
+      await w.deliver(yearly('EXPIRATION', { expiration_reason: 'BILLING_ERROR' })),
+      200,
+      { status: 'updated' },
+    );
+  });
+  assertEquals(w.books.lifecycles.length, 6);
+  assert(w.books.lifecycles.slice(0, 5).every((c) => c.state.autoRenew === false));
+  assert(logs.every((l) => !/UNSUBSCRIBE|BILLING_ERROR|reason/.test(l)), logs.join('\n'));
+  assertEquals(w.sent, []);
+});
+
+Deno.test('a lifecycle event for an unknown transaction writes nothing and grants nothing', async () => {
+  const w = world();
+  const logs = await logsOf(async () => {
+    await expect(await w.deliver(yearly('EXPIRATION')), 200, { status: 'unknown' });
+  });
+  assertEquals(logs.slice(1), [
+    JSON.stringify({ fn: 'purchases', event: 'EXPIRATION', lifecycle: 'unknown' }),
+  ]);
+  assertEquals(w.books.rows.size, 0);
+});
+
+Deno.test('a refund of the yearly plan (CUSTOMER_SUPPORT) revokes it with purchase_refunded', async () => {
+  const w = world();
+  await w.deliver(yearly('INITIAL_PURCHASE'));
+  await w.handle('/claim', {
+    store: 'apple',
+    householdId: HOME,
+    transactionId: '2000000900000001',
+  }, { authorization: 'Bearer peter' });
+  await expect(
+    await w.deliver(yearly('CANCELLATION', { cancel_reason: 'CUSTOMER_SUPPORT' })),
+    200,
+    {
+      status: 'revoked',
+    },
+  );
+  assertEquals(w.sent.map((e) => [e.name, e.sale.plan]), [
+    ['purchase_completed', 'yearly'],
+    ['purchase_refunded', 'yearly'],
+  ]);
+});
+
+Deno.test('a second yearly plan in a household is recorded and flagged in the log', async () => {
+  const w = world();
+  w.books.record = (p) =>
+    Promise.resolve({
+      outcome: 'granted',
+      alreadyUnlocked: true,
+      householdGone: false,
+      internal: false,
+      buyer: null,
+      sendCompleted: false,
+      secondYearly: p.plan === 'yearly',
+    });
+  const logs = await logsOf(async () => {
+    await expect(await w.deliver(yearly('INITIAL_PURCHASE')), 200, { status: 'granted' });
+  });
+  assertEquals(logs.slice(1), [
+    JSON.stringify({ fn: 'purchases', event: 'INITIAL_PURCHASE', flag: 'second_yearly' }),
+  ]);
+});
+
+Deno.test('TRANSFER of a yearly plan moves nothing', async () => {
+  const w = world();
+  await w.deliver(yearly('INITIAL_PURCHASE'));
+  await expect(
+    await w.deliver(yearly('TRANSFER', { transferred_from: [HOME], transferred_to: [OTHER] })),
+    200,
+    { status: 'ignored' },
+  );
+  assertEquals(w.books.writes, 1);
+  assertEquals(w.books.lifecycles, []);
 });

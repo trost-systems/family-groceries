@@ -26,6 +26,7 @@ void main() {
     return pumpMore(
       tester,
       location: location,
+      size: const Size(390, 2600),
       sdk: RevenueCatRepository(AppStore.apple, 'appl_public'),
     );
   }
@@ -34,30 +35,60 @@ void main() {
     final more = await start(tester);
     await tester.pumpAndSettle();
     expect(key('more-screen'), findsOneWidget);
-    expect(more.purchases.entitlements.canOffer(Entitlement.lifetime), isTrue);
+    expect(
+      more.purchases.entitlements.canOffer(
+        Entitlement.premium,
+        PremiumPlan.lifetime,
+      ),
+      isTrue,
+    );
     expect(native.calls, isEmpty);
   });
 
   testWidgets('opening, rebuilding, leaving and coming back to the Lifetime '
       'page make no SDK call', (tester) async {
-    final more = await start(tester, location: lifetimePath);
+    final more = await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
-    expect(key('lifetime-buy'), findsOneWidget);
+    expect(key('premium-buy-yearly'), findsOneWidget);
+    expect(key('premium-buy-lifetime'), findsOneWidget);
+    expect(more.purchases.storePrices.reads, 1, reason: 'one store query');
     more.purchases.rows.change();
     await tester.pumpAndSettle();
+    expect(more.purchases.storePrices.reads, 1, reason: 'not per rebuild');
     more.router.go(morePath);
     await tester.pumpAndSettle();
-    more.router.go(lifetimePath);
+    more.router.go(premiumPath);
     await tester.pumpAndSettle();
-    expect(key('lifetime-buy'), findsOneWidget);
+    expect(key('premium-buy-yearly'), findsOneWidget);
     expect(native.calls, isEmpty);
+    expect(more.purchases.storePrices.reads, 2, reason: 'once per opening');
+  });
+
+  testWidgets('Buy yearly: the same order, the subscription by its id', (
+    tester,
+  ) async {
+    await start(tester, location: premiumPath);
+    await tester.pumpAndSettle();
+    expect(native.calls, isEmpty);
+    await tester.tap(key('premium-buy-yearly'));
+    await tester.pumpAndSettle();
+    expect(native.methods, [
+      'setupPurchases',
+      'getProductInfo',
+      'purchaseProduct',
+    ]);
+    expect(
+      native.calls[1].arguments,
+      containsPair('productIdentifiers', [yearlyProductId]),
+    );
+    await tester.pump(unlockWait);
   });
 
   testWidgets('Buy configures with the household, then loads the product, '
       'then opens the purchase', (tester) async {
-    await start(tester, location: lifetimePath);
+    await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
-    await tester.tap(key('lifetime-buy'));
+    await tester.tap(key('premium-buy-lifetime'));
     await tester.pumpAndSettle();
     expect(native.methods, [
       'setupPurchases',
@@ -72,7 +103,7 @@ void main() {
   testWidgets('Restore configures with the household, then restores', (
     tester,
   ) async {
-    await start(tester, location: lifetimePath);
+    await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
     await tester.tap(key('lifetime-restore'));
     await tester.pumpAndSettle();
@@ -84,12 +115,13 @@ void main() {
     mockRevenueCat(native);
     await pumpMore(
       tester,
-      location: lifetimePath,
+      location: premiumPath,
       sdk: RevenueCatRepository(AppStore.apple, 'appl_public'),
       entitlements: FakeEntitlementsSource(unlockedNow: true),
     );
     await tester.pumpAndSettle();
-    expect(key('lifetime-buy'), findsNothing);
+    expect(key('premium-buy-lifetime'), findsNothing);
+    expect(key('premium-buy-yearly'), findsNothing);
     expect(native.calls, isEmpty);
   });
 }

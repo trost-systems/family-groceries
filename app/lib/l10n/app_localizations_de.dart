@@ -1319,4 +1319,153 @@ class AppLocalizationsDe extends AppLocalizations {
   String archivedRestoreArchivesCurrent(String household) {
     return 'Du bist das letzte Mitglied von „$household“. Weil er Hummlist Lifetime hat, wird er archiviert, nicht gelöscht.';
   }
+
+  @override
+  String get premiumTitle => 'Hummlist Premium';
+
+  @override
+  String get premiumRowHint => 'Siri, Alexa und KI-Assistenten';
+
+  @override
+  String get premiumBody =>
+      'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri, Alexa und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.';
+
+  @override
+  String get premiumUnlockedBody =>
+      'Hummlist Premium ist für euren ganzen Haushalt freigeschaltet. Danke!';
+
+  @override
+  String premiumStatusRenews(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Hummlist Premium aktiv (jährlich, verlängert sich am $dateString)';
+  }
+
+  @override
+  String premiumStatusEnds(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Hummlist Premium aktiv (jährlich, läuft am $dateString aus)';
+  }
+
+  @override
+  String get premiumStatusLifetime => 'Hummlist Premium Lifetime';
+
+  @override
+  String get premiumStatusTester =>
+      'Hummlist Premium über Tester-Freischaltung';
+
+  @override
+  String get premiumChecking =>
+      'Wir prüfen, ob euer Haushalt Hummlist Premium schon hat …';
+
+  @override
+  String get premiumYearlyTitle => 'Jährlich';
+
+  @override
+  String premiumYearlyPrice(String price) {
+    return '$price / Jahr';
+  }
+
+  @override
+  String get premiumLifetimeTitle => 'Lifetime';
+
+  @override
+  String premiumLifetimePrice(String price) {
+    return '$price einmalig';
+  }
+
+  @override
+  String get premiumLifetimeValue =>
+      'Einmal zahlen, für immer: so viel wie drei Jahre.';
+
+  @override
+  String get premiumVat => 'inkl. MwSt.';
+
+  @override
+  String get premiumYearlyTerms =>
+      'Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.';
+
+  @override
+  String get premiumBuyYearly => 'Jährlich abschließen';
+
+  @override
+  String get premiumBuyLifetime => 'Lifetime kaufen';
+
+  @override
+  String get premiumUnavailable =>
+      'Hummlist Premium ist gerade nicht verfügbar.';
+
+  @override
+  String get premiumComingSoon => 'Hummlist Premium ist bald verfügbar.';
+
+  @override
+  String get premiumTermsLink => 'Nutzungsbedingungen (EULA)';
+
+  @override
+  String get premiumPrivacyLink => 'Datenschutzerklärung';
+
+  @override
+  String get premiumUsedElsewhereYearly =>
+      'Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen.';
+
+  @override
+  String get premiumTwoYearly =>
+      'Euer Haushalt hat zwei Jahresabos. Kündigen kann jedes nur, wer es abgeschlossen hat.';
+
+  @override
+  String get premiumWeb =>
+      'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.';
+
+  @override
+  String get premiumRefundYearly =>
+      'Für das Jahresabo gilt dasselbe. Eine Kündigung beendet nur die Verlängerung; das laufende Jahr wird nicht automatisch erstattet.';
+
+  @override
+  String get premiumManage => 'Abo verwalten oder kündigen';
+
+  @override
+  String get premiumManageWeb =>
+      'Dein Jahresabo verwaltest du im App Store oder bei Google Play.';
+
+  @override
+  String get premiumManageApple => 'App Store';
+
+  @override
+  String get premiumManageGoogle => 'Google Play';
+
+  @override
+  String premiumBillingIssue(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Apple bzw. Google konnten dein Jahresabo nicht abbuchen. Premium läuft noch bis $dateString. Prüfe deine Zahlungsmethode im Store.';
+  }
+
+  @override
+  String get premiumLifetimeWhileYearly =>
+      'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Hummlist kann das Abo nicht kündigen.';
+
+  @override
+  String get premiumLifetimeWhileYearlySubscriber =>
+      'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Hummlist kann das Abo nicht kündigen.';
+
+  @override
+  String get premiumBuyAnyway => 'Trotzdem kaufen';
+
+  @override
+  String get premiumBillingContinues =>
+      'Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.';
+
+  @override
+  String get premiumBillingContinuesOther =>
+      'Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.';
+
+  @override
+  String get premiumManageSubscription => 'Abo verwalten';
+
+  @override
+  String get premiumContinueAnyway => 'Trotzdem fortfahren';
 }

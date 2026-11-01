@@ -9,22 +9,47 @@ import type { AppStore } from '../_shared/purchases.ts';
  */
 export const webhookPath = '/purchases/revenuecat/webhook';
 
-/** Hummlist Lifetime, a non-consumable, same id on both stores (scripts/iap/product.ts). */
+/** Hummlist Premium yearly: an auto-renewing subscription (scripts/iap/product.ts). */
+export const yearlyProductId = 'com.hummlist.app.yearly';
+
+/** Hummlist Premium Lifetime: a non-consumable, same id on both stores (scripts/iap/product.ts). */
 export const lifetimeProductId = 'com.hummlist.app.lifetime';
 
 /**
- * What an unlock grants (`entitlements.kind`). A later subscription adds its own kind next to
- * lifetime, never instead of it (docs/PURCHASES.md, "A second entitlement").
+ * The Play subscription's base plan (Hummlist Ops, 2026-10-31). RevenueCat names a Play
+ * subscription `<subscription id>:<base plan id>` in webhooks and the SDK.
  */
-export type EntitlementKind = 'lifetime';
+export const playBasePlanId = 'yearly';
 
-/** Every product this function records and the kind it unlocks. Events for others are ignored. */
-const productKinds: Readonly<Record<string, EntitlementKind>> = {
-  [lifetimeProductId]: 'lifetime',
+/**
+ * What an unlock grants (`entitlements.kind`). Both products grant premium; a later running-cost
+ * entitlement adds its own kind next to it (docs/PURCHASES.md, "A second entitlement").
+ */
+export type EntitlementKind = 'premium';
+
+/** How a purchase grants it: a yearly subscription or a one-time Lifetime purchase. */
+export type Plan = 'yearly' | 'lifetime';
+
+export interface Product {
+  /** The id as stored and reported: the bare subscription id, also for Play. */
+  id: string;
+  kind: EntitlementKind;
+  plan: Plan;
+}
+
+/** Every product this function records, by every id RevenueCat may send. Others are ignored. */
+const products: Readonly<Record<string, Product>> = {
+  [yearlyProductId]: { id: yearlyProductId, kind: 'premium', plan: 'yearly' },
+  [`${yearlyProductId}:${playBasePlanId}`]: {
+    id: yearlyProductId,
+    kind: 'premium',
+    plan: 'yearly',
+  },
+  [lifetimeProductId]: { id: lifetimeProductId, kind: 'premium', plan: 'lifetime' },
 };
 
-export const kindOf = (productId: string): EntitlementKind | null =>
-  Object.hasOwn(productKinds, productId) ? productKinds[productId] : null;
+export const productOf = (productId: string): Product | null =>
+  Object.hasOwn(products, productId) ? products[productId] : null;
 
 /**
  * Where a transaction happened. Sandbox is Apple's sandbox and TestFlight, and Google Play's
@@ -38,6 +63,7 @@ export interface Sale {
   /** The original transaction: Apple's originalTransactionId, Google's order id (GPA.…). */
   transactionId: string;
   productId: string;
+  plan: Plan;
   environment: StoreEnvironment;
   /** What the customer paid in major units, VAT included; null when unknown. */
   price: number | null;
@@ -55,6 +81,21 @@ export interface StorePurchase extends Sale {
   latestTransactionId: string;
   kind: EntitlementKind;
   purchasedAt: Date;
+  /** When RevenueCat produced the event: an older event never overwrites newer state. */
+  eventAt: Date;
+  /** Yearly only; null for Lifetime. */
+  subscription: SubscriptionState | null;
+}
+
+/**
+ * A yearly subscription's state as one event reports it. Null fields: the event says nothing
+ * about them, the stored value stays.
+ */
+export interface SubscriptionState {
+  /** Premium from it ends here: the paid period's end, or the grace period's during a billing issue. */
+  expiresAt: Date | null;
+  autoRenew: boolean | null;
+  billingIssue: boolean | null;
 }
 
 /** A refund: the store took [transactionId] back at [revokedAt]. */
@@ -62,6 +103,7 @@ export interface Refund {
   store: AppStore;
   transactionId: string;
   productId: string;
+  plan: Plan;
   environment: StoreEnvironment;
   purchasedAt: Date | null;
   revokedAt: Date;

@@ -233,6 +233,21 @@ Deno.test('server events pass the catalog only', async () => {
   assertFalse('$ip' in p);
 });
 
+Deno.test('premium_source (job 49): yearly or lifetime on purchase events only', () => {
+  for (const name of ['purchase_completed', 'purchase_refunded']) {
+    for (const source of ['yearly', 'lifetime']) {
+      checkServerEvent(name, { product_id: 'com.hummlist.app.yearly', premium_source: source });
+    }
+    for (const bad of ['tester_grant', 'Yearly', 'premium', 1]) {
+      assertThrows(() => checkServerEvent(name, { premium_source: bad }), RefusedEvent);
+    }
+  }
+  assertThrows(
+    () => checkServerEvent('purchase_restored', { premium_source: 'yearly' }),
+    RefusedEvent,
+  );
+});
+
 Deno.test('checkServerEvent names the property, never the value', () => {
   const e = assertThrows(
     () => checkServerEvent('purchase_completed', { country: 'Deutschland' }),

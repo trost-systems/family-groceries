@@ -1,0 +1,24 @@
+id: store-prices-channel-methods
+valid:
+  - |
+    Future<Object?> read() => channel.invokeMethod<Object?>('prices', {'yearly': id}).timeout(t);
+  - |
+    Future<bool?> manage() => channel.invokeMethod<bool>('manageSubscriptions');
+  - |
+    Future<bool?> manage() => channel.invokeMethod("manageSubscriptions");
+  # Not a channel call.
+  - |
+    void f() => prices.read('buy');
+invalid:
+  # A purchase through the price channel.
+  - |
+    Future<Object?> buy() => channel.invokeMethod<Object?>('buy', {'product': id});
+  - |
+    Future<void> restore() => channel.invokeMethod('restore');
+  - |
+    Future<Map?> details() => channel.invokeMapMethod<String, Object?>('productDetails');
+  - |
+    Future<List?> details() => channel.invokeListMethod<String>('pricesAll');
+  # A method name the rule cannot read.
+  - |
+    Future<Object?> call(String method) => channel.invokeMethod(method);

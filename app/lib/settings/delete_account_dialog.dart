@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +10,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Asks, deletes the account on the server and signs out on this device.
 /// The router then shows the start screen with the confirmation.
+/// A yearly plan the user pays keeps being billed after the deletion: they
+/// hear so first (H-85).
 Future<void> deleteAccount(BuildContext context) async {
   final repository = context.read<AccountRepository>();
   final session = context.read<SessionCubit>();
+  if (!await confirmBillingContinues(context, account: true) ||
+      !context.mounted) {
+    return;
+  }
   final deleted = await showDialog<AccountDeleted>(
     context: context,
     barrierDismissible: false,

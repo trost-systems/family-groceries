@@ -13,9 +13,11 @@ import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/setup.dart';
+import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -141,6 +143,8 @@ Future<void> _main(WidgetsBinding Function() binding) async {
         entitlements,
         session,
       ),
+      premium: SupabasePremiumServer(client),
+      storePrices: storePriceReader(),
       analytics: analytics,
       social: social,
       cache: cache,

@@ -13,7 +13,8 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
-import 'package:family_groceries/purchases/lifetime_screen.dart';
+import 'package:family_groceries/purchases/premium_screen.dart';
+import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/settings/account_screen.dart';
@@ -35,8 +36,8 @@ enum MorePage() {
   /// Invite the partner, the open invites, revoke (`/more/invites`).
   invites,
 
-  /// Hummlist Lifetime's purchase and restore (`/more/lifetime`).
-  lifetime,
+  /// Hummlist Premium's purchase, restore and status (`/more/lifetime`).
+  premium,
 
   /// Theme and language (`/more/settings`).
   settings,
@@ -130,7 +131,7 @@ class const MoreScreen({
     MorePage.access => l10n.accessTitle,
     MorePage.account => l10n.account,
     MorePage.invites => l10n.invitesTitle,
-    MorePage.lifetime => l10n.lifetimeTitle,
+    MorePage.premium => l10n.premiumTitle,
     MorePage.settings => l10n.settingsTitle,
     MorePage.language => l10n.language,
   };
@@ -142,7 +143,7 @@ class const _Page(final MorePage page) extends StatelessWidget {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
     MorePage.invites => const InvitesPage(),
-    MorePage.lifetime => const LifetimeScreen(),
+    MorePage.premium => const PremiumScreen(),
     MorePage.settings => const SettingsScreen(),
     MorePage.language => const LanguageScreen(),
   };
@@ -202,17 +203,17 @@ class const _MoreList({
         _Row(
           key: const ValueKey('more-lifetime'),
           icon: Icons.favorite_outline,
-          label: l10n.lifetimeTitle,
+          label: l10n.premiumTitle,
           // The hint asks for a purchase: only where one may be offered.
           detail: context.select<Entitlements, String?>(
-            (e) => e.has(Entitlement.lifetime)
+            (e) => e.has(Entitlement.premium)
                 ? l10n.lifetimeUnlocked
-                : e.canOffer(Entitlement.lifetime)
-                ? l10n.lifetimeRowHint
+                : e.canOffer(Entitlement.premium, PremiumPlan.yearly)
+                ? l10n.premiumRowHint
                 : null,
           ),
-          selected: selected == MorePage.lifetime,
-          onTap: () => context.go(lifetimePath),
+          selected: selected == MorePage.premium,
+          onTap: () => context.go(premiumPath),
         ),
         _Section(l10n.accessTitle),
         _Row(

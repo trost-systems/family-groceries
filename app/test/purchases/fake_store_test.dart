@@ -10,12 +10,20 @@ import 'fakes.dart';
 void main() {
   /// The events the local stack's RevenueCat stand-in got.
   late List<(String, String)> events;
+  late List<PremiumPlan> plans;
   Future<void> send({
     required String appUserId,
     required String transactionId,
-  }) async => events.add((appUserId, transactionId));
+    required PremiumPlan plan,
+  }) async {
+    events.add((appUserId, transactionId));
+    plans.add(plan);
+  }
 
-  setUp(() => events = []);
+  setUp(() {
+    events = [];
+    plans = [];
+  });
 
   FakeStore open(
     FakeStoreMode mode,
@@ -25,7 +33,7 @@ void main() {
 
   test('sells for the household, sending the event', () async {
     final store = open(FakeStoreMode.ok, MemoryLedger());
-    final bought = await store.buy('home');
+    final bought = await store.buy('home', PremiumPlan.lifetime);
     final transaction = (bought as Bought).transaction!;
     expect(transaction.store, AppStore.apple);
     expect(transaction.id, startsWith('fake-'));
@@ -34,7 +42,10 @@ void main() {
 
   test('restores in its household, across starts', () async {
     final ledger = MemoryLedger();
-    final bought = await open(FakeStoreMode.ok, ledger).buy('home');
+    final bought = await open(
+      FakeStoreMode.ok,
+      ledger,
+    ).buy('home', PremiumPlan.lifetime);
     final id = (bought as Bought).transaction!.id;
     events.clear();
     final next = open(FakeStoreMode.ok, ledger);
@@ -44,7 +55,7 @@ void main() {
 
   test("another household's purchase belongs elsewhere", () async {
     final ledger = MemoryLedger();
-    await open(FakeStoreMode.ok, ledger).buy('home');
+    await open(FakeStoreMode.ok, ledger).buy('home', PremiumPlan.lifetime);
     events.clear();
     expect(
       await open(FakeStoreMode.ok, ledger).restore('other'),
@@ -64,7 +75,9 @@ void main() {
     fakeAsync((async) {
       final store = open(FakeStoreMode.pending, MemoryLedger());
       BuyOutcome? outcome;
-      unawaited(store.buy('home').then((o) => outcome = o));
+      unawaited(
+        store.buy('home', PremiumPlan.lifetime).then((o) => outcome = o),
+      );
       async.flushMicrotasks();
       expect(outcome, isA<Pending>());
       async.elapse(const Duration(seconds: 7));
@@ -76,11 +89,17 @@ void main() {
 
   test('cancel, error and offline modes', () async {
     expect(
-      await open(FakeStoreMode.cancel, MemoryLedger()).buy('home'),
+      await open(
+        FakeStoreMode.cancel,
+        MemoryLedger(),
+      ).buy('home', PremiumPlan.lifetime),
       isA<Canceled>(),
     );
     expect(
-      await open(FakeStoreMode.error, MemoryLedger()).buy('home'),
+      await open(
+        FakeStoreMode.error,
+        MemoryLedger(),
+      ).buy('home', PremiumPlan.lifetime),
       isA<StoreFailed>(),
     );
     expect(
@@ -92,11 +111,17 @@ void main() {
 
   test('unavailable and offline modes sell nothing', () async {
     expect(
-      await open(FakeStoreMode.unavailable, MemoryLedger()).buy('h'),
+      await open(
+        FakeStoreMode.unavailable,
+        MemoryLedger(),
+      ).buy('h', PremiumPlan.lifetime),
       isA<ProductMissing>(),
     );
     expect(
-      await open(FakeStoreMode.offline, MemoryLedger()).buy('h'),
+      await open(
+        FakeStoreMode.offline,
+        MemoryLedger(),
+      ).buy('h', PremiumPlan.lifetime),
       isA<StoreOffline>(),
     );
     expect(events, isEmpty);
@@ -109,10 +134,16 @@ void main() {
       final failing = open(
         FakeStoreMode.ok,
         ledger,
-        sender: ({required appUserId, required transactionId}) async =>
-            throw Exception('404'),
+        sender: ({
+          required appUserId,
+          required transactionId,
+          required plan,
+        }) async => throw Exception('404'),
       );
-      expect(await failing.buy('home'), isA<StoreFailed>());
+      expect(
+        await failing.buy('home', PremiumPlan.lifetime),
+        isA<StoreFailed>(),
+      );
       expect(
         await open(FakeStoreMode.ok, ledger).restore('home'),
         isA<Restored>(),
@@ -128,5 +159,12 @@ void main() {
       await open(FakeStoreMode.ok, ledger).restore('home'),
       isA<NothingToRestore>(),
     );
+  });
+
+  test('the yearly plan goes out as the yearly product', () async {
+    final store = open(FakeStoreMode.ok, MemoryLedger());
+    await store.buy('home', PremiumPlan.yearly);
+    await store.buy('home', PremiumPlan.lifetime);
+    expect(plans, [PremiumPlan.yearly, PremiumPlan.lifetime]);
   });
 }

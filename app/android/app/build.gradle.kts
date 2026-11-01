@@ -67,9 +67,13 @@ flutter {
     source = "../.."
 }
 
-// posthog_flutter takes posthog-android [3.72.9, 4.0.0); a release build gets
-// the version job 44 checked (docs/DECISIONS.md, Job 44).
 dependencies {
+    // MainActivity's price reader (job 49). Must be the Play Billing version
+    // purchases-android brings (RevenueCat 11.0.0: 9.1.0), or Gradle resolves
+    // one library for both and RevenueCat runs on a version it was not built for.
+    implementation("com.android.billingclient:billing:9.1.0")
+    // posthog_flutter takes posthog-android [3.72.9, 4.0.0); a release build gets
+    // the version job 44 checked (docs/DECISIONS.md, Job 44).
     constraints {
         implementation("com.posthog:posthog-android") { version { strictly("3.75.0") } }
     }
