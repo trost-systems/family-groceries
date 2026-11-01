@@ -30,18 +30,19 @@
           <div class="count" data-t="count"></div>
         </div>
         <div class="avs">
-          <span class="hxp av av--mia">M</span>
-          <span class="hxp av av--noah">N</span>
-          <span class="hxp av av--ida">I</span>
+          <span class="hxp av av--mia">A</span>
+          <span class="hxp av av--noah">J</span>
         </div>
       </div>
       <div class="list">
         <div class="compact-hide">
-          <div class="store"><span class="store-name">dm</span><span class="store-rule"></span><span class="store-count" data-t="dmCount"></span></div>
+          <div class="store"><span class="store-name" data-t="market"></span><span class="store-rule"></span><span class="store-count" data-t="oneCount"></span></div>
+          <div class="store"><span class="store-name" data-t="bakery"></span><span class="store-rule"></span><span class="store-count" data-t="oneCount"></span></div>
+          <div class="store"><span class="store-name" data-t="drugstoreName"></span><span class="store-rule"></span><span class="store-count" data-t="oneCount"></span></div>
           <div class="cat" data-t="drugstore"></div>
           <div class="item"><span class="emo">🪥</span><span class="name" data-t="toothpaste"></span><span class="hxp cb"></span></div>
         </div>
-        <div class="store"><span class="store-name">Edeka</span><span class="store-rule"></span><span class="store-count" data-t="edekaCount"></span></div>
+        <div class="store"><span class="store-name" data-t="supermarket"></span><span class="store-rule"></span><span class="store-count" data-t="twoCount"></span></div>
         <div class="cat" data-t="produce"></div>
         <div class="item item--done"><span class="emo">🍌</span><span class="name"><span class="qty">6×</span> <span data-t="bananas"></span></span><span class="hxp cb"><i class="mi">&#xe156;</i></span></div>
                 <div class="cat" data-t="chilled"></div>
@@ -50,21 +51,23 @@
       <div class="compose hx"><span class="plus hxp"><i class="mi">&#xe047;</i></span><span data-t="hint"></span></div>
     </div>
   </div>
-  <p class="sticker sync"><span class="hxp av av--mia">M</span><span data-t="sync"></span></p>
+  <p class="sticker sync"><span class="hxp av av--mia">A</span><span data-t="sync"></span></p>
 </div>
 <script>
   globalThis.STRINGS = {
     de: {
-      household: 'Familie Brandt', count: '3 Artikel', dmCount: '<b>1</b> Artikel', edekaCount: '<b>2</b> Artikel',
+      household: 'Unser Haushalt', count: '5 Artikel', oneCount: '<b>1</b> Artikel', twoCount: '<b>2</b> Artikel',
+      market: 'Wochenmarkt', bakery: 'Bäckerei', drugstoreName: 'Drogerie', supermarket: 'Supermarkt',
       drugstore: 'Drogerie', toothpaste: 'Zahnpasta', produce: 'Obst &amp; Gemüse', bananas: 'Bananen',
       chilled: 'Kühlregal', oatmilk: 'Hafermilch', hint: 'Was brauchst du?',
-      sync: 'Mia hat „Hafermilch“ hinzugefügt',
+      sync: 'Anna hat „Hafermilch“ hinzugefügt',
     },
     en: {
-      household: 'The Brandts', count: '3 items', dmCount: '<b>1</b> item', edekaCount: '<b>2</b> items',
+      household: 'Our household', count: '5 items', oneCount: '<b>1</b> item', twoCount: '<b>2</b> items',
+      market: 'Farmers’ market', bakery: 'Bakery', drugstoreName: 'Drugstore', supermarket: 'Supermarket',
       drugstore: 'Drugstore', toothpaste: 'Toothpaste', produce: 'Fruit &amp; veg', bananas: 'Bananas',
       chilled: 'Chilled', oatmilk: 'Oat milk', hint: 'What do you need?',
-      sync: 'Mia added “Oat milk”',
+      sync: 'Anna added “Oat milk”',
     },
   };
 </script>
