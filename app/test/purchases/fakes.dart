@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/fake_store.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
+import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 
 /// A store that answers what the test set, or holds a purchase in [held]
@@ -22,14 +24,18 @@ class FakePurchaseRepository({
   var hold = false;
   final held = <Completer<BuyOutcome>>[];
 
-  /// `buy <household>` and `restore <household>`, in order.
+  /// `buy <household> <plan>` and `restore <household>`, in order.
   List<String> get calls => _calls;
   final _calls = <String>[];
 
+  /// The plan of each buy, in order.
+  final plans = <PremiumPlan>[];
+
   @override
-  Future<BuyOutcome> buy(String householdId) async {
+  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
     buys.add(householdId);
-    _calls.add('buy $householdId');
+    plans.add(plan);
+    _calls.add('buy $householdId ${plan.name}');
     if (!hold) {
       return bought;
     }
@@ -69,8 +75,8 @@ class FakeClaimApi({
 
 class FakeEntitlementsSource({var bool unlockedNow = false})
     implements EntitlementsSource {
-  /// The household's rows as the server has them; null: one purchase's
-  /// Lifetime row while [unlockedNow].
+  /// The household's rows as the server has them; null: one Lifetime
+  /// purchase's row while [unlockedNow].
   List<Map<String, dynamic>>? rowsNow;
 
   /// Reads fail (offline) while set.
@@ -89,7 +95,12 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
     return unlocksOf(
       rowsNow ??
           [
-            if (unlockedNow) {'kind': 'lifetime', 'source': 'purchase'},
+            if (unlockedNow)
+              {
+                'kind': 'premium',
+                'source': 'purchase',
+                'premium_source': 'lifetime',
+              },
           ],
     );
   }
@@ -105,6 +116,46 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
   }
 }
 
+/// A yearly plan's row as members read it, ending `days` after `from`.
+Map<String, dynamic> yearlyRow({
+  required DateTime from,
+  int days = 200,
+  bool renews = true,
+}) => {
+  'kind': 'premium',
+  'source': 'purchase',
+  'premium_source': 'yearly',
+  'expires_at': from.add(Duration(days: days)).toUtc().toIso8601String(),
+  'auto_renew': renews,
+};
+
+/// The server's switch and the caller's own yearly plan; [calls] lists the
+/// `offer` and `mine` reads.
+class FakePremiumServer({
+  var bool offer = true,
+  var MyYearlyPlan mine = const MyYearlyPlan(),
+}) implements PremiumServer {
+  final calls = <String>[];
+
+  /// my_yearly_plan fails (offline) while set.
+  var mineFails = false;
+
+  @override
+  Future<bool> offerOpen() async {
+    calls.add('offer');
+    return offer;
+  }
+
+  @override
+  Future<MyYearlyPlan> myYearlyPlan() async {
+    calls.add('mine');
+    if (mineFails) {
+      throw Exception('offline');
+    }
+    return mine;
+  }
+}
+
 /// Entitlements and the purchase cubit over fakes, for screens and
 /// harnesses; closed by [close]. [sdk] instead of the fake store: the real
 /// RevenueCat repository over a mocked platform channel.
@@ -114,12 +165,22 @@ class TestPurchases({
   final PurchaseRepository? sdk,
   final FakeClaimApi? api,
   final FakeEntitlementsSource? source,
+  final FakePremiumServer? premiumServer,
+  final FakeStorePrices? prices,
+  final DateTime Function()? clock,
 }) {
   late final FakePurchaseRepository repository =
       store ?? FakePurchaseRepository();
   late final FakeClaimApi server = api ?? FakeClaimApi();
   late final FakeEntitlementsSource rows = source ?? FakeEntitlementsSource();
-  late final entitlements = Entitlements(rows, session);
+  late final entitlements = Entitlements(
+    rows,
+    session,
+    now: clock ?? DateTime.now,
+  );
+  late final FakePremiumServer premium = premiumServer ?? FakePremiumServer();
+  late final FakeStorePrices storePrices =
+      prices ?? FakeStorePrices(fakeStorePrices);
   late final purchases = PurchaseCubit(
     sdk ?? repository,
     server,

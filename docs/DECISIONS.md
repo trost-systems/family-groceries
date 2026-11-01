@@ -5363,3 +5363,196 @@ lock in 6b with 6's yellow now [...] We go with app icon 5." Reference: docs/DES
 17. **`household-bound.spec.ts` formats its expected date in Europe/Berlin**, the browser's zone
     in `playwright.config.ts`. On a UTC runner just before midnight the runner's day and the app's
     day differ ("31. Oktober 2028" against "1. November 2028"); CI hit it at 23:55 UTC.
+
+
+## Job 49: Hummlist Premium, yearly and Lifetime under one entitlement, 2026-11-01
+
+Peter's Spec #4 decision (2026-10-31 20:18 CET): Hummlist Premium is sold as two household-bound
+products, `com.hummlist.app.yearly` (auto-renewing, 9.99 €/year) and `com.hummlist.app.lifetime`
+(one-time, 29.99 €), under one RevenueCat entitlement, `premium`. ADDENDUM 1 (static price
+conditions), ADDENDUM 2 (Legal Review K.13 must-fixes, the store price read before the tap, the
+store facts) and ADDENDUM 3 (country prices, yearly-only storefronts) refined it the same evening;
+where they differ, the later one wins, as noted below. Legal Review §K.13 itself was not on this
+host; ADDENDUM 2 restates it. Migration `20261031214500_premium_yearly.sql`; docs/PURCHASES.md has
+the behavior. Nothing is gated and nothing is sold: `REVENUECAT_PURCHASES` stays off, the new
+server switch `premium_offer` is seeded off.
+
+1. **One kind, `premium`; the plan is a column.** `purchases.kind` and `entitlements.kind` hold
+   `premium` (rows migrated from `lifetime`; the checks say `in ('premium')`, so a later
+   running-cost entitlement adds its kind there). How a row grants it is `purchases.plan`
+   (`yearly` | `lifetime`) and `entitlements.premium_source` (`yearly` | `lifetime` |
+   `tester_grant`). A check ties `premium_source` to `source` and a yearly row to its end date,
+   so an impossible row can't be written. `plan` keeps the default `lifetime`, so a function
+   deployed a few minutes before or after the migration fails loudly (the kind check) instead of
+   writing a wrong plan; RevenueCat retries.
+2. **The legacy wire value `lifetime` reads as premium in the app** (`Entitlement.parse`). It
+   covers a row the migration has not reached (a project not yet migrated) and keeps the tests'
+   old rows meaningful. It can go once the migration runs everywhere the app talks to; that is
+   the job 49 deploy. Builds from before job 49 (TestFlight) read `premium` as an unknown kind and
+   show no unlock; nothing is gated and nothing is sold there, so nothing breaks.
+3. **Active is computed at read time.** A yearly row keeps `expires_at` (the paid period's end,
+   or the grace end during a billing issue). `household_premium(household)` applies the one rule:
+   a lifetime or tester row wins (no end; lifetime before tester), else the latest end of the yearly
+   rows still ahead of `now()`, else none. `household_has_premium(household)` wraps it for the
+   integration gate (job 50); both are server-only (service connection, `security definer`, no
+   client grant). No cron decides premium, so a missed EXPIRATION never leaves it on, and a late
+   RENEWAL brings it back. The app applies the same rule to the rows (`HouseholdUnlocks.premiumAt`)
+   and re-reads the rows when a yearly end within a day passes; Realtime now also listens to
+   updates of `entitlements` (a renewal or cancellation updates a row).
+4. **Entitlement rows are a projection of purchases.** The subscription's state lives on
+   `purchases` (service-only: `expires_at`, `auto_renew`, `billing_issue`, `state_at`);
+   `purchase_entitlement_sync` writes the member-readable copy (`premium_source`, `expires_at`,
+   `auto_renew`) in the bound household. A refund deletes the row as before; REFUND_REVERSED
+   re-creates it with the stored state.
+5. **Lifecycle events by the original transaction, newest wins.** `purchase_record` (INITIAL_
+   PURCHASE, NON_RENEWING_PURCHASE, RENEWAL) creates or updates; `purchase_lifecycle`
+   (CANCELLATION without refund, UNCANCELLATION, BILLING_ISSUE, EXPIRATION, SUBSCRIPTION_EXTENDED,
+   SUBSCRIPTION_PAUSED) only updates a known yearly row and answers `unknown` otherwise (no write,
+   nothing granted). Each event carries `event_timestamp_ms`; `state_at` keeps the newest applied,
+   so an EXPIRATION delivered after a later RENEWAL is `stale`. A lifecycle event changes the
+   state of the transaction wherever it is bound, never the binding (H-56): RENEWAL reported for
+   another household's App User ID is `used_elsewhere`.
+6. **Cancel reasons (A2-1, H-81).** Only a refund revokes: `cancel_reason` CUSTOMER_SUPPORT, a
+   negative `price` or `price_in_purchased_currency` (RevenueCat's refund marker), or any
+   CANCELLATION of the one-time purchase (as job 43). UNSUBSCRIBE, BILLING_ERROR,
+   DEVELOPER_INITIATED, PRICE_INCREASE, UNKNOWN and a missing reason set `auto_renew = false`;
+   premium runs until `expires_at`, and only EXPIRATION ends it. UNKNOWN is App Store only
+   ("Apple did not provide the reason", RevenueCat event types, read 2026-11-01); a refund comes
+   with CUSTOMER_SUPPORT and a negative price, so UNKNOWN with a positive price is not one.
+   `cancel_reason` and `expiration_reason` are read in flight and neither stored nor logged
+   (H-87; this supersedes the brief's "expiration_reason logged").
+7. **A refunded yearly plan can renew.** RevenueCat: a subscription refund fires CANCELLATION
+   "only when the latest period is refunded", and "auto-renewal may still be active". So a
+   RENEWAL newer than the refund, in the plan's own household, lifts the revocation; an older one
+   and every later event of a refunded Lifetime stay `revoked`. Found while checking the research;
+   the brief did not cover it.
+8. **BILLING_ISSUE** keeps premium to `grace_period_expiration_at_ms` when RevenueCat sends one,
+   else to the period's end (`expiration_at_ms`); no grace length is hard-coded (Google's 14 days
+   are an Ops setting). Google's account hold arrives as EXPIRATION: premium off until a RENEWAL.
+   EXPIRATION ends premium at the reported end, never later than the event.
+9. **PRODUCT_CHANGE and TRANSFER write nothing** (logged by type). There is one subscription
+   product; RevenueCat's following RENEWAL carries the new product id, which maps to premium.
+   SUBSCRIPTION_PAUSED turns auto-renew off and keeps premium to the period's end; EXPIRATION with
+   reason SUBSCRIPTION_PAUSED ends it; a resume is a RENEWAL. TEMPORARY_ENTITLEMENT_GRANT, TEST and
+   the rest: 200, no write.
+10. **Play ids.** RevenueCat names a Play subscription `<subscription id>:<base plan id>` for
+    products set up after February 2023, in webhooks and the SDK. The function accepts
+    `com.hummlist.app.yearly` and `com.hummlist.app.yearly:yearly` (base plan `yearly`, Ops) and
+    stores the bare id (the `product_id` check allows no colon); another base plan is ignored like
+    an unknown product. `entitlement_ids` is not read: the product decides, so events naming the
+    old `lifetime` entitlement or the new `premium` both work during the transition (A2-7).
+11. **A second yearly plan is its own row (A2-3, H-84).** Two members' store accounts can each
+    subscribe. `purchase_record` keeps both (money was taken), never merges or extends one with
+    the other, flags `second_yearly` in its answer and the function logs it. The app hides the
+    yearly card while any premium is active, so only a race or another device can get there; the
+    page then says the household has two plans and shows the manage link.
+12. **What the app offers (`canOffer(Entitlement.premium, plan)`, still the one decision
+    point).** No premium: both plans. An active yearly plan: Lifetime only (the upgrade; never a
+    second yearly plan). Lifetime or a tester grant: nothing. Unknown (loading, offline): nothing.
+    Restore shows with any offered plan.
+13. **Lifetime while yearly runs: warn before the store sheet (A2-3).** When a renewing yearly
+    plan is active, Buy Lifetime opens Legal Review's text first (subscriber variant when
+    `my_yearly_plan().subscriber`), "Trotzdem kaufen" / "Abbrechen"; RevenueCat starts only on
+    "Trotzdem kaufen" (H-67). A plan with auto-renew off is not billed again, so it gets no
+    warning. After the purchase the page keeps the same text with the manage link while the plan
+    renews. Legal's `[Abos verwalten]` marks the link; `LinkedText` shows it as a link without
+    brackets, so the string stays word for word.
+14. **The store's price, read before the tap, through a minimal channel (A2-5, supersedes
+    change 4's static price and ADDENDUM 1's K13-1/K13-2).** Opening the page reads the server
+    switch and then, only when it is on, the prices once: StoreKit 2 `Product.products(for:)`
+    (`displayPrice`, `priceFormatStyle.currencyCode`) on iOS, Play Billing 9.1.0
+    `queryProductDetailsAsync` (the `yearly` base plan's recurring phase, the one-time offer) on
+    Android, over `familygroceries/store_prices` (`app/lib/purchases/store_prices.dart`). Not the
+    `in_app_purchase` plugin: its StoreKit plugin adds an `SKPaymentQueue` transaction observer at
+    app launch (plugin registration builds `FIAPaymentQueueHandler`, which calls
+    `addTransactionObserver`, flutter/packages source read 2026-11-01), next to RevenueCat's, and
+    its Android manager connects a BillingClient with a purchases listener on first use. The
+    channel's Android client has a no-op listener and ends its connection after the query; it
+    never purchases. The Billing version matches purchases-android 11.0.0's (9.1.0). Lint rules
+    `store-price-channel-only-in-store-prices`, `store-prices-channel-methods` (only `prices` and
+    `manageSubscriptions`) and `no-in-app-purchase` keep it that way. No price that the store did
+    not return is ever shown: no repo amount, nothing derived from locale or region. "inkl.
+    MwSt." / "incl. VAT" only for EUR (K.13.P.3). No price read (offline, timeout, error, nothing
+    returned): no Buy, the "nicht verfügbar" line. A plan the store doesn't return is not sold in
+    that storefront and is hidden silently (ADDENDUM 3; BR, MX, IN sell yearly only). "Der Preis im
+    Store kann abweichen." is gone. 47.1's option (a) is superseded for the paywall.
+15. **The server switch `premium_offer` (A2-5).** Job 47's `app_switches` gets the key, seeded
+    off; `premium_offer()` (security definer, granted to `authenticated`) returns only it.
+    Off, unreadable or `REVENUECAT_PURCHASES` off: no card, no Buy, no price query. Job 44 brought
+    PostHog feature flags (`Analytics.flags`), but they load only after the analytics yes and
+    through the PostHog SDK; a purchase switch must work for everyone without either, so the
+    existing table is the simpler mechanism. Setting it: NEEDS_LEAD "Job 49".
+16. **The subscriber's own view: `my_yearly_plan()`.** Members read a plan's end and renewal from
+    the rows; who pays and whether a payment failed stay hidden (H-55, H-87). The RPC answers the
+    caller only: `subscriber` (they claimed an active plan of their current household),
+    `renewing`, `billing_issue` with `until`, and `elsewhere` (they pay a renewing plan for
+    another household, archived, left or deleted). The billing-problem notice
+    (`premiumBillingIssue`) shows only when `subscriber` and `billing_issue` (A2-2; it replaces the
+    brief's household-wide "Zahlung fehlgeschlagen" line).
+17. **Billing continues (A2-4, H-85).** `confirmBillingContinues` runs before account deletion,
+    before a join that leaves the current household (plain, "Löschen und beitreten", "Archivieren
+    und beitreten") and before re-enabling an archived household (which leaves the current one).
+    The subscriber of a renewing plan (and, for account deletion, of one for another household)
+    gets Legal Review's text with "Abo verwalten" (opens the store, stays) and "Trotzdem
+    fortfahren"; another member of a billed household gets the Lead's placeholder line with
+    "Abbrechen" / "Trotzdem fortfahren". If the RPC can't be read, the flow goes on as before
+    (the warning never blocks a deletion).
+18. **Manage (A2-2).** "Abo verwalten oder kündigen" shows whenever the household has an active
+    yearly plan or a renewing one next to Lifetime. iOS: StoreKit's
+    `AppStore.showManageSubscriptions(in:)` sheet; Apple documents no web URL, and an App Review
+    rejection on the developer forums was for linking out to `apps.apple.com/account/subscriptions`,
+    which stays only as the fallback. Android: Play's
+    `/store/account/subscriptions?sku=com.hummlist.app.yearly&package=com.hummlist.app` (Play
+    Billing "deep link" docs, read 2026-11-01). Web: a line with both pages.
+19. **Disclosures and links.** The yearly card carries title, length, price per period, automatic
+    renewal unless cancelled at least 24 hours before the period ends, charging at confirmation
+    and renewal, and where to cancel; the cards are followed by the terms (Apple's standard EULA
+    on iOS, the support page as a placeholder elsewhere: no Hummlist terms exist, H-93) and the
+    privacy policy. Apple's subscription page asks for name, duration, the full renewal price and
+    restore on the sign-up screen; the "24 hours" wording is in Apple's Media Services Terms, not
+    in the guideline (read 2026-11-01). All copy is placeholder (ARB descriptions say so) until
+    Legal Review K.13 / Hummlist Launch.
+20. **Strings.** New keys for the Premium page; Legal Review's A2-2..A2-4 strings word for word.
+    The 26 "Hummlist Lifetime" values (S-11) are unchanged: renaming them is a legal text change
+    for Peter (NEEDS_LEAD). The page uses new `premium*` keys for its own copy (title, web note,
+    coming soon, status) and keeps the old keys only for the flow states and job 47's H-76 texts;
+    the refund sheet gets a separate yearly note under the H-76 texts.
+21. **The route stays `/more/lifetime`**, screen name `lifetime`: links and the analytics screen
+    name keep working. The code calls it `premiumPath` / `MorePage.premium` / `PremiumScreen`.
+22. **Archive eligibility is "has premium now".** `leave_current_household`,
+    `archived_households` and `preview_invite` use `household_has_premium`. An archived household's
+    yearly plan keeps being billed until cancelled; at its end premium stops and the archive stays.
+    A household whose yearly plan has lapsed is deleted on the last leave like a free one.
+23. **Tester grants beat yearly and apply to a yearly household.** `tester_grant_apply` now needs
+    a household without a lifetime or tester row; a household with only a yearly plan gets the
+    grant, which wins (no end). The table and `scripts/iap/testers.ts` keep their names.
+24. **Product facts in one place.** `scripts/iap/product.ts` holds both products (ids, Apple IDs
+    `6829293557` / `6829223747`, group `22532621` "Hummlist Premium", base plan `yearly`, P1Y,
+    9.99 / 29.99 €) and the drift check's expected prices; `app/ios/Hummlist.storekit` mirrors
+    them (product_test.ts pins both to `purchases/types.ts`). The lifetime internalID in the
+    StoreKit file changed from 6826922725 to Ops' 6829223747. `apple_product.ts` and
+    `google_product.ts` still create only Lifetime (Ops creates the subscription).
+25. **Price drift check (A2-5, ADDENDUM 3).** `scripts/iap/price_drift.ts` reads both stores'
+    prices (App Store Connect API, Play Developer API) and fails on any listed storefront whose
+    price differs, and if Lifetime appears in BR, MX or IN; BR/MX/IN yearly amounts are printed
+    to record. A missing secret is "SKIPPED: … missing" (exit 0, or 2 with `--require`, which the
+    daily `price-drift.yml` uses so the missing setup stays visible). The secrets don't exist yet:
+    NEEDS_LEAD. Drift turns `premium_offer` off by hand (one SQL line); switching from CI would
+    need a service-role secret in CI, which this job does not add.
+26. **Analytics.** `purchase_completed` and `purchase_refunded` carry `premium_source`
+    (`yearly` | `lifetime`), in the server catalog as `oneOf`. A renewal sends no event. The gate
+    queries count a household that paid for either product; the WAH share counts a yearly purchase
+    for 365 + 14 days from its `purchase_completed` (docs/ANALYTICS.md, the approximation and its
+    error). No new event (a renewal or expiry event would need a privacy-policy change; proposed in
+    NEEDS_LEAD).
+27. **Why not RevenueCat offerings.** The app still loads products by id (`getProducts` with
+    `ProductCategory.subscription` / `nonSubscription`). What to show is decided before the tap
+    from Supabase and the store's own price read; the offering (`$rc_annual`, `$rc_lifetime`) would
+    need the SDK before the tap (H-67). Switching later is a change inside
+    `RevenueCatRepository.buy`.
+28. **Google's original transaction across renewals.** RevenueCat staff: Google generates a new
+    transaction id per renewal that increments from the original; `original_transaction_id` stays
+    (community answer 2023-08-08). Google: a resubscribe after expiry creates a new purchase token,
+    so a lapsed Play plan bought again is a new row (same household by H-56). Apple's
+    `originalTransactionId` stays across renewals and lapsed resubscribes in the group (Apple
+    commerce engineer, developer forums). NEEDS_LEAD "Job 49" lists this for Legal's S-8.

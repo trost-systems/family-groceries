@@ -6,7 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// the only file that may use it (ast-grep rule
 /// `purchases-flutter-only-in-revenuecat-repository`). RevenueCat's customer
 /// is the household. Nothing here runs before the user taps Buy or Restore
-/// (Legal Review H-67): not at app start, not when the Lifetime page opens.
+/// (Legal Review H-67): not at app start, not when the Premium page opens.
 /// The tap configures the SDK with the household id, or switches to it with
 /// `logIn` when it was configured for another one. It never learns a user
 /// id, an e-mail or a device identifier (Legal Review K.9.9 C3, rule
@@ -38,17 +38,22 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
     }
   }
 
+  /// Loads [plan]'s product by its id, not from the offering: what the page
+  /// offers is decided before the tap (store prices, Supabase), and a
+  /// storefront without Lifetime simply returns nothing for it.
   @override
-  Future<BuyOutcome> buy(String householdId) async {
+  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
     final StoreProduct? product;
     try {
       await _as(householdId);
-      final found = await Purchases.getProducts([
-        lifetimeProductId,
-      ], productCategory: ProductCategory.nonSubscription);
-      product = found
-          .where((p) => p.identifier == lifetimeProductId)
-          .firstOrNull;
+      final found = await Purchases.getProducts(
+        [plan.productId],
+        productCategory: switch (plan) {
+          PremiumPlan.yearly => ProductCategory.subscription,
+          PremiumPlan.lifetime => ProductCategory.nonSubscription,
+        },
+      );
+      product = found.where((p) => plan.owns(p.identifier)).firstOrNull;
     } on PlatformException catch (e) {
       return switch (_codeOf(e)) {
         PurchasesErrorCode.networkError ||
@@ -82,7 +87,9 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
     try {
       await _as(householdId);
       final info = await Purchases.restorePurchases();
-      return info.allPurchasedProductIdentifiers.contains(lifetimeProductId)
+      return info.allPurchasedProductIdentifiers.any(
+            (id) => PremiumPlan.values.any((plan) => plan.owns(id)),
+          )
           ? const Restored()
           : const NothingToRestore();
     } on PlatformException catch (e) {

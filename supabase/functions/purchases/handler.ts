@@ -1,6 +1,7 @@
-// The purchases function (docs/PURCHASES.md): RevenueCat tells it about Hummlist Lifetime
-// purchases and refunds, and it unlocks the household (RevenueCat's App User ID) or takes the
-// unlock away. It never talks to Apple or Google itself.
+// The purchases function (docs/PURCHASES.md): RevenueCat tells it about Hummlist Premium purchases
+// (yearly and Lifetime), a yearly plan's renewals, cancellations and expiry, and refunds; it
+// unlocks the household (RevenueCat's App User ID), keeps the plan's state, or takes the unlock
+// away. It never talks to Apple or Google itself.
 //   GET  /purchases                       whether the webhook is configured (smoke checks)
 //   POST /purchases/revenuecat/webhook    RevenueCat's webhook (Authorization:
 //                                         REVENUECAT_WEBHOOK_AUTH, compared whole)
@@ -17,13 +18,15 @@ import { json, preflight } from '../_shared/http.ts';
 import type { AppStore, PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
 import { parseWebhook, sameSecret, signedBy, testEvent, type WebhookEvent } from './revenuecat.ts';
-import type { Claim, Recorded, Revoked } from './store.ts';
+import type { Lifecycle } from './revenuecat.ts';
+import type { Claim, LifecycleOutcome, Recorded, Revoked } from './store.ts';
 import { type Refund, type Sale, type StorePurchase, webhookPath } from './types.ts';
 import type { DeletionOutcome } from './deletions.ts';
 
 /** The writes one event may make, all in the transaction that records its id. */
 export interface Ledger {
   record(p: StorePurchase): Promise<Recorded>;
+  lifecycle(c: Lifecycle): Promise<LifecycleOutcome>;
   revoke(r: Refund): Promise<Revoked | null>;
   reinstate(store: AppStore, transactionId: string): Promise<boolean>;
 }
@@ -115,7 +118,8 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
 
   async function process(e: WebhookEvent): Promise<Response> {
     const { action } = e;
-    if (e.type === 'TRANSFER') log({ event: e.type });
+    // Never moves anything (H-56); the type is all that is logged.
+    if (e.type === 'TRANSFER' || e.type === 'PRODUCT_CHANGE') log({ event: e.type });
     if (action.do === 'ignore' && action.refused) log({ event: e.type, refused: action.refused });
     const done = await deps.once(
       e,
@@ -129,6 +133,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
             if (r.outcome !== 'granted' && r.outcome !== 'restored') {
               log({ event: e.type, refused: r.outcome });
             }
+            if (r.secondYearly) log({ event: e.type, flag: 'second_yearly' });
             const due = r.sendCompleted && r.buyer
               ? {
                 name: 'purchase_completed' as const,
@@ -138,6 +143,11 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
               }
               : null;
             return { status: r.outcome, due };
+          }
+          case 'lifecycle': {
+            const outcome = await ledger.lifecycle(action.change);
+            if (outcome !== 'updated') log({ event: e.type, lifecycle: outcome });
+            return { status: outcome, due: null };
           }
           case 'revoke': {
             const row = await ledger.revoke(action.refund);

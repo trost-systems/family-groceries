@@ -181,6 +181,8 @@ export type PurchaseEvent = 'purchase_completed' | 'purchase_refunded' | 'purcha
 export type Revenue = Omit<VerifiedTransaction, 'kind' | 'price' | 'currency'> & {
   price: number | null;
   currency: string | null;
+  /** Job 49: the Hummlist Premium product's plan; job 19's harness has none. */
+  premiumSource?: 'yearly' | 'lifetime';
 };
 
 /**
@@ -204,6 +206,7 @@ export async function sendPurchaseEvent(
       ...(t.country ? { country: t.country } : {}),
       ...(net === null || t.currency === null ? {} : { net_amount: net }),
       transaction_ref: await transactionRef(t),
+      ...(t.premiumSource ? { premium_source: t.premiumSource } : {}),
     };
   return telemetry.event(name, subject, properties);
 }

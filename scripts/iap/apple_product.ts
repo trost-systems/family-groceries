@@ -15,6 +15,19 @@ import { product } from './product.ts';
 export const appAppleId = '6826922741';
 const api = 'https://api.appstoreconnect.apple.com';
 
+/** Signs App Store Connect API tokens with an API key's .p8 (also price_drift.ts). */
+export async function ascTokens(p8: string, keyId: string, issuerId: string) {
+  const key = await importPKCS8(p8, 'ES256');
+  return async () =>
+    await new SignJWT({})
+      .setProtectedHeader({ alg: 'ES256', kid: keyId, typ: 'JWT' })
+      .setIssuer(issuerId)
+      .setIssuedAt()
+      .setExpirationTime('15m')
+      .setAudience('appstoreconnect-v1')
+      .sign(key);
+}
+
 type Json = Record<string, unknown>;
 
 export function createProductBody(appId = appAppleId): Json {
@@ -92,15 +105,11 @@ async function main() {
     if (!v) throw new Error(`${k} is not set`);
     return v;
   };
-  const key = await importPKCS8(await Deno.readTextFile(env('ASC_KEY_PATH')), 'ES256');
-  const token = async () =>
-    await new SignJWT({})
-      .setProtectedHeader({ alg: 'ES256', kid: env('ASC_KEY_ID'), typ: 'JWT' })
-      .setIssuer(env('ASC_ISSUER_ID'))
-      .setIssuedAt()
-      .setExpirationTime('15m')
-      .setAudience('appstoreconnect-v1')
-      .sign(key);
+  const token = await ascTokens(
+    await Deno.readTextFile(env('ASC_KEY_PATH')),
+    env('ASC_KEY_ID'),
+    env('ASC_ISSUER_ID'),
+  );
   const call = async (method: string, path: string, body?: Json): Promise<Json> => {
     const res = await fetch(`${api}${path}`, {
       method,

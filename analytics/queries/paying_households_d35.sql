@@ -1,12 +1,14 @@
--- Job 43: share of each household cohort with Hummlist Lifetime by day 35. A household starts
--- with its first event (household_created, invite_accepted, an add or a tick), as in
+-- Jobs 43 and 49: share of each household cohort with Hummlist Premium by day 35. A household
+-- starts with its first event (household_created, invite_accepted, an add or a tick), as in
 -- retention_weekly.sql; its cohort is the Berlin week of that start. It is paying when a
--- purchase_completed for it arrived within 35 days (35 * 24 h) of the start. A purchase the store
--- refunded since (same transaction_ref, any time) does not count; a second purchase in the same
--- household counts once. A buyer without analytics consent sends no purchase_completed, so the
--- share is a lower bound. Tester households and Sandbox purchases send is_internal = true and
--- leave with the internal filter. The cohort view of the kill gate (paying_share_wah.sql).
--- The p.household check covers default-value outer joins. metrics.ts payingHouseholdsByDay35().
+-- purchase_completed for it arrived within 35 days (35 * 24 h) of the start, for either product
+-- (com.hummlist.app.yearly or com.hummlist.app.lifetime; a yearly subscription runs well past day
+-- 35). A purchase the store refunded since (same transaction_ref, any time) does not count; the
+-- household's other purchases still do, and several count once. A buyer without analytics consent
+-- sends no purchase_completed, so the share is a lower bound. Tester households and Sandbox
+-- purchases send is_internal = true and leave with the internal filter. The cohort view of the
+-- kill gate (paying_share_wah.sql). The p.household check covers default-value outer joins.
+-- metrics.ts payingHouseholdsByDay35().
 WITH
   internal_installs AS (
     SELECT DISTINCT toString(properties.install_id) AS id

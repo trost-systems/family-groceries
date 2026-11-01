@@ -10,8 +10,8 @@ decisions in [DECISIONS.md](DECISIONS.md), "Job 19" and "Job 44"; open steps in
 | --- | --- | --- |
 | Day-35 unlock share | Which share of an install-week cohort bought the lifetime unlock within 35 days of `first_open`? | [`analytics/queries/unlock_d35.sql`](../analytics/queries/unlock_d35.sql) |
 | WAH | How many households added or ticked at least once in a week (Mon-Sun, Europe/Berlin)? | [`wah.sql`](../analytics/queries/wah.sql) |
-| Paying share of WAH (kill gate, job 43) | Which share of a week's active households has Hummlist Lifetime by the week's end? | [`paying_share_wah.sql`](../analytics/queries/paying_share_wah.sql) |
-| Paying households by day 35 (job 43) | Which share of a household-start-week cohort has Hummlist Lifetime within 35 days of its first event? | [`paying_households_d35.sql`](../analytics/queries/paying_households_d35.sql) |
+| Paying share of WAH (kill gate, jobs 43 and 49) | Which share of a week's active households has Hummlist Premium (Yearly or Lifetime) that week? | [`paying_share_wah.sql`](../analytics/queries/paying_share_wah.sql) |
+| Paying households by day 35 (jobs 43 and 49) | Which share of a household-start-week cohort bought Hummlist Premium (Yearly or Lifetime) within 35 days of its first event? | [`paying_households_d35.sql`](../analytics/queries/paying_households_d35.sql) |
 | Net unlock revenue | Revenue per month after VAT and store fee, refunds subtracted, restores zero | [`revenue_monthly.sql`](../analytics/queries/revenue_monthly.sql) |
 | Household retention | Share of an install-week cohort still adding or ticking in week 1-12 and month 1-11 | [`retention_weekly.sql`](../analytics/queries/retention_weekly.sql), [`retention_monthly.sql`](../analytics/queries/retention_monthly.sql) |
 | Manual reorders | Category (route order, store layout) and store reorders per household | [`reorders.sql`](../analytics/queries/reorders.sql) |
@@ -132,7 +132,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `feedback_submitted` | the server stored a feedback note (job 21, docs/FEEDBACK.md); once per note, also after a Retry whose first answer was lost | `category` (`bug`, `idea`, `other`, `none`), `entry_point` (`settings`; More is the only entry), `screen` (a name from `screenNames` in `router.dart`, e.g. `list`), `contact_ok` (true, false). Never the note's text |
 | `item_categorized` | the server confirmed an add from the app (job 32a); once per added item, also after a retry whose first answer was lost; not for a restored deletion | `via`: how the server chose the category (`items.categorized_via`): `household` (a correction of this household, also for the item's spelling variants and synonyms), `exact` (the dictionary, also after folding spelling: Karrotten), `synonym` (Paradeiser), `fuzzy` (a typo: Schokolde), `fallback` (Sonstiges), `picked` (the add brought another category than the guess). Never the name or the canonical key |
 | `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored` | job 32b's duplicate hint ("Möhren steht schon auf der Liste"): `shown` when the snackbar shows, then once either `merged` (Zusammenführen) or `ignored` (any other close); the merge's undo sends nothing. Listed by 32a, sent by `ListCubit` since 32b | `actor_role`, `household_size`. Never the item names |
-| `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id`, `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
+| `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id` (`com.hummlist.app.yearly`, `com.hummlist.app.lifetime`), `premium_source` (`yearly`, `lifetime`; job 49, absent on earlier events, which are all Lifetime), `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
 | `purchase_restored` | server only | `product_id`, `app_store` |
 | `siri_add` | server only (job 51): a Siri add reached the `voice` function, signed in with the app's Siri credential or a Shortcut's PAT; once per request, after authentication, for a user whose newest consent answer is yes (the Alexa lookup) | `result` (`success`, `fail`), `reason` (`added`, `nothing_added`, `no_text`, `too_long`, `nothing_understood`, `server`; `no_household` and `premium_required` are allowed but not sent yet), `language` (`en`, `de`), `source` (`native`: the Siri credential, `shortcut`: a PAT), `count` (items understood, 0 to 30). Never a name or the text |
 | `siri_read` | server only (job 51): "What's on my Hummlist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`; `no_household`, `premium_required` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
@@ -339,7 +339,10 @@ SQL, and `analytics/metrics_test.ts` checks them on `analytics/fixtures.ts`: Ber
 (Sunday 23:30 UTC is Monday in Berlin), a purchase after day 35, a refund in the next month, a
 restore, an install marked internal late, a test account and Peter's household; for job 43
 (`payingEvents`) a household with two purchases, a refunded one, a tester household, a purchase
-on day 40, one at 23:30 UTC on a Sunday and a buyer without consent. It also checks
+on day 40, one at 23:30 UTC on a Sunday and a buyer without consent; for job 49
+(`premiumEvents`) Yearly only, Lifetime only, both in one household, a refunded Lifetime next to a
+kept Yearly, a refunded only purchase, a Sandbox Yearly, a purchase without `premium_source` and
+the yearly `product_id` without it, a year on inside and past the 379 days. It also checks
 that every gate query carries the internal filter. The functions gate runs it.
 
 Definitions:
@@ -355,12 +358,28 @@ Definitions:
   next period. Fixed-length months give every cohort the same windows. Weeks 0-12, months 0-11:
   the free plan keeps a year of data (Peter's override, 2026-10-25); month 12 and beyond need the
   paid retention Peter plans to buy before year end.
-- **Paying household** (job 43): a household with a `purchase_completed` the store has not
-  refunded since (same `transaction_ref`; a refund at any time takes it back, also for the weeks
-  before it). Hummlist Lifetime unlocks the whole household (model A), so a second purchase in
-  the same household counts once. `paying_share_wah.sql` counts a household as paying in every
-  week from the Berlin week of its first such purchase; `paying_households_d35.sql` when that
-  purchase came within 35 × 24 h of the household's start (as in household retention).
+- **Paying household** (jobs 43 and 49): a household with a `purchase_completed` of either
+  Premium product (`com.hummlist.app.yearly`, `com.hummlist.app.lifetime`, one entitlement) the
+  store has not refunded since (same `transaction_ref`; a refund at any time takes it back, also
+  for the weeks before it). A refund takes back only its own purchase: the household's other
+  purchases still count. Premium unlocks the whole household (model A), so several purchases in
+  the same household count once. `paying_households_d35.sql` counts a household when its first
+  such purchase came within 35 × 24 h of the household's start (as in household retention).
+  `paying_share_wah.sql` counts a household as paying in a week when one such purchase covers
+  it:
+  - **Lifetime** (`premium_source` `lifetime`, or no `premium_source` and not the yearly
+    `product_id`: every purchase before job 49) covers every week from the Berlin week of the
+    purchase.
+  - **Yearly** (`premium_source` `yearly`, or the yearly `product_id`) covers the Berlin weeks
+    from the purchase's week through the week that contains the purchase + 379 days (365 days
+    and 14 days' grace for a late renewal).
+- **The Yearly window is an approximation** (job 49). A renewal sends no event and there is no
+  expiry event (a new event would need a privacy-policy change), so the query cannot see whether
+  a subscription is still running. It errs both ways: a household that renews is undercounted
+  from week 380 days after its first purchase on, and a household that cancels within its first
+  year (no refund) is overcounted until that year and the grace end. Before the first renewals
+  are due (a year after launch) only the overcount applies. PostHog's free plan keeps a year of
+  events, so a purchase older than that drops out of both queries anyway, Lifetime included.
 - **Kill gate** (Peter, 2026-10-31, model A): in the Berlin week that contains day 35 after
   launch, `paying_share_wah`'s `share_percent` is at least 2. `paying_households_d35` is the
   cohort view of the same question.
@@ -369,8 +388,10 @@ Definitions:
 
 ## Purchases (AC8)
 
-Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md); since
-job 43 RevenueCat verifies it and calls our `purchases` function. Revenue reaches PostHog only from
+Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md);
+since job 43 RevenueCat verifies it and calls our `purchases` function. Since job 49 Hummlist
+Premium Yearly is sold next to it under the same entitlement; `premium_source` on the purchase
+events says which product granted it. Revenue reaches PostHog only from
 that function, after RevenueCat confirmed the purchase:
 
 - **Who.** The app sends no install id or price. The function sends an event only for a buyer

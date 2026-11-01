@@ -7,6 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 const sameInBothLanguages = {
   'appTitle': 'brand name',
   'lifetimeTitle': 'product name',
+  'premiumTitle': 'product name',
+  'premiumStatusLifetime': 'product name',
+  'premiumLifetimeTitle': 'product name (Lifetime)',
+  'premiumManageApple': 'store name',
+  'premiumManageGoogle': 'store name',
   'inviteCodeLabel': '"Code" is English too',
   'inviteLinkLabel': '"Link" is English too',
   'tokenHint': 'only an ellipsis and the token hint',

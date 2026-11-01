@@ -1,14 +1,18 @@
-# Purchases: Hummlist Lifetime
+# Purchases: Hummlist Premium
 
-Hummlist sells one thing: **Hummlist Lifetime**, a non-consumable in-app purchase (EUR 9.99 in
-Germany) that unlocks the buyer's whole household. Nothing in the app is gated by it yet (product
-decision 4, NEEDS_PETER Job 25), and nothing is sold: the purchase screen is behind the build
-define `REVENUECAT_PURCHASES`, off by default, until Peter approves the new legal texts. Built in
-job 25 (sandbox, our own store verification), rebuilt in job 43 on RevenueCat, and changed in job
-47 for Legal Review K.11 (the SDK starts only on a tap). Decisions: DECISIONS.md "Job 25", "Job
-25b", "Job 43" and "Job 47".
+Hummlist sells **Hummlist Premium** for the whole household, in two ways (Peter, Spec #4,
+2026-10-31): **yearly**, an auto-renewing subscription `com.hummlist.app.yearly` (EUR 9.99 a
+year in Germany), and **Lifetime**, a one-time purchase `com.hummlist.app.lifetime` (EUR 29.99).
+Both grant one entitlement, `premium`, which will unlock the integrations (Siri, Alexa, MCP/AI
+assistants; job 50 gates them). Nothing in the app is gated by it yet, and nothing is sold: the
+purchase screen is behind the build define `REVENUECAT_PURCHASES` and the server switch
+`premium_offer`, both off, until Peter turns them on. Built in job 25 (sandbox, our own store
+verification), rebuilt in job 43 on RevenueCat, changed in job 47 for Legal Review K.11 (the SDK
+starts only on a tap) and in job 49 for the yearly plan (Legal Review K.13). Decisions:
+DECISIONS.md "Job 25", "Job 25b", "Job 43", "Job 47" and "Job 49".
 
-**Model A (Peter, 2026-10-31).** One member pays once; the whole household has it. A purchase
+**Model A (Peter, 2026-10-31; both products since job 49).** One member pays; the whole
+household has it. A purchase
 belongs to the household it was bought in, for good: it stays there when the buyer leaves, hands
 the household over or deletes the account, and it never unlocks another household, also not after
 its own is deleted. Nothing moves with the user. The app offers Buy only to a household it knows
@@ -17,7 +21,9 @@ pointed to the refund help (H-76, Peter 2026-10-31: Apple alone refunds App Stor
 for Google Play, Google in the first 48 hours, after that our support case by case in the Play
 Console). Testers get it
 free. A later subscription for running-cost features (model D) would be a second entitlement kind
-next to Lifetime ("A second entitlement" below).
+next to premium ("A second entitlement" below). The yearly plan is household-bound the same way:
+its renewals stay with the household it was bought for, and the same Apple ID cannot pay a second
+plan of the group for another household ("Cases").
 
 **RevenueCat (Peter, 2026-10-31 14:03; Legal Review's conditions, ADDENDUM 5).** RevenueCat
 verifies purchases with Apple and Google; our server no longer talks to either store. The
@@ -26,50 +32,75 @@ id, never anonymous.
 
 ## How it works
 
-1. A member opens Mehr → Hummlist Lifetime. Opening, rebuilding, leaving and returning to the
-   page make no RevenueCat call and no network contact to RevenueCat, and neither does app start
-   (Legal Review H-67, § 25 Abs. 2 Nr. 2 TDDDG: looking at the offer is not asking for it). Once
-   the household's rows are read from Supabase and hold no Lifetime
-   (`Entitlements.canOffer(Entitlement.lifetime)`, the one decision point) the page shows
-   "Weiter zum Kauf" and "Kauf wiederherstellen", and under them "Den Preis zeigen dir der App
-   Store oder Google Play, bevor du kaufst." The page shows **no price** (DECISIONS 47.1): the
-   store's own purchase sheet does. While the rows load or the phone is offline the page says "Wir
-   prüfen, ob dein Haushalt Hummlist Lifetime schon hat …" and has no Buy; More's row shows no
-   "Hummlist unterstützen" then either.
-2. **The tap starts the SDK.** "Weiter zum Kauf" configures `purchases_flutter` with the household
-   id as App User ID (`logIn(householdId)` instead when this app run configured it for another
-   household), loads the product (`getProducts`, the store's own product request) and opens the
-   store's sheet, which shows the price. "Kauf wiederherstellen" configures (or logs in) the same
-   way, then calls `restorePurchases()`. Members who never tap either never talk to RevenueCat.
-   After a tap, the SDK stays configured for the rest of that app run (it refreshes its caches
-   from RevenueCat when the app returns to the foreground); the next app start configures nothing
-   until the next tap. Buy runs the store's sheet through RevenueCat, which verifies the purchase
-   with the store,
-   acknowledges Play purchases and finishes the transaction. The app then **claims** it:
+1. A member opens Mehr → Hummlist Premium (`/more/lifetime`). Opening, rebuilding, leaving and
+   returning to the page make no RevenueCat call and no network contact to RevenueCat, and
+   neither does app start (Legal Review H-67, § 25 Abs. 2 Nr. 2 TDDDG). Opening reads the server
+   switch `premium_offer()` and, only when it is on and this build sells, the two prices **from
+   the store itself**, once: StoreKit 2 on iOS, Play Billing on Android
+   (`app/lib/purchases/store_prices.dart`, channel `familygroceries/store_prices`; A2-5). The page
+   shows each price exactly as the store formats it for the store account's country, "inkl.
+   MwSt." only in euros, never a repo amount and nothing derived from the device's locale.
+2. **What is offered** (`Entitlements.canOffer(Entitlement.premium, plan)`, the one decision
+   point): with no premium both cards, **yearly first**; with an active yearly plan only Lifetime
+   (the upgrade; never a second yearly plan, H-84); with Lifetime or a tester grant nothing; while
+   the rows load or the phone is offline nothing ("Wir prüfen, ob euer Haushalt Hummlist Premium
+   schon hat …"). A plan the store doesn't return (Lifetime in BR, MX, IN) is not offered there,
+   silently. No price read at all (offline, store unavailable, timeout): no Buy, "Hummlist Premium
+   ist gerade nicht verfügbar." Switch off or `REVENUECAT_PURCHASES` off: "Hummlist Premium ist
+   bald verfügbar.", no Buy, no Restore, no price query.
+3. The yearly card shows the price per year and the disclosures (1 year, renews automatically
+   unless cancelled at least 24 hours before the period ends, charged at confirmation and
+   renewal, where to cancel); the cards are followed by Restore, the terms (Apple's standard EULA
+   on iOS, a placeholder elsewhere) and the privacy policy. All copy is placeholder (K.13 /
+   Hummlist Launch).
+4. **The tap starts the SDK.** Buy configures `purchases_flutter` with the household id as App
+   User ID (`logIn(householdId)` instead when this app run configured it for another household),
+   loads that plan's product by id (`getProducts`, `ProductCategory.subscription` for yearly,
+   `nonSubscription` for Lifetime; Play names the subscription `com.hummlist.app.yearly:yearly`)
+   and opens the store's sheet. Restore configures (or logs in) the same way, then calls
+   `restorePurchases()`. After a tap the SDK stays configured for the rest of that app run; the
+   next app start configures nothing until the next tap. RevenueCat verifies the purchase with the
+   store, acknowledges Play purchases and finishes the transaction. The app then **claims** it:
    `POST /functions/v1/purchases/claim` with its own session and `{householdId, store,
-   transactionId}`: the household it bought for (the App User ID of the purchase), the StoreKit
-   transaction id (on Android the Play order id `GPA.…`, which is what RevenueCat's
-   `transactionIdentifier` holds there), pinned to `eu-central-1`. The claim records the buyer
-   (H-55) if they were a member of that household when buying (job 47); it never unlocks
-   anything. Until Supabase shows the unlock, the page says "Wird freigeschaltet …".
-3. RevenueCat calls our webhook (`POST /functions/v1/purchases/revenuecat/webhook`, the `purchases` function) with
-   `NON_RENEWING_PURCHASE`. The function checks the `Authorization` header (constant time) and,
-   when configured, RevenueCat's HMAC signature, ignores event ids it already processed, and
-   records the transaction for the household `app_user_id` names (`purchase_record`): a row in
-   `purchases` bound to that household and a row in `entitlements`.
-4. Every member's app reads the household's `entitlements` rows (RLS: members only; the columns
-   that say who paid or granted it are not readable, H-55) and hears new ones over Realtime: the
-   partner's phone shows "Freigeschaltet" without buying. The app asks for a kind
-   (`has(Entitlement.lifetime)`), never for "any row". The unlock the app shows comes only from
-   Supabase, never from RevenueCat's `CustomerInfo`.
-5. Refunds: RevenueCat's `CANCELLATION` takes that purchase's unlock away (`purchase_revoke`) and
-   sends `purchase_refunded` once; `REFUND_REVERSED` reinstates it in its own household. A
-   `TRANSFER` never moves anything.
-6. Restore (Kauf wiederherstellen) calls `restorePurchases()` under the household's App User ID.
-   With the project's restore behavior **Keep with original App User ID** (an Ops setting),
-   RevenueCat refuses a purchase that belongs to another household; the app says "Dieser Kauf
-   gehört zu einem anderen, früheren Haushalt und bleibt dort." with the refund help. The server
-   refuses it too, whatever RevenueCat does (`purchase_record`: bound household, tombstones).
+   transactionId}`, pinned to `eu-central-1`. The claim records the buyer (H-55) if they were a
+   member of that household when buying (job 47); it never unlocks anything. Until Supabase shows
+   the unlock (for Lifetime: the Lifetime row, also next to a running yearly plan), the page says
+   "Wird freigeschaltet …".
+5. **Lifetime while a yearly plan renews** (H-84): Buy Lifetime first shows Legal Review's
+   warning, „Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird
+   weiter abgerechnet, bis es gekündigt wird; …“ (the subscriber's variant: „Du kannst es unter
+   [Abo verwalten] kündigen.“), with „Trotzdem kaufen“ · „Abbrechen“. The SDK starts only on
+   „Trotzdem kaufen“. After the purchase the page keeps that text with the store link while the
+   plan renews. Hummlist never cancels or refunds the plan.
+6. RevenueCat calls our webhook (`POST /functions/v1/purchases/revenuecat/webhook`, the
+   `purchases` function): INITIAL_PURCHASE / NON_RENEWING_PURCHASE record the purchase for the
+   household `app_user_id` names (`purchase_record`), the yearly plan with its end; RENEWAL and
+   the lifecycle events keep the plan's state ("Subscription lifecycle" below).
+7. Every member's app reads the household's `entitlements` rows (RLS: members only; who paid or
+   granted is not readable, H-55) and hears inserts, updates and deletes over Realtime. Premium is
+   active **at read time**: a Lifetime or tester row (no end), else a yearly row whose end lies
+   ahead. The page's status line: „Hummlist Premium aktiv (jährlich, verlängert sich am …)“, „…
+   läuft am … aus“ (auto-renew off), „Hummlist Premium Lifetime“, „Hummlist Premium über
+   Tester-Freischaltung“. The server's check for the integrations is `household_has_premium()`
+   (same rule).
+8. While the household has an active yearly plan the page shows „Abo verwalten oder kündigen“
+   (StoreKit's manage sheet on iOS, Play's subscription page on Android, a line with both pages on
+   the web). Only the subscriber sees a failed renewal: „Apple bzw. Google konnten dein Jahresabo
+   nicht abbuchen. Premium läuft noch bis {date}. …“ (`my_yearly_plan()`, H-87).
+9. Before deleting the account, joining another household (leave, delete or archive the current
+   one) or re-enabling an archived one, the subscriber of a renewing plan reads „Dein Jahresabo
+   für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis
+   du es kündigst. Löschen oder Verlassen kündigt es nicht.“ with „Abo verwalten“ · „Trotzdem
+   fortfahren“ (account deletion also for a plan they pay for another household); other members
+   of a billed household the placeholder line „Ein Jahresabo für diesen Haushalt läuft weiter,
+   bis es gekündigt wird.“ (H-85).
+10. Refunds revoke one purchase's unlock (`purchase_revoke`) and send `purchase_refunded` once;
+    `REFUND_REVERSED` reinstates it in its own household. A `TRANSFER` never moves anything.
+11. Restore (Kauf wiederherstellen) calls `restorePurchases()` under the household's App User ID.
+    With the project's restore behavior **Keep with original App User ID** (an Ops setting),
+    RevenueCat refuses a purchase that belongs to another household; the app says "Dieser Kauf
+    gehört zu einem anderen, früheren Haushalt und bleibt dort." with the refund help. The server
+    refuses it too (`purchase_record`: bound household, tombstones).
 
 | Case | What happens |
 | --- | --- |
@@ -80,7 +111,15 @@ id, never anonymous.
 | A second purchase in an unlocked household (two phones, Ask to Buy, a race) | Its own row; refunding one keeps the other's unlock. Every member's page then shows "Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen." with the refund help |
 | Buyer switches households between buying and claiming | The claim names the household the purchase was made for (job 47), not the one the buyer is in now. `purchase_claim` records the buyer if they were a member of it at the purchase time: a member now who joined before it, or one who left it in the last hour (`household_departures`, kept one hour) after joining before it. Otherwise (left more than an hour ago, joined after the purchase, never a member, or the household is gone) it answers 403 `no_household` and the buyer stays unknown (no `purchase_completed`); the unlock stands where it was bought |
 | Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; RevenueCat's webhook records it when the store completes it |
-| Products not loadable, offline, store down | After the tap: "Hummlist Lifetime ist bald verfügbar." or the offline note; Buy stays and tries again; no crash |
+| Products not loadable, offline, store down | Before the tap (no price read): no Buy, "Hummlist Premium ist gerade nicht verfügbar.". After the tap: the same line or the offline note; Buy stays and tries again; no crash |
+| Yearly-only storefront (BR, MX, IN) | The store returns no Lifetime: no Lifetime card and no Lifetime entry (warning, upgrade); the yearly card as usual. Lifetime holders and testers there keep Premium |
+| The same Apple ID already pays the yearly plan for household A, and the person tries to buy or restore it in household B (iOS) | Apple allows one subscription per Apple ID per group, and RevenueCat (Keep with original App User ID) keeps the receipt with A: the store or RevenueCat refuses (`receiptAlreadyInUse`), the app says "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and "Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen." The restore setting stays |
+| Two yearly plans in one household (two members' store accounts, a race) | Both rows kept, never merged; premium runs to the later end; the page says so with the manage link; the function logs `second_yearly` |
+| Yearly plan cancelled (auto-renew off) | Premium stays until the period's end, the status says "läuft am … aus"; EXPIRATION ends it |
+| Yearly plan lapsed | Premium off at read time; the paywall offers both plans again. Nothing is deleted: household, list, Alexa links, tokens, MCP grants stay (integrations are paused by job 50's gate). The row stays with its past end |
+| Billing problem | Premium until the grace period's end (RevenueCat's `grace_period_expiration_at_ms`), else the period's end; only the subscriber is told. Google's account hold: EXPIRATION, premium off until a RENEWAL |
+| Lifetime bought while yearly renews | Both rows; Lifetime wins; the yearly plan keeps renewing until its subscriber cancels it; when it expires premium stays |
+| Archived household with a yearly plan | Archiving works as for Lifetime; the plan is still billed; at its end premium stops, the archive stays |
 | Payer leaves the household, hands it over or deletes the account | The unlock stays with the household. Account deletion removes the buyer link; the purchase keeps its household (`bound_household`) |
 | Last member leaves an unlocked household (joins another) | Joining asks first. With `HOUSEHOLD_ARCHIVE` on: "Archivieren und beitreten" keeps the household archived (list and unlock kept, re-enabled under Mehr → Archivierte Haushalte, deleted 24 months after archiving otherwise); "Löschen und beitreten" asks once more ("… Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt …", refund help). With it off (releases, until the legal texts say so): that warning and "Trotzdem beitreten". Never blocked. The server archives only while its switch `household_archive` is on (job 47, H-70); off, an archiving call is refused with `archive_disabled` and changes nothing, and the app says "Archivieren ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist." |
 | Joiner into an unlocked household | The join screen says "Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen." With their own purchase from the last 30 days that stands: a link to the refund help |
@@ -88,8 +127,8 @@ id, never anonymous.
 | Archived household | No members, not readable by anyone, its invites lead nowhere; the archiving user alone sees and re-enables it (`archived_households`, `unarchive_household`), with "Wird am <Datum> gelöscht" per household. Deleted 24 months after archiving unless re-enabled (job 47, H-50), and at once with that user's account. Its purchases restore nowhere else, and in it again after re-enabling; re-enabling and archiving again start a new 24 months. Re-enabling works with the server switch off, unless it would archive the household the user leaves |
 | Family Sharing | Off at Apple; a webhook event with `is_family_share` is ignored |
 | An App User ID that is no household (anonymous, unknown) | Ignored: nothing recorded, nothing unlocked |
-| Web | No buy button and no external purchase link; "Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet." and the unlocked state |
-| `REVENUECAT_PURCHASES` off (every build until Peter's OK) or no SDK key | "Hummlist Lifetime ist bald verfügbar.", no Buy, no Restore; unlocks (testers) still show |
+| Web | No buy button and no external purchase link; "Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet." and the status; with a yearly plan a line with the App Store and Google Play subscription pages |
+| `REVENUECAT_PURCHASES` off (every build until Peter's OK) or no SDK key, or `premium_offer` off | "Hummlist Premium ist bald verfügbar.", no Buy, no Restore, no store price query; unlocks (testers) still show |
 | Signed out, no household | The page is under More, which `authRedirect` only lets households reach; the claim route answers 401/403 |
 
 ## The webhook
@@ -106,15 +145,60 @@ id, never anonymous.
 | `POST /purchases/claim` | the app, signed in | Records the buyer of a transaction in the household it names (`householdId`, the purchase's App User ID), for a member of it at the purchase time (first member wins); 20 a minute per user |
 | `POST /purchases/test/event` | local stack only (404 elsewhere) | Builds a RevenueCat event and processes it like the webhook, without the secret: the debug fake store, fg and e2e use it |
 
-Events: `NON_RENEWING_PURCHASE` (and `INITIAL_PURCHASE`) for a product in `productKinds` record
-and unlock; `CANCELLATION` revokes; `REFUND_REVERSED` reinstates; `TRANSFER`, `TEST`,
-`TEMPORARY_ENTITLEMENT_GRANT`, `EXPIRATION` and anything else are acknowledged and change nothing.
-Stores: `APP_STORE` is `apple`, `PLAY_STORE` `google`; others are ignored. The purchase's key is
+Products (`productOf` in `supabase/functions/purchases/types.ts`, pinned to
+`scripts/iap/product.ts`): `com.hummlist.app.yearly` and Play's `com.hummlist.app.yearly:yearly`
+(stored as the bare id) are the yearly plan, `com.hummlist.app.lifetime` is Lifetime, all of kind
+`premium`; any other product id (another base plan included) is acknowledged and ignored. The
+event's `entitlement_ids` is not read: `premium` and the old `lifetime` both work. Stores:
+`APP_STORE` is `apple`, `PLAY_STORE` `google`; others are ignored. The purchase's key is
 `original_transaction_id` (`transaction_id` when absent); the claim may name either.
 
-**Analytics.** `purchase_completed` goes out once, when both the webhook's record and the buyer's
-claim are in (whichever comes second), under the buyer's consent; `purchase_refunded` on a refund
-of a purchase with a known buyer. Without a claim, or without consent, nothing is sent (the paying
+### Subscription lifecycle
+
+RevenueCat's event types and fields:
+https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields (read 2026-11-01).
+Every event carries `event_timestamp_ms`; a yearly row keeps the newest one applied (`state_at`),
+and an older event changes nothing (`stale`). Lifecycle events for a transaction never recorded
+write nothing (`unknown`).
+
+| Event | Yearly plan | Lifetime |
+| --- | --- | --- |
+| `INITIAL_PURCHASE`, `NON_RENEWING_PURCHASE` | Record and bind (H-56); end = `expiration_at_ms`, renews | Record and bind |
+| `RENEWAL` | Same transaction: new end, renews, billing problem cleared (also "a lapsed user resubscribed" on Apple). A new transaction (Google resubscribe: new purchase token) is a new row in the same household only. Never a second `purchase_completed` | (as a record) |
+| `CANCELLATION`, refund (see below) | Revoke this row (other rows stay), `purchase_refunded` | Revoke, `purchase_refunded` |
+| `CANCELLATION`, not a refund | Auto-renew off; premium stays until the end | (every cancellation is a refund) |
+| `UNCANCELLATION` | Auto-renew on | nothing |
+| `BILLING_ISSUE` | Billing problem open; end = `grace_period_expiration_at_ms`, else `expiration_at_ms` | nothing |
+| `EXPIRATION` | End = the reported end, at the latest the event's time; auto-renew off; premium ends at read time; nothing deleted | nothing |
+| `SUBSCRIPTION_EXTENDED` | New end | nothing |
+| `SUBSCRIPTION_PAUSED` (Google) | Auto-renew off, premium to the end; `EXPIRATION` (reason SUBSCRIPTION_PAUSED) ends it; a resume is a `RENEWAL` | nothing |
+| `REFUND_REVERSED` | Reinstate with the stored state | Reinstate |
+| `PRODUCT_CHANGE` | Logged by type; the following `RENEWAL` carries the new product, which maps to premium | logged |
+| `TRANSFER` | Logged by type, nothing moves (H-56) | same |
+| `TEMPORARY_ENTITLEMENT_GRANT`, `TEST`, others | 200, no write | same |
+
+A `RENEWAL` newer than a refund of the same yearly transaction, in its own household, lifts the
+refund (RevenueCat: a subscription refund covers the latest period, and auto-renew may stay on).
+
+### cancel_reason
+
+Read in flight, never stored or logged (H-87). Legal Review K.13 (A2-1, H-81): a cancellation
+never ends a paid period; only a refund revokes at once.
+
+| `cancel_reason` | Yearly plan | Lifetime |
+| --- | --- | --- |
+| `UNSUBSCRIBE` | Auto-renew off; premium until `expires_at`, then `EXPIRATION` ends it | Revoke (refund) |
+| `BILLING_ERROR` | Auto-renew off; premium until `expires_at` | Revoke |
+| `DEVELOPER_INITIATED` | Auto-renew off; premium until `expires_at` | Revoke |
+| `PRICE_INCREASE` | Auto-renew off; premium until `expires_at` | Revoke |
+| `UNKNOWN` (App Store only: "Apple did not provide the reason") | Auto-renew off, unless the event carries a negative `price`, which RevenueCat uses for refunds: then revoke | Revoke |
+| `CUSTOMER_SUPPORT` (a refund) | Revoke | Revoke |
+| missing | Auto-renew off | Revoke |
+
+**Analytics.** `purchase_completed` goes out once per purchase, when both the webhook's record
+and the buyer's claim are in (whichever comes second), under the buyer's consent;
+`purchase_refunded` on a refund of a purchase with a known buyer. Both carry `product_id` and
+`premium_source` (`yearly` | `lifetime`). A renewal sends nothing. Without a claim, or without consent, nothing is sent (the paying
 share is a lower bound, docs/ANALYTICS.md). Sandbox purchases, testers' purchases and purchases
 in households a tester unlocked are `is_internal`. `purchase_restored` is not sent: a RevenueCat
 restore produces no event for us, and no production code sends it (the job 25 helper
@@ -243,21 +327,27 @@ RevenueCat retries, the app retries the claim.
 
 | Table | Who reads | Who writes | Rows |
 | --- | --- | --- | --- |
-| `purchases` | service connection | `purchase_record`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind, environment, buyer (from the claim; null after their deletion), bound household (set at the first record, never changed), purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted |
-| `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at`), Realtime | `purchase_record`, `purchase_reinstate`, `tester_grant_apply` (insert), `purchase_revoke` (delete) | one row per unlock: a purchase's (`source` purchase) or a tester's grant (`source` tester, `tester` the granting user, null after their deletion); kind; granted by (not member-readable) |
+| `purchases` | service connection | `purchase_record`, `purchase_lifecycle`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind (`premium`), plan (`yearly`/`lifetime`), environment, buyer (from the claim; null after their deletion), bound household (set at the first record, never changed), purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted; yearly: end (`expires_at`), renews (`auto_renew`), billing problem open (`billing_issue`), newest event applied (`state_at`). No cancel or expiry reasons, no per-renewal rows (H-87) |
+| `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at, premium_source, expires_at, auto_renew`), Realtime (insert, update, delete) | `purchase_entitlement_sync` (from `purchase_record`, `purchase_lifecycle`, `purchase_reinstate`), `tester_grant_apply` (insert), `purchase_revoke` (delete) | one row per unlock: a purchase's (`source` purchase) or a tester's grant (`source` tester, `tester` the granting user, null after their deletion); kind; `premium_source` (`yearly`, `lifetime`, `tester_grant`); yearly: its end and whether it renews; granted by (not member-readable) |
 | `purchase_claims` | service connection | `purchase_claim`, `purchase_record` | a claim waiting for its webhook: store, transaction id, claimant, their household, when (30 days at most) |
 | `revenuecat_events` | service connection | the webhook | processed event ids and types, 90 days |
 | `purchase_tombstones` | service connection | `purge_purchases` | HMAC-SHA256 of purged store transaction ids under `REVENUECAT_TOMBSTONE_HMAC_KEY`, nothing else |
 | `revenuecat_deletions` | service connection | trigger on household deletion (every one: a tap on Buy or Restore creates the customer, also without a purchase), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' ids (RevenueCat App User IDs), due 30 days later |
 | `lifetime_testers` | service connection | `scripts/iap/testers.ts`, `tester_grant_apply` | user id, grants (free unlocks, default 1), used, note, added at |
 | `households.archived_at`, `archived_by` | nobody but `archived_households()` for the archiving user (with `deletes_at`, 24 months later) | `leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household` (archiving only while `household_archive` is on) | when and by whom the last member archived it |
-| `app_switches` | service connection (`app_switch(key)` for the functions) | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving |
+| `app_switches` | service connection (`app_switch(key)` for the functions); members only through `premium_offer()` | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving; `premium_offer` (seeded off, job 49) lets the app offer Hummlist Premium |
 | `household_departures` | service connection (`was_member_at`) | trigger on leaving a household | household, user, joined and left at; one hour, for the buyer's claim |
 | `purchase_rate` | service connection | `purchase_take_call` | per-user window for claims |
 
-Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifetime.sql` and
-`20261031194500_purchase_legal_fixes.sql`; pgTAP `supabase/tests/purchases.test.sql`,
-`household_bound.test.sql` and `purchase_legal_fixes.test.sql`; the data map
+Functions for others to call: `household_premium(household)` (source and end) and
+`household_has_premium(household)`, server-only, the check the integrations use (job 50);
+`my_yearly_plan()` (members: the caller's own subscriber facts) and `premium_offer()` (members:
+the switch).
+
+Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifetime.sql`,
+`20261031194500_purchase_legal_fixes.sql` and `20261031214500_premium_yearly.sql`; pgTAP
+`supabase/tests/purchases.test.sql`, `household_bound.test.sql`, `purchase_legal_fixes.test.sql`
+and `premium_yearly.test.sql`; the data map
 `docs/PRIVACY_DATA_MAP.md`. `export_my_data` has `purchases` (with `belongs_to_household`),
 `lifetime_tester` and `archived_households` sections.
 
@@ -325,17 +415,18 @@ back.
 
 ### A second entitlement (model D, not built)
 
-What a later subscription (AI meal plans, price feeds) adds, without touching Lifetime:
+What a later running-cost subscription (AI meal plans, price feeds) adds, without touching
+premium:
 
-1. A product id in `scripts/iap/product.ts` and a kind in `productKinds`
-   (`supabase/functions/purchases/types.ts`), e.g. `'com.hummlist.app.plus': 'plus'`. Every product
-   check (`kindOf`) then accepts it.
+1. A product id in `scripts/iap/product.ts` and an entry in `products`
+   (`supabase/functions/purchases/types.ts`) with its own kind, e.g. `plus`. Every product check
+   (`productOf`) then accepts it.
 2. The kind in the `purchases_kind` and `entitlements_kind` checks (a migration) and in
    `Entitlement` (`app/lib/purchases/entitlements.dart`). An unknown kind unlocks nothing in an
    older app (`Entitlement.parse` drops it), so a `plus` row never unlocks Lifetime features.
-3. Subscription events: `INITIAL_PURCHASE`, `RENEWAL` and `EXPIRATION` with an end date on the
-   entitlement; `purchase_record` keys everything by purchase and kind already.
-4. Paywalls ask `canOffer(Entitlement.plus)`. Apps from before job 43 (TestFlight) read any row as
+3. Subscription events work already (the yearly plan's lifecycle, job 49); the effective rule
+   (`household_premium`) is per kind and would get its sibling.
+4. Paywalls ask `canOffer(Entitlement.plus, plan)`. Apps from before job 43 (TestFlight) read any row as
    unlocked; they gate nothing, but no store build from before job 43 should be live when a
    second kind ships.
 5. **RevenueCat's restore behavior is project-wide.** "Keep with original App User ID" would pin a
@@ -344,9 +435,12 @@ What a later subscription (AI meal plans, price feeds) adds, without touching Li
 
 ## Configuration
 
-RevenueCat (set up by the Lead, ADDENDUM 6): entitlement `lifetime`, offering `default`, package
-`$rc_lifetime`, product `com.hummlist.app.lifetime` (non-consumable). The app loads the product by
-its id. Function secrets (set by the Lead on the hosted project; NEEDS_LEAD "Job 43 – RevenueCat
+RevenueCat (set up by the Lead and Ops): entitlement `premium` (`entl654efcfce4`) with the four
+products (App Store and Play, yearly and Lifetime; the old `lifetime` entitlement stays until every
+app is a job 49 build), offering `default` with `$rc_annual` and `$rc_lifetime`. The app loads
+products by id, not the offering (DECISIONS 49.27). Store facts (Ops, 2026-10-31): App Store
+subscription group "Hummlist Premium" `22532621`, yearly Apple ID `6829293557`, Lifetime
+`6829223747`; Play base plan `yearly`, grace period 14 days, account hold 46 days. Function secrets (set by the Lead on the hosted project; NEEDS_LEAD "Job 43 – RevenueCat
 setup"). Without
 `REVENUECAT_WEBHOOK_AUTH` and `REVENUECAT_TOMBSTONE_HMAC_KEY` the webhook answers 503
 `not_configured`; the claim route works regardless.
@@ -359,6 +453,17 @@ setup"). Without
 | `REVENUECAT_SECRET_KEY` | A v2 secret key (`customer_information:customers:read_write`) for deleting customers; never in the app |
 | `REVENUECAT_PROJECT_ID` | The RevenueCat project (Hummlist) |
 | `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow sends as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion route refuses every call |
+
+Expected prices (the drift check's constants, `expectedPrices` in `scripts/iap/product.ts`; never
+shown in the app, which shows only what the store returns):
+
+| Storefront | Yearly | Lifetime |
+| --- | --- | --- |
+| Euro storefronts (EUR) | €9.99 | €29.99 |
+| United States (USD) | $9.99 | $29.99 |
+| United Kingdom (GBP) | £8.99 | £24.99 |
+| Switzerland (CHF) | CHF 10 | CHF 30 |
+| Brazil, Mexico, India | as the store sets it (recorded on the first run) | not sold |
 
 App build defines (public SDK keys, from the build environment, never committed):
 `REVENUECAT_APPLE_API_KEY` (`appl_…`), `REVENUECAT_GOOGLE_API_KEY` (`goog_…`), and
@@ -382,16 +487,23 @@ Gone with job 43 (the Lead deletes them from the hosted secrets and the reposito
   `.cursor/skills/verify-family-groceries/features/purchases.md`.
 - `e2e/tests/purchases.spec.ts`: the web page, then a purchase reported through the real webhook
   (local secret) unlocks the household live for both members, and a refund locks it again.
+- `e2e/tests/premium-yearly.spec.ts`: the yearly plan live for both partners, cancelled and
+  expired (list and tokens stay), Lifetime while yearly renews, a TRANSFER, and the
+  billing-continues warnings before account deletion and leaving.
+- `POST /purchases/test/event` takes `productId` (`com.hummlist.app.yearly`), `type` (every
+  lifecycle type), `expiresInDays`, `graceDays`, `cancelReason`, `eventAgoMs`, `transferTo`.
 - `e2e/tests/household-bound.spec.ts`: joining an unlocked household (nothing to buy, the refund
   help, the delete warning), restore after the household is gone, archive and bring back (with
   the deletion date), a household bought twice, the web copy. The e2e build has
   `HOUSEHOLD_ARCHIVE` on (`app/config/e2e.json`) and the spec turns the server switch on.
 - `app/test/purchases/no_sdk_before_tap_test.dart`: the real `RevenueCatRepository` over a mocked
   platform channel: app start, the More tab, opening, rebuilding, leaving and returning to the
-  page make no SDK call; Buy makes `setupPurchases`, `getProductInfo`, `purchaseProduct`, Restore
-  `setupPurchases`, `restorePurchases`, in that order (H-67).
-- `app/ios/Hummlist.storekit`: the product for Xcode's StoreKit testing (RevenueCat supports
-  StoreKit configuration files for local UI work on a Mac).
+  page make no SDK call and one store price read per opening; Buy (yearly or Lifetime) makes
+  `setupPurchases`, `getProductInfo`, `purchaseProduct`, Restore `setupPurchases`,
+  `restorePurchases`, in that order (H-67).
+- `app/ios/Hummlist.storekit`: both products (the yearly plan in its subscription group) for
+  Xcode's StoreKit testing (RevenueCat supports StoreKit configuration files for local UI work on
+  a Mac).
 - Tests: `supabase/functions/purchases/*_test.ts`, `store_integration_test.ts` (db gate), pgTAP,
   `scripts/iap/*_test.ts`, `app/test/purchases/`.
 
@@ -405,22 +517,28 @@ Scripted where the APIs allow it, never submitted for review:
   which is on the box only.
 - `scripts/iap/google_product.ts`: Play Developer API `monetization.onetimeproducts`, dry run by
   default; prints Play's converted AT and CH prices. Needs the payments profile first.
-- `scripts/iap/product.ts` holds id, names and price for both; `product_test.ts` pins the
-  StoreKit file and the function's product id and kind to it.
+- `scripts/iap/product.ts` holds both products (ids, Apple IDs, names, base prices, period,
+  subscription group, Play base plan) and the expected prices; `product_test.ts` pins the
+  StoreKit file and the function's product map to it. `apple_product.ts` and `google_product.ts`
+  create Lifetime only; Ops creates the subscription.
+- `scripts/iap/price_drift.ts` (daily `.github/workflows/price-drift.yml`): reads both stores'
+  current prices and fails on drift from the expected prices, or Lifetime in BR/MX/IN; "SKIPPED:
+  … missing" without its secrets (NEEDS_LEAD "Job 49").
 - RevenueCat (account, apps, In-App Purchase key, Play service account, products with the Play
   product NON-CONSUMABLE, the `lifetime` entitlement, restore behavior, the webhook):
   NEEDS_LEAD "Job 43 – RevenueCat setup".
 
 ## The refund help
 
-A sheet (`app/lib/purchases/refund_help.dart`) from the Lifetime page, the join screen and the
+A sheet (`app/lib/purchases/refund_help.dart`) from the Premium page, the join screen and the
 delete confirmation. Its texts are Legal Review's R-8 strings word for word (H-76, job 47
 ADDENDUM 1 and 2): App Store purchases only Apple refunds; Google Play in the first 48 hours
 through Google, after that by e-mail to support@hummlist.com with the order number (`GPA.…`) or
 the Google account's e-mail address, looked at case by case; statutory rights unaffected. Links:
 Apple's Report a Problem, Google Play's refund page, and the FAQ on hummlist.com (`/support`,
 `/en/support`; its refund question has no anchor of its own, and the legal pages are not this
-code's to change).
+code's to change). Below them a placeholder note for the yearly plan: cancelling only stops the
+renewal; the current year is not refunded automatically (NEEDS_LEAD "Job 49").
 
 ## Refunds when something is off
 

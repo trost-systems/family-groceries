@@ -1307,4 +1307,152 @@ class AppLocalizationsEn extends AppLocalizations {
   String archivedRestoreArchivesCurrent(String household) {
     return 'You\'re the last member of “$household”. As it has Hummlist Lifetime, it is archived, not deleted.';
   }
+
+  @override
+  String get premiumTitle => 'Hummlist Premium';
+
+  @override
+  String get premiumRowHint => 'Siri, Alexa and AI assistants';
+
+  @override
+  String get premiumBody =>
+      'Hummlist Premium unlocks the connections for your whole household: Siri, Alexa and AI assistants (MCP). Google Assistant and the Apple Watch come later.';
+
+  @override
+  String get premiumUnlockedBody =>
+      'Hummlist Premium is unlocked for your whole household. Thank you!';
+
+  @override
+  String premiumStatusRenews(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Hummlist Premium active (yearly, renews on $dateString)';
+  }
+
+  @override
+  String premiumStatusEnds(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Hummlist Premium active (yearly, ends on $dateString)';
+  }
+
+  @override
+  String get premiumStatusLifetime => 'Hummlist Premium Lifetime';
+
+  @override
+  String get premiumStatusTester => 'Hummlist Premium through a tester grant';
+
+  @override
+  String get premiumChecking =>
+      'Checking whether your household already has Hummlist Premium …';
+
+  @override
+  String get premiumYearlyTitle => 'Yearly';
+
+  @override
+  String premiumYearlyPrice(String price) {
+    return '$price per year';
+  }
+
+  @override
+  String get premiumLifetimeTitle => 'Lifetime';
+
+  @override
+  String premiumLifetimePrice(String price) {
+    return '$price one-time';
+  }
+
+  @override
+  String get premiumLifetimeValue =>
+      'Pay once, for good: as much as three years.';
+
+  @override
+  String get premiumVat => 'incl. VAT';
+
+  @override
+  String get premiumYearlyTerms =>
+      'Hummlist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store\'s or Google Play\'s subscription settings.';
+
+  @override
+  String get premiumBuyYearly => 'Subscribe yearly';
+
+  @override
+  String get premiumBuyLifetime => 'Buy Lifetime';
+
+  @override
+  String get premiumUnavailable =>
+      'Hummlist Premium is not available right now.';
+
+  @override
+  String get premiumComingSoon => 'Hummlist Premium is coming soon.';
+
+  @override
+  String get premiumTermsLink => 'Terms of Use (EULA)';
+
+  @override
+  String get premiumPrivacyLink => 'Privacy policy';
+
+  @override
+  String get premiumUsedElsewhereYearly =>
+      'Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Hummlist Premium.';
+
+  @override
+  String get premiumTwoYearly =>
+      'Your household has two yearly plans. Each can only be cancelled by whoever took it out.';
+
+  @override
+  String get premiumWeb =>
+      'You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household.';
+
+  @override
+  String get premiumRefundYearly =>
+      'The same goes for the yearly plan. Cancelling only stops the renewal; the current year is not refunded automatically.';
+
+  @override
+  String get premiumManage => 'Manage or cancel subscription';
+
+  @override
+  String get premiumManageWeb =>
+      'You manage your yearly plan in the App Store or on Google Play.';
+
+  @override
+  String get premiumManageApple => 'App Store';
+
+  @override
+  String get premiumManageGoogle => 'Google Play';
+
+  @override
+  String premiumBillingIssue(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Apple or Google couldn\'t charge your yearly plan. Premium keeps running until $dateString. Check your payment method in the store.';
+  }
+
+  @override
+  String get premiumLifetimeWhileYearly =>
+      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Hummlist can\'t cancel it.';
+
+  @override
+  String get premiumLifetimeWhileYearlySubscriber =>
+      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. You can cancel it in [Manage subscription]. Hummlist can\'t cancel it.';
+
+  @override
+  String get premiumBuyAnyway => 'Buy anyway';
+
+  @override
+  String get premiumBillingContinues =>
+      'Your Hummlist Premium yearly plan keeps running and is billed to your Apple or Google account until you cancel it. Deleting or leaving doesn\'t cancel it.';
+
+  @override
+  String get premiumBillingContinuesOther =>
+      'A yearly plan for this household keeps running until it is cancelled.';
+
+  @override
+  String get premiumManageSubscription => 'Manage subscription';
+
+  @override
+  String get premiumContinueAnyway => 'Continue anyway';
 }

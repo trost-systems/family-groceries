@@ -8,8 +8,8 @@
     },
     "premium-launch": {
       "released": false,
-      "note": "Hummlist Lifetime is not on sale yet: nothing is sold or gated",
-      "match": ["lifetime"]
+      "note": "Hummlist Premium (yearly and Lifetime) is not on sale yet: nothing is sold or gated",
+      "match": ["lifetime", "premium"]
     },
     "native-siri": {
       "released": false,

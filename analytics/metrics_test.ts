@@ -1,5 +1,5 @@
 import { assertEquals } from '@std/assert';
-import { events, H1, H15, H2, payingEvents } from './fixtures.ts';
+import { events, H1, H15, H2, H20, H25, payingEvents, premiumEvents } from './fixtures.ts';
 import {
   berlinMonth,
   berlinWeek,
@@ -103,6 +103,36 @@ Deno.test('paying: a buyer without analytics consent leaves the household unpaid
   assertEquals(
     payingHouseholdsByDay35(onlyH15),
     new Map([['2027-01-04', { households: 1, payingByDay35: 0, share: 0 }]]),
+  );
+});
+
+Deno.test('premium by day 35: either product pays, a household once, a refund only its own', () => {
+  // H20 yearly, H21 lifetime, H22 both (once), H23 yearly kept and lifetime refunded, H26
+  // without premium_source and H27 yearly product_id pay; H24 (only purchase refunded) does
+  // not; H25 (Sandbox) is gone.
+  assertEquals(
+    payingHouseholdsByDay35(premiumEvents),
+    new Map([['2027-03-01', { households: 7, payingByDay35: 6, share: 85.7 }]]),
+  );
+});
+
+Deno.test('premium share of WAH: Yearly counts through purchase + 379 days, Lifetime for good', () => {
+  assertEquals(
+    payingShareOfWah(premiumEvents),
+    new Map([
+      ['2027-03-01', { wah: 7, paying: 6, share: 85.7 }],
+      // H20, within its 379 days.
+      ['2028-03-13', { wah: 1, paying: 1, share: 100 }],
+      // H21, H22 (its lifetime) and H26 (no premium_source) pay; H20, H23 and H27 (yearly
+      // past 379 days) no longer do.
+      ['2028-03-20', { wah: 6, paying: 3, share: 50 }],
+    ]),
+  );
+  assertEquals(external(premiumEvents).some((e) => e.properties.household_id === H25), false);
+  const onlyH20 = premiumEvents.filter((e) => e.properties.household_id === H20);
+  assertEquals(
+    [...payingShareOfWah(onlyH20)].map(([week, w]) => [week, w.paying]),
+    [['2027-03-01', 1], ['2028-03-13', 1], ['2028-03-20', 0]],
   );
 });
 

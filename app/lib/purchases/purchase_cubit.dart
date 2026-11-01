@@ -32,7 +32,7 @@ final class const FlowUnlockDelayed() extends PurchaseFlow;
 
 final class const FlowCanceled() extends PurchaseFlow;
 
-/// The store has no Hummlist Lifetime yet.
+/// The store has no such product (yet, or not in this storefront).
 final class const FlowNotAvailable() extends PurchaseFlow;
 
 final class const FlowFailed(final FailureKind kind, final String code)
@@ -79,11 +79,11 @@ const claimBackoff = [
   Duration(seconds: 15),
 ];
 
-/// Hummlist Lifetime's purchase and restore. It talks to the store only
-/// when the user taps Buy or Restore ([buy], [restore]) in a household the
-/// server confirmed has no Lifetime ([Entitlements.canOffer]): building it,
-/// app start and opening the Lifetime page reach no store and not RevenueCat
-/// (Legal Review H-67, K.9.9). The unlock it shows comes only from Supabase
+/// Hummlist Premium's purchase (yearly or Lifetime) and restore. It talks to
+/// RevenueCat only when the user taps Buy or Restore ([buy], [restore]) for
+/// a plan the server's rows allow ([Entitlements.canOffer]): building it, app
+/// start and opening the Premium page reach not RevenueCat (Legal Review
+/// H-67, K.9.9). The unlock it shows comes only from Supabase
 /// ([Entitlements]).
 class PurchaseCubit(
   final PurchaseRepository _store,
@@ -102,12 +102,21 @@ class PurchaseCubit(
   String? _household;
   Timer? _unlockTimeout;
 
+  /// The plan bought or restored last: the unlock it waits for.
+  PremiumPlan _plan = PremiumPlan.yearly;
+
   static String? _householdOf(Session session) => switch (session) {
     InHousehold(:final household) => household.id,
     _ => null,
   };
 
-  bool get _offer => _entitlements.canOffer(Entitlement.lifetime);
+  /// The rows show what [_plan] unlocks: any premium for the yearly plan,
+  /// Lifetime itself for Lifetime (bought next to a running yearly plan).
+  bool get _arrived => switch (_entitlements.premium) {
+    ActivePremium(:final source) =>
+      _plan == PremiumPlan.yearly || source.lasting,
+    _ => false,
+  };
 
   void _onSession(Session session) {
     final household = _householdOf(session);
@@ -121,21 +130,25 @@ class PurchaseCubit(
 
   void _onEntitlements() {
     if ((state.flow is FlowUnlocking || state.flow is FlowUnlockDelayed) &&
-        _entitlements.has(Entitlement.lifetime)) {
+        _arrived) {
       _unlockTimeout?.cancel();
       _emit(flow: const FlowIdle());
     }
   }
 
-  /// Buy, for the session's household at the time of the tap, and only
-  /// while Lifetime may be offered there. The store's sheet shows the price.
-  Future<void> buy() async {
+  /// Buy [plan], for the session's household at the time of the tap, and
+  /// only while it may be offered there.
+  Future<void> buy(PremiumPlan plan) async {
     final household = _household;
-    if (state.busy || state.noSale != null || !_offer || household == null) {
+    if (state.busy ||
+        state.noSale != null ||
+        !_entitlements.canOffer(Entitlement.premium, plan) ||
+        household == null) {
       return;
     }
+    _plan = plan;
     _emit(flow: const FlowBuying());
-    final outcome = await _store.buy(household);
+    final outcome = await _store.buy(household, plan);
     if (isClosed) {
       return;
     }
@@ -156,11 +169,19 @@ class PurchaseCubit(
     }
   }
 
+  /// Restore, while any plan may be offered: it finds the household's own
+  /// purchases of either plan.
   Future<void> restore() async {
     final household = _household;
-    if (state.busy || state.noSale != null || !_offer || household == null) {
+    if (state.busy ||
+        state.noSale != null ||
+        !PremiumPlan.values.any(
+          (plan) => _entitlements.canOffer(Entitlement.premium, plan),
+        ) ||
+        household == null) {
       return;
     }
+    _plan = PremiumPlan.yearly;
     _emit(flow: const FlowRestoring());
     final outcome = await _store.restore(household);
     if (isClosed) {
@@ -185,7 +206,7 @@ class PurchaseCubit(
   );
 
   void _unlocking() {
-    if (_entitlements.has(Entitlement.lifetime)) {
+    if (_arrived) {
       _emit(flow: const FlowIdle());
       return;
     }

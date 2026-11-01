@@ -12,6 +12,9 @@ import 'package:family_groceries/household/join_screen.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
+import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +23,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import '../analytics/fakes.dart';
+import '../purchases/fakes.dart';
 import '../settings/fake_account.dart';
 
 const home = Household(id: 'home', name: 'Zuhause');
@@ -207,6 +211,7 @@ typedef Onboarding = ({
   GoRouter router,
   NativePostHog sink,
   Analytics analytics,
+  FakePremiumServer premium,
 });
 
 /// The onboarding routes as `buildRouter` has them, the list a stub, with
@@ -220,6 +225,12 @@ Future<Onboarding> pumpOnboarding(
   FakeSharer? sharer,
   FakeInvites? invites,
   bool archiveOffered = false,
+
+  /// The caller's yearly plan (billing warnings before leaving, H-85).
+  FakePremiumServer? premium,
+
+  /// The current household's premium rows.
+  FakeEntitlementsSource? entitlements,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -241,6 +252,12 @@ Future<Onboarding> pumpOnboarding(
   await tester.runAsync(() => analytics!.decide(granted: true));
   analytics!.setUser(const AnalyticsUser(email: 'neu@gmail.com'));
   addTearDown(analytics.close);
+  final server = premium ?? FakePremiumServer();
+  final rows = Entitlements(
+    entitlements ?? FakeEntitlementsSource(),
+    testSession,
+  );
+  addTearDown(rows.close);
   final router = GoRouter(
     initialLocation: location,
     refreshListenable: _SessionListenable(testSession),
@@ -299,11 +316,16 @@ Future<Onboarding> pumpOnboarding(
         RepositoryProvider<AccountRepository>.value(
           value: FakeAccountRepository(),
         ),
+        RepositoryProvider<PremiumServer>.value(value: server),
+        RepositoryProvider<StorePriceReader>.value(
+          value: FakeStorePrices(fakeStorePrices, manages: true),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<SessionCubit>.value(value: testSession),
           BlocProvider.value(value: analytics),
+          BlocProvider.value(value: rows),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -323,6 +345,7 @@ Future<Onboarding> pumpOnboarding(
     router: router,
     sink: sink,
     analytics: analytics,
+    premium: server,
   );
 }
 

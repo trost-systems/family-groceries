@@ -1,0 +1,20 @@
+# The Premium page reads store prices through app/lib/purchases/store_prices.dart's own channel,
+# not the in_app_purchase plugin (job 49, Legal Review A2-5): its StoreKit side adds an
+# SKPaymentQueue transaction observer at app launch next to RevenueCat's, and its Android side
+# connects a BillingClient with a purchases listener. Two listeners for one purchase is how a
+# transaction gets finished or acknowledged by the wrong SDK.
+#
+# Matched on the import or export URI, conditional ones included, for every in_app_purchase*
+# package (the platform implementations too).
+id: no-in-app-purchase
+language: dart
+severity: error
+files:
+  - app/**
+rule:
+  kind: import_or_export
+  has:
+    stopBy: end
+    kind: uri
+    regex: '^[''"]package:in_app_purchase\w*/'
+message: 'in_app_purchase is imported: read store prices through StorePriceReader (app/lib/purchases/store_prices.dart) and buy through PurchaseRepository; the plugin observes store transactions next to RevenueCat (job 49)'

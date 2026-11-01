@@ -14,7 +14,9 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
+import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -118,6 +120,15 @@ Future<More> pumpMore(
   FakeClaimApi? api,
   FakeEntitlementsSource? entitlements,
 
+  /// The premium_offer switch and the caller's yearly plan.
+  FakePremiumServer? premium,
+
+  /// The store's prices; both plans in euros by default.
+  FakeStorePrices? prices,
+
+  /// The clock premium is computed with.
+  DateTime Function()? clock,
+
   /// The server's invites and archived households.
   FakeInvites? invites,
 }) async {
@@ -153,6 +164,9 @@ Future<More> pumpMore(
     sdk: sdk,
     api: api,
     source: entitlements,
+    premiumServer: premium,
+    prices: prices,
+    clock: clock,
   );
   addTearDown(purchases.close);
   final repo = FakeRepository();
@@ -189,6 +203,10 @@ Future<More> pumpMore(
         ),
         RepositoryProvider<InviteSharer>.value(value: FakeSharer()),
         RepositoryProvider.value(value: PendingInvite(MemoryPendingStore())),
+        RepositoryProvider<PremiumServer>.value(value: purchases.premium),
+        RepositoryProvider<StorePriceReader>.value(
+          value: purchases.storePrices,
+        ),
       ],
       child: MultiBlocProvider(
         providers: [

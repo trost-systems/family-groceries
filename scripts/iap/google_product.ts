@@ -18,6 +18,36 @@ export const purchaseOptionId = 'buy';
 
 type Json = Record<string, unknown>;
 
+export interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  token_uri: string;
+}
+
+/** An OAuth access token for the Play Developer API (also price_drift.ts). */
+export async function playAccessToken(sa: ServiceAccount, fetchFn = fetch): Promise<string> {
+  const assertion = await new SignJWT({ scope: 'https://www.googleapis.com/auth/androidpublisher' })
+    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+    .setIssuer(sa.client_email)
+    .setAudience(sa.token_uri)
+    .setIssuedAt()
+    .setExpirationTime('30m')
+    .sign(await importPKCS8(sa.private_key, 'RS256'));
+  const tokenRes = await fetchFn(sa.token_uri, {
+    method: 'POST',
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }),
+  });
+  if (!tokenRes.ok) {
+    await tokenRes.body?.cancel();
+    throw new Error(`token: ${tokenRes.status}`);
+  }
+  const { access_token } = await tokenRes.json() as { access_token: string };
+  return access_token;
+}
+
 /** The one-time product: DE+EN listings, one buy option priced in Germany. */
 export function oneTimeProductBody(): Json {
   return {
@@ -44,27 +74,9 @@ async function main() {
   const apply = Deno.args.includes('--apply');
   const path = Deno.env.get('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH');
   if (!path) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH is not set');
-  const sa = JSON.parse(await Deno.readTextFile(path)) as {
-    client_email: string;
-    private_key: string;
-    token_uri: string;
-  };
-  const assertion = await new SignJWT({ scope: 'https://www.googleapis.com/auth/androidpublisher' })
-    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-    .setIssuer(sa.client_email)
-    .setAudience(sa.token_uri)
-    .setIssuedAt()
-    .setExpirationTime('30m')
-    .sign(await importPKCS8(sa.private_key, 'RS256'));
-  const tokenRes = await fetch(sa.token_uri, {
-    method: 'POST',
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion,
-    }),
-  });
-  if (!tokenRes.ok) throw new Error(`token: ${tokenRes.status}`);
-  const { access_token } = await tokenRes.json() as { access_token: string };
+  const access_token = await playAccessToken(
+    JSON.parse(await Deno.readTextFile(path)) as ServiceAccount,
+  );
   const call = async (method: string, url: string, body?: Json) => {
     const res = await fetch(`${api}${url}`, {
       method,

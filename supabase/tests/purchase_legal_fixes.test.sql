@@ -25,7 +25,7 @@ $$;
 create function pg_temp.record(p_tx text, p_household uuid, p_bought timestamptz default now() - interval '1 minute')
 returns text language sql as $$
   select public.purchase_record('apple', p_tx, p_tx, pg_temp.hmac(p_tx), 'com.hummlist.app.lifetime',
-    'lifetime', 'Sandbox', p_bought, 9.99, 'EUR', 'DE', p_household) ->> 'outcome'
+    'premium', 'lifetime', 'Sandbox', p_bought, 9.99, 'EUR', 'DE', p_household) ->> 'outcome'
 $$;
 
 create function pg_temp.archive_switch(p_on boolean) returns void language sql as $$

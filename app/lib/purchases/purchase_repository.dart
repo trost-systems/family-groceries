@@ -1,8 +1,27 @@
 import 'package:flutter/foundation.dart' show immutable;
 
-/// Hummlist Lifetime, a non-consumable with the same id on both stores
-/// (supabase/functions/purchases/types.ts).
+/// Hummlist Premium Lifetime, a non-consumable with the same id on both
+/// stores (supabase/functions/purchases/types.ts).
 const lifetimeProductId = 'com.hummlist.app.lifetime';
+
+/// Hummlist Premium yearly, an auto-renewing subscription. Play names it
+/// `<id>:<base plan>` in the SDK and in RevenueCat's events.
+const yearlyProductId = 'com.hummlist.app.yearly';
+
+/// The Play subscription's base plan (Hummlist Ops, 2026-10-31).
+const playBasePlanId = 'yearly';
+
+/// The two ways to buy Hummlist Premium, in the order the page offers them.
+enum PremiumPlan(final String productId) {
+  yearly(yearlyProductId),
+  lifetime(lifetimeProductId);
+
+  /// Whether a store product identifier is this plan's: Play's subscription
+  /// ids carry the base plan.
+  bool owns(String identifier) =>
+      identifier == productId ||
+      (this == yearly && identifier == '$productId:$playBasePlanId');
+}
 
 /// The store a transaction comes from, as the purchases function names it.
 enum AppStore(final String wire) {
@@ -53,6 +72,8 @@ final class const Pending() extends BuyOutcome;
 sealed class const StoreProblem() implements BuyOutcome, RestoreOutcome;
 
 /// The store purchase belongs to another household and stays there (H-56).
+/// For the yearly plan also: the store account already pays one for another
+/// household (one subscription per Apple ID and group).
 final class const BelongsElsewhere() extends StoreProblem;
 
 /// The store or RevenueCat failed; [code] names why.
@@ -69,15 +90,16 @@ final class const NothingToRestore() extends RestoreOutcome;
 
 /// The App Store or Play Store through RevenueCat, or a stand-in. No plugin
 /// type leaves it. Every call names the household it is for, and only a tap
-/// on Buy or Restore makes one: the store is not asked before (Legal Review
-/// H-67), so the page shows no price; the store's sheet does.
+/// on Buy or Restore makes one: RevenueCat is not asked before (Legal Review
+/// H-67). The price the page shows comes from the store itself
+/// (store_prices.dart), never from here.
 abstract interface class PurchaseRepository() {
   /// Why a build without a store sells nothing; null where a store is asked.
   NoSale? get withoutStore;
 
-  /// Loads Hummlist Lifetime and opens the store's sheet for it, for
+  /// Loads [plan]'s product and opens the store's sheet for it, for
   /// [householdId].
-  Future<BuyOutcome> buy(String householdId);
+  Future<BuyOutcome> buy(String householdId, PremiumPlan plan);
 
   Future<RestoreOutcome> restore(String householdId);
 }
@@ -89,7 +111,7 @@ class const NoStoreRepository(final NoSale answer)
   NoSale get withoutStore => answer;
 
   @override
-  Future<BuyOutcome> buy(String householdId) async =>
+  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async =>
       const StoreFailed('unsupported');
 
   @override

@@ -158,24 +158,39 @@ export function retention(events: Event[], days: 7 | 30, periods: number) {
   return new Map([...cohorts].sort());
 }
 
+const yearlyProductId = 'com.hummlist.app.yearly';
+
 /**
- * The first purchase_completed per household that the store has not refunded (same
- * transaction_ref, any time), in ms. A second purchase in the household does not move it.
+ * How long a Yearly purchase counts as paying: a year and 14 days' grace. Renewals send no event,
+ * so this is the approximation docs/ANALYTICS.md describes.
  */
-function paidAt(kept: Event[]): Map<string, number> {
+const yearlyDays = 365 + 14;
+
+interface Purchase {
+  household: string;
+  /** ms */
+  at: number;
+  yearly: boolean;
+}
+
+/**
+ * Every purchase_completed the store has not refunded (same transaction_ref, any time), of either
+ * product. A refund takes back only its own purchase.
+ */
+function purchases(kept: Event[]): Purchase[] {
   const refunded = new Set(
     kept.filter((e) => e.event === 'purchase_refunded').map((e) =>
       str(e.properties.transaction_ref)
     ),
   );
-  const paid = new Map<string, number>();
-  for (const e of kept) {
+  return kept.flatMap((e) => {
     const household = str(e.properties.household_id);
-    if (!household || e.event !== 'purchase_completed') continue;
-    if (refunded.has(str(e.properties.transaction_ref))) continue;
-    paid.set(household, Math.min(Date.parse(e.timestamp), paid.get(household) ?? Infinity));
-  }
-  return paid;
+    if (!household || e.event !== 'purchase_completed') return [];
+    if (refunded.has(str(e.properties.transaction_ref))) return [];
+    const yearly = e.properties.premium_source === 'yearly' ||
+      e.properties.product_id === yearlyProductId;
+    return [{ household, at: Date.parse(e.timestamp), yearly }];
+  });
 }
 
 export interface PayingCohort {
@@ -187,7 +202,8 @@ export interface PayingCohort {
 
 /**
  * queries/paying_households_d35.sql: households by the Berlin week of their first event (as in
- * retention()); paying when an unrefunded purchase_completed arrived within 35 × 24 h of it.
+ * retention()); paying when an unrefunded purchase_completed of either product arrived within
+ * 35 × 24 h of it.
  */
 export function payingHouseholdsByDay35(events: Event[]): Map<string, PayingCohort> {
   const kept = external(events);
@@ -198,7 +214,10 @@ export function payingHouseholdsByDay35(events: Event[]): Map<string, PayingCoho
     if (!active(e) && e.event !== 'household_created' && e.event !== 'invite_accepted') continue;
     starts.set(household, Math.min(Date.parse(e.timestamp), starts.get(household) ?? Infinity));
   }
-  const paid = paidAt(kept);
+  const paid = new Map<string, number>();
+  for (const p of purchases(kept)) {
+    paid.set(p.household, Math.min(p.at, paid.get(p.household) ?? Infinity));
+  }
   const cohorts = new Map<string, PayingCohort>();
   for (const [household, start] of starts) {
     const week = berlinWeek(new Date(start).toISOString());
@@ -221,14 +240,18 @@ export interface PayingWeek {
 
 /**
  * queries/paying_share_wah.sql, the kill gate: per Berlin week, the weekly active households
- * (weeklyActiveHouseholds()) and how many of them have an unrefunded purchase_completed in that
- * week or before.
+ * (weeklyActiveHouseholds()) and how many of them have Premium that week: an unrefunded Lifetime
+ * purchase in that week or before, or a Yearly one from its week through the week that contains
+ * the purchase + 379 days.
  */
 export function payingShareOfWah(events: Event[]): Map<string, PayingWeek> {
   const kept = external(events);
-  const paidWeek = new Map(
-    [...paidAt(kept)].map(([h, at]) => [h, berlinWeek(new Date(at).toISOString())]),
-  );
+  const covers = new Map<string, { from: string; until: string | null }[]>();
+  for (const p of purchases(kept)) {
+    const from = berlinWeek(new Date(p.at).toISOString());
+    const until = p.yearly ? berlinWeek(new Date(p.at + yearlyDays * DAY).toISOString()) : null;
+    covers.set(p.household, [...(covers.get(p.household) ?? []), { from, until }]);
+  }
   const weeks = new Map<string, Set<string>>();
   for (const e of kept) {
     const household = str(e.properties.household_id);
@@ -238,7 +261,11 @@ export function payingShareOfWah(events: Event[]): Map<string, PayingWeek> {
   }
   return new Map(
     [...weeks].sort().map(([week, households]) => {
-      const paying = [...households].filter((h) => (paidWeek.get(h) ?? '9999') <= week).length;
+      const paying = [...households].filter((h) =>
+        (covers.get(h) ?? []).some((c) =>
+          c.from <= week && (c.until === null || week <= c.until)
+        )
+      ).length;
       const wah = households.size;
       return [week, { wah, paying, share: Math.round((1000 * paying) / wah) / 10 }];
     }),

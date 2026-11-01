@@ -20,12 +20,12 @@ end $$;
 -- RevenueCat reports a sandbox Lifetime for household [p_household] (its App User ID).
 create function pg_temp.record_(p_tx text, p_household uuid) returns text language sql as $$
   select public.purchase_record('apple', p_tx, p_tx, encode(extensions.hmac(p_tx, 'pgTAP key', 'sha256'), 'hex'),
-    'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now() - interval '1 minute', 9.99, 'EUR', 'DE', p_household)
+    'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now() - interval '1 minute', 9.99, 'EUR', 'DE', p_household)
     ->> 'outcome'
 $$;
 
 create function pg_temp.revoke_(p_tx text) returns jsonb language sql as $$
-  select public.purchase_revoke('apple', p_tx, now(), 'com.hummlist.app.lifetime', 'Sandbox', now() - interval '1 hour')
+  select public.purchase_revoke('apple', p_tx, now(), 'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', now() - interval '1 hour')
 $$;
 
 create function pg_temp.unlocked(p_household uuid) returns int language sql as $$
@@ -81,7 +81,7 @@ select is(pg_temp.unlocked((select id from hp)), 1, 'one unlock');
 select pg_temp.login('00000000-0000-0000-0000-0000000025b1');
 select results_eq(
   $$ select household_id, product_id, store, environment, kind from public.entitlements $$,
-  $$ values ((select id from hp), 'com.hummlist.app.lifetime', 'apple', 'Sandbox', 'lifetime') $$,
+  $$ values ((select id from hp), 'com.hummlist.app.lifetime', 'apple', 'Sandbox', 'premium') $$,
   'Lea sees the household''s unlock without buying');
 select throws_ok($$ select granted_by from public.entitlements $$, '42501', null, 'but not who bought it (H-55)');
 select throws_ok($$ delete from public.entitlements $$, '42501', null, 'members cannot remove it');
@@ -104,8 +104,8 @@ select is(pg_temp.unlocked((select id from hm)), 0, 'and Max''s household stays 
 -- Refunds ----------------------------------------------------------------------------------
 
 select is(pg_temp.revoke_('2000000000000001') - 'household_id' - 'user_id',
-  jsonb_build_object('product_id', 'com.hummlist.app.lifetime', 'environment', 'Sandbox', 'price', 9.99,
-    'currency', 'EUR', 'country', 'DE', 'internal', false),
+  jsonb_build_object('product_id', 'com.hummlist.app.lifetime', 'plan', 'lifetime', 'environment', 'Sandbox',
+    'price', 9.99, 'currency', 'EUR', 'country', 'DE', 'internal', false),
   'a refund returns what purchase_refunded needs');
 select is(pg_temp.unlocked((select id from hp)), 0, 'and takes the unlock away');
 select is(pg_temp.revoke_('2000000000000001'), null, 'a second refund changes nothing (purchase_refunded once)');

@@ -171,3 +171,76 @@ export const payingEvents: Event[] = [
   ev('household_created', '2027-01-05T12:01:00Z', id(16), H15),
   ev('item_added', '2027-01-05T12:02:00Z', id(16), H15, { source: 'typed' }),
 ];
+
+// Job 49, Hummlist Premium as two products (yearly, lifetime) under one entitlement. Its own
+// weeks from Monday 1 March 2027 and, a year on, the weeks of 13 and 20 March 2028. A Yearly
+// purchase on 2 or 3 March 2027 counts through the week that contains it + 379 days (15 or 16
+// March 2028): paying in the week of 13 March 2028, no longer in the week of 20 March.
+export const H20 = household(20),
+  H21 = household(21),
+  H22 = household(22),
+  H23 = household(23),
+  H24 = household(24),
+  H25 = household(25),
+  H26 = household(26),
+  H27 = household(27);
+
+const premium = (source: 'yearly' | 'lifetime', ref: string) => ({
+  ...lifetime(ref),
+  product_id: `com.hummlist.app.${source}`,
+  price: source === 'yearly' ? 9.99 : 29.99,
+  net_amount: source === 'yearly' ? 7.14 : 21.43,
+  premium_source: source,
+});
+
+/** A household that starts with an add at [at] and adds again in March 2028 on [later]. */
+const start = (n: number, h: string, at: string, ...later: string[]) => [
+  ev('household_created', at, id(n), h),
+  ev('item_added', at, id(n), h, { source: 'typed' }),
+  ...later.map((t) => ev('item_added', t, id(n), h, { source: 'typed' })),
+];
+
+export const premiumEvents: Event[] = [
+  // H20: Yearly only. Paying in its first week and a year later in the week of 13 March 2028
+  // (its 379 days end on Thursday 16 March), not in the week of 20 March.
+  ...start(20, H20, '2027-03-01T09:00:00Z', '2028-03-14T10:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-03T10:00:00Z', id(20), H20, premium('yearly', 'k')),
+
+  // H21: Lifetime only. Still paying in the week of 20 March 2028.
+  ...start(21, H21, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-03T10:00:00Z', id(21), H21, premium('lifetime', 'l')),
+
+  // H22: Yearly, then Lifetime two days later. Counts once; Lifetime keeps it paying after the
+  // year.
+  ...start(22, H22, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-02T10:00:00Z', id(22), H22, premium('yearly', 'm')),
+  ev('purchase_completed', '2027-03-04T10:00:00Z', id(22), H22, premium('lifetime', 'n')),
+
+  // H23: Yearly, then a Lifetime the store refunds. The refund takes only the Lifetime: paying
+  // in March 2027 through the Yearly, not after the year.
+  ...start(23, H23, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-02T10:00:00Z', id(23), H23, premium('yearly', 'o')),
+  ev('purchase_completed', '2027-03-04T10:00:00Z', id(23), H23, premium('lifetime', 'p')),
+  ev('purchase_refunded', '2027-03-20T10:00:00Z', id(23), H23, premium('lifetime', 'p')),
+
+  // H24: its only purchase, a Yearly, is refunded. Never paying.
+  ...start(24, H24, '2027-03-01T09:00:00Z'),
+  ev('purchase_completed', '2027-03-02T10:00:00Z', id(24), H24, premium('yearly', 'q')),
+  ev('purchase_refunded', '2027-03-09T10:00:00Z', id(24), H24, premium('yearly', 'q')),
+
+  // H25: a Sandbox Yearly (is_internal) takes the whole household out.
+  ...start(25, H25, '2027-03-01T09:00:00Z'),
+  ev('purchase_completed', '2027-03-02T10:00:00Z', id(25), H25, premium('yearly', 'r'), true),
+
+  // H26: a purchase from before job 49, without premium_source: Lifetime, paying for good.
+  ...start(26, H26, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-03T10:00:00Z', id(26), H26, lifetime('s')),
+
+  // H27: the yearly product_id without premium_source still counts as Yearly: not paying in the
+  // week of 20 March 2028.
+  ...start(27, H27, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
+  ev('purchase_completed', '2027-03-03T10:00:00Z', id(27), H27, {
+    ...lifetime('t'),
+    product_id: 'com.hummlist.app.yearly',
+  }),
+];

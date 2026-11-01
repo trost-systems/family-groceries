@@ -34,6 +34,7 @@ enum FakeStoreMode() {
 typedef SendTestEvent = Future<void> Function({
   required String appUserId,
   required String transactionId,
+  required PremiumPlan plan,
 });
 
 /// Where the fake store keeps its purchases across starts.
@@ -61,11 +62,15 @@ class FakeStore(
   /// Transaction id to the household it was bought for.
   Future<Map<String, String>> get _owned => _loaded ??= _read(ledger);
 
+  /// The plan of each transaction this run sold; restored ones count as
+  /// Lifetime, as before job 49.
+  final _plans = <String, PremiumPlan>{};
+
   @override
   NoSale? get withoutStore => null;
 
   @override
-  Future<BuyOutcome> buy(String householdId) async {
+  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
     switch (_mode) {
       case FakeStoreMode.cancel:
         return const Canceled();
@@ -76,20 +81,21 @@ class FakeStore(
       case FakeStoreMode.unavailable:
         return const ProductMissing();
       case FakeStoreMode.pending:
-        Timer(approval, () => unawaited(_sell(householdId)));
+        Timer(approval, () => unawaited(_sell(householdId, plan)));
         return const Pending();
       case FakeStoreMode.ok:
-        return await _sell(householdId);
+        return await _sell(householdId, plan);
     }
   }
 
-  Future<BuyOutcome> _sell(String householdId) async {
+  Future<BuyOutcome> _sell(String householdId, PremiumPlan plan) async {
     final id = 'fake-${const Uuid().v4()}';
     final owned = await _owned;
     owned[id] = householdId;
+    _plans[id] = plan;
     await ledger.write(jsonEncode({'owned': owned}));
     try {
-      await send(appUserId: householdId, transactionId: id);
+      await send(appUserId: householdId, transactionId: id, plan: plan);
     } on Object {
       // Sold; a restore sends the event again, as RevenueCat retries.
       return const StoreFailed('fake_event_failed');
@@ -114,7 +120,11 @@ class FakeStore(
     }
     try {
       for (final id in mine) {
-        await send(appUserId: householdId, transactionId: id);
+        await send(
+          appUserId: householdId,
+          transactionId: id,
+          plan: _plans[id] ?? PremiumPlan.lifetime,
+        );
       }
     } on Object {
       return const StoreFailed('fake_event_failed');
@@ -141,9 +151,13 @@ Future<Map<String, String>> _read(FakeLedgerStore store) async {
 
 /// The local stack's RevenueCat stand-in (404 on a hosted project).
 SendTestEvent localTestEvent(SupabaseClient client) =>
-    ({required appUserId, required transactionId}) async {
+    ({required appUserId, required transactionId, required plan}) async {
       await client.functions.invoke(
         'purchases/test/event',
-        body: {'appUserId': appUserId, 'transactionId': transactionId},
+        body: {
+          'appUserId': appUserId,
+          'transactionId': transactionId,
+          'productId': plan.productId,
+        },
       );
     };

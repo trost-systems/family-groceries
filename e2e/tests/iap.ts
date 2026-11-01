@@ -13,14 +13,34 @@ const webhookAuth = (() => {
   return line.slice('REVENUECAT_WEBHOOK_AUTH='.length).replace(/^"|"$/g, '');
 })();
 
-/** POSTs a RevenueCat event of [type] for [transactionId], App User ID [appUserId]. */
+export const yearlyId = 'com.hummlist.app.yearly';
+const day = 86_400_000;
+
+/**
+ * POSTs a RevenueCat event of [type] for [transactionId], App User ID [appUserId]. Lifetime by
+ * default; `productId: yearlyId` for the yearly plan, whose period ends `expiresInDays` from now
+ * (365 by default). `extra` adds fields as RevenueCat sends them (cancel_reason, transferred_to).
+ */
 export async function rcEvent(
   type: string,
   appUserId: string,
   transactionId: string,
-  { authorization = webhookAuth, id = crypto.randomUUID() }: { authorization?: string; id?: string } = {},
+  {
+    authorization = webhookAuth,
+    id = crypto.randomUUID(),
+    productId = 'com.hummlist.app.lifetime',
+    expiresInDays = 365,
+    extra = {},
+  }: {
+    authorization?: string;
+    id?: string;
+    productId?: string;
+    expiresInDays?: number;
+    extra?: Record<string, unknown>;
+  } = {},
 ) {
   const now = Date.now();
+  const yearly = productId.startsWith(yearlyId);
   const res = await fetch(`${functionsUrl}/purchases/revenuecat/webhook?forceFunctionRegion=eu-central-1`, {
     method: 'POST',
     headers: { authorization, 'content-type': 'application/json' },
@@ -32,8 +52,8 @@ export async function rcEvent(
         app_user_id: appUserId,
         original_app_user_id: appUserId,
         aliases: [appUserId],
-        product_id: 'com.hummlist.app.lifetime',
-        entitlement_ids: ['lifetime'],
+        product_id: productId,
+        entitlement_ids: ['premium'],
         transaction_id: transactionId,
         original_transaction_id: transactionId,
         environment: 'SANDBOX',
@@ -41,12 +61,13 @@ export async function rcEvent(
         is_family_share: false,
         period_type: 'NORMAL',
         purchased_at_ms: now - 1000,
-        expiration_at_ms: null,
+        expiration_at_ms: yearly ? now + expiresInDays * day : null,
         event_timestamp_ms: now,
-        price_in_purchased_currency: 9.99,
+        price_in_purchased_currency: yearly ? 9.99 : 29.99,
         currency: 'EUR',
         country_code: 'DE',
         ...(type === 'CANCELLATION' ? { cancel_reason: 'CUSTOMER_SUPPORT' } : {}),
+        ...extra,
       },
     }),
   });
@@ -70,6 +91,17 @@ export async function claim(email: string, transactionId: string) {
 export async function buy(email: string, transactionId: string): Promise<string> {
   expect((await claim(email, transactionId)).status, 'the claim is accepted').toBe(200);
   const res = await rcEvent('NON_RENEWING_PURCHASE', await householdOf(email), transactionId);
+  expect(res.status, JSON.stringify(res.body)).toBe(200);
+  return res.body.status;
+}
+
+/** [email] subscribes to the yearly plan for their household: the claim, then INITIAL_PURCHASE. */
+export async function subscribe(email: string, transactionId: string, expiresInDays = 365): Promise<string> {
+  expect((await claim(email, transactionId)).status, 'the claim is accepted').toBe(200);
+  const res = await rcEvent('INITIAL_PURCHASE', await householdOf(email), transactionId, {
+    productId: yearlyId,
+    expiresInDays,
+  });
   expect(res.status, JSON.stringify(res.body)).toBe(200);
   return res.body.status;
 }

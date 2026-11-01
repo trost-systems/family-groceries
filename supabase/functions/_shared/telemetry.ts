@@ -40,6 +40,8 @@ const revenue: Record<string, Rule> = {
   country: matches(/^[A-Z]{2}$/),
   net_amount: amount,
   transaction_ref: matches(/^[0-9a-f]{32}$/),
+  // Job 49: which Hummlist Premium product the event is about. Tester grants send no events.
+  premium_source: oneOf('yearly', 'lifetime'),
 };
 
 /**

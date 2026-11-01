@@ -1,0 +1,58 @@
+id: no-in-app-purchase
+snapshots:
+  "export 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';\n":
+    labels:
+    - source: >-
+        export
+        'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
+      style: primary
+      start: 0
+      end: 92
+    - source: "'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart'"
+      style: secondary
+      start: 7
+      end: 91
+  "import \"package:in_app_purchase_storekit/store_kit_wrappers.dart\" as sk;\n":
+    labels:
+    - source: import "package:in_app_purchase_storekit/store_kit_wrappers.dart" as sk;
+      style: primary
+      start: 0
+      end: 72
+    - source: "\"package:in_app_purchase_storekit/store_kit_wrappers.dart\""
+      style: secondary
+      start: 7
+      end: 65
+  "import 'package:family_groceries/purchases/none.dart'\n    if (dart.library.io) 'package:in_app_purchase/in_app_purchase.dart';\n":
+    labels:
+    - source: |-
+        import 'package:family_groceries/purchases/none.dart'
+            if (dart.library.io) 'package:in_app_purchase/in_app_purchase.dart';
+      style: primary
+      start: 0
+      end: 126
+    - source: "'package:in_app_purchase/in_app_purchase.dart'"
+      style: secondary
+      start: 79
+      end: 125
+  "import 'package:in_app_purchase/in_app_purchase.dart';\n":
+    labels:
+    - source: import 'package:in_app_purchase/in_app_purchase.dart';
+      style: primary
+      start: 0
+      end: 54
+    - source: "'package:in_app_purchase/in_app_purchase.dart'"
+      style: secondary
+      start: 7
+      end: 53
+  "import 'package:in_app_purchase_android/billing_client_wrappers.dart' show BillingClient;\n":
+    labels:
+    - source: >-
+        import 'package:in_app_purchase_android/billing_client_wrappers.dart' show
+        BillingClient;
+      style: primary
+      start: 0
+      end: 89
+    - source: "'package:in_app_purchase_android/billing_client_wrappers.dart'"
+      style: secondary
+      start: 7
+      end: 69

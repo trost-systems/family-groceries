@@ -4,6 +4,7 @@ import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,7 +70,7 @@ class _ArchivedHouseholdsState() extends State<ArchivedHouseholds> {
     }
     final entitlements = context.read<Entitlements>();
     final archivesCurrent =
-        members == 1 && entitlements.has(Entitlement.lifetime);
+        members == 1 && entitlements.has(Entitlement.premium);
     // Unknown whether the current household has Lifetime: say nothing more
     // specific than that the user leaves it.
     final knownMembers = entitlements.state is EntitlementsKnown
@@ -111,7 +112,11 @@ class _ArchivedHouseholdsState() extends State<ArchivedHouseholds> {
         ],
       ),
     );
-    if (!(go ?? false) || !mounted) {
+    if (!(go ?? false) ||
+        !mounted ||
+        (current != null &&
+            !await confirmBillingContinues(context, account: false)) ||
+        !mounted) {
       return;
     }
     setState(() => _busy = true);

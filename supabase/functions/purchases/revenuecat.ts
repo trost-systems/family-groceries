@@ -3,21 +3,36 @@
 // newer RevenueCat payload never fails.
 import type { AppStore } from '../_shared/purchases.ts';
 import {
-  kindOf,
   lifetimeProductId,
+  type Plan,
+  playBasePlanId,
+  productOf,
   type Refund,
   type StoreEnvironment,
   type StorePurchase,
+  type SubscriptionState,
+  yearlyProductId,
 } from './types.ts';
 
 /** Why an event unlocks nothing; logged as is (no ids). */
 export type Refusal = 'store' | 'product' | 'family_share' | 'app_user_id' | 'malformed';
 
+/** A yearly subscription's new state from a lifecycle event, for a transaction we may know. */
+export interface Lifecycle {
+  store: AppStore;
+  transactionId: string;
+  eventAt: Date;
+  state: SubscriptionState;
+}
+
 export type Action =
+  /** INITIAL_PURCHASE, NON_RENEWING_PURCHASE, RENEWAL: bind (H-56) and grant, or update. */
   | { do: 'record'; purchase: StorePurchase }
+  /** A yearly plan's state changed; never creates a row or grants anything. */
+  | { do: 'lifecycle'; change: Lifecycle }
   | { do: 'revoke'; refund: Refund }
   | { do: 'reinstate'; store: AppStore; transactionId: string }
-  /** No write. [refused] is logged; TRANSFER is logged by type. */
+  /** No write. [refused] is logged; TRANSFER and PRODUCT_CHANGE are logged by type. */
   | { do: 'ignore'; refused?: Refusal };
 
 export interface WebhookEvent {
@@ -38,6 +53,51 @@ const text = (v: unknown, max: number) =>
 const millis = (v: unknown) =>
   typeof v === 'number' && Number.isFinite(v) && v > 0 ? new Date(v) : null;
 
+/** The event types that grant: a purchase, or a renewal of one. */
+const recordTypes = new Set(['INITIAL_PURCHASE', 'NON_RENEWING_PURCHASE', 'RENEWAL']);
+
+/**
+ * The event types that change a yearly plan's state and the state they report (docs/PURCHASES.md,
+ * "Subscription lifecycle"). CANCELLATION is here for everything but a refund (A2-1, H-81): a
+ * cancelled plan stays premium until it expires; only EXPIRATION ends it.
+ */
+const lifecycleStates: Record<string, (f: Fields) => SubscriptionState> = {
+  CANCELLATION: (f) => ({ expiresAt: f.expiresAt, autoRenew: false, billingIssue: null }),
+  UNCANCELLATION: (f) => ({ expiresAt: f.expiresAt, autoRenew: true, billingIssue: null }),
+  // Premium through the grace period when the store grants one, else to the period's end. On
+  // Google an account hold follows the grace period; RevenueCat reports it as EXPIRATION.
+  BILLING_ISSUE: (f) => ({
+    expiresAt: f.graceEndsAt ?? f.expiresAt,
+    autoRenew: null,
+    billingIssue: true,
+  }),
+  // Ends at the reported end, never later than the event (a missed EXPIRATION is harmless: premium
+  // is computed from the stored end at read time).
+  EXPIRATION: (f) => ({
+    expiresAt: f.expiresAt && f.expiresAt < f.eventAt ? f.expiresAt : f.eventAt,
+    autoRenew: false,
+    billingIssue: false,
+  }),
+  SUBSCRIPTION_EXTENDED: (f) => ({ expiresAt: f.expiresAt, autoRenew: null, billingIssue: null }),
+  // A Play pause starts at the period's end: premium runs until then, EXPIRATION ends it, a
+  // resume arrives as RENEWAL.
+  SUBSCRIPTION_PAUSED: (f) => ({ expiresAt: f.expiresAt, autoRenew: false, billingIssue: null }),
+};
+
+/** What an event says about a transaction, read once. */
+interface Fields {
+  store: AppStore;
+  productId: string;
+  plan: Plan;
+  transactionId: string;
+  latestTransactionId: string;
+  environment: StoreEnvironment;
+  eventAt: Date;
+  purchasedAt: Date | null;
+  expiresAt: Date | null;
+  graceEndsAt: Date | null;
+}
+
 /** The webhook body, or null when it is no RevenueCat event at all (400). */
 export function parseWebhook(body: unknown, now: Date): WebhookEvent | null {
   const e = (body as { event?: unknown } | null)?.event;
@@ -49,16 +109,27 @@ export function parseWebhook(body: unknown, now: Date): WebhookEvent | null {
   return { id, type, action: actionOf(type, f, now) };
 }
 
+/**
+ * A refund: RevenueCat has no REFUND event; it sends CANCELLATION with cancel_reason
+ * CUSTOMER_SUPPORT, and a negative price for the refunded amount. Any cancellation of the one-time
+ * purchase is one too (as job 43). cancel_reason is read here and never stored (H-87).
+ */
+const isRefund = (f: Record<string, unknown>, plan: Plan) =>
+  plan === 'lifetime' || f.cancel_reason === 'CUSTOMER_SUPPORT' ||
+  (typeof f.price === 'number' && f.price < 0) ||
+  (typeof f.price_in_purchased_currency === 'number' && f.price_in_purchased_currency < 0);
+
 function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
-  const purchase = type === 'NON_RENEWING_PURCHASE' || type === 'INITIAL_PURCHASE';
-  if (!purchase && type !== 'CANCELLATION' && type !== 'REFUND_REVERSED') return { do: 'ignore' };
+  const relevant = recordTypes.has(type) || Object.hasOwn(lifecycleStates, type) ||
+    type === 'REFUND_REVERSED';
+  if (!relevant) return { do: 'ignore' };
   const store = typeof f.store === 'string' && Object.hasOwn(stores, f.store)
     ? stores[f.store]
     : null;
   if (!store) return { do: 'ignore', refused: 'store' };
-  const productId = text(f.product_id, 64);
-  const kind = productId && kindOf(productId);
-  if (!productId || !kind) return { do: 'ignore', refused: 'product' };
+  const reported = text(f.product_id, 128);
+  const product = reported && productOf(reported);
+  if (!product) return { do: 'ignore', refused: 'product' };
   const latest = text(f.transaction_id, 200);
   const transactionId = text(f.original_transaction_id, 200) ?? latest;
   const environment =
@@ -66,23 +137,56 @@ function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
       ? environments[f.environment]
       : null;
   if (!transactionId || !environment) return { do: 'ignore', refused: 'malformed' };
-  const purchasedAt = millis(f.purchased_at_ms);
-  const at = millis(f.event_timestamp_ms) ?? now;
+  const fields: Fields = {
+    store,
+    productId: product.id,
+    plan: product.plan,
+    transactionId,
+    latestTransactionId: latest ?? transactionId,
+    environment,
+    eventAt: millis(f.event_timestamp_ms) ?? now,
+    purchasedAt: millis(f.purchased_at_ms),
+    expiresAt: millis(f.expiration_at_ms),
+    graceEndsAt: millis(f.grace_period_expiration_at_ms),
+  };
 
   if (type === 'REFUND_REVERSED') return { do: 'reinstate', store, transactionId };
-  if (type === 'CANCELLATION') {
+  if (type === 'CANCELLATION' && isRefund(f, product.plan)) {
     return {
       do: 'revoke',
-      refund: { store, transactionId, productId, environment, purchasedAt, revokedAt: at },
+      refund: {
+        store,
+        transactionId,
+        productId: product.id,
+        plan: product.plan,
+        environment,
+        purchasedAt: fields.purchasedAt,
+        revokedAt: fields.eventAt,
+      },
     };
   }
-  // Family Sharing is off for Lifetime (scripts/iap/product.ts); a shared copy is no sale.
+  if (!recordTypes.has(type)) {
+    // The one-time purchase has no lifecycle: nothing but a refund changes it.
+    if (product.plan === 'lifetime') return { do: 'ignore' };
+    return {
+      do: 'lifecycle',
+      change: {
+        store,
+        transactionId,
+        eventAt: fields.eventAt,
+        state: lifecycleStates[type](fields),
+      },
+    };
+  }
+  // Family Sharing is off for both products (scripts/iap/product.ts); a shared copy is no sale.
   if (f.is_family_share === true) return { do: 'ignore', refused: 'family_share' };
   // The household id, or RevenueCat's own ($RCAnonymousID:…) when the app never logged in.
   const householdId = typeof f.app_user_id === 'string' && uuid.test(f.app_user_id)
     ? f.app_user_id.toLowerCase()
     : null;
   if (!householdId) return { do: 'ignore', refused: 'app_user_id' };
+  // A yearly plan without its end is no state we could keep.
+  if (product.plan === 'yearly' && !fields.expiresAt) return { do: 'ignore', refused: 'malformed' };
   const price = typeof f.price_in_purchased_currency === 'number' &&
       f.price_in_purchased_currency >= 0 && f.price_in_purchased_currency < 1e8
     ? Math.round(f.price_in_purchased_currency * 100) / 100
@@ -93,11 +197,16 @@ function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
     purchase: {
       store,
       transactionId,
-      latestTransactionId: latest ?? transactionId,
-      productId,
-      kind,
+      latestTransactionId: fields.latestTransactionId,
+      productId: product.id,
+      plan: product.plan,
+      kind: product.kind,
       environment,
-      purchasedAt: purchasedAt ?? at,
+      purchasedAt: fields.purchasedAt ?? fields.eventAt,
+      eventAt: fields.eventAt,
+      subscription: product.plan === 'yearly'
+        ? { expiresAt: fields.expiresAt, autoRenew: true, billingIssue: false }
+        : null,
       price,
       currency: code(f.currency, /^[A-Z]{3}$/),
       country: code(f.country_code, /^[A-Z]{2}$/),
@@ -157,31 +266,66 @@ export async function sameSecret(a: string, b: string): Promise<boolean> {
   return diff === 0;
 }
 
-const testTypes = ['NON_RENEWING_PURCHASE', 'CANCELLATION', 'REFUND_REVERSED', 'TRANSFER'];
+const testTypes = [
+  'INITIAL_PURCHASE',
+  'NON_RENEWING_PURCHASE',
+  'RENEWAL',
+  'CANCELLATION',
+  'UNCANCELLATION',
+  'BILLING_ISSUE',
+  'EXPIRATION',
+  'SUBSCRIPTION_EXTENDED',
+  'SUBSCRIPTION_PAUSED',
+  'PRODUCT_CHANGE',
+  'REFUND_REVERSED',
+  'TRANSFER',
+];
+const cancelReasons = [
+  'UNSUBSCRIBE',
+  'BILLING_ERROR',
+  'DEVELOPER_INITIATED',
+  'PRICE_INCREASE',
+  'CUSTOMER_SUPPORT',
+  'UNKNOWN',
+];
+const day = 86_400_000;
 
 /**
  * POST /purchases/test/event (local stack only): a RevenueCat-shaped webhook body for the app's
- * fake store, fg and the e2e specs. Null for a request it cannot build one from.
+ * fake store, fg and the e2e specs. Null for a request it cannot build one from. Optional:
+ * `productId` (Lifetime by default; `com.hummlist.app.yearly` or Play's `…:yearly`), `type`
+ * (NON_RENEWING_PURCHASE for Lifetime, INITIAL_PURCHASE for yearly by default), `expiresInDays`
+ * (yearly: the period's end from now, 365 by default; negative for the past), `graceDays`
+ * (BILLING_ISSUE), `cancelReason` (CANCELLATION: CUSTOMER_SUPPORT by default, a refund),
+ * `eventAgoMs` (the event's age, for out-of-order deliveries), `transferTo` (TRANSFER's target).
  */
 export function testEvent(body: unknown, now: Date): { api_version: string; event: object } | null {
   if (typeof body !== 'object' || body === null) return null;
   const b = body as Record<string, unknown>;
-  const type = b.type ?? 'NON_RENEWING_PURCHASE';
-  const store = b.store ?? 'APP_STORE';
-  const environment = b.environment ?? 'SANDBOX';
   const productId = b.productId ?? lifetimeProductId;
+  const yearly = typeof productId === 'string' && productId.startsWith(yearlyProductId);
+  const type = b.type ?? (yearly ? 'INITIAL_PURCHASE' : 'NON_RENEWING_PURCHASE');
+  const store = b.store ??
+    (typeof productId === 'string' && productId.includes(':') ? 'PLAY_STORE' : 'APP_STORE');
+  const environment = b.environment ?? 'SANDBOX';
   const appUserId = text(b.appUserId, 200);
   const transactionId = text(b.transactionId, 200);
+  const number = (v: unknown) => v === undefined || (typeof v === 'number' && Number.isFinite(v));
+  const cancelReason = b.cancelReason ?? 'CUSTOMER_SUPPORT';
   if (
     typeof type !== 'string' || !testTypes.includes(type) ||
     (store !== 'APP_STORE' && store !== 'PLAY_STORE') ||
     (environment !== 'SANDBOX' && environment !== 'PRODUCTION') ||
-    !text(productId, 64) || !appUserId || !transactionId ||
-    (b.isFamilyShare !== undefined && typeof b.isFamilyShare !== 'boolean')
+    !text(productId, 128) || !appUserId || !transactionId ||
+    (b.isFamilyShare !== undefined && typeof b.isFamilyShare !== 'boolean') ||
+    !number(b.expiresInDays) || !number(b.graceDays) || !number(b.eventAgoMs) ||
+    typeof cancelReason !== 'string' || !cancelReasons.includes(cancelReason)
   ) {
     return null;
   }
   const ms = now.getTime();
+  const at = ms - ((b.eventAgoMs as number | undefined) ?? 0);
+  const expires = yearly ? ms + ((b.expiresInDays as number | undefined) ?? 365) * day : null;
   return {
     api_version: '1.0',
     event: {
@@ -194,22 +338,32 @@ export function testEvent(body: unknown, now: Date): { api_version: string; even
       store,
       environment,
       product_id: productId,
-      entitlement_ids: ['lifetime'],
+      entitlement_ids: ['premium'],
       period_type: 'NORMAL',
       transaction_id: transactionId,
       original_transaction_id: transactionId,
-      purchased_at_ms: ms,
-      event_timestamp_ms: ms,
-      expiration_at_ms: null,
-      price: 10.49,
-      price_in_purchased_currency: 9.99,
+      purchased_at_ms: at,
+      event_timestamp_ms: at,
+      expiration_at_ms: expires,
+      price: yearly ? 10.49 : 31.49,
+      price_in_purchased_currency: yearly ? 9.99 : 29.99,
       currency: 'EUR',
       country_code: 'DE',
       takehome_percentage: 0.85,
       is_family_share: b.isFamilyShare === true,
-      ...(type === 'CANCELLATION' ? { cancel_reason: 'CUSTOMER_SUPPORT' } : {}),
+      ...(type === 'CANCELLATION' ? { cancel_reason: cancelReason } : {}),
+      ...(type === 'EXPIRATION' ? { expiration_reason: 'UNSUBSCRIBE' } : {}),
+      ...(type === 'BILLING_ISSUE' && b.graceDays !== undefined
+        ? { grace_period_expiration_at_ms: ms + (b.graceDays as number) * day }
+        : {}),
+      ...(type === 'PRODUCT_CHANGE'
+        ? { new_product_id: `${yearlyProductId}:${playBasePlanId}` }
+        : {}),
       ...(type === 'TRANSFER'
-        ? { transferred_from: [appUserId], transferred_to: [crypto.randomUUID()] }
+        ? {
+          transferred_from: [appUserId],
+          transferred_to: [text(b.transferTo, 200) ?? crypto.randomUUID()],
+        }
         : {}),
     },
   };

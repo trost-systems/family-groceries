@@ -21,6 +21,7 @@
 - Job 29d, More: Zugänge (`/more/access`) and Konto (`/more/account`) on separate pages, old `/settings` links redirect: [docs/done/29d-more-access-account.md](docs/done/29d-more-access-account.md)
 - Job 29a, fixed-height top bar (the sync icon no longer moves the list), no household name or item count on the list: [docs/done/29a-topbar-header.md](docs/done/29a-topbar-header.md)
 - Job 32a, spelling variants, synonyms and typos in the classifier (Spec #8 Part A), `items.canonical_key` for 32b, `item_categorized` analytics: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-classifier.md)
+- Job 49, Hummlist Premium as a yearly plan and Lifetime under one entitlement (lifecycle webhook, `household_has_premium`, Premium page with the store's own prices, Legal Review K.13 must-fixes, price drift check): [docs/done/49-premium-yearly.md](docs/done/49-premium-yearly.md)
 
 ## Job 1: foundation (2026-10-22)
 

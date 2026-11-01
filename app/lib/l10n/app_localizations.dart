@@ -2239,6 +2239,234 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Du bist das letzte Mitglied von „{household}“. Weil er Hummlist Lifetime hat, wird er archiviert, nicht gelöscht.'**
   String archivedRestoreArchivesCurrent(String household);
+
+  /// More: the Premium page and its row; the product name, the same in every language
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium'**
+  String get premiumTitle;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). More: under Hummlist Premium while it may be offered
+  ///
+  /// In de, this message translates to:
+  /// **'Siri, Alexa und KI-Assistenten'**
+  String get premiumRowHint;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: what is included (Spec #4)
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri, Alexa und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.'**
+  String get premiumBody;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has premium
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium ist für euren ganzen Haushalt freigeschaltet. Danke!'**
+  String get premiumUnlockedBody;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan that renews
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium aktiv (jährlich, verlängert sich am {date})'**
+  String premiumStatusRenews(DateTime date);
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan with auto-renew off
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium aktiv (jährlich, läuft am {date} aus)'**
+  String premiumStatusEnds(DateTime date);
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has Lifetime
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium Lifetime'**
+  String get premiumStatusLifetime;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: a tester's grant unlocks the household
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium über Tester-Freischaltung'**
+  String get premiumStatusTester;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household's rows are loading or offline; no Buy
+  ///
+  /// In de, this message translates to:
+  /// **'Wir prüfen, ob euer Haushalt Hummlist Premium schon hat …'**
+  String get premiumChecking;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the yearly plan's card title, offered first
+  ///
+  /// In de, this message translates to:
+  /// **'Jährlich'**
+  String get premiumYearlyTitle;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's price for the yearly plan, exactly as StoreKit or Play Billing formats it
+  ///
+  /// In de, this message translates to:
+  /// **'{price} / Jahr'**
+  String premiumYearlyPrice(String price);
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the one-time purchase's card title
+  ///
+  /// In de, this message translates to:
+  /// **'Lifetime'**
+  String get premiumLifetimeTitle;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's price for Lifetime, exactly as the store formats it
+  ///
+  /// In de, this message translates to:
+  /// **'{price} einmalig'**
+  String premiumLifetimePrice(String price);
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: Lifetime framed as three times the yearly price (Spec #4 AC9), without computing an amount
+  ///
+  /// In de, this message translates to:
+  /// **'Einmal zahlen, für immer: so viel wie drei Jahre.'**
+  String get premiumLifetimeValue;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: after a price in EUR only (Legal Review K.13.P.3)
+  ///
+  /// In de, this message translates to:
+  /// **'inkl. MwSt.'**
+  String get premiumVat;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the subscription disclosures next to the yearly card and its Buy button (App Store Review Guidelines 3.1.2, Google Play)
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.'**
+  String get premiumYearlyTerms;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy the yearly plan; RevenueCat starts only on this tap (H-67)
+  ///
+  /// In de, this message translates to:
+  /// **'Jährlich abschließen'**
+  String get premiumBuyYearly;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy Lifetime; RevenueCat starts only on this tap (H-67)
+  ///
+  /// In de, this message translates to:
+  /// **'Lifetime kaufen'**
+  String get premiumBuyLifetime;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's prices could not be read (offline, store unavailable); no Buy without a price (A2-5)
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium ist gerade nicht verfügbar.'**
+  String get premiumUnavailable;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: purchases are off in this build or on the server (premium_offer)
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium ist bald verfügbar.'**
+  String get premiumComingSoon;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the terms; Apple's standard EULA on iOS, a placeholder page elsewhere (no Hummlist terms exist, H-93)
+  ///
+  /// In de, this message translates to:
+  /// **'Nutzungsbedingungen (EULA)'**
+  String get premiumTermsLink;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the privacy policy
+  ///
+  /// In de, this message translates to:
+  /// **'Datenschutzerklärung'**
+  String get premiumPrivacyLink;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: after lifetimeUsedElsewhere when the yearly plan belongs to another household (one subscription per Apple ID and group)
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen.'**
+  String get premiumUsedElsewhereYearly;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: two yearly plans run at once (H-84); followed by the manage link
+  ///
+  /// In de, this message translates to:
+  /// **'Euer Haushalt hat zwei Jahresabos. Kündigen kann jedes nur, wer es abgeschlossen hat.'**
+  String get premiumTwoYearly;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: no sales on the web
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
+  String get premiumWeb;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Refund help: a short note for the yearly plan below the H-76 texts, which name only Lifetime (NEEDS_LEAD Job 49)
+  ///
+  /// In de, this message translates to:
+  /// **'Für das Jahresabo gilt dasselbe. Eine Kündigung beendet nur die Verlängerung; das laufende Jahr wird nicht automatisch erstattet.'**
+  String get premiumRefundYearly;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Premium page: opens the store's subscription management (H-83)
+  ///
+  /// In de, this message translates to:
+  /// **'Abo verwalten oder kündigen'**
+  String get premiumManage;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: before the two store links
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Jahresabo verwaltest du im App Store oder bei Google Play.'**
+  String get premiumManageWeb;
+
+  /// Premium page on the web: link to Apple's subscription settings
+  ///
+  /// In de, this message translates to:
+  /// **'App Store'**
+  String get premiumManageApple;
+
+  /// Premium page on the web: link to Google Play's subscriptions
+  ///
+  /// In de, this message translates to:
+  /// **'Google Play'**
+  String get premiumManageGoogle;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Premium page: shown only to the subscriber while a renewal failed (H-83, H-87)
+  ///
+  /// In de, this message translates to:
+  /// **'Apple bzw. Google konnten dein Jahresabo nicht abbuchen. Premium läuft noch bis {date}. Prüfe deine Zahlungsmethode im Store.'**
+  String premiumBillingIssue(DateTime date);
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Before buying Lifetime while a yearly plan runs, and after (H-84). The part in [brackets] is the link to the store's subscription page; the app shows it without the brackets
+  ///
+  /// In de, this message translates to:
+  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Hummlist kann das Abo nicht kündigen.'**
+  String get premiumLifetimeWhileYearly;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. premiumLifetimeWhileYearly for the subscriber (H-84). [brackets]: the store link
+  ///
+  /// In de, this message translates to:
+  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Hummlist kann das Abo nicht kündigen.'**
+  String get premiumLifetimeWhileYearlySubscriber;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Lifetime-while-yearly warning: opens the store sheet (RevenueCat starts only here, H-67). EN: Lead wording, PLACEHOLDER
+  ///
+  /// In de, this message translates to:
+  /// **'Trotzdem kaufen'**
+  String get premiumBuyAnyway;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Before deleting the account, leaving, deleting or archiving a household, to the subscriber of a renewing yearly plan (H-85)
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.'**
+  String get premiumBillingContinues;
+
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Lead wording for Legal Review: the same moment, to members who are not the subscriber (H-85, NEEDS_LEAD Job 49)
+  ///
+  /// In de, this message translates to:
+  /// **'Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.'**
+  String get premiumBillingContinuesOther;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Billing-continues dialog: opens the store's subscription page
+  ///
+  /// In de, this message translates to:
+  /// **'Abo verwalten'**
+  String get premiumManageSubscription;
+
+  /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Billing-continues dialog: goes on with deleting, leaving or archiving
+  ///
+  /// In de, this message translates to:
+  /// **'Trotzdem fortfahren'**
+  String get premiumContinueAnyway;
 }
 
 class _AppLocalizationsDelegate

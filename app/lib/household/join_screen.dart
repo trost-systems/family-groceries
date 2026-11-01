@@ -6,6 +6,7 @@ import 'package:family_groceries/household/join_cubit.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -66,11 +67,22 @@ class _JoinViewState() extends State<_JoinView> {
     leaveStep(context);
   }
 
+  /// Joins, leaving the current household ([archive]: archiving it). A
+  /// yearly plan of the household being left keeps being billed: its
+  /// subscriber hears so first (H-85).
+  Future<void> _join({bool archive = false}) async {
+    final cubit = context.read<JoinCubit>();
+    final leaves = context.read<SessionCubit>().state is InHousehold;
+    if (leaves && !await confirmBillingContinues(context, account: false)) {
+      return;
+    }
+    await cubit.join(archive: archive);
+  }
+
   /// Declining the archive: the household and its Lifetime go, with no
   /// refund. The user says so once more; it never stops them.
   Future<void> _confirmDelete(String household) async {
     final l10n = AppLocalizations.of(context);
-    final cubit = context.read<JoinCubit>();
     final delete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -100,8 +112,8 @@ class _JoinViewState() extends State<_JoinView> {
         ],
       ),
     );
-    if (delete ?? false) {
-      await cubit.join();
+    if ((delete ?? false) && mounted) {
+      await _join();
     }
   }
 
@@ -124,7 +136,7 @@ class _JoinViewState() extends State<_JoinView> {
             state.phase == JoinPhase.joining;
         final problem = state.problem;
         final join = previewed
-            ? (state.busy ? null : () => unawaited(cubit.join()))
+            ? (state.busy ? null : () => unawaited(_join()))
             : (state.busy ? null : () => unawaited(cubit.check(_code.text)));
         final lifetime = state.lifetime;
         final endsLifetime =
@@ -266,7 +278,7 @@ class _JoinViewState() extends State<_JoinView> {
                 key: const ValueKey('join-archive'),
                 onPressed: state.busy
                     ? null
-                    : () => unawaited(cubit.join(archive: true)),
+                    : () => unawaited(_join(archive: true)),
                 child: Text(l10n.joinArchive),
               ),
               const SizedBox(height: 8),

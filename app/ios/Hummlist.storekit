@@ -5,9 +5,9 @@
   ],
   "products" : [
     {
-      "displayPrice" : "9.99",
+      "displayPrice" : "29.99",
       "familyShareable" : false,
-      "internalID" : "6826922725",
+      "internalID" : "6829223747",
       "localizations" : [
         {
           "description" : "Ein Kauf für den ganzen Haushalt.",
@@ -35,7 +35,48 @@
     ]
   },
   "subscriptionGroups" : [
+    {
+      "id" : "22532621",
+      "localizations" : [
 
+      ],
+      "name" : "Hummlist Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6829293557",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Hummlist Premium für den ganzen Haushalt, ein Jahr.",
+              "displayName" : "Hummlist Premium",
+              "locale" : "de"
+            },
+            {
+              "description" : "Hummlist Premium for the whole household, one year.",
+              "displayName" : "Hummlist Premium",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.hummlist.app.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Hummlist Premium Yearly",
+          "subscriptionGroupID" : "22532621",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
   ],
   "version" : {
     "major" : 4,

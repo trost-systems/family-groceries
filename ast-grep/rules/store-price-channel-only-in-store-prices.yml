@@ -1,0 +1,18 @@
+# The store price channel (AppDelegate.swift's StorePrices, MainActivity.kt's storePrices) is
+# opened in one file, app/lib/purchases/store_prices.dart (job 49, Legal Review A2-5). The native
+# side only reads product details; store-prices-channel-methods keeps that file to those calls.
+# A second file naming the channel could ask the store at app start or for something else, where
+# no reviewer looks. Tests reach it through ChannelStorePrices.channel.
+#
+# Matched on a string literal naming the channel, anywhere in Dart.
+id: store-price-channel-only-in-store-prices
+language: dart
+severity: error
+files:
+  - app/**
+ignores:
+  - app/lib/purchases/store_prices.dart
+rule:
+  kind: string_literal
+  regex: 'familygroceries/store_prices'
+message: 'the store price channel is named outside app/lib/purchases/store_prices.dart: go through StorePriceReader (or ChannelStorePrices.channel in a test); only ChannelStorePrices talks to it (job 49)'

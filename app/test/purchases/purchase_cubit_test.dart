@@ -43,16 +43,16 @@ void main() {
       p.rows.change();
       await pumpEventQueue();
       expect(p.repository.calls, isEmpty);
-      await p.purchases.buy();
-      expect(p.repository.calls, ['buy home']);
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(p.repository.calls, ['buy home lifetime']);
       await p.purchases.restore();
-      expect(p.repository.calls, ['buy home', 'restore home']);
+      expect(p.repository.calls, ['buy home lifetime', 'restore home']);
     });
 
     test('never for an unlocked household', () async {
       final p = await started(rows: FakeEntitlementsSource(unlockedNow: true));
       await p.purchases.restore();
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(p.repository.calls, isEmpty);
     });
 
@@ -60,15 +60,15 @@ void main() {
       final rows = FakeEntitlementsSource()..offline = true;
       final p = await started(rows: rows);
       await p.purchases.restore();
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(p.repository.calls, isEmpty);
       rows
         ..offline = false
         ..change();
       await pumpEventQueue();
       expect(p.repository.calls, isEmpty, reason: 'knowing it asks nothing');
-      await p.purchases.buy();
-      expect(p.repository.calls, ['buy home']);
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(p.repository.calls, ['buy home lifetime']);
     });
 
     test('for the household of the moment of the tap', () async {
@@ -76,20 +76,20 @@ void main() {
       await (p.session as TestSession).join('ABCD2345');
       await pumpEventQueue();
       expect(p.repository.calls, isEmpty);
-      await p.purchases.buy();
-      expect(p.repository.calls, ['buy other']);
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(p.repository.calls, ['buy other lifetime']);
     });
 
     test('signing out calls no store: no logOut, nothing to buy', () async {
       final p = await started(
         store: FakePurchaseRepository(bought: const Canceled()),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await (p.session as TestSession).signOut();
       await pumpEventQueue();
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await p.purchases.restore();
-      expect(p.repository.calls, ['buy home']);
+      expect(p.repository.calls, ['buy home lifetime']);
       expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
@@ -97,7 +97,7 @@ void main() {
       final p = await started(
         store: FakePurchaseRepository(withoutStore: const PurchasesNotYet()),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await p.purchases.restore();
       expect(p.repository.calls, isEmpty);
       expect(p.purchases.state.noSale, isA<PurchasesNotYet>());
@@ -107,12 +107,12 @@ void main() {
   group('buying', () {
     test('bought: unlocking until Supabase has the unlock', () async {
       final p = await started();
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(p.repository.buys, ['home']);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
       p.unlock();
       await pumpEventQueue();
-      expect(p.entitlements.has(Entitlement.lifetime), isTrue);
+      expect(p.entitlements.has(Entitlement.premium), isTrue);
       expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
@@ -128,7 +128,7 @@ void main() {
             ),
           ),
         );
-        await p.purchases.buy();
+        await p.purchases.buy(PremiumPlan.lifetime);
         await pumpEventQueue();
         expect(api.calls, hasLength(1));
         expect(api.calls.single.store, AppStore.google);
@@ -143,7 +143,7 @@ void main() {
         api: api,
         store: FakePurchaseRepository(bought: const Bought(null)),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await pumpEventQueue();
       expect(api.calls, isEmpty);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
@@ -157,7 +157,7 @@ void main() {
         late TestPurchases p;
         unawaited(started(api: api).then((value) => p = value));
         async.elapse(Duration.zero);
-        unawaited(p.purchases.buy());
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
         async.flushMicrotasks();
         expect(api.calls, hasLength(1));
         async.elapse(const Duration(seconds: 2));
@@ -175,7 +175,7 @@ void main() {
         late TestPurchases p;
         unawaited(started(api: api).then((value) => p = value));
         async.elapse(Duration.zero);
-        unawaited(p.purchases.buy());
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
         async.elapse(const Duration(minutes: 5));
         expect(api.calls, hasLength(1));
       });
@@ -192,7 +192,7 @@ void main() {
         late TestPurchases p;
         unawaited(started(api: api).then((value) => p = value));
         async.elapse(Duration.zero);
-        unawaited(p.purchases.buy());
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
         async.elapse(const Duration(minutes: 5));
         expect(api.calls, hasLength(2));
       });
@@ -204,7 +204,7 @@ void main() {
         final p = await started(
           api: FakeClaimApi(answers: const [Claimed(ClaimStatus.elsewhere)]),
         );
-        await p.purchases.buy();
+        await p.purchases.buy(PremiumPlan.lifetime);
         await pumpEventQueue();
         expect(p.purchases.state.flow, isA<FlowUsedElsewhere>());
       },
@@ -215,7 +215,7 @@ void main() {
         late TestPurchases p;
         unawaited(started().then((value) => p = value));
         async.elapse(Duration.zero);
-        unawaited(p.purchases.buy());
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
         async.flushMicrotasks();
         expect(p.purchases.state.flow, isA<FlowUnlocking>());
         async.elapse(unlockWait);
@@ -227,10 +227,10 @@ void main() {
     test('a second tap while buying starts nothing', () async {
       final store = FakePurchaseRepository()..hold = true;
       final p = await started(store: store);
-      unawaited(p.purchases.buy());
+      unawaited(p.purchases.buy(PremiumPlan.lifetime));
       await pumpEventQueue();
       expect(p.purchases.state.flow, isA<FlowBuying>());
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await p.purchases.restore();
       expect(store.buys, hasLength(1));
       expect(store.restores, isEmpty);
@@ -240,19 +240,19 @@ void main() {
       final p = await started(
         store: FakePurchaseRepository(bought: const Pending()),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(p.purchases.state.flow, isA<FlowAwaitingApproval>());
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(p.repository.buys, hasLength(2));
       p.unlock();
       await pumpEventQueue();
-      expect(p.entitlements.has(Entitlement.lifetime), isTrue);
+      expect(p.entitlements.has(Entitlement.premium), isTrue);
     });
 
     test('the claim names the household bought for, after a switch', () async {
       final store = FakePurchaseRepository()..hold = true;
       final p = await started(store: store);
-      unawaited(p.purchases.buy());
+      unawaited(p.purchases.buy(PremiumPlan.lifetime));
       await pumpEventQueue();
       await (p.session as TestSession).join('ABCD2345');
       await pumpEventQueue();
@@ -277,14 +277,14 @@ void main() {
           api: api,
           store: FakePurchaseRepository(bought: outcome),
         );
-        await p.purchases.buy();
+        await p.purchases.buy(PremiumPlan.lifetime);
         expect(switch (p.purchases.state.flow) {
           FlowFailed(:final kind) => kind,
           final other => other.runtimeType,
         }, shown);
         expect(api.calls, isEmpty);
-        await p.purchases.buy();
-        expect(p.repository.buys, hasLength(2), reason: 'buy again');
+        await p.purchases.buy(PremiumPlan.lifetime);
+        expect(p.repository.buys, hasLength(2), reason: 'buy again lifetime');
       });
     }
 
@@ -292,7 +292,7 @@ void main() {
       final p = await started(
         store: FakePurchaseRepository(bought: const StoreFailed('E42')),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       expect(
         p.purchases.state.flow,
         isA<FlowFailed>().having((f) => f.code, 'code', 'E42'),
@@ -337,7 +337,7 @@ void main() {
       final p = await started(
         store: FakePurchaseRepository(bought: const Pending()),
       );
-      await p.purchases.buy();
+      await p.purchases.buy(PremiumPlan.lifetime);
       await p.purchases.restore();
       expect(p.repository.restores, hasLength(1));
     });
@@ -347,10 +347,71 @@ void main() {
     final p = await started(
       store: FakePurchaseRepository(bought: const BelongsElsewhere()),
     );
-    await p.purchases.buy();
+    await p.purchases.buy(PremiumPlan.lifetime);
     expect(p.purchases.state.flow, isA<FlowUsedElsewhere>());
     await (p.session as TestSession).join('ABCD2345');
     await pumpEventQueue();
     expect(p.purchases.state.flow, isA<FlowIdle>());
+  });
+
+  group('the yearly plan and Lifetime (job 49)', () {
+    test('yearly: bought for the household, unlocked by its row', () async {
+      final p = await started();
+      await p.purchases.buy(PremiumPlan.yearly);
+      expect(p.repository.calls, ['buy home yearly']);
+      expect(p.purchases.state.flow, isA<FlowUnlocking>());
+      p.rows
+        ..rowsNow = [yearlyRow(from: DateTime.now())]
+        ..change();
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+    });
+
+    test('never a second yearly plan; Lifetime is the one upgrade', () async {
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: DateTime.now())];
+      final p = await started(rows: rows);
+      await p.purchases.buy(PremiumPlan.yearly);
+      expect(p.repository.calls, isEmpty);
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(p.repository.calls, ['buy home lifetime']);
+      // The running yearly plan is no Lifetime: it waits for that row.
+      expect(p.purchases.state.flow, isA<FlowUnlocking>());
+      rows
+        ..rowsNow = [
+          yearlyRow(from: DateTime.now()),
+          {
+            'kind': 'premium',
+            'source': 'purchase',
+            'premium_source': 'lifetime',
+          },
+        ]
+        ..change();
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+    });
+
+    test('a lapsed yearly plan: both plans may be bought again', () async {
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: DateTime.now(), days: -1)];
+      final p = await started(
+        rows: rows,
+        store: FakePurchaseRepository(bought: const Canceled()),
+      );
+      await p.purchases.buy(PremiumPlan.yearly);
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(p.repository.calls, ['buy home yearly', 'buy home lifetime']);
+    });
+
+    test(
+      "a yearly plan another household's store account pays: elsewhere",
+      () async {
+        final p = await started(
+          store: FakePurchaseRepository(bought: const BelongsElsewhere()),
+        );
+        await p.purchases.buy(PremiumPlan.yearly);
+        expect(p.purchases.state.flow, isA<FlowUsedElsewhere>());
+      },
+    );
   });
 }

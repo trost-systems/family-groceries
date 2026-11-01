@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
+import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -12,6 +15,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
+import '../household/harness.dart' show TestSession;
+import '../purchases/fakes.dart';
 import '../session/fake_auth.dart';
 import 'fake_account.dart';
 
@@ -33,17 +38,39 @@ void main() {
     createdAt: '2026-10-22T12:00:00Z',
   );
 
-  Future<void> pump(WidgetTester tester, Widget home) async {
+  Future<void> pump(
+    WidgetTester tester,
+    Widget home, {
+    FakePremiumServer? premium,
+    FakeEntitlementsSource? rows,
+  }) async {
     auth = FakeAuth()..user = user;
     addTearDown(auth.close);
     cache = MemorySessionCache()
       ..households['peter'] = const Household(id: 'home', name: 'Zuhause');
     session = SessionCubit(FakeClient(auth), cache);
     addTearDown(session.close);
+    // The account page's own session is still loading here; the household's
+    // rows follow one that is in the household.
+    final inHousehold = TestSession(
+      const InHousehold('peter', Household(id: 'home', name: 'Zuhause')),
+    );
+    addTearDown(inHousehold.close);
+    final entitlements = Entitlements(
+      rows ?? FakeEntitlementsSource(),
+      inHousehold,
+    );
+    addTearDown(entitlements.close);
     await tester.pumpWidget(
       MultiRepositoryProvider(
         providers: [
           RepositoryProvider<AccountRepository>.value(value: account),
+          RepositoryProvider<PremiumServer>.value(
+            value: premium ?? FakePremiumServer(),
+          ),
+          RepositoryProvider<StorePriceReader>.value(
+            value: FakeStorePrices(fakeStorePrices),
+          ),
           RepositoryProvider.value(
             value: SocialSignIn(
               auth,
@@ -52,8 +79,11 @@ void main() {
             ),
           ),
         ],
-        child: BlocProvider.value(
-          value: session,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: session),
+            BlocProvider.value(value: entitlements),
+          ],
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
@@ -366,6 +396,102 @@ void main() {
       await pump(tester, settings());
       expect(find.byKey(const ValueKey('account-email')), findsNothing);
       expect(find.byKey(const ValueKey('account-delete')), findsOneWidget);
+    });
+  });
+
+  group('a yearly plan keeps being billed (H-85)', () {
+    Future<void> tapDelete(WidgetTester tester) async {
+      await tester.ensureVisible(find.byKey(const ValueKey('account-delete')));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('account-delete')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the subscriber hears so first, with the store link', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        settings(),
+        premium: FakePremiumServer(
+          mine: const MyYearlyPlan(subscriber: true, renewing: true),
+        ),
+      );
+      await tapDelete(tester);
+      expect(
+        find.text(
+          'Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein '
+          'Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen '
+          'oder Verlassen kündigt es nicht.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Abo verwalten'), findsOneWidget);
+      expect(find.byKey(const ValueKey('account-delete-dialog')), findsNothing);
+      await tester.tap(find.text('Trotzdem fortfahren'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('account-delete-dialog')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('also for a plan they pay for another household', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        settings(),
+        premium: FakePremiumServer(mine: const MyYearlyPlan(elsewhere: true)),
+      );
+      await tapDelete(tester);
+      expect(
+        find.byKey(const ValueKey('premium-billing-continues')),
+        findsOneWidget,
+      );
+      // Abo verwalten leaves the deletion for later.
+      await tester.tap(find.byKey(const ValueKey('premium-billing-manage')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('account-delete-dialog')), findsNothing);
+    });
+
+    testWidgets('another member of a billed household gets the short line', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        settings(),
+        premium: FakePremiumServer(
+          mine: const MyYearlyPlan(householdBilled: true),
+        ),
+      );
+      await tapDelete(tester);
+      expect(
+        find.text(
+          'Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt '
+          'wird.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Abo verwalten'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('premium-billing-cancel')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('account-delete-dialog')), findsNothing);
+    });
+
+    testWidgets('no plan, or the server unreachable: straight to deletion', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        settings(),
+        premium: FakePremiumServer()..mineFails = true,
+      );
+      await tapDelete(tester);
+      expect(
+        find.byKey(const ValueKey('account-delete-dialog')),
+        findsOneWidget,
+      );
     });
   });
 }

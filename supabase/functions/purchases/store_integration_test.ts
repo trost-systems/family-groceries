@@ -183,9 +183,10 @@ Deno.test({
         );
         assertEquals(queued(), ['purchase_completed']);
         const completed = telemetry.queued[0].properties as Record<string, unknown>;
+        assertEquals(completed.premium_source, 'lifetime');
         assertEquals(
           [completed.is_internal, completed.price, completed.household_id],
-          [true, 9.99, peter.householdId],
+          [true, 29.99, peter.householdId],
         );
 
         // H-56: a restore or transfer into another household binds nothing there.
@@ -238,6 +239,265 @@ Deno.test({
       } finally {
         await sql`delete from public.purchase_tombstones
                   where transaction_hmac = ${await hmacHex(TOMBSTONE_KEY, tombstoned)}`;
+        await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
+      }
+    });
+  },
+});
+
+Deno.test({
+  name: "A yearly plan's lifecycle: renewals, cancellations, billing issues and expiry, in order",
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withHouseholds(async (sql, peter, lea, max) => {
+      const telemetry = telemetryFor('purchases', { get: () => undefined });
+      let caller: Member = peter;
+      const handler = createHandler(productionDeps(
+        {
+          webhook: { authorization: AUTH, signingSecret: null, tombstoneKey: TOMBSTONE_KEY },
+          local: true,
+          region: null,
+          revenueCat: null,
+          deletionsSecret: null,
+        },
+        telemetry,
+        { authenticate: () => Promise.resolve(caller) },
+      ));
+      const eventIds: string[] = [];
+      const tx = `49${Date.now()}`;
+      const yearlyId = 'com.hummlist.app.yearly';
+      const deliver = async (
+        type: string,
+        more: Record<string, unknown> = {},
+        appUserId = peter.householdId,
+      ) => {
+        const e = testEvent(
+          { type, appUserId, transactionId: tx, productId: yearlyId, ...more },
+          new Date(),
+        )!;
+        eventIds.push((e.event as { id: string }).id);
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify(e),
+          }),
+        );
+        return (await res.json()).status;
+      };
+      const premium = async (household: string) => {
+        const [r] = await sql<{ source: string | null; expires_at: Date | null; has: boolean }[]>`
+          select p.source, p.expires_at, public.household_has_premium(${household}::uuid) as has
+          from (select 1) one left join public.household_premium(${household}::uuid) p on true`;
+        return r;
+      };
+      const days = (d: Date | null) =>
+        d === null ? null : Math.round((d.getTime() - Date.now()) / 86_400_000);
+      const memberRows = (who: Member) =>
+        asUser(
+          who.userId,
+          (t) =>
+            t<{ premium_source: string; auto_renew: boolean | null; expires_at: Date | null }[]>`
+              select premium_source, auto_renew, expires_at from public.entitlements`,
+        );
+      const mine = (who: Member) =>
+        asUser(who.userId, async (t) => {
+          const [r] = await t<
+            { p: Record<string, unknown> }[]
+          >`select public.my_yearly_plan() as p`;
+          return r.p;
+        });
+
+      try {
+        assertEquals(await deliver('INITIAL_PURCHASE'), 'granted');
+        let p = await premium(peter.householdId);
+        assertEquals([p.source, days(p.expires_at), p.has], ['yearly', 365, true]);
+        // The partner reads source, end and renewal; not who pays (H-55).
+        assertEquals(
+          (await memberRows(lea)).map((r) => [r.premium_source, r.auto_renew, days(r.expires_at)]),
+          [['yearly', true, 365]],
+        );
+        await assertRejects(() =>
+          asUser(lea.userId, (t) => t`select granted_by from public.entitlements`)
+        );
+        // The buyer claims it; only they are the subscriber.
+        assertEquals(
+          (await (await handler(
+            new Request('http://local/functions/v1/purchases/claim', {
+              method: 'POST',
+              headers: { authorization: 'Bearer s' },
+              body: JSON.stringify({
+                store: 'apple',
+                householdId: peter.householdId,
+                transactionId: tx,
+              }),
+            }),
+          )).json()).status,
+          'recorded',
+        );
+        assertEquals((await mine(peter)).subscriber, true);
+        assertEquals((await mine(lea)).subscriber, false);
+
+        // UNSUBSCRIBE: auto-renew off, premium stays until the end (H-81).
+        assertEquals(await deliver('CANCELLATION', { cancelReason: 'UNSUBSCRIBE' }), 'updated');
+        p = await premium(peter.householdId);
+        assertEquals([p.source, days(p.expires_at)], ['yearly', 365]);
+        assertEquals((await memberRows(lea))[0].auto_renew, false);
+        assertEquals(await deliver('UNCANCELLATION'), 'updated');
+        assertEquals((await memberRows(lea))[0].auto_renew, true);
+
+        // Out of order: an older EXPIRATION after a newer RENEWAL changes nothing.
+        assertEquals(await deliver('RENEWAL', { expiresInDays: 730 }), 'restored');
+        assertEquals(
+          await deliver('EXPIRATION', { expiresInDays: -1, eventAgoMs: 3_600_000 }),
+          'stale',
+        );
+        p = await premium(peter.householdId);
+        assertEquals([p.source, days(p.expires_at)], ['yearly', 730]);
+
+        // A billing issue keeps premium through the grace period, only the subscriber is told.
+        assertEquals(
+          await deliver('BILLING_ISSUE', { expiresInDays: 0, graceDays: 14 }),
+          'updated',
+        );
+        p = await premium(peter.householdId);
+        assertEquals(days(p.expires_at), 14);
+        assertEquals([(await mine(peter)).billing_issue, (await mine(lea)).billing_issue], [
+          true,
+          false,
+        ]);
+        // Without a grace period it ends with the period.
+        assertEquals(await deliver('BILLING_ISSUE', { expiresInDays: 0 }), 'updated');
+        assertEquals((await premium(peter.householdId)).has, false);
+        // A late RENEWAL (account hold recovered) brings it back.
+        assertEquals(await deliver('RENEWAL', { expiresInDays: 365 }), 'restored');
+        assertEquals((await premium(peter.householdId)).has, true);
+        assertEquals((await mine(peter)).billing_issue, false);
+
+        // TRANSFER and a restore into another household move nothing (H-56).
+        assertEquals(await deliver('TRANSFER', { transferTo: max.householdId }), 'ignored');
+        assertEquals(await deliver('RENEWAL', {}, max.householdId), 'used_elsewhere');
+        assertEquals((await premium(max.householdId)).has, false);
+        assertEquals((await premium(peter.householdId)).has, true);
+
+        // EXPIRATION ends it at read time; the row, the household and its list stay.
+        await sql`insert into public.items (household_id, name) values (${peter.householdId}, 'Milch')`;
+        assertEquals(await deliver('EXPIRATION', { expiresInDays: -1 }), 'updated');
+        assertEquals((await premium(peter.householdId)).has, false);
+        assertEquals((await memberRows(lea)).length, 1);
+        assertEquals(
+          (await sql`select from public.items where household_id = ${peter.householdId}`).length,
+          1,
+        );
+        assertEquals((await mine(peter)).subscriber, false);
+
+        // Lifetime bought while yearly was active wins; yearly's end no longer matters.
+        assertEquals(await deliver('RENEWAL', { expiresInDays: 30 }), 'restored');
+        const lifetime = testEvent(
+          { appUserId: peter.householdId, transactionId: `${tx}L` },
+          new Date(),
+        )!;
+        eventIds.push((lifetime.event as { id: string }).id);
+        await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify(lifetime),
+          }),
+        );
+        p = await premium(peter.householdId);
+        assertEquals([p.source, p.expires_at], ['lifetime', null]);
+        assertEquals(await deliver('EXPIRATION', { expiresInDays: -1 }), 'updated');
+        assertEquals((await premium(peter.householdId)).source, 'lifetime');
+
+        // An event for a transaction never seen writes nothing.
+        const unknown = testEvent(
+          {
+            type: 'EXPIRATION',
+            appUserId: max.householdId,
+            transactionId: `${tx}X`,
+            productId: yearlyId,
+          },
+          new Date(),
+        )!;
+        eventIds.push((unknown.event as { id: string }).id);
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify(unknown),
+          }),
+        );
+        assertEquals((await res.json()).status, 'unknown');
+        assertEquals(
+          (await sql`select from public.purchases where transaction_id = ${`${tx}X`}`).length,
+          0,
+        );
+        caller = lea;
+      } finally {
+        await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
+      }
+    });
+  },
+});
+
+Deno.test({
+  name: 'A tombstoned yearly transaction never binds again; a second yearly plan stays its own row',
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withHouseholds(async (sql, peter) => {
+      const handler = createHandler(productionDeps(
+        {
+          webhook: { authorization: AUTH, signingSecret: null, tombstoneKey: TOMBSTONE_KEY },
+          local: true,
+          region: null,
+          revenueCat: null,
+          deletionsSecret: null,
+        },
+        telemetryFor('purchases', { get: () => undefined }),
+      ));
+      const tx = `49t${Date.now()}`;
+      const eventIds: string[] = [];
+      const deliver = async (transactionId: string, expiresInDays: number) => {
+        const e = testEvent({
+          appUserId: peter.householdId,
+          transactionId,
+          productId: 'com.hummlist.app.yearly:yearly',
+          expiresInDays,
+        }, new Date())!;
+        eventIds.push((e.event as { id: string }).id);
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify(e),
+          }),
+        );
+        return (await res.json()).status;
+      };
+      try {
+        await sql`insert into public.purchase_tombstones (transaction_hmac)
+                  values (${await hmacHex(TOMBSTONE_KEY, tx)})`;
+        assertEquals(await deliver(tx, 365), 'tombstoned');
+        assertEquals(await deliver(`${tx}a`, 100), 'granted');
+        assertEquals(await deliver(`${tx}b`, 300), 'granted');
+        const rows = await sql<{ expires_at: Date; store: string; product_id: string }[]>`
+          select expires_at, store, product_id from public.purchases
+          where bound_household = ${peter.householdId} order by expires_at`;
+        assertEquals(rows.map((r) => [r.store, r.product_id]), [
+          ['google', 'com.hummlist.app.yearly'],
+          ['google', 'com.hummlist.app.yearly'],
+        ]);
+        const [p] = await sql<{ expires_at: Date }[]>`
+          select expires_at from public.household_premium(${peter.householdId}::uuid)`;
+        assertEquals(p.expires_at.getTime(), rows[1].expires_at.getTime());
+      } finally {
+        await sql`delete from public.purchase_tombstones
+                  where transaction_hmac = ${await hmacHex(TOMBSTONE_KEY, tx)}`;
         await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
       }
     });

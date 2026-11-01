@@ -1,0 +1,20 @@
+id: store-price-channel-only-in-store-prices
+snapshots:
+  "const prices = MethodChannel('familygroceries/store_prices');\n":
+    labels:
+    - source: "'familygroceries/store_prices'"
+      style: primary
+      start: 29
+      end: 59
+  "final c = MethodChannel(\"familygroceries/store_prices\", const StandardMethodCodec());\n":
+    labels:
+    - source: "\"familygroceries/store_prices\""
+      style: primary
+      start: 24
+      end: 54
+  "void main() {\n  messenger.setMockMethodCallHandler(const MethodChannel('familygroceries/store_prices'), h);\n}\n":
+    labels:
+    - source: "'familygroceries/store_prices'"
+      style: primary
+      start: 71
+      end: 101

@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -28,7 +32,7 @@ void main() {
       session: const NeedsHousehold('peter'),
     );
     expect(entitlements.state, isA<EntitlementsUnknown>());
-    expect(entitlements.has(Entitlement.lifetime), isFalse);
+    expect(entitlements.has(Entitlement.premium), isFalse);
     expect(rows.watching, isEmpty);
   });
 
@@ -39,14 +43,14 @@ void main() {
       entitlements.state,
       isA<EntitlementsKnown>()
           .having((s) => s.householdId, 'household', 'home')
-          .having((s) => s.unlocks.kinds, 'kinds', isEmpty),
+          .having((s) => s.unlocks.rows, 'rows', isEmpty),
     );
     expect(rows.watching, {'home'});
     rows
       ..unlockedNow = true
       ..change();
     await pumpEventQueue();
-    expect(entitlements.has(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isTrue);
   });
 
   test('offline it stays unknown until a reconnect reads', () async {
@@ -57,7 +61,7 @@ void main() {
       ..offline = false
       ..change();
     await pumpEventQueue();
-    expect(entitlements.has(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isTrue);
   });
 
   test('offline later keeps what it knew', () async {
@@ -65,13 +69,13 @@ void main() {
     final (entitlements, _) = await follow(rows);
     rows.offline = true;
     await entitlements.refresh();
-    expect(entitlements.has(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isTrue);
   });
 
   test("another household's unlock is not this one's", () async {
     final rows = FakeEntitlementsSource(unlockedNow: true);
     final (entitlements, session) = await follow(rows);
-    expect(entitlements.has(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isTrue);
     rows.unlockedNow = false;
     await session.join('ABCD2345');
     await pumpEventQueue();
@@ -80,7 +84,7 @@ void main() {
       entitlements.state,
       isA<EntitlementsKnown>()
           .having((s) => s.householdId, 'id', 'other')
-          .having((s) => s.unlocks.kinds, 'kinds', isEmpty),
+          .having((s) => s.unlocks.rows, 'rows', isEmpty),
     );
   });
 
@@ -90,7 +94,7 @@ void main() {
       final rows = FakeEntitlementsSource()..offline = true;
       final (entitlements, _) = await follow(rows);
       expect(
-        entitlements.canOffer(Entitlement.lifetime),
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
         isFalse,
         reason: 'unknown',
       );
@@ -99,7 +103,7 @@ void main() {
         ..change();
       await pumpEventQueue();
       expect(
-        entitlements.canOffer(Entitlement.lifetime),
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
         isTrue,
         reason: 'known, locked',
       );
@@ -108,7 +112,7 @@ void main() {
         ..change();
       await pumpEventQueue();
       expect(
-        entitlements.canOffer(Entitlement.lifetime),
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
         isFalse,
         reason: 'unlocked',
       );
@@ -121,8 +125,11 @@ void main() {
         {'kind': 'plus', 'source': 'purchase'},
       ];
     final (entitlements, _) = await follow(rows);
-    expect(entitlements.has(Entitlement.lifetime), isFalse);
-    expect(entitlements.canOffer(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isFalse);
+    expect(
+      entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
+      isTrue,
+    );
   });
 
   test("a tester's grant unlocks Lifetime and is marked", () async {
@@ -131,7 +138,7 @@ void main() {
         {'kind': 'lifetime', 'source': 'tester'},
       ];
     final (entitlements, _) = await follow(rows);
-    expect(entitlements.has(Entitlement.lifetime), isTrue);
+    expect(entitlements.has(Entitlement.premium), isTrue);
     expect(
       entitlements.state,
       isA<EntitlementsKnown>().having(
@@ -178,5 +185,212 @@ void main() {
     await pumpEventQueue();
     expect(entitlements.state, isA<EntitlementsUnknown>());
     expect(rows.watching, isEmpty);
+  });
+
+  group('premium at read time (the server rule, household_premium)', () {
+    final now = DateTime.utc(2026, 11, 1, 12);
+    Premium premiumOf(List<Map<String, dynamic>> rows) =>
+        unlocksOf(rows).premiumAt(now);
+
+    test('the legacy wire value lifetime reads as premium', () {
+      expect(Entitlement.parse('lifetime'), Entitlement.premium);
+      expect(Entitlement.parse('premium'), Entitlement.premium);
+      expect(Entitlement.parse('plus'), isNull);
+      expect(
+        premiumOf([
+          {'kind': 'lifetime', 'source': 'purchase'},
+        ]),
+        isA<ActivePremium>().having(
+          (p) => p.source,
+          'source',
+          PremiumSource.lifetime,
+        ),
+      );
+    });
+
+    test('an active yearly plan: premium until its end, renewing', () {
+      expect(
+        premiumOf([yearlyRow(from: now)]),
+        isA<ActivePremium>()
+            .having((p) => p.source, 'source', PremiumSource.yearly)
+            .having(
+              (p) => p.expiresAt,
+              'end',
+              now.add(const Duration(days: 200)),
+            )
+            .having((p) => p.renews, 'renews', isTrue),
+      );
+      expect(
+        premiumOf([yearlyRow(from: now, renews: false)]),
+        isA<ActivePremium>().having((p) => p.renews, 'renews', isFalse),
+      );
+    });
+
+    test('an ended yearly plan is no premium, without any event', () {
+      expect(premiumOf([yearlyRow(from: now, days: -1)]), isA<NoPremium>());
+    });
+
+    test('Lifetime and tester grants win over yearly and never end', () {
+      final yearly = yearlyRow(from: now);
+      expect(
+        premiumOf([
+          yearly,
+          {
+            'kind': 'premium',
+            'source': 'purchase',
+            'premium_source': 'lifetime',
+          },
+        ]),
+        isA<ActivePremium>()
+            .having((p) => p.source, 'source', PremiumSource.lifetime)
+            .having((p) => p.expiresAt, 'end', isNull),
+      );
+      expect(
+        premiumOf([
+          yearly,
+          {
+            'kind': 'premium',
+            'source': 'tester',
+            'premium_source': 'tester_grant',
+          },
+        ]),
+        isA<ActivePremium>().having(
+          (p) => p.source,
+          'source',
+          PremiumSource.testerGrant,
+        ),
+      );
+    });
+
+    test('two yearly plans: premium runs to the later end', () {
+      expect(
+        premiumOf([yearlyRow(from: now, days: 10), yearlyRow(from: now)]),
+        isA<ActivePremium>().having(
+          (p) => p.expiresAt,
+          'end',
+          now.add(const Duration(days: 200)),
+        ),
+      );
+    });
+
+    test('a yearly row without its end is dropped', () {
+      expect(
+        premiumOf([
+          {'kind': 'premium', 'source': 'purchase', 'premium_source': 'yearly'},
+        ]),
+        isA<NoPremium>(),
+      );
+    });
+  });
+
+  group('what may be offered (canOffer, H-84)', () {
+    final now = DateTime.utc(2026, 11, 1, 12);
+
+    Future<Entitlements> known(List<Map<String, dynamic>> rows) async {
+      final session = TestSession(
+        const InHousehold('peter', Household(id: 'home', name: 'Zuhause')),
+      );
+      addTearDown(session.close);
+      final entitlements = Entitlements(
+        FakeEntitlementsSource()..rowsNow = rows,
+        session,
+        now: () => now,
+      );
+      addTearDown(entitlements.close);
+      await pumpEventQueue();
+      return entitlements;
+    }
+
+    List<PremiumPlan> offered(Entitlements e) => [
+      for (final plan in PremiumPlan.values)
+        if (e.canOffer(Entitlement.premium, plan)) plan,
+    ];
+
+    test('no premium: both plans', () async {
+      expect(offered(await known([])), PremiumPlan.values);
+    });
+
+    test(
+      'an active yearly plan: only Lifetime, never a second yearly plan',
+      () async {
+        final e = await known([yearlyRow(from: now)]);
+        expect(offered(e), [PremiumPlan.lifetime]);
+        expect(e.yearlyBilled, isTrue);
+      },
+    );
+
+    test('a lapsed yearly plan: both plans again', () async {
+      expect(
+        offered(await known([yearlyRow(from: now, days: -3)])),
+        PremiumPlan.values,
+      );
+    });
+
+    test('Lifetime or a tester grant: nothing', () async {
+      expect(
+        offered(
+          await known([
+            {
+              'kind': 'premium',
+              'source': 'purchase',
+              'premium_source': 'lifetime',
+            },
+          ]),
+        ),
+        isEmpty,
+      );
+      expect(
+        offered(
+          await known([
+            {
+              'kind': 'premium',
+              'source': 'tester',
+              'premium_source': 'tester_grant',
+            },
+            yearlyRow(from: now),
+          ]),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('Lifetime next to a renewing yearly plan: still billed', () async {
+      final e = await known([
+        yearlyRow(from: now),
+        {'kind': 'premium', 'source': 'purchase', 'premium_source': 'lifetime'},
+      ]);
+      expect(e.yearlyBilled, isTrue);
+      expect(e.twoYearlyPlans, isFalse);
+    });
+  });
+
+  test('when a yearly plan ends, the rows are read again', () {
+    fakeAsync((async) {
+      var clock = DateTime.utc(2026, 11, 1, 12);
+      final session = TestSession(
+        const InHousehold('peter', Household(id: 'home', name: 'Zuhause')),
+      );
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: clock, days: 1)];
+      final entitlements = Entitlements(rows, session, now: () => clock);
+      async.flushMicrotasks();
+      expect(entitlements.has(Entitlement.premium), isTrue);
+      final states = <EntitlementsState>[];
+      final sub = entitlements.stream.listen(states.add);
+      clock = clock.add(const Duration(days: 1, seconds: 2));
+      async
+        ..elapse(const Duration(days: 1, seconds: 2))
+        ..flushMicrotasks();
+      expect(states, isNotEmpty, reason: 'read again at the end');
+      expect(entitlements.has(Entitlement.premium), isFalse);
+      expect(
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.yearly),
+        isTrue,
+      );
+      unawaited(sub.cancel());
+      unawaited(entitlements.close());
+      unawaited(session.close());
+      async.flushMicrotasks();
+    });
   });
 }

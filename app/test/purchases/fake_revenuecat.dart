@@ -15,6 +15,10 @@ class FakeRevenueCat() {
   var transactionId = '2000000123';
   var owned = <String>[];
 
+  /// The products the store has in this storefront (a yearly-only one has
+  /// no Lifetime), by the id the SDK reports: Play adds the base plan.
+  var products = <String>{lifetimeProductId, yearlyProductId};
+
   Map<String, Object?> get customerInfo => {
     'entitlements': {'all': <String, Object?>{}, 'active': <String, Object?>{}},
     'allPurchaseDates': <String, Object?>{},
@@ -44,23 +48,28 @@ class FakeRevenueCat() {
         appUserId = args!['appUserID']! as String;
         return {'customerInfo': customerInfo, 'created': false};
       case 'getProductInfo':
+        final wanted = (args!['productIdentifiers']! as List).cast<String>();
         return [
-          {
-            'identifier': lifetimeProductId,
-            'description': 'Hummlist Lifetime',
-            'title': 'Hummlist Lifetime',
-            'price': 9.99,
-            'priceString': '9,99 €',
-            'currencyCode': 'EUR',
-            'productCategory': 'NON_SUBSCRIPTION',
-          },
+          for (final id in products)
+            if (wanted.any((w) => id == w || id.startsWith('$w:')))
+              {
+                'identifier': id,
+                'description': 'Hummlist Premium',
+                'title': 'Hummlist Premium',
+                'price': id == lifetimeProductId ? 29.99 : 9.99,
+                'priceString': id == lifetimeProductId ? '29,99 €' : '9,99 €',
+                'currencyCode': 'EUR',
+                'productCategory': id == lifetimeProductId
+                    ? 'NON_SUBSCRIPTION'
+                    : 'SUBSCRIPTION',
+              },
         ];
       case 'purchaseProduct':
         return {
           'customerInfo': customerInfo,
           'transaction': {
             'transactionIdentifier': transactionId,
-            'productIdentifier': lifetimeProductId,
+            'productIdentifier': args!['productIdentifier'],
             'purchaseDate': '2026-10-31T12:00:00Z',
           },
         };
