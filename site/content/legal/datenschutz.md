@@ -47,7 +47,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Nutzungsvertrags).
 
 ## 5. Einkaufsliste und Haushalt
 
-Wir speichern, was du in Hummlist eingibst: Haushaltsname, Mitglieder und ihre Rolle, Einladungen, Einträge (Artikelname, Menge, wer ihn hinzugefügt und gekauft hat, Zeitpunkte), einen Verlauf der Änderungen sowie, was Hummlist für deinen Haushalt lernt (Kategorien, Läden, Marken). Alle Mitglieder deines Haushalts sehen die Liste, den Verlauf und die Anzeigenamen der anderen Mitglieder. Einladungslinks laufen nach 14 Tagen ab.
+Wir speichern, was du in Hummlist eingibst: Haushaltsname, Mitglieder und ihre Rolle, Einladungen, Einträge (Artikelname, Menge, wer ihn hinzugefügt und gekauft hat, Zeitpunkte), einen Verlauf der Änderungen sowie, was Hummlist für deinen Haushalt lernt (Kategorien, Läden, Marken). Alle Mitglieder deines Haushalts sehen die Liste, den Verlauf und die Anzeigenamen der anderen Mitglieder. Einladungslinks laufen nach 7 Tagen ab und gelten nur einmal.
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ## 6. Spracheingabe
