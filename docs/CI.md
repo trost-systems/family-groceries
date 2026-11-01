@@ -14,18 +14,22 @@ the same things.
 | Gate | What it checks | Runs locally |
 | --- | --- | --- |
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
-| `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh` | yes |
+| `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh`, the generated design tokens and app icon against their source (`design/tokens/build.mjs --check`, `design/app-icon/build.mjs --check`) | yes |
 | `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/`, its `pending.json` and overrides, and `releases/flags.json`; the note's `flag:` / `hold:` keys must be in that file ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
 | `site` | The guides site in `site/`: build checks, tests, a production build; no real access token in the repo | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
 | `fg-cli` | Deno fmt, lint and tests for the verify skill's CLI | yes |
-| `flutter` | Generated l10n, format, `flutter analyze --fatal-infos`, tests | yes |
+| `flutter` | Generated l10n, format, `flutter analyze --fatal-infos`, tests; the same for the Widgetbook (`app/widgetbook/`) | yes |
 | `web-prod` | The production web build, into `app/build/web-prod` | yes |
 | `fastlane` | The Gemfile.lock installs and the Fastfile parses | yes |
 | `e2e` | Playwright against the release web build and the local stack | yes, under `/tmp/fg-e2e.lock` |
 | `android` | Debug APK build (the app's Kotlin) | `--only android` |
-| `ios` | Simulator build (the app's Swift), macOS only | no |
+| `ios` | Simulator build (the app's Swift); the built app holds the app icon (light, dark, tinted, the Icon Composer stacks) and the launch screen's assets; macOS only | no |
+
+`.github/workflows/widgetbook.yml` is not a gate: on pushes to `main` that touch
+`app/` and by hand it builds the Widgetbook for the web (`scripts/widgetbook.sh`)
+and uploads it as the artifact `widgetbook` (docs/DESIGN.md, "Widgetbook").
 
 ```bash
 scripts/verify.sh                          # every local gate, e2e last

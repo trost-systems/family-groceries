@@ -58,3 +58,23 @@ flutter:
   generate: true
   assets:
     - assets/
+    - assets/fonts/OFL-BricolageGrotesque.txt
+    - assets/fonts/OFL-Inter.txt
+  # Design job 52: bundled, never downloaded at runtime (OFL texts next to
+  # them, registered with the LicenseRegistry in main.dart).
+  fonts:
+    - family: Bricolage Grotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BricolageGrotesque-ExtraBold.ttf
+          weight: 800
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

@@ -78,18 +78,25 @@ export async function listArea(page: Page): Promise<{ top: number; bottom: numbe
 }
 
 /**
- * Scrolls the list with the mouse wheel until [target] is fully on screen. The list builds rows
- * lazily, so a row far off screen is not in the page at all until the list scrolls near it; it is
- * looked for downwards first, then upwards.
+ * Scrolls the list with the mouse wheel until [target] is fully on screen, at least [margin] px
+ * inside the list's top and bottom edges. The list builds rows lazily, so a row far off screen is
+ * not in the page at all until the list scrolls near it; it is looked for downwards first, then
+ * upwards. A row on screen that the list cannot move further in (at its start or end) is as far in
+ * as it gets.
  */
-export async function reveal(page: Page, target: Locator): Promise<void> {
+export async function reveal(page: Page, target: Locator, margin = 0): Promise<void> {
   const { top, bottom } = await listArea(page);
   await page.mouse.move(page.viewportSize()!.width / 2, (top + bottom) / 2);
+  let lastY: number | undefined;
   for (let i = 0; i < 40; i++) {
     const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
-    if (box && box.y >= top && box.y + box.height <= bottom) return;
-    const down = box ? box.y + box.height > bottom : i < 20;
-    await page.mouse.wheel(0, down ? 250 : -250);
+    const onScreen = box && box.y >= top && box.y + box.height <= bottom;
+    if (onScreen && box.y >= top + margin && box.y + box.height <= bottom - margin) return;
+    if (onScreen && box.y === lastY) return;
+    lastY = box?.y;
+    const down = box ? box.y + box.height > bottom - margin : i < 20;
+    const step = onScreen ? margin + box.height : 250;
+    await page.mouse.wheel(0, down ? step : -step);
     await page.waitForTimeout(150);
   }
   throw new Error(`could not scroll ${target} into view`);

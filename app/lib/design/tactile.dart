@@ -1,0 +1,264 @@
+import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/motion.dart';
+import 'package:family_groceries/design/tokens.g.dart';
+import 'package:flutter/material.dart';
+
+/// Colours of one tactile hex in one state.
+@immutable
+final class const TactileColors({
+  required final Color face,
+  required final Color contour,
+
+  /// The solid edge the face rests on; null for a flat face.
+  required final Color? edge,
+
+  /// The keyboard focus ring.
+  required final Color focus,
+}) {
+  @override
+  bool operator ==(Object other) =>
+      other is TactileColors &&
+      other.face == face &&
+      other.contour == contour &&
+      other.edge == edge &&
+      other.focus == focus;
+
+  @override
+  int get hashCode => Object.hash(face, contour, edge, focus);
+}
+
+/// The 6b tactile look for a Material button: a hex face with a 2 px contour
+/// resting on a hard edge [HlDepth.edge] tall. Hover lifts the face by
+/// [HlDepth.lift], a press sinks it flush into the edge in
+/// [HlDuration.press], and it springs back in [HlDuration.release] with the
+/// bounce curve; with reduced motion it jumps. A disabled face sits flush.
+///
+/// Plug it into a [ButtonStyle] with [tactileButtonStyle]: the background
+/// paints the face and the foreground moves the label with it, so the
+/// button's ink, semantics, keys and tap target stay Material's.
+class const TactileFace({
+  required final Set<WidgetState> states,
+  required final TactileColors colors,
+  required final Widget? child,
+  super.key,
+}) extends StatefulWidget {
+  /// How far the face of the enclosing tactile button has moved from rest:
+  /// negative lifted, [HlDepth.press] sunk.
+  static Animation<double>? offsetOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_FaceOffset>()?.notifier;
+
+  @override
+  State<TactileFace> createState() => _TactileFaceState();
+}
+
+class _TactileFaceState()
+    extends State<TactileFace>
+    with SingleTickerProviderStateMixin {
+  late final _offset = AnimationController.unbounded(
+    vsync: this,
+    value: _target,
+  );
+
+  double get _target {
+    final states = widget.states;
+    if (states.contains(WidgetState.disabled) ||
+        states.contains(WidgetState.pressed)) {
+      return HlDepth.press;
+    }
+    return states.contains(WidgetState.hovered) ? -HlDepth.lift : 0;
+  }
+
+  @override
+  void didUpdateWidget(TactileFace oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final target = _target;
+    if (target == _offset.value) {
+      return;
+    }
+    final sinking = target > _offset.value;
+    final duration = hlMotion(
+      context,
+      sinking ? HlDuration.press : HlDuration.release,
+    );
+    if (duration == Duration.zero) {
+      _offset.value = target;
+      return;
+    }
+    _offset.animateTo(
+      target,
+      duration: duration,
+      curve: sinking ? HlEasing.press : HlEasing.bounce,
+    );
+  }
+
+  @override
+  void dispose() {
+    _offset.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _FaceOffset(
+    notifier: _offset,
+    child: CustomPaint(
+      painter: _TactilePainter(
+        offset: _offset,
+        colors: widget.colors,
+        focused: widget.states.contains(WidgetState.focused),
+      ),
+      child: widget.child,
+    ),
+  );
+}
+
+class const _FaceOffset({
+  required AnimationController super.notifier,
+  required super.child,
+}) extends InheritedNotifier<AnimationController>;
+
+class _TactilePainter({
+  required final Animation<double> offset,
+  required final TactileColors colors,
+  required final bool focused,
+}) extends CustomPainter {
+  this : super(repaint: offset);
+
+  static const _shape = HexBorder();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final edge = colors.edge;
+    final depth = edge == null ? 0.0 : HlDepth.edge;
+    final rest = Rect.fromLTWH(0, 0, size.width, size.height - depth);
+    final contour = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = HlBorder.width
+      ..color = colors.contour;
+    // Strokes sit inside the face so the contour never grows the control.
+    const inset = -HlBorder.width / 2;
+    if (edge != null) {
+      final below = rest.shift(const Offset(0, HlDepth.edge));
+      canvas
+        ..drawPath(_shape.pathFor(below), Paint()..color = edge)
+        ..drawPath(_shape.pathFor(below, outset: inset), contour);
+    }
+    final face = rest.shift(Offset(0, edge == null ? 0 : offset.value));
+    canvas
+      ..drawPath(_shape.pathFor(face), Paint()..color = colors.face)
+      ..drawPath(_shape.pathFor(face, outset: inset), contour);
+    if (focused) {
+      canvas.drawPath(
+        _shape.pathFor(face, outset: HlFocus.ringGap + HlFocus.ringWidth / 2),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = HlFocus.ringWidth
+          ..color = colors.focus,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TactilePainter oldDelegate) =>
+      oldDelegate.colors != colors || oldDelegate.focused != focused;
+}
+
+/// The label of a tactile button: centred on the face and moving with it.
+/// A spinner in it (a button that is busy) takes the label's colour: the
+/// theme's cobalt-light would sit on lemon in dark mode.
+class const _TactileLabel({
+  required final Widget? child,
+  required final bool hasEdge,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final offset = TactileFace.offsetOf(context);
+    final child = ProgressIndicatorTheme(
+      data: ProgressIndicatorTheme.of(context)
+          .copyWith(color: DefaultTextStyle.of(context).style.color),
+      child: this.child ?? const SizedBox.shrink(),
+    );
+    if (offset == null || !hasEdge) {
+      return child;
+    }
+    return AnimatedBuilder(
+      animation: offset,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, offset.value - HlDepth.edge / 2),
+        child: child,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// The tactile button's Material shape. A button with a background builder
+/// clips to its shape, and the face's lift and focus ring reach past the
+/// button's box: this shape is that box grown by the ring.
+class const _RoomForFocus({super.side}) extends OutlinedBorder {
+  static const _room = HlFocus.ringGap + HlFocus.ringWidth + HlDepth.lift;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      Path()..addRect(rect.inflate(_room));
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
+      getOuterPath(rect);
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  _RoomForFocus copyWith({BorderSide? side}) =>
+      _RoomForFocus(side: side ?? this.side);
+
+  @override
+  _RoomForFocus scale(double t) => this;
+}
+
+/// Whether the button being built picked its own background colour (a
+/// destructive action, a brand button, a chip): then it stays a plain
+/// Material button in its own colours instead of a tactile face.
+bool _ownsBackground(BuildContext context) => switch (context.widget) {
+  ButtonStyleButton(:final style?) => style.backgroundColor != null,
+  _ => false,
+};
+
+/// A [ButtonStyle] that draws the button as a [TactileFace] in [colors]
+/// (resolved per state). The button's own background and elevation are off;
+/// its ink still runs, under the opaque face.
+ButtonStyle tactileButtonStyle({
+  required TactileColors Function(Set<WidgetState> states) colors,
+  required WidgetStateProperty<Color?> foreground,
+  required TextStyle textStyle,
+}) => ButtonStyle(
+  backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+  // The moving face is the feedback; ink would show around it.
+  overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+  foregroundColor: foreground,
+  iconColor: foreground,
+  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+  surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+  elevation: const WidgetStatePropertyAll(0),
+  side: const WidgetStatePropertyAll(BorderSide.none),
+  shape: const WidgetStatePropertyAll(_RoomForFocus()),
+  textStyle: WidgetStatePropertyAll(textStyle),
+  minimumSize: const WidgetStatePropertyAll(Size(64, HlSize.target)),
+  padding: const WidgetStatePropertyAll(
+    EdgeInsets.symmetric(
+      // Text stays between the tips: the safe area is the flat middle.
+      horizontal: HlHex.tip * HlSize.target + HlSpace.s3,
+      vertical: HlSpace.s2,
+    ),
+  ),
+  backgroundBuilder: (context, states, child) => _ownsBackground(context)
+      ? child ?? const SizedBox.shrink()
+      : TactileFace(states: states, colors: colors(states), child: child),
+  foregroundBuilder: (context, states, child) => _TactileLabel(
+    hasEdge: !_ownsBackground(context) && colors(states).edge != null,
+    child: child,
+  ),
+);

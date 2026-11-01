@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/model.dart';
@@ -184,7 +185,11 @@ class const _Chip({
           foregroundColor: open
               ? scheme.onSecondaryContainer
               : scheme.onSurface,
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: HlFont.sans,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -244,7 +249,11 @@ class const _Option({
               ? scheme.primary
               : scheme.surfaceContainerHigh,
           foregroundColor: selected ? scheme.onPrimary : scheme.onSurface,
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontFamily: HlFont.sans,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

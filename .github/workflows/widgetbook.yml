@@ -1,0 +1,41 @@
+# Job 52: builds the Widgetbook (app/widgetbook/, the catalogue of the app's real components) for
+# the web and uploads it as the artifact `widgetbook`: download it from the run, unzip, serve the
+# folder (python3 -m http.server -d widgetbook) and open it. Its analyze, format and tests run in
+# ci.yml's flutter gate; this workflow only spends the web build's minutes, on main and by hand.
+# Never published on hummlist.com.
+name: Widgetbook
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**']
+  workflow_dispatch:
+
+concurrency:
+  group: widgetbook-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.8
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: scripts/widgetbook.sh --out "$RUNNER_TEMP/widgetbook"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: widgetbook
+          path: ${{ runner.temp }}/widgetbook
+          retention-days: 30
+          if-no-files-found: error

@@ -1,18 +1,271 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/tactile.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Design H's seed. Every colour of the app is a role of the tonal-spot
-/// scheme Material 3 builds from it, in light and in dark (design SPEC
-/// 2), except the store badges (`store_badge.dart`).
-const seedColor = Color(0xFF2E7D32);
+/// The Material roles of the Hummlist palette (6b Hex Frische, design job
+/// 52): cobalt is primary, lemon ("honey") secondary, mint tertiary; outline
+/// is the navy contour. Every colour comes from `tokens.g.dart`.
+ColorScheme hummlistColorScheme(Brightness brightness) {
+  final t = HummlistColors.of(brightness);
+  final light = brightness == Brightness.light;
+  return ColorScheme(
+    brightness: brightness,
+    primary: t.brand,
+    onPrimary: t.onBrand,
+    primaryContainer: t.accentSoft,
+    onPrimaryContainer: t.onAccentSoft,
+    secondary: t.honey,
+    onSecondary: t.onHoney,
+    secondaryContainer: t.honeySoft,
+    onSecondaryContainer: t.text,
+    tertiary: t.success,
+    onTertiary: t.onSuccess,
+    tertiaryContainer: t.mintSoft,
+    onTertiaryContainer: t.text,
+    error: t.error,
+    onError: t.onError,
+    errorContainer: Color.alphaBlend(
+      t.error.withValues(alpha: light ? 0.14 : 0.22),
+      t.surfaceRaised,
+    ),
+    onErrorContainer: t.text,
+    surface: t.surface,
+    onSurface: t.text,
+    onSurfaceVariant: t.textMuted,
+    surfaceDim: light ? t.surfaceSunken : t.surface,
+    surfaceBright: t.surfaceRaised,
+    surfaceContainerLowest: light ? t.surfaceRaised : t.surface,
+    surfaceContainerLow: t.surfaceRaised,
+    surfaceContainer: light ? t.surfaceSunken : t.surfaceRaised,
+    surfaceContainerHigh: light
+        ? t.surfaceSunken
+        : Color.lerp(t.surfaceRaised, t.divider, 0.3),
+    surfaceContainerHighest: Color.lerp(
+      t.surfaceSunken,
+      t.divider,
+      light ? 0.5 : 0.7,
+    ),
+    outline: t.border,
+    outlineVariant: t.divider,
+    shadow: t.edge,
+    scrim: const Color(0xFF000000),
+    inverseSurface: light ? t.inverse : t.text,
+    onInverseSurface: light ? t.onInverse : t.surface,
+    inversePrimary: light ? t.honey : t.cobalt,
+    surfaceTint: Colors.transparent,
+  );
+}
 
-/// The app's theme in [brightness]: both come from [seedColor], so a screen
-/// that uses `ColorScheme` roles is right in both.
-ThemeData appTheme(Brightness brightness) =>
-    ThemeData(colorSchemeSeed: seedColor, brightness: brightness);
+/// Material's type scale in the Hummlist fonts: Bricolage Grotesque for
+/// display, headline and title, Inter for everything else. The sizes stay
+/// Material's ([geometry]: ThemeData only applies them in `Theme.of`), so
+/// layouts and text scaling behave as before.
+TextTheme _textTheme(TextTheme base, TextTheme geometry) {
+  TextStyle display(
+    TextStyle? Function(TextTheme) role,
+    FontWeight weight,
+    double tracking,
+  ) => role(base)!.copyWith(
+    fontFamily: HlFont.display,
+    fontWeight: weight,
+    letterSpacing: tracking * role(geometry)!.fontSize!,
+  );
+  TextStyle sans(TextStyle? Function(TextTheme) role, [FontWeight? weight]) =>
+      role(base)!.copyWith(fontFamily: HlFont.sans, fontWeight: weight);
+  return base.copyWith(
+    displayLarge: display((t) => t.displayLarge, FontWeight.w800, -0.04),
+    displayMedium: display((t) => t.displayMedium, FontWeight.w800, -0.04),
+    displaySmall: display((t) => t.displaySmall, FontWeight.w800, -0.035),
+    headlineLarge: display((t) => t.headlineLarge, FontWeight.w800, -0.035),
+    headlineMedium: display((t) => t.headlineMedium, FontWeight.w800, -0.03),
+    headlineSmall: display((t) => t.headlineSmall, FontWeight.w800, -0.025),
+    titleLarge: display((t) => t.titleLarge, FontWeight.w700, -0.02),
+    titleMedium: display((t) => t.titleMedium, FontWeight.w700, -0.01),
+    titleSmall: display((t) => t.titleSmall, FontWeight.w700, 0),
+    bodyLarge: sans((t) => t.bodyLarge),
+    bodyMedium: sans((t) => t.bodyMedium),
+    bodySmall: sans((t) => t.bodySmall),
+    labelLarge: sans((t) => t.labelLarge, FontWeight.w600),
+    labelMedium: sans((t) => t.labelMedium, FontWeight.w600),
+    labelSmall: sans((t) => t.labelSmall, FontWeight.w600),
+  );
+}
+
+/// The app's theme in [brightness], built from the design tokens
+/// (`design/tokens/hummlist.tokens.json`): the colour scheme above, the
+/// fonts, and the 6b shapes: tactile hex buttons on a hard edge, hex chips
+/// and indicators, rounded cards and sheets with the navy contour.
+ThemeData appTheme(Brightness brightness) {
+  final t = HummlistColors.of(brightness);
+  final scheme = hummlistColorScheme(brightness);
+  final base = ThemeData(
+    colorScheme: scheme,
+    brightness: brightness,
+    fontFamily: HlFont.sans,
+  );
+  // Sizes merged in now, so component themes built from it have them too.
+  final text = _textTheme(
+    base.typography.englishLike.merge(base.textTheme),
+    base.typography.englishLike,
+  );
+  final label = text.labelLarge!.copyWith(fontWeight: FontWeight.w700);
+  final contour = BorderSide(color: t.edge, width: HlBorder.width);
+  final muted = TactileColors(
+    face: t.surfaceSunken,
+    contour: t.textMuted,
+    edge: t.textMuted,
+    focus: t.accent,
+  );
+
+  // The one main action: lemon face, navy contour, darker lemon edge.
+  final primary = tactileButtonStyle(
+    colors: (states) => states.contains(WidgetState.disabled)
+        ? muted
+        : TactileColors(
+            face: t.honey,
+            contour: t.edge,
+            edge: t.honeyEdge,
+            focus: t.accent,
+          ),
+    foreground: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.disabled) ? t.textMuted : t.onHoney,
+    ),
+    textStyle: label,
+  );
+  // Second rank: raised surface face on a surface edge.
+  final secondary = tactileButtonStyle(
+    colors: (states) => states.contains(WidgetState.disabled)
+        ? muted
+        : TactileColors(
+            face: t.surfaceRaised,
+            contour: t.border,
+            edge: t.surfaceEdge,
+            focus: t.accent,
+          ),
+    foreground: WidgetStateProperty.resolveWith(
+      (states) => states.contains(WidgetState.disabled) ? t.textMuted : t.text,
+    ),
+    textStyle: label,
+  );
+
+  RoundedRectangleBorder rounded(double radius, [BorderSide? side]) =>
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radius),
+        side: side ?? BorderSide.none,
+      );
+
+  return base.copyWith(
+    textTheme: text,
+    extensions: [t],
+    scaffoldBackgroundColor: t.surface,
+    dividerTheme: DividerThemeData(color: t.divider),
+    appBarTheme: AppBarTheme(
+      backgroundColor: t.surface,
+      foregroundColor: t.text,
+      surfaceTintColor: Colors.transparent,
+      titleTextStyle: text.titleLarge!.copyWith(color: t.text),
+    ),
+    filledButtonTheme: FilledButtonThemeData(style: primary),
+    elevatedButtonTheme: ElevatedButtonThemeData(style: primary),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: secondary),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: t.brand,
+        textStyle: label,
+        shape: const HexBorder(),
+        minimumSize: const Size(48, HlSize.target),
+        padding: const EdgeInsets.symmetric(
+          horizontal: HlHex.tip * HlSize.target,
+        ),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: t.honey,
+      foregroundColor: t.onHoney,
+      elevation: 0,
+      focusElevation: 0,
+      hoverElevation: 0,
+      highlightElevation: 0,
+      shape: HexBorder(side: contour),
+      extendedTextStyle: label,
+    ),
+    chipTheme: ChipThemeData(
+      shape: HexBorder(side: BorderSide(color: t.border)),
+      side: BorderSide(color: t.border),
+      backgroundColor: t.surfaceRaised,
+      selectedColor: t.honey,
+      checkmarkColor: t.onHoney,
+      labelStyle: text.labelLarge!.copyWith(color: t.text),
+      secondaryLabelStyle: text.labelLarge!.copyWith(color: t.onHoney),
+      padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      shape: const HexBorder(),
+      side: BorderSide(color: t.border, width: HlBorder.width),
+      fillColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? t.honey : null,
+      ),
+      checkColor: WidgetStatePropertyAll(t.onHoney),
+    ),
+    cardTheme: CardThemeData(
+      color: t.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      shape: rounded(HlRadius.m, BorderSide(color: t.divider)),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: t.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      shape: rounded(HlRadius.l, contour),
+      titleTextStyle: text.headlineSmall!.copyWith(color: t.text),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: t.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(HlRadius.l)),
+      ),
+      dragHandleColor: t.textMuted,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: scheme.inverseSurface,
+      contentTextStyle: text.bodyMedium!.copyWith(
+        color: scheme.onInverseSurface,
+      ),
+      actionTextColor: scheme.inversePrimary,
+      shape: rounded(HlRadius.s),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: scheme.surfaceContainer,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: t.honey,
+      indicatorShape: HexBorder(side: contour),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? t.onHoney
+              : t.textMuted,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => text.labelMedium!.copyWith(
+          color: states.contains(WidgetState.selected) ? t.text : t.textMuted,
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w600,
+        ),
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: t.brand),
+    listTileTheme: ListTileThemeData(iconColor: t.textMuted),
+  );
+}
 
 /// How a stored theme choice reads: `light`, `dark`, or anything else for
 /// the device's setting.

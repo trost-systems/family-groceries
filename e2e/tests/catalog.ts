@@ -102,6 +102,9 @@ export async function storeOf(page: Page, item: string): Promise<string | undefi
 
 type Box = { x: number; y: number; width: number; height: number };
 
+/** More than the list's auto-scroll zone (8% of the list's height) in the e2e viewport. */
+const autoScrollMargin = 72;
+
 /**
  * Holds [from] until it lifts, then carries it to [to] and lets go at [at] (a point in the target's
  * box). A target off screen is reached the way a user reaches it: by holding the item at the list's
@@ -113,7 +116,9 @@ export async function holdAndDrop(
   page: Page, from: Locator, to: Locator, at: (box: Box) => { x: number; y: number },
   { up, beforeDrop }: { up: boolean | (() => Promise<boolean>); beforeDrop?: () => Promise<void> },
 ): Promise<void> {
-  await reveal(page, from);
+  // Clear of the list's auto-scroll zones (8% of its height at each edge): a row lifted inside one
+  // starts the list scrolling at once, and the target then moves while it is being measured.
+  await reveal(page, from, autoScrollMargin);
   const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + Math.min(a.width / 2, 120), a.y + a.height / 2);
   await page.mouse.down();

@@ -1,0 +1,25 @@
+name: hummlist_widgetbook
+description: Widgetbook catalogue of the Hummlist app's real components (design job 52).
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  family_groceries:
+    path: ..
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  visibility_detector: 0.4.0+2
+  widgetbook: 4.0.0-beta.14
+
+dev_dependencies:
+  flutter_agent_lints: 1.1.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

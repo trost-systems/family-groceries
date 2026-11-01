@@ -9,3 +9,4 @@ analyzer:
     - ios/**
     - web/**
     - linux/**
+    - widgetbook/**

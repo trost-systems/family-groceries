@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
@@ -292,8 +293,8 @@ class _FeedbackFormState() extends State<FeedbackForm> {
                       visualDensity: VisualDensity.standard,
                       minimumSize: const Size(132, 52),
                       padding: const EdgeInsets.symmetric(horizontal: 28),
-                      shape: const StadiumBorder(),
                       textStyle: const TextStyle(
+                        fontFamily: HlFont.sans,
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                       ),

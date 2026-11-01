@@ -1,0 +1,7 @@
+# The app's rule set (../analysis_options.yaml): flutter_agent_lints, experimental, every rule an error.
+include: package:flutter_agent_lints/experimental.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - web/**

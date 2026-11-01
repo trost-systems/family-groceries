@@ -5243,3 +5243,123 @@ and the Apple DTS forum answers in threads 777854 and 759909.
 17. **Not built:** an Apple Watch app (App Shortcuts from the iPhone "cannot be run on the Watch",
     WWDC23 10102), a tick-off intent, and a gradual rollout. The changelog item holds on
     `native-siri` until Hummlist Launch.
+
+
+## Job 52: the design system (6b Hex Frische, option 6's yellow) in the app, app icon #5, 2026-11-01
+
+Peter, 2026-10-31 21:06: "6 has a brighter yellow that I like more, let's use that on 6b. We'll
+lock in 6b with 6's yellow now [...] We go with app icon 5." Reference: docs/DESIGN.md.
+
+1. **The yellow change is dark mode only.** In light mode 6 and 6b already used the same lemon
+   `#ffe24a`. The brighter yellow Peter saw is 6's dark-mode yellow: 6 keeps `#ffe24a` at night,
+   6b dimmed it to option 5's `#e8cb3c`. So `color.dark.honey` is `#ffe24a` and
+   `color.dark.honey-edge` is 6's `#b39b1a`; everything else is 6b verbatim. Every icon and splash
+   colour is read from the token file, so no `#e8cb3c` is left anywhere.
+2. **One token source, owned by this job.** `design/tokens/hummlist.tokens.json` (6b's
+   tokens.json structure) and `node design/tokens/build.mjs`, which writes
+   `app/lib/design/tokens.g.dart` and `site/public/tokens.css` (6b's `--hl-*` names; the values
+   equal 6b's except the two dark tokens). Plain Node without packages: 6b's Style Dictionary
+   pipeline needs npm in the lint job and is far more than two small writers. The lint gate runs
+   `--check`. Job 53 takes these files verbatim.
+3. **The components are Material's widgets in the 6b look, through the theme, not ported POC
+   widgets.** The POC's `HexButton`, `HexChip`, `ListRow` and `Pressable` are built on
+   `widgets.dart` with their own semantics and keyboard handling. Swapping the app's 77 Material
+   buttons, chips and checkboxes for them would change each control's semantics node, focus
+   behaviour and the roles e2e finds them by: the opposite of "no behaviour change". Instead
+   `appTheme` gives the Material widgets the 6b look: `HexBorder` is ported as is (the soft hex
+   with its parallel outset), and the POC's tactile face (`tactile.dart`) plugs into
+   `ButtonStyle.backgroundBuilder`/`foregroundBuilder`, so every `FilledButton` and
+   `OutlinedButton` in the app sinks into its edge and springs back, with Material's semantics,
+   keys and tap target untouched. Chips, checkboxes and the navigation indicator take
+   `HexBorder` as their shape. No screen needed a component swap. `HexBadge` was not ported: the
+   app's badges are the stores' own logos (`store_badge.dart`), which keep their brand shape and
+   colours. The POC's `list_row` has no counterpart either: the app's item row is its own
+   (`list_view/item_row.dart`) and keeps its layout. The Widgetbook shows the real widgets.
+4. **A button with its own background opts out.** A widget whose `ButtonStyle` sets
+   `backgroundColor` (the delete confirmation in the error colour, the Google button's
+   brand colours, the fold-out chips) means "my colours": it stays a plain Material button and
+   keeps its ink, because `styleFrom(foregroundColor:)` derives its own overlay. The two sheet
+   buttons that only set a `StadiumBorder` shape (edit "Fertig", feedback "Senden") lost that
+   line so they become lemon hex buttons like every other main action.
+5. **The tactile button's Material shape is its box grown by the focus ring.** With a background
+   builder, `ButtonStyleButton` clips to its shape by default (`Clip.antiAlias`), and
+   `clipBehavior` is not a style property. A hex clip would cut the 2 px hover lift, the 3 px
+   focus ring 2 px outside the face and the tips of the face itself. The ink overlay is off for
+   tactile buttons; the moving face is the feedback.
+6. **Material's type sizes, the 6b fonts.** Bricolage Grotesque 700/800 for display, headline,
+   title, store names and counts; Inter for the rest. The sizes and line heights stay Material's
+   (6b's web sizes, body 17 px, would move every layout and the e2e geometry checks); text
+   scaling is unchanged. Fonts are static TTFs from the projects' releases (Bricolage
+   Grotesque from ateliertriay/bricolage `fonts/ttf`, Inter 4.1 from rsms/inter `extras/ttf`), not
+   the variable fonts: Flutter picks a static face per `FontWeight`, while a variable font needs
+   `fontVariations` on every style, which Material's component styles don't set. A button whose
+   own `textStyle` replaces the theme's names `HlFont.sans`.
+7. **No input decoration theme.** A first version gave fields an outlined `focusedBorder`. The
+   add field sets only `border: InputBorder.none`, so it gained an outline and new padding when
+   focused: the add sheet grew 6 px and a tap on the focused field stopped opening it (e2e
+   `add-sheet.spec.ts:61`, `list.spec.ts:12`). Fields keep Material's defaults; the focus colour is
+   cobalt through `primary`.
+8. **Spinners in lemon buttons take the label colour.** The theme's progress colour is
+   `primary`, which is `#9fb6ff` in dark mode: 1.53:1 on lemon.
+9. **Contrast rules live in the token file.** `contrastPairs` (with an optional mode) and
+   `contourRequired` (pairs that fail alone and need the navy contour, or are never used) feed
+   `app/test/design/contrast_test.dart`, which also pins the brief's lemon numbers. The test
+   failed on a planted change (`text-muted` lightened: four failures).
+10. **Icon colours.** Light: cobalt, lemon ring, white inner hex, cobalt check. Dark: deep
+    `#0b1024`, lemon ring, `#9fb6ff` inner hex, deep check; the dark icon keeps an opaque
+    background (Apple allows a transparent one). The ring and the inner hex never touch: 20 of
+    1024 units of background lie between them, so white or `#9fb6ff` next to lemon (1.29, 1.53)
+    never meet. Monochrome (Android themed, iOS tinted): the ring and the check, the inner hex
+    left out. The generator is plain Node with its own rasterizer and PNG encoder
+    (`design/app-icon/`), deterministic, with a `--check` in the lint gate; it replaces
+    `scripts/icons.py`, which needed Pillow.
+11. **Splash.** The 6b mark (cobalt hex, white check, lemon cell) centred on the surface,
+    `#f7f7f2` or `#0b1024`, on iOS (named colour and image set with dark appearances), Android
+    (`launch_background`, night variants, and `windowSplashScreen*` from API 31) and web
+    (`#splash` in index.html, removed on Flutter's `flutter-first-frame` event, never
+    intercepting pointers). In dark mode the mark's cobalt body is 2.48:1 on the deep surface; it
+    is a logo (WCAG 1.4.11 exempts logotypes), and its white check (7.6) and lemon cell (14.6)
+    carry it.
+12. **Web manifest.** `background_color` is the light surface `#f7f7f2` (the colour the page
+    shows before the first frame), `theme_color` cobalt `#1b3fae`.
+13. **The changelog item waits for Peter.** Hold `new-design` (`match: ["design"]`) in
+    releases/flags.json: merging still ships the build to internal TestFlight, which is Peter's
+    look check; the note reaches the public changelog when he releases the hold.
+14. **iOS ships both icon formats under the one name `AppIcon`.** `Runner/AppIcon.icon` is an
+    Icon Composer bundle (icon.json plus the three layer SVGs: the ring group "Wabe außen", the
+    inner hex and the check in "Wabe innen", with Default, Dark and Tinted fills) generated by
+    `design/app-icon/build.mjs`, so iOS 26 renders the layered Liquid Glass icon.
+    `Assets.xcassets/AppIcon.appiconset` keeps the Xcode 16 single-size set (1024 light, dark,
+    tinted) for older iOS. Proof: on CI's macos-26 job (Xcode 26) actool compiled the bundle into
+    `IconImageStack` renditions for light, dark and tintable next to the catalog's flat images
+    (run 41254285525, job `ios`); `scripts/gates/ios.sh` now fails if either is missing. Wiring
+    the bundle took four lines in `project.pbxproj` (a file reference of type
+    `folder.iconcomposer.icon`, the build file, the Runner group and the Resources phase); the
+    bundle id, entitlements, capabilities and signing are untouched. Glass, specular and shadow
+    stay at Icon Composer's defaults; Peter can fine-tune the bundle in Icon Composer and commit
+    it, but the generator would then overwrite it, so a tuned bundle means moving its settings
+    into `build.mjs`.
+15. **A field that gets focus back after a close opens the sheet (a main bug fixed here).** On
+    the web with semantics on, a click on the add field sometimes reaches the app as a
+    semantics tap or focus action instead of pointer events. `TextField` answers both by
+    requesting focus or the keyboard and never calls `onTap`, which is what opens the sheet. So
+    the click showed a cursor but no sheet: e2e `list.spec.ts` "adds are grouped" failed 3 of 3 on
+    this runner with `origin/main`'s own build too (job 44 saw it in classifier, list and feedback
+    specs; main's CI run for 3ff970d failed `feedback.spec.ts` the same way). Now closing the
+    sheet (`_close`: Escape, Schließen, the scrim) arms a flag, and the field's next focus, by any
+    route, opens the sheet like a tap. A tap on the list does not arm it: a first version did, and
+    the fg sync smoke test's clients then found the sheet open after sign-in: after the hint card's
+    "Verstanden" the field got focus back without a tap (most likely the browser restoring focus;
+    not traced further). Autofocus at start,
+    the refocus after an add and the focus after dictation don't arm it either; dictated text still
+    waits for a tap.
+    `test/list/add_sheet_test.dart` performs both semantics actions on the field's node (they
+    failed before the fix), and `shell_tabs_test.dart` checks that leaving for Mehr and coming
+    back keeps a closed sheet closed.
+16. **The fold-out chips' labels are 14 px.** Inter is wider than Roboto: at 15 px "Laden:
+    automatisch" and a category took 373 px of the 366 px row on a 390 px phone, wrapped, and the
+    sheet grew past half the screen (e2e `add-sheet.spec.ts:61`). A widget test with the real fonts
+    keeps both chips on one line; it fails at 15 px.
+17. **`household-bound.spec.ts` formats its expected date in Europe/Berlin**, the browser's zone
+    in `playwright.config.ts`. On a UTC runner just before midnight the runner's day and the app's
+    day differ ("31. Oktober 2028" against "1. November 2028"); CI hit it at 23:55 UTC.

@@ -146,4 +146,22 @@ void main() {
     expect(find.byKey(const ValueKey('add-sheet')), findsNothing);
     expect(find.byType(NavigationRail), findsOneWidget);
   });
+
+  testWidgets('closing the sheet, then More and back to the list, leaves '
+      'the sheet closed', (tester) async {
+    await pumpShell(tester);
+    await tester.tap(field);
+    await tester.enterText(field, 'Milch');
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    final sheet = find.byKey(const ValueKey('add-sheet'));
+    expect(sheet, findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('tab-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('tab-list')));
+    await tester.pumpAndSettle();
+    expect(sheet, findsNothing);
+  });
 }

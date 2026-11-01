@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
@@ -41,7 +42,10 @@ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
-              textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              textStyle: const TextStyle(
+                fontFamily: HlFont.sans,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             child: Text(l10n.listHintDismiss),
           ),

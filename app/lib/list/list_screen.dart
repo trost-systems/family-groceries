@@ -82,6 +82,13 @@ class _ShoppingListState() extends State<_ShoppingList> {
   _openHint;
   var _listening = false;
 
+  /// Set when the user closes the sheet: the field's next focus is the user
+  /// coming back to type, and opens the sheet. On the web a click can reach
+  /// the field as a semantics tap or focus, which never calls
+  /// `TextField.onTap`. Not set by a tap on the list: after one, the field
+  /// can get focus back without a tap (fg sync's sign-in, job 52).
+  var _openOnFocus = false;
+
   /// Phones get the keyboard only when asked; with a hardware keyboard
   /// the field is ready for typing at once.
   static final _autofocus =
@@ -93,6 +100,14 @@ class _ShoppingListState() extends State<_ShoppingList> {
     super.initState();
     _notices = context.read<RejectionNotices?>()?..listTab = _rejected;
     _hints = context.read<ListCubit>().hints.listen(_hint);
+    _inputFocus.addListener(_focusChanged);
+  }
+
+  void _focusChanged() {
+    if (_inputFocus.hasFocus && _openOnFocus) {
+      _openOnFocus = false;
+      context.read<AddSheetCubit>().show();
+    }
   }
 
   @override
@@ -228,6 +243,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   void _close() {
     context.read<AddSheetCubit>().dismiss();
     _inputFocus.unfocus();
+    _openOnFocus = true;
   }
 
   void _take(Suggestion suggestion) {
@@ -385,7 +401,11 @@ class _ShoppingListState() extends State<_ShoppingList> {
                   onMessage: _snack,
                   onListening: (listening) =>
                       setState(() => _listening = listening),
-                  onDone: _inputFocus.requestFocus,
+                  // The dictated text waits in the field; a tap opens it.
+                  onDone: () {
+                    _openOnFocus = false;
+                    _inputFocus.requestFocus();
+                  },
                 ),
                 null => null,
               },
