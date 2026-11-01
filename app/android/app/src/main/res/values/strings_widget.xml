@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Home Screen widget (job 63); German in values-de. -->
+<resources>
+    <string name="widget_label" translatable="false">Hummlist</string>
+    <string name="widget_description">Your shopping list at a glance</string>
+    <string name="widget_open_label">open</string>
+    <string name="widget_open_count">%d open</string>
+    <string name="widget_add">Add</string>
+    <string name="widget_more">+%d more</string>
+    <string name="widget_all_done">All done</string>
+    <string name="widget_signed_out">Sign in to Hummlist</string>
+    <string name="widget_no_household">Set up your household in Hummlist</string>
+    <string name="widget_no_data">Open Hummlist to see your list</string>
+    <!-- The picker's preview list: name, quantity (empty: none) and store (empty: none) per row. -->
+    <string-array name="widget_preview_names">
+        <item>Oat milk</item>
+        <item>Apples</item>
+        <item>Pasta</item>
+        <item>Toothpaste</item>
+        <item>Bread</item>
+    </string-array>
+    <string-array name="widget_preview_quantities" translatable="false">
+        <item>2 l</item>
+        <item>1 kg</item>
+        <item />
+        <item />
+        <item />
+    </string-array>
+    <string-array name="widget_preview_stores" translatable="false">
+        <item>Rewe</item>
+        <item>Rewe</item>
+        <item>Rewe</item>
+        <item>dm</item>
+        <item />
+    </string-array>
+</resources>

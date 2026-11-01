@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit. -->
+<resources>
+    <color name="hl_brand">#9fb6ff</color>
+    <color name="hl_on_brand">#0b1024</color>
+    <color name="hl_honey">#ffe24a</color>
+    <color name="hl_on_honey">#0b1024</color>
+    <color name="hl_honey_soft">#35310f</color>
+    <color name="hl_accent">#9fb6ff</color>
+    <color name="hl_on_accent">#0b1024</color>
+    <color name="hl_accent_soft">#1d2b66</color>
+    <color name="hl_surface">#0b1024</color>
+    <color name="hl_surface_raised">#151c3a</color>
+    <color name="hl_surface_sunken">#111735</color>
+    <color name="hl_text">#eff3ff</color>
+    <color name="hl_text_muted">#b0b9d8</color>
+    <color name="hl_border">#7f8cc4</color>
+    <color name="hl_divider">#2f3a66</color>
+    <color name="hl_ink">#03050f</color>
+    <color name="hl_success">#62c99d</color>
+    <color name="hl_on_success">#0b1024</color>
+    <color name="hl_success_soft">#123a31</color>
+    <color name="hl_warning">#ffd25a</color>
+    <color name="hl_on_warning">#0b1024</color>
+    <color name="hl_error">#ff8a73</color>
+    <color name="hl_on_error">#0b1024</color>
+    <color name="hl_edge">#03050f</color>
+    <color name="hl_honey_edge">#b39b1a</color>
+    <color name="hl_surface_edge">#2a3463</color>
+    <color name="hl_mint">#62c99d</color>
+    <color name="hl_on_mint">#0b1024</color>
+    <color name="hl_mint_soft">#123a31</color>
+    <color name="hl_mint_edge">#3a9e78</color>
+    <color name="hl_cobalt">#2448c0</color>
+    <color name="hl_on_cobalt">#ffffff</color>
+    <color name="hl_on_accent_soft">#e1e8ff</color>
+    <color name="hl_tomato">#f0603f</color>
+    <color name="hl_on_tomato">#0b1024</color>
+    <color name="hl_tomato_edge">#b04530</color>
+    <color name="hl_inverse">#111735</color>
+    <color name="hl_on_inverse">#eff3ff</color>
+</resources>

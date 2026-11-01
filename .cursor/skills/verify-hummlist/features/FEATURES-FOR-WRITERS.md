@@ -414,6 +414,27 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
 
+## Home Screen widget (held)
+
+**What it does.** On iPhone and Android the user can put Hummlist on the Home Screen as a widget. It shows how many items are still open („3 offen“, EN "3 open") and the next ones with their quantity and the store's name. The medium size adds a „Hinzufügen“ (EN "Add") button. A tap on the widget opens the list; Add opens the list with the input ready. Without internet it shows the last list the app saw. Built, but its announcement is held until Peter has tested it on an iPhone and an Android phone.
+
+**How to get there.**
+1. iPhone: touch and hold an empty spot on the Home Screen, „Bearbeiten“ (EN "Edit") → „Widget hinzufügen“ (EN "Add Widget") → Hummlist, pick small or medium.
+2. Android: touch and hold an empty spot → „Widgets“ → Hummlist, drag it out; four columns wide shows the Add button.
+3. Guides (drafts until the hold ends): „Hummlist auf dem Home-Bildschirm: das Widget“ (EN "Hummlist on your Home Screen: the widget").
+
+**Never claim.**
+- That it is released (held until Peter's device test).
+- That you can tick items off in the widget (you open the app for that).
+- That a partner's adds show in the widget the moment they happen (they show once Hummlist was open on your phone again).
+- That it follows the app's own light/dark choice (it follows the phone's).
+- That it works on the web, Apple Watch, the Lock Screen or StandBy.
+- That it needs Premium (it does not).
+
+**Unverified.** Everything on a real device: the look in light and dark, both sizes, the taps.
+
+**Last verified.** job 63 branch, 2026-11-01 (CET), from code and unit tests (`app/test/home_widget`) and the CI iOS and Android builds; no device. Recipe: [home-widgets.md](./home-widgets.md).
+
 ## Alexa skill (beta)
 
 **What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Milch und Eier sind auf der Hummlist.“ „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). The skill is in beta, German only, and not yet certified by Amazon, so it is not for everyone.

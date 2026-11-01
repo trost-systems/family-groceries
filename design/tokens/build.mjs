@@ -4,9 +4,11 @@
 //                                 radius, depth, shape, focus and motion constants
 //   site/public/tokens.css        the same as --hl-* custom properties, dark under
 //                                 prefers-color-scheme
+//   app/ios/HomeWidget/HummlistColors.swift, app/android/.../values{,-night}/hummlist_tokens.xml
+//                                 the colours for the Home Screen widgets (job 63)
 // Node only, no packages and no network. `--check` writes nothing and fails when an output
 // differs from what the source makes.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -206,10 +208,46 @@ ${dartCurves}
 }
 `;
 
+
+// ---- Home Screen widgets (job 63): the colours only, light and dark ----
+const generated = 'Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.';
+const rgb = (mode, k) => `0x${colorHex(value(tokens.color[mode][k])).slice(1)}`;
+const swift = `// ${generated}
+import SwiftUI
+import UIKit
+
+/// Every colour token, switching with the widget's light or dark appearance.
+enum HummlistColors {
+${colorNames.map((k) => `  static let ${camel(k)} = dynamic(light: ${rgb('light', k)}, dark: ${rgb('dark', k)})`).join('\n')}
+
+  private static func dynamic(light: UInt32, dark: UInt32) -> Color {
+    Color(UIColor { $0.userInterfaceStyle == .dark ? rgb(dark) : rgb(light) })
+  }
+
+  private static func rgb(_ value: UInt32) -> UIColor {
+    UIColor(
+      red: CGFloat((value >> 16) & 0xff) / 255,
+      green: CGFloat((value >> 8) & 0xff) / 255,
+      blue: CGFloat(value & 0xff) / 255,
+      alpha: 1)
+  }
+}
+`;
+const androidColors = (mode) => `<?xml version="1.0" encoding="utf-8"?>
+<!-- ${generated} -->
+<resources>
+${colorNames.map((k) => `    <color name="hl_${k.replace(/-/g, '_')}">${colorHex(value(tokens.color[mode][k]))}</color>`).join('\n')}
+</resources>
+`;
+const androidRes = 'app/android/app/src/main/res';
+
 const outputs = [
   // dart format puts a blank line before a doc comment that follows a member, not after a brace.
   ['app/lib/design/tokens.g.dart', dart.replace(/\{\n\n/g, '{\n').replace(/\n\n\n/g, '\n\n')],
   ['site/public/tokens.css', css],
+  ['app/ios/HomeWidget/HummlistColors.swift', swift],
+  [`${androidRes}/values/hummlist_tokens.xml`, androidColors('light')],
+  [`${androidRes}/values-night/hummlist_tokens.xml`, androidColors('dark')],
 ];
 
 const check = process.argv.includes('--check');
@@ -222,6 +260,7 @@ for (const [path, content] of outputs) {
     console.error(`${path} is stale: run node design/tokens/build.mjs`);
     stale++;
   } else {
+    mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, content);
     console.log(`wrote ${relative(root, file)}`);
   }

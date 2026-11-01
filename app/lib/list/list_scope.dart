@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/home_widget/home_widget_sync.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
@@ -38,7 +39,7 @@ class const ListScope({
         userId: session.userId,
         analytics: context.read<Analytics>(),
       )..start(),
-      child: _Scope(child: child),
+      child: _Scope(householdId: household.id, child: child),
     );
   }
 }
@@ -52,9 +53,12 @@ class RejectionNotices() {
 }
 
 /// Coming back to the app catches up on what changed meanwhile, a refused
-/// write is told wherever the user is, and on iOS Siri learns the
-/// household's item names.
-class const _Scope({required final Widget child}) extends StatefulWidget {
+/// write is told wherever the user is, on iOS Siri learns the household's
+/// item names, and the Home Screen widgets show the list.
+class const _Scope({
+  required final String householdId,
+  required final Widget child,
+}) extends StatefulWidget {
   @override
   State<_Scope> createState() => _ScopeState();
 }
@@ -64,6 +68,7 @@ class _ScopeState() extends State<_Scope> {
   late final StreamSubscription<Rejected> _rejections;
   final _notices = RejectionNotices();
   SiriSuggestions? _siri;
+  StreamSubscription<ListState>? _homeWidgets;
 
   @override
   void initState() {
@@ -73,6 +78,10 @@ class _ScopeState() extends State<_Scope> {
         case final siri?) {
       _siri = SiriSuggestions(siri, cubit);
     }
+    _homeWidgets = context.read<HomeWidgetSync?>()?.followList(
+      widget.householdId,
+      cubit,
+    );
     _lifecycle = AppLifecycleListener(
       onResume: () => unawaited(cubit.resync()),
     );
@@ -103,6 +112,7 @@ class _ScopeState() extends State<_Scope> {
     _lifecycle.dispose();
     unawaited(_rejections.cancel());
     unawaited(_siri?.close());
+    unawaited(_homeWidgets?.cancel());
     super.dispose();
   }
 

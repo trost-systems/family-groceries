@@ -20,6 +20,10 @@
       "note": "Peter switched the new design on (2026-11-01)",
       "match": ["design"]
     },
+    "home-widgets": {
+      "released": false,
+      "note": "waits for Peter's device test on iPhone and Android"
+    },
     "integration-lock": {
       "released": false,
       "note": "Siri, Alexa and AI assistants need Hummlist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"

@@ -6158,3 +6158,63 @@ page and the onboarding hint ("Du kannst sie später unter Mehr anlegen") alread
   edit sheet the options fold back and focus returns where a pick returns it (the add field);
   after a cancel it goes to the "+ Neuer Laden" option. Escape and Android back close only the
   field, not the sheet.
+
+## Job 63: Home Screen widgets, 2026-11-01
+
+Peter asked for Home Screen widgets with Anton Borri's `home_widget` package
+(0.10.0). Design and contract: docs/HOME_WIDGETS.md.
+
+- **One payload, one key.** The app writes one JSON string (`hummlist_widget`,
+  version 1, state `ready` / `signedOut` / `noHousehold`, the open count and
+  the first six open items with the store's full name). Both widgets parse the
+  same shape; an unknown version is the "open Hummlist" prompt, so a future
+  version 2 never shows half a list on an old widget.
+- **The app's own order.** `readyPayloadOf` reuses `sectionsOf`, so the widget
+  lists stores in the household's order and categories in each store's walk
+  order, exactly like the List tab. Folded sections are included: a fold is a
+  view of the tab, not of the list.
+- **When it writes.** `HomeWidgetSync` follows the session and the list cubit
+  (like `SiriSuggestions`), at most once a second, only when the payload
+  changed, never a list of another household than the session's. No network
+  call of its own: offline, the cached snapshot goes out as soon as the cubit
+  loads it. A partner's change reaches the widget only once the app on this
+  phone saw it; a background refresh would mean a native Supabase client in
+  both extensions, which v1 does not earn.
+- **Taps.** `hummlist-widget://open/?homeWidget` and `.../add/?homeWidget`
+  (the `homeWidget` query item is what the iOS plugin claims). One handler in
+  `App` maps them to `go(listPath)` plus an `AddSheetRequest` the List tab
+  takes, even when the tab is built after the request (cold start). No general
+  deep-link system (that is the Nov 7 job); auth gating stays in
+  `authRedirect`, so a signed-out tap ends on sign-in.
+- **Android: Jetpack Glance**, as the home_widget docs recommend for new
+  widgets (`HomeWidgetGlanceWidgetReceiver`, `HomeWidgetGlanceStateDefinition`).
+  Glance cannot clip shapes, so the store pill and the Add button are
+  nine-patch PNGs with real hex ends, drawn by `design/widget/build.mjs` from
+  the tokens and the app icon's geometry (checked in the lint gate); in
+  `drawable-xxxhdpi` so the tips scale with the density.
+- **iOS: WidgetKit extension `HomeWidget`**, iOS 17.0 (containerBackground,
+  previews with timelines); the app stays on 15.0, and on 15 and 16 there is
+  simply no widget. The extension takes its version from Flutter's xcconfig
+  and the `ios` gate fails if it drifts from the app's. The target is added by
+  `scripts/ios/home-widget-target.rb` (xcodeproj gem, idempotent), with
+  "Embed Foundation Extensions" before "Thin Binary" (Flutter's cycle error).
+- **Colours.** `design/tokens/build.mjs` now also writes
+  `HummlistColors.swift` and `values{,-night}/hummlist_tokens.xml`; nothing is
+  copied by hand. The widgets follow the phone's light or dark mode, not the
+  app's theme choice (neither OS hands a widget the app's setting).
+- **No ticking from the widget (the optional stretch, skipped).** Glance
+  actions and iOS 17 App Intents could tick without opening the app, but a
+  tick must go through the app's op queue (`ItemOp`, retried until acked) or
+  it is lost offline, and a second, native op queue on two platforms is not
+  cheap. Tapping the widget opens the list instead.
+- **No Premium gating.** The integration lock is off and widgets are not
+  decided.
+- **Signing.** The App Group and the extension's App ID need the Apple
+  portal (the ASC API key cannot create or assign an App Group), then
+  `renew_profile`. The PR must not merge before that (docs/NEEDS_PETER.md,
+  job 63): `preflight` would stop every iOS release on main.
+- **Held.** The changelog item carries `hold: home-widgets`; the guides
+  (`/de/anleitungen/widget`, `/en/guides/widget`) are `draft: true`, because
+  the site has no hold mechanism, only `since:` and drafts, and a version
+  would publish them with the next release whether or not the device test
+  passed.
