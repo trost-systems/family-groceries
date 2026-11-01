@@ -17,6 +17,7 @@ export interface Shot {
 
 const items = {
   addTick: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
+  pantry: { de: 'Nudeln', en: 'Pasta' },
   sync: { de: 'Eier', en: 'Eggs' },
   mcp: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
 };
@@ -70,64 +71,69 @@ const now = () => performance.timeOrigin + performance.now();
 
 export const shots: Record<string, Shot> = {
   'add-tick': {
-    scenario: { de: 'demo-familie', en: 'demo-family-en' },
-    members: ['mia'],
-    async film(s, { mia }, lang) {
+    scenario: { de: 'demo-haushalt', en: 'demo-household-en' },
+    members: ['anna'],
+    async prepare(s, { anna }, lang) {
+      // The new items go to the Supermarkt's pantry rows (item→store memory): Anna's list sits
+      // there, just above the add bar.
+      await s.scrollUntil(anna, { text: items.pantry[lang] }, 560);
+    },
+    async film(s, { anna }, lang) {
       const [first, second] = items.addTick[lang];
       await sleep(1500);
-      s.mark('mia', 'open');
-      await s.tap(mia, { key: 'add-item-field' }, { dx: 262 });
-      await find(mia, { key: 'add-sheet-close' });
+      s.mark('anna', 'open');
+      await s.tap(anna, { key: 'add-item-field' }, { dx: 262 });
+      await find(anna, { key: 'add-sheet-close' });
       await sleep(450);
-      await s.type(mia, first, 110);
+      await s.type(anna, first, 110);
       await sleep(500);
-      await s.key(mia, 'Return');
+      await s.key(anna, 'Return');
       await sleep(900);
-      await s.type(mia, second, 110);
+      await s.type(anna, second, 110);
       await sleep(500);
-      await s.key(mia, 'Return');
+      await s.key(anna, 'Return');
       await sleep(1000);
-      s.mark('mia', 'close');
-      await s.tap(mia, { key: 'add-sheet-close' });
-      await gone(mia, { key: 'add-sheet-close' });
+      s.mark('anna', 'close');
+      await s.tap(anna, { key: 'add-sheet-close' });
+      await gone(anna, { key: 'add-sheet-close' });
       await sleep(1300);
-      s.mark('mia', 'tick');
-      await s.tap(mia, { text: first }, { dx: 210 });
+      s.mark('anna', 'tick');
+      await s.tap(anna, { text: first }, { dx: 210 });
       await sleep(900);
-      await s.tap(mia, { text: second }, { dx: 210 });
+      await s.tap(anna, { text: second }, { dx: 210 });
       await sleep(8000);
-      s.mark('mia', 'end');
+      s.mark('anna', 'end');
     },
   },
   'household-sync': {
-    scenario: { de: 'demo-familie', en: 'demo-family-en' },
-    members: ['mia', 'noah', 'ida'],
-    async prepare(s, { noah, ida }, lang) {
-      // Noah and Ida look at the chilled section, where the new item lands under Butter.
-      for (const c of [noah, ida]) await s.scrollUntil(c, { text: 'Butter' }, 52);
+    scenario: { de: 'demo-haushalt', en: 'demo-household-en' },
+    members: ['anna', 'jonas'],
+    async prepare(s, { jonas }, lang) {
+      // Jonas looks at the Supermarkt's chilled rows, where the new item lands under Butter.
+      await s.scrollUntil(jonas, { text: 'Butter' }, 52);
     },
-    async film(s, { mia, noah, ida }, lang) {
+    async film(s, { anna, jonas }, lang) {
       const item = items.sync[lang];
       await sleep(1500);
-      await s.tap(mia, { key: 'add-item-field' }, { dx: 262 });
-      await find(mia, { key: 'add-sheet-close' });
+      await s.tap(anna, { key: 'add-item-field' }, { dx: 262 });
+      await find(anna, { key: 'add-sheet-close' });
       await sleep(450);
-      await s.type(mia, item, 120);
+      await s.type(anna, item, 120);
       await sleep(450);
-      await s.key(mia, 'Return');
+      await s.key(anna, 'Return');
       const added = now();
-      const [toNoah, toIda] = await Promise.all([until(s, noah, item, added), until(s, ida, item, added)]);
+      const toJonas = await until(s, jonas, item, added);
       await sleep(1200);
-      // Mia closes the sheet the way a phone user does, by tapping the list above it.
-      await s.tap(mia, { x: 200, y: 470 });
-      await gone(mia, { key: 'add-sheet-close' });
+      // Anna closes the sheet the way a phone user does, by tapping the list above it.
+      await s.tap(anna, { x: 200, y: 470 });
+      await gone(anna, { key: 'add-sheet-close' });
       await sleep(1600);
-      await s.tap(noah, { text: item }, { dx: 118 });
+      await s.tap(jonas, { text: item }, { dx: 118 });
       const ticked = now();
-      const [goneMia, goneIda] = await Promise.all([until(s, mia, item, ticked, true), until(s, ida, item, ticked, true)]);
+      const goneAnna = await until(s, anna, item, ticked, true);
       await sleep(3000);
-      s.mark('mia', 'end');
-      return { addToNoahMs: toNoah, addToIdaMs: toIda, tickToMiaMs: goneMia, tickToIdaMs: goneIda };
+      s.mark('anna', 'end');
+      return { addToJonasMs: toJonas, tickToAnnaMs: goneAnna };
     },
   },
   'mcp-chat': {

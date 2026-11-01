@@ -277,7 +277,7 @@ Deno.test('instance settings derive from FG_PORT_PREFIX; a KVM marker makes linu
   assertEquals(plain.defaultSurface, 'android');
 });
 
-Deno.test('port blocks run from 500 to 649: job 60 runs on 601xx', async () => {
+Deno.test('port blocks run from 500 to 654: job 60 runs on 601xx, job 65 on 651xx', async () => {
   const sh = new FakeShell();
   const inst = await loadInstance(
     sh,
@@ -286,7 +286,8 @@ Deno.test('port blocks run from 500 to 649: job 60 runs on 601xx', async () => {
   );
   assertEquals(inst.apiUrl, 'http://127.0.0.1:60121');
   assertEquals(inst.dbContainer, 'supabase_db_family-groceries-60');
-  for (const prefix of ['499', '650', '60', '6011']) {
+  assertEquals((await loadInstance(sh, { HOME: '/h', FG_PORT_PREFIX: '651', FG_KVM_MARKER: '/none' }, '/r')).apiUrl, 'http://127.0.0.1:65121');
+  for (const prefix of ['499', '655', '60', '6011']) {
     const error = await loadInstance(sh, { HOME: '/h', FG_PORT_PREFIX: prefix }, '/r').then(() => null, (e) => e);
     assertEquals(error?.code, 'bad_env', prefix);
   }

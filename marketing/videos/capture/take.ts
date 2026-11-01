@@ -35,18 +35,23 @@ async function fgJson(args: string[]) {
   return doc;
 }
 
+const stateDir = Deno.env.get('FG_STATE_DIR') ?? `${Deno.env.get('HOME')}/.cache/fg/${prefix}`;
+// fg's own stack, or the checkout's when fg runs on it (FG_STACK_WORKDIR, scripts/lib.sh fg_on_repo_stack).
 const stack = JSON.parse(new TextDecoder().decode((await new Deno.Command('supabase', {
-  args: ['status', '-o', 'json', '--workdir', `${Deno.env.get('FG_STATE_DIR') ?? `${Deno.env.get('HOME')}/.cache/fg/${prefix}`}/stack`],
+  args: ['status', '-o', 'json', '--workdir', Deno.env.get('FG_STACK_WORKDIR') ?? `${stateDir}/stack`],
   stdout: 'piped', stderr: 'null',
 }).output()).stdout).replace(/^[^{]*/, ''));
 Deno.env.set('CAPTURE_API_URL', stack.API_URL);
 Deno.env.set('CAPTURE_PUBLISHABLE_KEY', stack.PUBLISHABLE_KEY);
 
 const scenario = shot.scenario[lang];
-const run: string = (await fgJson(['seed', scenario])).run;
+// The store screenshots' seeding: the scenario's own stores only (marketing/store-screenshots/seed.mjs).
+const seeded = await new Deno.Command('node', { args: [`${repo}marketing/store-screenshots/seed.mjs`, scenario], stdout: 'piped', stderr: 'inherit' }).output();
+if (!seeded.success) throw new Error(`seeding ${scenario} failed`);
+const run: string = JSON.parse(new TextDecoder().decode(seeded.stdout)).run;
 console.error(`[take] ${video} ${lang}: seeded ${scenario} as ${run}`);
 const manifest = JSON.parse(
-  await Deno.readTextFile(`${Deno.env.get('FG_STATE_DIR') ?? `${Deno.env.get('HOME')}/.cache/fg/${prefix}`}/runs/${run}.json`),
+  await Deno.readTextFile(`${stateDir}/runs/${run}.json`),
 );
 
 const clients: d.Client[] = [];

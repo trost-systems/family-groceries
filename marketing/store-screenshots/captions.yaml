@@ -1,0 +1,65 @@
+# Every word the store screenshots and the feature graphic put on screen besides the app's own.
+# One entry per scene (sets.mjs names the scenes each device shows) plus the feature graphic.
+# status: approved (signed off by Hummlist Launch) or draft. The pipeline renders drafts too and
+# lists them in out/manifest.json, so nothing unapproved goes to a store unnoticed.
+# Never: Premium, prices, retailer names, a shortened "Hummlist".
+
+de-DE:
+  feature:
+    title: Gemeinsam einkaufen, ohne Werbung
+    sub: Eine Liste für Partner, Familie und WG
+    status: approved
+  list:
+    title: Eine Liste für den ganzen Haushalt
+    sub: Nach Läden sortiert, in eurer Reihenfolge
+    status: draft
+  add:
+    title: Eintippen, antippen, steht drauf
+    sub: Vorschläge aus dem, was ihr schon kauft
+    status: draft
+  tick:
+    title: "Im Laden: antippen, abgehakt"
+    sub: Die Liste wird kürzer, während ihr einkauft
+    status: draft
+  sync:
+    title: Anna trägt ein, Jonas sieht es sofort
+    sub: Live auf jedem Handy im Haushalt
+    status: draft
+  due:
+    title: Hummlist merkt sich, was ihr regelmäßig kauft
+    sub: Ein Tipp, und es steht wieder drauf
+    status: draft
+  dark:
+    title: Ohne Werbung, ohne Ablenkung
+    sub: Hell oder dunkel, wie ihr mögt
+    status: draft
+
+en-US:
+  feature:
+    title: Shop together, without ads
+    sub: One list for partners, families and flatmates
+    status: draft
+  list:
+    title: One list for the whole household
+    sub: Sorted by store, in your order
+    status: draft
+  add:
+    title: Type, tap, it's on the list
+    sub: Suggestions from what you already buy
+    status: draft
+  tick:
+    title: "In the store: tap, ticked off"
+    sub: The list gets shorter as you shop
+    status: draft
+  sync:
+    title: Anna adds it, Jonas sees it right away
+    sub: Live on every phone in the household
+    status: draft
+  due:
+    title: Hummlist remembers what you buy regularly
+    sub: One tap and it's back on the list
+    status: draft
+  dark:
+    title: No ads, no clutter
+    sub: Light or dark, as you like
+    status: draft

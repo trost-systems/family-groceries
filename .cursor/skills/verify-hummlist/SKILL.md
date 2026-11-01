@@ -140,5 +140,5 @@ How-to clips (GIF for emails, MP4/WebM for the site) of the same build: [hummlis
 - Clicking „Verstanden“ (the explainer card) takes focus from the add field. Test autofocus after a reload, as `ready.mjs` does.
 - The add sheet's note „✓ Hinzugefügt: …“ exists twice in the DOM (the note and a screen-reader announcement). Scope it to `addSheet(page, L)`.
 - Catalogue suggestions are German words in both UI languages. In English, type a prefix of a German word ("Ched" → „Cheddar“).
-- `fg` accepts port blocks 500 to 649. On the Hetzner runner `env.sh` sources `~/groceries-ops/env.hz` for PATH.
+- `fg` accepts port blocks 500 to 654. On the Hetzner runner `env.sh` sources `~/groceries-ops/env.hz` for PATH.
 - The local stack signs up without email confirmation, while the hosted project requires it (`features/sign-in.md`).

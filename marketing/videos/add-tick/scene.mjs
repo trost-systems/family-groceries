@@ -1,4 +1,4 @@
-// Video 1, add-tick: Mia types two items into the real add sheet, closes it, the rows sit in
+// Video 1, add-tick: Anna types two items into the real add sheet, closes it, the rows sit in
 // their category, and she ticks both off again. One take, one phone; the loop starts and ends on
 // the same list.
 
@@ -27,7 +27,7 @@ export function plan(take, events, lang) {
   const poster = frames(rel((close + ticks[0]) / 2 + 0.3));
   const enters = events.filter((e) => e.kind === 'key').map((e) => e.t / 1000);
   const beats = { open, enter1: enters[0], enter2: enters[1], close: close + 0.3, tick1: ticks[0], tick2: ticks[1] };
-  return { a, b, duration, cues, poster, beats: Object.fromEntries(Object.entries(beats).map(([k, v]) => [k, rel(v)])), offset: (take.offsets?.mia ?? 0) / 1000 };
+  return { a, b, duration, cues, poster, beats: Object.fromEntries(Object.entries(beats).map(([k, v]) => [k, rel(v)])), offset: (take.offsets?.anna ?? 0) / 1000 };
 }
 
 // The app region in view ends with the input bar (logical y 830, the tab bar stays out) and
@@ -39,9 +39,9 @@ const LAYOUT = {
 
 export function compose({ fmt, lang, take, events, p }) {
   const L = LAYOUT[fmt];
-  const ph = phone({ id: 'mia', box: L.box, appTop: L.appTop, fadeTop: L.fadeTop, src: 'assets/mia.mp4', start: 0, duration: p.duration, mediaStart: p.a + p.offset });
+  const ph = phone({ id: 'anna', box: L.box, appTop: L.appTop, fadeTop: L.fadeTop, src: 'assets/anna.mp4', start: 0, duration: p.duration, mediaStart: p.a + p.offset });
   const toTime = (ms) => ms / 1000 - p.a;
-  const dots = touches({ id: 'tap', events, client: 'mia', toStage: ph.at, toTime, from: 0, to: p.duration });
+  const dots = touches({ id: 'tap', events, client: 'anna', toStage: ph.at, toTime, from: 0, to: p.duration });
   const ids = ['add-tick.add', 'add-tick.tick', 'add-tick.add'];
   const cues = p.cues.map((c, i) => (fmt === 'wide' ? { ...c, html: esc(tBreak(ids[i], lang)).replace('\n', '<br>') } : c));
   const caps = captions({ id: 'cap', cues, slot: L.caption, align: L.align });
