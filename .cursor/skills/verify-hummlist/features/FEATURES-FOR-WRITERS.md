@@ -18,7 +18,6 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - Siri without setup ("just say Hey Siri", no Shortcut) as available. It is built, but its announcement waits for Hummlist Launch. Today Siri works through a Shortcut the user sets up once, in German.
 - That the Alexa skill is launched, certified or in the Alexa Skill Store. It is a beta by invitation, German only.
 - Store logos or chain colours, official store layouts, prices, offers or opening hours. Store names are plain names; walking orders are researched defaults.
-- That users can add, rename or delete their own stores. Not yet.
 - A code to type from an email for sign-in. Sign-in emails contain a link, and the only code in Hummlist is the 8-character household invite code.
 - Apple Watch, widgets, Google Assistant, Android voice assistants, push notifications, recipes, meal plans or price tracking. None exist.
 - That the microphone (dictation) works in the browser. It is in the iPhone and Android apps only.
@@ -67,20 +66,20 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Getting started: first sign-in to the list
 
-**What it does.** After the first sign-in, a new user creates a household or accepts an invite. Creating asks for a household name (prefilled "Unser Haushalt") and whether to start with the stores dm, Lidl and Edeka. Then Hummlist offers to invite the partner and opens the shopping list. Someone who opens an invite link goes straight to joining.
+**What it does.** After the first sign-in, a new user creates a household or accepts an invite. Creating asks for a household name (prefilled "Unser Haushalt") and which stores you shop at: pick from ten common ones (EDEKA, REWE, Lidl, Aldi Süd, Aldi Nord, Kaufland, Netto, Penny, dm, Rossmann) and add your own, or skip and add them later. Then Hummlist offers to invite the partner and opens the shopping list. Someone who opens an invite link goes straight to joining.
 
 **How to get there.**
 1. Sign up or sign in. If the app asks about usage data, answer it.
 2. On „Willkommen bei Hummlist“ (EN: "Welcome to Hummlist") tap „Haushalt erstellen“ (EN: "Create a household") or „Einladung annehmen“ (EN: "Join with an invite").
-3. Creating: choose the name and „Deutsche Standard-Läden hinzufügen“ (EN: "Add default German stores") or „Überspringen“ (EN: "Skip"), then „Haushalt erstellen“.
+3. Creating: choose the name, tap the stores you shop at (or „+ Eigenen Laden hinzufügen“, EN: "+ Add your own store"), then „Haushalt erstellen“ (EN: "Create a household"); „Überspringen“ (EN: "Skip") starts without stores.
 4. Next screen „Partner einladen“ (EN: "Invite your partner"): make an invite or tap „Später“ (EN: "Later") to go to the list.
 
 **Never claim.**
 - A tour, a tutorial or a newsletter or email opt-in in the app: there is none.
-- Other store chains than dm, Lidl and Edeka pre-installed.
+- That any store is pre-installed, recommended or a partner: nothing is picked until you pick it, and the shops have nothing to do with Hummlist.
 - Anything about stores the user creates themselves during onboarding.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [onboarding.md](./onboarding.md).
+**Last verified.** job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/onboarding.spec.ts and stores-add.spec.ts. Recipe: [onboarding.md](./onboarding.md).
 
 ## Household and invites
 
@@ -234,23 +233,23 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Stores, walk order and the sections of the list
 
-**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. Hold and drag moves an item to another store, category or place, and the household remembers which store an item belongs to. The stores in a new household are named dm, Lidl and Edeka, and you can change their order.
+**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. Hold and drag moves an item to another store, category or place, and the household remembers which store an item belongs to. A new household has the stores it picked at the start; you can change their order and add your own stores (Rewe, the market, the bakery), each with its own walking order, rename them or delete them.
 
 **How to get there.**
 1. Open the „Liste“ tab (EN: "List"): each store is a section; tap a store's name to fold it.
 2. Hold a store's name (or right click it) for the menu: „Laden nach oben“ / „Laden nach unten“ (EN: "Move store up" / "Move store down") and „Reihenfolge bearbeiten“ (EN: "Edit order") for the category order of that store.
 3. Hold an item and drag it onto a store's name to put it in that store.
-4. Tap „Mehr“ (EN: "More"), then „Läden“ (EN: "Stores"), to reorder the stores or open a store's category order.
+4. Tap „Mehr“ (EN: "More"), then „Läden“ (EN: "Stores"), to reorder the stores or open a store's category order; „+ Neuer Laden“ (EN: "+ New store") adds one, the ⋮ next to a store renames or deletes it.
+5. While adding or editing an item, open the store chip and tap „+ Neuer Laden“ (EN: "+ New store"), type the name and press Enter: the store is created and chosen for the item.
 
 **Never claim.**
-- That users can add, rename or delete their own stores; they cannot yet. A new household either gets dm, Lidl and Edeka or none („Überspringen“).
 - Store logos, chain colours or official store maps. Store names appear as plain names in a small hexagonal label. The walking orders are researched defaults that can differ from a real shop.
 - That swiping or tapping moves items between stores; it is hold and drag, or the edit sheet's store choice.
 - That the app knows prices, opening hours or store locations.
 
 **Note.** The wording of the onboarding skip hint („Du kannst sie später unter Mehr anlegen“) promises adding stores later, but the app has no add-store function today; do not repeat it.
 
-**Last verified.** main c8dfb2c, 2026-11-01 (CET), from code on main after job 57, driven on the web build. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/stores-add.spec.ts and stores.spec.ts. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 

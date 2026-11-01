@@ -134,7 +134,9 @@ class TestSession(super.initialState)
   /// The joins that asked to archive the household left behind (job 43).
   final archivingJoins = <String>[];
   final unarchived = <String>[];
-  final creates = <(String, bool)>[];
+
+  /// Each create: the name and the stores, joined with ", ".
+  final creates = <(String, String)>[];
   HouseholdProblem? fail;
   var refreshes = 0;
   Completer<void>? hold;
@@ -175,8 +177,11 @@ class TestSession(super.initialState)
   }
 
   @override
-  Future<void> createHousehold(String name, {bool defaultStores = true}) async {
-    creates.add((name, defaultStores));
+  Future<void> createHousehold(
+    String name, {
+    List<String> stores = const [],
+  }) async {
+    creates.add((name, stores.join(', ')));
     await _answer();
     emit(InHousehold('peter', Household(id: 'home', name: name)));
   }

@@ -458,9 +458,17 @@ export async function signUpWithHousehold(page: Page, email: string): Promise<vo
  * "Unser Haushalt" by default) and the default stores unless [stores] is false. Ends on Step 3,
  * inviting the partner.
  */
+/** Onboarding's store offer (app/lib/household/popular_stores.dart). */
+export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord', 'Kaufland', 'Netto', 'Penny', 'dm', 'Rossmann'];
+
+/**
+ * Onboarding Step 2a. [stores] are picked in order; a name not on the offer is typed as an own
+ * store. The default makes the household the specs know: dm, Lidl and "Edeka" (typed, so it keeps
+ * that spelling; the server makes it the Edeka chain with its walking order). [] skips.
+ */
 export async function createHousehold(
   page: Page,
-  { name, stores = true }: { name?: string; stores?: boolean } = {},
+  { name, stores = ['dm', 'Lidl', 'Edeka'] }: { name?: string; stores?: string[] } = {},
 ): Promise<void> {
   await expect(page).toHaveURL(/\/welcome(\?|$)/);
   await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
@@ -469,8 +477,19 @@ export async function createHousehold(
   const field = page.getByRole('textbox', { name: 'Name des Haushalts' });
   await expect(field).toBeVisible();
   if (name !== undefined) await typeInto(field, name);
-  if (!stores) await page.getByRole('radio', { name: /^Überspringen/ }).click();
-  await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
+  for (const store of stores) {
+    if (popularStores.includes(store)) {
+      await page.getByRole('checkbox', { name: store, exact: true }).or(page.getByRole('button', { name: store, exact: true }))
+        .click();
+    } else {
+      await page.getByRole('button', { name: 'Eigenen Laden hinzufügen' }).click();
+      await typeInto(page.getByRole('textbox', { name: 'Name des Ladens' }), store);
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('textbox', { name: 'Name des Ladens' })).toHaveCount(0);
+    }
+  }
+  if (stores.length === 0) await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
+  else await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
   await expect(page).toHaveURL(/\/welcome\/invite$/);
 }
 

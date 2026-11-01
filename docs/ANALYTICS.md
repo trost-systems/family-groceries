@@ -143,7 +143,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | Event | When | Properties |
 | --- | --- | --- |
 | `first_open` | the first yes on an install | none |
-| `household_created` | the server created the household; once, also when a retry finds the household a lost answer made (job 22) | `default_stores` (true: dm, Lidl and Edeka; false: Skip) |
+| `household_created` | the server created the household; once, also when a retry finds the household a lost answer made (job 22) | `store_count` (0 to 50: how many stores were picked or typed in onboarding, job 58; never their names); `default_stores` from builds before job 58 (true: dm, Lidl and Edeka; false: Skip) |
 | `invite_accepted` | the server confirmed a new membership from an invite (`accept_invite` answered `joined`; not when the user was a member already, except as the answer to a try whose answer was lost) | `method`: `link` (the code came from `/join/<code>`, `?invite=` or the pending invite kept on the device, and was not edited) or `code` (typed) |
 | `invite_sent` | job 22: an invite was handed out: the share sheet opened, or its link or code was copied; once per tap | `channel` (`share_sheet`, `copy_link`, `copy_code`), `context` (`onboarding`: Step 3 after creating; `settings`: More, Einladungen). Never the code, the link or the household's name |
 | `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick), `alexa` (server only, job 31: added through the Alexa skill, sent by the `alexa` function); `actor_role` (`owner`, `member`); `household_size` |

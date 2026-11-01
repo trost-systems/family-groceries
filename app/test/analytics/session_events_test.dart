@@ -171,19 +171,21 @@ void main() {
     final events = await sent();
     expect(events.map((e) => e['event']), ['household_created']);
     expect(props(events.single)['household_id'], _home);
-    expect(props(events.single)['default_stores'], true);
+    expect(props(events.single)['store_count'], 0);
   });
 
-  test('skipping the stores sends default_stores false', () async {
-    await cubit.createHousehold('Zuhause', defaultStores: false);
-    expect(props((await sent()).single)['default_stores'], false);
+  test('the stores picked in onboarding are counted, not named', () async {
+    await cubit.createHousehold('Zuhause', stores: const ['REWE', 'dm']);
+    final properties = props((await sent()).single);
+    expect(properties['store_count'], 2);
+    expect(properties.values, isNot(contains('REWE')));
   });
 
   test('a create whose answer was lost, retried, is one household and one '
       'event', () async {
     db.dropNextAnswer = true;
     await expectLater(
-      cubit.createHousehold('Zuhause', defaultStores: false),
+      cubit.createHousehold('Zuhause', stores: const ['REWE']),
       throwsA(
         isA<HouseholdError>().having(
           (e) => e.problem,
@@ -194,12 +196,12 @@ void main() {
     );
     expect(cubit.state, isA<NeedsHousehold>());
     // The retry finds the household the first call made.
-    await cubit.createHousehold('Zuhause', defaultStores: false);
+    await cubit.createHousehold('Zuhause', stores: const ['REWE']);
     expect(cubit.state, isA<InHousehold>());
     expect(db.calls.where((c) => c.endsWith('create_household')), hasLength(2));
     final events = await sent();
     expect(events.map((e) => e['event']), ['household_created']);
-    expect(props(events.single)['default_stores'], false);
+    expect(props(events.single)['store_count'], 1);
   });
 
   test('a second create (double tap) sends nothing more', () async {

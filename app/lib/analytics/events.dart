@@ -73,7 +73,12 @@ const _householdSize = IntIn(1, 100);
 final eventCatalog = <String, Map<String, PropertyRule>>{
   'first_open': const {},
   // Job 22: whether it started with dm, Lidl and Edeka.
-  'household_created': const {'default_stores': IsBool()},
+  // default_stores: builds before job 58; store_count: the stores picked
+  // in onboarding.
+  'household_created': const {
+    'default_stores': IsBool(),
+    'store_count': IntIn(0, 50),
+  },
   'invite_accepted': {'method': _namesOf(JoinMethod.values)},
   // Job 22: an invite handed out (share sheet opened, link or code
   // copied). Never the code, the link or the household's name.

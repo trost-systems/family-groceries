@@ -26,6 +26,8 @@ void main() {
     ('household_created', {}),
     ('household_created', {'default_stores': true}),
     ('household_created', {'default_stores': false}),
+    ('household_created', {'store_count': 0}),
+    ('household_created', {'store_count': 4}),
     ('invite_accepted', {'method': 'link'}),
     ('invite_sent', {'channel': 'share_sheet', 'context': 'onboarding'}),
     ('invite_sent', {'channel': 'copy_link', 'context': 'settings'}),
@@ -93,6 +95,8 @@ void main() {
     ('invite_accepted', {'method': 'ABCD2345'}, 'an invite code'),
     ('household_created', {'name': 'Familie Trost'}, 'the household name'),
     ('household_created', {'default_stores': 'yes'}, 'stores as text'),
+    ('household_created', {'store_count': 'REWE'}, 'a store name'),
+    ('household_created', {'store_count': 51}, 'over 50 stores'),
     ('invite_sent', {'code': 'ABCD2345'}, 'the code'),
     (
       'invite_sent',

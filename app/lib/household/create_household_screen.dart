@@ -1,9 +1,12 @@
 import 'dart:async';
 
-import 'package:family_groceries/design/hex_radio.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
+import 'package:family_groceries/household/popular_stores.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/store_name_field.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,8 +22,9 @@ bool validHouseholdName(String name) {
   return length >= 1 && length <= maxHouseholdName;
 }
 
-/// Onboarding Step 2a: the household's name (prefilled, editable) and
-/// whether it starts with the default German stores. Once the server has
+/// Onboarding Step 2a: the household's name (prefilled, editable) and its
+/// stores: [popularStores] to pick, nothing picked, plus own ones typed in
+/// place; "Überspringen" creates it without stores. Once the server has
 /// created it the router moves on to Step 3, inviting the partner. A
 /// second tap while creating does nothing; a retry after a lost answer
 /// finds the household and goes on (no second one).
@@ -33,7 +37,13 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   late final _name = TextEditingController(
     text: AppLocalizations.of(context).householdNameDefault,
   );
-  var _defaultStores = true;
+
+  /// The stores to create, in the order picked.
+  var _stores = <String>[];
+
+  /// The own store being typed; false while the add row shows.
+  var _naming = false;
+  final _nameFocus = FocusNode();
   var _busy = false;
   var _invalidName = false;
   HouseholdProblem? _problem;
@@ -41,16 +51,40 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _create() async {
+  void _toggle(String store) {
+    final key = storeNameKey(store);
+    setState(
+      () => _stores = _stores.any((s) => storeNameKey(s) == key)
+          ? [..._stores.where((s) => storeNameKey(s) != key)]
+          : [..._stores, store],
+    );
+  }
+
+  Future<bool> _addOwn(String name) async {
+    final clean = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final key = storeNameKey(clean);
+    setState(() {
+      if (!_stores.any((s) => storeNameKey(s) == key)) {
+        _stores = [..._stores, clean];
+      }
+      _naming = false;
+    });
+    return true;
+  }
+
+  Future<void> _create({bool skip = false}) async {
     if (_busy) {
       return;
     }
     final name = _name.text.trim();
     if (!validHouseholdName(name)) {
       setState(() => _invalidName = true);
+      // Below the store choices the field may be out of view.
+      _nameFocus.requestFocus();
       return;
     }
     final session = context.read<SessionCubit>();
@@ -60,7 +94,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
       _problem = null;
     });
     try {
-      await session.createHousehold(name, defaultStores: _defaultStores);
+      await session.createHousehold(name, stores: skip ? const [] : _stores);
     } on HouseholdError catch (e) {
       if (mounted) {
         setState(() => _problem = e.problem);
@@ -76,7 +110,12 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final t = HummlistColors.of(theme.brightness);
     final problem = _problem;
+    final own = [
+      for (final s in _stores)
+        if (!popularStores.any((p) => storeNameKey(p) == storeNameKey(s))) s,
+    ];
     return OnboardingPage(
       title: l10n.createHousehold,
       listKey: const ValueKey('create-household-screen'),
@@ -85,6 +124,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
         TextField(
           key: const ValueKey('household-name'),
           controller: _name,
+          focusNode: _nameFocus,
           enabled: !_busy,
           maxLength: maxHouseholdName,
           textCapitalization: TextCapitalization.sentences,
@@ -96,30 +136,61 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
         ),
         const SizedBox(height: 16),
         Text(l10n.storesChoice, style: theme.textTheme.titleSmall),
-        RadioGroup<bool>(
-          groupValue: _defaultStores,
-          onChanged: (value) {
-            if (!_busy && value != null) {
-              setState(() => _defaultStores = value);
-            }
-          },
-          child: Column(
-            children: [
-              HexRadioTile<bool>(
-                key: const ValueKey('default-stores'),
-                value: true,
-                title: Text(l10n.defaultStores),
-                subtitle: Text(l10n.defaultStoresHint),
+        const SizedBox(height: 4),
+        Text(l10n.onboardingStoresHint, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 12),
+        Wrap(
+          key: const ValueKey('onboarding-stores'),
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final store in [...popularStores, ...own])
+              FilterChip(
+                key: ValueKey('onboarding-store-$store'),
+                label: Text(store),
+                // The theme's label colour is white in dark; on honey the
+                // text is navy.
+                labelStyle: theme.chipTheme.labelStyle?.copyWith(
+                  color: _stores.contains(store) ? t.onHoney : t.text,
+                ),
+                selected: _stores.contains(store),
+                onSelected: _busy ? null : (_) => _toggle(store),
               ),
-              HexRadioTile<bool>(
-                key: const ValueKey('skip-stores'),
-                value: false,
-                title: Text(l10n.skipStores),
-                subtitle: Text(l10n.skipStoresHint),
+            if (!_naming)
+              // A button, not an ActionChip: Flutter web names a chip a
+              // check box.
+              TextButton.icon(
+                key: const ValueKey('onboarding-store-own'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, HlSize.target),
+                ),
+                icon: const Icon(Icons.add),
+                label: Text(l10n.storeAddOwn),
+                onPressed: _busy ? null : () => setState(() => _naming = true),
               ),
-            ],
+          ],
+        ),
+        if (_naming) ...[
+          const SizedBox(height: 8),
+          StoreNameField(
+            confirmLabel: l10n.storeAddOwn,
+            onConfirm: _addOwn,
+            onCancel: () => setState(() => _naming = false),
+          ),
+        ],
+        const SizedBox(height: 12),
+        Text(
+          l10n.storesDisclaimer,
+          key: const ValueKey('stores-disclaimer'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (_invalidName)
+          ProblemText(
+            l10n.householdNameInvalid,
+            key: const ValueKey('create-name-problem'),
+          ),
         if (problem != null)
           ProblemText(
             householdProblemText(l10n, problem),
@@ -135,6 +206,19 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(l10n.createHousehold),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          key: const ValueKey('skip-stores'),
+          onPressed: _busy ? null : () => unawaited(_create(skip: true)),
+          child: Text(l10n.skipStores),
+        ),
+        Text(
+          l10n.skipStoresHint,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

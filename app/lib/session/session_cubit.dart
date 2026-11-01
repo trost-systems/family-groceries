@@ -107,7 +107,7 @@ class SessionCubit(
   /// A create or join whose answer never came (offline, a timeout): the
   /// server may have done it. The retry then answers
   /// `already_in_household` or `member`, and the event goes out once, then.
-  ({bool defaultStores})? _unansweredCreate;
+  ({int storeCount})? _unansweredCreate;
   ({String code, JoinMethod method})? _unansweredJoin;
 
   Future<void> _load(String? userId) async {
@@ -177,22 +177,29 @@ class SessionCubit(
     emit(next);
   }
 
-  /// Creates the user's household, with dm, Lidl and Edeka unless
-  /// [defaultStores] is false. Creating again (a double tap, a retry after a
-  /// lost answer) makes no second household: the server answers
-  /// `already_in_household`, which loads the one there is.
-  Future<void> createHousehold(String name, {bool defaultStores = true}) async {
+  /// Creates the user's household with [stores], the ones picked in
+  /// onboarding, in that order; no store without a pick. Creating again (a
+  /// double tap, a retry after a lost answer) makes no second household: the
+  /// server answers `already_in_household`, which loads the one there is.
+  Future<void> createHousehold(
+    String name, {
+    List<String> stores = const [],
+  }) async {
     final Object? created;
     try {
       created = await householdCall(
         () => _client.rpc<Object?>(
           'create_household',
-          params: {'p_name': name, 'p_default_stores': defaultStores},
+          params: {
+            'p_name': name,
+            'p_default_stores': false,
+            'p_stores': stores,
+          },
         ),
       );
     } on HouseholdError catch (e) {
       if (e.problem == HouseholdProblem.offline) {
-        _unansweredCreate ??= (defaultStores: defaultStores);
+        _unansweredCreate ??= (storeCount: stores.length);
         rethrow;
       }
       // The household is there already; show it.
@@ -201,9 +208,9 @@ class SessionCubit(
       }
       await householdCall(refresh);
       if (state case InHousehold(:final household)) {
-        if (_unansweredCreate case (:final defaultStores)) {
+        if (_unansweredCreate case (:final storeCount)) {
           _trackIn(household.id, 'household_created', {
-            'default_stores': defaultStores,
+            'store_count': storeCount,
           });
         }
         _unansweredCreate = null;
@@ -213,7 +220,7 @@ class SessionCubit(
     }
     _unansweredCreate = null;
     if (created case {'id': final String id}) {
-      _trackIn(id, 'household_created', {'default_stores': defaultStores});
+      _trackIn(id, 'household_created', {'store_count': stores.length});
     }
     await householdCall(refresh);
   }

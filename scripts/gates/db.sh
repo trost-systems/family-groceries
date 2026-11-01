@@ -27,7 +27,8 @@ supabase/bench/suggest_latency.sh
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
   deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
-  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts)
+  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts \
+  _shared/zero_stores_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

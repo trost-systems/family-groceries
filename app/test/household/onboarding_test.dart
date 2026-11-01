@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/popular_stores.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -56,17 +57,60 @@ void main() {
   });
 
   group('Step 2a: create', () {
-    testWidgets('the name is prefilled, the default stores are on', (
-      tester,
-    ) async {
+    testWidgets('the name is prefilled, no store is picked, the stores '
+        'and the disclaimer show', (tester) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       expect(find.widgetWithText(TextField, 'Unser Haushalt'), findsOneWidget);
-      expect(find.text('Deutsche Standard-Läden hinzufügen'), findsOneWidget);
-      expect(find.text('Überspringen'), findsOneWidget);
+      for (final store in popularStores) {
+        final chip = tester.widget<FilterChip>(key('onboarding-store-$store'));
+        expect(chip.selected, isFalse, reason: store);
+      }
+      expect(key('stores-disclaimer'), findsOneWidget);
+      expect(
+        find.textContaining('Ladennamen wie dm, Lidl oder EDEKA'),
+        findsOneWidget,
+      );
       await tapKey(tester, 'create-household');
-      expect(o.session.creates, [('Unser Haushalt', true)]);
+      expect(o.session.creates, [('Unser Haushalt', '')]);
       // Created: Step 3.
       expect(location(o), '/welcome/invite');
+    });
+
+    testWidgets('the picked stores and an own one are created in the order '
+        'picked; unpicking takes one out', (tester) async {
+      final o = await pumpOnboarding(tester, location: '/welcome/create');
+      await tapKey(tester, 'onboarding-store-REWE');
+      await tapKey(tester, 'onboarding-store-dm');
+      await tapKey(tester, 'onboarding-store-EDEKA');
+      await tapKey(tester, 'onboarding-store-dm');
+      await tapKey(tester, 'onboarding-store-own');
+      await tester.enterText(key('store-new-field'), '  Bäcker   Kühn ');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<FilterChip>(key('onboarding-store-Bäcker Kühn')).selected,
+        isTrue,
+      );
+      await tapKey(tester, 'onboarding-store-own');
+      await tester.enterText(key('store-new-field'), 'rewe');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'create-household');
+      expect(o.session.creates, [
+        ('Unser Haushalt', 'REWE, EDEKA, Bäcker Kühn'),
+      ]);
+    });
+
+    testWidgets('the own-store row reads as a button, not a check box', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpOnboarding(tester, location: '/welcome/create');
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Eigenen Laden hinzufügen')),
+        isSemantics(isButton: true, hasCheckedState: false, hasTapAction: true),
+      );
+      handle.dispose();
     });
 
     testWidgets('Skip creates without stores, under the typed name', (
@@ -74,18 +118,33 @@ void main() {
     ) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       await tester.enterText(key('household-name'), '  WG Sonnenallee ');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      await tapKey(tester, 'onboarding-store-Lidl');
       await tapKey(tester, 'skip-stores');
-      await tapKey(tester, 'create-household');
-      expect(o.session.creates, [('WG Sonnenallee', false)]);
+      expect(o.session.creates, [('WG Sonnenallee', '')]);
+      expect(
+        find.text(
+          'Ohne Läden starten. Du kannst sie später unter Mehr anlegen.',
+        ),
+        findsNothing,
+        reason: 'created: Step 3',
+      );
     });
 
     testWidgets('an empty name is refused before any call', (tester) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       await tester.enterText(key('household-name'), '   ');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
       await tapKey(tester, 'create-household');
       expect(
-        find.text('Gib einen Namen mit 1 bis 80 Zeichen ein.'),
+        find.descendant(
+          of: key('create-name-problem'),
+          matching: find.text('Gib einen Namen mit 1 bis 80 Zeichen ein.'),
+        ),
         findsOneWidget,
+        reason: 'beside the button, where the tap was',
       );
       expect(o.session.creates, isEmpty);
     });
@@ -107,16 +166,42 @@ void main() {
     ) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       await tester.enterText(key('household-name'), 'Familie Trost');
-      await tapKey(tester, 'skip-stores');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      await tapKey(tester, 'onboarding-store-Penny');
       o.session.fail = HouseholdProblem.offline;
       await tapKey(tester, 'create-household');
       expect(find.text(offline), findsOneWidget);
+      await tester.scrollUntilVisible(
+        key('household-name'),
+        -200,
+        scrollable: find
+            .descendant(
+              of: key('create-household-screen'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.widgetWithText(TextField, 'Familie Trost'), findsOneWidget);
       expect(location(o), '/welcome/create');
+      await tester.scrollUntilVisible(
+        key('create-household'),
+        200,
+        scrollable: find
+            .descendant(
+              of: key('create-household-screen'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(
+        tester.widget<FilterChip>(key('onboarding-store-Penny')).selected,
+        isTrue,
+      );
       await tapKey(tester, 'create-household');
       expect(o.session.creates, [
-        ('Familie Trost', false),
-        ('Familie Trost', false),
+        ('Familie Trost', 'Penny'),
+        ('Familie Trost', 'Penny'),
       ]);
       expect(location(o), '/welcome/invite');
     });
@@ -128,8 +213,12 @@ void main() {
         locale: const Locale('en'),
       );
       expect(find.widgetWithText(TextField, 'Our household'), findsOneWidget);
-      expect(find.text('Add default German stores'), findsOneWidget);
+      expect(find.text('Add your own store'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
+      expect(
+        find.textContaining("Hummlist is independent and isn't affiliated"),
+        findsOneWidget,
+      );
     });
   });
 

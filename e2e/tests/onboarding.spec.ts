@@ -1,5 +1,5 @@
 // Job 22 (Spec #3): onboarding after sign-in and the analytics consent: create a household (with
-// or without the default stores) or join one with an invite, invite the partner, manage invites.
+// with the stores picked, job 58, or without) or join one with an invite, invite the partner, manage invites.
 // The acceptance criteria on the web; the mobile parts are unit-tested (app/test/household,
 // app/test/app/router_test.dart, deep_links_config_test.dart) and on Peter's device checklist.
 import { expect, test, type Browser, type Page } from './fixtures';
@@ -68,7 +68,7 @@ async function newPage(browser: Browser, options: Parameters<Browser['newContext
   return (await browser.newContext(options)).newPage();
 }
 
-test('AC1-3: sign-in, consent, Step 1, create with the default stores, invite with a visible code', async ({ browser }) => {
+test('AC1-3: sign-in, consent, Step 1, create with picked stores, invite with a visible code', async ({ browser }) => {
   const page = await newPage(browser, { viewport: phone, permissions: ['clipboard-read', 'clipboard-write'] });
   const email = newEmail('create');
   await signUp(page, email);
@@ -112,7 +112,7 @@ test('AC1-3: sign-in, consent, Step 1, create with the default stores, invite wi
 test('AC2: Skip creates a household without stores; categories and the fallback are there', async ({ page }) => {
   const email = newEmail('skip');
   await signUp(page, email);
-  await createHousehold(page, { name: 'WG Sonnenallee', stores: false });
+  await createHousehold(page, { name: 'WG Sonnenallee', stores: [] });
   const [household] = await householdsCreatedBy(email);
   expect(household.name).toBe('WG Sonnenallee');
   const admin = adminClient();
@@ -165,7 +165,7 @@ test('AC5 and AC12: a typed code joins; events once, without names, emails, code
   await skipInvite(owner);
   await received(ownerEvents, ['first_open', 'household_created', 'invite_sent', 'invite_sent']);
   const created = ownerEvents.events.find((e) => e.event === 'household_created')!;
-  expect(created.properties.default_stores).toBe(true);
+  expect(created.properties.store_count).toBe(3);
   expect(ownerEvents.events.filter((e) => e.event === 'invite_sent').map((e) => [e.properties.channel, e.properties.context]))
     .toEqual([['copy_code', 'onboarding'], ['copy_link', 'onboarding']]);
 
@@ -455,7 +455,9 @@ test('AC11: onboarding, the share text and errors in English', async ({ browser 
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('button', { name: /^Create a household/ }).click();
   await expect(page.getByRole('textbox', { name: 'Household name' })).toBeVisible();
-  await expect(page.getByRole('radio', { name: /^Add default German stores/ })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'EDEKA', exact: true }), 'nothing picked').not.toBeChecked();
+  await expect(page.getByRole('button', { name: 'Add your own store' })).toBeVisible();
+  await expect(page.getByText(/^We use shop names such as dm, Lidl or EDEKA only/)).toBeVisible();
   await page.getByRole('button', { name: 'Create a household', exact: true }).click();
   await page.getByRole('button', { name: 'Invite your partner', exact: true }).click();
   await expect(page.getByText(/^valid until /)).toBeVisible();
@@ -489,9 +491,10 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
       await shot(page, '02', 'step1');
       await page.getByRole('button', { name: new RegExp(`^${t.create}`) }).click();
       await expect(page.getByRole('button', { name: t.create, exact: true })).toBeVisible();
-      await shot(page, '03', 'create-default-stores');
-      await page.getByRole('radio', { name: t.skip }).click();
-      await shot(page, '04', 'create-skip-stores');
+      await shot(page, '03', 'create-stores');
+      await page.getByRole('checkbox', { name: 'REWE', exact: true }).or(page.getByRole('button', { name: 'REWE', exact: true }))
+        .click();
+      await shot(page, '04', 'create-stores-picked');
       const cut = await cutOff(page);
       await page.getByRole('button', { name: t.create, exact: true }).click();
       await expect(page.getByRole('textbox').first()).toBeVisible();
