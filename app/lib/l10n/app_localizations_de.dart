@@ -780,6 +780,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get suggestionDue => 'Wieder fällig';
 
   @override
+  String get suggestionRecent => 'Zuletzt verwendet';
+
+  @override
   String addedTo(String name, String store) {
     return 'Hinzugefügt: $name → $store';
   }

@@ -1340,6 +1340,12 @@ abstract class AppLocalizations {
   /// **'Wieder fällig'**
   String get suggestionDue;
 
+  /// Source label of an item used in the last 30 days, shown in the add sheet before anything is typed
+  ///
+  /// In de, this message translates to:
+  /// **'Zuletzt verwendet'**
+  String get suggestionRecent;
+
   /// The add sheet's note after an add
   ///
   /// In de, this message translates to:

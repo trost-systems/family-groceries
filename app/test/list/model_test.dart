@@ -476,7 +476,7 @@ void main() {
     });
   });
 
-  test('suggestions match whole names first, then word starts', () {
+  test('suggestions match names, then word starts, then inside', () {
     const usuals = [
       Usual(name: 'Bio-Milch', due: false),
       Usual(name: 'Hafermilch', due: false),
@@ -488,6 +488,7 @@ void main() {
     expect(names(suggestUsuals(usuals, const [], ' MILCH ')), [
       'Milch',
       'Bio-Milch',
+      'Hafermilch',
     ]);
     expect(names(suggestUsuals(usuals, const [], 'kae')), ['Käse']);
     expect(names(suggestUsuals(usuals, const [], 'Kä')), ['Käse']);
@@ -500,5 +501,94 @@ void main() {
       updatedAt: DateTime.utc(2026),
     );
     expect(names(dueUsualsOf(usuals, [brot])), ['Milch', 'Käse']);
+  });
+
+  group('typos and part of a word, as the server matches them', () {
+    List<String> names(List<Usual> list) => [for (final u in list) u.name];
+    const usuals = [
+      Usual(name: 'Hafermilch', due: false),
+      Usual(name: 'Milchreis', due: false),
+      Usual(name: 'Tomte', due: false),
+      Usual(name: 'Cocktailtomate', due: false),
+      Usual(name: 'Tomatensoße', due: false),
+      Usual(name: 'Tomate', due: false),
+      Usual(name: 'Reis', due: false),
+      Usual(name: 'Joghurt', due: false),
+    ];
+
+    test('Hafermlch and milch find Hafermilch', () {
+      expect(names(suggestUsuals(usuals, const [], 'Hafermlch')), [
+        'Hafermilch',
+      ]);
+      expect(names(suggestUsuals(usuals, const [], 'milch')), [
+        'Milchreis',
+        'Hafermilch',
+      ]);
+    });
+
+    test('exact, prefix, inside a word, then a typo', () {
+      expect(names(suggestUsuals(usuals, const [], 'Tomate')), [
+        'Tomate',
+        'Tomatensoße',
+        'Cocktailtomate',
+        'Tomte',
+      ]);
+    });
+
+    test('under 3 letters prefixes only; in-word from 4', () {
+      expect(names(suggestUsuals(usuals, const [], 'af')), isEmpty);
+      expect(names(suggestUsuals(usuals, const [], 'Hf')), isEmpty);
+      expect(names(suggestUsuals(usuals, const [], 'Ris')), ['Reis']);
+      expect(names(suggestUsuals(usuals, const [], 'eis')), isEmpty);
+    });
+
+    test('one edit up to 5 letters, two from 6, same first letter', () {
+      expect(suggestionMatch('mlc', 'milch'), isNull);
+      expect(suggestionMatch('mlch', 'milch'), 4);
+      expect(suggestionMatch('jogurt', 'joghurt'), 4);
+      expect(suggestionMatch('tomatn', 'tomte'), 4);
+      expect(suggestionMatch('tomat', 'tomte'), isNull);
+      expect(suggestionMatch('eis', 'reis'), isNull);
+      expect(suggestionMatch('bete', 'rote beete'), 4);
+      expect(suggestionMatch('rote bte', 'rote bete'), 4);
+    });
+  });
+
+  test('used lately: the last 30 days, not due, not on the list', () {
+    final now = DateTime.utc(2026, 11);
+    Usual used(String name, int days, {bool due = false}) => Usual(
+      name: name,
+      due: due,
+      lastUsed: now.subtract(Duration(days: days)),
+    );
+    final usuals = [
+      used('Brot', 3),
+      used('Milch', 1, due: true),
+      used('Mehl', 31),
+      used('Käse', 1),
+      const Usual(name: 'Salz', due: false),
+      used('Butter', 2),
+    ];
+    final butter = Item(
+      id: 'x',
+      name: 'Butter',
+      status: ItemStatus.active,
+      createdAt: now,
+      updatedAt: now,
+    );
+    expect(
+      [
+        for (final u in recentUsualsOf(usuals, [butter], now)) u.name,
+      ],
+      ['Käse', 'Brot'],
+    );
+    expect(recentUsualsOf(usuals, const [], now, limit: 1), hasLength(1));
+    final back = Usual.fromJson(used('Brot', 3).toJson());
+    expect(back.lastUsed, now.subtract(const Duration(days: 3)));
+    expect(
+      Usual.fromJson(const {'name': 'Brot', 'due': false}).lastUsed,
+      isNull,
+      reason: 'a cache from before has no last use',
+    );
   });
 }

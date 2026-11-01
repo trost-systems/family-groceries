@@ -34,14 +34,19 @@ const _firstOpenShare = 0.5;
 const _roomy = 200.0;
 
 /// The rows the sheet shows: the suggestions for what is typed, or, before
-/// typing, the usuals that are due. Alternatives already on the list are
-/// left out; what was typed always stays first.
+/// typing, the usuals that are due, then those used lately. Alternatives
+/// already on the list are left out; what was typed always stays first.
 List<Suggestion> sheetRows(AddSheetState sheet, ListCubit list) {
   if (sheet.text.trim().isEmpty) {
     return [
       for (final usual in list.dueUsuals)
         Suggestion(
           SuggestionSource.due,
+          ParsedEntry(name: usual.name, quantity: usual.quantity),
+        ),
+      for (final usual in list.recentUsuals)
+        Suggestion(
+          SuggestionSource.recent,
           ParsedEntry(name: usual.name, quantity: usual.quantity),
         ),
     ];
@@ -323,7 +328,8 @@ class const _Content({
         _SuggestionRow(
           key: ValueKey('suggestion-$i'),
           suggestion: row,
-          first: i == 0,
+          // Enter takes nothing before anything is typed.
+          first: i == 0 && sheet.text.trim().isNotEmpty,
           base: first,
           catalog: catalog,
           // A row tells its own store only while the
@@ -727,6 +733,7 @@ String sourceLabel(AppLocalizations l10n, SuggestionSource source) =>
       SuggestionSource.brand => l10n.suggestionBrand,
       SuggestionSource.catalog => l10n.suggestionCatalog,
       SuggestionSource.due => l10n.suggestionDue,
+      SuggestionSource.recent => l10n.suggestionRecent,
     };
 
 /// Eigenschaften are stored joined with ", "; a decimal comma ("1,5 %")

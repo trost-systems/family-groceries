@@ -25,7 +25,11 @@ enum SuggestionSource() {
   catalog,
 
   /// Bought regularly and due again: shown before anything is typed.
-  due;
+  due,
+
+  /// Used in the last 30 days: shown after the due ones before anything is
+  /// typed.
+  recent;
 
   static SuggestionSource byName(String name) =>
       values.where((s) => s.name == name).firstOrNull ?? typed;

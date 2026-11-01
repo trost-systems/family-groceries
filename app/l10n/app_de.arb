@@ -269,6 +269,8 @@
   "@suggestionCatalog": {"description": "Source label of an add suggestion"},
   "suggestionDue": "Wieder fällig",
   "@suggestionDue": {"description": "Source label of a due usual in the add sheet"},
+  "suggestionRecent": "Zuletzt verwendet",
+  "@suggestionRecent": {"description": "Source label of an item used in the last 30 days, shown in the add sheet before anything is typed"},
   "addedTo": "Hinzugefügt: {name} → {store}",
   "@addedTo": {"description": "The add sheet's note after an add", "placeholders": {"name": {"type": "String"}, "store": {"type": "String"}}},
   "addedItem": "Hinzugefügt: {name}",

@@ -5870,6 +5870,19 @@ for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a 
    serve a Levenshtein bound. `supabase/bench/suggest_latency.sh` (in the db gate) fails at a p95
    of 50 ms. Before: p50 7.6 ms, p95 21 ms (prefix only). After: p50 about 16 ms, p95 about 28 ms;
    the rest is the extra rows found (each catalog row runs `parse_item`).
+7. **Offline matches the same way** (`suggestionMatch` in `app/lib/list/model.dart`, over the
+   cached usuals): same name, starts with, a word starts with (the device's old second group,
+   which `suggest_items` ranks the same), inside from 4 letters, typo from 3 with the server's
+   edit bounds; the server's order within each.
+8. **Recently used on the empty field comes from the usuals.** `suggest_items` already returns
+   `last_used` (last added or bought) and leaves out what is on the list; the app keeps it with
+   the usuals (and in the device cache), so online and offline show the same rows: the due ones,
+   then those used in the last 30 days that are not due, latest first, 10 rows in all, labelled
+   "Zuletzt verwendet". No server change. A cache from before has no `last_used`: no recent rows
+   until the next usuals load.
+9. **No Enter mark before typing.** The first row's highlight and ↵ key say what Enter takes;
+   with the field empty Enter takes nothing (as before), so the due and recent rows go without it.
+   With recent rows the empty sheet is rarely empty, and the mark would have promised an add.
 
 ## Job 60: Hummlist feature map (verify-hummlist) and how-to clips, 2026-11-01
 
