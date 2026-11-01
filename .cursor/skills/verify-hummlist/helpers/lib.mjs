@@ -50,8 +50,8 @@ export const addField = (page, L) => page.getByRole('textbox', { name: L('addFie
 /** The add sheet (a group named like the add button). */
 export const addSheet = (page, L) => page.getByRole('group', { name: L('addButton'), exact: true });
 
-/** A list row by item name: its accessible name is the name, then the quantity. */
-export const itemRow = (page, name) => page.getByRole('button', { name: new RegExp(`^${escape(name)}( |$)`) });
+/** A list row by item name: a checkbox (since job 57) named by the item, then the quantity. */
+export const itemRow = (page, name) => page.getByRole('checkbox', { name: new RegExp(`^${escape(name)}( |$)`) });
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

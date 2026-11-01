@@ -103,6 +103,8 @@ async function tap(page, locator) {
   }, [x, y]);
   await page.waitForTimeout(90);
   await page.mouse.click(x, y);
+  // A finger lifts: no hover highlight stays on whatever row slides under the pointer.
+  await page.mouse.move(VIEWPORT.width / 2, 1);
 }
 
 // Every painted frame with its timestamp, from Chromium's screencast at device pixels.

@@ -5911,7 +5911,8 @@ for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a 
    FEATURES-FOR-WRITERS.md say so.
 7. **Store badges.** Main shows chain-coloured letter badges (dm red, Edeka and Lidl yellow on
    blue). Legal N-23 asks for no chain colours and job 58 replaces them, so the writers' file
-   forbids mentioning them and the clip skill avoids filming store sections.
+   forbids mentioning them and the clip skill avoids filming store sections. Job 57 then shipped the
+   neutral name pill; the follow-up PR updated the map and the clip gotcha.
 8. **Clip capture.** Chromium's screencast delivers frames at CSS pixels (390×844) even at DPR 2,
    and a DPR 2 screenshot loop reaches only about 13 fps. So MP4 and WebM are 390×844 at 30 fps,
    the GIF scales to 480 px, and GIF frame 1 and the PNG come from a sharp DPR 2 screenshot of the

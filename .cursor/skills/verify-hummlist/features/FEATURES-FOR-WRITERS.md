@@ -118,7 +118,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list").
 
-**Last verified.** main 113e756, 2026-11-01 (CET), from code on main, driven on the web build (verify-hummlist journey, a typo probe and the how-to clip, DE and EN). Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
@@ -134,7 +134,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That it works from a single purchase; it needs at least two purchase days.
 - That it predicts quantities by season or guesses new items; it only repeats what the household bought.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [usuals.md](./usuals.md).
+**Last verified.** main 3d66cee, 2026-11-01 (CET), from code on main and job 59's drive of the recent rows (#179). Recipe: [usuals.md](./usuals.md).
 
 ## Dictation
 
@@ -158,7 +158,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Ticking items, "Zuletzt verwendet" and undo
 
-**What it does.** Tapping an item on the list ticks it off. It disappears from the list straight away, without a message. At the bottom of the list, „Zuletzt verwendet“ keeps the last 20 ticked items; tapping one puts it back where it was. Deleting an item or adding one by mistake can be undone with „Rückgängig“.
+**What it does.** Tapping an item on the list ticks it off: a line strikes through it, the row turns mint and slides away in under half a second, without a message. There is no check box to tap; the whole row is the target. At the bottom of the list, „Zuletzt verwendet“ keeps the last 20 ticked items; tapping one puts it back where it was. Deleting an item or adding one by mistake can be undone with „Rückgängig“.
 
 **How to get there.**
 1. Open the list and tap an item to tick it.
@@ -168,12 +168,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Never claim.**
 - That ticking shows an undo message; it does not. Undo for a tick is the „Zuletzt verwendet“ section.
+- A check box next to each item: there is none.
 - That swiping deletes; swiping left opens editing.
 - That ticked items vanish after a fixed time or can be counted past 20 there.
 
 **Unverified.** Whether ticked items are ever removed from the section by age: no cleanup job was found in the code, but it was not run.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [tick-and-undo.md](./tick-and-undo.md).
+**Last verified.** main c8dfb2c, 2026-11-01 (CET), from code on main after job 57, driven on the web build. Recipe: [tick-and-undo.md](./tick-and-undo.md).
 
 ## Edit an item
 
@@ -243,13 +244,13 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Never claim.**
 - That users can add, rename or delete their own stores; they cannot yet. A new household either gets dm, Lidl and Edeka or none („Überspringen“).
-- Store logos, chain colours or official store maps. Don't mention the small coloured letter badges next to store names (they are being replaced). The walking orders are researched defaults that can differ from a real shop.
+- Store logos, chain colours or official store maps. Store names appear as plain names in a small hexagonal label. The walking orders are researched defaults that can differ from a real shop.
 - That swiping or tapping moves items between stores; it is hold and drag, or the edit sheet's store choice.
 - That the app knows prices, opening hours or store locations.
 
 **Note.** The wording of the onboarding skip hint („Du kannst sie später unter Mehr anlegen“) promises adding stores later, but the app has no add-store function today; do not repeat it.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** main c8dfb2c, 2026-11-01 (CET), from code on main after job 57, driven on the web build. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 
@@ -265,7 +266,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - Push notifications for a partner's changes.
 - That the list updates with the app fully closed in the background.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [live-sync.md](./live-sync.md).
+**Last verified.** main c8dfb2c, 2026-11-01 (CET), from code on main after job 57, driven on the web build. Recipe: [live-sync.md](./live-sync.md).
 
 ## Working offline
 
@@ -287,19 +288,20 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 # Settings, help and account
 
-## Theme: light, dark, like the device
+## Theme: System, light, dark
 
-**What it does.** The user chooses between light, dark and "like the device". The choice applies immediately across the whole app and is remembered on that device, also after signing out. By default the app follows the phone's or browser's own light/dark setting.
+**What it does.** The user chooses between „System“ (follow the device), light and dark in one three-part switch. The choice applies immediately across the whole app and is remembered on that device, also after signing out. By default the app follows the phone's or browser's own light/dark setting.
 
 **How to get there.**
 1. „Mehr“ (EN: "More") → „Einstellungen“ (EN: "Settings").
-2. Under „Darstellung“ (EN: "Appearance") choose „Wie Gerät“ (EN: "Device"), „Hell“ (EN: "Light") or „Dunkel“ (EN: "Dark").
+2. Under „Darstellung“ (EN: "Appearance") tap „System“ (EN: "System"), „Hell“ (EN: "Light") or „Dunkel“ (EN: "Dark").
 
 **Never claim.**
 - That the choice follows the account to other devices.
-- A scheduled or automatic day/night switch beyond "like the device".
+- A scheduled or automatic day/night switch beyond „System“.
+- The old label „Wie Gerät“ for the theme (it is „System“ since 2026-11-01).
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [theme.md](./theme.md).
+**Last verified.** main c8dfb2c, 2026-11-01 (CET), from code on main after job 57, driven on the web build. Recipe: [theme.md](./theme.md).
 
 ## App language
 
