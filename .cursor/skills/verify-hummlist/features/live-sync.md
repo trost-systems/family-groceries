@@ -7,7 +7,7 @@ Members of one household see each other's changes without reloading: an item one
 - `sync-add` / `sync-tick` / `sync-edit` / `sync-delete` a partner's add, tick, edit or delete shows on the other list within a couple of seconds.
 - `sync-move` a partner's move of an item to another category or store shows in its new place.
 - `news-subtitle` bar text „{n} neu von {name}“ (EN "{n} new from {name}") when the unseen adds are all from one partner; „{n} neu“ / "{n} new" when from several; empty otherwise. The bar keeps its height in every state.
-- `news-row` an unseen partner item's row has accessible name "<Name>\nNeu" (EN "New").
+- `news-row` an unseen partner item's row is tinted honey (since job 57) and has accessible name "<Name>\nNeu" (EN "New").
 - `news-clear` an item stops being new after 3 s on screen while the app is showing, or when it is ticked; stays cleared after reload. Own adds are never new. On first start nothing old is new. Items added while the app was closed are new on the next open.
 - `sync-status-icon` pending „1 Änderung wird synchronisiert“ / „{n} Änderungen werden synchronisiert“ (EN "Syncing 1 change" / "Syncing {n} changes"); offline „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN "Offline: changes will sync once the connection is back"). Offline wins over pending.
 - `sync-reconnect` changes made offline go out when the connection returns; the other side's changes come in (resync); also on app resume and after Realtime drops (retry about 3 s, backing off to 30 s).

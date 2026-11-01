@@ -1,10 +1,11 @@
 # Ticking items, "Zuletzt verwendet" and undo
 
-A tap on an item's row ticks it off: the row leaves the list at once and no snackbar appears, so a tick has no "Rückgängig". Ticked items collect in a folded section at the bottom of the list, „Zuletzt verwendet“ (the 20 newest). A tap on an item there puts it back on the list, in the place it had, and shows a short note. Only some other actions carry an undo: deleting an item (from the edit sheet), the add sheet's „Hinzugefügt“ note, and a merge of duplicates.
+A tap on an item's row ticks it off: a line draws across the item's words, the row turns mint, then it closes and the rows below move up (about 0.4 s). A store or category divider whose last item leaves closes with it. No snackbar appears, so a tick has no „Rückgängig“; screen readers hear „<Name> abgehakt“ / "<Name> ticked off". Ticked items collect in a folded section at the bottom of the list, „Zuletzt verwendet“ (the 20 newest). A tap on an item there puts it back on the list, in the place it had, and shows a short note. Only some other actions carry an undo: deleting an item (from the edit sheet), the add sheet's „Hinzugefügt“ note, and a merge of duplicates.
 
 ## Sub-features
 
-- `tu-tick` a tap on a row ticks it; the row leaves the list, no snackbar, no "abgehakt" text. The state is saved on the server and survives a reload.
+- `tu-tick` a tap on a row ticks it: strike-through across quantity and name (180 ms), the row tints mint, then fades and closes (260 ms); the tick commits 440 ms after the tap and is saved on the server (survives a reload). No snackbar. With reduced motion the struck row shows at once, holds 260 ms and goes without the close.
+- `tu-tick-a11y` each row is a checkbox (unchecked while open, checked while it leaves) and the tick is announced „<Name> abgehakt“ / "<Name> ticked off". There is no visible check box.
 - `tu-used-section` „Zuletzt verwendet“ / "Recently used" is a folded section below the list; it exists only while at least one item is ticked. It holds up to 20 ticked items, newest tick first, each drawn like the list's row (icon, name, brand · properties, quantity) but faded.
 - `tu-put-back` a tap on a row under „Zuletzt verwendet“ puts it back on the list in its old store, category and position, and shows the snackbar „<Name> steht wieder auf der Liste“ / "<Name> is back on the list" (no action button).
 - `tu-delete-undo` „Löschen“ / "Delete" at the bottom of the edit sheet removes the item and shows the snackbar „<Name> gelöscht“ / "<Name> deleted" with the action „Rückgängig“ / "Undo", which brings the item back (the server row is re-created).
@@ -27,7 +28,7 @@ Preconditions:
 - Seeded household „Familie Brandt“, signed in on the list, analytics declined, onboarded; the demo items include Butter, Nudeln and Reis without a quantity and „6× Bananen“ with one.
 - Browser locale de-DE, viewport 480x900 or 390x844.
 
-- **Tick.** Tap the row. `tick(page, 'Joghurt')` (reveals the row, clicks `itemRow(page, 'Joghurt')`). Observable result: `itemRow(page, 'Joghurt')` count drops by 1; `page.getByRole('button', { name: 'Rückgängig' })` count is 0 and `page.getByText('Joghurt abgehakt')` count is 0.
+- **Tick.** Tap the row. `tick(page, 'Joghurt')` (reveals the row, clicks `itemRow(page, 'Joghurt')`). Observable result: `itemRow(page, 'Joghurt')` count drops by 1; `page.getByRole('button', { name: 'Rückgängig' })` count is 0 and no snackbar group named „Joghurt abgehakt“ (`actionSnackBar(page, 'Joghurt abgehakt')` count 0; the same words exist only as the screen-reader announcement).
 - **Open the used section.** `page.getByRole('button', { name: 'Zuletzt verwendet' }).click()` (`reveal` it first if off-screen). Observable result: `usedRow(page, 'Joghurt')` visible; its accessible name is the item name, then details/quantity, then „Wieder auf die Liste“, for example `Bananen 2 Wieder auf die Liste`.
 - **Put back.** `putBack(page, 'Joghurt')` (or `usedRow(page, 'Joghurt').click()`). Observable result: `itemRow(page, 'Joghurt')` visible again, `usedRow(page, 'Joghurt')` count 0, snackbar text „Joghurt steht wieder auf der Liste“ (plain snackbar: `getByText` may hit only the announcement). In a store section the row returns to its old position (`list-walk-order.spec.ts` checks the row order).
 - **Persistence.** After tick or put back, `page.reload()` then `expect(addField(page)).toBeFocused()`; the row is gone/back. A second view: the `items` row's `status` is `bought` / `active` through the API as the user.
@@ -43,4 +44,6 @@ Preconditions:
 - Putting an item back within 10 minutes of the tick counts as the tick's undo; later it counts as a new add for analytics only. The user sees no difference.
 - No code path purges ticked items after a time (none found); the section keeps the 20 newest. unverified (no server job found, not run).
 - The „Rückgängig“ in the add note disappears at the next keystroke; click it before typing again.
-- Ticking has no undo snackbar since the job 29b release; old recipes that wait for „abgehakt“ or „Rückgängig“ after a tick are wrong.
+- Ticking has no undo snackbar since the job 29b release; old recipes that wait for a „Rückgängig“ after a tick are wrong.
+- Rows are role `checkbox` since job 57 (2026-11-01): `itemRow` in `e2e/tests/helpers.ts` and `helpers/lib.mjs` find them that way; recipes that look for a row as `button` find nothing. Rows under „Zuletzt verwendet“ stay buttons (`usedRow`).
+- `tick` waits for the row to go; the row needs about 440 ms before the tick commits, so an add of the same name right after a click finds it still on the list.

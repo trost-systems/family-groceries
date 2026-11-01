@@ -65,5 +65,5 @@ node .cursor/skills/hummlist-howto-clips/clip.mjs quick-add --out /tmp/clips
 
 ## Missing or open
 
-- Jobs 57 (#175), 58 (#176) and 59 (#177) had not merged when this PR was opened. The map describes main 1b6d204. Follow-up after they land: see the job's DONE_SUMMARY in the ops dir.
+- Job 59's server part (#177) landed before the merge; quick-add was updated and re-driven in #178. Job 57 (#175) landed after it; a follow-up PR updated tick-and-undo, theme, stores-walk-order and live-sync and added `journeys/tick-and-undo.mjs` (driven: strike-through and mint row, no snackbar, bought/active in the database). Job 59's app part (#179) landed too and updated the map itself. Job 58 (#176) was still open at the end of the 2-hour watch.
 - Only quick-add has a scripted journey and a clip script. The other features have recipes and e2e spec pointers.
