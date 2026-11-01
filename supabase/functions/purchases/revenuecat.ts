@@ -2,6 +2,7 @@
 // its events as what they mean for a household's unlock. Unknown types and fields are ignored, so a
 // newer RevenueCat payload never fails.
 import type { AppStore } from '../_shared/purchases.ts';
+import { premiumEntitlement } from './promotional.ts';
 import {
   lifetimeProductId,
   type Plan,
@@ -15,7 +16,13 @@ import {
 } from './types.ts';
 
 /** Why an event unlocks nothing; logged as is (no ids). */
-export type Refusal = 'store' | 'product' | 'family_share' | 'app_user_id' | 'malformed';
+export type Refusal =
+  | 'store'
+  | 'product'
+  | 'family_share'
+  | 'app_user_id'
+  | 'malformed'
+  | 'entitlement';
 
 /** A yearly subscription's new state from a lifecycle event, for a transaction we may know. */
 export interface Lifecycle {
@@ -32,6 +39,12 @@ export type Action =
   | { do: 'lifecycle'; change: Lifecycle }
   | { do: 'revoke'; refund: Refund }
   | { do: 'reinstate'; store: AppStore; transactionId: string }
+  /**
+   * A promotional grant of premium changed (store PROMOTIONAL: granted, extended, revoked or
+   * expired). The event is only the trigger: the household's promotional premium is read from
+   * RevenueCat's API and stored as it is now (promotional.ts).
+   */
+  | { do: 'promotional'; householdId: string }
   /** No write. [refused] is logged; TRANSFER and PRODUCT_CHANGE are logged by type. */
   | { do: 'ignore'; refused?: Refusal };
 
@@ -119,7 +132,34 @@ const isRefund = (f: Record<string, unknown>, plan: Plan) =>
   (typeof f.price === 'number' && f.price < 0) ||
   (typeof f.price_in_purchased_currency === 'number' && f.price_in_purchased_currency < 0);
 
+/** The household id, or null for RevenueCat's own ids ($RCAnonymousID:…) and anything else. */
+const householdOf = (f: Record<string, unknown>) =>
+  typeof f.app_user_id === 'string' && uuid.test(f.app_user_id)
+    ? f.app_user_id.toLowerCase()
+    : null;
+
+/**
+ * Grants from the RevenueCat dashboard or API v2 grant_entitlement: NON_RENEWING_PURCHASE when
+ * granted or extended, CANCELLATION (DEVELOPER_INITIATED) when revoked, EXPIRATION when it ends.
+ * Every one of them, whatever its type, makes us read the household's current state: deliveries
+ * may come late, twice or out of order, and the API answers what is true now.
+ */
+function promotionalAction(type: string, f: Record<string, unknown>): Action {
+  if (type === 'TRANSFER' || type === 'TEST') return { do: 'ignore' };
+  const ids = Array.isArray(f.entitlement_ids)
+    ? f.entitlement_ids
+    : typeof f.entitlement_id === 'string'
+    ? [f.entitlement_id]
+    : null;
+  // Another entitlement's grant: nothing of ours changed. Without ids we look anyway.
+  if (ids && !ids.includes(premiumEntitlement)) return { do: 'ignore', refused: 'entitlement' };
+  const householdId = householdOf(f);
+  if (!householdId) return { do: 'ignore', refused: 'app_user_id' };
+  return { do: 'promotional', householdId };
+}
+
 function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
+  if (f.store === 'PROMOTIONAL') return promotionalAction(type, f);
   const relevant = recordTypes.has(type) || Object.hasOwn(lifecycleStates, type) ||
     type === 'REFUND_REVERSED';
   if (!relevant) return { do: 'ignore' };
@@ -181,9 +221,7 @@ function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
   // Family Sharing is off for both products (scripts/iap/product.ts); a shared copy is no sale.
   if (f.is_family_share === true) return { do: 'ignore', refused: 'family_share' };
   // The household id, or RevenueCat's own ($RCAnonymousID:…) when the app never logged in.
-  const householdId = typeof f.app_user_id === 'string' && uuid.test(f.app_user_id)
-    ? f.app_user_id.toLowerCase()
-    : null;
+  const householdId = householdOf(f);
   if (!householdId) return { do: 'ignore', refused: 'app_user_id' };
   // A yearly plan without its end is no state we could keep.
   if (product.plan === 'yearly' && !fields.expiresAt) return { do: 'ignore', refused: 'malformed' };

@@ -503,3 +503,106 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: "A promotional grant unlocks the household while RevenueCat's API says it runs",
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withHouseholds(async (sql, peter, lea, max) => {
+      // RevenueCat's API, as GET /v2/projects/{project}/customers/{id}/subscriptions answers.
+      let grant: { ends_at: number | null } | null = { ends_at: Date.now() + 30 * 86_400_000 };
+      const asked: string[] = [];
+      const fetch = (url: string) => {
+        asked.push(url);
+        const items = grant
+          ? [{
+            store: 'promotional',
+            gives_access: true,
+            ends_at: grant.ends_at,
+            entitlements: { items: [{ id: 'entl1', lookup_key: 'premium' }] },
+          }]
+          : [];
+        return Promise.resolve(Response.json({ items, next_page: null }));
+      };
+      const handler = createHandler(productionDeps(
+        {
+          webhook: { authorization: AUTH, signingSecret: null, tombstoneKey: TOMBSTONE_KEY },
+          local: true,
+          region: null,
+          revenueCat: { secretKey: 'sk_integration', projectId: 'projtest' },
+          deletionsSecret: 'integration-ops',
+        },
+        telemetryFor('purchases', { get: () => undefined }),
+        { fetch },
+      ));
+      const eventIds: string[] = [];
+      const deliver = async (type: string) => {
+        const id = crypto.randomUUID();
+        eventIds.push(id);
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify({
+              api_version: '1.0',
+              event: {
+                id,
+                type,
+                app_user_id: peter.householdId,
+                store: 'PROMOTIONAL',
+                environment: 'PRODUCTION',
+                entitlement_ids: ['premium'],
+                period_type: 'PROMOTIONAL',
+                event_timestamp_ms: Date.now(),
+              },
+            }),
+          }),
+        );
+        return (await res.json()).status;
+      };
+      const premium = async (household: string) =>
+        (await sql<{ p: boolean }[]>`select public.household_has_premium(${household}::uuid) as p`)[
+          0
+        ]
+          .p;
+      try {
+        assertEquals(await deliver('NON_RENEWING_PURCHASE'), 'granted');
+        assertEquals(asked, [
+          `https://api.revenuecat.com/v2/projects/projtest/customers/${peter.householdId}/subscriptions?limit=100`,
+        ]);
+        assertEquals(await premium(peter.householdId), true);
+        assertEquals(await premium(max.householdId), false);
+        assertEquals(
+          (await sql`select 1 from public.purchases where bound_household = ${peter.householdId}`)
+            .length,
+          0,
+        );
+        // Lea, a member, reads it through RLS.
+        const rows = await asUser(
+          lea.userId,
+          (tx) => tx<{ premium_source: string }[]>`select premium_source from public.entitlements`,
+        );
+        assertEquals(rows.map((r) => r.premium_source), ['promotional']);
+        // Revoked in RevenueCat: the next event, whatever its type, ends it.
+        grant = null;
+        assertEquals(await deliver('CANCELLATION'), 'removed');
+        assertEquals(await premium(peter.householdId), false);
+        // Ops' reconcile reads the same way.
+        grant = { ends_at: null };
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/reconcile', {
+            method: 'POST',
+            headers: { 'x-deletions-secret': 'integration-ops' },
+            body: JSON.stringify({ householdId: peter.householdId }),
+          }),
+        );
+        assertEquals(await res.json(), { status: 'granted' });
+        assertEquals(await premium(peter.householdId), true);
+      } finally {
+        await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
+      }
+    });
+  },
+});

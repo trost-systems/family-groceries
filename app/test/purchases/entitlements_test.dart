@@ -273,6 +273,83 @@ void main() {
       );
     });
 
+    test('a promotional grant: premium until its end, then none', () {
+      expect(
+        premiumOf([promotionalRow(from: now)]),
+        isA<ActivePremium>()
+            .having((p) => p.source, 'source', PremiumSource.promotional)
+            .having(
+              (p) => p.expiresAt,
+              'end',
+              now.add(const Duration(days: 30)),
+            )
+            .having((p) => p.renews, 'renews', isFalse),
+      );
+      expect(
+        premiumOf([promotionalRow(from: now, days: -1)]),
+        isA<NoPremium>(),
+      );
+    });
+
+    test('a promotional grant without end never ends; Lifetime still wins', () {
+      expect(
+        premiumOf([promotionalRow(), yearlyRow(from: now)]),
+        isA<ActivePremium>()
+            .having((p) => p.source, 'source', PremiumSource.promotional)
+            .having((p) => p.expiresAt, 'end', isNull),
+      );
+      expect(
+        premiumOf([
+          promotionalRow(),
+          {
+            'kind': 'premium',
+            'source': 'purchase',
+            'premium_source': 'lifetime',
+          },
+        ]),
+        isA<ActivePremium>().having(
+          (p) => p.source,
+          'source',
+          PremiumSource.lifetime,
+        ),
+      );
+    });
+
+    test(
+      'a promotional grant next to a yearly plan: the later end names it',
+      () {
+        expect(
+          premiumOf([promotionalRow(from: now), yearlyRow(from: now)]),
+          isA<ActivePremium>()
+              .having((p) => p.source, 'source', PremiumSource.yearly)
+              .having((p) => p.renews, 'renews', isTrue),
+        );
+        expect(
+          premiumOf([
+            promotionalRow(from: now, days: 300),
+            yearlyRow(from: now),
+          ]),
+          isA<ActivePremium>()
+              .having((p) => p.source, 'source', PremiumSource.promotional)
+              .having(
+                (p) => p.expiresAt,
+                'end',
+                now.add(const Duration(days: 300)),
+              )
+              .having((p) => p.renews, 'renews', isFalse),
+        );
+      },
+    );
+
+    test('a promotional row with an unreadable end is dropped', () {
+      expect(
+        premiumOf([
+          {...promotionalRow(), 'expires_at': 'soon'},
+        ]),
+        isA<NoPremium>(),
+      );
+    });
+
     test('a yearly row without its end is dropped', () {
       expect(
         premiumOf([
@@ -354,6 +431,15 @@ void main() {
       );
     });
 
+    test('a running promotional grant: nothing; once it ended, both', () async {
+      expect(offered(await known([promotionalRow(from: now)])), isEmpty);
+      expect(offered(await known([promotionalRow()])), isEmpty);
+      expect(
+        offered(await known([promotionalRow(from: now, days: -1)])),
+        PremiumPlan.values,
+      );
+    });
+
     test('Lifetime next to a renewing yearly plan: still billed', () async {
       final e = await known([
         yearlyRow(from: now),
@@ -361,6 +447,32 @@ void main() {
       ]);
       expect(e.yearlyBilled, isTrue);
       expect(e.twoYearlyPlans, isFalse);
+    });
+  });
+
+  test('when a promotional grant ends, the rows are read again', () {
+    fakeAsync((async) {
+      var clock = DateTime.utc(2026, 11, 1, 12);
+      final session = TestSession(
+        const InHousehold('peter', Household(id: 'home', name: 'Zuhause')),
+      );
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [promotionalRow(from: clock, days: 1)];
+      final entitlements = Entitlements(rows, session, now: () => clock);
+      async.flushMicrotasks();
+      expect(entitlements.has(Entitlement.premium), isTrue);
+      var reads = 0;
+      final sub = entitlements.stream.listen((_) => reads++);
+      clock = clock.add(const Duration(days: 1, seconds: 2));
+      async
+        ..elapse(const Duration(days: 1, seconds: 2))
+        ..flushMicrotasks();
+      expect(reads, greaterThan(0), reason: 'read again at the end');
+      expect(entitlements.has(Entitlement.premium), isFalse);
+      unawaited(sub.cancel());
+      unawaited(entitlements.close());
+      unawaited(session.close());
+      async.flushMicrotasks();
     });
   });
 

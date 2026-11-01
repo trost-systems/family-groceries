@@ -27,10 +27,16 @@ enum Entitlement(final String wire) {
 enum PremiumSource(final String wire) {
   yearly('yearly'),
   lifetime('lifetime'),
-  testerGrant('tester_grant');
+  testerGrant('tester_grant'),
 
-  /// A lifetime or tester grant never ends and wins over a yearly plan.
-  bool get lasting => this != yearly;
+  /// A RevenueCat promotional grant (dashboard or API): it ends at its
+  /// `expires_at`, or never when that is null (docs/PURCHASES.md, "Free
+  /// premium: RevenueCat promotional grants").
+  promotional('promotional');
+
+  /// A lifetime or tester grant never ends and wins over a yearly plan. A
+  /// promotional grant without end does too ([PremiumRow.endless]).
+  bool get lasting => this == lifetime || this == testerGrant;
 
   static PremiumSource? parse(Object? wire) =>
       values.where((v) => v.wire == wire).firstOrNull;
@@ -41,14 +47,19 @@ enum PremiumSource(final String wire) {
 class const PremiumRow({
   required final PremiumSource source,
 
-  /// Yearly only: premium from this row ends here.
+  /// Yearly and promotional: premium from this row ends here (a promotional
+  /// grant without one never ends).
   final DateTime? expiresAt,
 
   /// Yearly only: the plan renews at [expiresAt].
   final bool? autoRenew,
 }) {
-  bool activeAt(DateTime now) =>
-      source.lasting || (expiresAt?.isAfter(now) ?? false);
+  /// Never ends: Lifetime, a tester grant, a promotional grant without end.
+  bool get endless =>
+      source.lasting ||
+      (source == PremiumSource.promotional && expiresAt == null);
+
+  bool activeAt(DateTime now) => endless || (expiresAt?.isAfter(now) ?? false);
 }
 
 /// The household's premium at one moment: the server's rule
@@ -60,7 +71,7 @@ final class const NoPremium() extends Premium;
 final class const ActivePremium(
   final PremiumSource source, {
 
-  /// Yearly: the latest end of its active plans.
+  /// Yearly or promotional: the latest end of the active rows that end.
   final DateTime? expiresAt,
 
   /// Yearly: one of the active plans renews.
@@ -92,29 +103,49 @@ class const HouseholdUnlocks({
   /// household paid twice, which only Apple or Google can refund.
   final int lifetimePurchases = 0,
 }) {
-  /// Lifetime or a tester grant first; else the yearly plans that have not
-  /// ended, up to the latest end; else none.
+  /// Lifetime, a tester grant or a promotional grant without end first (in
+  /// that order); else the yearly plan or promotional grant that ends last,
+  /// with its end; else none. The server's `household_premium`, row by row.
   Premium premiumAt(DateTime now) {
-    final lasting = rows.where((r) => r.source.lasting).toList();
-    if (lasting.isNotEmpty) {
-      return ActivePremium(
-        lasting.any((r) => r.source == PremiumSource.lifetime)
-            ? PremiumSource.lifetime
-            : PremiumSource.testerGrant,
-      );
+    final endless = {
+      for (final r in rows)
+        if (r.endless) r.source,
+    };
+    for (final source in const [
+      PremiumSource.lifetime,
+      PremiumSource.testerGrant,
+      PremiumSource.promotional,
+    ]) {
+      if (endless.contains(source)) {
+        return ActivePremium(source);
+      }
     }
-    final yearly = activeYearly(now);
-    if (yearly.isEmpty) {
+    final ending = _ending(now);
+    if (ending.isEmpty) {
       return const NoPremium();
     }
+    // The latest end names it; on a tie the yearly plan (it renews).
+    final last = ending.reduce(
+      (a, b) =>
+          b.expiresAt!.isAfter(a.expiresAt!) ||
+              (b.expiresAt == a.expiresAt && b.source == PremiumSource.yearly)
+          ? b
+          : a,
+    );
     return ActivePremium(
-      PremiumSource.yearly,
-      expiresAt: yearly
-          .map((r) => r.expiresAt!)
-          .reduce((a, b) => a.isAfter(b) ? a : b),
-      renews: yearly.any((r) => r.autoRenew ?? false),
+      last.source,
+      expiresAt: last.expiresAt,
+      renews:
+          last.source == PremiumSource.yearly &&
+          activeYearly(now).any((r) => r.autoRenew ?? false),
     );
   }
+
+  /// The rows with an end that have not ended at [now].
+  List<PremiumRow> _ending(DateTime now) => [
+    for (final r in rows)
+      if (!r.endless && r.activeAt(now)) r,
+  ];
 
   /// The yearly plans that have not ended at [now].
   List<PremiumRow> activeYearly(DateTime now) => [
@@ -127,10 +158,10 @@ class const HouseholdUnlocks({
   bool yearlyBilledAt(DateTime now) =>
       activeYearly(now).any((r) => r.autoRenew ?? false);
 
-  /// The next moment a yearly plan ends, after [now]: premium may change then
-  /// without any row changing.
+  /// The next moment a yearly plan or promotional grant ends, after [now]:
+  /// premium may change then without any row changing.
   DateTime? nextEndAfter(DateTime now) =>
-      activeYearly(now)
+      _ending(now)
           .map((r) => r.expiresAt!)
           .fold<DateTime?>(null, (a, b) => a == null || b.isBefore(a) ? b : a);
 }
@@ -197,9 +228,9 @@ class Entitlements(
   /// Whether to offer [plan] of [entitlement] for sale: only when the
   /// household is known not to have it. Without premium both plans; with an
   /// active yearly plan only Lifetime (the upgrade; never a second yearly
-  /// plan, H-84); with Lifetime or a tester grant nothing. While unknown
-  /// (loading, offline) the answer is no, so no member pays twice. Every
-  /// paywall entry point asks this, never [has].
+  /// plan, H-84); with Lifetime, a tester grant or a promotional grant
+  /// nothing. While unknown (loading, offline) the answer is no, so no member
+  /// pays twice. Every paywall entry point asks this, never [has].
   bool canOffer(Entitlement entitlement, PremiumPlan plan) => switch (premium) {
     null => false,
     NoPremium() => true,
@@ -290,6 +321,17 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
             autoRenew: row['auto_renew'] == true,
           ),
           null => null,
+        },
+        // No end (null): the grant never ends.
+        PremiumSource.promotional => switch (row['expires_at']) {
+          null => const PremiumRow(source: PremiumSource.promotional),
+          final at => switch (DateTime.tryParse('$at')) {
+            final DateTime end => PremiumRow(
+              source: PremiumSource.promotional,
+              expiresAt: end,
+            ),
+            null => null,
+          },
         },
         final source => PremiumRow(source: source),
       },

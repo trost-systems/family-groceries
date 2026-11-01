@@ -8,6 +8,9 @@
 //   POST /purchases/revenuecat/deletions  deletes due RevenueCat customers (deletions.ts); the
 //                                         daily workflow, with x-deletions-secret:
 //                                         REVENUECAT_DELETIONS_SECRET (compared whole; 503 unset)
+//   POST /purchases/revenuecat/reconcile  Ops: stores a household's promotional premium as
+//                                         RevenueCat has it now (body {"householdId"}), with the
+//                                         same x-deletions-secret (scripts/iap/promotional.ts)
 //   POST /purchases/claim       the app, signed in (its own session, not a PAT or OAuth app): "I
 //                               bought this transaction for this household" (H-55)
 // Routes match exactly, after the gateway's /functions/v1 prefix.
@@ -19,7 +22,8 @@ import type { AppStore, PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
 import { parseWebhook, sameSecret, signedBy, testEvent, type WebhookEvent } from './revenuecat.ts';
 import type { Lifecycle } from './revenuecat.ts';
-import type { Claim, LifecycleOutcome, Recorded, Revoked } from './store.ts';
+import type { Claim, LifecycleOutcome, PromotionalOutcome, Recorded, Revoked } from './store.ts';
+import { RevenueCatUnavailable } from './promotional.ts';
 import { type Refund, type Sale, type StorePurchase, webhookPath } from './types.ts';
 import type { DeletionOutcome } from './deletions.ts';
 
@@ -29,6 +33,8 @@ export interface Ledger {
   lifecycle(c: Lifecycle): Promise<LifecycleOutcome>;
   revoke(r: Refund): Promise<Revoked | null>;
   reinstate(store: AppStore, transactionId: string): Promise<boolean>;
+  /** Reads the household's promotional premium from RevenueCat and stores it. */
+  promotional(householdId: string): Promise<PromotionalOutcome>;
 }
 
 export interface Deps {
@@ -61,6 +67,12 @@ export interface Deps {
     store: AppStore,
     transactionId: string,
   ): Promise<Claim>;
+  /**
+   * Stores [householdId]'s promotional premium as RevenueCat has it now, outside any event. Null
+   * without REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID: promotional events answer 503 (and
+   * RevenueCat retries), the reconcile route 503.
+   */
+  reconcile: ((householdId: string) => Promise<PromotionalOutcome>) | null;
   /** Null without REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID: the route skips. */
   deleteDueCustomers: (() => Promise<DeletionOutcome>) | null;
   /** Whom analytics events for [userId] go to: null unless their latest answer in the app was yes. */
@@ -88,6 +100,7 @@ export const routes = {
   status: '/purchases',
   webhook: webhookPath,
   deletions: '/purchases/revenuecat/deletions',
+  reconcile: '/purchases/revenuecat/reconcile',
   claim: '/purchases/claim',
   testEvent: '/purchases/test/event',
 } as const;
@@ -98,6 +111,8 @@ const log = (fields: Record<string, string | null>) =>
 export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
   const notConfigured = () => json({ error: 'not_configured' }, { status: 503 });
   const badRequest = () => json({ error: 'bad_request' }, { status: 400 });
+  // RevenueCat's API failed: nothing was stored, the event id rolled back, RevenueCat retries.
+  const unavailable = () => json({ error: 'revenuecat_unavailable' }, { status: 502 });
 
   async function send(due: Due | null) {
     if (!due) return;
@@ -121,7 +136,27 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
     // Never moves anything (H-56); the type is all that is logged.
     if (e.type === 'TRANSFER' || e.type === 'PRODUCT_CHANGE') log({ event: e.type });
     if (action.do === 'ignore' && action.refused) log({ event: e.type, refused: action.refused });
-    const done = await deps.once(
+    // A promotional grant is read from RevenueCat's API; without the key we can't, so RevenueCat
+    // delivers again once it is set.
+    if (action.do === 'promotional' && !deps.reconcile) return notConfigured();
+    let done;
+    try {
+      done = await apply(e);
+    } catch (err) {
+      if (err instanceof RevenueCatUnavailable) {
+        log({ event: e.type, promotional: 'revenuecat_unavailable' });
+        return unavailable();
+      }
+      throw err;
+    }
+    if (!done) return json({ status: 'duplicate' });
+    await send(done.due);
+    return json({ status: done.status });
+  }
+
+  function apply(e: WebhookEvent) {
+    const { action } = e;
+    return deps.once(
       e,
       async (ledger): Promise<{ status: string; due: Due | null }> => {
         switch (action.do) {
@@ -168,12 +203,15 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
                 : 'unchanged',
               due: null,
             };
+          case 'promotional': {
+            // No purchases row and no analytics event: a grant is no sale.
+            const outcome = await ledger.promotional(action.householdId);
+            if (outcome === 'no_household') log({ event: e.type, refused: outcome });
+            return { status: outcome, due: null };
+          }
         }
       },
     );
-    if (!done) return json({ status: 'duplicate' });
-    await send(done.due);
-    return json({ status: done.status });
   }
 
   async function webhook(req: Request): Promise<Response> {
@@ -262,6 +300,27 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
     return json(outcome, { status: outcome.failed > 0 ? 502 : 200 });
   }
 
+  async function reconcile(req: Request): Promise<Response> {
+    if (!deps.deletionsSecret) return notConfigured();
+    if (!await sameSecret(req.headers.get('x-deletions-secret') ?? '', deps.deletionsSecret)) {
+      return json({ error: 'invalid_token' }, { status: 401 });
+    }
+    if (!deps.reconcile) return notConfigured();
+    const b = await req.json().catch(() => null) as Record<string, unknown> | null;
+    const householdId = typeof b?.householdId === 'string' && uuid.test(b.householdId)
+      ? b.householdId
+      : null;
+    if (!householdId) return badRequest();
+    try {
+      const outcome = await deps.reconcile(householdId);
+      log({ reconcile: outcome });
+      return json({ status: outcome });
+    } catch (err) {
+      if (err instanceof RevenueCatUnavailable) return unavailable();
+      throw err;
+    }
+  }
+
   return async (req) => {
     const pre = preflight(req);
     if (pre) return pre;
@@ -276,6 +335,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
     if (req.method === 'POST') {
       if (path === routes.webhook) return await webhook(req);
       if (path === routes.deletions) return await deletions(req);
+      if (path === routes.reconcile) return await reconcile(req);
       if (path === routes.claim) return await claimRoute(req);
       if (path === routes.testEvent && deps.local) return await localEvent(req);
     }

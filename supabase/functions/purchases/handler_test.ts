@@ -6,7 +6,8 @@ import type { PurchaseEvent } from '../_shared/purchases.ts';
 import type { Subject } from '../_shared/telemetry.ts';
 import { createHandler, type Deps, type Ledger, maxBodyBytes, routes } from './handler.ts';
 import type { Lifecycle } from './revenuecat.ts';
-import type { Claim, LifecycleOutcome, Recorded, Revoked } from './store.ts';
+import type { Claim, LifecycleOutcome, PromotionalOutcome, Recorded, Revoked } from './store.ts';
+import { type PromotionalPremium, RevenueCatUnavailable } from './promotional.ts';
 import { lifetimeProductId, type Sale, type StorePurchase, webhookPath } from './types.ts';
 
 const PETER = '00000000-0000-4000-8000-0000000043a1';
@@ -110,6 +111,31 @@ class Books implements Ledger {
     return Promise.resolve(true);
   }
 
+  /** RevenueCat's promotional premium per household (its API), and the rows we keep of it. */
+  granted = new Map<string, PromotionalPremium>();
+  promoRows = new Map<string, Date | null>();
+  revenueCatDown = false;
+  apiReads = 0;
+
+  /** promotional_premium_sync after reading RevenueCat, in memory. */
+  promotional(household: string): Promise<PromotionalOutcome> {
+    if (![...this.members.values(), OTHER].includes(household)) {
+      return Promise.resolve('no_household');
+    }
+    this.apiReads++;
+    if (this.revenueCatDown) return Promise.reject(new RevenueCatUnavailable(500));
+    this.writes++;
+    const now = this.granted.get(household) ?? { active: false };
+    const had = this.promoRows.has(household);
+    if (!now.active) {
+      this.promoRows.delete(household);
+      return Promise.resolve(had ? 'removed' : 'unchanged');
+    }
+    const same = had && this.promoRows.get(household)?.getTime() === now.expiresAt?.getTime();
+    this.promoRows.set(household, now.expiresAt);
+    return Promise.resolve(!had ? 'granted' : same ? 'unchanged' : 'updated');
+  }
+
   claim(user: string, household: string, store: 'apple' | 'google', tx: string): Claim {
     if (this.members.get(user) !== household) throw new AuthError('no_household', 'left');
     const row = this.find(store, tx);
@@ -183,6 +209,7 @@ function world(overrides: Partial<Deps> = {}): World {
       return Promise.resolve();
     },
     deletionsSecret: DELETIONS_SECRET,
+    reconcile: (householdId) => books.promotional(householdId),
     deleteDueCustomers: null,
     report: (e) => {
       throw e;
@@ -453,7 +480,8 @@ Deno.test('refused purchases unlock nothing and are logged without ids', async (
     [purchase({ product_id: 'com.hummlist.app.plus' }), 'product'],
     [purchase({ product_id: 'toString' }), 'product'],
     [purchase({ store: 'STRIPE' }), 'store'],
-    [purchase({ store: 'PROMOTIONAL' }), 'store'],
+    // A promotional grant of another entitlement (premium's are read from the API, below).
+    [purchase({ store: 'PROMOTIONAL' }), 'entitlement'],
     [purchase({ environment: 'XCODE' }), 'malformed'],
     [purchase({ transaction_id: null, original_transaction_id: null }), 'malformed'],
   ];
@@ -1062,4 +1090,144 @@ Deno.test('TRANSFER of a yearly plan moves nothing', async () => {
   );
   assertEquals(w.books.writes, 1);
   assertEquals(w.books.lifecycles, []);
+});
+
+/** A promotional grant's event as RevenueCat sends it: no app_id, no price, period PROMOTIONAL. */
+function promo(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: crypto.randomUUID().toUpperCase(),
+    type: 'NON_RENEWING_PURCHASE',
+    app_user_id: HOME,
+    original_app_user_id: HOME,
+    aliases: [HOME],
+    store: 'PROMOTIONAL',
+    environment: 'PRODUCTION',
+    product_id: 'rc_promo_premium_custom',
+    entitlement_ids: ['premium'],
+    period_type: 'PROMOTIONAL',
+    transaction_id: null,
+    original_transaction_id: null,
+    purchased_at_ms: NOW.getTime() - 5_000,
+    event_timestamp_ms: NOW.getTime(),
+    expiration_at_ms: NOW.getTime() + 30 * 86_400_000,
+    price: 0,
+    currency: null,
+    subscriber_attributes: {},
+    ...overrides,
+  };
+}
+
+Deno.test('a promotional premium grant stores what RevenueCat has now, no purchase, no event', async () => {
+  const w = world();
+  const until = new Date(NOW.getTime() + 30 * 86_400_000);
+  w.books.granted.set(HOME, { active: true, expiresAt: until });
+  await expect(await w.deliver(promo()), 200, { status: 'granted' });
+  assertEquals(w.books.promoRows.get(HOME), until);
+  assertEquals(w.books.rows.size, 0);
+  assertEquals(w.sent, []);
+  // A lifetime grant (no end) replaces it; the payload's own expiry is never trusted.
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  await expect(await w.deliver(promo({ expiration_at_ms: until.getTime() })), 200, {
+    status: 'updated',
+  });
+  assertEquals(w.books.promoRows.get(HOME), null);
+});
+
+Deno.test('a promotional grant revoked or expired ends premium, whatever the event says', async () => {
+  for (const [type, reason] of [['CANCELLATION', 'DEVELOPER_INITIATED'], ['EXPIRATION', null]]) {
+    const w = world();
+    w.books.granted.set(HOME, { active: true, expiresAt: null });
+    await expect(await w.deliver(promo()), 200, { status: 'granted' });
+    w.books.granted.set(HOME, { active: false });
+    await expect(await w.deliver(promo({ type, cancel_reason: reason })), 200, {
+      status: 'removed',
+    });
+    assertEquals(w.books.promoRows.has(HOME), false, String(type));
+    // A grant delivered late, after RevenueCat revoked it, grants nothing.
+    await expect(await w.deliver(promo()), 200, { status: 'unchanged' });
+    assertEquals(w.books.promoRows.has(HOME), false);
+  }
+});
+
+Deno.test("another entitlement's promotional grant and a non-household id are ignored unread", async () => {
+  const w = world();
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  await expect(await w.deliver(promo({ entitlement_ids: ['pro'] })), 200, { status: 'ignored' });
+  await expect(await w.deliver(promo({ app_user_id: '$RCAnonymousID:8d1f0c2b' })), 200, {
+    status: 'ignored',
+  });
+  await expect(await w.deliver(promo({ app_user_id: 'peter@example.com' })), 200, {
+    status: 'ignored',
+  });
+  assertEquals(w.books.apiReads, 0);
+  assertEquals(w.books.promoRows.size, 0);
+});
+
+Deno.test('a promotional event is idempotent, and for an unknown household stores nothing', async () => {
+  const w = world();
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  const e = promo();
+  await expect(await w.deliver(e), 200, { status: 'granted' });
+  await expect(await w.deliver(e), 200, { status: 'duplicate' });
+  assertEquals(w.books.apiReads, 1);
+  const gone = '00000000-0000-4000-8000-00000000dead';
+  await expect(await w.deliver(promo({ app_user_id: gone })), 200, { status: 'no_household' });
+  assertEquals(w.books.promoRows.has(gone), false);
+});
+
+Deno.test("RevenueCat's API down or its key unset: 502/503 and the event is delivered again", async () => {
+  const w = world();
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  w.books.revenueCatDown = true;
+  const e = promo();
+  await expect(await w.deliver(e), 502, { error: 'revenuecat_unavailable' });
+  assertEquals(w.books.promoRows.size, 0);
+  w.books.revenueCatDown = false;
+  await expect(await w.deliver(e), 200, { status: 'granted' });
+  const unset = world({ reconcile: null });
+  await expect(await unset.deliver(promo()), 503, { error: 'not_configured' });
+  assertEquals(unset.books.apiReads, 0);
+  // A store purchase doesn't need the key.
+  await expect(await unset.deliver(purchase()), 200, { status: 'granted' });
+});
+
+Deno.test('the promotional webhook keeps the signature check', async () => {
+  const w = world({ webhook: { authorization: AUTH, signingSecret: SIGNING } });
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  await expect(await w.deliver(promo()), 401, { error: 'bad_signature' });
+  assertEquals(w.books.apiReads, 0);
+  await expect(await w.deliver(promo(), { signed: true }), 200, { status: 'granted' });
+});
+
+Deno.test('the reconcile route: only with the Ops secret, a household id, and the key', async () => {
+  const ops = { 'x-deletions-secret': DELETIONS_SECRET };
+  const w = world();
+  w.books.granted.set(HOME, { active: true, expiresAt: null });
+  await expect(await w.handle('/revenuecat/reconcile', { householdId: HOME }), 401, {
+    error: 'invalid_token',
+  });
+  await expect(
+    await w.handle('/revenuecat/reconcile', { householdId: HOME }, { authorization: AUTH }),
+    401,
+  );
+  assertEquals(w.books.apiReads, 0);
+  await expect(await w.handle('/revenuecat/reconcile', { householdId: 'x' }, ops), 400);
+  await expect(await w.handle('/revenuecat/reconcile', { householdId: HOME }, ops), 200, {
+    status: 'granted',
+  });
+  await expect(await w.handle('/revenuecat/reconcile', { householdId: HOME }, ops), 200, {
+    status: 'unchanged',
+  });
+  w.books.revenueCatDown = true;
+  await expect(await w.handle('/revenuecat/reconcile', { householdId: HOME }, ops), 502);
+  await expect(
+    await world({ reconcile: null }).handle('/revenuecat/reconcile', { householdId: HOME }, ops),
+    503,
+  );
+  await expect(
+    await world({ deletionsSecret: null }).handle('/revenuecat/reconcile', { householdId: HOME }, {
+      'x-deletions-secret': '',
+    }),
+    503,
+  );
 });
