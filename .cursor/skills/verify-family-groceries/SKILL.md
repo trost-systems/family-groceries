@@ -41,12 +41,13 @@ scripts/fg login peter && scripts/fg login lea
 `fg setup` installs clang, CMake and the GTK headers with `sudo apt-get`. On a host without sudo but with Docker (the Hetzner runner) skip it and build the app in a container:
 
 ```bash
+export FG_SURFACE=linux                                                           # no ~/.config/fg/kvm-broken here, so the default would be android
 export FG_EXTRA_PATH="$PWD/.cursor/skills/verify-family-groceries/linux-build"   # dirs fg puts before ~/flutter/bin
 dart pub global activate marionette_cli && flutter config --enable-linux-desktop    # the rest of fg setup
 scripts/fg up --clients peter,lea
 ```
 
-`linux-build/flutter` runs `flutter build linux` in an image built from `linux-build/Dockerfile` on first use (`fg-linux-build:1`) and passes every other command to the host's flutter. The bundle runs on the host, which needs only the GTK 3 runtime. For `fg drag`, which needs `xdotool`, unpack it without root: `apt-get download xdotool libxdo3`, `dpkg -x` both into a directory, and put a wrapper that sets `LD_LIBRARY_PATH` to its `usr/lib/x86_64-linux-gnu` on `FG_EXTRA_PATH` too (several directories join with `:`).
+`linux-build/flutter` runs `flutter build linux` in an image built from `linux-build/Dockerfile` on first use (`fg-linux-build:<first 12 hex of the Dockerfile's sha256>`, so an edited Dockerfile gets a new image) and passes every other command to the host's flutter. The bundle runs on the host, which needs only the GTK 3 runtime. For `fg drag`, which needs `xdotool`, unpack it without root: `apt-get download xdotool libxdo3`, `dpkg -x` both into a directory, and put a wrapper that sets `LD_LIBRARY_PATH` to its `usr/lib/x86_64-linux-gnu` on `FG_EXTRA_PATH` too (several directories join with `:`).
 
 Clients start signed out (`fg up` clears their session storage). `fg restart` quits and reopens an app and keeps its stored data. Use it for launch behavior such as autofocus. The session survives it on every surface.
 

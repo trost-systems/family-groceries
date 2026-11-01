@@ -1,12 +1,12 @@
 # Stores
 
-Every store of the household is a section of the list: a divider "<Store>, N Artikel", then the items tagged to that store in the store's walking order. Items without a store sit in a last section, "Ohne Laden", in the household's route order. There is no store view (job 16): an item gets its store when it is dragged onto a store or into another store's rows, in the edit sheet, or from the add sheet's store chip as it is added. Mehr → Läden lists the stores in list order; a hold and drag reorders them, and a tap opens a store's walking order. The household remembers where each item was put, so a later re-add lands in that store again. Each store's category order is editable from its divider's menu.
+Every store of the household is a section of the list: a divider "<Store>, N Artikel", then the items tagged to that store in the store's walking order. Items without a store sit in a last section, "Ohne Laden", in the household's route order. There is no store view (job 16): an item gets its store when it is dragged onto a store divider or onto a row of another store (a row drop takes that row's category too), in the edit sheet, or from the add sheet's store chip as it is added. Mehr → Läden lists the stores in list order; a hold and drag reorders them, and a tap opens a store's walking order. The household remembers where each item was put, so a later re-add lands in that store again. Each store's category order is editable from its divider's menu.
 
 ## Sub-features
 
 - `st-sections` shows one divider per store with open items, in store order, and "Ohne Laden" last while it has items. A store without items does not show (no divider, no "0 Artikel"); while an item is dragged every store shows, an empty one folded, as a drop target. The list without any item shows only the empty state.
 - `st-order` sorts a store's section by that store's category order (Lidl: "Brot & Backwaren" before "Obst & Gemüse"; Edeka: "Fleisch/Wurst/Fisch" before "Kühlregal"), and "Ohne Laden" by the route.
-- `st-drop-tags` tags an item dropped on a store divider (folded or not) or on a row of another store to that store, keeps its category, and remembers the store for the item's name.
+- `st-drop-tags` tags an item dropped on a store divider (folded or not) to that store, keeps its category, and remembers the store for the item's name. Dropped on a row of another store, the item takes that row's store and category, and the household learns the category like a move in the edit sheet.
 - `st-memory` puts a re-added item back in the store it was last tagged to.
 - `st-tick-no-tag` leaves an untagged item untagged when it is ticked; nothing is remembered.
 - `st-sheet` sets the store in the edit sheet (store chip, key `chip-store`); "Ohne Laden" (`store-option-none`) clears the tag and the memory.
