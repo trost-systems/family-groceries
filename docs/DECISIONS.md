@@ -5841,3 +5841,38 @@ Remotion not used; stageshow not used (ADDENDUM 3); a capture driver of our own 
 `integration_test` (item 2); the software renderer (item 3); loops of 10.5 to 10.9 s instead of 12
 to 14 s for videos 1 and 2 (each beat at its real length, no padding); the research's poster advice
 for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a picture element.
+
+## Job 59: fuzzy suggestions while typing, 2026-11-01
+
+1. **Edit distance decides a typo, pg_trgm only orders.** The brief offered pg_trgm `similarity`
+   or `word_similarity` for the match. Measured on the dictionary's words, neither separates typos
+   from other words: `mlch`/`milch` and `kaese`/`kase` score 0.38 (`similarity`), while
+   `hafermlch`/`haferkekse` scores 0.50 and `brot`/`brokkoli` 0.60 (`word_similarity`). A bounded
+   Levenshtein (`fuzzystrmatch`, already in `extensions`) does: a word of the name, or the whole
+   name, with the same first letter and at most 1 edit for 3 to 5 letters, 2 from 6 (the app's
+   offline rule from the brief, so server and device agree). `extensions.similarity` (pg_trgm, in
+   `extensions` per Supabase convention) orders in-word and typo matches within a source.
+   `public.suggest_match(typed, name)` returns the tier: 0 exact, 1 prefix, 2 in-word, 3 typo.
+2. **In-word from 4 letters, typos from 3, prefixes from any.** Three letters inside a word are
+   mostly noise: "Eis" in Fleisch, "Rot" in Brot, "Übe" in Aubergine (item_key folds ü to u). The
+   brief's under-3 rule (prefix only) holds; in-word waits one letter more. Without it the
+   existing "Übe" catalog test would change too.
+3. **Order within a source.** Exact, prefix, in-word, typo. Exact and prefix keep the old order
+   (history latest first, catalog shortest first); in-word and typo go most similar first, then
+   the same. History still ranks above the catalog and the caps are unchanged; a history row
+   still hides the catalog's same entry (suggestion_key).
+4. **The catalog corrects only a one-word name.** It replaces the last word, so after other words
+   a typo fix ignores them ("Rote Bete" offered "Rote Besen") and a phrase found by a later word
+   repeats them ("Rote Rote Beete"). After other words it completes a prefix, or a one-word term
+   containing the typed part.
+5. **History read once, through a security-definer helper.** The items policy calls
+   `is_household_member` per row (about 9 µs: 47 ms for 5000 rows). The old prefix match hid this
+   because `starts_with` is leakproof and filtered first; a fuzzy match can't.
+   `public.suggest_history(household)` checks membership once and returns the same year of rows
+   the caller may read; names are matched once per distinct name, and the per-row loop checks a
+   source's cap before the costly `suggestion_key`.
+6. **No trigram index.** EXPLAIN on 5000 items in one household and the 1202 dictionary terms:
+   reading the household's year is 2.5 ms, matching all terms 3.7 ms, and a GIN/GiST index cannot
+   serve a Levenshtein bound. `supabase/bench/suggest_latency.sh` (in the db gate) fails at a p95
+   of 50 ms. Before: p50 7.6 ms, p95 21 ms (prefix only). After: p50 about 16 ms, p95 about 28 ms;
+   the rest is the extra rows found (each catalog row runs `parse_item`).
