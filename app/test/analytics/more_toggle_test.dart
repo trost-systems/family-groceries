@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,13 @@ void main() {
   setUpAll(fakeSupabase);
 
   final toggle = find.byKey(const ValueKey('more-analytics'));
+  bool on(WidgetTester tester) =>
+      tester
+          .getSemantics(toggle)
+          .getSemanticsData()
+          .flagsCollection
+          .isToggled ==
+      Tristate.isTrue;
   final version = find.byKey(const ValueKey('more-version'));
 
   late MemoryAnalyticsStore store;
@@ -36,12 +45,12 @@ void main() {
     final (analytics, sink) = await consented();
     await pumpMore(tester, analytics: analytics, size: const Size(390, 2000));
     expect(toggle, findsOneWidget);
-    expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+    expect(on(tester), isTrue);
 
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(analytics.state.consent, isFalse);
-    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    expect(on(tester), isFalse);
     expect(sink.methods.last, 'close', reason: 'off stops the SDK');
     expect(store.id, isNull, reason: 'off deletes the install id');
     analytics.track('item_ticked');

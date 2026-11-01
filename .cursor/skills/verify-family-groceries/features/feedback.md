@@ -6,7 +6,7 @@ Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes
 
 - `fb-open` `more-feedback` (section "Feedback", between Konto/Abmelden and Einstellungen, with "Hilfe & Kontakt" below it) opens the sheet. Its key `feedback-sheet` sits on a layout widget that `fg find` and `fg wait` don't list; wait for `feedback-message` instead.
 - `fb-send` `feedback-message` takes the note; `feedback-send` ("Senden") is enabled once it has a non-blank character. One row lands; the sheet closes; the snackbar `feedback-thanks` reads "Danke!".
-- `fb-options` `feedback-category-bug` / `-idea` / `-other` (a second tap unpicks), `feedback-contact` (off by default). `feedback-attached` names what goes along.
+- `fb-options` `feedback-category-bug` / `-idea` / `-other` (a second tap unpicks), `feedback-contact` (off by default; a pointy hex `HexCheckboxListTile` since job 57, still role checkbox). `feedback-attached` names what goes along.
 - `fb-limits` from 1,800 characters `feedback-counter` shows "N / 2000"; over 2,000 the field says "Höchstens 2000 Zeichen" and Send is disabled. Blank notes can't be sent.
 - `fb-retry` without a connection `feedback-error` ("Nicht gesendet. …") shows, the note stays, and `feedback-retry` ("Erneut senden") replaces Send. Closing (`feedback-close`) keeps the note for the next open.
 - `fb-screen` the row's `screen` is the last screen before More (`list`), or the More page the form sat beside on a wide screen (`account`).

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -104,16 +105,14 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
           },
           child: Column(
             children: [
-              RadioListTile(
+              HexRadioTile<bool>(
                 key: const ValueKey('default-stores'),
-                contentPadding: EdgeInsets.zero,
                 value: true,
                 title: Text(l10n.defaultStores),
                 subtitle: Text(l10n.defaultStoresHint),
               ),
-              RadioListTile(
+              HexRadioTile<bool>(
                 key: const ValueKey('skip-stores'),
-                contentPadding: EdgeInsets.zero,
                 value: false,
                 title: Text(l10n.skipStores),
                 subtitle: Text(l10n.skipStoresHint),

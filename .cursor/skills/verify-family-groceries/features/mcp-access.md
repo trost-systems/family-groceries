@@ -4,7 +4,7 @@ Mehr → Zugänge shows the MCP server URL, the user's personal access tokens an
 
 ## Sub-features
 
-- `mcp-consent` is the page an AI app opens to connect (`/oauth/consent?authorization_id=…`, title "Zugriff erlauben?"): "Erlauben" approves, "Ablehnen" sends `access_denied` back to the app, and a signed-out user signs in on the way and lands back on it.
+- `mcp-consent` is the page an AI app opens to connect (`/oauth/consent?authorization_id=…`, title "Zugriff erlauben?"; an unknown or expired request shows "Verbindung abgelaufen" with "Zurück zur Liste" and no server text, job 57): "Erlauben" approves, "Ablehnen" sends `access_denied` back to the app, and a signed-out user signs in on the way and lands back on it.
 - `mcp-url` shows the endpoint with a copy button ("Kopiert"): `https://mcp.hummlist.com` in builds for the production project, `<API URL>/functions/v1/mcp` in builds for any other project, such as fg's local stack.
 - `mcp-pat-create` creates a named token ("Token erstellen"), shows `fgp_…` once, then lists it after "Fertig" with the title `<name>` and the subtitle `…<last 4> · Erstellt am <date> · Noch nie benutzt` ("Zuletzt benutzt <date>" once it was used).
 - `mcp-pat-revoke` revokes a token ("<name> widerrufen", then "Widerrufen"); the next MCP call with it gets 401.

@@ -152,6 +152,8 @@ because a button's text style replaces the theme's instead of merging.
 | `TextButton` | Cobalt label, hex ink |
 | `FloatingActionButton` | Lemon hex with the contour |
 | `ChoiceChip`, `Checkbox` | Hex; selected is lemon with navy |
+| `HexSwitch`, `HexSwitchTile` (`lib/design/`) | Horizontal hex track with the 2 px contour and a nested hex thumb; off sunken with a raised thumb, on lemon with a navy thumb |
+| `HexRadio`, `HexRadioTile` (`lib/design/`) | Hex outline like the checkbox; picked is lemon with a navy hex dot |
 | `NavigationBar` | Lemon hex indicator with the contour |
 | `Card`, dialogs, bottom sheets | Radius m (18), l (28); dialogs keep the 2 px contour |
 
@@ -168,20 +170,121 @@ because a button's text style replaces the theme's instead of merging.
   never clipped. A button that sets its own `backgroundColor` (the delete
   confirmation, the Google button, the fold-out chips) opts out and stays a
   plain Material button in its colours.
+- `hex_switch.dart`: `HexSwitch`, a 56 × 30 horizontal hex track in a
+  68 × 48 box (the target and the focus ring), its thumb a hex nested 4 px
+  inside with sides parallel to the track's. The thumb travels in 260 ms
+  (`HlDuration.medium`, standard curve) while the colours cross-fade, and
+  stretches 6 px towards where it goes while pressed. Disabled, the contours
+  step back to `divider` and on stays readable (pale lemon, muted thumb).
+  It is built on Flutter's `ToggleableStateMixin`, like Material's `Switch`,
+  so keyboard, focus and the switch semantics (toggled) are Flutter's.
+  Material's `Switch` has no track shape, hence the widget instead of a
+  `switchTheme`. `HexSwitchTile` is its `SwitchListTile`: the row takes the
+  tap and the focus and reads as one labelled switch.
+- `hex_radio.dart`: `HexRadio` over `RawRadio` (group, keyboard, radio
+  semantics), the dot growing in 180 ms; `HexRadioTile` is its
+  `RadioListTile`. Material's `Radio` is round and stays only where no hex
+  version is in use yet (creating a household).
 - `motion.dart`: `hlMotion(context, duration)` is zero when the platform asks
-  for reduced motion (`MediaQuery.disableAnimations`); the tactile face then
-  jumps.
+  for reduced motion (`MediaQuery.disableAnimations`); the tactile face, the
+  switch thumb and the radio dot then jump.
 - `tokens.g.dart`: generated, see above.
 
 Targets stay 48 px (face plus edge).
+
+### List rows
+
+A row of the list is the category emoji (28 px column, 10 px gap), the
+quantity in bold cobalt and the name in Bricolage 17/1.25 w700, with brand
+and properties under it in 13 px medium; no check box (Peter, job 57). The
+whole row is the tap target (48 px minimum, `HlSpace.s7`; the site's rows are
+44) and ticks the item.
+On a tap, one controller (`item_row.dart`) runs the way out:
+
+| Time | What moves |
+| --- | --- |
+| 0 to 180 ms (`HlDuration.short`, `HlEasing.standard`) | A 2 px (`HlBorder.width`) `text-muted` line draws left to right across the words only (quantity and name, 2 px past each end; a wrapped name gets a line per line, drawn one after the other); the text turns `text-muted` and the row tints to `mint-soft`, the site's `.item--done` |
+| 180 to 440 ms (`HlDuration.medium`) | The content fades out (`HlEasing.exit`) and the row closes its height (`HlEasing.standard`), so the rows below move up; a category or store divider whose rows all leave closes with them on the same curves |
+| 440 ms | The tick commits (`onTick`) |
+
+A lifted row or divider is an `HlSticker` pill. With reduced motion the
+struck, tinted row shows at once, holds for
+`HlDuration.medium` and the tick commits without a close. Screen readers
+hear the row as a checkbox (unchecked while open, checked once tapped) and
+the announcement "<Name> abgehakt" / "<name> ticked off".
+`test/design/goldens/list-rows-{light,dark}.png` show an open row, a row a
+quarter into its line and struck rows, one wrapped.
+
+### Other components (job 57)
+
+- `HexCheckbox` / `HexCheckboxListTile` (`hex_checkbox.dart`): pointy-top 26 px
+  like the site's `.hxp`, honey when checked, navy check, 48 dp; the opt-ins
+  (feedback contact). The Material `checkboxTheme` keeps its flat hex and the
+  contour checked or not.
+- `PointyHex` (`pointy_hex.dart`): the add bar's plus and the empty list's
+  cart.
+- `HlSticker` (`sticker.dart`): the site's `.sticker`, raised face, 2 px
+  contour, the hard `HlShadow` sticker shadow in light, the night shadow in
+  dark; for the welcome choices, the Premium card (Zugänge and the Premium
+  page) and drag pills. Theme cards and snackbars carry the contour only.
+- `HexPill`, `HexStep` (`hex_pill.dart`): settings rows (store layout,
+  categories, Läden) as hex pills on a 4 px edge, lifted with `sticker-l`
+  while dragged; the walk-order number a 32 px pointy honey hex.
+- `BrandBlock` (`brand_block.dart`): app icon #5 at 56 dp (exported by
+  `design/app-icon/build.mjs` to `app/assets/brand/`) over the wordmark, on
+  login and welcome.
+- The navigation rail's indicator is the honey hex of the bottom bar;
+  snackbars float as contoured notes.
+
+### The list's frame and add bar (job 57)
+
+- The add bar is the page under a 52 px hex compose field (2 px contour,
+  raised fill, 12 px gutters) with a 38 px pointy lemon "+" (`PointyHex`);
+  open, the field's column turns raised to join the sheet. The field itself
+  keeps `InputBorder.none` (job 52 item 7); the shape is on its container.
+- Fold-out chips and their options are hex with the contour: the user's pick
+  honey, an open chip honey-soft. The edit sheet's stepper uses the outlined
+  tactile hex; its fields take the hex input theme.
+- Suggestion source lines are 13 px medium muted.
+- The explainer is an `HlSticker` with `Icons.touch_app_outlined`.
+- Wide: one frame (`ShoppingListView.frameFor`) for the bar, explainer,
+  columns, add field and sheet; field and sheet over the first column.
+
+### Peter's addendum 5 (job 57)
+
+- Empty list: a 72 px pointy honey hex with the cart icon over the copy.
+- `StoreBadge`: the store's full name in a horizontal hex pill (raised
+  face, contour, Bricolage, ellipsis, full name in semantics), the same for
+  every store; divider rules are cobalt for every store. A logo variant
+  (`StoreBadgeStyle.logo`) waits for the Legal Review.
+- Text fields: every single-line field is a hex from the input theme
+  (`field_border.dart`; focus: cobalt contour and the 3 px ring); the
+  multi-line feedback message is rounded (`RoundedFields`); the add field
+  opts out with an empty local theme.
+- New rows from a partner are honey-soft; done rows are mint-soft.
+
+### Settings and More
+
+More and Einstellungen use the hex controls: More's usage-data row is a
+`HexSwitchTile`, the language list and the create-household "Läden" choice
+`HexRadioTile`s. The theme is one `HexSegmented` control (job 57, Peter
+14:20): System / Hell / Dunkel, all visible, a honey hex indicator that
+slides to the pick (`HlDuration.medium`, standard curve; a jump with reduced
+motion), radio-group semantics, arrow keys, 48 dp segments. The device keeps
+the same value as before (`theme`: none for the system, `light`, `dark`), so
+a stored pick reads 1:1. Section titles are `HlSectionLabel`: the list's
+category label (11 px w800 caps, 0.12 em, muted) with a hairline rule.
 
 ### Goldens
 
 `app/test/design/components_golden_test.dart` renders every button kind in
 rest, hover, focus, pressed and disabled, plus loading, chips, checkboxes,
-the navigation bar, store badges and a card, light and dark.
+the hex switch (off, on, focus, disabled off and on), the navigation bar,
+store badges and a card, light and dark.
 `app/test/design/screens_golden_test.dart` renders the list, the add sheet,
-More and the settings at 390 × 844, light and dark. Both load the real fonts
+More and the settings at 390 × 844, light and dark, and the settings
+following a light and a dark device (`settings-system-*.png`, Dunkel
+disabled). Both load the real fonts
 (`app/test/design/fonts.dart`). After a deliberate change:
 
 ```sh
@@ -256,9 +359,14 @@ path dependency on the app, showing the app's real widgets in `appTheme`.
   input. The "Spielwiese" stories have knobs for label, enabled and loading,
   and a press really sinks and bounces.
 - Surfaces: navigation bar, snackbar with undo, dialog, bottom sheet, card.
+- Hummlist/Auswahl: `HexSwitch` in every state, a switch that flips by
+  itself every 1.2 s so the travel shows (still, on, with reduced motion), a
+  playground, the Darstellung rows (`HexSwitchTile`) and `HexRadio` with the
+  language list.
 - App widgets: store badges, the explainer card, the fold-out chips, and a
   list excerpt built from the app's own dividers and item rows (a tap ticks,
-  a tap on a store folds).
+  a tap on a store folds); "Abhaken (Animation)" ticks a row in a loop with a
+  synthetic finger, "Abgehakt" holds a struck row.
 - Tokens: the palette in light and dark, the contrast pairs with their ratio,
   the type ramp, radii, the depth states drawn with the real `TactileFace`,
   and the easing curves.

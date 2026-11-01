@@ -53,6 +53,8 @@ function observer() {
 
 /** A label's visible text with its lines joined by spaces, as Playwright's accessible name reads it ("Bananen 6 Von Mia hinzugefügt"). */
 const textOf = (/** @type {string} */ label) => label.split('|').slice(1).join('|').replace(/\s+/g, ' ').trim();
+/** A list row: a checkbox to assistive tech since job 57 (checked while it leaves). */
+const isRow = (/** @type {string} */ label) => label.startsWith('checkbox|');
 /**
  * Whether a snapshot satisfies a condition. see/gone match a list row: its
  * text is the given text or starts with it and a space ("Bananen", "Bananen 6").
@@ -61,7 +63,7 @@ const textOf = (/** @type {string} */ label) => label.split('|').slice(1).join('
 function holds(/** @type {string[]} */ labels, /** @type {{check: string, text: string}} */ c) {
   const want = c.text.replace(/\s+/g, ' ').trim();
   if (c.check === 'text') return labels.some((l) => textOf(l).includes(want));
-  const present = labels.some((l) => l.startsWith('button|') && (textOf(l) === want || textOf(l).startsWith(`${want} `)));
+  const present = labels.some((l) => isRow(l) && (textOf(l) === want || textOf(l).startsWith(`${want} `)));
   return c.check === 'see' ? present : !present;
 }
 
@@ -131,8 +133,8 @@ function diff(/** @type {string[]} */ before, /** @type {string[]} */ after) {
   const b = new Set(before);
   const a = new Set(after);
   const short = (/** @type {string} */ l) => l.split('|').slice(1).join('|').split('\n').slice(0, 2).join(' ');
-  const plus = after.filter((l) => !b.has(l) && l.startsWith('button|')).map((l) => `+${short(l)}`);
-  const minus = before.filter((l) => !a.has(l) && l.startsWith('button|')).map((l) => `-${short(l)}`);
+  const plus = after.filter((l) => !b.has(l) && isRow(l)).map((l) => `+${short(l)}`);
+  const minus = before.filter((l) => !a.has(l) && isRow(l)).map((l) => `-${short(l)}`);
   const other = plus.length + minus.length ? [] : ['screen changed'];
   return [...plus, ...minus, ...other].slice(0, 6).join(' ');
 }
@@ -195,7 +197,7 @@ async function shopAt(/** @type {import('@playwright/test').Page} */ page, /** @
 }
 
 const row = (/** @type {any} */ page, /** @type {string} */ name) =>
-  page.getByRole('button', { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`) });
+  page.getByRole('checkbox', { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s|$)`) });
 
 /**
  * Flutter swaps in its own editor on focus: wait for focus, then select all

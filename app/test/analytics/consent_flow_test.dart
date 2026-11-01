@@ -34,11 +34,12 @@ void main() {
     WidgetTester tester,
     Session state, {
     Locale locale = const Locale('de'),
+    Size size = const Size(390, 844),
     Map<String, Object> stored = const {},
   }) async {
     tester.view
       ..devicePixelRatio = 1
-      ..physicalSize = const Size(390, 844);
+      ..physicalSize = size;
     addTearDown(tester.view.reset);
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.withData({...stored});
@@ -91,6 +92,30 @@ void main() {
     await tester.ensureVisible(target);
     await tester.pumpAndSettle();
   }
+
+  testWidgets('at 360 px the answers stack, decline first, no label wraps', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      const NeedsHousehold('u'),
+      size: const Size(360, 780),
+    );
+    await reach(tester, accept);
+    final declineBox = tester.getRect(decline);
+    final acceptBox = tester.getRect(accept);
+    expect(declineBox.bottom, lessThan(acceptBox.top));
+    expect(declineBox.width, acceptBox.width);
+    expect(declineBox.width, greaterThan(250));
+    for (final button in [decline, accept]) {
+      final text = find.descendant(of: button, matching: find.byType(Text));
+      expect(
+        tester.getSize(text).height,
+        lessThan(24),
+        reason: tester.widget<Text>(text).data,
+      );
+    }
+  });
 
   testWidgets('a first sign-in asks before onboarding; yes sends first_open', (
     tester,

@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/design/field_border.dart';
+import 'package:family_groceries/design/hex_checkbox.dart';
+import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
@@ -14,9 +17,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// From this many characters on, the form shows how many are used.
 const _counterFrom = 1800;
-
-/// Material's emphasized decelerate, as the edit sheet.
-const _sheetCurve = Cubic(0.05, 0.7, 0.1, 1);
 
 /// Opens the feedback form over the whole app (More's row). The note
 /// waiting in [FeedbackCubit] comes back; after a send the form closes and
@@ -40,14 +40,12 @@ Future<void> showFeedbackSheet(BuildContext context) async {
     isScrollControlled: true,
     useSafeArea: true,
     constraints: const BoxConstraints(maxWidth: 640),
-    sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
-        ? AnimationStyle.noAnimation
-        : const AnimationStyle(
-            curve: _sheetCurve,
-            reverseCurve: _sheetCurve,
-            duration: Duration(milliseconds: 280),
-            reverseDuration: Duration(milliseconds: 200),
-          ),
+    sheetAnimationStyle: AnimationStyle(
+      curve: HlEasing.standard,
+      reverseCurve: HlEasing.exit,
+      duration: hlMotion(context, HlDuration.medium),
+      reverseDuration: hlMotion(context, HlDuration.short),
+    ),
     builder: (_) => BlocProvider.value(
       value: cubit,
       child: FeedbackForm(screen: screen),
@@ -139,7 +137,7 @@ class _FeedbackFormState() extends State<FeedbackForm> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: scheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(HlRadius.full),
                     ),
                   ),
                 ),
@@ -171,24 +169,25 @@ class _FeedbackFormState() extends State<FeedbackForm> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                child: TextField(
-                  key: const ValueKey('feedback-message'),
-                  controller: _message,
-                  autofocus: true,
-                  readOnly: sending,
-                  minLines: 4,
-                  maxLines: 8,
-                  keyboardType: TextInputType.multiline,
-                  textCapitalization: TextCapitalization.sentences,
-                  onChanged: context.read<FeedbackCubit>().edit,
-                  decoration: InputDecoration(
-                    labelText: l10n.feedbackMessage,
-                    hintText: l10n.feedbackMessageHint,
-                    alignLabelWithHint: true,
-                    border: const OutlineInputBorder(),
-                    errorText: state.tooLong
-                        ? l10n.feedbackTooLong(maxFeedbackLength)
-                        : null,
+                child: RoundedFields(
+                  child: TextField(
+                    key: const ValueKey('feedback-message'),
+                    controller: _message,
+                    autofocus: true,
+                    readOnly: sending,
+                    minLines: 4,
+                    maxLines: 8,
+                    keyboardType: TextInputType.multiline,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: context.read<FeedbackCubit>().edit,
+                    decoration: InputDecoration(
+                      labelText: l10n.feedbackMessage,
+                      hintText: l10n.feedbackMessageHint,
+                      alignLabelWithHint: true,
+                      errorText: state.tooLong
+                          ? l10n.feedbackTooLong(maxFeedbackLength)
+                          : null,
+                    ),
                   ),
                 ),
               ),
@@ -242,17 +241,15 @@ class _FeedbackFormState() extends State<FeedbackForm> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 8, 12, 0),
-                child: CheckboxListTile(
+                child: HexCheckboxListTile(
                   key: const ValueKey('feedback-contact'),
-                  controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                   title: Text(l10n.feedbackContact),
                   value: state.contactOk,
                   onChanged: sending
                       ? null
-                      : (on) => context.read<FeedbackCubit>().setContact(
-                          ok: on ?? false,
-                        ),
+                      : (on) =>
+                            context.read<FeedbackCubit>().setContact(ok: on),
                 ),
               ),
               Padding(

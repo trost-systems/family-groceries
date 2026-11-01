@@ -1,6 +1,7 @@
 import 'dart:ui' show CheckedState;
 
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,7 +51,7 @@ void main() {
     await tapKey(tester, 'more-settings');
     expect(path(more), '/more/settings');
     expect(find.text('Einstellungen'), findsOneWidget, reason: 'the title');
-    expect(find.text('Darstellung'), findsOneWidget);
+    expect(find.text('DARSTELLUNG'), findsOneWidget);
     for (final row in ['theme-system', 'theme-light', 'theme-dark']) {
       expect(key(row), findsOneWidget, reason: row);
     }
@@ -61,32 +62,77 @@ void main() {
   });
 
   group('the theme', () {
-    testWidgets('follows the device by default', (tester) async {
+    const segments = ['theme-system', 'theme-light', 'theme-dark'];
+
+    bool pickedSegment(WidgetTester tester, String k) => checked(tester, k);
+
+    bool grouped(WidgetTester tester, String k) => tester
+        .getSemantics(key(k))
+        .getSemanticsData()
+        .flagsCollection
+        .isInMutuallyExclusiveGroup;
+
+    testWidgets('follows the device by default: System is picked', (
+      tester,
+    ) async {
       await pumpMore(
         tester,
         location: '/more/settings',
         deviceBrightness: Brightness.dark,
       );
-      expect(checked(tester, 'theme-system'), isTrue);
-      expect(checked(tester, 'theme-dark'), isFalse);
-      expect(shownBrightness(tester), Brightness.dark);
+      expect(pickedSegment(tester, 'theme-system'), isTrue);
+      expect(pickedSegment(tester, 'theme-light'), isFalse);
+      expect(pickedSegment(tester, 'theme-dark'), isFalse);
+      expect(shownBrightness(tester), Brightness.dark, reason: 'the device');
     });
 
-    testWidgets('switches at once and is kept on the device', (tester) async {
+    for (final (stored, picked, device, shown) in const [
+      (null, 'theme-system', Brightness.light, Brightness.light),
+      (null, 'theme-system', Brightness.dark, Brightness.dark),
+      ('light', 'theme-light', Brightness.light, Brightness.light),
+      ('light', 'theme-light', Brightness.dark, Brightness.light),
+      ('dark', 'theme-dark', Brightness.light, Brightness.dark),
+      ('dark', 'theme-dark', Brightness.dark, Brightness.dark),
+      ('sepia', 'theme-system', Brightness.dark, Brightness.dark),
+    ]) {
+      testWidgets('a stored $stored on a ${device.name} device picks $picked '
+          'and shows ${shown.name}', (tester) async {
+        await pumpMore(
+          tester,
+          location: '/more/settings',
+          theme: themeModeOf(stored),
+          deviceBrightness: device,
+        );
+        for (final segment in segments) {
+          expect(
+            pickedSegment(tester, segment),
+            segment == picked,
+            reason: segment,
+          );
+        }
+        expect(shownBrightness(tester), shown);
+      });
+    }
+
+    testWidgets('a tap picks, applies at once and is kept on the device', (
+      tester,
+    ) async {
       final more = await pumpMore(tester, location: '/more/settings');
       expect(shownBrightness(tester), Brightness.light);
 
       await tapKey(tester, 'theme-dark');
       expect(shownBrightness(tester), Brightness.dark);
-      expect(checked(tester, 'theme-dark'), isTrue);
-      expect(checked(tester, 'theme-system'), isFalse);
+      expect(pickedSegment(tester, 'theme-dark'), isTrue);
+      expect(pickedSegment(tester, 'theme-system'), isFalse);
       expect(await more.cache.theme(), 'dark');
 
       await tapKey(tester, 'theme-light');
       expect(shownBrightness(tester), Brightness.light);
+      expect(pickedSegment(tester, 'theme-light'), isTrue);
       expect(await more.cache.theme(), 'light');
 
       await tapKey(tester, 'theme-system');
+      expect(pickedSegment(tester, 'theme-system'), isTrue);
       expect(await more.cache.theme(), isNull, reason: 'the default again');
     });
 
@@ -100,8 +146,65 @@ void main() {
         deviceBrightness: Brightness.dark,
       );
       expect(shownBrightness(tester), Brightness.light);
-      expect(checked(tester, 'theme-light'), isTrue);
+      await tapKey(tester, 'theme-dark');
+      expect(shownBrightness(tester), Brightness.dark);
     });
+
+    testWidgets('the indicator slides', (tester) async {
+      await pumpMore(tester, location: '/more/settings');
+      await tester.tap(key('theme-light'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.hasRunningAnimations, isTrue, reason: 'on its way');
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('with reduced motion the indicator jumps', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await pumpMore(tester, location: '/more/settings');
+      final indicator = find.descendant(
+        of: key('theme-mode'),
+        matching: find.byType(FractionallySizedBox),
+      );
+      final start = tester.getTopLeft(indicator).dx;
+      await tester.tap(key('theme-dark'));
+      await tester.pump();
+      await tester.pump();
+      final jumped = tester.getTopLeft(indicator).dx;
+      expect(jumped, greaterThan(start + 100), reason: 'at the third segment');
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(indicator).dx, jumped, reason: 'nothing left');
+    });
+
+    for (final (language, labels) in const [
+      (AppLanguage.de, ['System', 'Hell', 'Dunkel']),
+      (AppLanguage.en, ['System', 'Light', 'Dark']),
+    ]) {
+      testWidgets('the segments are labelled radio buttons of one group, '
+          '48 dp, in ${language.code}', (tester) async {
+        await pumpMore(tester, location: '/more/settings', language: language);
+        for (final (i, segment) in segments.indexed) {
+          final data = tester.getSemantics(key(segment)).getSemanticsData();
+          expect(data.label, labels[i], reason: segment);
+          expect(data.flagsCollection.isChecked, isNot(CheckedState.none));
+          expect(grouped(tester, segment), isTrue, reason: segment);
+          final size = tester.getSize(key(segment));
+          expect(size.height, greaterThanOrEqualTo(48), reason: segment);
+          expect(size.width, greaterThanOrEqualTo(48), reason: segment);
+        }
+        expect(
+          find.bySemanticsLabel(
+            language == AppLanguage.de ? 'Darstellung' : 'Appearance',
+          ),
+          findsWidgets,
+          reason: 'the group has a name',
+        );
+      });
+    }
 
     testWidgets('the dark theme dresses More itself', (tester) async {
       await pumpMore(tester, theme: ThemeMode.dark);

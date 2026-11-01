@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
@@ -8,6 +10,7 @@ import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/fixtures.dart' as fixtures;
 import 'package:hummlist_widgetbook/src/story.dart';
@@ -20,14 +23,13 @@ final appComponents = [
     plain('Ketten', (context) => const _Badges(fixtures.seededStores)),
     plain('Eigene Läden', (context) => const _Badges(fixtures.ownStores)),
     plain(
-      'Größen',
-      (context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: HlSpace.s4,
-        children: [
-          for (final size in const <double>[20, 24, 32, 48])
-            StoreBadge(fixtures.seededStores.first, size: size),
-        ],
+      'Langer Name',
+      (context) => const StoreBadge(
+        Store(
+          id: 'long',
+          name: 'Bioladen am Wochenmarkt Süd Großhandel',
+          sortOrder: 0,
+        ),
       ),
     ),
   ]),
@@ -52,6 +54,8 @@ final appComponents = [
       'Laden zugeklappt',
       (context) => const _ListExcerpt(folded: {'lidl'}),
     ),
+    plain('Abhaken (Animation)', (context) => const _TickLoop()),
+    plain('Abgehakt', (context) => const _TickLoop(still: true)),
   ]),
 ];
 
@@ -66,7 +70,7 @@ class const _Badges(final List<Store> stores) extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           spacing: HlSpace.s3,
-          children: [StoreBadge(store), Text(store.name)],
+          children: [StoreBadge(store)],
         ),
     ],
   );
@@ -203,5 +207,121 @@ class _ListExcerptState() extends State<_ListExcerpt> {
         ],
       ),
     );
+  }
+}
+
+/// Three rows of the list; a synthetic finger taps the middle one, its line
+/// draws, the row closes and the row below moves up; after a pause it is
+/// back and the loop starts again. [still] shows the struck row instead:
+/// reduced motion, so it stays struck and never leaves.
+class const _TickLoop({final bool still = false}) extends StatefulWidget {
+  @override
+  State<_TickLoop> createState() => _TickLoopState();
+}
+
+class _TickLoopState() extends State<_TickLoop> {
+  static const _rest = Duration(milliseconds: 900);
+  // Its own pointer device, so the real mouse does not cancel its taps.
+  static var _nextDevice = 0x5700;
+
+  final _session = DragSession();
+  final _device = _nextDevice++;
+  final _target = GlobalKey();
+  var _round = 0;
+  Timer? _timer;
+
+  List<Item> get _rows => [
+    fixtures.items[0],
+    fixtures.items[2],
+    fixtures.items[3],
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(_rest, _tap);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _session.dispose();
+    super.dispose();
+  }
+
+  void _tap() {
+    final box = _target.currentContext?.findRenderObject();
+    if (!mounted || box is! RenderBox || !box.hasSize) {
+      return;
+    }
+    final at = box.localToGlobal(box.size.center(Offset.zero));
+    final view = View.of(context).viewId;
+    GestureBinding.instance
+      ..handlePointerEvent(
+        PointerDownEvent(
+          viewId: view,
+          pointer: _device,
+          device: _device,
+          position: at,
+        ),
+      )
+      ..handlePointerEvent(
+        PointerUpEvent(
+          viewId: view,
+          pointer: _device,
+          device: _device,
+          position: at,
+        ),
+      );
+  }
+
+  void _ticked(Item _) {
+    if (widget.still) {
+      return;
+    }
+    // The closed row stays gone for a beat before it is back.
+    _timer = Timer(_rest, () {
+      setState(() => _round++);
+      _timer = Timer(_rest, _tap);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = _rows;
+    Category? category(Item item) =>
+        fixtures.categories.where((c) => c.id == item.categoryId).firstOrNull;
+    final list = SizedBox(
+      width: 390,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (i, item) in rows.indexed)
+            KeyedSubtree(
+              key: i == 1 ? _target : null,
+              child: ItemRow(
+                key: ValueKey('${item.id}-$_round'),
+                item: item,
+                category: category(item),
+                block: rows,
+                session: _session,
+                fresh: false,
+                last: i == rows.length - 1,
+                onVisible: (_) {},
+                onTick: _ticked,
+                onEdit: (_) {},
+                onDelete: (_) {},
+                onDrop: (_, _) {},
+              ),
+            ),
+        ],
+      ),
+    );
+    return widget.still
+        ? MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: list,
+          )
+        : list;
   }
 }

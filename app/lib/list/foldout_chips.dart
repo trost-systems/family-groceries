@@ -1,8 +1,9 @@
+import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
 
 enum _Fold() {
@@ -10,7 +11,12 @@ enum _Fold() {
   category,
 }
 
-const _foldCurve = Cubic(0.05, 0.7, 0.1, 1);
+/// The chips' and options' height: a touch target.
+const _height = 44.0;
+
+/// Room from the hex's edge to its content: the tip's depth, so the content
+/// starts where the flat sides do.
+const _hexPadding = EdgeInsets.symmetric(horizontal: HlHex.tip * _height);
 
 /// The store and category chips. Tapping one folds its options out right
 /// below; picking one folds them back.
@@ -61,7 +67,6 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
     final category = w.catalog.categories
         .where((c) => c.id == w.categoryId)
         .firstOrNull;
-    final still = MediaQuery.disableAnimationsOf(context);
     final l10n = AppLocalizations.of(context);
     final storeName = store?.name ?? w.storeAutoLabel ?? w.storeLabel;
     final shownCategory = switch (category) {
@@ -78,9 +83,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
           children: [
             _Chip(
               key: const ValueKey('chip-store'),
-              leading: store == null
-                  ? const Icon(Icons.storefront_outlined, size: 20)
-                  : StoreBadge(store, size: 20),
+              leading: const Icon(Icons.storefront_outlined, size: 20),
               label: storeName,
               // The automatic labels already say what the chip is.
               semanticsLabel: store == null && w.storeAutoLabel != null
@@ -104,8 +107,8 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
           ],
         ),
         AnimatedSize(
-          duration: still ? Duration.zero : const Duration(milliseconds: 240),
-          curve: _foldCurve,
+          duration: hlMotion(context, HlDuration.medium),
+          curve: HlEasing.standard,
           alignment: Alignment.topCenter,
           child: switch (_fold) {
             null => const SizedBox(width: double.infinity),
@@ -120,7 +123,6 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
               for (final s in w.catalog.stores)
                 _Option(
                   key: ValueKey('store-option-${s.id}'),
-                  leading: StoreBadge(s, size: 22),
                   label: s.name,
                   selected: s.id == w.storeId,
                   onTap: () => _pick(() => w.onStore(s.id)),
@@ -155,11 +157,13 @@ class const _Chip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final side = switch ((open, changed)) {
-      (true, _) => BorderSide.none,
-      (false, true) => BorderSide(color: scheme.primary, width: 2),
-      (false, false) => BorderSide(color: scheme.outline),
+    final t = HummlistColors.of(Theme.of(context).brightness);
+    // A value the user picked is their choice, honey like a selected chip;
+    // an open chip is lit softly while its options show.
+    final (face, onFace) = switch ((changed, open)) {
+      (true, _) => (t.honey, t.onHoney),
+      (false, true) => (t.honeySoft, t.text),
+      (false, false) => (t.surfaceRaised, t.text),
     };
     // The button's own web semantics node would take the add field's text
     // input with it on a tap; this node only taps.
@@ -175,16 +179,13 @@ class const _Chip({
           // Desktop defaults to compact density, which shrinks targets
           // under 44 px.
           visualDensity: VisualDensity.standard,
-          minimumSize: const Size(0, 44),
-          padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 10, 0),
-          shape: const StadiumBorder(),
-          side: side,
-          backgroundColor: open
-              ? scheme.secondaryContainer
-              : scheme.surfaceContainerLowest,
-          foregroundColor: open
-              ? scheme.onSecondaryContainer
-              : scheme.onSurface,
+          minimumSize: const Size(0, _height),
+          padding: _hexPadding,
+          shape: const HexBorder(),
+          side: BorderSide(color: t.border, width: HlBorder.width),
+          backgroundColor: face,
+          foregroundColor: onFace,
+          iconColor: onFace,
           textStyle: const TextStyle(
             fontFamily: HlFont.sans,
             fontSize: 14,
@@ -193,15 +194,14 @@ class const _Chip({
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          spacing: 8,
+          spacing: HlSpace.s1,
           children: [
             leading,
             Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
             AnimatedRotation(
               turns: open ? 0.5 : 0,
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 200),
+              duration: hlMotion(context, HlDuration.short),
+              curve: HlEasing.standard,
               child: const Icon(Icons.arrow_drop_down, size: 20),
             ),
           ],
@@ -231,7 +231,7 @@ class const _Option({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final t = HummlistColors.of(Theme.of(context).brightness);
     return Semantics(
       button: true,
       selected: selected,
@@ -242,13 +242,17 @@ class const _Option({
         onPressed: onTap,
         style: TextButton.styleFrom(
           visualDensity: VisualDensity.standard,
-          minimumSize: const Size(0, 44),
-          padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 14, 0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          backgroundColor: selected
-              ? scheme.primary
-              : scheme.surfaceContainerHigh,
-          foregroundColor: selected ? scheme.onPrimary : scheme.onSurface,
+          minimumSize: const Size(0, _height),
+          padding: _hexPadding,
+          // Lemon on the page needs the navy contour.
+          shape: HexBorder(
+            side: selected
+                ? BorderSide(color: t.edge, width: HlBorder.width)
+                : BorderSide.none,
+          ),
+          backgroundColor: selected ? t.honey : t.surfaceSunken,
+          foregroundColor: selected ? t.onHoney : t.text,
+          iconColor: selected ? t.onHoney : t.text,
           textStyle: const TextStyle(
             fontFamily: HlFont.sans,
             fontSize: 15,

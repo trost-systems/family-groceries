@@ -343,7 +343,6 @@ PRs carry a `## Changelog` note (de/en items or `none`), checked by push-pr.sh a
 
 PR notes may add `flag:` / `hold:` lines. `releases/flags.json` decides what is public, and the Alexa skill is held. Held items wait in `releases/changelog/pending.json` (written by `record.mjs`) until their gate opens. `releases/changelog/1.0.0.override.md` is the 1.0 launch "What's new", still a draft for Peter's review. Details: [docs/done/40-changelog-flags.md](docs/done/40-changelog-flags.md).
 
-
 ## Job 43: Hummlist Lifetime as a household-bound unlock (model A), on RevenueCat
 
 A purchase belongs to the household it was bought in, for good: RevenueCat's App User ID is the household, and the server refuses it anywhere else, also after deletion (a tombstone stays 30 days after the purge of its rows). Our own Apple/Google verification is replaced by RevenueCat's webhook, and the SDK starts only on the purchase page with the household id. The purchase screen is off in every build until Peter approves the legal texts. Buy shows only when the household is known to have no Lifetime, and the join screen explains Lifetime around a join, with archiving behind the default-off `HOUSEHOLD_ARCHIVE`. There is DE/EN refund help, tester grants stay with households, members can't read who paid, and two paying-household queries back the kill gate. Details: [docs/done/43-iap-household-a.md](docs/done/43-iap-household-a.md).
@@ -389,3 +388,61 @@ Three silent, captioned loops from the real Hummlist app fill job 53's video slo
 ## Job 60: Hummlist feature map and how-to clips
 
 verify-hummlist skill (web build + Playwright, launch/doctor/drive/cleanup proven on hz), 23-feature map with FEATURES-FOR-WRITERS.md for Hummlist Launch, hummlist-howto-clips skill (email GIF, MP4/WebM, PNG; quick-add DE+EN proven). Details: [docs/done/60-feature-map.md](docs/done/60-feature-map.md).
+
+## Job 57: list rows without a check box, a polished strike-through, design alignment
+
+PR: see BOARD (title "Job 57: list rows without checkbox, polished strike-through, design
+alignment"), not merged by this job; the lead lands it after review. Details:
+[docs/done/57-list-tick-align.md](docs/done/57-list-tick-align.md), decisions in DECISIONS
+"Job 57", evidence in `docs/screenshots/57/` (also `/workspace/hummlist/research/57-list-tick-align/`).
+
+**Built.** A tap on a row draws a 2 px muted line across the words only (line by line on a
+wrapped name), the row turns mint like the site's done row, then closes so the rows below move
+up, with an emptied category or store heading closing along; tick after 440 ms (tokens), reduced
+motion shows the struck row 260 ms without the close. Rows are checkboxes to screen readers and
+announce "<Name> abgehakt" / "<name> ticked off". No list row draws a check box anywhere in the
+app or Widgetbook; consent and opt-in check boxes stay hexagons (`HexCheckbox`). Theme: one hex
+segmented control System / Hell / Dunkel (Peter 14:20), storage unchanged. Job 56: 29 of its 30
+SAFE items (item 6 left to Peter: it reverses his job 29a call). Addendum 5 (Peter's calls on
+items 31 to 34): the empty list shows a honey hex with the cart; `StoreBadge` shows the store's
+full name in a hex pill (no retailer colours, cobalt rules; a logo variant waits for the Legal
+Review); every single-line text field is a hex from one input theme (multi-line rounded, the add
+field opted out and tested); a partner's new row is honey. Widgetbook: an auto-ticking "Abhaken (Animation)" story and stories for every new
+component.
+
+**Tests.** `flutter test`: 1359 pass (app), 326 (Widgetbook). Local e2e, full suite on the final
+build: everything passes except the 7 fake-OIDC specs (`id-token`, `social-sign-in`, onboarding
+AC6), which cannot reach the fake provider from containers on the Hetzner box; CI runs them.
+Gates gitleaks, lint, flutter, fg-cli pass locally.
+
+**Site follow-up (not done)** (ADDENDUM 1: this PR is app-only)
+1. *Scene edits to drop the hex check box* (job 56 item 35). `site/scenes/scenes.css`: delete the
+   `.cb` rules and the mint ticked hex (`.item--done .cb`), make `.item` two columns
+   (`28px 1fr`) with equal side padding, give `.item--done` the app's done row
+   (`--hl-color-mint-soft` fill, text `--hl-color-text-muted`) and a strike as `.name::after`
+   over the text width only (2 px `--hl-border-width`, muted). Remove the `<span class="hxp cb">`
+   (and `.tick`) from every row in `hero.html` (3 rows), `add-tick.html` (5),
+   `household-sync.html` (9); `mcp-chat.html` loses its `.tick` column (four-column grid to
+   three). A ready patch from this job's first pass (cobalt-on-accent-soft variant, adjust the
+   colours to mint as above): `~/groceries-ops/jobs/57-list-tick-align/site-followup/site-scenes.patch`.
+   Effort: about 30 min.
+2. *Stills that change*: re-film with `node site/scenes/film-all.mjs hero add-tick household-sync
+   mcp-chat` (32 WebP stills: `site/public/media/{hero,add-tick,household-sync,mcp-chat}-{de,en}-
+   {wide,compact}[-dark].webp`); `stores` has no rows and stays. Effort: 15 min filming plus
+   30 min contact-sheet review.
+3. *Demo loops (#163) that change*: all three are real-app footage and now show the old app
+   (rows, add bar, chips): `add-tick` (the tick itself: strike, mint, close; its `scene.mjs`
+   assumes the 260 ms leave, now 440 ms), `household-sync` (Noah's tick and the add bar),
+   `mcp-chat` (the list and add bar behind the chat; its ticks arrive remotely without the
+   animation). Re-take with `marketing/videos/` (capture `take.ts`, `build.mjs`, DE and EN, wide
+   and compact) after this PR lands: about 2 to 3 h agent time including review.
+4. *Job 56 SAFE items touching `site/`*: none; job 56 filed the site work as items 35 and 36
+   (above).
+5. *Addendum 5 site follow-ups.* Item 32: the scenes show no store badge; once this ships they can
+   draw the same hex name pill and the cobalt rule (`scenes.css` `.store-head`), about 30 min plus
+   re-filming the stores and hero stills. Item 34: `household-sync.html` drops `.item--arrived`
+   (mint plus edge bar) for `.item--fresh` (honey-soft), re-film `household-sync` stills (8), about
+   20 min; the household-sync demo loop shows honey once re-taken (point 3).
+
+**Missing / for Peter.** NEEDS_PETER "Job 57": a look at the self-drawn Apple button on an
+iPhone; retailer logos for the store badge after the Legal Review; job 56 item 6.

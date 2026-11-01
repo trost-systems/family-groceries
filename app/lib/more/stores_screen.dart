@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/hex_pill.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/model.dart';
@@ -34,7 +37,7 @@ class const StoresScreen({super.key}) extends StatelessWidget {
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: pageMaxWidth),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -51,25 +54,36 @@ class const StoresScreen({super.key}) extends StatelessWidget {
                     ids.insert(to, ids.removeAt(from));
                     unawaited(cubit.reorderStores(ids));
                   },
+                  proxyDecorator: HexPill.lift,
                   children: [
                     for (final (i, store) in stores.indexed)
-                      ListTile(
+                      HexPill(
                         key: ValueKey('store-row-${store.id}'),
-                        minTileHeight: 56,
-                        leading: StoreBadge(store),
-                        title: Text(store.name),
-                        subtitle: Text(l10n.editStoreLayout),
                         onTap: () =>
                             unawaited(openStoreLayout(context, store.id)),
-                        trailing: ReorderableDragStartListener(
-                          index: i,
-                          child: Semantics(
-                            label: l10n.dragStore(store.name),
-                            child: const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Icon(Icons.drag_handle),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: HlSpace.s1,
+                                children: [
+                                  StoreBadge(store),
+                                  Text(
+                                    l10n.editStoreLayout,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                            PillDragHandle(
+                              index: i,
+                              label: l10n.dragStore(store.name),
+                            ),
+                          ],
                         ),
                       ),
                   ],

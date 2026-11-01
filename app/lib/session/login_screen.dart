@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/design/brand_block.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -30,30 +32,33 @@ class const LoginScreen({
     };
     final panel = SignInPanel(
       returnPath: next ?? (invite == null ? '/' : '/join/$invite'),
+      header: const BrandBlock(),
     );
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.signInTitle)),
-      body: Column(
-        children: [
-          if (deleted != null)
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                key: const ValueKey('account-deleted-notice'),
-                margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                child: ListTile(
-                  leading: const Icon(Icons.check_circle_outline),
-                  title: Text(l10n.accountDeletedNotice),
-                  subtitle: deleted.removeAppleManually
-                      ? Text(l10n.accountDeletedApple)
-                      : null,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            if (deleted != null)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  key: const ValueKey('account-deleted-notice'),
+                  margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                  child: ListTile(
+                    leading: const Icon(Icons.check_circle_outline),
+                    title: Text(l10n.accountDeletedNotice),
+                    subtitle: deleted.removeAppleManually
+                        ? Text(l10n.accountDeletedApple)
+                        : null,
+                  ),
                 ),
               ),
-            ),
-          Expanded(child: Center(child: panel)),
-          // Outside the scrolling form: visible without scrolling.
-          const SafeArea(top: false, child: LegalFooter()),
-        ],
+            Expanded(child: Center(child: panel)),
+            // Outside the scrolling form: visible without scrolling.
+            const SafeArea(top: false, child: LegalFooter()),
+          ],
+        ),
       ),
     );
   }
@@ -66,6 +71,9 @@ class const SignInPanel({
   /// `/join/ABCD2345`. The mobile apps always return through
   /// [mobileAuthCallback].
   required final String returnPath,
+
+  /// Shown above the methods, inside the scrolling form.
+  final Widget? header,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -172,6 +180,10 @@ class _SignInPanelState() extends State<SignInPanel> {
           padding: const EdgeInsets.all(24),
           shrinkWrap: true,
           children: [
+            if (widget.header case final header?) ...[
+              header,
+              const SizedBox(height: HlSpace.s5),
+            ],
             if (flows.containsKey(SocialProvider.google)) ...[
               GoogleSignInButton(
                 key: const ValueKey('sign-in-google'),

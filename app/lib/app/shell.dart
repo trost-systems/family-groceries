@@ -1,3 +1,5 @@
+import 'package:family_groceries/design/motion.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
@@ -6,6 +8,10 @@ import 'package:go_router/go_router.dart';
 
 /// From this width the tabs become a rail and More shows two panes.
 const wideLayout = 840.0;
+
+/// The widest a settings page's list runs (store layout, categories, Läden):
+/// on a wide window it stays a readable column (job 56 item 26).
+const pageMaxWidth = 640.0;
 
 /// Whether the add sheet is open. The shell hides the tabs while it is;
 /// the List tab opens and closes it. Leaving the tab closes it.
@@ -41,8 +47,6 @@ class SheetOpenNotifier() extends ValueNotifier<bool> {
     super.dispose();
   }
 }
-
-const _sheetOpenDuration = Duration(milliseconds: 280);
 
 /// The signed-in app: the List and More tabs, as a bottom bar on phones
 /// and a rail from [wideLayout] on.
@@ -142,12 +146,9 @@ class const _Tabs({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final still = MediaQuery.disableAnimationsOf(context);
     final open = SheetOpen.of(context).value;
-    final duration = still ? Duration.zero : _sheetOpenDuration;
-    final curve = open
-        ? Easing.emphasizedAccelerate
-        : Easing.emphasizedDecelerate;
+    final duration = hlMotion(context, HlDuration.medium);
+    final curve = open ? HlEasing.exit : HlEasing.standard;
     return ColoredBox(
       color: scheme.surfaceContainerLow,
       child: Stack(
@@ -157,9 +158,7 @@ class const _Tabs({
               top: false,
               child: AnimatedOpacity(
                 opacity: open ? 1 : 0,
-                duration: still
-                    ? Duration.zero
-                    : const Duration(milliseconds: 200),
+                duration: hlMotion(context, HlDuration.short),
                 curve: Interval(open ? 0.4 : 0, 1),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -188,9 +187,7 @@ class const _Tabs({
                   curve: curve,
                   child: AnimatedOpacity(
                     opacity: open ? 0 : 1,
-                    duration: still
-                        ? Duration.zero
-                        : const Duration(milliseconds: 180),
+                    duration: hlMotion(context, HlDuration.short),
                     child: NavigationBar(
                       height: 62,
                       selectedIndex: index,

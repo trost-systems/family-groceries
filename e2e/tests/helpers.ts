@@ -30,11 +30,12 @@ export const addField = (page: Page) => page.getByRole('textbox', { name: 'Was b
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * A list row; its accessible name is the item name, a space, then the quantity. A row under
- * "Zuletzt verwendet" ends in "Wieder auf die Liste" and is not one (`usedRow`).
+ * A list row, a checkbox (unchecked while open, checked while it leaves); its accessible name is
+ * the item name, a space, then the quantity. A row under "Zuletzt verwendet" is a button ending in
+ * "Wieder auf die Liste" and is not one (`usedRow`).
  */
 export const itemRow = (page: Page, name: string) =>
-  page.getByRole('button', { name: new RegExp(`^(?!.* ${usedAction}$)${escape(name)}( |$)`) });
+  page.getByRole('checkbox', { name: new RegExp(`^(?!.* ${usedAction}$)${escape(name)}( |$)`) });
 
 const usedAction = 'Wieder auf die Liste';
 
@@ -103,9 +104,9 @@ export async function reveal(page: Page, target: Locator, margin = 0): Promise<v
 }
 
 /**
- * Ticks an item off: a tap on its row (design H has no check box). The row leaves for 260 ms
- * before the tick commits, so this waits for the row to go (the tick has no snackbar since job
- * 29b): an add of the same name before then finds the item still on the list.
+ * Ticks an item off: a tap on its row (design H has no check box). The row strikes through and
+ * closes for 440 ms before the tick commits, so this waits for the row to go (the tick has no
+ * snackbar since job 29b): an add of the same name before then finds the item still on the list.
  */
 export async function tick(page: Page, name: string): Promise<void> {
   await reveal(page, itemRow(page, name));
@@ -561,6 +562,28 @@ export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> 
   await page.getByRole('tab', { name: tab, exact: true }).or(page.getByRole('button', { name: `${tab} Tab ` })).click();
 }
 
+/**
+ * Wheels More's lazy list until [target] is fully on screen above the tab bar. The list keeps its
+ * scroll position between visits, and an entry far off screen is not built at all, so a click alone
+ * can wait forever.
+ */
+export async function wheelTo(page: Page, target: Locator): Promise<void> {
+  const size = page.viewportSize()!;
+  // From 840 px there is no tab bar (a rail): don't wait for one.
+  const tabs = await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 200 }).catch(() => null);
+  const bottom = tabs ? tabs.y : size.height;
+  // From 840 px More's list is the 360 px pane on the left.
+  await page.mouse.move(size.width >= 840 ? 180 : size.width / 2, size.height / 3);
+  for (let i = 0; i < 40; i++) {
+    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
+    if (box && box.y >= 0 && box.y + box.height <= bottom) return;
+    const down = box ? box.y + box.height > bottom : i < 20;
+    await page.mouse.wheel(0, down ? 250 : -250);
+    await page.waitForTimeout(150);
+  }
+  throw new Error(`could not scroll ${target} into view`);
+}
+
 /** Opens an entry of the More tab by its title ("Partner einladen", "Zugänge", "Abmelden" …). */
 export async function openMore(page: Page, entry: string): Promise<void> {
   await openTab(page, 'Mehr');
@@ -568,7 +591,9 @@ export async function openMore(page: Page, entry: string): Promise<void> {
   await expect(page).toHaveURL(/\/more\b/);
   if (new URL(page.url()).pathname !== '/more') await openTab(page, 'Mehr');
   await expect(page).toHaveURL(/\/more$/);
-  await page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) }).click();
+  const target = page.getByRole('button', { name: new RegExp(`^${escape(entry)}( |$)`) });
+  await wheelTo(page, target);
+  await target.click();
 }
 
 const inviteCode = /^Code [A-HJ-NP-Z2-9]{8}$/;

@@ -6,6 +6,8 @@ import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/hex_switch.dart';
+import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
 import 'package:family_groceries/household/archived_households.dart';
 import 'package:family_groceries/household/invites_page.dart';
@@ -168,7 +170,10 @@ class const _MoreList({
       key: const ValueKey('more-screen'),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        _Section(l10n.household),
+        HlSectionLabel(
+          l10n.household,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         if (household != null) ...[
           _Row(
             key: const ValueKey('more-invite'),
@@ -220,7 +225,10 @@ class const _MoreList({
           selected: selected == MorePage.premium,
           onTap: () => context.go(premiumPath),
         ),
-        _Section(l10n.accessTitle),
+        HlSectionLabel(
+          l10n.accessTitle,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         _Row(
           key: const ValueKey('more-access'),
           icon: Icons.key_outlined,
@@ -229,7 +237,10 @@ class const _MoreList({
           selected: selected == MorePage.access,
           onTap: () => context.go(accessPath),
         ),
-        _Section(l10n.account),
+        HlSectionLabel(
+          l10n.account,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         _Row(
           key: const ValueKey('menu-account'),
           icon: Icons.manage_accounts_outlined,
@@ -244,7 +255,10 @@ class const _MoreList({
           label: l10n.signOut,
           onTap: () => unawaited(context.read<SessionCubit>().signOut()),
         ),
-        _Section(l10n.feedbackSection),
+        HlSectionLabel(
+          l10n.feedbackSection,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         _Row(
           key: const ValueKey('more-feedback'),
           icon: Icons.feedback_outlined,
@@ -265,7 +279,10 @@ class const _MoreList({
               ),
             ),
           ),
-        _Section(l10n.settingsTitle),
+        HlSectionLabel(
+          l10n.settingsTitle,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         _Row(
           key: const ValueKey('more-settings'),
           icon: Icons.settings_outlined,
@@ -276,10 +293,16 @@ class const _MoreList({
           onTap: () => context.go(appSettingsPath),
         ),
         if (context.read<Analytics>().enabled) ...[
-          _Section(l10n.analyticsSection),
+          HlSectionLabel(
+            l10n.analyticsSection,
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+          ),
           const _AnalyticsSwitch(),
         ],
-        _Section(l10n.legal),
+        HlSectionLabel(
+          l10n.legal,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+        ),
         _Row(
           key: const ValueKey('more-imprint'),
           icon: Icons.info_outline,
@@ -329,26 +352,8 @@ String _versionOf(PackageInfo info) => info.buildNumber.isEmpty
     ? info.version
     : '${info.version} (${info.buildNumber})';
 
-class const _Section(final String title) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-      child: Semantics(
-        header: true,
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: scheme.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
+/// The list's category label, for a settings group: 11 px heavy caps,
+/// 0.12 em tracking, muted, and a hairline rule after it.
 
 class const _Row({
   required final IconData icon,
@@ -382,7 +387,7 @@ class const _AnalyticsSwitch() extends StatelessWidget {
     final consent = context.select<Analytics, bool>(
       (a) => a.state.consent ?? false,
     );
-    return SwitchListTile(
+    return HexSwitchTile(
       key: const ValueKey('more-analytics'),
       title: Text(l10n.analyticsToggle),
       subtitle: Text(l10n.analyticsToggleHint),

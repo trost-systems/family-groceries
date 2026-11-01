@@ -41,6 +41,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String itemTicked(String name) {
+    return '$name abgehakt';
+  }
+
+  @override
   String alreadyOnList(String name) {
     return '$name steht schon auf der Liste';
   }
@@ -282,6 +287,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get joinHousehold => 'Haushalt beitreten';
 
   @override
+  String get joinTitle => 'Haushalt beitreten';
+
+  @override
   String get invalidInvite => 'Dieser Code ist ungültig oder abgelaufen.';
 
   @override
@@ -346,6 +354,12 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get consentInvalid =>
       'Diese Anfrage ist ungültig oder abgelaufen. Starte die Verbindung in deiner App neu.';
+
+  @override
+  String get consentErrorTitle => 'Verbindung abgelaufen';
+
+  @override
+  String get consentBackToList => 'Zurück zur Liste';
 
   @override
   String get accessTitle => 'Zugänge';
@@ -823,7 +837,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearance => 'Darstellung';
 
   @override
-  String get themeSystem => 'Wie Gerät';
+  String get themeSystem => 'System';
 
   @override
   String get themeLight => 'Hell';

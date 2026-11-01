@@ -817,14 +817,25 @@ Map<String, Item> mergeServerRow(Map<String, Item> server, Item row) {
   return {...server, row.id: row};
 }
 
-/// Bought items, most recent first: the list's "Zuletzt verwendet".
+/// Bought items, most recent first: the list's "Zuletzt verwendet". One
+/// row per thing (`canonical_key`, else the folded name), its newest
+/// purchase, and none for a thing that is on the list again.
 List<Item> recentlyUsed(Iterable<Item> items, {int limit = 20}) {
+  String thing(Item i) => i.canonicalKey ?? foldName(i.name);
+  final open = {
+    for (final i in items)
+      if (i.status == ItemStatus.active) thing(i),
+  };
   final bought = items.where((i) => i.status == ItemStatus.bought).toList()
     ..sort(
       (a, b) =>
           (b.boughtAt ?? b.updatedAt).compareTo(a.boughtAt ?? a.updatedAt),
     );
-  return bought.take(limit).toList();
+  final seen = <String>{};
+  return [
+    for (final i in bought)
+      if (!open.contains(thing(i)) && seen.add(thing(i))) i,
+  ].take(limit).toList();
 }
 
 /// Something the household buys again and again, as `public.suggest_items`

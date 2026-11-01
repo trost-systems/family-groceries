@@ -3,6 +3,7 @@ import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FakeConsentApi({required final ConsentRequest details})
@@ -145,13 +146,49 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('authorization not found'), findsOneWidget);
+    expect(find.text('authorization not found'), findsNothing);
+    expect(
+      find.widgetWithText(AppBar, 'Verbindung abgelaufen'),
+      findsOneWidget,
+    );
+    expect(find.text('Zugriff erlauben?'), findsNothing);
     expect(find.text('Erlauben'), findsNothing);
+    expect(find.text('Zurück zur Liste'), findsOneWidget);
   });
 
   testWidgets('a missing authorization id explains itself', (tester) async {
     await pumpConsent(tester, id: null);
     expect(find.textContaining('ungültig oder abgelaufen'), findsOneWidget);
     expect(visited, isEmpty);
+  });
+
+  testWidgets('the failed page leads back to the list', (tester) async {
+    final router = GoRouter(
+      initialLocation: '/oauth',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const Text('the list')),
+        GoRoute(
+          path: '/oauth',
+          builder: (_, _) => ConsentView(
+            authorizationId: null,
+            household: const Household(id: 'h', name: 'Trost'),
+            api: FakeConsentApi(details: request),
+            navigate: (_) async {},
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('de'),
+        routerConfig: router,
+      ),
+    );
+    await tester.tap(find.text('Zurück zur Liste'));
+    await tester.pumpAndSettle();
+    expect(find.text('the list'), findsOneWidget);
   });
 }

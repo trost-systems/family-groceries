@@ -13,6 +13,7 @@ const sameInBothLanguages = {
   'premiumManageApple': 'store name',
   'premiumManageGoogle': 'store name',
   'inviteCodeLabel': '"Code" is English too',
+  'themeSystem': '"System" is the word in both (job 57 theme control)',
   'inviteLinkLabel': '"Link" is English too',
   'tokenHint': 'only an ellipsis and the token hint',
   'tokenName': '"Name" is English too',

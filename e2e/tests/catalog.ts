@@ -58,14 +58,14 @@ export type Section = { store: string; headings: string[]; items: string[] };
 
 /**
  * The list as a screen reader reads it: each store section (and 'Ohne Laden') in order, with its
- * category headings and rows. Rows are named by item, quantity, then Marke · Eigenschaften. On wide
- * screens the columns are read one after the other.
+ * category headings and rows (checkboxes since job 57). Rows are named by item, quantity, then
+ * Marke · Eigenschaften. On wide screens the columns are read one after the other.
  */
 export async function outline(page: Page): Promise<Section[]> {
   const sections: Section[] = [];
   let current: Section | undefined;
   for (const line of (await page.locator('body').ariaSnapshot()).split('\n')) {
-    const match = /- (button|heading) "(.*)"/.exec(line);
+    const match = /- (button|checkbox|heading) "(.*)"/.exec(line);
     if (!match) continue;
     const [, role, name] = match;
     const store = /^(.+), \d+ Artikel$/.exec(name);

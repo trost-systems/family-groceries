@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/brand_block.dart';
+import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -28,7 +30,7 @@ class const WelcomeScreen({super.key}) extends StatelessWidget {
         ),
       ],
       children: [
-        Icon(Icons.home_outlined, size: 48, color: theme.colorScheme.primary),
+        const BrandBlock(),
         const SizedBox(height: 16),
         Text(l10n.onboardingBody, textAlign: TextAlign.center),
         const SizedBox(height: 24),
@@ -72,7 +74,7 @@ String _keepNext(BuildContext context, String path) => switch (GoRouterState.of(
   null => path,
 };
 
-/// One of Step 1's two ways, as a card-sized button.
+/// One of Step 1's two ways, as a sticker-sized button.
 class const _Choice({
   required final IconData icon,
   required final String label,
@@ -81,16 +83,17 @@ class const _Choice({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Card.outlined(
-    margin: EdgeInsets.zero,
-    clipBehavior: Clip.antiAlias,
-    child: ListTile(
-      minTileHeight: 72,
-      leading: Icon(icon),
-      title: Text(label),
-      subtitle: Text(hint),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
+  Widget build(BuildContext context) => HlSticker(
+    child: Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        minTileHeight: 72,
+        leading: Icon(icon),
+        title: Text(label),
+        subtitle: Text(hint),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
     ),
   );
 }

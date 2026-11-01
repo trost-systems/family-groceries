@@ -58,6 +58,7 @@ flutter:
   generate: true
   assets:
     - assets/
+    - assets/brand/
     - assets/fonts/OFL-BricolageGrotesque.txt
     - assets/fonts/OFL-Inter.txt
   # Design job 52: bundled, never downloaded at runtime (OFL texts next to

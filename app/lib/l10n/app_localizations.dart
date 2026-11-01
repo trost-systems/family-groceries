@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'{name} steht wieder auf der Liste'**
   String itemReadded(String name);
 
+  /// No description provided for @itemTicked.
+  ///
+  /// In de, this message translates to:
+  /// **'{name} abgehakt'**
+  String itemTicked(String name);
+
   /// No description provided for @alreadyOnList.
   ///
   /// In de, this message translates to:
@@ -560,6 +566,12 @@ abstract class AppLocalizations {
   /// **'Haushalt beitreten'**
   String get joinHousehold;
 
+  /// Title of the join screen when already in a household; shorter than the More row, which fits 360 px
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt beitreten'**
+  String get joinTitle;
+
   /// No description provided for @invalidInvite.
   ///
   /// In de, this message translates to:
@@ -667,6 +679,18 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Diese Anfrage ist ungültig oder abgelaufen. Starte die Verbindung in deiner App neu.'**
   String get consentInvalid;
+
+  /// Title of the MCP consent page when the authorization is unknown or expired
+  ///
+  /// In de, this message translates to:
+  /// **'Verbindung abgelaufen'**
+  String get consentErrorTitle;
+
+  /// Button on the failed MCP consent page
+  ///
+  /// In de, this message translates to:
+  /// **'Zurück zur Liste'**
+  String get consentBackToList;
 
   /// No description provided for @accessTitle.
   ///
@@ -1394,25 +1418,25 @@ abstract class AppLocalizations {
   /// **'Darstellung und Sprache'**
   String get settingsRowHint;
 
-  /// Settings: section with the light/dark switch
+  /// Settings: section with the theme segments (system, light, dark); also names the group
   ///
   /// In de, this message translates to:
   /// **'Darstellung'**
   String get appearance;
 
-  /// Theme option: follow the device's light or dark setting
+  /// Settings: theme segment, the app follows the device's light or dark setting
   ///
   /// In de, this message translates to:
-  /// **'Wie Gerät'**
+  /// **'System'**
   String get themeSystem;
 
-  /// Theme option: always light
+  /// Settings: theme segment, always light
   ///
   /// In de, this message translates to:
   /// **'Hell'**
   String get themeLight;
 
-  /// Theme option: always dark
+  /// Settings: theme segment, always dark
   ///
   /// In de, this message translates to:
   /// **'Dunkel'**

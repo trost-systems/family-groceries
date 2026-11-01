@@ -6,6 +6,7 @@ import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
+import 'package:family_groceries/purchases/premium_features_card.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -98,11 +99,13 @@ class const _PremiumView() extends StatelessWidget {
           children: [
             // Each block is its own semantics node: one line for a screen
             // reader (and the web's DOM) instead of the page run together.
-            Semantics(
-              container: true,
-              child: ListTile(
-                leading: const Icon(Icons.favorite_outline),
-                title: Text(l10n.premiumBody),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: PremiumFeaturesCard(
+                title: l10n.premiumTitle,
+                titleStyle: theme.textTheme.titleLarge,
+                body: l10n.premiumBody,
+                later: false,
               ),
             ),
             if (premium case ActivePremium(

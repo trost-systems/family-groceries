@@ -76,7 +76,13 @@ void main() {
       'nothing (H-67)', (tester) async {
     final more = await openLifetime(tester);
     expect(key('lifetime-screen'), findsOneWidget);
-    expect(find.text('Hummlist Premium'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: key('lifetime-screen'),
+        matching: find.text('Hummlist Premium'),
+      ),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('Siri, Alexa und KI-Assistenten (MCP)'),
       findsOneWidget,
@@ -483,7 +489,13 @@ void main() {
   testWidgets('English', (tester) async {
     final store = FakePurchaseRepository()..hold = true;
     await openLifetime(tester, language: AppLanguage.en, store: store);
-    expect(find.text('Hummlist Premium'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: key('lifetime-screen'),
+        matching: find.text('Hummlist Premium'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Subscribe yearly'), findsOneWidget);
     expect(find.text('Buy Lifetime'), findsOneWidget);
     expect(find.text('Restore purchase'), findsOneWidget);

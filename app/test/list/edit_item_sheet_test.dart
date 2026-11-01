@@ -229,16 +229,33 @@ void main() {
     expect(key('edit-quantity-plus'), findsOneWidget);
     expect(
       tester
-          .widget<IconButton>(
+          .widget<ButtonStyleButton>(
             find.descendant(
               of: key('edit-quantity-minus'),
-              matching: find.byType(IconButton),
+              matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
             ),
           )
-          .onPressed,
-      isNull,
+          .enabled,
+      isFalse,
       reason: 'below 1',
     );
+  });
+
+  testWidgets('the steppers are buttons named for what they do', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await open(tester, milk);
+    for (final name in ['Eins mehr', 'Eins weniger']) {
+      expect(
+        find.semantics.byPredicate(
+          (node) => node.label == name && node.flagsCollection.isButton,
+        ),
+        findsOne,
+        reason: name,
+      );
+    }
+    handle.dispose();
   });
 
   testWidgets('the sheet is as tall as its content', (tester) async {

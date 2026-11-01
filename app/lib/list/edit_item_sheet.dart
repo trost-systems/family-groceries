@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/entry.dart';
@@ -15,9 +16,6 @@ final class const EditSaved(final ItemChanges changes) extends EditResult;
 
 final class const EditDeleted() extends EditResult;
 
-/// Material's emphasized decelerate, the prototype's sheet curve.
-const _sheetCurve = Cubic(0.05, 0.7, 0.1, 1);
-
 /// Null when the user cancels, dismisses, or saves without a change.
 Future<EditResult?> showEditItemSheet(
   BuildContext context, {
@@ -32,10 +30,10 @@ Future<EditResult?> showEditItemSheet(
   sheetAnimationStyle: MediaQuery.disableAnimationsOf(context)
       ? AnimationStyle.noAnimation
       : const AnimationStyle(
-          curve: _sheetCurve,
-          reverseCurve: _sheetCurve,
-          duration: Duration(milliseconds: 280),
-          reverseDuration: Duration(milliseconds: 200),
+          curve: HlEasing.standard,
+          reverseCurve: HlEasing.exit,
+          duration: HlDuration.medium,
+          reverseDuration: HlDuration.short,
         ),
   builder: (_) => _EditItemSheet(item: item, catalog: catalog),
 );
@@ -130,7 +128,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: scheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(HlRadius.full),
                     ),
                   ),
                 ),
@@ -360,17 +358,14 @@ class const _Field({
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: color, width: width),
-    );
     return MergeSemantics(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 4,
         children: [
           Padding(
-            padding: const EdgeInsetsDirectional.only(start: 4),
+            // Over the field's text, not its tip.
+            padding: const EdgeInsetsDirectional.only(start: hexFieldInset),
             child: Text(
               label,
               maxLines: 1,
@@ -400,12 +395,14 @@ class const _Field({
               hintStyle: TextStyle(
                 color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
               ),
-              filled: true,
-              fillColor: scheme.surfaceContainerLowest,
-              constraints: const BoxConstraints.tightFor(height: 48),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              enabledBorder: border(scheme.outline, 1),
-              focusedBorder: border(scheme.primary, 2),
+              constraints: const BoxConstraints.tightFor(height: HlSize.target),
+              // Centred text in a narrow field clears the tips with less.
+              contentPadding: centered
+                  ? const EdgeInsets.symmetric(
+                      horizontal: HlSpace.s3,
+                      vertical: HlSpace.s2,
+                    )
+                  : null,
             ),
             onSubmitted: (_) => onSubmitted(),
           ),
@@ -421,26 +418,23 @@ class const _Stepper({
   required final VoidCallback? onPressed,
   super.key,
 }) extends StatelessWidget {
+  /// The theme's outlined button: a raised hex with the contour on its
+  /// edge, sinking when pressed.
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return IconButton(
-      tooltip: tooltip,
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    // The icon names the button; the tooltip only shows it.
+    excludeFromSemantics: true,
+    child: OutlinedButton(
       onPressed: onPressed,
-      style: IconButton.styleFrom(
+      style: OutlinedButton.styleFrom(
         visualDensity: VisualDensity.standard,
-        fixedSize: const Size(44, 48),
-        minimumSize: const Size(44, 48),
+        fixedSize: const Size(56, HlSize.target),
+        minimumSize: const Size(56, HlSize.target),
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        backgroundColor: scheme.surfaceContainerHigh,
-        disabledBackgroundColor: scheme.surfaceContainerHigh.withValues(
-          alpha: 0.38,
-        ),
-        foregroundColor: scheme.onSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      icon: Icon(icon, size: 22),
-    );
-  }
+      child: Icon(icon, size: 22, semanticLabel: tooltip),
+    ),
+  );
 }

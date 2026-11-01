@@ -388,6 +388,33 @@ void main() {
     expect([for (final i in bought) i.id], ['new', 'old']);
   });
 
+  test('recently used shows a thing once, its newest purchase, and not '
+      'while it is on the list again', () {
+    Item named(
+      String id,
+      String name, {
+      required int at,
+      ItemStatus status = ItemStatus.bought,
+      String? canonical,
+    }) => Item(
+      id: id,
+      name: name,
+      status: status,
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026).add(Duration(minutes: at)),
+      canonicalKey: canonical,
+    );
+    final used = recentlyUsed([
+      named('b1', 'Bananen', at: 1),
+      named('b2', 'Bananen', at: 3),
+      named('k1', 'Karotten', at: 2, canonical: 'mohr'),
+      named('m1', 'Möhren', at: 4, canonical: 'mohr'),
+      named('e1', 'Eier', at: 5),
+      named('e2', 'Eier', at: 6, status: ItemStatus.active),
+    ]);
+    expect([for (final i in used) i.id], ['m1', 'b2']);
+  });
+
   test('a member is found by id', () {
     const catalog = Catalog(
       members: [Member(id: 'l', displayName: 'Lea')],

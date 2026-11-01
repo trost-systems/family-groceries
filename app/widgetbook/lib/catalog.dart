@@ -7,7 +7,12 @@ import 'package:flutter/material.dart' hide ThemeMode;
 import 'package:hummlist_widgetbook/src/addons.dart';
 import 'package:hummlist_widgetbook/src/app_widgets.dart';
 import 'package:hummlist_widgetbook/src/controls.dart';
+import 'package:hummlist_widgetbook/src/fields.dart';
+import 'package:hummlist_widgetbook/src/hex_controls.dart';
+import 'package:hummlist_widgetbook/src/hex_segmented_stories.dart';
+import 'package:hummlist_widgetbook/src/hex_shapes.dart';
 import 'package:hummlist_widgetbook/src/home.dart';
+import 'package:hummlist_widgetbook/src/stickers.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 import 'package:hummlist_widgetbook/src/surfaces.dart';
 import 'package:hummlist_widgetbook/src/tokens.dart';
@@ -22,6 +27,11 @@ final components = [
   for (final control in selection)
     component('Material/Auswahl', control.name, controlStories(control)),
   ...surfaceComponents,
+  ...hexControlComponents,
+  ...hexSegmentedComponents,
+  ...stickerComponents,
+  ...hexShapeComponents,
+  ...fieldComponents,
   ...appComponents,
   ...tokenComponents,
 ];

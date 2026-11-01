@@ -19,7 +19,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Start every recipe from the baseline unless its preconditions say otherwise. `fg up --fresh` restores the baseline: database reset and both users reseeded. Then `fg login` each client again.
 - Prefer ValueKeys (`--key`), then field labels (`--label`), tooltips (`--tooltip`), exact text (`--text`), and coordinates last.
-- A list row is one button: `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, and `fg drag` moves it. The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
+- A list row is one tap target (a checkbox to screen readers, job 57): `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, and `fg drag` moves it. The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
 - Seeded scenario runs share the stack with the baseline household. Read with `--as peter` (or `--as <run>:<handle>`) so a query sees one household, and filter `--write` preconditions by household.
 - Wait for state with `fg wait`. Never use sleep.
 - `fg type --key add-item-field --input <item> --submit` adds through the add sheet, which stays open after the add: wait for its note (`fg wait --contains "Hinzugefügt: <item>"`), then `fg press escape` before you check or touch the list. While the sheet is open, `fg find` and `fg wait` don't see the list's rows, and the tabs don't take taps.

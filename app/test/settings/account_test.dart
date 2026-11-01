@@ -317,7 +317,12 @@ void main() {
   testWidgets('the welcome screen offers deletion too', (tester) async {
     account.fateResult = const FateNone();
     await pump(tester, const WelcomeScreen());
-    // Below Step 1's two choices, past the bottom of the test window.
+    // Below the brand and Step 1's two choices, past the bottom of the test
+    // window and the list's build-ahead.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('account-delete')),
+      200,
+    );
     await tapKey(tester, 'account-delete');
     expect(
       find.text('Du bist in keinem Haushalt, geteilte Daten gibt es nicht.'),
@@ -385,7 +390,7 @@ void main() {
       expect(find.text('peter@fg.test'), findsOneWidget);
       expect(find.byKey(const ValueKey('account-export')), findsOneWidget);
       expect(find.byKey(const ValueKey('account-delete')), findsOneWidget);
-      expect(find.text('MCP-Server'), findsNothing);
+      expect(find.text('MCP-SERVER'), findsNothing);
       expect(find.text('Zugriffstoken'), findsNothing);
     });
 

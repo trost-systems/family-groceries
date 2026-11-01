@@ -1,7 +1,6 @@
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/theme.dart';
-import 'package:family_groceries/list/model.dart';
-import 'package:family_groceries/list/store_badge.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,6 +43,25 @@ void main() {
       await cache.saveTheme('sepia');
       expect(themeModeOf(await cache.theme()), ThemeMode.system);
     });
+
+    // Job 57: the theme is one segmented control (System, Hell, Dunkel)
+    // over the same key and values; what was stored reads 1:1.
+    for (final (stored, selected) in const [
+      (null, ThemeMode.system),
+      ('light', ThemeMode.light),
+      ('dark', ThemeMode.dark),
+    ]) {
+      test('a stored $stored selects ${selected.name} and is written back '
+          'unchanged', () async {
+        await cache.saveTheme(stored);
+        final mode = themeModeOf(await cache.theme());
+        expect(mode, selected);
+        final cubit = ThemeCubit(cache, mode)..pick(mode);
+        addTearDown(cubit.close);
+        await pumpEventQueue();
+        expect(await cache.theme(), stored, reason: 'written back unchanged');
+      });
+    }
 
     test('a sign-out keeps the pick: it belongs to the device', () async {
       await cache.saveTheme('dark');
@@ -125,36 +143,12 @@ void main() {
       });
 
       // The store divider's rule is the store's only line between sections.
-      final stores = [
-        for (final key in ['dm', 'edeka', 'lidl', 'rewe', 'aldi'])
-          Store(id: key, name: key, sortOrder: 0, seedKey: key),
-        // Own stores, one per palette colour (picked by the name's sum).
-        for (final name in ['A', 'B', 'C', 'D', 'E', 'F'])
-          Store(id: name, name: name, sortOrder: 0),
-      ];
-      for (final store in stores) {
-        test('store rule: ${store.name} on surface ≥ 3', () {
-          expect(
-            contrastRatio(storeTint(store, scheme.surface), scheme.surface),
-            greaterThanOrEqualTo(3),
-          );
-        });
-      }
+      test('store rule (brand) on surface ≥ 3', () {
+        expect(
+          contrastRatio(HummlistColors.of(brightness).brand, scheme.surface),
+          greaterThanOrEqualTo(3),
+        );
+      });
     });
   }
-
-  test('a tint that already reads keeps its brand colour', () {
-    const lidl = Store(id: 'lidl', name: 'Lidl', sortOrder: 0, seedKey: 'lidl');
-    const dm = Store(id: 'dm', name: 'dm', sortOrder: 0, seedKey: 'dm');
-    final light = appTheme(Brightness.light).colorScheme.surface;
-    expect(storeTint(lidl, light), const Color(0xFF0050AA));
-    expect(storeTint(dm, light), const Color(0xFFD6001C), reason: 'its red');
-  });
-
-  test('on dark, Aldi navy is lightened but stays blue', () {
-    const aldi = Store(id: 'aldi', name: 'Aldi', sortOrder: 0, seedKey: 'aldi');
-    final tint = storeTint(aldi, appTheme(Brightness.dark).colorScheme.surface);
-    expect(tint, isNot(const Color(0xFF00005F)));
-    expect(tint.b, greaterThan(tint.r), reason: 'still a blue');
-  });
 }

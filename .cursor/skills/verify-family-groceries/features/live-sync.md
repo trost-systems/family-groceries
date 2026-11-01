@@ -12,7 +12,7 @@ Two members of one household see each other's changes without reloading. An item
 - `sync-reconnect` catches up after the connection comes back: changes made while offline go out, changes made by others come in.
 - `sync-after-sleep`: a phone that sleeps through a dropped connection and a partner's add catches up on waking (the item shows, the channel is live again, adds go both ways). e2e: live-sync.spec "a phone that sleeps through a dropped connection ...", which freezes the page with CDP `Page.setWebLifecycleState` and closes its Realtime socket meanwhile.
 - `sync-expired-token`: a write the server refuses with a JWT error (`PGRST3xx`, the token lapsed in flight) is retried with a fresh token, not dropped as "Änderung abgelehnt". Covered by the e2e test "a write the server answers with an expired token is retried, not dropped" (`e2e/tests/offline-start.spec.ts`), which fakes the 401 with `page.route`.
-- `sync-new` tints partner items added after this device last looked (row name ends in "Neu"), with the subtitle "N neu von <name>" ("N neu" for several partners). An item clears after 3 s more than half on screen while the app shows, or at once when it is ticked, and stays cleared after a relaunch. On a first start nothing old is new. The subtitle has the key `new-items-subtitle`.
+- `sync-new` tints partner items added after this device last looked honey-soft (yellow is new, mint is done, job 57) (row name ends in "Neu"), with the subtitle "N neu von <name>" ("N neu" for several partners). An item clears after 3 s more than half on screen while the app shows, or at once when it is ticked, and stays cleared after a relaunch. On a first start nothing old is new. The subtitle has the key `new-items-subtitle`.
 
 ## How to get to it (user POV)
 

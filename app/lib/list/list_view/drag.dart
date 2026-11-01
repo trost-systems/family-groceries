@@ -30,12 +30,17 @@ class const Hover(final String target, [final Edge? edge]) {
   int get hashCode => Object.hash(target, edge);
 }
 
-/// The drag in progress, shared by every row and divider of one list.
-/// [active] changes the layout (dragging a store folds every store); [hover]
-/// only paints a line or a tint.
+/// The drag in progress and the rows on their way out, shared by every row
+/// and divider of one list. [active] changes the layout (dragging a store
+/// folds every store); [hover] only paints a line or a tint.
 class DragSession() {
   final active = ValueNotifier<Dragged?>(null);
   final hover = ValueNotifier<Hover?>(null);
+
+  /// Ids of ticked items whose rows are closing: a divider whose rows all
+  /// close closes with them.
+  final leaving = ValueNotifier<Set<String>>(const {});
+  var _disposed = false;
 
   /// Whether the lifted thing went past the slop: a hold that stays put is
   /// a long press, not a drag.
@@ -49,10 +54,22 @@ class DragSession() {
     moved.value = false;
   }
 
+  void leave(String id) => leaving.value = {...leaving.value, id};
+
+  /// Drops [id] from [leaving] once its row is gone; a list torn down with
+  /// it has nothing left to tell.
+  void left(String id) {
+    if (!_disposed && leaving.value.contains(id)) {
+      leaving.value = {...leaving.value}..remove(id);
+    }
+  }
+
   void dispose() {
+    _disposed = true;
     active.dispose();
     hover.dispose();
     moved.dispose();
+    leaving.dispose();
   }
 }
 

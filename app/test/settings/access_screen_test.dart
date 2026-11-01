@@ -83,7 +83,7 @@ void main() {
 
   testWidgets('shows the MCP endpoint and empty sections', (tester) async {
     await pumpAccess(tester);
-    expect(find.text('MCP-Server'), findsOneWidget);
+    expect(find.text('MCP-SERVER'), findsOneWidget);
     // Tests build for the production project, whose MCP URL is the proxy.
     expect(find.text('https://mcp.hummlist.com'), findsOneWidget);
     expect(find.text('Kein aktiver Token.'), findsOneWidget);

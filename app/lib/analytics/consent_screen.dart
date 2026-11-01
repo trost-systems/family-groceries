@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +43,7 @@ class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
             shrinkWrap: true,
             children: [
               Icon(
-                Icons.insights_outlined,
+                Icons.query_stats_outlined,
                 size: 48,
                 color: theme.colorScheme.primary,
               ),
@@ -82,28 +83,40 @@ class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.tonal(
-                      key: const ValueKey('analytics-consent-decline'),
-                      onPressed: () => unawaited(
-                        context.read<Analytics>().decide(granted: false),
-                      ),
-                      child: Text(l10n.analyticsDecline),
+              Builder(
+                builder: (context) {
+                  final decline = FilledButton.tonal(
+                    key: const ValueKey('analytics-consent-decline'),
+                    onPressed: () => unawaited(
+                      context.read<Analytics>().decide(granted: false),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.tonal(
-                      key: const ValueKey('analytics-consent-accept'),
-                      onPressed: () => unawaited(
-                        context.read<Analytics>().decide(granted: true),
-                      ),
-                      child: Text(l10n.analyticsAccept),
+                    child: Text(l10n.analyticsDecline),
+                  );
+                  final accept = FilledButton.tonal(
+                    key: const ValueKey('analytics-consent-accept'),
+                    onPressed: () => unawaited(
+                      context.read<Analytics>().decide(granted: true),
                     ),
-                  ),
-                ],
+                    child: Text(l10n.analyticsAccept),
+                  );
+                  if (MediaQuery.sizeOf(context).width < 400) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        decline,
+                        const SizedBox(height: HlSpace.s3),
+                        accept,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: decline),
+                      const SizedBox(width: HlSpace.s3),
+                      Expanded(child: accept),
+                    ],
+                  );
+                },
               ),
             ],
           ),

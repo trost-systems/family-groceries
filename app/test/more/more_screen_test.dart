@@ -72,7 +72,7 @@ void main() {
       await tester.scrollUntilVisible(key(row), 200);
       expect(key(row), findsOneWidget, reason: row);
     }
-    expect(find.text('MCP-Server'), findsNothing, reason: 'no second pane');
+    expect(find.text('MCP-SERVER'), findsNothing, reason: 'no second pane');
     await tester.scrollUntilVisible(key('more-version'), 200);
     await tester.pumpAndSettle();
     expect(find.text('Version 1.2.3 (45)'), findsOneWidget);
@@ -112,8 +112,8 @@ void main() {
     await tapKey(tester, 'more-access');
     expect(path(more), '/more/access');
     expect(find.text('Zugänge'), findsOneWidget, reason: 'the page title');
-    expect(find.text('MCP-Server'), findsOneWidget);
-    expect(find.text('Verbundene Apps'), findsOneWidget);
+    expect(find.text('MCP-SERVER'), findsOneWidget);
+    expect(find.text('VERBUNDENE APPS'), findsOneWidget);
     expect(key('account-delete'), findsNothing, reason: 'Konto is apart');
     expect(key('account-export'), findsNothing);
     await tester.tap(find.byType(BackButton));
@@ -131,7 +131,7 @@ void main() {
     expect(find.text('peter@fg.test'), findsOneWidget);
     expect(onScreen(tester, 'account-export'), isTrue);
     expect(onScreen(tester, 'account-delete'), isTrue);
-    expect(find.text('MCP-Server'), findsNothing, reason: 'Zugänge is apart');
+    expect(find.text('MCP-SERVER'), findsNothing, reason: 'Zugänge is apart');
     expect(find.text('Token 0'), findsNothing);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
@@ -250,10 +250,10 @@ void main() {
     testWidgets('More shows the list beside the access page', (tester) async {
       await pumpMore(tester, size: const Size(1024, 768));
       expect(key('more-screen'), findsOneWidget);
-      expect(find.text('MCP-Server'), findsOneWidget);
+      expect(find.text('MCP-SERVER'), findsOneWidget);
       expect(find.text('Zugänge'), findsWidgets);
       final list = tester.getRect(key('more-screen'));
-      final page = tester.getRect(find.text('MCP-Server'));
+      final page = tester.getRect(find.text('MCP-SERVER'));
       expect(page.left, greaterThan(list.right), reason: 'two panes');
       expect(
         selected(tester, 'more-access'),
@@ -281,7 +281,7 @@ void main() {
       expect(path(more), '/more/account');
       expect(key('more-screen'), findsOneWidget, reason: 'the list stays');
       expect(onScreen(tester, 'account-delete'), isTrue);
-      expect(find.text('MCP-Server'), findsNothing);
+      expect(find.text('MCP-SERVER'), findsNothing);
       expect(find.byType(BackButton), findsNothing, reason: 'nothing to pop');
       await reveal('menu-account');
       expect(selected(tester, 'menu-account'), isTrue);
@@ -290,7 +290,7 @@ void main() {
       await reveal('more-access');
       await tapKey(tester, 'more-access');
       expect(path(more), '/more/access');
-      expect(find.text('MCP-Server'), findsOneWidget);
+      expect(find.text('MCP-SERVER'), findsOneWidget);
       expect(key('account-delete'), findsNothing);
       expect(selected(tester, 'more-access'), isTrue);
     });
