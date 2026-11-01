@@ -62,6 +62,18 @@ reported to error tracking). Quantities are said in words: "2 l" is "2 Liter", "
 
 `SessionEndedRequest`, `System.ExceptionEncountered` and skill events get an empty answer.
 
+**Integration lock (job 50, off).** With the server switch `integration_lock` on, a linked
+household without Hummlist Premium (`requirePremium`, `_shared/premium.ts`) hears instead of an
+add "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe
+nichts hinzugefügt." and, for `ReadListIntent` and LaunchRequest, its first two sentences, each
+with a Simple card and the session ended (placeholder copy, `speech.ts` `premium`/`premiumAdd`).
+Nothing is added, read or counted against the rate limit. The check runs after verification and
+after the link is resolved, so an unverified or unlinked request never gets it. Help, Stop,
+Cancel, Fallback, account linking and the skill events never ask; the link, its session and
+`alexa_links` stay as they are through a lock or a lapse, and buying Premium opens the skill at
+once without relinking. A failing check answers like a database error. docs/PURCHASES.md,
+"Integration lock".
+
 ## Account linking
 
 Alexa links accounts with the OAuth 2.0 authorization code grant. **Supabase Auth's OAuth 2.1

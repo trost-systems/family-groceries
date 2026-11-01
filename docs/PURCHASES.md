@@ -3,8 +3,9 @@
 Hummlist sells **Hummlist Premium** for the whole household, in two ways (Peter, Spec #4,
 2026-10-31): **yearly**, an auto-renewing subscription `com.hummlist.app.yearly` (EUR 9.99 a
 year in Germany), and **Lifetime**, a one-time purchase `com.hummlist.app.lifetime` (EUR 29.99).
-Both grant one entitlement, `premium`, which will unlock the integrations (Siri, Alexa, MCP/AI
-assistants; job 50 gates them). Nothing in the app is gated by it yet, and nothing is sold: the
+Both grant one entitlement, `premium`, which unlocks the integrations (Siri, Alexa, MCP/AI
+assistants) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
+gated by it yet, and nothing is sold: the
 purchase screen is behind the build define `REVENUECAT_PURCHASES` and the server switch
 `premium_offer`, both off, until Peter turns them on. Built in job 25 (sandbox, our own store
 verification), rebuilt in job 43 on RevenueCat, changed in job 47 for Legal Review K.11 (the SDK
@@ -432,6 +433,61 @@ premium:
 5. **RevenueCat's restore behavior is project-wide.** "Keep with original App User ID" would pin a
    subscription bought with the same Apple ID to the first household as well. Revisit when D is
    built (e.g. a separate RevenueCat project or entitlement).
+
+## Integration lock
+
+Job 50 (Spec #4; DECISIONS "Job 50"). Siri, Alexa and MCP / AI assistants are part of Hummlist
+Premium; the list, sync, categories, the app and the web app stay free. Two switches, both off
+until Peter says go:
+
+- **Server:** `app_switches.integration_lock` (seeded off). Off, every integration works as it did
+  before job 50, for every household. On, the voice function (Shortcut and native Siri), the
+  alexa function (add, read, launch) and the mcp function (tool calls) refuse a household without
+  premium, as `public.integration_gate(household, integration)` decides with job 49's
+  `household_has_premium` (yearly not ended, Lifetime or a tester grant; read at request time).
+- **App:** the build define `INTEGRATION_LOCK` (off). On, the integration settings (More ›
+  Zugänge) show a household without premium, while the server switch is on, what Hummlist
+  Premium includes, its connections as paused, and a button to the Premium page where this build
+  sells (else "Bald verfügbar", on the web job 49's "buy it in the app" note). On in e2e
+  (`app/config/e2e.json`).
+
+What a locked household gets: Siri says "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es
+in der App freischalten. Ich habe nichts hinzugefügt." (HTTP 200, `premium_required`); Alexa the
+same sentence (adds) or its first two sentences (reading, launch), with a card; an MCP tool call a
+tool result with `isError: true` and HTTP 200 (German, or English for a client that prefers it).
+Nothing is added, queued or kept. OAuth discovery, initialize and tools/list, Alexa's help, stop,
+linking and skill events stay free. All copy is a placeholder until Hummlist Launch.
+
+What it never does: delete, revoke or disconnect anything. A lapsed yearly plan (or a refund)
+locks again at read time; tokens, the Siri credential, the Alexa link, OAuth connections and the
+list stay, and buying or renewing opens everything at once, for every member, with no relinking.
+Connecting while locked is allowed. A failing check answers with the endpoint's normal "try again"
+error, never with the premium answer and never by adding.
+
+`integration_blocked` (`integration`: `siri`, `alexa`, `mcp`) goes to PostHog at most once an hour
+per household and integration (`integration_blocks`), only with the caller's analytics yes;
+`paywall_viewed` (`entry_point`: `more`, `integrations`) when the Premium page offers a plan with
+its price (docs/ANALYTICS.md).
+
+**Go-live order** (Peter's go; NEEDS_LEAD "Job 50" has the commands):
+
+1. Job 49's premium is live: products in the stores and RevenueCat, the webhook secrets set,
+   `premium_offer` on and `REVENUECAT_PURCHASES` in the store builds (otherwise a locked household
+   cannot unlock and sees "Bald verfügbar").
+2. Tester grants for the beta households Peter wants to keep (`scripts/iap/testers.ts`); check the
+   cut-over with `scripts/iap/integration-cutover.sql` (read-only).
+3. Legal Review has added `integration_blocked` and `paywall_viewed` to privacy section 9 and the
+   texts that call the integrations free are updated (NEEDS_LEAD "Job 50").
+4. The server switch on: `update public.app_switches set enabled = true, changed_at = now() where
+   key = 'integration_lock';` (service role, SQL editor). From now on locked households are refused.
+5. The app define on in the next store builds (`--dart-define=INTEGRATION_LOCK=true`), with the
+   changelog hold `integration-lock` released in `releases/flags.json`.
+
+Rolling back: the server switch off opens every integration at once and hides the app's card in
+every build (the app reads the switch). Testing locally: `update public.app_switches set enabled =
+true where key = 'integration_lock'` on the local stack, a household with or without a fake
+purchase (`e2e/tests/iap.ts`), then the Shortcut, Alexa or MCP; `e2e/tests/integration-lock.spec.ts`
+does all of it.
 
 ## Configuration
 

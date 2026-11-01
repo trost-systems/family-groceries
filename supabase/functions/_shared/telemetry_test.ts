@@ -310,3 +310,20 @@ Deno.test('siri_add and siri_read (job 51): result, reason, language, source and
   assertEquals(batch.map((e) => e.event), ['siri_add', 'siri_add', 'siri_read']);
   assertEquals((batch[0].properties as Record<string, unknown>).household_id, household);
 });
+
+Deno.test('integration_blocked (job 50): the integration only, never what was said', async () => {
+  const { sent, fetchImpl } = recorder();
+  const t = telemetryFor('mcp', env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }), fetchImpl);
+  const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
+  const subject = { installId: INSTALL, householdId: household };
+  for (const integration of ['siri', 'alexa', 'mcp']) {
+    assert(t.event('integration_blocked', subject, { integration }));
+  }
+  assertFalse(t.event('integration_blocked', subject, { integration: 'google' }));
+  assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', text: 'Milch' }));
+  assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', tool: 'add_items' }));
+  await t.flush();
+  const batch = sent[0].body.batch as { properties: Record<string, unknown> }[];
+  assertEquals(batch.map((e) => e.properties.integration), ['siri', 'alexa', 'mcp']);
+  assertEquals(batch[0].properties.household_id, household);
+});

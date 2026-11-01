@@ -1468,4 +1468,34 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get premiumContinueAnyway => 'Trotzdem fortfahren';
+
+  @override
+  String get integrationPremiumTitle => 'Teil von Hummlist Premium';
+
+  @override
+  String get integrationPremiumBody =>
+      'Siri, Alexa und KI-Assistenten gehören zu Hummlist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Hummlist Premium hat.';
+
+  @override
+  String get integrationPremiumSiri => 'Siri auf dem iPhone';
+
+  @override
+  String get integrationPremiumAlexa => 'Alexa-Skill';
+
+  @override
+  String get integrationPremiumAi =>
+      'KI-Assistenten wie ChatGPT oder Claude (MCP)';
+
+  @override
+  String get integrationPremiumLater =>
+      'Später: Google Assistant und Apple Watch';
+
+  @override
+  String get integrationPremiumBuy => 'Hummlist Premium freischalten';
+
+  @override
+  String get integrationPremiumSoon => 'Bald verfügbar.';
+
+  @override
+  String get integrationPaused => 'Pausiert: braucht Hummlist Premium';
 }

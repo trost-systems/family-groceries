@@ -108,12 +108,15 @@ trap 'rm -rf "$tmp"' EXIT
 ran=0
 if gh run download "$id" --repo "$repo" -p "e2e-results-*-attempt$attempt" -D "$tmp" >/dev/null 2>&1; then
   # One directory per artifact, named after it (gh 2.x with -p, also for a single match).
-  while IFS= read -r json; do
-    shard="${json%/playwright-results.json}"
-    shard="${shard##*/e2e-results-}"
-    echo "  shard ${shard%-attempt*}: $(scripts/e2e-summary.sh --brief "$json" | sed '2,$s/^/  /')"
-    ran=$((ran + $(jq '.stats.expected + .stats.unexpected + .stats.flaky' "$json" || echo 0)))
-  done < <(find "$tmp" -name playwright-results.json | sort)
+  # Job 50: a shard's artifact can also hold playwright-results-integration-lock.json.
+  while IFS= read -r dir; do
+    shard="${dir##*/e2e-results-}"
+    jsons=("$dir"/playwright-results*.json)
+    echo "  shard ${shard%-attempt*}: $(scripts/e2e-summary.sh --brief "${jsons[@]}" | sed '2,$s/^/  /')"
+    for json in "${jsons[@]}"; do
+      ran=$((ran + $(jq '.stats.expected + .stats.unexpected + .stats.flaky' "$json" || echo 0)))
+    done
+  done < <(find "$tmp" -name 'playwright-results*.json' -exec dirname {} \; | sort -u)
 else
   echo "  no Playwright results (the e2e jobs stopped before Playwright, or were skipped)"
 fi

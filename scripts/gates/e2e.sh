@@ -40,7 +40,23 @@ flutter build web --release --no-web-resources-cdn --wasm $(flutter_defines) --d
 log "playwright"
 cd "$REPO_ROOT/e2e"
 [[ -d node_modules ]] || npm ci
-npx playwright test "$@"
+# Job 50: integration-lock.spec.ts turns the server's integration_lock switch on, which every Siri,
+# Alexa and MCP spec relies on being off, so it runs alone after the suite: on a full run (CI's
+# first shard, or locally without a subset), or with the arguments when they name it (name it on
+# its own: in that run only it can match). Its reports get their own names.
+case " $* " in
+  *integration-lock*)
+    log "playwright: integration-lock.spec.ts alone, with the arguments"
+    FG_E2E_INTEGRATION_LOCK=1 npx playwright test "$@"
+    ;;
+  *)
+    npx playwright test "$@"
+    if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
+      log "playwright: integration-lock.spec.ts alone"
+      FG_E2E_INTEGRATION_LOCK=1 npx playwright test tests/integration-lock.spec.ts
+    fi
+    ;;
+esac
 
 # Job 18: a two-client fg sync smoke test on the web build above (one add, one tick, the artifacts
 # and the index), once per full run: on CI's first shard, or locally without a subset. It reuses

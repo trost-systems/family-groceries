@@ -901,3 +901,99 @@ RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attac
   price and restore on the sign-up screen and links to the terms and privacy policy; the "24
   hours" sentence comes from Apple's Media Services Terms. `premiumYearlyTerms` follows that;
   please confirm or replace.
+
+## Job 50: integration lock (2026-11-01)
+
+Nothing here is live: the server switch `app_switches.integration_lock` is seeded off and the app
+define `INTEGRATION_LOCK` is off, so every integration works as before for every household.
+Turning it on is Peter's go. Decisions: DECISIONS "Job 50". Behavior: docs/PURCHASES.md,
+"Integration lock". This job changed nothing in any dashboard, console or hosted database.
+
+### Go-live order and commands (each step after the one before)
+
+1. Job 49's premium is live for buyers: products and RevenueCat ready, the webhook secrets set,
+   `premium_offer` on (`update public.app_switches set enabled = true, changed_at = now() where key
+   = 'premium_offer';`) and store builds with `REVENUECAT_PURCHASES=true`. Otherwise a locked
+   household sees "Bald verfügbar" and cannot unlock.
+2. Tester grants for the households Peter wants to keep working (`scripts/iap/testers.ts`, a dry
+   run by default; `--apply` writes). Spec #4 says no grandfathering: a beta household without a
+   grant or purchase is locked.
+3. The cut-over count, read-only, in the hosted project's SQL editor (the Lead runs it; this job
+   never queried the hosted database): `scripts/iap/integration-cutover.sql`. It lists every
+   household without premium that uses an integration now (ids and counts of Shortcut tokens,
+   Siri iPhones, Alexa links, OAuth connections, last token use) and a total line (households,
+   with premium, would be locked, locked with integrations). Run on the local stack after the
+   e2e spec it printed 10 households, 4 with premium, 6 would be locked, all 6 with integrations.
+4. Legal Review's changes below are live (privacy section 9 at least).
+5. The server switch, service role: `update public.app_switches set enabled = true, changed_at =
+   now() where key = 'integration_lock';` From that moment Siri, Alexa and MCP refuse households
+   without premium. Off again: the same with `false`; everything opens at once and the app hides
+   the card in every build.
+6. The app define in the next store builds: `--dart-define=INTEGRATION_LOCK=true` (release
+   workflow defines, like `REVENUECAT_PURCHASES`), and `releases/flags.json` hold
+   `integration-lock` set to released in a PR with the changelog item.
+
+### Legal Review touchpoints (no legal text was edited)
+
+- Privacy policy section 9 lists the server events (purchases, Alexa's `item_added`) but not
+  `integration_blocked` (integration, household id, install id, under the caller's analytics yes;
+  at most once an hour per household and integration) nor `paywall_viewed` (entry point). Both
+  only happen with the switches on; the server switch waits for this.
+- Privacy section 7 ("Siri, Alexa und KI-Assistenten") describes the integrations without saying
+  they need Hummlist Premium; the support FAQ (`site/content/legal/support.md`,
+  `support-en.md`), the purchase privacy page (`datenschutz-kaeufe.md`, `privacy-purchases.md`)
+  and the store listings may call them free or not name them as premium. Check before the switch.
+- The new service-only table `integration_blocks` (household, integration, last report time) is
+  in docs/PRIVACY_DATA_MAP.md; it cascades with the household.
+
+### Hummlist Launch: placeholder copy
+
+| Where | Key | Text (DE; EN in the same file) |
+| --- | --- | --- |
+| `supabase/functions/voice/copy.ts` | `failures.premium_required` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt. |
+| `app/ios/Runner/Localizable.xcstrings` (job 51, used only when the server sends no speech) | `siri.locked` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. |
+| `supabase/functions/alexa/speech.ts` | `premiumAdd` | the voice sentence above |
+| `supabase/functions/alexa/speech.ts` | `premium` (read, launch) | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. |
+| `supabase/functions/mcp/tools.ts` | `premiumRequired.de` / `.en` | Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert. |
+| `app/l10n/app_de.arb` / `app_en.arb` | `integrationPremiumTitle`, `integrationPremiumBody`, `integrationPremiumSiri`, `integrationPremiumAlexa`, `integrationPremiumAi`, `integrationPremiumLater`, `integrationPremiumBuy`, `integrationPremiumSoon`, `integrationPaused` | the integration settings' card and the paused label (descriptions marked PLACEHOLDER) |
+
+### Alexa
+
+The skill's certification and store description: Amazon's "Policy requirements for an Alexa
+skill" (https://developer.amazon.com/en-US/docs/alexa/custom-skills/policy-requirements-for-an-alexa-skill.html,
+last updated 2024-05-01, read 2026-11-01), section 4 "Skill recommendations, compensation, and
+purchasing": In-Skill Purchasing must be used if the skill lets users buy digital products
+within the skill, and every skill that makes products available for purchase must meet Amazon's
+published requirements. The skill sells nothing; it tells a locked household to unlock in the app
+("Du kannst es in der App freischalten"). Whether that counts as pointing to a purchase outside
+Alexa is Amazon's call: ask in the certification submission, or say only that the household needs
+Hummlist Premium without naming a purchase. The "Requirements for account linking" page
+(https://developer.amazon.com/en-US/docs/alexa/account-linking/requirements-account-linking.html,
+modified 2026-09-29, read 2026-11-01) has no rule about the description. Recommended: the skill
+description says that Siri, Alexa and AI assistants need Hummlist Premium for the household,
+before the switch goes on. The certification test account needs premium (a tester grant), or the
+certifier hears only the premium answer. No Alexa console change was made.
+
+### MCP and docs for clients
+
+`docs/MCP.md` has the engineering note. Client-facing texts that will need a premium note
+(Hummlist Launch, not edited here): the site guides under `site/content/guides/` about connecting
+Claude, ChatGPT, Codex, Siri and Alexa, and the app's own help links. `mcp-proxy/vercel.json`
+needed no change.
+
+### Not gated, on purpose
+
+An OAuth access token used directly against Supabase's REST API (PostgREST) instead of the MCP
+endpoint is not gated: it is a user token under the same RLS as the app, and the app's own access
+must never be gated. No MCP client does this. Closing it would need a client-id check in every
+RLS policy (DECISIONS 50.3).
+
+### Analytics
+
+`analytics/queries/integration_blocked_weekly.sql` (households refused per Berlin week, per
+integration, and how many bought within 14 days), run against PostHog project 319492 once the
+switch is on. Job 49 had no `paywall_viewed`; this job added it (DECISIONS 50.9).
+
+### Secrets
+
+None new.

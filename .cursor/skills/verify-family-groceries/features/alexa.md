@@ -13,6 +13,7 @@ A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the
 - `alexa-revoke` cuts Alexa off at once: "Amazon Alexa trennen" under Zugänge, or the skill disabled in the Alexa app.
 - `alexa-verify` refuses unsigned, tampered, stale and foreign-skill requests with 400 before anything is read.
 
+- `alexa-locked` (job 50, off by default): with `app_switches.integration_lock` on, a linked household without Hummlist Premium hears for an add "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." and for reading or launch the first two sentences, with a card, session ended; nothing is added or read, the rate limit is untouched. Help, stop, linking and skill events stay free; the link stays and works again once the household has Premium. Drive with `scripts/alexa-say.sh` after `fg db query --write "update app_switches set enabled = true where key = 'integration_lock'"`; e2e: `e2e/tests/integration-lock.spec.ts`.
 ## How to get to it (user POV)
 
 - An Echo or the Alexa app, after the skill is enabled and linked (beta, docs/ALEXA.md): "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öffne Hummlist".

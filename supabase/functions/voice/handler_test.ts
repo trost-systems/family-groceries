@@ -22,6 +22,8 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
       req.headers.get('authorization') === 'Bearer fgp_good'
         ? Promise.resolve(caller)
         : Promise.reject(fail(401)),
+    // The lock is off (or the household has premium): everything as before job 50.
+    requirePremium: () => Promise.resolve('open'),
     addItems: (_caller, items) => {
       calls.push(items);
       return Promise.resolve(items.map((item) => ({

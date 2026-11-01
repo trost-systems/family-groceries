@@ -6,7 +6,9 @@ import {
   originValidationResponse,
 } from '@modelcontextprotocol/server';
 import { type Auth, authenticate, AuthError, discoverIssuer } from '../_shared/auth.ts';
-import { buildServer } from './tools.ts';
+import { requirePremiumWith } from '../_shared/premium.ts';
+import { telemetry } from './telemetry.ts';
+import { buildServer, langOf } from './tools.ts';
 
 const PRM_SUFFIXES = ['/.well-known/oauth-protected-resource', '/oauth-protected-resource'];
 
@@ -209,12 +211,21 @@ function supabaseAuthServerMetadata(): Promise<Record<string, unknown>> {
   return asMetadataCache;
 }
 
+const requirePremium = requirePremiumWith(telemetry);
+
 const defaultDeps: Deps = {
   endpoints: projectEndpoints,
   authServerMetadata: supabaseAuthServerMetadata,
   publicOrigin: publicOriginFromEnv,
   authenticate,
-  serve: (req, auth) => createMcpHandler(() => buildServer(auth)).fetch(req),
+  serve: (req, auth) =>
+    createMcpHandler(() =>
+      buildServer(
+        auth,
+        () => requirePremium(auth, 'mcp'),
+        langOf(req.headers.get('accept-language')),
+      )
+    ).fetch(req),
   allowedOriginHosts: () =>
     (Deno.env.get('MCP_ALLOWED_ORIGIN_HOSTS') ?? '').split(',').map((h) => h.trim()).filter(
       Boolean,

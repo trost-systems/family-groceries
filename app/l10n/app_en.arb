@@ -534,5 +534,14 @@
   "@premiumStatusEnds": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}},
   "@premiumBillingIssue": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}},
   "@premiumYearlyPrice": {"placeholders": {"price": {"type": "String"}}},
-  "@premiumLifetimePrice": {"placeholders": {"price": {"type": "String"}}}
+  "@premiumLifetimePrice": {"placeholders": {"price": {"type": "String"}}},
+  "integrationPremiumTitle": "Part of Hummlist Premium",
+  "integrationPremiumBody": "Siri, Alexa and AI assistants are part of Hummlist Premium. Your connections stay saved and work again as soon as your household has Hummlist Premium.",
+  "integrationPremiumSiri": "Siri on iPhone",
+  "integrationPremiumAlexa": "Alexa skill",
+  "integrationPremiumAi": "AI assistants like ChatGPT or Claude (MCP)",
+  "integrationPremiumLater": "Later: Google Assistant and Apple Watch",
+  "integrationPremiumBuy": "Unlock Hummlist Premium",
+  "integrationPremiumSoon": "Coming soon.",
+  "integrationPaused": "Paused: needs Hummlist Premium"
 }

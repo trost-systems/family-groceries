@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -22,7 +23,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// frame. Opening it reads the server switch and the store's prices
 /// (StoreKit or Play Billing, A2-5); only Buy and Restore start RevenueCat
 /// (Legal Review H-67).
-class const PremiumScreen({super.key}) extends StatelessWidget {
+class const PremiumScreen({
+  super.key,
+
+  /// Where it was opened from, for paywall_viewed.
+  final PaywallEntry entry = PaywallEntry.more,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider(
     create: (context) => PremiumPageCubit(
@@ -30,6 +36,8 @@ class const PremiumScreen({super.key}) extends StatelessWidget {
       context.read<StorePriceReader>(),
       context.read<Entitlements>(),
       sells: context.read<PurchaseCubit>().state.noSale == null,
+      analytics: context.read<Analytics?>(),
+      entry: entry,
     ),
     child: const _PremiumView(),
   );

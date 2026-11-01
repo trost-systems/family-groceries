@@ -2467,6 +2467,60 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Trotzdem fortfahren'**
   String get premiumContinueAnyway;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings (Zugänge), locked household: the card's title
+  ///
+  /// In de, this message translates to:
+  /// **'Teil von Hummlist Premium'**
+  String get integrationPremiumTitle;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: why the connections are paused; nothing is removed
+  ///
+  /// In de, this message translates to:
+  /// **'Siri, Alexa und KI-Assistenten gehören zu Hummlist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Hummlist Premium hat.'**
+  String get integrationPremiumBody;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
+  ///
+  /// In de, this message translates to:
+  /// **'Siri auf dem iPhone'**
+  String get integrationPremiumSiri;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
+  ///
+  /// In de, this message translates to:
+  /// **'Alexa-Skill'**
+  String get integrationPremiumAlexa;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
+  ///
+  /// In de, this message translates to:
+  /// **'KI-Assistenten wie ChatGPT oder Claude (MCP)'**
+  String get integrationPremiumAi;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: planned, not built yet
+  ///
+  /// In de, this message translates to:
+  /// **'Später: Google Assistant und Apple Watch'**
+  String get integrationPremiumLater;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: button that opens the Hummlist Premium page (only where it is sold)
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium freischalten'**
+  String get integrationPremiumBuy;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: Hummlist Premium is not sold in this build yet, no button
+  ///
+  /// In de, this message translates to:
+  /// **'Bald verfügbar.'**
+  String get integrationPremiumSoon;
+
+  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: shown on each existing connection or token, which stays as it is
+  ///
+  /// In de, this message translates to:
+  /// **'Pausiert: braucht Hummlist Premium'**
+  String get integrationPaused;
 }
 
 class _AppLocalizationsDelegate

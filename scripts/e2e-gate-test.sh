@@ -40,10 +40,14 @@ expect_calls() {
 
 expect_calls "npx playwright test tests/purchases.spec.ts --workers=1" -- tests/purchases.spec.ts --workers=1
 expect_calls "npx playwright test tests/purchases.spec.ts" tests/purchases.spec.ts
-expect_calls $'npx playwright test\nsync smoke' --
-expect_calls $'npx playwright test\nsync smoke'
-expect_calls $'npx playwright test --shard=1/2\nsync smoke' --shard=1/2
+# Job 50: integration-lock.spec.ts runs alone after the suite: on full runs and when named.
+lock="npx playwright test tests/integration-lock.spec.ts"
+expect_calls $'npx playwright test\n'"$lock"$'\nsync smoke' --
+expect_calls $'npx playwright test\n'"$lock"$'\nsync smoke'
+expect_calls $'npx playwright test --shard=1/2\n'"$lock"$'\nsync smoke' --shard=1/2
 expect_calls "npx playwright test --shard=2/2" --shard=2/2
+expect_calls "$lock" -- tests/integration-lock.spec.ts
+expect_calls "$lock -g English --workers=1" tests/integration-lock.spec.ts -g English --workers=1
 
 if [[ $failures -gt 0 ]]; then
   echo "e2e-gate-test: $failures failed" >&2

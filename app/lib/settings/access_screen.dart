@@ -1,16 +1,21 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/settings/access_cubit.dart';
 import 'package:family_groceries/settings/access_repository.dart';
+import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_phrases.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Ways in from outside the app: the MCP endpoint, Siri, personal access
@@ -37,6 +42,8 @@ class const AccessScreen({
           siri: siri,
         );
         unawaited(cubit.load());
+        // Job 50: the server's lock switches, read again on every visit.
+        unawaited(context.read<IntegrationLockCubit?>()?.refresh());
         return cubit;
       },
       child: _Access(onIphone: siri != null),
@@ -67,6 +74,8 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
         if (t.kind == AccessKind.siri) t,
     ];
     final shortcutTokens = tokens.where(_isShortcutToken).toList();
+    final access = _accessOf(context);
+    final paused = access is IntegrationsLocked;
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
@@ -75,6 +84,8 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
           key: const ValueKey('access-screen'),
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
+            if (access case IntegrationsLocked(:final offer))
+              _PremiumCard(offer: offer),
             _Header(l10n.mcpServer),
             ListTile(
               title: const SelectionArea(child: Text(Environment.mcpUrl)),
@@ -93,6 +104,7 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 label: token.id == state.siriHere
                     ? l10n.siriThisIphone
                     : l10n.siriOtherIphone,
+                paused: paused,
               ),
             _Header(l10n.accessTokens),
             ..._section(
@@ -105,7 +117,8 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 final other => other,
               },
               empty: l10n.noTokens,
-              tile: (token) => _TokenTile(token: token, label: token.name),
+              tile: (token) =>
+                  _TokenTile(token: token, label: token.name, paused: paused),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -123,11 +136,27 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
               context,
               state.apps,
               empty: l10n.noConnectedApps,
-              tile: (app) => _AppTile(app: app),
+              tile: (app) => _AppTile(app: app, paused: paused),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Job 50: whether to show the lock. Without the app-wide cubit (a
+  /// screen on its own) or with the `INTEGRATION_LOCK` define off, never.
+  static IntegrationAccess _accessOf(BuildContext context) {
+    final server = context.watch<IntegrationLockCubit?>()?.state;
+    if (server == null) {
+      return const IntegrationsOpen();
+    }
+    return integrationAccess(
+      server: server,
+      // Watched: a purchase by any member arrives over Realtime and hides
+      // the card within one sync.
+      entitlements: context.watch<Entitlements>(),
+      noSale: context.read<PurchaseCubit>().state.noSale,
     );
   }
 
@@ -326,6 +355,9 @@ class const _TokenTile({
 
   /// The token's name, or what a Siri credential is called.
   required final String label,
+
+  /// The household is locked (job 50): the token stays, unused for now.
+  final bool paused = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -335,12 +367,13 @@ class const _TokenTile({
     return ListTile(
       leading: Icon(siri ? Icons.mic_none : Icons.key),
       title: Text(label),
-      subtitle: Text(
+      subtitle: _Subtitle(
         [
           l10n.tokenHint(token.hint),
           l10n.createdOn(token.createdAt),
           if (lastUsed == null) l10n.neverUsed else l10n.lastUsedOn(lastUsed),
         ].join(' · '),
+        paused: paused,
       ),
       trailing: IconButton(
         tooltip: l10n.revokeToken(label),
@@ -366,19 +399,22 @@ class const _TokenTile({
   }
 }
 
-class const _AppTile({required final ConnectedApp app})
-    extends StatelessWidget {
+class const _AppTile({
+  required final ConnectedApp app,
+  final bool paused = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return ListTile(
       leading: const Icon(Icons.smart_toy_outlined),
       title: Text(app.name),
-      subtitle: Text(
+      subtitle: _Subtitle(
         [
           l10n.connectedOn(app.grantedAt),
           for (final scope in app.scopes) scopeLabel(l10n, scope),
         ].join(' · '),
+        paused: paused,
       ),
       trailing: IconButton(
         tooltip: l10n.disconnectApp(app.name),
@@ -400,6 +436,114 @@ class const _AppTile({required final ConnectedApp app})
     if (confirmed && context.mounted) {
       await _attempt(context, () => cubit.disconnect(app.clientId));
     }
+  }
+}
+
+/// A connection's details, below them "paused" while the household is
+/// locked (job 50).
+class const _Subtitle(final String details, {required final bool paused})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!paused) {
+      return Text(details);
+    }
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(details),
+        Text(
+          AppLocalizations.of(context).integrationPaused,
+          key: const ValueKey('access-paused'),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Job 50: Siri, Alexa and AI assistants are part of Hummlist Premium, for a
+/// household known to have none while the server enforces the lock. Nothing
+/// is removed; [offer] says how to unlock it.
+class const _PremiumCard({required final LockOffer offer})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Card(
+      key: const ValueKey('integration-premium'),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Semantics(
+              // Its own node: without it the header flag merges into the
+              // card and makes all of it one heading.
+              container: true,
+              header: true,
+              child: Text(
+                l10n.integrationPremiumTitle,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(l10n.integrationPremiumBody),
+            const SizedBox(height: 8),
+            for (final (icon, included) in [
+              (Icons.mic_none, l10n.integrationPremiumSiri),
+              (Icons.speaker_outlined, l10n.integrationPremiumAlexa),
+              (Icons.smart_toy_outlined, l10n.integrationPremiumAi),
+            ])
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 20, color: theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(included)),
+                  ],
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                l10n.integrationPremiumLater,
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 12),
+            switch (offer) {
+              LockOffer.buy => FilledButton(
+                key: const ValueKey('integration-buy'),
+                onPressed: () => context.go(
+                  Uri(
+                    path: premiumPath,
+                    queryParameters: {'from': 'integrations'},
+                  ).toString(),
+                ),
+                child: Text(l10n.integrationPremiumBuy),
+              ),
+              LockOffer.soon => Text(
+                l10n.integrationPremiumSoon,
+                key: const ValueKey('integration-soon'),
+                style: theme.textTheme.titleSmall,
+              ),
+              LockOffer.inTheApps => Text(
+                l10n.premiumWeb,
+                key: const ValueKey('integration-in-the-apps'),
+              ),
+            },
+          ],
+        ),
+      ),
+    );
   }
 }
 

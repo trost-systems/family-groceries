@@ -2,6 +2,7 @@
 import { type CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import type { Auth } from '../_shared/auth.ts';
+import type { Access } from '../_shared/premium.ts';
 import { asUser, type Tx } from '../_shared/db.ts';
 import { addItems, categories, listItems, moveItem, stores, tickItems, ToolError } from './list.ts';
 
@@ -13,9 +14,44 @@ einsortiert; gib eine Kategorie nur an, wenn der Nutzer sie ausdrücklich nennt.
 Einträge, Kategorien und Läden lassen sich per Name (ungefähr, ohne Umlaute) oder per id angeben.
 Abgehakte Einträge verschwinden aus der Liste.`;
 
-/** A tool body: runs as the caller in one transaction; ToolErrors become tool-level errors. */
-function run(auth: Auth, body: (tx: Tx) => Promise<unknown>) {
+/**
+ * Job 50: what a tool call of a household without Hummlist Premium gets while the lock is on. A
+ * tool result, not a 401/403: the client keeps its token and needs no new sign-in once the
+ * household unlocks. PLACEHOLDER copy (Spec #4); the final text comes from Hummlist Launch.
+ */
+export const premiumRequired: Record<Lang, string> = {
+  de:
+    'Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in ' +
+    'der Hummlist-App frei. Es wurde nichts gelesen oder geändert.',
+  en: 'This household needs Hummlist Premium for AI assistant access. Unlock it in the Hummlist ' +
+    'app. Nothing was read or changed.',
+};
+
+export type Lang = 'de' | 'en';
+
+/** English when the client prefers it to German (Accept-Language), else German like the tools. */
+export function langOf(acceptLanguage: string | null): Lang {
+  const ranked = (acceptLanguage ?? '').split(',').map((part, i) => {
+    const [tag, ...params] = part.trim().toLowerCase().split(';');
+    const q = Number(params.find((p) => p.trim().startsWith('q='))?.trim().slice(2) ?? 1);
+    return { lang: tag.split('-')[0], q: Number.isFinite(q) ? q : 0, i };
+  }).filter((r) => (r.lang === 'de' || r.lang === 'en') && r.q > 0)
+    .sort((a, b) => b.q - a.q || a.i - b.i);
+  return ranked[0]?.lang === 'en' ? 'en' : 'de';
+}
+
+/** Whether the caller's household may use the tools; asked once per request, on the first call. */
+export type Gate = () => Promise<Access>;
+
+/**
+ * A tool body: runs as the caller in one transaction once the household may use MCP; ToolErrors
+ * become tool-level errors. A failing check throws, like any database error.
+ */
+function run(auth: Auth, gate: Gate, lang: Lang, body: (tx: Tx) => Promise<unknown>) {
   return async (): Promise<CallToolResult> => {
+    if (await gate() === 'locked') {
+      return { isError: true, content: [{ type: 'text', text: premiumRequired[lang] }] };
+    }
     try {
       const result = await asUser(auth.userId, body);
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
@@ -34,12 +70,14 @@ const categoryName = z.string().min(1).max(60).describe(
   'Kategorie, z. B. "Obst & Gemüse" oder "Kühlregal"',
 );
 
-export function buildServer(auth: Auth): McpServer {
+export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServer {
   const server = new McpServer(
     { name: 'hummlist', title: 'Hummlist', version: '1.0.0' },
     { instructions: INSTRUCTIONS },
   );
   const h = auth.householdId;
+  let access: Promise<Access> | undefined;
+  const once: Gate = () => (access ??= gate());
 
   server.registerTool('list_items', {
     title: 'Einkaufsliste anzeigen',
@@ -49,7 +87,7 @@ export function buildServer(auth: Auth): McpServer {
       'Reihenfolge dieses Ladens. Mit "category" nur eine Kategorie.',
     inputSchema: z.object({ store: storeName.optional(), category: categoryName.optional() }),
     annotations: { readOnlyHint: true },
-  }, (args) => run(auth, (tx) => listItems(tx, h, args))());
+  }, (args) => run(auth, once, lang, (tx) => listItems(tx, h, args))());
 
   server.registerTool('add_items', {
     title: 'Einträge hinzufügen',
@@ -82,7 +120,7 @@ export function buildServer(auth: Auth): McpServer {
         ),
       })).min(1).max(50),
     }),
-  }, ({ items }) => run(auth, (tx) => addItems(tx, h, items))());
+  }, ({ items }) => run(auth, once, lang, (tx) => addItems(tx, h, items))());
 
   server.registerTool('tick_items', {
     title: 'Einträge abhaken',
@@ -92,7 +130,7 @@ export function buildServer(auth: Auth): McpServer {
       'unter "notFound" gemeldet, ein zweiter Aufruf ändert also nichts.',
     inputSchema: z.object({ items: z.array(itemRef).min(1).max(50) }),
     annotations: { destructiveHint: false, idempotentHint: true },
-  }, ({ items }) => run(auth, (tx) => tickItems(tx, h, items))());
+  }, ({ items }) => run(auth, once, lang, (tx) => tickItems(tx, h, items))());
 
   server.registerTool('move_item', {
     title: 'Eintrag verschieben',
@@ -107,19 +145,19 @@ export function buildServer(auth: Auth): McpServer {
       store: storeName.nullable().optional(),
     }),
     annotations: { idempotentHint: true },
-  }, (args) => run(auth, (tx) => moveItem(tx, h, args))());
+  }, (args) => run(auth, once, lang, (tx) => moveItem(tx, h, args))());
 
   server.registerTool('list_categories', {
     title: 'Kategorien anzeigen',
     description: 'Listet die Kategorien des Haushalts in Gang-Reihenfolge.',
     annotations: { readOnlyHint: true },
-  }, () => run(auth, (tx) => categories(tx, h))());
+  }, () => run(auth, once, lang, (tx) => categories(tx, h))());
 
   server.registerTool('list_stores', {
     title: 'Läden anzeigen',
     description: 'Listet die Läden des Haushalts.',
     annotations: { readOnlyHint: true },
-  }, () => run(auth, (tx) => stores(tx, h))());
+  }, () => run(auth, once, lang, (tx) => stores(tx, h))());
 
   return server;
 }

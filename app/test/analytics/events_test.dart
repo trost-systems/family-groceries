@@ -17,6 +17,7 @@ void main() {
       'dedupe_hint_shown',
       'dedupe_hint_merged',
       'dedupe_hint_ignored',
+      'paywall_viewed',
     });
   });
 
@@ -41,6 +42,8 @@ void main() {
     ('category_reordered', {'scope': 'default'}),
     ('category_reordered', {'scope': 'store'}),
     ('store_reordered', {}),
+    ('paywall_viewed', {'entry_point': 'more'}),
+    ('paywall_viewed', {'entry_point': 'integrations'}),
     (
       'feedback_submitted',
       {
@@ -75,6 +78,9 @@ void main() {
 
   const refused = <(String, Map<String, Object>, String)>[
     ('household_joined', {}, 'the old name'),
+    ('paywall_viewed', {'entry_point': 'list'}, 'an entry the page has not'),
+    ('paywall_viewed', {'price': '9,99 €'}, 'a price'),
+    ('integration_blocked', {}, 'server-only'),
     ('purchase_completed', {}, 'server-only'),
     ('item_added', {'source': 'Hafermilch'}, 'an item name as source'),
     ('item_added', {'name': 'Hafermilch'}, 'an item name property'),

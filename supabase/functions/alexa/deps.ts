@@ -2,6 +2,7 @@
 // of index.ts so the database integration test runs the same wiring.
 import { authenticate, AuthError } from '../_shared/auth.ts';
 import { asUser, serviceDb } from '../_shared/db.ts';
+import { requirePremiumWith } from '../_shared/premium.ts';
 import type { Telemetry } from '../_shared/telemetry.ts';
 import { addItems } from '../voice/items.ts';
 import { countAdds } from './analytics.ts';
@@ -25,6 +26,7 @@ export function productionDeps(
   return {
     verify,
     authenticate: resolve,
+    requirePremium: requirePremiumWith(telemetry),
     takeAdds: (linked, count) => takeAdds(serviceDb(), linked.userId, count),
     addItems: (linked, items) =>
       asUser(linked.userId, (tx) => addItems(tx, linked.householdId, items)),

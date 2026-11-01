@@ -134,6 +134,9 @@ Map<String, dynamic> yearlyRow({
 class FakePremiumServer({
   var bool offer = true,
   var MyYearlyPlan mine = const MyYearlyPlan(),
+
+  /// The `integration_lock` switch (job 50).
+  var bool lock = false,
 }) implements PremiumServer {
   final calls = <String>[];
 
@@ -144,6 +147,12 @@ class FakePremiumServer({
   Future<bool> offerOpen() async {
     calls.add('offer');
     return offer;
+  }
+
+  @override
+  Future<bool> integrationLock() async {
+    calls.add('lock');
+    return lock;
   }
 
   @override

@@ -4,6 +4,7 @@
 // request reaches nothing.
 import { assert, assertEquals, assertFalse, assertStringIncludes } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
+import type { Access } from '../_shared/premium.ts';
 import { telemetryFor } from '../_shared/telemetry.ts';
 import type { Added } from '../voice/handler.ts';
 import type { ParsedItem } from '../voice/parse.ts';
@@ -46,6 +47,9 @@ class World {
   failAdds = false;
   failList = false;
   counted: Added[][] = [];
+  /** Job 50: what the premium check answers; open is the lock off. */
+  access: Access | 'fail' = 'open';
+  premiumAsked: string[] = [];
 
   link(token: string, userId: string, household: string | null, sessionId = `s-${token}`) {
     this.tokens.set(token, { userId, sessionId });
@@ -66,6 +70,11 @@ class World {
         const householdId = this.householdOf.get(owner.userId);
         if (!householdId) return Promise.reject(new AuthError('no_household', 'none'));
         return Promise.resolve({ ...owner, householdId });
+      },
+      requirePremium: (linked, integration) => {
+        this.premiumAsked.push(`${linked.householdId}:${integration}`);
+        if (this.access === 'fail') return Promise.reject(new Error('connection refused'));
+        return Promise.resolve(this.access);
       },
       takeAdds: (linked, count) => {
         const used = (this.taken.get(linked.userId) ?? 0) + count;
@@ -782,4 +791,125 @@ Deno.test('job 32b: a new item with another spelling open is added, and Alexa na
     confirmation([{ ...added('Karotten'), similarOnList: ['Möhren', 'Gelbe Rüben'] }]),
     'Ich habe Karotten auf die Hummlist gesetzt. Möhren und Gelbe Rüben stehen schon auf der Hummlist.',
   );
+});
+
+// Job 50: the integration lock. A locked household hears why, nothing is read or added, and the
+// link, the help and the skill events stay as they are.
+
+function lockedWorld() {
+  const world = linkedWorld();
+  world.rows.push({ household: HH_A, name: 'Milch', quantity: null, addedBy: 'lea' });
+  world.access = 'locked';
+  return world;
+}
+
+Deno.test('locked: an add is refused with the premium answer and nothing is added', async () => {
+  const world = lockedWorld();
+  const { status, reply } = await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', 'Eier und Brot'), { token: 'tok-peter' }),
+  );
+  assertEquals(status, 200);
+  assertEquals(said(reply), speech.premiumAdd);
+  assertStringIncludes(speech.premiumAdd, 'Ich habe nichts hinzugefügt.');
+  assertEquals(reply.response.card?.content, speech.premiumAdd, 'the Alexa app shows it too');
+  assertEquals(reply.response.shouldEndSession, true);
+  assertEquals(world.rows.map((r) => r.name), ['Milch'], 'nothing was added');
+  assertEquals(world.taken.size, 0, 'the allowance is untouched');
+  assertEquals(world.counted, []);
+  assertEquals(world.premiumAsked, [`${HH_A}:alexa`]);
+});
+
+Deno.test('locked: reading the list is refused and no item is said', async () => {
+  const world = lockedWorld();
+  const { reply } = await send(
+    world.deps(),
+    envelope(intent('ReadListIntent'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(reply), speech.premium);
+  assertFalse(JSON.stringify(reply).includes('Milch'), 'no list content leaves');
+  assertEquals(reply.response.shouldEndSession, true);
+});
+
+Deno.test('locked: launch says why at once instead of asking for items', async () => {
+  const world = lockedWorld();
+  const { reply } = await send(
+    world.deps(),
+    envelope({ type: 'LaunchRequest' }, { token: 'tok-peter' }),
+  );
+  assertEquals(said(reply), speech.premium);
+  assertEquals(reply.response.shouldEndSession, true);
+  assertEquals(reply.response.directives, undefined, 'no Dialog.ElicitSlot');
+});
+
+Deno.test('locked: help, stop and the skill events never ask the premium check', async () => {
+  const world = lockedWorld();
+  world.link('tok-peter-2', 'peter', HH_A, 's-new');
+  const help = await send(
+    world.deps(),
+    envelope(intent('AMAZON.HelpIntent'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(help.reply), speech.help);
+  const stop = await send(
+    world.deps(),
+    envelope(intent('AMAZON.StopIntent'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(stop.reply), speech.goodbye);
+  const linked = await send(world.deps(), {
+    ...envelope({
+      type: 'AlexaSkillEvent.SkillAccountLinked',
+      body: { accessToken: 'tok-peter-2' },
+    }),
+  });
+  assertEquals(linked.status, 200);
+  assert(world.links.get('amzn1.ask.account.PETER')?.has('s-new'), 'account linking still works');
+  assertEquals(world.premiumAsked, []);
+});
+
+Deno.test('locked: an unlinked or unverified request never reaches the premium check', async () => {
+  const world = lockedWorld();
+  const unlinked = await send(world.deps(), envelope(intent('AddItemIntent', 'Eier')));
+  assertEquals(said(unlinked.reply), speech.linkAccount);
+  const refused = await send(
+    world.deps({
+      verify: () =>
+        verifyRequest(new Headers(), new Uint8Array(), {
+          anchors: [],
+          fetchChain: () => Promise.reject(new Error('no chain')),
+          skillIds: [testSkillId],
+          now: () => new Date(),
+        }),
+    }),
+    envelope(intent('AddItemIntent', 'Eier'), { token: 'tok-peter' }),
+  );
+  assertEquals(refused.status, 400);
+  assertFalse(JSON.stringify(refused.reply).includes(speech.premium), 'no premium answer');
+  assertEquals(world.premiumAsked, []);
+});
+
+Deno.test('the premium check fails: the usual error, nothing added, never the premium answer', async () => {
+  const world = lockedWorld();
+  world.access = 'fail';
+  const add = await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', 'Eier'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(add.reply), speech.failed);
+  const read = await send(world.deps(), envelope(intent('ReadListIntent'), { token: 'tok-peter' }));
+  assertEquals(said(read.reply), speech.listFailed);
+  assertEquals(world.rows.map((r) => r.name), ['Milch']);
+  assertEquals(world.reports.length, 2);
+});
+
+Deno.test('unlocked again (bought or renewed): the same link adds at once, no relinking', async () => {
+  const world = lockedWorld();
+  const deps = world.deps();
+  const before = await send(deps, envelope(intent('AddItemIntent', 'Eier'), { token: 'tok-lea' }));
+  assertEquals(said(before.reply), speech.premiumAdd);
+  world.access = 'open';
+  const after = await send(deps, envelope(intent('AddItemIntent', 'Eier'), { token: 'tok-lea' }));
+  assertEquals(said(after.reply), 'Ich habe Eier auf die Hummlist gesetzt.');
+  const peter = await send(deps, envelope(intent('ReadListIntent'), { token: 'tok-peter' }));
+  assertStringIncludes(said(peter.reply) ?? '', 'Eier');
+  assertEquals(world.revokedSessions, [], 'no link was touched');
 });

@@ -11,6 +11,7 @@ Mehr → Zugänge shows the MCP server URL, the user's personal access tokens an
 - `mcp-apps` lists each OAuth app the user approved, with the date and the scopes.
 - `mcp-disconnect` disconnects an app ("<app> trennen", then "Trennen"); the next MCP call with its unexpired access token gets 401.
 
+- `mcp-locked` (job 50, off by default): with `app_switches.integration_lock` on, `initialize` and `tools/list` work for a household without Hummlist Premium, every `tools/call` answers HTTP 200 with `isError: true` and "Dieser Haushalt braucht Hummlist Premium …" (English by `Accept-Language`); the token stays valid. With the `INTEGRATION_LOCK` define (fg: `FG_INTEGRATION_LOCK=1`) Zugänge shows the card `integration-premium` (`integration-buy`, or `integration-soon` / `integration-in-the-apps`) and every token and app as paused (`access-paused`, "Pausiert: braucht Hummlist Premium"); nothing is removed and new tokens can still be created. See features/purchases.md `iap-integration-lock`.
 ## How to get to it (user POV)
 
 - Tap "Mehr" in the tab bar, then "Zugänge".

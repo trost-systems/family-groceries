@@ -41,7 +41,8 @@ language sql as $$
   union all select 'feedback', count(*)::int from public.feedback where household_id = p_household
   union all select 'item_merges', count(*)::int from public.item_merges where household_id = p_household
   union all select 'entitlements', count(*)::int from public.entitlements where household_id = p_household
-  union all select 'household_departures', count(*)::int from public.household_departures where household_id = p_household;
+  union all select 'household_departures', count(*)::int from public.household_departures where household_id = p_household
+  union all select 'integration_blocks', count(*)::int from public.integration_blocks where household_id = p_household;
 $$;
 
 select is(
@@ -231,6 +232,8 @@ select pg_temp.as_postgres();
 select public.purchase_claim('00000000-0000-0000-0000-0000000000c1', (select id from h), 'apple', '2000000000002501');
 select public.purchase_record('apple', '2000000000002501', '2000000000002501', repeat('a', 64),
   'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from h));
+-- Job 50: a refusal noted while the household was locked.
+insert into public.integration_blocks (household_id, integration, reported_at) values ((select id from h), 'siri', now());
 select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n = 0),
   null, 'before: every household table has rows'

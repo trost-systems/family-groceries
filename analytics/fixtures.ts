@@ -244,3 +244,38 @@ export const premiumEvents: Event[] = [
     product_id: 'com.hummlist.app.yearly',
   }),
 ];
+
+// Job 50: integration_blocked from the edge functions (at most once an hour per household and
+// integration), around the weeks of 5 and 12 April 2027.
+export const H30 = household(30),
+  H31 = household(31),
+  H32 = household(32),
+  H33 = household(33),
+  H34 = household(34);
+
+const blocked = (at: string, n: number, h: string, integration: string, internal = false) =>
+  ev('integration_blocked', at, id(n), h, { integration }, internal);
+
+export const blockedEvents: Event[] = [
+  // H30: Siri twice an hour apart and Alexa in one week: once overall, once each; buys Yearly
+  // three days later.
+  blocked('2027-04-06T08:00:00Z', 30, H30, 'siri'),
+  blocked('2027-04-06T09:30:00Z', 30, H30, 'siri'),
+  blocked('2027-04-07T18:00:00Z', 30, H30, 'alexa'),
+  ev('purchase_completed', '2027-04-09T10:00:00Z', id(30), H30, premium('yearly', 't')),
+
+  // H31: MCP, bought 20 days later: not within 14 days.
+  blocked('2027-04-06T12:00:00Z', 31, H31, 'mcp'),
+  ev('purchase_completed', '2027-04-26T12:00:00Z', id(31), H31, premium('lifetime', 'u')),
+
+  // H32: a tester's household (is_internal): left out.
+  blocked('2027-04-06T12:00:00Z', 32, H32, 'siri', true),
+
+  // H33: Sunday 11 April 23:30 UTC is Monday 12 April in Berlin: the next week.
+  blocked('2027-04-11T23:30:00Z', 33, H33, 'alexa'),
+
+  // H34: buys within the 14 days, but the store refunds it: not paying.
+  blocked('2027-04-12T08:00:00Z', 34, H34, 'mcp'),
+  ev('purchase_completed', '2027-04-13T08:00:00Z', id(34), H34, premium('yearly', 'v')),
+  ev('purchase_refunded', '2027-04-20T08:00:00Z', id(34), H34, premium('yearly', 'v')),
+];

@@ -19,6 +19,7 @@ import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
+import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,6 +68,8 @@ Future<void> fakeSupabase() async {
         ),
         200,
         headers: {'content-type': 'application/json'},
+        // postgrest reads the method back from the response.
+        request: request,
       ),
     ),
     authOptions: const FlutterAuthClientOptions(
@@ -131,6 +134,9 @@ Future<More> pumpMore(
 
   /// The server's invites and archived households.
   FakeInvites? invites,
+
+  /// The `INTEGRATION_LOCK` define (job 50); the switch is `premium.lock`.
+  bool integrationLock = false,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -169,6 +175,11 @@ Future<More> pumpMore(
     clock: clock,
   );
   addTearDown(purchases.close);
+  final lock = IntegrationLockCubit(
+    purchases.premium,
+    enabled: integrationLock,
+  );
+  addTearDown(lock.close);
   final repo = FakeRepository();
   final feedback = FakeFeedbackRepository();
   final feedbackCubit = FeedbackCubit(feedback, analytics: shownAnalytics);
@@ -217,6 +228,7 @@ Future<More> pumpMore(
           BlocProvider.value(value: feedbackCubit),
           BlocProvider.value(value: purchases.entitlements),
           BlocProvider.value(value: purchases.purchases),
+          BlocProvider.value(value: lock),
         ],
         child: Builder(
           builder: (context) => MaterialApp.router(

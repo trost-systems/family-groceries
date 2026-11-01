@@ -19,6 +19,10 @@
       "released": true,
       "note": "Peter switched the new design on (2026-11-01)",
       "match": ["design"]
+    },
+    "integration-lock": {
+      "released": false,
+      "note": "Siri, Alexa and AI assistants need Hummlist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"
     }
   }
 }

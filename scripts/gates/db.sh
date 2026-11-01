@@ -20,10 +20,12 @@ supabase/classifier/latency.sh
 # Job 31: the alexa function's wiring (add, read, households, rate limit, revocation, consent).
 # Job 32b: the add paths report a similar open item, and merge_quantities matches the app's table.
 # Job 25: the purchases function's wiring (grant, RLS read, replay, Apple refund, rate limit).
+# Job 50: the integration lock through the voice, alexa and mcp wiring (switch, lapse, events).
+# Job 50: the integration lock through the voice, alexa and mcp wiring (switch, lapse, events).
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
   deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
-  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts)
+  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

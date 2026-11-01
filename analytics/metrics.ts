@@ -322,3 +322,49 @@ export function reordersByHousehold(events: Event[]) {
   }
   return new Map([...households].sort());
 }
+
+export interface BlockedWeek {
+  households: number;
+  siri: number;
+  alexa: number;
+  mcp: number;
+  payingWithin14Days: number;
+}
+
+/**
+ * queries/integration_blocked_weekly.sql (job 50): per Berlin week the households an
+ * integration_blocked names, overall and per integration, and how many of them sent an unrefunded
+ * purchase_completed within 14 × 24 h after their first refusal of that week.
+ */
+export function blockedHouseholdsByWeek(events: Event[]): Map<string, BlockedWeek> {
+  const kept = external(events);
+  const blocked = new Map<string, { household: string; first: number; seen: Set<string> }>();
+  for (const e of kept) {
+    const household = str(e.properties.household_id);
+    if (!household || e.event !== 'integration_blocked') continue;
+    const key = `${berlinWeek(e.timestamp)} ${household}`;
+    const b = blocked.get(key) ?? { household, first: Infinity, seen: new Set<string>() };
+    b.first = Math.min(b.first, Date.parse(e.timestamp));
+    const integration = str(e.properties.integration);
+    if (integration) b.seen.add(integration);
+    blocked.set(key, b);
+  }
+  const paid = purchases(kept);
+  const weeks = new Map<string, BlockedWeek>();
+  for (const [key, b] of blocked) {
+    const week = key.slice(0, 10);
+    const w = weeks.get(week) ??
+      { households: 0, siri: 0, alexa: 0, mcp: 0, payingWithin14Days: 0 };
+    w.households++;
+    for (const integration of ['siri', 'alexa', 'mcp'] as const) {
+      if (b.seen.has(integration)) w[integration]++;
+    }
+    if (
+      paid.some((p) => p.household === b.household && p.at >= b.first && p.at <= b.first + 14 * DAY)
+    ) {
+      w.payingWithin14Days++;
+    }
+    weeks.set(week, w);
+  }
+  return new Map([...weeks].sort());
+}

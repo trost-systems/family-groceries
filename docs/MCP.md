@@ -82,6 +82,17 @@ Results are JSON text. Every item in a result carries `id`, `name`,
 ambiguous names) come back as tool errors (`isError: true`) with a German
 message that lists the valid options.
 
+**Integration lock (job 50, off).** With the server switch `integration_lock` on, a household
+without Hummlist Premium can still discover the server, run OAuth, `initialize` and `tools/list`,
+but every `tools/call` answers HTTP 200 with a tool result `{isError: true}` and "Dieser Haushalt
+braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei.
+Es wurde nichts gelesen oder geändert." (English for a client whose `Accept-Language` prefers it;
+placeholder copy, `tools.ts` `premiumRequired`). Never 401 or 403: the client keeps its token or
+PAT, and once the household has Premium the same connection works without signing in again. The
+check (`requirePremium`, `_shared/premium.ts`, once per request on the first tool call) reads
+nothing else; a failing check is an error like any database failure. No change to
+`mcp-proxy/vercel.json`. docs/PURCHASES.md, "Integration lock".
+
 Changes made through MCP reach the app through Realtime like any other change:
 an item added by an assistant appears on both phones within seconds (the
 e2e test allows 3 s).

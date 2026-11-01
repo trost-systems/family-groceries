@@ -84,6 +84,9 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
     source: oneOf('native', 'shortcut'),
     count: intIn(0, 10_000),
   },
+  // Job 50: a household without Hummlist Premium used an integration while the lock is on (at
+  // most once an hour per household and integration, _shared/premium.ts). Never what was said.
+  integration_blocked: { integration: oneOf('siri', 'alexa', 'mcp') },
 };
 
 /** Properties every server event carries besides its own. */

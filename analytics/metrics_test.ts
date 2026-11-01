@@ -1,8 +1,19 @@
 import { assertEquals } from '@std/assert';
-import { events, H1, H15, H2, H20, H25, payingEvents, premiumEvents } from './fixtures.ts';
+import {
+  blockedEvents,
+  events,
+  H1,
+  H15,
+  H2,
+  H20,
+  H25,
+  payingEvents,
+  premiumEvents,
+} from './fixtures.ts';
 import {
   berlinMonth,
   berlinWeek,
+  blockedHouseholdsByWeek,
   external,
   payingHouseholdsByDay35,
   payingShareOfWah,
@@ -199,6 +210,7 @@ Deno.test('every gate query filters internal installs and households (AC10)', as
     'reorders',
     'paying_households_d35',
     'paying_share_wah',
+    'integration_blocked_weekly',
   ];
   const filter = [
     "ifNull(toString(properties.is_internal), '') != 'true'",
@@ -223,4 +235,14 @@ Deno.test('every gate query filters internal installs and households (AC10)', as
       assertEquals(sql.includes(filter[3]), true, 'wah: Berlin weeks');
     }
   }
+});
+
+Deno.test('integration_blocked (job 50): households per Berlin week, per integration, and paying within 14 days', () => {
+  assertEquals(
+    blockedHouseholdsByWeek(blockedEvents),
+    new Map([
+      ['2027-04-05', { households: 2, siri: 1, alexa: 1, mcp: 1, payingWithin14Days: 1 }],
+      ['2027-04-12', { households: 2, siri: 0, alexa: 1, mcp: 1, payingWithin14Days: 0 }],
+    ]),
+  );
 });
