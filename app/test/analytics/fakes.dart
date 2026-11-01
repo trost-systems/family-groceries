@@ -92,6 +92,9 @@ Map<String, Object?> propsOf(Map<String, Object?> event) =>
 class MemoryAnalyticsStore() implements AnalyticsStore {
   String? id;
   bool? decided;
+
+  /// The consent text version [decided] was given under.
+  String? textVersion;
   String? firstOpen;
   var internal = false;
 
@@ -111,7 +114,22 @@ class MemoryAnalyticsStore() implements AnalyticsStore {
   Future<bool?> consent() async => decided;
 
   @override
-  Future<void> saveConsent({required bool granted}) async => decided = granted;
+  Future<String?> consentTextVersion() async => textVersion;
+
+  @override
+  Future<void> saveConsent({
+    required bool granted,
+    required String textVersion,
+  }) async {
+    decided = granted;
+    this.textVersion = textVersion;
+  }
+
+  @override
+  Future<void> forgetConsent() async {
+    decided = null;
+    textVersion = null;
+  }
 
   @override
   Future<String?> firstOpenSentFor() async => firstOpen;

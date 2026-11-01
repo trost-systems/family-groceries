@@ -102,7 +102,27 @@ Our guarantees sit on top of it (DECISIONS Job 44):
   an id stored with a yes keeps working.
 - **A build without a key** (CI, fg, local debug) never shows the screen: nothing could be sent.
 - Peter approved the wording (DE and EN, the legal review's version) on 2026-10-30; job 33b
-  removed the "ENTWURF" mark from the screen and from More.
+  removed the "ENTWURF" mark from the screen and from More. The current text, version
+  2026-11-01, is Legal's 12:55 text with the buttons „Erlauben“ / „Nicht erlauben“ ("Allow" /
+  "Don't allow"), equal weight, none pre-selected (approved by Peter 2026-11-01).
+- **Consent text version** (Legal Review 2026-11-01, addendum 12:35; EDPB Guidelines 05/2020
+  Rn. 108, 110): every decision is stored with the version of the text it was given under,
+  `consentTextVersion` in `app/lib/analytics/consent_version.dart` (now `2026-11-01`). On the
+  device it is `analytics.consent_text_version` next to `analytics.consent`; on the server
+  `analytics_consents.consent_text_version` (`record_analytics_consent(p_install, p_consent,
+  p_internal, p_answered, p_text_version)`). Each version's exact DE and EN text is kept in
+  [`docs/consent/`](consent/README.md), the older ones (2026-10-30 and PR #165's, both stored
+  without a version) included; `app/test/analytics/consent_version_test.dart` checks the app's
+  strings against the current file and the functions' `CONSENT_TEXT_VERSION` against the app's.
+  **A yes with no version or an older one counts as no decision**: at the start the app deletes
+  it, the install id, the `first_open` mark and the SDK's data on the device, as on a no, sends
+  nothing (no events, no errors, no `/flags`) and shows the consent screen again; only a new yes
+  starts the SDK, with a new install id. A no stays a no whatever its version. The server does
+  the same for its events (`analyticsSubject` in `supabase/functions/alexa/store.ts`): only a
+  newest answer that is a yes to the current version counts, so a yes an older build recorded
+  (the four-argument `record_analytics_consent`, kept for those builds, stores no version) sends
+  nothing. Changing the text means a new version: a new file in `docs/consent/`, the new date in
+  both constants, and everyone is asked again.
 - **`first_open`** is sent at the moment of consent on the first sign-in of an install, once per
   install id, not at process start. Install-week cohorts therefore start at the first consented
   open. Someone who said no and later switches it on under More sends `first_open` then, and so
@@ -197,13 +217,14 @@ An item added through the Alexa skill is `item_added` with `source: alexa`, `act
 allows nothing else), once per item that was not on the list yet.
 
 Consent is per install and lives on the device, so the app tells the server each install's answer
-(`record_analytics_consent(p_install, p_consent, p_internal)`, table `analytics_consents`, no
-client may read it): when the user answers, switches it under More, marks the install internal,
+(`record_analytics_consent(p_install, p_consent, p_internal, p_answered, p_text_version)`, table
+`analytics_consents`, no client may read it): when the user answers, switches it under More, marks the install internal,
 or signs in (an account new on an install that already answered). A no is recorded under the
 install id it had before job 33b's no deletes it, or, for an install that never had one, under the
 nil UUID. An answer the user gives is always their newest; a start or sign-in only records a new or
 changed answer, so it never outranks a newer answer on another device. The function
-counts an Alexa add only while the user's newest answer is yes, with that install as
+counts an Alexa add only while the user's newest answer is a yes to the current consent text
+version (above), with that install as
 `distinct_id` and its internal mark as `is_internal`; otherwise nothing is sent. A build without a
 key never records an answer, so its users' Alexa adds are never counted. Item names, the
 utterance, Alexa's user id and tokens are never sent.
@@ -306,8 +327,10 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
   build without a project key (CI, fg, local debug), and offline until a first answer. After
   the first answer the SDK serves what it received last, also offline and at the next start
   (native SDKs keep it on disk; posthog-js asks again at every page load).
-- **Only installs that said yes get flags.** The flag request carries the install id, so a
-  rollout through a flag never reaches users who declined. A change that must reach everyone
+- **Only installs that said yes to the current consent text get flags.** The flag request
+  carries the install id, so a rollout through a flag never reaches users who declined, nor an
+  install whose yes was given under an older text (no `/flags` until the new yes; Peter kept the
+  flag lookups on 2026-11-01 instead of PR #164, which stays unmerged). A change that must reach everyone
   ships without a flag.
 - **Reading a flag sends nothing** (`sendFeatureFlagEvent` off, no `$feature_flag_called`).
   Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new

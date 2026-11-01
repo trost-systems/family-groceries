@@ -1544,10 +1544,10 @@ abstract class AppLocalizations {
   /// **'Darf Hummlist Nutzungsdaten erfassen?'**
   String get analyticsConsentTitle;
 
-  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. approved by Peter 2026-11-01 (legal review H-03)
+  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. Version 2026-11-01 (consentTextVersion, docs/consent/2026-11-01.md): changing it needs a new version. approved by Peter 2026-11-01 (Legal 12:55)
   ///
   /// In de, this message translates to:
-  /// **'Peter Trost, der Anbieter von Hummlist, möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Hummlist wirtschaftlich trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Hummlist mit deiner Erlaubnis eine zufällige Kennung auf diesem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Dienstleister PostHog (Server in der EU): zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, mit dieser Kennung, der Kennung deines Haushalts, Plattform, App-Version und technischen Angaben zu Gerät oder Browser. Die Daten sind pseudonym, nicht anonym. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort werden nie gesendet. Ohne Erlaubnis wird nichts gespeichert oder gesendet. Du kannst die Erlaubnis jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
+  /// **'Hummlist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Hummlist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Hummlist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten, Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
   String get analyticsConsentBody;
 
   /// Analytics consent screen: the link to the privacy policy that ends analyticsConsentBody. approved by Peter 2026-10-30 (legal review H-03)
@@ -1556,16 +1556,16 @@ abstract class AppLocalizations {
   /// **'Datenschutzerklärung'**
   String get analyticsConsentPrivacyLink;
 
-  /// Analytics consent: allow
+  /// Analytics consent: allow; as prominent as decline, nothing pre-selected. approved by Peter 2026-11-01 (Legal 12:45)
   ///
   /// In de, this message translates to:
-  /// **'Einverstanden'**
+  /// **'Erlauben'**
   String get analyticsAccept;
 
-  /// Analytics consent: decline; as prominent as allow
+  /// Analytics consent: don't allow; as prominent as allow. approved by Peter 2026-11-01 (Legal 12:45)
   ///
   /// In de, this message translates to:
-  /// **'Ablehnen'**
+  /// **'Nicht erlauben'**
   String get analyticsDecline;
 
   /// More: section with the analytics switch

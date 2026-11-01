@@ -54,10 +54,10 @@ for (const [name, text] of [['E-Mail', user.email], ['Passwort', 'irrelevant-pas
   }
 }
 await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-await page.getByRole('button', { name: 'Einverstanden' }).waitFor();
+await page.getByRole('button', { name: 'Erlauben', exact: true }).waitFor();
 await page.screenshot({ path: `${out}/ac11-01-consent.png` });
 const beforeConsent = sent.length;
-await page.getByRole('button', { name: 'Einverstanden' }).click();
+await page.getByRole('button', { name: 'Erlauben', exact: true }).click();
 await page.getByRole('tab', { name: 'Mehr', exact: true }).or(page.getByRole('button', { name: 'Mehr Tab ' })).click();
 await page.waitForURL(/\/more$/);
 const version = page.getByText(/^Version /);

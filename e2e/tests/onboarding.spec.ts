@@ -445,7 +445,7 @@ test('AC11: onboarding, the share text and errors in English', async ({ browser 
   await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('english'));
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
   await page.getByRole('button', { name: 'Sign up' }).click();
-  await page.getByRole('button', { name: 'Decline' }).click();
+  await page.getByRole('button', { name: "Don't allow", exact: true }).click();
   await expect(page.getByRole('button', { name: /^Create a household/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Join with an invite/ })).toBeVisible();
   await page.getByRole('button', { name: /^Join with an invite/ }).click();
@@ -470,10 +470,10 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
     test(`screenshots ${lang} ${size}`, async ({ browser }) => {
       test.skip(!process.env.SCREENSHOT_DIR, 'only when screenshots are asked for');
       const t = lang === 'de'
-        ? { email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Ablehnen', create: 'Haushalt erstellen',
+        ? { email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben', create: 'Haushalt erstellen',
           join: 'Einladung annehmen', skip: /^Überspringen/, invite: 'Partner einladen', code: 'Einladungscode', next: 'Weiter',
           later: 'Weiter zur Liste', more: 'Partner einladen', newInvite: 'Neue Einladung' }
-        : { email: 'Email', password: 'Password', signUp: 'Sign up', decline: 'Decline', create: 'Create a household',
+        : { email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow", create: 'Create a household',
           join: 'Join with an invite', skip: /^Skip/, invite: 'Invite your partner', code: 'Invite code', next: 'Continue',
           later: 'Go to the list', more: 'Invite your partner', newInvite: 'New invite' };
       const shot = (page: Page, n: string, name: string) => screenshot(page, `job22-${lang}-${size}-${n}-${name}`);

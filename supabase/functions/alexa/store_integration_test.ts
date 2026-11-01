@@ -205,11 +205,22 @@ Deno.test({
       assertEquals(await analyticsSubject(sql, peter.userId), null, 'no answer: nothing');
       const phone = crypto.randomUUID();
       const laptop = crypto.randomUUID();
-      const record = (install: string, consent: boolean) =>
+      const record = (install: string, consent: boolean, version: string | null = '2026-11-01') =>
         asUser(
           peter.userId,
-          (tx) => tx`select public.record_analytics_consent(${install}::uuid, ${consent})`,
+          (tx) =>
+            tx`select public.record_analytics_consent(${install}::uuid, ${consent}, false, true, ${version})`,
         );
+      // Legal Review 2026-11-01, 12:35: a yes counts only for the current consent text.
+      await record(phone, true, null);
+      assertEquals(await analyticsSubject(sql, peter.userId), null, 'a yes without a version');
+      await record(phone, true, '2026-10-30');
+      assertEquals(await analyticsSubject(sql, peter.userId), null, 'a yes to an older text');
+      await asUser(
+        peter.userId,
+        (tx) => tx`select public.record_analytics_consent(${phone}::uuid, true)`,
+      );
+      assertEquals(await analyticsSubject(sql, peter.userId), null, 'a yes from an older build');
       await record(phone, true);
       assertEquals(await analyticsSubject(sql, peter.userId), {
         installId: phone,

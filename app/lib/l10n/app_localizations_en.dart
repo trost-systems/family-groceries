@@ -895,7 +895,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyticsConsentBody =>
-      'Peter Trost, who runs Hummlist, wants to see which features are used, find bugs, measure whether Hummlist pays for itself and switch new features on step by step. For that, with your permission, Hummlist stores a random ID on this device and sends usage data and error reports to our service provider PostHog (servers in the EU): for example that an item was added or ticked off, together with this ID, your household\'s ID, platform, app version and technical details of your device or browser. The data is pseudonymous, not anonymous. Item names, list contents, names, e-mail addresses, IP address and location are never sent. Without your permission nothing is stored or sent. You can withdraw your permission any time under More → Usage data. More in the';
+      'Hummlist (run by Peter Trost) wants to see which features are used, find bugs, measure whether Hummlist pays for itself and switch new features on step by step. For that, Hummlist stores a random ID on this device and uses it to send pseudonymous usage data, error reports, your household\'s ID and technical details of your device or browser to our service provider PostHog (servers in the EU). List contents, names and e-mail addresses are never sent. You can withdraw any time under More → Usage data. More in the';
 
   @override
   String get analyticsConsentPrivacyLink => 'privacy policy';
@@ -904,7 +904,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyticsAccept => 'Allow';
 
   @override
-  String get analyticsDecline => 'Decline';
+  String get analyticsDecline => 'Don\'t allow';
 
   @override
   String get analyticsSection => 'Usage data';

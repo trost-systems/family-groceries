@@ -48,7 +48,7 @@ async function withHouseholds(
       const [i] = await tx<
         { code: string }[]
       >`select code from public.create_invite(${home}::uuid)`;
-      await tx`select public.record_analytics_consent(${crypto.randomUUID()}::uuid, true)`;
+      await tx`select public.record_analytics_consent(${crypto.randomUUID()}::uuid, true, false, true, '2026-11-01')`;
       return i.code;
     });
     const joined = await asUser(

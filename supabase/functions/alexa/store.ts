@@ -2,6 +2,7 @@
 // (asUser); the link map, the rate limit and the analytics subject use the service connection
 // through functions in migration 20261030140000_alexa.sql that clients cannot call.
 import { sha256Hex } from '../_shared/auth.ts';
+import { CONSENT_TEXT_VERSION } from '../_shared/consent_version.ts';
 import type { Sql, Tx } from '../_shared/db.ts';
 import { listItems as mcpListItems } from '../mcp/list.ts';
 import type { Spoken } from './speech.ts';
@@ -42,7 +43,11 @@ export async function openItems(tx: Tx, householdId: string): Promise<Spoken[]> 
   return (await mcpListItems(tx, householdId, {})).items;
 }
 
-/** Who an analytics event for [userId] goes to, or null when their latest answer was not yes. */
+/**
+ * Who an analytics event for [userId] goes to, or null when their latest answer was not a yes to
+ * the current consent text ([CONSENT_TEXT_VERSION]): a yes under an older text, or one an app
+ * build before 2026-11-01 recorded without a version, is no decision.
+ */
 export interface AnalyticsSubject {
   installId: string;
   internal: boolean;
@@ -56,13 +61,14 @@ export async function analyticsSubject(sql: Sql, userId: string): Promise<Analyt
     {
       install_id: string;
       consent: boolean;
+      consent_text_version: string | null;
       internal: boolean;
       household_id: string | null;
       role: 'owner' | 'member' | null;
       household_size: number;
     }[]
   >`
-    select a.install_id, a.consent, a.internal, m.household_id, m.role,
+    select a.install_id, a.consent, a.consent_text_version, a.internal, m.household_id, m.role,
            (select count(*)::int from public.household_members o
             where o.household_id = m.household_id) as household_size
     from public.analytics_consents a
@@ -70,7 +76,8 @@ export async function analyticsSubject(sql: Sql, userId: string): Promise<Analyt
     where a.user_id = ${userId}::uuid
     order by a.decided_at desc, a.install_id
     limit 1`;
-  if (!row?.consent || !row.household_id || !row.role) return null;
+  if (!row?.consent || row.consent_text_version !== CONSENT_TEXT_VERSION) return null;
+  if (!row.household_id || !row.role) return null;
   return {
     installId: row.install_id,
     internal: row.internal,

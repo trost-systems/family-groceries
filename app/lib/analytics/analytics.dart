@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/consent_version.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/analytics/exceptions.dart';
 import 'package:family_groceries/analytics/flags.dart';
@@ -15,8 +16,10 @@ class const AnalyticsState({
   /// False until the stored decision was read.
   final bool loaded = false,
 
-  /// Null: not asked yet. True: events and errors are sent while signed
-  /// in. False: nothing is sent.
+  /// Null: not asked yet, or a yes under an older consent text
+  /// ([consentTextVersion]). True: a yes to the current text; events,
+  /// errors and flag lookups are sent while signed in. False: nothing is
+  /// sent.
   final bool? consent,
 
   /// Marked internal under More: every event says `is_internal`.
@@ -37,7 +40,17 @@ abstract interface class AnalyticsStore() {
 
   Future<bool?> consent();
 
-  Future<void> saveConsent({required bool granted});
+  /// The [consentTextVersion] the stored decision was given under; null for
+  /// one an older build stored.
+  Future<String?> consentTextVersion();
+
+  Future<void> saveConsent({
+    required bool granted,
+    required String textVersion,
+  });
+
+  /// Deletes the decision and its version: asked again at the next start.
+  Future<void> forgetConsent();
 
   /// The install id `first_open` was sent for, if any.
   Future<String?> firstOpenSentFor();
@@ -58,12 +71,14 @@ class const AnalyticsUser({final String? email, final String? householdId});
 /// (`record_analytics_consent`, job 31), so server events such as an add over
 /// Alexa follow the same consent. [installId] is null for an install that
 /// said no and so has none; [answered] is true when the user just answered,
-/// which makes it the user's newest answer.
+/// which makes it the user's newest answer; [textVersion] is the consent
+/// text it was given under (null for a no an older build stored).
 typedef ConsentRecorder = Future<void> Function({
   required String? installId,
   required bool consent,
   required bool internal,
   required bool answered,
+  required String? textVersion,
 });
 
 /// Build facts every event carries.
@@ -131,6 +146,9 @@ class Analytics(
   /// The answer last recorded, so a token refresh does not record it again.
   String? _recorded;
 
+  /// The consent text version [AnalyticsState.consent] was given under.
+  String? _textVersion;
+
   /// The install id `first_open` went out for, claimed before the write so
   /// two quick yeses send one.
   String? _firstOpenFor;
@@ -167,14 +185,25 @@ class Analytics(
 
   /// Reads the decision; after a yes it starts the SDK with the install id
   /// in the background. Without a yes no install id is kept, and one stored
-  /// by an older build is deleted. Call once before the first frame.
+  /// by an older build is deleted. A yes under an older consent text (or
+  /// none, from a build before [consentTextVersion]) is no decision: it is
+  /// deleted with the install id and the SDK's data on the device, as on a
+  /// no, and the consent screen asks again. Call once before the first
+  /// frame.
   Future<void> load() async {
-    final (stored, consent, internal, firstOpen) = await (
+    final (stored, decided, version, internal, firstOpen) = await (
       _store.installId(),
       _store.consent(),
+      _store.consentTextVersion(),
       _store.internalInstall(),
       _store.firstOpenSentFor(),
     ).wait;
+    final outdated = decided == true && version != consentTextVersion;
+    final consent = outdated ? null : decided;
+    _textVersion = consent == null ? null : version;
+    if (outdated) {
+      await _store.forgetConsent();
+    }
     if (consent == true) {
       _firstOpenFor = firstOpen;
       _installId = stored != null && anyUuidPattern.hasMatch(stored)
@@ -183,8 +212,9 @@ class Analytics(
     } else if (stored != null || firstOpen != null) {
       await _store.forgetInstallId();
     }
-    if (consent == false) {
-      // An off whose clean-up did not finish (the app was closed) ends here.
+    if (consent == false || outdated) {
+      // An off whose clean-up did not finish (the app was closed) ends here,
+      // and so does what the SDK kept after an outdated yes.
       unawaited(_serially(_forgetSdkState));
     }
     emit(
@@ -210,6 +240,7 @@ class Analytics(
   /// `first_open` once per install id; no stops the SDK and deletes the
   /// install id, so a later yes starts with a new one.
   Future<void> decide({required bool granted}) async {
+    _textVersion = consentTextVersion;
     emit(_with(consent: granted));
     if (!granted) {
       // The server learns the no under the id it had (job 31) before it goes.
@@ -217,7 +248,7 @@ class Analytics(
       _installId = null;
       _firstOpenFor = null;
       flags.clear();
-      await _store.saveConsent(granted: false);
+      await _store.saveConsent(granted: false, textVersion: consentTextVersion);
       await _store.forgetInstallId();
       await _serially(_stop);
       return;
@@ -225,7 +256,7 @@ class Analytics(
     // Queued before the first await, so an event tracked right after the
     // yes waits for the start.
     final starting = _serially(() => _start(fresh: true));
-    await _store.saveConsent(granted: true);
+    await _store.saveConsent(granted: true, textVersion: consentTextVersion);
     await starting;
     final id = _installId;
     if (id == null) {
@@ -521,7 +552,8 @@ class Analytics(
       return;
     }
     final internal = internalNow;
-    final key = '${user.email}|$consent|$internal|$id';
+    final version = _textVersion;
+    final key = '${user.email}|$consent|$internal|$id|$version';
     if (!answered && key == _recorded) {
       return;
     }
@@ -533,6 +565,7 @@ class Analytics(
           consent: consent,
           internal: internal,
           answered: answered,
+          textVersion: version,
         ),
       ).catchError((Object e) {
         if (_recorded == key) {

@@ -1,4 +1,5 @@
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/consent_version.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
@@ -174,6 +175,137 @@ void main() {
     });
   });
 
+  // Legal Review 2026-11-01, addendum 12:35: every decision carries the
+  // version of the text it was given under; a yes under an older or no
+  // version is no decision.
+  group('the consent text version', () {
+    const kept = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
+
+    MemoryAnalyticsStore storedYes(String? version) => MemoryAnalyticsStore()
+      ..id = kept
+      ..decided = true
+      ..textVersion = version
+      ..firstOpen = kept;
+
+    for (final (label, version) in [
+      ('no version', null),
+      ('an older version', '2026-10-30'),
+      ('an unknown version', '2027-01-01'),
+    ]) {
+      test('a yes with $label is asked again and sends nothing', () async {
+        final older = storedYes(version);
+        final a = await loadedAnalytics(older);
+        a
+          ..setUser(customer)
+          ..track('item_ticked')
+          ..captureException(StateError('boom'), StackTrace.current);
+        await a.flush();
+        expect(a.state.consent, isNull);
+        expect(a.asksConsent, isTrue);
+        expect(a.flags.isOn('new-thing'), isFalse);
+        expect(native.calls, isEmpty, reason: 'no setup, no /flags, no event');
+        expect(native.forgotten, ['phc_unit_test'], reason: 'as on a no');
+        expect(older.id, isNull);
+        expect(older.firstOpen, isNull);
+        expect(older.decided, isNull, reason: 'asked again at every start');
+        expect(older.textVersion, isNull);
+        await a.close();
+      });
+    }
+
+    test(
+      'a yes to the current version sends events and asks for flags',
+      () async {
+        native.served = {'new-thing': true};
+        final current = storedYes(consentTextVersion);
+        final a = await loadedAnalytics(current);
+        a
+          ..setUser(customer)
+          ..track('item_ticked');
+        await a.flush();
+        await pumpEventQueue();
+        expect(a.state.consent, isTrue);
+        expect(a.asksConsent, isFalse);
+        expect(native.methods, containsAll(['setup', 'getAllFeatureFlags']));
+        expect(native.names, ['item_ticked']);
+        expect(a.flags.isOn('new-thing'), isTrue);
+        expect(native.forgotten, isEmpty);
+        await a.close();
+      },
+    );
+
+    test('a new yes after the re-ask stores the current version', () async {
+      final older = storedYes(null);
+      final a = await loadedAnalytics(older);
+      a.setUser(customer);
+      await a.decide(granted: true);
+      await a.flush();
+      expect(older.decided, isTrue);
+      expect(older.textVersion, consentTextVersion);
+      expect(older.id, allOf(isNotNull, isNot(kept)));
+      expect(native.names, ['first_open']);
+      await a.close();
+    });
+
+    test('a no is stored with the version and sends nothing', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: false);
+      analytics.track('item_ticked');
+      await analytics.flush();
+      expect(store.decided, isFalse);
+      expect(store.textVersion, consentTextVersion);
+      expect(native.calls, isEmpty);
+    });
+
+    test('a no an older build stored stays a no', () async {
+      final older = MemoryAnalyticsStore()..decided = false;
+      final a = await loadedAnalytics(older);
+      expect(a.state.consent, isFalse);
+      expect(a.asksConsent, isFalse);
+      expect(native.calls, isEmpty);
+      await a.close();
+    });
+
+    test('the server gets the version with every answer', () async {
+      final versions = <String?>[];
+      analytics
+        ..recordConsent =
+            ({
+              required installId,
+              required consent,
+              required internal,
+              required answered,
+              required textVersion,
+            }) async {
+              versions.add(textVersion);
+            }
+        ..setUser(customer);
+      await analytics.decide(granted: true);
+      await analytics.decide(granted: false);
+      expect(versions, [consentTextVersion, consentTextVersion]);
+    });
+
+    test('an outdated yes is not recorded on the server again', () async {
+      final recorded = <bool>[];
+      final a = await loadedAnalytics(storedYes('2026-10-30'));
+      a
+        ..recordConsent =
+            ({
+              required installId,
+              required consent,
+              required internal,
+              required answered,
+              required textVersion,
+            }) async {
+              recorded.add(consent);
+            }
+        ..setUser(customer);
+      await a.flush();
+      expect(recorded, isEmpty, reason: 'only a new answer is recorded');
+      await a.close();
+    });
+  });
+
   group('what the SDK is set up to do', () {
     late Map<Object?, Object?> setup;
 
@@ -288,6 +420,7 @@ void main() {
       final older = MemoryAnalyticsStore()
         ..id = kept
         ..decided = true
+        ..textVersion = consentTextVersion
         ..firstOpen = kept;
       final a = await loadedAnalytics(older);
       a
@@ -552,6 +685,7 @@ void main() {
       required bool consent,
       required bool internal,
       required bool answered,
+      required String? textVersion,
     }) async {
       recorded.add('$installId $consent $internal $answered');
     }
@@ -634,6 +768,7 @@ void main() {
               required consent,
               required internal,
               required answered,
+              required textVersion,
             }) async {
               if (fail) {
                 throw Exception('offline');

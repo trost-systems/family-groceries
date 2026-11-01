@@ -73,6 +73,7 @@ class SessionCubit(
           required consent,
           required internal,
           required answered,
+          required textVersion,
         }) => _client.rpc<void>(
           'record_analytics_consent',
           params: {
@@ -80,6 +81,7 @@ class SessionCubit(
             'p_consent': consent,
             'p_internal': internal,
             'p_answered': answered,
+            'p_text_version': textVersion,
           },
         );
     // Also replays a failed browser sign-in that supabase_flutter read from
