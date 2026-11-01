@@ -370,7 +370,7 @@ function readPiece(segment: string[]): Piece | null {
 }
 
 /** "Eier zehn Stück", "Milch 2 Liter", "Joghurt 3x": an amount said after the item. */
-function trailingAmount(tokens: string[]): { rest: string[]; quantity: string } | null {
+function trailingAmount(tokens: string[]): { rest: string[]; quantity: string | null } | null {
   const at = (i: number) => tokens[tokens.length - i];
   const allowed = (before: string | undefined) =>
     before !== undefined && !sizeWords.has(before.toLowerCase()) && !readNumber(before);
@@ -379,6 +379,11 @@ function trailingAmount(tokens: string[]): { rest: string[]; quantity: string } 
   if (last && !isArticle(at(1)) && allowed(at(2))) {
     const unit = last.glued ? units[last.glued.toLowerCase()] : null;
     if (last.glued && !unit && !multipliers.has(last.glued.toLowerCase())) return null;
+    // A bare count goes to public.parse_item as digits, which keeps it as the Menge only after
+    // a known name and up to 20 ("Karotten zwei", not "Büroklammern hundert"; job 61).
+    if (!last.glued) {
+      return { rest: [...tokens.slice(0, -1), formatNumber(last.value)], quantity: null };
+    }
     return { rest: tokens.slice(0, -1), quantity: amountOf(last.value, unit) };
   }
   const unit = units[at(1)?.toLowerCase() ?? ''];

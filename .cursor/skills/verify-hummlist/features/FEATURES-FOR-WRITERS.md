@@ -103,7 +103,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Quick add
 
-**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type ("2 l Milch", "6x Eier", "zwei Gurken"), and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
+**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type, in front or behind ("2 l Milch", "6x Eier", "zwei Gurken", "Karotten 2", "Karotten x2"), and a number that is part of the name stays there ("Windeln Größe 4", "Vitamin D3", "7up"); and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
 
 **How to get there.**
 1. Open Hummlist and stay on the „Liste“ (EN: "List") tab.
@@ -117,7 +117,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list").
 
-**Last verified.** main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** job 61 branch (quantities), 2026-11-01 (CET), driven on the Linux app with fg; main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 

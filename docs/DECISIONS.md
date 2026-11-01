@@ -6158,3 +6158,43 @@ page and the onboarding hint ("Du kannst sie später unter Mehr anlegen") alread
   edit sheet the options fold back and focus returns where a pick returns it (the add field);
   after a cancel it goes to the "+ Neuer Laden" option. Escape and Android back close only the
   field, not the sheet.
+
+## Job 61: typed quantities at the end of a line (2026-11-01)
+
+Peter added "Karotten 2" and "2 Karotten" and lost the 2. Two causes: a bare number at the end
+was always part of the name (app and server), and a suggestion row tapped while the rows for the
+new text were still loading carried the quantity of the text before ("Karotten" while "2 Karotten"
+loaded).
+
+- **The rule (Peter/PM, 2026-11-01).** A bare number at the end is the Menge only when it is a
+  whole 1 to 20, the word before it is no size or unit word (Größe, Gr., Stufe, Nr., No., size,
+  typ, Klasse, Pack, pcs, mAh, cl, %, and every unit) and has no digit, it is not glued to
+  letters (D3, 7up), and the rest is a known name. "Karotten x2" and "Karotten 2x" are explicit
+  counts and need no known name. `supabase/tests/quantity_parse.tsv` is the one table the app and
+  the server pass.
+- **Known name on the server: `public.is_known_name(household, name)`**, a classifier word of
+  the name with a category (`classifier_words`: dictionary, synonyms such as "carrots", typos) or
+  an item of the household with that `normalized_name` (its history). In SQL, not TS, because
+  `parse_item` is already the one parser behind `add_item` (MCP add_items, Siri/voice, Alexa) and
+  `suggest_entries`, so one change covers every server path.
+- **Known name in the app: a bundled copy of `classifier_lexicon`'s forms**
+  (`app/lib/list/lexicon_forms.dart`, 1322 forms, about 10 KB) plus the usuals and items on the
+  device. `parseEntry` runs only without the server (offline rows), so it has to know words
+  offline; the Dart port of `item_key`/`fold_key` matched Postgres on all 421 words of
+  `wordlist.tsv`. `supabase/classifier/client_lexicon.sh` writes the file from the local stack, and
+  the db gate fails (`--check`) when a classifier migration changes the forms without it. Typo
+  matching (`lexicon_fuzzy`) stays server-only.
+- **Voice/Siri/Alexa.** The sentence splitter (`voice/parse.ts`) used to take any bare trailing
+  number ("Eier zehn" = 10 Eier). It now hands a bare count to `add_item` as digits in the text
+  ("Eier 10") with no explicit quantity, so `parse_item` applies the same rule; read-backs come
+  from the stored row, so Alexa still says "10 Eier". A trailing number with a unit or "x" is read
+  by the splitter as before.
+- **Stale rows.** While the rows for a new text load, the rows on screen take the quantity typed
+  now (`AddSheetCubit._withTyped`), so what a tap adds is what the row shows. A text that drops
+  its quantity keeps the old rows' quantity for that moment; the server's rows follow within
+  about 150 ms.
+- **The row shows the quantity after the name**, "Karotten · 2", in the bold accent colour it
+  had in front. The semantics label is unchanged ("2× Karotten, Wie getippt"): the list rows,
+  e2e tests and recipes read it that way.
+- **Changed expectation:** `entry_test.dart`'s 'Eier   10' was Entry('Eier 10', null); under the
+  rule it is Eier with 10 (Eier is a dictionary word). The case now lives in the shared table.

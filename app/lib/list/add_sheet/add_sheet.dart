@@ -466,7 +466,7 @@ class const _Header({required final VoidCallback onClose})
   }
 }
 
-/// "6× Windeln" over "Wie getippt · Pampers · Größe 3"; what differs from
+/// "Windeln · 6" over "Wie getippt · Pampers · Größe 3"; what differs from
 /// the first row is bold. The first row is what Enter takes.
 class const _SuggestionRow({
   required final Suggestion suggestion,
@@ -537,15 +537,17 @@ class const _SuggestionRow({
                       Text.rich(
                         TextSpan(
                           children: [
-                            if (quantityLabel(quantity) case final q?)
+                            TextSpan(text: entry.name),
+                            // The Menge after the name, as typed at either
+                            // end: "Karotten · 2".
+                            if (quantityLabel(quantity) != null)
                               TextSpan(
-                                text: '$q ',
+                                text: ' · ${quantity!.trim()}',
                                 style: TextStyle(
                                   color: scheme.primary,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
-                            TextSpan(text: entry.name),
                           ],
                         ),
                         style: TextStyle(
