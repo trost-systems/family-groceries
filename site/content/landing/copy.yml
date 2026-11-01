@@ -46,8 +46,8 @@ hero.test-link:
   status: draft
   source: "New: replaces the prototype's store badges (no store listing yet); jumps to the test block."
 hero.image:
-  de: "Die Hummlist-App mit der Liste von Familie Brandt: Zahnpasta bei dm, bei Edeka sind die Bananen abgehakt und die Hafermilch ist neu. Darüber die Meldung „Mia hat ‚Hafermilch‘ hinzugefügt“."
-  en: "The Hummlist app with the Brandts’ list: toothpaste at dm, at Edeka the bananas are ticked off and the oat milk is new. Above it the note “Mia added ‘Oat milk’”."
+  de: "Die Hummlist-App mit der Liste von „Unser Haushalt“, dazu Wochenmarkt, Bäckerei, Drogerie und Supermarkt: Zahnpasta bei der Drogerie, im Supermarkt sind die Bananen abgehakt und die Hafermilch ist neu. Darüber die Meldung „Anna hat ‚Hafermilch‘ hinzugefügt“."
+  en: "The Hummlist app with the list of “Our household”, with farmers’ market, bakery, drugstore and supermarket: toothpaste at the drugstore, at the supermarket the bananas are ticked off and the oat milk is new. Above it the note “Anna added ‘Oat milk’”."
   status: draft
   source: "New: text alternative of the hero illustration; must match site/public/media/hero-*."
 
@@ -93,18 +93,18 @@ feature.stores.title:
   status: draft
   source: "6b prototype; English new."
 feature.stores.body:
-  de: "Jeder Artikel landet von selbst in seiner Kategorie, von Obst & Gemüse bis Drogerie. dm, Lidl und Edeka sind schon eingerichtet, jeder mit eigenem Laufweg. Hummlist merkt sich, wo du was meistens kaufst."
-  en: "Every item lands in its category by itself, from fruit & vegetables to toiletries. dm, Lidl and Edeka are set up already, each with its own route. Hummlist remembers where you usually buy what."
+  de: "Jeder Artikel landet von selbst in seiner Kategorie, von Obst & Gemüse bis Drogerie. Lege deine Läden an, vom Supermarkt bis zum Wochenmarkt, jeder mit eigenem Laufweg. Hummlist merkt sich, wo du was meistens kaufst."
+  en: "Every item lands in its category by itself, from fruit & vegetables to toiletries. Add your stores, from the supermarket to the farmers’ market, each with its own route. Hummlist remembers where you usually buy what."
   status: draft
-  source: "6b prototype; English new. Names the seeded stores dm, Lidl and Edeka (retailer names, flag for Launch)."
+  source: "6b prototype; English new. Generic store types only, no retailer names (N-23)."
 feature.stores.more:
   de: "Eigene Läden legst du dazu, die Reihenfolge der Kategorien stellst du um."
   en: "Add your own stores and change the order of the categories."
   status: draft
   source: "6b prototype; English new."
 feature.stores.image:
-  de: "Die Läden dm, Lidl und Edeka zur Auswahl, Edeka ist gewählt. Die Kategorien stehen in der Reihenfolge des Laufwegs: Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Tiefkühl."
-  en: "The stores dm, Lidl and Edeka to choose from, Edeka selected. The categories follow the route through the store: fruit & veg, bread & bakery, chilled, pantry, frozen."
+  de: "Die Läden Drogerie, Bäckerei und Supermarkt zur Auswahl, der Supermarkt ist gewählt. Die Kategorien stehen in der Reihenfolge des Laufwegs: Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Tiefkühl."
+  en: "The stores drugstore, bakery and supermarket to choose from, the supermarket selected. The categories follow the route through the store: fruit & veg, bread & bakery, chilled, pantry, frozen."
   status: draft
   source: "New: text alternative of the stores illustration; must match site/public/media/stores-*."
 

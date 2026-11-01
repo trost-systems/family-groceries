@@ -39,13 +39,13 @@ posters, so nothing here loops.
 ### hero (wide 500 x 540, compact 358 x 400)
 - Where: the bottom of the cobalt hero block, painted cobalt so it merges with the block.
 - Focal object: the list screen on one phone, run off the bottom edge.
-- Action: Mia added Hafermilch on her phone; it sits in the list, freshly tinted.
-- Payoff: the sync sticker "Mia hat „Hafermilch“ hinzugefügt" with Mia's avatar, straddling the phone.
+- Action: Anna (household „Unser Haushalt“, with Jonas) added Hafermilch on her phone; it sits in the list, freshly tinted.
+- Payoff: the sync sticker "Anna hat „Hafermilch“ hinzugefügt" with Anna's avatar, straddling the phone.
 - Left out: tabs, status bar, settings, other satellites (no voice sticker, no logo cluster).
 
 ### add-tick (wide 576 x 324, compact 358 x 448)
 - Where: the "add and tick off" video slot, as its poster, inside the page's 28 px frame.
-- Focal object: the Edeka part of the list with the add field under it.
+- Focal object: the Supermarkt part of the list with the add field under it.
 - Action: Bananen ticked off, Avocados just added through the add field.
 - Payoff: one mint ticked row and one fresh row in place, the field ready for the next item.
 - Left out: the app bar (cropped above), the add sheet, keyboard, other stores.
@@ -70,8 +70,8 @@ picks; store names are text in Hummlist colours only.
 
 ### stores (wide 576 x 324, compact 358 x 448)
 - Where: the still for "sorted the way you walk through the store".
-- Focal object: Edeka's walk order, five numbered category rows.
-- Action: Edeka is the selected store chip among dm, Lidl and Edeka.
+- Focal object: the Supermarkt's walk order, five numbered category rows.
+- Action: Supermarkt is the selected store chip among Drogerie, Bäckerei and Supermarkt (Drogerie dropped at compact).
 - Payoff: the numbers 1 to 5 down the route, the order read at a glance.
 - Left out: items, drag handles, the app bar, store colours or logos.
 
@@ -83,14 +83,14 @@ dark), frames `/tmp/s53/scenes/<scene>-<locale>-<size>[-dark].png` at 2x. Every 
 
 ### hero
 Plan: the list screen on one phone; Mia added Hafermilch; it sits honey-tinted in the list with the sync sticker; no tabs, status bar or second satellite.
-Layout: Block with gutters on the cobalt ground, gutter 72 (sides and top), phone off the bottom with the add field whole and 44 px of list under it (19 px at compact); sticker straddles the top-left corner, rotated -3°. Compact 358: phone 24 px from the sides, the dm store and Gurken dropped, sticker stacked centred over the phone's top edge.
+Layout: Block with gutters on the cobalt ground, gutter 72 (sides and top), phone off the bottom with the add field whole and 44 px of list under it (19 px at compact); sticker straddles the top-left corner, rotated -3°. Compact 358: phone 24 px from the sides, the Wochenmarkt, Bäckerei and Drogerie stores dropped, sticker stacked centred over the phone's top edge.
 Beats: still, stays a still on the page.
 Captured: 500 and 358, light and dark, de and en. No reduced-motion or seam film (nothing moves).
 Review: add field touched the bottom crop → Gurken dropped in wide, field now clear. "Emptiest of the five, no bleed off the right" → stands: the brief places it at the block's bottom, so it bleeds off the bottom only, and more rows would push the field out of the crop. Night-shadow halo in dark → stands, it is the `--hl-shadow-night-l` token.
 Not checked: the image inside the real page at 390 and 1440 (the page is being built in parallel).
 
 ### add-tick
-Plan: the Edeka part of the list and the add field; Bananen ticked in mint, 2× Avocados just added at the end of its category above the field; no app bar, sheet or keyboard.
+Plan: the Supermarkt part of the list and the add field; Bananen ticked in mint, 2× Avocados just added at the end of its category above the field; no app bar, sheet or keyboard.
 Layout: Pinned bottom, cropped at the top inside the content (category label first) and off the bottom; gutter 48; the sticker "Hinzugefügt: Avocados" (the app's `addedItem`) straddles the right edge at the Avocados row, 12 px clear of its check box. Compact 358: app bar shown, sticker stacked over the phone's top edge.
 Beats: poster only; job 54's footage replaces it.
 Captured: 576 and 358, light and dark, de and en.
@@ -114,7 +114,7 @@ Review: grey bubble above the request → removed. Carrot for Spinat (the app's 
 Not checked: whether real MCP tool results classify Äpfel as Obst & Gemüse and Eier as Kühlregal on the demo household (assumed from the seeded categories).
 
 ### stores
-Plan: Edeka's walk order, five numbered category rows; Edeka selected among dm, Lidl, Edeka; no items, drag handles, store colours or logos.
+Plan: the Supermarkt's walk order, five numbered category rows; Supermarkt selected among Drogerie, Bäckerei, Supermarkt; no items, drag handles, store colours or logos.
 Layout: wide puts the chips in a column, vertically centred, gutter 32, and the route as a staircase stepping 20 px right per stop; compact puts the chips in a row on top, 24 px sides, 38 px top and bottom, steps of 12 px.
 Beats: still.
 Captured: 576 and 358, light and dark, de and en.

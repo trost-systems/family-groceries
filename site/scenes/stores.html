@@ -73,15 +73,16 @@
     .route li:nth-child(3) { margin-left: 24px; }
     .route li:nth-child(4) { margin-left: 36px; }
     .route li:nth-child(5) { margin-left: 48px; }
+    .compact-hide { display: none; }
   }
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="chips">
-    <span class="hx chip">dm</span>
-    <span class="hx chip">Lidl</span>
-    <span class="hx hx--honey chip">Edeka</span>
+    <span class="hx chip compact-hide" data-t="storeA"></span>
+    <span class="hx chip" data-t="storeB"></span>
+    <span class="hx hx--honey chip" data-t="storeC"></span>
   </div>
   <ol class="route">
     <li class="hx"><span class="hxp step">1</span><span class="emo">🥕</span><span data-t="produce"></span></li>
@@ -94,10 +95,12 @@
 <script>
   globalThis.STRINGS = {
     de: {
+      storeA: 'Drogerie', storeB: 'Bäckerei', storeC: 'Supermarkt',
       produce: 'Obst &amp; Gemüse', bakery: 'Brot &amp; Backwaren', chilled: 'Kühlregal',
       pantry: 'Vorrat &amp; Konserven', frozen: 'Tiefkühl',
     },
     en: {
+      storeA: 'Drugstore', storeB: 'Bakery', storeC: 'Supermarket',
       produce: 'Fruit &amp; veg', bakery: 'Bread &amp; bakery', chilled: 'Chilled',
       pantry: 'Pantry', frozen: 'Frozen',
     },
