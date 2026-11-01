@@ -220,7 +220,8 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   calls `create_siri_credential()` and stores `{token, id, userId, sessionId, url}` in the Keychain
   (service `com.hummlist.app.siri`, this device only). The row is kind `siri` in
   `personal_access_tokens`, bound to the Supabase session; it ends with sign-out, account deletion
-  or leaving the household. Only `voice` accepts it (`authenticate(req, deps, { siri: true })`).
+  or leaving the household. Like every access key, its row is deleted 30 days after it ended
+  (`purge_access_tokens`, see docs/MCP.md "Retention"). Only `voice` accepts it (`authenticate(req, deps, { siri: true })`).
   Zugänge lists it as "Siri (dieses iPhone)".
 - **Request** from the intents: `POST /functions/v1/voice` with `Authorization: Bearer fgp_…` and
   JSON `{"text", "mode": "add"|"read", "lang": "de"|"en"}`. `lang` comes from the dictated text
