@@ -199,3 +199,40 @@ Deno.test('a lifecycle event names its transaction by the original id and its ti
     new Date(NOW.getTime() - 60_000),
   ]);
 });
+
+Deno.test('every PROMOTIONAL event of premium for a household is a promotional read', () => {
+  const promo = {
+    store: 'PROMOTIONAL',
+    product_id: 'rc_promo_premium_lifetime',
+    app_id: undefined,
+  };
+  for (const type of ['NON_RENEWING_PURCHASE', 'CANCELLATION', 'EXPIRATION', 'RENEWAL']) {
+    assertEquals(action(type, promo), { do: 'promotional', householdId: HOME }, type);
+  }
+  // Upper case ids are the same household.
+  assertEquals(action('EXPIRATION', { ...promo, app_user_id: HOME.toUpperCase() }), {
+    do: 'promotional',
+    householdId: HOME,
+  });
+  // Without entitlement ids we read anyway: the API decides.
+  assertEquals(action('EXPIRATION', { ...promo, entitlement_ids: null }).do, 'promotional');
+  assertEquals(action('TRANSFER', promo), { do: 'ignore' });
+});
+
+Deno.test('PROMOTIONAL events of another entitlement or for no household are refused', () => {
+  const promo = { store: 'PROMOTIONAL' };
+  assertEquals(action('NON_RENEWING_PURCHASE', { ...promo, entitlement_ids: ['pro'] }), {
+    do: 'ignore',
+    refused: 'entitlement',
+  });
+  assertEquals(action('NON_RENEWING_PURCHASE', { ...promo, entitlement_ids: [] }), {
+    do: 'ignore',
+    refused: 'entitlement',
+  });
+  for (const id of ['$RCAnonymousID:8f3e0a1b', 'peter@example.com', HOME.slice(1), null]) {
+    assertEquals(action('NON_RENEWING_PURCHASE', { ...promo, app_user_id: id }), {
+      do: 'ignore',
+      refused: 'app_user_id',
+    });
+  }
+});

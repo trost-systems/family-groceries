@@ -907,6 +907,32 @@ void main() {
       expect(key('premium-card-lifetime'), findsNothing);
     });
 
+    testWidgets('a promotional grant: its status and end, nothing to buy', (
+      tester,
+    ) async {
+      await openLifetime(
+        tester,
+        entitlements: FakeEntitlementsSource()
+          ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
+      );
+      expect(
+        find.textContaining('Hummlist Premium geschenkt bis '),
+        findsOneWidget,
+      );
+      expect(key('premium-card-lifetime'), findsNothing);
+      expect(key('premium-card-yearly'), findsNothing);
+      expect(key('premium-manage'), findsNothing);
+    });
+
+    testWidgets('a promotional grant without end', (tester) async {
+      await openLifetime(
+        tester,
+        entitlements: FakeEntitlementsSource()..rowsNow = [promotionalRow()],
+      );
+      expect(find.text('Hummlist Premium geschenkt'), findsOneWidget);
+      expect(key('premium-card-lifetime'), findsNothing);
+    });
+
     testWidgets('a failed renewal: only the subscriber is told', (
       tester,
     ) async {

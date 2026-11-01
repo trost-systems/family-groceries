@@ -1345,6 +1345,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumStatusTester => 'Hummlist Premium through a tester grant';
 
   @override
+  String get premiumStatusGranted => 'Hummlist Premium, a gift';
+
+  @override
+  String premiumStatusGrantedUntil(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Hummlist Premium, a gift until $dateString';
+  }
+
+  @override
   String get premiumChecking =>
       'Checking whether your household already has Hummlist Premium …';
 

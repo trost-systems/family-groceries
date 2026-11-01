@@ -1,8 +1,10 @@
 // The purchases function's database work, all through the service connection and the functions
-// in migrations 20261030190000_purchases.sql, 20261031123504_household_bound_lifetime.sql and
-// 20261031214500_premium_yearly.sql that no client may call. A webhook event's writes take [Tx]: they commit with its id (firstDelivery).
+// in migrations 20261030190000_purchases.sql, 20261031123504_household_bound_lifetime.sql,
+// 20261031214500_premium_yearly.sql and 20261101143000_revenuecat_promotional.sql that no client
+// may call. A webhook event's writes take [Tx]: they commit with its id (firstDelivery).
 import type { Sql, Tx } from '../_shared/db.ts';
 import type { AppStore } from '../_shared/purchases.ts';
+import type { PromotionalPremium } from './promotional.ts';
 import type { Lifecycle } from './revenuecat.ts';
 import type { Plan, Refund, Sale, StoreEnvironment, StorePurchase } from './types.ts';
 
@@ -165,4 +167,28 @@ export async function takeDeletions(sql: Sql, limit: number): Promise<string[]> 
 
 export async function deletionDone(sql: Sql, id: string): Promise<void> {
   await sql`select public.revenuecat_deletion_done(${id}::uuid)`;
+}
+
+/** promotional_premium_sync's outcome (migration 20261101143000_revenuecat_promotional.sql). */
+export type PromotionalOutcome = 'granted' | 'updated' | 'unchanged' | 'removed' | 'no_household';
+
+/**
+ * Stores [householdId]'s promotional premium as [read] finds it at RevenueCat. The household is
+ * locked first, so two deliveries for it read and write one after the other: the later read
+ * wins, and it is never older than the later event.
+ */
+export async function promotional(
+  sql: Tx,
+  householdId: string,
+  read: () => Promise<PromotionalPremium>,
+): Promise<PromotionalOutcome> {
+  const held = await sql`
+    select 1 from public.households where id = ${householdId}::uuid for no key update`;
+  if (held.length === 0) return 'no_household';
+  const now = await read();
+  const [row] = await sql<{ outcome: PromotionalOutcome }[]>`
+    select public.promotional_premium_sync(${householdId}::uuid, ${now.active}::boolean, ${
+    now.active ? now.expiresAt?.toISOString() ?? null : null
+  }::timestamptz) as outcome`;
+  return row.outcome;
 }

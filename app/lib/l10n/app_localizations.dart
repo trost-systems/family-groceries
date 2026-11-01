@@ -2288,6 +2288,18 @@ abstract class AppLocalizations {
   /// **'Hummlist Premium über Tester-Freischaltung'**
   String get premiumStatusTester;
 
+  /// PLACEHOLDER (RevenueCat promotional, Nov 1): Hummlist Launch / Legal Review K.13 write the final copy. Premium page: a free grant without end (RevenueCat promotional) unlocks the household
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium geschenkt'**
+  String get premiumStatusGranted;
+
+  /// PLACEHOLDER (RevenueCat promotional, Nov 1): Hummlist Launch / Legal Review K.13 write the final copy. Premium page: a free grant (RevenueCat promotional) unlocks the household until date
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium geschenkt bis {date}'**
+  String premiumStatusGrantedUntil(DateTime date);
+
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household's rows are loading or offline; no Buy
   ///
   /// In de, this message translates to:

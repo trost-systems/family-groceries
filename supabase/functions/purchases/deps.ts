@@ -8,12 +8,14 @@ import { analyticsSubject } from '../alexa/store.ts';
 import type { PurchasesConfig } from './config.ts';
 import type { Deps, Ledger } from './handler.ts';
 import { hmacHex } from './revenuecat.ts';
-import { deleteDueCustomers } from './deletions.ts';
+import { deleteDueCustomers, type Fetch } from './deletions.ts';
+import { fetchPromotional } from './promotional.ts';
 import {
   claim,
   deletionDone,
   firstDelivery,
   lifecycle,
+  promotional,
   record,
   reinstate,
   revoke,
@@ -30,9 +32,15 @@ export async function appSession(req: Request) {
 export function productionDeps(
   config: PurchasesConfig,
   telemetry: Telemetry,
-  options: { authenticate?: Deps['authenticate'] } = {},
+  options: { authenticate?: Deps['authenticate']; fetch?: Fetch } = {},
 ): Deps {
+  const fetchApi: Fetch = options.fetch ?? fetch;
   const webhook = config.webhook;
+  const revenueCat = config.revenueCat;
+  /** The household's promotional premium, read now (null without the API key). */
+  const readPromotional = revenueCat
+    ? (householdId: string) => () => fetchPromotional(revenueCat, householdId, fetchApi, new Date())
+    : null;
   return {
     webhook,
     local: config.local,
@@ -48,6 +56,11 @@ export function productionDeps(
           lifecycle: (c) => lifecycle(tx, c),
           revoke: (r) => revoke(tx, r),
           reinstate: (store, transactionId) => reinstate(tx, store, transactionId),
+          promotional: (householdId) => {
+            // The handler answers 503 before this without the key.
+            if (!readPromotional) throw new Error('REVENUECAT_SECRET_KEY is not set');
+            return promotional(tx, householdId, readPromotional(householdId));
+          },
         };
         return { first: true as const, value: await work(ledger) };
       });
@@ -84,6 +97,10 @@ export function productionDeps(
         premiumSource: sale.plan,
       }, subject);
     },
+    reconcile: readPromotional
+      ? (householdId) =>
+        serviceDb().begin((tx) => promotional(tx, householdId, readPromotional(householdId)))
+      : null,
     deleteDueCustomers: config.revenueCat
       ? () =>
         deleteDueCustomers(
@@ -92,7 +109,7 @@ export function productionDeps(
             done: (id) => deletionDone(serviceDb(), id),
           },
           config.revenueCat!,
-          fetch,
+          fetchApi,
         )
       : null,
     report: (e) => telemetry.exception(e),

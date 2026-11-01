@@ -117,6 +117,16 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
 }
 
 /// A yearly plan's row as members read it, ending `days` after `from`.
+/// A RevenueCat promotional grant's row: ending [days] after [from], or never
+/// without [from].
+Map<String, dynamic> promotionalRow({DateTime? from, int days = 30}) => {
+  'kind': 'premium',
+  'source': 'promotional',
+  'premium_source': 'promotional',
+  'expires_at': from?.add(Duration(days: days)).toUtc().toIso8601String(),
+  'auto_renew': null,
+};
+
 Map<String, dynamic> yearlyRow({
   required DateTime from,
   int days = 200,

@@ -126,6 +126,9 @@ class const _PremiumView() extends StatelessWidget {
                     ),
                     PremiumSource.lifetime => l10n.premiumStatusLifetime,
                     PremiumSource.testerGrant => l10n.premiumStatusTester,
+                    PremiumSource.promotional when expiresAt != null =>
+                      l10n.premiumStatusGrantedUntil(expiresAt.toLocal()),
+                    PremiumSource.promotional => l10n.premiumStatusGranted,
                   }),
                   subtitle: Text(l10n.premiumUnlockedBody),
                 ),
