@@ -89,7 +89,7 @@ const allowedKeys = new Set([
   'token', 'distinct_id', '$lib', '$lib_version', '$os', '$os_version', '$browser', '$browser_version',
   '$browser_language', '$device_type', '$screen_height', '$screen_width', '$viewport_height',
   '$viewport_width', '$timezone',
-  'source', 'actor_role', 'household_size', 'default_stores', 'method', 'channel', 'context', 'scope',
+  'source', 'actor_role', 'household_size', 'default_stores', 'store_count', 'method', 'channel', 'context', 'scope',
   'via', 'category', 'entry_point', 'screen', 'contact_ok',
 ]);
 

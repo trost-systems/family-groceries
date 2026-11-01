@@ -6064,3 +6064,97 @@ for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a 
    mint is done, as on the homepage hero. Site follow-up: `household-sync.html` drops
    `.item--arrived` (mint plus edge bar) for `.item--fresh` and is re-filmed; the household-sync
    demo loop shows the new honey once re-taken.
+## Job 58: the household's own stores, 2026-11-01
+
+Peter (Q22 = S1): picking a store while adding an item offers "+ Neuer Laden" with an inline field
+that creates the store and selects it; Mehr → Läden adds, renames and deletes stores. The landing
+page and the onboarding hint ("Du kannst sie später unter Mehr anlegen") already promised this.
+
+- **One name, one store.** `public.store_name_key(name)` (trimmed, spaces collapsed, lower case)
+  is unique per household (`stores_household_name_key`), replacing in effect the case-sensitive
+  `unique (household_id, name)`, which stays. Existing names that clash under the key keep their
+  store, items and layout; all but the first by sort order get a number ("Lidl (2)") in the
+  migration, so nothing is merged or lost and the household can rename or delete them.
+- **`add_store` is idempotent.** A name the household has in any case or spacing returns that
+  store's id instead of failing, so "type a name, confirm" always ends with a selected store, also
+  when two members create the same store at once (`on conflict do nothing`, then the lookup). The
+  app looks in its catalog first and only calls the server for a new name.
+- **40 characters.** The RPCs refuse longer names (`store_name_too_long`, 22001); the column's
+  60-character check stays the hard limit for names households already have. A store name sits in
+  a section divider, a badge and a picker row on a 358 px screen; 40 still fits "Edeka Center
+  Musterstadt-Südost" with room to spare.
+- **Rename clash** raises `store_name_taken` with SQLSTATE 23505, which `RejectedOp.nameTaken`
+  already maps; the app says "Einen Laden „…“ gibt es schon."
+- **A new store's layout** is a full copy of the household's route order, every category shown
+  (the "Ohne Laden" order), so the layout screen edits it like a preset store's.
+  `create_category` already extends every store's layout, custom ones included (pgTAP).
+- **Preset stores are household data:** dm, Lidl and Edeka can be renamed and deleted like any
+  other store. Renaming one to another name clears its `seed_key`: "dm" renamed to "Rossmann" is
+  no longer dm, so dm's brand defaults (Balea → dm, drugstore items → dm) stop picking it and the
+  badge no longer treats it as the chain. A change of case or spacing ("dm" → "DM") keeps it.
+- **Delete** lets the foreign keys do it: items (open and bought) fall back to no store, layout
+  and item→store memories go (cascade). The app's confirmation names how many open items move to
+  "Ohne Laden".
+- **Online only.** Like the store and category orders, adding, renaming and deleting a store is
+  not queued: offline the app says "Läden lassen sich nur mit Verbindung anlegen, umbenennen oder
+  löschen." An existing store is still picked offline, by name too. A queued create would need a
+  client-made id and a queued item tagged with a store the server does not know yet.
+- **RPCs are security invoker** with the member check, like `create_category` and
+  `set_store_layout`: RLS (`stores_member`) is a second guard, and nothing needs the owner's
+  rights.
+- **Realtime:** `stores` and `store_category_order` were in the publication since the foundation
+  and the list's channel reloads the catalog on any change there; deletes are unfiltered and
+  reload too. Items untagged by a delete arrive as item updates. No change needed.
+- **Data export:** stores have no section of their own (items carry their store's name), so the
+  export is unchanged; household deletion cascades to stores as before.
+- **No analytics event** for store changes: category creation has none either, and the gate
+  insights do not need one.
+- **MCP:** `resolve` first tries the name in any case and spacing, then the folded and partial
+  matches as before, so "Aldi Süd" and "Aldi Sued" (two stores to the database) stay reachable by
+  name. The `store` argument's description names the household's stores (`list_stores`) with
+  "Rewe" as an own example. Siri, the voice endpoint and Alexa never match stores by name (the
+  store comes from memory or the preset chains' defaults), so they work with any store as they
+  are; a custom store is picked automatically once an item was bought or tagged there.
+- **Logos:** none. Retailer logos wait for a legal check (Peter). Job 57's `StoreBadge` already
+  has the slot (`StoreBadgeStyle.logo`, an empty logo table by seed key); an own store shows its
+  full name in the badge like every store. A "Logos:" comment on `Store`
+  (`app/lib/list/model.dart`) points there; the analyzer's `todo` diagnostic is an error in this
+  repo, so it is not written as a TODO. No column, no assets.
+- **Onboarding picks the stores (ADDENDUM 3, Peter 15:46).** New households no longer start with
+  dm, Lidl and Edeka. Step 2a offers EDEKA, REWE, Lidl, Aldi Süd, Aldi Nord, Kaufland, Netto,
+  Penny, dm and Rossmann (`app/lib/household/popular_stores.dart`, the one place to change the
+  offer), nothing picked, as hex filter chips (compact on 358 px, checked semantics built in),
+  plus "+ Eigenen Laden hinzufügen" with the same inline field as the picker. The stores are
+  created with the household in the order picked (`create_household(p_stores)`, one transaction,
+  so a lost answer and its retry cannot leave half the stores). "Überspringen" creates it without
+  stores, and the hint says they can be added under Mehr, which is now true.
+- **The server keeps `p_default_stores`,** default true: builds before this one still show "dm,
+  Lidl und Edeka" and send true for it, and the scripts, fixtures and pgTAP tests that create a
+  household without arguments keep their data. The new app always sends false. No existing
+  household or row changes.
+- **"dm", "Lidl" or "EDEKA" in any case is that chain** when the household does not have it yet
+  (`add_store`, so for onboarding, the picker and Mehr → Läden alike): its seed key (brand
+  defaults like Balea → dm) and its researched walking order. Any other name, "REWE" included,
+  starts from the route order; only those three chains have a researched layout. The layouts now
+  live in one function, `apply_store_layout(store)`; `apply_default_store_layouts` calls it.
+- **Analytics:** `household_created` sends `store_count` (0 to 50) instead of `default_stores`,
+  never the names; the old key stays allowed for old builds.
+- **The store-name disclaimer (Legal L-7, N-23; Peter "L1", 15:45)** stands word for word under
+  Mehr → Läden, under the onboarding store choices, and on hummlist.com's Impressum and imprint
+  pages ("Ladennamen" / "Shop names"). The app has no About screen; Mehr → Impressum opens that
+  site page.
+- **No chain colours for any store (ADDENDUM 1):** job 57's `StoreBadge` draws every store the
+  same, from tokens; nothing in the app colours by seed key or name any more.
+- **A household with no stores** works on every path: MCP `list_stores` answers `[]`, adds land
+  without a store (also items dm would get), a store name gets "Laden „…“ nicht gefunden.
+  Vorhanden: (keine).", voice and Siri add, Alexa reads back
+  (`supabase/functions/_shared/zero_stores_integration_test.ts`, in the db gate).
+- **Picker search from six stores.** More than five stores make a second row of option pills on
+  a 358 px phone; from there a search field (`store-search`) sits above them. Enter on a name the
+  household has picks it; any other text opens the new-store field with it. Partial matches are
+  tapped, not guessed, so "Re" + Enter never picks "Rewe" by surprise.
+- **Focus.** The new-store field asks for focus itself after its first frame (`autofocus` yields
+  to the add field or the search field, which have focus already). After confirming in the add or
+  edit sheet the options fold back and focus returns where a pick returns it (the add field);
+  after a cancel it goes to the "+ Neuer Laden" option. Escape and Android back close only the
+  field, not the sheet.

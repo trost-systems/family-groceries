@@ -818,6 +818,79 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get storeNew => 'New store';
+
+  @override
+  String get storeNewLabel => 'Add a new store';
+
+  @override
+  String get storeNameHint => 'Store name';
+
+  @override
+  String get storeCreateConfirm => 'Add store';
+
+  @override
+  String storeAddedAndSelected(String store) {
+    return '$store added and selected';
+  }
+
+  @override
+  String storeAdded(String store) {
+    return '$store added';
+  }
+
+  @override
+  String get storeSearch => 'Search stores';
+
+  @override
+  String storeRename(String store) {
+    return 'Rename $store';
+  }
+
+  @override
+  String storeDelete(String store) {
+    return 'Delete $store';
+  }
+
+  @override
+  String storeDeleteTitle(String store) {
+    return 'Delete $store?';
+  }
+
+  @override
+  String storeNameTaken(String name) {
+    return 'A store named “$name” already exists.';
+  }
+
+  @override
+  String get storesNeedConnection =>
+      'Adding, renaming or deleting stores needs a connection.';
+
+  @override
+  String get storesEmpty =>
+      'No stores yet. Add one and the list sorts your items along its walking route.';
+
+  @override
+  String storeMenu(String store) {
+    return 'Options for $store';
+  }
+
+  @override
+  String get storeRenameAction => 'Rename';
+
+  @override
+  String storeDeleteBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open items move to “No store”.',
+      one: '1 open item moves to “No store”.',
+      zero: 'No open items are in this store.',
+    );
+    return '$_temp0 Its walking route goes too.';
+  }
+
+  @override
   String get accessRowHint => 'MCP server, access tokens, connected apps';
 
   @override
@@ -1034,10 +1107,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storesChoice => 'Stores';
 
   @override
-  String get defaultStores => 'Add default German stores';
+  String get onboardingStoresHint =>
+      'Pick the stores you shop at. Your list shows them in this order.';
 
   @override
-  String get defaultStoresHint => 'dm, Lidl and Edeka, each in its aisle order';
+  String get storeAddOwn => 'Add your own store';
+
+  @override
+  String get storesDisclaimer =>
+      'We use shop names such as dm, Lidl or EDEKA only so you can see which shop a list is for. The names and trade marks belong to their owners. Hummlist is independent and isn\'t affiliated with, sponsored or endorsed by these companies.';
 
   @override
   String get skipStores => 'Skip';

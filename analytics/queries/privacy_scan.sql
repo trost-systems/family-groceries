@@ -14,7 +14,7 @@ WHERE timestamp > now() - INTERVAL 90 DAY
     -- (supabase/functions/_shared/telemetry.ts).
     'distinct_id', 'event_id', 'install_id', 'household_id', 'platform', 'app_version',
     'is_internal', '$geoip_disable', '$process_person_profile', '$lib', '$lib_version',
-    '$groups', 'source', 'actor_role', 'household_size', 'scope', 'method', 'default_stores',
+    '$groups', 'source', 'actor_role', 'household_size', 'scope', 'method', 'default_stores', 'store_count',
     'channel', 'context', 'via', 'category', 'entry_point', 'screen', 'contact_ok',
     'product_id', 'price', 'currency', 'app_store', 'country', 'net_amount', 'transaction_ref',
     'function_name', '$exception_list', '$exception_level',

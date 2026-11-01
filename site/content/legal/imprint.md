@@ -4,7 +4,7 @@ description: "Imprint of Hummlist: provider, address and contact."
 locale: en
 path: /en/imprint
 translation_key: imprint
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 # Imprint
@@ -32,3 +32,7 @@ Peter Trost
 Yalovastr. 5
 72108 Rottenburg am Neckar
 Germany
+
+## Shop names
+
+We use shop names such as dm, Lidl or EDEKA only so you can see which shop a list is for. The names and trade marks belong to their owners. Hummlist is independent and isn't affiliated with, sponsored or endorsed by these companies.

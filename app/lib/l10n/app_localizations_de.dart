@@ -825,6 +825,79 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get storeNew => 'Neuer Laden';
+
+  @override
+  String get storeNewLabel => 'Neuen Laden anlegen';
+
+  @override
+  String get storeNameHint => 'Name des Ladens';
+
+  @override
+  String get storeCreateConfirm => 'Laden anlegen';
+
+  @override
+  String storeAddedAndSelected(String store) {
+    return '$store angelegt und ausgewählt';
+  }
+
+  @override
+  String storeAdded(String store) {
+    return '$store angelegt';
+  }
+
+  @override
+  String get storeSearch => 'Läden durchsuchen';
+
+  @override
+  String storeRename(String store) {
+    return '$store umbenennen';
+  }
+
+  @override
+  String storeDelete(String store) {
+    return '$store löschen';
+  }
+
+  @override
+  String storeDeleteTitle(String store) {
+    return '$store löschen?';
+  }
+
+  @override
+  String storeNameTaken(String name) {
+    return 'Einen Laden „$name“ gibt es schon.';
+  }
+
+  @override
+  String get storesNeedConnection =>
+      'Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.';
+
+  @override
+  String get storesEmpty =>
+      'Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.';
+
+  @override
+  String storeMenu(String store) {
+    return 'Optionen für $store';
+  }
+
+  @override
+  String get storeRenameAction => 'Umbenennen';
+
+  @override
+  String storeDeleteBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count offene Artikel kommen zu „Ohne Laden“.',
+      one: '1 offener Artikel kommt zu „Ohne Laden“.',
+      zero: 'In diesem Laden sind keine offenen Artikel.',
+    );
+    return '$_temp0 Sein Laufweg geht mit.';
+  }
+
+  @override
   String get accessRowHint => 'MCP-Server, Zugangsschlüssel, verbundene Apps';
 
   @override
@@ -1044,11 +1117,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storesChoice => 'Läden';
 
   @override
-  String get defaultStores => 'Deutsche Standard-Läden hinzufügen';
+  String get onboardingStoresHint =>
+      'Wähl die Läden, in denen ihr einkauft. In dieser Reihenfolge stehen sie in der Liste.';
 
   @override
-  String get defaultStoresHint =>
-      'dm, Lidl und Edeka, jeweils in ihrer Gangfolge';
+  String get storeAddOwn => 'Eigenen Laden hinzufügen';
+
+  @override
+  String get storesDisclaimer =>
+      'Ladennamen wie dm, Lidl oder EDEKA verwenden wir nur, damit du erkennst, für welchen Laden eine Liste gedacht ist. Die Namen und Marken gehören den jeweiligen Unternehmen. Hummlist ist ein unabhängiges Angebot und steht in keiner Verbindung zu diesen Unternehmen. Sie unterstützen oder empfehlen Hummlist nicht.';
 
   @override
   String get skipStores => 'Überspringen';

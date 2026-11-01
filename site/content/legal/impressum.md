@@ -4,7 +4,7 @@ description: "Impressum von Hummlist: Anbieter, Anschrift und Kontakt."
 locale: de
 path: /impressum
 translation_key: imprint
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 # Impressum
@@ -30,3 +30,7 @@ Peter Trost
 Yalovastr. 5
 72108 Rottenburg am Neckar
 Deutschland
+
+## Ladennamen
+
+Ladennamen wie dm, Lidl oder EDEKA verwenden wir nur, damit du erkennst, für welchen Laden eine Liste gedacht ist. Die Namen und Marken gehören den jeweiligen Unternehmen. Hummlist ist ein unabhängiges Angebot und steht in keiner Verbindung zu diesen Unternehmen. Sie unterstützen oder empfehlen Hummlist nicht.

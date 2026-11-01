@@ -199,7 +199,7 @@ test.describe('with an English browser', () => {
     await expect(page.getByRole('button', { name: /^Create a household/ })).toBeVisible();
     await expectNoGerman(page, 'welcome', german);
     await page.getByRole('button', { name: /^Create a household/ }).click();
-    await expect(page.getByRole('radio', { name: /^Add default German stores/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add your own store' })).toBeVisible();
     await expectNoGerman(page, 'create household', german);
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Invite your partner', exact: true })).toBeVisible();

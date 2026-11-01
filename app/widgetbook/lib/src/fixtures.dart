@@ -41,7 +41,7 @@ const seededStores = [
   Store(id: 'aldi', name: 'ALDI', sortOrder: 4, seedKey: 'aldi'),
 ];
 
-/// Stores the household named itself: a letter in a colour picked by name.
+/// Stores the household named itself: the same name badge as every store.
 const ownStores = [
   Store(id: 'baecker', name: 'Bäcker Kühn', sortOrder: 5),
   Store(id: 'markt', name: 'Wochenmarkt', sortOrder: 6),
@@ -52,6 +52,17 @@ const ownStores = [
 final catalog = Catalog(
   categories: categories,
   stores: [seededStores[0], seededStores[1], ownStores[0]],
+);
+
+/// Over five stores: the store options get a search field.
+final manyStores = Catalog(
+  categories: catalog.categories,
+  stores: [
+    ...seededStores,
+    ...ownStores,
+    for (final (i, name) in const ['Penny', 'Netto', 'Kaufland'].indexed)
+      Store(id: name.toLowerCase(), name: name, sortOrder: 100 + i * 10),
+  ],
 );
 
 Item item(
