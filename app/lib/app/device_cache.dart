@@ -38,11 +38,13 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// follows the device. Kept across sign-outs like the language.
   static const _themeKey = 'theme';
 
-  /// Analytics (job 19): the install id, the consent decision, the install
-  /// id `first_open` went out for, and the internal-install mark. Kept
-  /// across sign-outs: the decision is per install, not per account.
+  /// Analytics (job 19): the install id, the consent decision and the
+  /// version of the consent text it was given under, the install id
+  /// `first_open` went out for, and the internal-install mark. Kept across
+  /// sign-outs: the decision is per install, not per account.
   static const _installIdKey = 'analytics.install_id';
   static const _consentKey = 'analytics.consent';
+  static const _consentVersionKey = 'analytics.consent_text_version';
   static const _firstOpenKey = 'analytics.first_open';
   static const _internalKey = 'analytics.internal';
 
@@ -109,8 +111,24 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   }
 
   @override
-  Future<void> saveConsent({required bool granted}) =>
-      _write(() => _prefs.setBool(_consentKey, granted));
+  Future<String?> consentTextVersion() => _readString(_consentVersionKey);
+
+  @override
+  Future<void> saveConsent({
+    required bool granted,
+    required String textVersion,
+  }) => _write(() async {
+    // The answer first: a yes cut off before its version is outdated, so
+    // asked again; a no is a no with any version.
+    await _prefs.setBool(_consentKey, granted);
+    await _prefs.setString(_consentVersionKey, textVersion);
+  });
+
+  @override
+  Future<void> forgetConsent() => _write(() async {
+    await _prefs.remove(_consentKey);
+    await _prefs.remove(_consentVersionKey);
+  });
 
   @override
   Future<String?> firstOpenSentFor() => _readString(_firstOpenKey);

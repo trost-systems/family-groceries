@@ -235,7 +235,7 @@ async function signIn(/** @type {any} */ c) {
     let landed = await land();
     if (landed === 'consent') {
       // On a small client the answers sit below the text: wheel down to them.
-      const decline = page.getByRole('button', { name: 'Ablehnen' });
+      const decline = page.getByRole('button', { name: 'Nicht erlauben', exact: true });
       await page.getByRole('heading', { name: 'Nutzungsdaten' }).waitFor({ timeout: 20_000 });
       if (!(await decline.isVisible())) {
         await page.mouse.move(viewport.width / 2, viewport.height / 2);

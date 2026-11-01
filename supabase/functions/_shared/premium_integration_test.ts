@@ -39,7 +39,7 @@ async function withHousehold(lock: boolean, work: (m: Member, sql: postgres.Sql)
     await sql`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
     const householdId = await asUser(userId, async (tx) => {
       const [row] = await tx<{ id: string }[]>`select id from public.create_household('50')`;
-      await tx`select public.record_analytics_consent(${install}::uuid, true)`;
+      await tx`select public.record_analytics_consent(${install}::uuid, true, false, true, '2026-11-01')`;
       return row.id;
     });
     await sql`update public.app_switches set enabled = ${lock} where key = 'integration_lock'`;

@@ -116,7 +116,7 @@ void main() {
     expect(await cache.consent(), isNull);
     expect(await cache.internalInstall(), isFalse);
     await cache.saveInstallId('id-1');
-    await cache.saveConsent(granted: false);
+    await cache.saveConsent(granted: false, textVersion: '2026-11-01');
     await cache.saveFirstOpenSentFor('id-1');
     await cache.saveInternalInstall(internal: true);
     await cache.remember('peter', home);
@@ -130,6 +130,12 @@ void main() {
     expect(await cache.installId(), isNull);
     expect(await cache.firstOpenSentFor(), isNull);
     expect(await cache.consent(), isFalse, reason: 'the answer stays');
+    expect(await cache.consentTextVersion(), '2026-11-01');
+    expect(await cache.internalInstall(), isTrue);
+
+    await cache.forgetConsent();
+    expect(await cache.consent(), isNull);
+    expect(await cache.consentTextVersion(), isNull);
     expect(await cache.internalInstall(), isTrue);
   });
 }

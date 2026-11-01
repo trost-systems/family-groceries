@@ -168,7 +168,7 @@ test.describe('in English', () => {
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();
-    await page.getByRole('button', { name: 'Decline' }).click();
+    await page.getByRole('button', { name: "Don't allow", exact: true }).click();
     await page.getByRole('button', { name: /^Create a household/ }).click();
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page).toHaveURL(/\/welcome\/invite$/);

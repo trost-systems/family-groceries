@@ -150,7 +150,7 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   await expect(page.getByRole('heading', { name: 'Darf Hummlist Nutzungsdaten erfassen?' })
     .or(page.getByText('Darf Hummlist Nutzungsdaten erfassen?'))).toBeVisible();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the consent text as the review wrote it' })
-    .toMatch(/Peter Trost, der Anbieter von Hummlist[\s\S]*Die Daten sind pseudonym, nicht anonym\./);
+    .toMatch(/Hummlist \(Anbieter: Peter Trost\)[\s\S]*Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet\./);
   const policy = page.getByRole('link', { name: 'Datenschutzerklärung', exact: true });
   await expect(policy).toHaveAttribute('href', 'https://hummlist.com/datenschutz');
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'approved wording: no draft mark' })
@@ -282,7 +282,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   await page.getByRole('button', { name: 'Sign up' }).click();
   await expect(page).toHaveURL(/\/analytics-consent$/);
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the English consent text as the review wrote it' })
-    .toMatch(/May Hummlist collect usage data\?[\s\S]*Peter Trost, who runs Hummlist[\s\S]*The data is pseudonymous, not anonymous\./);
+    .toMatch(/May Hummlist collect usage data\?[\s\S]*Hummlist \(run by Peter Trost\)[\s\S]*List contents, names and e-mail addresses are never sent\./);
   await screenshot(page, 'analytics-07-consent-en');
   await context.route('https://hummlist.com/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
@@ -293,7 +293,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   expect((await popup).url(), 'the English policy, in a new tab').toBe('https://hummlist.com/en/privacy');
   await (await popup).close();
 
-  const allow = page.getByRole('button', { name: 'Allow' });
+  const allow = page.getByRole('button', { name: 'Allow', exact: true });
   const size = page.viewportSize() ?? { width: 400, height: 800 };
   await page.mouse.move(size.width / 2, size.height / 2);
   await expect(async () => {
@@ -425,3 +425,63 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
   expectAllowedKeys(collector);
   expect(collector.leaks).toEqual([]);
 });
+
+/**
+ * The raw localStorage key of `analytics.consent_text_version`, and its value, or null. The app
+ * stores it with every decision (Legal Review 2026-11-01, addendum 12:35).
+ */
+async function storedTextVersion(page: Page): Promise<{ key: string; raw: string } | null> {
+  return page.evaluate(() => {
+    const key = Object.keys(localStorage).find((k) => /(^|\.)analytics\.consent_text_version$/.test(k));
+    return key === undefined ? null : { key, raw: localStorage.getItem(key)! };
+  });
+}
+
+// Legal Review 2026-11-01, addendum 12:35: a yes counts only for the consent text it was given
+// under. A yes an older build stored (no version) or one under an older text is no decision: the
+// app asks again and sends nothing to PostHog before the new yes, no event and no /flags lookup.
+for (const [label, outdate] of [
+  ['without a version (an older build)', (_raw: string) => null],
+  ['under the 2026-10-30 text', (raw: string) => raw.replace('2026-11-01', '2026-10-30')],
+] as const) {
+  test(`a yes ${label} is asked again; nothing goes to PostHog before the new yes`, async ({ browser }) => {
+    const context = await browser.newContext();
+    const collector = await fakeCollector(context);
+    const page = await context.newPage();
+    await signUp(page, newEmail('consent-version'), '/', { consent: 'accept' });
+    await expect(page).toHaveURL(/\/welcome$/);
+    await expect.poll(() => storedInstallId(page)).toMatch(/^[0-9a-f-]{36}$/);
+    const stored = await storedTextVersion(page);
+    expect(stored?.raw, 'the yes is stored with the current version').toContain('2026-11-01');
+    await received(collector, ['first_open']);
+    expect(collector.requests.some((r) => r.startsWith('POST /flags')), 'a current yes asks for flags')
+      .toBe(true);
+
+    // What an older build (or the older text) left: the yes stays, the version goes or ages.
+    const outdated = outdate(stored!.raw);
+    await page.evaluate(({ key, raw }) => {
+      if (raw === null) localStorage.removeItem(key);
+      else localStorage.setItem(key, raw);
+    }, { key: stored!.key, raw: outdated });
+    collector.requests.length = 0;
+    collector.events.length = 0;
+    await page.reload();
+
+    await expect(page, 'asked again').toHaveURL(/\/analytics-consent$/);
+    await expect(page.getByRole('button', { name: 'Erlauben', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Nicht erlauben', exact: true })).toBeVisible();
+    await quietFor(page, collector, 0);
+    expect(collector.requests, 'no event, no /flags').toEqual([]);
+    expect(await posthogJsLoaded(page), 'posthog-js is not even fetched').toBe(false);
+    expect(await storedInstallId(page), 'the old install id is gone, as on a no').toBeNull();
+    expect(collector.leaks).toEqual([]);
+
+    await answerConsent(page, 'accept');
+    await expect.poll(() => storedTextVersion(page).then((v) => v?.raw)).toContain('2026-11-01');
+    await received(collector, ['first_open']);
+    await expect.poll(() => collector.requests.some((r) => r.startsWith('POST /flags')),
+      { message: 'flags work again after the new yes' }).toBe(true);
+    expect(collector.leaks).toEqual([]);
+    await context.close();
+  });
+}

@@ -327,7 +327,7 @@ export async function touchSwipeUp(page: Page): Promise<void> {
 export type ConsentChoice = 'accept' | 'decline';
 
 /** The analytics consent screen (job 19), asked once per install right after sign-in. */
-export const consentScreen = (page: Page) => page.getByRole('button', { name: 'Einverstanden' });
+export const consentScreen = (page: Page) => page.getByRole('button', { name: 'Erlauben', exact: true });
 
 /**
  * Answers the analytics consent, which a fresh browser context sees after its first sign-in, and
@@ -336,7 +336,7 @@ export const consentScreen = (page: Page) => page.getByRole('button', { name: 'E
  */
 export async function answerConsent(page: Page, choice: ConsentChoice = 'decline'): Promise<void> {
   await expect(page).toHaveURL(/\/analytics-consent(\?|$)/);
-  const answer = page.getByRole('button', { name: choice === 'accept' ? 'Einverstanden' : 'Ablehnen' });
+  const answer = page.getByRole('button', { name: choice === 'accept' ? 'Erlauben' : 'Nicht erlauben', exact: true });
   await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
   // A phone (job 33b): the consent text is longer than an iPhone screen. Scroll as a finger does
   // (no mouse wheel on a phone), then tap the answer.

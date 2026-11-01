@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/consent_version.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/router.dart';
@@ -33,13 +34,14 @@ void main() {
     WidgetTester tester,
     Session state, {
     Locale locale = const Locale('de'),
+    Map<String, Object> stored = const {},
   }) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(390, 844);
     addTearDown(tester.view.reset);
     SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+        InMemorySharedPreferencesAsync.withData({...stored});
     cache = DeviceCache(SharedPreferencesAsync());
     sink = NativePostHog()..install();
     analytics = Analytics(testClient(), cache, releaseConfig);
@@ -117,20 +119,40 @@ void main() {
     expect(await cache.installId(), matches(uuidPattern));
   });
 
-  for (final (locale, title, link, url) in [
+  for (final (locale, title, link, url, yes, no) in [
     (
       const Locale('de'),
       'Darf Hummlist Nutzungsdaten erfassen?',
       'Datenschutzerklärung',
       'https://hummlist.com/datenschutz',
+      'Erlauben',
+      'Nicht erlauben',
     ),
     (
       const Locale('en'),
       'May Hummlist collect usage data?',
       'privacy policy',
       'https://hummlist.com/en/privacy',
+      'Allow',
+      "Don't allow",
     ),
   ]) {
+    testWidgets('$locale: two equal answers, $yes and $no, none chosen', (
+      tester,
+    ) async {
+      await pumpApp(tester, const NeedsHousehold('u'), locale: locale);
+      await reach(tester, accept);
+      expect(find.descendant(of: accept, matching: find.text(yes)), findsOne);
+      expect(find.descendant(of: decline, matching: find.text(no)), findsOne);
+      final (a, d) = (
+        tester.widget<ButtonStyleButton>(accept),
+        tester.widget<ButtonStyleButton>(decline),
+      );
+      expect(a.runtimeType, d.runtimeType, reason: 'the same weight');
+      expect(a.style, d.style);
+      expect(analytics.state.consent, isNull, reason: 'nothing pre-selected');
+    });
+
     testWidgets('$locale: the text names Peter Trost and links the policy', (
       tester,
     ) async {
@@ -168,6 +190,69 @@ void main() {
     await pumpApp(tester, const NeedsHousehold('u'));
     await reach(tester, accept);
     expect(tester.getSize(accept), tester.getSize(decline));
+  });
+
+  // Legal Review 2026-11-01, 12:35: a yes counts only for the text it was
+  // given under. One an older build stored (no version) or one under an
+  // older text is no decision: asked again, and nothing goes to PostHog
+  // before the new answer, no flag lookup either.
+  const kept = '0b9f8e3c-1d2a-4c5b-8e7f-123456789abc';
+  for (final (label, version) in [
+    ('no version (an older build)', null),
+    ('the 2026-10-30 text', '2026-10-30'),
+  ]) {
+    testWidgets('a yes under $label is asked again, nothing sent before', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        const NeedsHousehold('u'),
+        stored: {
+          'analytics.consent': true,
+          'analytics.install_id': kept,
+          'analytics.first_open': kept,
+          'analytics.consent_text_version': ?version,
+        },
+      );
+      expect(consent, findsOneWidget);
+      expect(welcome, findsNothing);
+      analytics.track('household_created');
+      await analytics.flush();
+      expect(sink.calls, isEmpty, reason: 'no setup, no /flags, no event');
+      expect(sink.forgotten, ['phc_unit_test'], reason: 'as on a no');
+      expect(await cache.installId(), isNull);
+      expect(await cache.consent(), isNull);
+
+      await reach(tester, accept);
+      await tester.tap(accept);
+      await tester.pumpAndSettle();
+      expect(welcome, findsOneWidget);
+      await analytics.flush();
+      expect(await cache.consentTextVersion(), consentTextVersion);
+      expect(await cache.installId(), allOf(isNotNull, isNot(kept)));
+      expect(sink.names, ['first_open']);
+    });
+  }
+
+  testWidgets('a yes to the current text is not asked again and sends', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      const NeedsHousehold('u'),
+      stored: {
+        'analytics.consent': true,
+        'analytics.install_id': kept,
+        'analytics.first_open': kept,
+        'analytics.consent_text_version': consentTextVersion,
+      },
+    );
+    expect(consent, findsNothing);
+    expect(welcome, findsOneWidget);
+    analytics.track('household_created');
+    await analytics.flush();
+    expect(sink.methods, containsAll(['setup', 'getAllFeatureFlags']));
+    expect(sink.names, ['household_created']);
   });
 
   testWidgets('a decided install is not asked again', (tester) async {
