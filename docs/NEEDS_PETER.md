@@ -1054,3 +1054,16 @@ Built as decided on 2026-10-31 (DECISIONS "Job 43"), on RevenueCat. Four calls a
    RevenueCat (NEEDS_LEAD Job 43 lists the affected sentences). Then the Lead turns it on, first in
    your own build.
 
+
+## Job 52: the new design (6b Hex Frische, app icon #5)
+
+1. **Check the new look in TestFlight.** The merge ships the build to internal TestFlight as
+   usual. Open it in light and dark (Einstellungen → Darstellung): the list, the add sheet, an
+   item's edit sheet, Mehr and the settings, and press a yellow button to feel it sink. Check the
+   home-screen icon in light, dark and tinted (long-press the home screen → Bearbeiten →
+   Anpassen) and the launch screen. The changelog note "Neues Design …" stays out of the public
+   changelog until you say it's good: then the Lead sets `new-design` to `"released": true` in
+   `releases/flags.json`.
+2. **The Widgetbook** (the component catalogue) is not on hummlist.com. Open the latest
+   `widgetbook` artifact of the "Widgetbook" workflow on GitHub Actions (docs/DESIGN.md,
+   "Widgetbook"), unzip it and serve it, or ask the Lead for a link.

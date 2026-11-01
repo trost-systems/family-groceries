@@ -14,6 +14,11 @@
     "native-siri": {
       "released": false,
       "note": "native Siri (no Shortcut setup) waits for Hummlist Launch and Peter's device test"
+    },
+    "new-design": {
+      "released": false,
+      "note": "Peter checks the new design in TestFlight first",
+      "match": ["design"]
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
@@ -448,6 +449,7 @@ class const _Header({required final VoidCallback onClose})
                       minimumSize: const Size(0, 44),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       textStyle: const TextStyle(
+                        fontFamily: HlFont.sans,
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                       ),

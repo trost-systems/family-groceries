@@ -6,6 +6,7 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -377,5 +378,44 @@ void main() {
       await tester.pumpAndSettle();
       expect(content(), findsNothing);
     }
+  });
+
+  // On the web a click on the field can reach the app as a semantics tap or
+  // focus instead of pointer events; TextField then requests focus or the
+  // keyboard but never calls onTap. After the user closed the sheet, the
+  // field getting focus back opens it like a tap (seen in e2e list.spec,
+  // "adds are grouped", on the third or fourth add).
+  for (final action in [SemanticsAction.tap, SemanticsAction.focus]) {
+    testWidgets('after closing, a semantics ${action.name} on the field '
+        'opens the sheet again', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpList(tester);
+      await open(tester);
+      expect(content(), findsOne);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(content(), findsNothing);
+      expect(focus(tester).hasFocus, isFalse);
+
+      final node = find.semantics
+          .byFlag(SemanticsFlag.isTextField)
+          .evaluate()
+          .single;
+      node.owner!.performAction(node.id, action);
+      await tester.pumpAndSettle();
+      expect(content(), findsOne);
+      expect(focus(tester).hasFocus, isTrue);
+      semantics.dispose();
+    });
+  }
+
+  testWidgets('the field focused at start leaves the sheet closed', (
+    tester,
+  ) async {
+    await pumpList(tester);
+    focus(tester).requestFocus();
+    await tester.pumpAndSettle();
+    expect(focus(tester).hasFocus, isTrue);
+    expect(content(), findsNothing);
   });
 }

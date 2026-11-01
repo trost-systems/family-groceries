@@ -128,7 +128,8 @@ test('the last member archives an unlocked household, its purchase stays its own
   // Job 47 (H-50): each archived household says when it is deleted, 24 months after archiving.
   const deletes = new Date();
   deletes.setMonth(deletes.getMonth() + 24);
-  const date = deletes.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+  // In the browser's zone (playwright.config.ts): on a UTC runner just before midnight the day differs.
+  const date = deletes.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' });
   await expect(frank.getByRole('group', { name: new RegExp(`Mit Hummlist Lifetime\\s+Wird am ${date} gelöscht$`) }))
     .toBeVisible();
   await screenshot(frank, 'job43-archived-de-390');

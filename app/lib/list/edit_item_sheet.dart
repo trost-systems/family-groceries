@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
@@ -160,6 +161,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                         minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         textStyle: const TextStyle(
+                          fontFamily: HlFont.sans,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                         ),
@@ -287,6 +289,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 18),
                         foregroundColor: scheme.error,
                         textStyle: const TextStyle(
+                          fontFamily: HlFont.sans,
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                         ),
@@ -303,8 +306,8 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                           visualDensity: VisualDensity.standard,
                           minimumSize: const Size(132, 52),
                           padding: const EdgeInsets.symmetric(horizontal: 28),
-                          shape: const StadiumBorder(),
                           textStyle: const TextStyle(
+                            fontFamily: HlFont.sans,
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
                           ),

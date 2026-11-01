@@ -1,6 +1,6 @@
 # Settings: theme and language
 
-Mehr → Einstellungen (`/more/settings`) holds what belongs to the device, not the account: the theme ("Darstellung": Wie Gerät, Hell, Dunkel) and the language ("Sprache", a row that opens a list of languages). Both apply at once, are kept on the device and outlive restarts and sign-out. Both default to the device's own setting. The dark theme is design H's scheme from the same seed in dark: every screen, sheet, dialog and snackbar follows it, and the store dividers keep their store colour, lightened where it would not read on dark (Aldi, Edeka).
+Mehr → Einstellungen (`/more/settings`) holds what belongs to the device, not the account: the theme ("Darstellung": Wie Gerät, Hell, Dunkel) and the language ("Sprache", a row that opens a list of languages). Both apply at once, are kept on the device and outlive restarts and sign-out. Both default to the device's own setting. Light and dark are the 6b Hex Frische palette (job 52, `docs/DESIGN.md`): every screen, sheet, dialog and snackbar follows it, yellow buttons sink when pressed, and the store dividers keep their store colour, lightened where it would not read on dark (Aldi, Edeka).
 
 ## Sub-features
 

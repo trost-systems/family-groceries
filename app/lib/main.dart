@@ -8,6 +8,7 @@ import 'package:family_groceries/app/early_keys.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/theme.dart';
+import 'package:family_groceries/design/fonts.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
@@ -49,6 +50,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
   // Path URLs (/join/CODE, later /oauth/consent) instead of #-fragments.
   usePathUrlStrategy();
   binding();
+  registerFontLicenses();
   if (kIsWeb) {
     // Exposes the widget tree to the DOM for screen readers and Playwright.
     SemanticsBinding.instance.ensureSemantics();

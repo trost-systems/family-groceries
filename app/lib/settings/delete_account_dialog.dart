@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
@@ -180,6 +181,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
             style: FilledButton.styleFrom(
               backgroundColor: theme.colorScheme.error,
               foregroundColor: theme.colorScheme.onError,
+              shape: const HexBorder(),
             ),
             onPressed: switch (step) {
               _Confirming(:final fate)

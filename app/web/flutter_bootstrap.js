@@ -15,6 +15,9 @@ function retryBoot(error) {
 // With onEntrypointLoaded the loader does not watch its script tag, so
 // catch a failed main.dart.js here (load errors only reach capture listeners).
 let started = false;
+
+// Job 52: index.html's splash stays until the engine has drawn the app's first frame.
+window.addEventListener('flutter-first-frame', () => document.getElementById('splash')?.remove(), { once: true });
 window.addEventListener('error', (event) => {
   if (!started && event.target instanceof HTMLScriptElement) {
     retryBoot(new Error(`failed to load ${event.target.src}`));

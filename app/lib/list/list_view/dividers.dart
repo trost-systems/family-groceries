@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_view/drag.dart';
@@ -271,6 +272,7 @@ class const _Head({
                     softWrap: false,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
+                      fontFamily: HlFont.display,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
@@ -297,6 +299,7 @@ class const _Head({
               TextSpan(
                 text: '${section.count}',
                 style: TextStyle(
+                  fontFamily: HlFont.display,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: scheme.onSurface,

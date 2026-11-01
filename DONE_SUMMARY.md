@@ -374,3 +374,7 @@ RevenueCat's SDK starts only on a tap on "Weiter zum Kauf" or "Kauf wiederherste
 ## Job 51: native Siri (App Intents, English and German)
 
 Siri adds items to the household's Hummlist on iOS 17+ without a Shortcut: "Add to Hummlist" / "Füge etwas zu Hummlist hinzu", then the items, read back only after the server confirmed; "What's on my Hummlist?" reads the list. A session-bound "Siri (dieses iPhone)" credential replaces token copying; the old Shortcut keeps working. Details: [docs/done/51-native-siri.md](docs/done/51-native-siri.md).
+
+## Job 52: the design system (6b Hex Frische with option 6's yellow) in the app, app icon #5
+
+The app wears the locked 6b Hex Frische design: one token source for app and site, cobalt, lemon and mint, Bricolage Grotesque over Inter, lemon hex buttons that sink into their edge when pressed, and app icon #5 Wabenstapel with splash screens on iOS (also as the iOS 26 layered icon), Android and web. A Widgetbook shows every component in every state. On the way it fixes main's flaky add-field tap on the web. The changelog note waits for Peter's TestFlight look (hold `new-design`). Details: [docs/done/52-design-6b-app.md](docs/done/52-design-6b-app.md).
