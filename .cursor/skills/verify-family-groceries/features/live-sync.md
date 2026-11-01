@@ -1,6 +1,6 @@
 # Live sync
 
-Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way: a partner's drag to another place, category or store shows on the other phone. Partner items added since this device last looked are tinted, with "N neu von <name>" under the household name, until they have been on screen for 3 seconds.
+Two members of one household see each other's changes without reloading. An item added on one phone appears on the other, and an item ticked off on one disappears from the other immediately. Edits and moves sync the same way: a partner's drag to another place, category or store shows on the other phone. Partner items added since this device last looked are tinted, with "N neu von <name>" in the bar above the list, until they have been on screen for 3 seconds.
 
 ## Sub-features
 

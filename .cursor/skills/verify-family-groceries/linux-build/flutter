@@ -7,7 +7,8 @@ real="$HOME/flutter/bin/flutter"
 if [[ ${1:-} != build || ${2:-} != linux ]]; then exec "$real" "$@"; fi
 here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 repo="$(git -C "$here" rev-parse --show-toplevel)"
-image=fg-linux-build:1
+# The tag follows the Dockerfile, so an edited Dockerfile builds a new image instead of reusing the old one.
+image="fg-linux-build:$(sha256sum "$here/Dockerfile" | cut -c1-12)"
 docker image inspect "$image" >/dev/null 2>&1 || docker build -q -t "$image" "$here" >&2
 pub="${PUB_CACHE:-$HOME/.pub-cache}"
 exec docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp/home -e PUB_CACHE="$pub" \

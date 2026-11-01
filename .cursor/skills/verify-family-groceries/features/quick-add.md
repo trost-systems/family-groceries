@@ -27,7 +27,7 @@ The add bar at the bottom of the list ("Was brauchst du?") opens the add sheet (
 
 - Open the app while signed in to a household. The list tab ("Liste") is the home screen; the add bar sits above the tabs.
 - Type into the bar, or tap it, and press Enter or tap a row.
-- Tap "Laden" or "Kategorie" in the sheet before taking a row.
+- Tap the store chip ("Laden: automatisch" or the store's name) or the category chip ("Kategorie: automatisch" or the category's name) in the sheet before taking a row.
 - Tap "Rückgängig" in the note after an add.
 - Tap the ✕ in the bar, "Schließen", the dimmed list, or press Escape.
 - Tap the empty bar to see what is due.
