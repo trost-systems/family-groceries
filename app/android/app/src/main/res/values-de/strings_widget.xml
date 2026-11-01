@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Deine Einkaufsliste auf einen Blick</string>
+    <string name="widget_open_label">offen</string>
+    <string name="widget_open_count">%d offen</string>
+    <string name="widget_add">Hinzufügen</string>
+    <string name="widget_more">+%d weitere</string>
+    <string name="widget_all_done">Alles erledigt</string>
+    <string name="widget_signed_out">Melde dich in Hummlist an</string>
+    <string name="widget_no_household">Richte deinen Haushalt in Hummlist ein</string>
+    <string name="widget_no_data">Öffne Hummlist, um deine Liste zu sehen</string>
+    <string-array name="widget_preview_names">
+        <item>Hafermilch</item>
+        <item>Äpfel</item>
+        <item>Nudeln</item>
+        <item>Zahnpasta</item>
+        <item>Brot</item>
+    </string-array>
+</resources>

@@ -1,0 +1,134 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld open": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld offen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld open"
+          }
+        }
+      }
+    },
+    "+%lld more": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld weitere"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld more"
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinzufügen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        }
+      }
+    },
+    "All done": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles erledigt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All done"
+          }
+        }
+      }
+    },
+    "Open Hummlist to see your list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Hummlist, um deine Liste zu sehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Hummlist to see your list"
+          }
+        }
+      }
+    },
+    "Set up your household in Hummlist": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richte deinen Haushalt in Hummlist ein"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up your household in Hummlist"
+          }
+        }
+      }
+    },
+    "Sign in to Hummlist": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich in Hummlist an"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to Hummlist"
+          }
+        }
+      }
+    },
+    "Your shopping list at a glance": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Einkaufsliste auf einen Blick"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your shopping list at a glance"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

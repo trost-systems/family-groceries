@@ -10,6 +10,8 @@ import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/fonts.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:family_groceries/home_widget/home_widget_sync.dart';
+import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
@@ -119,6 +121,10 @@ Future<void> _main(WidgetsBinding Function() binding) async {
     beforeSignOut: siri?.signingOut,
   );
   siri?.follow(session);
+  final homeWidgets = homeWidgetSyncFor(
+    web: kIsWeb,
+    platform: defaultTargetPlatform,
+  )?..follow(session);
   final entitlements = Entitlements(
     SupabaseEntitlementsSource(client),
     session,
@@ -152,6 +158,11 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       feedback: SupabaseFeedbackRepository(client),
       invites: SupabaseInviteRepository(client),
       pendingInvite: pendingInvite,
+      homeWidgets: homeWidgets,
+      widgetLaunches: widgetLaunchesFor(
+        web: kIsWeb,
+        platform: defaultTargetPlatform,
+      ),
     ),
   );
 }

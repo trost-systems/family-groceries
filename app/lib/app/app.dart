@@ -10,6 +10,8 @@ import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
+import 'package:family_groceries/home_widget/home_widget_sync.dart';
+import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
@@ -60,6 +62,12 @@ class const App({
   /// first frame.
   final AppLanguage? language,
 
+  /// Writes the Home Screen widgets' payload; null without widgets.
+  final HomeWidgetSync? homeWidgets,
+
+  /// Taps on the Home Screen widgets; null without widgets.
+  final WidgetLaunches? widgetLaunches,
+
   /// The theme picked there; the device's setting by default.
   final ThemeMode theme = ThemeMode.system,
 
@@ -96,6 +104,8 @@ class _AppState() extends State<App> {
   );
   late final FeedbackDevice _device =
       widget.feedbackDevice ?? PluginFeedbackDevice();
+  final _addSheetRequest = AddSheetRequest();
+  StreamSubscription<Uri?>? _widgetLaunches;
 
   /// Sends what analytics has queued when the app goes to the background
   /// or the tab is hidden: it may not come back.
@@ -111,6 +121,18 @@ class _AppState() extends State<App> {
     // The first location may be set before anyone listens (a reload on
     // `/more`): take it once the first frame is up.
     WidgetsBinding.instance.addPostFrameCallback((_) => _onRoute());
+    if (widget.widgetLaunches case final launches?) {
+      _widgetLaunches = followWidgetLaunches(launches, _onWidgetLaunch);
+    }
+  }
+
+  /// A widget tap opens the list; Add opens its add sheet too. Signed out,
+  /// `authRedirect` sends both to sign-in.
+  void _onWidgetLaunch(WidgetLaunch launch) {
+    _router.go(listPath);
+    if (launch == WidgetLaunch.add) {
+      _addSheetRequest.request();
+    }
   }
 
   void _onRoute() {
@@ -123,6 +145,7 @@ class _AppState() extends State<App> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    unawaited(_widgetLaunches?.cancel());
     _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
     unawaited(_language.close());
@@ -145,6 +168,9 @@ class _AppState() extends State<App> {
       RepositoryProvider.value(value: _sharer),
       RepositoryProvider.value(value: widget.premium),
       RepositoryProvider.value(value: widget.storePrices),
+      RepositoryProvider.value(value: _addSheetRequest),
+      if (widget.homeWidgets case final homeWidgets?)
+        RepositoryProvider.value(value: homeWidgets),
     ],
     child: MultiBlocProvider(
       providers: [

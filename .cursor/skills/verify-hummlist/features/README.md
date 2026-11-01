@@ -79,6 +79,7 @@ Connections and Premium
 
 - [ai-assistants](./ai-assistants.md): connecting an AI assistant through MCP (https://mcp.hummlist.com), the consent page, Mehr → Zugänge with keys and connected apps.
 - [siri](./siri.md): the Siri Shortcut today, native Siri (built, announcement held), Siri keys.
+- [home-widgets](./home-widgets.md): the iPhone and Android Home Screen widget (built, announcement held).
 - [alexa](./alexa.md): the Alexa skill (beta, not certified): linking, adding and reading by voice.
 - [premium](./premium.md): what users see of Hummlist Premium while it is not on sale.
 

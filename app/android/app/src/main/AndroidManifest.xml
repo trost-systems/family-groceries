@@ -46,6 +46,18 @@
                 <data android:scheme="https" android:host="app.hummlist.com" android:pathPrefix="/join/"/>
             </intent-filter>
         </activity>
+        <!-- The Home Screen widget (job 63, docs/HOME_WIDGETS.md). -->
+        <receiver
+            android:name=".widget.HummlistWidgetReceiver"
+            android:label="@string/widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hummlist_widget_info"/>
+        </receiver>
         <!-- PostHog starts only after the analytics yes (docs/ANALYTICS.md), never on its own. -->
         <meta-data
             android:name="com.posthog.posthog.AUTO_INIT"

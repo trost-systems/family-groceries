@@ -258,6 +258,14 @@ The app is "Hummlist", bundle ID and Android `applicationId`
 `com.hummlist.app` since job 20. `app/fastlane/Appfile`, `Matchfile` and
 `APP_ID` in the `Fastfile` name it.
 
+Since job 63 the iOS app embeds a second bundle, the Home Screen widget
+extension `com.hummlist.app.HomeWidget` (Xcode target `HomeWidget`,
+[HOME_WIDGETS.md](HOME_WIDGETS.md)). It is signed with its own App Store
+profile; `Matchfile` and `WIDGET_ID` in the `Fastfile` name it. The app and
+the extension share the App Group `group.com.hummlist.app`. The extension
+takes the app's version and build number (`FLUTTER_BUILD_NAME`,
+`FLUTTER_BUILD_NUMBER`), as App Store Connect requires.
+
 - iOS: App Store Connect app "Hummlist", Apple ID `6826922741`, primary
   language de-DE. Internal group "Familie" has access to all builds, so every
   `VALID` build reaches it. The old app record (`6826907810`,
@@ -274,11 +282,11 @@ Run lanes from `app/` with `bundle exec fastlane <platform> <lane>`.
 
 | Lane | What it does |
 | --- | --- |
-| `ios certificates` | Creates or renews the distribution certificate and profile in the match repo. Run by the manual Certificates workflow only; the team keeps its three distribution certificates, so don't run it. |
-| `ios preflight` | Fails if the App Store profile is not `ACTIVE`; writes TestFlight's highest build number and whether any build is installable to `TESTFLIGHT_JSON`. The plan job runs it. |
-| `ios beta` | Installs the certificate and profile from match (read-only), signs manually, runs `flutter build ipa`. `RELEASE_UPLOAD=true` uploads to TestFlight (internal only, one retry), otherwise `altool --validate-app` validates the IPA. |
+| `ios certificates` | Creates or renews the distribution certificate and profiles in the match repo. Run by the manual Certificates workflow only; the team keeps its three distribution certificates, so don't run it. |
+| `ios preflight` | Fails if either App Store profile (the app's, the widget's) is not `ACTIVE`, naming the ones that are not; writes TestFlight's highest build number and whether any build is installable to `TESTFLIGHT_JSON`. The plan job runs it. |
+| `ios beta` | Installs the certificate and both profiles from match (read-only), signs `Runner` and `HomeWidget` manually, each with its own profile, runs `flutter build ipa`. `RELEASE_UPLOAD=true` uploads to TestFlight (internal only, one retry), otherwise `altool --validate-app` validates the IPA. |
 | `ios wait_processing` | Sets What to Test (de-DE and en-US) as soon as the build shows up (a refusal only warns), then polls until it is `VALID` (at most `WAIT_MINUTES`, 45). Fails on `INVALID`, `FAILED`, an expired build or two API errors in a row. |
-| `ios renew_profile` | Regenerates the App Store profile with the existing certificate `GN85KDC962` and pushes it to the match repo ([Capabilities](#capabilities)). |
+| `ios renew_profile` | Regenerates both App Store profiles (every identifier in the `Matchfile`) with the existing certificate `GN85KDC962` and pushes them to the match repo ([Capabilities](#capabilities)). |
 | `android build` | `flutter build appbundle`, signed with `android/key.properties`. |
 | `android play_access` | Gets a Google token for the service account (fails if that does not work), then tries to open a Play edit; writes `ok` or Play's refusal to `PLAY_ACCESS_FILE`. |
 | `android internal` | Uploads the AAB to the `internal` track with `PLAY_RELEASE_STATUS`, or validates it only (`RELEASE_UPLOAD` not `true`). Uploads no listing, changelog or images. |
@@ -411,7 +419,8 @@ an `external_account` credentials file, which fastlane's supply reads as
 
 [match](https://docs.fastlane.tools/actions/match/) keeps the distribution
 certificate (`GN85KDC962`, Apple Distribution, expires 2027-10-25) and the
-App Store profile "match AppStore com.hummlist.app", encrypted with
+App Store profiles "match AppStore com.hummlist.app" and "match AppStore
+com.hummlist.app.HomeWidget", encrypted with
 `MATCH_PASSWORD`, in the private repo
 `trost-systems/family-groceries-certificates`. The workflow loads
 `MATCH_DEPLOY_KEY` into an SSH agent so match can clone it.
@@ -424,12 +433,18 @@ does not ask the export compliance question for each build.
 
 ### Capabilities
 
-Enabling a capability on the App ID `com.hummlist.app` (for example
-Associated Domains for job 22) makes the App Store profile `INVALID`. The
-next Release run then fails in `plan` ("Profile ... is INVALID") before any
-build. The sequence:
+Enabling a capability on the App ID `com.hummlist.app` or
+`com.hummlist.app.HomeWidget` (for example Associated Domains for job 22)
+makes that App ID's App Store profile `INVALID`. The next Release run then
+fails in `plan` ("Profile ... is INVALID") before any build; a profile that
+does not exist yet fails the same way ("is missing"). The sequence:
 
 1. The Lead enables the capability in the browser (`NEEDS_LEAD.md`, L6).
+   For the Home Screen widget (job 63) that is, under Certificates,
+   Identifiers & Profiles: register the App Group `group.com.hummlist.app`;
+   register the App ID `com.hummlist.app.HomeWidget`; enable App Groups on
+   both `com.hummlist.app` and `com.hummlist.app.HomeWidget` and assign the
+   group to each.
 2. From the build box, in `app/` (the box reaches GitHub over HTTPS only, so
    the match URL is the HTTPS one; `gh` is the git credential helper):
 
@@ -443,14 +458,17 @@ build. The sequence:
    bundle exec fastlane ios renew_profile
    ```
 
-   match regenerates the profile with the certificate `GN85KDC962` and pushes
-   it to the match repo. It creates a certificate only when the repo holds
+   match regenerates the profiles of every identifier in the `Matchfile`
+   (and creates a missing one, such as the widget's the first time) with the
+   certificate `GN85KDC962` and pushes them to the match repo. It creates a certificate only when the repo holds
    none, so it creates and revokes none here. `MATCH_FORCE=false` checks
    without regenerating (proven 2026-10-27: "All required keys, certificates
    and provisioning profiles are installed", repo unchanged).
 3. The PR that adds the entitlement (for example
    `com.apple.developer.associated-domains` in
-   `ios/Runner/Runner.entitlements`) lands after step 2.
+   `ios/Runner/Runner.entitlements`, or job 63's
+   `com.apple.security.application-groups` there and in
+   `ios/HomeWidget/HomeWidget.entitlements`) lands after step 2.
 4. Dispatch the Release workflow; the plan's preflight passes and the build
    signs with the new profile.
 

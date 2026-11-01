@@ -8,6 +8,16 @@ set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT/app"
 flutter build ios --simulator --debug
+# The Home Screen widget ships inside the app (docs/HOME_WIDGETS.md, scripts/ios/home-widget-target.rb).
+[[ -f build/ios/iphonesimulator/Runner.app/PlugIns/HomeWidget.appex/HomeWidget ]] ||
+  { echo "ios: Runner.app does not embed PlugIns/HomeWidget.appex" >&2; exit 1; }
+# App Store Connect rejects an extension whose version differs from the app's.
+for key in CFBundleShortVersionString CFBundleVersion; do
+  app_value="$(/usr/libexec/PlistBuddy -c "Print :$key" build/ios/iphonesimulator/Runner.app/Info.plist)"
+  widget_value="$(/usr/libexec/PlistBuddy -c "Print :$key" build/ios/iphonesimulator/Runner.app/PlugIns/HomeWidget.appex/Info.plist)"
+  [[ $app_value == "$widget_value" ]] ||
+    { echo "ios: HomeWidget.appex $key is '$widget_value', the app's '$app_value'" >&2; exit 1; }
+done
 xcrun --sdk iphonesimulator assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car >build/ios/assets.json
 # Each wanted asset needs a rendition whose JSON mentions every listed word (the appearance).
 python3 - build/ios/assets.json <<'PY'

@@ -5,6 +5,7 @@ import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet.dart';
 import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
@@ -79,6 +80,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   final _inputFocus = FocusNode();
   RejectionNotices? _notices;
   SheetOpenNotifier? _sheetOpen;
+  AddSheetRequest? _addSheetRequest;
   StreamSubscription<DedupeHint>? _hints;
 
   /// The duplicate hint on screen, until it closes.
@@ -105,6 +107,18 @@ class _ShoppingListState() extends State<_ShoppingList> {
     _notices = context.read<RejectionNotices?>()?..listTab = _rejected;
     _hints = context.read<ListCubit>().hints.listen(_hint);
     _inputFocus.addListener(_focusChanged);
+    _addSheetRequest = context.read<AddSheetRequest?>()
+      ?..listTab = _openRequested;
+    // A widget's Add that started the app came before this tab.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openRequested());
+  }
+
+  /// A Home Screen widget's Add: the sheet opens, ready for typing.
+  void _openRequested() {
+    if (mounted && (_addSheetRequest?.take() ?? false)) {
+      context.read<AddSheetCubit>().show();
+      _inputFocus.requestFocus();
+    }
   }
 
   void _focusChanged() {
@@ -134,6 +148,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
   @override
   void dispose() {
     _sheetOpen?.removeListener(_followShell);
+    if (_addSheetRequest?.listTab == _openRequested) {
+      _addSheetRequest?.listTab = null;
+    }
     // The tabs come back, after this frame: the tree is locked now, and a
     // new household's list may already have taken the notifier over.
     if (_sheetOpen case final notifier? when notifier.value) {

@@ -1100,3 +1100,57 @@ push to `main` goes live on hummlist.com.
    name in caps, the open-item count and the members as hex initials. You took name and count out
    in job 29a. Say if you want the site's header in the app after all; it is built and was left
    out only because of your 29a call (DECISIONS job 57, 16).
+
+## Job 63: Home Screen widgets (2026-11-01)
+
+The iOS widget is a new app extension, `com.hummlist.app.HomeWidget`, that
+reads the list from the App Group `group.com.hummlist.app`. The App Store
+Connect API key can register an App ID but cannot create an App Group or
+assign one to an App ID, so these steps are in the browser. Until they are
+done and the profiles are renewed, the iOS release on `main` fails in
+`preflight` ("Profile ... is missing"), so job 63's PR must not merge
+before step 7.
+
+1. <https://developer.apple.com/account>, Peter signs in. **Certificates,
+   Identifiers & Profiles**, **Identifiers**, the **+** button, **App
+   Groups**, **Continue**. Description `Hummlist`, identifier
+   `group.com.hummlist.app`. **Continue**, **Register**.
+2. **Identifiers**, **+**, **App IDs**, **App**, **Continue**. Description
+   `Hummlist Home Widget`, **Explicit** Bundle ID
+   `com.hummlist.app.HomeWidget`. Under Capabilities tick **App Groups** only.
+   **Continue**, **Register**.
+3. Open `com.hummlist.app.HomeWidget` again, **App Groups**, **Configure**,
+   tick `group.com.hummlist.app`, **Continue**, **Save**.
+4. Open `com.hummlist.app`, tick **App Groups** (leave every other
+   capability as it is), **Configure**, tick `group.com.hummlist.app`,
+   **Continue**, **Save**, confirm the dialog about invalidated profiles.
+5. Do not touch **Certificates** or **Profiles**: no revoke, no new
+   certificate. "match AppStore com.hummlist.app" now shows "Invalid"; that
+   is expected.
+6. Post on BOARD.md that job 63's portal steps are done. Then, on the box, in
+   `app/` of a checkout of the job 63 branch (its Matchfile names both
+   identifiers), run `bundle exec fastlane ios renew_profile` exactly as
+   docs/RELEASE.md, "Capabilities", step 2 shows. match regenerates the app's
+   profile and creates "match AppStore com.hummlist.app.HomeWidget", both
+   with the existing certificate `GN85KDC962`; it creates and revokes no
+   certificate. `MATCH_FORCE=false` afterwards checks without changing
+   anything.
+7. `bundle exec fastlane ios preflight` (same environment, plus
+   `TESTFLIGHT_JSON=/tmp/tf.json`) passes for both profiles. Now the PR may
+   merge.
+
+Then the device test, on an iPhone (TestFlight build) and an Android phone:
+
+- [ ] Add the small and the medium widget (iPhone: Bearbeiten → Widget
+  hinzufügen → Hummlist; Android: Widgets → Hummlist, 2x2 and 4x2).
+- [ ] Both show the open count and the next items; medium shows the store
+  pills with the store's full name and the Add button.
+- [ ] Add and tick in the app: the count and rows follow within a second or
+  two.
+- [ ] Airplane mode, reopen the app: the widget still shows the last list.
+- [ ] Add opens the app with the add sheet and the keyboard; a tap anywhere
+  else opens the list (also from the More tab, and with the app closed).
+- [ ] Sign out: the widget asks to sign in; a tap opens sign-in.
+- [ ] German and English phone language; light and dark mode.
+- [ ] If all is well, set `home-widgets` to `"released": true` in
+  `releases/flags.json` and remove `draft: true` from both widget guides.
