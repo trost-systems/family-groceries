@@ -1,5 +1,7 @@
 # Family Groceries verification map
 
+The current feature map is `.cursor/skills/verify-hummlist/features/`.
+
 This directory is the maintained source for verifying the user-facing behavior of Family Groceries. Read this index before driving the app, then use the matching feature file as the recipe. Each recipe drives the real app through `fg` (run it as `scripts/fg` from the repo root).
 
 ## Baseline preconditions

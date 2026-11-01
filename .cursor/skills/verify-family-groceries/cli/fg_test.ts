@@ -277,6 +277,21 @@ Deno.test('instance settings derive from FG_PORT_PREFIX; a KVM marker makes linu
   assertEquals(plain.defaultSurface, 'android');
 });
 
+Deno.test('port blocks run from 500 to 649: job 60 runs on 601xx', async () => {
+  const sh = new FakeShell();
+  const inst = await loadInstance(
+    sh,
+    { HOME: '/h', FG_PORT_PREFIX: '601', FG_PROJECT_ID: 'family-groceries-60', FG_KVM_MARKER: '/none' },
+    '/r',
+  );
+  assertEquals(inst.apiUrl, 'http://127.0.0.1:60121');
+  assertEquals(inst.dbContainer, 'supabase_db_family-groceries-60');
+  for (const prefix of ['499', '650', '60', '6011']) {
+    const error = await loadInstance(sh, { HOME: '/h', FG_PORT_PREFIX: prefix }, '/r').then(() => null, (e) => e);
+    assertEquals(error?.code, 'bad_env', prefix);
+  }
+});
+
 Deno.test('config rewrite moves every 543xx port line and the project id, and leaves URLs alone', () => {
   const toml =
     'project_id = "family-groceries"\nport = 54321\nshadow_port = 54320\nsite_url = "http://127.0.0.1:3000"\nurl = "http://host.docker.internal:54399/realms/test"\n';

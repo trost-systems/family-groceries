@@ -224,7 +224,7 @@ rebase_onto_main() {
 # throwaway state dir, so fixture runs from a gate never mix with an agent's fg state.
 fg_on_repo_stack() {
   local config="$REPO_ROOT/supabase/config.toml"
-  FG_PORT_PREFIX="$(sed -n 's/^port = \(5[0-9][0-9]\)21$/\1/p' "$config" | head -1)"
+  FG_PORT_PREFIX="$(sed -n 's/^port = \([56][0-9][0-9]\)21$/\1/p' "$config" | head -1)"
   FG_PROJECT_ID="$(sed -n 's/^project_id = "\(.*\)"$/\1/p' "$config")"
   FG_STACK_WORKDIR="$REPO_ROOT"
   FG_STATE_DIR="$(mktemp -d)"

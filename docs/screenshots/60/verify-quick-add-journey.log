@@ -1,0 +1,6 @@
+[16:19:49.385Z] signed in as mia (de) on http://127.0.0.1:60181
+[16:19:50.435Z] typed "Joghu": first catalogue row "Joghurt, Aus dem Katalog" (rows: Joghu, Wie getippt | Joghurt, Aus dem Katalog | Joghurtdrink, Aus dem Katalog)
+[16:19:50.763Z] note: "✓ Hinzugefügt: Joghurt"
+[16:19:51.423Z] list: "Joghurt" sits under the heading "Kühlregal"
+[16:19:51.552Z] database: [{"name":"Joghurt","status":"active","added_by":"bb57c9eb-6268-4128-a0d5-b3c3af04d29f","categories":{"name":"Kühlregal"}}]
+[16:19:51.650Z] PASS quick-add (evidence: /workspace/hummlist/research/60-feature-map/evidence/fx-1101-1719-3sei/quick-add-171946)

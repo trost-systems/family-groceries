@@ -59,11 +59,11 @@ export interface Instance {
 
 export async function loadInstance(sh: Shell, env: Record<string, string | undefined>, repo: string): Promise<Instance> {
   const prefix = env.FG_PORT_PREFIX ?? '543';
-  if (!/^5\d\d$/.test(prefix)) {
+  if (!/^(5\d\d|6[0-4]\d)$/.test(prefix)) {
     throw new FgError(
       'bad_env',
       `FG_PORT_PREFIX="${prefix}" is not a 3-digit port block.`,
-      'Use e.g. FG_PORT_PREFIX=548 for ports 54820-54829.',
+      'Use e.g. FG_PORT_PREFIX=548 for ports 54820-54829 (500-649).',
       64,
     );
   }

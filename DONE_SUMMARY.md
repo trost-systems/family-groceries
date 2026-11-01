@@ -386,3 +386,6 @@ German and English landing pages in the 6b Hex Frische design with design 6's ye
 ## Job 54: demo videos for hummlist.com, PR into job 53's branch, not merged
 
 Three silent, captioned loops from the real Hummlist app fill job 53's video slots: adding and ticking off items, one household on three phones syncing live (real measured latency), and a generic AI chat adding and ticking items through the real MCP server. German and English, wide and compact, WebM and MP4 of 0.28 to 0.45 MB each, posters and captions. Made with a capture driver for the Linux build and HyperFrames (`marketing/videos/`). Site checks pass (97 tests, crawl, contrast, Lighthouse a11y 100, mobile perf 94–95). Review 0 fixed: the compact household-sync cut now shows both receiving phones; the English MCP cut's German list is the first item of Peter's check. Peter watches each loop on a phone and approves with job 53 (NEEDS_LEAD "Job 54"). Details: [docs/done/54-demo-videos.md](docs/done/54-demo-videos.md).
+## Job 60: Hummlist feature map and how-to clips
+
+verify-hummlist skill (web build + Playwright, launch/doctor/drive/cleanup proven on hz), 23-feature map with FEATURES-FOR-WRITERS.md for Hummlist Launch, hummlist-howto-clips skill (email GIF, MP4/WebM, PNG; quick-add DE+EN proven). Details: [docs/done/60-feature-map.md](docs/done/60-feature-map.md).

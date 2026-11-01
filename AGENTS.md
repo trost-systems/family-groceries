@@ -73,11 +73,14 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   state come from `scripts/fg seed <scenario>` (`test/fixtures/scenarios/`,
   removed with `fg teardown <run>`), multi-client sync proofs from
   `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
-- Make shown UI look finished with the hummlist-ui-craft skill
-  (`.claude/skills/hummlist-ui-craft/`, also `.cursor/skills/`): the 6b look,
-  restraint, framing, motion, loops, poster frames, the 358 px compact design and
-  the film/contact-sheet review loop, for homepage scenes, demo videos, goldens
-  and app screens. Its `film.mjs` films HTML/CSS scenes with Playwright.
+- The current feature map is `.cursor/skills/verify-hummlist/features/`
+  (`docs/FEATURE_MAP.md`): one file per user-facing feature, plus
+  `FEATURES-FOR-WRITERS.md`, which emails and site copy are written from.
+  Whenever user-facing behaviour changes, update the feature file and its
+  section in FEATURES-FOR-WRITERS.md (last verified: commit and date) in the
+  same PR. The verify-hummlist skill drives the web build with Playwright
+  (`helpers/launch.sh`, `doctor.sh`, `drive.sh <feature-id>`, `cleanup.sh`);
+  hummlist-howto-clips films GIF/MP4 how-to clips of it.
 - Make shown UI look finished with the hummlist-ui-craft skill
   (`.claude/skills/hummlist-ui-craft/`, also `.cursor/skills/`): the 6b look,
   restraint, framing, motion, loops, poster frames, the 358 px compact design and

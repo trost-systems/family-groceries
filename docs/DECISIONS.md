@@ -5876,3 +5876,55 @@ for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a 
    serve a Levenshtein bound. `supabase/bench/suggest_latency.sh` (in the db gate) fails at a p95
    of 50 ms. Before: p50 7.6 ms, p95 21 ms (prefix only). After: p50 about 16 ms, p95 about 28 ms;
    the rest is the extra rows found (each catalog row runs `parse_item`).
+
+## Job 60: Hummlist feature map (verify-hummlist) and how-to clips, 2026-11-01
+
+1. **A new skill next to the old one.** `verify-hummlist` (`.cursor/skills/verify-hummlist/`, linked
+   from `.claude/skills/`) drives the web release build with Playwright. `verify-family-groceries`
+   and its `fg` CLI stay unchanged in place, because jobs 58 and 59 edit them. The new skill reuses
+   `scripts/fg seed` and `fg teardown` (scenarios, leftover check) and `e2e/serve.mjs` instead of
+   copies. The old `SKILL.md` and `features/README.md` now start with "The current feature map is
+   `.cursor/skills/verify-hummlist/features/`."
+2. **What it builds.** Production defines (`app/config/auth.json`'s switches) with two local
+   swaps: a fake Google client id, and the e2e stand-in PostHog host. It has no LEGAL_DRAFTS,
+   HOUSEHOLD_ARCHIVE or INTEGRATION_LOCK, so a drive shows what a normal user sees. The e2e build
+   keeps those switches for its specs.
+3. **Journeys are Node scripts, not Playwright tests.** `journeys/<id>.mjs` and the clip scripts
+   load Playwright from `e2e/package.json` (as `film.mjs` does). The test runner would not resolve
+   `@playwright/test` from `.cursor/`. The scripts run against a launched instance instead of the
+   suite's per-test sign-ups.
+4. **Build to `app/build/web`, then copy.** `flutter build web --output <dir>` (3.47.8) leaves out
+   `assets/FontManifest.json` and `AssetManifest.bin.json`, and the app then renders no text.
+5. **Baseline household.** The `demo-familie` scenario (job 54's fictional Brandt family, no store
+   tags), so verification, screenshots and clips share one tidy household with no real data.
+6. **The "8-digit code".** The app has no screen to type an emailed code: sign-in is password, a
+   link by email, Google or Apple. A read-only look at the hosted auth config (Management API,
+   2026-11-01) shows an OTP length of 8, but the sign-in and confirmation emails carry only a
+   link. The only 8-character code users see is the household invite code. `sign-in.md` and
+   FEATURES-FOR-WRITERS.md say so.
+7. **Store badges.** Main shows chain-coloured letter badges (dm red, Edeka and Lidl yellow on
+   blue). Legal N-23 asks for no chain colours and job 58 replaces them, so the writers' file
+   forbids mentioning them and the clip skill avoids filming store sections.
+8. **Clip capture.** Chromium's screencast delivers frames at CSS pixels (390×844) even at DPR 2,
+   and a DPR 2 screenshot loop reaches only about 13 fps. So MP4 and WebM are 390×844 at 30 fps,
+   the GIF scales to 480 px, and GIF frame 1 and the PNG come from a sharp DPR 2 screenshot of the
+   end state. The brief asks for DPR 2 on stills.
+9. **GIF frame 1 is the result.** Outlook desktop shows only frame 1, so the GIF opens on the
+   finished state for 0.9 s, then plays the journey, which ends on that state. The loop has one cut
+   (result to start), which is acceptable for email.
+10. **English clips type a German catalogue word.** The add sheet's catalogue rows are German in
+    both UI languages ("Yogh" finds nothing, "Ched" finds „Cheddar“). The writers' file and
+    `language.md` say this.
+11. **Port blocks above 599.** `fg` rejected `FG_PORT_PREFIX=601` and `fg_on_repo_stack` in
+    `scripts/lib.sh` read only 5xx ports. Both now accept 500 to 649, which job 60 is the first to
+    need. That is a tooling fix, not an app change.
+12. **No CI hint.** The brief made a soft CI hint optional. A PR template checkbox and the pointers
+    in AGENTS.md and `docs/FEATURE_MAP.md` carry the rule without a new gate.
+13. **Feature map research.** Five agents read code, ARB files and specs per feature group. I then
+    corrected their output against drives:
+    - the More tab order and the Premium hint;
+    - quick-add in DE and EN, including the „Eingabe leeren“ button;
+    - the hosted auth settings;
+    - the analytics key in production builds;
+    - the guide URLs;
+    - the household name and seed (they had assumed "Familie Demo").
