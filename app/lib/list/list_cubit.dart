@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/events.dart';
@@ -281,6 +282,15 @@ class ListCubit(
 
   /// Usuals that are due and not on the list, at most 10.
   List<Usual> get dueUsuals => dueUsualsOf(state.usuals, state.items.values);
+
+  /// Usuals used in the last 30 days, not due and not on the list, the
+  /// latest first: after the due ones, up to 10 rows in all.
+  List<Usual> get recentUsuals => recentUsualsOf(
+    state.usuals,
+    state.items.values,
+    _clock(),
+    limit: max(0, 10 - dueUsuals.length),
+  );
 
   AddResult addUsual(Usual usual) =>
       addEntry(Entry(usual.name, usual.quantity), source: AddSource.suggestion);

@@ -113,7 +113,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 4. Close with „Schließen“ (EN: "Close"), Escape, or a tap on the list behind.
 
 **Never claim.**
-- That suggestions forgive any spelling. They forgive one wrong letter in short words and two in longer ones ("Hafermlch" finds Hafermilch) and find a word from 4 letters inside it ("milch" finds Hafermilch), but only with a connection; offline only the start of a name counts.
+- That suggestions forgive any spelling. They forgive one wrong letter in short words and two in longer ones ("Hafermlch" finds Hafermilch) and find a word from 4 letters inside it ("milch" finds Hafermilch), online and offline alike.
 - That the microphone works in the browser (it is on iOS and Android only).
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list").
@@ -122,7 +122,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Due again
 
-**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the usual quantity. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed.
+**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the usual quantity. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed. Below them come the items used in the last 30 days, marked „Zuletzt verwendet“ (EN: "Recently used"), up to 10 rows in all.
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.

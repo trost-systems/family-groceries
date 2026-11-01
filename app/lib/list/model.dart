@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart' show immutable, listEquals, mapEquals;
 
 enum ItemStatus() {
@@ -845,17 +847,25 @@ class const Usual({
   required final String name,
   required final bool due,
   final String? quantity,
+
+  /// When it was last added or bought.
+  final DateTime? lastUsed,
 }) {
   factory fromJson(Map<String, Object?> json) => Usual(
     name: json['name']! as String,
     quantity: json['quantity'] as String?,
     due: json['due']! as bool,
+    lastUsed: switch (json['last_used']) {
+      final String at => DateTime.parse(at),
+      _ => null,
+    },
   );
 
   Map<String, Object?> toJson() => {
     'name': name,
     'quantity': quantity,
     'due': due,
+    'last_used': lastUsed?.toIso8601String(),
   };
 }
 
@@ -869,29 +879,78 @@ String foldName(String name) => name
     .replaceAll('ß', 'ss')
     .replaceAll(RegExp(r'\s+'), ' ');
 
-/// [usuals] matching what is typed, as the server matches a prefix: names
-/// starting with it first, then names with a word starting with it, each in
-/// the server's order. Names already on the list are left out.
+/// [usuals] matching what is typed, folded as the server folds: the same
+/// name, names starting with it, names with a word starting with it, names
+/// with it inside, then typos of it (`suggestionMatch`), each in the
+/// server's order. Names already on the list are left out.
 List<Usual> suggestUsuals(
   List<Usual> usuals,
   Iterable<Item> visible,
   String text, {
   int limit = 5,
 }) {
-  final prefix = foldName(text);
-  if (prefix.isEmpty) {
+  final typed = foldName(text);
+  if (typed.isEmpty) {
     return const [];
   }
-  final offList = _offList(usuals, visible);
-  final words = RegExp('[ -]');
-  return [
-    ...offList.where((u) => foldName(u.name).startsWith(prefix)),
-    ...offList.where((u) {
-      final name = foldName(u.name);
-      return !name.startsWith(prefix) &&
-          name.split(words).any((w) => w.startsWith(prefix));
-    }),
-  ].take(limit).toList();
+  final ranked = [
+    for (final (order, usual) in _offList(usuals, visible).indexed)
+      if (suggestionMatch(typed, foldName(usual.name)) case final rank?)
+        (rank, order, usual),
+  ]..sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
+  return [for (final (_, _, usual) in ranked.take(limit)) usual];
+}
+
+/// How a folded [name] matches folded [typed] text, best first, as
+/// `public.suggest_match` on the server: 0 the same name, 1 it starts with
+/// it, 2 a word of it does, 3 it has it inside (from 4 letters), 4 a word of
+/// it or the whole name is a typo of it (from 3 letters: same first letter,
+/// one edit up to 5 letters, two from 6). Null: no match.
+int? suggestionMatch(String typed, String name) {
+  if (name == typed) {
+    return 0;
+  }
+  if (name.startsWith(typed)) {
+    return 1;
+  }
+  final words = name.split(RegExp('[ -]+'));
+  if (words.any((w) => w.startsWith(typed))) {
+    return 2;
+  }
+  if (typed.length < 3) {
+    return null;
+  }
+  if (typed.length >= 4 && name.contains(typed)) {
+    return 3;
+  }
+  final most = typed.length < 6 ? 1 : 2;
+  for (final word in {name, ...words}) {
+    if (word.isNotEmpty &&
+        word[0] == typed[0] &&
+        (word.length - typed.length).abs() <= most &&
+        _editDistance(typed, word) <= most) {
+      return 4;
+    }
+  }
+  return null;
+}
+
+/// Inserts, deletes and replacements that turn [a] into [b].
+int _editDistance(String a, String b) {
+  var previous = [for (var j = 0; j <= b.length; j++) j];
+  for (var i = 1; i <= a.length; i++) {
+    final current = [i];
+    for (var j = 1; j <= b.length; j++) {
+      current.add(
+        min(
+          min(previous[j], current[j - 1]) + 1,
+          previous[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1),
+        ),
+      );
+    }
+    previous = current;
+  }
+  return previous.last;
 }
 
 /// The due [usuals] not on the list, in the server's order.
@@ -900,6 +959,22 @@ List<Usual> dueUsualsOf(
   Iterable<Item> visible, {
   int limit = 10,
 }) => _offList(usuals, visible).where((u) => u.due).take(limit).toList();
+
+/// The [usuals] used in the 30 days before [now] that are not due and not
+/// on the list, the latest first.
+List<Usual> recentUsualsOf(
+  List<Usual> usuals,
+  Iterable<Item> visible,
+  DateTime now, {
+  int limit = 10,
+}) {
+  final since = now.subtract(const Duration(days: 30));
+  final recent = [
+    for (final usual in _offList(usuals, visible))
+      if (!usual.due && (usual.lastUsed?.isAfter(since) ?? false)) usual,
+  ]..sort((a, b) => b.lastUsed!.compareTo(a.lastUsed!));
+  return recent.take(limit).toList();
+}
 
 Iterable<Usual> _offList(List<Usual> usuals, Iterable<Item> visible) {
   final active = {

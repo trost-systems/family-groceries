@@ -446,3 +446,6 @@ Gates gitleaks, lint, flutter, fg-cli pass locally.
 
 **Missing / for Peter.** NEEDS_PETER "Job 57": a look at the self-drawn Apple button on an
 iPhone; retailer logos for the store badge after the Legal Review; job 56 item 6.
+## Job 59: fuzzy suggestions while typing (typos, part of a word, recently used)
+
+Suggestions now find what was meant despite a typo or from part of a word: "Hafermlch" and "milch" both offer Hafermilch. This works on the server (PR #177, merged) and offline on the device, with one shared rule: typos from 3 letters, in-word matches from 4, and prefixes only for shorter input. With the field empty, the add sheet shows the due items and then what was used in the last 30 days ("Zuletzt verwendet"). Tap-to-add, clearing and refocus are unchanged and now locked in by widget and web e2e tests. `suggest_entries` p95 is 29 ms locally and 32 ms on CI, against 21 ms before; a db-gate check fails at 50 ms. Details: [docs/done/59-fuzzy-suggest.md](docs/done/59-fuzzy-suggest.md).

@@ -108,3 +108,31 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
   await expect(itemRow(page, 'Brötchen'), 'added with its usual quantity').toHaveAccessibleName(/^Brötchen 4/);
   await expect(itemRow(page, 'Butter')).toBeVisible();
 });
+
+test('a typo or part of a word finds what was bought before; a tap adds it and the field is ready for the next', async ({ page }) => {
+  await signUpWithHousehold(page, newEmail('usuals-fuzzy'));
+  await addItem(page, 'Hafermilch');
+  await tick(page, 'Hafermilch');
+  await expect(itemRow(page, 'Hafermilch')).toHaveCount(0);
+
+  await addField(page).click();
+  await expect(suggestion(page, 'Hafermilch', 'Zuletzt verwendet'), 'the empty field offers what was used lately').toBeVisible();
+
+  await typeInto(addField(page), 'milch');
+  await expect(suggestion(page, 'Hafermilch', 'Schon mal gekauft'), 'part of the word finds it').toBeVisible();
+  await typeInto(addField(page), 'Hafermlch');
+  const row = suggestion(page, 'Hafermilch', 'Schon mal gekauft');
+  await expect(row, 'a typo finds it').toBeVisible();
+  await screenshot(page, '12-fuzzy-suggestion');
+
+  await row.click();
+  await expect(addedNote(page, /^✓ Hinzugefügt: Hafermilch\b/), 'a tap adds the row').toBeVisible();
+  await expect(addField(page), 'the field keeps focus').toBeFocused();
+  await expect(addField(page), 'and is empty').toHaveValue('');
+  await page.keyboard.insertText('Brot');
+  await page.keyboard.press('Enter');
+  await expect(addedNote(page, /^✓ Hinzugefügt: Brot\b/), 'the next item is typed straight away').toBeVisible();
+  await closeSheet(page);
+  await expect(itemRow(page, 'Hafermilch')).toBeVisible();
+  await expect(itemRow(page, 'Brot')).toBeVisible();
+});

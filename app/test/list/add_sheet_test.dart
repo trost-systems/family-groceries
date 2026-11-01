@@ -257,6 +257,107 @@ void main() {
     });
   });
 
+  group('a typo finds what was bought before; a tap adds it', () {
+    String label(WidgetTester tester, int i) =>
+        tester.getSemantics(row(i)).label;
+
+    /// Adds the second row, then checks the field is empty, focused and
+    /// takes the next item straight away.
+    Future<void> takeAndGoOn(WidgetTester tester) async {
+      await tester.tap(row(1));
+      await tester.pumpAndSettle();
+      expect(find.text('✓ Hinzugefügt: Hafermilch'), findsOneWidget);
+      expect(typed(tester), isEmpty);
+      expect(focus(tester).hasFocus, isTrue);
+      await tester.enterText(field(), 'Brot');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('✓ Hinzugefügt: Brot'), findsOneWidget);
+      expect(focus(tester).hasFocus, isTrue);
+    }
+
+    testWidgets('from the server', (tester) async {
+      await pumpList(
+        tester,
+        seed: (r) => r.suggestions['Hafermlch'] = const [
+          Suggestion(SuggestionSource.typed, ParsedEntry(name: 'Hafermlch')),
+          Suggestion(SuggestionSource.history, ParsedEntry(name: 'Hafermilch')),
+        ],
+      );
+      await open(tester);
+      await type(tester, 'Hafermlch');
+      expect(label(tester, 1), 'Hafermilch, Schon mal gekauft');
+      await takeAndGoOn(tester);
+      expect(
+        {for (final item in repo.rows.values) item.name},
+        {'Hafermilch', 'Brot'},
+      );
+    });
+
+    testWidgets('without the server, from the usuals on the device', (
+      tester,
+    ) async {
+      await pumpList(
+        tester,
+        seed: (r) => r.usuals = [const Usual(name: 'Hafermilch', due: false)],
+      );
+      repo.online = false;
+      await open(tester);
+      await type(tester, 'Hafermlch');
+      expect(label(tester, 0), 'Hafermlch, Wie getippt');
+      expect(label(tester, 1), 'Hafermilch, Schon mal gekauft');
+      await takeAndGoOn(tester);
+    });
+
+    testWidgets('part of a word, without the server', (tester) async {
+      await pumpList(
+        tester,
+        seed: (r) => r.usuals = [const Usual(name: 'Hafermilch', due: false)],
+      );
+      repo.online = false;
+      await open(tester);
+      await type(tester, 'milch');
+      expect(label(tester, 1), 'Hafermilch, Schon mal gekauft');
+    });
+  });
+
+  testWidgets('the empty field offers what is due, then what was used lately', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    await pumpList(
+      tester,
+      seed: (r) => r.usuals = [
+        const Usual(name: 'Milch', due: true),
+        Usual(
+          name: 'Hafermilch',
+          due: false,
+          lastUsed: now.subtract(const Duration(days: 2)),
+        ),
+        Usual(
+          name: 'Mehl',
+          due: false,
+          lastUsed: now.subtract(const Duration(days: 40)),
+        ),
+      ],
+    );
+    await open(tester);
+    expect(tester.getSemantics(row(0)).label, 'Milch, Wieder fällig');
+    expect(tester.getSemantics(row(1)).label, 'Hafermilch, Zuletzt verwendet');
+    expect(row(2), findsNothing, reason: 'Mehl was last used 40 days ago');
+    expect(
+      find.descendant(of: row(0), matching: find.byIcon(Icons.keyboard_return)),
+      findsNothing,
+      reason: 'Enter takes nothing while the field is empty',
+    );
+    await tester.ensureVisible(row(1));
+    await tester.pumpAndSettle();
+    await tester.tap(row(1));
+    await tester.pumpAndSettle();
+    expect(find.text('✓ Hinzugefügt: Hafermilch'), findsOneWidget);
+    expect(focus(tester).hasFocus, isTrue);
+  });
+
   group('Enter takes the first row', () {
     const eggs = [
       Suggestion(
