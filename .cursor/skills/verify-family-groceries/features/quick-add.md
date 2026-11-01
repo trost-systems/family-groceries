@@ -39,7 +39,7 @@ The add bar at the bottom of the list ("Was brauchst du?") opens the add sheet (
 
 Preconditions:
 
-- Baseline from `features/README.md`; peter signed in (`fg doctor` shows `peter.marionette ... screen list`).
+- Baseline from `features/README.md` with the chain stores dm, Lidl and Edeka, added as in `features/README.md` (Baseline); peter signed in (`fg doctor` shows `peter.marionette ... screen list`).
 - `H="(select id from households where name = 'Familie Test')"`. None of the test items are active: `fg db query "update items set status = 'bought' where status = 'active' and name in ('Milch', 'Äpfel', 'Brot', 'Brötchen', 'Butter') and household_id = $H" --write`.
 - Note the stores: `fg db query "select id, name from stores where household_id = $H order by sort_order" --as peter`. `EDEKA=<Edeka's id>` below.
 

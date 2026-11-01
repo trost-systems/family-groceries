@@ -14,11 +14,11 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'dora@example.com');
 
 select pg_temp.login('00000000-0000-0000-0000-0000000000d1');
-create temp table hd as select id from public.create_household('Dora');
+create temp table hd as select id from public.create_household(p_name => 'Dora', p_stores => array['dm', 'Lidl', 'Edeka']);
 insert into public.items (household_id, name, brand, properties, status)
 select id, 'Windeln', 'Lillydoo', 'Größe 3', 'bought' from hd;
 select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
-create temp table hc as select id from public.create_household('Carla');
+create temp table hc as select id from public.create_household(p_name => 'Carla', p_stores => array['dm', 'Lidl', 'Edeka']);
 grant select on hc, hd to authenticated;
 
 create function pg_temp.store(p_seed text) returns uuid language sql as $$
@@ -269,8 +269,8 @@ select is((select count(*)::int from public.category_memory where item_key = 'ke
 -- leaves Edeka the latest and Lidl's count as it was.
 insert into public.items (household_id, name, store_id) select id, 'Gurken', pg_temp.store('edeka') from hc;
 select is(public.suggest_store((select id from hc), 'Gurke'), pg_temp.store('edeka'), 'Edeka picked for Gurke');
-insert into public.items (id, household_id, name, store_id)
-select '00000000-0000-0000-0000-00000000a001', id, 'Gurke', pg_temp.store('lidl') from hc;
+insert into public.items (id, household_id, name, properties, store_id)
+select '00000000-0000-0000-0000-00000000a001', id, 'Gurke', 'Bio', pg_temp.store('lidl') from hc;
 select is(public.suggest_store((select id from hc), 'Gurke'), pg_temp.store('lidl'), 'then Lidl again');
 delete from public.items where id = '00000000-0000-0000-0000-00000000a001';
 select results_eq(
@@ -283,15 +283,15 @@ select results_eq(
 -- A lesson learned on the row since the add stays when the item goes.
 insert into public.items (id, household_id, name, category_id)
 select '00000000-0000-0000-0000-00000000a002', id, 'Senf', pg_temp.cat('bakery') from hc;
-insert into public.items (id, household_id, name, category_id)
-select '00000000-0000-0000-0000-00000000a003', id, 'Senf', pg_temp.cat('pantry') from hc;
+insert into public.items (id, household_id, name, properties, category_id)
+select '00000000-0000-0000-0000-00000000a003', id, 'Senf', 'mittelscharf', pg_temp.cat('pantry') from hc;
 update public.items set category_id = pg_temp.cat('bakery') where id = '00000000-0000-0000-0000-00000000a003';
 delete from public.items where id = '00000000-0000-0000-0000-00000000a002';
 select is(public.classify_item((select id from hc), 'Senf'), pg_temp.cat('bakery'), 'a later edit to the same category keeps the lesson');
 
-insert into public.items (household_id, name, category_id)
-select id, 'Zwiebeln', pg_temp.cat('bakery') from hc
-union all select id, 'Zwiebeln', null from hc;
+insert into public.items (household_id, name, properties, category_id)
+select id, 'Zwiebeln', null, pg_temp.cat('bakery') from hc
+union all select id, 'Zwiebeln', 'rot', null from hc;
 select results_eq(
   $$ select category_id, corrections from public.category_memory where item_key = 'zwiebel' $$,
   $$ values (pg_temp.cat('bakery'), 1) $$,

@@ -17,6 +17,8 @@ import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/purchases/premium_screen.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
+import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
@@ -210,21 +212,7 @@ class const _MoreList({
           detail: l10n.storesRowHint,
           onTap: () => unawaited(openStores(context)),
         ),
-        _Row(
-          key: const ValueKey('more-lifetime'),
-          icon: Icons.favorite_outline,
-          label: l10n.premiumTitle,
-          // The hint asks for a purchase: only where one may be offered.
-          detail: context.select<Entitlements, String?>(
-            (e) => e.has(Entitlement.premium)
-                ? l10n.lifetimeUnlocked
-                : e.canOffer(Entitlement.premium, PremiumPlan.yearly)
-                ? l10n.premiumRowHint
-                : null,
-          ),
-          selected: selected == MorePage.premium,
-          onTap: () => context.go(premiumPath),
-        ),
+        _PremiumRow(selected: selected == MorePage.premium),
         HlSectionLabel(
           l10n.accessTitle,
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
@@ -354,6 +342,56 @@ String _versionOf(PackageInfo info) => info.buildNumber.isEmpty
 
 /// The list's category label, for a settings group: 11 px heavy caps,
 /// 0.12 em tracking, muted, and a hairline rule after it.
+
+/// Hummlist Premium, listed only once it may be offered (the server's
+/// `premium_offer` and, in the iPhone and Android apps,
+/// `REVENUECAT_PURCHASES`), or for a household that has it. Before the
+/// launch nobody sees it (job 64); the page stays reachable from the
+/// integration settings.
+class const _PremiumRow({required final bool selected}) extends StatefulWidget {
+  @override
+  State<_PremiumRow> createState() => _PremiumRowState();
+}
+
+class _PremiumRowState() extends State<_PremiumRow> {
+  late final Future<bool> _offerOpen = context
+      .read<PremiumServer>()
+      .offerOpen();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final unlocked = context.select<Entitlements, bool>(
+      (e) => e.has(Entitlement.premium),
+    );
+    final notYet = context.select<PurchaseCubit, bool>(
+      (c) => c.state.noSale is PurchasesNotYet,
+    );
+    return FutureBuilder(
+      future: _offerOpen,
+      builder: (context, offer) {
+        if (!unlocked && (offer.data != true || notYet)) {
+          return const SizedBox.shrink();
+        }
+        return _Row(
+          key: const ValueKey('more-lifetime'),
+          icon: Icons.favorite_outline,
+          label: l10n.premiumTitle,
+          // The hint asks for a purchase: only where one may be offered.
+          detail: context.select<Entitlements, String?>(
+            (e) => e.has(Entitlement.premium)
+                ? l10n.lifetimeUnlocked
+                : e.canOffer(Entitlement.premium, PremiumPlan.yearly)
+                ? l10n.premiumRowHint
+                : null,
+          ),
+          selected: widget.selected,
+          onTap: () => context.go(premiumPath),
+        );
+      },
+    );
+  }
+}
 
 class const _Row({
   required final IconData icon,

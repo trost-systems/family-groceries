@@ -2,6 +2,7 @@ import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/more/more_screen.dart';
+import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../app/fake_launcher.dart';
+import '../purchases/fakes.dart';
 import 'more_harness.dart';
 
 void main() {
@@ -196,6 +198,64 @@ void main() {
       expect(key('more-screen'), findsOneWidget, reason: 'More stays open');
     });
   }
+
+  // Job 64: before the launch nobody sees Hummlist Premium in More.
+  group('Hummlist Premium', () {
+    Future<bool> listed(
+      WidgetTester tester, {
+      required bool offer,
+      NoSale? noSale,
+      bool unlocked = false,
+    }) async {
+      await pumpMore(
+        tester,
+        premium: FakePremiumServer(offer: offer),
+        store: FakePurchaseRepository(withoutStore: noSale),
+        entitlements: FakeEntitlementsSource(unlockedNow: unlocked),
+      );
+      return find.text('Hummlist Premium').evaluate().isNotEmpty;
+    }
+
+    testWidgets('is not listed while the server switch is off', (tester) async {
+      expect(await listed(tester, offer: false), isFalse);
+    });
+
+    testWidgets('is not listed in an app build that does not sell yet', (
+      tester,
+    ) async {
+      expect(
+        await listed(tester, offer: true, noSale: const PurchasesNotYet()),
+        isFalse,
+      );
+    });
+
+    testWidgets('is listed once offered, with its hint', (tester) async {
+      expect(await listed(tester, offer: true), isTrue);
+      expect(find.text('Siri, Alexa und KI-Assistenten'), findsOneWidget);
+    });
+
+    testWidgets('is listed on the web once offered: bought in the apps', (
+      tester,
+    ) async {
+      expect(
+        await listed(tester, offer: true, noSale: const PurchasesUnsupported()),
+        isTrue,
+      );
+    });
+
+    testWidgets('stays listed for a household that has it', (tester) async {
+      expect(
+        await listed(
+          tester,
+          offer: false,
+          noSale: const PurchasesNotYet(),
+          unlocked: true,
+        ),
+        isTrue,
+      );
+      expect(find.text('Freigeschaltet'), findsOneWidget);
+    });
+  });
 
   group('Hilfe & Kontakt (job 24)', () {
     for (final (device, url) in const [

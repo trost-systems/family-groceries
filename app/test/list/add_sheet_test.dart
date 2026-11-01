@@ -25,10 +25,11 @@ void main() {
   Future<void> pumpList(
     WidgetTester tester, {
     void Function(FakeRepository repo)? seed,
+    Size size = screen,
   }) async {
     tester.view
       ..devicePixelRatio = 3
-      ..physicalSize = screen * 3
+      ..physicalSize = size * 3
       ..padding = const FakeViewPadding(
         top: safeTop * 3,
         bottom: safeBottom * 3,
@@ -358,6 +359,49 @@ void main() {
     expect(focus(tester).hasFocus, isTrue);
   });
 
+  // Job 64: on a 360 px phone the chips wrap, and a half-screen cap left
+  // one "Wieder fällig" row, cut by the input.
+  for (final size in [const Size(360, 640), screen]) {
+    testWidgets('the empty field shows three due rows whole above the input, '
+        'also after an add (${size.width.toInt()}x${size.height.toInt()})', (
+      tester,
+    ) async {
+      await pumpList(
+        tester,
+        size: size,
+        seed: (r) => r.usuals = [
+          for (final name in ['Eier', 'Milch', 'Brot', 'Butter', 'Käse'])
+            Usual(name: name, due: true),
+        ],
+      );
+      await open(tester);
+      void threeWhole(List<String> names) {
+        final sheetTop = surface(tester).top;
+        for (final (i, name) in names.indexed) {
+          expect(tester.getSemantics(row(i)).label, '$name, Wieder fällig');
+          final rect = tester.getRect(row(i));
+          expect(rect.top, greaterThanOrEqualTo(sheetTop), reason: name);
+          expect(
+            rect.bottom,
+            lessThanOrEqualTo(barTop(tester) + 0.5),
+            reason: '$name is not cut by the input',
+          );
+        }
+        expect(
+          row(names.length).hitTestable(),
+          findsNothing,
+          reason: 'the others scroll',
+        );
+      }
+
+      threeWhole(['Eier', 'Milch', 'Brot']);
+      await tester.tap(row(0));
+      await tester.pumpAndSettle();
+      expect(find.text('✓ Hinzugefügt: Eier'), findsOneWidget);
+      threeWhole(['Milch', 'Brot', 'Butter']);
+    });
+  }
+
   group('Enter takes the first row', () {
     const eggs = [
       Suggestion(
@@ -479,6 +523,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(content(), findsNothing);
     }
+  });
+
+  // Job 64: Escape with a row focused (Tab from the input, or the moment
+  // after a tap on the web) is not the field's; the screen takes it.
+  testWidgets('Escape closes the sheet while a row has focus', (tester) async {
+    await pumpList(tester, seed: (r) => r.suggestions['wurst'] = rows(3));
+    await open(tester);
+    await type(tester, 'wurst');
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(focus(tester).hasFocus, isFalse, reason: 'a row has focus');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(content(), findsNothing);
+    expect(focus(tester).hasFocus, isFalse, reason: 'it stays closed');
   });
 
   // On the web a click on the field can reach the app as a semantics tap or

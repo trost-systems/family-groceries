@@ -13,7 +13,7 @@ async function openMore(page: Page): Promise<void> {
 
 test('More opens every entry; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
   const email = newEmail('more');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   await openMore(page);
   await screenshot(page, 'more-01-phone');
   // More is a lazy list taller than the window (job 21 added Feedback): wheel to what is below.
@@ -43,12 +43,12 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
 
   await page.getByRole('button', { name: /^Läden/ }).click();
   await expect(page.getByRole('heading', { name: 'Läden' })).toBeVisible();
-  for (const store of ['dm', 'Lidl', 'Edeka']) {
+  for (const store of ['Supermarkt', 'Drogerie']) {
     // The list hides stores without items (job 17b); this screen lists every store.
     await expect(page.getByRole('button', { name: new RegExp(`^${store}\\b`) }), `${store} is listed though empty`).toBeVisible();
   }
-  await page.getByRole('button', { name: /^Lidl/ }).click();
-  await expect(page.getByRole('heading', { name: 'Lidl: Reihenfolge' }), 'a store opens its walking order').toBeVisible();
+  await page.getByRole('button', { name: /^Supermarkt/ }).click();
+  await expect(page.getByRole('heading', { name: 'Supermarkt: Reihenfolge' }), 'a store opens its walking order').toBeVisible();
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: 'Zurück' }).click();
 

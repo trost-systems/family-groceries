@@ -1,8 +1,8 @@
 import { expect, type Page, test } from './fixtures';
 import { dragHandle, dragItemToStore, groupHeadings, openStoreLayout, sectionHeadings, storeOf } from './catalog';
 import {
-  addedNote, addField, addItem, addSheet, closeSheet, createInviteCode, enterItem, itemRow, joinWithCode, newEmail, openEdit, openMore,
-  openTab, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold, storeDivider, tick, typeInto, within,
+  addedNote, addField, addItem, closeSheet, createInviteCode, enterItem, itemRow, joinWithCode, newEmail, openEdit, openMore,
+  openTab, pickInSheet, saveEdit, screenshot, signUp, signUpWithHousehold, chainStores, storeDivider, tick, typeInto, within,
 } from './helpers';
 
 /** The route order of the categories the test's items land in under "Ohne Laden" (Zahnpasta's 👶 Drogerie goes to dm). */
@@ -20,7 +20,7 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
   // The longest journey (eight adds, a dozen drags, a reload): it took 46-55 s of the default 60 s
   // on main, and the add sheet's open and close add a few seconds.
   test.setTimeout(120_000);
-  await signUpWithHousehold(page, newEmail('stores'));
+  await signUpWithHousehold(page, newEmail('stores'), { stores: chainStores });
   for (const item of ['Brot', 'Äpfel', 'Milch', 'Hack', 'Zahnpasta', 'Klopapier', 'Chips', 'Pizza']) {
     await enterItem(page, item);
   }
@@ -90,22 +90,23 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
 test('category and store layout changes sync live to the other member', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const lea = await (await browser.newContext()).newPage();
-  await signUpWithHousehold(peter, newEmail('peter-cat'));
+  // An own store without a researched layout walks the household's category order.
+  await signUpWithHousehold(peter, newEmail('peter-cat'), { stores: ['Supermarkt'] });
   await addItem(peter, 'Spülmittel');
   await addItem(peter, 'Brot');
   await expect(itemRow(peter, 'Brot')).toBeVisible();
-  await dragItemToStore(peter, 'Spülmittel', 'Lidl');
-  await dragItemToStore(peter, 'Brot', 'Lidl');
-  await expect.poll(() => storeOf(peter, 'Brot')).toBe('Lidl');
+  await dragItemToStore(peter, 'Spülmittel', 'Supermarkt');
+  await dragItemToStore(peter, 'Brot', 'Supermarkt');
+  await expect.poll(() => storeOf(peter, 'Brot')).toBe('Supermarkt');
   const code = await createInviteCode(peter);
   await signUp(lea, newEmail('lea-cat'));
   await joinWithCode(lea, code);
   await expect(itemRow(lea, 'Spülmittel')).toBeVisible();
-  await expect.poll(() => sectionHeadings(lea, 'Lidl')).toEqual(['Brot & Backwaren', 'Haushalt']);
+  await expect.poll(() => sectionHeadings(lea, 'Supermarkt')).toEqual(['Brot & Backwaren', 'Haushalt']);
 
-  await openStoreLayout(peter, 'Lidl');
+  await openStoreLayout(peter, 'Supermarkt');
   await dragHandle(peter, 'Haushalt verschieben', 'Brot & Backwaren verschieben');
-  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Lidl'), { message: 'a store reorder in A reaches B', timeout })
+  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Supermarkt'), { message: 'a store reorder in A reaches B', timeout })
     .toEqual(['Haushalt', 'Brot & Backwaren']));
   await peter.getByRole('button', { name: 'Zurück' }).click();
 
@@ -113,23 +114,15 @@ test('category and store layout changes sync live to the other member', async ({
   await peter.getByRole('button', { name: 'Haushalt', exact: true }).click();
   await typeInto(peter.getByRole('textbox', { name: 'Name' }), 'Putzzeug');
   await peter.getByRole('button', { name: 'Speichern' }).click();
-  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Lidl'), { message: 'a rename in A reaches B', timeout })
+  await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Supermarkt'), { message: 'a rename in A reaches B', timeout })
     .toEqual(['Putzzeug', 'Brot & Backwaren']));
   await screenshot(lea, '09-live-catalog-sync');
 });
 
 test('categories: add, move an item there, rename, reorder, delete with reassignment', async ({ page }) => {
+  // No stores: both items are under "Ohne Laden", so the headings below follow the route order alone.
   await signUpWithHousehold(page, newEmail('categories'));
-  // The sheet would put Windeln in dm, its store guess; both items stay without a store, so the
-  // headings below follow the route order alone.
-  await addField(page).click();
-  await typeInto(addField(page), 'Windeln');
-  await addSheet(page).getByRole('button', { name: /^Laden: / }).click();
-  await addSheet(page).getByRole('button', { name: 'Ohne Laden', exact: true }).click();
-  await expect(addField(page)).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(addedNote(page, /^✓ Hinzugefügt: Windeln$/)).toBeVisible();
-  await closeSheet(page);
+  await addItem(page, 'Windeln');
   await addItem(page, 'Bier');
   await openMore(page, 'Kategorien verwalten');
 

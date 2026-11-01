@@ -25,7 +25,7 @@ Every item on the list has a name („Bezeichnung“ / "Name"), an optional bran
 
 Preconditions:
 
-- Signed in, on the list tab, an item without a brand on the list (for example `addItem(page, 'Milch')` from helpers, which types it, presses Enter and closes the sheet). Stores: the e2e household has the default stores; the baseline „Familie Brandt“ has dm, Lidl and Edeka, and none of its items has a store yet.
+- Signed in, on the list tab, an item without a brand on the list (for example `addItem(page, 'Milch')` from helpers, which types it, presses Enter and closes the sheet). Stores: the baseline „Familie Brandt“ has none, and the e2e household only the ones its spec passes to `signUpWithHousehold` (none by default). Add the stores a step picks first, as in `README.md` (Baseline); add dm by that name for the brand default (Pampers → dm).
 - Existing coverage: `e2e/tests/edit-sheet.spec.ts` (right click, steppers, height, swipe, hold, Löschen with undo, Abbrechen, touch variants in a phone browser) and `e2e/tests/item-details.spec.ts` (row second line). Run via `scripts/verify.sh --only e2e -- tests/edit-sheet.spec.ts`.
 - Helpers: `openEdit(page, 'Milch')` right-clicks the row and waits for `editSheet(page)` (`getByRole('group', { name: 'Bearbeiten', exact: true })`); `editField(page, 'Marke')` is `editSheet(page).getByRole('textbox', { name: 'Marke' })`; `expectFieldValue(field, value)` reads a prefilled value; `pickInSheet(page, 'Laden' | 'Kategorie', '<option>')`; `saveEdit(page)` clicks „Fertig“ and waits for the sheet to go.
 

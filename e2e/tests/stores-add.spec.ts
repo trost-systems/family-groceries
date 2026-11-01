@@ -59,13 +59,13 @@ test('OWN STORE: made in the add sheet and picked at once, then renamed and dele
 
 test('OWN STORE: a store one member adds shows for the other at once, with its layout', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
-  await signUpWithHousehold(peter, newEmail('peter-store'));
+  await signUpWithHousehold(peter, newEmail('peter-store'), { stores: ['Supermarkt'] });
   const code = await createInviteCode(peter);
   const lea = await (await browser.newContext()).newPage();
   await signUp(lea, newEmail('lea-store'));
   await joinWithCode(lea, code);
   await openMore(lea, 'Läden');
-  await expect(storeRow(lea, 'Edeka')).toBeVisible();
+  await expect(storeRow(lea, 'Supermarkt')).toBeVisible();
 
   await openMore(peter, 'Läden');
   await peter.getByRole('button', { name: 'Neuen Laden anlegen' }).click();

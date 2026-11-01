@@ -61,7 +61,8 @@ async function seedStores(page: Page, email: string): Promise<void> {
   if (error) throw error;
   const store = (name: string) => stores!.find((s) => s.name === name)!;
   const rows = [
-    ['Vollmilch', 'Lidl'], ['Bananen', 'Lidl'], ['Brot', 'Edeka'], ['Butter', 'Edeka'], ['Zahnpasta', 'dm'], ['Kerzen', null],
+    ['Vollmilch', 'Supermarkt'], ['Bananen', 'Supermarkt'], ['Brot', 'Bäckerei'], ['Butter', 'Supermarkt'], ['Zahnpasta', 'Drogerie'],
+    ['Kerzen', null],
   ] as const;
   const { error: inserted } = await api.from('items').insert(rows.map(([name, at]) => ({
     household_id: stores![0].household_id,
@@ -80,7 +81,7 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
     await screenshot(page, `theme-${theme}-${n}-${name}`);
   };
   await openTab(page, 'Liste');
-  await expect(storeDivider(page, 'Lidl')).toBeVisible();
+  await expect(storeDivider(page, 'Supermarkt')).toBeVisible();
   await expectTheme(page, theme, 'the list');
   await shot('01', 'list');
 
@@ -144,7 +145,7 @@ test('Dunkel switches every screen at once and survives a reload; System follows
   await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
   await expectTheme(page, 'light', 'the login of a light browser');
   await screenshot(page, 'theme-light-12-login');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Bäckerei', 'Drogerie'] });
   await seedStores(page, email);
 
   await openSettings(page);

@@ -26,7 +26,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   const context = await browser.newContext();
   const app = await context.newPage();
   const email = newEmail('oauth');
-  await signUpWithHousehold(app, email);
+  await signUpWithHousehold(app, email, { stores: ['Supermarkt'] });
   await addItem(app, 'Brot');
 
   // Discovery as an MCP host performs it, asserted step by step.
@@ -91,8 +91,8 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await within(3_000, (timeout) => expect(itemRow(app, 'Hafermilch'), 'an MCP add shows up live in the app').toBeVisible({ timeout }));
   await expect(itemRow(app, 'Äpfel')).toHaveAccessibleName('Äpfel 6');
 
-  const moved = await call<Item>(client, 'move_item', { item: 'hafermilch', category: 'Getränke', store: 'Lidl' });
-  expect([moved.category, moved.store]).toEqual(['Getränke', 'Lidl']);
+  const moved = await call<Item>(client, 'move_item', { item: 'hafermilch', category: 'Getränke', store: 'Supermarkt' });
+  expect([moved.category, moved.store]).toEqual(['Getränke', 'Supermarkt']);
   const db = await apiAs(email);
   await expect.poll(async () =>
     (await db.from('items').select('categories(name)').eq('name', 'Hafermilch').single()).data,
@@ -142,19 +142,19 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
 
 test('a category or store corrected over MCP is learned and used on the next MCP add', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
-  await signUpWithHousehold(page, newEmail('learn'));
+  await signUpWithHousehold(page, newEmail('learn'), { stores: ['Supermarkt'] });
   const client = await connectWithToken(await createTokenInSettings(page, 'Lernen'));
 
   const first = await call<{ added: Item[] }>(client, 'add_items', { items: [{ name: 'Hafermilch' }] });
   expect(first.added.map((i) => [i.category, i.store])).toEqual([['Kühlregal', null]]);
-  await call(client, 'move_item', { item: 'Hafermilch', category: 'Getränke', store: 'Lidl' });
+  await call(client, 'move_item', { item: 'Hafermilch', category: 'Getränke', store: 'Supermarkt' });
   await call(client, 'tick_items', { items: ['Hafermilch'] });
 
   const again = await call<{ added: Item[]; alreadyOnList: Item[] }>(client, 'add_items', {
     items: [{ name: 'hafermilch' }, { name: '2 Gurken' }, { name: 'Gurke' }],
   });
   expect(again.added.map((i) => [i.name, i.quantity, i.category, i.store])).toEqual([
-    ['hafermilch', null, 'Getränke', 'Lidl'],
+    ['hafermilch', null, 'Getränke', 'Supermarkt'],
     ['Gurken', '2', 'Obst & Gemüse', null],
   ]);
   expect(again.alreadyOnList.map((i) => i.name), '"Gurke" is "2 Gurken"').toEqual(['Gurken']);
@@ -215,7 +215,7 @@ async function createTokenInSettings(page: Page, name: string): Promise<string> 
 
 test('personal access token: create in settings, use over MCP in both protocol eras, revoke -> 401', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
-  await signUpWithHousehold(page, newEmail('pat'));
+  await signUpWithHousehold(page, newEmail('pat'), { stores: ['Supermarkt', 'Drogerie'] });
   const token = await createTokenInSettings(page, 'Siri');
   await screenshot(page, 'mcp-05-pat-created');
   await page.getByRole('button', { name: 'Fertig' }).click();
@@ -227,7 +227,7 @@ test('personal access token: create in settings, use over MCP in both protocol e
   const listed = await call<{ items: Item[] }>(modern, 'list_items', {});
   expect(listed.items.map((i) => i.name)).toEqual(['Klopapier']);
   const stores = await call<{ name: string }[]>(modern, 'list_stores');
-  expect(stores.map((s) => s.name)).toEqual(['dm', 'Lidl', 'Edeka']);
+  expect(stores.map((s) => s.name)).toEqual(['Supermarkt', 'Drogerie']);
   const categories = await call<{ name: string }[]>(modern, 'list_categories');
   expect(categories[0].name).toBe('Obst & Gemüse');
 
@@ -249,7 +249,7 @@ test('personal access token: create in settings, use over MCP in both protocol e
 test('a store the household added, renamed or deleted is what MCP knows by name', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   const email = newEmail('own-store');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   const db = await apiAs(email);
   const { data: household } = await db.from('household_members').select('household_id').single();
   const { data: rewe, error } = await db.rpc('add_store', { p_household: household!.household_id, p_name: 'Rewe' });
@@ -257,7 +257,7 @@ test('a store the household added, renamed or deleted is what MCP knows by name'
   const client = await connectWithToken(await createTokenInSettings(page, 'Läden'));
 
   const stores = await call<{ name: string }[]>(client, 'list_stores');
-  expect(stores.map((s) => s.name)).toEqual(['dm', 'Lidl', 'Edeka', 'Rewe']);
+  expect(stores.map((s) => s.name)).toEqual(['Supermarkt', 'Drogerie', 'Rewe']);
   const added = await call<{ added: Item[] }>(client, 'add_items', { items: [{ name: 'Milch', store: 'rewe' }] });
   expect(added.added.map((i) => i.store)).toEqual(['Rewe']);
   const inRewe = await call<{ items: Item[] }>(client, 'list_items', { store: 'REWE' });
@@ -271,7 +271,7 @@ test('a store the household added, renamed or deleted is what MCP knows by name'
   const after = await call<{ items: Item[] }>(client, 'list_items', {});
   expect(after.items.map((i) => [i.name, i.store])).toEqual([['Milch', null]]);
   expect(await callExpectingError(client, 'add_items', { items: [{ name: 'Brot', store: 'Rewe Markt' }] }))
-    .toContain('Laden „Rewe Markt“ nicht gefunden. Vorhanden: dm, Lidl, Edeka.');
+    .toContain('Laden „Rewe Markt“ nicht gefunden. Vorhanden: Supermarkt, Drogerie.');
 });
 
 test('another household\'s credentials can neither see nor change this household\'s list', async ({ browser }) => {

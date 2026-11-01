@@ -510,7 +510,7 @@ export const syncCommands: Command[] = [{
     '  B tick "Milch"  /  A delete "Brot"           tick the row\'s checkbox / open it and press Löschen',
     '  C edit "Bananen" quantity "6"  (or name)     open the row, retype the field, Speichern',
     '  A offline  /  A online                       cut the client off (HTTP and the open realtime socket) / reconnect',
-    '  A store "Lidl"  /  A reload                  fold all but Lidl and Ohne Laden ("Alle": unfold) / reload',
+    '  A store "Supermarkt"  /  A reload            fold all but Supermarkt and Ohne Laden ("Alle": unfold) / reload',
     `  expect B,C see|gone|text "X" [within 2000ms] wait until each client shows or lost row "X" (or any text "X"); default ${DEFAULT_WITHIN_MS} ms`,
     '  wait 500ms  /  screenshot "name"             pause / an extra frame',
     "Capture needs no trigger: every client is screenshotted at once after each step and whenever any client's screen changes (a MutationObserver on Flutter's semantics tree), composited side by side with labels and times; each context records a video and ffmpeg stacks them into one composite video. Latency per expectation is measured from the acting client's server ack (and input, and the item_events row on local) to the first frame showing the change. Artifacts: $FG_EVIDENCE_DIR/<run>/sync/ with index.md and index.html. Exits 1 on a failed expectation (code sync_failed), with the failure frames first in index.html. A run fg sync seeded is torn down afterwards unless --keep; a --run-id run is left as it was. Ctrl-C, SIGTERM and SIGHUP kill the lock wait, build or browser at once, tear down a run this command seeded, and exit 130/143/129; a stop before the seed leaves nothing.",

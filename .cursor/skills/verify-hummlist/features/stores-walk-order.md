@@ -37,7 +37,7 @@ The list is one scroll of sections: a divider per store that has open items, in 
 
 Preconditions:
 
-- Seeded household „Familie Brandt“ signed in on the list tab with the default stores dm, Lidl, Edeka (the seed's items may already sit in stores; list state from `sectionHeadings`/`outline` in `e2e/tests/catalog.ts`). Or sign up fresh with `signUpWithHousehold(page, newEmail('x'))` (default stores on).
+- Seeded household „Familie Brandt“ signed in on the list tab. It has no stores: add dm, Lidl and Edeka in that order first, as in `README.md` (Baseline), since the steps below read their walk orders (list state from `sectionHeadings`/`outline` in `e2e/tests/catalog.ts`). Or sign up fresh with `signUpWithHousehold(page, newEmail('x'), { stores: chainStores })` (`e2e/tests/helpers.ts`).
 - Items to sort come from `addItem`/`enterItem` (add sheet) or direct API inserts as `seed` in `e2e/tests/list-walk-order.spec.ts`.
 
 - **Read the sections.** `storeDivider(page, 'Lidl')` = button named `^Lidl, \d+ Artikel`. `outline(page)` from `e2e/tests/catalog.ts` returns each section's store, headings and items. Observable: store order, headings per section (`page.getByRole('heading', { level: 2 })`).
@@ -57,7 +57,7 @@ Preconditions:
 - Lifting a store divider folds every store, and lifting a category divider folds its siblings, so a target below the source can move before the drop.
 - An empty store shows as a drop target only after the dragged item has moved; look for the divider then (`dragItemToStore` does).
 - `getByText` for a store name can also hit the edit sheet's store options behind or in a sheet; use `storeDivider`.
-- The store names dm, Lidl, Edeka are the default stores only; test accounts created with „Überspringen“ have none. Add one with Mehr → „Läden“ → „+ Neuer Laden“ or `db.rpc('add_store', { p_household, p_name })` (`e2e/tests/mcp.spec.ts`).
+- The store names dm, Lidl, Edeka are chains the household adds; seeded households and test accounts created with „Überspringen“ have no store. Add one with Mehr → „Läden“ → „+ Neuer Laden“ or `db.rpc('add_store', { p_household, p_name })` (`e2e/tests/mcp.spec.ts`).
 - The store badge is the store's full name in a hexagonal pill (long names end in „…“), the same on dividers, under Mehr → „Läden“ and in the add sheet. Since job 57 (2026-11-01) there are no letter squares and no retailer colours (Legal N-23); logos would need a Legal Review and none ship. It is decorative: the accessible name is just the text („<Store>, N Artikel“).
 - A drop on a category divider changes the item's category and teaches the household (`category_memory`). Do not use the baseline household for such tests if its learned categories matter.
 - Hidden flags for dm's food categories are stored but change nothing on the list: an item in Obst & Gemüse tagged to dm still shows. unverified (no UI to set hidden; read from code only).

@@ -224,7 +224,7 @@ create temp table pat_c as select token from public.create_personal_access_token
 grant select on pat_c to authenticated;
 update public.items
 set category_id = (select id from public.categories where household_id = (select id from h) and seed_key = 'drinks'),
-    store_id = (select id from public.stores where household_id = (select id from h) and seed_key = 'lidl'),
+    store_id = public.add_store((select id from h), 'Supermarkt'),
     brand = 'Hofbäckerei Kurz'
 where name = 'Brot';
 select pg_temp.as_postgres();

@@ -107,7 +107,7 @@ test('edit: the sheet is as tall as its content, also with a chip folded out', a
 });
 
 test('edit: a swipe to the left opens the sheet and the row stays; so does a hold that stays put; Löschen deletes with Undo', async ({ page }) => {
-  await signUpWithHousehold(page, newEmail('edit-delete'));
+  await signUpWithHousehold(page, newEmail('edit-delete'), { stores: ['Drogerie'] });
   await addItem(page, 'Zahnpasta');
   await expect(page.getByText('Wird einsortiert')).toHaveCount(0);
   await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
@@ -137,7 +137,7 @@ test('edit: a swipe to the left opens the sheet and the row stays; so does a hol
   await expect(editSheet(page), 'hold and release opens edit').toBeVisible();
   await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
 
-  await pickInSheet(page, 'Laden', 'dm');
+  await pickInSheet(page, 'Laden', 'Drogerie');
   await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
   await expect(editSheet(page)).toHaveCount(0);
   await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
@@ -173,7 +173,7 @@ test.describe('on a phone browser', () => {
 
   test('edit: a finger swipe opens the sheet, a hold that wobbles a little too; tick, edit and delete need no hold', async ({ page }) => {
     const email = newEmail('swipe-phone');
-    await householdWithItems(email, ['Zahnpasta', 'Milch', 'Brot']);
+    await householdWithItems(email, ['Zahnpasta', 'Milch', 'Brot'], { stores: ['Supermarkt'] });
     await page.goto('/');
     await signIn(page, email);
     const row = itemRow(page, 'Zahnpasta');
@@ -197,10 +197,10 @@ test.describe('on a phone browser', () => {
     // Move: the sheet's chips; delete: its Löschen; tick: a tap. No hold anywhere.
     await swipeLeft(page, itemRow(page, 'Milch'));
     await editSheet(page).getByRole('button', { name: /^Laden: / }).tap();
-    await editSheet(page).getByRole('button', { name: 'Lidl', exact: true }).tap();
+    await editSheet(page).getByRole('button', { name: 'Supermarkt', exact: true }).tap();
     await editSheet(page).getByRole('button', { name: 'Fertig' }).tap();
     await expect(editSheet(page)).toHaveCount(0);
-    await expect.poll(async () => (await rowOf(email, 'Milch')).store_id, { message: 'moved to Lidl' }).not.toBeNull();
+    await expect.poll(async () => (await rowOf(email, 'Milch')).store_id, { message: 'moved to Supermarkt' }).not.toBeNull();
 
     await swipeLeft(page, itemRow(page, 'Zahnpasta'));
     await editSheet(page).getByRole('button', { name: 'Löschen' }).tap();

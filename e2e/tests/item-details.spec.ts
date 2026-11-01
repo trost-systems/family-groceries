@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { apiAs, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { apiAs, chainStores, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 import { call, connectWithToken } from './mcp-helpers';
 
 type Item = {
@@ -19,7 +19,7 @@ async function personalAccessToken(email: string): Promise<string> {
 
 test('MCP add_items: an old payload still classifies; brand and properties are split or taken as given', async ({ page }) => {
   const email = newEmail('details-mcp');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   const mcp = await connectWithToken(await personalAccessToken(email));
 
   const old = await call<{ added: Item[] }>(mcp, 'add_items', { items: [{ name: 'Gurken', quantity: '2' }, { name: 'Milch' }] });
@@ -49,7 +49,7 @@ test('MCP add_items: an old payload still classifies; brand and properties are s
 
 test('voice: "Windeln Pampers Größe 3 und zwei Liter Milch" is split into fields', async ({ page }) => {
   const email = newEmail('details-voice');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   const token = (await (await apiAs(email)).auth.getSession()).data.session!.access_token;
   const res = await fetch(`${functionsUrl}/voice`, {
     method: 'POST',

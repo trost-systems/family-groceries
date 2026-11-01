@@ -115,13 +115,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That suggestions forgive any spelling. They forgive one wrong letter in short words and two in longer ones ("Hafermlch" finds Hafermilch) and find a word from 4 letters inside it ("milch" finds Hafermilch), online and offline alike.
 - That the microphone works in the browser (it is on iOS and Android only).
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
-- That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list").
+- That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"). Two people adding the same item at the same moment also end up with one.
 
-**Last verified.** main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
-**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the usual quantity. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed. Below them come the items used in the last 30 days, marked „Zuletzt verwendet“ (EN: "Recently used"), up to 10 rows in all.
+**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the usual quantity. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed. Below them come the items used in the last 30 days, marked „Zuletzt verwendet“ (EN: "Recently used"), up to 10 rows in all. The sheet opens small, with three of them; the others scroll.
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.
@@ -133,7 +133,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That it works from a single purchase; it needs at least two purchase days.
 - That it predicts quantities by season or guesses new items; it only repeats what the household bought.
 
-**Last verified.** main 3d66cee, 2026-11-01 (CET), from code on main and job 59's drive of the recent rows (#179). Recipe: [usuals.md](./usuals.md).
+**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [usuals.md](./usuals.md).
 
 ## Dictation
 
@@ -337,7 +337,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. More collects household entries (invite partner, join another household, categories, stores, Premium), access, account and sign-out, feedback, help, settings, and the legal pages, with the app version at the bottom. Help, imprint and privacy open pages on hummlist.com in the browser.
+**What it does.** The app has two tabs, List and More. More collects household entries (invite partner, join another household, categories, stores; Premium only once it is on sale), access, account and sign-out, feedback, help, settings, and the legal pages, with the app version at the bottom. Help, imprint and privacy open pages on hummlist.com in the browser.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the bottom bar (on wide screens: the rail on the left).
@@ -350,7 +350,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That Siri or Alexa guides exist in English beyond the German-only notice.
 - A sign-out from anywhere but More.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main, the Mehr tab driven on the web build, hummlist.com URLs checked. Recipe: [more-help.md](./more-help.md).
+**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [more-help.md](./more-help.md).
 
 ## Account: data export and deletion
 
@@ -438,16 +438,15 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household. Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ and „Freigeschaltet“.
 
-**How to get there.**
-1. Open „Mehr“ (EN: "More").
-2. Under „Haushalt“ (EN: "Household") tap „Hummlist Premium“.
+**How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (testers). The page opens from its link.
 
 **Never claim.**
 - That Premium can be bought, or any price, plan or discount (yearly and Lifetime are planned, not for sale).
 - That Siri, Alexa or AI assistants need Premium today (they do not).
 - That Google Assistant or Apple Watch exist (the page says only "later").
 - That there is a free trial.
+- That Mehr shows Hummlist Premium to everyone (it does once Premium is on sale).
 
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main, the Mehr row driven on the web build. Recipe: [premium.md](./premium.md).
+**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [premium.md](./premium.md).

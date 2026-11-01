@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: household-3-mid-shop
-summary: Three members of one household in the middle of a Lidl trip; eight items were just ticked off, ten are still open, and Noah's client shows the Lidl view.
+summary: Three members of one household in the middle of a Supermarkt trip; eight items were just ticked off, ten are still open, and Noah's client shows the Supermarkt view.
 goodFor:
   - live sync with two or three clients (fg sync household-3-mid-shop --clients 3)
   - ticking off while shopping at one store (the other stores folded)
@@ -12,32 +12,37 @@ users:
 households:
   - name: Familie Brandt
     members: [mia, noah, ida]
+    stores:
+      - name: Supermarkt
+      - name: Drogerie
+        layout: [👶 Drogerie, Vorrat & Konserven, Süßes & Snacks, Haushalt, Getränke, Sonstiges]
+        hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl]
     items:
       - { name: Bananen, quantity: "6", by: mia }
       - { name: Gurke, by: ida }
-      - { name: Vollmilch, quantity: "2", store: Lidl, by: mia }
-      - { name: Butter, store: Lidl, by: noah }
+      - { name: Vollmilch, quantity: "2", store: Supermarkt, by: mia }
+      - { name: Butter, store: Supermarkt, by: noah }
       - { name: Brötchen, quantity: "4", by: ida }
-      - { name: Nudeln, store: Lidl, by: mia }
+      - { name: Nudeln, store: Supermarkt, by: mia }
       - { name: Tomaten, by: noah }
-      - { name: Spülmittel, store: dm, by: mia }
-      - { name: Zahnpasta, store: dm, by: ida }
+      - { name: Spülmittel, store: Drogerie, by: mia }
+      - { name: Zahnpasta, store: Drogerie, by: ida }
       - { name: Apfelsaft, by: noah }
     history:
-      # The trip in progress: ticked off in the Lidl view minutes ago.
+      # The trip in progress: ticked off in the Supermarkt view minutes ago.
       - at: "-12m"
         by: noah
-        store: Lidl
+        store: Supermarkt
         items: [Eier, Joghurt, Käse, Mehl, Reis, Paprika, Möhren, Haferflocken]
       # Earlier weeks, so usuals and the history are not empty.
       - at: "-7d 18:10"
         by: mia
-        store: Lidl
+        store: Supermarkt
         every: 7d
         times: 3
         items: [Eier, Joghurt, Vollmilch, Bananen]
 views:
-  noah: { store: Lidl }
+  noah: { store: Supermarkt }
 expect:
   usuals:
     home: [Eier, Joghurt]

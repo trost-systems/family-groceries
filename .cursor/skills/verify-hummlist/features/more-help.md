@@ -23,7 +23,7 @@ More entries in order (section header, then rows: DE label, EN label, hint):
    - „Archivierte Haushalte“ / "Archived households": hidden on normal builds (see Gotchas).
    - „Kategorien verwalten“ / "Manage categories".
    - „Läden“ / "Stores", hint „Reihenfolge und Laufweg“ / "Order and walking route".
-   - „Hummlist Premium“ (both languages), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
+   - „Hummlist Premium“ (both languages), only once Premium may be offered or for a household that has it (job 64), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
 2. Section „Zugänge“ / "Access": „Zugänge“ / "Access", hint „MCP-Server, Zugangsschlüssel, verbundene Apps“ / "MCP server, access tokens, connected apps".
 3. Section „Konto“ / "Account": „Konto“ / "Account", hint „Daten exportieren, Konto löschen“ / "Export your data, delete your account"; then „Abmelden“ / "Sign out".
 4. Section „Feedback“ / "Feedback": „Feedback senden“ / "Send feedback", hint „Fehler, Ideen und Fragen an Peter“ / "Bugs, ideas and questions for Peter"; then „Hilfe & Kontakt“ / "Help & contact", hint „Fragen, Anleitungen und unsere E-Mail-Adresse“ / "Questions, guides and our email address" (external-link icon).

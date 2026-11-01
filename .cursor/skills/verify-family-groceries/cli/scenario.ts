@@ -7,7 +7,7 @@ import { FgError, type Shell } from './core.ts';
 export const SCENARIO_DIR = 'test/fixtures/scenarios';
 export const SCHEMA_PATH = 'test/fixtures/scenario.schema.json';
 
-/** What seed_household creates in every household (supabase/migrations); seeding checks the database still agrees. */
+/** The categories seed_household creates in every household (supabase/migrations); seeding checks the database still agrees. A household starts without stores. */
 export const SEEDED_CATEGORIES = [
   'Obst & Gemüse',
   'Brot & Backwaren',
@@ -21,7 +21,6 @@ export const SEEDED_CATEGORIES = [
   '👶 Drogerie',
   'Sonstiges',
 ];
-export const SEEDED_STORES = ['dm', 'Lidl', 'Edeka'];
 /** Baseline users of plain `fg seed`; a scenario handle may not shadow them. */
 export const RESERVED_HANDLES = ['peter', 'lea'];
 
@@ -83,7 +82,7 @@ export interface PlannedHousehold {
   members: string[];
   addCategories: string[];
   categoryOrder: string[];
-  stores: { name: string; layout: string[]; hidden: string[]; isNew: boolean }[];
+  stores: { name: string; layout: string[]; hidden: string[] }[];
   items: PlannedItem[];
   /** Oldest first: replaying them in order keeps "latest wins" memories right. */
   trips: PlannedTrip[];
@@ -203,20 +202,25 @@ export function semanticProblems(s: RawScenario): string[] {
       if (who !== undefined && !h.members.includes(who)) problems.push(`${path}: "${who}" is not a member of this household`);
     };
     const categories = [...SEEDED_CATEGORIES, ...(h.categories?.add ?? [])];
-    const stores = [...new Set([...SEEDED_STORES, ...(h.stores ?? []).map((x) => x.name)])];
+    const stores = (h.stores ?? []).map((x) => x.name);
     const category = (name: string | undefined, path: string) => {
       if (name !== undefined && !categories.includes(name)) {
         problems.push(`${path}: no category "${name}" (have: ${categories.join(', ')})`);
       }
     };
     const store = (name: string | undefined, path: string) => {
-      if (name !== undefined && !stores.includes(name)) problems.push(`${path}: no store "${name}" (have: ${stores.join(', ')})`);
+      if (name !== undefined && !stores.includes(name)) {
+        problems.push(`${path}: no store "${name}" (have: ${stores.join(', ') || 'none'}; declare it in ${at}.stores)`);
+      }
     };
     (h.categories?.add ?? []).forEach((c, ci) => {
       if (SEEDED_CATEGORIES.includes(c)) problems.push(`${at}.categories.add[${ci}]: "${c}" exists in every household already`);
     });
     (h.categories?.order ?? []).forEach((c, ci) => category(c, `${at}.categories.order[${ci}]`));
     (h.stores ?? []).forEach((st, si) => {
+      // add_store returns the existing store for a name that differs only in case or spacing.
+      const twin = stores.findIndex((x) => fold(x) === fold(st.name));
+      if (twin < si) problems.push(`${at}.stores[${si}]: "${st.name}" is stores[${twin}] again`);
       (st.layout ?? []).forEach((c, ci) => category(c, `${at}.stores[${si}].layout[${ci}]`));
       (st.hidden ?? []).forEach((c, ci) => category(c, `${at}.stores[${si}].hidden[${ci}]`));
     });
@@ -227,6 +231,16 @@ export function semanticProblems(s: RawScenario): string[] {
       category(item.category, `${path}.category`);
     };
     (h.items ?? []).forEach((item, ii) => checkItem(item, `${at}.items[${ii}]`));
+    // The items insert trigger skips an open item that is already on the list (items_skip_duplicate).
+    const open = new Map<string, number>();
+    (h.items ?? []).forEach((item, ii) => {
+      const key = openItemKey(item);
+      if (open.has(key)) {
+        problems.push(
+          `${at}.items[${ii}]: the same open item as items[${open.get(key)}]; the list keeps one (give it other properties or drop it)`,
+        );
+      } else open.set(key, ii);
+    });
     (h.history ?? []).forEach((t, ti) => {
       const path = `${at}.history[${ti}]`;
       member(t.by, `${path}.by`);
@@ -241,7 +255,7 @@ export function semanticProblems(s: RawScenario): string[] {
     else if (view.store !== undefined) {
       const h = homeOf.has(user) ? s.households![homeOf.get(user)!] : undefined;
       if (!h) problems.push(`views.${user}.store: "${user}" is in no household`);
-      else if (![...SEEDED_STORES, ...(h.stores ?? []).map((x) => x.name)].includes(view.store)) {
+      else if (!(h.stores ?? []).some((x) => x.name === view.store)) {
         problems.push(`views.${user}.store: no store "${view.store}" in ${h.name}`);
       }
     }
@@ -376,7 +390,6 @@ export function plan(s: Scenario, now: Date): Plan {
         name: st.name,
         layout: st.layout ?? [],
         hidden: st.hidden ?? [],
-        isNew: !SEEDED_STORES.includes(st.name),
       })),
       items,
       trips,
@@ -394,6 +407,15 @@ export function plan(s: Scenario, now: Date): Plan {
     views: s.views ?? {},
     expect: { usuals: s.expect?.usuals ?? {}, due: s.expect?.due ?? {}, notDue: s.expect?.notDue ?? {} },
   };
+}
+
+const fold = (s: string | undefined) => (s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+/** Approximates public.open_item_key: name, brand and the comma-separated details folded, in any order. */
+function openItemKey(item: RawItem): string {
+  const raw = typeof item === 'string' ? { name: item } : item;
+  const details = (raw.properties ?? '').split(',').map(fold).filter(Boolean).sort();
+  return [fold(raw.name), fold(raw.brand), details.join(',')].join('|');
 }
 
 function toItem(raw: RawItem, defaultBy: string, defaultAt: Date, now: Date): PlannedItem {
@@ -421,7 +443,7 @@ export function expectedCounts(p: Plan) {
       members: h.members.length,
       activeItems: h.items.length,
       boughtItems: h.trips.reduce((n, t) => n + t.items.length, 0),
-      stores: SEEDED_STORES.length + h.stores.filter((s) => s.isNew).length,
+      stores: h.stores.length,
       categories: SEEDED_CATEGORIES.length + h.addCategories.length,
       openInvites: h.invites.filter((i) => !i.revoked && (i.expiresAt === null || i.expiresAt > new Date())).length,
     }])),

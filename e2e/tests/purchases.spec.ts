@@ -4,13 +4,12 @@ import {
   functionsUrl,
   joinWithCode,
   newEmail,
-  openMore,
+  openPremium,
   password,
   screenshot,
   signUp,
   signUpWithHousehold,
-  typeInto,
-} from './helpers';
+  typeInto } from './helpers';
 import { buy, claim, householdOf, rcEvent, report } from './iap';
 
 // Job 25, as of job 43: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
@@ -43,7 +42,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await signUp(lea, leaEmail);
   await joinWithCode(lea, (Array.isArray(invite) ? invite[0] : invite).code);
 
-  await openMore(peter, 'Hummlist Premium');
+  await openPremium(peter);
   await expect(peter).toHaveURL(/\/more\/lifetime$/);
   await expect(webNote(peter)).toBeVisible();
   await expect(peter.getByRole('button', { name: /Weiter zum Kauf|kaufen/ }), 'no buy button on the web').toHaveCount(0);
@@ -55,7 +54,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await expect(webNote(peter)).toBeVisible();
   await screenshot(peter, 'job25-web-de-1366');
   await peter.setViewportSize({ width: 390, height: 844 });
-  await openMore(lea, 'Hummlist Premium');
+  await openPremium(lea);
   await expect(webNote(lea)).toBeVisible();
 
   // Peter buys on his iPhone; both web pages show it without a reload.
@@ -82,7 +81,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   await signUpWithHousehold(max, maxEmail);
   expect(await report(maxEmail, transactionId)).toBe('used_elsewhere');
   expect((await rcEvent('TRANSFER', await householdOf(maxEmail), transactionId)).body).toEqual({ status: 'ignored' });
-  await openMore(max, 'Hummlist Premium');
+  await openPremium(max);
   await expect(webNote(max)).toBeVisible();
   await expect(unlocked(max), 'Max stays locked').toHaveCount(0);
 
@@ -101,12 +100,13 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   expect(await report(peterEmail, transactionId), 'a refunded purchase does not unlock again').toBe('revoked');
 });
 
-test('More shows the row, and Freigeschaltet once the household has it', async ({ page }) => {
+test('More lists Premium only once the household has it (premium_offer off), then live with Freigeschaltet', async ({ page }) => {
   const email = newEmail('iap-row');
   await page.setViewportSize({ width: 390, height: 844 });
   await signUpWithHousehold(page, email);
   await page.getByRole('tab', { name: 'Mehr' }).click();
-  await expect(lifetimeRow(page)).toContainText('Siri, Alexa und KI-Assistenten');
+  await expect(page.getByRole('button', { name: /^Kategorien verwalten/ })).toBeVisible();
+  await expect(lifetimeRow(page), 'not listed before the launch (job 64)').toHaveCount(0);
   await screenshot(page, 'job25-more-de-390');
   expect(await buy(email, `2001${Date.now()}`)).toBe('granted');
   await expect(lifetimeRow(page), 'the row says so, live').toContainText('Freigeschaltet', { timeout: 10_000 });
