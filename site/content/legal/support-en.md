@@ -4,7 +4,7 @@ description: "Help with Hummlist: how to reach us, and answers to common questio
 locale: en
 path: /en/support
 translation_key: support
-updated: 2026-10-30
+updated: 2026-11-01
 draft: false
 ---
 
@@ -60,7 +60,7 @@ Tap **More** and, under **Usage data**, turn off **Send usage data and error rep
 
 ### Can I add items with Siri?
 
-Yes, with a shortcut on your iPhone. The guide [Hummlist with Siri](/en/guides/siri-shortcut) explains it. Adding by voice works in German only for now.
+Yes. On iPhone with iOS 17 or later you can do it directly with the Hummlist app, with no shortcut of your own, as soon as you're signed in and in a household: say for example "Add to Hummlist", or ask Siri to read out your list. It works in English and German. Apple turns your speech into text; we only receive the text, not a recording. Section 7 of the [privacy policy](/en/privacy) has the details. You can still use the older way with your own shortcut, but you no longer need it.
 
 ### Can I add items with Alexa?
 

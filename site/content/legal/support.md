@@ -4,7 +4,7 @@ description: "Hilfe zu Hummlist: so erreichst du uns, und Antworten auf häufige
 locale: de
 path: /support
 translation_key: support
-updated: 2026-10-30
+updated: 2026-11-01
 draft: false
 ---
 
@@ -60,7 +60,7 @@ Tippe auf **Mehr** und schalte unter **Nutzungsdaten** den Schalter **Nutzungsda
 
 ### Kann ich Sachen per Siri auf die Liste setzen?
 
-Ja, mit einem Kurzbefehl auf dem iPhone. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Siri: Kurzbefehl einrichten](/de/anleitungen/siri-kurzbefehl).
+Ja. Auf dem iPhone geht das ab iOS 17 direkt mit der Hummlist-App, ohne eigenen Kurzbefehl, sobald du angemeldet bist und zu einem Haushalt gehörst: Sag zum Beispiel „Füge etwas zu Hummlist hinzu“, oder lass dir deine Liste vorlesen. Das klappt auf Deutsch und Englisch. Apple wandelt deine Sprache in Text um; wir bekommen nur den Text, keine Aufnahme. Mehr dazu steht in der [Datenschutzerklärung, Abschnitt 7](/datenschutz). Den älteren Weg über einen eigenen Kurzbefehl kannst du weiter nutzen, du brauchst ihn aber nicht mehr.
 
 ### Kann ich Sachen per Alexa auf die Liste setzen?
 

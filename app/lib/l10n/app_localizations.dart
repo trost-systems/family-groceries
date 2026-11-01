@@ -1544,10 +1544,10 @@ abstract class AppLocalizations {
   /// **'Darf Hummlist Nutzungsdaten erfassen?'**
   String get analyticsConsentTitle;
 
-  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. approved by Peter 2026-10-30 (legal review H-03)
+  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. approved by Peter 2026-11-01 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'Peter Trost, der Anbieter von Hummlist, möchte verstehen, welche Funktionen genutzt werden, Fehler finden und messen, ob sich Hummlist wirtschaftlich trägt. Dafür speichert Hummlist mit deiner Erlaubnis eine zufällige Kennung auf diesem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Dienstleister PostHog (Server in der EU): zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, mit dieser Kennung, der Kennung deines Haushalts, Plattform und App-Version. Die Daten sind pseudonym, nicht anonym. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort werden nie gesendet. Ohne Erlaubnis wird nichts gespeichert oder gesendet. Du kannst die Erlaubnis jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
+  /// **'Peter Trost, der Anbieter von Hummlist, möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Hummlist wirtschaftlich trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Hummlist mit deiner Erlaubnis eine zufällige Kennung auf diesem Gerät und sendet Nutzungsdaten und Fehlerberichte an unseren Dienstleister PostHog (Server in der EU): zum Beispiel, dass ein Artikel hinzugefügt oder abgehakt wurde, mit dieser Kennung, der Kennung deines Haushalts, Plattform, App-Version und technischen Angaben zu Gerät oder Browser. Die Daten sind pseudonym, nicht anonym. Artikelnamen, Listeninhalte, Namen, E-Mail-Adressen, IP-Adresse und Standort werden nie gesendet. Ohne Erlaubnis wird nichts gespeichert oder gesendet. Du kannst die Erlaubnis jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
   String get analyticsConsentBody;
 
   /// Analytics consent screen: the link to the privacy policy that ends analyticsConsentBody. approved by Peter 2026-10-30 (legal review H-03)

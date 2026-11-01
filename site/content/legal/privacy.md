@@ -4,13 +4,13 @@ description: "Privacy policy of Hummlist: which data the app and the website pro
 locale: en
 path: /en/privacy
 translation_key: privacy
-updated: 2026-10-31
+updated: 2026-11-01
 ---
 
 # Privacy policy
 
 This is a translation. The [German version](/datenschutz) is authoritative.
-Last updated: 31 October 2026
+Last updated: 1 November 2026
 
 This page explains which personal data Hummlist processes, why, on what legal basis, who receives it and what rights you have. Hummlist is a shopping-list app for households on iPhone, Android and in the browser (app.hummlist.com), with the website hummlist.com.
 
@@ -44,7 +44,18 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 7. Siri, Alexa and AI assistants
 
-You can connect Hummlist to Siri or to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com). This only happens if you create an access key or approve a connection yourself. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each key we store a name, a hash and when it was last used. You can revoke keys and connections in the app at any time.
+You can connect Hummlist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access key or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each key we store a name, a hash, its last four characters and when it was last used. When a key ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke keys and connections in the app at any time.
+Legal basis: Art. 6(1)(b) GDPR.
+
+### Siri on iPhone
+
+When you are signed in to the iPhone app and belong to a household, the app automatically creates its own access key for Siri; you don't need to do anything. In the app it is called "Siri (this iPhone)". The key is kept in this iPhone's Keychain and is not transferred to other devices. For it we store a hash (SHA-256) of the key, its last four characters, the name "Siri", which sign-in session it belongs to, and when it was created and last used. The key only works for Siri requests to Hummlist, and only while you are signed in and a member of that household.
+
+When you ask Siri to add something to your list or read it out, Apple turns your speech into text. We do not receive a voice recording. We only receive the recognised text or the name of a suggestion you picked (for example "milk"), whether you want to add or hear items, the language (German or English) and the key. When reading out, no text is sent. We add the items to your household's list just as if you had entered them in the app; the other members see them. We do not write the text to logs or to usage analytics; for errors we only log the type of error.
+
+So that Siri understands phrases like "Add milk to Hummlist", the app stores up to 50 item names of your household on your iPhone and passes them to iOS's App Shortcuts. How Apple processes your speech, its transcript and this data is governed by Apple, as an independent controller, in its privacy policy and in your iPhone's Siri settings; we have no influence on this.
+
+The key ends when you sign out, leave the household, delete your account, revoke it under More › Access, or sign in again on this iPhone (the app then creates a new one). Each account has at most five Siri keys; when another is added, the oldest ends. After a key ends, we keep its stored data for 30 more days so we can look into misuse or questions, then delete it at the next daily clean-up. If the key ends because you signed out, we notice this by the next day at the latest.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Amazon Alexa
@@ -64,8 +75,8 @@ Account › Export my data gives you your data as a JSON file. Account › Delet
 
 ## 9. Usage data and error reports (only with consent)
 
-Only if you agree, Hummlist stores a random installation ID on your device and sends usage data and error reports to our processor PostHog Inc. (servers in the EU, Frankfurt). Sent: the installation ID, your household's ID, platform, app version, actions such as "app opened for the first time", "household created", "invite accepted", "item added/ticked off" and "category/store reordered" (with details such as your role in the household, the number of members and whether an item was typed, dictated, suggested or added through Alexa), and cleaned-up error reports. For in-app purchases our servers send the purchase event (purchase, refund or restore) with the same installation and household ID, with product, price, currency, store, country and a pseudonymised purchase reference (hash), but without payment data; this too only if you agreed. If you add an item through Alexa that was not yet on the list, our servers send the event "item added" marked "through Alexa", with your role and the number of members, under the installation ID of the device on which you last decided about usage data, and only if that decision was yes. To make this possible and to be able to prove your consent, we store for your account, per installation, your decision (yes or no), when you made it and, for a yes, the installation ID; at most the 20 most recent decisions. They are deleted with your account (legal basis: Art. 6(1)(c) GDPR in conjunction with Art. 7(1) GDPR). Never sent: item names, list contents, names, e-mail addresses, IP address and location. PostHog creates no person profile and does not derive a location from the IP address. The data is pseudonymous.
-Purpose: to see which features are used, find bugs and measure whether Hummlist pays for itself.
+Only if you agree, Hummlist stores a random installation ID on your device and sends usage data and error reports to our processor PostHog Inc. (servers in the EU, Frankfurt). Sent: the installation ID, your household's ID, platform, app version, technical details of the device and the app (in the iPhone and Android app: app build, device maker, model and type, operating system and version, screen size, language, time zone, whether Wi-Fi or mobile data is used, on Android also Bluetooth status, the mobile network's name and the system's HTTP user agent; in the browser: browser and operating system with version, device type, screen and window size, language and time zone, but never the page address or the referring page), a random session ID that changes after 30 minutes without use, actions such as "app opened for the first time", "household created", "invite accepted", "item added/ticked off" and "category/store reordered" (with details such as your role in the household, the number of members and whether an item was typed, dictated, suggested or added through Alexa), and error reports. We clean errors in the app's own code before sending. If the iPhone or Android app crashes, it sends the operating system's crash report (error type, error message, technical stack trace) at the next start; we don't clean this one, but it normally holds none of your list content. For in-app purchases our servers send the purchase event (purchase, refund or restore) with the same installation and household ID, with product, price, currency, store, country and a pseudonymised purchase reference (hash), but without payment data; this too only if you agreed. If you add an item through Alexa that was not yet on the list, our servers send the event "item added" marked "through Alexa", with your role and the number of members, under the installation ID of the device on which you last decided about usage data, and only if that decision was yes. To make this possible and to be able to prove your consent, we store for your account, per installation, your decision (yes or no), when you made it and, for a yes, the installation ID; at most the 20 most recent decisions. They are deleted with your account (legal basis: Art. 6(1)(c) GDPR in conjunction with Art. 7(1) GDPR). Never sent: item names, list contents, names, e-mail addresses, IP address and location. PostHog creates no person profile and does not derive a location from the IP address. The data is pseudonymous. Also only with your consent, the app asks PostHog, using the installation ID, which features are switched on for your installation. For this, in the iPhone and Android app, the PostHog software stores the installation ID, events not yet sent and the answer about switched-on features on your device; in the browser it stores nothing. If you switch usage data off, we delete this on your device.
+Purpose: to see which features are used, find bugs, measure whether Hummlist pays for itself and switch new features on step by step.
 Legal basis: your consent (Art. 6(1)(a) GDPR; for storing the ID, § 25(1) TDDDG). You can withdraw it any time under More › Usage data, with effect for the future.
 Retention at PostHog: 1 year.
 
