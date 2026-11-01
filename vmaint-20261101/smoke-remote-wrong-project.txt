@@ -1,0 +1,40 @@
+smoke test against https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1
+FAIL health: want 200 with {"ok":true,"database":true}; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL voice with a bad token: want 401 and WWW-Authenticate: Bearer; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co www-authenticate=''
+MCP smoke test against https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1/mcp
+FAIL no token: want 401 and WWW-Authenticate: Bearer resource_metadata="https://jdwqrallbpdbshrdhenx.supabase.co/…"; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co www-authenticate=''
+FAIL bad token: want 401 with error="invalid_token" and resource_metadata=""; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co www-authenticate=''
+FAIL protected resource metadata: want 200 with resource "https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1/mcp" and authorization_servers; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL authorization server metadata: no authorization server to check (see the metadata check)
+FAIL hint-less discovery: want 200 with issuer "" and a refresh_token token endpoint at https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1/mcp/.well-known/openid-configuration; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+SKIP initialize + tools/list: MCP_SMOKE_TOKEN not set
+5 check(s) failed against https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1/mcp
+FAIL mcp: scripts/mcp-smoke.sh (above)
+FAIL alexa without a signature: want 400 {"error":"missing_signature"}; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL purchases: want 200 with a configured flag; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL purchases test events: want 404; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL purchases webhook with a bad secret: want 401 (or 503 unconfigured); got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+FAIL purchases claim without a session: want 401; got HTTP 000  curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+curl: (6) Could not resolve host: jdwqrallbpdbshrdhenx.supabase.co
+8 check(s) failed against https://jdwqrallbpdbshrdhenx.supabase.co/functions/v1

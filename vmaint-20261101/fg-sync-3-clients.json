@@ -1,0 +1,304 @@
+{
+  "ok": true,
+  "command": "sync",
+  "run": "fx-1101-0601-bsny",
+  "scenario": "household-3-mid-shop",
+  "target": "local",
+  "clients": [
+    {
+      "label": "A",
+      "ref": "fx-1101-0601-bsny:mia",
+      "name": "Mia Brandt",
+      "view": "Alle"
+    },
+    {
+      "label": "B",
+      "ref": "fx-1101-0601-bsny:noah",
+      "name": "Noah Brandt",
+      "view": "Lidl"
+    },
+    {
+      "label": "C",
+      "ref": "fx-1101-0601-bsny:ida",
+      "name": "Ida Brandt",
+      "view": "Alle"
+    }
+  ],
+  "household": "home",
+  "passed": true,
+  "steps": [
+    {
+      "line": 3,
+      "step": "A add \"Hafermilch\"",
+      "ok": true
+    },
+    {
+      "line": 4,
+      "step": "expect B,C see \"Hafermilch\" within 2000ms",
+      "ok": true,
+      "latency": {
+        "B": {
+          "fromAckMs": 250,
+          "fromInputMs": 373,
+          "fromEventMs": 292
+        },
+        "C": {
+          "fromAckMs": 256,
+          "fromInputMs": 379,
+          "fromEventMs": 298
+        }
+      }
+    },
+    {
+      "line": 5,
+      "step": "B tick \"Butter\"",
+      "ok": true
+    },
+    {
+      "line": 6,
+      "step": "expect A,C gone \"Butter\" within 2000ms",
+      "ok": true,
+      "latency": {
+        "A": {
+          "fromAckMs": 544,
+          "fromInputMs": 857,
+          "fromEventMs": 561
+        },
+        "C": {
+          "fromAckMs": 542,
+          "fromInputMs": 855,
+          "fromEventMs": 559
+        }
+      }
+    },
+    {
+      "line": 7,
+      "step": "C edit \"Bananen\" quantity \"8\"",
+      "ok": true
+    },
+    {
+      "line": 8,
+      "step": "expect A,B see \"Bananen 8\" within 2000ms",
+      "ok": true,
+      "latency": {
+        "A": {
+          "fromAckMs": 233,
+          "fromInputMs": 367,
+          "fromEventMs": 337
+        },
+        "B": {
+          "fromAckMs": 214,
+          "fromInputMs": 348,
+          "fromEventMs": 318
+        }
+      }
+    },
+    {
+      "line": 10,
+      "step": "B offline",
+      "ok": true
+    },
+    {
+      "line": 11,
+      "step": "A add \"Kaffee\"",
+      "ok": true
+    },
+    {
+      "line": 12,
+      "step": "expect C see \"Kaffee\" within 2000ms",
+      "ok": true,
+      "latency": {
+        "C": {
+          "fromAckMs": 330,
+          "fromInputMs": 397,
+          "fromEventMs": 356
+        }
+      }
+    },
+    {
+      "line": 13,
+      "step": "wait 1500ms",
+      "ok": true
+    },
+    {
+      "line": 14,
+      "step": "expect B gone \"Kaffee\"",
+      "ok": true,
+      "latency": {
+        "B": {
+          "fromAckMs": null,
+          "fromInputMs": null,
+          "fromEventMs": null
+        }
+      }
+    },
+    {
+      "line": 15,
+      "step": "B tick \"Nudeln\"",
+      "ok": true
+    },
+    {
+      "line": 16,
+      "step": "expect B gone \"Nudeln\"",
+      "ok": true,
+      "latency": {
+        "B": {
+          "fromAckMs": null,
+          "fromInputMs": 304,
+          "fromEventMs": -3020
+        }
+      }
+    },
+    {
+      "line": 18,
+      "step": "B online",
+      "ok": true
+    },
+    {
+      "line": 19,
+      "step": "expect B see \"Kaffee\" within 15s",
+      "ok": true,
+      "latency": {
+        "B": {
+          "fromAckMs": null,
+          "fromInputMs": 2898
+        }
+      }
+    },
+    {
+      "line": 20,
+      "step": "expect A,C gone \"Nudeln\" within 15s",
+      "ok": true,
+      "latency": {
+        "A": {
+          "fromAckMs": 503,
+          "fromInputMs": 3412
+        },
+        "C": {
+          "fromAckMs": 506,
+          "fromInputMs": 3415
+        }
+      }
+    }
+  ],
+  "latency": {
+    "perClient": {
+      "A": {
+        "fromAckMs": {
+          "n": 2,
+          "p50": 233,
+          "max": 544,
+          "min": 233
+        },
+        "fromInputMs": {
+          "n": 2,
+          "p50": 367,
+          "max": 857,
+          "min": 367
+        },
+        "fromEventMs": {
+          "n": 2,
+          "p50": 337,
+          "max": 561,
+          "min": 337
+        }
+      },
+      "B": {
+        "fromAckMs": {
+          "n": 2,
+          "p50": 214,
+          "max": 250,
+          "min": 214
+        },
+        "fromInputMs": {
+          "n": 2,
+          "p50": 348,
+          "max": 373,
+          "min": 348
+        },
+        "fromEventMs": {
+          "n": 2,
+          "p50": 292,
+          "max": 318,
+          "min": 292
+        }
+      },
+      "C": {
+        "fromAckMs": {
+          "n": 3,
+          "p50": 330,
+          "max": 542,
+          "min": 256
+        },
+        "fromInputMs": {
+          "n": 3,
+          "p50": 397,
+          "max": 855,
+          "min": 379
+        },
+        "fromEventMs": {
+          "n": 3,
+          "p50": 356,
+          "max": 559,
+          "min": 298
+        }
+      }
+    },
+    "all": {
+      "fromAckMs": {
+        "n": 7,
+        "p50": 256,
+        "max": 544,
+        "min": 214
+      },
+      "fromInputMs": {
+        "n": 7,
+        "p50": 379,
+        "max": 857,
+        "min": 348
+      },
+      "fromEventMs": {
+        "n": 7,
+        "p50": 337,
+        "max": 561,
+        "min": 292
+      }
+    },
+    "catchUp": {
+      "fromAckMs": {
+        "n": 2,
+        "p50": 503,
+        "max": 506,
+        "min": 503
+      },
+      "fromInputMs": {
+        "n": 3,
+        "p50": 3412,
+        "max": 3415,
+        "min": 2898
+      },
+      "fromEventMs": null
+    }
+  },
+  "resolution": "Visible = the first rendered frame whose Flutter semantics DOM satisfies the expectation (a MutationObserver in each page, so one frame, ~16 ms, plus the callback). Ack = the acting client's first successful REST write after the input, seen by Playwright (a few ms after the response). Event = the item_events row time (local stack only: same clock). All clients run in one Chromium on one machine, so their clocks agree. The summary leaves out the acting client's own (optimistic) view and expectations that held before the action (\"held already\"); delivery after a reconnect is reported apart as catch-up.",
+  "teardown": {
+    "leftovers": {
+      "auth_users": 0,
+      "households": 0,
+      "household_members": 0,
+      "items": 0,
+      "item_events": 0,
+      "invites": 0,
+      "categories": 0,
+      "stores": 0,
+      "store_category_order": 0,
+      "category_memory": 0,
+      "item_store_memory": 0,
+      "profiles.id": 0,
+      "household_members.user_id": 0,
+      "personal_access_tokens.user_id": 0,
+      "item_events.actor": 0,
+      "items.added_by": 0
+    }
+  }
+}

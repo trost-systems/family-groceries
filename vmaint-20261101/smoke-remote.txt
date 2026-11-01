@@ -1,0 +1,17 @@
+smoke test against https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1
+PASS health: 200, Postgres answered
+PASS voice with a bad token: 401, WWW-Authenticate: Bearer
+MCP smoke test against https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
+PASS no token: 401, resource_metadata on the same host (https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource)
+PASS bad token: 401 invalid_token, same resource_metadata
+PASS protected resource metadata: 200, resource https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp, authorization server https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1
+PASS authorization server metadata: https://jdwqrallbpdbshrdhenk.supabase.co/.well-known/oauth-authorization-server/auth/v1 has authorization, token and registration endpoints
+PASS hint-less discovery: https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/.well-known/openid-configuration names the token endpoint
+SKIP initialize + tools/list: MCP_SMOKE_TOKEN not set
+all checks passed against https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
+PASS alexa without a signature: 400 missing_signature
+PASS purchases: 200, configured=true
+PASS purchases test events: 404 on a hosted project
+PASS purchases webhook with a bad secret: 401
+PASS purchases claim without a session: 401
+all checks passed against https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1
