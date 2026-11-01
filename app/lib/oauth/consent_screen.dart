@@ -128,8 +128,16 @@ final class const _Failed() extends _Phase;
 
 final class const _Asking(final NeedsConsent request) extends _Phase;
 
-/// Decided; the browser is on its way to the client.
-final class const _Leaving(final NeedsConsent? request) extends _Phase;
+/// The user tapped allow or deny; the server records it.
+final class const _Deciding(final NeedsConsent request) extends _Phase;
+
+/// Decided; the browser is on its way to the client. The client's callback
+/// can take seconds (Claude's took about 10, docs/MCP.md), and the browser
+/// keeps this page up until it answers, so it says the user is done.
+final class const _Left({
+  required final NeedsConsent? request,
+  required final bool approved,
+}) extends _Phase;
 
 class _ConsentViewState() extends State<ConsentView> {
   _Phase _phase = const _Loading();
@@ -145,7 +153,7 @@ class _ConsentViewState() extends State<ConsentView> {
         _guard(() async {
           switch (await widget.api.getDetails(id)) {
             case AlreadyApproved(:final redirect):
-              _show(const _Leaving(null));
+              _show(const _Left(request: null, approved: true));
               await widget.navigate(redirect);
             case final NeedsConsent request:
               _show(_Asking(request));
@@ -161,13 +169,16 @@ class _ConsentViewState() extends State<ConsentView> {
     }
   }
 
-  Future<void> _decide(
-    NeedsConsent request,
-    Future<Uri> Function(String id) decision,
-  ) => _guard(() async {
-    _show(_Leaving(request));
-    await widget.navigate(await decision(widget.authorizationId!));
-  });
+  Future<void> _decide(NeedsConsent request, {required bool approve}) =>
+      _guard(() async {
+        _show(_Deciding(request));
+        final id = widget.authorizationId!;
+        final redirect = await (approve
+            ? widget.api.approve(id)
+            : widget.api.deny(id));
+        _show(_Left(request: request, approved: approve));
+        await widget.navigate(redirect);
+      });
 
   Future<void> _guard(Future<void> Function() action) async {
     try {
@@ -186,9 +197,7 @@ class _ConsentViewState() extends State<ConsentView> {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final body = switch (_phase) {
-      _Loading() || _Leaving(request: null) => const [
-        Center(child: CircularProgressIndicator()),
-      ],
+      _Loading() => const [Center(child: CircularProgressIndicator())],
       _Failed() => [
         Text(l10n.consentInvalid, style: theme.textTheme.bodyMedium),
         const SizedBox(height: HlSpace.s5),
@@ -198,17 +207,38 @@ class _ConsentViewState() extends State<ConsentView> {
           child: Text(l10n.consentBackToList),
         ),
       ],
-      _Asking(:final request) || _Leaving(:final request?) => _details(
+      _Asking(:final request) || _Deciding(:final request) => _details(
         context,
         request,
-        leaving: _phase is _Leaving,
+        deciding: _phase is _Deciding,
       ),
+      _Left(:final request, :final approved) => [
+        Icon(
+          approved ? Icons.check_circle_outline : Icons.block,
+          size: 48,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: HlSpace.s5),
+        Text(
+          switch ((request?.clientName, approved)) {
+            (final client?, true) => l10n.consentDone(client),
+            (null, _) => l10n.consentDoneNoClient,
+            (final client?, false) => l10n.consentDeclined(client),
+          },
+          key: const ValueKey('consent-done'),
+          style: theme.textTheme.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+      ],
     };
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _phase is _Failed ? l10n.consentErrorTitle : l10n.consentTitle,
-        ),
+        title: Text(switch (_phase) {
+          _Failed() => l10n.consentErrorTitle,
+          _Left(approved: true) => l10n.consentConnectedTitle,
+          _Left(approved: false) => l10n.consentDeclinedTitle,
+          _ => l10n.consentTitle,
+        }),
         automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
@@ -229,7 +259,7 @@ class _ConsentViewState() extends State<ConsentView> {
   List<Widget> _details(
     BuildContext context,
     NeedsConsent request, {
-    required bool leaving,
+    required bool deciding,
   }) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -260,24 +290,20 @@ class _ConsentViewState() extends State<ConsentView> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton(
-            onPressed: leaving
+            onPressed: deciding
                 ? null
-                : () => unawaited(_decide(request, widget.api.deny)),
+                : () => unawaited(_decide(request, approve: false)),
             child: Text(l10n.consentDeny),
           ),
           const SizedBox(width: 8),
           FilledButton(
-            onPressed: leaving
+            onPressed: deciding
                 ? null
-                : () => unawaited(_decide(request, widget.api.approve)),
+                : () => unawaited(_decide(request, approve: true)),
             child: Text(l10n.consentAllow),
           ),
         ],
       ),
-      if (leaving) ...[
-        const SizedBox(height: 16),
-        Text(l10n.redirecting, textAlign: TextAlign.center),
-      ],
     ];
   }
 }

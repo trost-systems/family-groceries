@@ -375,7 +375,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## AI assistants (MCP) and access keys
 
-**What it does.** An AI assistant such as Claude can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Nothing needs Premium today.
+**What it does.** An AI assistant such as Claude can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. After „Erlauben“ the page says „Fertig, du kannst zu Claude zurückkehren.“ while the assistant finishes connecting (Claude takes up to about 10 seconds). Asked what's on the list, the assistant also gets how many items are open and how many were ticked in the last 24 hours. In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Nothing needs Premium today. Setup guide: hummlist.com/de/anleitungen/claude (EN /en/guides/claude).
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More") and tap „Zugänge“ (EN: "Access").
@@ -392,7 +392,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** The third-party connector screens of Claude and ChatGPT.
 
-**Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [ai-assistants.md](./ai-assistants.md).
+**Last verified.** job 62 branch (job/62-mcp-testers), 2026-11-01 (CET), consent page and counts by e2e/tests/mcp.spec.ts, the widget tests and mcp/list_integration_test.ts. Recipe: [ai-assistants.md](./ai-assistants.md).
 
 ## Siri
 
