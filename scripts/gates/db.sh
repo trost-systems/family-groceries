@@ -16,6 +16,8 @@ scripts/feedback-monday.sh
 supabase/classifier/sweep.sh
 supabase/classifier/wordlist.sh
 supabase/classifier/latency.sh
+# Job 61: the app's copy of the classifier's word forms (offline trailing counts) is current.
+supabase/classifier/client_lexicon.sh --check
 # Job 59: suggest_entries with fuzzy matching stays under 50 ms p95 on a 5000-item household.
 supabase/bench/suggest_latency.sh
 # Job 32a: the MCP and voice/Siri add code against this stack classifies like the app (AC7).

@@ -5,9 +5,10 @@
 // Without FG_DB_TEST the tests are skipped (the functions gate has no database).
 import { assertEquals } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from './db.ts';
+import { asUser, type Tx } from './db.ts';
 import { addItems as mcpAddItems } from '../mcp/list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
+import { parseSentence } from '../voice/parse.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
 
@@ -86,3 +87,62 @@ Deno.test({
       assertEquals(added.map((i) => [i.name, i.category]), [['Karotten', 'Getränke']]);
     }),
 });
+
+// Job 61: the typed-quantity table the app's parseEntry passes too.
+const quantityRows = async () =>
+  (await Deno.readTextFile(new URL('../../tests/quantity_parse.tsv', import.meta.url)))
+    .split('\n')
+    .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+    .map((line) => {
+      const [text, name, quantity = '', history = ''] = line.split('\t');
+      return { text, name, quantity: quantity || null, history };
+    });
+
+type Added = { name: string; properties: string | null; quantity: string | null };
+/** Each path, how it adds a line, and the name it keeps (the voice path
+ * capitalizes it, reads a period as the end of a sentence and writes units its own way). */
+const addPaths: [
+  string,
+  (tx: Tx, householdId: string, text: string) => Promise<Added[]>,
+  (name: string, quantity: string | null) => [string, string | null],
+][] = [
+  [
+    'MCP add_items',
+    async (tx, householdId, text) => (await mcpAddItems(tx, householdId, [{ name: text }])).added,
+    (name, quantity) => [name, quantity],
+  ],
+  [
+    'voice and Siri',
+    (tx, householdId, text) => voiceAddItems(tx, householdId, parseSentence(text)),
+    (name, quantity) => [
+      (name[0].toUpperCase() + name.slice(1)).replaceAll('.', ''),
+      quantity?.toLowerCase() ?? null,
+    ],
+  ],
+];
+
+for (const [path, add, kept] of addPaths) {
+  Deno.test({
+    name: `${path} reads a typed quantity as supabase/tests/quantity_parse.tsv says`,
+    ignore: !enabled,
+    sanitizeResources: false,
+    fn: async () => {
+      for (const row of await quantityRows()) {
+        await withHousehold(async (userId, householdId) => {
+          const added = await asUser(userId, async (tx) => {
+            if (row.history) {
+              await tx`insert into public.items (household_id, name, status, bought_at)
+                values (${householdId}, ${row.history}, 'bought', now() - interval '3 days')`;
+            }
+            return await add(tx, householdId, row.text);
+          });
+          assertEquals(
+            added.map((i) => [[i.name, i.properties].filter(Boolean).join(' '), i.quantity]),
+            [kept(row.name, row.quantity)],
+            `${row.text}${row.history ? ` after ${row.history}` : ''}`,
+          );
+        });
+      }
+    },
+  });
+}
