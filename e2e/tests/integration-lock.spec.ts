@@ -40,6 +40,14 @@ test.beforeAll(() => lockSwitch(true));
 test.afterAll(() => lockSwitch(false));
 
 /** The Siri Shortcut's request: one sentence, the PAT, the spoken answer as text. */
+/** Stores a RevenueCat promotional grant without end for [household], as the purchases function does. */
+async function promote(household: string): Promise<string> {
+  const { data, error } = await adminClient().rpc('promotional_premium_sync',
+    { p_household: household, p_active: true, p_expires_at: null });
+  expect(error).toBeNull();
+  return data as string;
+}
+
 async function siri(token: string, text: string) {
   const res = await fetch(`${functionsUrl}/voice?format=text`, {
     method: 'POST',
@@ -162,22 +170,20 @@ test("a tester's household works with the lock on; a beta household without a gr
   const betaEmail = newEmail('lock-beta');
   const tess = await newPage(browser);
   await signUp(tess, tessEmail);
-  const { data: user } = await (await apiAs(tessEmail)).auth.getUser();
-  const { error } = await adminClient().from('lifetime_testers').insert({ user_id: user.user!.id, grants: 1 });
-  expect(error).toBeNull();
   await signUpWithHousehold(await newPage(browser), betaEmail);
   const { error: created } = await (await apiAs(tessEmail)).rpc('create_household', { p_name: 'Tess' });
   expect(created).toBeNull();
+  // A tester's grant is a RevenueCat promotional grant for the household; the purchases function
+  // stores it like this (promotional_premium_sync, docs/PURCHASES.md "Testers").
+  expect(await promote(await householdOf(tessEmail))).toBe('granted');
 
   expect(await siri(await pat(tessEmail, 'Kurzbefehl'), 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
   const beta = await pat(betaEmail, 'Kurzbefehl');
   expect(await siri(beta, 'Milch')).toEqual({ status: 200, speech: voicePremium });
 
-  // The cut-over: the Lead grants the beta tester (scripts/iap/testers.ts); the existing
-  // household unlocks at once and the same token works.
-  const { data: betaUser } = await (await apiAs(betaEmail)).auth.getUser();
-  const { error: granted } = await adminClient().from('lifetime_testers').insert({ user_id: betaUser.user!.id, grants: 1 });
-  expect(granted).toBeNull();
+  // The cut-over: the Lead grants the beta tester's household at RevenueCat
+  // (scripts/iap/promotional.ts grant); it unlocks at once and the same token works.
+  expect(await promote(await householdOf(betaEmail))).toBe('granted');
   expect(await siri(beta, 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
   await tess.goto('/');
   await openMore(tess, 'Zugänge');

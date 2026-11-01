@@ -24,7 +24,7 @@ export interface Recorded {
   alreadyUnlocked: boolean;
   /** used_elsewhere, and the household the purchase belongs to is deleted. */
   householdGone: boolean;
-  /** The buyer or the household is a tester's: analytics marks it internal. */
+  /** The household has a promotional grant (testers, reviewers): analytics marks it internal. */
   internal: boolean;
   /** The member who claimed it, if any. */
   buyer: string | null;
@@ -82,7 +82,7 @@ export async function lifecycle(sql: Tx, c: Lifecycle): Promise<LifecycleOutcome
 /** A purchase the store just took back, as purchase_refunded needs it. */
 export interface Revoked extends Sale {
   userId: string | null;
-  /** A tester's purchase or household. */
+  /** In a household with a promotional grant (household_internal). */
   internal: boolean;
 }
 

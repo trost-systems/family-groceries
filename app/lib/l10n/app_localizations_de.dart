@@ -1354,10 +1354,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumStatusLifetime => 'Hummlist Premium Lifetime';
 
   @override
-  String get premiumStatusTester =>
-      'Hummlist Premium über Tester-Freischaltung';
-
-  @override
   String get premiumStatusGranted => 'Hummlist Premium geschenkt';
 
   @override

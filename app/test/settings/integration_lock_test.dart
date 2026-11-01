@@ -117,15 +117,8 @@ void main() {
     ),
     ('Lifetime', () => FakeEntitlementsSource(unlockedNow: true)),
     (
-      "a tester's grant",
-      () => FakeEntitlementsSource()
-        ..rowsNow = [
-          {
-            'kind': 'premium',
-            'source': 'tester',
-            'premium_source': 'tester_grant',
-          },
-        ],
+      "a tester's grant (RevenueCat promotional)",
+      () => FakeEntitlementsSource()..rowsNow = [promotionalRow()],
     ),
     (
       'rows that cannot be read (offline)',

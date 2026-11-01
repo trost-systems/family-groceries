@@ -292,7 +292,7 @@ create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
   array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'archived_households', 'connected_apps', 'exported_at',
-        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added', 'lifetime_tester',
+        'feedback', 'format', 'history', 'household', 'invites_created', 'items_added',
         'profile', 'purchases', 'version'],
   'the export has the documented sections'
 );
@@ -327,7 +327,6 @@ select is(
     'alexa_links', '[]'::jsonb,
     -- Job 25: Emil bought nothing (purchases.test.sql covers a buyer's export).
     'purchases', '[]'::jsonb,
-    'lifetime_tester', null,
     'archived_households', '[]'::jsonb
   ),
   'the export holds the user''s own data and nothing of the other member''s'

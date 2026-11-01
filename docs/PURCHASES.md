@@ -20,9 +20,8 @@ its own is deleted. Nothing moves with the user. The app offers Buy only to a ho
 has no Lifetime, so no member pays twice. Someone who paid and then joins an unlocked household is
 pointed to the refund help (H-76, Peter 2026-10-31: Apple alone refunds App Store purchases;
 for Google Play, Google in the first 48 hours, after that our support case by case in the Play
-Console). Testers get it
-free, and anyone else the Lead picks (App and Play Review) gets it free through a RevenueCat
-promotional grant ("Free premium: RevenueCat promotional grants"). A later subscription for running-cost features (model D) would be a second entitlement kind
+Console). Testers and anyone else the Lead picks (App and Play Review) get it free through a
+RevenueCat promotional grant ("Free premium: RevenueCat promotional grants", "Testers"). A later subscription for running-cost features (model D) would be a second entitlement kind
 next to premium ("A second entitlement" below). The yearly plan is household-bound the same way:
 its renewals stay with the household it was bought for, and the same Apple ID cannot pay a second
 plan of the group for another household ("Cases").
@@ -44,7 +43,7 @@ id, never anonymous.
    MwSt." only in euros, never a repo amount and nothing derived from the device's locale.
 2. **What is offered** (`Entitlements.canOffer(Entitlement.premium, plan)`, the one decision
    point): with no premium both cards, **yearly first**; with an active yearly plan only Lifetime
-   (the upgrade; never a second yearly plan, H-84); with Lifetime or a tester grant nothing; while
+   (the upgrade; never a second yearly plan, H-84); with Lifetime or a promotional grant nothing; while
    the rows load or the phone is offline nothing ("Wir prüfen, ob euer Haushalt Hummlist Premium
    schon hat …"). A plan the store doesn't return (Lifetime in BR, MX, IN) is not offered there,
    silently. No price read at all (offline, store unavailable, timeout): no Buy, "Hummlist Premium
@@ -80,10 +79,10 @@ id, never anonymous.
    the lifecycle events keep the plan's state ("Subscription lifecycle" below).
 7. Every member's app reads the household's `entitlements` rows (RLS: members only; who paid or
    granted is not readable, H-55) and hears inserts, updates and deletes over Realtime. Premium is
-   active **at read time**: a Lifetime or tester row (no end), a promotional row without end, else
+   active **at read time**: a Lifetime row (no end), a promotional row without end, else
    a yearly or promotional row whose end lies ahead. The page's status line: „Hummlist Premium
    aktiv (jährlich, verlängert sich am …)“, „… läuft am … aus“ (auto-renew off), „Hummlist Premium
-   Lifetime“, „Hummlist Premium über Tester-Freischaltung“, „Hummlist Premium geschenkt (bis …)“
+   Lifetime“, „Hummlist Premium geschenkt (bis …)“
    (promotional; placeholder copy for K.13). The server's check for the integrations is `household_has_premium()`
    (same rule).
 8. While the household has an active yearly plan the page shows „Abo verwalten oder kündigen“
@@ -115,7 +114,7 @@ id, never anonymous.
 | Buyer switches households between buying and claiming | The claim names the household the purchase was made for (job 47), not the one the buyer is in now. `purchase_claim` records the buyer if they were a member of it at the purchase time: a member now who joined before it, or one who left it in the last hour (`household_departures`, kept one hour) after joining before it. Otherwise (left more than an hour ago, joined after the purchase, never a member, or the household is gone) it answers 403 `no_household` and the buyer stays unknown (no `purchase_completed`); the unlock stands where it was bought |
 | Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; RevenueCat's webhook records it when the store completes it |
 | Products not loadable, offline, store down | Before the tap (no price read): no Buy, "Hummlist Premium ist gerade nicht verfügbar.". After the tap: the same line or the offline note; Buy stays and tries again; no crash |
-| Yearly-only storefront (BR, MX, IN) | The store returns no Lifetime: no Lifetime card and no Lifetime entry (warning, upgrade); the yearly card as usual. Lifetime holders and testers there keep Premium |
+| Yearly-only storefront (BR, MX, IN) | The store returns no Lifetime: no Lifetime card and no Lifetime entry (warning, upgrade); the yearly card as usual. Lifetime holders and granted households there keep Premium |
 | The same Apple ID already pays the yearly plan for household A, and the person tries to buy or restore it in household B (iOS) | Apple allows one subscription per Apple ID per group, and RevenueCat (Keep with original App User ID) keeps the receipt with A: the store or RevenueCat refuses (`receiptAlreadyInUse`), the app says "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and "Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen." The restore setting stays |
 | Two yearly plans in one household (two members' store accounts, a race) | Both rows kept, never merged; premium runs to the later end; the page says so with the manage link; the function logs `second_yearly` |
 | Yearly plan cancelled (auto-renew off) | Premium stays until the period's end, the status says "läuft am … aus"; EXPIRATION ends it |
@@ -127,7 +126,7 @@ id, never anonymous.
 | Last member leaves an unlocked household (joins another) | Joining asks first. With `HOUSEHOLD_ARCHIVE` on: "Archivieren und beitreten" keeps the household archived (list and unlock kept, re-enabled under Mehr → Archivierte Haushalte, deleted 24 months after archiving otherwise); "Löschen und beitreten" asks once more ("… Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt …", refund help). With it off (releases, until the legal texts say so): that warning and "Trotzdem beitreten". Never blocked. The server archives only while its switch `household_archive` is on (job 47, H-70); off, an archiving call is refused with `archive_disabled` and changes nothing, and the app says "Archivieren ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist." |
 | Joiner into an unlocked household | The join screen says "Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen." With their own purchase from the last 30 days that stands: a link to the refund help |
 | Promotional grant (RevenueCat dashboard) | Premium for the whole household until the grant's end (none: for good); nothing to buy, no Buy shown. Revoked or ended at RevenueCat: the row is deleted, premium ends at once. No `purchases` row, no analytics event |
-| Tester | Their grant (1 by default, `scripts/iap/testers.ts`) unlocks a household they are in that has none; it stays with that household like a purchase. No RevenueCat involved. Internal for analytics |
+| Tester | Their household gets a RevenueCat promotional grant until 2100 (`scripts/iap/promotional.ts grant`, "Testers"); it stays with that household like a purchase. Internal for analytics |
 | Archived household | No members, not readable by anyone, its invites lead nowhere; the archiving user alone sees and re-enables it (`archived_households`, `unarchive_household`), with "Wird am <Datum> gelöscht" per household. Deleted 24 months after archiving unless re-enabled (job 47, H-50), and at once with that user's account. Its purchases restore nowhere else, and in it again after re-enabling; re-enabling and archiving again start a new 24 months. Re-enabling works with the server switch off, unless it would archive the household the user leaves |
 | Family Sharing | Off at Apple; a webhook event with `is_family_share` is ignored |
 | An App User ID that is no household (anonymous, unknown) | Ignored: nothing recorded, nothing unlocked |
@@ -207,8 +206,8 @@ never ends a paid period; only a refund revokes at once.
 and the buyer's claim are in (whichever comes second), under the buyer's consent;
 `purchase_refunded` on a refund of a purchase with a known buyer. Both carry `product_id` and
 `premium_source` (`yearly` | `lifetime`). A renewal sends nothing. Without a claim, or without consent, nothing is sent (the paying
-share is a lower bound, docs/ANALYTICS.md). Sandbox purchases, testers' purchases and purchases
-in households a tester unlocked are `is_internal`. `purchase_restored` is not sent: a RevenueCat
+share is a lower bound, docs/ANALYTICS.md). Sandbox purchases and purchases in households with a
+promotional grant (testers, reviewers) are `is_internal`. `purchase_restored` is not sent: a RevenueCat
 restore produces no event for us, and no production code sends it (the job 25 helper
 `recordPurchase` in `_shared/purchases.ts`, which could, has no caller but its test; checked in job
 47).
@@ -381,12 +380,11 @@ RevenueCat retries, the app retries the claim.
 | Table | Who reads | Who writes | Rows |
 | --- | --- | --- | --- |
 | `purchases` | service connection | `purchase_record`, `purchase_lifecycle`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind (`premium`), plan (`yearly`/`lifetime`), environment, buyer (from the claim; null after their deletion), bound household (set at the first record, never changed), purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted; yearly: end (`expires_at`), renews (`auto_renew`), billing problem open (`billing_issue`), newest event applied (`state_at`). No cancel or expiry reasons, no per-renewal rows (H-87) |
-| `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at, premium_source, expires_at, auto_renew`), Realtime (insert, update, delete) | `purchase_entitlement_sync` (from `purchase_record`, `purchase_lifecycle`, `purchase_reinstate`), `tester_grant_apply` (insert), `purchase_revoke` (delete), `promotional_premium_sync` (the webhook and the reconcile route: insert, update, delete) | one row per unlock: a purchase's (`source` purchase), a tester's grant (`source` tester, `tester` the granting user, null after their deletion) or the household's RevenueCat promotional grant (`source` promotional, at most one per household, no store, product or environment); kind; `premium_source` (`yearly`, `lifetime`, `tester_grant`, `promotional`); yearly and promotional: the end (promotional: null for none); yearly: whether it renews; granted by (not member-readable) |
+| `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at, premium_source, expires_at, auto_renew`), Realtime (insert, update, delete) | `purchase_entitlement_sync` (from `purchase_record`, `purchase_lifecycle`, `purchase_reinstate`), `purchase_revoke` (delete), `promotional_premium_sync` (the webhook and the reconcile route: insert, update, delete) | one row per unlock: a purchase's (`source` purchase) or the household's RevenueCat promotional grant (`source` promotional, at most one per household, no store, product or environment; testers' too); kind; `premium_source` (`yearly`, `lifetime`, `promotional`); yearly and promotional: the end (promotional: null for none); yearly: whether it renews; granted by (not member-readable) |
 | `purchase_claims` | service connection | `purchase_claim`, `purchase_record` | a claim waiting for its webhook: store, transaction id, claimant, their household, when (30 days at most) |
 | `revenuecat_events` | service connection | the webhook | processed event ids and types, 90 days |
 | `purchase_tombstones` | service connection | `purge_purchases` | HMAC-SHA256 of purged store transaction ids under `REVENUECAT_TOMBSTONE_HMAC_KEY`, nothing else |
 | `revenuecat_deletions` | service connection | trigger on household deletion (every one: a tap on Buy or Restore creates the customer, also without a purchase), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' ids (RevenueCat App User IDs), due 30 days later |
-| `lifetime_testers` | service connection | `scripts/iap/testers.ts`, `tester_grant_apply` | user id, grants (free unlocks, default 1), used, note, added at |
 | `households.archived_at`, `archived_by` | nobody but `archived_households()` for the archiving user (with `deletes_at`, 24 months later) | `leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household` (archiving only while `household_archive` is on) | when and by whom the last member archived it |
 | `app_switches` | service connection (`app_switch(key)` for the functions); members only through `premium_offer()` | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving; `premium_offer` (seeded off, job 49) lets the app offer Hummlist Premium |
 | `household_departures` | service connection (`was_member_at`) | trigger on leaving a household | household, user, joined and left at; one hour, for the buyer's claim |
@@ -394,16 +392,18 @@ RevenueCat retries, the app retries the claim.
 
 Functions for others to call: `household_premium(household)` (source and end) and
 `household_has_premium(household)`, server-only, the check the integrations use (job 50);
+`household_internal(household)`, server-only, whether its purchases are internal (a promotional
+grant);
 `my_yearly_plan()` (members: the caller's own subscriber facts) and `premium_offer()` (members:
 the switch).
 
 Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifetime.sql`,
-`20261031194500_purchase_legal_fixes.sql`, `20261031214500_premium_yearly.sql` and
-`20261101143000_revenuecat_promotional.sql`; pgTAP `supabase/tests/purchases.test.sql`,
+`20261031194500_purchase_legal_fixes.sql`, `20261031214500_premium_yearly.sql`,
+`20261101143000_revenuecat_promotional.sql` and `20261101150000_testers_via_revenuecat.sql`; pgTAP `supabase/tests/purchases.test.sql`,
 `household_bound.test.sql`, `purchase_legal_fixes.test.sql`, `premium_yearly.test.sql` and
 `revenuecat_promotional.test.sql`; the data map
-`docs/PRIVACY_DATA_MAP.md`. `export_my_data` has `purchases` (with `belongs_to_household`),
-`lifetime_tester` and `archived_households` sections.
+`docs/PRIVACY_DATA_MAP.md`. `export_my_data` has `purchases` (with `belongs_to_household`) and
+`archived_households` sections (the `lifetime_tester` section went with the tester list).
 
 ### Retention
 
@@ -448,32 +448,40 @@ Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifet
 
 ### Testers
 
-`lifetime_testers` lists users who get Lifetime free, with a number of grants (1 by default). A
-grant unlocks a household the tester is in that has no Lifetime: at once when the Lead adds them or
-raises the count, otherwise when they next create or join such a household. The unlock is an
-`entitlements` row with `source` tester and then behaves like a purchase: it stays when the tester
-leaves, survives an archive, never moves; lowering the count or removing the tester keeps it, and
-a deleted household doesn't give its grant back (`used` is counted). Removing a tester from the
-list (or their account) clears their mark on the households they unlocked (`entitlements.tester`,
-trigger `lifetime_testers_removed`, H-72); the unlocks stay. Free premium for a household
-without a tester list entry (App and Play Review) is a RevenueCat promotional grant ("Free
-premium: RevenueCat promotional grants"); it sends the household UUID to RevenueCat, nothing about
-a user. Sandbox
-purchases (TestFlight, App Review, Play license testers) stay as they are (Peter, 2026-10-31).
-Both are internal for analytics: the function marks a tester's purchase and any purchase in a
-household a tester unlocked `is_internal`, and the app marks every event from a household whose
-rows include a tester grant (`isInternal`'s `testerHousehold`).
+Testers get Hummlist Premium the same way as App and Play Review: a RevenueCat promotional grant
+of the premium entitlement to their **household's** customer (App User ID = household id),
+until 2100-01-01 ("Free premium: RevenueCat promotional grants" above; Peter, Nov 1: "use
+revenuecat to handle tester's premium grants instead of the custom code"). The household then has
+one promotional row like any other grant: it stays when the tester leaves, survives an archive,
+never moves to another household, and ends when it is revoked in RevenueCat. RevenueCat knows
+households, not people: a tester who starts a second household needs a second grant, and nothing
+about the tester (user id, e-mail, name) goes to RevenueCat or into a list of ours.
 
 ```
-deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts list
-deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts add --email a@b.de [--grants 2] [--note "TestFlight"] [--apply]
-deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts set-grants --email a@b.de --grants 3 [--apply]
-deno run --allow-env --allow-net --allow-read scripts/iap/testers.ts remove --email a@b.de [--apply]
+deno run --allow-env --allow-net scripts/iap/promotional.ts grant --household <uuid> [--apply]
 ```
 
-Dry run unless `--apply`. Hosted: `SUPABASE_ACCESS_TOKEN` (Management API, on the box); local:
-`SUPABASE_DB_URL`. The e-mail is resolved to the user id at run time, never stored or printed
-back.
+Dry run unless `--apply`; a household that already has a grant to 2100 or without end is left
+alone, so a rerun changes nothing. `--apply` calls API v2 `grant_entitlement` (entitlement
+`entl654efcfce4`, `expires_at` 2100-01-01; a customer RevenueCat doesn't know yet is created
+first), then asks the purchases function to store the grant (`reconcile`, so the app shows it
+without waiting for the webhook). Needs `REVENUECAT_SECRET_KEY` (v2, with
+`customer_information:customers:read_write`), `REVENUECAT_PROJECT_ID` and
+`REVENUECAT_DELETIONS_SECRET`. The dashboard's Customer → Entitlements → Grant does the same by
+hand. To end a tester's premium, revoke the grant in RevenueCat; the webhook deletes the row.
+
+Until 20261101150000_testers_via_revenuecat.sql the server kept its own tester list
+(`lifetime_testers`, `tester_grant_apply`, `scripts/iap/testers.ts`, job 43). The migration
+removes the list, its triggers and functions, the `tester` column and the `tester`/`tester_grant`
+values; it refuses to run while a tester row exists in a household without a promotional row
+(production had none on Nov 1, 2026), so no household loses premium by it.
+
+**Analytics.** A household with a promotional row is internal: the purchases function marks every
+purchase and refund in it `is_internal` (`household_internal`), and the app marks every event from
+it (`HouseholdUnlocks.tester`, `isInternal`'s `testerHousehold`). A tester's purchase in a
+household without a grant is no longer internal (we no longer know who is a tester); Sandbox
+purchases (TestFlight, App Review, Play license testers) are internal as before (Peter,
+2026-10-31).
 
 ### A second entitlement (model D, not built)
 
@@ -505,8 +513,8 @@ until Peter says go:
   before job 50, for every household. On, the voice function (Shortcut and native Siri), the
   alexa function (add, read, launch) and the mcp function (tool calls) refuse a household without
   premium, as `public.integration_gate(household, integration)` decides with job 49's
-  `household_has_premium` (yearly not ended, Lifetime, a tester grant or a running promotional
-  grant; read at request time).
+  `household_has_premium` (yearly not ended, Lifetime or a running promotional grant, testers'
+  included; read at request time).
 - **App:** the build define `INTEGRATION_LOCK` (off). On, the integration settings (More ›
   Zugänge) show a household without premium, while the server switch is on, what Hummlist
   Premium includes, its connections as paused, and a button to the Premium page where this build
@@ -536,7 +544,8 @@ its price (docs/ANALYTICS.md).
 1. Job 49's premium is live: products in the stores and RevenueCat, the webhook secrets set,
    `premium_offer` on and `REVENUECAT_PURCHASES` in the store builds (otherwise a locked household
    cannot unlock and sees "Bald verfügbar").
-2. Tester grants for the beta households Peter wants to keep (`scripts/iap/testers.ts`); check the
+2. Promotional grants for the beta households Peter wants to keep (`scripts/iap/promotional.ts
+   grant`, "Testers"); check the
    cut-over with `scripts/iap/integration-cutover.sql` (read-only).
 3. Legal Review has added `integration_blocked` and `paywall_viewed` to privacy section 9 and the
    texts that call the integrations free are updated (NEEDS_LEAD "Job 50").

@@ -122,7 +122,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
       await deps.event(due.name, due.sale, {
         installId: subject.installId,
         householdId: due.sale.householdId ?? subject.householdId,
-        // A sandbox purchase is never revenue, nor is a tester's: internal (docs/ANALYTICS.md).
+        // A sandbox purchase is never revenue, nor one in a granted household: internal (docs/ANALYTICS.md).
         internal: subject.internal === true || due.sale.environment === 'Sandbox' || due.internal,
       });
     } catch (e) {

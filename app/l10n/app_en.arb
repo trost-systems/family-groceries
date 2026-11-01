@@ -499,7 +499,6 @@
   "premiumStatusRenews": "Hummlist Premium active (yearly, renews on {date})",
   "premiumStatusEnds": "Hummlist Premium active (yearly, ends on {date})",
   "premiumStatusLifetime": "Hummlist Premium Lifetime",
-  "premiumStatusTester": "Hummlist Premium through a tester grant",
   "premiumStatusGranted": "Hummlist Premium, a gift",
   "premiumStatusGrantedUntil": "Hummlist Premium, a gift until {date}",
   "premiumChecking": "Checking whether your household already has Hummlist Premium …",

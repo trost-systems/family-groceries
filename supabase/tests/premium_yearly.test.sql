@@ -1,6 +1,6 @@
 -- Job 49: Hummlist Premium, yearly and Lifetime under one kind (migration
 -- 20261031214500_premium_yearly.sql). Pia and Paul share a household, Quinn has her own, Tara is a
--- tester. Premium is active at read time; lifetime and tester grants beat yearly; expiry deletes
+-- tester. Premium is active at read time; lifetime and endless promotional grants beat yearly; expiry deletes
 -- nothing; only the subscriber learns of a billing problem.
 begin;
 select plan(57);
@@ -66,7 +66,7 @@ select pg_temp.as_postgres();
 select is((select count(*)::int from public.purchases where kind <> 'premium')
   + (select count(*)::int from public.entitlements where kind <> 'premium'), 0, 'no lifetime kind is left');
 select throws_ok($$ insert into public.entitlements (household_id, kind, source, premium_source)
-                    values ((select id from hp), 'lifetime', 'tester', 'tester_grant') $$, '23514', null,
+                    values ((select id from hp), 'lifetime', 'promotional', 'promotional') $$, '23514', null,
   'the old kind is refused by the check');
 select throws_ok(
   $$ select public.purchase_record('apple', 'k1', 'k1', pg_temp.hmac('k1'), 'com.hummlist.app.lifetime',
@@ -174,7 +174,7 @@ select is((select count(*)::int from public.entitlements where household_id = (s
   2, 'both rows are kept');
 select is(pg_temp.premium((select id from hq)), 'yearly 365', 'premium runs to the later end');
 
--- Lifetime and tester grants beat yearly ------------------------------------------------------
+-- Lifetime and endless grants beat yearly ------------------------------------------------------
 
 select is(pg_temp.lifetime('l1', (select id from hq)) ->> 'outcome', 'granted', 'Quinn buys Lifetime as well');
 select is(pg_temp.premium((select id from hq)), 'lifetime', 'Lifetime wins, with no end');
@@ -184,21 +184,21 @@ select is(pg_temp.premium((select id from hq)), 'lifetime', 'premium stays (Life
 select is(public.purchase_lifecycle('apple', 'l1', now(), null, false, false) ->> 'outcome', 'lifetime',
   'Lifetime has no lifecycle');
 
--- Tara, a tester, joins Pia's household while it has an active yearly plan again.
+-- Tara, a tester, joins Pia's household while it has an active yearly plan again; RevenueCat grants
+-- the household premium without end (20261101150000_testers_via_revenuecat.sql).
 select pg_temp.yearly('y4', (select id from hp), 200);
-insert into public.lifetime_testers (user_id, grants) values ('00000000-0000-0000-0000-0000000049d1', 1);
 select pg_temp.login('00000000-0000-0000-0000-0000000049a1');
 create temp table inv2 as select code from public.create_invite((select id from hp));
 grant select on inv2 to authenticated;
 select pg_temp.login('00000000-0000-0000-0000-0000000049d1');
 select public.join_household((select code from inv2));
 select pg_temp.as_postgres();
-select is((select premium_source from public.entitlements where source = 'tester'), 'tester_grant',
-  'the tester grant applies to a household with only a yearly plan');
-select is(pg_temp.premium((select id from hp)), 'tester_grant', 'and wins over it');
+select is(public.promotional_premium_sync((select id from hp), true, null), 'granted',
+  'the grant applies to a household with only a yearly plan');
+select is(pg_temp.premium((select id from hp)), 'promotional', 'and wins over it');
 select is(public.purchase_lifecycle('apple', 'y4', now() + interval '5 seconds', now() - interval '1 minute', false, false) ->> 'outcome',
   'updated', 'the yearly plan expires');
-select is(pg_temp.premium((select id from hp)), 'tester_grant', 'the grant does not');
+select is(pg_temp.premium((select id from hp)), 'promotional', 'the grant does not');
 
 -- Refund and reinstate keep the yearly state.
 select is(public.purchase_revoke('apple', 'y3', now(), 'com.hummlist.app.yearly', 'yearly', 'Production', null) ->> 'plan',

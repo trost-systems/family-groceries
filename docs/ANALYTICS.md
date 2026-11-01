@@ -444,10 +444,11 @@ that function, after RevenueCat confirmed the purchase:
   reached us (app killed right after the purchase), sends no `purchase_completed`, so their
   household never counts as paying, even when another member said yes. Both paying queries are a
   lower bound (`analytics/fixtures.ts` H15).
-- **Tester households** (job 43). The server grants testers Hummlist Lifetime without a store
-  purchase (no RevenueCat involved). A purchase by a tester or in a household a tester unlocked is
-  sent with `is_internal: true` too. The app sends every event of a household whose unlock comes from that tester grant
-  with `is_internal: true`, so the internal filter drops the household from both the numerator
+- **Tester households** (job 43; since 20261101150000 a RevenueCat promotional grant for the
+  household, docs/PURCHASES.md "Testers"). A purchase in a household with a promotional grant
+  (testers, App and Play Review) is sent with `is_internal: true` too (`household_internal`). The
+  app sends every event of a household whose rows include a promotional grant with
+  `is_internal: true`, so the internal filter drops the household from both the numerator
   and the denominator of the paying queries (`analytics/fixtures.ts` H12).
 - `recordPurchase` and `FakePurchaseVerifier` remain job 19's harness for the same mapping.
 

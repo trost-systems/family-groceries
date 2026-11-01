@@ -348,7 +348,7 @@ void main() {
     );
   });
 
-  testWidgets('a tester grant and a purchase are not bought twice', (
+  testWidgets('a promotional grant and a purchase are not bought twice', (
     tester,
   ) async {
     await openLifetime(
@@ -356,7 +356,7 @@ void main() {
       entitlements: FakeEntitlementsSource()
         ..rowsNow = [
           {'kind': 'lifetime', 'source': 'purchase'},
-          {'kind': 'lifetime', 'source': 'tester'},
+          promotionalRow(),
         ],
     );
     shows({'lifetime-unlocked'});
@@ -886,25 +886,6 @@ void main() {
       expect(key('premium-card-lifetime'), findsOneWidget);
       expect(key('premium-manage'), findsNothing);
       shows({});
-    });
-
-    testWidgets('a tester grant: its status, nothing to buy', (tester) async {
-      await openLifetime(
-        tester,
-        entitlements: FakeEntitlementsSource()
-          ..rowsNow = [
-            {
-              'kind': 'premium',
-              'source': 'tester',
-              'premium_source': 'tester_grant',
-            },
-          ],
-      );
-      expect(
-        find.text('Hummlist Premium über Tester-Freischaltung'),
-        findsOneWidget,
-      );
-      expect(key('premium-card-lifetime'), findsNothing);
     });
 
     testWidgets('a promotional grant: its status and end, nothing to buy', (
