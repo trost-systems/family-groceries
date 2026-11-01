@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
 import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:web/web.dart' as web;
 
 /// Loads posthog-js from this app's origin (`web/posthog/array.js`, a pinned
@@ -48,6 +49,8 @@ Future<void> loadPostHogJs({
             'disable_web_experiments': true,
             'disable_external_dependency_loading': true,
             'advanced_disable_toolbar_metrics': true,
+            // No `/flags` request at all while flag lookups are off (Flags).
+            'advanced_disable_flags': !flagLookups,
             'save_referrer': false,
             'save_campaign_params': false,
             'disable_compression': true,

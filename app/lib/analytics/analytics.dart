@@ -303,7 +303,7 @@ class Analytics(
 
   Future<void> _refreshFlags() async {
     final posthog = _posthog;
-    if (posthog == null || !_running) {
+    if (!flagLookups || posthog == null || !_running) {
       return;
     }
     try {

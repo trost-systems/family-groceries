@@ -298,6 +298,15 @@ so the filter is this pair of lists in each query rather than a saved cohort.
 Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.isOn('<key>')`
 (`Flags`, a cubit, so a widget can `select` it). Nothing else in the app reads PostHog flags.
 
+**Flag lookups are off for now (`flagLookups` in `app/lib/analytics/flags.dart`).** Legal Review
+N-2 (sweep 2026-11-01): asking PostHog which features an install gets is a purpose the consent
+text and privacy §9 do not name yet, and a yes given under the old text must never lead to a flag
+lookup. So no platform makes a `/flags` request, after a yes too: posthog-js gets
+`advanced_disable_flags: true`, the native SDKs `preloadFeatureFlags: false`, and the app never
+calls `getAllFeatureFlags()`; every flag reads off. Turn it on only together with a consent-version
+gate: the yes stored with the version of the consent text it was given on, and flags only for a
+yes on the text that names the purpose (others see the consent screen again first).
+
 - **Off unless PostHog said on.** `isOn` is false for an unknown key, before the yes (the SDK
   does not run, so no flag request is made), after a no (every flag back to off at once), in a
   build without a project key (CI, fg, local debug), and offline until a first answer. After
