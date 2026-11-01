@@ -5,6 +5,8 @@ description: "Drive the real Family Groceries Flutter app (debug build with the 
 
 # Verify Family Groceries
 
+The current feature map is `.cursor/skills/verify-hummlist/features/`.
+
 Prove behavior on the real app, not on a proxy. `fg` is this skill's CLI. It starts an isolated instance (Supabase stack, app clients, Marionette), drives the app like a user, and saves evidence. Every command prints one JSON object. A failure carries `error.code`, `error.message` and `error.hint`, and the hint names the command to run instead.
 
 ```bash

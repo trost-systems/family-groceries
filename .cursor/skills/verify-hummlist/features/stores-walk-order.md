@@ -1,0 +1,65 @@
+# Stores, walk order and the sections of the list
+
+The list is one scroll of sections: a divider per store that has open items, in the household's store order, then „Ohne Laden“ for items without a store. Each divider reads „<Store>, N Artikel“ and carries a small badge (the store's first letter in a colour, a coloured line runs behind the name). Under it, small category dividers follow that store's own walking order (the order a person walks through that store), and the items in each category follow the household's item order. Items are moved by holding and dragging: onto a row, a category divider or a store divider. Stores and categories can be dragged or moved with a menu, folded stores stay folded, and the household remembers which store each item was put in. Stores show no logos; users cannot add, rename or delete stores yet.
+
+## Sub-features
+
+- `sw-sections` one divider per store that has at least one open item, in store order, then „Ohne Laden“ / "No store" last while it has items. An empty store shows no divider and no „0 Artikel“. The divider's accessible name is „<Store>, N Artikel“ / "<Store>, N items" (1: „1 Artikel“ / "1 item").
+- `sw-category-dividers` inside a section, category dividers in that store's walking order; „Ohne Laden“ uses the household's route order (Mehr → „Kategorien verwalten“). The divider text is the category name without its leading emoji ("👶 Drogerie" reads „Drogerie“); the dividers are headings (level 2). An item still being classified sits under „Wird einsortiert …“ / "Sorting …" at the top of the section.
+- `sw-rows` a row shows an emoji for the item, the quantity first, then the name ("2 l Milch"), and brand · properties below. No checkbox. Accessible name: name, then brand · properties, then quantity, then „Neu“ for a partner's fresh item.
+- `sw-default-order` default walking orders for the three default stores. Lidl: Brot & Backwaren, Obst & Gemüse, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges. Edeka: Obst & Gemüse, Brot & Backwaren, Fleisch/Wurst/Fisch, Kühlregal, Vorrat & Konserven, Süßes & Snacks, Tiefkühl, Getränke, Haushalt, 👶 Drogerie, Sonstiges. dm: 👶 Drogerie, Vorrat & Konserven, Süßes & Snacks, Haushalt, Getränke, Sonstiges, then (hidden flag, still shown on the list when an item is there) Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl.
+- `sw-where-stores-come-from` a new household chooses at creation: „Deutsche Standard-Läden hinzufügen“ / "Add default German stores" (dm, Lidl, Edeka with the layouts above) or „Überspringen“ / "Skip" (no stores at all: the list has only „Ohne Laden“). There is no screen to add, rename or delete a store on this version.
+- `sw-drag-row` a row dropped before/after another row takes that place (by the half of the row the pointer is in); dropped on a row of another category or store it takes that category and store.
+- `sw-drag-category` a row dropped on a category divider goes to the end of that category in that store and changes the item's category; the household learns it (see classifier).
+- `sw-drag-store` a row dropped on a store divider, folded or not, goes to that store, keeps its category, and goes to the end of it. While an item is being dragged, every store (also empty ones, and „Ohne Laden“) shows as a folded drop target; after the drop an empty store hides again.
+- `sw-store-order` reorder stores by dragging a store divider, or with the menu entries „Laden nach oben“ / "Move store up" and „Laden nach unten“ / "Move store down" (the first store has no up, the last no down).
+- `sw-category-order` reorder a store's categories by dragging a category divider, or with „Kategorie nach oben“ / "Move category up" and „Kategorie nach unten“ / "Move category down". In „Ohne Laden“ this reorders the household's route.
+- `sw-menu` a hold without moving, or a right click, on a divider opens its menu (a bottom sheet). Store divider: title = store name; „Laden nach oben“ and „Laden nach unten“ when there is room; „Reihenfolge bearbeiten“ / "Edit order". „Ohne Laden“ divider: title „Ohne Laden“, only „Kategorien verwalten“ / "Manage categories". Category divider: title = category name; „Kategorie nach oben“, „Kategorie nach unten“ when there is room; then „Reihenfolge bearbeiten“ in a store, or „Kategorien verwalten“ under „Ohne Laden“.
+- `sw-layout-screen` „Reihenfolge bearbeiten“ opens „<Store>: Reihenfolge“ / "<Store>: order" with the hint „Ordne die Kategorien so, wie du durch den Laden gehst.“ / "Order the categories the way you walk through the store."; every category has a drag handle „<Kategorie> verschieben“ / "Move <category>"; each change saves at once and shows on the list.
+- `sw-more-stores` Mehr → „Läden“ / "Stores": hint „Halten und ziehen ändert die Reihenfolge der Läden in der Liste. Ein Laden öffnet seinen Laufweg.“ (EN: "Drag to change the order of the stores in the list. Tap a store to edit its walking route."). One row per store with its badge, name, „Reihenfolge bearbeiten“ and a handle „<Store> verschieben“ / "Move <store>". A tap on a row opens „<Store>: Reihenfolge“; a drag on the handle reorders the stores. The row on Mehr reads „Läden“ with „Reihenfolge und Laufweg“ / "Order and walking route". That is everything the screen does.
+- `sw-fold` a tap on a store divider (including „Ohne Laden“) folds or unfolds its section; folds are remembered on the device and survive a restart. A screen reader hears the hint „Zuklappen“ / "Collapse" (open) or „Aufklappen“ / "Expand" (folded).
+- `sw-explainer` a card above the list: „Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt“ / "Tap ticks off · Swipe left edits · Hold and drag moves", with the button „Verstanden“ / "Got it". Dismissed for good on that device.
+- `sw-store-memory` the household remembers an item's store: when an item is dragged to a store, set in the edit sheet or add sheet chip, or ticked while it has a store, a later add of the same item (also from MCP/Siri/Alexa) lands in that store. Choosing „Ohne Laden“ for an item clears the memory. Ticking an item without a store remembers nothing. The add sheet also guesses dm for drugstore items and a brand's own store.
+- `sw-columns` on wide screens (width at least 840 px: two columns, 1200 px: three) the sections flow into columns of whole sections.
+- `sw-live` a partner's drags, adds and order changes show on the other client without a reload.
+
+## How to get to it (user POV)
+
+- Open the app on the „Liste“ tab: each store is a section with its own divider.
+- Tap the divider to fold; hold it without moving, or right click it, for its menu; hold and drag to move it.
+- Hold a category divider for its menu or drag it within its store.
+- Hold an item and drag it onto a store divider, a category divider or another row.
+- Tap „Mehr“ in the tab bar, then „Läden“.
+- Tap „Verstanden“ on the card above the list.
+
+## Driving it with Playwright
+
+Preconditions:
+
+- Seeded household „Familie Brandt“ signed in on the list tab with the default stores dm, Lidl, Edeka (the seed's items may already sit in stores; list state from `sectionHeadings`/`outline` in `e2e/tests/catalog.ts`). Or sign up fresh with `signUpWithHousehold(page, newEmail('x'))` (default stores on).
+- Items to sort come from `addItem`/`enterItem` (add sheet) or direct API inserts as `seed` in `e2e/tests/list-walk-order.spec.ts`.
+
+- **Read the sections.** `storeDivider(page, 'Lidl')` = button named `^Lidl, \d+ Artikel`. `outline(page)` from `e2e/tests/catalog.ts` returns each section's store, headings and items. Observable: store order, headings per section (`page.getByRole('heading', { level: 2 })`).
+- **Drag an item to a store.** `dragItemToStore(page, 'Brot', 'Lidl')` (hold 600 ms, move, drop on the divider). Observable: `storeOf(page, 'Brot')` becomes `Lidl`, divider count changes to „Lidl, N Artikel“.
+- **Drag before/after a row, onto a category.** `holdAndDrop(page, itemRow(page, 'Gurke'), itemRow(page, 'Äpfel'), …)` as `dragOnto` in `list-walk-order.spec.ts`; read the result with `sectionItems(page, 'Lidl')`.
+- **Menu.** `storeDivider(page, 'dm').click({ button: 'right' })`, then `page.getByRole('button', { name: 'Laden nach unten' })`, `'Laden nach oben'` or `'Reihenfolge bearbeiten'`. Observable: `stores(page)` order changes; the sheet closes.
+- **Open the layout screen.** `openStoreLayout(page, 'Edeka')` (right click, then „Reihenfolge bearbeiten“): `page.getByText('Edeka: Reihenfolge')` visible. Reorder with `dragHandle(page, 'Kühlregal verschieben', 'Obst & Gemüse verschieben')`, then `page.getByRole('button', { name: 'Zurück' }).click()`: `sectionHeadings(page, 'Edeka')` shows the new order and survives `page.reload()`.
+- **Stores screen.** `openMore(page, 'Läden')`; rows are named by the store; handles by „<Store> verschieben“. A tap on a store name opens „<Store>: Reihenfolge“.
+- **Fold.** `storeDivider(page, 'dm').click()`; the items of dm disappear; after `page.reload()` they are still hidden. Click again to unfold.
+- **Explainer.** On a fresh account the card text is visible; `page.getByRole('button', { name: 'Verstanden' }).click()` removes it for good.
+- **Store memory.** Drag Hack to Edeka, `tick(page, 'Hack')`, `addItem(page, 'Hack')`: it lands under Edeka.
+- **Specs.** `e2e/tests/stores.spec.ts` (ordering per store, layout screen, memory, live sync), `e2e/tests/list-walk-order.spec.ts` (dividers, folds, explainer, drag and drop, reorder by drag, wide columns), `e2e/tests/list-header.spec.ts`. Run with `scripts/verify.sh --only e2e -- tests/stores.spec.ts`.
+
+## Gotchas
+
+- Drags need a real hold: press, wait about 600 ms, move past the slop (finger 18 px, mouse 8 px), then drop. A hold that stays put opens the edit sheet (rows) or the menu (dividers) instead. Use `holdAndDrop`.
+- Lifting a store divider folds every store, and lifting a category divider folds its siblings, so a target below the source can move before the drop.
+- An empty store shows as a drop target only after the dragged item has moved; look for the divider then (`dragItemToStore` does).
+- `getByText` for a store name can also hit the edit sheet's store options behind or in a sheet; use `storeDivider`.
+- The store names dm, Lidl, Edeka are the default stores only; test accounts created with „Überspringen“ have none. Stores cannot be added on this version: the skip hint says "You can add them later under More", but Mehr → „Läden“ has no add function (the copy is ahead of the app).
+- The store badge is a small square with a letter (dm: red „dm“ on white, Edeka: yellow E on blue, Lidl: yellow L on blue, REWE/Aldi likewise; other names get a colour by name). It is not a logo, and it is decorative: the accessible name is just the text. Legal review N-23 asks for no chain colours (job 58 replaces the badge with a neutral name pill), so copy and clips must not mention or feature the coloured badges; film with households whose items have no store, or crop the badge out.
+- A drop on a category divider changes the item's category and teaches the household (`category_memory`). Do not use the baseline household for such tests if its learned categories matter.
+- Hidden flags for dm's food categories are stored but change nothing on the list: an item in Obst & Gemüse tagged to dm still shows. unverified (no UI to set hidden; read from code only).
+- Fold state and the dismissed explainer are per device (browser storage); a fresh browser context shows the card again.
+- The e2e build turns on some flags (see the app config); store behaviour is the same in both builds.
+- A hold on „Ohne Laden“ does not drag it; it opens the menu with only „Kategorien verwalten“.

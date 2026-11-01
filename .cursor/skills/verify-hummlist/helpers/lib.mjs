@@ -1,0 +1,201 @@
+// Shared by the verify-hummlist journeys and the hummlist-howto-clips scripts: the running
+// instance (launch.sh's instance.json), its seeded members, UI labels from the ARB files, a
+// browser on the web build signed in through the real login screen, and a second view of the data.
+import { createRequire } from 'node:module';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
+import { execFileSync } from 'node:child_process';
+
+export const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
+const fromE2e = createRequire(resolve(repo, 'e2e/package.json'));
+export const { chromium } = fromE2e('@playwright/test');
+const { createClient } = fromE2e('@supabase/supabase-js');
+
+/** launch.sh's record of the instance: URLs, run id, credentials file, evidence dir. */
+export function instance() {
+  const prefix = /^port = ([56]\d\d)21$/m.exec(readFileSync(join(repo, 'supabase/config.toml'), 'utf8'))?.[1];
+  const stateDir = process.env.VH_STATE_DIR ?? join(homedir(), '.cache/verify-hummlist', prefix ?? '543');
+  const file = join(stateDir, 'instance.json');
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    throw new Error(`no instance at ${file}: run .cursor/skills/verify-hummlist/helpers/launch.sh first`);
+  }
+}
+
+/** A seeded member ({ handle, email, password, name, locale }) of the instance's run; the first by default. */
+export function member(inst, handle) {
+  const run = JSON.parse(readFileSync(inst.credentials, 'utf8'));
+  const users = Object.values(run.users);
+  const user = handle ? run.users[handle] : users[0];
+  if (!user) throw new Error(`run ${inst.run} has no member ${handle}; it has ${Object.keys(run.users).join(', ')}`);
+  return { ...user, householdId: run.households[user.household]?.id };
+}
+
+/** The app's UI strings for a language, by ARB key ('de' or 'en'). */
+export function labels(lang) {
+  const arb = JSON.parse(readFileSync(join(repo, `app/l10n/app_${lang}.arb`), 'utf8'));
+  return (key, params = {}) => {
+    const value = arb[key];
+    if (typeof value !== 'string') throw new Error(`app_${lang}.arb has no ${key}`);
+    return value.replace(/\{(\w+)\}/g, (_, p) => params[p] ?? `{${p}}`);
+  };
+}
+
+/** The add field, found like a user finds it: by its hint. */
+export const addField = (page, L) => page.getByRole('textbox', { name: L('addFieldHint') });
+
+/** The add sheet (a group named like the add button). */
+export const addSheet = (page, L) => page.getByRole('group', { name: L('addButton'), exact: true });
+
+/** A list row by item name: its accessible name is the name, then the quantity. */
+export const itemRow = (page, name) => page.getByRole('button', { name: new RegExp(`^${escape(name)}( |$)`) });
+
+const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Resolves once Flutter has drawn the frame it had scheduled. */
+export const nextFrames = (page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+
+/**
+ * Focus first, then insert: Flutter swaps in its own editor on focus, and synthetic key events
+ * drop umlauts (e2e/tests/helpers.ts typeInto). With `perKey` it types visibly, a key at a time.
+ */
+export async function typeInto(field, text, { perKey = 0 } = {}) {
+  const page = field.page();
+  for (let attempt = 0; ; attempt++) {
+    await field.click();
+    const focused = await field.evaluate((el) => el === document.activeElement || el.contains(document.activeElement)).catch(() => false);
+    if (focused) {
+      await nextFrames(page);
+      await page.keyboard.press('ControlOrMeta+a');
+      if (perKey) {
+        await page.keyboard.press('Backspace');
+        for (const ch of text) {
+          await page.keyboard.insertText(ch);
+          await page.waitForTimeout(perKey);
+        }
+      } else {
+        await page.keyboard.insertText(text);
+      }
+      await nextFrames(page);
+      if ((await field.inputValue().catch(() => '')) === text) return;
+    }
+    if (attempt === 20) throw new Error(`could not type "${text}"`);
+    await page.waitForTimeout(250);
+  }
+}
+
+/**
+ * A fresh browser context on the web build. lang 'de' or 'en' sets the browser locale, which the
+ * app follows while its language is "System". Video goes to `videoDir` when given.
+ */
+export async function openApp(inst, { lang = 'de', viewport = { width: 390, height: 844 }, dpr = 2, dark = false, videoDir, headless = true } = {}) {
+  const browser = await chromium.launch({ headless });
+  const context = await browser.newContext({
+    baseURL: inst.webUrl,
+    viewport,
+    deviceScaleFactor: dpr,
+    locale: lang === 'en' ? 'en-US' : 'de-DE',
+    timezoneId: 'Europe/Berlin',
+    colorScheme: dark ? 'dark' : 'light',
+    ...(videoDir && { recordVideo: { dir: videoDir, size: viewport } }),
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  return { browser, context, page, L: labels(lang), errors };
+}
+
+/**
+ * Signs a member in on the login screen with email and password, declines the analytics question
+ * a new install asks, dismisses the explainer card, and waits for the focused add field.
+ */
+export async function signIn(page, L, user) {
+  await page.goto('/');
+  await typeInto(page.getByRole('textbox', { name: L('email') }), user.email);
+  await typeInto(page.getByRole('textbox', { name: L('password') }), user.password);
+  await page.keyboard.press('Enter');
+  const decline = page.getByRole('button', { name: L('analyticsDecline'), exact: true });
+  const landed = await Promise.race([
+    addField(page, L).waitFor({ timeout: 30_000 }).then(() => 'list'),
+    page.waitForURL(/\/analytics-consent(\?|$)/, { timeout: 30_000 }).then(() => 'consent'),
+  ]);
+  if (landed === 'consent') {
+    await page.mouse.move(page.viewportSize().width / 2, page.viewportSize().height / 2);
+    for (let i = 0; i < 10 && !(await decline.isVisible()); i++) {
+      await page.mouse.wheel(0, 400);
+      await page.waitForTimeout(200);
+    }
+    await decline.click();
+    await addField(page, L).waitFor({ timeout: 30_000 });
+  }
+  const hint = page.getByRole('button', { name: L('listHintDismiss'), exact: true });
+  if (await hint.waitFor({ timeout: 3_000 }).then(() => true, () => false)) await hint.click();
+}
+
+/** A supabase-js client signed in as the member: the read-only second view of what the UI did. */
+export async function apiAs(inst, user) {
+  const client = createClient(inst.apiUrl, inst.publishableKey, { auth: { persistSession: false } });
+  const { error } = await client.auth.signInWithPassword({ email: user.email, password: user.password });
+  if (error) throw error;
+  return client;
+}
+
+/** Writes a screenshot and an ARIA snapshot of the page under dir as <name>.png / .aria.txt. */
+export async function capture(page, dir, name) {
+  mkdirSync(dir, { recursive: true });
+  await nextFrames(page);
+  await page.screenshot({ path: join(dir, `${name}.png`) });
+  writeFileSync(join(dir, `${name}.aria.txt`), await page.locator('body').ariaSnapshot());
+  return join(dir, `${name}.png`);
+}
+
+/** Records one line of a journey's log (stdout and <dir>/journey.log). */
+export function logger(dir) {
+  mkdirSync(dir, { recursive: true });
+  const file = join(dir, 'journey.log');
+  writeFileSync(file, '');
+  return (line) => {
+    const stamped = `[${new Date().toISOString().slice(11, 23)}Z] ${line}`;
+    console.log(stamped);
+    writeFileSync(file, `${stamped}\n`, { flag: 'a' });
+  };
+}
+
+export const commit = () => execFileSync('git', ['-C', repo, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
+
+/** The accessible name in one line of an ARIA snapshot (`- button "Joghurt, Aus dem Katalog"`). */
+export const accessibleName = (snapshotLine) => /"(.*)"/.exec(snapshotLine.split('\n')[0])?.[1] ?? snapshotLine.trim();
+
+/** The text of the nearest level-2 heading (a category or store divider) above a row. */
+export async function headingAbove(page, row) {
+  const y = (await row.boundingBox()).y;
+  let best = null;
+  for (const heading of await page.getByRole('heading', { level: 2 }).all()) {
+    const box = await heading.boundingBox();
+    if (box && box.y < y && (!best || box.y > best.y)) best = { y: box.y, text: (await heading.textContent()).trim() };
+  }
+  return best?.text ?? null;
+}
+
+/** A tab of the shell by its ARB key ('tabList' or 'tabMore'): a tab on phones, a rail button from 840 px. */
+export async function openTab(page, L, key) {
+  await page.getByRole('tab', { name: L(key), exact: true }).or(page.getByRole('button', { name: `${L(key)} Tab ` })).click();
+}
+
+/**
+ * Scrolls the list with the mouse wheel until [target] is on screen. The list builds rows lazily,
+ * so a row far below is not in the page until the list scrolls near it (e2e helpers' reveal).
+ */
+export async function reveal(page, target) {
+  const { width, height } = page.viewportSize();
+  await page.mouse.move(width / 2, height / 3);
+  for (let i = 0; i < 40; i++) {
+    if (await target.isVisible().catch(() => false)) return;
+    await page.mouse.wheel(0, i < 20 ? 300 : -300);
+    await page.waitForTimeout(150);
+  }
+  throw new Error(`could not scroll ${target} into view`);
+}

@@ -6,7 +6,7 @@ themselves into store-route categories, ticking one off removes it on every
 phone at once, and an undo is one tap away.
 
 Flutter (iOS, Android, web) on Supabase. See [`docs/SPEC.md`](docs/SPEC.md)
-for the full product spec.
+for the full product spec, [`docs/FEATURE_MAP.md`](docs/FEATURE_MAP.md) for what the app does today.
 
 ## Quick start
 

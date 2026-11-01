@@ -6,6 +6,8 @@
 
 ## How verified
 
+- [ ] User-facing behaviour changed? The feature file in `.cursor/skills/verify-hummlist/features/` and its section in `FEATURES-FOR-WRITERS.md` (last verified: commit and date) are updated in this PR (`docs/FEATURE_MAP.md`).
+
 <!-- Commands and results, the green CI run, screenshots where the UI changed. -->
 
 ## Changelog
