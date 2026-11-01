@@ -125,7 +125,6 @@ class const _PremiumView() extends StatelessWidget {
                       expiresAt!.toLocal(),
                     ),
                     PremiumSource.lifetime => l10n.premiumStatusLifetime,
-                    PremiumSource.testerGrant => l10n.premiumStatusTester,
                     PremiumSource.promotional when expiresAt != null =>
                       l10n.premiumStatusGrantedUntil(expiresAt.toLocal()),
                     PremiumSource.promotional => l10n.premiumStatusGranted,

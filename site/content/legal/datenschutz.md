@@ -112,7 +112,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherheit, Art. 32 DSGVO).
 Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach unseren Weisungen verarbeiten (Art. 28 DSGVO):
 
 - Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU; die Server-Funktion für Käufe läuft immer in Frankfurt am Main)
-- RevenueCat, Inc., Brandon (Florida), USA (Käufe in der App: Prüfung und Verwaltung der Freischaltung; Server bei Amazon Web Services in den USA)
+- RevenueCat, Inc., Brandon (Florida), USA (Käufe in der App und kostenlose Freischaltungen für Tester und App-Prüfung: Prüfung und Verwaltung der Freischaltung; Server bei Amazon Web Services in den USA)
 - Vercel Inc. (Hosting von hummlist.com, app.hummlist.com, mcp.hummlist.com; Domain und DNS)
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
@@ -134,7 +134,7 @@ Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 
 ## 14. Speicherdauer
 
-Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa), deine Entscheidungen zu Nutzungsdaten und einen Eintrag in der Testerliste sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, kannst du ihn archivieren; wir löschen ihn, wenn er nicht innerhalb von 24 Monaten wieder aktiviert wird. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
+Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, kannst du ihn archivieren; wir löschen ihn, wenn er nicht innerhalb von 24 Monaten wieder aktiviert wird. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
 
 ## 15. Deine Rechte {#rechte}
 

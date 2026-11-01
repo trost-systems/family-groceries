@@ -6,8 +6,9 @@
 /// - a debug or profile build ([releaseBuild] false);
 /// - an install flagged internal under More (long press on the version);
 /// - a household listed in the `ANALYTICS_INTERNAL_HOUSEHOLDS` define;
-/// - a household unlocked by a tester's grant ([testerHousehold], job 43:
-///   testers get Hummlist Lifetime free, their households never count);
+/// - a household with a RevenueCat promotional grant ([testerHousehold]:
+///   testers', App and Play Review's free premium; their households never
+///   count, as the server's `household_internal` says);
 /// - a user whose e-mail domain is a test domain: the reserved top-level
 ///   domains `.test`, `.invalid`, `.example`, `.localhost` (the fixtures'
 ///   `fg.test`, `fg-test.invalid`, the e2e `example.test`) and the

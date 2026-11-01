@@ -493,7 +493,9 @@ Plain facts from the code; what the law requires is Legal Review's call.
   rows keep pointing to them as before (e.g. `items.added_by`); their own account deletion nulls
   those links. There is no time limit: an archived household stays until re-enabled or account
   deletion. A limit (e.g. after N months, with notice) would be a product and legal decision.
-- **H-51, testers.** `public.lifetime_testers`: user id (cascade-deleted with the account),
+- **H-51, testers.** (Superseded by 20261101150000_testers_via_revenuecat.sql: testers get a
+  RevenueCat promotional grant for their household, docs/PURCHASES.md "Testers"; the list below
+  is removed.) `public.lifetime_testers`: user id (cascade-deleted with the account),
   grants, used, a note (Lead's free text, no names or e-mail), added_at. Service connection only;
   the Lead's script resolves an e-mail to the id at run time and stores no e-mail. A used grant
   is an `entitlements` row (`source` tester, `tester` the user id, nulled when the account is

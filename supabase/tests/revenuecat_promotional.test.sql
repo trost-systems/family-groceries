@@ -137,12 +137,12 @@ select throws_ok(
   '23514', null, 'a grant has no store');
 select throws_ok(
   $$ insert into public.entitlements (household_id, kind, source, premium_source, expires_at)
-     select id, 'premium', 'tester', 'promotional', null from hs $$,
+     select id, 'premium', 'purchase', 'promotional', null from hs $$,
   '23514', null, 'source and premium_source agree');
 select throws_ok(
   $$ insert into public.entitlements (household_id, kind, source, premium_source, expires_at)
-     select id, 'premium', 'tester', 'tester_grant', now() + interval '1 day' from hs $$,
-  '23514', null, 'a tester grant still has no end');
+     select id, 'premium', 'promotional', 'lifetime', null from hs $$,
+  '23514', null, 'a grant is never Lifetime');
 select is(public.promotional_premium_sync(gen_random_uuid(), true, null), 'no_household',
   'an App User ID that is no household stores nothing');
 

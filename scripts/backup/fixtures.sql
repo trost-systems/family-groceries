@@ -114,7 +114,7 @@ reset role;
 
 -- Job 25 (job 43: through RevenueCat): Peter bought Hummlist Lifetime (sandbox) for the household;
 -- the purchases function writes through the service connection only. His claim came first; a
--- second claim waits for its webhook (purchase_claims). Carl is a tester; one webhook event id is
+-- second claim waits for its webhook (purchase_claims). Carl's household has a RevenueCat promotional grant (a tester's); one webhook event id is
 -- remembered; one purged purchase left its tombstone; one deleted household waits for RevenueCat.
 select public.purchase_claim((select id from auth.users where email = 'peter@backup.test'),
   (select id from fx where key = 'home'), 'apple', '2000000999000001');
@@ -123,8 +123,7 @@ select public.purchase_claim((select id from auth.users where email = 'peter@bac
 select public.purchase_record('apple', '2000000999000001', '2000000999000001', repeat('b', 64),
   'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from fx where key = 'home'));
 select public.purchase_take_call((select id from auth.users where email = 'peter@backup.test'));
-insert into public.lifetime_testers (user_id, grants, note)
-select id, 1, 'backup drill' from auth.users where email = 'carl@backup.test';
+select public.promotional_premium_sync((select id from fx where key = 'other'), true, '2100-01-01T00:00:00Z');
 insert into public.revenuecat_events (id, type) values ('backup-drill-event', 'NON_RENEWING_PURCHASE');
 insert into public.purchase_tombstones (transaction_hmac) values (repeat('c', 64));
 insert into public.revenuecat_deletions (app_user_id, due_at) values (gen_random_uuid(), now() + interval '30 days');

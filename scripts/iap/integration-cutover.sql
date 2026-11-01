@@ -1,6 +1,6 @@
 -- Job 50: which households the integration lock would lock when app_switches.integration_lock
 -- goes on (docs/NEEDS_LEAD.md "Job 50"). Read-only: one SELECT, nothing written. It uses the
--- server's own rule (household_has_premium, job 49), so a tester grant or an active plan counts
+-- server's own rule (household_has_premium, job 49), so a promotional grant (testers) or an active plan counts
 -- exactly as the endpoints count it.
 --
 -- Run it in the Supabase SQL editor (or psql as postgres) of the project you want to know about:

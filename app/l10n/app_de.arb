@@ -528,8 +528,6 @@
   "@premiumStatusEnds": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}, "description": "PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan with auto-renew off"},
   "premiumStatusLifetime": "Hummlist Premium Lifetime",
   "@premiumStatusLifetime": {"description": "PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has Lifetime"},
-  "premiumStatusTester": "Hummlist Premium über Tester-Freischaltung",
-  "@premiumStatusTester": {"description": "PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: a tester's grant unlocks the household"},
   "premiumStatusGranted": "Hummlist Premium geschenkt",
   "@premiumStatusGranted": {"description": "PLACEHOLDER (RevenueCat promotional, Nov 1): Hummlist Launch / Legal Review K.13 write the final copy. Premium page: a free grant without end (RevenueCat promotional) unlocks the household"},
   "premiumStatusGrantedUntil": "Hummlist Premium geschenkt bis {date}",

@@ -1,9 +1,10 @@
 -- Job 43: Hummlist Lifetime is household-bound (migration 20261031123504_household_bound_lifetime.sql).
 -- Anna and Ben share a household, Cleo has her own, Dana (a tester) has hers. A purchase stays
--- with its household for good, a tester's unlock goes with the tester, the join preview says
--- what a household has and what joining ends.
+-- with its household for good, so does a RevenueCat promotional grant (testers since
+-- 20261101150000_testers_via_revenuecat.sql), the join preview says what a household has and what
+-- joining ends.
 begin;
-select plan(96);
+select plan(94);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -65,16 +66,17 @@ select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
 create temp table hd as select id from public.create_household('Dana');
 grant select on hd to authenticated;
 
--- The tester list is the service connection's -------------------------------------------------
+-- Free grants are the service connection's ------------------------------------------------------
 
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
-select throws_ok($$ select * from public.lifetime_testers $$, '42501', null, 'clients cannot read the tester list');
-select throws_ok($$ insert into public.lifetime_testers (user_id) values (auth.uid()) $$, '42501', null,
-  'clients cannot put themselves on it');
-select throws_ok($$ select public.tester_grant_apply(auth.uid(), (select id from hd)) $$, '42501', null,
-  'clients cannot use a grant themselves');
+select throws_ok($$ select public.promotional_premium_sync((select id from hd), true, null) $$, '42501', null,
+  'clients cannot grant their household premium');
+select throws_ok($$ select public.household_internal((select id from hd)) $$, '42501', null,
+  'clients cannot read the internal mark');
+select hasnt_table('public', 'lifetime_testers', 'the custom tester list is gone');
 set local role anon;
-select throws_ok($$ select * from public.lifetime_testers $$, '42501', null, 'anon cannot read it either');
+select throws_ok($$ select public.promotional_premium_sync('00000000-0000-0000-0000-000000000000', true, null) $$,
+  '42501', null, 'anon cannot grant either');
 select pg_temp.login('00000000-0000-0000-0000-0000000043a1');
 select throws_ok(
   $$ select public.purchase_record('apple', 'x', 'x', repeat('a', 64), 'com.hummlist.app.lifetime', 'premium', 'lifetime',
@@ -83,8 +85,8 @@ select throws_ok(
 select throws_ok($$ select public.purchase_claim(auth.uid(), (select id from ha), 'apple', 'x') $$,
   '42501', null, 'clients cannot claim directly (only through the function)');
 select throws_ok(
-  $$ insert into public.entitlements (household_id, source, tester) select id, 'tester', auth.uid() from ha $$,
-  '42501', null, 'clients cannot write a tester unlock');
+  $$ insert into public.entitlements (household_id, source, premium_source) select id, 'promotional', 'promotional' from ha $$,
+  '42501', null, 'clients cannot write a promotional unlock');
 
 -- Join preview before anything is unlocked ---------------------------------------------------
 
@@ -173,7 +175,7 @@ select is(public.preview_invite((select code from inv_d)) ->> 'recent_purchase',
 select is(public.preview_invite((select code from inv_d)) ->> 'leaves_unlocked', 'false',
   'Cleo is not the last member of her unlocked household');
 
--- Testers ------------------------------------------------------------------------------------
+-- Testers: a RevenueCat promotional grant for the household ----------------------------------
 
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
 create temp table inv_d2 as select code from public.create_invite((select id from hd));
@@ -181,28 +183,28 @@ select pg_temp.login('00000000-0000-0000-0000-0000000043e1');
 select is(public.accept_invite((select code from inv_d2)) ->> 'status', 'joined', 'Eva joins Dana');
 
 select pg_temp.as_postgres();
-insert into public.lifetime_testers (user_id, note) values ('00000000-0000-0000-0000-0000000043d1', 'pgTAP');
-select is(pg_temp.unlocks((select id from hd)), 'tester', 'putting Dana on the list uses her one grant on her household');
+select is(public.promotional_premium_sync((select id from hd), true, null), 'granted',
+  'RevenueCat''s grant for Dana''s household is stored');
 select pg_temp.login('00000000-0000-0000-0000-0000000043e1');
 select results_eq($$ select kind, source, purchase_id from public.entitlements $$,
-  $$ values ('premium', 'tester', null::uuid) $$, 'Eva reads it like a purchase''s, with its source');
-select throws_ok($$ select tester from public.entitlements $$, '42501', null, 'but not whose grant it is');
+  $$ values ('premium', 'promotional', null::uuid) $$, 'Eva reads it like a purchase''s, with its source');
+select hasnt_column('public', 'entitlements', 'tester', 'no row says which person it was for');
 select throws_ok($$ select granted_by from public.entitlements $$, '42501', null, 'nor who gave it');
 select throws_ok($$ select * from public.entitlements $$, '42501', null, 'so no select *');
 select pg_temp.login('00000000-0000-0000-0000-0000000043c1');
 select is(public.preview_invite((select code from inv_d)) ->> 'unlocked', 'true',
   'Cleo previews Dana''s household as unlocked');
-select is_empty($$ select household_id from public.entitlements where source = 'tester' $$,
+select is_empty($$ select household_id from public.entitlements where source = 'promotional' $$,
   'and cannot read its unlock (not her household)');
 
 select pg_temp.as_postgres();
 select is(pg_temp.grant_('4300000000000004', '00000000-0000-0000-0000-0000000043d1', (select id from hd)),
   '{"outcome": "granted", "already_unlocked": true, "household_gone": false, "internal": true}'::jsonb,
-  'a tester''s purchase is internal, and her household was unlocked already');
+  'a purchase in a household with a promotional grant is internal, and it was unlocked already');
 select is((public.purchase_revoke('apple', '4300000000000004', now(), 'com.hummlist.app.lifetime', 'lifetime', 'Sandbox', null)) ->> 'internal',
   'true', 'so is its refund');
 
--- Dana moves to Cleo's household: her grant stays with Eva, like a purchase.
+-- Dana moves to Cleo's household: the grant stays with Eva, like a purchase.
 select pg_temp.login('00000000-0000-0000-0000-0000000043c1');
 create temp table inv_c3 as select code from public.create_invite((select id from hc));
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
@@ -211,26 +213,23 @@ select is(public.preview_invite((select code from inv_c3)) - 'name',
   'Eva stays: no warning; Dana''s refunded purchase is not recent');
 select is(public.accept_invite((select code from inv_c3)) ->> 'status', 'joined', 'Dana joins Cleo');
 select pg_temp.as_postgres();
-select is(pg_temp.unlocks((select id from hd)), 'tester', 'the tester left; her grant stays with Eva''s household');
-select is(pg_temp.unlocks((select id from hc)), 'purchase', 'Cleo''s household was unlocked: no grant used there');
+select is(pg_temp.unlocks((select id from hd)), 'promotional', 'the tester left; the grant stays with Eva''s household');
+select is(pg_temp.unlocks((select id from hc)), 'purchase', 'Cleo''s household has no grant from it');
 select is(pg_temp.grant_('4300000000000005', '00000000-0000-0000-0000-0000000043e1', (select id from hd)) ->> 'internal',
-  'true', 'a purchase by anyone in a household a tester unlocked is internal');
+  'true', 'a purchase by anyone in a household with a promotional grant is internal');
 
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
 select public.leave_current_household();
 create temp table hd2 as select id from public.create_household('Dana neu');
 select pg_temp.as_postgres();
-select is(pg_temp.unlocks((select id from hd2)), '', 'her one grant is used: her new household stays locked');
-update public.lifetime_testers set grants = 2 where user_id = '00000000-0000-0000-0000-0000000043d1';
-select is(pg_temp.unlocks((select id from hd2)), 'tester', 'the Lead raises her count: the new household is unlocked');
-select is((select used from public.lifetime_testers where user_id = '00000000-0000-0000-0000-0000000043d1'), 2,
-  'both grants are counted as used; deleting a household later gives none back');
-update public.lifetime_testers set grants = 0 where user_id = '00000000-0000-0000-0000-0000000043d1';
-delete from public.lifetime_testers where user_id = '00000000-0000-0000-0000-0000000043d1';
-select is(pg_temp.unlocks((select id from hd)) || '/' || pg_temp.unlocks((select id from hd2)), 'purchase,tester/tester',
-  'used grants stay when the count is lowered or the tester is taken off the list');
-select is((select count(*)::int from public.entitlements where tester = '00000000-0000-0000-0000-0000000043d1'), 0,
-  'taking her off the list clears her mark on the households she unlocked (H-72)');
+select is(pg_temp.unlocks((select id from hd2)), '', 'RevenueCat grants households, not people: her new one is locked');
+select is(public.promotional_premium_sync((select id from hd2), true, now() + interval '30 days'), 'granted',
+  'the Lead grants it too');
+select is(public.household_internal((select id from hd2)), true, 'which makes it internal');
+select is(pg_temp.unlocks((select id from hd)) || '/' || pg_temp.unlocks((select id from hd2)), 'promotional,purchase/promotional',
+  'each household has its own grant');
+select is(public.promotional_premium_sync((select id from hd2), false, null), 'removed',
+  'revoking one at RevenueCat ends only that one');
 
 -- Archive ------------------------------------------------------------------------------------
 
@@ -339,13 +338,8 @@ select pg_temp.login('00000000-0000-0000-0000-0000000043f1');
 select is(
   (select jsonb_agg(h - 'archived_at' - 'id') from jsonb_array_elements(public.export_my_data() -> 'archived_households') h),
   '[{"name": "Frank"}]'::jsonb, 'Frank''s export lists his archived household');
-select pg_temp.as_postgres();
-insert into public.lifetime_testers (user_id, grants, note) values ('00000000-0000-0000-0000-0000000043d1', 3, 'pgTAP');
 select pg_temp.login('00000000-0000-0000-0000-0000000043d1');
-select is((public.export_my_data() -> 'lifetime_tester') - 'added_at' - 'used_in_households',
-  '{"note": "pgTAP", "grants": 3}'::jsonb, 'a tester''s export shows her grants');
-select is(public.export_my_data() -> 'lifetime_tester' -> 'used_in_households', '[]'::jsonb,
-  'added again, she has no marked households: removal cleared the marks (H-72)');
+select ok(not public.export_my_data() ? 'lifetime_tester', 'the export has no tester list any more');
 select is(
   (select jsonb_agg(p -> 'belongs_to_household') from jsonb_array_elements(public.export_my_data() -> 'purchases') p),
   jsonb_build_array((select id from hd)), 'and names the household her purchase belongs to');
@@ -359,9 +353,8 @@ select ok(not exists (select from public.households where id = (select id from h
 select is((select bound_household from public.purchases where transaction_id = '4300000000000006'), (select id from hf),
   'his purchase still names it, so it never unlocks another');
 select is(public.delete_account('00000000-0000-0000-0000-0000000043d1'), 'kept', 'Dana deletes her account');
-select is((select count(*)::int from public.lifetime_testers), 0, 'and leaves the tester list');
-select results_eq($$ select source, tester from public.entitlements where household_id = (select id from hd) and source = 'tester' $$,
-  $$ values ('tester', null::uuid) $$, 'Eva''s household keeps the unlock Dana gave it, without her');
+select results_eq($$ select source from public.entitlements where household_id = (select id from hd) and source = 'promotional' $$,
+  $$ values ('promotional') $$, 'Eva''s household keeps its grant, without her');
 
 select * from finish();
 rollback;

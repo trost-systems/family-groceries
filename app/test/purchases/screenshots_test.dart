@@ -140,12 +140,7 @@ final List<Scene> _scenes = [
     ),
   ),
   _scene('lifetime', rows: (_) => [_lifetimeRow]),
-  _scene(
-    'tester',
-    rows: (_) => [
-      {'kind': 'premium', 'source': 'tester', 'premium_source': 'tester_grant'},
-    ],
-  ),
+  _scene('granted', rows: (_) => [promotionalRow()]),
   _scene(
     'prices-unavailable',
     prices: () => FakeStorePrices(const PricesUnavailable()),

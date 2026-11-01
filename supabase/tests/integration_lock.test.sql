@@ -136,13 +136,13 @@ select is(public.purchase_record('apple', 'l50', 'l50', encode(extensions.hmac('
     'DE', (select id from hj)) ->> 'outcome', 'granted', 'Jo buys Lifetime');
 select is(pg_temp.gate((select id from hj), 'alexa'), 'open', 'Lifetime opens Alexa');
 
--- A tester's grant counts as premium (AC6): Tess's own new household works at the cut-over.
-insert into public.lifetime_testers (user_id, grants) values ('00000000-0000-0000-0000-0000000050d1', 1);
+-- A tester's grant counts as premium (AC6): Tess's own new household works at the cut-over. Since
+-- 20261101150000 a tester's grant is a RevenueCat promotional grant for the household.
 select pg_temp.login('00000000-0000-0000-0000-0000000050d1');
 create temp table ht as select id from public.create_household('Tess');
 select pg_temp.as_postgres();
-select is((select premium_source from public.entitlements where household_id = (select id from ht)), 'tester_grant',
-  'Tess''s household has a tester grant');
+select is(public.promotional_premium_sync((select id from ht), true, '2100-01-01T00:00:00Z'), 'granted',
+  'Tess''s household has a promotional grant');
 select is(pg_temp.gate((select id from ht), 'siri'), 'open', 'and uses Siri with the switch on');
 
 update public.app_switches set enabled = false where key = 'integration_lock';

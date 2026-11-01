@@ -132,30 +132,30 @@ void main() {
     );
   });
 
-  test("a tester's grant unlocks Lifetime and is marked", () async {
-    final rows = FakeEntitlementsSource()
-      ..rowsNow = [
-        {'kind': 'lifetime', 'source': 'tester'},
-      ];
-    final (entitlements, _) = await follow(rows);
-    expect(entitlements.has(Entitlement.premium), isTrue);
-    expect(
-      entitlements.state,
-      isA<EntitlementsKnown>().having(
-        (s) => s.unlocks.tester,
-        'tester',
-        isTrue,
-      ),
-    );
-  });
+  test(
+    "a promotional grant (a tester's) unlocks premium and is marked",
+    () async {
+      final rows = FakeEntitlementsSource()..rowsNow = [promotionalRow()];
+      final (entitlements, _) = await follow(rows);
+      expect(entitlements.has(Entitlement.premium), isTrue);
+      expect(
+        entitlements.state,
+        isA<EntitlementsKnown>().having(
+          (s) => s.unlocks.tester,
+          'tester',
+          isTrue,
+        ),
+      );
+    },
+  );
 
   test(
-    'two Lifetime purchases: bought twice; a tester grant does not count',
+    'two Lifetime purchases: bought twice; a promotional grant does not count',
     () async {
       final rows = FakeEntitlementsSource()
         ..rowsNow = [
           {'kind': 'lifetime', 'source': 'purchase'},
-          {'kind': 'lifetime', 'source': 'tester'},
+          promotionalRow(),
         ];
       final (entitlements, _) = await follow(rows);
       expect(entitlements.boughtLifetimeTwice, isFalse);
@@ -246,19 +246,10 @@ void main() {
             .having((p) => p.expiresAt, 'end', isNull),
       );
       expect(
-        premiumOf([
-          yearly,
-          {
-            'kind': 'premium',
-            'source': 'tester',
-            'premium_source': 'tester_grant',
-          },
-        ]),
-        isA<ActivePremium>().having(
-          (p) => p.source,
-          'source',
-          PremiumSource.testerGrant,
-        ),
+        premiumOf([yearly, promotionalRow()]),
+        isA<ActivePremium>()
+            .having((p) => p.source, 'source', PremiumSource.promotional)
+            .having((p) => p.expiresAt, 'end', isNull),
       );
     });
 
@@ -417,16 +408,7 @@ void main() {
         isEmpty,
       );
       expect(
-        offered(
-          await known([
-            {
-              'kind': 'premium',
-              'source': 'tester',
-              'premium_source': 'tester_grant',
-            },
-            yearlyRow(from: now),
-          ]),
-        ),
+        offered(await known([promotionalRow(), yearlyRow(from: now)])),
         isEmpty,
       );
     });

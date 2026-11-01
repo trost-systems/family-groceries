@@ -27,16 +27,15 @@ enum Entitlement(final String wire) {
 enum PremiumSource(final String wire) {
   yearly('yearly'),
   lifetime('lifetime'),
-  testerGrant('tester_grant'),
 
-  /// A RevenueCat promotional grant (dashboard or API): it ends at its
-  /// `expires_at`, or never when that is null (docs/PURCHASES.md, "Free
-  /// premium: RevenueCat promotional grants").
+  /// A RevenueCat promotional grant (dashboard or API; testers' too): it ends
+  /// at its `expires_at`, or never when that is null (docs/PURCHASES.md,
+  /// "Free premium: RevenueCat promotional grants").
   promotional('promotional');
 
-  /// A lifetime or tester grant never ends and wins over a yearly plan. A
-  /// promotional grant without end does too ([PremiumRow.endless]).
-  bool get lasting => this == lifetime || this == testerGrant;
+  /// Lifetime never ends and wins over a yearly plan. A promotional grant
+  /// without end does too ([PremiumRow.endless]).
+  bool get lasting => this == lifetime;
 
   static PremiumSource? parse(Object? wire) =>
       values.where((v) => v.wire == wire).firstOrNull;
@@ -54,7 +53,7 @@ class const PremiumRow({
   /// Yearly only: the plan renews at [expiresAt].
   final bool? autoRenew,
 }) {
-  /// Never ends: Lifetime, a tester grant, a promotional grant without end.
+  /// Never ends: Lifetime, a promotional grant without end.
   bool get endless =>
       source.lasting ||
       (source == PremiumSource.promotional && expiresAt == null);
@@ -95,17 +94,18 @@ final class const EntitlementsKnown({
 class const HouseholdUnlocks({
   final List<PremiumRow> rows = const [],
 
-  /// One of them is a tester's grant (job 43): the household's events are
-  /// internal.
+  /// One of them is a RevenueCat promotional grant (testers, App and Play
+  /// Review; 20261101150000_testers_via_revenuecat.sql): the household's
+  /// events are internal, as the server's `household_internal` says.
   final bool tester = false,
 
   /// How many store purchases of Lifetime it has; two or more and the
   /// household paid twice, which only Apple or Google can refund.
   final int lifetimePurchases = 0,
 }) {
-  /// Lifetime, a tester grant or a promotional grant without end first (in
-  /// that order); else the yearly plan or promotional grant that ends last,
-  /// with its end; else none. The server's `household_premium`, row by row.
+  /// Lifetime or a promotional grant without end first (in that order); else
+  /// the yearly plan or promotional grant that ends last, with its end; else
+  /// none. The server's `household_premium`, row by row.
   Premium premiumAt(DateTime now) {
     final endless = {
       for (final r in rows)
@@ -113,7 +113,6 @@ class const HouseholdUnlocks({
     };
     for (final source in const [
       PremiumSource.lifetime,
-      PremiumSource.testerGrant,
       PremiumSource.promotional,
     ]) {
       if (endless.contains(source)) {
@@ -228,7 +227,7 @@ class Entitlements(
   /// Whether to offer [plan] of [entitlement] for sale: only when the
   /// household is known not to have it. Without premium both plans; with an
   /// active yearly plan only Lifetime (the upgrade; never a second yearly
-  /// plan, H-84); with Lifetime, a tester grant or a promotional grant
+  /// plan, H-84); with Lifetime or a promotional grant (testers' too)
   /// nothing. While unknown (loading, offline) the answer is no, so no member
   /// pays twice. Every paywall entry point asks this, never [has].
   bool canOffer(Entitlement entitlement, PremiumPlan plan) => switch (premium) {
@@ -298,9 +297,9 @@ class Entitlements(
   }
 }
 
-/// The rows this build understands, whether one is a tester's, and how many
-/// are Lifetime purchases. A row without `premium_source` (a server before
-/// job 49) is a tester's grant or a Lifetime purchase.
+/// The rows this build understands, whether one is a promotional grant, and
+/// how many are Lifetime purchases. A row without `premium_source` (a server
+/// before job 49) is Lifetime.
 HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
   final premium = [
     for (final row in rows)
@@ -309,9 +308,7 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
   final parsed = [
     for (final row in premium)
       ?switch (PremiumSource.parse(row['premium_source']) ??
-          (row['source'] == 'tester'
-              ? PremiumSource.testerGrant
-              : PremiumSource.lifetime)) {
+          PremiumSource.lifetime) {
         PremiumSource.yearly => switch (DateTime.tryParse(
           '${row['expires_at']}',
         )) {
@@ -338,7 +335,7 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
   ];
   return HouseholdUnlocks(
     rows: parsed,
-    tester: rows.any((row) => row['source'] == 'tester'),
+    tester: rows.any((row) => row['source'] == 'promotional'),
     lifetimePurchases: premium
         .where(
           (row) =>

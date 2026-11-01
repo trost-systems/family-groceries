@@ -123,7 +123,7 @@ Deno.test("the app's own session (in-app dictation) never asks the gate", async 
   assertEquals(w.asked, []);
 });
 
-Deno.test('open (lock off, yearly, Lifetime or a tester grant): Siri adds as before', async () => {
+Deno.test('open (lock off, yearly, Lifetime or a promotional grant): Siri adds as before', async () => {
   const w = world(() => Promise.resolve('open'));
   const res = await w.handle(post({ text: 'Milch und Eier' }, 'fgp_pat'));
   assertEquals(res.status, 200);

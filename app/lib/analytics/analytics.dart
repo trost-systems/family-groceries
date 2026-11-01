@@ -169,8 +169,8 @@ class Analytics(
     testerHousehold: testerHousehold,
   );
 
-  /// Set by the household's entitlements: the household a tester's grant
-  /// unlocks, if any.
+  /// Set by the household's entitlements: the household, if it has a
+  /// RevenueCat promotional grant (testers, App and Play Review).
   String? get testerHousehold => _testerHousehold;
   set testerHousehold(String? household) {
     _testerHousehold = household;
