@@ -14,14 +14,16 @@ export const LOCALES = {
 
 export const STORES = ['play', 'appstore'];
 
-const ALL = ['list', 'add', 'tick', 'sync', 'due', 'dark'];
+// The empty add sheet opens at half the screen, so „Wieder fällig“ needs a tall phone to show rows.
+const PHONE = ['list', 'add', 'tick', 'sync', 'edit', 'dark'];
+const TALL_PHONE = ['list', 'add', 'tick', 'sync', 'due', 'edit', 'dark'];
 
 export const DEVICES = {
-  'play-phone': { store: 'play', width: 1080, height: 1920, viewportWidth: 390, scenes: ALL },
-  'play-tablet7': { store: 'play', width: 1440, height: 2560, viewportWidth: 600, scenes: ['list', 'add', 'tick', 'sync'] },
-  'play-tablet10': { store: 'play', width: 1800, height: 3200, viewportWidth: 800, scenes: ['list', 'add', 'tick', 'sync'] },
-  'appstore-iphone69': { store: 'appstore', width: 1320, height: 2868, viewportWidth: 440, scenes: ALL },
-  'appstore-ipad13': { store: 'appstore', width: 2064, height: 2752, viewportWidth: 1032, scenes: ['list', 'add', 'sync', 'due'] },
+  'play-phone': { store: 'play', width: 1080, height: 1920, viewport: { width: 390, height: 780 }, scenes: PHONE },
+  'play-tablet7': { store: 'play', width: 1440, height: 2560, viewport: { width: 600, height: 960 }, scenes: ['list', 'add', 'tick', 'sync'] },
+  'play-tablet10': { store: 'play', width: 1800, height: 3200, viewport: { width: 800, height: 1280 }, scenes: ['list', 'add', 'tick', 'sync'] },
+  'appstore-iphone69': { store: 'appstore', width: 1320, height: 2868, viewport: { width: 440, height: 900 }, scenes: TALL_PHONE },
+  'appstore-ipad13': { store: 'appstore', width: 2064, height: 2752, viewport: { width: 1032, height: 1300 }, scenes: ['list', 'add', 'sync', 'due'] },
 };
 
 export const FEATURE_GRAPHIC = { width: 1024, height: 500 };
@@ -29,24 +31,25 @@ export const ICON = { width: 512, height: 512 };
 
 /**
  * The frame of one device in output pixels: the caption band on top, then a phone or tablet body
- * whose screen runs to the bottom edge (the body's foot bleeds off), and the app viewport whose
- * CSS pixels fill that screen exactly, so the whole app down to its tab bar is in the frame.
+ * whose screen runs to the bottom edge (the body's foot bleeds off). The app is filmed at the
+ * device's viewport (a real device's CSS size, minus its system bars); the screen gets that
+ * shape at the height below the band, so the whole app down to its tab bar is in the frame.
  */
 export function layout(device) {
-  const { width: W, height: H, viewportWidth } = DEVICES[device];
+  const { width: W, height: H, viewport } = DEVICES[device];
   const unit = W / 1080;
   const band = Math.round(Math.min(H * 0.22, W * 0.4));
-  const margin = Math.round(84 * unit);
   const bezel = Math.round(16 * unit);
-  const screen = { x: margin + bezel, y: band + bezel, width: W - 2 * (margin + bezel) };
-  const scale = screen.width / viewportWidth;
-  screen.height = H - screen.y;
-  const viewport = { width: viewportWidth, height: Math.floor(screen.height / scale) };
+  const top = band + bezel;
+  const scale = (H - top) / viewport.height;
+  const width = Math.round(viewport.width * scale);
+  const x = Math.round((W - width) / 2);
+  if (x - bezel < 40 * unit) throw new Error(`${device}: the screen (${width} px) leaves no margin in ${W} px`);
   return {
     unit,
     band,
-    body: { x: margin, y: band, width: W - 2 * margin, radius: Math.round(56 * unit), bezel },
-    screen: { ...screen, radius: Math.round(42 * unit) },
+    body: { x: x - bezel, y: band, width: width + 2 * bezel, radius: Math.round(56 * unit), bezel },
+    screen: { x, y: top, width, height: H - top, radius: Math.round(42 * unit) },
     scale,
     viewport,
     // Filmed sharper than shown, then scaled down in compose.

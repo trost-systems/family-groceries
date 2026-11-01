@@ -18,7 +18,7 @@ households:
       - name: Supermarkt
       - name: Drogerie
     items:
-      - { name: Äpfel, quantity: "1 kg", store: Wochenmarkt, category: Obst & Gemüse, by: anna, at: "-3h" }
+      - { name: Äpfel, quantity: "1 kg", properties: Elstar, store: Wochenmarkt, category: Obst & Gemüse, by: anna, at: "-3h" }
       - { name: Tomaten, quantity: "500 g", store: Wochenmarkt, category: Obst & Gemüse, by: jonas, at: "-3h" }
       - { name: Feldsalat, store: Wochenmarkt, category: Obst & Gemüse, by: anna, at: "-170m" }
       - { name: Brötchen, quantity: "6", store: Bäckerei, category: Brot & Backwaren, by: jonas, at: "-160m" }

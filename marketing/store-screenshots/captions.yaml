@@ -29,6 +29,10 @@ de-DE:
     title: Hummlist merkt sich, was ihr regelmäßig kauft
     sub: Ein Tipp, und es steht wieder drauf
     status: draft
+  edit:
+    title: "Menge, Sorte, Laden: alles drin"
+    sub: Halten, und der Artikel lässt sich bearbeiten
+    status: draft
   dark:
     title: Ohne Werbung, ohne Ablenkung
     sub: Hell oder dunkel, wie ihr mögt
@@ -58,6 +62,10 @@ en-US:
   due:
     title: Hummlist remembers what you buy regularly
     sub: One tap and it's back on the list
+    status: draft
+  edit:
+    title: "Quantity, details, store: all in one place"
+    sub: Hold an item to edit it
     status: draft
   dark:
     title: No ads, no clutter

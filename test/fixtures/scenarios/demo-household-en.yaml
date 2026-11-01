@@ -18,7 +18,7 @@ households:
       - name: Supermarket
       - name: Drugstore
     items:
-      - { name: Apples, quantity: "1 kg", store: "Farmers' market", category: Obst & Gemüse, by: anna, at: "-3h" }
+      - { name: Apples, quantity: "1 kg", properties: Gala, store: "Farmers' market", category: Obst & Gemüse, by: anna, at: "-3h" }
       - { name: Tomatoes, quantity: "500 g", store: "Farmers' market", category: Obst & Gemüse, by: jonas, at: "-3h" }
       - { name: Lamb's lettuce, store: "Farmers' market", category: Obst & Gemüse, by: anna, at: "-170m" }
       - { name: Bread rolls, quantity: "6", store: Bakery, category: Brot & Backwaren, by: jonas, at: "-160m" }

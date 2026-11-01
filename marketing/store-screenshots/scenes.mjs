@@ -7,8 +7,8 @@ import { apiAs, pause, step, stepUntil } from './app.mjs';
 
 /** The words a scene types or acts on, per language; the scenarios hold the same items. */
 const WORDS = {
-  de: { prefix: 'Hafer', tick: 'Brötchen', partnerAdds: ['Ziegenkäse', 'Radieschen'], partnerStore: 'Wochenmarkt' },
-  en: { prefix: 'Oat', tick: 'Bread rolls', partnerAdds: ['Goat cheese', 'Radishes'], partnerStore: "Farmers' market" },
+  de: { prefix: 'Hafer', tick: 'Brötchen', edit: 'Äpfel', partnerAdds: ['Ziegenkäse', 'Radieschen'], partnerStore: 'Wochenmarkt' },
+  en: { prefix: 'Oat', tick: 'Bread rolls', edit: 'Apples', partnerAdds: ['Goat cheese', 'Radishes'], partnerStore: "Farmers' market" },
 };
 
 /** No caret in a list frame: a phone opens the list without the keyboard (the web build focuses the field). */
@@ -83,6 +83,18 @@ export const SCENES = {
       await page.waitForTimeout(400);
       await pause(page);
       await caretAt(page, 300);
+    },
+  },
+  edit: {
+    member: 'anna',
+    // A hold, a swipe or a right click opens the edit sheet; a right click is the one a pointer has.
+    async frame({ page, L, lang }) {
+      await unfocus(page);
+      await itemRow(page, WORDS[lang].edit).click({ button: 'right' });
+      await page.getByRole('group', { name: L('editSheet'), exact: true }).waitFor();
+      await page.waitForTimeout(400);
+      await pause(page);
+      await step(page, 500);
     },
   },
   dark: {

@@ -1,0 +1,58 @@
+# Job 65: the Play and App Store screenshots, the Play feature graphic and icon, from the real web
+# build against a local stack with the demo household „Unser Haushalt“ (scripts/store-screenshots.sh,
+# docs/STORE_SCREENSHOTS.md). Uploads the set as an artifact; nothing goes to any store. By hand only.
+name: Store screenshots
+run-name: "store screenshots ${{ inputs.locale }} ${{ inputs.store }} on ${{ github.ref_name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: de-DE has the approved texts; en-US renders the draft English set
+        type: choice
+        options: [de-DE, en-US, all]
+        default: de-DE
+      store:
+        type: choice
+        options: [all, play, appstore]
+        default: all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Same values as ci.yml.
+env:
+  FLUTTER_VERSION: 3.47.8
+  SUPABASE_CLI_VERSION: 2.121.0
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/e2e-setup
+        with:
+          supabase-cli-version: ${{ env.SUPABASE_CLI_VERSION }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          ffmpeg: 'true'
+      - run: scripts/store-screenshots.sh --locale "$LOCALE" --store "$STORE"
+        env:
+          LOCALE: ${{ inputs.locale }}
+          STORE: ${{ inputs.store }}
+      - name: Summary
+        if: ${{ !cancelled() }}
+        run: cat marketing/store-screenshots/out/summary.md >>"$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: store-screenshots-${{ github.sha }}
+          path: |
+            marketing/store-screenshots/out/
+            !marketing/store-screenshots/out/raw/
+          if-no-files-found: error

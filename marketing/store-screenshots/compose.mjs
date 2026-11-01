@@ -8,6 +8,7 @@
 // out/<locale>/play/icon-512.png          the app icon, from design/app-icon's 1024 px asset
 // out/<locale>/contact-sheet.png          every file of the locale on one sheet
 // out/manifest.json                       size, pixel format, bytes and sha256 per file, caption status
+// out/summary.md                          the same as a table (the workflow's job summary)
 //
 // Each frame is an HTML page rendered by Chromium at its exact pixel size, then flattened by
 // ffmpeg to 24-bit RGB without alpha (both stores refuse alpha). Fails when a file breaks a rule.
@@ -40,7 +41,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 function caption(locale, id) {
   const c = captions[locale]?.[id];
   if (!c?.title || !c?.sub) throw new Error(`captions.yaml has no ${locale} title and sub for ${id}`);
-  if (/humm(?!list)|HummList/i.test(`${c.title} ${c.sub}`)) throw new Error(`${locale} ${id}: write "Hummlist" in full`);
+  if (/humm(?!list)/i.test(`${c.title} ${c.sub}`) || /HummList/.test(`${c.title} ${c.sub}`)) throw new Error(`${locale} ${id}: write "Hummlist" in full`);
   if (/premium|€|\$|preis|price/i.test(`${c.title} ${c.sub}`)) throw new Error(`${locale} ${id}: no Premium or prices in a store frame`);
   return c;
 }
@@ -145,7 +146,7 @@ try {
       await render(page, framePage(locale, s.device, s.scene, raw), width, height, file);
       const status = captions[locale][s.scene].status;
       record(file, { width, height }, { locale, device: s.device, scene: s.scene, caption: status });
-      if (status !== 'approved') manifest.drafts.push(`${locale} ${s.scene}`);
+      if (status !== 'approved' && !manifest.drafts.includes(`${locale} ${s.scene}`)) manifest.drafts.push(`${locale} ${s.scene}`);
       done.push(file);
     }
     if (stores.includes('play')) {
@@ -178,4 +179,10 @@ figure{display:flex;flex-direction:column;gap:8px}figure img{height:520px;box-sh
 }
 rmSync(WORK, { recursive: true, force: true });
 writeFileSync(join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 1)}\n`);
+const summary = [
+  '| File | Size | Pixels | Caption |', '| --- | --- | --- | --- |',
+  ...manifest.files.map((f) => `| \`${f.file}\` | ${f.width} x ${f.height} | ${f.pixFmt} | ${f.caption ?? ''} |`),
+  '', manifest.drafts.length ? `Draft captions: ${manifest.drafts.join(', ')}` : 'Every caption is approved.',
+];
+writeFileSync(join(OUT, 'summary.md'), `${summary.join('\n')}\n`);
 if (manifest.drafts.length) console.log(`draft captions (not approved yet): ${manifest.drafts.join(', ')}`);
