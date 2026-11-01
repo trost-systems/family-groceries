@@ -1,4 +1,5 @@
 import 'package:family_groceries/settings/access_repository.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,12 +16,21 @@ final class const SectionFailed<T>(final String message) extends Section<T>;
 class const AccessState({
   final Section<List<AccessToken>> tokens = const SectionLoading(),
   final Section<List<ConnectedApp>> apps = const SectionLoading(),
+
+  /// The Siri credential in this iPhone's keychain, which the list calls
+  /// "this iPhone".
+  final String? siriHere,
 });
 
-class AccessCubit(final AccessRepository _repo) extends Cubit<AccessState> {
+class AccessCubit(
+  final AccessRepository _repo, {
+
+  /// This iPhone's Siri; null elsewhere.
+  final SiriChannel? siri,
+}) extends Cubit<AccessState> {
   this : super(const AccessState());
 
-  Future<void> load() => Future.wait([_loadTokens(), _loadApps()]);
+  Future<void> load() => Future.wait([_loadTokens(), _loadApps(), _loadSiri()]);
 
   /// Throws [AccessError], e.g. `too_many_tokens`.
   Future<NewToken> create(String name) async {
@@ -42,14 +52,31 @@ class AccessCubit(final AccessRepository _repo) extends Cubit<AccessState> {
   Future<void> _loadTokens() async {
     final tokens = await _section(_repo.fetchTokens);
     if (!isClosed) {
-      emit(AccessState(tokens: tokens, apps: state.apps));
+      emit(
+        AccessState(tokens: tokens, apps: state.apps, siriHere: state.siriHere),
+      );
     }
   }
 
   Future<void> _loadApps() async {
     final apps = await _section(_repo.fetchApps);
     if (!isClosed) {
-      emit(AccessState(tokens: state.tokens, apps: apps));
+      emit(
+        AccessState(tokens: state.tokens, apps: apps, siriHere: state.siriHere),
+      );
+    }
+  }
+
+  Future<void> _loadSiri() async {
+    final String? id;
+    try {
+      id = (await siri?.read())?.id;
+    } on Object {
+      // No channel or no keychain: every Siri row is another iPhone's.
+      return;
+    }
+    if (!isClosed && id != null) {
+      emit(AccessState(tokens: state.tokens, apps: state.apps, siriHere: id));
     }
   }
 

@@ -1,6 +1,15 @@
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// What a token is for.
+enum AccessKind() {
+  /// Made by the user, for the MCP server or a Shortcut.
+  pat,
+
+  /// Made by the app for native Siri on one iPhone, bound to its session.
+  siri,
+}
+
 /// A personal access token as the settings list shows it. The secret itself
 /// is never readable after creation.
 @immutable
@@ -11,11 +20,13 @@ class const AccessToken({
   /// The last four characters, to tell tokens apart.
   required final String hint,
   required final DateTime createdAt,
+  final AccessKind kind = AccessKind.pat,
   final DateTime? lastUsedAt,
 }) {
   factory fromJson(Map<String, dynamic> json) => AccessToken(
     id: json['id']! as String,
     name: json['name']! as String,
+    kind: json['kind'] == 'siri' ? AccessKind.siri : AccessKind.pat,
     hint: json['token_hint']! as String,
     createdAt: DateTime.parse(json['created_at']! as String).toLocal(),
     lastUsedAt: switch (json['last_used_at']) {
@@ -62,7 +73,7 @@ class SupabaseAccessRepository(final SupabaseClient _client)
   Future<List<AccessToken>> fetchTokens() => _guard(() async {
     final rows = await _client.rest
         .from('personal_access_tokens')
-        .select('id, name, token_hint, created_at, last_used_at')
+        .select('id, name, kind, token_hint, created_at, last_used_at')
         .isFilter('revoked_at', null)
         .order('created_at', ascending: false);
     return rows.map(AccessToken.fromJson).toList();

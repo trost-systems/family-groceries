@@ -397,7 +397,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tokenName => 'Name';
 
   @override
-  String get tokenNameHint => 'z. B. Claude oder Siri';
+  String get tokenNameHint => 'z. B. Claude oder Kurzbefehle';
 
   @override
   String get tokenCreated => 'Token erstellt';
@@ -432,6 +432,48 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get noConnectedApps => 'Noch keine App verbunden.';
+
+  @override
+  String get siriHeader => 'Siri';
+
+  @override
+  String get siriThisIphone => 'Siri (dieses iPhone)';
+
+  @override
+  String get siriOtherIphone => 'Siri (anderes iPhone)';
+
+  @override
+  String get siriWorksWithoutSetup =>
+      'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zu Hummlist hinzu“.';
+
+  @override
+  String get siriShowPhrases => 'Siri-Sätze anzeigen';
+
+  @override
+  String siriOldShortcutHint(String name) {
+    return 'Den alten Kurzbefehl brauchst du nicht mehr. Seinen Token „$name“ kannst du unten löschen.';
+  }
+
+  @override
+  String get siriPhrasesTitle => 'Siri-Sätze';
+
+  @override
+  String get siriPhrasesEnglish => 'Auf Englisch';
+
+  @override
+  String get siriPhrasesGerman => 'Auf Deutsch';
+
+  @override
+  String siriPhrase(String phrase) {
+    return '„$phrase“';
+  }
+
+  @override
+  String get revokeSiriTitle => 'Siri-Zugang widerrufen?';
+
+  @override
+  String get revokeSiriBody =>
+      'Siri kann auf dem iPhone dann nichts mehr hinzufügen. Beim nächsten Start von Hummlist dort wird Siri neu eingerichtet.';
 
   @override
   String connectedOn(DateTime date) {

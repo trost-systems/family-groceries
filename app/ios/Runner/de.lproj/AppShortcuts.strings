@@ -1,0 +1,10 @@
+"${applicationName} add" = "${applicationName} Einkaufsliste";
+"Add ${item} to ${applicationName}" = "Füge ${item} zu ${applicationName} hinzu";
+"Add ${item} to my ${applicationName}" = "Füge ${item} zu meiner ${applicationName} hinzu";
+"Add something to ${applicationName}" = "Etwas auf die ${applicationName} setzen";
+"Add something to my ${applicationName}" = "Auf meine ${applicationName}";
+"Add to ${applicationName}" = "Füge etwas zu ${applicationName} hinzu";
+"Put ${item} on ${applicationName}" = "Setz ${item} auf die ${applicationName}";
+"Read my ${applicationName}" = "Lies meine ${applicationName} vor";
+"What's on ${applicationName}" = "Was steht auf ${applicationName}";
+"What's on my ${applicationName}" = "Was steht auf meiner ${applicationName}";

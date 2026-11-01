@@ -370,3 +370,7 @@ Details: [docs/done/44-posthog-sdk.md](docs/done/44-posthog-sdk.md).
 ## Job 47: purchase legal fixes (Legal Review K.11) and job 43 review leftovers
 
 RevenueCat's SDK starts only on a tap on "Weiter zum Kauf" or "Kauf wiederherstellen" (no price on the page; the store's sheet shows it). Archived households are deleted 24 months after archiving, with the date in "Archivierte Haushalte", and archiving needs a server switch that is seeded off. Nil-bound sandbox purchases are deleted. What Apple and Google receive and what the SDK keeps on the device were read from the pinned SDK sources and match draft 5a. The deletions route takes a cron secret, routes match exactly, the claim names the purchase's household, and removing a tester clears their mark. The refund help, the bought-twice note and the join warning use Legal Review's R-8 refund texts (H-76), with a link to the FAQ. Nothing is live for users. Details: [docs/done/47-purchase-legal-fixes.md](docs/done/47-purchase-legal-fixes.md).
+
+## Job 51: native Siri (App Intents, English and German)
+
+Siri adds items to the household's Hummlist on iOS 17+ without a Shortcut: "Add to Hummlist" / "Füge etwas zu Hummlist hinzu", then the items, read back only after the server confirmed; "What's on my Hummlist?" reads the list. A session-bound "Siri (dieses iPhone)" credential replaces token copying; the old Shortcut keeps working. Details: [docs/done/51-native-siri.md](docs/done/51-native-siri.md).

@@ -18,6 +18,34 @@ Mit einem Kurzbefehl setzt du Sachen per Siri auf deine Hummlist, ohne die App z
 
 Siri schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Das Aufteilen funktioniert bisher nur auf Deutsch.
 
+## Ohne Einrichtung: Siri kennt Hummlist {#ohne-einrichtung since=1.0.0}
+
+> Entwurf für Hummlist Launch: Text und Sätze bitte vor dem Start prüfen.
+
+Mit der aktuellen App brauchst du keinen Kurzbefehl mehr. Sobald du in Hummlist angemeldet bist und zu einem Haushalt gehörst, versteht Siri Hummlist von selbst, auf Deutsch und auf Englisch. Du musst nichts einrichten und keinen Token kopieren.
+
+> **Du:** Hey Siri, füge etwas zu Hummlist hinzu.
+> **Siri:** Was soll auf die Liste?
+> **Du:** Milch, Eier und Brot.
+> **Siri:** Hinzugefügt: Milch, Eier, Brot.
+
+Diese Sätze versteht Siri:
+
+| Du sagst | Was passiert |
+| --- | --- |
+| Füge etwas zu Hummlist hinzu | Siri fragt, was auf die Liste soll. |
+| Auf meine Hummlist | Siri fragt, was auf die Liste soll. |
+| Füge Milch zu Hummlist hinzu | Milch kommt direkt auf die Liste, wenn Milch bei euch schon einmal auf der Liste stand. Sonst fragt Siri nach. |
+| Was steht auf meiner Hummlist? | Siri liest die ersten zehn offenen Einträge vor. |
+
+Siri sagt erst „Hinzugefügt“, wenn Hummlist die Einträge gespeichert hat. Ohne Internet oder bei einem Fehler sagt Siri, dass nichts hinzugefügt wurde. Dann versuch es einfach noch einmal.
+
+Alle Sätze siehst du auch in der App unter **Mehr** → **Zugänge** → **Siri-Sätze anzeigen**. Dort steht auch „Siri (dieses iPhone)“: Das ist die Anmeldung, mit der Siri für dich spricht. Wenn du dich in Hummlist abmeldest, endet sie.
+
+Hast du dir früher den Kurzbefehl unten eingerichtet? Der funktioniert weiter. Du kannst ihn aber löschen und den alten Token widerrufen ([Siri wieder abschalten](#siri-wieder-abschalten)).
+
+Den Kurzbefehl unten brauchst du nur noch, wenn du einen eigenen Satz wie „Einkaufsliste“ möchtest oder dein iPhone älter als iOS 17 ist.
+
 ## Was du brauchst
 
 - ein iPhone mit der App **Kurzbefehle**
@@ -130,7 +158,7 @@ Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“,
 
 Startet Siri bei „Einkaufsliste“ nicht deinen Kurzbefehl? Prüf, ob er genau so heißt. Sonst gib ihm einen eindeutigeren Namen, etwa `Einkauf notieren`, und sag „Hey Siri, Einkauf notieren“. Zum Umbenennen öffnest du den Kurzbefehl, tippst auf den Pfeil neben seinem Namen und dann auf **Umbenennen**.
 
-## Siri wieder abschalten
+## Siri wieder abschalten {#siri-wieder-abschalten}
 
 1. Lösch den Kurzbefehl in der Kurzbefehle-App: Leg den Finger auf **Einkaufsliste**, tippe auf **Löschen** und bestätige.
 2. Widerrufe den Token in Hummlist: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.

@@ -41,7 +41,7 @@ const cross = (...parts: string[][]) =>
 const onTheList = cross(
   ['auf', 'in', 'zu', 'zur'],
   ['', 'die', 'den', 'der', 'meine', 'meinen', 'meiner', 'unsere', 'unseren', 'unserer'],
-  ['liste', 'einkaufsliste', 'einkaufszettel', 'zettel'],
+  ['liste', 'einkaufsliste', 'einkaufszettel', 'zettel', 'hummlist'],
 );
 
 /**
@@ -50,7 +50,7 @@ const onTheList = cross(
  */
 const leadingFiller = [
   ...words(
-    'hey siri|siri|einkaufsliste|einkaufszettel|okay|ok|also|ca|circa|etwa|ungefähr|ach ja|ach so|achso|ach|äh|ähm|ehm|hm|hmm|so|ja|dann|' +
+    'hey siri|siri|hummlist|einkaufsliste|einkaufszettel|okay|ok|also|ca|circa|etwa|ungefähr|ach ja|ach so|achso|ach|äh|ähm|ehm|hm|hmm|so|ja|dann|' +
       'bitte|mal|danke|doch|eben|halt|unbedingt|dringend|mehr|mal sehen|' +
       'wir brauchen|wir bräuchten|ich brauche|ich bräuchte|brauchen|brauche|' +
       'wir haben|wir haben kein|wir haben keine|wir haben keinen|' +

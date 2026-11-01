@@ -14,6 +14,7 @@ const ISSUER = 'http://127.0.0.1:54621/auth/v1';
 const USER = '11111111-1111-1111-1111-111111111111';
 const HOUSEHOLD = '22222222-2222-2222-2222-222222222222';
 const PAT = 'fgp_valid-token';
+const SIRI = 'fgp_siri-on-this-iphone';
 const SESSION = '44444444-4444-4444-4444-444444444444';
 const ENDED = '55555555-5555-5555-5555-555555555555';
 
@@ -28,8 +29,13 @@ const deps: AuthDeps = {
   jwks: () => jwks,
   householdOf: (userId) => Promise.resolve(userId === USER ? HOUSEHOLD : null),
   sessionActive: ({ id }) => Promise.resolve(id !== ENDED),
-  resolvePat: async (hash) =>
-    hash === await sha256Hex(PAT) ? { userId: USER, householdId: HOUSEHOLD } : null,
+  resolvePat: async (hash) => {
+    if (hash === await sha256Hex(PAT)) return { userId: USER, householdId: HOUSEHOLD, kind: 'pat' };
+    if (hash === await sha256Hex(SIRI)) {
+      return { userId: USER, householdId: HOUSEHOLD, kind: 'siri' };
+    }
+    return null;
+  },
 };
 
 function token(
@@ -85,6 +91,21 @@ Deno.test('a personal access token authenticates by its hash', async () => {
     householdId: HOUSEHOLD,
     via: 'pat',
   });
+});
+
+Deno.test('a Siri credential authenticates as siri only where the function opts in', async () => {
+  assertEquals(await authenticate(bearer(SIRI), deps, { siri: true }), {
+    userId: USER,
+    householdId: HOUSEHOLD,
+    via: 'siri',
+  });
+  assertEquals((await authenticate(bearer(PAT), deps, { siri: true })).via, 'pat');
+  await failsWith(bearer(SIRI), 'invalid_token');
+  const error = await assertRejects(
+    () => authenticateSession(bearer(SIRI), sessionDeps),
+    AuthError,
+  );
+  assertEquals(error.reason, 'session_required');
 });
 
 Deno.test('missing or malformed Authorization headers are missing tokens', async () => {

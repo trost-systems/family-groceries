@@ -57,13 +57,14 @@ export async function sessionActive(
   return row.active;
 }
 
-export async function resolvePersonalAccessToken(
+/** A PAT or Siri credential by its hash; nothing when unknown, revoked or no longer valid. */
+export async function resolveAccessToken(
   tokenHash: string,
-): Promise<{ userId: string; householdId: string } | null> {
+): Promise<{ userId: string; householdId: string; kind: 'pat' | 'siri' } | null> {
   const sql = db();
-  const [row] = await sql<{ user_id: string; household_id: string }[]>`
-    select user_id, household_id from public.authenticate_personal_access_token(${tokenHash})`;
-  return row ? { userId: row.user_id, householdId: row.household_id } : null;
+  const [row] = await sql<{ user_id: string; household_id: string; kind: 'pat' | 'siri' }[]>`
+    select user_id, household_id, kind from public.authenticate_access_token(${tokenHash})`;
+  return row ? { userId: row.user_id, householdId: row.household_id, kind: row.kind } : null;
 }
 
 export async function userExists(userId: string): Promise<boolean> {

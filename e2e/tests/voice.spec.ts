@@ -210,3 +210,95 @@ test('a different size or type is a new item, not "already on the list"', async 
     await expect(itemRow(page, name)).toBeVisible();
   }
 });
+
+/** Posts the way the native Siri intents do (job 51): JSON with mode and lang. */
+async function ask(token: string, body: Record<string, unknown>) {
+  const res = await fetch(`${functionsUrl}/voice`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return { status: res.status, body: await res.json() };
+}
+
+test('native Siri: the credential the app mints adds in English, reads back, and ends with its session', async ({ page }) => {
+  const email = newEmail('voice-siri');
+  await signUpWithHousehold(page, email);
+  const iphone = await apiAs(email);
+  const { data, error } = await iphone.rpc('create_siri_credential');
+  expect(error).toBeNull();
+  const [{ token }] = data as { id: string; token: string }[];
+  expect(token).toMatch(/^fgp_/);
+
+  const added = await ask(token, { text: 'milk, eggs and bread', mode: 'add', lang: 'en' });
+  expect(added.status).toBe(200);
+  expect(added.body.outcome).toBe('added');
+  expect(added.body.speech).toBe('Added milk, eggs and bread to Hummlist.');
+  expect(added.body.items.map((i: { name: string; category: string }) => [i.name, i.category])).toEqual([
+    ['milk', 'Kühlregal'],
+    ['eggs', 'Kühlregal'],
+    ['bread', 'Brot & Backwaren'],
+  ]);
+  for (const name of ['milk', 'eggs', 'bread']) await expect(itemRow(page, name)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Brot & Backwaren' })).toBeVisible();
+  await screenshot(page, 'voice-04-native-siri-english');
+
+  const again = await ask(token, { text: 'milk', mode: 'add', lang: 'en' });
+  expect([again.status, again.body.outcome, again.body.speech]).toEqual([200, 'nothing_added', 'Already on the list: milk.']);
+
+  const read = await ask(token, { mode: 'read', lang: 'en' });
+  expect(read).toEqual({
+    status: 200,
+    body: {
+      outcome: 'read',
+      speech: expect.stringMatching(/^There are 3 things on your Hummlist: /),
+      items: expect.arrayContaining([{ name: 'milk', quantity: null }, { name: 'bread', quantity: null }]),
+      total: 3,
+    },
+  });
+  const gelesen = await ask(token, { mode: 'read', lang: 'de' });
+  expect(gelesen.body.speech).toMatch(/^Auf der Hummlist stehen 3 Sachen: /);
+
+  const mcp = await fetch(`${functionsUrl}/mcp`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+      accept: 'application/json, text/event-stream',
+    },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+  });
+  expect(mcp.status, 'only the voice function takes a Siri credential').toBe(401);
+  await mcp.body?.cancel();
+
+  await iphone.auth.signOut({ scope: 'local' });
+  const after = await ask(token, { text: 'butter', mode: 'add', lang: 'en' });
+  expect(after.status, 'signing out on that iPhone ends its Siri credential').toBe(401);
+  expect(after.body.outcome).toBe('unauthorized');
+  expect(after.body.speech).toMatch(/nothing was added/);
+  await expect(itemRow(page, 'butter')).toHaveCount(0);
+});
+
+test('the Shortcut recipe with a PAT answers exactly as before job 51', async ({ page }) => {
+  const email = newEmail('voice-recipe');
+  await signUpWithHousehold(page, email);
+  const { data } = await (await apiAs(email)).rpc('create_personal_access_token', { p_name: 'Siri' });
+  const [{ token }] = data as { token: string }[];
+
+  const said = await say(token, 'Zwei Gurken und Klopapier');
+  expect(said.status).toBe(200);
+  expect(JSON.parse(said.body)).toEqual({
+    speech: 'Hinzugefügt: 2 Gurken, Klopapier.',
+    items: [
+      { name: 'Gurken', brand: null, properties: null, quantity: '2', category: 'Obst & Gemüse', alreadyOnList: false,
+        similarOnList: [] },
+      { name: 'Klopapier', brand: null, properties: null, quantity: null, category: 'Haushalt', alreadyOnList: false,
+        similarOnList: [] },
+    ],
+    truncated: false,
+  });
+  expect(await say(token, 'Bitte, danke', '?format=text')).toEqual({
+    status: 422,
+    body: 'Ich habe nichts verstanden, was auf die Liste soll. Sag zum Beispiel: Milch, zwei Gurken und Klopapier.',
+  });
+});

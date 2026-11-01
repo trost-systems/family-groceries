@@ -1,0 +1,10 @@
+"${applicationName} add" = "${applicationName} add";
+"Add ${item} to ${applicationName}" = "Add ${item} to ${applicationName}";
+"Add ${item} to my ${applicationName}" = "Add ${item} to my ${applicationName}";
+"Add something to ${applicationName}" = "Add something to ${applicationName}";
+"Add something to my ${applicationName}" = "Add something to my ${applicationName}";
+"Add to ${applicationName}" = "Add to ${applicationName}";
+"Put ${item} on ${applicationName}" = "Put ${item} on ${applicationName}";
+"Read my ${applicationName}" = "Read my ${applicationName}";
+"What's on ${applicationName}" = "What's on ${applicationName}";
+"What's on my ${applicationName}" = "What's on my ${applicationName}";

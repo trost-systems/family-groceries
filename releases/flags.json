@@ -10,6 +10,10 @@
       "released": false,
       "note": "Hummlist Lifetime is not on sale yet: nothing is sold or gated",
       "match": ["lifetime"]
+    },
+    "native-siri": {
+      "released": false,
+      "note": "native Siri (no Shortcut setup) waits for Hummlist Launch and Peter's device test"
     }
   }
 }

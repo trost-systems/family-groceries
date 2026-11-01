@@ -6,6 +6,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
+import 'package:family_groceries/siri/siri_suggestions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,8 +51,9 @@ class RejectionNotices() {
   bool Function(String text)? listTab;
 }
 
-/// Coming back to the app catches up on what changed meanwhile, and a
-/// refused write is told wherever the user is.
+/// Coming back to the app catches up on what changed meanwhile, a refused
+/// write is told wherever the user is, and on iOS Siri learns the
+/// household's item names.
 class const _Scope({required final Widget child}) extends StatefulWidget {
   @override
   State<_Scope> createState() => _ScopeState();
@@ -59,11 +63,16 @@ class _ScopeState() extends State<_Scope> {
   late final AppLifecycleListener _lifecycle;
   late final StreamSubscription<Rejected> _rejections;
   final _notices = RejectionNotices();
+  SiriSuggestions? _siri;
 
   @override
   void initState() {
     super.initState();
     final cubit = context.read<ListCubit>();
+    if (siriChannelFor(web: kIsWeb, platform: defaultTargetPlatform)
+        case final siri?) {
+      _siri = SiriSuggestions(siri, cubit);
+    }
     _lifecycle = AppLifecycleListener(
       onResume: () => unawaited(cubit.resync()),
     );
@@ -91,6 +100,7 @@ class _ScopeState() extends State<_Scope> {
   void dispose() {
     _lifecycle.dispose();
     unawaited(_rejections.cancel());
+    unawaited(_siri?.close());
     super.dispose();
   }
 

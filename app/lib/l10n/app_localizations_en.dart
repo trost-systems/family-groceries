@@ -397,7 +397,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tokenName => 'Name';
 
   @override
-  String get tokenNameHint => 'e.g. Claude or Siri';
+  String get tokenNameHint => 'e.g. Claude or Shortcuts';
 
   @override
   String get tokenCreated => 'Token created';
@@ -430,6 +430,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noConnectedApps => 'No apps connected yet.';
+
+  @override
+  String get siriHeader => 'Siri';
+
+  @override
+  String get siriThisIphone => 'Siri (this iPhone)';
+
+  @override
+  String get siriOtherIphone => 'Siri (other iPhone)';
+
+  @override
+  String get siriWorksWithoutSetup =>
+      'Siri now works without setup: say “Add to Hummlist”.';
+
+  @override
+  String get siriShowPhrases => 'Show Siri phrases';
+
+  @override
+  String siriOldShortcutHint(String name) {
+    return 'You no longer need the old shortcut. You can delete its token “$name” below.';
+  }
+
+  @override
+  String get siriPhrasesTitle => 'Siri phrases';
+
+  @override
+  String get siriPhrasesEnglish => 'In English';
+
+  @override
+  String get siriPhrasesGerman => 'In German';
+
+  @override
+  String siriPhrase(String phrase) {
+    return '“$phrase”';
+  }
+
+  @override
+  String get revokeSiriTitle => 'Revoke Siri access?';
+
+  @override
+  String get revokeSiriBody =>
+      'Siri on that iPhone can no longer add items. Hummlist sets Siri up again the next time it starts there.';
 
   @override
   String connectedOn(DateTime date) {

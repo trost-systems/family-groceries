@@ -60,6 +60,9 @@ class SessionCubit(
   /// The invite link waiting for an answer; dropped after a join and on
   /// sign-out.
   final PendingInvite? pendingInvite,
+
+  /// Runs while the session still exists, before [signOut] ends it.
+  final Future<void> Function()? _beforeSignOut,
 }) extends Cubit<Session> {
   this : super(const SessionLoading()) {
     // Job 31: the server learns each install's analytics answer, so an add
@@ -303,6 +306,7 @@ class SessionCubit(
       const Duration(seconds: 2),
       onTimeout: () {},
     );
+    await _beforeSignOut?.call();
     await _client.auth.signOut();
   }
 

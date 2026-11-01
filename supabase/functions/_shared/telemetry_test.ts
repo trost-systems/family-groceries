@@ -264,3 +264,34 @@ Deno.test('item_added (job 31): source alexa, role and household size only', asy
   assertEquals(p.household_id, household);
   assertEquals(p.is_internal, true, 'an internal install says so');
 });
+
+Deno.test('siri_add and siri_read (job 51): result, reason, language, source and count only', async () => {
+  const { sent, fetchImpl } = recorder();
+  const t = telemetryFor(
+    'voice',
+    env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }),
+    fetchImpl,
+  );
+  const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
+  const subject = { installId: INSTALL, householdId: household };
+  const add = { result: 'success', reason: 'added', language: 'en', source: 'native', count: 3 };
+  assert(t.event('siri_add', subject, add));
+  assert(
+    t.event('siri_add', subject, { ...add, result: 'fail', reason: 'premium_required', count: 0 }),
+  );
+  assertFalse(t.event('siri_add', subject, { ...add, count: 31 }));
+  assertFalse(t.event('siri_add', subject, { ...add, count: 2.5 }));
+  assertFalse(t.event('siri_add', subject, { ...add, reason: 'read' }));
+  assertFalse(t.event('siri_add', subject, { ...add, language: 'fr' }));
+  assertFalse(t.event('siri_add', subject, { ...add, source: 'alexa' }));
+  assertFalse(t.event('siri_add', subject, { ...add, text: 'milk, eggs and bread' }));
+  assertFalse(t.event('siri_add', subject, { ...add, items: ['milk'] }));
+  const read = { result: 'success', reason: 'read', language: 'de', source: 'shortcut', count: 42 };
+  assert(t.event('siri_read', subject, read));
+  assertFalse(t.event('siri_read', subject, { ...read, reason: 'added' }));
+  assertFalse(t.event('siri_read', subject, { ...read, names: 'Milch' }));
+  await t.flush();
+  const batch = sent[0].body.batch;
+  assertEquals(batch.map((e) => e.event), ['siri_add', 'siri_add', 'siri_read']);
+  assertEquals((batch[0].properties as Record<string, unknown>).household_id, household);
+});

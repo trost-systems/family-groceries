@@ -1,8 +1,11 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/access_screen.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../siri/fake_siri_channel.dart';
 
 class FakeAccessRepository() implements AccessRepository {
   final tokens = <AccessToken>[];
@@ -53,6 +56,8 @@ void main() {
   Future<void> pumpAccess(
     WidgetTester tester, {
     void Function(FakeAccessRepository repo)? seed,
+    SiriChannel? siri,
+    String language = 'de',
   }) async {
     repo = FakeAccessRepository();
     seed?.call(repo);
@@ -60,8 +65,10 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('de'),
-        home: Scaffold(body: AccessScreen(repository: repo)),
+        locale: Locale(language),
+        home: Scaffold(
+          body: AccessScreen(repository: repo, siri: siri),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -175,5 +182,148 @@ void main() {
     expect(repo.disconnected, ['client-1']);
     expect(find.text('Claude'), findsNothing);
     expect(find.text('Noch keine App verbunden.'), findsOneWidget);
+  });
+
+  group('Siri', () {
+    AccessToken token(String id, String name, {AccessKind kind = .pat}) =>
+        AccessToken(
+          id: id,
+          name: name,
+          kind: kind,
+          hint: id.substring(0, 4),
+          createdAt: DateTime(2026, 10, 31),
+        );
+
+    FakeSiriChannel thisIphone(String id) =>
+        FakeSiriChannel()
+          ..entry = SiriKeychainEntry(id: id, userId: 'u1', sessionId: 's1');
+
+    void twoIphones(FakeAccessRepository r) => r.tokens.addAll([
+      token('here-id', 'Siri', kind: .siri),
+      token('else-id', 'Siri', kind: .siri),
+    ]);
+
+    testWidgets('the card and rows on this iPhone, in German', (tester) async {
+      await pumpAccess(tester, siri: thisIphone('here-id'), seed: twoIphones);
+
+      expect(
+        find.text(
+          'Siri funktioniert jetzt ohne Einrichtung. '
+          'Sag: „Füge etwas zu Hummlist hinzu“.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Siri (dieses iPhone)'), findsOneWidget);
+      expect(find.text('Siri (anderes iPhone)'), findsOneWidget);
+      expect(find.text('Kein aktiver Token.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
+
+      await tapText(tester, 'Siri-Sätze anzeigen');
+      expect(find.text('„Füge etwas zu Hummlist hinzu“'), findsOneWidget);
+      expect(find.text('„Was steht auf meiner Hummlist?“'), findsOneWidget);
+      expect(find.text('„Add to Hummlist“'), findsOneWidget);
+      expect(find.text('Auf Englisch'), findsOneWidget);
+      await tapText(tester, 'Schließen');
+      expect(find.text('Siri-Sätze'), findsNothing);
+    });
+
+    testWidgets('the card and rows on this iPhone, in English', (tester) async {
+      await pumpAccess(
+        tester,
+        siri: thisIphone('else-id'),
+        seed: twoIphones,
+        language: 'en',
+      );
+
+      expect(
+        find.text('Siri now works without setup: say “Add to Hummlist”.'),
+        findsOneWidget,
+      );
+      expect(find.text('Siri (this iPhone)'), findsOneWidget);
+      expect(find.text('Siri (other iPhone)'), findsOneWidget);
+
+      await tapText(tester, 'Show Siri phrases');
+      expect(find.text('“Add something to my Hummlist”'), findsOneWidget);
+      expect(find.text('“Add <item> to Hummlist”'), findsOneWidget);
+      expect(find.text("“What's on my Hummlist?”"), findsOneWidget);
+      expect(find.text('“Füge <Eintrag> zu Hummlist hinzu”'), findsOneWidget);
+    });
+
+    testWidgets('a Siri credential is revoked like a token', (tester) async {
+      await pumpAccess(tester, siri: thisIphone('here-id'), seed: twoIphones);
+
+      await tester.tap(find.byTooltip('Siri (anderes iPhone) widerrufen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Siri-Zugang widerrufen?'), findsOneWidget);
+      await tapText(tester, 'Widerrufen');
+
+      expect(repo.revoked, ['else-id']);
+      expect(find.text('Siri (anderes iPhone)'), findsNothing);
+      expect(find.text('Siri (dieses iPhone)'), findsOneWidget);
+    });
+
+    testWidgets('elsewhere no card, but the rows to revoke', (tester) async {
+      await pumpAccess(tester, seed: twoIphones);
+
+      expect(find.byKey(const ValueKey('siri-card')), findsNothing);
+      expect(find.text('Siri (anderes iPhone)'), findsNWidgets(2));
+    });
+
+    testWidgets('no Siri section elsewhere without Siri rows', (tester) async {
+      await pumpAccess(
+        tester,
+        seed: (r) => r.tokens.add(token('pat-id', 'Siri')),
+      );
+      expect(find.byKey(const ValueKey('siri-card')), findsNothing);
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
+      expect(find.text('Siri'), findsOneWidget, reason: 'the token only');
+    });
+
+    testWidgets('the old shortcut token gets a hint', (tester) async {
+      await pumpAccess(
+        tester,
+        siri: FakeSiriChannel(),
+        seed: (r) => r.tokens.addAll([
+          token('pat1', 'Claude'),
+          token('pat2', 'Mein Kurzbefehl'),
+          token('siri', 'Siri', kind: .siri),
+        ]),
+      );
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsOneWidget);
+      expect(
+        find.text(
+          'Den alten Kurzbefehl brauchst du nicht mehr. '
+          'Seinen Token „Mein Kurzbefehl“ kannst du unten löschen.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('no hint without a shortcut token', (tester) async {
+      await pumpAccess(
+        tester,
+        siri: FakeSiriChannel(),
+        seed: (r) => r.tokens.addAll([
+          token('pat1', 'Claude'),
+          token('siri', 'Siri', kind: .siri),
+        ]),
+        language: 'en',
+      );
+      expect(find.byKey(const ValueKey('siri-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
+    });
+
+    testWidgets('a revoked shortcut token loses its hint', (tester) async {
+      await pumpAccess(
+        tester,
+        siri: FakeSiriChannel(),
+        seed: (r) => r.tokens.add(token('pat-id', 'Siri Shortcut')),
+      );
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsOneWidget);
+      await tester.tap(find.byTooltip('Siri Shortcut widerrufen'));
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Widerrufen');
+      expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
+    });
   });
 }

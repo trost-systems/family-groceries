@@ -261,3 +261,18 @@ Deno.test('a run of digits too long for an amount stays in the name; quantities 
     );
   }
 });
+
+// Job 51 (Spec #9): the native Siri phrases name the app.
+for (
+  const [sentence, expected] of [
+    ['Milch, Eier und Brot', ['Milch', 'Eier', 'Brot']],
+    ['Füge Milch zu Hummlist hinzu', ['Milch']],
+    ['Füge Milch zu meiner Hummlist hinzu', ['Milch']],
+    ['Setz Milch und Eier auf die Hummlist', ['Milch', 'Eier']],
+    ['Hummlist, Milch', ['Milch']],
+  ] as [string, string[]][]
+) {
+  Deno.test(`"${sentence}" -> ${JSON.stringify(expected)}`, () => {
+    assertEquals(parseSentence(sentence).map(spoken), expected);
+  });
+}
