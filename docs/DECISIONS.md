@@ -6158,3 +6158,28 @@ page and the onboarding hint ("Du kannst sie später unter Mehr anlegen") alread
   edit sheet the options fold back and focus returns where a pick returns it (the add field);
   after a cancel it goes to the "+ Neuer Laden" option. Escape and Android back close only the
   field, not the sheet.
+
+## Job 62: MCP for testers, 2026-11-01
+
+- **`list_items` counts.** Next to `items` the result carries `counts: {open, checkedLast24h}`
+  for the whole list, whatever the `store` or `category` filter: an assistant asked "how much is
+  left?" while showing only dm should not answer with dm's share. The filtered count is
+  `items.length` already. "Checked" means ticked in the last 24 hours, the shopping trip so far:
+  ticked items stay as history for good, so an all-time count would only grow and say nothing.
+  A day window needs no time zone. One query, both counts, on `items_household_status_idx`.
+- **The blank page after Erlauben is Claude's.** Traced (docs/MCP.md, Claude): our page reaches
+  the client's `redirect_uri` about 50 ms after the tap; Claude's callback then exchanges the code
+  and connects before answering. Nothing on our side to speed up beyond a cold function start.
+  The consent page therefore says the user is done („Verbunden“, „Fertig, du kannst zu Claude
+  zurückkehren.“) once the decision is recorded, and the browser keeps that page up while the
+  callback is pending. Shown only after the server answered, so it never claims a connection
+  that failed on our side. The page names the client from its registration, so other clients get
+  their own name; an earlier approval (no client name) says „zu deiner App“.
+- **Warming the function from the consent page: no.** Supabase runs edge functions near the
+  caller, and Claude's servers call from elsewhere than the user's browser; a warm-up request
+  from the page would likely warm the wrong instance. Unmeasured, so not built.
+- **Tester guide.** `site/content/guides/{de,en}/claude.md`, slug `claude`. No `since`: the
+  connection works with today's app; the "Fertig" page arrives with the next web release, so the
+  guide describes both ("zeigt … oder bleibt bis zu zehn Sekunden leer"). Claude's menu names
+  are given in English too, unverified on a live Claude account (like the feature map says).
+  No page-level noindex, like the other guides: the whole site sends `X-Robots-Tag: noindex`.

@@ -349,7 +349,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get consentDeny => 'Deny';
 
   @override
-  String get redirecting => 'Redirecting …';
+  String get consentConnectedTitle => 'Connected';
+
+  @override
+  String get consentDeclinedTitle => 'Not connected';
+
+  @override
+  String consentDone(String client) {
+    return 'Done, you can return to $client.';
+  }
+
+  @override
+  String get consentDoneNoClient => 'Done, you can return to your app.';
+
+  @override
+  String consentDeclined(String client) {
+    return 'Declined, you can return to $client.';
+  }
 
   @override
   String get consentInvalid =>
