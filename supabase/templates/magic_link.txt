@@ -1,0 +1,14 @@
+Your sign-in link
+
+Follow the link below to sign in. This link expires shortly and can only be used once.
+
+Sign in:
+{{ .ConfirmationURL }}
+
+-- 
+
+You're getting this e-mail because a Hummlist sign-in link was requested for this address. If that wasn't you, just ignore it.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

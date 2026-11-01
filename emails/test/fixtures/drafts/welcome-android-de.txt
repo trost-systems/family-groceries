@@ -1,0 +1,23 @@
+Hi {{NAME}}, schön, dass ihr dabei seid! So geht's los:
+
+1. Installieren
+Öffne diesen Link auf deinem Handy:
+{{JOIN_URL}}
+Wichtig: Der Play Store muss mit {{GOOGLE_EMAIL}} angemeldet sein (oben rechts aufs Profilbild tippen, um das Konto zu wechseln).
+Tipp auf „Tester werden“ und installier die App dann ganz normal aus dem Play Store. Nicht wundern: Sie heißt dort evtl. noch „com.hummlist.app“, und der Installieren-Knopf kann ein paar Minuten brauchen. Updates kommen danach automatisch.
+
+2. Anmelden
+Mit Google, E-Mail und Passwort oder per Anmelde-Link. Ob die App anonyme Nutzungsdaten sammeln darf, entscheidest du; eure Liste wird dafür nie übertragen.
+
+3. Haushalt
+Einer von euch erstellt einen Haushalt und lädt den anderen per Link oder Code ein. Die Einladung gilt 7 Tage und funktioniert einmal.
+
+Eure Aufgabe: Packt euren nächsten Einkauf drauf und nehmt die Liste mit in den Laden.
+Meine Frage: Was hat euch beim ersten Einkauf gestört?
+
+Wenn's beim Installieren hakt, machen wir's kurz zusammen.
+
+Peter
+
+-- 
+Feedback gern als Antwort auf diese Mail oder in der App unter Einstellungen > „Feedback senden“.

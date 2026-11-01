@@ -5,6 +5,8 @@
 #             app's Swift and Kotlin and the plugin registrant from pubspec; the Dart in app/lib
 #             is compiled by the flutter, web-prod and e2e gates already.
 #   fastlane  only when app/fastlane/ or app/Gemfile* changes
+#   emails    only when the mails' sources or outputs change: emails/, supabase/templates/,
+#             supabase/config.toml, the design tokens or the mail assets in site/public/email/
 # Without a range (a push to main, a manual run) and when the CI definition itself changes
 # (this script, ci.yml, the composite actions it uses, a gate, lib.sh, the e2e summary),
 # everything runs. The on-demand e2e (e2e.yml, scripts/ci-e2e.sh, job 27) is not part of ci.yml:
@@ -12,7 +14,7 @@
 # Usage: scripts/ci-changes.sh [<base> <head>]
 set -euo pipefail
 
-all() { printf 'heavy=true\nnative=true\nfastlane=true\n'; exit 0; }
+all() { printf 'heavy=true\nnative=true\nfastlane=true\nemails=true\n'; exit 0; }
 [[ $# == 2 ]] || all
 files="$(git diff --name-only "$1" "$2")"
 [[ -n $files ]] || all
@@ -21,8 +23,9 @@ grep -qE '^(\.github/workflows/ci\.yml|\.github/actions/|scripts/ci-changes\.sh|
 # Documentation: docs/ and Markdown, except the verify skill's files, which its CLI reads.
 code="$(grep -vE '^docs/' <<<"$files" | grep -vE '^[^.].*\.md$|^\.github/.*\.md$' \
   | grep -vxE '\.github/workflows/e2e\.yml|scripts/ci-e2e\.sh' || true)"
-heavy=false native=false fastlane=false
+heavy=false native=false fastlane=false emails=false
 [[ -n $code ]] && heavy=true
 grep -qE '^app/(ios|android)/|^app/pubspec\.(yaml|lock)$' <<<"$files" && native=true
 grep -qE '^app/(fastlane/|Gemfile)' <<<"$files" && fastlane=true
-printf 'heavy=%s\nnative=%s\nfastlane=%s\n' "$heavy" "$native" "$fastlane"
+grep -qE '^(emails/|supabase/templates/|supabase/config\.toml$|design/tokens/|site/public/email/)' <<<"$files" && emails=true
+printf 'heavy=%s\nnative=%s\nfastlane=%s\nemails=%s\n' "$heavy" "$native" "$fastlane" "$emails"

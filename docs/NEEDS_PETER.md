@@ -1086,3 +1086,43 @@ push to `main` goes live on hummlist.com.
    every response until you decide on the beta launch.
 4. **Job 54's demo videos** drop into the three slots without a code change
    (`site/public/media/README.md`); until then the slots show stills.
+
+## Job 55: switch live templates (Peter, after review)
+
+PR "Job 55: Hummlist mail design system" restyles every mail Supabase Auth can send and builds the
+onboarding mails. Nothing is live, nothing was sent, the hosted project is unchanged.
+
+1. **Review** the previews in `docs/screenshots/55-email-design/` (or render them:
+   `cd emails && npm ci && flock /tmp/fg-e2e.lock npm run preview`). Auth mails keep Supabase's
+   English wording on purpose; Launch writes the German ones (`emails/COPY_NEEDED.md`).
+2. **Approve the Legal footer texts** (Legal Review N-15 a and b, in
+   `emails/src/components/Footer.tsx`): sender line with your address, imprint and privacy links,
+   the onboarding unsubscribe paragraph. They are marked "pending Peter's approval" in the code.
+3. **Merge the PR** (it does not change the hosted project).
+4. **Switch the hosted templates** after the merge has deployed `site/public/email/` to
+   hummlist.com (the logo URL), and only once `cd emails && npm run production` passes: today
+   12 of the 13 templates carry a reason line marked draft (Launch to confirm), which this step
+   would put live as they are. With a personal access token from
+   https://supabase.com/dashboard/account/tokens, on a checkout of `main`:
+
+   ```sh
+   cd supabase/templates
+   jq -n --slurpfile s subjects.json '
+     reduce ($s[0] | to_entries[]) as $e ({};
+       . + { ("mailer_subjects_" + $e.key): $e.value,
+             ("mailer_templates_" + $e.key + "_content"): ($e.key + ".html") })' > /tmp/fields.json
+   # inline the HTML files
+   jq 'with_entries(if (.key | endswith("_content")) then .value |= $ARGS.named[.] else . end)' \
+     $(for f in *.html; do printf -- '--rawfile %s %s ' "$f" "$f"; done) /tmp/fields.json > /tmp/auth-templates.json
+   curl -fsS -X PATCH "https://api.supabase.com/v1/projects/jdwqrallbpdbshrdhenk/config/auth" \
+     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+     --data @/tmp/auth-templates.json
+   ```
+
+   This sets the subjects and HTML of all 13 templates. The 7 security notifications stay disabled
+   (`mailer_notifications_*_enabled` is not touched). Then send yourself a magic link from the app
+   and look at it in your mail client. To go back, PATCH the same fields with the values in
+   `emails/test/fixtures/hosted-auth-templates-2026-11-01.json`.
+5. **Decide later:** onboarding sends (From `Hummlist <hello@hummlist.com>`, `List-Unsubscribe`
+   headers ready in `onboardingHeaders`) need the unsubscribe endpoint, a consent record and a
+   sender; none exist (Legal N-16, your decision). Resend open and click tracking must stay off.

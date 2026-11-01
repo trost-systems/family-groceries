@@ -1,0 +1,14 @@
+Confirm your email address
+
+Follow the link below to confirm this email address and finish signing up.
+
+Confirm email address:
+{{ .ConfirmationURL }}
+
+-- 
+
+You're getting this e-mail because someone signed up for Hummlist with this address. If that wasn't you, just ignore it.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

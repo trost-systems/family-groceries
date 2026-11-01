@@ -1,0 +1,13 @@
+Your phone number was changed
+
+The phone number for your account was changed from {{ .OldPhone }} to {{ .Phone }}.
+
+If you didn't make this change, contact support immediately.
+
+-- 
+
+You're getting this e-mail because a security setting of your Hummlist account changed.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

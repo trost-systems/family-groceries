@@ -5841,3 +5841,55 @@ Remotion not used; stageshow not used (ADDENDUM 3); a capture driver of our own 
 `integration_test` (item 2); the software renderer (item 3); loops of 10.5 to 10.9 s instead of 12
 to 14 s for videos 1 and 2 (each beat at its real length, no padding); the research's poster advice
 for autoplay loops (no poster) yields to 53's reduced-motion poster, which is a picture element.
+
+## Job 55: Hummlist mail design system (2026-11-01)
+
+1. **React Email in its own package, `emails/`.** As `site/` is: own `package.json`, exact
+   versions, lockfile. `@react-email/components` 1.0.12 (its bundled `render` 2.0.6, the only
+   render in the tree), React 19.3.1, `tsx` to run TSX, `typescript` 5.9.3 for the type checks.
+   No React Email CLI, so no dev server and no telemetry; previews are Playwright PNGs. Nothing in
+   the repo argued for another tool: the site is plain HTML from Markdown, and Resend takes the
+   `html` and `text` this renders.
+2. **Tokens are read, not copied.** `emails/src/tokens.ts` parses `design/tokens/hummlist.tokens.json`
+   at render time. The output has resolved hex values inline, because mail clients have no CSS
+   variables. Sizes are token values (headline 36, title 22, body 17, label 15; space, radius,
+   border, depth, the 48 px target).
+3. **No web fonts.** Every remote load in a mail reveals the reader's IP and open time; Gmail's
+   proxy does not cover fonts, and only Apple Mail, iOS Mail and Thunderbird would load them. The
+   stacks lead with the tokens' Bricolage Grotesque and Inter and fall back to installed fonts.
+   The logo PNG on hummlist.com is the only remote load.
+4. **Logo: a square PNG from the icon generator.** `design/app-icon/build.mjs` writes
+   `site/public/email/hummlist-icon-96.png` (icon #5, 96 px for 48 px at 2x) with its cobalt ground,
+   so no client darkens ink on a transparent background. CSS rounds it. Its alt is empty because the
+   live "Hummlist" wordmark sits next to it; a screen reader would otherwise say the name twice.
+5. **Plain text from the same render**, with html-to-text formatters in `render.ts`: `1. Title` for
+   steps, the button's label over its URL, URLs of in-sentence links after their paragraph (the
+   Legal sentences stay whole), `-- ` before the footer.
+6. **Wording is checked word for word**, not by eye: the tests compare the auth mails with a copy
+   of the hosted templates and the onboarding mails with Launch's `.txt` drafts. Changing one word
+   in either fails the gate.
+7. **Local stack uses the templates.** `npm run build` writes the template block in
+   `supabase/config.toml` between markers, so subjects cannot drift from `subjects.json`. The e2e
+   specs that read Mailpit (magic link, onboarding) pass with them. The security notifications stay
+   disabled locally, as on hosted. Nothing deploys `config.toml`'s auth settings; switching the
+   hosted project stays a manual step for Peter.
+8. **GoTrue strips HTML comments.** It renders templates with `html/template`, which drops every
+   comment, so the MSO conditionals (VML button, 600 px ghost table, the Arial font rule) never reach
+   readers through Supabase (seen in Mailpit). Kept anyway: they cost nothing, and mails sent
+   through Resend's API keep them. Through Supabase, Outlook on Windows shows the table button with
+   square corners and a card as wide as the reading pane. Moving auth mail to a Send Email Hook
+   would fix that, and would also allow per-reader DE/EN; not built.
+9. **Footers per Legal Review N-15** (addendum 12:55): `TransactionalFooter` and `OnboardingFooter`
+   replace the placeholder slot. Reason lines nobody approved yet are typed `{ draft }`;
+   `renderEmail(…, { production: true })` and `npm run production` refuse them, the `Draft` body
+   component and the demo unsubscribe link. That keeps "pending" visible without a fake placeholder
+   in the reviewed mails.
+10. **"Partner joined" is transactional.** The addendum lists it under both footers. Item 5 (a
+    service notice with only "Liste öffnen", transactional footer) is the specific instruction,
+    and a member joining is account activity, not marketing; it uses `AuthLayout`.
+11. **Auth mails are one table** (`AUTH_MAILS` in `emails/src/emails/auth.tsx`): heading, blocks
+    (paragraph, button or code), subject, reason. Thirteen near-identical files would hide the four
+    real differences.
+12. **Demo screen for `PhoneScreenshot`**: `site/public/email/demo-list-de.png`, cropped from the
+    homepage's add-tick scene (the fictional Brandt household) with the scene's row checkbox
+    hidden, since the app has none (job 57).
