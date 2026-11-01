@@ -39,6 +39,7 @@ jobs:
       heavy: ${{ steps.filter.outputs.heavy }}
       native: ${{ steps.filter.outputs.native }}
       fastlane: ${{ steps.filter.outputs.fastlane }}
+      emails: ${{ steps.filter.outputs.emails }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -139,6 +140,21 @@ jobs:
           cache: npm
           cache-dependency-path: site/package-lock.json
       - run: scripts/gates/site.sh
+
+  # Job 55: the Hummlist mails (emails/) and the Supabase templates built from them.
+  emails:
+    needs: changes
+    if: needs.changes.outputs.emails == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: emails/package-lock.json
+      - run: scripts/gates/emails.sh
 
   fg-cli:
     needs: changes
@@ -291,7 +307,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, changelog, db, functions, site, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, changelog, db, functions, site, emails, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

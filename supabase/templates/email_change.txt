@@ -1,0 +1,16 @@
+Confirm your new email address
+
+Follow the link below to confirm {{ .NewEmail }} as your new email address.
+
+Confirm new email address:
+{{ .ConfirmationURL }}
+
+If you didn't request this change, you can safely ignore this email.
+
+-- 
+
+You're getting this e-mail because a change of your Hummlist account's e-mail address was requested.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

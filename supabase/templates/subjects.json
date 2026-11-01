@@ -1,0 +1,15 @@
+{
+  "confirmation": "Confirm your email address",
+  "magic_link": "Your sign-in link",
+  "recovery": "Reset your password",
+  "email_change": "Confirm your new email address",
+  "invite": "You've been invited",
+  "reauthentication": "{{ .Token }} is your verification code",
+  "password_changed_notification": "Your password was changed",
+  "email_changed_notification": "Your email address was changed",
+  "phone_changed_notification": "Your phone number was changed",
+  "mfa_factor_enrolled_notification": "A new verification method was added to your account",
+  "mfa_factor_unenrolled_notification": "A verification method was removed from your account",
+  "identity_linked_notification": "A new sign-in method was linked to your account",
+  "identity_unlinked_notification": "A sign-in method was removed from your account"
+}

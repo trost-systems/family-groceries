@@ -1,0 +1,10 @@
+Hi {{NAME}},
+
+Ein Tipp für deinen nächsten Einkauf: Schieb die Kategorien einmal in die Reihenfolge, in der du durch deinen Laden läufst. Dann gehst du die Liste im Laden einfach von oben nach unten durch.
+
+Und: Wie lief's bisher? Ein kurzer Satz als Antwort reicht völlig.
+
+Peter
+
+-- 
+Feedback gern als Antwort auf diese Mail oder in der App unter Einstellungen > „Feedback senden“.

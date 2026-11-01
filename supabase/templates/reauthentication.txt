@@ -1,0 +1,13 @@
+Your verification code
+
+Use the code below to verify your identity. It expires shortly.
+
+{{ .Token }}
+
+-- 
+
+You're getting this e-mail because a verification code was requested for your Hummlist account.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

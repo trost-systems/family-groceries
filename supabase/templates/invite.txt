@@ -1,0 +1,14 @@
+You've been invited
+
+You've been invited to create an account. Follow the link below to accept.
+
+Accept invitation:
+{{ .ConfirmationURL }}
+
+-- 
+
+You're getting this e-mail because you were invited to create a Hummlist account.
+
+Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com
+
+Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy

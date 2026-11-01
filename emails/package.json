@@ -1,0 +1,27 @@
+{
+  "name": "hummlist-emails",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@react-email/components": "1.0.12",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "playwright": "1.64.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "tsx scripts/build.tsx",
+    "check": "tsx scripts/build.tsx --check",
+    "production": "tsx scripts/build.tsx --production",
+    "preview": "tsx scripts/preview.tsx",
+    "test": "tsc -p . && tsx scripts/build.tsx --check && node --import tsx --test test/*.test.tsx"
+  }
+}

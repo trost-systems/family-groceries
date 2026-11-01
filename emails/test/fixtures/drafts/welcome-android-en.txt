@@ -1,0 +1,23 @@
+Hi {{NAME}}, glad you're in! Here's how to get started:
+
+1. Install
+Open this link on your phone:
+{{JOIN_URL}}
+Important: The Play Store needs to be signed in with {{GOOGLE_EMAIL}} (tap your profile picture in the top right to switch accounts).
+Tap “Become a tester”, then install the app from the Play Store like any other app. Don't be surprised: it may still be listed as “com.hummlist.app”, and the Install button can take a few minutes to show up. Updates come automatically after that.
+
+2. Sign in
+With Google, email and password, or a sign-in link. Whether the app may collect anonymous usage data is your call; your list is never sent for it.
+
+3. Household
+One of you creates a household and invites the other by link or code. The invite is good for 7 days and works once.
+
+Your task: Put your next grocery run on the list and take it to the store.
+My question: What bugged you on that first trip?
+
+If installing gets stuck, we'll set it up together.
+
+Peter
+
+-- 
+Feedback is welcome as a reply to this email or in the app under Settings > “Send feedback”.
