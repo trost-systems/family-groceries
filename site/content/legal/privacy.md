@@ -34,7 +34,7 @@ Legal basis: Art. 6(1)(b) GDPR (performance of the user agreement).
 
 ## 5. Shopping list and household
 
-We store what you enter in Hummlist: the household name, members and their roles, invitations, items (item name, quantity, who added and bought it, timestamps), a history of changes, and what Hummlist learns for your household (categories, stores, brands). All members of your household see the list, the history and the other members' display names. Invite links expire after 14 days.
+We store what you enter in Hummlist: the household name, members and their roles, invitations, items (item name, quantity, who added and bought it, timestamps), a history of changes, and what Hummlist learns for your household (categories, stores, brands). All members of your household see the list, the history and the other members' display names. Invite links expire after 7 days and work only once.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ## 6. Voice input
