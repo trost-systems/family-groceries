@@ -82,6 +82,14 @@ abstract final class Environment() {
   /// (Legal Review); on in e2e (`config/e2e.json`).
   static const householdArchive = bool.fromEnvironment('HOUSEHOLD_ARCHIVE');
 
+  /// Shows in the integration settings that Siri, Alexa and AI assistants
+  /// are part of Hummlist Premium, for a household without it, while the
+  /// server's `integration_lock` switch is on (job 50). Off by default; on
+  /// only after the switch, in the order docs/PURCHASES.md gives
+  /// ("Integration lock"). Turn it on with
+  /// `--dart-define=INTEGRATION_LOCK=true`.
+  static const integrationLock = bool.fromEnvironment('INTEGRATION_LOCK');
+
   /// Offers Hummlist Lifetime's purchase and restore through RevenueCat on
   /// iOS and Android. Off, the default, the Lifetime page says "coming
   /// soon": the purchase reaches no one until Peter has approved the new

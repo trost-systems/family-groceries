@@ -21,6 +21,7 @@ A spoken sentence such as "Milch, zwei Gurken und Klopapier" becomes separate li
 - `voice-mic` is the microphone button (key `dictation-button`, tooltip "Diktieren", "Diktat beenden" while listening, hint "Ich höre zu …"). It shows on iOS and Android only.
 - `voice-mic-offline-only` refuses to listen when the device can't recognize German offline and says why ("… fehlt hier die deutsche Offline-Spracherkennung …"). It never falls back to a server recognizer.
 
+- `voice-locked` (job 50, off by default): with `app_switches.integration_lock` on, a PAT or Siri-credential request for a household without Hummlist Premium gets HTTP 200, `error`/`outcome` `premium_required` and "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." (English for `lang: en`); nothing is added or read. The app's own session (in-app dictation) is never locked. Drive: `fg db query --write "update app_switches set enabled = true where key = 'integration_lock'"`, then a PAT request (`curl … -H 'Authorization: Bearer fgp_…'`); `fg fn call voice --as peter` uses peter's session and stays free. Switch it off again afterwards.
 ## How to get to it (user POV)
 
 - Siri: "Hey Siri, Einkaufsliste", then the sentence. The Shortcut (docs/SIRI_SHORTCUT.md) POSTs `{"text": "<dictated text>"}` to `/functions/v1/voice?format=text` with `Authorization: Bearer fgp_…`.

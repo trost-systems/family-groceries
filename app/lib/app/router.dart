@@ -11,6 +11,7 @@ import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
+import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/widgets.dart';
@@ -224,7 +225,10 @@ List<RouteBase> moreTabRoutes() => [
       ])
         GoRoute(
           path: path,
-          builder: (_, _) => MoreScreen(page: page),
+          builder: (_, state) => MoreScreen(
+            page: page,
+            paywallEntry: PaywallEntry.parse(state.uri.queryParameters['from']),
+          ),
         ),
       GoRoute(
         path: 'settings',

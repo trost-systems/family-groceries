@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
@@ -20,6 +21,7 @@ import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
+import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -60,6 +62,10 @@ class const App({
 
   /// The theme picked there; the device's setting by default.
   final ThemeMode theme = ThemeMode.system,
+
+  /// Whether the integration settings may show the integration lock (the
+  /// `INTEGRATION_LOCK` define, job 50).
+  final bool integrationLock = Environment.integrationLock,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -75,6 +81,10 @@ class _AppState() extends State<App> {
   late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
   late final _theme = ThemeCubit(widget.cache, widget.theme);
+  late final _integrationLock = IntegrationLockCubit(
+    widget.premium,
+    enabled: widget.integrationLock,
+  );
 
   /// Built once: a theme change only switches between them.
   final _light = appTheme(Brightness.light);
@@ -118,6 +128,7 @@ class _AppState() extends State<App> {
     unawaited(_language.close());
     unawaited(_feedback.close());
     unawaited(_theme.close());
+    unawaited(_integrationLock.close());
     super.dispose();
   }
 
@@ -144,6 +155,7 @@ class _AppState() extends State<App> {
         BlocProvider.value(value: _language),
         BlocProvider.value(value: _feedback),
         BlocProvider.value(value: _theme),
+        BlocProvider.value(value: _integrationLock),
       ],
       child: Builder(
         builder: (context) => MaterialApp.router(

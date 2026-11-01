@@ -46,6 +46,10 @@ abstract interface class PremiumServer() {
 
   /// Throws when it cannot be read.
   Future<MyYearlyPlan> myYearlyPlan();
+
+  /// The server switch `integration_lock` (job 50, seeded off): Siri, Alexa
+  /// and MCP need Hummlist Premium. False when it cannot be read.
+  Future<bool> integrationLock();
 }
 
 class const SupabasePremiumServer(final SupabaseClient _client)
@@ -62,6 +66,15 @@ class const SupabasePremiumServer(final SupabaseClient _client)
   @override
   Future<MyYearlyPlan> myYearlyPlan() async =>
       MyYearlyPlan.parse(await _client.rpc<Object?>('my_yearly_plan'));
+
+  @override
+  Future<bool> integrationLock() async {
+    try {
+      return await _client.rpc<Object?>('integration_lock') == true;
+    } on Object {
+      return false;
+    }
+  }
 }
 
 /// Apple's subscription settings, for when StoreKit's own sheet is not

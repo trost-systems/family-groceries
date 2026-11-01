@@ -190,6 +190,17 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
     -d '{"text": "Milch, zwei Gurken und Klopapier"}'
   ```
 
+- Integration lock (Job 50, docs/PURCHASES.md „Integration lock“): Ist der
+  Server-Schalter `integration_lock` an und hat der Haushalt kein Hummlist
+  Premium, antwortet der Endpunkt jeder Anfrage mit einem Zugriffstoken
+  oder der Siri-Anmeldung mit HTTP 200 und dem Satz „Sprachbefehle sind Teil
+  von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts
+  hinzugefügt.“ (`error`/`outcome` `premium_required`; Platzhaltertext).
+  Nichts wird hinzugefügt oder vorgelesen; der Token bleibt gültig und
+  funktioniert ohne neue Einrichtung, sobald der Haushalt Premium hat. Die
+  Spracheingabe in der App selbst (Sitzungstoken, `mode: "parse"`) ist frei.
+  Der Schalter ist aus.
+
 Der Quellcode liegt in `supabase/functions/voice/`; die Zerlegung des
 Satzes in `parse.ts`, die Beispielsätze als Tests in `parse_test.ts`.
 
@@ -217,7 +228,7 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
 - **Answer.** A request with `lang` gets `outcome` in every JSON answer: `added`, `nothing_added`,
   `parsed`, `read`, or the failure code (also in `error`): `method`, `unauthorized`,
   `no_household`, `no_text`, `too_long`, `nothing_understood`, `server`, and `premium_required`
-  (job 50's lock; not returned yet). `mode: "read"` answers `{outcome, speech, items: [{name,
+  (job 50's integration lock, below). `mode: "read"` answers `{outcome, speech, items: [{name,
   quantity}], total}`, the speech naming the first ten. Requests without `lang`, like this
   Shortcut, get exactly the answers from before job 51.
 - **English** splitting is `supabase/functions/voice/parse_en.ts` (cases in `parse_en_test.ts`), every

@@ -107,6 +107,11 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'actor_role': _roles,
     'household_size': _householdSize,
   },
+  // Job 50 (Spec #4 AC7): the Premium page offered a plan with its price,
+  // once per visit, from More or the integration settings. Never a price.
+  'paywall_viewed': const {
+    'entry_point': OneOf({'more', 'integrations'}),
+  },
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

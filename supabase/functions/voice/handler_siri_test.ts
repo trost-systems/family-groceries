@@ -28,6 +28,8 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
         ? Promise.resolve({ userId: 'u1', householdId: 'h1', via })
         : Promise.reject(new AuthError('invalid_token', 'test'));
     },
+    // The lock is off (or the household has premium): everything as before job 50.
+    requirePremium: () => Promise.resolve('open'),
     addItems: asAdded(['milk', 'Milch']),
     readItems: () => Promise.resolve([]),
     track: (_caller, event) => {
@@ -318,7 +320,7 @@ Deno.test('English failures say that nothing was added', () => {
   }
 });
 
-Deno.test('no request reaches premium_required: job 50 owns that answer', async () => {
+Deno.test('with the gate open (lock off) no request answers premium_required', async () => {
   const reasons: AuthFailure[] = [
     'missing_token',
     'invalid_token',

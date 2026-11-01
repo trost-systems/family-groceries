@@ -13,7 +13,7 @@ export const failureCodes = [
   'too_long',
   'nothing_understood',
   'server',
-  // Job 50's integration lock answers with it; nothing in this function does yet.
+  // Job 50's integration lock: the household has no Hummlist Premium.
   'premium_required',
 ] as const;
 
@@ -57,6 +57,7 @@ export const copy: Record<Lang, Copy> = {
       too_long: 'Das war zu lang. Sag höchstens dreißig Dinge auf einmal.',
       nothing_understood: `Ich habe nichts verstanden, was auf die Liste soll. ${exampleDe}`,
       server: 'Das hat leider nicht geklappt. Versuch es gleich noch einmal.',
+      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Hummlist Launch.
       premium_required:
         'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
     },
@@ -88,6 +89,7 @@ export const copy: Record<Lang, Copy> = {
       too_long: 'That was too long, so nothing was added. Say at most thirty things at once.',
       nothing_understood: `I didn't understand anything to put on the list. ${exampleEn}`,
       server: "Sorry, that didn't work, nothing was added. Please try again in a moment.",
+      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Hummlist Launch.
       premium_required:
         "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium. I didn't add anything.",
     },

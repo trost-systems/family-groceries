@@ -1455,4 +1455,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumContinueAnyway => 'Continue anyway';
+
+  @override
+  String get integrationPremiumTitle => 'Part of Hummlist Premium';
+
+  @override
+  String get integrationPremiumBody =>
+      'Siri, Alexa and AI assistants are part of Hummlist Premium. Your connections stay saved and work again as soon as your household has Hummlist Premium.';
+
+  @override
+  String get integrationPremiumSiri => 'Siri on iPhone';
+
+  @override
+  String get integrationPremiumAlexa => 'Alexa skill';
+
+  @override
+  String get integrationPremiumAi =>
+      'AI assistants like ChatGPT or Claude (MCP)';
+
+  @override
+  String get integrationPremiumLater =>
+      'Later: Google Assistant and Apple Watch';
+
+  @override
+  String get integrationPremiumBuy => 'Unlock Hummlist Premium';
+
+  @override
+  String get integrationPremiumSoon => 'Coming soon.';
+
+  @override
+  String get integrationPaused => 'Paused: needs Hummlist Premium';
 }

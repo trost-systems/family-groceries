@@ -4,5 +4,6 @@
   "POSTHOG_PROJECT_API_KEY": "phc_e2e_fake_collector",
   "POSTHOG_HOST": "https://posthog.invalid",
   "LEGAL_DRAFTS": "true",
-  "HOUSEHOLD_ARCHIVE": "true"
+  "HOUSEHOLD_ARCHIVE": "true",
+  "INTEGRATION_LOCK": "true"
 }

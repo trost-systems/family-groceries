@@ -6,6 +6,8 @@ import { fakeOidcPort, webPort as port, stack } from './stack';
 // `npx playwright test tests/perf.spec.ts`, or `scripts/ci-e2e.sh --spec tests/perf.spec.ts`.
 const timingsAsked = process.argv.some((arg) => /perf/.test(arg));
 // Job 33c: the e2e build's stand-in PostHog host, for the production CSP serve.mjs sends.
+// Job 50: the run of integration-lock.spec.ts alone (scripts/gates/e2e.sh).
+const lockRun = process.env.FG_E2E_INTEGRATION_LOCK === '1';
 const posthogHost = JSON.parse(readFileSync(new URL('../app/config/e2e.json', import.meta.url), 'utf8')).POSTHOG_HOST;
 
 export default defineConfig({
@@ -19,8 +21,13 @@ export default defineConfig({
   // One retry, which fixtures.ts lets run only after a host stall (VM pause) cut the attempt.
   retries: 1,
   // The JSON report is what the job summary and scripts/ci-e2e.sh read (scripts/e2e-summary.sh).
+  // The integration-lock run (below) writes its own, so the suite's stay what CI summarizes.
   reporter: process.env.CI
-    ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'playwright-results.json' }]]
+    ? [
+      ['list'],
+      ['html', { open: 'never', outputFolder: `playwright-report${lockRun ? '-integration-lock' : ''}` }],
+      ['json', { outputFile: `playwright-results${lockRun ? '-integration-lock' : ''}.json` }],
+    ]
     : 'list',
   use: {
     baseURL: `http://127.0.0.1:${port}`,
@@ -29,10 +36,17 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [
+  // Job 50: integration-lock.spec.ts flips the server's integration_lock switch, which every Siri,
+  // Alexa and MCP spec relies on being off, so it runs alone after the suite (scripts/gates/e2e.sh
+  // sets FG_E2E_INTEGRATION_LOCK=1 for that run).
+  projects: lockRun ? [{
+    name: 'integration-lock',
+    testMatch: /integration-lock\.spec\.ts/,
+    use: { ...devices['Desktop Chrome'], viewport: { width: 480, height: 900 } },
+  }] : [
     {
       name: 'chromium',
-      testIgnore: /iphone\.spec\.ts/,
+      testIgnore: /(iphone|integration-lock)\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 480, height: 900 },

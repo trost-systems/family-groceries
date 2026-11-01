@@ -132,4 +132,8 @@ insert into public.revenuecat_deletions (app_user_id, due_at) values (gen_random
 insert into public.household_departures (household_id, user_id, joined_at)
 select (select id from fx where key = 'home'), id, now() - interval '1 day' from auth.users where email = 'carl@backup.test';
 
+-- Job 50: a refusal noted while the household was locked.
+insert into public.integration_blocks (household_id, integration, reported_at)
+values ((select id from fx where key = 'home'), 'mcp', now() - interval '2 hours');
+
 commit;

@@ -13,6 +13,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/purchases/premium_screen.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -57,6 +58,9 @@ class const MoreScreen({
 
   /// Shows "Archivierte Haushalte" (job 43); tests pass true.
   @visibleForTesting final bool showArchived = Environment.householdArchive,
+
+  /// Where the Premium page was opened from (`?from=`), for paywall_viewed.
+  final PaywallEntry paywallEntry = PaywallEntry.more,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -105,7 +109,7 @@ class const MoreScreen({
                       ],
                     ),
                   ),
-                  Expanded(child: _Page(shown)),
+                  Expanded(child: _Page(shown, paywallEntry)),
                 ],
               ),
             ),
@@ -118,7 +122,7 @@ class const MoreScreen({
       // system's) pops to the list, also after a deep link.
       return Scaffold(
         appBar: AppBar(title: Text(_title(l10n, page))),
-        body: _Page(page),
+        body: _Page(page, paywallEntry),
       );
     }
     return Scaffold(
@@ -137,13 +141,14 @@ class const MoreScreen({
   };
 }
 
-class const _Page(final MorePage page) extends StatelessWidget {
+class const _Page(final MorePage page, final PaywallEntry paywallEntry)
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (page) {
     MorePage.access => const AccessScreen(),
     MorePage.account => const AccountScreen(),
     MorePage.invites => const InvitesPage(),
-    MorePage.premium => const PremiumScreen(),
+    MorePage.premium => PremiumScreen(entry: paywallEntry),
     MorePage.settings => const SettingsScreen(),
     MorePage.language => const LanguageScreen(),
   };

@@ -7,6 +7,7 @@
 // branches on. Requests without lang (the Shortcut recipe) get the answers they always got.
 import { AuthError, type Via } from '../_shared/auth.ts';
 import { corsHeaders, json, preflight } from '../_shared/http.ts';
+import type { RequirePremium } from '../_shared/premium.ts';
 import { scrubMessage } from '../_shared/telemetry.ts';
 import { copy, type FailureCode, type Lang, readLimit } from './copy.ts';
 import { maxItems, type ParsedItem, parseSentence } from './parse.ts';
@@ -38,6 +39,11 @@ export interface Added extends ParsedItem {
 export interface Deps<C extends Caller = Caller> {
   /** Resolves the bearer token; throws an AuthError when it can't. */
   authenticate(req: Request): Promise<C>;
+  /**
+   * Job 50: whether the caller's household may use Siri (_shared/premium.ts). Asked for every
+   * caller but the app's own session (in-app dictation is part of the free app).
+   */
+  requirePremium: RequirePremium;
   addItems(caller: C, items: ParsedItem[]): Promise<Added[]>;
   /** The household's open items in the app's order, for mode read. */
   readItems?(caller: C): Promise<ParsedItem[]>;
@@ -193,6 +199,24 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
         console.error('voice: event not recorded', errorShape(e));
       }
     };
+
+    if (caller.via !== 'session') {
+      const event = ({ add: 'siri_add', read: 'siri_read', parse: null } as const)[body.mode];
+      const refuse = async (error: FailureCode) => {
+        if (event) await track(event, error, 0);
+        return fail(error);
+      };
+      try {
+        // Locked: nothing is read or added, and the answer says so (Spec #4 AC2).
+        if (await deps.requirePremium(caller, 'siri') === 'locked') {
+          return await refuse('premium_required');
+        }
+      } catch (e) {
+        console.error('voice: the premium check failed', errorShape(e));
+        deps.report?.(e);
+        return await refuse('server');
+      }
+    }
 
     if (body.mode === 'read') {
       try {

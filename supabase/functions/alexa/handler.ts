@@ -6,6 +6,7 @@
 // items are split, categorized and deduplicated exactly as in the app.
 import { AuthError } from '../_shared/auth.ts';
 import { json } from '../_shared/http.ts';
+import type { RequirePremium } from '../_shared/premium.ts';
 import type { Added } from '../voice/handler.ts';
 import { maxTextLength } from '../voice/handler.ts';
 import { maxItems, type ParsedItem, parseSentence } from '../voice/parse.ts';
@@ -25,6 +26,11 @@ export interface Deps {
   verify(headers: Headers, body: Uint8Array<ArrayBuffer>): Promise<Envelope>;
   /** Resolves an OAuth access token; throws an AuthError when it is not a live link. */
   authenticate(accessToken: string): Promise<Linked>;
+  /**
+   * Job 50: whether the linked household may use Alexa (_shared/premium.ts). Asked before the
+   * list is read or written and at launch; help, stop and the skill events never ask.
+   */
+  requirePremium: RequirePremium;
   /** Takes [count] from the user's allowance (30 items a minute); false when it is used up. */
   takeAdds(linked: Linked, count: number): Promise<boolean>;
   addItems(linked: Linked, items: ParsedItem[]): Promise<Added[]>;
@@ -110,6 +116,26 @@ export function createHandler(deps: Deps) {
 
   const isReply = (x: Linked | Reply): x is Reply => 'end' in x;
 
+  /**
+   * The linked account if its household may use Alexa, else the reply instead: [locked] (with a
+   * card, so the Alexa app shows it too) or [failed] when the check itself failed.
+   */
+  async function unlockedOrReply(
+    envelope: Envelope,
+    locked: string,
+    failed: string,
+  ): Promise<Linked | Reply> {
+    const linked = await linkedOrReply(envelope);
+    if (isReply(linked)) return linked;
+    try {
+      if (await deps.requirePremium(linked, 'alexa') === 'open') return linked;
+    } catch (e) {
+      deps.report(e);
+      return { speech: failed, end: true };
+    }
+    return { speech: locked, card: locked, end: true };
+  }
+
   /** One more try at most, then "nicht verstanden"; never a guess (AC4). */
   const notUnderstood = (envelope: Envelope): Reply =>
     envelope.session?.attributes?.retry ? { speech: speech.notUnderstood, end: true } : {
@@ -129,7 +155,7 @@ export function createHandler(deps: Deps) {
       if (!accessTokenOf(envelope)) return { speech: speech.linkAccount, card: 'link', end: true };
       return notUnderstood(envelope);
     }
-    const linked = await linkedOrReply(envelope);
+    const linked = await unlockedOrReply(envelope, speech.premiumAdd, speech.failed);
     if (isReply(linked)) return linked;
     const items = heard.slice(0, maxItems).map((item) => ({
       ...item,
@@ -154,7 +180,7 @@ export function createHandler(deps: Deps) {
   }
 
   async function readList(envelope: Envelope): Promise<Reply> {
-    const linked = await linkedOrReply(envelope);
+    const linked = await unlockedOrReply(envelope, speech.premium, speech.listFailed);
     if (isReply(linked)) return linked;
     try {
       const said = listing(await deps.listItems(linked));
@@ -166,7 +192,8 @@ export function createHandler(deps: Deps) {
   }
 
   async function launch(envelope: Envelope): Promise<Reply> {
-    const linked = await linkedOrReply(envelope);
+    // Locked: say why right away instead of asking for items it would not add.
+    const linked = await unlockedOrReply(envelope, speech.premium, speech.failed);
     if (isReply(linked)) return linked;
     return { speech: speech.launch, reprompt: speech.launchReprompt, elicit: true, end: false };
   }

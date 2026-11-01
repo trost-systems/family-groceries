@@ -5556,3 +5556,86 @@ server switch `premium_offer` is seeded off.
     so a lapsed Play plan bought again is a new row (same household by H-56). Apple's
     `originalTransactionId` stays across renewals and lapsed resubscribes in the group (Apple
     commerce engineer, developer forums). NEEDS_LEAD "Job 49" lists this for Legal's S-8.
+
+## Job 50: integration lock (Siri, Alexa and MCP are Hummlist Premium), 2026-11-01
+
+Spec #4 (Peter, 2026-10-31 20:18 CET): Siri, Alexa and AI-assistant access (MCP) are part of
+Hummlist Premium; the list, sync, categories, the app and the web app stay free. Everything is
+behind a release flag that stays off until Peter says go. Migration
+`20261101081327_integration_lock.sql`; docs/PURCHASES.md ("Integration lock") has the behavior and
+the go-live order.
+
+1. **Two switches, both off.** The server's `app_switches.integration_lock` (job 47's table,
+   seeded off) decides enforcement; the app's `INTEGRATION_LOCK` define (off) decides whether the
+   app shows anything. The app also reads the server switch (`integration_lock()`, members may
+   call it), so the card shows only while the server really refuses: turning the switch off again
+   hides it in every build. Order: server switch first, then the define.
+2. **One check, in Postgres.** `integration_gate(household, integration)` (service connection
+   only) returns open while the switch is off, else `household_has_premium` (job 49's rule at read
+   time: yearly not ended, Lifetime, tester grant). `_shared/premium.ts` (`requirePremium`) only
+   calls it and reports; no premium rule lives in TypeScript. Every endpoint calls it right after
+   `authenticate` (Alexa: after verification and linking).
+3. **What is premium (`authenticate(` on main, classified).**
+   | Endpoint | Credential | Class |
+   | --- | --- | --- |
+   | `voice` add, read, parse | PAT (the Shortcut), Siri credential (native Siri), OAuth | premium, `siri` |
+   | `voice` parse | the app's own session (in-app dictation) | free: part of the app |
+   | `alexa` AddItemIntent, ReadListIntent, LaunchRequest | the account link (OAuth) | premium, `alexa` |
+   | `alexa` Help, Stop, Cancel, Fallback, SessionEnded, skill events (linked, disabled) | any | free: the user hears why and can unlink |
+   | `mcp` tools/call (all six tools read or write household data) | OAuth, PAT | premium, `mcp` |
+   | `mcp` discovery, initialize, tools/list | none or any | free: clients connect and show the tools |
+   | `account`, `purchases` | the app's own session only | free |
+   | `health` | none | free |
+   The app's own Supabase access (RLS, the list, Realtime, the web app) is never gated. Not gated
+   either: an OAuth access token a client sends straight to PostgREST instead of MCP; it is a
+   Supabase user token under the same RLS as the app. No MCP client does that; gating it would
+   mean a client check in every policy, which the app's own access must never meet. Listed in
+   NEEDS_LEAD "Job 50".
+4. **Locked answers.** Voice: `premium_required` with HTTP 200 (job 51 prepared code, copy and the
+   iOS client): the Shortcut speaks only a 200's answer, native Siri branches on `outcome`. One
+   sentence for add and read; it says nothing was added. Alexa: `premiumAdd` ("... Ich habe nichts
+   hinzugefügt.") for adds, `premium` for reading and at launch, each with a card, session ended.
+   Launch answers at once instead of asking for items it would refuse. The rate limit is not
+   touched by a refusal. MCP: a tool result with `isError: true` and HTTP 200, German unless the
+   client prefers English (Accept-Language), never 401/403: those make clients run OAuth again,
+   and AC4 wants no relinking. Nothing is queued or kept for later.
+5. **Fail-safe.** A failing check (database down) throws: the endpoint gives its normal transient
+   error (voice `server`, Alexa `failed`/`listFailed`, MCP an error like any database failure),
+   never the premium answer and never an add. With the switch off this changes nothing a user
+   could see: the same request would have failed at its first database call.
+6. **Linking while locked is allowed.** Tokens, Siri on an iPhone, Alexa linking and OAuth
+   connections can be set up while locked; unlocking later needs nothing redone. A lock or a lapse
+   deletes, revokes or disconnects nothing; the integration settings list every connection with
+   "Pausiert: braucht Hummlist Premium" and offer only the usual revoke/disconnect.
+7. **`integration_blocked`, once an hour.** The first refusal per household and integration in an
+   hour is noted in `integration_blocks` (service only; RLS policy for members, no grant) and sent
+   to PostHog as `integration_blocked` with `integration` only, under the install of the caller's
+   newest analytics decision if that was yes (as Alexa's `item_added`). Hammering a locked endpoint
+   costs one row update an hour, not one event per request. The note is taken whether or not the
+   event can go (no consent): the count is per household. The event can only happen with the
+   switch on; privacy section 9 does not list it yet, so the switch waits for Legal Review
+   (NEEDS_LEAD "Job 50").
+8. **The app's one decision.** `integrationAccess` (`app/lib/settings/integration_lock.dart`):
+   locked only when the server enforces the lock and `canOffer(Entitlement.premium, yearly)` is
+   true (the household is known to have no premium; false while loading or offline, so an unlocked
+   household never sees Buy). Then Buy (opens job 49's Premium page) where this build sells and
+   `premium_offer` is on, "Bald verfügbar" where it does not (`REVENUECAT_PURCHASES` off, or the
+   switch off), and job 49's "buy it in the iPhone or Android app" note on the web. Opening the
+   settings reads the two switches over Supabase; RevenueCat is never asked (H-67). Entitlements'
+   Realtime watch updates the card for every member within one sync.
+9. **`paywall_viewed` is new.** Job 49 shipped no such event; AC7 asks for it. The Premium page
+   sends it once per visit when it shows a plan with its price to a household that can buy it,
+   with `entry_point` (`more`, or `integrations` from the card's Buy), as soon as both the prices
+   and the household's rows are known, whichever comes last. Off today in practice (the
+   page offers nothing while `premium_offer` and `REVENUECAT_PURCHASES` are off).
+10. **Free screens.** AC5 is tested on the screens the app has: the list, More, settings (theme,
+    app icon, language), account, invites, categories and stores. The app has no item photos or
+    home-screen widget settings yet; when they come they must not read the lock.
+11. **The e2e spec runs alone.** `integration-lock.spec.ts` turns the global switch on, which every
+    other Siri, Alexa and MCP spec relies on being off, so `scripts/gates/e2e.sh` runs it after the
+    suite (full runs, or with the arguments when they name it) with `FG_E2E_INTEGRATION_LOCK=1`,
+    which gives it its own Playwright project and report files
+    (`playwright-results-integration-lock.json`, `playwright-report-integration-lock/`). The CI
+    report action uploads and summarizes both result files, and `scripts/ci-e2e.sh` reads both.
+12. **Changelog: `none`.** Nothing changes for users while the flag is off. `releases/flags.json`
+    gets the hold `integration-lock` (released: false) for the item the go-live PR writes.

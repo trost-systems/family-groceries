@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
@@ -25,6 +26,16 @@ final class const OfferUnavailable() extends Offer;
 final class const OfferPrices(final Map<PremiumPlan, StorePrice> prices)
     extends Offer;
 
+/// Where the Premium page was opened from: More's row, or the integration
+/// settings' card (job 50, `?from=integrations`).
+enum PaywallEntry() {
+  more,
+  integrations;
+
+  static PaywallEntry parse(String? from) =>
+      from == integrations.name ? integrations : more;
+}
+
 @immutable
 class const PremiumPage({
   final Offer offer = const OfferLoading(),
@@ -44,9 +55,16 @@ class PremiumPageCubit(
 
   /// Whether this build sells at all (a store and `REVENUECAT_PURCHASES`).
   required final bool sells,
+
+  /// paywall_viewed goes here once the page offers a plan with its price.
+  final Analytics? analytics,
+  final PaywallEntry entry = PaywallEntry.more,
 }) extends Cubit<PremiumPage> {
   this : super(const PremiumPage()) {
-    _rows = _entitlements.stream.listen((_) => unawaited(_readMine()));
+    _rows = _entitlements.stream.listen((_) {
+      unawaited(_readMine());
+      _viewed();
+    });
     unawaited(_open());
   }
 
@@ -58,11 +76,31 @@ class PremiumPageCubit(
       _emitOffer(const OfferClosed());
       return;
     }
-    _emitOffer(switch (await _prices.read()) {
+    final offer = switch (await _prices.read()) {
       PricesRead(:final prices) when prices.isNotEmpty => OfferPrices(prices),
       PricesRead() => const OfferUnavailable(),
       PricesUnavailable() => const OfferUnavailable(),
-    });
+    };
+    _emitOffer(offer);
+    _viewed();
+  }
+
+  var _viewedSent = false;
+
+  /// Job 50 (Spec #4 AC7): paywall_viewed once per visit, as soon as the
+  /// page shows a plan with its price to a household that can buy it
+  /// (prices and the household's rows arrive in either order). Never a
+  /// price or a product.
+  void _viewed() {
+    if (_viewedSent || isClosed || state.offer is! OfferPrices) {
+      return;
+    }
+    if (PremiumPlan.values.any(
+      (plan) => _entitlements.canOffer(Entitlement.premium, plan),
+    )) {
+      _viewedSent = true;
+      analytics?.track('paywall_viewed', {'entry_point': entry.name});
+    }
   }
 
   Future<void> _readMine() async {
