@@ -5,6 +5,8 @@ name: Store screenshots
 run-name: "store screenshots ${{ inputs.locale }} ${{ inputs.store }} on ${{ github.ref_name }}"
 
 on:
+  push:
+    branches: [job/65-store-screenshots]
   workflow_dispatch:
     inputs:
       locale:
@@ -41,7 +43,7 @@ jobs:
           supabase-cli-version: ${{ env.SUPABASE_CLI_VERSION }}
           flutter-version: ${{ env.FLUTTER_VERSION }}
           ffmpeg: 'true'
-      - run: scripts/store-screenshots.sh --locale "$LOCALE" --store "$STORE"
+      - run: scripts/store-screenshots.sh --locale "${LOCALE:-de-DE}" --store "${STORE:-all}"
         env:
           LOCALE: ${{ inputs.locale }}
           STORE: ${{ inputs.store }}
