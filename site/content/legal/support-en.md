@@ -35,24 +35,36 @@ Tap **More**, then **Account** and **Export my data**. You get everything stored
 
 ### How do I delete my account?
 
-Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Hummlist Lifetime included; the purchase can't be moved to another household. Whether you can get your money back is under "Can I get a refund for Hummlist Lifetime?". Households you archived are deleted too. If others stay in the household, Hummlist Lifetime stays with them. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
+Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Hummlist Premium included; a purchase can't be moved to another household. Whether you can get your money back is under "Can I get a refund for Hummlist Premium?". Households you archived are deleted too. If others stay in the household, Hummlist Premium stays with them. If you took out a yearly plan, it does not end with your account: it keeps being billed to your Apple or Google account until you cancel it there (see "How do I cancel the yearly plan?"). Best cancel it before deleting your account. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
 
 Without the app: the steps are at [app.hummlist.com/konto-loeschen.html](https://app.hummlist.com/konto-loeschen.html) (German), or write to [support@hummlist.com](mailto:support@hummlist.com).
 
-### What happens to Hummlist Lifetime if I leave a household as its last member?
+### What happens to Hummlist Premium if I leave a household?
 
-Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, you can archive it: it is kept with its list and Hummlist Lifetime, and you can re-enable it under **More** › **Archived households**. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Lifetime ends with it. For refunds, see "Can I get a refund for Hummlist Lifetime?".
+Hummlist Premium belongs to the household and does not move with you, whether it's a yearly plan or a one-time purchase. If you took out a yearly plan for the household, it keeps running on your Apple or Google account even if you leave the household, until you cancel it (see "How do I cancel the yearly plan?"). If you leave a household with Hummlist Premium as its last member, you can archive it: it is kept with its list and Hummlist Premium, and you can re-enable it under **More** › **Archived households**. A yearly plan keeps being billed for an archived household until you cancel it; when it runs out, Premium ends and the household stays archived. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Premium ends with it; you still have to cancel a yearly plan yourself. For refunds, see "Can I get a refund for Hummlist Premium?".
 
-### Can I get a refund for Hummlist Lifetime?
+### How do I cancel the yearly plan?
 
-You buy Hummlist Lifetime from Apple or Google, not from us. So:
+You take out the Hummlist Premium yearly plan with Apple or Google, and you can only cancel it there. Only the person who took it out can cancel it; Hummlist can't do it for you. In the app, go to **More** › **Hummlist Premium** › **Manage or cancel subscription**.
+
+- **iPhone:** open [Subscriptions in your Apple Account](https://apps.apple.com/account/subscriptions), choose Hummlist, then "Cancel Subscription" ([Apple's guide](https://support.apple.com/en-us/118428)).
+- **Android:** open [Subscriptions on Google Play](https://play.google.com/store/account/subscriptions), choose Hummlist, then "Cancel subscription" ([Google's guide](https://support.google.com/googleplay/answer/7018481?hl=en)).
+
+If you cancel at least 24 hours before the end of the paid year, it won't renew, and Premium stays until the end of that year. After that, Premium ends; your list and everything else stay. If you live in Germany, you can also cancel early with immediate effect and get the rest refunded pro rata: with Apple at any time through Apple Support, with Google after the first year through "Cancel immediately", where offered (details: [Apple](https://www.apple.com/legal/internet-services/itunes/de/terms.html), [Google](https://support.google.com/googleplay/answer/15576180?hl=en)). Deleting the app or your Hummlist account does not cancel the plan.
+
+If your household buys the one-time purchase while a yearly plan is running, the plan keeps running until it is cancelled; the rest of the plan year is not refunded automatically. How to get money back for it is under "Can I get a refund for Hummlist Premium?".
+
+### Can I get a refund for Hummlist Premium?
+
+You buy Hummlist Premium, as a yearly plan or a one-time purchase, from Apple or Google, not from us. So:
 
 - **iPhone (App Store):** only Apple can refund. Request it at [reportaproblem.apple.com](https://reportaproblem.apple.com) ("I'd like to" › "Request a refund"); how it works: [Apple Support](https://support.apple.com/en-us/118223). We can't refund App Store purchases ourselves.
 - **Android (Google Play):** within 48 hours of buying, request the refund from Google directly; Google decides ([Google Play refund policies](https://support.google.com/googleplay/answer/15574908?hl=en)). After that, email us at [support@hummlist.com](mailto:support@hummlist.com) with the order number from Google's purchase confirmation (it starts with "GPA.") or the email address of your Google account. We look at each request individually and, where we agree, refund through Google Play.
+- **Yearly plan:** the same applies. In Germany you can also cancel a running yearly plan early and get the rest refunded pro rata (see "How do I cancel the yearly plan?").
 
-If a purchase is refunded, the unlock ends for the household it was bought for, for all its members, unless the household bought Hummlist Lifetime more than once.
+If a purchase is refunded, the unlock ends for the household it was bought for, for all its members, unless the household has another purchase or a running yearly plan.
 
-Our refunds after the 48 hours are voluntary. They don't affect your statutory rights, also after the 48 hours, for example if Hummlist Lifetime doesn't work as described or if you can withdraw from the purchase. You have these rights against Apple or Google, who sell you Hummlist Lifetime; details are in [Apple's terms](https://www.apple.com/legal/internet-services/itunes/) or [Google Play's terms](https://play.google.com/about/play-terms/). Feel free to write to us in that case too; we'll help.
+Our refunds after the 48 hours are voluntary. They don't affect your statutory rights, also after the 48 hours, for example if Hummlist Premium doesn't work as described or if you can withdraw from the purchase. You have these rights against Apple or Google, who sell you Hummlist Premium; details are in [Apple's terms](https://www.apple.com/legal/internet-services/itunes/) or [Google Play's terms](https://play.google.com/about/play-terms/). Feel free to write to us in that case too; we'll help.
 
 ### How do I turn off usage data?
 
@@ -66,9 +78,9 @@ Yes. On iPhone with iOS 17 or later you can do it directly with the Hummlist app
 
 Yes, with the Alexa skill "Hummlist" (German only). Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, „Alexa, sag Hummlist, füg Milch und Eier hinzu“ ("add milk and eggs") or „Alexa, frag Hummlist, was auf der Liste steht“ ("what's on the list"). To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Hummlist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
 
-### Can I use Hummlist with Claude, ChatGPT or another AI assistant?
+### Can I connect Hummlist to AI assistants?
 
-Yes, through Hummlist's MCP server. Tap **More**, then **Access**. The MCP server's address is shown there. You connect the assistant by signing in or with an access token. Under **Connected apps** and **Access tokens** you see every connection and can revoke it at any time.
+Yes, through Hummlist's MCP server. This is part of Hummlist Premium. Tap **More**, then **Access**. The MCP server's address is shown there. You connect the assistant by signing in or with an access token. Under **Connected apps** and **Access tokens** you see every connection and can revoke it at any time.
 
 ### I test Hummlist through TestFlight or Google Play. What should I know?
 
