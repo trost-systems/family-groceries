@@ -42,14 +42,14 @@ select results_eq(
             ('👶 Drogerie'), ('Sonstiges') $$,
   'the ten route categories are seeded in order, fallback last'
 );
-select results_eq(
-  $$ select name from public.stores where household_id = (select id from h) order by sort_order $$,
-  $$ values ('dm'), ('Lidl'), ('Edeka') $$,
-  'dm, Lidl and Edeka are seeded'
+select is(
+  (select count(*)::int from public.stores where household_id = (select id from h)),
+  0, 'create_household(name) creates no store'
 );
+select public.add_store((select id from h), 'Supermarkt');
 select is(
   (select count(*)::int from public.store_category_order where household_id = (select id from h)),
-  33, 'every store gets an order for every category'
+  11, 'an added store gets an order for every category'
 );
 
 insert into public.items (household_id, name) select id, '  Vollmilch ' from h;

@@ -67,5 +67,5 @@ ffmpeg -i <out>/quick-add/de.gif -vf "select='not(mod(n\,15))',scale=240:-1,tile
 ## Gotchas
 
 - `clip.mjs` needs `launch.sh`'s instance (`doctor.sh` healthy) and `ffmpeg`. It seeds and tears down its own runs, so it doesn't touch the baseline run.
-- Store sections show the store's name in a neutral hex pill (no retailer colours or logos since job 57). The demo households have no store tags, so their items sit under „Ohne Laden“; seed store tags in the script's scenario if a clip needs a store.
+- Store sections show the store's name in a neutral hex pill (no retailer colours or logos since job 57). The demo households have no stores, so their items sit under „Ohne Laden“; if a clip needs a store, declare a generic one (Supermarkt, Drogerie, Bäckerei, Wochenmarkt) in the script's scenario (`stores:`) and tag items to it, so no retailer appears on screen.
 - A failed take leaves `<out>/<feature-id>/.work-<lang>/` only with `--keep-frames`. A failure still tears the seeded run down.

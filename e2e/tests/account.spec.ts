@@ -151,7 +151,7 @@ test('a member deletes their account; the household and their items stay for the
 
 test('the last member deletes their account; the household goes with every row in it', async ({ page }) => {
   const email = newEmail('acct-last');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: ['Supermarkt'] });
   await addItem(page, 'Milch');
   await addItem(page, 'Brot');
   await expect(itemRow(page, 'Brot')).toBeVisible();

@@ -45,10 +45,12 @@ insert into auth.users (id, email) values
 -- create_household: the default stores are optional, the categories are not ------------------
 
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
-create temp table h as select * from public.create_household('Familie Test');
+create temp table h as select * from public.create_household(p_name => 'Familie Test', p_default_stores => true);
 grant select on h to authenticated;
-select is((select count(*)::int from public.stores where household_id = (select id from h)), 3,
-  'create_household(name) still seeds dm, Lidl and Edeka');
+select results_eq(
+  $$ select name, seed_key from public.stores where household_id = (select id from h) order by sort_order $$,
+  $$ values ('dm', 'dm'), ('Lidl', 'lidl'), ('Edeka', 'edeka') $$,
+  'p_default_stores true still seeds dm, Lidl and Edeka (old builds)');
 select is(
   (select count(*)::int from public.store_category_order where household_id = (select id from h)), 33,
   'with their store layouts');

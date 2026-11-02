@@ -32,7 +32,7 @@ A spoken sentence such as "Milch, zwei Gurken und Klopapier" becomes separate li
 
 Preconditions:
 
-- Baseline from `features/README.md`; peter signed in on the list. One client is enough. Mark earlier test items bought, or start from `fg up --fresh`.
+- Baseline from `features/README.md` with the chain stores dm, Lidl and Edeka, added as in `features/README.md` (Baseline) (the Windeln check needs dm); peter signed in on the list. One client is enough. Mark earlier test items bought, or start from `fg up --fresh`.
 
 - **Add.** Run `fg fn call voice --body '{"text":"Milch, zwei Gurken und Klopapier"}'`. The result has status 200 and `speech` "Hinzugefügt: Milch, 2 Gurken, Klopapier.", with Gurken's quantity "2". `fg wait --text Klopapier` succeeds on peter's app within a second, without any tap.
 - **Brand and properties.** Run `fg fn call voice --body '{"text":"Windeln Pampers Größe 3 und zwei Liter Hafermilch"}'`. The `speech` is "Hinzugefügt: Windeln Pampers Größe 3, 2 l Hafermilch." and the first item has name "Windeln", brand "Pampers", properties "Größe 3" (the server parser, `public.parse_item`). `fg db query "select store_id is not null from items where name = 'Windeln'"` is true (drugstore items get the dm store).

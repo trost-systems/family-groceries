@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
-  addField, adminClient, apiAs, holdFrames, itemRow, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
+  addField, adminClient, apiAs, chainStores, holdFrames, itemRow, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
 } from './helpers';
 import { watchBuild, withoutWasmGC } from './web-build';
 
@@ -61,7 +61,7 @@ async function dbItem(email: string, name: string) {
 test('the sheet hugs its suggestions, grows with them up to the top and keeps the input still', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const email = newEmail('sheet');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   await seedHistory(email);
   await page.reload();
   await expect(addField(page)).toBeFocused();
@@ -138,7 +138,8 @@ test('with reduced motion the sheet changes size without animating', async ({ pa
 
 test('a tap adds the row with every field; a chip pick applies to the tapped row; Enter takes the first', async ({ page }) => {
   const email = newEmail('sheet-add');
-  await signUpWithHousehold(page, email);
+  // dm for the brand default (Pampers -> dm), an own store for the chip pick.
+  await signUpWithHousehold(page, email, { stores: ['dm', 'Supermarkt'] });
   await seedHistory(email);
   await page.reload();
   await expect(addField(page)).toBeFocused();
@@ -158,15 +159,15 @@ test('a tap adds the row with every field; a chip pick applies to the tapped row
   await typeInto(addField(page), 'Windeln Babylove');
   await expect(rows(page).first()).toHaveAccessibleName(/^Windeln, Wie getippt, Babylove/);
   await sheet(page).getByRole('button', { name: /^Laden: / }).click();
-  await sheet(page).getByRole('button', { name: 'Lidl', exact: true }).click();
-  await expect(sheet(page).getByRole('button', { name: 'Laden: Lidl' }), 'the chip shows the pick').toBeVisible();
+  await sheet(page).getByRole('button', { name: 'Supermarkt', exact: true }).click();
+  await expect(sheet(page).getByRole('button', { name: 'Laden: Supermarkt' }), 'the chip shows the pick').toBeVisible();
   const alternative = rows(page).nth(1);
   const label = (await alternative.getAttribute('aria-label')) ?? (await alternative.innerText());
   await screenshot(page, 'add-chip-picked');
   await alternative.click();
   await expect.poll(async () => (await dbItem(email, 'Windeln')).length, { message: 'a second Windeln row' }).toBe(2);
   const added = (await dbItem(email, 'Windeln')).find((r) => r.brand !== 'Pampers' || r.properties !== 'Größe 3')!;
-  expect(added.store, `the store pick applies to the tapped row (${label})`).toEqual({ name: 'Lidl' });
+  expect(added.store, `the store pick applies to the tapped row (${label})`).toEqual({ name: 'Supermarkt' });
 
   await typeInto(addField(page), 'Butter');
   await page.keyboard.press('Enter');
@@ -192,10 +193,10 @@ test('a tap adds the row with every field; a chip pick applies to the tapped row
 });
 
 test('after a chip pick or Undo, typing goes on in the input without a click', async ({ page }) => {
-  await signUpWithHousehold(page, newEmail('sheet-focus'));
+  await signUpWithHousehold(page, newEmail('sheet-focus'), { stores: ['Supermarkt'] });
   await typeInto(addField(page), 'Butter');
   await sheet(page).getByRole('button', { name: /^Laden: / }).click();
-  await sheet(page).getByRole('button', { name: 'Lidl', exact: true }).click();
+  await sheet(page).getByRole('button', { name: 'Supermarkt', exact: true }).click();
   // On web the input gets its focus back 50 ms after a tap (list_screen.dart, _refocusAfterTap).
   await page.waitForTimeout(150);
   await expect(addField(page)).toBeFocused();

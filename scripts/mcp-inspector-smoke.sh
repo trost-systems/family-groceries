@@ -17,7 +17,7 @@ api() { # api <method> <path> [json] [bearer]
 json() { node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(eval("("+s+")"+process.argv[1])))' "$1"; }
 
 session="$(api POST /auth/v1/signup "{\"email\":\"$email\",\"password\":\"inspector-pass-123\"}" | json .access_token)"
-api POST /rest/v1/rpc/create_household '{}' "$session" >/dev/null
+api POST /rest/v1/rpc/create_household '{"p_stores":["Drogerie"]}' "$session" >/dev/null
 pat="$(api POST /rest/v1/rpc/create_personal_access_token '{"p_name":"Inspector"}' "$session" | json '[0].token')"
 log "user $email, token fgp_…${pat: -4}, endpoint $ENDPOINT"
 
@@ -37,11 +37,11 @@ status
 
 inspect --method tools/list | json '.tools.map(t => t.name).join(", ")'
 inspect --method tools/call --tool-name add_items \
-  --tool-arg 'items=[{"name":"Hafermilch"},{"name":"2 Gurken"},{"name":"Zahnpasta","store":"dm"}]'
+  --tool-arg 'items=[{"name":"Hafermilch"},{"name":"2 Gurken"},{"name":"Zahnpasta","store":"Drogerie"}]'
 inspect --method tools/call --tool-name add_items --tool-arg 'items=[{"name":"Gurke"}]'
 inspect --method tools/call --tool-name move_item --tool-arg item=hafermilch --tool-arg category=Getränke
 inspect --method tools/call --tool-name tick_items --tool-arg 'items=["Gurken"]'
-inspect --method tools/call --tool-name list_items --tool-arg store=dm
+inspect --method tools/call --tool-name list_items --tool-arg store=Drogerie
 inspect --method tools/call --tool-name list_categories | head -c 400
 echo
 inspect --method tools/call --tool-name list_stores

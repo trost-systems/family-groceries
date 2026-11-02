@@ -8,6 +8,7 @@ import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_link.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +56,7 @@ void main() {
         providers: [
           RepositoryProvider.value(value: cache),
           RepositoryProvider.value(value: links),
+          RepositoryProvider<PremiumServer>.value(value: purchases.premium),
           RepositoryProvider.value(
             value: SocialSignIn(
               auth,

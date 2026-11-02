@@ -36,7 +36,7 @@ Every store of the household is a section of the list: a divider "<Store>, N Art
 
 Preconditions:
 
-- Baseline from `features/README.md` on the linux surface (`fg drag`); peter signed in on the list. `fg up --fresh` if earlier runs tagged these items or changed a store layout: tags, memory and layouts survive `fg up`.
+- Baseline from `features/README.md` on the linux surface (`fg drag`) with the chain stores dm, Lidl and Edeka, added as in `features/README.md` (Baseline); peter signed in on the list. `fg up --fresh` if earlier runs tagged these items or changed a store layout: tags, memory and layouts survive `fg up`.
 - A short list: `fg db query "update items set status = 'bought' where status = 'active'" --write`, then `fg type --key add-item-field --input <item> --submit` for Äpfel, Brot, Milch, Hack, Zahnpasta and Klopapier (the add sheet stays open between them), `fg press escape` to close the sheet, and `fg wait --contains "Wird einsortiert" --gone`. Tap `--key list-hint-dismiss` if the card shows, so all sections fit.
 - The store ids: `fg db query "select name, id from stores order by sort_order" --as peter`. The store query used below: `S="select i.name, s.name as store, c.name as category from items i left join stores s on s.id = i.store_id join categories c on c.id = i.category_id where i.status = 'active' order by 1"`.
 

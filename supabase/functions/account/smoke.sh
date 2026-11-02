@@ -57,7 +57,7 @@ b=$(signup bob); B=$(jq -r .access_token <<<"$b"); B_ID=$(jq -r .user.id <<<"$b"
 c=$(signup carl); C=$(jq -r .access_token <<<"$c"); C_ID=$(jq -r .user.id <<<"$c")
 check 'three users signed up' "$([[ $A != null && $B != null && $C != null ]] && echo ok)" ok
 
-HH=$(rpc "$A" create_household '{"p_name":"Smoke"}' | jq -r .id)
+HH=$(rpc "$A" create_household '{"p_name":"Smoke","p_stores":["Supermarkt"]}' | jq -r .id)
 CODE=$(rpc "$A" create_invite "{\"p_household\":\"$HH\"}" | jq -r .code)
 check 'Bob joins' "$(rpc "$B" join_household "{\"p_code\":\"$CODE\"}" | jq -r .)" "$HH"
 # Invites are single use (job 22): Carl gets his own.
@@ -110,9 +110,9 @@ check "Carl's item stays without an author" \
 check 'Alice is now the only member' "$(rest "$A" GET "household_members?household_id=eq.$HH&select=user_id,role" | jq -c .)" \
   "[{\"user_id\":\"$A_ID\",\"role\":\"owner\"}]"
 
-LIDL=$(rest "$A" GET "stores?household_id=eq.$HH&seed_key=eq.lidl&select=id" | jq -r '.[0].id')
+STORE=$(rest "$A" GET "stores?household_id=eq.$HH&name=eq.Supermarkt&select=id" | jq -r '.[0].id')
 DRINKS=$(rest "$A" GET "categories?household_id=eq.$HH&seed_key=eq.drinks&select=id" | jq -r '.[0].id')
-rest "$A" PATCH "items?household_id=eq.$HH&name=eq.Tee" "{\"store_id\":\"$LIDL\",\"category_id\":\"$DRINKS\"}" >/dev/null
+rest "$A" PATCH "items?household_id=eq.$HH&name=eq.Tee" "{\"store_id\":\"$STORE\",\"category_id\":\"$DRINKS\"}" >/dev/null
 before=$(household_rows "$HH")
 echo "     $before"
 check 'before: the household has rows in every table' "$(tr ' ' '\n' <<<"$before" | grep -cvE '=[1-9][0-9]*$' || true)" 0

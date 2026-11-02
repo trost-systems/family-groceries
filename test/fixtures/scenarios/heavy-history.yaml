@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: heavy-history
-summary: Two members with eight weeks of shopping trips at Edeka, Lidl and dm, so suggestions show clear usuals and several items are due again.
+summary: Two members with eight weeks of shopping trips at the Supermarkt, the Wochenmarkt and the Drogerie, so suggestions show clear usuals and several items are due again.
 goodFor:
   - usuals and "Brauchen wir wieder?" (suggest_items, due items)
   - prefix suggestions in the add field
@@ -12,29 +12,35 @@ users:
 households:
   - name: Wohnung Weber
     members: [jo, kai]
+    stores:
+      - name: Supermarkt
+      - name: Wochenmarkt
+      - name: Drogerie
+        layout: [👶 Drogerie, Vorrat & Konserven, Süßes & Snacks, Haushalt, Getränke, Sonstiges]
+        hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl]
     items:
       - Kaffee
-      - { name: Spülmaschinentabs, store: dm }
+      - { name: Spülmaschinentabs, store: Drogerie }
       - Basilikum
     history:
       # Weekly big shop; last one 9 days ago, so these are due (gap 7 days).
       - at: "-9d 17:30"
         by: jo
-        store: Edeka
+        store: Supermarkt
         every: 7d
         times: 8
         items: [Milch, Brot, Eier, Butter, Bananen, Äpfel, Käse, Joghurt]
       # Weekly top-up two days ago: usuals, not due yet.
       - at: "-2d 18:10"
         by: kai
-        store: Lidl
+        store: Wochenmarkt
         every: 7d
         times: 8
         items: [Hafermilch, Gurken, Tomaten, Nudeln]
-      # Every two weeks at dm; last one 20 days ago, so due (gap 14 days).
+      # Every two weeks at the Drogerie; last one 20 days ago, so due (gap 14 days).
       - at: "-20d 10:00"
         by: kai
-        store: dm
+        store: Drogerie
         every: 14d
         times: 4
         items: [Windeln, Zahnpasta, Duschgel]

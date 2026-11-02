@@ -1,6 +1,6 @@
 import { expect, type Page, test } from './fixtures';
 import {
-  addField, addSheet, answerConsent, apiAs, itemRow, newEmail, password, screenshot, signUp, signUpWithHousehold,
+  addField, addSheet, answerConsent, apiAs, chainStores, itemRow, newEmail, password, screenshot, signUp, signUpWithHousehold,
   storeDivider, typeInto,
 } from './helpers';
 
@@ -56,7 +56,7 @@ test('/add opens the list with the add sheet; /list and unknown paths open the l
 
 test('/stores/<id> opens the list at that store, unfolded', async ({ page }) => {
   const email = newEmail('link-store');
-  await signUpWithHousehold(page, email);
+  await signUpWithHousehold(page, email, { stores: chainStores });
   const api = await apiAs(email);
   const { data: stores } = await api.from('stores').select('id, name, household_id');
   const { data: categories } = await api.from('categories').select('id, name');
