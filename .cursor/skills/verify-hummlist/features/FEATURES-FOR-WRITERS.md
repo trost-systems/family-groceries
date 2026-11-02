@@ -130,7 +130,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 1. Open Hummlist and stay on the „Liste“ (EN: "List") tab.
 2. Type into „Was brauchst du?“ (EN: "What do you need?") or tap it.
 3. Press Enter for the first suggestion, or tap another row. Before you take a row you can choose a store („Laden: automatisch“, EN: "Store: automatic") and a category („Kategorie: automatisch“, EN: "Category: automatic"); the chips show the store and category Hummlist picked, once it knows them. The store chip also offers „Neuer Laden“ (EN: "New store") to add a store on the spot.
-4. Close with „Schließen“ (EN: "Close"), Escape, or a tap on the list behind.
+4. Close with „Schließen“ (EN: "Close"), Escape, or a tap on the list behind. The sheet stays closed until you tap the field or type again, also when you close it right after an add. Closing while Enter still waits for its suggestions adds nothing.
 
 **Never claim.**
 - That suggestions forgive any spelling. They forgive one wrong letter in short words and two in longer ones ("Hafermlch" finds Hafermilch) and find a word from 4 letters inside it ("milch" finds Hafermilch), online and offline alike.
@@ -140,6 +140,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Last verified.** job 61 branch (quantities), 2026-11-01 (CET), driven on the Linux app with fg; main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
 **Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** job 76 branch (job/76-add-sheet-flake), 2026-11-02 (CET), closing right after an add, driven on the web build (`add-sheet.spec.ts`, 20 repeats) and by widget tests. Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
