@@ -681,6 +681,9 @@ export function build({
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
   cpSync(publicDir, outDir, { recursive: true });
+  // Review pages for the team (public/internal/, e.g. the paywall prototypes) are for preview and
+  // local builds only; production leaves them out.
+  if (versions.production) rmSync(join(outDir, 'internal'), { recursive: true, force: true });
   const write = (route, html) => {
     const file = join(outDir, routeFile(route));
     mkdirSync(dirname(file), { recursive: true });

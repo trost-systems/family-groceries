@@ -6846,3 +6846,38 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    archive directory at a cached one (key: runner image and version, Playwright lockfile, ffmpeg),
    so apt only fetches packages missing there. Only `apt-get update` still reads the mirror.
 6. **Local ports 577xx**, since 761xx is past 65535.
+
+## Job 81: Paywall research and five prototypes, 2026-11-02
+
+1. **Prototypes in the app, debug builds only.** `app/lib/purchases/paywall_prototypes.dart`:
+   with `kDebugMode`, the Premium page shows a "Paywall-Prototyp" switch on top and the picked
+   prototype in its place; with PW-P5 picked, the integration lock's button opens it as a sheet.
+   Both hooks check `kDebugMode` (a const), so release builds compile none of it; the switch is
+   off under `flutter test` (`test/flutter_test_config.dart`), so other tests' trees and
+   screenshots of the Premium page are unchanged. The prototypes are presentational:
+   their buy and restore buttons only show "Prototyp: Hier wird nichts gekauft.", so no
+   RevenueCat call, no store sheet, no flag or switch touched. Same approach as job 79.
+2. **Prices: the store's when the page has them, else the configured launch prices.** In the app
+   a prototype takes `OfferPrices` from the page's cubit, otherwise `fakeStorePrices` (9,99 € and
+   29,99 €, the values `scripts/iap/product.ts` and docs/PURCHASES.md "Expected prices" pin). The
+   PW-P5 sheet opens over Zugänge, which reads no store price, so it always shows these. A
+   plan with no price shows the marked placeholder "€X,XX" (tested), never an invented amount.
+3. **Legal copy unchanged.** The yearly disclosures, Lifetime's value line, Restore, Terms, Privacy
+   and "inkl. MwSt." are today's strings; new strings are marketing copy marked PROTOTYPE in the
+   ARB descriptions. Open legal questions are in NEEDS_LEAD "Job 81".
+4. **No mascot.** The brief allowed the Hummel, but there is no approved mascot asset and the
+   design system rules out a bee mascot (hummlist-ui-craft "Never", job 54's research decision).
+   The heroes use the app icon, hex shapes and colour blocks.
+5. **No trial, no monthly equivalent, no social proof.** No intro offer is configured (R9, R11),
+   Google Play's policy text conflicts with a monthly anchor (L3), and Hummlist has no real reviews
+   yet (R12). The research file maps each prototype to the RevenueCat findings it applies.
+6. **Built from RevenueCat Paywalls v2's components, rendered natively.** Peter asked to prefer
+   patterns RevenueCat Paywalls can render. Every prototype uses only Stack, Text, Image, Icon,
+   Feature list, Package, Purchase button, Button and Switch, so it can move to Paywalls later, but
+   the app keeps its native page: DECISIONS "Job 43" item 22 rules out Paywalls (C3), and whether
+   Paywalls' remote config and events fit C3 is Legal Review's Q7.
+7. **Review page like jobs 77 and 79.** `site/public/internal/paywall-prototypes.html` (noindex),
+   built by `node design/paywall-prototypes/build.mjs <shots>` from
+   `app/test/purchases/paywall_prototypes_screenshots_test.dart`. `site/build.mjs` drops
+   `internal/` in production (the same guard as #204 and #206; whichever lands first, the others
+   rebase).

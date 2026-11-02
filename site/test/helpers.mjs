@@ -86,9 +86,10 @@ export function readPage(outDir, route) {
   return parse(readFileSync(join(outDir, file), 'utf8'));
 }
 
+// The site's pages. Review pages copied from public/internal/ have no site chrome and are left out.
 export function htmlRoutes(outDir) {
   return readdirSync(outDir, { recursive: true })
-    .filter((f) => f.endsWith('.html'))
+    .filter((f) => f.endsWith('.html') && !f.startsWith('internal/'))
     .map((f) => (f === 'index.html' ? '/' : `/${f.slice(0, -5)}`));
 }
 
