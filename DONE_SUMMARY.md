@@ -26,6 +26,7 @@
 - Job 63, Home Screen widgets on iPhone (WidgetKit) and Android (Glance) with home_widget, held (`home-widgets`) and waiting for Apple portal steps before merge: [docs/done/63-home-widgets.md](docs/done/63-home-widgets.md)
 - Job 70, sign-in without autofocus; Google and Apple first, email behind „Weiter mit E-Mail“: [docs/done/70-login-no-autofocus.md](docs/done/70-login-no-autofocus.md)
 - Job 74, one privacy-safe log line per Alexa request: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md)
+- Job 77, five store-screenshot frame proposals, research and a preview-only review page (`/internal/store-frames`): [docs/done/77-store-frames.md](docs/done/77-store-frames.md)
 
 ## Job 1: foundation (2026-10-22)
 
