@@ -326,6 +326,7 @@ void main() {
       expect(setup['sessionReplay'], isFalse);
       expect(setup['surveys'], isFalse);
       expect(setup['sendFeatureFlagEvents'], isFalse);
+      expect(setup['preloadFeatureFlags'], isFalse);
       expect(setup['capturePushNotificationSubscriptions'], isFalse);
       expect(setup['capturePushNotificationOpened'], isFalse);
       expect(setup['rageClickConfig'], containsPair('enabled', false));

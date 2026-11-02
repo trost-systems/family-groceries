@@ -240,6 +240,8 @@ test('accepting sends first_open once, then one event per action, no list text; 
   }
   expectAllowedKeys(collector);
   await expectNoPostHogStorage(page);
+  // Legal Review N-2 (2026-11-01): no flag lookup, not even after a yes (app/lib/analytics/flags.dart).
+  expect(collector.requests.filter((r) => r.includes('/flags')), 'no /flags request').toEqual([]);
   const sent = JSON.stringify(collector.events) + collector.bodies.join('');
   for (const secret of ['Hafermilch', 'Brot', 'Familie Geheim', email, email.split('@')[0], '127.0.0.1']) {
     expect(sent, `no "${secret}" in what was sent`).not.toContain(secret);

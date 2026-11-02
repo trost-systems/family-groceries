@@ -1,3 +1,4 @@
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/analytics/posthog_platform.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 
@@ -34,12 +35,14 @@ class PostHogClient({
       ..personProfiles = PostHogPersonProfiles.never
       ..captureApplicationLifecycleEvents = false
       ..sendFeatureFlagEvent = false
+      // No `/flags` request at start while flag lookups are off (Flags).
+      ..preloadFeatureFlags = flagLookups
       ..sessionReplay = false
       ..surveys = false
       ..capturePushNotificationSubscriptions = false
       ..capturePushNotificationOpened = false
       ..beforeSend = [(event) => _admitted(event, admit)]
-      ..onFeatureFlags = onFlags
+      ..onFeatureFlags = flagLookups ? onFlags : null
       ..bootstrap = installId == null
           ? null
           : PostHogBootstrapConfig(distinctId: installId);
@@ -96,6 +99,9 @@ class PostHogClient({
 
   /// The flags PostHog evaluated for this install, by key.
   Future<Map<String, bool>> flags() async {
+    if (!flagLookups) {
+      return const {};
+    }
     final results = await Posthog().getAllFeatureFlags();
     return {
       for (final flag in results ?? const <PostHogFeatureFlagResult>[])
