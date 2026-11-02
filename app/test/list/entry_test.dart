@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:family_groceries/list/entry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,11 +24,27 @@ void main() {
     'Windeln Größe 4': Entry('Windeln Größe 4', null),
     '7up': Entry('7up', null),
     'Vitamin D3': Entry('Vitamin D3', null),
-    'Eier   10': Entry('Eier 10', null),
   };
   for (final MapEntry(:key, :value) in cases.entries) {
     test('"$key" parses to $value', () => expect(parseEntry(key), value));
   }
+
+  group('a bare number at the end (supabase/tests/quantity_parse.tsv)', () {
+    final rows = File('../supabase/tests/quantity_parse.tsv')
+        .readAsLinesSync()
+        .where((l) => l.trim().isNotEmpty && !l.startsWith('#'))
+        .map((l) => l.split('\t'));
+    for (final [text, name, ...rest] in rows) {
+      final quantity = rest.firstOrNull ?? '';
+      final history = rest.elementAtOrNull(1) ?? '';
+      test('"$text"${history.isEmpty ? '' : ' after buying $history'}', () {
+        expect(
+          parseEntry(text, history: [if (history.isNotEmpty) history]),
+          Entry(name, quantity.isEmpty ? null : quantity),
+        );
+      });
+    }
+  });
 
   group('Menge steppers', () {
     // (Menge, after +, after −); null: that stepper is off.
