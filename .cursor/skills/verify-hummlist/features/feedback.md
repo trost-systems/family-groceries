@@ -28,7 +28,7 @@ Preconditions:
 - Seeded household, signed in, consent declined, on the list.
 - To read the stored row: service-role client (`adminClient()` in `e2e/tests/helpers.ts`) on table `feedback`, filtered by the user's id.
 
-- **Open.** `openMore(page, 'Feedback senden')` (on phones scroll the lazy list first). Observable: `getByRole('group',{name:'Feedback senden', exact:true})` visible; `getByRole('button',{name:'Senden', exact:true})` disabled.
+- **Open.** `openMore(page, 'Feedback senden')` (it wheels the lazy list to the row). Observable: `getByRole('group',{name:'Feedback senden', exact:true})` visible; `getByRole('button',{name:'Senden', exact:true})` disabled.
 - **Write.** `typeInto(page.getByRole('textbox',{name:'Deine Nachricht'}), 'Beim Abhaken springt die Liste nach oben.')`. Use `typeInto` (umlauts). Send becomes enabled.
 - **Kind.** `getByRole('checkbox',{name:'Idee', exact:true}).click()`; contact: `getByRole('checkbox',{name:'Peter darf mich dazu kontaktieren'})`.
 - **Send.** `getByRole('button',{name:'Senden', exact:true}).click()`. Observable: sheet group gone; snackbar text „Danke!“ (find with `page.locator('[id^="flt-semantic-node-"]').getByText('Danke!',{exact:true}).first()`); one `feedback` row: message, category (`bug`/`idea`/`other`/null), contact_ok, platform `web`, locale `de`, screen `list`.
@@ -44,4 +44,5 @@ Preconditions:
 - A feedback row is stored with or without analytics consent; the analytics event `feedback_submitted` (category, screen, contact_ok, no text) goes out only with consent. Test accounts on @example.test are marked internal.
 - Only the e2e build points analytics at a fake collector; feedback itself goes to Supabase.
 - Rows older than 12 months are deleted by the server (migration); that is not visible in the app.
+- The sender cannot read notes back in the app, but Konto → „Meine Daten exportieren“ (EN "Export my data") includes their own notes (section `feedback` of the export).
 - Whether Peter actually gets a notification of a new note is not in the app: unverified (outside app code).

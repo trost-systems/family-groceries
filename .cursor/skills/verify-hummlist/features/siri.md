@@ -6,6 +6,7 @@ A user can put things on the Hummlist by voice with Siri on an iPhone. Two ways 
 
 - `siri-shortcut` the Shortcut recipe: access key „Siri“ (Mehr → Zugänge → „Token erstellen“), then the shortcut „Einkaufsliste“ (dictate text in German, POST to the voice address with `Authorization: Bearer fgp_…`, speak the result). German only for splitting.
 - `siri-reply-added` spoken reply German: „Hinzugefügt: Milch, 2 Gurken, Klopapier.“
+- `siri-amounts` an amount said before or after the item is its quantity: „zwei Gurken“, „Eier zehn Stück“, „Möhren zwei“ (reply „Hinzugefügt: 2 Möhren.“). A bare count after the item counts only from 1 to 20 after a known name; otherwise it stays in the name („Büroklammern hundert“ → „Hinzugefügt: Büroklammern 100.“).
 - `siri-reply-existing` already on the list: „Schon auf der Liste: Milch.“ (nothing added for it). Mixed: „Hinzugefügt: Brot. Schon auf der Liste: Milch.“
 - `siri-reply-similar` a spelling variant or synonym is open: item is added and Siri adds „Möhren steht schon auf der Liste.“ (several: „… stehen schon auf der Liste.“).
 - `siri-errors` the exact sentences, German and English (see below).
@@ -41,6 +42,7 @@ Preconditions:
 
 - **Create the key in the UI.** `openMore(page, 'Zugänge')`, `getByRole('button', { name: 'Token erstellen' })`, `typeInto(getByRole('textbox', { name: 'Name' }), 'Siri')`, `getByRole('button', { name: 'Erstellen' })`, read `getByText(/^fgp_/)`, `getByRole('button', { name: 'Fertig' })`.
 - **Dictate.** `say(token, 'Zwei Gurken und Klopapier')` returns status 200 and JSON `speech` „Hinzugefügt: 2 Gurken, Klopapier.“; `say(token, 'Milch und Brot', '?format=text')` returns the body only. In the app: `openTab(page, 'Liste')`; `itemRow(page, 'Klopapier')` visible without reload.
+- **Amount after the item.** `say(token, 'Möhren zwei', '?format=text')` is 200; the body starts „Hinzugefügt: 2 Möhren.“ (if Karotten or Karrotten are already open, for example from earlier steps, the note „Karotten und Karrotten stehen schon auf der Liste.“ follows) and the Möhren row has quantity „2“ (`itemRow(page, 'Möhren')`). `say(token, 'Büroklammern hundert', '?format=text')` answers „Hinzugefügt: Büroklammern 100.“ (name „Büroklammern 100“, no quantity).
 - **Duplicate and similar.** Say „Milch“ twice: second answer „Schon auf der Liste: Milch.“. Say „Möhren“ then „Karotten“: both on the list, speech ends „Möhren steht schon auf der Liste.“
 - **Errors.** `say('fgp_not-a-token', 'Milch', '?format=text')` is 401 with the unauthorized sentence; text „Bitte, danke“ is 422 with „Ich habe nichts verstanden …“.
 - **Native, English.** `ask(token, { text: 'milk, eggs and bread', mode: 'add', lang: 'en' })`: `outcome` `added`, `speech` "Added milk, eggs and bread to Hummlist."; again with `milk`: `nothing_added`, "Already on the list: milk."; `ask(token, { mode: 'read', lang: 'en' })`: `total` 3, speech starts "There are 3 things on your Hummlist: "; German `lang: 'de'`: „Auf der Hummlist stehen 3 Sachen: “. A request without `lang` answers exactly as the Shortcut always did and has no `outcome`.

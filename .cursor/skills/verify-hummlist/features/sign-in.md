@@ -1,10 +1,10 @@
 # Sign-up and sign-in
 
-A signed-out user sees one login screen (app bar title „Anmelden“ / "Sign in"). It offers email plus password („Anmelden“ / "Sign in"), „Registrieren“ / "Sign up" for a new account, and „Anmeldelink per E-Mail senden“ / "Email me a sign-in link" (a magic link by email, no code to type). Production builds also show „Mit Google anmelden“ / "Sign in with Google" and „Mit Apple anmelden“ / "Sign in with Apple" above the form, with the divider „oder mit E-Mail“ / "or with email". Signing out is in the More tab. There is no screen in the app where a user types a code from an email.
+A signed-out user sees one login screen. It has no title bar and opens on the Hummlist icon over the wordmark „Hummlist“. It offers email plus password („Anmelden“ / "Sign in"), „Registrieren“ / "Sign up" for a new account, and „Anmeldelink per E-Mail senden“ / "Email me a sign-in link" (a magic link by email, no code to type). Production builds also show „Mit Google anmelden“ / "Sign in with Google" and „Mit Apple anmelden“ / "Sign in with Apple" above the form, with the divider „oder mit E-Mail“ / "or with email". Signing out is in the More tab. The same form also appears on the page where an AI assistant asks for access. There is no screen in the app where a user types a code from an email.
 
 ## Sub-features
 
-- `password-sign-in` email + password; lands on the list, or on onboarding for an account without a household.
+- `password-sign-in` email + password; lands on the list, or on onboarding for an account without a household. On builds with an analytics key, a device's first sign-in shows the analytics question first (privacy-consent).
 - `sign-up` „Registrieren“ with the same two fields; on the hosted project the user must first confirm by the emailed link.
 - `magic-link` „Anmeldelink per E-Mail senden“ sends a link; opening it on the device signs in. Only the email field is needed.
 - `google` / `apple` provider buttons (production builds only). Same email as an existing account links to that account and its household.
@@ -31,7 +31,7 @@ Preconditions:
 - Locally email confirmation is off, so sign-up signs in at once.
 
 - **Sign up.** Type the credentials and tap Registrieren. `typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email)`, `typeInto(page.getByRole('textbox', { name: 'Passwort' }), password)`, `page.getByRole('button', { name: 'Registrieren' }).click()` (the helper `signUp(page, email)` does this and then `answerConsent`). Observable result: URL `/analytics-consent` on the e2e build, else `/welcome` (see Gotchas).
-- **Password sign-in.** Same two fields, then `page.getByRole('button', { name: 'Anmelden', exact: true }).click()` (the app bar title is also "Anmelden", so match the button role) or Enter in the password field. Observable result: `addField(page)` visible and focused for a user with a household.
+- **Password sign-in.** Same two fields, then `page.getByRole('button', { name: 'Anmelden', exact: true }).click()` (`exact`, because a plain name match is a case-insensitive substring and also hits „Mit Google anmelden“ and „Mit Apple anmelden“) or Enter in the password field. Observable result: `addField(page)` visible and focused for a user with a household.
 - **Sign out.** `openMore(page, 'Abmelden')`. Observable result: the login screen, textbox „E-Mail“ visible.
 - **Magic link send.** Signed out: `typeInto(... 'E-Mail' ...)`, `page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' }).click()`. Observable result: `page.getByText(/Anmeldelink geschickt/).first()` visible.
 - **Magic link open.** `await page.goto(await latestLinkFor(email))`. Observable result: URL `/` and `addField(page)` focused (the link is the `/auth/v1/verify...` URL from Mailpit).
@@ -43,9 +43,9 @@ Preconditions:
 ## Gotchas
 
 - Code or no code: the app never asks for an emailed code. The only code entry in the app is the household invite code (8 characters from A-Z and 2-9, without I, O, 0, 1). The hosted project's auth settings (read through the Management API on 2026-11-01) have an email one-time-code length of 8, but the sign-in link and confirmation emails carry only a link, no code; only the reauthentication email (which the app never triggers) contains a code. Locally `otp_length = 6`, also unused.
-- Email subjects on the hosted project (2026-11-01, Supabase's English defaults, sent through a custom SMTP sender): sign-in link „Your sign-in link“, sign-up confirmation „Confirm your email address“, password reset „Reset your password“. The bodies are short link emails; their exact wording is not in the repo. Local Mailpit shows the local defaults instead.
+- Email subjects on the hosted project (2026-11-01, Supabase's English defaults, sent through a custom SMTP sender): sign-in link „Your sign-in link“, sign-up confirmation „Confirm your email address“, password reset „Reset your password“. The bodies are short link emails; their exact wording is not in the repo. The local stack sends the sign-in link with the same subject „Your sign-in link“ (Mailpit, 2026-11-02).
 - Legal footer: the login screen ends with links „Impressum“ / "Imprint" and „Datenschutz“ / "Privacy", on screen without scrolling; they open hummlist.com in a new tab (de: `/impressum`, `/datenschutz`; en: `/en/imprint`, `/en/privacy`). Locator: `page.getByRole('link', { name: 'Impressum', exact: true })`; covered by `e2e/tests/legal.spec.ts`.
 - Google and Apple buttons appear only when the build has the provider configured; production (`app/config/auth.json`) has Google web and iOS client IDs and Apple on, and the hosted project has both providers enabled (Management API, 2026-11-01). Hosted sign-up needs the emailed confirmation (autoconfirm off); the minimum password length is 6. The e2e and verify-hummlist builds have Apple on and a fake Google id, so both buttons show but neither completes locally.
 - Apple "Hide My Email" creates a separate account (private relay address does not match). Provider sign-ins with the same verified email as an existing account join that account and its household.
 - A signed-in user whose build has a PostHog key is asked the analytics question before anything else (see the privacy-consent feature); the e2e build has one, so `answerConsent` follows sign-up in the helpers.
-- Playwright: `typeInto` for typing; the app bar title and the sign-in button are both "Anmelden".
+- Playwright: `typeInto` for typing. The login screen has no heading (its ARIA shows a group with the text „Hummlist“); match the sign-in button with `exact: true`, since „Mit Google anmelden“ and „Mit Apple anmelden“ also contain "anmelden".

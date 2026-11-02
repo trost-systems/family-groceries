@@ -83,7 +83,7 @@ A journey is `journeys/<feature-id>.mjs`, a plain Node script on `helpers/lib.mj
 | `apiAs(inst, user)` | supabase-js signed in as the member: the second view of stored state |
 | `capture(page, dir, name)`, `logger(dir)` | PNG + ARIA snapshot, a timestamped journey log |
 
-Find widgets by role and accessible name, never by coordinates. Semantics are on in the web build. A row's name is the item name, then the quantity. Menu rows join label and hint. The richer TypeScript helpers (`reveal`, `tick`, `putBack`, `openEdit`, `actionSnackBar`, `cutOff`, `finger`) are in `e2e/tests/helpers.ts`. A feature's existing specs run with `scripts/verify.sh --only e2e -- tests/<spec>`. That is the e2e build under `/tmp/fg-e2e.lock`, not this instance.
+Find widgets by role and accessible name, never by coordinates. Semantics are on in the web build. A row's name is the item name, then the quantity. Menu rows join label and hint. `helpers/lib.mjs` also has `reveal` (like the one in `e2e/tests/helpers.ts`: wheel a lazily built row into view). The richer TypeScript helpers (`tick`, `putBack`, `openEdit`, `openMore`, `actionSnackBar`, `cutOff`, `finger`) are in `e2e/tests/helpers.ts`. A feature's existing specs run with `scripts/verify.sh --only e2e -- tests/<spec>`. That is the e2e build under `/tmp/fg-e2e.lock`, not this instance.
 
 Local Playwright here is one browser per journey. When you run the e2e suite yourself, use `flock /tmp/fg-e2e.lock` and `--workers=1`.
 
@@ -118,6 +118,8 @@ Cleanup does these things:
 - It stops the Supabase stack only if `instance.json` says `launch.sh` started it. Only your project id is stopped.
 - It removes `instance.json`.
 
+After `--keep-stack` the record is gone, so a later `cleanup.sh` no longer stops the stack: stop it yourself with `supabase stop --no-backup` from the repo root (your project only) when you are done.
+
 It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and how many files it holds.
 
 ## Helpers
@@ -131,6 +133,7 @@ It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and ho
 | `helpers/env.sh` | `source` it to get `VH_*` and fg's `FG_*` for this instance (then `scripts/fg db query "..." --as <run>:mia` works) |
 | `helpers/lib.mjs` | `import { ... } from '<repo>/.cursor/skills/verify-hummlist/helpers/lib.mjs'` in a journey or clip script |
 | `journeys/quick-add.mjs` | `drive.sh quick-add [--lang en] [--prefix Joghu]` |
+| `journeys/tick-and-undo.mjs` | `drive.sh tick-and-undo [--lang en] [--item Butter]` |
 
 How-to clips (GIF for emails, MP4/WebM for the site) of the same build: [hummlist-howto-clips](../hummlist-howto-clips/SKILL.md).
 

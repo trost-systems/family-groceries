@@ -51,7 +51,7 @@ Getting started
 
 - [sign-in](./sign-in.md): email and password, sign-up with email confirmation, the sign-in link by email (no code), Google and Apple, sign-out.
 - [privacy-consent](./privacy-consent.md): the analytics question after the first sign-in on a device, its exact text, and changing it later under Mehr → Nutzungsdaten.
-- [onboarding](./onboarding.md): „Willkommen bei Hummlist“, creating a household with or without the default stores, joining with a code, the invite step.
+- [onboarding](./onboarding.md): „Willkommen bei Hummlist“, creating a household with the stores you pick or type (or none), joining with a code, the invite step.
 - [household-invites](./household-invites.md): inviting a partner by code or link (7 days, single use), joining, revoking, switching households.
 
 The list
@@ -63,7 +63,7 @@ The list
 - [edit-item](./edit-item.md): the edit sheet (name, brand, details, quantity, store, category), deleting with undo.
 - [classifier](./classifier.md): the automatic category for every new item, learning from moves, spelling variants and synonyms.
 - [categories](./categories.md): Mehr → „Kategorien verwalten“: add, rename, delete, reorder; the 11 seeded categories.
-- [stores-walk-order](./stores-walk-order.md): store sections and category dividers in walk order, hold-and-drag, the divider menus, „Reihenfolge bearbeiten“, Mehr → „Läden“, item→store memory.
+- [stores-walk-order](./stores-walk-order.md): store sections and category dividers in walk order, hold-and-drag, the divider menus, „Reihenfolge bearbeiten“, adding a store from the store chip or Mehr → „Läden“ (rename, delete), item→store memory.
 - [live-sync](./live-sync.md): members see each other's changes live; „N neu von <Name>“ and the sync icon.
 - [offline](./offline.md): what works without a connection, what waits, and the messages.
 
@@ -72,7 +72,7 @@ Settings, help and account
 - [theme](./theme.md): light, dark or device theme under Mehr → Einstellungen.
 - [language](./language.md): German, English or the device's language, and which texts stay German.
 - [feedback](./feedback.md): Mehr → „Feedback senden“.
-- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on hummlist.com, imprint, privacy, licenses, version.
+- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on hummlist.com (Siri, Alexa, Claude), imprint, privacy, licenses, version.
 - [account-deletion](./account-deletion.md): Mehr → Konto: data export, account deletion, deleting single data without deleting the account.
 
 Connections and Premium

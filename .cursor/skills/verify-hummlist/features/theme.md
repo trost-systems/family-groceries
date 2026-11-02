@@ -12,7 +12,7 @@ Under Mehr → Einstellungen the user picks how the app looks: like the device, 
 ## How to get to it (user POV)
 
 - „Mehr“ / "More" → „Einstellungen“ / "Settings" (hint „Darstellung und Sprache“ / "Appearance and language") → section „Darstellung“ / "Appearance" with one segmented control of three hexagonal segments: „System“ / "System", „Hell“ / "Light", „Dunkel“ / "Dark". One tap selects; a honey hex marks the pick.
-- Deep link `/more/settings`. The old `/settings` link redirects there.
+- Deep link `/more/settings`. (The old `/settings` link goes to Zugänge, `/more/access`, not here.)
 
 ## Driving it with Playwright
 
@@ -33,3 +33,4 @@ Preconditions:
 - Stored per device (browser storage): a fresh browser context starts on „System“.
 - Colour is only visible in pixels or screenshots; semantics give no theme information.
 - The wide layout shows Einstellungen beside the More list; the same segments.
+- The section header „Darstellung“ is drawn in capitals („DARSTELLUNG“); its accessible name keeps normal case, so find it by role and name, not by visible text.

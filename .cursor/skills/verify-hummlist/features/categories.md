@@ -4,9 +4,9 @@ Every household starts with 11 categories (fruit and veg, bread, chilled, …, �
 
 ## Sub-features
 
-- `cat-seed` a new household gets these categories, in this order. DE (as stored and shown in German): Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges. EN (shown when the app language is English and the category was not renamed): Fruit & veg, Bread & bakery, Chilled, Meat & fish, Pantry, Sweets & snacks, Drinks, Frozen, Household, 👶 Drugstore, Other. A renamed or self-made category shows exactly what the household typed, in both languages. Each category also has a fixed emoji on its items' rows (🥕 🥖 🥛 🥩 🥫 🍫 🧃 🧊 🧽 🧴 🛒); the divider text drops a leading emoji.
+- `cat-seed` a new household gets these categories, in this order. DE (as stored and shown in German): Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges. EN (shown when the app language is English and the category was not renamed): Fruit & veg, Bread & bakery, Chilled, Meat & fish, Pantry, Sweets & snacks, Drinks, Frozen, Household, 👶 Drugstore, Other. A renamed or self-made category shows exactly what the household typed, in both languages. Each category has an emoji: the one its name starts with, else the seeded one (🥕 🥖 🥛 🥩 🥫 🍫 🧃 🧊 🧽 🧴 🛒; „👶 Drogerie“ shows 👶, a renamed Drogerie without it 🧴), else 🧺 for a self-made one. Item rows show it unless the item has its own emoji (Klopapier 🧻, Zahnbürste 🪥); the Kategorien screen shows it before each name; the divider text drops a leading emoji.
 - `cat-open` Mehr → „Kategorien verwalten“ / "Manage categories" opens „Kategorien“ / "Categories" with the hint „In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.“ (EN: "Items without a store, and stores without their own order, follow this order. Tap a category to rename it."). The „Ohne Laden“ divider's menu entry „Kategorien verwalten“ and a category divider's menu entry under „Ohne Laden“ open the same screen.
-- `cat-add` button „Kategorie hinzufügen“ / "Add category" (bottom right) opens a dialog of the same title with a field „Name“ / "Name" and buttons „Abbrechen“ / „Speichern“ ("Cancel" / "Save"). The new category goes just before „Sonstiges“ in the route and in every store's order.
+- `cat-add` button „Kategorie hinzufügen“ / "Add category" (bottom right) opens a dialog of the same title with a field „Name“ / "Name" (at most 60 characters, with a counter) and buttons „Abbrechen“ / „Speichern“ ("Cancel" / "Save"). The new category goes after the last category, just before „Sonstiges“ when that is last, in the route and in every store's order (live: „Baby“ landed between „👶 Drogerie“ and „Sonstiges“).
 - `cat-duplicate` a name that already exists (add or rename) is refused with a snackbar „Eine Kategorie „<Name>“ gibt es schon.“ / "A category named “<name>” already exists." and the dialog closes.
 - `cat-rename` a tap on a category opens „Kategorie umbenennen“ / "Rename category" with the name filled in; „Speichern“ saves. An empty name or an unchanged name does nothing. „Sonstiges“ can be renamed too.
 - `cat-delete` the trash icon (tooltip „<Name> löschen“ / "Delete <name>") opens a dialog „<Name> löschen“ with a dropdown „Artikel verschieben nach“ / "Move items to" (default „Sonstiges“) and „Abbrechen“ / „Löschen“ ("Delete"). All its items, open and ticked, move to the chosen category; the move teaches the classifier nothing, and corrections learned for the deleted category go with it. „Sonstiges“ has no trash icon.
@@ -25,7 +25,7 @@ Every household starts with 11 categories (fruit and veg, bread, chilled, …, �
 
 Preconditions:
 
-- Signed in on the list. For a deterministic route use a fresh account: `signUpWithHousehold(page, newEmail('categories'))` (default stores on, 11 seeded categories). A seeded „Familie Brandt“ may have renamed or extra categories: read the screen first.
+- Signed in on the list. For a deterministic route use a fresh account: `signUpWithHousehold(page, newEmail('categories'))` (onboarding picks dm, Lidl and Edeka; 11 seeded categories). A seeded „Familie Brandt“ may have renamed or extra categories: read the screen first.
 - An item without a store to see route order (e2e adds Windeln with the add sheet's „Laden: …“ chip set to „Ohne Laden“, and Bier).
 
 - **Open.** `openMore(page, 'Kategorien verwalten')`. Observable: title „Kategorien“; the 11 categories as buttons in route order; `page.getByRole('button', { name: 'Sonstiges löschen' })` count 0.
@@ -44,6 +44,6 @@ Preconditions:
 - The delete dropdown opens as a menu: pick with `getByRole('menuitem', …)`.
 - Category changes persist and change the divider order in „Ohne Laden“ and in every store; use a fresh account for order assertions.
 - Seeded category names are stored in German. An English UI shows English names only for unrenamed seed categories; the Playwright harness runs de-DE.
-- Adding a category while the household has stores also places it in every store's order (before „Sonstiges“, or last when „Sonstiges“ is not at the end).
+- Adding a category while the household has stores also places it in every store's order: after the store's last shown category, or just before it when that is „Sonstiges“ (dm, whose hidden categories follow „Sonstiges“, gets it before „Sonstiges“).
 - Deleting a category moves ticked items too (they are under „Zuletzt verwendet“), and puts the deleted category's identity on the target so the classifier keeps finding a home for the old words. unverified in the UI (SQL only).
-- Free-form and overlong names: no length limit found in the UI. unverified.
+- Names are limited to 60 characters: the field stops there (live: 65 typed, 60 kept).

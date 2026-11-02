@@ -1,13 +1,13 @@
 # Account: data export and deletion
 
-Every signed-in user can export their data as a JSON file and delete their account. Both are on the Konto page (Mehr → Konto), which also shows the signed-in email address. Deleting asks first what happens to the household, and only deletes after the user types LÖSCHEN (German app) or DELETE (English app) and taps „Endgültig löschen“. A shared household stays for the other members with the leaving user's items, now without their name; a household whose last member deletes goes with everything in it. Single pieces of data (an item, an access key, a connected app, usage data) can be removed without deleting the account; the public page app.hummlist.com/konto-loeschen.html explains this.
+Every signed-in user can export their data as a JSON file and delete their account. Both are on the Konto page (Mehr → Konto), which also shows the signed-in email address. Deleting asks first what happens to the household, and only deletes after the user types LÖSCHEN (German app) or DELETE (English app) and taps „Endgültig löschen“. A shared household stays for the other members with the leaving user's items, now without their name; a household whose last member deletes goes with everything in it, and so does every household the user archived. Single pieces of data (an item, an access key, a connected app, usage data) can be removed without deleting the account; the public page app.hummlist.com/konto-loeschen.html explains this.
 
 ## Sub-features
 
 - `acct-entry` the Konto page: the email, „Meine Daten exportieren“ and „Konto löschen“.
 - `acct-export` saves a JSON file `einkauf-daten-YYYY-MM-DD.json` (on web a browser download) and shows „Daten exportiert“ (on platforms that report a path: „Daten exportiert: <path>“).
 - `acct-fate-kept` for a member of a shared household the dialog says the household stays for the others.
-- `acct-fate-deleted` for the last member the dialog says the household is deleted too.
+- `acct-fate-deleted` for the last member the dialog says the household is deleted too, with its list, history, categories and stores.
 - `acct-confirm-word` „Endgültig löschen“ stays disabled until the field holds LÖSCHEN, LOESCHEN or DELETE (any case, spaces around ignored, in either language).
 - `acct-deleted` after deletion the sign-in screen shows „Dein Konto wurde gelöscht.“
 - `acct-welcome` a user without a household deletes the account from the welcome screen.
@@ -38,7 +38,7 @@ Preconditions:
 - Spec: `e2e/tests/account.spec.ts`, run with `scripts/verify.sh --only e2e -- tests/account.spec.ts`.
 
 - **Open the Konto page.** `await openMore(page, 'Konto')`. `page.getByRole('button', { name: 'Konto löschen', exact: true })` is visible; URL `/more/account`.
-- **Export.** `const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Meine Daten exportieren/ }).click()])`. `download.suggestedFilename()` is `einkauf-daten-<YYYY-MM-DD, Europe/Berlin>.json`; parse the file: `format` is `family-groceries-export`, `account.email` the user's, `items_added` the items they added, the text contains no `token_hash`.
+- **Export.** `const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Meine Daten exportieren/ }).click()])`. `download.suggestedFilename()` is `einkauf-daten-<YYYY-MM-DD>.json` (the device's local date; the e2e spec computes it in Europe/Berlin); parse the file: `format` is `family-groceries-export`, `account.email` the user's, `items_added` the items they added, the text contains no `token_hash`.
 - **Open the dialog.** Click `getByRole('button', { name: 'Konto löschen', exact: true })`, wait for `getByRole('textbox', { name: 'Zum Bestätigen LÖSCHEN eingeben' })` (a spinner shows while the household's fate loads). Shared case: `getByText(/bleibt für/)`; last member: `getByText(/Du bist das letzte Mitglied/)`; no household (user stuck on welcome screen): `getByText('Du bist in keinem Haushalt, geteilte Daten gibt es nicht.')`.
 - **Confirm word.** `typeInto(confirmField, 'LÖSCHEN')` (never `fill`/`type`: umlauts drop), then `getByRole('button', { name: 'Endgültig löschen' }).click()`. Observable: `getByText('Dein Konto wurde gelöscht.')` on the sign-in screen; `adminClient().auth.admin.getUserById(id)` returns no user; shared case: the other context still sees the deleted user's items (`itemRow(b, 'Milch')`) and `items.added_by` is null; last member: zero rows left for the household in households, household_members, invites, categories, stores, items, item_events and the other household tables.
 - **Offline.** `const network = await cutOff(page)`, click „Endgültig löschen“: `getByText(/^Keine Internetverbindung\. Dein Konto wurde nicht gelöscht/)`, user still exists. `await network.restore()`, click again: the account is deleted.
@@ -53,7 +53,7 @@ Preconditions:
 - Type the confirmation word with `typeInto`, not synthetic keys. DE app accepts LÖSCHEN, LOESCHEN and DELETE.
 - The dialog cannot be dismissed by clicking outside; use „Abbrechen“. While deleting, the buttons are disabled.
 - On web the export is a browser download; the success snackbar reads „Daten exportiert“ (no path).
-- The billing warning „Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.“ appears before the dialog only for someone who pays a renewing yearly plan; nothing is sold today (premium-launch hold), so a normal user never sees it.
+- The billing warning „Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.“ appears before the dialog only for someone who pays a renewing yearly plan; other members of a household with a billed yearly plan see „Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.“ instead. Nothing is sold today (premium-launch hold), so a normal user never sees it.
 - Apple revocation (iOS) and the hint „Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.“ cannot be driven on web. unverified (no iOS surface).
 - Legal texts (page, dialog) are quoted, never edit them; the page is static HTML served by the web build, not a Flutter route.
 - The Zugänge partial-deletion paths are in the ai-assistants map. The „Nutzungsdaten“ section (switch „Nutzungsdaten und Fehlerberichte senden“ / "Send usage data and error reports") shows in Mehr only when analytics is enabled in the build; unverified whether the e2e build shows it.

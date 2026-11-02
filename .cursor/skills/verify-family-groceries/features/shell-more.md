@@ -1,13 +1,14 @@
 # Shell and More
 
-The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and "Mehr". On phones they sit in a bar at the bottom, which slides away while the add sheet is open; from 840 px wide they become a rail on the left. The More tab gathers what the old list menu held and more: the household (invite, join, categories, stores, Hummlist Lifetime), Zugänge, Konto and sign-out, Einstellungen (theme and language, `features/settings.md`), and the legal pages, with the app version at the bottom.
+The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and "Mehr". On phones they sit in a bar at the bottom, which slides away while the add sheet is open; from 840 px wide they become a rail on the left. The More tab gathers what the old list menu held and more: the household (invite, join, categories, stores, Hummlist Premium), Zugänge, Konto and sign-out, Einstellungen (theme and language, `features/settings.md`), and the legal pages, with the app version at the bottom.
 
 ## Sub-features
 
 - `sm-tabs` switches between `tab-list` ("Liste") and `tab-more` ("Mehr"). Each tab reopens the page it last showed; a tap on the current tab goes back to its first page. Leaving the list tab closes the add sheet.
 - `sm-household` opens "Partner einladen" (`more-invite`, shown with a household only) on the Einladungen page (`invites-page`, route `/more/invites`: "Neue Einladung" `invite-new` and the open invites, `features/household.md`), "Anderem Haushalt beitreten" (`more-join`) on the join screen (`join-screen`, route `/join`, outside the tabs), "Kategorien verwalten" (`more-categories`, `features/categories.md`) and "Läden" (`more-stores`, `features/stores.md`).
-- `sm-stores` lists the stores on `stores-screen`. A row `store-row-<id>` opens "<Store>: Reihenfolge"; a drag on "<Store> verschieben" reorders the stores.
-- `sm-lifetime` "Hummlist Lifetime" (`more-lifetime`, route `/more/lifetime`, before Zugänge) opens the purchase page: `features/purchases.md`. Its second line reads "Hummlist unterstützen" while the household can buy, "Freigeschaltet" once it is unlocked.
+- `sm-stores` lists the stores on `stores-screen`. A row `store-row-<id>` opens "<Store>: Reihenfolge"; a drag on "<Store> verschieben" reorders the stores; each row's menu has "<Store> umbenennen" and "<Store> löschen", and "Neuer Laden" below the list adds one (`features/stores.md`).
+- `sm-lifetime` "Hummlist Premium" (`more-lifetime`, route `/more/lifetime`, before Zugänge) opens the Premium page: `features/purchases.md`. Its second line reads "Siri, Alexa und KI-Assistenten" while the household could be offered Premium, "Freigeschaltet" once it is unlocked, and nothing while the status is loading or offline.
+- `sm-archived` "Archivierte Haushalte" (`more-archived`, after "Anderem Haushalt beitreten") shows only in builds with `HOUSEHOLD_ARCHIVE` (the e2e config); fg builds don't have it.
 - `sm-access` opens the Zugänge page (`more-access` → `access-screen`, route `/more/access`: MCP-Server, Zugriffstoken, Verbundene Apps; `features/mcp-access.md`).
 - `sm-account` opens the Konto page (`menu-account` → `account-screen`, route `/more/account`: the signed-in email, export, deletion; `features/account.md`). Zugänge and Konto are two pages (job 29d); each has a back arrow to More.
 - `sm-old-links` the routes of the one page they were before keep working: `/settings` redirects to `/more/access`, `/settings?section=account` to `/more/account`.
@@ -18,14 +19,14 @@ The signed-in app has two tabs: "Liste" (the shopping list with the add bar) and
 - `sm-imprint` opens the imprint in the browser (`more-imprint`, external: https://hummlist.com/impressum, English /en/imprint).
 - `sm-privacy` opens the privacy policy in the browser (`more-privacy`, external: https://hummlist.com/datenschutz, English /en/privacy).
 - `sm-licenses` opens Flutter's license page for "Hummlist" with the version (`more-licenses`).
-- `sm-version` shows "Version <version> (<build>)" at the bottom (`more-version`). A long press marks the device internal for analytics (`features/analytics.md`, `an-internal`).
+- `sm-version` shows "Version <version> (<build>)" at the bottom (`more-version`). A long press marks the device internal for analytics (`features/analytics.md`, `an-internal`); then "Interne Installation" (`more-internal`) and "Testfehler senden" (`more-test-error`) show below it.
 - `sm-analytics` "Nutzungsdaten" (`more-analytics`) between Einstellungen and Rechtliches, only in builds with a PostHog key (fg builds only with `FG_POSTHOG_HOST`): `features/analytics.md`, `an-switch`.
 - `sm-wide` from 840 px: a NavigationRail instead of the bar, the add sheet as wide as the list column, and More in two panes (the list on the left, Zugänge or the picked page on the right, without a back arrow).
 
 ## How to get to it (user POV)
 
 - Tap "Mehr" in the tab bar (or the rail on a wide screen). Tap "Liste" to go back.
-- Scroll down the More list for Konto, Abmelden, Einstellungen and Rechtliches.
+- Scroll down the More list for Konto, Abmelden, Feedback senden, Hilfe & Kontakt, Einstellungen and Rechtliches.
 
 ## Driving it with fg
 

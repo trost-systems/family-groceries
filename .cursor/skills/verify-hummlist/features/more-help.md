@@ -23,7 +23,7 @@ More entries in order (section header, then rows: DE label, EN label, hint):
    - „Archivierte Haushalte“ / "Archived households": hidden on normal builds (see Gotchas).
    - „Kategorien verwalten“ / "Manage categories".
    - „Läden“ / "Stores", hint „Reihenfolge und Laufweg“ / "Order and walking route".
-   - „Hummlist Premium“ (both languages), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
+   - „Hummlist Premium“ (both languages), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants" (driven 2026-11-02 on the production-like web build: a normal household sees this hint although nothing is sold); no hint while the household's status is still loading or offline.
 2. Section „Zugänge“ / "Access": „Zugänge“ / "Access", hint „MCP-Server, Zugangsschlüssel, verbundene Apps“ / "MCP server, access tokens, connected apps".
 3. Section „Konto“ / "Account": „Konto“ / "Account", hint „Daten exportieren, Konto löschen“ / "Export your data, delete your account"; then „Abmelden“ / "Sign out".
 4. Section „Feedback“ / "Feedback": „Feedback senden“ / "Send feedback", hint „Fehler, Ideen und Fragen an Peter“ / "Bugs, ideas and questions for Peter"; then „Hilfe & Kontakt“ / "Help & contact", hint „Fragen, Anleitungen und unsere E-Mail-Adresse“ / "Questions, guides and our email address" (external-link icon).
@@ -37,7 +37,7 @@ More entries in order (section header, then rows: DE label, EN label, hint):
 - Bottom tab „Mehr“ / "More" on phones (under 840 px); left rail button „Mehr“ from 840 px. Tapping the already-open tab returns to its first page (the list of entries).
 - Help page: „Mehr“ → „Hilfe & Kontakt“ / "Help & contact" opens https://hummlist.com/support (German UI) or https://hummlist.com/en/support (English UI) in a new browser tab. The page „Hilfe und Kontakt“ gives the support email address support@hummlist.com and answers FAQs (invite partner, join with a code, export data, delete account, Hummlist Lifetime, usage data, Siri, Alexa, AI assistants, TestFlight/Google Play testing).
 - Imprint: „Mehr“ → „Impressum“ opens https://hummlist.com/impressum (DE) or https://hummlist.com/en/imprint (EN). Privacy: „Datenschutz“ opens https://hummlist.com/datenschutz (DE) or https://hummlist.com/en/privacy (EN). On the login screen the same two links sit under the form as „Impressum · Datenschutz“.
-- Guides on hummlist.com (not linked from anywhere in the app; each URL below answered 200 on 2026-11-01): German „Hummlist per Siri: Kurzbefehl einrichten“ at /de/anleitungen/siri-kurzbefehl, „Hummlist per Alexa: Skill einrichten“ at /de/anleitungen/alexa; English "Hummlist with Siri (German only for now)" at /en/guides/siri-shortcut and "Hummlist with Alexa (German only for now)" at /en/guides/alexa (English pages say the feature is German-only and point to the German guide).
+- Guides on hummlist.com (not linked from anywhere in the app; the site's nav links the index /de/anleitungen, /en/guides, the help page links the Alexa guide, the landing page the Siri guide): German „Hummlist per Siri: Kurzbefehl einrichten“ at /de/anleitungen/siri-kurzbefehl, „Hummlist per Alexa: Skill einrichten“ at /de/anleitungen/alexa, „Hummlist mit Claude verbinden“ at /de/anleitungen/claude; English "Hummlist with Siri (German only for now)" at /en/guides/siri-shortcut, "Hummlist with Alexa (German only for now)" at /en/guides/alexa (both say the feature is German-only and point to the German guide) and "Connect Hummlist to Claude" at /en/guides/claude (a full English guide). The widget guides „Hummlist auf dem Home-Bildschirm: das Widget“ / "Hummlist on your Home Screen: the widget" (/de/anleitungen/widget, /en/guides/widget) are drafts: preview builds only, not in production (`site/content/guides/`).
 - Deep links: /more, /more/access, /more/account, /more/invites, /more/lifetime, /more/settings, /more/settings/language.
 
 ## Driving it with Playwright
@@ -46,7 +46,7 @@ Preconditions:
 
 - Seeded household „Familie Brandt“, signed in, consent declined, on the list (phone 390x844, or 1366x1024 for the wide layout).
 - For the external pages stub the site so the test never hits the live site: `page.context().route('https://hummlist.com/**', r => r.fulfill({contentType:'text/html', body:'<title>stub</title>'}))`.
-- More is a lazy list taller than the window: wheel to a row before clicking it (`wheelTo` helper in `e2e/tests/shell-more.spec.ts`/`help.spec.ts`: `page.mouse.wheel(0, 250)` over the list until the row is above the tab bar).
+- More is a lazy list taller than the window: wheel to a row before clicking it (`wheelTo` in `e2e/tests/helpers.ts`: `page.mouse.wheel(0, 250)` over the list until the row is above the tab bar; `openMore` does it for you).
 
 - **Open More.** Click the tab. `openTab(page, 'Mehr')` (phone: `getByRole('tab', {name:'Mehr', exact:true})`; rail: `getByRole('button', {name:'Mehr Tab '})`). URL `/more`, heading „Mehr“.
 - **Open an entry.** `openMore(page, 'Einstellungen')` (taps Mehr, makes sure the list is shown, clicks `getByRole('button', {name: /^Einstellungen( |$)/})`). Rows are buttons whose accessible name is label + hint, so match with a start-anchored regex, e.g. `/^Konto Daten/`, `/^Läden/`, `/^Zugänge/`.
@@ -60,7 +60,7 @@ Preconditions:
 
 ## Gotchas
 
-- „Archivierte Haushalte“ shows only in builds with HOUSEHOLD_ARCHIVE (the e2e build has it; a normal user does not see it). „Hilfe & Kontakt“ is on for everyone now (the help page is published).
+- „Archivierte Haushalte“ shows only in builds with HOUSEHOLD_ARCHIVE (the e2e build has it; the verify-hummlist build and a normal user do not see it). „Hilfe & Kontakt“ is on for everyone now (the help page is published).
 - „Nutzungsdaten“ section and switch exist only when the build has an analytics key. Production has one: the app.hummlist.com bundle carries a PostHog project key, and the store builds get it from the `release` environment secret (checked 2026-11-01). The e2e and verify-hummlist builds carry the stand-in key, so the switch shows there too.
 - „Partner einladen“ is absent for a signed-in user without a household.
 - Premium row hint: a household without Premium sees „Siri, Alexa und KI-Assistenten“ under „Hummlist Premium“ even though Premium is not on sale (driven 2026-11-01).
@@ -69,3 +69,4 @@ Preconditions:
 - Opening hummlist.com pages stays external everywhere; never an in-app browser. Real site pages are not reachable offline; stub them.
 - Long-press on the version line (touch only in practice) toggles „Interne Installation“ and shows „Testfehler senden“; internal testers only, not for copy.
 - Wide More page title: „Mehr“ heading; language page adds a back button next to its title.
+- Section headers („Haushalt“, „Zugänge“ …) are drawn in capitals; their accessible names keep normal case.

@@ -4,15 +4,16 @@ A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's current household and reads them back.
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts, a bare trailing count such as "Karotten 2") to the linked user's current household and reads them back.
 - `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again.
+- `alexa-similar` a new item whose spelling variant or synonym is open is added anyway and the open one named ("Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.").
 - `alexa-read` reads the open items in aisle order, at most 10, then "und N weitere"; an empty list has its own sentence.
 - `alexa-reprompt` asks once when nothing was understood, then says "… Ich habe nichts auf die Hummlist gesetzt."; nothing is added.
 - `alexa-unlinked` asks to link the account (LinkAccount card) when there is no token or it was revoked.
-- `alexa-link` is account linking: the consent page shows "Amazon Alexa", and Mehr → Zugänge lists it afterwards.
+- `alexa-link` is account linking: the consent page shows "Amazon Alexa", after "Erlauben" "Verbunden" / "Fertig, du kannst zu Amazon Alexa zurückkehren.", and Mehr → Zugänge lists it afterwards.
 - `alexa-revoke` cuts Alexa off at once: "Amazon Alexa trennen" under Zugänge, or the skill disabled in the Alexa app.
 - `alexa-verify` refuses unsigned, tampered, stale and foreign-skill requests with 400 before anything is read.
-
+- `alexa-help` help ("Mit Hummlist setzt du Sachen auf eure Einkaufsliste. …", session open) and stop, cancel or home ("Bis bald.").
 - `alexa-locked` (job 50, off by default): with `app_switches.integration_lock` on, a linked household without Hummlist Premium hears for an add "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." and for reading or launch the first two sentences, with a card, session ended; nothing is added or read, the rate limit is untouched. Help, stop, linking and skill events stay free; the link stays and works again once the household has Premium. Drive with `scripts/alexa-say.sh` after `fg db query --write "update app_switches set enabled = true where key = 'integration_lock'"`; e2e: `e2e/tests/integration-lock.spec.ts`.
 ## How to get to it (user POV)
 
@@ -32,7 +33,7 @@ Preconditions:
 - **Read.** `scripts/alexa-say.sh … --token "$TOKEN" --read` answers "Auf der Hummlist stehen 2 Sachen: …".
 - **Re-prompt.** `… --token "$TOKEN" "äh"` answers "Das habe ich nicht verstanden. Was soll auf die Liste?" with `shouldEndSession` false; `… --token "$TOKEN" --retry "ähm"` answers "Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt."
 - **Unlinked.** `scripts/alexa-say.sh … --launch` (no token) answers "Bitte verknüpfe zuerst dein Hummlist-Konto …" with `card.type` LinkAccount.
-- **Revoke.** On peter's client: `fg tap --key tab-more`, Zugänge, tap "Amazon Alexa trennen" and confirm "Trennen". The add call with `$TOKEN` now answers the link sentence and adds nothing. Or `scripts/alexa-say.sh … --disable` (SkillDisabled for the default Alexa user that made the earlier calls) with the same result.
+- **Revoke.** On peter's client: `fg tap --key tab-more`, `fg tap --key more-access`, tap "Amazon Alexa trennen" and confirm "Trennen". The add call with `$TOKEN` now answers the link sentence and adds nothing. Or `scripts/alexa-say.sh … --disable` (SkillDisabled for the default Alexa user that made the earlier calls) with the same result.
 - **Verify.** `… --unsigned "Bier"` and `… --stale "Bier"` answer 400 `missing_signature` and `stale_timestamp`; no Bier row exists.
 - **Proof.** The JSON answers, `fg screenshot --name alexa-<sub-feature>` of lea's list, and the `fg db query` rows.
 

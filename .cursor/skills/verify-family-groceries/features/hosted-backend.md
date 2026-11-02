@@ -1,6 +1,6 @@
 # Hosted backend
 
-The hosted Supabase project stays reachable for the app, MCP clients and Siri. Every deploy from `main` ends with a smoke test of the edge functions, a daily keepalive keeps the free project from pausing, a dispatch with an earlier `main` commit rolls the edge functions back, and a nightly encrypted backup keeps 90 days of data. The runbooks are `docs/DEPLOY.md` and `docs/BACKUP.md`.
+The hosted Supabase project stays reachable for the app, MCP clients, Siri and the Alexa skill. Every deploy from `main` ends with a smoke test of the edge functions, a daily keepalive keeps the free project from pausing, a dispatch with an earlier `main` commit rolls the edge functions back, and a nightly encrypted backup keeps 90 days of data. The runbooks are `docs/DEPLOY.md` and `docs/BACKUP.md`.
 
 ## Sub-features
 
@@ -30,7 +30,7 @@ Preconditions:
 - **Read-only history.** `gh run list -R trost-systems/family-groceries -w keepalive.yml -L 3` (and `-w backup.yml`, `-w supabase-deploy.yml`) shows the latest runs, and `gh run view <id> --log` their steps. Use it when a dispatch is not warranted.
 - **Keepalive.** Run `gh workflow run keepalive.yml -R trost-systems/family-groceries`, then `gh run watch` on the new run. It ends green, with "Postgres answered through ..." in the first step.
 - **Backup.** Run `gh workflow run backup.yml -R trost-systems/family-groceries --ref main`, then `gh run watch` on the new run. It ends green and lists one artifact `db-backup-<date>-<run id>`. `gh run download <run id> -R trost-systems/family-groceries -D <tmp dir>`, then `head -c 21 <tmp dir>/*/*.sql.age` prints `age-encryption.org/v1`. Never decrypt the real backup; delete the download.
-- **Restore drill.** Run `scripts/backup/drill.sh` from the repo root (it uses the checkout's own stack from `supabase/config.toml`, not an `fg` instance). The last lines read `drill: PASS: 28 tables identical after dump, decrypt and restore:` and one line per table with its row count and md5. The count is every table in `public` plus `auth.users` and `auth.identities`, so it grows with each new table (28 on 2026-10-31). It resets the checkout's local database twice.
+- **Restore drill.** Run `scripts/backup/drill.sh` from the repo root (it uses the checkout's own stack from `supabase/config.toml`, not an `fg` instance). The last lines read `drill: PASS: <N> tables identical after dump, decrypt and restore:` and one line per table with its row count and md5. The count is every table in `public` plus `auth.users` and `auth.identities`, so it grows with each new table (35 by the migrations on main aa339cc, 2026-11-02; not run). It resets the checkout's local database twice.
 - **Rollback.** Run `gh workflow run supabase-deploy.yml -R trost-systems/family-groceries --ref main -f ref=<sha on main>`. The run shows the notice "Rollback: redeploying the edge functions of <sha>", skips Migrations, and Smoke test passes. A SHA not on `main`, or one older than `scripts/smoke-remote.sh`, fails in "Check out the rollback commit" before anything deploys. So does a `ref` that is not a commit SHA, and a dispatch from a branch other than `main` fails earlier, in "Check deploy credentials".
 
 ## Gotchas

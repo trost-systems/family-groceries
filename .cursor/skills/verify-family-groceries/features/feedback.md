@@ -23,7 +23,7 @@ Preconditions: the baseline from `features/README.md`; peter signed in on the li
 - **`fb-options`.** Open the sheet again (it is blank after a send), type a note, `fg tap --key feedback-category-bug`, `fg tap --key feedback-contact`, `fg tap --key feedback-send`; the newest row has category `bug`, contact_ok true.
 - **`fb-limits`.** `fg tap --key feedback-message`, `fg type --input "   "`: `fg find --key feedback-send` is disabled. A 2,001-character input (`fg type --input "$(printf 'a%.0s' {1..2001})"`) shows `feedback-counter` "2001 / 2000" and "Höchstens 2000 Zeichen".
 - **`fb-retry`.** Not reliably drivable on linux (fg can't cut one client off the local stack); the web e2e tests "offline: …" and "a lost answer: …" (`e2e/tests/feedback.spec.ts`) and the widget test `test/feedback/feedback_sheet_test.dart` cover it. Report it as skipped with that pointer.
-- **RLS.** `fg db query "select count(*) from feedback" --as peter` fails with permission denied: the sender can't read their own notes.
+- **RLS.** `fg db query "select count(*) from feedback" --as peter` fails with permission denied: the sender can't read their own notes from the table (their data export, `features/account.md`, does include them).
 - **Proof.** Screenshots `fb-more`, `fb-empty`, `fb-filled`, `fb-thanks` and the db query output.
 
 ## Gotchas
@@ -31,3 +31,4 @@ Preconditions: the baseline from `features/README.md`; peter signed in on the li
 - The sheet covers the tabs: close it (`feedback-close` or `fg back`) before `fg tap --key tab-list`.
 - The note is kept when the sheet is closed without sending; a recipe that expects a blank form sends first or types over it: `fg type --key feedback-message --input <text>` replaces the field's text.
 - `screen` is taken when the sheet opens: go to the list first, then More, to get `list`.
+- The server deletes notes 12 months after `created_at` (pg_cron `purge-old-feedback`); nothing in the app shows it.
