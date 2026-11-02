@@ -1111,3 +1111,99 @@ German setting names differ between iOS versions, so the English ones are given.
   phrases. Do "Job 51" section 2 (the Siri capability and entitlement; Apple reads the
   alternative app names only with it, according to its documentation), then test again.
 - Everything works: tell the lead. The `native-siri` hold stays until Hummlist Launch.
+
+## Job 72: Alexa data cleanup and fact answers for Legal Review (2026-11-02)
+
+**ADDENDUM 1 (Alexa free, N-27) is done in this job:** the alexa function never asks the
+integration lock, `integration_gate` answers `alexa` open even with `integration_lock` on, the
+app's Premium copy and card no longer name Alexa (section 7's exact ARB changes), and the Alexa
+tile in Zugänge is never paused. Proved by pgTAP (`integration_lock.test.sql`), the functions'
+database test (`premium_integration_test.ts`: Alexa adds with the switch on, before a plan and
+after its lapse), app tests and `e2e/tests/integration-lock.spec.ts`. Nothing was flipped;
+`integration_lock` stays off. Section 7's other points (speech strings, handler line) are in the
+same change.
+
+For Legal Review's handoff of 2026-11-02 (section 6 and "Open fact questions"). Variant A of
+N-24 and the 12-month purge of N-28 are built: migration `20261102093000_alexa_cleanup.sql`,
+tests in `supabase/tests/alexa.test.sql` and `e2e/tests/alexa.spec.ts`, the table in
+`docs/ALEXA.md` ("What is kept, and for how long"). Nothing is applied to the hosted project
+before the merge; `supabase-deploy.yml` applies it from main. The site's legal texts are not
+changed here (Peter approves them).
+
+What the texts may now say, as built:
+
+- The counter: deleted with the user's last Alexa link right away; otherwise by the daily job
+  (03:29 UTC) once its minute has passed, so none is older than a day ("spätestens nach einem
+  Tag" holds). Stricter than the handoff's "older than 1 day", which would let a counter live
+  almost two days between two runs.
+- Disabling the skill: the link, the counter, the Hummlist session and the Zugänge entry go right
+  away. Linking again: the older sessions and their links go right away.
+- "Amazon Alexa trennen": the session, the link and the counter go right away; GoTrue keeps the
+  revoked grant record, which the next daily run deletes, within 24 hours ("spätestens am
+  folgenden Tag" holds).
+- Unlinking only in the Alexa app: everything stays until the user removes it in Zugänge or the
+  skill goes unused for 12 months; then the session, the link and the grant go.
+
+Answers (evidence read 2026-11-02, read-only: Management API config, `database/query/read-only`
+as `supabase_read_only_user`, and the logs endpoint):
+
+3. **Region.** Amazon's requests run in **eu-west-1** (Ireland). The three real Alexa requests in
+   the last 24 h (2026-11-02 07:16:21, 07:25:34, 07:25:41 UTC; client AS "Amazon Technologies
+   Inc.", Cloudflare colo DUB, country IE, user agent Apache-HttpClient) show
+   `x_sb_edge_region=eu-west-1` in `function_edge_logs`, and their Boot/Shutdown lines in
+   `function_logs` show `region=eu-west-1` (execution ids b013a8b4, 959205fb, 36e75b23). The
+   database is in eu-central-1 (Frankfurt). Unsigned probes from elsewhere (curl, US/MX/FI)
+   ran in us-west-1, us-east-1, us-east-2 and eu-central-1: Supabase runs the function in the
+   region nearest the caller. `?forceFunctionRegion=eu-central-1` would not break request
+   verification: `supabase/functions/alexa/verify.ts` checks the `SignatureCertChainUrl` and
+   `Signature-256` headers and the signature over the raw body (lines 3-6, 207-211), never the
+   request URL. Supabase documents `forceFunctionRegion` as the query form of `x-region`
+   (supabase.com/docs/guides/functions/regional-invocation). Not tested: whether the Alexa console
+   accepts a query string in the endpoint URI (needs the ASK login, which only the box has). The
+   endpoint is unchanged, as briefed.
+4. **`last_seen`.** It moves on every request that carries a token Hummlist accepts:
+   `linkedOrReply` (`supabase/functions/alexa/handler.ts` l.95-114) calls `alexa_remember`
+   (l.112), whose upsert sets `last_seen = now()` (`20261030140000_alexa.sql` l.113-114). That
+   covers LaunchRequest (l.196), AddItemIntent (l.158) and ReadListIntent, "what's on the list"
+   (l.183), also when the household is locked (the update runs before the Premium check), and
+   SkillAccountLinked (l.226-230). It does not move on AMAZON.HelpIntent, Stop, Cancel,
+   NavigateHome or Fallback (l.207-215, no account lookup), on an AddItemIntent with nothing
+   understood (l.153-157), on SessionEndedRequest, or when the token is refused. A failure of
+   the update is reported, not spoken (`.catch`). Hosted: the one link's `last_seen` is
+   2026-11-02 07:25:41 UTC, the moment of the last Alexa request in the edge logs. The 12-month
+   purge also counts the session's `refreshed_at`: Alexa refreshes the token when it uses it.
+5. **Grant after SkillDisabled.** Before this job: yes. `alexa_revoke` deleted the Hummlist
+   sessions only (`20261030140000_alexa.sql`, function `alexa_revoke`); the
+   `auth.oauth_consents` row stayed with `revoked_at` null, with no expiry, until the user
+   removed it in Zugänge or deleted the account. Zugänge lists exactly those rows (GoTrue
+   v2.197.0, `internal/api/oauthserver/handlers.go`, `UserListOAuthGrants`: "active (non-revoked)
+   consents"), so "Amazon Alexa" stayed listed although it no longer worked; docs/ALEXA.md's
+   device check 7 said otherwise. Now `alexa_revoke` deletes the grant in the same call once the
+   user holds no other Alexa session; the e2e spec checks that Zugänge shows "Noch keine App
+   verbunden." after SkillDisabled. "Trennen" in Zugänge: GoTrue sets `revoked_at` and keeps the
+   row (`UserRevokeOAuthGrant`); the daily job now deletes revoked Alexa grants. Hosted today:
+   one active Alexa grant, with its session; no revoked one.
+6. **Refresh token lifetime.** Unlimited, locally and live. `supabase/config.toml` l.279 and
+   l.281 leave `timebox` and `inactivity_timeout` commented out; the hosted project's auth config
+   says `sessions_timebox: 0`, `sessions_inactivity_timeout: 0` (0 = off),
+   `refresh_token_rotation_enabled: true`, `security_refresh_token_reuse_interval: 10`,
+   `jwt_exp: 3600`. Each refresh rotates the refresh token, and the session lives until it is
+   revoked. From this job on, an Alexa session also ends after 12 months without use
+   (`purge_alexa`). A project-wide timebox would sign app users out too, so it stays off.
+9. **Console values against skill.json.** Partly answered. The skill was created from
+   `alexa/skill-package/skill.json` with `ask deploy --target skill-metadata` (job 31b,
+   docs/ALEXA.md "Deploy" step 2), not typed into the console. Job 31b's manifest read
+   (`docs/screenshots/31b/alexa-deploy-smoke.txt`) shows privacy URL
+   `https://hummlist.com/datenschutz`, as in skill.json. The terms URL, the countries and the
+   privacy answers were not read back then, and this runner has no ASK login. On the box, from
+   the repo root:
+
+   ```bash
+   diff <(ask smapi get-skill-manifest -s "$ALEXA_SKILL_ID" -g development \
+            | jq -S '.manifest | {privacyAndCompliance, countries: .publishingInformation.distributionCountries, mode: .publishingInformation.distributionMode}') \
+        <(jq -S '.manifest | {privacyAndCompliance, countries: .publishingInformation.distributionCountries, mode: .publishingInformation.distributionMode}' alexa/skill-package/skill.json) \
+     && echo "console matches skill.json"
+   ```
+
+   Run it against main's skill.json: job 69 changes skill.json (English locales), so a
+   difference may be job 69's not yet deployed change rather than a hand edit.

@@ -1,0 +1,35 @@
+# Job 72: read-only evidence from the hosted project jdwqrallbpdbshrdhenk, 2026-11-02 (UTC times)
+
+## Auth config (Management API GET /v1/projects/{ref}/config/auth, selected fields)
+{"jwt_exp":3600,"sessions_timebox":0,"sessions_inactivity_timeout":0,"sessions_single_per_user":false,
+ "refresh_token_rotation_enabled":true,"security_refresh_token_reuse_interval":10,
+ "oauth_server_enabled":true,"oauth_server_allow_dynamic_registration":true}
+
+## Project region (GET /v1/projects/{ref}): eu-central-1
+
+## Alexa invocations, last 24 h (logs endpoint, source function_edge_logs + function_logs)
+2026-11-02T07:25:41.767000 200 edge_region=eu-west-1 colo=DUB country=IE as=Amazon Technologies Inc. exec=b013a8b4-64b8-4fc6-ae67-c0df3e869b44
+2026-11-02T07:25:34.082000 200 edge_region=eu-west-1 colo=DUB country=IE as=Amazon Data Services Ireland Limited exec=959205fb-ef91-43d3-9ea7-b338bc7f68b7
+2026-11-02T07:16:21.711000 200 edge_region=eu-west-1 colo=DUB country=IE as=Amazon Data Services Ireland Limited exec=36e75b23-cbde-4d71-b609-0981ee483096
+2026-11-02T06:38:00.956000 400 edge_region=us-east-2 colo=DFW country=MX as=Microsoft Singapore Pte. Ltd. exec=bf09fdcc-b358-4d6d-b46c-e81927545b1d
+2026-11-02T03:48:52.428000 400 edge_region=eu-central-1 colo=HEL country=FI as=Hetzner Online GmbH exec=d2051c81-623b-4e7e-a828-2077c5833aa6
+2026-11-02T03:10:50.132000 400 edge_region=us-west-1 colo=LAX country=US as=Microsoft Corporation exec=919eec5e-d989-4ef2-a39f-ddea927f4a6d
+2026-11-02T02:35:22.835000 400 edge_region=us-east-1 colo=IAD country=US as=Microsoft Limited exec=a15e57d6-7184-4d0b-8c31-9da579c69787
+2026-11-01T21:38:38.189000 400 edge_region=us-east-2 colo=ORD country=US as=Microsoft Corporation exec=1abdbbba-9a8e-4cd8-adad-3547a380bc26
+2026-11-01T16:30:43.194000 400 edge_region=us-west-1 colo=LAX country=US as=Microsoft Corporation exec=d419d724-3fd8-40df-a924-7ff6943ade9e
+2026-11-01T14:43:55.613000 400 edge_region=us-west-1 colo=SJC country=US as=Microsoft Corporation exec=8616ef73-d1fc-4c86-b2dd-05fb75b7e080
+2026-11-01T14:32:41.550000 400 edge_region=us-east-2 colo=MSP country=US as=Microsoft Corporation exec=1abb7699-1f4d-45a4-81fa-684d37197f9e
+2026-11-01T12:42:34.412000 400 edge_region=us-west-1 colo=LAX country=US as=Microsoft Corporation exec=2659c1ed-08da-4d47-92c4-3c08b625e3e2
+2026-11-01T12:11:50.887000 400 edge_region=us-west-1 colo=SJC country=US as=Microsoft Corporation exec=21058b46-2be0-4e1a-ad6a-176456299c64
+2026-11-01T10:05:47.887000 400 edge_region=us-east-1 colo=IAD country=US as=Microsoft Limited exec=dff2e414-4a98-4175-897a-068c87744361
+(function_logs Boot/Shutdown for exec b013a8b4, 959205fb, 36e75b23: region=eu-west-1)
+
+## Privileges of postgres (database/query/read-only)
+auth.oauth_consents DELETE=true UPDATE=true; auth.sessions TRIGGER=true; auth.sessions owner supabase_auth_admin
+
+## Alexa rows (aggregates)
+alexa_links: 1 row, 1 user, 0 orphaned; alexa_rate: 0 rows; Alexa client grants: 1 active, 0 revoked, 1 session; Alexa grants without a session: 0
+the link: last_seen 2026-11-02 07:25:41, session created 07:25:39, refreshed_at null, grant 07:16:19
+
+## pg_cron jobs before this migration
+purge-access-tokens 23 3 * * *; purge-old-feedback 17 3 * * *; purge-purchases 41 3 * * *

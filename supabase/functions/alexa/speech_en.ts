@@ -55,9 +55,6 @@ export const speechEnglish = {
   failed: "Sorry, that didn't work. I didn't add anything. Please try again in a moment.",
   listFailed: "Sorry, I can't reach Hummlist right now. Please try again in a moment.",
   emptyList: 'Your Hummlist is empty.',
-  premium: "Hummlist can't take voice requests for your household right now.",
-  premiumAdd:
-    "Hummlist can't take voice requests for your household right now. I didn't add anything.",
   cardTitle: 'Hummlist',
 } as const;
 

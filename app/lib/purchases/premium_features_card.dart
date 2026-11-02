@@ -38,7 +38,6 @@ class const PremiumFeaturesCard({
             const SizedBox(height: HlSpace.s2),
             for (final (icon, included) in [
               (Icons.mic_none, l10n.integrationPremiumSiri),
-              (Icons.speaker_outlined, l10n.integrationPremiumAlexa),
               (Icons.smart_toy_outlined, l10n.integrationPremiumAi),
             ])
               Padding(

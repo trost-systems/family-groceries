@@ -8,8 +8,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// integration settings open.
 @immutable
 class const ServerLock({
-  /// `integration_lock` is on: Siri, Alexa and MCP refuse a household
-  /// without Hummlist Premium.
+  /// `integration_lock` is on: Siri and MCP refuse a household without
+  /// Hummlist Premium. Alexa stays free (Legal Review N-27).
   required final bool enforced,
 
   /// `premium_offer` is on, or could not be read: the card links to the

@@ -316,14 +316,18 @@ Deno.test('integration_blocked (job 50): the integration only, never what was sa
   const t = telemetryFor('mcp', env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }), fetchImpl);
   const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
   const subject = { installId: INSTALL, householdId: household };
-  for (const integration of ['siri', 'alexa', 'mcp']) {
+  for (const integration of ['siri', 'mcp']) {
     assert(t.event('integration_blocked', subject, { integration }));
   }
   assertFalse(t.event('integration_blocked', subject, { integration: 'google' }));
+  assertFalse(
+    t.event('integration_blocked', subject, { integration: 'alexa' }),
+    'Alexa is free (job 72)',
+  );
   assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', text: 'Milch' }));
   assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', tool: 'add_items' }));
   await t.flush();
   const batch = sent[0].body.batch as { properties: Record<string, unknown> }[];
-  assertEquals(batch.map((e) => e.properties.integration), ['siri', 'alexa', 'mcp']);
+  assertEquals(batch.map((e) => e.properties.integration), ['siri', 'mcp']);
   assertEquals(batch[0].properties.household_id, household);
 });

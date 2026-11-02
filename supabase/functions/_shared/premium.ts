@@ -1,5 +1,5 @@
-// Job 50: Siri, Alexa and MCP / AI assistants are part of Hummlist Premium (Spec #4). Every
-// integration endpoint asks requirePremium once it knows the caller's household; the rule itself
+// Job 50: Siri and MCP / AI assistants are part of Hummlist Premium (Spec #4); Alexa stays free
+// (job 72, Legal Review N-27) and never asks. Every other integration endpoint asks requirePremium once it knows the caller's household; the rule itself
 // lives in Postgres (public.integration_gate: the integration_lock switch, then job 49's
 // household_has_premium), never here. A locked household's first refusal of the hour per
 // integration counts as integration_blocked for an install that said yes to analytics.
@@ -9,7 +9,7 @@ import { analyticsSubject } from '../alexa/store.ts';
 import { serviceDb, type Sql } from './db.ts';
 import type { Telemetry } from './telemetry.ts';
 
-export type Integration = 'siri' | 'alexa' | 'mcp';
+export type Integration = 'siri' | 'mcp';
 
 export type Access = 'open' | 'locked';
 

@@ -11,7 +11,7 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
 - `alexa-reprompt` asks once when nothing was understood, then gives up; nothing is added.
 - `alexa-unlinked` asks to link the account (a link card in the Alexa app) when there is no link or it was cut.
 - `alexa-link` account linking: Alexa app → Skills → Hummlist → „Zur Verwendung aktivieren“ / „Konto verknüpfen“ opens the Hummlist consent page „Zugriff erlauben?“ for „Amazon Alexa“; after „Erlauben“ it shows „Verbunden“ / „Fertig, du kannst zu Amazon Alexa zurückkehren.“ until the Alexa app takes over; afterwards Mehr → Zugänge lists „Amazon Alexa“ under „Verbundene Apps“.
-- `alexa-revoke` Alexa is cut off at once by „Amazon Alexa trennen“ then „Trennen“ in Zugänge, or by disabling the skill in the Alexa app; linking again restores it.
+- `alexa-revoke` Alexa is cut off at once by „Amazon Alexa trennen“ then „Trennen“ in Zugänge, or by disabling the skill in the Alexa app; linking again restores it. Disabling the skill also removes „Amazon Alexa“ from Zugänge at once („Noch keine App verbunden.“ when it was the only app). What the server kept about the connection (link, add counter) goes at once either way; a connection unused for 12 months (also one only unlinked in the Alexa app) is removed with its Zugänge entry by a daily job.
 - `alexa-help` help and stop.
 - `alexa-verify` requests not signed by Amazon, stale or for another skill are refused (HTTP 400) before anything is read.
 
@@ -55,7 +55,7 @@ Preconditions:
 - **Zugänge shows it.** `openMore(page, 'Zugänge')`; `page.getByText('Amazon Alexa').first()` is visible under „Verbundene Apps“.
 - **Add.** `say(token, 'Milch und Eier')` (or `scripts/alexa-say.sh --url "$API" --token "$TOKEN" "Milch und Eier"`): `response.outputSpeech.text` is „Ich habe Milch und Eier auf die Hummlist gesetzt.“; in the partner's page `itemRow(lea, 'Eier')` is visible within 5 seconds without reload; both are under category „Kühlregal“ (`getByRole('heading', { name: 'Kühlregal' })`).
 - **Duplicate / read / re-prompt / launch.** `say(token, 'Milch')` gives „Schon auf der Hummlist: Milch.“; `scripts/alexa-say.sh … --read` gives „Auf der Hummlist stehen N Sachen: …“; `say(token, 'äh')` then `--retry` gives the two not-understood sentences, `shouldEndSession` false then true; `--launch` with no token gives the link sentence and a `LinkAccount` card.
-- **Revoke.** `getByRole('button', { name: 'Amazon Alexa trennen' }).click()`, `getByRole('button', { name: 'Trennen', exact: true }).click()`, `getByText('Noch keine App verbunden.')`; the next add answers the link sentence and adds nothing; the refresh token is refused. Or `--disable` (SkillDisabled).
+- **Revoke.** `getByRole('button', { name: 'Amazon Alexa trennen' }).click()`, `getByRole('button', { name: 'Trennen', exact: true }).click()`, `getByText('Noch keine App verbunden.')`; the next add answers the link sentence and adds nothing; the refresh token is refused. Or `--disable` (SkillDisabled); Zugänge then shows „Noch keine App verbunden.“ as well. Database: `alexa_links` and `alexa_rate` have no row for the user afterwards (`alexaRows` in e2e/tests/alexa.spec.ts).
 - **Verify.** `--unsigned` and `--stale` answer HTTP 400 (`missing_signature`, `stale_timestamp`); no item is added.
 
 ## Gotchas

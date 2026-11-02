@@ -84,8 +84,16 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.textContaining('Siri, Alexa und KI-Assistenten (MCP)'),
+      find.textContaining('Siri und KI-Assistenten (MCP)'),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: key('lifetime-screen'),
+        matching: find.textContaining('Alexa'),
+      ),
+      findsNothing,
+      reason: 'Alexa stays free (Legal Review N-27)',
     );
     expect(enabled(tester, 'premium-buy-yearly'), isTrue);
     expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
@@ -580,7 +588,7 @@ void main() {
       expect(
         find.descendant(
           of: key('more-lifetime'),
-          matching: find.text('Siri, Alexa und KI-Assistenten'),
+          matching: find.text('Siri und KI-Assistenten'),
         ),
         findsOneWidget,
       );
@@ -616,7 +624,7 @@ void main() {
         entitlements: FakeEntitlementsSource()..offline = true,
       );
       await showRow(tester);
-      expect(find.text('Siri, Alexa und KI-Assistenten'), findsNothing);
+      expect(find.text('Siri und KI-Assistenten'), findsNothing);
       expect(find.text('Freigeschaltet'), findsNothing);
     });
 

@@ -23,7 +23,7 @@ More entries in order (section header, then rows: DE label, EN label, hint):
    - „Archivierte Haushalte“ / "Archived households": hidden on normal builds (see Gotchas).
    - „Kategorien verwalten“ / "Manage categories".
    - „Läden“ / "Stores", hint „Reihenfolge und Laufweg“ / "Order and walking route".
-   - „Hummlist Premium“ (both languages), only once Premium may be offered or for a household that has it (job 64), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri, Alexa und KI-Assistenten“ / "Siri, Alexa and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
+   - „Hummlist Premium“ (both languages), only once Premium may be offered or for a household that has it (job 64), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri und KI-Assistenten“ / "Siri and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
 2. Section „Zugänge“ / "Access": „Zugänge“ / "Access", hint „MCP-Server, Zugangsschlüssel, verbundene Apps“ / "MCP server, access tokens, connected apps".
 3. Section „Konto“ / "Account": „Konto“ / "Account", hint „Daten exportieren, Konto löschen“ / "Export your data, delete your account"; then „Abmelden“ / "Sign out".
 4. Section „Feedback“ / "Feedback": „Feedback senden“ / "Send feedback", hint „Fehler, Ideen und Fragen an Peter“ / "Bugs, ideas and questions for Peter"; then „Hilfe & Kontakt“ / "Help & contact", hint „Fragen, Anleitungen und unsere E-Mail-Adresse“ / "Questions, guides and our email address" (external-link icon).
@@ -63,7 +63,7 @@ Preconditions:
 - „Archivierte Haushalte“ shows only in builds with HOUSEHOLD_ARCHIVE (the e2e build has it; the verify-hummlist build and a normal user do not see it). „Hilfe & Kontakt“ is on for everyone now (the help page is published).
 - „Nutzungsdaten“ section and switch exist only when the build has an analytics key. Production has one: the app.hummlist.com bundle carries a PostHog project key, and the store builds get it from the `release` environment secret (checked 2026-11-01). The e2e and verify-hummlist builds carry the stand-in key, so the switch shows there too.
 - „Partner einladen“ is absent for a signed-in user without a household.
-- Premium row hint: a household without Premium sees „Siri, Alexa und KI-Assistenten“ under „Hummlist Premium“ even though Premium is not on sale (driven 2026-11-01).
+- Premium row hint: a household without Premium sees „Siri und KI-Assistenten“ under „Hummlist Premium“ even though Premium is not on sale (driven 2026-11-01).
 - On the phone the tab is role `tab`; on the rail it is role `button` named "Mehr Tab …". Use `openTab`.
 - Pages open by deep link: back goes to the More list, not out of the app.
 - Opening hummlist.com pages stays external everywhere; never an in-app browser. Real site pages are not reachable offline; stub them.

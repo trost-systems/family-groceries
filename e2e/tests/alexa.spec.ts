@@ -41,6 +41,15 @@ async function openNames(email: string): Promise<[string, string][]> {
   return (data as unknown as { name: string; categories: { name: string } }[]).map((r) => [r.name, r.categories.name]);
 }
 
+/** What the alexa function keeps about [uid]: its links and its rate counter (job 72). */
+async function alexaRows(uid: string): Promise<{ links: number; counters: number }> {
+  const db = adminClient();
+  const links = await db.from('alexa_links').select('session_id', { count: 'exact', head: true }).eq('user_id', uid);
+  const rate = await db.from('alexa_rate').select('user_id', { count: 'exact', head: true }).eq('user_id', uid);
+  expect(links.error ?? rate.error).toBeNull();
+  return { links: links.count!, counters: rate.count! };
+}
+
 async function userId(email: string): Promise<string> {
   return (await (await apiAs(email)).auth.getUser()).data.user!.id;
 }
@@ -121,6 +130,8 @@ test('Alexa: link with a confidential client, then adds land live for another me
   expect(await openNames(leaEmail)).toHaveLength(4);
 
   // AC8: Peter disconnects Alexa in Zugänge: the next request is treated as unlinked.
+  const peterId = await userId(peterEmail);
+  expect(await alexaRows(peterId)).toEqual({ links: 1, counters: 1 });
   await openMore(peter, 'Zugänge');
   await expect(peter.getByText('Amazon Alexa').first()).toBeVisible();
   await screenshot(peter, 'alexa-03-zugaenge-alexa');
@@ -133,6 +144,8 @@ test('Alexa: link with a confidential client, then adds land live for another me
   const refresh = await tokenRequest(client, { grant_type: 'refresh_token', refresh_token: renewed.body.refresh_token });
   expect(refresh.status, 'the refresh token is revoked as well').not.toBe(200);
   expect(await openNames(leaEmail)).toHaveLength(4);
+  // Legal Review N-24: the link and the counter go with it, right away.
+  expect(await alexaRows(peterId)).toEqual({ links: 0, counters: 0 });
 });
 
 test('Alexa: two households stay apart, a household switch moves the adds, disabling the skill revokes it, forged requests change nothing', async ({ browser, baseURL }) => {
@@ -198,6 +211,11 @@ test('Alexa: two households stay apart, a household switch moves the adds, disab
   const refresh = await tokenRequest(client, { grant_type: 'refresh_token', refresh_token: tokens.refresh_token });
   expect(refresh.status).not.toBe(200);
   expect((await openNames(ninaEmail)).map(([n]) => n)).toEqual(['Milch', 'Eier', 'Brot']);
+  // N-24: the link, the counter and the grant go too: Zugänge no longer lists Amazon Alexa.
+  expect(await alexaRows(await userId(maxEmail))).toEqual({ links: 0, counters: 0 });
+  await openMore(max, 'Zugänge');
+  await expect(max.getByText('Noch keine App verbunden.')).toBeVisible();
+  await screenshot(max, 'alexa-05-zugaenge-after-skill-disabled');
 });
 
 test('the app records each install\'s analytics answer for server events (AC10)', async ({ browser }) => {

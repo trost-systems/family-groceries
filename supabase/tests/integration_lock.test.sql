@@ -1,9 +1,10 @@
 -- Job 50: the integration lock (migration 20261101081327_integration_lock.sql). Ida and Ian share a
 -- household with a yearly plan, Jo has none, Tess is a tester. integration_gate() opens every
 -- household while the switch is off; with it on only premium ones. A lapse locks at read time and
--- deletes nothing; renewing opens again with the same tokens and links.
+-- deletes nothing; renewing opens again with the same tokens and links. Alexa is never locked
+-- (20261102120000_alexa_free.sql).
 begin;
-select plan(35);
+select plan(36);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -86,7 +87,9 @@ select pg_temp.as_postgres();
 
 select is(pg_temp.gate((select id from hj), 'siri'), 'locked, report', 'switch on: no premium, Siri is locked and reported');
 select is(pg_temp.gate((select id from hj), 'siri'), 'locked', 'the second refusal within the hour is not reported');
-select is(pg_temp.gate((select id from hj), 'alexa'), 'locked, report', 'Alexa is reported on its own');
+select is(pg_temp.gate((select id from hj), 'alexa'), 'open', 'switch on, no premium: Alexa stays open (free, job 72)');
+select ok(not exists (select from public.integration_blocks where household_id = (select id from hj) and integration = 'alexa'),
+  'and is never noted as blocked');
 select is(pg_temp.gate((select id from hj), 'mcp'), 'locked, report', 'and MCP');
 select is(pg_temp.gate((select id from hi), 'mcp'), 'locked, report', 'Ida''s household is its own pair');
 update public.integration_blocks set reported_at = now() - interval '61 minutes'
@@ -120,7 +123,7 @@ create temp table before_lapse as select pg_temp.integrations((select id from hi
 select is(public.purchase_lifecycle('apple', 'y50', now() + interval '1 second', now() - interval '1 minute', false, false) ->> 'outcome',
   'updated', 'the yearly plan expires (EXPIRATION)');
 select is(pg_temp.gate((select id from hi), 'mcp'), 'locked', 'lapsed: MCP is locked at read time (reported within the hour already)');
-select is(pg_temp.gate((select id from hi), 'alexa'), 'locked, report', 'and Alexa, reported');
+select is(pg_temp.gate((select id from hi), 'alexa'), 'open', 'Alexa stays open after the lapse');
 select is(pg_temp.integrations((select id from hi)), (select v from before_lapse),
   'the lapse deleted no token, Alexa link, session, item or entitlement row');
 
@@ -134,7 +137,7 @@ select is(pg_temp.integrations((select id from hi)), (select v from before_lapse
 select is(public.purchase_record('apple', 'l50', 'l50', encode(extensions.hmac('l50', 'pgTAP key', 'sha256'), 'hex'),
     'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Production', now() - interval '1 minute', 29.99, 'EUR',
     'DE', (select id from hj)) ->> 'outcome', 'granted', 'Jo buys Lifetime');
-select is(pg_temp.gate((select id from hj), 'alexa'), 'open', 'Lifetime opens Alexa');
+select is(pg_temp.gate((select id from hj), 'alexa'), 'open', 'with Lifetime Alexa is open as always');
 
 -- A tester's grant counts as premium (AC6): Tess's own new household works at the cut-over. Since
 -- 20261101150000 a tester's grant is a RevenueCat promotional grant for the household.

@@ -24,10 +24,10 @@ Deno.test('open: nothing is reported', async () => {
 
 Deno.test('locked: reported only when the database says it is the first of the hour', async () => {
   const first = gate({ locked: true, report: true });
-  assertEquals(await first.require(caller, 'alexa'), 'locked');
-  assertEquals(first.reported, ['alexa']);
+  assertEquals(await first.require(caller, 'mcp'), 'locked');
+  assertEquals(first.reported, ['mcp']);
   const again = gate({ locked: true, report: false });
-  assertEquals(await again.require(caller, 'alexa'), 'locked');
+  assertEquals(await again.require(caller, 'mcp'), 'locked');
   assertEquals(again.reported, []);
 });
 

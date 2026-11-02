@@ -1,8 +1,9 @@
 // Job 50: the integration lock against a database with the repo's migrations, through the
 // functions' production wiring. With app_switches.integration_lock off a household without premium
-// adds as before; with it on Siri, Alexa and MCP refuse it, add nothing, and integration_blocked
-// goes out once per hour and integration without any content; a yearly plan opens all three for
-// the same credentials, its lapse locks them again and deletes nothing. The db gate sets
+// adds as before; with it on Siri and MCP refuse it, add nothing, and integration_blocked goes
+// out once per hour and integration without any content; a yearly plan opens both for the same
+// credentials, its lapse locks them again and deletes nothing. Alexa is free (job 72): it adds with
+// the switch on, before the plan and after its lapse. The db gate sets
 // FG_DB_TEST=1 and SUPABASE_DB_URL; without them this is skipped.
 import { assert, assertEquals, assertFalse } from '@std/assert';
 import postgres from 'postgres';
@@ -13,7 +14,6 @@ import { requirePremiumWith } from './premium.ts';
 import { Telemetry } from './telemetry.ts';
 import { productionDeps } from '../alexa/deps.ts';
 import { createHandler as alexaHandler, type Linked } from '../alexa/handler.ts';
-import { speech } from '../alexa/speech.ts';
 import { testSkillId } from '../alexa/test_ca.ts';
 import type { Envelope } from '../alexa/verify.ts';
 import { buildServer, premiumRequired } from '../mcp/tools.ts';
@@ -171,7 +171,7 @@ test('switch off: a household without premium adds over Siri, Alexa and MCP as b
     );
   }));
 
-test('switch on: locked everywhere, nothing added, integration_blocked once each', () =>
+test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integration_blocked once each', () =>
   withHousehold(true, async (m, sql) => {
     const t = recorder();
     const siri = voice(m, t);
@@ -181,20 +181,24 @@ test('switch on: locked everywhere, nothing added, integration_blocked once each
       body: { error: 'premium_required', speech: copy.de.failures.premium_required },
     });
     await siri('Brot');
-    assertEquals(await alexa(m, t)('Eier'), speech.premiumAdd);
+    assertEquals(
+      await alexa(m, t)('Eier'),
+      'Ich habe Eier auf die Hummlist gesetzt.',
+      'Alexa is never locked',
+    );
     const tool = mcp(m, t);
     for (const name of ['add_items', 'list_items']) {
       const result = await tool(name);
       assertEquals(result.isError, true);
       assertEquals(result.content[0].text, premiumRequired.de);
     }
-    assertEquals(await items(sql, m.householdId), [], 'nothing was added');
+    assertEquals(await items(sql, m.householdId), ['Eier'], 'only the Alexa add went through');
 
     const blocked = t.queued.filter((e) => e.event === 'integration_blocked');
     assertEquals(
       blocked.map((e) => (e.properties as Record<string, unknown>).integration),
-      ['siri', 'alexa', 'mcp'],
-      'once per integration within the hour',
+      ['siri', 'mcp'],
+      'once per locked integration within the hour',
     );
     for (const e of blocked) {
       const p = e.properties as Record<string, unknown>;
@@ -207,7 +211,7 @@ test('switch on: locked everywhere, nothing added, integration_blocked once each
     }
   }));
 
-test('a yearly plan opens all three with the same credentials; its lapse locks and deletes nothing', () =>
+test('a yearly plan opens Siri and MCP with the same credentials; its lapse locks them and deletes nothing', () =>
   withHousehold(true, async (m, sql) => {
     const t = recorder();
     const tx = `y50-${m.householdId.slice(0, 8)}`;
@@ -215,7 +219,7 @@ test('a yearly plan opens all three with the same credentials; its lapse locks a
               values (${m.householdId}, ${m.userId}, 'Kurzbefehl', ${
       crypto.randomUUID().replaceAll('-', '').padEnd(64, '5')
     }, '5050')`;
-    assertEquals(await alexa(m, t)('Eier'), speech.premiumAdd);
+    assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
 
     await yearly(sql, m, tx);
     assertEquals((await voice(m, t)('Milch')).body.speech, 'Hinzugefügt: Milch.');
@@ -226,7 +230,12 @@ test('a yearly plan opens all three with the same credentials; its lapse locks a
                 now() - interval '1 minute', false, false)`;
     assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
     assertEquals((await mcp(m, t)('list_items')).isError, true);
-    assertEquals(await items(sql, m.householdId), ['Milch', 'Eier'], 'the list is kept');
+    assertEquals(
+      await alexa(m, t)('Käse'),
+      'Ich habe Käse auf die Hummlist gesetzt.',
+      'lapsed: Alexa stays open',
+    );
+    assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Käse'], 'the list is kept');
     const [kept] = await sql<{ tokens: number; rows: number }[]>`
       select (select count(*)::int from public.personal_access_tokens
               where household_id = ${m.householdId} and revoked_at is null) as tokens,

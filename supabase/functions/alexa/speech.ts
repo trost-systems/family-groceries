@@ -58,11 +58,6 @@ export const speech = {
   listFailed:
     'Entschuldigung, ich komme gerade nicht an die Hummlist. Versuch es bitte gleich noch einmal.',
   emptyList: 'Die Hummlist ist leer.',
-  // Job 50, the integration lock: the household may not use Alexa. Alexa is not Premium (Legal
-  // N-27, job 69), so the lines say nothing about buying or unlocking; job 72 removes the lock.
-  premium: 'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an.',
-  premiumAdd:
-    'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt.',
   cardTitle: 'Hummlist',
 } as const;
 

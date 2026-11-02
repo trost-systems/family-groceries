@@ -20,6 +20,7 @@ import '../purchases/fakes.dart';
 void main() {
   setUpAll(fakeSupabase);
   setUp(() {
+    serverGrants.clear();
     serverTokens
       ..clear()
       ..add({
@@ -55,6 +56,29 @@ void main() {
     device: [Locale(language)],
   );
 
+  testWidgets('locked: an AI assistant is paused, Amazon Alexa never', (
+    tester,
+  ) async {
+    serverTokens.clear();
+    serverGrants.addAll([
+      for (final (id, name) in [('c1', 'Claude'), ('c2', 'Amazon Alexa')])
+        {
+          'client': {'id': id, 'name': name},
+          'scopes': ['openid'],
+          'granted_at': '2026-10-21T10:00:00Z',
+        },
+    ]);
+    await access(tester);
+    expect(key('integration-premium'), findsOneWidget);
+    Finder paused(String app) => find.descendant(
+      of: find.widgetWithText(ListTile, app),
+      matching: key('access-paused'),
+    );
+    expect(paused('Claude'), findsOneWidget);
+    expect(find.text('Amazon Alexa'), findsOneWidget);
+    expect(paused('Amazon Alexa'), findsNothing);
+  });
+
   testWidgets('locked: what is included, Buy, and the token paused, not gone', (
     tester,
   ) async {
@@ -62,7 +86,11 @@ void main() {
     expect(key('integration-premium'), findsOneWidget);
     expect(find.text('Teil von Hummlist Premium'), findsOneWidget);
     expect(find.text('Siri auf dem iPhone'), findsOneWidget);
-    expect(find.text('Alexa-Skill'), findsOneWidget);
+    expect(
+      find.textContaining('Alexa'),
+      findsNothing,
+      reason: 'Alexa stays free (Legal Review N-27)',
+    );
     expect(
       find.text('KI-Assistenten wie ChatGPT oder Claude (MCP)'),
       findsOneWidget,

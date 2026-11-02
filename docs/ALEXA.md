@@ -66,18 +66,10 @@ reported to error tracking). Quantities are said in words: "2 l" is "2 Liter", "
 
 `SessionEndedRequest`, `System.ExceptionEncountered` and skill events get an empty answer.
 
-**Integration lock (job 50, off).** With the server switch `integration_lock` on, a linked
-household without Hummlist Premium (`requirePremium`, `_shared/premium.ts`) hears instead of an
-add "Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts
-hinzugefügt." and, for `ReadListIntent` and LaunchRequest, its first sentence, each with a Simple
-card and the session ended (`speech.ts` `premium`/`premiumAdd`; English in `speech_en.ts`). Alexa
-is not Premium (Legal N-27), so neither language mentions Premium or unlocking (job 69); job 72
-takes Alexa out of the lock.
-Nothing is added, read or counted against the rate limit. The check runs after verification and
-after the link is resolved, so an unverified or unlinked request never gets it. Help, Stop,
-Cancel, Fallback, account linking and the skill events never ask; the link, its session and
-`alexa_links` stay as they are through a lock or a lapse, and buying Premium opens the skill at
-once without relinking. A failing check answers like a database error. docs/PURCHASES.md,
+**Integration lock: Alexa stays free (job 72).** The skill is not part of Hummlist Premium
+(Peter Q39, Legal Review N-27). The alexa function never asks the integration lock, and
+`integration_gate` answers `alexa` open even with `integration_lock` on (for a function deployed
+before job 72). Its Zugänge tile never shows as paused. Siri and MCP: docs/PURCHASES.md,
 "Integration lock".
 
 ## Account linking
@@ -133,8 +125,25 @@ every request, not only the JWT's expiry). That happens when:
 
 "Unlink" in the Alexa app without disabling the skill sends no event: Alexa deletes the access
 and refresh token it held, so the next request comes without a token and gets the link prompt.
-The grant stays listed under Zugänge until it is removed there or the skill is linked again or
-disabled; nobody holds a token for it (Alexa had the only copy).
+The grant stays listed under Zugänge until it is removed there, the skill is linked again or
+disabled, or it goes unused for 12 months; nobody holds a token for it (Alexa had the only copy).
+
+### What is kept, and for how long
+
+Legal Review N-24 and N-28 (privacy §7), migration `20261102093000_alexa_cleanup.sql`:
+
+| Data | Deleted |
+| --- | --- |
+| `alexa_links` row (Alexa id hash, session, `last_seen`) | with its session, right away (trigger on `auth.sessions`): Zugänge "trennen", SkillDisabled, linking again, signing out everywhere, account deletion |
+| `alexa_rate` counter | with the user's last link, right away; otherwise by the daily job once its minute has passed |
+| The grant (`auth.oauth_consents`, the Zugänge entry) | SkillDisabled: right away, once the user holds no other Alexa session. "trennen": GoTrue only marks it revoked; the daily job deletes it |
+| An Alexa session and its link unused for 12 months | by the daily job, then its grant with it |
+
+The daily job is `public.purge_alexa()` (pg_cron `purge-alexa`, 03:29 UTC). It also deletes
+links whose session is gone and Alexa grants with no session left (a day's grace while a link
+is in progress). "Unused" means no request moved `last_seen` and Alexa did not refresh the
+token. The Alexa client is the one whose redirect URIs are Amazon's account linking URLs
+(`public.alexa_client_ids()`), not the one named "Amazon Alexa".
 
 ## Request verification
 
@@ -318,11 +327,12 @@ English, checked by `skill_package_test.ts` (no credentials).
 - `alexa/store_integration_test.ts` against the stack's database (the db gate): the production
   wiring adds and reads like the app, keeps households apart, limits, links and revokes.
 - `supabase/tests/alexa.test.sql` (pgTAP): no client reaches the tables or functions; the
-  consent RPC; the rate limit; links and revocation; the export.
+  consent RPC; the rate limit; links and revocation; the export; what is kept and the daily job.
 - `e2e/tests/alexa.spec.ts` (the e2e gate, CI): account linking with a confidential client, PKCE
   and the layla redirect through the app's consent page, a refresh, signed requests adding
   "Milch" visible on another member's screen within 5 s, categories as typed, re-prompt,
-  revocation in Zugänge and by SkillDisabled, two households and a switch, forged, stale and
+  revocation in Zugänge and by SkillDisabled (the link, the counter and, for SkillDisabled, the
+  Zugänge entry gone right away), two households and a switch, forged, stale and
   foreign-skill requests refused. `e2e/tests/alexa-en.spec.ts`: the same linking, then an en-US
   add, duplicate and read in English. It writes a redacted transcript of the linking
   (`alexa-account-linking-transcript.txt` in the screenshots artifact).

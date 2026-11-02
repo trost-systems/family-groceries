@@ -151,7 +151,10 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
               context,
               state.apps,
               empty: l10n.noConnectedApps,
-              tile: (app) => _AppTile(app: app, paused: paused),
+              tile: (app) => _AppTile(
+                app: app,
+                paused: paused && app.name != _alexaClientName,
+              ),
             ),
           ],
         ),
@@ -402,6 +405,11 @@ class const _TokenTile({
   }
 }
 
+/// The OAuth client Alexa links with (docs/ALEXA.md). Alexa stays free
+/// (Legal Review N-27), so its connection never shows as paused. The grant
+/// carries no redirect URIs, so its name is all the app can go by.
+const _alexaClientName = 'Amazon Alexa';
+
 class const _AppTile({
   required final ConnectedApp app,
   final bool paused = false,
@@ -469,9 +477,9 @@ class const _Subtitle(final String details, {required final bool paused})
   }
 }
 
-/// Job 50: Siri, Alexa and AI assistants are part of Hummlist Premium, for a
-/// household known to have none while the server enforces the lock. Nothing
-/// is removed; [offer] says how to unlock it.
+/// Job 50: Siri and AI assistants are part of Hummlist Premium (Alexa stays
+/// free), for a household known to have none while the server enforces the
+/// lock. Nothing is removed; [offer] says how to unlock it.
 class const _PremiumCard({required final LockOffer offer})
     extends StatelessWidget {
   @override

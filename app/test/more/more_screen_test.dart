@@ -231,7 +231,7 @@ void main() {
 
     testWidgets('is listed once offered, with its hint', (tester) async {
       expect(await listed(tester, offer: true), isTrue);
-      expect(find.text('Siri, Alexa und KI-Assistenten'), findsOneWidget);
+      expect(find.text('Siri und KI-Assistenten'), findsOneWidget);
     });
 
     testWidgets('is listed on the web once offered: bought in the apps', (

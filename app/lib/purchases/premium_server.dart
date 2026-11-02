@@ -56,8 +56,8 @@ abstract interface class PremiumServer() {
   /// Throws when it cannot be read.
   Future<MyYearlyPlan> myYearlyPlan();
 
-  /// The server switch `integration_lock` (job 50, seeded off): Siri, Alexa
-  /// and MCP need Hummlist Premium. False when it cannot be read.
+  /// The server switch `integration_lock` (job 50, seeded off): Siri and MCP
+  /// need Hummlist Premium; Alexa stays free. False when it cannot be read.
   Future<bool> integrationLock();
 }
 
