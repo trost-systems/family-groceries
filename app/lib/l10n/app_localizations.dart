@@ -962,24 +962,6 @@ abstract class AppLocalizations {
   /// **'Die App verliert sofort den Zugriff auf deine Liste.'**
   String get disconnectBody;
 
-  /// No description provided for @editStoreLayout.
-  ///
-  /// In de, this message translates to:
-  /// **'Reihenfolge bearbeiten'**
-  String get editStoreLayout;
-
-  /// No description provided for @manageCategories.
-  ///
-  /// In de, this message translates to:
-  /// **'Kategorien verwalten'**
-  String get manageCategories;
-
-  /// No description provided for @categoriesTitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Kategorien'**
-  String get categoriesTitle;
-
   /// No description provided for @categoriesHint.
   ///
   /// In de, this message translates to:
@@ -1034,16 +1016,10 @@ abstract class AppLocalizations {
   /// **'Die Änderung konnte nicht gespeichert werden.'**
   String get catalogSaveFailed;
 
-  /// No description provided for @storeLayoutTitle.
-  ///
-  /// In de, this message translates to:
-  /// **'{store}: Reihenfolge'**
-  String storeLayoutTitle(String store);
-
   /// No description provided for @storeLayoutHint.
   ///
   /// In de, this message translates to:
-  /// **'Ordne die Kategorien so, wie du durch den Laden gehst.'**
+  /// **'Ordne die Kategorien so, wie du durch den Laden gehst. Tippe auf eine Kategorie, um sie umzubenennen.'**
   String get storeLayoutHint;
 
   /// No description provided for @newItemsFrom.
@@ -1088,34 +1064,10 @@ abstract class AppLocalizations {
   /// **'Zuklappen'**
   String get collapseSection;
 
-  /// No description provided for @moveStoreUp.
-  ///
-  /// In de, this message translates to:
-  /// **'Laden nach oben'**
-  String get moveStoreUp;
-
-  /// No description provided for @moveStoreDown.
-  ///
-  /// In de, this message translates to:
-  /// **'Laden nach unten'**
-  String get moveStoreDown;
-
-  /// No description provided for @moveCategoryUp.
-  ///
-  /// In de, this message translates to:
-  /// **'Kategorie nach oben'**
-  String get moveCategoryUp;
-
-  /// No description provided for @moveCategoryDown.
-  ///
-  /// In de, this message translates to:
-  /// **'Kategorie nach unten'**
-  String get moveCategoryDown;
-
   /// No description provided for @listHint.
   ///
   /// In de, this message translates to:
-  /// **'Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt'**
+  /// **'Tippen hakt ab · Halten bearbeitet'**
   String get listHint;
 
   /// No description provided for @listHintDismiss.
@@ -1340,11 +1292,35 @@ abstract class AppLocalizations {
   /// **'Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag'**
   String get addSheetHint;
 
-  /// The add sheet's store chip before a store is known
+  /// Screen-reader name of the add sheet's store chip while Hummlist picks the store and knows none yet
   ///
   /// In de, this message translates to:
   /// **'Laden: automatisch'**
   String get storeAuto;
+
+  /// The add sheet's store chip while Hummlist picks the store and knows none yet; next to the automatic mark
+  ///
+  /// In de, this message translates to:
+  /// **'Laden'**
+  String get chipStoreShort;
+
+  /// The add sheet's category chip while Hummlist picks the category and knows none yet; next to the automatic mark
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get chipCategoryShort;
+
+  /// Screen-reader name of the add sheet's store chip showing the store Hummlist picked
+  ///
+  /// In de, this message translates to:
+  /// **'Laden: automatisch, {name}'**
+  String storeAutoValue(String name);
+
+  /// Screen-reader name of the add sheet's category chip showing the category Hummlist picked
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie: automatisch, {name}'**
+  String categoryAutoValue(String name);
 
   /// The add sheet with nothing typed and nothing due
   ///
@@ -1442,16 +1418,40 @@ abstract class AppLocalizations {
   /// **'Läden'**
   String get storesTitle;
 
-  /// More: under Läden
+  /// List tab header: opens the stores and categories (job 78)
   ///
   /// In de, this message translates to:
-  /// **'Reihenfolge und Laufweg'**
-  String get storesRowHint;
+  /// **'Anpassen'**
+  String get listEdit;
+
+  /// Stores screen: under the pinned Ohne Laden row
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorien für Artikel ohne Laden'**
+  String get noStoreRowHint;
+
+  /// Stores screen: the add button and its dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Laden hinzufügen'**
+  String get storeAdd;
+
+  /// Store details: under the store name at the top
+  ///
+  /// In de, this message translates to:
+  /// **'Tippen zum Umbenennen'**
+  String get storeRenameHint;
+
+  /// Delete category dialog: categories belong to the whole household
+  ///
+  /// In de, this message translates to:
+  /// **'Sie verschwindet aus allen Läden.'**
+  String get deleteCategoryEverywhere;
 
   /// Stores screen hint
   ///
   /// In de, this message translates to:
-  /// **'Halten und ziehen ändert die Reihenfolge der Läden in der Liste. Ein Laden öffnet seinen Laufweg.'**
+  /// **'Ziehe die Läden in die Reihenfolge, in der sie auf der Liste stehen. Tippe auf einen Laden, um ihn umzubenennen und seine Kategorien zu ordnen.'**
   String get storesHint;
 
   /// Drag handle of a store
@@ -1537,18 +1537,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.'**
   String get storesEmpty;
-
-  /// stores screen: a store's menu button (rename, delete)
-  ///
-  /// In de, this message translates to:
-  /// **'Optionen für {store}'**
-  String storeMenu(String store);
-
-  /// stores screen: menu entry
-  ///
-  /// In de, this message translates to:
-  /// **'Umbenennen'**
-  String get storeRenameAction;
 
   /// delete confirmation: how many open items lose their store
   ///
@@ -1970,7 +1958,7 @@ abstract class AppLocalizations {
   /// **'Eigenen Laden hinzufügen'**
   String get storeAddOwn;
 
-  /// Legal Review L-7 (N-23), approved by Peter 2026-11-01 (L1): character for character; under Mehr → Läden and the onboarding store step
+  /// Legal Review L-7 (N-23), approved by Peter 2026-11-01 (L1): character for character; the onboarding store step (job 78: no longer on the stores screen)
   ///
   /// In de, this message translates to:
   /// **'Ladennamen wie dm, Lidl oder EDEKA verwenden wir nur, damit du erkennst, für welchen Laden eine Liste gedacht ist. Die Namen und Marken gehören den jeweiligen Unternehmen. Hummlist ist ein unabhängiges Angebot und steht in keiner Verbindung zu diesen Unternehmen. Sie unterstützen oder empfehlen Hummlist nicht.'**
@@ -1985,7 +1973,7 @@ abstract class AppLocalizations {
   /// No description provided for @skipStoresHint.
   ///
   /// In de, this message translates to:
-  /// **'Ohne Läden starten. Du kannst sie später unter Mehr → Läden anlegen.'**
+  /// **'Ohne Läden starten. Du kannst sie später unter Liste → Anpassen anlegen.'**
   String get skipStoresHint;
 
   /// No description provided for @householdOffline.

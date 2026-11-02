@@ -6,10 +6,10 @@ Every new item gets a category without the user choosing one: the server looks a
 
 - `cl-auto` an item without a category lands under the matching divider, e.g. Hafermilch → „Kühlregal“, Apfelsaft → „Getränke“, Zahnbürste → „👶 Drogerie“, Vollkornbrot → „Brot & Backwaren“, Spülmaschinentabs → „Haushalt“, Fischstäbchen → „Tiefkühl“, Gummibärchen → „Süßes & Snacks“, Kichererbsen → „Vorrat & Konserven“, Rinderhack → „Fleisch/Wurst/Fisch“, „Aepfel 2 kg“ → „Obst & Gemüse“ (name „Aepfel“, quantity „2 kg“). The word list is German; English words work only where they are synonyms ("toilet paper" → „Haushalt“).
 - `cl-fallback` an unknown word lands under „Sonstiges“ / "Other" (the household's fallback category), shown last.
-- `cl-preview` while typing, the add sheet's category chip shows the guess (accessible name „Kategorie: 👶 Drogerie“ for „Zahnbürste“), and the store chip the store guess („Laden: dm“); with nothing guessed the chip reads „Kategorie: automatisch“ / "Category: automatic".
+- `cl-preview` while typing, the add sheet's category chip shows the guess, muted with an "A" mark (accessible name „Kategorie: automatisch, 👶 Drogerie“ for „Zahnbürste“), and the store chip the store guess („Laden: automatisch, dm“); with nothing guessed the chip shows „Kategorie“, named „Kategorie: automatisch“ / "Category: automatic".
 - `cl-sorting` an item added without a category (offline, or Enter before the sheet had an answer) shows at the top of its section under a divider „Wird einsortiert …“ / "Sorting …", then moves under its category. Online adds arrive categorized and skip it.
-- `cl-learn-edit` the user moves an item to another category in the edit sheet (chip „Kategorie: …“, pick, „Fertig“) or by dragging it onto a category divider or a row of another category. The household learns it: the next add of that item (and its plural, e.g. „Zahnbürste“ → „Zahnbürsten“) lands there.
-- `cl-learn-pick` a category chosen on the add sheet's category chip (default label „Kategorie: automatisch“ / "Category: automatic") is learned when it differs from the guess; „Rückgängig“ on that add removes the item and the lesson again.
+- `cl-learn-edit` the user moves an item to another category in the edit sheet (chip „Kategorie: …“, pick, „Fertig“); the list itself has no drag since job 78. The household learns it: the next add of that item (and its plural, e.g. „Zahnbürste“ → „Zahnbürsten“) lands there.
+- `cl-learn-pick` a category chosen on the add sheet's category chip (before a pick named „Kategorie: automatisch, <guess>“ / "Category: automatic, <guess>", or „Kategorie: automatisch“ without a guess) is learned when it differs from the guess; „Rückgängig“ on that add removes the item and the lesson again.
 - `cl-variants` spelling variants, regional and English synonyms and typos land with the word they mean, the name stays as typed: „Karrotten“ → „Obst & Gemüse“ (Möhren), „Paradeiser“ → „Obst & Gemüse“, „Semmeln“ → „Brot & Backwaren“, „Mlich“ → „Kühlregal“, „Schokolde“ → „Süßes & Snacks“, "toilet paper" → „Haushalt“.
 - `cl-variant-learn` a correction for one spelling holds for the word's synonyms and spellings in that household only: „Karrotten“ moved to „Getränke“, then „Möhren“ lands in „Getränke“.
 - `cl-household-only` learning is per household; another household with the same word still gets the default category.
@@ -20,7 +20,7 @@ Every new item gets a category without the user choosing one: the server looks a
 ## How to get to it (user POV)
 
 - Type an item in the add bar at the bottom of the list and add it: it appears under its category divider (in the guessed store's section, see `cl-store`, otherwise under „Ohne Laden“).
-- To correct: hold the item (or right click, or swipe left) to open „Bearbeiten“, tap the chip „Kategorie: …“, pick a category, tap „Fertig“. Or hold the item and drag it onto another category divider.
+- To correct: hold the item (or right click it) to open „Bearbeiten“, tap the chip „Kategorie: …“, pick a category, tap „Fertig“.
 - To choose before adding: tap the category chip in the add sheet.
 
 ## Driving it with Playwright
@@ -32,7 +32,7 @@ Preconditions:
 
 - **Preview.** Type `Zahnbürste` into the add field without Enter: `getByRole('button', { name: 'Kategorie: 👶 Drogerie' })` and `getByRole('button', { name: 'Laden: dm' })` show in the sheet.
 - **Auto-categorize.** `addItem(page, 'Hafermilch')`, then `expectGroup(page, 'Hafermilch', 'Kühlregal')` (nearest level-2 heading above the row, `e2e/tests/catalog.ts`). Observable: also `groupHeadings(page)`. A word not in the list (`Quietscheentchen`) → heading „Sonstiges“.
-- **Correct by drag.** `dragItemTo(page, 'Hafermilch', 'Getränke')` (needs the target divider on screen, so add `Apfelsaft` first). Observable: `expectGroup(page, 'Hafermilch', 'Getränke')`.
+- **Correct in the edit sheet.** `setCategory(page, 'Hafermilch', 'Getränke')` (`e2e/tests/catalog.ts`). Observable: `expectGroup(page, 'Hafermilch', 'Getränke')` (add `Apfelsaft` first so Getränke has a divider).
 - **Correct in the sheet.** `openEdit(page, 'Zahnbürste')`, `pickInSheet(page, 'Kategorie', 'Haushalt')`, `saveEdit(page)`; heading becomes „Haushalt“.
 - **Learn.** `tick(page, 'Zahnbürste')` then `addItem(page, 'Zahnbürsten')` → `expectGroup(page, 'Zahnbürsten', 'Haushalt')`. Or delete the first item (`deleteItem`) and add `2 Hafermilch` → „Getränke“.
 - **Variants.** `addItem` for `Karrotten`, `Paradeiser`, `Semmeln`, `Mlich`, `Schokolde`, `toilet paper`; headings as in `cl-variants`; the row names stay as typed. Second view: `api.from('items').select('name, categorized_via')` returns exact / synonym / exact / fuzzy / fuzzy / synonym for those names.

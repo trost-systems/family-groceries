@@ -695,4 +695,86 @@ void main() {
     expect(focus(tester).hasFocus, isTrue);
     expect(content(), findsNothing);
   });
+
+  // Job 78: the hex around the field is one tap target; no "+" disc.
+  group('the compose hex', () {
+    testWidgets('a tap beside the field opens the sheet and focuses it', (
+      tester,
+    ) async {
+      await pumpList(tester);
+      final left = tester.getRect(field()).centerLeft;
+      await tester.tapAt(left - const Offset(8, 0));
+      await tester.pumpAndSettle();
+      expect(content(), findsOne);
+      expect(focus(tester).hasFocus, isTrue);
+    });
+
+    testWidgets('a tap beside the field takes dictated text into the sheet', (
+      tester,
+    ) async {
+      await pumpList(tester, seed: (r) => r.suggestions['milch'] = rows(2));
+      tester.widget<TextField>(field()).controller!.text = 'milch';
+      await tester.tapAt(
+        tester.getRect(field()).centerLeft - const Offset(8, 0),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+      expect(row(1), findsOne, reason: 'the rows for the dictated text');
+    });
+  });
+
+  testWidgets('the sheet has no title, only its name for screen readers', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await pumpList(tester);
+    await open(tester);
+    expect(find.text('Hinzufügen'), findsNothing);
+    expect(find.bySemanticsLabel('Hinzufügen'), findsOne);
+    expect(find.bySemanticsLabel('Schließen'), findsOne);
+    semantics.dispose();
+  });
+
+  testWidgets('the chips say automatic until the user picks', (tester) async {
+    final semantics = tester.ensureSemantics();
+    const milk = [
+      Suggestion(
+        SuggestionSource.typed,
+        ParsedEntry(name: 'Milch', categoryId: 'chilled'),
+      ),
+    ];
+    await pumpList(tester, seed: (r) => r.suggestions['milch'] = milk);
+    await open(tester);
+    await type(tester, 'milch');
+    expect(find.bySemanticsLabel('Laden: automatisch'), findsOne);
+    expect(
+      find.bySemanticsLabel('Kategorie: automatisch, Kühlregal'),
+      findsOne,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('chip-store')),
+        matching: find.text('Laden'),
+      ),
+      findsOne,
+      reason: 'the word automatisch is not shown',
+    );
+
+    for (final (chip, option) in [
+      ('chip-store', 'store-option-lidl'),
+      ('chip-category', 'category-option-chilled'),
+    ]) {
+      await tester.tap(find.byKey(ValueKey(chip)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey(option)));
+      await tester.pumpAndSettle();
+    }
+    expect(find.bySemanticsLabel('Laden: Lidl'), findsOne);
+    expect(
+      find.bySemanticsLabel('Kategorie: Kühlregal'),
+      findsOne,
+      reason: 'picking the guess is still a pick',
+    );
+    semantics.dispose();
+  });
 }

@@ -146,119 +146,20 @@ void main() {
       ]);
       expect(ids(columnsOf(const [], 2, count)), [<String>[]]);
     });
-
-    test('empty stores join the column of the store before them', () {
-      final sections = [
-        section('empty-first', 0),
-        section('a', 8),
-        section('empty-a', 0),
-        section('b', 2),
-        section('c', 3),
-        section('empty-c', 0),
-        section('d', 6),
-        section('empty-last', 0),
-      ];
-      final resting = columnsOf(
-        shownSections(sections, dropping: false),
-        3,
-        count,
-      );
-      expect(ids(resting), [
-        ['a'],
-        ['b', 'c'],
-        ['d'],
-      ], reason: 'balanced on the stores with items only');
-      expect(ids(withDropTargets(resting, sections)), [
-        ['empty-first', 'a', 'empty-a'],
-        ['b', 'c', 'empty-c'],
-        ['d', 'empty-last'],
-      ]);
-      expect(
-        ids(withDropTargets(resting, shownSections(sections, dropping: false))),
-        ids(resting),
-        reason: 'nothing to add at rest',
-      );
-    });
   });
 
   group('shown sections', () {
-    test('only sections with active items; while an item is dragged, '
-        'every one', () {
+    test('only sections with active items', () {
       final sections = sectionsOf([
         item('soap', category: 'other', store: 'dm'),
         item('bought', category: 'pantry', status: ItemStatus.bought),
       ], catalog);
       expect(
-        [for (final s in shownSections(sections, dropping: false)) s.key],
+        [for (final s in shownSections(sections)) s.key],
         ['dm'],
         reason: 'a bought item does not keep its section on the list',
       );
-      expect(
-        [for (final s in shownSections(sections, dropping: true)) s.key],
-        ['dm', 'lidl', noStoreKey],
-      );
-      expect(
-        shownSections(sectionsOf(const [], catalog), dropping: false),
-        isEmpty,
-      );
-    });
-  });
-
-  group('drops', () {
-    final a = item('a', key: 1024);
-    final b = item('b', key: 2048);
-    final c = item('c', key: 3072);
-    final block = [a, b, c];
-
-    test('the pointer above a row half drops before it, below after it', () {
-      expect(edgeAt(10, 52), Edge.before);
-      expect(edgeAt(25.9, 52), Edge.before);
-      expect(edgeAt(26, 52), Edge.after);
-      expect(edgeAt(51, 52), Edge.after);
-    });
-
-    test('before or after a row places the item there', () {
-      expect(_place(dropOnRow(c, a, Edge.before, block)), ('a', Edge.before));
-      expect(_place(dropOnRow(a, c, Edge.after, block)), ('c', Edge.after));
-      final other = item('x', category: 'b', store: 'dm');
-      expect(_place(dropOnRow(other, b, Edge.after, block)), ('b', Edge.after));
-    });
-
-    test('a drop that leaves the item where it is does nothing', () {
-      expect(dropOnRow(a, a, Edge.after, block), isNull);
-      expect(dropOnRow(a, b, Edge.before, block), isNull);
-      expect(dropOnRow(b, a, Edge.after, block), isNull);
-      expect(dropOnCategory(c, null, 'a', block), isNull);
-      expect(dropOnStore(item('x', store: 'dm'), 'dm'), isNull);
-    });
-
-    test('a category divider takes the item to the end of its category', () {
-      expect(_move(dropOnCategory(a, null, 'a', block)), (null, 'a'));
-      expect(_move(dropOnCategory(a, 'dm', 'b', const [])), ('dm', 'b'));
-    });
-
-    test('a store divider, folded or not, keeps the category', () {
-      expect(_move(dropOnStore(item('x', category: 'chilled'), 'lidl')), (
-        'lidl',
-        'chilled',
-      ));
-      expect(_move(dropOnStore(item('x', category: 'b', store: 'dm'), null)), (
-        null,
-        'b',
-      ));
-      expect(
-        dropOnStore(item('typed', category: null), 'lidl'),
-        isNull,
-        reason: 'not classified yet',
-      );
-    });
-
-    test('reordering puts the moved id at the edge of the target', () {
-      const ids = ['a', 'b', 'c', 'd'];
-      expect(reordered(ids, 'd', 'b', Edge.before), ['a', 'd', 'b', 'c']);
-      expect(reordered(ids, 'a', 'c', Edge.after), ['b', 'c', 'a', 'd']);
-      expect(reordered(ids, 'a', 'a', Edge.after), ids);
-      expect(reordered(ids, 'x', 'a', Edge.after), ids);
+      expect(shownSections(sectionsOf(const [], catalog)), isEmpty);
     });
   });
 
@@ -314,13 +215,3 @@ void main() {
     });
   });
 }
-
-(String, Edge)? _place(ItemDrop? drop) => switch (drop) {
-  PlaceDrop(:final anchorId, :final edge) => (anchorId, edge),
-  _ => null,
-};
-
-(String?, String)? _move(ItemDrop? drop) => switch (drop) {
-  MoveDrop(:final storeId, :final categoryId) => (storeId, categoryId),
-  _ => null,
-};

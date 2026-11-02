@@ -21,8 +21,7 @@ More entries in order (section header, then rows: DE label, EN label, hint):
    - „Partner einladen“ / "Invite your partner", hint = household name; only when the user is in a household (opens Einladungen page; see household-invites).
    - „Anderem Haushalt beitreten“ / "Join another household" (opens the join-code page).
    - „Archivierte Haushalte“ / "Archived households": hidden on normal builds (see Gotchas).
-   - „Kategorien verwalten“ / "Manage categories".
-   - „Läden“ / "Stores", hint „Reihenfolge und Laufweg“ / "Order and walking route".
+   - (Job 78 moved „Kategorien verwalten“ and „Läden“ to the list header's „Anpassen“; see stores-walk-order and categories.)
    - „Hummlist Premium“ (both languages), only once Premium may be offered or for a household that has it (job 64), hint „Freigeschaltet“ / "Unlocked" when the household has Premium, otherwise „Siri und KI-Assistenten“ / "Siri and AI assistants" (driven 2026-11-01 on the production-like web build: a normal household sees this hint although nothing is sold).
 2. Section „Zugänge“ / "Access": „Zugänge“ / "Access", hint „MCP-Server, Zugangsschlüssel, verbundene Apps“ / "MCP server, access tokens, connected apps".
 3. Section „Konto“ / "Account": „Konto“ / "Account", hint „Daten exportieren, Konto löschen“ / "Export your data, delete your account"; then „Abmelden“ / "Sign out".

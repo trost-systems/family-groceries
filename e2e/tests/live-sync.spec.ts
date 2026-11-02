@@ -72,7 +72,7 @@ test('a member of another household joins with a code from the menu', async ({ b
   await addItem(lea, 'Tee');
 
   await openMore(lea, 'Anderem Haushalt beitreten');
-  await expect(lea).toHaveURL(/\/join$/);
+  await expect(lea).toHaveURL(/\/more\/join$/);
   await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code.toLowerCase());
   await lea.getByRole('button', { name: 'Weiter', exact: true }).click();
   // Job 22: in a household, the screen says so first; switching takes the explicit Join.

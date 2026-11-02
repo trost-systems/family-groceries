@@ -1,8 +1,8 @@
 # Store layouts
 
 Each store has its own walking order of the categories, from the entrance to
-the checkout. A household can change it by drag in the app (store picker,
-then "Reihenfolge bearbeiten"). The defaults are seeded by
+the checkout. A household can change it in the app: the drag handles on a
+store's details (Liste → "Anpassen" → the store, or a hold on its divider). The defaults are seeded by
 `public.apply_default_store_layouts` in
 `supabase/migrations/20261022233800_classifier_stores.sql`.
 

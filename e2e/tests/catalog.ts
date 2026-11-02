@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { boxIfBuilt, editSheet, itemRow, listArea, openEdit, reveal, storeDivider } from './helpers';
+import { editSheet, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
 
 /** The list's group headings, top to bottom. */
 export async function groupHeadings(page: Page): Promise<string[]> {
@@ -25,21 +25,6 @@ export async function groupOf(page: Page, item: string): Promise<string | undefi
 export async function expectGroup(page: Page, item: string, group: string): Promise<void> {
   await reveal(page, itemRow(page, item));
   await expect.poll(() => groupOf(page, item), { message: `${item} is under ${group}` }).toBe(group);
-}
-
-/** Long-press drag of an item row onto a group heading. */
-export async function dragItemTo(page: Page, item: string, group: string): Promise<void> {
-  const from = (await itemRow(page, item).boundingBox())!;
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(800);
-  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 12, { steps: 4 });
-  const target = page.getByRole('heading', { level: 2, name: group, exact: true });
-  await expect(target).toBeVisible();
-  const to = (await target.boundingBox())!;
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 });
-  await page.waitForTimeout(150);
-  await page.mouse.up();
 }
 
 /** Drags a row of a reorderable list by its handle to the position of another row. */
@@ -100,84 +85,40 @@ export async function storeOf(page: Page, item: string): Promise<string | undefi
   return (await outline(page)).find((s) => s.items.some((row) => startsWith(row, item)))?.store;
 }
 
-type Box = { x: number; y: number; width: number; height: number };
+/** Moves [item] to [store] in its edit sheet; ordering and moving live off the list since job 78. */
+export async function setStore(page: Page, item: string, store: string): Promise<void> {
+  await openEdit(page, item);
+  await pickInSheet(page, 'Laden', store);
+  await saveEdit(page);
+}
 
-/** More than the list's auto-scroll zone (8% of the list's height) in the e2e viewport. */
-const autoScrollMargin = 72;
+/** Moves [item] to [category] in its edit sheet. */
+export async function setCategory(page: Page, item: string, category: string): Promise<void> {
+  await openEdit(page, item);
+  await pickInSheet(page, 'Kategorie', category);
+  await saveEdit(page);
+}
+
+/** Opens Liste → Anpassen (job 78): the stores, "Ohne Laden" pinned last. */
+export async function openStores(page: Page): Promise<void> {
+  await openTab(page, 'Liste');
+  await page.getByRole('button', { name: 'Anpassen', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Läden' })).toBeVisible();
+}
+
+/** A store's row on the stores screen; null is the pinned "Ohne Laden". */
+export const storeRow = (page: Page, store: string | null): Locator => store === null
+  ? page.getByRole('button', { name: /^Ohne Laden/ })
+  : page.getByRole('button', { name: store, exact: true });
 
 /**
- * Holds [from] until it lifts, then carries it to [to] and lets go at [at] (a point in the target's
- * box). A target off screen is reached the way a user reaches it: by holding the item at the list's
- * top or bottom edge until the list has scrolled it into view. [up] says which way that is; as a
- * function it is asked once the item moves, when the empty stores show as drop targets too.
- * [beforeDrop] runs over the target, just before letting go.
+ * Opens a store's details under Liste → Anpassen: its name, its categories in walking order. Null
+ * opens "Ohne Laden", the household's route order and its categories.
  */
-export async function holdAndDrop(
-  page: Page, from: Locator, to: Locator, at: (box: Box) => { x: number; y: number },
-  { up, beforeDrop }: { up: boolean | (() => Promise<boolean>); beforeDrop?: () => Promise<void> },
-): Promise<void> {
-  // Clear of the list's auto-scroll zones (8% of its height at each edge): a row lifted inside one
-  // starts the list scrolling at once, and the target then moves while it is being measured.
-  await reveal(page, from, autoScrollMargin);
-  const a = (await from.boundingBox())!;
-  await page.mouse.move(a.x + Math.min(a.width / 2, 120), a.y + a.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(600);
-  // Past the slop towards the target; sideways while its direction is still unknown, so a row near
-  // an edge doesn't start the list scrolling the wrong way.
-  const x = a.x + Math.min(a.width / 2, 120);
-  const dy = typeof up === 'function' ? 0 : up ? -12 : 12;
-  await page.mouse.move(x + (dy === 0 ? 12 : 0), a.y + a.height / 2 + dy, { steps: 4 });
-  if (typeof up === 'function') up = await up();
-  const list = await listArea(page);
-  const top = list.top + 12;
-  const bottom = list.bottom;
-  let lastY: number | undefined;
-  for (let i = 0; i < 80; i++) {
-    const box = await boxIfBuilt(to);
-    if (box && box.y > top + 60 && box.y + box.height < bottom - 60) break;
-    // On screen and no longer moving: the list is at its end (a target at the very top or bottom
-    // never leaves the edge zone). On screen from the start: nothing to scroll.
-    if (box && box.y >= list.top && box.y + box.height <= bottom && (i === 0 || box.y === lastY)) break;
-    lastY = box?.y;
-    await page.mouse.move(a.x + 40, up ? top + 4 : bottom - 4, { steps: 2 });
-    await page.waitForTimeout(100);
-  }
-  // Out of the edge zone first, so the list stops scrolling before the target is measured.
-  await page.mouse.move(a.x + 40, (top + bottom) / 2, { steps: 2 });
-  await page.waitForTimeout(250);
-  const box = (await to.boundingBox())!;
-  const point = at(box);
-  await page.mouse.move(point.x, point.y, { steps: 15 });
-  await page.waitForTimeout(150);
-  await beforeDrop?.();
-  await page.mouse.up();
-}
-
-/** Where [store] is relative to [item]'s section: true when above it. */
-async function storeIsAbove(page: Page, item: string, store: string): Promise<boolean> {
-  let sections: string[] = [];
-  await expect.poll(async () => (sections = (await outline(page)).map((s) => s.store)).includes(store),
-    { message: `${store} shows as a drop target` }).toBe(true);
-  const from = await storeOf(page, item);
-  return sections.indexOf(store) < sections.indexOf(from ?? '');
-}
-
-/**
- * Long-press drag of an item row onto a store's divider (folded or not). An empty store shows only
- * during the drag, so where it is gets asked then.
- */
-export async function dragItemToStore(page: Page, item: string, store: string): Promise<void> {
-  await holdAndDrop(page, itemRow(page, item), storeDivider(page, store), (b) => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 }), {
-    up: () => storeIsAbove(page, item, store),
-  });
-}
-
-/** Opens a store's menu with a right click on its divider, then its layout screen. */
-export async function openStoreLayout(page: Page, store: string): Promise<void> {
-  await storeDivider(page, store).click({ button: 'right' });
-  await page.getByRole('button', { name: 'Reihenfolge bearbeiten' }).click();
-  await expect(page.getByText(`${store}: Reihenfolge`)).toBeVisible();
+export async function openStoreDetails(page: Page, store: string | null): Promise<void> {
+  await openStores(page);
+  await storeRow(page, store).click();
+  await expect(page.getByRole('heading', { name: store ?? 'Ohne Laden', exact: true })).toBeVisible();
 }
 
 export async function deleteItem(page: Page, item: string): Promise<void> {

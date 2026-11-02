@@ -63,8 +63,8 @@ The list
 - [tick-and-undo](./tick-and-undo.md): a tap ticks an item off, „Zuletzt verwendet“ and putting items back, which actions have an undo.
 - [edit-item](./edit-item.md): the edit sheet (name, brand, details, quantity, store, category), deleting with undo.
 - [classifier](./classifier.md): the automatic category for every new item, learning from moves, spelling variants and synonyms.
-- [categories](./categories.md): Mehr → „Kategorien verwalten“: add, rename, delete, reorder; the 11 seeded categories.
-- [stores-walk-order](./stores-walk-order.md): store sections and category dividers in walk order, hold-and-drag, the divider menus, „Reihenfolge bearbeiten“, adding a store from the store chip or Mehr → „Läden“ (rename, delete), item→store memory.
+- [categories](./categories.md): Liste → „Anpassen“ → „Ohne Laden“ (and every store's details): add, rename, delete, reorder; the 11 seeded categories.
+- [stores-walk-order](./stores-walk-order.md): store sections and category dividers in walk order, nothing on the list drags, a divider hold opens its store's details, the stores screen under Liste → „Anpassen“ and a store's details (add, rename, delete, reorder), adding a store from the store chip, item→store memory.
 - [live-sync](./live-sync.md): members see each other's changes live; „N neu von <Name>“ and the sync icon.
 - [offline](./offline.md): what works without a connection, what waits, and the messages.
 

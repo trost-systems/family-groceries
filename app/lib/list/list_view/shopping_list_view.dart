@@ -1,32 +1,29 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
-import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/explainer.dart';
-import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
+import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:family_groceries/list/store_layout_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, listEquals;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'
-    show RenderAbstractViewport, ScrollCacheExtent;
-import 'package:flutter/scheduler.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// Everything between the header and the add bar: the explainer card, the
 /// stores as sections with their categories and items in walk order, and
-/// the recently used items. Ticking, editing, folding and drag and drop
-/// happen here; it needs a [ListCubit] above it.
+/// the recently used items. Ticking, editing and folding happen here; the
+/// order is changed in Anpassen. It needs a [ListCubit] above it.
 /// Where the list's columns sit: `side` from either edge, each
 /// `columnWidth` wide.
 typedef ListFrame = ({int columns, double side, double columnWidth});
@@ -82,27 +79,18 @@ class const ShoppingListView({
   /// [frameOf] for the list as [state] shows it at rest.
   static ListFrame frameFor(double width, ListState state) => frameOf(
     width,
-    shownSections(
-      sectionsOf(state.items.values, state.catalog),
-      dropping: false,
-    ).length,
+    shownSections(sectionsOf(state.items.values, state.catalog)).length,
   );
 
   @override
   State<ShoppingListView> createState() => _ShoppingListViewState();
 }
 
-class _ShoppingListViewState()
-    extends State<ShoppingListView>
-    with SingleTickerProviderStateMixin {
-  final _session = DragSession();
+class _ShoppingListViewState() extends State<ShoppingListView> {
+  final _leaving = LeavingRows();
   final _scroll = ScrollController();
   final _viewport = GlobalKey();
-  late final Ticker _scroller = createTicker((_) => _autoScroll());
   late final AppLifecycleListener _lifecycle;
-
-  /// Pixels per frame the list scrolls by while a drag sits in an edge zone.
-  var _scrollSpeed = 0.0;
 
   /// Fresh items on screen now, and the timers that mark them seen.
   final _visibleFresh = <String>{};
@@ -140,9 +128,8 @@ class _ShoppingListViewState()
     _links?.changes.removeListener(_linked);
     _cancelSeenTimers();
     _lifecycle.dispose();
-    _scroller.dispose();
     _scroll.dispose();
-    _session.dispose();
+    _leaving.dispose();
     super.dispose();
   }
 
@@ -168,10 +155,9 @@ class _ShoppingListViewState()
   /// yet: the list jumps toward it and looks again, a few frames at most.
   Future<void> _reveal(String storeId) async {
     final state = _cubit.state;
-    final section = shownSections(
-      sectionsOf(state.items.values, state.catalog),
-      dropping: false,
-    ).where((s) => s.store?.id == storeId && s.count > 0).firstOrNull;
+    final section = shownSections(sectionsOf(state.items.values, state.catalog))
+        .where((s) => s.store?.id == storeId && s.count > 0)
+        .firstOrNull;
     if (section == null) {
       return;
     }
@@ -228,7 +214,6 @@ class _ShoppingListViewState()
     final state = _cubit.state;
     final resting = shownSections(
       sectionsOf(state.items.values, state.catalog),
-      dropping: false,
     );
     final weight = _weightIn(state);
     final column = columnsOf(
@@ -350,173 +335,11 @@ class _ShoppingListViewState()
     }
   }
 
-  void _drop(Item item, ItemDrop drop) {
+  /// The store details of [storeId] (null: the section without a store),
+  /// where its order lives.
+  void _editStore(String? storeId) {
     widget.onInteract?.call();
-    switch (drop) {
-      case PlaceDrop(:final anchorId, :final edge):
-        _cubit.place(item.id, anchorId: anchorId, edge: edge);
-      case MoveDrop(:final storeId, :final categoryId):
-        _cubit.move(item.id, categoryId: categoryId, storeId: storeId);
-    }
-  }
-
-  void _moveStore(String moved, String target, Edge edge) {
-    final ids = [for (final s in _cubit.state.catalog.stores) s.id];
-    final next = reordered(ids, moved, target, edge);
-    if (!listEquals(next, ids)) {
-      unawaited(_cubit.reorderStores(next));
-    }
-  }
-
-  /// Within the section of [storeId] (null: no store, whose order is the
-  /// route order).
-  void _moveCategory(String? storeId, String moved, String target, Edge edge) {
-    final catalog = _cubit.state.catalog;
-    final stops = walkingOrder(catalog, storeId);
-    final ids = [for (final s in stops) s.category.id];
-    final next = reordered(ids, moved, target, edge);
-    if (listEquals(next, ids)) {
-      return;
-    }
-    if (storeId == null) {
-      unawaited(_cubit.reorderCategories(next));
-    } else {
-      unawaited(
-        _cubit.setStoreLayout(storeId, next, {
-          for (final s in stops)
-            if (s.hidden) s.category.id,
-        }),
-      );
-    }
-  }
-
-  Future<void> _sectionMenu(
-    StoreSection section, {
-    Category? category,
-    VoidCallback? up,
-    VoidCallback? down,
-  }) async {
-    widget.onInteract?.call();
-    final l10n = AppLocalizations.of(context);
-    final store = section.store;
-    final storeName = store?.name ?? l10n.noStore;
-    final choice = await showModalBottomSheet<_MenuChoice>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          key: const ValueKey('section-menu'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text(
-                category == null
-                    ? storeName
-                    : categoryLabel(category, AppLocalizations.of(context)),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            if (up != null)
-              ListTile(
-                key: const ValueKey('section-menu-up'),
-                leading: const Icon(Icons.arrow_upward),
-                title: Text(
-                  category == null ? l10n.moveStoreUp : l10n.moveCategoryUp,
-                ),
-                onTap: () => Navigator.pop(context, _MenuChoice.up),
-              ),
-            if (down != null)
-              ListTile(
-                key: const ValueKey('section-menu-down'),
-                leading: const Icon(Icons.arrow_downward),
-                title: Text(
-                  category == null ? l10n.moveStoreDown : l10n.moveCategoryDown,
-                ),
-                onTap: () => Navigator.pop(context, _MenuChoice.down),
-              ),
-            ListTile(
-              key: const ValueKey('section-menu-layout'),
-              leading: const Icon(Icons.low_priority),
-              title: Text(
-                store == null ? l10n.manageCategories : l10n.editStoreLayout,
-              ),
-              onTap: () => Navigator.pop(context, _MenuChoice.layout),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (!mounted) {
-      return;
-    }
-    switch (choice) {
-      case _MenuChoice.up:
-        up?.call();
-      case _MenuChoice.down:
-        down?.call();
-      case _MenuChoice.layout when store == null:
-        await openCategories(context);
-      case _MenuChoice.layout:
-        await openStoreLayout(context, store!.id);
-      case null:
-        break;
-    }
-  }
-
-  void _onPointerMove(PointerMoveEvent event) {
-    if (_session.active.value == null || !_session.moved.value) {
-      _setScrollSpeed(0);
-      return;
-    }
-    final box = _viewport.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) {
-      return;
-    }
-    final y = box.globalToLocal(event.position).dy;
-    final height = box.size.height;
-    final zone = height * 0.08;
-    const fastest = 14.0;
-    _setScrollSpeed(switch (y) {
-      _ when y < zone => -fastest * (1 - (y / zone).clamp(0, 1)),
-      _ when y > height - zone =>
-        fastest * (1 - ((height - y) / zone).clamp(0, 1)),
-      _ => 0,
-    });
-  }
-
-  void _onPointerEnd(PointerEvent _) {
-    _setScrollSpeed(0);
-    // After the drop: the drag's own end callbacks run in this same event.
-    scheduleMicrotask(() {
-      if (_session.active.value != null) {
-        _session.end();
-      }
-    });
-  }
-
-  void _setScrollSpeed(double speed) {
-    _scrollSpeed = speed;
-    if (speed == 0 && _scroller.isActive) {
-      _scroller.stop();
-    } else if (speed != 0 && !_scroller.isActive) {
-      _scroller.start();
-    }
-  }
-
-  void _autoScroll() {
-    if (!_scroll.hasClients || _session.active.value == null) {
-      _setScrollSpeed(0);
-      return;
-    }
-    final position = _scroll.position;
-    final to = (position.pixels + _scrollSpeed).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    );
-    if (to != position.pixels) {
-      position.jumpTo(to);
-    }
+    context.go(storeDetailsPath(storeId));
   }
 
   @override
@@ -532,68 +355,34 @@ class _ShoppingListViewState()
       return const Center(child: CircularProgressIndicator());
     }
     final list = LayoutBuilder(
-      builder: (context, constraints) => ValueListenableBuilder(
-        valueListenable: _session.active,
-        builder: (context, active, _) => ValueListenableBuilder(
-          valueListenable: _session.moved,
-          builder: (context, moved, _) => _scrollView(
-            context,
-            state,
-            active,
-            constraints.maxWidth,
-            // Only once the item moves: a hold that stays put edits it, and
-            // the list should not jump under the finger for that.
-            dropping: active is DraggedItem && moved,
-          ),
-        ),
-      ),
-    );
-    final listened = Listener(
-      onPointerMove: _onPointerMove,
-      onPointerUp: _onPointerEnd,
-      onPointerCancel: _onPointerEnd,
-      child: list,
+      builder: (context, constraints) =>
+          _scrollView(context, state, constraints.maxWidth),
     );
     if (!kIsWeb) {
-      return listened;
+      return list;
     }
     // A right click on a row opens the edit sheet, not the browser's menu.
     // Only over the list: text fields keep the browser's menu.
     return MouseRegion(
       onEnter: (_) => unawaited(BrowserContextMenu.disableContextMenu()),
       onExit: (_) => unawaited(BrowserContextMenu.enableContextMenu()),
-      child: listened,
+      child: list,
     );
   }
 
-  Widget _scrollView(
-    BuildContext context,
-    ListState state,
-    Dragged? active,
-    double width, {
-    required bool dropping,
-  }) {
-    final sections = sectionsOf(state.items.values, state.catalog);
+  Widget _scrollView(BuildContext context, ListState state, double width) {
     final used = recentlyUsed(state.items.values);
-    // The list as it stands without a drag. Columns are cut from it, so no
-    // store changes column under the finger, and never more columns than
-    // it has sections: one store with items reads as one centred column.
-    final resting = shownSections(sections, dropping: false);
-    final shown = dropping ? shownSections(sections, dropping: true) : resting;
-    final frame = ShoppingListView.frameOf(width, resting.length);
+    // Never more columns than sections: one store with items reads as one
+    // centred column.
+    final shown = shownSections(sectionsOf(state.items.values, state.catalog));
+    final frame = ShoppingListView.frameOf(width, shown.length);
     final columnCount = frame.columns;
     final side = frame.side;
-    bool folded(StoreSection s) =>
-        s.count == 0 ||
-        active is DraggedStore ||
-        state.prefs.folded.contains(s.key);
-    final balanced = columnsOf(resting, columnCount, _weightIn(state));
-    // The empty sections that show only while an item is dragged join the
-    // column of the section before them.
-    final columns = dropping ? withDropTargets(balanced, shown) : balanced;
+    bool folded(StoreSection s) => state.prefs.folded.contains(s.key);
+    final columns = columnsOf(shown, columnCount, _weightIn(state));
     final fresh = context.read<ListCubit>().fresh;
     SliverList column(List<StoreSection> run) {
-      final entries = _entries(run, shown, state, active, folded, fresh);
+      final entries = _entries(run, state, folded, fresh);
       final index = {for (final (i, e) in entries.indexed) e.key: i};
       return SliverList.builder(
         itemCount: entries.length,
@@ -633,13 +422,6 @@ class _ShoppingListViewState()
     return CustomScrollView(
       key: _viewport,
       controller: _scroll,
-      // The dragged row is kept alive but laid out only within the cache
-      // extent; the empty stores that show above it must not push it past
-      // that, or it cannot tell how far it moved (`ItemRow`).
-      scrollCacheExtent: ScrollCacheExtent.pixels(
-        RenderAbstractViewport.defaultCacheExtent +
-            (shown.length - resting.length) * _dividerBound,
-      ),
       slivers: [
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: side),
@@ -662,12 +444,7 @@ class _ShoppingListViewState()
                       title: Text(l10n.recentlyUsed),
                       children: [
                         for (final (i, item) in used.indexed)
-                          _usedRow(
-                            state,
-                            item,
-                            used,
-                            last: i == used.length - 1,
-                          ),
+                          _usedRow(state, item, last: i == used.length - 1),
                       ],
                     ),
                   ),
@@ -682,14 +459,9 @@ class _ShoppingListViewState()
 
   /// A recently used item as the list's own row, icon included, faded: a
   /// tap puts it back on the list. The row's own gestures are off (no
-  /// tick, swipe, hold or drop), and so are its semantics, which would
-  /// tick and delete.
-  Widget _usedRow(
-    ListState state,
-    Item item,
-    List<Item> used, {
-    required bool last,
-  }) {
+  /// tick or hold), and so are its semantics, which would tick and
+  /// delete.
+  Widget _usedRow(ListState state, Item item, {required bool last}) {
     final l10n = AppLocalizations.of(context);
     final category = state.catalog.categories
         .where((c) => c.id == item.categoryId)
@@ -718,15 +490,13 @@ class _ShoppingListViewState()
             child: ItemRow(
               item: item,
               category: category,
-              block: used,
-              session: _session,
+              leaving: _leaving,
               fresh: false,
               last: last,
               onVisible: (_) {},
               onTick: _readd,
               onEdit: (_) {},
               onDelete: (_) {},
-              onDrop: (_, _) {},
             ),
           ),
         ),
@@ -734,36 +504,17 @@ class _ShoppingListViewState()
     );
   }
 
-  /// More than a folded store divider is tall, with its gap.
-  static const _dividerBound = 120.0;
-
   /// The dividers and rows of [run], top to bottom.
   List<Widget> _entries(
     List<StoreSection> run,
-    List<StoreSection> shown,
     ListState state,
-    Dragged? active,
     bool Function(StoreSection) folded,
     Set<String> fresh,
   ) {
     final entries = <Widget>[];
-    final stores = [
-      for (final s in shown)
-        if (s.store != null) s.store!.id,
-    ];
     for (final (i, section) in run.indexed) {
       final isFolded = folded(section);
       final storeId = section.store?.id;
-      final at = storeId == null ? -1 : stores.indexOf(storeId);
-      VoidCallback? storeStep(int by) {
-        final to = at + by;
-        if (storeId == null || to < 0 || to >= stores.length) {
-          return null;
-        }
-        return () =>
-            _moveStore(storeId, stores[to], by < 0 ? Edge.before : Edge.after);
-      }
-
       entries.add(
         Padding(
           key: ValueKey('store-${section.key}'),
@@ -777,90 +528,38 @@ class _ShoppingListViewState()
           child: StoreDivider(
             section: section,
             folded: isFolded,
-            session: _session,
+            leaving: _leaving,
             onToggle: () => context.read<ListCubit>().toggleFold(section.key),
-            onMenu: () => unawaited(
-              _sectionMenu(section, up: storeStep(-1), down: storeStep(1)),
-            ),
-            onDropItem: _drop,
-            onDropStore: (moved, edge) {
-              if (storeId != null) {
-                _moveStore(moved, storeId, edge);
-              }
-            },
-            onMoveUp: storeStep(-1),
-            onMoveDown: storeStep(1),
+            onEdit: () => _editStore(storeId),
           ),
         ),
       );
       if (isFolded) {
         continue;
       }
-      final reordering =
-          active is DraggedCategory && active.sectionKey == section.key;
-      final categories = [
-        for (final b in section.blocks)
-          if (b.category != null) b.category!.id,
-      ];
       for (final block in section.blocks) {
         final category = block.category;
-        final c = category == null ? -1 : categories.indexOf(category.id);
-        VoidCallback? categoryStep(int by) {
-          final to = c + by;
-          if (category == null || to < 0 || to >= categories.length) {
-            return null;
-          }
-          return () => _moveCategory(
-            storeId,
-            category.id,
-            categories[to],
-            by < 0 ? Edge.before : Edge.after,
-          );
-        }
-
         entries.add(
           CategoryDivider(
             key: ValueKey('category-${section.key}-${category?.id}'),
-            sectionKey: section.key,
-            storeId: storeId,
             block: block,
-            session: _session,
-            onMenu: () => unawaited(
-              _sectionMenu(
-                section,
-                category: category,
-                up: categoryStep(-1),
-                down: categoryStep(1),
-              ),
-            ),
-            onDropItem: _drop,
-            onDropCategory: (moved, edge) {
-              if (category != null) {
-                _moveCategory(storeId, moved, category.id, edge);
-              }
-            },
-            onMoveUp: categoryStep(-1),
-            onMoveDown: categoryStep(1),
+            leaving: _leaving,
+            onEdit: () => _editStore(storeId),
           ),
         );
-        if (reordering) {
-          continue;
-        }
         for (final (j, item) in block.items.indexed) {
           entries.add(
             ItemRow(
               key: ValueKey(item.id),
               item: item,
               category: category,
-              block: block.items,
-              session: _session,
+              leaving: _leaving,
               fresh: fresh.contains(item.id),
               last: j == block.items.length - 1,
               onVisible: (visible) => _freshVisible(item.id, visible: visible),
               onTick: _tick,
               onEdit: (item) => unawaited(_edit(item)),
               onDelete: _delete,
-              onDrop: _drop,
             ),
           );
         }
@@ -868,10 +567,4 @@ class _ShoppingListViewState()
     }
     return entries;
   }
-}
-
-enum _MenuChoice() {
-  up,
-  down,
-  layout,
 }

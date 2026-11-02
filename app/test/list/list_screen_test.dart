@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
@@ -18,6 +19,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'fake_repository.dart';
@@ -43,15 +45,31 @@ void main() {
       cache = MemoryListCache();
     }
     seed?.call(repo);
+    final list = BlocProvider(
+      key: UniqueKey(),
+      create: (_) => ListCubit(repo, cache, userId: 'peter')..start(),
+      child: const ShoppingList(),
+    );
     await tester.pumpWidget(
-      MaterialApp(
+      MaterialApp.router(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('de'),
-        home: BlocProvider(
-          key: UniqueKey(),
-          create: (_) => ListCubit(repo, cache, userId: 'peter')..start(),
-          child: const ShoppingList(),
+        routerConfig: GoRouter(
+          routes: [
+            GoRoute(
+              path: listPath,
+              builder: (_, _) => list,
+              routes: [
+                // Stands in for the store details (job 78), nested under
+                // the list as in the app: says where it is.
+                GoRoute(
+                  path: 'edit/:store',
+                  builder: (_, state) => Text(state.uri.path),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -138,28 +156,6 @@ void main() {
     return [for (final r in rows) r.item.name];
   }
 
-  /// Holds [from] past the hold delay, moves past a finger's slop, then to [to]
-  /// and lets go. [to] is measured once the drag moves: by then the empty
-  /// stores show as drop targets, and the list below them has moved down.
-  Future<void> drag(
-    WidgetTester tester,
-    Offset from,
-    Offset Function() to,
-  ) async {
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    await tester.pump();
-    final target = to();
-    await gesture.moveTo(target);
-    await tester.pump();
-    await gesture.moveTo(target);
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-  }
-
   testWidgets('on a phone the add field waits for a tap; an empty list '
       'says so', (tester) async {
     phone(tester);
@@ -242,6 +238,43 @@ void main() {
     }
     expect(repo.rows.values.map((i) => i.name), ['Milch', 'Brot']);
     expect(tester.widget<TextField>(addField()).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('after a household switch under the open tabs, an add goes to '
+      'the new household', (tester) async {
+    phone(tester);
+    final left = FakeRepository();
+    final joined = FakeRepository();
+    final first = ListCubit(left, MemoryListCache(), userId: 'peter')..start();
+    final second = ListCubit(joined, MemoryListCache(), userId: 'peter')
+      ..start();
+    final current = ValueNotifier(first);
+    addTearDown(current.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('de'),
+        home: ValueListenableBuilder(
+          valueListenable: current,
+          builder: (_, cubit, child) =>
+              BlocProvider.value(value: cubit, child: child),
+          child: const ShoppingList(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    current.value = second;
+    await tester.pumpAndSettle();
+    await tester.tap(addField());
+    await tester.enterText(addField(), 'Brot');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect([for (final i in joined.rows.values) i.name], ['Brot']);
+    expect(left.rows, isEmpty);
+    await tester.pumpWidget(const SizedBox());
+    await first.close();
+    await second.close();
   });
 
   testWidgets('a long paste is capped at the server limit', (tester) async {
@@ -388,8 +421,8 @@ void main() {
     );
   });
 
-  testWidgets('a used row only puts back: a swipe or right click does '
-      'nothing, a hold puts it back too', (tester) async {
+  testWidgets('a used row only puts back: a sideways drag or right click '
+      'does nothing, a hold puts it back too', (tester) async {
     final handle = tester.ensureSemantics();
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
     await tester.tap(row('Brot'));
@@ -448,45 +481,53 @@ void main() {
 
   Finder editSheet() => find.byKey(const ValueKey('edit-sheet'));
 
-  testWidgets('a swipe to the left opens the edit sheet; the row stays', (
-    tester,
-  ) async {
+  testWidgets('a sideways drag across a row opens nothing, ticks nothing '
+      'and moves nothing; an upward one scrolls', (tester) async {
+    phone(tester);
     await pumpList(
       tester,
-      seed: (repo) => repo
-        ..remoteAdd('Erbsen', categoryId: 'produce')
-        ..remoteAdd('Bohnen', categoryId: 'produce'),
+      seed: (repo) {
+        for (var i = 0; i < 30; i++) {
+          repo.remoteAdd('Artikel $i', categoryId: 'produce');
+        }
+      },
     );
-    final before = tester.getRect(row('Erbsen'));
-    await tester.drag(row('Erbsen'), const Offset(-600, 0));
-    await tester.pumpAndSettle();
-    expect(editSheet(), findsOneWidget);
-    expect(find.text('Bearbeiten: Erbsen'), findsOneWidget);
-    expect(repo.sent, isEmpty, reason: 'the swipe deletes nothing');
-    expect(tester.getRect(row('Erbsen')), before, reason: 'it sprang back');
-
-    await tester.tap(find.byKey(const ValueKey('edit-cancel')));
-    await tester.pumpAndSettle();
+    final order = rowOrder(tester);
+    final before = tester.getRect(row('Artikel 0'));
+    final name = tester.getRect(find.text('Artikel 0'));
+    for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+      for (final dx in [-200.0, 200.0]) {
+        final from = tester.getCenter(row('Artikel 0'));
+        final finger = await tester.startGesture(from, kind: kind);
+        for (var step = 1; step <= 4; step++) {
+          await finger.moveTo(from + Offset(dx * step / 4, 0));
+          await tester.pump(const Duration(milliseconds: 16));
+        }
+        expect(
+          tester.getRect(find.text('Artikel 0')),
+          name,
+          reason: 'the row does not follow the finger',
+        );
+        await finger.up();
+        await tester.pumpAndSettle();
+      }
+    }
     expect(editSheet(), findsNothing);
-    expect(rowOrder(tester), ['Erbsen', 'Bohnen']);
-    expect(repo.rows, hasLength(2));
-  });
-
-  testWidgets('a short swipe springs back without opening the sheet', (
-    tester,
-  ) async {
-    await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
-    await tester.drag(row('Brot'), const Offset(-60, 0));
-    await tester.pumpAndSettle();
-    expect(editSheet(), findsNothing);
+    expect(itemNamed('Artikel 0').status, ItemStatus.active);
+    expect(rowOrder(tester), order);
     expect(repo.sent, isEmpty);
+
+    await tester.drag(row('Artikel 1'), const Offset(0, -100));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(row('Artikel 0')).top, lessThan(before.top - 50));
+    expect(editSheet(), findsNothing);
   });
 
-  testWidgets('Löschen in the swiped-open sheet deletes, with undo', (
+  testWidgets('Löschen in the held-open sheet deletes, with undo', (
     tester,
   ) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
-    await tester.drag(row('Brot'), const Offset(-600, 0));
+    await tester.longPress(row('Brot'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('edit-delete')));
     await tester.pumpAndSettle();
@@ -499,7 +540,7 @@ void main() {
     expect(row('Brot'), findsOneWidget);
   });
 
-  testWidgets('an item still being sorted opens the sheet on a swipe too', (
+  testWidgets('an item still being sorted opens the sheet on a hold too', (
     tester,
   ) async {
     phone(tester);
@@ -511,14 +552,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('add-sheet-close')));
     await tester.pumpAndSettle();
     expect(tester.widget<ItemRow>(row('Brot')).item.categoryId, isNull);
-    await tester.drag(row('Brot'), const Offset(-600, 0));
+    await tester.longPress(row('Brot'));
     await tester.pumpAndSettle();
     expect(find.text('Bearbeiten: Brot'), findsOneWidget);
     expect(row('Brot'), findsOneWidget);
   });
 
   testWidgets('no item action needs a hold: tick, edit, delete and move '
-      'all work with taps and a swipe', (tester) async {
+      'all work with taps and a right click', (tester) async {
     await pumpList(
       tester,
       seed: (repo) => repo
@@ -532,8 +573,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(itemNamed('Seife').status, ItemStatus.bought);
 
-    // Edit and move to another category and store: the swiped-open sheet.
-    await tester.drag(row('Milch'), const Offset(-600, 0));
+    // Edit and move to another category and store: the sheet a right click
+    // opens.
+    await tester.tap(row('Milch'), buttons: kSecondaryButton);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('chip-category')));
     await tester.pumpAndSettle();
@@ -550,39 +592,54 @@ void main() {
       ('produce', 'lidl'),
     );
 
-    // Delete: the swiped-open sheet's Löschen.
-    await tester.drag(row('Brot'), const Offset(-600, 0));
+    // Delete: that sheet's Löschen.
+    await tester.tap(row('Brot'), buttons: kSecondaryButton);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('edit-delete')));
     await tester.pumpAndSettle();
     expect(repo.rows.values.where((i) => i.name == 'Brot'), isEmpty);
   });
 
-  testWidgets('a finger that drifts while it holds still edits; a mouse '
-      'that drifts as far drags', (tester) async {
+  testWidgets('a hold opens the edit sheet while the finger is still down, '
+      'also when the finger drifts a little', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
     final start = tester.getCenter(row('Milch'));
     final finger = await tester.startGesture(start);
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 100));
     await finger.moveTo(start + const Offset(4, 12));
-    await tester.pump();
-    await finger.up();
+    await tester.pump(const Duration(milliseconds: 250));
     await tester.pumpAndSettle();
     expect(find.text('Bearbeiten: Milch'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('edit-cancel')));
+    await finger.up();
     await tester.pumpAndSettle();
+    expect(editSheet(), findsOneWidget, reason: 'the lift does not close it');
+    expect(repo.sent, isEmpty);
+  });
 
-    final mouse = await tester.startGesture(
-      start,
-      kind: PointerDeviceKind.mouse,
+  testWidgets('nothing on the list drags: a hold that moves on edits, '
+      'shows no empty store and moves nothing', (tester) async {
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Seife', storeId: 'dm')
+        ..remoteAdd('Milch', storeId: 'lidl'),
     );
-    await tester.pump(const Duration(milliseconds: 400));
-    await mouse.moveTo(start + const Offset(4, 12));
-    await tester.pump();
-    await mouse.up();
-    await tester.pumpAndSettle();
-    expect(editSheet(), findsNothing, reason: 'past 8 px a mouse drags');
-    expect(repo.sent, isEmpty, reason: 'dropped on itself');
+    for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
+      final from = tester.getCenter(row('Milch'));
+      final gesture = await tester.startGesture(from, kind: kind);
+      await tester.pump(const Duration(milliseconds: 400));
+      await gesture.moveTo(tester.getCenter(storeDivider('dm')));
+      await tester.pump();
+      expect(storeDivider('none'), findsNothing, reason: 'no drop targets');
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('edit-cancel')));
+      await tester.pumpAndSettle();
+    }
+    expect(repo.sent, isEmpty);
+    expect(itemNamed('Milch').storeId, 'lidl');
+    expect(rowOrder(tester), ['Seife', 'Milch']);
   });
 
   testWidgets('screen readers get edit and delete as actions', (tester) async {
@@ -653,241 +710,11 @@ void main() {
     expect(row('Shampoo'), findsOneWidget);
   });
 
-  testWidgets('an item dropped on the upper or lower half of a row goes '
-      'before or after it', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Erbsen', categoryId: 'produce')
-        ..remoteAdd('Bohnen', categoryId: 'produce')
-        ..remoteAdd('Linsen', categoryId: 'produce'),
-    );
-    await drag(
-      tester,
-      tester.getCenter(row('Linsen')),
-      () => tester.getRect(row('Erbsen')).topCenter + const Offset(0, 8),
-    );
-    expect(repo.sent.last, isA<PlaceItem>());
-    final place = repo.sent.last as PlaceItem;
-    expect((place.anchorId, place.edge), (itemNamed('Erbsen').id, Edge.before));
-    expect(rowOrder(tester), ['Linsen', 'Erbsen', 'Bohnen']);
-
-    await drag(
-      tester,
-      tester.getCenter(row('Linsen')),
-      () => tester.getRect(row('Bohnen')).bottomCenter - const Offset(0, 8),
-    );
-    expect((repo.sent.last as PlaceItem).edge, Edge.after);
-    expect(rowOrder(tester), ['Erbsen', 'Bohnen', 'Linsen']);
-    expect(find.byKey(const ValueKey('edit-sheet')), findsNothing);
-  });
-
-  testWidgets('dragging shows the insertion line at the hovered edge', (
-    tester,
-  ) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Erbsen', categoryId: 'produce')
-        ..remoteAdd('Bohnen', categoryId: 'produce'),
-    );
-    final from = tester.getCenter(row('Bohnen'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    final target = tester.getRect(row('Erbsen'));
-    await gesture.moveTo(target.topCenter + const Offset(0, 6));
-    await tester.pump();
-    final id = itemNamed('Erbsen').id;
-    final line = find.byKey(ValueKey('drop-line-$id'));
-    expect(line, findsOneWidget);
-    expect(tester.getRect(line).top, closeTo(target.top - 2, 0.5));
-    await gesture.moveTo(target.bottomCenter - const Offset(0, 6));
-    await tester.pump();
-    expect(tester.getRect(line).bottom, closeTo(target.bottom + 2, 0.5));
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(line, findsNothing);
-  });
-
-  testWidgets('an item dropped on a category divider goes to its end', (
-    tester,
-  ) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Äpfel', categoryId: 'produce')
-        ..remoteAdd('Milch'),
-    );
-    await drag(
-      tester,
-      tester.getCenter(row('Milch')),
-      () => tester.getCenter(categoryDivider('Obst & Gemüse')),
-    );
-    final move = repo.sent.last as MoveItem;
-    expect((move.categoryId, move.storeId), ('produce', null));
-    expect(rowOrder(tester), ['Äpfel', 'Milch']);
-  });
-
-  testWidgets('an item dropped on a folded store goes there and keeps its '
-      'category', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Seife', storeId: 'dm')
-        ..remoteAdd('Milch'),
-    );
-    await tester.tap(storeDivider('dm'));
-    await tester.pumpAndSettle();
-    await drag(
-      tester,
-      tester.getCenter(row('Milch')),
-      () => tester.getCenter(storeDivider('dm')),
-    );
-    final move = repo.sent.last as MoveItem;
-    expect((move.categoryId, move.storeId), ('chilled', 'dm'));
-    expect(itemNamed('Milch').storeId, 'dm');
-    expect(row('Milch'), findsNothing, reason: 'dm is folded');
-    expect(tester.getSemantics(storeNode('dm')).label, 'dm, 2 Artikel');
-  });
-
-  testWidgets('a store without items does not show; while an item is '
-      'dragged it shows folded and takes the drop', (tester) async {
+  testWidgets('a store without items does not show', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
     expect(storeDivider('dm'), findsNothing);
     expect(storeDivider('lidl'), findsNothing);
     expect(find.textContaining(RegExp(r'(^|\D)0 Artikel')), findsNothing);
-
-    final from = tester.getCenter(row('Milch'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(
-      storeDivider('lidl'),
-      findsNothing,
-      reason: 'a hold that stays put edits: the list does not jump for it',
-    );
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    expect(
-      tester.getSemantics(storeNode('lidl')),
-      isSemantics(label: 'Lidl, 0 Artikel', isExpanded: false),
-    );
-    expect(storeDivider('dm'), findsOneWidget);
-    await gesture.moveTo(tester.getCenter(storeDivider('lidl')));
-    await tester.pump();
-    await gesture.moveTo(tester.getCenter(storeDivider('lidl')));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-
-    expect(itemNamed('Milch').storeId, 'lidl');
-    expect(tester.getSemantics(storeNode('lidl')).label, 'Lidl, 1 Artikel');
-    expect(storeDivider('none'), findsNothing, reason: 'nothing left there');
-    expect(storeDivider('dm'), findsNothing, reason: 'still empty');
-  });
-
-  testWidgets('the empty stores that show above a dragged row scroll it '
-      'back under the finger', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) {
-        for (var i = 0; i < 20; i++) {
-          repo.remoteAdd('Ding $i');
-        }
-      },
-    );
-    final before = tester.getTopLeft(row('Ding 2')).dy;
-    final from = tester.getCenter(row('Ding 2'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    expect(storeDivider('dm'), findsOneWidget);
-    expect(
-      tester.getTopLeft(row('Ding 2')).dy,
-      greaterThan(before),
-      reason: 'dm and Lidl pushed it down',
-    );
-    await tester.pump();
-    expect(tester.getTopLeft(row('Ding 2')).dy, before);
-    await gesture.up();
-    await tester.pumpAndSettle();
-  });
-
-  testWidgets('a dragged row stays under the finger also when many empty '
-      'stores show above it', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) {
-        repo.stores = [
-          for (var i = 0; i < 15; i++)
-            Store(id: 's$i', name: 'Laden $i', sortOrder: i),
-        ];
-        for (var i = 0; i < 30; i++) {
-          repo.remoteAdd('Ding $i');
-        }
-      },
-    );
-    final visible = tester
-        .widgetList<ItemRow>(find.byType(ItemRow))
-        .map((r) => r.item.name)
-        // Clear of the add bar over the list's foot.
-        .where((name) => tester.getBottomLeft(row(name)).dy < 500)
-        .toList();
-    final name = visible.last;
-    final before = tester.getTopLeft(row(name)).dy;
-    final from = tester.getCenter(row(name));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    await tester.pump();
-    expect(tester.getTopLeft(row(name)).dy, before);
-    expect(
-      find.byKey(const ValueKey('store-s14'), skipOffstage: false),
-      findsOneWidget,
-      reason: 'the empty stores show, above the row',
-    );
-    await gesture.up();
-    await tester.pumpAndSettle();
-  });
-
-  testWidgets('a drag that ends where it started hides the empty stores '
-      'again', (tester) async {
-    await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
-    final from = tester.getCenter(row('Milch'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    expect(storeDivider('dm'), findsOneWidget);
-    await gesture.moveTo(tester.getCenter(row('Milch')));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(repo.sent, isEmpty);
-    expect(storeDivider('dm'), findsNothing);
-    expect(storeDivider('lidl'), findsNothing);
-    expect(row('Milch'), findsOneWidget);
-  });
-
-  testWidgets('moving the last item out of a store hides it once the drag '
-      'ends', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Seife', storeId: 'dm')
-        ..remoteAdd('Milch', storeId: 'lidl'),
-    );
-    await drag(
-      tester,
-      tester.getCenter(row('Seife')),
-      () => tester.getCenter(storeDivider('lidl')),
-    );
-    expect(itemNamed('Seife').storeId, 'lidl');
-    expect(storeDivider('dm'), findsNothing);
-    expect(tester.getSemantics(storeNode('lidl')).label, 'Lidl, 2 Artikel');
   });
 
   testWidgets('ticking the last item hides its store, putting it back shows '
@@ -920,68 +747,6 @@ void main() {
       find.text('Die Liste ist leer. Tippe unten ein, was fehlt.'),
       findsOneWidget,
     );
-  });
-
-  testWidgets('dragging a store divider reorders the stores', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Seife', storeId: 'dm')
-        ..remoteAdd('Milch', storeId: 'lidl'),
-    );
-    final from = tester.getCenter(storeDivider('lidl'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from - const Offset(0, 24));
-    await tester.pump();
-    expect(row('Seife'), findsNothing, reason: 'every store folds');
-    final dm = tester.getRect(storeDivider('dm'));
-    await gesture.moveTo(dm.topCenter + const Offset(0, 4));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(repo.catalogCalls, ['reorderStores(lidl, dm)']);
-    expect(rowOrder(tester), ['Milch', 'Seife']);
-  });
-
-  testWidgets('dragging a category divider reorders it in its store', (
-    tester,
-  ) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo
-        ..remoteAdd('Milch', storeId: 'lidl')
-        ..remoteAdd('Äpfel', categoryId: 'produce', storeId: 'lidl'),
-    );
-    expect(rowOrder(tester), ['Milch', 'Äpfel']);
-    final from = tester.getCenter(categoryDivider('Obst & Gemüse'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from - const Offset(0, 24));
-    await tester.pump();
-    expect(row('Milch'), findsNothing, reason: 'its siblings fold');
-    final chilled = tester.getRect(categoryDivider('Kühlregal'));
-    await gesture.moveTo(chilled.topCenter + const Offset(0, 2));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(repo.catalogCalls, ['layout(lidl: other, produce, chilled; )']);
-    expect(rowOrder(tester), ['Äpfel', 'Milch']);
-  });
-
-  testWidgets('a long press that stays put opens the edit sheet', (
-    tester,
-  ) async {
-    await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
-    final start = tester.getCenter(row('Milch'));
-    final gesture = await tester.startGesture(start);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(start + const Offset(3, 2));
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('edit-sheet')), findsOneWidget);
-    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
-    expect(repo.sent, isEmpty);
   });
 
   testWidgets('a right click opens the edit sheet', (tester) async {
@@ -1051,13 +816,7 @@ void main() {
 
   testWidgets('the explainer card is dismissed for good', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
-    expect(
-      find.text(
-        'Tippen hakt ab · Nach links wischen bearbeitet · '
-        'Halten und ziehen verschiebt',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Tippen hakt ab · Halten bearbeitet'), findsOneWidget);
     await tester.tap(find.text('Verstanden'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('list-hint')), findsNothing);
@@ -1066,67 +825,58 @@ void main() {
     expect(find.byKey(const ValueKey('list-hint')), findsNothing);
   });
 
-  testWidgets("a store's menu moves it and opens its layout screen", (
-    tester,
-  ) async {
+  testWidgets("a hold or right click on a divider opens its section's store "
+      'details; nothing moves', (tester) async {
     await pumpList(
       tester,
       seed: (repo) => repo
         ..remoteAdd('Seife', storeId: 'dm')
-        ..remoteAdd('Milch', storeId: 'lidl'),
+        ..remoteAdd('Milch', storeId: 'lidl')
+        ..remoteAdd('Brot'),
     );
-    await tester.tap(storeDivider('lidl'), buttons: kSecondaryButton);
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('section-menu-down')), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('section-menu-up')));
-    await tester.pumpAndSettle();
-    expect(repo.catalogCalls, ['reorderStores(lidl, dm)']);
-
-    final start = tester.getCenter(storeDivider('dm'));
-    final gesture = await tester.startGesture(start);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.up();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('section-menu-layout')));
-    await tester.pumpAndSettle();
-    expect(find.text('dm: Reihenfolge'), findsOneWidget);
-    expect(
-      find.byType(Switch),
-      findsNothing,
-      reason: 'H folds, it does not hide',
-    );
-  });
-
-  testWidgets('a hold on the no-store divider opens its menu', (tester) async {
-    await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
-    await tester.longPress(storeDivider('none'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('section-menu-layout')), findsOneWidget);
-    expect(row('Brot'), findsOneWidget, reason: 'not folded');
-  });
-
-  testWidgets('a finger that drifts while it holds a store or category '
-      'divider still opens its menu', (tester) async {
-    await pumpList(
-      tester,
-      seed: (repo) => repo..remoteAdd('Milch', storeId: 'lidl'),
-    );
-    for (final divider in [
-      storeDivider('lidl'),
-      categoryDivider('Kühlregal'),
-    ]) {
-      final start = tester.getCenter(divider);
-      final finger = await tester.startGesture(start);
-      await tester.pump(const Duration(milliseconds: 400));
-      await finger.moveTo(start + const Offset(4, 12));
-      await tester.pump();
-      await finger.up();
+    Future<void> opens(Future<void> Function() hold, String path) async {
+      await hold();
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('section-menu')), findsOneWidget);
-      expect(repo.catalogCalls, isEmpty);
-      await tester.tapAt(const Offset(10, 10));
+      expect(find.text(path), findsOneWidget);
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
       await tester.pumpAndSettle();
     }
+
+    await opens(() => tester.longPress(storeDivider('lidl')), '/edit/lidl');
+    await opens(
+      () => tester.tap(storeDivider('dm'), buttons: kSecondaryButton),
+      '/edit/dm',
+    );
+    await opens(
+      () => tester.longPress(categoryDivider('Sonstiges').first),
+      '/edit/dm',
+    );
+    await opens(
+      () => tester.tap(categoryDivider('Kühlregal'), buttons: kSecondaryButton),
+      '/edit/lidl',
+    );
+    await opens(
+      () => tester.longPress(categoryDivider('Sonstiges').last),
+      '/edit/none',
+    );
+    await opens(() => tester.longPress(storeDivider('none')), '/edit/none');
+    expect(row('Brot'), findsOneWidget, reason: 'a hold does not fold');
+    expect(repo.catalogCalls, isEmpty);
+    expect(rowOrder(tester), ['Seife', 'Milch', 'Brot']);
+  });
+
+  testWidgets("a screen reader's long press on a store divider opens its "
+      'details; the divider offers no up or down moves', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
+    expect(
+      tester.getSemantics(storeNode('none')),
+      isSemantics(hasLongPressAction: true, customActions: []),
+    );
+    tester.semantics.longPress(find.semantics.byLabel('Ohne Laden, 1 Artikel'));
+    await tester.pumpAndSettle();
+    expect(find.text('/edit/none'), findsOneWidget);
+    handle.dispose();
   });
 
   testWidgets('wide screens lay the stores out in columns', (tester) async {
@@ -1147,31 +897,6 @@ void main() {
     expect(xs, hasLength(3), reason: 'three columns from 1200 px');
     expect(tester.getSize(row('Milch')).width, lessThanOrEqualTo(560));
 
-    Map<String, Offset> dividers() => {
-      for (final key in ['dm', 'lidl', 'none'])
-        key: tester.getTopLeft(storeDivider(key)),
-    };
-    final resting = dividers();
-    final from = tester.getCenter(storeDivider('lidl'));
-    final lift = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await lift.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    expect(
-      dividers().map((k, v) => MapEntry(k, v.dx)),
-      resting.map((k, v) => MapEntry(k, v.dx)),
-      reason: 'no store changes column while one is dragged',
-    );
-    await lift.up();
-    await tester.pumpAndSettle();
-
-    await drag(
-      tester,
-      tester.getCenter(row('Brot')),
-      () => tester.getCenter(storeDivider('dm')),
-    );
-    expect(itemNamed('Brot').storeId, 'dm', reason: 'across columns');
-
     await tester.binding.setSurfaceSize(const Size(900, 1024));
     await tester.pumpAndSettle();
     final two = {
@@ -1186,8 +911,7 @@ void main() {
     expect(one.left, 30, reason: 'one centred column');
   });
 
-  testWidgets('wide screens balance only the stores with items; an empty '
-      'one shows during a drag in the column of the store before it', (
+  testWidgets('wide screens balance only the stores with items', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1366, 1024));
@@ -1210,27 +934,6 @@ void main() {
     };
     final resting = xs(['dm', 'edeka', 'none']);
     expect(resting.values.toSet(), hasLength(3), reason: 'one store each');
-
-    final from = tester.getCenter(row('Brot'));
-    final gesture = await tester.startGesture(from);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(from + const Offset(0, 24));
-    await tester.pump();
-    expect(xs(['dm', 'edeka', 'none']), resting, reason: 'none moves');
-    expect(xs(['lidl'])['lidl'], resting['dm'], reason: "dm's column");
-    expect(
-      tester.getTopLeft(storeDivider('lidl')).dy,
-      greaterThan(tester.getTopLeft(storeDivider('dm')).dy),
-    );
-    await gesture.moveTo(tester.getCenter(storeDivider('lidl')));
-    await tester.pump();
-    await gesture.moveTo(tester.getCenter(storeDivider('lidl')));
-    await tester.pump();
-    await gesture.up();
-    await tester.pumpAndSettle();
-    expect(itemNamed('Brot').storeId, 'lidl');
-    expect(storeDivider('none'), findsNothing);
-    expect(xs(['dm', 'lidl', 'edeka']).values.toSet(), hasLength(3));
   });
 
   testWidgets('wide screens with one section of items show one centred '
@@ -1241,18 +944,6 @@ void main() {
     final brot = tester.getRect(row('Brot'));
     expect(brot.width, 640, reason: 'not one column across the screen');
     expect(brot.left, (1366 - 640) / 2);
-
-    final gesture = await tester.startGesture(brot.center);
-    await tester.pump(const Duration(milliseconds: 400));
-    await gesture.moveTo(brot.center + const Offset(0, 24));
-    await tester.pump();
-    expect(
-      tester.getTopLeft(storeDivider('dm')).dx,
-      tester.getTopLeft(storeDivider('none')).dx,
-      reason: 'the drop targets join that one column',
-    );
-    await gesture.up();
-    await tester.pumpAndSettle();
   });
 
   group('who added what', () {
@@ -1631,18 +1322,20 @@ void main() {
       await tester.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('shows neither the household name nor the item count', (
-      tester,
-    ) async {
+    testWidgets('shows neither the household name nor the item count, '
+        'only Anpassen', (tester) async {
       await pumpList(
         tester,
         seed: (repo) => repo
           ..remoteAdd('Brot')
           ..remoteAdd('Milch'),
       );
+      final texts = find.descendant(of: header(), matching: find.byType(Text));
+      expect(texts, findsOneWidget);
+      expect(tester.widget<Text>(texts).data, 'Anpassen');
       expect(
-        find.descendant(of: header(), matching: find.byType(Text)),
-        findsNothing,
+        tester.getSemantics(texts),
+        isSemantics(label: 'Anpassen', isButton: true),
       );
       expect(find.byKey(const ValueKey('list-title')), findsNothing);
       expect(find.byKey(const ValueKey('list-count')), findsNothing);

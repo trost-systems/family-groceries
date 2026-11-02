@@ -425,26 +425,6 @@ int compareWalk(Item a, Item b) {
   return byCreated != 0 ? byCreated : a.id.compareTo(b.id);
 }
 
-/// The provisional key for an item put [edge] of [anchor]: halfway to the
-/// neighbour in [group] (the anchor's group in walk order, without the item),
-/// or 1024 past the anchor at an end. Null while the anchor has no key.
-double? placeKey(List<Item> group, Item anchor, Edge edge) {
-  final key = anchor.sortKey;
-  if (key == null) {
-    return null;
-  }
-  final at = group.indexWhere((i) => i.id == anchor.id);
-  final next = switch (edge) {
-    Edge.before => at > 0 ? group[at - 1].sortKey : null,
-    Edge.after => at + 1 < group.length ? group[at + 1].sortKey : null,
-  };
-  return switch ((edge, next)) {
-    (_, final n?) => (key + n) / 2,
-    (Edge.before, null) => key - 1024,
-    (Edge.after, null) => key + 1024,
-  };
-}
-
 /// A nullable column an edit sets, to [value] (null clears it). An edit
 /// that leaves the column alone has no [SetTo] for it.
 @immutable

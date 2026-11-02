@@ -1,4 +1,5 @@
 import { expect, test, type Page } from './fixtures';
+import { openStores, storeRow } from './catalog';
 import {
   apiAs, closeSheet, editSheet, enterItem, itemRow, newEmail, openEdit, openMore, openTab, screenshot,
   signUpWithHousehold, storeDivider, inviteCodeLabel,
@@ -111,15 +112,15 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: 'Zurück' }).click();
 
-  await page.getByRole('button', { name: /^Läden/ }).click();
-  await expect(page.getByRole('heading', { name: 'Läden' })).toBeVisible();
+  // Job 78: stores and categories are the List tab's Anpassen.
+  await openStores(page);
   await shot('08', 'stores');
-  await page.getByRole('button', { name: 'Zurück' }).click();
-
-  await page.getByRole('button', { name: 'Kategorien verwalten' }).click();
-  await expect(page.getByRole('heading', { name: 'Kategorien' })).toBeVisible();
+  await storeRow(page, null).click();
+  await expect(page.getByRole('heading', { name: 'Ohne Laden', exact: true })).toBeVisible();
   await shot('09', 'categories');
-  await page.getByRole('button', { name: 'Zurück' }).click();
+  await openTab(page, 'Liste');
+  await openTab(page, 'Mehr');
+  await expect(page).toHaveURL(/\/more$/);
 
   await page.getByRole('button', { name: /^Zugänge/ }).click();
   await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();

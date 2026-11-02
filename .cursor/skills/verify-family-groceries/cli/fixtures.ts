@@ -293,7 +293,7 @@ async function seedHousehold(
     route.splice(0, route.length, ...order);
   }
 
-  // As the app adds one (store picker, Mehr → Läden): after the last store, with a layout.
+  // As the app adds one (store picker, Liste → Anpassen): after the last store, with a layout.
   const stores = new Map<string, string>();
   for (const st of h.stores) {
     const id = (await api.rpc('add_store', { p_household: hid, p_name: st.name }, ownerToken)) as string;

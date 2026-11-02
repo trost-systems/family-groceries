@@ -5,8 +5,8 @@
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
+import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,8 +47,8 @@ void main() {
         ..devicePixelRatio = 1
         ..physicalSize = const Size(358, 330);
       addTearDown(tester.view.reset);
-      final session = DragSession();
-      addTearDown(session.dispose);
+      final leaving = LeavingRows();
+      addTearDown(leaving.dispose);
       await tester.pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -64,8 +64,7 @@ void main() {
                     key: ValueKey(item.id),
                     item: item,
                     category: null,
-                    block: _rows,
-                    session: session,
+                    leaving: leaving,
                     // A partner's new row is honey (job 56 item 34).
                     fresh: item == _rows.first,
                     last: item == _rows.last,
@@ -73,7 +72,6 @@ void main() {
                     onTick: (_) {},
                     onEdit: (_) {},
                     onDelete: (_) {},
-                    onDrop: (_, _) {},
                   ),
               ],
             ),

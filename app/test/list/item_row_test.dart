@@ -1,8 +1,8 @@
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
+import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,13 +23,13 @@ Item _item(String name, {String? quantity}) {
 
 void main() {
   late List<Item> ticked;
-  late DragSession session;
+  late LeavingRows leaving;
 
   setUp(() {
     ticked = [];
-    session = DragSession();
+    leaving = LeavingRows();
   });
-  tearDown(() => session.dispose());
+  tearDown(() => leaving.dispose());
 
   Future<void> pumpRows(
     WidgetTester tester,
@@ -54,15 +54,13 @@ void main() {
                     key: ValueKey(item.id),
                     item: item,
                     category: null,
-                    block: items,
-                    session: session,
+                    leaving: leaving,
                     fresh: false,
                     last: item == items.last,
                     onVisible: (_) {},
                     onTick: ticked.add,
                     onEdit: (_) {},
                     onDelete: (_) {},
-                    onDrop: (_, _) {},
                   ),
                 const SizedBox(key: ValueKey('below'), height: 10),
               ],

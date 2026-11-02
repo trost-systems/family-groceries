@@ -100,11 +100,13 @@ test('the sheet hugs its suggestions, grows with them up to the top and keeps th
   expect(full.y, 'on a short screen the sheet reaches the top gap').toBeLessThanOrEqual(28 + 2);
   expect(full.height, 'and is shorter than its content on 844 px').toBeLessThan(eight.height);
   await screenshot(page, 'add-8-full-667');
-  const firstBefore = (await rows(page).first().boundingBox())!;
+  // Without the title row (job 78) the eight overflow by less than a row, so the first stays
+  // partly in view, its box clipped at the top: the last row is the one that visibly moves up.
+  const lastBefore = (await rows(page).last().boundingBox())!;
   await page.mouse.move(195, full.y + full.height - 80);
   await page.mouse.wheel(0, 400);
-  await expect.poll(async () => (await rows(page).first().boundingBox())?.y ?? -1000, { message: 'only now the rows scroll' })
-    .toBeLessThan(firstBefore.y - 20);
+  await expect.poll(async () => (await rows(page).last().boundingBox())?.y ?? 10_000, { message: 'only now the rows scroll' })
+    .toBeLessThan(lastBefore.y - 20);
   await page.setViewportSize({ width: 390, height: 844 });
   await settled(page);
 

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { deleteItem, dragItemTo, expectGroup } from './catalog';
+import { deleteItem, expectGroup, setCategory } from './catalog';
 import { addItem, apiAs, itemRow, newEmail, openEdit, pickInSheet, reveal, saveEdit, screenshot, signUpWithHousehold, tick } from './helpers';
 
 test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household only', async ({ browser }) => {
@@ -12,9 +12,9 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
   // Design H shows a category only with items in it, so a drink gives Getränke its divider.
   await addItem(peter, 'Apfelsaft');
   await expectGroup(peter, 'Apfelsaft', 'Getränke');
-  await dragItemTo(peter, 'Hafermilch', 'Getränke');
+  await setCategory(peter, 'Hafermilch', 'Getränke');
   await expectGroup(peter, 'Hafermilch', 'Getränke');
-  await screenshot(peter, '01-dragged-to-getraenke');
+  await screenshot(peter, '01-moved-to-getraenke');
   await deleteItem(peter, 'Hafermilch');
   await addItem(peter, '2 Hafermilch');
   await expectGroup(peter, 'Hafermilch', 'Getränke');

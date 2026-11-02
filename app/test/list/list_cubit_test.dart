@@ -322,55 +322,6 @@ void main() {
     await restarted.close();
   });
 
-  test('a placed item shows between its neighbours at once', () async {
-    for (final name in ['Äpfel', 'Birnen', 'Kiwis', 'Trauben']) {
-      repo.remoteAdd(name, categoryId: 'produce');
-    }
-    await cubit.resync();
-    String idOf(String name) =>
-        cubit.state.items.values.firstWhere((i) => i.name == name).id;
-    List<String> produce() => [
-      for (final i in sectionsOf(
-        cubit.state.items.values,
-        cubit.state.catalog,
-      ).last.blocks.single.items)
-        i.name,
-    ];
-    expect(produce(), ['Äpfel', 'Birnen', 'Kiwis', 'Trauben']);
-
-    repo.gate = Completer();
-    cubit.place(idOf('Trauben'), anchorId: idOf('Birnen'), edge: Edge.before);
-    expect(produce(), ['Äpfel', 'Trauben', 'Birnen', 'Kiwis']);
-    final place = cubit.state.pending.single as PlaceItem;
-    final birnen = cubit.state.items[idOf('Birnen')]!.sortKey!;
-    final apples = cubit.state.items[idOf('Äpfel')]!.sortKey!;
-    expect(place.sortKey, (apples + birnen) / 2);
-
-    repo.gate!.complete();
-    await settle();
-    expect(cubit.state.pending, isEmpty);
-    expect(produce(), ['Äpfel', 'Trauben', 'Birnen', 'Kiwis']);
-
-    cubit.place(idOf('Äpfel'), anchorId: idOf('Kiwis'), edge: Edge.after);
-    await settle();
-    expect(produce(), ['Trauben', 'Birnen', 'Kiwis', 'Äpfel']);
-  });
-
-  test('placing next to an item of another group takes its group', () async {
-    final milk = repo.remoteAdd('Milch', storeId: 'lidl');
-    final soap = repo.remoteAdd('Seife', categoryId: 'other', storeId: 'dm');
-    await cubit.resync();
-    cubit.place(soap.id, anchorId: milk.id, edge: Edge.after);
-    final shown = cubit.state.items[soap.id]!;
-    expect((shown.categoryId, shown.storeId), ('chilled', 'lidl'));
-    expect(shown.sortKey, greaterThan(milk.sortKey!));
-    await settle();
-    expect(
-      (repo.rows[soap.id]!.categoryId, repo.rows[soap.id]!.storeId),
-      ('chilled', 'lidl'),
-    );
-  });
-
   group('own stores', () {
     List<String> storeNames() => [
       for (final s in cubit.state.catalog.stores) s.name,

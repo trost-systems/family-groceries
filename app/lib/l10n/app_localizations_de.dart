@@ -535,15 +535,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die App verliert sofort den Zugriff auf deine Liste.';
 
   @override
-  String get editStoreLayout => 'Reihenfolge bearbeiten';
-
-  @override
-  String get manageCategories => 'Kategorien verwalten';
-
-  @override
-  String get categoriesTitle => 'Kategorien';
-
-  @override
   String get categoriesHint =>
       'In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.';
 
@@ -579,13 +570,8 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Änderung konnte nicht gespeichert werden.';
 
   @override
-  String storeLayoutTitle(String store) {
-    return '$store: Reihenfolge';
-  }
-
-  @override
   String get storeLayoutHint =>
-      'Ordne die Kategorien so, wie du durch den Laden gehst.';
+      'Ordne die Kategorien so, wie du durch den Laden gehst. Tippe auf eine Kategorie, um sie umzubenennen.';
 
   @override
   String newItemsFrom(int count, String name) {
@@ -629,20 +615,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get collapseSection => 'Zuklappen';
 
   @override
-  String get moveStoreUp => 'Laden nach oben';
-
-  @override
-  String get moveStoreDown => 'Laden nach unten';
-
-  @override
-  String get moveCategoryUp => 'Kategorie nach oben';
-
-  @override
-  String get moveCategoryDown => 'Kategorie nach unten';
-
-  @override
-  String get listHint =>
-      'Tippen hakt ab · Nach links wischen bearbeitet · Halten und ziehen verschiebt';
+  String get listHint => 'Tippen hakt ab · Halten bearbeitet';
 
   @override
   String get listHintDismiss => 'Verstanden';
@@ -812,6 +785,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storeAuto => 'Laden: automatisch';
 
   @override
+  String get chipStoreShort => 'Laden';
+
+  @override
+  String get chipCategoryShort => 'Kategorie';
+
+  @override
+  String storeAutoValue(String name) {
+    return 'Laden: automatisch, $name';
+  }
+
+  @override
+  String categoryAutoValue(String name) {
+    return 'Kategorie: automatisch, $name';
+  }
+
+  @override
   String get typeToSuggest => 'Tippe, um Vorschläge zu sehen';
 
   @override
@@ -872,11 +861,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storesTitle => 'Läden';
 
   @override
-  String get storesRowHint => 'Reihenfolge und Laufweg';
+  String get listEdit => 'Anpassen';
+
+  @override
+  String get noStoreRowHint => 'Kategorien für Artikel ohne Laden';
+
+  @override
+  String get storeAdd => 'Laden hinzufügen';
+
+  @override
+  String get storeRenameHint => 'Tippen zum Umbenennen';
+
+  @override
+  String get deleteCategoryEverywhere => 'Sie verschwindet aus allen Läden.';
 
   @override
   String get storesHint =>
-      'Halten und ziehen ändert die Reihenfolge der Läden in der Liste. Ein Laden öffnet seinen Laufweg.';
+      'Ziehe die Läden in die Reihenfolge, in der sie auf der Liste stehen. Tippe auf einen Laden, um ihn umzubenennen und seine Kategorien zu ordnen.';
 
   @override
   String dragStore(String store) {
@@ -935,14 +936,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get storesEmpty =>
       'Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.';
-
-  @override
-  String storeMenu(String store) {
-    return 'Optionen für $store';
-  }
-
-  @override
-  String get storeRenameAction => 'Umbenennen';
 
   @override
   String storeDeleteBody(int count) {
@@ -1191,7 +1184,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get skipStoresHint =>
-      'Ohne Läden starten. Du kannst sie später unter Mehr → Läden anlegen.';
+      'Ohne Läden starten. Du kannst sie später unter Liste → Anpassen anlegen.';
 
   @override
   String get householdOffline =>

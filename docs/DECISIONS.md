@@ -6846,3 +6846,80 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    archive directory at a cached one (key: runner image and version, Playwright lockfile, ffmpeg),
    so apt only fetches packages missing there. Only `apt-get update` still reads the mirror.
 6. **Local ports 577xx**, since 761xx is past 65535.
+
+## Job 78: stores and categories under Liste → Anpassen, nothing on the list drags, 2026-11-02
+
+Peter's feedback of 2026-11-02 (20:38 CET): move store and category management to the List tab,
+simplify the stores screen, drop drag on the list, and tighten the add bar and add sheet.
+
+1. **Routes under the List branch.** `/edit` is the stores screen, `/edit/<id>` a store's details,
+   `/edit/none` the section without a store, all children of `/`, so back stays in the List tab
+   and the tab bar stays. The header button and the store rows use `context.go`, which builds the
+   same back stack and keeps the address bar and the screen tracker on the real location
+   (`push` left go_router's location at `/`, and the tracker reported `list`). `authRedirect` keeps
+   these paths for a member (`inListTab`). Analytics screen name `stores` for all of them; a
+   store's id never reaches analytics.
+2. **One details screen for a store and for „Ohne Laden“.** It replaces the categories screen and
+   the store layout screen: rename at the top (stores only), the categories in walking order with
+   drag handles, tap renames, a trash icon per category (not „Sonstiges“), „Kategorie hinzufügen“.
+   For „Ohne Laden“ the order is the household's route order.
+3. **Trash on a category in a store's details deletes the category everywhere.** Categories are
+   household-wide; there is no per-store category to remove (the old `hidden` flag has no effect
+   on the list). The dialog says so („Sie verschwindet aus allen Läden.“) and asks where the
+   items go, as before. NEEDS_LEAD Job 78.
+4. **„Ohne Laden“, not „Kein Laden“.** The brief's "Kein Laden" is the section the list already
+   labels „Ohne Laden“; one name on both screens. It is pinned last, where the list shows it,
+   as a flat muted pill with a hint line and a chevron: no handle, no trash, no rename.
+5. **Store delete: confirm, no undo.** The app has no undo for deleting a store (the server
+   deletes it and untags its items); the existing confirm dialog stays.
+6. **No disclaimer on the stores screen.** Stores are no longer prefilled, so every name there is
+   the user's own. The approved L-7 text stays in the onboarding store step, which still offers
+   store names. No retailer names in hints, examples or feature-map copy (N-23).
+7. **All drag on the list is gone, not just reordering.** Items no longer drag to another store or
+   category either; the edit sheet's chips do that (the e2e specs move items there). Without a
+   drag to rule out, a hold opens the edit sheet while the finger is still down. A hold or right
+   click on any divider opens that section's store details (no menu, no up/down moves). The
+   `MoveItem` and `PlaceItem` ops stay in the model: a device updating from an older build may
+   still have one queued.
+8. **The add bar has no disc.** The „+“ hex was not tappable; it and the first row's icon it
+   showed while open are gone. The whole compose hex is one tap target with no semantics node of
+   its own, so the field stays the only target on the web.
+9. **The add sheet has no title row.** „Hinzufügen“ looked like a button. The store and category
+   chips share the first line with a ✕ close button (name and tooltip „Schließen“, key
+   `add-sheet-close`); the sheet keeps „Hinzufügen“ as its screen-reader name. Adding is a tap on
+   a suggestion or Enter, as before.
+10. **„Automatisch“ without the word.** Until the user picks, a chip shows the guessed store or
+    category in a muted style with a small circled „A“ (`Icons.hdr_auto_outlined`) in place of its
+    icon; screen readers hear „Laden: automatisch“ or „Kategorie: automatisch, Kühlregal“. Not a
+    sparkle: the hummlist-ui-craft skill rules out stock AI sparkles. Picking, even the guessed
+    value, makes it a normal chip.
+11. **More → „Anderem Haushalt beitreten“ is `/more/join`**, a page of the More branch, so back
+    returns to More and the address bar, a reload and the screen name (`join`) agree. A pushed
+    `/join` also popped back to More, but go_router does not put pushed pages in the web address
+    bar, which stayed `/more`. The join screen's cancel pops when it can; onboarding still reaches
+    `/join` with `go`.
+12. **A category name that starts with an emoji shows it once.** The seeded „👶 Drogerie“ showed
+    the baby twice in the categories screen (icon and name); the details rows use the label
+    without the leading emoji, as the list's dividers do.
+13. **A household switch under the open tabs starts the list screen over.** With the join screen
+    inside the More tab, the tabs stay mounted while the household changes, and go_router's branch
+    navigators keep their state across it (GlobalKeys). The add sheet's cubit held the old
+    household's `ListCubit`, so an add right after joining went to the household that was left
+    and vanished (`live-sync.spec.ts`). The list screen's add-sheet provider is keyed by the
+    `ListCubit` it gets, so it starts over with the new one. This also fixes restoring an archived
+    household from More, which switched under the open tabs before.
+14. **A divider hold uses `go` like the rest**, so back from those details goes to the stores
+    screen first, then the list. The hold fires at 300 ms, as the old drag lift did; a scroll that
+    moves past the touch slop first still wins.
+15. **No swipe-to-edit either** (Peter's addendum, 20:56 CET). A hold or a right click is the
+    only edit gesture on a row; a horizontal drag does nothing, so it can't fight the vertical
+    scroll. Screen readers keep the „Bearbeiten“ and „Löschen“ actions. The explainer reads
+    „Tippen hakt ab · Halten bearbeitet“ / "Tap ticks off · Hold to edit".
+16. **Settings as the style reference** (addendum): the new screens add no new control type. The
+    stores screen and the details reuse the hex pill rows, step numbers, drag handles and
+    extended FAB the stores and categories screens already had; the add sheet keeps its fold-out
+    chips. Settings' segmented switchers fit a choice of a few values, not a list you sort, so
+    nothing here copies them. „Ohne Laden“ is a flat pill, set apart from the raised store rows
+    because it can't be moved, renamed or deleted. Whether the rows should be lighter, closer to
+    Settings' plain list rows, is a look call for the lead (NEEDS_LEAD Job 78).
+17. **Local ports 578xx**, since 781xx is past 65535.

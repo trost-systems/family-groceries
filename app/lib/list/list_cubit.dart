@@ -405,42 +405,6 @@ class ListCubit(
     }
   }
 
-  /// To the end of group ([storeId], [categoryId]); a null store is no store.
-  void move(
-    String id, {
-    required String categoryId,
-    required String? storeId,
-  }) => _enqueue(MoveItem(id, categoryId: categoryId, storeId: storeId));
-
-  /// Directly before or after [anchorId], in the anchor's group. Shows it
-  /// there at once, halfway between the anchor and its neighbour.
-  void place(String id, {required String anchorId, required Edge edge}) {
-    final items = state.items;
-    final anchor = items[anchorId];
-    final categoryId = anchor?.categoryId;
-    if (anchor == null || categoryId == null || anchorId == id) {
-      return;
-    }
-    final group = [
-      for (final item in items.values)
-        if (item.id != id &&
-            item.status == ItemStatus.active &&
-            item.storeId == anchor.storeId &&
-            item.categoryId == categoryId)
-          item,
-    ]..sort(compareWalk);
-    _enqueue(
-      PlaceItem(
-        id,
-        anchorId: anchorId,
-        edge: edge,
-        categoryId: categoryId,
-        storeId: anchor.storeId,
-        sortKey: placeKey(group, anchor, edge),
-      ),
-    );
-  }
-
   void delete(String id) => _enqueue(DeleteItem(id));
 
   /// The UI showed [DedupeHint]s once.

@@ -134,27 +134,28 @@ test('after a tapped suggestion one tap on the field brings the keyboard back', 
   await tapFieldOnce(page, 'Eier');
 });
 
-// Job 29c, Peter: in Safari on the iPhone a hold "always triggers the move action". A swipe to the
-// left now edits (it used to delete), a hold that wobbles a little still edits, and the sheet deletes.
-test('a finger swipe to the left opens the edit sheet and the row stays; Löschen in it deletes', async ({ page }) => {
-  const email = newEmail('iphone-swipe');
+// Job 29c, Peter: in Safari on the iPhone a hold "always triggers the move action". Since job 78 a
+// hold is the only edit gesture: a swipe across a row does nothing, a hold that wobbles a little
+// edits, and the sheet deletes.
+test('a finger swipe across a row opens nothing and moves nothing; a hold edits; Löschen in it deletes', async ({ page }) => {
+  const email = newEmail('iphone-hold');
   await householdWithItems(email, ['Zahnpasta', 'Brot']);
   await page.goto('/');
   await signIn(page, email);
   const row = itemRow(page, 'Zahnpasta');
   const before = (await row.boundingBox())!;
 
-  await swipeLeft(page, row, { onMove: () => screenshot(page, '29c-iphone-swipe-mid') });
-  await expect(editSheet(page), 'a finger swipe to the left opens edit').toBeVisible();
-  await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
-  await screenshot(page, '29c-iphone-swipe-sheet');
-  await editSheet(page).getByRole('button', { name: 'Abbrechen' }).tap();
-  await expect(editSheet(page)).toHaveCount(0);
-  await expect.poll(async () => (await row.boundingBox())?.x, { message: 'the row sprang back' }).toBe(before.x);
+  // Lifted after the engine's 200 ms click window, so it is a drag, not a tap that ticks.
+  await swipeLeft(page, row, { pause: 300, onMove: () => screenshot(page, '78-iphone-swipe-mid') });
+  await page.waitForTimeout(500);
+  await expect(editSheet(page), 'a finger swipe opens nothing').toHaveCount(0);
+  await expect(row, 'and ticks nothing').toBeVisible();
+  expect((await row.boundingBox())?.x, 'and the row stayed put').toBe(before.x);
 
   const mid = { x: before.x + before.width / 2, y: before.y + before.height / 2 };
   await finger(page, [mid, { x: mid.x + 7, y: mid.y + 10 }], { hold: 700, steps: 4, pause: 300 });
-  await expect(editSheet(page), 'a hold that wobbles 12 px opens edit, not a move').toBeVisible();
+  await expect(editSheet(page), 'a hold that wobbles 12 px opens edit').toBeVisible();
+  await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
   await editSheet(page).getByRole('button', { name: 'Löschen' }).tap();
   await expect(actionSnackBar(page, 'Zahnpasta gelöscht')).toBeVisible();
   await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);

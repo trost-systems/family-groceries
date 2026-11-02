@@ -1,15 +1,18 @@
 import { expect, type Page, test } from './fixtures';
-import { openStoreLayout, storeOf } from './catalog';
+import { openStoreDetails, openStores, storeOf, storeRow } from './catalog';
 import {
-  addedNote, addField, addSheet, closeSheet, createInviteCode, joinWithCode, newEmail, openMore, openTab, screenshot, signUp,
+  addedNote, addField, addSheet, closeSheet, createInviteCode, joinWithCode, newEmail, openTab, screenshot, signUp,
   signUpWithHousehold, typeInto,
 } from './helpers';
 
-/** A store's row under Mehr → Läden. */
-const storeRow = (page: Page, store: string) =>
-  page.getByRole('button', { name: `${store} Reihenfolge bearbeiten`, exact: true });
+/** Adds a store with Liste → Anpassen's button. */
+async function addStore(page: Page, name: string): Promise<void> {
+  await page.getByRole('button', { name: 'Laden hinzufügen' }).click();
+  await typeInto(page.getByRole('textbox', { name: 'Name des Ladens' }), name);
+  await page.keyboard.press('Enter');
+}
 
-test('OWN STORE: made in the add sheet and picked at once, then renamed and deleted under Mehr → Läden', async ({ page }) => {
+test('OWN STORE: made in the add sheet and picked at once, then renamed and deleted under Liste → Anpassen', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('own-store'));
   await addField(page).click();
   await expect(addSheet(page)).toBeVisible();
@@ -31,23 +34,21 @@ test('OWN STORE: made in the add sheet and picked at once, then renamed and dele
   await closeSheet(page);
   await expect.poll(() => storeOf(page, 'Milch'), { message: 'the item is under the Rewe divider' }).toBe('Rewe');
 
-  await openStoreLayout(page, 'Rewe');
+  await openStoreDetails(page, 'Rewe');
   await expect(page.getByText(/ verschieben$/), 'every category, like a preset store\'s layout').toHaveCount(11);
-  await page.getByRole('button', { name: 'Zurück' }).click();
 
-  await openMore(page, 'Läden');
-  await expect(storeRow(page, 'Rewe')).toBeVisible();
-  await page.getByRole('button', { name: 'Optionen für Rewe' }).click();
-  await page.getByRole('menuitem', { name: 'Rewe umbenennen' }).click();
+  // Job 78: the store is renamed at the top of its details.
+  await page.getByRole('button', { name: 'Rewe umbenennen' }).click();
   const rename = page.getByRole('textbox', { name: 'Name des Ladens' });
   await expect(rename).toBeFocused();
   await typeInto(rename, 'Rewe Markt');
   await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Rewe Markt', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(storeRow(page, 'Rewe Markt')).toBeVisible();
   await screenshot(page, '58-03-stores-renamed');
 
-  await page.getByRole('button', { name: 'Optionen für Rewe Markt' }).click();
-  await page.getByRole('menuitem', { name: 'Rewe Markt löschen' }).click();
+  await page.getByRole('button', { name: 'Rewe Markt löschen' }).click();
   await expect(page.getByText('1 offener Artikel kommt zu „Ohne Laden“. Sein Laufweg geht mit.')).toBeVisible();
   await screenshot(page, '58-04-stores-delete-confirm');
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
@@ -64,17 +65,15 @@ test('OWN STORE: a store one member adds shows for the other at once, with its l
   const lea = await (await browser.newContext()).newPage();
   await signUp(lea, newEmail('lea-store'));
   await joinWithCode(lea, code);
-  await openMore(lea, 'Läden');
+  await openStores(lea);
   await expect(storeRow(lea, 'Supermarkt')).toBeVisible();
 
-  await openMore(peter, 'Läden');
-  await peter.getByRole('button', { name: 'Neuen Laden anlegen' }).click();
-  await typeInto(peter.getByRole('textbox', { name: 'Name des Ladens' }), 'Kaufland');
-  await peter.keyboard.press('Enter');
+  await openStores(peter);
+  await addStore(peter, 'Kaufland');
   await expect(storeRow(peter, 'Kaufland')).toBeVisible();
 
   await expect(storeRow(lea, 'Kaufland'), 'live on the other phone, no reload').toBeVisible();
   await storeRow(lea, 'Kaufland').click();
-  await expect(lea.getByText('Kaufland: Reihenfolge')).toBeVisible();
+  await expect(lea.getByRole('heading', { name: 'Kaufland', exact: true })).toBeVisible();
   await expect(lea.getByText(/ verschieben$/)).toHaveCount(11);
 });

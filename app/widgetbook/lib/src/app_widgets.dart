@@ -4,9 +4,9 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
-import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/explainer.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
+import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
@@ -43,6 +43,8 @@ final appComponents = [
   component(_path, 'FoldoutChips', [
     plain('Laden und Kategorie', (context) => const _Chips()),
     plain('Geändert', (context) => const _Chips(changed: true)),
+    // The add sheet before a pick: Hummlist's guess, muted and marked.
+    plain('Automatisch', (context) => const _Chips(auto: true)),
     plain('Läden offen', (context) => const _Chips(storesOpen: true)),
     plain(
       'Viele Läden (Suche)',
@@ -109,6 +111,9 @@ class const _Badges(final List<Store> stores) extends StatelessWidget {
 
 class const _Chips({
   final bool changed = false,
+
+  /// Hummlist picks until the user does.
+  final bool auto = false,
   final bool storesOpen = false,
   final Catalog? catalog,
 }) extends StatefulWidget {
@@ -119,6 +124,8 @@ class const _Chips({
 class _ChipsState() extends State<_Chips> {
   String? _store = 'lidl';
   String? _category = 'produce';
+  late var _storeAuto = widget.auto;
+  late var _categoryAuto = widget.auto;
 
   @override
   Widget build(BuildContext context) {
@@ -134,10 +141,18 @@ class _ChipsState() extends State<_Chips> {
         storesOpen: widget.storesOpen,
         onCreateStore: (name) async =>
             Store(id: 'story-$name', name: name, sortOrder: 99),
+        storeAuto: _storeAuto,
+        categoryAuto: _categoryAuto,
         storeChanged: widget.changed,
         categoryChanged: widget.changed,
-        onStore: (id) => setState(() => _store = id),
-        onCategory: (id) => setState(() => _category = id),
+        onStore: (id) => setState(() {
+          _store = id;
+          _storeAuto = false;
+        }),
+        onCategory: (id) => setState(() {
+          _category = id;
+          _categoryAuto = false;
+        }),
       ),
     );
   }
@@ -156,7 +171,7 @@ class const _ListExcerpt({
 }
 
 class _ListExcerptState() extends State<_ListExcerpt> {
-  final _session = DragSession();
+  final _leaving = LeavingRows();
   late var _items = _initial;
   late final _folded = {...widget.folded};
 
@@ -167,7 +182,7 @@ class _ListExcerptState() extends State<_ListExcerpt> {
 
   @override
   void dispose() {
-    _session.dispose();
+    _leaving.dispose();
     super.dispose();
   }
 
@@ -190,45 +205,29 @@ class _ListExcerptState() extends State<_ListExcerpt> {
             StoreDivider(
               section: section,
               folded: _folded.contains(section.key),
-              session: _session,
+              leaving: _leaving,
               onToggle: () => setState(
                 () => _folded.contains(section.key)
                     ? _folded.remove(section.key)
                     : _folded.add(section.key),
               ),
-              onMenu: () {},
-              onDropItem: (_, _) {},
-              onDropStore: (_, _) {},
-              onMoveUp: null,
-              onMoveDown: null,
+              onEdit: () {},
             ),
             if (!_folded.contains(section.key))
               for (final block in section.blocks) ...[
-                CategoryDivider(
-                  sectionKey: section.key,
-                  storeId: section.store?.id,
-                  block: block,
-                  session: _session,
-                  onMenu: () {},
-                  onDropItem: (_, _) {},
-                  onDropCategory: (_, _) {},
-                  onMoveUp: null,
-                  onMoveDown: null,
-                ),
+                CategoryDivider(block: block, leaving: _leaving, onEdit: () {}),
                 for (final (i, item) in block.items.indexed)
                   ItemRow(
                     key: ValueKey(item.id),
                     item: item,
                     category: block.category,
-                    block: block.items,
-                    session: _session,
+                    leaving: _leaving,
                     fresh: widget.fresh,
                     last: i == block.items.length - 1,
                     onVisible: (_) {},
                     onTick: _tick,
                     onEdit: (_) {},
                     onDelete: _tick,
-                    onDrop: (_, _) {},
                   ),
               ],
           ],
@@ -262,7 +261,7 @@ class _TickLoopState() extends State<_TickLoop> {
   // Its own pointer device, so the real mouse does not cancel its taps.
   static var _nextDevice = 0x5700;
 
-  final _session = DragSession();
+  final _leaving = LeavingRows();
   final _device = _nextDevice++;
   final _target = GlobalKey();
   var _round = 0;
@@ -283,7 +282,7 @@ class _TickLoopState() extends State<_TickLoop> {
   @override
   void dispose() {
     _timer?.cancel();
-    _session.dispose();
+    _leaving.dispose();
     super.dispose();
   }
 
@@ -341,15 +340,13 @@ class _TickLoopState() extends State<_TickLoop> {
                 key: ValueKey('${item.id}-$_round'),
                 item: item,
                 category: category(item),
-                block: rows,
-                session: _session,
+                leaving: _leaving,
                 fresh: false,
                 last: i == rows.length - 1,
                 onVisible: (_) {},
                 onTick: _ticked,
                 onEdit: (_) {},
                 onDelete: (_) {},
-                onDrop: (_, _) {},
               ),
             ),
         ],

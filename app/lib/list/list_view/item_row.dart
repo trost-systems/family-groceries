@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/list_view/drag.dart';
+import 'package:family_groceries/list/list_view/hold.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
-import 'package:family_groceries/list/list_view/sections.dart';
+import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -18,20 +17,15 @@ String? quantityLabel(String? quantity) => switch (quantity?.trim()) {
   final q => q,
 };
 
-/// One item: a tap ticks it, a swipe to the left (or a right click, or a
-/// hold that stays put) edits it, a hold that moves drags it. The swipe
-/// leaves the row in place and opens the edit sheet, which deletes the item
-/// and moves it to another category or store, so only reordering within its
-/// category needs a hold: on a phone's browser a hold often drifts into a
-/// drag (job 29c). Screen readers get edit and delete as actions. It is also
-/// a drop target that puts a dragged item before or after it.
+/// One item: a tap ticks it; a hold or a right click opens the edit sheet,
+/// which also deletes the item and moves it to another category or store.
+/// Nothing on the row drags or swipes (the order lives in the store's
+/// details, Anpassen, job 78): a sideways drag does nothing.
+/// Screen readers get edit and delete as actions.
 class const ItemRow({
   required final Item item,
   required final Category? category,
-
-  /// The item's category block, in walk order.
-  required final List<Item> block,
-  required final DragSession session,
+  required final LeavingRows leaving,
 
   /// Not seen yet: tinted, and it reports whether it is on screen.
   required final bool fresh,
@@ -45,7 +39,6 @@ class const ItemRow({
   /// Only a screen reader's action deletes from the row; everyone else
   /// deletes in the edit sheet.
   required final ValueChanged<Item> onDelete,
-  required final void Function(Item item, ItemDrop drop) onDrop,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -54,15 +47,7 @@ class const ItemRow({
 
 class _ItemRowState()
     extends State<ItemRow>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
-  /// Kept alive while lifted: auto-scroll may carry it off screen, and a
-  /// disposed source never learns how its drag ended.
-  var _lifted = false;
-  var _travel = Offset.zero;
-
-  /// [holdSlop] of the pointer that pressed last.
-  var _slop = dragSlop;
-
+    with SingleTickerProviderStateMixin {
   /// The way out after a tap, from 0 (open) to 1 (gone): see
   /// [rowLeaveDuration].
   /// Null until the row is ticked.
@@ -70,15 +55,12 @@ class _ItemRowState()
   Timer? _still;
 
   @override
-  bool get wantKeepAlive => _lifted;
-
-  @override
   void dispose() {
     if (_leave != null) {
       // Not while the tree is being torn down: the dividers listen.
-      final session = widget.session;
+      final leaving = widget.leaving;
       final id = widget.item.id;
-      scheduleMicrotask(() => session.left(id));
+      scheduleMicrotask(() => leaving.left(id));
     }
     _leave?.dispose();
     _still?.cancel();
@@ -89,7 +71,7 @@ class _ItemRowState()
   /// motion the struck row shows at once and holds for as long before the
   /// tick, so the result is still seen.
   void _tick() {
-    if (_leave != null || widget.session.active.value != null) {
+    if (_leave != null) {
       return;
     }
     final item = widget.item;
@@ -112,99 +94,14 @@ class _ItemRowState()
       leave.value = _struck;
       _still = Timer(HlDuration.medium, commit);
     } else {
-      widget.session.leave(item.id);
+      widget.leaving.leave(item.id);
       unawaited(leave.forward().whenComplete(commit));
-    }
-  }
-
-  void _lift() {
-    _travel = Offset.zero;
-    widget.session.active.value = DraggedItem(widget.item);
-    setState(() => _lifted = true);
-    updateKeepAlive();
-  }
-
-  void _dragUpdate(DragUpdateDetails details) {
-    _travel += details.delta;
-    if (!widget.session.moved.value && _travel.distance >= _slop) {
-      _stayUnderFinger();
-      widget.session.moved.value = true;
-    }
-  }
-
-  /// Once the item moves, the empty stores show as drop targets, some of
-  /// them above this row: the list scrolls by what they pushed it down, so
-  /// it stays under the finger where the list has room to scroll.
-  void _stayUnderFinger() {
-    final before = _top();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || before == null) {
-        return;
-      }
-      final after = _top();
-      final position = Scrollable.maybeOf(context)?.position;
-      if (after == null || position == null || after == before) {
-        return;
-      }
-      position.jumpTo(
-        (position.pixels + after - before).clamp(
-          position.minScrollExtent,
-          position.maxScrollExtent,
-        ),
-      );
-    });
-  }
-
-  double? _top() {
-    final box = context.findRenderObject();
-    return box is RenderBox && box.attached
-        ? box.localToGlobal(Offset.zero).dy
-        : null;
-  }
-
-  void _dragEnd(DraggableDetails details) {
-    final moved = widget.session.moved.value;
-    widget.session.end();
-    setState(() => _lifted = false);
-    updateKeepAlive();
-    if (!moved && !details.wasAccepted) {
-      widget.onEdit(widget.item);
-    }
-  }
-
-  void _hover(DragTargetDetails<Dragged> details) {
-    final box = context.findRenderObject();
-    if (box is! RenderBox) {
-      return;
-    }
-    final y = box.globalToLocal(details.offset).dy;
-    widget.session.hover.value = Hover(
-      widget.item.id,
-      edgeAt(y, box.size.height),
-    );
-  }
-
-  void _leaveTarget(Dragged? _) {
-    if (widget.session.hover.value?.target == widget.item.id) {
-      widget.session.hover.value = null;
-    }
-  }
-
-  void _accept(DragTargetDetails<Dragged> details) {
-    final edge = widget.session.hover.value?.edge;
-    widget.session.hover.value = null;
-    if (details.data case DraggedItem(:final item) when edge != null) {
-      if (dropOnRow(item, widget.item, edge, widget.block) case final drop?) {
-        widget.onDrop(item, drop);
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final item = widget.item;
-    final session = widget.session;
     final tile = _semantics(
       context,
       _Tile(row: widget, leave: _leave, onTap: _tick),
@@ -217,86 +114,10 @@ class _ItemRowState()
             child: tile,
           )
         : tile;
-    // Unclassified items have no group to be placed in yet: a hold edits.
-    if (item.categoryId == null) {
-      return GestureDetector(
-        onLongPress: () => widget.onEdit(item),
-        child: _swipeToEdit(context, watched, enabled: true),
-      );
-    }
-    final draggable = LongPressDraggable<Dragged>(
-      data: DraggedItem(item),
-      delay: holdDelay(tappable: true),
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      onDragStarted: _lift,
-      onDragUpdate: _dragUpdate,
-      onDragEnd: _dragEnd,
-      feedback: _Feedback(
-        item: item,
-        category: widget.category,
-        session: session,
-      ),
-      childWhenDragging: ValueListenableBuilder(
-        valueListenable: session.moved,
-        builder: (_, moved, child) =>
-            Opacity(opacity: moved ? 0.3 : 1, child: child),
-        child: watched,
-      ),
+    return Hold(
+      tappable: true,
+      onHold: () => widget.onEdit(item),
       child: watched,
-    );
-    return DragTarget<Dragged>(
-      onWillAcceptWithDetails: (details) =>
-          details.data is DraggedItem &&
-          (details.data as DraggedItem).item.id != item.id,
-      onMove: _hover,
-      onLeave: _leaveTarget,
-      onAcceptWithDetails: _accept,
-      builder: (context, _, _) => Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Listener(
-            onPointerDown: (event) => _slop = holdSlop(event.kind),
-            child: _swipeToEdit(
-              context,
-              draggable,
-              enabled: session.active.value == null,
-            ),
-          ),
-          _InsertionLine(id: item.id, hover: session.hover),
-        ],
-      ),
-    );
-  }
-
-  /// A swipe to the left past the threshold opens the edit sheet; the row
-  /// springs back instead of leaving.
-  Widget _swipeToEdit(
-    BuildContext context,
-    Widget child, {
-    required bool enabled,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Dismissible(
-      key: ValueKey('dismiss-${widget.item.id}'),
-      direction: enabled ? DismissDirection.endToStart : DismissDirection.none,
-      background: ColoredBox(
-        color: scheme.secondaryContainer,
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 24),
-            child: Icon(
-              Icons.edit_outlined,
-              color: scheme.onSecondaryContainer,
-            ),
-          ),
-        ),
-      ),
-      confirmDismiss: (_) async {
-        widget.onEdit(widget.item);
-        return false;
-      },
-      child: child,
     );
   }
 
@@ -560,92 +381,4 @@ class const StrikePainter({
       old.text != text ||
       old.textScaler != textScaler ||
       old.textDirection != textDirection;
-}
-
-/// The 3 px line where a dragged item would land, at the row's top or bottom
-/// edge.
-class const _InsertionLine({
-  required final String id,
-  required final ValueNotifier<Hover?> hover,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => ValueListenableBuilder(
-    valueListenable: hover,
-    builder: (context, hover, _) {
-      if (hover == null || hover.target != id || hover.edge == null) {
-        return const SizedBox.shrink();
-      }
-      final line = DecoratedBox(
-        key: ValueKey('drop-line-$id'),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(HlRadius.full),
-        ),
-      );
-      return hover.edge == Edge.before
-          ? Positioned(left: 12, right: 12, top: -2, height: 3, child: line)
-          : Positioned(left: 12, right: 12, bottom: -2, height: 3, child: line);
-    },
-  );
-}
-
-/// The pill under the finger: icon, quantity and name. Hidden until the
-/// hold moves, so a long press that edits shows nothing lifted.
-class const _Feedback({
-  required final Item item,
-  required final Category? category,
-  required final DragSession session,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final quantity = quantityLabel(item.quantity);
-    return ValueListenableBuilder(
-      valueListenable: session.moved,
-      builder: (context, moved, child) =>
-          Opacity(opacity: moved ? 1 : 0, child: child),
-      child: FractionalTranslation(
-        translation: const Offset(-0.15, -0.5),
-        child: HlSticker(
-          borderRadius: const BorderRadius.all(Radius.circular(HlRadius.full)),
-          child: Material(
-            type: MaterialType.transparency,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: HlSpace.s4,
-                  vertical: HlSpace.s2,
-                ),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: '${itemIcon(item, category)}  '),
-                      if (quantity != null)
-                        TextSpan(
-                          text: '$quantity ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: scheme.primary,
-                          ),
-                        ),
-                      TextSpan(text: item.name),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: HlFont.display,
-                    fontSize: _nameSize,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
