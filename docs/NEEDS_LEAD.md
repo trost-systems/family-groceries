@@ -790,6 +790,8 @@ No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAutho
 
 ## Job 49: Hummlist Premium, yearly and Lifetime (2026-11-01)
 
+The go-live order for jobs 43 to 50 is now [`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md) (job 67).
+
 Nothing here is live for users: `REVENUECAT_PURCHASES` stays off (Peter turns it on, 20:35 CET),
 and the new server switch `premium_offer` is seeded off. Nothing is gated (job 50). Decisions:
 DECISIONS "Job 49". Behavior: docs/PURCHASES.md.
@@ -906,6 +908,8 @@ RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attac
 
 ## Job 50: integration lock (2026-11-01)
 
+The go-live order is now [`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md), section 6 (job 67).
+
 Nothing here is live: the server switch `app_switches.integration_lock` is seeded off and the app
 define `INTEGRATION_LOCK` is off, so every integration works as before for every household.
 Turning it on is Peter's go. Decisions: DECISIONS "Job 50". Behavior: docs/PURCHASES.md,
@@ -917,8 +921,9 @@ Turning it on is Peter's go. Decisions: DECISIONS "Job 50". Behavior: docs/PURCH
    `premium_offer` on (`update public.app_switches set enabled = true, changed_at = now() where key
    = 'premium_offer';`) and store builds with `REVENUECAT_PURCHASES=true`. Otherwise a locked
    household sees "Bald verfügbar" and cannot unlock.
-2. Tester grants for the households Peter wants to keep working (`scripts/iap/testers.ts`, a dry
-   run by default; `--apply` writes). Spec #4 says no grandfathering: a beta household without a
+2. Promotional grants for the households Peter wants to keep working (`scripts/iap/promotional.ts
+   grant --household <uuid>`, a dry run by default; `--apply` writes; `testers.ts` is gone since
+   #173). Spec #4 says no grandfathering: a beta household without a
    grant or purchase is locked.
 3. The cut-over count, read-only, in the hosted project's SQL editor (the Lead runs it; this job
    never queried the hosted database): `scripts/iap/integration-cutover.sql`. It lists every

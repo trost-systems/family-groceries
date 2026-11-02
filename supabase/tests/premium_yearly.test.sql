@@ -3,7 +3,7 @@
 -- tester. Premium is active at read time; lifetime and endless promotional grants beat yearly; expiry deletes
 -- nothing; only the subscriber learns of a billing problem.
 begin;
-select plan(57);
+select plan(69);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -48,7 +48,8 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000049a1', 'pia49@example.com'),
   ('00000000-0000-0000-0000-0000000049b1', 'paul49@example.com'),
   ('00000000-0000-0000-0000-0000000049c1', 'quinn49@example.com'),
-  ('00000000-0000-0000-0000-0000000049d1', 'tara49@example.com');
+  ('00000000-0000-0000-0000-0000000049d1', 'tara49@example.com'),
+  ('00000000-0000-0000-0000-0000000049e1', 'gina49@example.com');
 
 select pg_temp.login('00000000-0000-0000-0000-0000000049a1');
 create temp table hp as select id from public.create_household('Pia & Paul');
@@ -59,6 +60,9 @@ select public.join_household((select code from inv));
 select pg_temp.login('00000000-0000-0000-0000-0000000049c1');
 create temp table hq as select id from public.create_household('Quinn');
 grant select on hq to authenticated;
+select pg_temp.login('00000000-0000-0000-0000-0000000049e1');
+create temp table hg as select id from public.create_household('Gina');
+grant select on hg to authenticated;
 select pg_temp.as_postgres();
 
 -- The kind ------------------------------------------------------------------------------------
@@ -113,7 +117,7 @@ select pg_temp.as_postgres();
 select is(public.purchase_lifecycle('apple', 'y1', now(), now() + interval '365 days', false, null) ->> 'outcome',
   'updated', 'Pia turns auto-renew off');
 select is(pg_temp.premium((select id from hp)), 'yearly 365', 'premium stays until the end');
-select is((select auto_renew from public.entitlements where premium_source = 'yearly'), false,
+select is((select auto_renew from public.entitlements where premium_source = 'yearly' and household_id = (select id from hp)), false,
   'members see that it will not renew');
 select is(public.purchase_lifecycle('apple', 'y1', now() - interval '1 hour', now() - interval '1 day', false, false) ->> 'outcome',
   'stale', 'an older EXPIRATION after a newer event changes nothing');
@@ -126,6 +130,23 @@ select is((public.my_yearly_plan() ->> 'billing_issue')::boolean, true, 'Pia is 
 select pg_temp.login('00000000-0000-0000-0000-0000000049b1');
 select is((public.my_yearly_plan() ->> 'billing_issue')::boolean, false, 'Paul is not');
 select pg_temp.as_postgres();
+
+-- RevenueCat sends CANCELLATION (BILLING_ERROR) with the period's end next to BILLING_ISSUE, in
+-- any order; only BILLING_ISSUE has the grace period's end, and a cancellation never cuts it short.
+select pg_temp.yearly('g1', (select id from hg), 0);
+select is(public.purchase_lifecycle('apple', 'g1', now() + interval '1 second', now() + interval '14 days', null, true) ->> 'outcome',
+  'updated', 'Gina''s renewal fails: a billing issue with a grace period');
+select is(public.purchase_lifecycle('apple', 'g1', now() + interval '1 second', now() - interval '1 minute', false, null) ->> 'outcome',
+  'updated', 'CANCELLATION (BILLING_ERROR) at the same event time');
+select is(public.household_has_premium((select id from hg)), true, 'premium stays in the grace period');
+select is(pg_temp.premium((select id from hg)), 'yearly 14', 'until the grace period''s end');
+select is(public.purchase_lifecycle('apple', 'g1', now() + interval '2 seconds', now() - interval '1 minute', false, null) ->> 'outcome',
+  'updated', 'CANCELLATION (BILLING_ERROR) at a later event time');
+select is(pg_temp.premium((select id from hg)), 'yearly 14', 'still until the grace period''s end');
+select is((select auto_renew from public.purchases where transaction_id = 'g1'), false, 'the cancellation turns renewal off');
+select is(public.purchase_lifecycle('apple', 'g1', now() + interval '3 seconds', now() - interval '1 minute', false, false) ->> 'outcome',
+  'updated', 'EXPIRATION after the grace period');
+select is(public.household_has_premium((select id from hg)), false, 'ends premium');
 
 -- Integrations of the household, to show expiry touches none of them.
 insert into public.personal_access_tokens (household_id, user_id, name, token_hash, token_hint)
@@ -163,6 +184,12 @@ select is(pg_temp.premium((select id from hq)), 'yearly 365', 'brings it back');
 select is(pg_temp.yearly('y2', (select id from hp), 365) ->> 'outcome', 'used_elsewhere',
   'Quinn''s plan does not bind to Pia''s household');
 select is(pg_temp.premium((select id from hp)), 'none', 'Pia''s household gets nothing from it');
+-- A RENEWAL under another App User ID (TRANSFER, an App User ID drift) still renews the plan where
+-- it is bound: Quinn paid, her premium runs on.
+select is(pg_temp.yearly('y2', (select id from hp), 400, null, now() + interval '3500 milliseconds') ->> 'outcome',
+  'used_elsewhere', 'a RENEWAL of Quinn''s plan under Pia''s household id');
+select is(pg_temp.premium((select id from hq)), 'yearly 400', 'renews Quinn''s plan in her household');
+select is(pg_temp.premium((select id from hp)), 'none', 'and grants Pia''s household nothing');
 select is(public.purchase_lifecycle('apple', 'nope', now(), now() + interval '1 year', true, false) ->> 'outcome',
   'unknown', 'a lifecycle event for an unknown transaction');
 select is((select count(*)::int from public.purchases where transaction_id = 'nope'), 0, 'writes nothing');
@@ -172,7 +199,7 @@ select is(pg_temp.yearly('y3', (select id from hq), 100) ->> 'second_yearly', 't
   'a second yearly plan while one is active is flagged');
 select is((select count(*)::int from public.entitlements where household_id = (select id from hq) and premium_source = 'yearly'),
   2, 'both rows are kept');
-select is(pg_temp.premium((select id from hq)), 'yearly 365', 'premium runs to the later end');
+select is(pg_temp.premium((select id from hq)), 'yearly 400', 'premium runs to the later end');
 
 -- Lifetime and endless grants beat yearly ------------------------------------------------------
 

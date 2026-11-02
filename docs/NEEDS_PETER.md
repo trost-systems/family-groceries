@@ -1154,3 +1154,15 @@ Then the device test, on an iPhone (TestFlight build) and an Android phone:
 - [ ] German and English phone language; light and dark mode.
 - [ ] If all is well, set `home-widgets` to `"released": true` in
   `releases/flags.json` and remove `draft: true` from both widget guides.
+
+## Job 67: the paywall release (2026-11-02)
+
+Everything is ready for the switches. Nothing is on yet. [`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md) lists them in order. Your yes is needed for these steps:
+
+1. Google Play real-time notifications. They need a Google Cloud project with billing attached and stay inside the free tier (step 1.4).
+2. The store prices, and any change to the products (step 2.3).
+3. The legal texts: PR #153 with section 5a, and later the terms of use (steps 4.1 and 4.2).
+4. The sandbox run on your phones (step 5.3), then opening the sale (step 5.4).
+5. The App Store review submission and the Play production release (step 5.5).
+6. Which beta households keep Siri, Alexa and AI assistants free, then the integration lock (steps 6.1 and 6.4).
+7. Whether the Home Screen widgets should become Premium. Today they stay free. Making them Premium would be new work.

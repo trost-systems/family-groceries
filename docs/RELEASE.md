@@ -332,6 +332,10 @@ deployments from `main` only). Values marked "variable" may also be secrets.
 | `ANDROID_KEYSTORE_BASE64` | secret | Android | The upload keystore, base64-encoded. |
 | `ANDROID_KEY_PROPERTIES` | secret | Android | The `key.properties` file (format below). |
 | `PLAY_RELEASE_STATUS` | variable | Android | Unset: Play is not set up, no upload. `draft`: upload as a draft release (until the app leaves draft). `completed`: upload and roll out to internal testers. |
+| `REVENUECAT_PURCHASES` | variable | both | Unset: no purchase screen ("bald verfügbar"). `true` at the paywall go-live ([`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md)). |
+| `REVENUECAT_APPLE_API_KEY` | secret | iOS | RevenueCat's public App Store SDK key (`appl_…`). Without it the build sells nothing. |
+| `REVENUECAT_GOOGLE_API_KEY` | secret | Android | RevenueCat's public Play SDK key (`goog_…`). Without it the build sells nothing. |
+| `INTEGRATION_LOCK` | variable | both | Unset: no Premium card in the integration settings. `true` once the server's `integration_lock` switch is on ([`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md)). |
 
 Play needs no key: the Android job signs in to Google with Workload Identity
 Federation (below). The workflow's `env` holds the non-secret identifiers:

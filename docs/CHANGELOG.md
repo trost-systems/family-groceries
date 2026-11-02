@@ -143,6 +143,9 @@ mentions one of them (at the start of a word, so "Alexas" and "Alexa-Skill"
 count, in German or English) must carry that hold. push-pr.sh and the gate
 refuse such an item without the line. If one reaches `main` anyway, `draft`
 holds it back and warns.
+An item with a closed hold of its own may name another hold's word (the
+integration lock's item, `hold: integration-lock`, names Premium): it stays
+back until both holds are released.
 
 What a draft or an override would publish is checked again, in the
 changelog gate and in `record.mjs`: every item's gate must still be open, and

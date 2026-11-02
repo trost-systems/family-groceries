@@ -455,3 +455,7 @@ iPhone; job 56's taste calls (items 31 to 34) and item 6.
 ## Job 58: add your own store (inline in the store picker, Mehr → Läden), PR #176
 
 Households add their own stores right in the add and edit sheets' store options ("+ Neuer Laden": type, Enter, created and picked) or under Mehr → Läden, which now also renames and deletes stores (open items fall back to "Ohne Laden"). Store names are unique per household ignoring case and spacing; a new store starts from the route order with every category. Works live for the partner and over MCP by name. Review 0: onboarding now offers ten common stores to pick (none preselected) plus own ones instead of seeding dm, Lidl and Edeka; Legal's store-name disclaimer stands under Mehr → Läden, in onboarding and on the site's Impressum; households without stores work on MCP, Siri, voice and Alexa. Details: [docs/done/58-add-own-store.md](docs/done/58-add-own-store.md).
+
+## Job 67: paywall release readiness, PR #187, not merged
+
+The paywall go-live is now the ordered checklist `docs/PAYWALL_RELEASE.md`, with an owner per step and nothing flipped. The audit with every flag on found 13 bugs, all fixed with tests: a failed renewal ended Premium on day one of the grace period, a restore of a lapsed plan blocked Buy until the app restarted, offline showed "bald verfügbar", and others. Store builds read the Premium switches from repository variables. PR #153 is rebased and green but not merged. The legal gaps are in the PR. Details: [docs/done/67-paywall-ready.md](docs/done/67-paywall-ready.md).

@@ -37,12 +37,21 @@ class const MyYearlyPlan({
   };
 }
 
+/// The server switch `premium_offer` as the app could read it.
+enum OfferSwitch() {
+  on,
+  off,
+
+  /// Offline or the call failed: the server decides, the app does not know.
+  unreadable,
+}
+
 /// The two server reads the Premium page and the billing warnings make;
 /// neither touches a store or RevenueCat.
 abstract interface class PremiumServer() {
   /// The server switch `premium_offer` (seeded off): whether Hummlist
-  /// Premium may be offered at all. False when it cannot be read.
-  Future<bool> offerOpen();
+  /// Premium may be offered at all.
+  Future<OfferSwitch> offerSwitch();
 
   /// Throws when it cannot be read.
   Future<MyYearlyPlan> myYearlyPlan();
@@ -55,11 +64,13 @@ abstract interface class PremiumServer() {
 class const SupabasePremiumServer(final SupabaseClient _client)
     implements PremiumServer {
   @override
-  Future<bool> offerOpen() async {
+  Future<OfferSwitch> offerSwitch() async {
     try {
-      return await _client.rpc<Object?>('premium_offer') == true;
+      return await _client.rpc<Object?>('premium_offer') == true
+          ? OfferSwitch.on
+          : OfferSwitch.off;
     } on Object {
-      return false;
+      return OfferSwitch.unreadable;
     }
   }
 

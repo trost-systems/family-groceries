@@ -5,7 +5,7 @@
 // GET /v2/projects/{project}/customers/{household}/subscriptions (permission
 // customer_information:customers:read) and keep only what decides premium: whether a promotional
 // subscription with the premium entitlement gives access now, and until when.
-import type { Fetch, RevenueCatKey } from './deletions.ts';
+import { type Fetch, type RevenueCatKey, revenueCatTimeoutMs, within } from './deletions.ts';
 
 /** The entitlement's identifier (lookup key) in RevenueCat; entl654efcfce4 in project proj9cb4a72e. */
 export const premiumEntitlement = 'premium';
@@ -56,15 +56,18 @@ export function promotionalOf(subscriptions: Subscription[], now: Date): Promoti
 
 /**
  * Reads [householdId]'s promotional premium from RevenueCat. A customer RevenueCat doesn't know
- * (404, e.g. deleted) has none. Throws [RevenueCatUnavailable] for anything else that isn't 200.
+ * (404, e.g. deleted) has none. Throws [RevenueCatUnavailable] for anything else that isn't 200,
+ * and when RevenueCat takes longer than [timeoutMs].
  */
 export async function fetchPromotional(
   key: RevenueCatKey,
   householdId: string,
-  fetch: Fetch,
+  untimed: Fetch,
   now: Date,
+  timeoutMs = revenueCatTimeoutMs,
 ): Promise<PromotionalPremium> {
   if (!uuid.test(householdId)) throw new Error('not a household id');
+  const fetch = within(untimed, timeoutMs);
   const headers = { authorization: `Bearer ${key.secretKey}`, accept: 'application/json' };
   const items: Subscription[] = [];
   let url: string | null = `${base}/v2/projects/${encodeURIComponent(key.projectId)}/customers/${

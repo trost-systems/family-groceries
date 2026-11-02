@@ -132,6 +132,57 @@ void main() {
     );
   });
 
+  test('a premium source this build does not know unlocks nothing', () async {
+    final rows = FakeEntitlementsSource()
+      ..rowsNow = [
+        {'kind': 'premium', 'source': 'purchase', 'premium_source': 'monthly'},
+      ];
+    final (entitlements, _) = await follow(rows);
+    expect(entitlements.has(Entitlement.premium), isFalse);
+    expect(
+      entitlements.canOffer(Entitlement.premium, PremiumPlan.yearly),
+      isTrue,
+    );
+    rows
+      ..rowsNow = [
+        {'kind': 'premium', 'source': 'purchase'},
+      ]
+      ..change();
+    await pumpEventQueue();
+    expect(
+      entitlements.premium,
+      isA<ActivePremium>().having(
+        (p) => p.source,
+        'source',
+        PremiumSource.lifetime,
+      ),
+      reason: 'without premium_source (a server before job 49): Lifetime',
+    );
+  });
+
+  test('reads finishing out of order: the latest started wins', () async {
+    final rows = FakeEntitlementsSource();
+    final (entitlements, _) = await follow(rows);
+    rows.holdReads = true;
+    final older = entitlements.refresh();
+    final newer = entitlements.refresh();
+    expect(rows.heldReads, hasLength(2));
+    rows.heldReads[1].complete(
+      unlocksOf([
+        {'kind': 'premium', 'source': 'purchase', 'premium_source': 'lifetime'},
+      ]),
+    );
+    await newer;
+    expect(entitlements.has(Entitlement.premium), isTrue);
+    rows.heldReads[0].complete(unlocksOf([]));
+    await older;
+    expect(
+      entitlements.has(Entitlement.premium),
+      isTrue,
+      reason: 'the older read, before the purchase, does not undo it',
+    );
+  });
+
   test(
     "a promotional grant (a tester's) unlocks premium and is marked",
     () async {
@@ -456,6 +507,51 @@ void main() {
       unawaited(session.close());
       async.flushMicrotasks();
     });
+  });
+
+  test('the end passes offline: re-emitted, premium off', () {
+    fakeAsync((async) {
+      var clock = DateTime.utc(2026, 11, 1, 12);
+      final session = TestSession(
+        const InHousehold('peter', Household(id: 'home', name: 'Zuhause')),
+      );
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: clock, days: 1, renews: false)];
+      final entitlements = Entitlements(rows, session, now: () => clock);
+      async.flushMicrotasks();
+      expect(entitlements.has(Entitlement.premium), isTrue);
+      final states = <EntitlementsState>[];
+      final sub = entitlements.stream.listen(states.add);
+      rows.offline = true;
+      clock = clock.add(const Duration(days: 1, seconds: 2));
+      async
+        ..elapse(const Duration(days: 1, seconds: 2))
+        ..flushMicrotasks();
+      expect(states, [
+        isA<EntitlementsKnown>(),
+      ], reason: 'listeners rebuild at the new clock');
+      expect(entitlements.has(Entitlement.premium), isFalse);
+      expect(
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.yearly),
+        isTrue,
+      );
+      unawaited(sub.cancel());
+      unawaited(entitlements.close());
+      unawaited(session.close());
+      async.flushMicrotasks();
+    });
+  });
+
+  test('offline before anything was read: nothing emitted', () async {
+    final rows = FakeEntitlementsSource()..offline = true;
+    final (entitlements, _) = await follow(rows);
+    final states = <EntitlementsState>[];
+    final sub = entitlements.stream.listen(states.add);
+    addTearDown(sub.cancel);
+    await entitlements.refresh();
+    await pumpEventQueue();
+    expect(states, isEmpty);
+    expect(entitlements.state, isA<EntitlementsUnknown>());
   });
 
   test('when a yearly plan ends, the rows are read again', () {

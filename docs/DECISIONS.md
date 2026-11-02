@@ -5573,7 +5573,7 @@ the go-live order.
    | Endpoint | Credential | Class |
    | --- | --- | --- |
    | `voice` add, read, parse | PAT (the Shortcut), Siri credential (native Siri), OAuth | premium, `siri` |
-   | `voice` parse | the app's own session (in-app dictation) | free: part of the app |
+   | `voice` parse, add, read | the app's own session (in-app dictation) | free: part of the app; the same session writes through PostgREST anyway (job 67: the code never gated add and read for a session, the table said parse only) |
    | `alexa` AddItemIntent, ReadListIntent, LaunchRequest | the account link (OAuth) | premium, `alexa` |
    | `alexa` Help, Stop, Cancel, Fallback, SessionEnded, skill events (linked, disabled) | any | free: the user hears why and can unlink |
    | `mcp` tools/call (all six tools read or write household data) | OAuth, PAT | premium, `mcp` |
@@ -6218,3 +6218,50 @@ Peter asked for Home Screen widgets with Anton Borri's `home_widget` package
   the site has no hold mechanism, only `since:` and drafts, and a version
   would publish them with the next release whether or not the device test
   passed.
+
+## Job 67: paywall release readiness, 2026-11-02
+
+Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_lock`,
+`INTEGRATION_LOCK` and the `premium-launch` hold are as they were. The go-live order is
+`docs/PAYWALL_RELEASE.md`.
+
+1. **The store builds take the Premium defines from the release environment.** Fastlane's
+   `PREMIUM_DEFINES` (`REVENUECAT_PURCHASES`, `REVENUECAT_APPLE_API_KEY`,
+   `REVENUECAT_GOOGLE_API_KEY`, `INTEGRATION_LOCK`) are passed only when set, like the analytics
+   defines; `release.yml` reads them from variables (switches) and secrets (SDK keys); the web
+   build takes `INTEGRATION_LOCK` from the Vercel project. Before, turning the purchase screen on
+   in the store builds needed a code change; now it is a variable.
+2. **An unreadable `premium_offer` is "gerade nicht verfügbar", not "bald verfügbar".**
+   `PremiumServer.offerSwitch()` answers on, off or unreadable. Offline the page says what
+   PURCHASES.md always promised, and the integration card links to the page instead of "Bald
+   verfügbar". An unreadable `integration_lock` still counts as off in the app: the server decides.
+3. **Restore counts what is active now**, by product, from `CustomerInfo.entitlements.active`.
+   `allPurchasedProductIdentifiers` lists lapsed plans too, and waiting for their unlock blocked
+   Buy for the rest of the app run.
+4. **Play buys the base plan's option.** RevenueCat's `defaultOption` would pick a trial or an
+   intro offer once Play has one, and the page shows the base plan's price (A2-5).
+5. **Purchase notes are per visit; what is under way stays.** `PurchaseCubit.pageOpened()` clears
+   canceled, failed, not available, used elsewhere and nothing restored. Waiting for approval,
+   unlocking and unlock delayed stay, since a second purchase would be paid twice.
+6. **Premium is recomputed when a read fails and on resume.** A failed read re-emits the last
+   rows, so an end that passed offline turns premium off; only the newest read started may emit.
+   An unknown `premium_source` unlocks nothing (a missing one is still Lifetime).
+7. **The grace period holds against the CANCELLATION next to BILLING_ISSUE.** While a billing
+   problem is open, an event that says nothing about billing never moves the end earlier
+   (`20261102001623_premium_grace_kept.sql`). Changing the TypeScript mapping instead would have
+   needed the stored state there; the SQL already has it.
+8. **A RENEWAL under another App User ID renews the plan where it is bound**, and still answers
+   `used_elsewhere`. Nothing is granted to the other household.
+9. **A recent lifecycle event for an unknown transaction is redelivered.** Younger than 2 hours:
+   503 `not_recorded_yet` without storing the event id. RevenueCat retries for about 80 minutes,
+   so 2 hours covers its whole retry window; older events are acknowledged as before.
+10. **RevenueCat calls time out after 10 s** (`AbortSignal.timeout`, raced), as 502
+    `revenuecat_unavailable`: the promotional read runs under the household lock, and a hung call
+    held a pool connection and that household's purchases.
+11. **The changelog check lets an item with a closed hold of its own name another hold's word.**
+    One hold line per item made the integration lock's item impossible ("Premium" demands
+    `premium-launch`, "Siri … Premium" is about `integration-lock`). The draft already kept such an
+    item back until every matching hold is released, so only the check changed.
+12. **Widgets stay unlocked** (the brief): they read the list the app has and call no gated
+    endpoint. Whether they become Premium is Peter's call and new work.
+13. **Local ports 567xx**, since 671xx is past 65535 (job 66 did the same with 566xx).

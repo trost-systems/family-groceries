@@ -52,9 +52,15 @@ end
 # households, from the release environment. Unset, the build has analytics off.
 ANALYTICS_DEFINES = %w[POSTHOG_PROJECT_API_KEY POSTHOG_HOST ANALYTICS_INTERNAL_HOUSEHOLDS].freeze
 
+# Hummlist Premium (job 67, docs/PAYWALL_RELEASE.md): the purchase screen, RevenueCat's public SDK
+# keys and the integration lock, from the release environment. Unset, the build sells nothing and
+# locks nothing.
+PREMIUM_DEFINES = %w[REVENUECAT_PURCHASES REVENUECAT_APPLE_API_KEY REVENUECAT_GOOGLE_API_KEY
+                     INTEGRATION_LOCK].freeze
+
 def analytics_defines
-  ANALYTICS_DEFINES.reject { |name| ENV.fetch(name, "").empty? }
-                   .map { |name| "--dart-define=#{name}=#{ENV.fetch(name)}" }
+  (ANALYTICS_DEFINES + PREMIUM_DEFINES).reject { |name| ENV.fetch(name, "").empty? }
+                                       .map { |name| "--dart-define=#{name}=#{ENV.fetch(name)}" }
 end
 
 platform :ios do

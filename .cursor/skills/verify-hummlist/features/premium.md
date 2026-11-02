@@ -10,7 +10,7 @@ Premium launch is on hold: nothing is sold and nothing is gated. Siri, Alexa and
 - `prem-refund-link` the page always ends with the link „Doppelt gekauft? So bekommst du dein Geld zurück“ (opens „Kauf zurückfordern“ help with the Apple and Google refund steps).
 - `prem-granted` household with a grant (testers): status tile „Hummlist Premium geschenkt“ (no end date) or „Hummlist Premium geschenkt bis <Datum>“ plus „Hummlist Premium ist für euren ganzen Haushalt freigeschaltet. Danke!“. Every member sees it live.
 - `prem-no-paywall` no paywall is shown in production: no plan cards, so no `paywall_viewed` event is ever sent; the Zugänge page shows no Premium card (the integration lock is off).
-- `prem-held-unreachable` (not visible today, shipped in the code, needs the purchases define on a store build and the server switch `premium_offer`): yearly „Jährlich“ and „Lifetime“ cards with store prices, „Kauf wiederherstellen“, terms, manage-subscription, billing warnings. Do not describe as available.
+- `prem-held-unreachable` (not visible today, shipped in the code, needs the purchases define on a store build and the server switch `premium_offer`): yearly „Jährlich“ and „Lifetime“ cards with store prices, „Kauf wiederherstellen“, terms, manage-subscription, billing warnings. Do not describe as available. Offline (switch unreadable) the page says „Hummlist Premium ist gerade nicht verfügbar.“, not „bald verfügbar“; a restore that finds only a lapsed plan says nothing to restore; a failed renewal keeps Premium through the store's grace period (job 67). The order of the switches that make this reachable is `docs/PAYWALL_RELEASE.md`.
 
 ## How to get to it (user POV)
 

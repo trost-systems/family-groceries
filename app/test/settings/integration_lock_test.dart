@@ -39,6 +39,7 @@ void main() {
     bool define = true,
     bool lock = true,
     bool offer = true,
+    bool offerReadable = true,
     FakeEntitlementsSource? rows,
     NoSale? noSale,
     String language = 'de',
@@ -47,7 +48,8 @@ void main() {
     location: accessPath,
     size: const Size(390, 1600),
     integrationLock: define,
-    premium: FakePremiumServer(lock: lock, offer: offer),
+    premium: FakePremiumServer(lock: lock, offer: offer)
+      ..offerFails = !offerReadable,
     entitlements: rows,
     store: FakePurchaseRepository(withoutStore: noSale),
     device: [Locale(language)],
@@ -165,6 +167,21 @@ void main() {
     await access(tester, offer: false);
     expect(key('integration-soon'), findsOneWidget);
     expect(key('integration-buy'), findsNothing);
+  });
+
+  testWidgets('the premium_offer switch unreadable (offline): not "Bald '
+      'verfügbar"; Buy opens the page, which says unavailable', (tester) async {
+    final more = await access(tester, offerReadable: false);
+    expect(key('integration-soon'), findsNothing);
+    expect(find.text('Bald verfügbar.'), findsNothing);
+    await tester.tap(key('integration-buy'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+      findsOneWidget,
+    );
+    expect(key('premium-buy-yearly'), findsNothing);
+    expect(more.purchases.storePrices.reads, 0);
   });
 
   testWidgets('the web app: bought in the iPhone or Android app, no Buy', (

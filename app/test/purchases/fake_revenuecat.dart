@@ -13,22 +13,55 @@ class FakeRevenueCat() {
   int? fail;
   var failAt = '';
   var transactionId = '2000000123';
+
+  /// Products the store account has now: active entitlements.
   var owned = <String>[];
+
+  /// Products bought once that are no longer active (a lapsed yearly plan):
+  /// RevenueCat still lists them among all purchased products.
+  var lapsed = <String>[];
 
   /// The products the store has in this storefront (a yearly-only one has
   /// no Lifetime), by the id the SDK reports: Play adds the base plan.
   var products = <String>{lifetimeProductId, yearlyProductId};
 
   Map<String, Object?> get customerInfo => {
-    'entitlements': {'all': <String, Object?>{}, 'active': <String, Object?>{}},
+    'entitlements': {'all': _entitlements, 'active': _entitlements},
     'allPurchaseDates': <String, Object?>{},
     'activeSubscriptions': <Object?>[],
-    'allPurchasedProductIdentifiers': owned,
+    'allPurchasedProductIdentifiers': [...owned, ...lapsed],
     'nonSubscriptionTransactions': <Object?>[],
     'firstSeen': '2026-10-31T12:00:00Z',
     'originalAppUserId': appUserId,
     'allExpirationDates': <String, Object?>{},
     'requestDate': '2026-10-31T12:00:00Z',
+  };
+
+  Map<String, Object?> get _entitlements => {
+    for (final (i, id) in owned.indexed)
+      'premium$i': {
+        'identifier': 'premium',
+        'isActive': true,
+        'willRenew': true,
+        'latestPurchaseDate': '2026-10-31T12:00:00Z',
+        'originalPurchaseDate': '2026-10-31T12:00:00Z',
+        'productIdentifier': id,
+        'isSandbox': true,
+      },
+  };
+
+  /// Play's yearly product carries its base plan and, when set, a free-trial
+  /// offer that RevenueCat would pick as its default option.
+  var trialOffer = false;
+
+  Map<String, Object?> _option(String id, {required bool basePlan}) => {
+    'id': id,
+    'storeProductId': '$yearlyProductId:$playBasePlanId',
+    'productId': yearlyProductId,
+    'pricingPhases': <Object?>[],
+    'tags': <Object?>[],
+    'isBasePlan': basePlan,
+    'isPrepaid': false,
   };
 
   Future<Object?> handle(MethodCall call) async {
@@ -62,9 +95,19 @@ class FakeRevenueCat() {
                 'productCategory': id == lifetimeProductId
                     ? 'NON_SUBSCRIPTION'
                     : 'SUBSCRIPTION',
+                if (id == '$yearlyProductId:$playBasePlanId') ...{
+                  'defaultOption': trialOffer
+                      ? _option('$playBasePlanId:trial', basePlan: false)
+                      : _option(playBasePlanId, basePlan: true),
+                  'subscriptionOptions': [
+                    if (trialOffer)
+                      _option('$playBasePlanId:trial', basePlan: false),
+                    _option(playBasePlanId, basePlan: true),
+                  ],
+                },
               },
         ];
-      case 'purchaseProduct':
+      case 'purchaseProduct' || 'purchaseSubscriptionOption':
         return {
           'customerInfo': customerInfo,
           'transaction': {

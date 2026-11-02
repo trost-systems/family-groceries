@@ -7,6 +7,23 @@
 
 export type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 
+/**
+ * How long a RevenueCat API request may take. A webhook's read holds its database transaction open
+ * meanwhile; past this it fails (502) and RevenueCat delivers again.
+ */
+export const revenueCatTimeoutMs = 10_000;
+
+/** [fetch], aborted and rejected after [ms], also when [fetch] ignores the signal. */
+export function within(fetch: Fetch, ms: number): Fetch {
+  return (url, init) => {
+    const signal = AbortSignal.timeout(ms);
+    const timedOut = new Promise<never>((_, reject) =>
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+    );
+    return Promise.race([fetch(url, { ...init, signal }), timedOut]);
+  };
+}
+
 export interface RevenueCatKey {
   /** A v2 secret key with customer_information:customers:read_write. */
   secretKey: string;
@@ -36,8 +53,10 @@ export const deletionsPerRun = 25;
 export async function deleteDueCustomers(
   queue: DeletionQueue,
   key: RevenueCatKey,
-  fetch: Fetch,
+  untimed: Fetch,
+  timeoutMs = revenueCatTimeoutMs,
 ): Promise<DeletionOutcome> {
+  const fetch = within(untimed, timeoutMs);
   const ids = await queue.take(deletionsPerRun);
   const outcome: DeletionOutcome = { due: ids.length, deleted: 0, pending: 0, failed: 0 };
   const headers = { authorization: `Bearer ${key.secretKey}` };
