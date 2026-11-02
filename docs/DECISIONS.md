@@ -6800,3 +6800,49 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    Deno integration tests save and restore it like `integration_lock`, the e2e spec turns it on
    for the local stack only. Production's value comes only from the migration's default.
 8. **Local ports 576xx**, since 751xx is past 65535.
+
+## Job 76: the add sheet closes for good after Escape (add-sheet.spec.ts flake), 2026-11-02
+
+1. **The flake was an app bug, not the test.** `add-sheet.spec.ts:139` failed on CI for #199 and
+   #197 at its last step, Escape after Tab, Tab, Enter on a row. The CI trace's frames show
+   Escape did close the sheet, and 50 ms later the sheet opened again, empty. Logging on a local
+   release build with wasm names, plus a hook on `HTMLElement.focus`, traced it. Fifty ms after the
+   add, the refocus timer (DECISIONS 8.8) focuses the field. In the next frame the engine focuses
+   the field's DOM input. Its `focus` listener reports that back as `SemanticsAction.focus`, but
+   during a frame it defers the report with `Timer.run` (`invokeOnSemanticsAction`). An Escape
+   queued before that timer closes the sheet first (`_close`, which arms `_openOnFocus`). Then the
+   report lands: `TextField`'s semantics `onFocus` asks for focus, and `_openOnFocus` reads that as
+   the user coming back to type. The test is right: a user's Escape 100 ms after an add must
+   close the sheet, so the assertion stays as it was.
+2. **A close lets the field's next focus open the sheet only once the engine's reports are
+   through.** `_close` parks focus on the bar as before, and `_settleClose` waits for the next frame
+   and then a zero-delay timer. Timers of equal delay run in the order they started (HTML timer
+   ordering), so a report from a frame before the close always runs first. If it took focus,
+   focus goes back to the bar, and only then is `_openOnFocus` set. Considered and dropped: arming
+   at the end of the close animation (with reduced motion it ends at once), keeping focus in the
+   field on close (a click on a focused field reaches no `onTap` on the web, so it would no longer
+   reopen), and asking the DOM whether the input really has focus (web-only code in the list
+   screen for what the frame order already gives).
+3. **A close cancels an Enter that still waits for its rows.** The same reopen came from a second
+   place: `takeFirst` waits for the server's rows, the user presses Escape meanwhile, the rows
+   arrive, the item was added into the closed sheet and `_afterAdd` focused the field, which
+   reopened it (7 of 16 tries locally with Enter then Escape at once). Whether the add happened
+   at all depended on the server: slower than the close animation, `settled()` had cleared the
+   text and nothing was added. Now `takeFirst` adds nothing once the sheet closed, so Escape always
+   means "never mind" for an add the user has not seen yet. An Enter whose rows are already there
+   adds at once, as before.
+4. **Proof.** A deterministic e2e case (`add-sheet.spec.ts`, "an Escape between the refocus after
+   a row and its focus report closes the sheet for good"): a hook on `HTMLElement.focus` starts a
+   zero-delay timer that sends Escape when the engine focuses the input, so the Escape always
+   lands between the refocus and its report. Before the fix it failed 3 of 3 (a probe of the same
+   trigger reopened 18 of 18 times), after it 19 of 19 and 3 of 3 passed. The widget test "Escape
+   while Enter waits for its rows cancels the add" fails before the fix (the add was sent). The
+   whole spec file passed 20 times in a row locally (`--repeat-each=20 --workers=1`).
+5. **CI: the apt packages for WebKit and Firefox are cached.** The second shard's "hang" on #197
+   was `playwright install --with-deps webkit`. The runner image lacks WebKit's and Firefox's
+   libraries, so every e2e job fetched 181 packages (114 MB) from the Ubuntu mirror, and that run
+   got about 50 kB/s for half an hour until the 30-minute job timeout. In the last 40 CI runs 1 of
+   132 e2e setups hung like this, and the rest took up to 3 minutes. `e2e-setup` now points apt's
+   archive directory at a cached one (key: runner image and version, Playwright lockfile, ffmpeg),
+   so apt only fetches packages missing there. Only `apt-get update` still reads the mirror.
+6. **Local ports 577xx**, since 761xx is past 65535.

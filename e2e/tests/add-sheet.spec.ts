@@ -192,6 +192,38 @@ test('a tap adds the row with every field; a chip pick applies to the tapped row
   await expect(itemRow(page, 'Windeln').first(), 'the added rows are in the list').toBeVisible();
 });
 
+test('an Escape between the refocus after a row and its focus report closes the sheet for good', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { escapeAfterNextInputFocus: boolean };
+    const focus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+      if (w.escapeAfterNextInputFocus && this instanceof HTMLInputElement) {
+        w.escapeAfterNextInputFocus = false;
+        setTimeout(() => {
+          for (const type of ['keydown', 'keyup']) {
+            this.dispatchEvent(new KeyboardEvent(type, { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true, cancelable: true }));
+          }
+        });
+      }
+      focus.call(this, options);
+    };
+  });
+  await signUpWithHousehold(page, newEmail('sheet-escape'));
+  for (const query of ['Butter', 'Mi', 'Br']) {
+    await typeInto(addField(page), query);
+    await expect(rows(page).nth(1)).toBeVisible();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await page.evaluate(() => { (window as unknown as { escapeAfterNextInputFocus: boolean }).escapeAfterNextInputFocus = true; });
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(() => (window as unknown as { escapeAfterNextInputFocus: boolean }).escapeAfterNextInputFocus), { message: `${query}: the add refocused the field` })
+      .toBe(false);
+    await expect(sheet(page), `${query}: Escape closed the sheet`).toHaveCount(0);
+    await page.waitForTimeout(300);
+    await expect(sheet(page), `${query}: and nothing opened it again`).toHaveCount(0);
+  }
+});
+
 test('after a chip pick or Undo, typing goes on in the input without a click', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('sheet-focus'), { stores: ['Supermarkt'] });
   await typeInto(addField(page), 'Butter');

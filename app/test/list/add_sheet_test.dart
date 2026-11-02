@@ -541,6 +541,23 @@ void main() {
       expect(focus(tester).hasFocus, isTrue);
     });
 
+    testWidgets('Escape while Enter waits for its rows cancels the add; '
+        'the sheet stays closed', (tester) async {
+      await pumpList(tester, seed: (r) => r.suggestions['10 eier'] = eggs);
+      await open(tester);
+      final gate = repo.suggestGate = Completer<void>();
+      await tester.enterText(field(), '10 eier');
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(repo.sent, isEmpty);
+      expect(content(), findsNothing, reason: 'nothing reopens it');
+      expect(focus(tester).hasFocus, isFalse);
+    });
+
     testWidgets('the note says what was added; Rückgängig removes it', (
       tester,
     ) async {

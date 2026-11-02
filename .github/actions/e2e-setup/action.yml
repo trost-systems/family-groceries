@@ -40,6 +40,22 @@ runs:
         node-version: 22
         cache: npm
         cache-dependency-path: e2e/package-lock.json
+    - name: Name the cache of apt packages
+      id: debs
+      shell: bash
+      run: |
+        dir="$HOME/.cache/e2e-debs"
+        mkdir -p "$dir/partial"
+        printf 'Dir::Cache::Archives "%s/";\nAPT::Keep-Downloaded-Packages "true";\n' "$dir" \
+          | sudo tee /etc/apt/apt.conf.d/99e2e-debs >/dev/null
+        echo "dir=$dir" >>"$GITHUB_OUTPUT"
+        echo "key=e2e-debs-$ImageOS-$ImageVersion-${{ hashFiles('e2e/package-lock.json') }}-ffmpeg-${{ inputs.ffmpeg }}" >>"$GITHUB_OUTPUT"
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: debs-cache
+      with:
+        path: ${{ steps.debs.outputs.dir }}
+        key: ${{ steps.debs.outputs.key }}
+        restore-keys: e2e-debs-
     # The runner image already has the libraries headless Chromium needs. install-deps (apt:
     # fonts, xvfb) took 6 min on a slow mirror once, so it runs only when a launch fails.
     # WebKit (job 28: the iphone and webkit projects) and Firefox (job 33c) get the same treatment.
@@ -62,3 +78,13 @@ runs:
       if: inputs.ffmpeg == 'true'
       shell: bash
       run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg
+    # apt leaves root-owned files there (its lock), which the cache's tar could not read.
+    - name: Save the apt packages
+      if: steps.debs-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: sudo chown -R "$(id -u):$(id -g)" "${{ steps.debs.outputs.dir }}"
+    - if: steps.debs-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.debs.outputs.dir }}
+        key: ${{ steps.debs.outputs.key }}

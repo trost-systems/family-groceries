@@ -140,8 +140,8 @@ class AddSheetCubit(
   }
 
   /// Enter: the first row for what is typed now, waiting for it if it is
-  /// still loading. Null when nothing is typed or the text changed while
-  /// waiting.
+  /// still loading. Null when nothing is typed, or the text changed or the
+  /// sheet closed while waiting.
   Future<AddResult?> takeFirst() async {
     final key = state.text.trim();
     if (key.isEmpty) {
@@ -153,7 +153,7 @@ class AddSheetCubit(
     _typing?.cancel();
     final rows = await _fetch(key)
         .timeout(const Duration(seconds: 3), onTimeout: () => _offline(key));
-    if (isClosed || state.text.trim() != key || rows.isEmpty) {
+    if (isClosed || !state.open || state.text.trim() != key || rows.isEmpty) {
       return null;
     }
     return take(rows.first);

@@ -97,9 +97,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
   _openHint;
   var _listening = false;
 
-  /// Set when the user closes the sheet: the field's next focus is the user
-  /// coming back to type, and opens the sheet. On the web a click can reach
-  /// the field as a semantics tap or focus, which never calls
+  /// Set once the user's close has settled: the field's next focus is the
+  /// user coming back to type, and opens the sheet. On the web a click can
+  /// reach the field as a semantics tap or focus, which never calls
   /// `TextField.onTap`. Not set by a tap on the list: after one, the field
   /// can get focus back without a tap (fg sync's sign-in, job 52).
   var _openOnFocus = false;
@@ -294,6 +294,22 @@ class _ShoppingListState() extends State<_ShoppingList> {
     _refocus?.cancel();
     context.read<AddSheetCubit>().dismiss();
     _barFocus.requestFocus();
+    unawaited(_settleClose());
+  }
+
+  /// The web engine defers a semantics focus raised during a frame to a
+  /// `Timer.run` after that frame, so a refocus just before a close can
+  /// reach the framework after it. A zero-delay timer started after the next
+  /// frame runs after that one.
+  Future<void> _settleClose() async {
+    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted || context.read<AddSheetCubit>().state.open) {
+      return;
+    }
+    if (_inputFocus.hasFocus) {
+      _barFocus.requestFocus();
+    }
     _openOnFocus = true;
   }
 
