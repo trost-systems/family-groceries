@@ -1322,3 +1322,31 @@ Order: server first, then the flag, so nobody sees a button that answers „noch
 freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
 API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
 depend on it.
+
+## Job 81: Paywall prototypes (2026-11-02)
+
+- **PR:** #208 (draft, not for merge). **Preview path:** `/internal/paywall-prototypes` on the
+  PR's hummlist-site preview (Vercel login, as for jobs 77 and 79).
+- **Pick one** of PW-P1 Klassisch, PW-P2 Einmal zahlen, PW-P3 Vergleich, PW-P4 Haushalt, PW-P5 Aus
+  der Sperre, or a mix (for example PW-P5 as the sheet at the integration lock plus PW-P1 or PW-P4
+  as the page in More, which is what R14 and R15 suggest). A follow-up job builds the pick into
+  `premium_screen.dart` on the real offer states and deletes `paywall_prototypes.dart` and the
+  `paywall*` prototype strings. The real page keeps today's rules the prototypes skip: a plan the
+  storefront doesn't sell (Lifetime in BR, MX, IN) is left out, so PW-P2 would fall back to yearly
+  there, and the PW-P5 sheet reads the store's prices like the page.
+- **Try it live:** a debug build, Mehr → Hummlist Premium, "Paywall-Prototyp" on top. PW-P5 as the
+  sheet needs the integration lock on (`INTEGRATION_LOCK` define and the server switch), which
+  this job did not change; the screenshot test shows it.
+- **For Legal Review** (no legal text was changed; details in `docs/design/paywall-research.md`
+  section 7):
+  - Q1: is a preselected yearly plan (PW-P1, P3, P4, P5) a preselection under UCPD or DSA Art. 25
+    when both prices are fully shown?
+  - Q3: may "für immer" / "Für immer." (PW-P2, and today's "Einmal zahlen, für immer") stand, or
+    does "Lifetime" need a definition ("solange Hummlist angeboten wird")?
+  - Q6: must the household binding ("bleibt bei dem Haushalt, in dem gekauft wurde") be on the page
+    before purchase? PW-P4 only says "auch für alle, die später dazukommen".
+  - Q9: is a sheet with a buy button right at the paused connection (PW-P5) fine, with "Später" as
+    an equal exit?
+  - New marketing claims: "Kein Abo, keine Verlängerung" (PW-P2), "Per Siri auf die Liste, ohne die
+    App zu öffnen", "ChatGPT oder Claude schreiben mit (MCP)": wording and naming ChatGPT and Claude.
+  - Q4 (withdrawal right for in-app digital content) and Q7 (RevenueCat Paywalls against C3).

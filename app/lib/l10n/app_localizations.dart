@@ -2821,6 +2821,228 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
   String get apiPremium;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: the debug switch on the Premium page
+  ///
+  /// In de, this message translates to:
+  /// **'Paywall-Prototyp'**
+  String get paywallProtoSwitch;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: the debug switch: today's Premium page
+  ///
+  /// In de, this message translates to:
+  /// **'Heute'**
+  String get paywallProtoToday;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: name in the debug switch
+  ///
+  /// In de, this message translates to:
+  /// **'PW-P1 Klassisch'**
+  String get paywallProtoName1;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: name in the debug switch
+  ///
+  /// In de, this message translates to:
+  /// **'PW-P2 Einmal zahlen'**
+  String get paywallProtoName2;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: name in the debug switch
+  ///
+  /// In de, this message translates to:
+  /// **'PW-P3 Vergleich'**
+  String get paywallProtoName3;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: name in the debug switch
+  ///
+  /// In de, this message translates to:
+  /// **'PW-P4 Haushalt'**
+  String get paywallProtoName4;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: name in the debug switch
+  ///
+  /// In de, this message translates to:
+  /// **'PW-P5 Aus der Sperre'**
+  String get paywallProtoName5;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: snackbar after a tap on a prototype's buy or restore button
+  ///
+  /// In de, this message translates to:
+  /// **'Prototyp: Hier wird nichts gekauft.'**
+  String get paywallProtoNoPurchase;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: a plan whose store price is not known: a marked placeholder, never an invented price
+  ///
+  /// In de, this message translates to:
+  /// **'€X,XX'**
+  String get paywallPriceUnknown;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: the one buy button under a plan picker
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter'**
+  String get paywallContinue;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: closes the sheet; no confirmshaming
+  ///
+  /// In de, this message translates to:
+  /// **'Später'**
+  String get paywallLater;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: benefit row
+  ///
+  /// In de, this message translates to:
+  /// **'Per Siri auf die Liste, ohne die App zu öffnen'**
+  String get paywallSiri;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: benefit row
+  ///
+  /// In de, this message translates to:
+  /// **'ChatGPT oder Claude schreiben mit (MCP)'**
+  String get paywallAi;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: benefit row
+  ///
+  /// In de, this message translates to:
+  /// **'Eigene Automationen mit der Hummlist API'**
+  String get paywallApi;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: benefit row
+  ///
+  /// In de, this message translates to:
+  /// **'Einer zahlt, der ganze Haushalt hat es'**
+  String get paywallHousehold;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: reassurance: the Alexa skill is free
+  ///
+  /// In de, this message translates to:
+  /// **'Alexa bleibt kostenlos.'**
+  String get paywallAlexaFree;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P1 hero title (benefit framing)
+  ///
+  /// In de, this message translates to:
+  /// **'Eure Liste hört mit'**
+  String get paywallP1Title;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P1 hero body
+  ///
+  /// In de, this message translates to:
+  /// **'Sagt, schreibt oder automatisiert, was fehlt. Hummlist Premium verbindet eure Liste mit den Helfern, die ihr schon habt.'**
+  String get paywallP1Body;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P2 hero title (Lifetime first)
+  ///
+  /// In de, this message translates to:
+  /// **'Einmal zahlen. Für immer.'**
+  String get paywallP2Title;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P2 hero body
+  ///
+  /// In de, this message translates to:
+  /// **'Kein Abo, keine Verlängerung: Hummlist Premium Lifetime gehört eurem Haushalt.'**
+  String get paywallP2Body;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P2: the yearly plan as the second option
+  ///
+  /// In de, this message translates to:
+  /// **'Lieber jährlich?'**
+  String get paywallP2OrYearly;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 title over the free/premium table
+  ///
+  /// In de, this message translates to:
+  /// **'Was Premium dazugibt'**
+  String get paywallP3Title;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table column
+  ///
+  /// In de, this message translates to:
+  /// **'Kostenlos'**
+  String get paywallP3Free;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table column
+  ///
+  /// In de, this message translates to:
+  /// **'Premium'**
+  String get paywallP3Premium;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'Gemeinsame Liste'**
+  String get paywallP3List;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'Sync in Echtzeit'**
+  String get paywallP3Sync;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'Alexa'**
+  String get paywallP3Alexa;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'Siri'**
+  String get paywallP3Siri;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'KI-Assistenten (MCP)'**
+  String get paywallP3Ai;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table row
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist API'**
+  String get paywallP3Api;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3: label of the plan toggle
+  ///
+  /// In de, this message translates to:
+  /// **'Wie möchtet ihr zahlen?'**
+  String get paywallP3Plan;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table cell, screen readers
+  ///
+  /// In de, this message translates to:
+  /// **'enthalten'**
+  String get paywallIncluded;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P3 table cell, screen readers
+  ///
+  /// In de, this message translates to:
+  /// **'nicht enthalten'**
+  String get paywallNotIncluded;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P4 hero title (household angle)
+  ///
+  /// In de, this message translates to:
+  /// **'Einer kauft. Alle haben es.'**
+  String get paywallP4Title;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P4 hero body
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.'**
+  String get paywallP4Body;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P5 sheet title, opened from the integration lock
+  ///
+  /// In de, this message translates to:
+  /// **'Siri und KI-Assistenten gehören zu Hummlist Premium'**
+  String get paywallP5Title;
+
+  /// PROTOTYPE (job 81, debug builds only): paywall prototype: P5 sheet body
+  ///
+  /// In de, this message translates to:
+  /// **'Eure Verbindungen bleiben gespeichert und laufen wieder, sobald euer Haushalt Premium hat.'**
+  String get paywallP5Body;
 }
 
 class _AppLocalizationsDelegate

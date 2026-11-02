@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Hummlist Premium: fünf Paywall-Prototypen (intern)</title>
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/internal/paywall-prototypes/review.css">
+</head>
+<body>
+<main>
+<p class="internal">Intern · nur in Vorschau-Deployments · nicht indexiert</p>
+<h1>Hummlist Premium: fünf Paywall-Prototypen</h1>
+<p class="lead">Fünf Varianten der Premium-Seite, gebaut in der echten Flutter-App (Debug-Builds: oben auf der Seite Mehr → Hummlist Premium schaltet „Paywall-Prototyp“ zwischen heute und PW-P1 bis PW-P5 um; mit PW-P5 öffnet der Knopf der Integrationssperre in „Zugänge“ das Blatt). Aufnahmen 390 pt breit und so lang wie die Seite, Design 6b Hex Frische. Erzeugt mit <code>app/test/purchases/paywall_prototypes_screenshots_test.dart</code> und <code>node design/paywall-prototypes/build.mjs</code>, Stand 2026-11-02, Code in PR #208.</p>
+<p class="note">Für alle gilt: die Preise sind die konfigurierten Startpreise (9,99 € im Jahr, 29,99 € einmalig; <code>scripts/iap/product.ts</code>), in der App später immer der Preis, den der Store liefert. „inkl. MwSt.“ nur nach einem Euro-Preis. Die Abo-Bedingungen, „Kauf wiederherstellen“, Nutzungsbedingungen und Datenschutzerklärung sind die von heute, unverändert (Platzhaltertexte aus Job 49, Legal Review K.13). Kein Probezeitraum (keiner eingerichtet), kein Countdown, kein durchgestrichener Preis, kein Monatspreis, keine erfundenen Bewertungen, kein Maskottchen. Die Knöpfe kaufen nichts: sie zeigen nur „Prototyp: Hier wird nichts gekauft.“ Keine Flag und kein Schalter wurde geändert.</p>
+<nav class="toc"><a href="#heute">Heute</a><a href="#p1">PW-P1 Klassisch</a><a href="#p2">PW-P2 Einmal zahlen</a><a href="#p3">PW-P3 Vergleich</a><a href="#p4">PW-P4 Haushalt</a><a href="#p5">PW-P5 Aus der Sperre</a><a href="#recherche">Recherche</a><a href="#legal">Fragen an Legal Review</a></nav>
+
+<h2>Auf einen Blick</h2>
+<p class="note">Deutsch, hell, nebeneinander; ganz links die Seite von heute. PW-P5 als Blatt über „Zugänge“. Die gestrichelte Linie zeigt, wie weit man ohne Scrollen sieht (iPhone 13/14: 714 pt).</p>
+<div class="compare">
+<div class="compare-col"><p class="compare-label"><a href="#heute">Heute</a></p><div class="fold"><img src="/internal/paywall-prototypes/now-de-light.webp" alt="Heutige Premium-Seite, hell" width="390" height="1024" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p1">PW-P1 Klassisch</a></p><div class="fold"><img src="/internal/paywall-prototypes/p1-de-light.webp" alt="PW-P1 Klassisch, hell" width="390" height="912" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p2">PW-P2 Einmal zahlen</a></p><div class="fold"><img src="/internal/paywall-prototypes/p2-de-light.webp" alt="PW-P2 Einmal zahlen, hell" width="390" height="1073" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p3">PW-P3 Vergleich</a></p><div class="fold"><img src="/internal/paywall-prototypes/p3-de-light.webp" alt="PW-P3 Vergleich, hell" width="390" height="858" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p4">PW-P4 Haushalt</a></p><div class="fold"><img src="/internal/paywall-prototypes/p4-de-light.webp" alt="PW-P4 Haushalt, hell" width="390" height="775" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p5">PW-P5 Aus der Sperre</a></p><div class="fold"><img src="/internal/paywall-prototypes/p5-sheet-de-light.webp" alt="PW-P5 Aus der Sperre, hell" width="390" height="844" loading="lazy"></div></div>
+</div>
+
+<h2>Die Vorschläge</h2>
+<table class="summary"><thead><tr><th>Prototyp</th><th>Richtung</th><th>RevenueCat und andere Quellen</th><th>Abwägung</th></tr></thead><tbody>
+<tr><td><a href="#p1">PW-P1 Klassisch</a></td><td>Nutzen vorn, ein Knopf</td><td>R12: das Ergebnis verkaufen, nicht die Funktion. R13 und S1: eine Seite, zwei Tarife, ein Knopf. R10: Jahrestarif als Vorauswahl hob bei Mojo den Jahresanteil um 15 bis 20 %. R16: hell und ruhig.</td><td>Am vertrautesten und kürzesten bis zum Kauf. Die Vorauswahl ist eine Frage für Legal Review (Q1). Lifetime ist nur eine Zeile unter Jährlich.</td></tr>
+<tr><td><a href="#p2">PW-P2 Einmal zahlen</a></td><td>Lifetime zuerst</td><td>Abschnitt 6: in Deutschland wird oft lieber einmal gezahlt (Annahme, keine Studie gefunden). R7 und R8: Lifetime klar zeigen, ohne Scheinrabatt. Lifetime kostet hier das 3-Fache des Jahrespreises, am unteren Ende der Beispiele bei RevenueCat (2,1- bis 11,5-fach).</td><td>Spricht Abo-Müde direkt an. R5 zeigt aber: Jahresabos bringen pro Installation mehr. Diese Variante setzt bewusst auf das Gegenteil von R7 (Lifetime ist dort selten die Hauptsache). „Für immer“ braucht Legal Review (Q3).</td></tr>
+<tr><td><a href="#p3">PW-P3 Vergleich</a></td><td>Kostenlos neben Premium</td><td>S5: Bring! musste 2014 bezahlte geteilte Listen zurücknehmen; das kostenlose Versprechen sichtbar halten. R15: zeigen, was der Haushalt bekommt. Abschnitt 5: Switch ist eine Paywalls-Komponente (anders als der Trial-Umschalter, den Apple seit Februar 2026 ablehnt, R13).</td><td>Am ehrlichsten über Kostenlos und Premium und am besten für Leute, die vergleichen. Der zweite Tarif ist hinter dem Umschalter versteckt; beide Preise sieht man nur nacheinander.</td></tr>
+<tr><td><a href="#p4">PW-P4 Haushalt</a></td><td>Einer kauft, alle haben es</td><td>S4: AnyList verkauft einen eigenen Haushaltstarif; bei Hummlist ist es der einzige. Folgerung aus Abschnitt 8: das Haushaltsmodell offen sagen. R13 (Food-App): Tarife nebeneinander hoben Install-zu-Trial um 72 %.</td><td>Am meisten Hummlist: der Haushalt ist das Produkt. Ob die Bindung an den Haushalt vor dem Kauf so stehen muss, ist Q6. Die Kacheln sind schmal; längere Preise (andere Länder) brechen um.</td></tr>
+<tr><td><a href="#p5">PW-P5 Aus der Sperre</a></td><td>Blatt aus der Integrationssperre</td><td>R14 und R15: Paywall am gesperrten Feature, Text nach Einstieg (Duolingo). S1: eine klare Empfehlung. L9: „Später“ ohne Beschämung. Der Einstieg ist schon als paywall_viewed entry_point „integrations“ messbar.</td><td>Kommt genau dann, wenn der Wert klar ist, und lässt den Kontext sichtbar. Wenig Platz für Vorteile; aus Mehr heraus wirkt der Text („pausiert“) fremd und bräuchte dort eine eigene Überschrift. Q9.</td></tr>
+</tbody></table>
+
+<section id="heute" class="proposal">
+<h2>Heute <span class="direction">Zum Vergleich</span></h2>
+<p class="rationale">Die Premium-Seite auf main: Funktionskarte, dann je Tarif eine Karte mit Preis, Bedingungen und eigenem Knopf, darunter Wiederherstellen und die Links.</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/now-de-light.webp" alt="Heute: Deutsch, hell" width="390" height="1024" loading="lazy"><figcaption>Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/now-de-dark.webp" alt="Heute: Deutsch, dunkel" width="390" height="1024" loading="lazy"><figcaption>Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/now-en-light.webp" alt="Heute: Englisch, hell" width="390" height="940" loading="lazy"><figcaption>Englisch, hell</figcaption></figure></div>
+</section>
+<section id="p1" class="proposal">
+<h2>PW-P1 Klassisch <span class="direction">Nutzen vorn, ein Knopf</span></h2>
+<p class="rationale">Gelber Kopfbereich mit dem Nutzen („Eure Liste hört mit“), darunter vier Zeilen, was Premium bringt. Beide Tarife als Auswahl in einer Karte, Jährlich vorausgewählt, ein Knopf „Weiter“. Darunter stehen die Bedingungen des gewählten Tarifs. Die Form, die die meisten RevenueCat-Vorlagen haben.</p>
+<p class="rationale"><strong>Woher:</strong> R12: das Ergebnis verkaufen, nicht die Funktion. R13 und S1: eine Seite, zwei Tarife, ein Knopf. R10: Jahrestarif als Vorauswahl hob bei Mojo den Jahresanteil um 15 bis 20 %. R16: hell und ruhig.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am vertrautesten und kürzesten bis zum Kauf. Die Vorauswahl ist eine Frage für Legal Review (Q1). Lifetime ist nur eine Zeile unter Jährlich.</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/p1-de-light.webp" alt="PW-P1 Klassisch: Deutsch, hell" width="390" height="912" loading="lazy"><figcaption>Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p1-de-dark.webp" alt="PW-P1 Klassisch: Deutsch, dunkel" width="390" height="912" loading="lazy"><figcaption>Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p1-en-light.webp" alt="PW-P1 Klassisch: Englisch, hell" width="390" height="896" loading="lazy"><figcaption>Englisch, hell</figcaption></figure></div>
+</section>
+<section id="p2" class="proposal">
+<h2>PW-P2 Einmal zahlen <span class="direction">Lifetime zuerst</span></h2>
+<p class="rationale">Lifetime ist der Held: „Einmal zahlen. Für immer.“, der Preis als die eine große Zahl, die Vorteile in seiner Karte. Jährlich steht darunter als ruhigere zweite Wahl mit eigenem Knopf und den Abo-Bedingungen.</p>
+<p class="rationale"><strong>Woher:</strong> Abschnitt 6: in Deutschland wird oft lieber einmal gezahlt (Annahme, keine Studie gefunden). R7 und R8: Lifetime klar zeigen, ohne Scheinrabatt. Lifetime kostet hier das 3-Fache des Jahrespreises, am unteren Ende der Beispiele bei RevenueCat (2,1- bis 11,5-fach).</p>
+<p class="rationale"><strong>Abwägung:</strong> Spricht Abo-Müde direkt an. R5 zeigt aber: Jahresabos bringen pro Installation mehr. Diese Variante setzt bewusst auf das Gegenteil von R7 (Lifetime ist dort selten die Hauptsache). „Für immer“ braucht Legal Review (Q3).</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/p2-de-light.webp" alt="PW-P2 Einmal zahlen: Deutsch, hell" width="390" height="1073" loading="lazy"><figcaption>Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p2-de-dark.webp" alt="PW-P2 Einmal zahlen: Deutsch, dunkel" width="390" height="1073" loading="lazy"><figcaption>Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p2-en-light.webp" alt="PW-P2 Einmal zahlen: Englisch, hell" width="390" height="1004" loading="lazy"><figcaption>Englisch, hell</figcaption></figure></div>
+</section>
+<section id="p3" class="proposal">
+<h2>PW-P3 Vergleich <span class="direction">Kostenlos neben Premium</span></h2>
+<p class="rationale">Eine Tabelle zeigt, was kostenlos bleibt (Liste, Sync, Alexa) und was Premium dazugibt (Siri, KI-Assistenten, Hummlist API). Darunter ein Umschalter Jährlich/Lifetime, der Preis groß, ein Knopf mit dem Tarif im Namen.</p>
+<p class="rationale"><strong>Woher:</strong> S5: Bring! musste 2014 bezahlte geteilte Listen zurücknehmen; das kostenlose Versprechen sichtbar halten. R15: zeigen, was der Haushalt bekommt. Abschnitt 5: Switch ist eine Paywalls-Komponente (anders als der Trial-Umschalter, den Apple seit Februar 2026 ablehnt, R13).</p>
+<p class="rationale"><strong>Abwägung:</strong> Am ehrlichsten über Kostenlos und Premium und am besten für Leute, die vergleichen. Der zweite Tarif ist hinter dem Umschalter versteckt; beide Preise sieht man nur nacheinander.</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/p3-de-light.webp" alt="PW-P3 Vergleich: Deutsch, hell" width="390" height="858" loading="lazy"><figcaption>Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p3-de-dark.webp" alt="PW-P3 Vergleich: Deutsch, dunkel" width="390" height="858" loading="lazy"><figcaption>Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p3-en-light.webp" alt="PW-P3 Vergleich: Englisch, hell" width="390" height="842" loading="lazy"><figcaption>Englisch, hell</figcaption></figure></div>
+</section>
+<section id="p4" class="proposal">
+<h2>PW-P4 Haushalt <span class="direction">Einer kauft, alle haben es</span></h2>
+<p class="rationale">Waben für die Mitglieder des Haushalts und ein Plus, dazu „Einer kauft. Alle haben es.“ und dass es auch für später Dazukommende gilt. Drei Vorteile, die Tarife als zwei Kacheln nebeneinander (die gewählte gelb), dann „Weiter“.</p>
+<p class="rationale"><strong>Woher:</strong> S4: AnyList verkauft einen eigenen Haushaltstarif; bei Hummlist ist es der einzige. Folgerung aus Abschnitt 8: das Haushaltsmodell offen sagen. R13 (Food-App): Tarife nebeneinander hoben Install-zu-Trial um 72 %.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am meisten Hummlist: der Haushalt ist das Produkt. Ob die Bindung an den Haushalt vor dem Kauf so stehen muss, ist Q6. Die Kacheln sind schmal; längere Preise (andere Länder) brechen um.</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/p4-de-light.webp" alt="PW-P4 Haushalt: Deutsch, hell" width="390" height="775" loading="lazy"><figcaption>Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p4-de-dark.webp" alt="PW-P4 Haushalt: Deutsch, dunkel" width="390" height="775" loading="lazy"><figcaption>Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p4-en-light.webp" alt="PW-P4 Haushalt: Englisch, hell" width="390" height="759" loading="lazy"><figcaption>Englisch, hell</figcaption></figure></div>
+</section>
+<section id="p5" class="proposal">
+<h2>PW-P5 Aus der Sperre <span class="direction">Blatt aus der Integrationssperre</span></h2>
+<p class="rationale">Öffnet sich als Blatt über „Zugänge“, wenn ein Haushalt ohne Premium auf „Hummlist Premium freischalten“ tippt. Sagt, was gerade pausiert ist und dass es wiederkommt, dass Alexa kostenlos bleibt, dann die Tarife, Kaufen und ein schlichtes „Später“. Als Seite (aus Mehr) ohne „Später“.</p>
+<p class="rationale"><strong>Woher:</strong> R14 und R15: Paywall am gesperrten Feature, Text nach Einstieg (Duolingo). S1: eine klare Empfehlung. L9: „Später“ ohne Beschämung. Der Einstieg ist schon als paywall_viewed entry_point „integrations“ messbar.</p>
+<p class="rationale"><strong>Abwägung:</strong> Kommt genau dann, wenn der Wert klar ist, und lässt den Kontext sichtbar. Wenig Platz für Vorteile; aus Mehr heraus wirkt der Text („pausiert“) fremd und bräuchte dort eine eigene Überschrift. Q9.</p>
+<div class="shots"><figure><img src="/internal/paywall-prototypes/p5-sheet-de-light.webp" alt="PW-P5 Aus der Sperre als Blatt: Deutsch, hell" width="390" height="844" loading="lazy"><figcaption>Blatt, Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p5-sheet-de-dark.webp" alt="PW-P5 Aus der Sperre als Blatt: Deutsch, dunkel" width="390" height="844" loading="lazy"><figcaption>Blatt, Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p5-sheet-en-light.webp" alt="PW-P5 Aus der Sperre als Blatt: Englisch, hell" width="390" height="844" loading="lazy"><figcaption>Blatt, Englisch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p5-de-light.webp" alt="PW-P5 Aus der Sperre: Deutsch, hell" width="390" height="682" loading="lazy"><figcaption>Seite, Deutsch, hell</figcaption></figure><figure><img src="/internal/paywall-prototypes/p5-de-dark.webp" alt="PW-P5 Aus der Sperre: Deutsch, dunkel" width="390" height="682" loading="lazy"><figcaption>Seite, Deutsch, dunkel</figcaption></figure><figure><img src="/internal/paywall-prototypes/p5-en-light.webp" alt="PW-P5 Aus der Sperre: Englisch, hell" width="390" height="642" loading="lazy"><figcaption>Seite, Englisch, hell</figcaption></figure></div>
+</section>
+
+<section id="recherche">
+<h2>Recherche</h2>
+<p class="rationale">Die Recherche mit Quellen steht unter <a href="https://github.com/trost-systems/family-groceries/blob/job/81-paywall-prototypes/docs/design/paywall-research.md"><code>docs/design/paywall-research.md</code></a>, RevenueCat als Hauptquelle (State of Subscription Apps 2025 und 2026, Paywall-Tests, Redesign-Fallstudien, Platzierung, Paywalls-v2-Komponenten), dazu Superwall, Adapty, AnyList, Bring!, Todoist und Things. Kurz: Hummlist ist Freemium, also eher 2 % als 10 % zahlende Downloads (R1, R4). Eine ruhige Seite mit zwei Tarifen und einer klaren Empfehlung (R13, S1). Jahresabos bringen mehr pro Installation (R5), Lifetime klar zeigen, ohne Scheinrabatt (R7, R8). Der Text richtet sich nach dem Einstieg (R14, R15). Nur echte Bewertungen (R12). Alle fünf Prototypen nutzen nur Bausteine, die RevenueCat Paywalls v2 auch kann (Stack, Text, Image, Icon, Feature list, Package, Purchase button, Button, Switch). Die App bleibt trotzdem nativ: DECISIONS „Job 43“ Punkt 22 schließt RevenueCat Paywalls aus.</p>
+</section>
+
+<section id="legal">
+<h2>Fragen an Legal Review</h2>
+<ul class="findings">
+<li>Q1: Ist ein vorausgewählter Jahrestarif (PW-P1, P3, P4, P5) eine Voreinstellung im Sinne von UGP-Richtlinie oder DSA Art. 25, wenn beide Preise voll sichtbar sind?</li>
+<li>Q3: Darf „für immer“ (PW-P2, und heute schon „Einmal zahlen, für immer“) stehen, oder braucht „Lifetime“ eine Erklärung („solange Hummlist angeboten wird“)?</li>
+<li>Q6: Muss die Bindung an den Haushalt („bleibt bei dem Haushalt, in dem gekauft wurde“) vor dem Kauf auf der Seite stehen (PW-P4 sagt nur „auch für alle, die später dazukommen“)?</li>
+<li>Q9: Ist ein Blatt mit Kaufknopf direkt an der gesperrten Verbindung (PW-P5) zulässig, mit „Später“ als gleichwertigem Ausgang?</li>
+<li>Neu: Die Nutzentexte („Per Siri auf die Liste, ohne die App zu öffnen“, „ChatGPT oder Claude schreiben mit“, „Kein Abo, keine Verlängerung“) sind Werbeaussagen; dürfen Marken wie ChatGPT und Claude so genannt werden?</li>
+</ul>
+</section>
+</main>
+</body>
+</html>

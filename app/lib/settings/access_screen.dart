@@ -9,6 +9,7 @@ import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/paywall_prototypes.dart';
 import 'package:family_groceries/purchases/premium_features_card.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/settings/access_cubit.dart';
@@ -635,12 +636,15 @@ class const _PremiumCard({required final LockOffer offer})
         footer: switch (offer) {
           LockOffer.buy => FilledButton(
             key: const ValueKey('integration-buy'),
-            onPressed: () => context.go(
-              Uri(
-                path: premiumPath,
-                queryParameters: {'from': 'integrations'},
-              ).toString(),
-            ),
+            onPressed: () =>
+                kDebugMode && paywallPrototype.value == PaywallPrototype.p5
+                ? unawaited(showLockPaywall(context))
+                : context.go(
+                    Uri(
+                      path: premiumPath,
+                      queryParameters: {'from': 'integrations'},
+                    ).toString(),
+                  ),
             child: Text(l10n.integrationPremiumBuy),
           ),
           LockOffer.soon => Text(

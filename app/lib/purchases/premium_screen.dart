@@ -5,6 +5,7 @@ import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
+import 'package:family_groceries/purchases/paywall_prototypes.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/purchases/premium_features_card.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
@@ -43,8 +44,33 @@ class const PremiumScreen({
         entry: entry,
       );
     },
-    child: const _PremiumView(),
+    child: kDebugMode ? const _WithPrototypes() : const _PremiumView(),
   );
+}
+
+/// Debug builds (job 81): the prototype switch above the page, and the picked
+/// prototype in its place, with the store's prices once the page has them.
+class const _WithPrototypes() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final prices = switch (context.watch<PremiumPageCubit>().state.offer) {
+      OfferPrices(:final prices) => prices,
+      _ => configuredPrices,
+    };
+    return Column(
+      children: [
+        if (showPaywallPrototypeSwitch) const PaywallPrototypeSwitch(),
+        Expanded(
+          child: ValueListenableBuilder(
+            valueListenable: paywallPrototype,
+            builder: (context, picked, _) => picked == null
+                ? const _PremiumView()
+                : PaywallPrototypeView(prototype: picked, prices: prices),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class const _PremiumView() extends StatelessWidget {

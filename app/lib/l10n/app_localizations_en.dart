@@ -1700,4 +1700,120 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get apiPremium =>
       'The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium.';
+
+  @override
+  String get paywallProtoSwitch => 'Paywall prototype';
+
+  @override
+  String get paywallProtoToday => 'Today';
+
+  @override
+  String get paywallProtoName1 => 'PW-P1 Classic';
+
+  @override
+  String get paywallProtoName2 => 'PW-P2 Pay once';
+
+  @override
+  String get paywallProtoName3 => 'PW-P3 Compare';
+
+  @override
+  String get paywallProtoName4 => 'PW-P4 Household';
+
+  @override
+  String get paywallProtoName5 => 'PW-P5 From the lock';
+
+  @override
+  String get paywallProtoNoPurchase => 'Prototype: nothing is bought here.';
+
+  @override
+  String get paywallPriceUnknown => '€X.XX';
+
+  @override
+  String get paywallContinue => 'Continue';
+
+  @override
+  String get paywallLater => 'Not now';
+
+  @override
+  String get paywallSiri => 'Add by Siri without opening the app';
+
+  @override
+  String get paywallAi => 'ChatGPT or Claude add to it (MCP)';
+
+  @override
+  String get paywallApi => 'Your own automations with the Hummlist API';
+
+  @override
+  String get paywallHousehold => 'One pays, the whole household has it';
+
+  @override
+  String get paywallAlexaFree => 'Alexa stays free.';
+
+  @override
+  String get paywallP1Title => 'Your list is listening';
+
+  @override
+  String get paywallP1Body =>
+      'Say, type or automate what\'s missing. Hummlist Premium connects your list to the helpers you already use.';
+
+  @override
+  String get paywallP2Title => 'Pay once. For good.';
+
+  @override
+  String get paywallP2Body =>
+      'No subscription, no renewal: Hummlist Premium Lifetime belongs to your household.';
+
+  @override
+  String get paywallP2OrYearly => 'Prefer yearly?';
+
+  @override
+  String get paywallP3Title => 'What Premium adds';
+
+  @override
+  String get paywallP3Free => 'Free';
+
+  @override
+  String get paywallP3Premium => 'Premium';
+
+  @override
+  String get paywallP3List => 'Shared list';
+
+  @override
+  String get paywallP3Sync => 'Real-time sync';
+
+  @override
+  String get paywallP3Alexa => 'Alexa';
+
+  @override
+  String get paywallP3Siri => 'Siri';
+
+  @override
+  String get paywallP3Ai => 'AI assistants (MCP)';
+
+  @override
+  String get paywallP3Api => 'Hummlist API';
+
+  @override
+  String get paywallP3Plan => 'How would you like to pay?';
+
+  @override
+  String get paywallIncluded => 'included';
+
+  @override
+  String get paywallNotIncluded => 'not included';
+
+  @override
+  String get paywallP4Title => 'One buys. Everyone has it.';
+
+  @override
+  String get paywallP4Body =>
+      'Hummlist Premium covers your whole household, including everyone who joins later.';
+
+  @override
+  String get paywallP5Title =>
+      'Siri and AI assistants are part of Hummlist Premium';
+
+  @override
+  String get paywallP5Body =>
+      'Your connections stay saved and work again as soon as your household has Premium.';
 }
