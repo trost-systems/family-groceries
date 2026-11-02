@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { addField, anonClient, answerConsent, apiAs, password, typeInto } from './helpers';
+import { addField, anonClient, answerConsent, apiAs, password, typeInto, openEmailSignIn } from './helpers';
 
 /**
  * Job 28: the web build is `flutter build web --wasm`, which holds two apps. flutter_bootstrap.js
@@ -57,6 +57,7 @@ export async function householdWithItems(email: string, names: string[], { store
 
 /** Signs in with email and password on the login page of a fresh context, declining analytics. */
 export async function signIn(page: Page, email: string): Promise<void> {
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();

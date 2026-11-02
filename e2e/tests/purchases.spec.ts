@@ -9,7 +9,9 @@ import {
   screenshot,
   signUp,
   signUpWithHousehold,
-  typeInto } from './helpers';
+  typeInto,
+  openEmailSignIn,
+} from './helpers';
 import { buy, claim, householdOf, rcEvent, report } from './iap';
 
 // Job 25, as of job 43: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
@@ -123,6 +125,7 @@ test.describe('in English', () => {
     const email = newEmail('iap-en');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();

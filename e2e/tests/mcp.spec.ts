@@ -2,6 +2,7 @@ import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@model
 import { expect, type Page, test } from './fixtures';
 import {
   addItem, apiAs, itemRow, newEmail, openMore, openTab, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto, within,
+  openEmailSignIn,
 } from './helpers';
 import {
   call, callbackParams, callExpectingError, connectWithToken, mcpUrl, openAuthorization, TestOAuthProvider, timedFetch,
@@ -196,6 +197,7 @@ test('a signed-out user signs in on the way to the consent page and lands back o
     .connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: timedFetch })))
     .rejects.toThrow(UnauthorizedError);
   await openAuthorization(page, provider.authorizationUrl!, baseURL!);
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden' }).last().click();

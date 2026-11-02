@@ -1,12 +1,14 @@
 # Sign-up and sign-in
 
-A signed-out user sees one login screen. It has no title bar and opens on the Hummlist icon over the wordmark „Hummlist“. It offers email plus password („Anmelden“ / "Sign in"), „Registrieren“ / "Sign up" for a new account, and „Anmeldelink per E-Mail senden“ / "Email me a sign-in link" (a magic link by email, no code to type). Production builds also show „Mit Google anmelden“ / "Sign in with Google" and „Mit Apple anmelden“ / "Sign in with Apple" above the form, with the divider „oder mit E-Mail“ / "or with email". Signing out is in the More tab. The same form also appears on the page where an AI assistant asks for access. There is no screen in the app where a user types a code from an email.
+A signed-out user sees one login screen. It has no title bar and opens on the Hummlist icon over the wordmark „Hummlist“. Production builds open on „Mit Google anmelden“ / "Sign in with Google", „Mit Apple anmelden“ / "Sign in with Apple" and „Weiter mit E-Mail“ / "Continue with email" (job 70); tapping the last one opens the email form under the divider „oder mit E-Mail“ / "or with email". The email form offers email plus password („Anmelden“ / "Sign in"), „Registrieren“ / "Sign up" for a new account, and „Anmeldelink per E-Mail senden“ / "Email me a sign-in link" (a magic link by email, no code to type). Builds without Google and Apple show the email form at once. No field is focused when the screen opens or when the email form opens, so the keyboard stays closed until the user taps a field; tapping Google or Apple closes an open keyboard, and it stays closed after a canceled provider sign-in. Signing out is in the More tab. The same form also appears on the page where an AI assistant asks for access. There is no screen in the app where a user types a code from an email.
 
 ## Sub-features
 
 - `password-sign-in` email + password; lands on the list, or on onboarding for an account without a household. On builds with an analytics key, a device's first sign-in shows the analytics question first (privacy-consent).
 - `sign-up` „Registrieren“ with the same two fields; on the hosted project the user must first confirm by the emailed link.
 - `magic-link` „Anmeldelink per E-Mail senden“ sends a link; opening it on the device signs in. Only the email field is needed.
+- `continue-with-email` „Weiter mit E-Mail“ / "Continue with email" under the provider buttons opens the email form (builds with a provider only).
+- `no-autofocus` the login screen and the email form open with no field focused; Google or Apple closes the keyboard first.
 - `google` / `apple` provider buttons (production builds only). Same email as an existing account links to that account and its household.
 - `form-checks` „Bitte eine gültige E-Mail-Adresse eingeben“ / "Please enter a valid email address" (email without "@"); „Mindestens 6 Zeichen“ / "At least 6 characters" (password under 6, for sign-in and sign-up, not for the magic link).
 - `legal-footer` Impressum and Datenschutz links under the form (see Gotchas).
@@ -17,6 +19,7 @@ A signed-out user sees one login screen. It has no title bar and opens on the Hu
 
 - Open Hummlist signed out: the login screen shows at once (any other path redirects to it).
 - Signed in: tab „Mehr“ / "More", then „Abmelden“ / "Sign out".
+- Email: tap „Weiter mit E-Mail“ / "Continue with email" (builds with Google or Apple), then tap the email field.
 - Sign-up: type email and password, tap „Registrieren“ / "Sign up".
 - Magic link: type email, tap „Anmeldelink per E-Mail senden“; snackbar „Wir haben dir einen Anmeldelink geschickt. Öffne ihn auf diesem Gerät.“ / "We sent you a sign-in link. Open it on this device."; open the emailed link in the same browser or phone.
 - Sign-up on the hosted project (email confirmation on): snackbar „Bitte bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben.“ / "Please confirm your email address with the link we sent you."
@@ -30,14 +33,15 @@ Preconditions:
 - Sign-in recipes start signed out (new browser context). Use a fresh address per run (`newEmail(...)` in the specs) for sign-up; the seeded users (password known to the harness) for sign-in.
 - Locally email confirmation is off, so sign-up signs in at once.
 
+- **Open the email form.** `openEmailSignIn(page)` (`e2e/tests/helpers.ts`) clicks `page.getByRole('button', { name: 'Weiter mit E-Mail' })` when the build shows it. Observable result: textbox „E-Mail“ visible, and `document.activeElement` is no `INPUT` (Flutter web adds its input only for a focused field). Every recipe below that types into the form starts with it.
 - **Sign up.** Type the credentials and tap Registrieren. `typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email)`, `typeInto(page.getByRole('textbox', { name: 'Passwort' }), password)`, `page.getByRole('button', { name: 'Registrieren' }).click()` (the helper `signUp(page, email)` does this and then `answerConsent`). Observable result: URL `/analytics-consent` on the e2e build, else `/welcome` (see Gotchas).
 - **Password sign-in.** Same two fields, then `page.getByRole('button', { name: 'Anmelden', exact: true }).click()` (`exact`, because a plain name match is a case-insensitive substring and also hits „Mit Google anmelden“ and „Mit Apple anmelden“) or Enter in the password field. Observable result: `addField(page)` visible and focused for a user with a household.
-- **Sign out.** `openMore(page, 'Abmelden')`. Observable result: the login screen, textbox „E-Mail“ visible.
+- **Sign out.** `openMore(page, 'Abmelden')`. Observable result: the login screen, button „Weiter mit E-Mail“ visible.
 - **Magic link send.** Signed out: `typeInto(... 'E-Mail' ...)`, `page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' }).click()`. Observable result: `page.getByText(/Anmeldelink geschickt/).first()` visible.
 - **Magic link open.** `await page.goto(await latestLinkFor(email))`. Observable result: URL `/` and `addField(page)` focused (the link is the `/auth/v1/verify...` URL from Mailpit).
 - **Form checks.** Type `foo` as email, `123` as password, tap Anmelden. Observable result: the two messages under the fields (Flutter shows them as text under the inputs; a screenshot is the safe proof).
 - **Wrong password.** Observable result: snackbar starting „Anmeldung fehlgeschlagen“, still on the login screen.
-- **Provider buttons.** The e2e build shows them: `page.getByRole('button', { name: 'Mit Google anmelden' })` and `'Mit Apple anmelden'`. A click starts a redirect to `/auth/v1/authorize?provider=google|apple`; real provider round trips cannot run locally (the specs swap the provider for a fake OpenID issuer).
+- **Provider buttons.** The e2e build shows them, above „Weiter mit E-Mail“: `page.getByRole('button', { name: 'Mit Google anmelden' })` and `'Mit Apple anmelden'`. A click starts a redirect to `/auth/v1/authorize?provider=google|apple`; real provider round trips cannot run locally (the specs swap the provider for a fake OpenID issuer).
 - Covered by `e2e/tests/auth.spec.ts`, `e2e/tests/social-sign-in.spec.ts`, `e2e/tests/id-token.spec.ts` (token grant against the local stack), `e2e/tests/no-google.spec.ts` (no request to Google leaves the app). Run via `scripts/verify.sh --only e2e -- tests/<file>`.
 
 ## Gotchas

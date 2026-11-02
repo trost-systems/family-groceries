@@ -114,6 +114,10 @@ export async function openApp(inst, { lang = 'de', viewport = { width: 390, heig
  */
 export async function signIn(page, L, user) {
   await page.goto('/');
+  // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“ (job 70).
+  const withEmail = page.getByRole('button', { name: L('continueWithEmail') });
+  await withEmail.or(page.getByRole('textbox', { name: L('email') })).waitFor({ timeout: 30_000 });
+  if (await withEmail.isVisible()) await withEmail.click();
   await typeInto(page.getByRole('textbox', { name: L('email') }), user.email);
   await typeInto(page.getByRole('textbox', { name: L('password') }), user.password);
   await page.keyboard.press('Enter');

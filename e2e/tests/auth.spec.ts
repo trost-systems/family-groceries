@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures';
 import {
   addField, holdFrames, latestLinkFor, newEmail, nextFrames, openMore, password, signUpWithHousehold, typeInto,
+  openEmailSignIn,
 } from './helpers';
 import { watchBuild, withoutWasmGC } from './web-build';
 
@@ -10,6 +11,7 @@ test('email and password: sign out and back in', async ({ page }) => {
   await openMore(page, 'Abmelden');
   await expect(page).toHaveURL(/\/login$/);
 
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), 'wrong-password');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
@@ -25,6 +27,7 @@ test('magic link signs in on this device', async ({ page }) => {
   await signUpWithHousehold(page, email);
   await openMore(page, 'Abmelden');
 
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' }).click();
   await expect(page.getByText(/Anmeldelink geschickt/).first()).toBeVisible();
@@ -39,6 +42,7 @@ for (const build of ['wasm', 'js'] as const) {
     if (build === 'js') await withoutWasmGC(page);
     const loaded = watchBuild(page);
     await page.goto('/login');
+    await openEmailSignIn(page);
     const field = page.getByRole('textbox', { name: 'Passwort' });
     await expect(field).toBeVisible();
     expect(loaded()).toEqual([build]);

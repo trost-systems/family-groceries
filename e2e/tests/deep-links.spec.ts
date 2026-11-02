@@ -2,12 +2,14 @@ import { expect, type Page, test } from './fixtures';
 import {
   addField, addSheet, answerConsent, apiAs, chainStores, itemRow, newEmail, password, screenshot, signUp, signUpWithHousehold,
   storeDivider, typeInto,
+  openEmailSignIn,
 } from './helpers';
 
 // Job 66 (docs/DEEP_LINKS.md): app.hummlist.com links. Where the app is not installed they open the
 // web app, which routes them as the apps do.
 
 async function signIn(page: Page, email: string): Promise<void> {
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();

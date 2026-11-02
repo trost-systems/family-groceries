@@ -111,3 +111,21 @@ class const AppleSignInButton({
     );
   }
 }
+
+/// „Weiter mit E-Mail“ under the provider buttons: their height, in the
+/// app's own secondary button, so email reads as one more way in.
+class const EmailSignInButton({
+  required final String label,
+  required final VoidCallback? onPressed,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: _height,
+    child: OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.mail_outline, size: 20),
+      label: Text(label, overflow: TextOverflow.ellipsis),
+    ),
+  );
+}

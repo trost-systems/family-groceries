@@ -224,6 +224,10 @@ async function signIn(/** @type {any} */ c) {
   const page = c.page;
   for (let attempt = 1;; attempt++) {
     await page.goto(baseURL);
+    // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
+    const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });
+    await withEmail.or(page.getByRole('textbox', { name: 'E-Mail' })).waitFor();
+    if (await withEmail.isVisible()) await withEmail.click();
     await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), c.email);
     await typeInto(page.getByRole('textbox', { name: 'Passwort' }), c.password);
     // Enter submits from the password field itself, like fg login; a click first moves focus.

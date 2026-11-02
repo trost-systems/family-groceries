@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Locator, test, type Page } from './fixtures';
 import {
   addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
+  openEmailSignIn,
 } from './helpers';
 
 const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
@@ -98,7 +99,7 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
 
   await wheelTo(page, page.getByRole('button', { name: /^Abmelden/ }));
   await page.getByRole('button', { name: /^Abmelden/ }).click();
-  await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 });
 
@@ -186,8 +187,10 @@ test.describe('with an English browser', () => {
     const german = germanTexts();
     expect(german.length, 'the scan has German texts to look for').toBeGreaterThan(100);
     await page.goto('/');
-    await expect(page.getByRole('button', { name: 'Sign up' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue with email' })).toBeVisible();
     await expectNoGerman(page, 'login', german);
+    await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
+    await expectNoGerman(page, 'login email form', german);
     await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('english'));
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();

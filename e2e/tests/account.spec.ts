@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import {
   addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, joinWithCode, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
+  openEmailSignIn,
 } from './helpers';
 
 const deletedNotice = (page: Page) => page.getByText('Dein Konto wurde gelöscht.');
@@ -136,6 +137,7 @@ test('a member deletes their account; the household and their items stay for the
   await expect(itemRow(a, 'Hafer'), 'after a reload too').toBeVisible();
   await expect(itemRow(a, 'Milch')).toBeVisible();
 
+  await openEmailSignIn(b);
   await typeInto(b.getByRole('textbox', { name: 'E-Mail' }), emailB);
   await typeInto(b.getByRole('textbox', { name: 'Passwort' }), password);
   await b.getByRole('button', { name: 'Anmelden', exact: true }).click();

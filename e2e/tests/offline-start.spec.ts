@@ -2,6 +2,7 @@ import { expect, test, type Page } from './fixtures';
 import {
   addField, addItem, answerConsent, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick,
   typeInto, within,
+  openEmailSignIn,
 } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
@@ -74,6 +75,7 @@ test('a cold start without Supabase shows the cached list, queues changes across
 
   const other = await (await browser.newContext()).newPage();
   await other.goto('/');
+  await openEmailSignIn(other);
   await typeInto(other.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(other.getByRole('textbox', { name: 'Passwort' }), password);
   await other.getByRole('button', { name: 'Anmelden', exact: true }).click();
@@ -91,7 +93,7 @@ test('signing out drops the cached list', async ({ page }) => {
   await expect.poll(async () => (await cachedList(page))?.server.length, { message: 'the list is cached' }).toBe(1);
 
   await openMore(page, 'Abmelden');
-  await expect(page.getByRole('button', { name: 'Anmelden', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expect.poll(
     () => page.evaluate(() => Object.keys(localStorage).filter((k) => /\b(list|household)\./.test(k)).length),
     { message: 'nothing of the list stays on the device' },

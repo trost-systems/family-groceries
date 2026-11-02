@@ -76,7 +76,9 @@ class const LoginScreen({
 }
 
 /// Every sign-in method: Google, Apple, email and password, magic link.
-/// The MCP consent page embeds it too, with its own [returnPath].
+/// Where a build offers Google or Apple, the email form waits behind
+/// „Weiter mit E-Mail“: most people sign in with an account they already
+/// have. The MCP consent page embeds it too, with its own [returnPath].
 class const SignInPanel({
   /// Where a web redirect or magic link lands after sign-in, e.g.
   /// `/join/ABCD2345`. The mobile apps always return through
@@ -97,6 +99,7 @@ class _SignInPanelState() extends State<SignInPanel> {
   final _password = TextEditingController();
   var _busy = false;
   var _passwordRequired = true;
+  late var _emailOpen = context.read<SocialSignIn>().flows.isEmpty;
 
   @override
   void initState() {
@@ -171,13 +174,18 @@ class _SignInPanelState() extends State<SignInPanel> {
     return null;
   });
 
-  Future<void> _social(SocialProvider provider) => _run(() async {
-    await context.read<SocialSignIn>().signIn(
-      provider,
-      redirectTo: _redirectTo,
-    );
-    return null;
-  });
+  Future<void> _social(SocialProvider provider) {
+    // The provider's sheet or page takes over; an open keyboard would wait
+    // under it and still be there after a cancel.
+    FocusManager.instance.primaryFocus?.unfocus();
+    return _run(() async {
+      await context.read<SocialSignIn>().signIn(
+        provider,
+        redirectTo: _redirectTo,
+      );
+      return null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,79 +223,88 @@ class _SignInPanelState() extends State<SignInPanel> {
               ),
               const SizedBox(height: 12),
             ],
-            if (flows.isNotEmpty) ...[
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(l10n.orWithEmail),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
+            if (!_emailOpen)
+              EmailSignInButton(
+                key: const ValueKey('sign-in-email'),
+                label: l10n.continueWithEmail,
+                onPressed: _busy
+                    ? null
+                    : () => setState(() => _emailOpen = true),
+              )
+            else ...[
+              if (flows.isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(l10n.orWithEmail),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextFormField(
+                key: const ValueKey('login-email'),
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                decoration: InputDecoration(labelText: l10n.email),
+                validator: (v) =>
+                    (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
               ),
               const SizedBox(height: 12),
+              TextFormField(
+                key: const ValueKey('login-password'),
+                controller: _password,
+                obscureText: true,
+                autofillHints: const [AutofillHints.password],
+                decoration: InputDecoration(labelText: l10n.password),
+                validator: (v) => !_passwordRequired || (v ?? '').length >= 6
+                    ? null
+                    : l10n.passwordTooShort,
+                onFieldSubmitted: (_) => unawaited(_signIn()),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _busy ? null : () => unawaited(_signIn()),
+                child: Text(l10n.signIn),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: _busy
+                    ? null
+                    : () => unawaited(
+                        _runWithForm(() async {
+                          final res = await _auth.signUp(
+                            email: _email.text.trim(),
+                            password: _password.text,
+                            emailRedirectTo: _redirectTo,
+                          );
+                          return res.session == null
+                              ? l10n.signUpCheckEmail
+                              : null;
+                        }),
+                      ),
+                child: Text(l10n.signUp),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => unawaited(
+                        _runWithForm(() async {
+                          await _auth.signInWithOtp(
+                            email: _email.text.trim(),
+                            emailRedirectTo: _redirectTo,
+                          );
+                          return l10n.magicLinkSent;
+                        }, needsPassword: false),
+                      ),
+                child: Text(l10n.sendMagicLink),
+              ),
             ],
-            TextFormField(
-              key: const ValueKey('login-email'),
-              controller: _email,
-              autofocus: true,
-              keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
-              decoration: InputDecoration(labelText: l10n.email),
-              validator: (v) =>
-                  (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              key: const ValueKey('login-password'),
-              controller: _password,
-              obscureText: true,
-              autofillHints: const [AutofillHints.password],
-              decoration: InputDecoration(labelText: l10n.password),
-              validator: (v) => !_passwordRequired || (v ?? '').length >= 6
-                  ? null
-                  : l10n.passwordTooShort,
-              onFieldSubmitted: (_) => unawaited(_signIn()),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : () => unawaited(_signIn()),
-              child: Text(l10n.signIn),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: _busy
-                  ? null
-                  : () => unawaited(
-                      _runWithForm(() async {
-                        final res = await _auth.signUp(
-                          email: _email.text.trim(),
-                          password: _password.text,
-                          emailRedirectTo: _redirectTo,
-                        );
-                        return res.session == null
-                            ? l10n.signUpCheckEmail
-                            : null;
-                      }),
-                    ),
-              child: Text(l10n.signUp),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () => unawaited(
-                      _runWithForm(() async {
-                        await _auth.signInWithOtp(
-                          email: _email.text.trim(),
-                          emailRedirectTo: _redirectTo,
-                        );
-                        return l10n.magicLinkSent;
-                      }, needsPassword: false),
-                    ),
-              child: Text(l10n.sendMagicLink),
-            ),
           ],
         ),
       ),

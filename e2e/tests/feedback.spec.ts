@@ -11,6 +11,7 @@ import {
   signUp,
   signUpWithHousehold,
   typeInto, createHousehold, skipInvite,
+  openEmailSignIn,
 } from './helpers';
 
 // Job 21: in-app feedback (docs/FEEDBACK.md). More -> "Feedback senden" -> a note with the app's
@@ -275,6 +276,7 @@ test.describe('in English', () => {
     const page = await context.newPage();
     const email = newEmail('feedback-en');
     await page.goto('/');
+    await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), 'test-password-123');
     await page.getByRole('button', { name: 'Sign up' }).click();

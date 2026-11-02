@@ -29,13 +29,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Sign-up and sign-in
 
-**What it does.** A new or returning user signs in with email and password, creates an account with "Registrieren", or asks for a sign-in link by email and opens it on the same device. The app also offers "Sign in with Google" and "Sign in with Apple". Signing out is in the More tab. The login screen links the imprint and the privacy policy.
+**What it does.** A new or returning user signs in with Google or Apple, or with email: email and password, a new account with "Registrieren", or a sign-in link by email opened on the same device. Google and Apple come first; email is one more button below them, „Weiter mit E-Mail“ (EN: "Continue with email"). The keyboard opens only when the user taps a field. Signing out is in the More tab. The login screen links the imprint and the privacy policy.
 
 **How to get there.**
 1. Open Hummlist while signed out: the login screen appears. It opens on the Hummlist logo and name and has no title.
-2. Enter email and password, then tap „Anmelden“ (EN: "Sign in"), or „Registrieren“ (EN: "Sign up") for a new account.
-3. Or enter only the email and tap „Anmeldelink per E-Mail senden“ (EN: "Email me a sign-in link"), then open the link from the email on the same device.
-4. Or tap „Mit Google anmelden“ / „Mit Apple anmelden“ (EN: "Sign in with Google" / "Sign in with Apple").
+2. Tap „Mit Google anmelden“ / „Mit Apple anmelden“ (EN: "Sign in with Google" / "Sign in with Apple").
+3. Or tap „Weiter mit E-Mail“ (EN: "Continue with email"), enter email and password, then tap „Anmelden“ (EN: "Sign in"), or „Registrieren“ (EN: "Sign up") for a new account.
+4. Or, after „Weiter mit E-Mail“, enter only the email and tap „Anmeldelink per E-Mail senden“ (EN: "Email me a sign-in link"), then open the link from the email on the same device.
 5. To sign out: tab „Mehr“ (EN: "More"), then „Abmelden“ (EN: "Sign out").
 
 **Never claim.**
@@ -43,8 +43,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - "8-digit code" for sign-in. Sign-in emails contain a link, not a code. The only 8-character code in Hummlist is the household invite code (letters and digits).
 - That the emails are in German or come from a "Hummlist" template: today they are short English emails ("Your sign-in link", "Confirm your email address").
 - Passkeys, phone-number sign-in or other providers than Google and Apple.
+- That users need an email and password account: Google or Apple is enough.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); email subjects from the hosted project's auth settings (2026-11-01). Recipe: [sign-in.md](./sign-in.md).
+**Last verified.** job/70-login-no-autofocus f48d081 (job 70), 2026-11-02 (CET), from code and driven on the web build (verify-hummlist, DE and EN, light and dark); email subjects from the hosted project's auth settings (2026-11-01). Recipe: [sign-in.md](./sign-in.md).
 
 ## Usage-data question (analytics consent)
 

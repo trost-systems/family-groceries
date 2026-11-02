@@ -262,6 +262,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signInCanceled => 'Sign-in canceled';
 
   @override
+  String get continueWithEmail => 'Continue with email';
+
+  @override
   String get orWithEmail => 'or with email';
 
   @override

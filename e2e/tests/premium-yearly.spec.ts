@@ -11,7 +11,9 @@ import {
   screenshot,
   signUp,
   signUpWithHousehold,
-  typeInto } from './helpers';
+  typeInto,
+  openEmailSignIn,
+} from './helpers';
 import { buy, householdOf, rcEvent, subscribe, yearlyId } from './iap';
 
 // Job 49: Hummlist Premium as a yearly plan and Lifetime, on the web (docs/PURCHASES.md). The web
@@ -191,6 +193,7 @@ test.describe('in English', () => {
     const email = newEmail('yearly-en');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();

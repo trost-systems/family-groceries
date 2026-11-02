@@ -10,6 +10,7 @@ import {
   screenshot,
   supabaseUrl,
   typeInto,
+  openEmailSignIn,
 } from './helpers';
 import { householdWithItems } from './web-build';
 
@@ -40,6 +41,7 @@ test('no request leaves for Google: login, sign-in, a list in many scripts, the 
   });
 
   await page.goto('/');
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await screenshot(page, `33c-${browserName}-login`);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
