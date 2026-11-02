@@ -668,11 +668,35 @@ abstract class AppLocalizations {
   /// **'Ablehnen'**
   String get consentDeny;
 
-  /// No description provided for @redirecting.
+  /// Title of the MCP consent page once the user allowed; the browser then goes to the client
   ///
   /// In de, this message translates to:
-  /// **'Weiterleitung …'**
-  String get redirecting;
+  /// **'Verbunden'**
+  String get consentConnectedTitle;
+
+  /// No description provided for @consentDeclinedTitle.
+  ///
+  /// In de, this message translates to:
+  /// **'Nicht verbunden'**
+  String get consentDeclinedTitle;
+
+  /// MCP consent page after Allow, while the client (e.g. Claude) finishes the connection on its side
+  ///
+  /// In de, this message translates to:
+  /// **'Fertig, du kannst zu {client} zurückkehren.'**
+  String consentDone(String client);
+
+  /// No description provided for @consentDoneNoClient.
+  ///
+  /// In de, this message translates to:
+  /// **'Fertig, du kannst zu deiner App zurückkehren.'**
+  String get consentDoneNoClient;
+
+  /// No description provided for @consentDeclined.
+  ///
+  /// In de, this message translates to:
+  /// **'Abgelehnt, du kannst zu {client} zurückkehren.'**
+  String consentDeclined(String client);
 
   /// No description provided for @consentInvalid.
   ///

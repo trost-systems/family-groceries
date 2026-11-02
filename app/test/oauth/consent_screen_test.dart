@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -11,6 +13,9 @@ class FakeConsentApi({required final ConsentRequest details})
   final decisions = <String>[];
   Exception? failure;
 
+  /// When set, approve answers only once it completes.
+  Completer<void>? hold;
+
   @override
   Future<ConsentRequest> getDetails(String authorizationId) async {
     if (failure case final failure?) {
@@ -22,6 +27,7 @@ class FakeConsentApi({required final ConsentRequest details})
   @override
   Future<Uri> approve(String authorizationId) async {
     decisions.add('approve $authorizationId');
+    await hold?.future;
     return Uri.parse('https://client.example/cb?code=granted');
   }
 
@@ -108,11 +114,30 @@ void main() {
     await tapButton(tester, 'Erlauben');
     expect(api.decisions, ['approve auth-1']);
     expect(visited, [Uri.parse('https://client.example/cb?code=granted')]);
-    expect(find.text('Weiterleitung …'), findsOneWidget);
+    expect(find.text('Verbunden'), findsOneWidget);
+    expect(
+      find.text('Fertig, du kannst zu Claude zurückkehren.'),
+      findsOneWidget,
+    );
+    expect(find.text('Erlauben'), findsNothing);
+  });
+
+  testWidgets('while the server records the approval, nothing is done yet', (
+    tester,
+  ) async {
+    await pumpConsent(tester);
+    api.hold = Completer();
+    await tapButton(tester, 'Erlauben');
     final allow = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Erlauben'),
     );
-    expect(allow.onPressed, isNull);
+    expect(allow.onPressed, isNull, reason: 'no second tap');
+    expect(find.byKey(const ValueKey('consent-done')), findsNothing);
+    expect(visited, isEmpty);
+    api.hold!.complete();
+    await tester.pumpAndSettle();
+    expect(visited, hasLength(1));
+    expect(find.byKey(const ValueKey('consent-done')), findsOneWidget);
   });
 
   testWidgets('deny denies and follows the redirect', (tester) async {
@@ -122,6 +147,11 @@ void main() {
     expect(visited, [
       Uri.parse('https://client.example/cb?error=access_denied'),
     ]);
+    expect(find.text('Nicht verbunden'), findsOneWidget);
+    expect(
+      find.text('Abgelehnt, du kannst zu Claude zurückkehren.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('an earlier approval redirects without asking', (tester) async {
@@ -131,6 +161,10 @@ void main() {
     );
     expect(visited, [Uri.parse('https://client.example/cb?code=x')]);
     expect(find.text('Erlauben'), findsNothing);
+    expect(
+      find.text('Fertig, du kannst zu deiner App zurückkehren.'),
+      findsOneWidget,
+    );
     expect(api.decisions, isEmpty);
   });
 

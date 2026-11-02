@@ -86,7 +86,9 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
     description: 'Zeigt die offenen Einträge der Einkaufsliste mit Marke und Eigenschaften, in ' +
       'Gang-Reihenfolge und innerhalb einer Kategorie in der Laufweg-Reihenfolge des Haushalts. Mit "store" ' +
       'nur, was in diesem Laden gekauft werden kann (seine Einträge plus alle ohne Laden), in der ' +
-      'Reihenfolge dieses Ladens. Mit "category" nur eine Kategorie.',
+      'Reihenfolge dieses Ladens. Mit "category" nur eine Kategorie. "counts" gilt immer für die ' +
+      'ganze Liste, auch mit Filter: "open" offene Einträge, "checkedLast24h" in den letzten 24 ' +
+      'Stunden abgehakte.',
     inputSchema: z.object({ store: storeName.optional(), category: categoryName.optional() }),
     annotations: { readOnlyHint: true },
   }, (args) => run(auth, once, lang, (tx) => listItems(tx, h, args))());

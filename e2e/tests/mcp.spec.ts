@@ -103,8 +103,9 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   expect(ticked.ticked.map((i) => i.name).sort()).toEqual(['Brot', 'Äpfel']);
   await within(3_000, (timeout) => expect(itemRow(app, 'Brot'), 'an MCP tick disappears live in the app').toHaveCount(0, { timeout }));
 
-  const listed = await call<{ items: Item[] }>(client, 'list_items', {});
+  const listed = await call<{ items: Item[]; counts: { open: number; checkedLast24h: number } }>(client, 'list_items', {});
   expect(listed.items.map((i) => i.name)).toEqual(['Hafermilch']);
+  expect(listed.counts, 'the whole list counted next to the items').toEqual({ open: 1, checkedLast24h: 2 });
   await screenshot(app, 'mcp-03-list-after-tick');
 
   // The grant shows up in the app's settings and can be disconnected there.

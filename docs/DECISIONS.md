@@ -6258,3 +6258,28 @@ loaded).
   e2e tests and recipes read it that way.
 - **Changed expectation:** `entry_test.dart`'s 'Eier   10' was Entry('Eier 10', null); under the
   rule it is Eier with 10 (Eier is a dictionary word). The case now lives in the shared table.
+
+## Job 62: MCP for testers, 2026-11-01
+
+- **`list_items` counts.** Next to `items` the result carries `counts: {open, checkedLast24h}`
+  for the whole list, whatever the `store` or `category` filter: an assistant asked "how much is
+  left?" while showing only dm should not answer with dm's share. The filtered count is
+  `items.length` already. "Checked" means ticked in the last 24 hours, the shopping trip so far:
+  ticked items stay as history for good, so an all-time count would only grow and say nothing.
+  A day window needs no time zone. One query, both counts, on `items_household_status_idx`.
+- **The blank page after Erlauben is Claude's.** Traced (docs/MCP.md, Claude): our page reaches
+  the client's `redirect_uri` about 50 ms after the tap; Claude's callback then exchanges the code
+  and connects before answering. Nothing on our side to speed up beyond a cold function start.
+  The consent page therefore says the user is done („Verbunden“, „Fertig, du kannst zu Claude
+  zurückkehren.“) once the decision is recorded, and the browser keeps that page up while the
+  callback is pending. Shown only after the server answered, so it never claims a connection
+  that failed on our side. The page names the client from its registration, so other clients get
+  their own name; an earlier approval (no client name) says „zu deiner App“.
+- **Warming the function from the consent page: no.** Supabase runs edge functions near the
+  caller, and Claude's servers call from elsewhere than the user's browser; a warm-up request
+  from the page would likely warm the wrong instance. Unmeasured, so not built.
+- **Tester guide.** `site/content/guides/{de,en}/claude.md`, slug `claude`. No `since`: the
+  connection works with today's app; the "Fertig" page arrives with the next web release, so the
+  guide describes both ("zeigt … oder bleibt bis zu zehn Sekunden leer"). Claude's menu names
+  are given in English too, unverified on a live Claude account (like the feature map says).
+  No page-level noindex, like the other guides: the whole site sends `X-Robots-Tag: noindex`.
