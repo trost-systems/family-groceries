@@ -112,3 +112,8 @@ Deno.test('any other answer throws RevenueCatUnavailable, so nothing is stored',
   await assertRejects(() => fetchPromotional(key, HOME, offline, NOW), RevenueCatUnavailable);
   await assertRejects(() => fetchPromotional(key, '../customers', offline, NOW));
 });
+
+Deno.test('a RevenueCat read that never answers times out as RevenueCatUnavailable', async () => {
+  const hang = () => new Promise<Response>(() => {});
+  await assertRejects(() => fetchPromotional(key, HOME, hang, NOW, 20), RevenueCatUnavailable);
+});

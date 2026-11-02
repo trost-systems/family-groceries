@@ -512,6 +512,32 @@ void main() {
     );
   });
 
+  testWidgets('leave and come back: the last note is gone, Buy is there', (
+    tester,
+  ) async {
+    final more = await openLifetime(
+      tester,
+      store: FakePurchaseRepository(bought: const Canceled()),
+    );
+    await tester.tap(key('premium-buy-lifetime'));
+    await tester.pump();
+    shows({'lifetime-canceled'});
+    more.router.go(morePath);
+    await tester.pumpAndSettle();
+    more.router.go(premiumPath);
+    await tester.pumpAndSettle();
+    shows({});
+    expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
+    await tester.tap(key('lifetime-restore'));
+    await tester.pump();
+    shows({'lifetime-nothing-restored'});
+    more.router.go(morePath);
+    await tester.pumpAndSettle();
+    more.router.go(premiumPath);
+    await tester.pumpAndSettle();
+    shows({});
+  });
+
   testWidgets('opening, rebuilding, leaving and coming back ask no store', (
     tester,
   ) async {
@@ -751,6 +777,25 @@ void main() {
       expect(key('premium-buy-yearly'), findsNothing);
       expect(key('premium-buy-lifetime'), findsNothing);
       shows({'lifetime-unavailable'});
+      expect(more.purchases.storePrices.reads, 0);
+      expect(more.purchases.repository.calls, isEmpty);
+    });
+
+    testWidgets('switch unreadable: unavailable, no price query', (
+      tester,
+    ) async {
+      final more = await openLifetime(
+        tester,
+        premium: FakePremiumServer()..offerFails = true,
+      );
+      expect(key('premium-buy-yearly'), findsNothing);
+      expect(key('premium-buy-lifetime'), findsNothing);
+      shows({'premium-unavailable'});
+      expect(
+        find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('bald verfügbar'), findsNothing);
       expect(more.purchases.storePrices.reads, 0);
       expect(more.purchases.repository.calls, isEmpty);
     });

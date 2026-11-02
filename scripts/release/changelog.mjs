@@ -202,11 +202,15 @@ export function gateOf(item, gates) {
 }
 
 // The check push-pr.sh and the gate run on a PR's items: keys known, and an item about something
-// held back (Alexa) carries that hold's line, so its author sees it stays out of the changelog.
+// held back (Alexa) carries that hold's line, so its author sees it stays out of the changelog. An
+// item with a hold of its own that is still closed may also name another held word (the
+// integration lock's item names Premium): one hold line per item, and the draft keeps it back
+// until both are released (gateOf).
 export function checkGates(items, gates) {
   for (const item of items) {
     const { matched } = gateOf(item, gates);
-    if (matched) throw new NoteError(`${item.category} item "${item.en}" mentions "${matched.word}": add the line "hold: ${matched.key}" (${gates.holds[matched.key].note}); it stays out of the public changelog until releases/flags.json releases that hold`);
+    const ownHoldClosed = item.hold && !gates.holds[item.hold].released;
+    if (matched && !ownHoldClosed) throw new NoteError(`${item.category} item "${item.en}" mentions "${matched.word}": add the line "hold: ${matched.key}" (${gates.holds[matched.key].note}); it stays out of the public changelog until releases/flags.json releases that hold`);
   }
 }
 

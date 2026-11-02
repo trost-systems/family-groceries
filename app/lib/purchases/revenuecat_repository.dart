@@ -68,9 +68,7 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
       return const ProductMissing();
     }
     try {
-      final result = await Purchases.purchase(
-        PurchaseParams.storeProduct(product),
-      );
+      final result = await Purchases.purchase(_paramsFor(product));
       final id = result.storeTransaction.transactionIdentifier;
       return Bought(id.isEmpty ? null : StoreTransactionRef(_store, id));
     } on PlatformException catch (e) {
@@ -87,8 +85,14 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
     try {
       await _as(householdId);
       final info = await Purchases.restorePurchases();
-      return info.allPurchasedProductIdentifiers.any(
-            (id) => PremiumPlan.values.any((plan) => plan.owns(id)),
+      // Only what is active now: allPurchasedProductIdentifiers also lists
+      // lapsed yearly plans, and their unlock would never come. By product,
+      // as the server reads it, not by entitlement id; a promotional grant
+      // is active too, and the server shows it as well.
+      return info.entitlements.active.values.any(
+            (e) => PremiumPlan.values.any(
+              (plan) => plan.owns(e.productIdentifier),
+            ),
           )
           ? const Restored()
           : const NothingToRestore();
@@ -96,6 +100,17 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
       return _failure(_codeOf(e));
     }
   }
+
+  /// Play's base plan, never RevenueCat's default option: that picks a free
+  /// trial or intro offer once Play has one, while the page shows the base
+  /// plan's price. iOS products have no options.
+  static PurchaseParams _paramsFor(StoreProduct product) => switch (product
+      .subscriptionOptions
+      ?.where((o) => o.isBasePlan)
+      .firstOrNull) {
+    final basePlan? => PurchaseParams.subscriptionOption(basePlan),
+    null => PurchaseParams.storeProduct(product),
+  };
 
   static PurchasesErrorCode _codeOf(PlatformException e) =>
       num.tryParse(e.code) == null
