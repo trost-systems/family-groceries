@@ -6519,3 +6519,45 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
     can replace it (keep its placeholders).
 16. **Five identical English models** instead of one shared file: the ASK package needs one file
     per locale; a test keeps them equal.
+
+## Job 71: German native Siri only opened the app, 2026-11-02
+
+1. **The cause is the app name, not the phrase tables.** The ios gate's build log (run
+   41401075259, Xcode 26.6) shows every German phrase compiled and trained for `de`
+   (`appintentsnltrainingprocessor … Training 'Füge etwas zu ${+applicationName} hinzu|…' for de`)
+   and the app name trained as only `Application name 'Hummlist' for de`. The ten German phrases
+   share nothing but that token, and every one of them failed, while the same build ran the
+   English phrases. Siri opening the app means it found the app by name and no App Shortcut
+   phrase matched. So German Siri writes "Hummlist" as a German word ("Hummliste", "Humm Liste")
+   that the phrase's app-name slot does not accept. This is inferred: no iPhone reaches this
+   runner. `docs/NEEDS_LEAD.md` "Job 71" separates the two remaining causes on a device (Type to
+   Siri skips speech recognition).
+2. **Fix: localized `INAlternativeAppNames`** (Info.plist variables, `{de,en}.lproj/InfoPlist.strings`,
+   three per language, Apple's limit). An Apple engineer confirmed they apply to App Shortcuts
+   phrases (developer forums thread 832258: "INAlternativeAppNames will continue to work for App
+   Shortcuts"). German: Hummliste, Humm Liste, Hummelliste. English: Humm List, Hum List,
+   Humlist. All are spellings of the app's own name, as Apple requires. PR #194's first ios run
+   trains `Application name 'HummlistHummlisteHumm ListeHummelliste' for de`, where main trained
+   `'Hummlist'`. The same run trained the raw variables for `Base`
+   (`'HummlistHUMMLIST_NAME_1…'`), so `Base.lproj/InfoPlist.strings` carries the English names.
+   The ios gate fails on a `root.ssu.yaml` without Hummliste or with a variable in it.
+3. **No `com.apple.developer.siri` entitlement in this PR.** Apple's SiriKit page says alternative
+   names need an Intents extension, and another app's German Siri fix needed the entitlement
+   (henemm/loose-ends #348). Adding it without the App ID capability breaks the release signing,
+   and enabling the capability needs the Apple account. It stays the documented next step
+   ("Job 51" section 2) if the device test still opens the app.
+4. **German phrases with an article.** „Füge etwas zu Hummlist hinzu“ lacks the article German
+   speakers use, so „…zur Hummlist…“, „Setz etwas auf meine Hummlist“ and „Lies die Hummlist vor“
+   were added and the old phrases kept. A `.strings` table maps one phrase to one translation,
+   and the target is iOS 15, so a multi-variant `AppShortcuts.xcstrings` is out. Each German
+   variant comes with an English phrase of its own (18 per language). The Zugänge dialog and the
+   card now show full sentences instead of „Auf meine Hummlist“.
+5. **The voice parser drops the same spellings** (`parse.ts`, `parse_en.ts`). Otherwise a
+   dictation like „Füge Milch zur Hummliste hinzu“ would have added „Milch zur Hummliste“.
+6. **`scripts/siri-phrases.ts` in the lint gate.** It runs on Linux, and on every PR, unlike
+   RunnerTests (macOS, native changes only). It checks phrase parity, placeholders, untranslated
+   German, the alternative names, and that every phrase the app shows is one Siri knows. Its
+   mutations (a dropped `${applicationName}`, a missing translation, an English value in `de`, a
+   shown phrase Siri lacks, main's Info.plist) each fail it.
+7. **Changelog `none`.** Native Siri is behind the `native-siri` hold and unannounced.
+8. **Local ports 587xx.** 711xx is past 65535, and job 47's stack holds 571xx.

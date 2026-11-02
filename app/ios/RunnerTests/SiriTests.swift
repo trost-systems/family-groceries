@@ -363,6 +363,24 @@ final class AppShortcutPhraseTests: XCTestCase {
     }
   }
 
+  func testEachLanguageNamesTheAppTheWaySiriWritesIt() throws {
+    let entries = try XCTUnwrap(
+      Bundle.main.object(forInfoDictionaryKey: "INAlternativeAppNames") as? [[String: String]])
+    let variables = entries.compactMap { $0["INAlternativeAppName"] }
+    XCTAssertEqual(variables.count, entries.count)
+    XCTAssertTrue((1...3).contains(variables.count), "Apple reads one to three")
+    var names: [String: [String]] = [:]
+    for lang in ["en", "de"] {
+      let path = try XCTUnwrap(
+        Bundle.main.path(forResource: "InfoPlist", ofType: "strings", inDirectory: nil, forLocalization: lang),
+        "the app ships \(lang).lproj/InfoPlist.strings")
+      let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String], lang)
+      names[lang] = try variables.map { try XCTUnwrap(table[$0], "\(lang) lacks \($0)") }
+    }
+    XCTAssertTrue(names["de"]!.contains("Hummliste"), "German Siri writes the name as one German word")
+    XCTAssertNotEqual(names["de"], names["en"])
+  }
+
   func testAtMostTenAppShortcuts() throws {
     let source = try String(contentsOf: runner.appendingPathComponent("AppIntents/HummlistIntents.swift"), encoding: .utf8)
     let count = source.components(separatedBy: "AppShortcut(\n").count - 1

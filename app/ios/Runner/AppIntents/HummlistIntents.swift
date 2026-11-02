@@ -91,7 +91,9 @@ struct ItemSuggestionQuery: EntityStringQuery {
 }
 
 /// The phrases. Each needs the app name, at most one parameter (an entity), and an entry in
-/// en.lproj and de.lproj AppShortcuts.strings (RunnerTests checks that).
+/// en.lproj and de.lproj AppShortcuts.strings (RunnerTests and scripts/siri-phrases.ts check
+/// that). A .strings table maps one phrase to one translation, so the German variants with an
+/// article ("zur Hummlist") come with English phrases of their own.
 @available(iOS 17.0, *)
 struct HummlistShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
@@ -105,6 +107,12 @@ struct HummlistShortcuts: AppShortcutsProvider {
         "Add \(\.$item) to \(.applicationName)",
         "Add \(\.$item) to my \(.applicationName)",
         "Put \(\.$item) on \(.applicationName)",
+        "Add to my \(.applicationName)",
+        "Put something on \(.applicationName)",
+        "Put something on my \(.applicationName)",
+        "\(.applicationName) add something",
+        "\(.applicationName) add \(\.$item)",
+        "Put \(\.$item) on my \(.applicationName)",
       ],
       shortTitle: "Add to Hummlist",
       systemImageName: "cart.badge.plus")
@@ -114,6 +122,8 @@ struct HummlistShortcuts: AppShortcutsProvider {
         "What's on my \(.applicationName)",
         "What's on \(.applicationName)",
         "Read my \(.applicationName)",
+        "Read \(.applicationName)",
+        "What's on the \(.applicationName)",
       ],
       shortTitle: "Read my Hummlist",
       systemImageName: "list.bullet")

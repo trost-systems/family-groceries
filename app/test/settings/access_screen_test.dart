@@ -209,7 +209,7 @@ void main() {
       expect(
         find.text(
           'Siri funktioniert jetzt ohne Einrichtung. '
-          'Sag: „Füge etwas zu Hummlist hinzu“.',
+          'Sag: „Füge etwas zur Hummlist hinzu“.',
         ),
         findsOneWidget,
       );
@@ -219,7 +219,7 @@ void main() {
       expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
 
       await tapText(tester, 'Siri-Sätze anzeigen');
-      expect(find.text('„Füge etwas zu Hummlist hinzu“'), findsOneWidget);
+      expect(find.text('„Füge etwas zur Hummlist hinzu“'), findsOneWidget);
       expect(find.text('„Was steht auf meiner Hummlist?“'), findsOneWidget);
       expect(find.text('„Add to Hummlist“'), findsOneWidget);
       expect(find.text('Auf Englisch'), findsOneWidget);
@@ -246,7 +246,7 @@ void main() {
       expect(find.text('“Add something to my Hummlist”'), findsOneWidget);
       expect(find.text('“Add <item> to Hummlist”'), findsOneWidget);
       expect(find.text("“What's on my Hummlist?”"), findsOneWidget);
-      expect(find.text('“Füge <Eintrag> zu Hummlist hinzu”'), findsOneWidget);
+      expect(find.text('“Füge <Eintrag> zur Hummlist hinzu”'), findsOneWidget);
     });
 
     testWidgets('a Siri credential is revoked like a token', (tester) async {

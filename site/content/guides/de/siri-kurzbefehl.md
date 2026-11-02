@@ -24,7 +24,7 @@ Siri schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge a
 
 Mit der aktuellen App brauchst du keinen Kurzbefehl mehr. Sobald du in Hummlist angemeldet bist und zu einem Haushalt gehörst, versteht Siri Hummlist von selbst, auf Deutsch und auf Englisch. Du musst nichts einrichten und keinen Token kopieren.
 
-> **Du:** Hey Siri, füge etwas zu Hummlist hinzu.
+> **Du:** Hey Siri, füge etwas zur Hummlist hinzu.
 > **Siri:** Was soll auf die Liste?
 > **Du:** Milch, Eier und Brot.
 > **Siri:** Hinzugefügt: Milch, Eier, Brot.
@@ -33,9 +33,9 @@ Diese Sätze versteht Siri:
 
 | Du sagst | Was passiert |
 | --- | --- |
-| Füge etwas zu Hummlist hinzu | Siri fragt, was auf die Liste soll. |
-| Auf meine Hummlist | Siri fragt, was auf die Liste soll. |
-| Füge Milch zu Hummlist hinzu | Milch kommt direkt auf die Liste, wenn Milch bei euch schon einmal auf der Liste stand. Sonst fragt Siri nach. |
+| Füge etwas zur Hummlist hinzu | Siri fragt, was auf die Liste soll. |
+| Setz etwas auf meine Hummlist | Siri fragt, was auf die Liste soll. |
+| Füge Milch zur Hummlist hinzu | Milch kommt direkt auf die Liste, wenn Milch bei euch schon einmal auf der Liste stand. Sonst fragt Siri nach. |
 | Was steht auf meiner Hummlist? | Siri liest die ersten zehn offenen Einträge vor. |
 
 Siri sagt erst „Hinzugefügt“, wenn Hummlist die Einträge gespeichert hat. Ohne Internet oder bei einem Fehler sagt Siri, dass nichts hinzugefügt wurde. Dann versuch es einfach noch einmal.
