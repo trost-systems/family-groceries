@@ -1717,4 +1717,94 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get apiPremium =>
       'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.';
+
+  @override
+  String get menuProtoSwitch => 'Menü-Prototypen';
+
+  @override
+  String get menuProtoCurrent => 'Heutiges Menü';
+
+  @override
+  String get menuProtoUpdateCard => 'Update-Karte zeigen';
+
+  @override
+  String get menuProtoP1 => 'M-P1 Klar gegliedert';
+
+  @override
+  String get menuProtoP2 => 'M-P2 Gruppen';
+
+  @override
+  String get menuProtoP3 => 'M-P3 Luftig';
+
+  @override
+  String get menuProtoP4 => 'M-P4 Kompakt';
+
+  @override
+  String get menuProtoP5 => 'M-P5 Nach Aufgaben';
+
+  @override
+  String get updatePatchTitle => 'Update bereit';
+
+  @override
+  String get updatePatchBody =>
+      'Hummlist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.';
+
+  @override
+  String get updatePatchAction => 'Neu starten';
+
+  @override
+  String get updateStoreTitle => 'Neue Version da';
+
+  @override
+  String updateStoreBody(String version) {
+    return 'Version $version ist im Store. Aktualisiere, um alles Neue zu bekommen.';
+  }
+
+  @override
+  String get updateStoreAction => 'Aktualisieren';
+
+  @override
+  String get updateLater => 'Später';
+
+  @override
+  String get menuPrivacy => 'Datenschutz';
+
+  @override
+  String get menuPrivacyHint => 'Nutzungsdaten, Datenschutzerklärung';
+
+  @override
+  String get menuPrivacyPolicy => 'Datenschutzerklärung';
+
+  @override
+  String get menuLegalHint => 'Impressum, Datenschutzerklärung, Lizenzen';
+
+  @override
+  String get menuSecConnections => 'Verbindungen';
+
+  @override
+  String get menuSecHelp => 'Hilfe';
+
+  @override
+  String get menuSecAbout => 'Über Hummlist';
+
+  @override
+  String get menuSecApp => 'Einstellungen und Datenschutz';
+
+  @override
+  String get menuSecAccountAccess => 'Konto und Zugänge';
+
+  @override
+  String get menuSecAppHelp => 'App und Hilfe';
+
+  @override
+  String get menuTaskShare => 'Gemeinsam einkaufen';
+
+  @override
+  String get menuTaskConnect => 'Mit Siri, Alexa und KI';
+
+  @override
+  String get menuTaskYou => 'Du und deine Daten';
+
+  @override
+  String get menuTaskHelp => 'Hilfe und Feedback';
 }

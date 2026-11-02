@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
+import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/hex_switch.dart';
+import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/section_label.dart';
+import 'package:family_groceries/design/sticker.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
 import 'package:family_groceries/household/archived_households.dart';
 import 'package:family_groceries/household/invites_page.dart';
@@ -24,10 +30,13 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/settings/account_screen.dart';
 import 'package:family_groceries/settings/settings_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+
+part 'menu_prototypes.dart';
 
 /// The pages More opens: beside its list on wide screens, on their own
 /// on phones.
@@ -78,13 +87,14 @@ class const MoreScreen({
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text(l10n.tabMore),
+          actions: [if (showMenuPrototypeSwitch) const _PrototypeSwitch()],
         ),
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
               width: 360,
-              child: _MoreList(
+              child: _MoreMenu(
                 showHelp: showHelp,
                 showArchived: showArchived,
                 selected: shown,
@@ -130,8 +140,11 @@ class const MoreScreen({
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.tabMore)),
-      body: _MoreList(showHelp: showHelp, showArchived: showArchived),
+      appBar: AppBar(
+        title: Text(l10n.tabMore),
+        actions: [if (showMenuPrototypeSwitch) const _PrototypeSwitch()],
+      ),
+      body: _MoreMenu(showHelp: showHelp, showArchived: showArchived),
     );
   }
 
@@ -348,7 +361,12 @@ String _versionOf(PackageInfo info) => info.buildNumber.isEmpty
 /// `REVENUECAT_PURCHASES`), or for a household that has it. Before the
 /// launch nobody sees it (job 64); the page stays reachable from the
 /// integration settings.
-class const _PremiumRow({required final bool selected}) extends StatefulWidget {
+class const _PremiumRow({
+  required final bool selected,
+
+  /// Draws the row from its hint; [_Row] when null.
+  final Widget Function(String? detail)? builder,
+}) extends StatefulWidget {
   @override
   State<_PremiumRow> createState() => _PremiumRowState();
 }
@@ -374,18 +392,22 @@ class _PremiumRowState() extends State<_PremiumRow> {
         if (!unlocked && (offer.data != true || notYet)) {
           return const SizedBox.shrink();
         }
+        // The hint asks for a purchase: only where one may be offered.
+        final detail = context.select<Entitlements, String?>(
+          (e) => e.has(Entitlement.premium)
+              ? l10n.lifetimeUnlocked
+              : e.canOffer(Entitlement.premium, PremiumPlan.yearly)
+              ? l10n.premiumRowHint
+              : null,
+        );
+        if (widget.builder case final builder?) {
+          return builder(detail);
+        }
         return _Row(
           key: const ValueKey('more-lifetime'),
           icon: Icons.favorite_outline,
           label: l10n.premiumTitle,
-          // The hint asks for a purchase: only where one may be offered.
-          detail: context.select<Entitlements, String?>(
-            (e) => e.has(Entitlement.premium)
-                ? l10n.lifetimeUnlocked
-                : e.canOffer(Entitlement.premium, PremiumPlan.yearly)
-                ? l10n.premiumRowHint
-                : null,
-          ),
+          detail: detail,
           selected: widget.selected,
           onTap: () => context.go(premiumPath),
         );

@@ -1322,3 +1322,19 @@ Order: server first, then the flag, so nobody sees a button that answers „noch
 freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
 API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
 depend on it.
+
+## Job 79: More menu prototypes (2026-11-02)
+
+- **PR:** #206 (draft, not for merge). **Preview path:** `/internal/menu-prototypes` on the PR's
+  hummlist-site preview, https://hummlist-site-git-job-79-menu-prototypes-peter-trost.vercel.app/internal/menu-prototypes
+  (Vercel login, as for job 77's store frames).
+- **Pick one:** M-P1 Klar gegliedert, M-P2 Gruppen, M-P3 Luftig (the one with clearly more
+  spacing), M-P4 Kompakt or M-P5 Nach Aufgaben, or a mix ("P5's headers with P4's density").
+  A follow-up job then turns that prototype's data into the real menu, adds routes for the
+  Privacy (and, if chosen, Legal) pages, deletes `app/lib/more/menu_prototypes.dart` and the
+  `menuProto*` strings, and builds the update card for real (Shorebird patch state, store
+  version check).
+- **Try it live:** any debug build (`scripts/dev.sh` or `flutter run`), More tab, lab icon top
+  right.
+- Job 77's #204 carries the same `site/build.mjs` guard for `internal/`; if either lands, the
+  other rebases onto it.
