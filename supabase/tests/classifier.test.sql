@@ -24,9 +24,9 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000d1', 'dora@example.com');
 
 select pg_temp.login('00000000-0000-0000-0000-0000000000d1');
-create temp table hd as select id from public.create_household('Dora');
+create temp table hd as select id from public.create_household(p_name => 'Dora', p_stores => array['dm', 'Lidl', 'Edeka']);
 select pg_temp.login('00000000-0000-0000-0000-0000000000c1');
-create temp table hc as select id from public.create_household('Carla');
+create temp table hc as select id from public.create_household(p_name => 'Carla', p_stores => array['dm', 'Lidl', 'Edeka']);
 grant select on hc, hd to authenticated;
 
 -- Item keys: one form per item across case, umlauts, quantities and plurals.

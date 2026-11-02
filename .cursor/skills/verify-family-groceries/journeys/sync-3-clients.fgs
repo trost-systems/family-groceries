@@ -1,5 +1,5 @@
 # fg sync household-3-mid-shop --clients 3 --script journeys/sync-3-clients.fgs
-# A = Mia (all stores open), B = Noah (shopping at Lidl: every other store folded), C = Ida (all open).
+# A = Mia (all stores open), B = Noah (shopping at the Supermarkt: every other store folded), C = Ida (all open).
 A add "Hafermilch"
 expect B,C see "Hafermilch" within 2000ms
 B tick "Butter"

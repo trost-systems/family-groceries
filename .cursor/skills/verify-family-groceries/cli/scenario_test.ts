@@ -98,7 +98,21 @@ Deno.test('cross references are checked: members, stores, categories, reserved h
     await problems(base + 'households:\n  - { name: H, members: [anna] }\nexpect:\n  due: { home: [Milch] }\n'),
     /expect\.due\.home\[0\]: "Milch" is never bought/,
   );
-  assertMatch(await problems(base + 'views:\n  ben: { store: Lidl }\n'), /views\.ben\.store: "ben" is in no household/);
+  assertMatch(
+    await problems(base + 'households:\n  - { name: H, members: [anna], items: [{ name: X, store: Lidl }] }\n'),
+    /items\[0\]\.store: no store "Lidl" \(have: none; declare it in households\[0\]\.stores\)/,
+    'a household starts without stores, chains included',
+  );
+  assertMatch(
+    await problems(base + 'households:\n  - { name: H, members: [anna], stores: [{ name: Supermarkt }, { name: " supermarkt" }] }\n'),
+    /households\[0\]\.stores\[1\]: " supermarkt" is stores\[0\] again/,
+  );
+  assertMatch(
+    await problems(base + 'households:\n  - { name: H, members: [anna], items: [Milch, { name: milch, quantity: "2" }] }\n'),
+    /households\[0\]\.items\[1\]: the same open item as items\[0\]/,
+  );
+  await parse(base + 'households:\n  - { name: H, members: [anna], items: [Milch, { name: Milch, properties: laktosefrei }] }\n');
+  assertMatch(await problems(base + 'views:\n  ben: { store: Supermarkt }\n'), /views\.ben\.store: "ben" is in no household/);
   assertMatch(await problems(base.replace('name: tt', 'name: other')), /name: "other" must match the file name "tt"/);
   assertMatch(await problems('name: tt\nsummary: [unclosed\n'), /not valid YAML/);
 });
@@ -120,9 +134,9 @@ Deno.test('repeated trips keep their wall-clock time and come out oldest first',
   const trips = plan(s, new Date('2026-11-10T12:00:00Z')).households[0].trips;
   assertEquals(trips.length, 8 + 8 + 4 + 1);
   for (let i = 1; i < trips.length; i++) assert(trips[i - 1].at <= trips[i].at, 'oldest first');
-  const edeka = trips.filter((t) => t.store === 'Edeka');
+  const weekly = trips.filter((t) => t.store === 'Supermarkt');
   const berlin = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(d);
-  assertEquals(new Set(edeka.map((t) => berlin(t.at))), new Set(['17:30']), 'same wall clock before and after the DST change');
+  assertEquals(new Set(weekly.map((t) => berlin(t.at))), new Set(['17:30']), 'same wall clock before and after the DST change');
 });
 
 Deno.test('heavy-history due margins hold at any time of day', async () => {
@@ -131,7 +145,7 @@ Deno.test('heavy-history due margins hold at any time of day', async () => {
   for (let hour = 0; hour < 24; hour++) {
     const now = new Date(Date.UTC(2026, 10, 10, hour, 30));
     const trips = plan(s, now).households[0].trips;
-    for (const [store, gap, due] of [['Edeka', 7, true], ['Lidl', 7, false], ['dm', 14, true]] as const) {
+    for (const [store, gap, due] of [['Supermarkt', 7, true], ['Wochenmarkt', 7, false], ['Drogerie', 14, true]] as const) {
       const last = trips.filter((t) => t.store === store).at(-1)!;
       const days = (now.getTime() - last.at.getTime()) / 86_400_000;
       assertEquals(days >= gap && days <= 4 * gap, due, `${store} at ${hour}:30 UTC: ${days.toFixed(2)} days`);

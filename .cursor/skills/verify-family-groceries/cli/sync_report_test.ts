@@ -16,7 +16,7 @@ const result: EngineResult = {
   durationMs: 9000,
   clients: [
     { label: 'A', ref: 'r:mia', name: 'Mia', screen: 'list', store: null, video: 'videos/A.webm' },
-    { label: 'B', ref: 'r:noah', name: 'Noah', screen: 'list', store: 'Lidl', video: 'videos/B.webm' },
+    { label: 'B', ref: 'r:noah', name: 'Noah', screen: 'list', store: 'Supermarkt', video: 'videos/B.webm' },
   ],
   steps: [
     { index: 0, line: 1, source: 'A add "X"', kind: 'act', ok: true, frame: '0002' },

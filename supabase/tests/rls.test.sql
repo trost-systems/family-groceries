@@ -22,11 +22,11 @@ create temp table ha as select id from public.create_household('Alice');
 insert into public.items (household_id, name) select id, 'Milch' from ha;
 create temp table inv as select * from public.create_invite((select id from ha));
 -- Job 2: Alice's learned memories and catalog ids for the cross-household checks.
+create temp table alice_store as select public.add_store((select id from ha), 'Supermarkt') as id;
 update public.items
 set category_id = (select id from public.categories where household_id = (select id from ha) and seed_key = 'drinks'),
-    store_id = (select id from public.stores where household_id = (select id from ha) and seed_key = 'lidl')
+    store_id = (select id from alice_store)
 where household_id = (select id from ha);
-create temp table alice_store as select id from public.stores where household_id = (select id from ha) and seed_key = 'lidl';
 create temp table alice_category as
   select id from public.categories where household_id = (select id from ha) and seed_key = 'drinks';
 -- Job 15: a learned brand and an item to place, move and reorder around.

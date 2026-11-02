@@ -14,7 +14,7 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000005b1', 'ben@example.com'),
   ('00000000-0000-0000-0000-0000000005c1', 'cleo@example.com');
 select pg_temp.login('00000000-0000-0000-0000-0000000005a1');
-create temp table hs as select id from public.create_household('Sara');
+create temp table hs as select id from public.create_household(p_name => 'Sara', p_stores => array['dm', 'Lidl', 'Edeka']);
 grant select on hs to authenticated;
 
 create function pg_temp.store(p_name text) returns uuid language sql as $$
@@ -34,7 +34,7 @@ select is(
 );
 select is(public.add_store((select id from hs), 'rewe  city'), (select id from rewe),
   'the same name in another case and spacing returns the existing store');
-select is(public.add_store((select id from hs), 'LIDL'), pg_temp.store('Lidl'), 'a preset store is found by name too');
+select is(public.add_store((select id from hs), 'LIDL'), pg_temp.store('Lidl'), 'a chain picked in onboarding is found by name too');
 select is((select count(*)::int from public.stores where household_id = (select id from hs)), 4,
   'no duplicate was created');
 select throws_ok($$ select public.add_store((select id from hs), '   ') $$, '22023', 'store_name_empty',
@@ -65,9 +65,9 @@ select lives_ok($$ select public.rename_store((select id from rewe), ' Rewe  Mar
 select is((select name from public.stores where id = (select id from rewe)), 'Rewe Markt', 'the new name is cleaned');
 select throws_ok($$ select public.rename_store((select id from rewe), 'edeka') $$, '23505', 'store_name_taken',
   'renaming onto another store''s name is refused');
-select lives_ok($$ select public.rename_store(pg_temp.store('dm'), 'DM') $$, 'a preset store changes case');
+select lives_ok($$ select public.rename_store(pg_temp.store('dm'), 'DM') $$, 'a chain store changes case');
 select is((select seed_key from public.stores where id = pg_temp.store('DM')), 'dm', 'and stays that chain');
-select lives_ok($$ select public.rename_store(pg_temp.store('DM'), 'Rossmann') $$, 'a preset store gets another name');
+select lives_ok($$ select public.rename_store(pg_temp.store('DM'), 'Rossmann') $$, 'a chain store gets another name');
 select is((select seed_key from public.stores where id = pg_temp.store('Rossmann')), null,
   'and is no longer that chain');
 

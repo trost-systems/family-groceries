@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: many-stores
-summary: A household with nine stores, each with its own walk order and hidden categories, and items tagged to every store.
+summary: A household with ten stores, each with its own walk order and hidden categories, and items tagged to every store.
 goodFor:
   - the store picker with many chips (overflow, scrolling)
   - store sections ordered by distinct walk orders
@@ -15,45 +15,54 @@ households:
     categories:
       add: [Tiernahrung]
     stores:
-      - name: Rewe
+      - name: Supermarkt
         layout: [Obst & Gemüse, Kühlregal, Brot & Backwaren, Fleisch/Wurst/Fisch, Vorrat & Konserven, Getränke, Tiefkühl, Haushalt]
-      - name: Aldi Süd
+      - name: Discounter
         layout: [Brot & Backwaren, Obst & Gemüse, Vorrat & Konserven, Süßes & Snacks, Kühlregal, Tiefkühl, Getränke, Haushalt]
-      - name: Kaufland
+      - name: Großmarkt
         layout: [Getränke, Haushalt, 👶 Drogerie, Tiernahrung, Vorrat & Konserven, Süßes & Snacks, Obst & Gemüse, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl]
-      - name: Netto
+      - name: Biomarkt
         layout: [Obst & Gemüse, Brot & Backwaren, Tiefkühl, Kühlregal, Getränke]
-      - name: Rossmann
+      - name: Drogerie
         layout: [👶 Drogerie, Haushalt, Süßes & Snacks, Getränke]
         hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl, Tiernahrung]
       - name: Wochenmarkt
         layout: [Obst & Gemüse, Brot & Backwaren, Fleisch/Wurst/Fisch, Kühlregal]
         hidden: [Haushalt, 👶 Drogerie, Tiefkühl, Getränke, Süßes & Snacks, Tiernahrung]
-      - name: Fressnapf
+      - name: Tierbedarf
         layout: [Tiernahrung]
         hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, 👶 Drogerie]
+      - name: Hofladen
+        layout: [Kühlregal, Obst & Gemüse, Fleisch/Wurst/Fisch, Brot & Backwaren]
+        hidden: [Haushalt, 👶 Drogerie, Tiefkühl, Tiernahrung]
+      - name: Bäckerei
+        layout: [Brot & Backwaren, Süßes & Snacks, Getränke]
+        hidden: [Obst & Gemüse, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl, Haushalt, 👶 Drogerie, Tiernahrung]
+      - name: Apotheke
+        layout: [👶 Drogerie]
+        hidden: [Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Tiefkühl, Getränke, Tiernahrung]
     items:
       - { name: Erdbeeren, store: Wochenmarkt }
       - { name: Bauernbrot, store: Wochenmarkt }
       - { name: Ziegenkäse, store: Wochenmarkt }
-      - { name: Hundefutter, store: Fressnapf, category: Tiernahrung }
-      - { name: Katzenstreu, store: Fressnapf, category: Tiernahrung }
-      - { name: Windeln, store: Rossmann }
-      - { name: Sonnencreme, store: Rossmann }
-      - { name: Haarspray, store: Rossmann }
-      - { name: Mineralwasser, quantity: "3 Kisten", store: Kaufland }
-      - { name: Waschmittel, store: Kaufland }
-      - { name: Katzenfutter, store: Kaufland, category: Tiernahrung }
-      - { name: Fischstäbchen, store: Netto }
-      - { name: Toast, store: Netto }
-      - { name: Nüsse, store: Aldi Süd }
-      - { name: Müsli, store: Aldi Süd }
-      - { name: Lachs, store: Rewe }
-      - { name: Rucola, store: Rewe }
-      - { name: Pesto, store: Rewe }
-      - { name: Milch, store: Lidl }
-      - { name: Brot, store: Edeka }
-      - { name: Zahnpasta, store: dm }
+      - { name: Hundefutter, store: Tierbedarf, category: Tiernahrung }
+      - { name: Katzenstreu, store: Tierbedarf, category: Tiernahrung }
+      - { name: Windeln, store: Drogerie }
+      - { name: Sonnencreme, store: Drogerie }
+      - { name: Haarspray, store: Drogerie }
+      - { name: Mineralwasser, quantity: "3 Kisten", store: Großmarkt }
+      - { name: Waschmittel, store: Großmarkt }
+      - { name: Katzenfutter, store: Großmarkt, category: Tiernahrung }
+      - { name: Fischstäbchen, store: Biomarkt }
+      - { name: Toast, store: Biomarkt }
+      - { name: Nüsse, store: Discounter }
+      - { name: Müsli, store: Discounter }
+      - { name: Lachs, store: Supermarkt }
+      - { name: Rucola, store: Supermarkt }
+      - { name: Pesto, store: Supermarkt }
+      - { name: Milch, store: Hofladen }
+      - { name: Brot, store: Bäckerei }
+      - { name: Zahnpasta, store: Apotheke }
       - Zwiebeln
       - Kaffee
       - Spülmittel

@@ -6378,3 +6378,53 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
 12. **Widgets stay unlocked** (the brief): they read the list the app has and call no gated
     endpoint. Whether they become Premium is Peter's call and new work.
 13. **Local ports 567xx**, since 671xx is past 65535 (job 66 did the same with 566xx).
+
+## Job 64: polish from the Play reshoot, 2026-11-02
+
+- **No default stores anywhere** (Peter, job 58). `create_household`'s `p_default_stores` now
+  defaults to false (`20261102084411_no_default_stores.sql`). The app sends false since job 22,
+  so real new households already got no store unless one was picked; the change reaches only
+  builds older than job 22 and the scripts, fixtures and tests that left the argument out. `true`
+  still seeds dm, Lidl and Edeka for builds whose onboarding ticked them.
+- **Fixtures and tests use generic stores** (Supermarkt, Drogerie, Bäckerei, Wochenmarkt; two more
+  in `many-stores` and `h-prototype`: Discounter, Großmarkt, Biomarkt, Tierbedarf, Hofladen,
+  Apotheke). A scenario declares every store it uses; fg creates them with `add_store`, the app's
+  path. The e2e `createHousehold` picks nothing by default, as onboarding does. Tests whose subject
+  is a chain (Lidl's walking order, dm hiding food, Balea → dm, the drugstore hint) pick dm, Lidl
+  and Edeka explicitly (`chainStores` in `e2e/tests/helpers.ts`, `p_stores` in pgTAP).
+- **One open item per name, brand and details, server-side** (`20261102084412_one_open_item.sql`).
+  Found as a real race, not a helper shortcut: the app's duplicate check only knows its own list,
+  so two members (or a phone and Siri) adding "Milch" at the same moment both inserted. A BEFORE
+  INSERT trigger (`items_skip_duplicate`) takes a per-household advisory lock and skips an active
+  insert whose key (`open_item_key`: the app's `_sameItem` rule, name and brand folded, details in
+  any order) is already open. The app's upsert then gets no row and acknowledges its add with the
+  row that is there, exactly as for a replayed add, so no app change and old builds behave too.
+  `add_item` (MCP, Siri, Alexa) takes the same lock before its own check and returns the open row
+  when the trigger skipped. Updates are not checked: putting an item back or an edit that makes
+  two rows alike stays possible. Not a unique index: existing duplicates would block the
+  migration, and a violation would turn into a retried, then rejected op in the app instead of a
+  quiet merge.
+- **„Wieder fällig“ was right; the sheet hid it.** The due rule (purchases on two or more days,
+  due from one usual gap after the last purchase to four gaps) returned eleven due items for the
+  heavy-history household. The empty sheet was capped at half the screen minus the bar and tabs,
+  with a 200 px floor that assumed one line of chips. On a 360 px phone (the Play captures,
+  1080×1920) the „Laden: automatisch“ and „Kategorie: automatisch“ chips wrap, so one row was
+  left, cut in half by the input; after an add the note took that room. That is also the "last
+  row hidden behind the input" of the reshoot. Before anything is typed the sheet now shows its
+  notes and at most three whole suggestion rows (60 px each); the rest scroll. This replaces
+  Job 17's half-screen rule (6. Height) for the empty field: the first opening stays small, but
+  never shows one row cut by the input. The typed sheet is unchanged.
+- **Hummlist Premium is not listed in Mehr before the launch.** The row shows once Premium may be
+  offered (`premium_offer` on and, in the iPhone and Android apps, `REVENUECAT_PURCHASES`), or for
+  a household that has Premium (a tester grant), whose status stays reachable. The web lists it
+  once `premium_offer` is on, since the page there says to buy in the apps. The page itself stays
+  at `/more/lifetime` for the integration settings' card (only with the integration lock on).
+  No flag was changed.
+- **Escape right after a tap closes the sheet** (found by CI on this job's e2e,
+  `add-sheet.spec.ts`). On the web a tap on a row unfocused the input and refocused it 50 ms later;
+  an Escape in that gap reached nothing, and the timer then refocused the input. The gap now holds
+  focus on the add bar's own node (`_barFocus`, which already took Escape and Enter), the timer is
+  cancelled on close, a close parks focus there instead of unfocusing (a focused row leaving with
+  the sheet no longer hands focus back to the input, which reopened it), and a non-focusable
+  `Focus` around the sheet takes Escape from its rows and chips. That wrapper has
+  `includeSemantics: false`: with semantics on, a node the size of the list area took every tap.

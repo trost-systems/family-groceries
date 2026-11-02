@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
@@ -26,9 +25,13 @@ const _sheetDuration = HlDuration.medium;
 /// Room between the open sheet's top and the screen's safe top.
 const _topGap = 28.0;
 
-/// Before anything is typed the sheet takes at most this share of the
-/// screen, counting the bar and tabs below it.
-const _firstOpenShare = 0.5;
+/// Before anything is typed the sheet shows at most this many suggestion
+/// rows, whole; the others scroll. Wrapped chips on a narrow phone no
+/// longer leave room for a single row cut by the input.
+const _firstOpenRows = 3;
+
+/// A suggestion row's height (its minimum; a larger text scale grows it).
+const _rowHeight = 60.0;
 
 /// Room for the header, the chips and a row; with less, all of it scrolls.
 const _roomy = 200.0;
@@ -79,9 +82,6 @@ class const AddSheet({
 
   /// Folds, picks and Undo inside the sheet hand focus back to the input.
   required final VoidCallback onPicked,
-
-  /// Room below the sheet that the bar and tabs take on the screen.
-  required final double bandHeight,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -130,17 +130,7 @@ class _AddSheetState() extends State<AddSheet> {
         builder: (context, constraints) {
           final media = MediaQuery.of(context);
           final frame = ShoppingListView.frameFor(constraints.maxWidth, list);
-          var max = constraints.maxHeight - media.padding.top - _topGap;
-          // A duplicate hint or merge note (job 32b) needs its row in
-          // view, so the sheet may grow for it.
-          if (sheet.text.trim().isEmpty &&
-              sheet.hint == null &&
-              sheet.merge == null) {
-            final first =
-                media.size.height * _firstOpenShare - widget.bandHeight;
-            // Never below the room the header and chips need.
-            max = math.min(max, math.max(first, _roomy));
-          }
+          final max = constraints.maxHeight - media.padding.top - _topGap;
           final content = _shown || open
               ? _Content(
                   maxHeight: max < 0 ? 0 : max,
@@ -291,7 +281,7 @@ class const _Content({
         ),
       ),
     ];
-    final rowWidgets = <Widget>[
+    final notes = <Widget>[
       if (sheet.added case final added?)
         _AddedNote(
           added,
@@ -325,6 +315,8 @@ class const _Content({
             onPicked();
           },
         ),
+    ];
+    final suggestions = <Widget>[
       for (final (i, row) in rows.indexed)
         _SuggestionRow(
           key: ValueKey('suggestion-$i'),
@@ -350,6 +342,10 @@ class const _Content({
           ),
         ),
     ];
+    final rowWidgets = [...notes, ...suggestions];
+    // Before typing, a note (the last add, a duplicate hint or merge) sits
+    // above the capped rows, so it never pushes them out of view.
+    final firstOpen = sheet.text.trim().isEmpty;
     return AnimatedOpacity(
       opacity: sheet.open ? 1 : 0,
       duration: hlMotion(context, HlDuration.short),
@@ -373,14 +369,22 @@ class const _Content({
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ...fixed,
+                    if (firstOpen) ...notes,
                     Flexible(
                       child: FocusTraversalOrder(
                         order: const NumericFocusOrder(2),
-                        child: ListView(
-                          key: const ValueKey('add-suggestions'),
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          children: rowWidgets,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: firstOpen
+                                ? _firstOpenRows * _rowHeight
+                                : double.infinity,
+                          ),
+                          child: ListView(
+                            key: const ValueKey('add-suggestions'),
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            children: firstOpen ? suggestions : rowWidgets,
+                          ),
                         ),
                       ),
                     ),
@@ -510,7 +514,7 @@ class const _SuggestionRow({
         child: InkWell(
           onTap: onTap,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 60),
+            constraints: const BoxConstraints(minHeight: _rowHeight),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: scheme.outlineVariant)),

@@ -8,16 +8,7 @@
  */
 
 import { type Ctx, FgError, type JsonObject, stopIf } from './core.ts';
-import {
-  expectedCounts,
-  type Plan,
-  plan,
-  type PlannedHousehold,
-  type PlannedItem,
-  type Scenario,
-  SEEDED_CATEGORIES,
-  SEEDED_STORES,
-} from './scenario.ts';
+import { expectedCounts, type Plan, plan, type PlannedHousehold, type PlannedItem, type Scenario, SEEDED_CATEGORIES } from './scenario.ts';
 import { Api, type Target } from './target.ts';
 
 export const TEST_DOMAIN = 'fg-test.invalid';
@@ -259,7 +250,7 @@ async function seedHousehold(
 ): Promise<void> {
   const owner = h.members[0];
   const ownerToken = tokens[owner];
-  // The app's own path: create_household seeds categories, stores and their layouts.
+  // The app's own path: create_household seeds the categories; the household has no store yet.
   const household = (await api.rpc('create_household', { p_name: h.name }, ownerToken)) as JsonObject;
   const hid = household.id as string;
   m.households[h.handle] = { id: hid, name: h.name, members: h.members };
@@ -280,19 +271,14 @@ async function seedHousehold(
     return rows;
   };
   const seeded = await loadCategories();
-  const stores = new Map<string, string>();
-  for (const r of (await api.rest(`stores?select=id,name,sort_order&household_id=eq.${hid}&order=sort_order`)) as JsonObject[]) {
-    stores.set(r.name as string, r.id as string);
-  }
-  const drift = [
-    ...SEEDED_CATEGORIES.filter((c) => !categories.has(c)).map((c) => `category "${c}"`),
-    ...SEEDED_STORES.filter((x) => !stores.has(x)).map((x) => `store "${x}"`),
-  ];
-  if (drift.length || seeded.length !== SEEDED_CATEGORIES.length) {
+  const missing = SEEDED_CATEGORIES.filter((c) => !categories.has(c));
+  if (missing.length || seeded.length !== SEEDED_CATEGORIES.length) {
     throw new FgError(
       'seed_drift',
-      `create_household no longer seeds what cli/scenario.ts expects: missing ${drift.join(', ') || `(${seeded.length} categories)`}.`,
-      'Update SEEDED_CATEGORIES / SEEDED_STORES in cli/scenario.ts to match seed_household in supabase/migrations.',
+      `create_household no longer seeds what cli/scenario.ts expects: missing ${
+        missing.map((c) => `category "${c}"`).join(', ') || `(${seeded.length} categories)`
+      }.`,
+      'Update SEEDED_CATEGORIES in cli/scenario.ts to match seed_household in supabase/migrations.',
     );
   }
 
@@ -307,21 +293,16 @@ async function seedHousehold(
     route.splice(0, route.length, ...order);
   }
 
-  let storeSort = 10 * (stores.size + 1);
+  // As the app adds one (store picker, Mehr → Läden): after the last store, with a layout.
+  const stores = new Map<string, string>();
   for (const st of h.stores) {
-    if (st.isNew) {
-      const [row] = (await api.rest('stores', {
-        method: 'POST',
-        token: ownerToken,
-        body: JSON.stringify({ household_id: hid, name: st.name, sort_order: storeSort }),
-      })) as JsonObject[];
-      storeSort += 10;
-      stores.set(st.name, row.id as string);
-      m.created.stores.push(row.id as string);
-    }
+    const id = (await api.rpc('add_store', { p_household: hid, p_name: st.name }, ownerToken)) as string;
+    stores.set(st.name, id);
+    m.created.stores.push(id);
+    if (!st.layout.length && !st.hidden.length) continue;
     const order = [...st.layout, ...route.filter((c) => !st.layout.includes(c))];
     await api.rpc('set_store_layout', {
-      p_store: stores.get(st.name)!,
+      p_store: id,
       p_categories: order.map((c) => categories.get(c)!),
       p_hidden: st.hidden.map((c) => categories.get(c)!),
     }, ownerToken);

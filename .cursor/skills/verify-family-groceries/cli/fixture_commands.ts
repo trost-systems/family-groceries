@@ -192,9 +192,9 @@ export const fixtureCommands: Command[] = [
         ctx.actions.push(
           `create ${p.users.length} users ${p.users.map((u) => `${u.handle}.${run}@fg-test.invalid`).join(', ')} on the ${kind} target`,
           ...p.households.map((h) =>
-            `create household "${h.name}" (${h.members.join(', ')}): ${h.items.length} list items, ${h.trips.length} past trips, ${
-              h.stores.filter((s) => s.isNew).length
-            } new stores, ${h.invites.length} invites`
+            `create household "${h.name}" (${
+              h.members.join(', ')
+            }): ${h.items.length} list items, ${h.trips.length} past trips, ${h.stores.length} stores, ${h.invites.length} invites`
           ),
           'check counts, usuals and RLS as the members',
         );

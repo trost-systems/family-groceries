@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from './fixtures';
-import { apiAs, newEmail, openMore, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
+import { apiAs, newEmail, openPremium, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
 import { archiveSwitchOn, buy, householdOf, report } from './iap';
 
 // Job 43: Hummlist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
@@ -74,7 +74,7 @@ test('joining an unlocked household: nothing to buy, the warning, the refund hel
   expect(await report(benEmail, benTx), 'restore after the household is gone').toBe('used_elsewhere');
 
   // In Anna's household, a member who did not buy sees it unlocked, with no Buy.
-  await openMore(ben, 'Hummlist Premium');
+  await openPremium(ben);
   await expect(unlocked(ben)).toBeVisible();
   await expect(buyButton(ben)).toHaveCount(0);
 });
@@ -94,7 +94,7 @@ test('a joiner into a locked household is told nothing; a household bought twice
   await dirk.getByRole('button', { name: 'Haushalt beitreten', exact: true }).click();
   await expect(dirk).toHaveURL(/\/$/);
 
-  await openMore(cara, 'Hummlist Premium');
+  await openPremium(cara);
   expect(await buy(caraEmail, `4302${Date.now()}`)).toBe('granted');
   await expect(unlocked(cara)).toBeVisible({ timeout: 10_000 });
   // Dirk bought too on his phone before he saw it (two phones, Ask to Buy): flagged for the refund help.
@@ -121,7 +121,7 @@ test('the last member archives an unlocked household, its purchase stays its own
 
   // In Cara's household the purchase restores nothing: it belongs to the archived one.
   expect(await report(frankEmail, frankTx)).toBe('used_elsewhere');
-  await openMore(frank, 'Hummlist Premium');
+  await openPremium(frank);
   await expect(unlocked(frank), 'Cara\'s household has no Lifetime').toHaveCount(0);
 
   await openTab(frank, 'Mehr');
@@ -138,7 +138,7 @@ test('the last member archives an unlocked household, its purchase stays its own
   await frank.getByRole('button', { name: 'Wieder aktivieren', exact: true }).click();
   await frank.getByRole('button', { name: 'Wieder aktivieren', exact: true }).last().click();
   await expect.poll(() => householdOf(frankEmail)).toBe(frankHousehold);
-  await openMore(frank, 'Hummlist Premium');
+  await openPremium(frank);
   await expect(unlocked(frank), 'back in his household, the unlock is back').toBeVisible({ timeout: 10_000 });
   expect(await report(frankEmail, frankTx)).toBe('restored');
 });
@@ -147,7 +147,11 @@ test('the web says to buy in the app, also in English', async ({ browser }) => {
   const email = newEmail('iap43-web');
   const page = await newPage(browser);
   await signUpWithHousehold(page, email);
-  await openMore(page, 'Hummlist Premium');
+  await openTab(page, 'Mehr');
+  await expect(page.getByRole('button', { name: 'Konto', exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Hummlist Premium/ }), 'not listed before the launch (job 64)')
+    .toHaveCount(0);
+  await openPremium(page);
   await expect(
     page.getByText(
       'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.',

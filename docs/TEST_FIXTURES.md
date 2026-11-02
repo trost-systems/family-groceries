@@ -37,13 +37,13 @@ scripts/fg sync household-3-mid-shop --clients 3 \
 | Scenario | State | Good for |
 | --- | --- | --- |
 | `empty-new-user` | One confirmed user, no household | Onboarding: the welcome screen, create a household, join with a code, deleting an account without data |
-| `solo-long-list` | One person, 64 items over Lidl, Edeka, dm and no store, every category | Scrolling and grouping, store sections with many items, offline start with a big cache |
-| `household-3-mid-shop` | Three members; 8 items ticked 12 minutes ago at Lidl, 10 open; Noah's client has every store but Lidl folded | Live sync with 2 or 3 clients, ticking while shopping at one store, fresh "Zuletzt verwendet" |
-| `heavy-history` | Two members, 8 weeks of trips at Edeka (weekly), Lidl (weekly), dm (every 2 weeks) | Usuals and "Brauchen wir wieder?": Milch, Brot, Eier, Windeln, Duschgel are due; Hafermilch, Gurken, Tomaten, Nudeln are usuals but not due |
-| `many-stores` | Nine stores (dm, Lidl, Edeka, Rewe, Aldi Süd, Kaufland, Netto, Rossmann, Wochenmarkt, Fressnapf) with distinct walk orders and hidden categories, a "Tiernahrung" category | The store picker with many chips, store layouts, hidden categories, item→store memory |
-| `edge-cases` | A German and an English user; a 120-character name, a 40-character quantity, emoji, umlauts, quotes, duplicates (Milch twice, milch) | Text layout, duplicates, quantity display, an `en` user |
+| `solo-long-list` | One person, 64 items over Supermarkt, Wochenmarkt, Bäckerei, Drogerie and no store, every category | Scrolling and grouping, store sections with many items, offline start with a big cache |
+| `household-3-mid-shop` | Three members, stores Supermarkt and Drogerie; 8 items ticked 12 minutes ago at the Supermarkt, 10 open; Noah's client has every store but the Supermarkt folded | Live sync with 2 or 3 clients, ticking while shopping at one store, fresh "Zuletzt verwendet" |
+| `heavy-history` | Two members, 8 weeks of trips at the Supermarkt (weekly), the Wochenmarkt (weekly), the Drogerie (every 2 weeks) | Usuals and "Brauchen wir wieder?": Milch, Brot, Eier, Windeln, Duschgel are due; Hafermilch, Gurken, Tomaten, Nudeln are usuals but not due |
+| `many-stores` | Ten generic stores (Supermarkt, Discounter, Großmarkt, Biomarkt, Drogerie, Wochenmarkt, Tierbedarf, Hofladen, Bäckerei, Apotheke) with distinct walk orders and hidden categories, a "Tiernahrung" category | The store picker with many chips, store layouts, hidden categories, item→store memory |
+| `edge-cases` | A German and an English user; a 120-character name, a 40-character quantity, emoji, umlauts, quotes, near-duplicates (Milch and Milch laktosefrei; a second open Milch would be skipped) | Text layout, near-duplicates, quantity display, an `en` user |
 | `pending-invite` | A one-person household with one open, one expired and one revoked invite code; a second user without a household | Joining by code or `/join/<code>` (the seed prints the open code), invalid-invite errors, a member arriving live |
-| `h-list-walk` | Two members, Lidl, dm and Edeka with their own layouts, 14 items with brands, properties and a set walk order inside each group, two without a store | Design H's list (store sections, category dividers, Marke · Eigenschaften rows), drag and drop against a known order, store reordering, the edit sheet prefilled |
+| `h-list-walk` | Two members, Drogerie, Supermarkt and Wochenmarkt (in that order) with their own layouts, 14 items with brands, properties and a set walk order inside each group, two without a store | Design H's list (store sections, category dividers, Marke · Eigenschaften rows), drag and drop against a known order, store reordering, the edit sheet prefilled |
 
 `fg scenario show <name>` prints the resolved plan: every user, item and
 trip with absolute times, and the counts the seed checks.
@@ -57,10 +57,14 @@ trip with absolute times, and the counts the seed checks.
    `<handle>.<run>@fg-test.invalid`, `user_metadata.display_name` and
    `locale`, and `app_metadata.fg_run` / `fg_scenario`.
 2. Creates each household the way the app does: the owner calls
-   `create_household` (which seeds categories, dm/Lidl/Edeka and their
-   layouts); the other members are added with the service role.
-3. Adds categories (`create_category`), the route order
-   (`reorder_categories`), new stores and walk orders (`set_store_layout`).
+   `create_household` (which seeds the categories; a household starts
+   without stores); the other members are added with the service role.
+3. Adds categories (`create_category`) and the route order
+   (`reorder_categories`). Creates the scenario's stores in their order
+   with `add_store`, as the app does, then sets the walk orders a scenario
+   gives (`set_store_layout`). Fixtures use generic store names
+   (Supermarkt, Drogerie, Bäckerei, Wochenmarkt); `add_store` would make
+   dm, Lidl or Edeka that chain.
 4. Replays the history oldest trip first, through the real triggers: the
    adder inserts the items (classifier, `added_by`, the `added` event), the
    shopper ticks them (the `bought` event, item→store memory when the trip
@@ -136,7 +140,10 @@ Each Linux client costs about 650 MB; use at most two on the shared box.
 One YAML file per scenario, validated by
 [`test/fixtures/scenario.schema.json`](../test/fixtures/scenario.schema.json)
 (editors pick it up through the `yaml-language-server` comment). Errors
-name the field: `households[0].items[3].store: no store "Aldi"`.
+name the field: `households[0].items[3].store: no store "Aldi"`. An item,
+trip or view may name only a store the household declares under `stores:`,
+and the open list may hold each item once (the database skips an open item
+that is already on the list).
 
 ```yaml
 # yaml-language-server: $schema=../scenario.schema.json
@@ -152,16 +159,17 @@ households:
       add: [Tiernahrung]          # before Sonstiges, like the app
       order: [Getränke]           # these first; the rest keep their order
     stores:
-      - name: Rewe                # new store (dm, Lidl, Edeka always exist)
+      - name: Supermarkt          # households start without stores
         layout: [Obst & Gemüse, Kühlregal]   # walk order; the rest follow
         hidden: [Tiefkühl]
+      - name: Wochenmarkt         # no layout: the route order
     items:                        # the open list
       - Milch                     # just a name
-      - { name: Hafermilch, quantity: "2", store: Lidl, category: Kühlregal, by: noah, at: "-2h" }
+      - { name: Hafermilch, quantity: "2", store: Supermarkt, category: Kühlregal, by: noah, at: "-2h" }
     history:                      # past trips
       - at: "-9d 17:30"           # ticked off then (Berlin time)
         by: mia
-        store: Edeka              # ticked in this store's view
+        store: Wochenmarkt        # ticked in this store's view
         every: 7d                 # repeat, going back
         times: 8
         items: [Milch, Brot]
@@ -170,7 +178,7 @@ households:
       - { expires: "-1d" }        # expired
       - { revoked: true }
 views:
-  noah: { store: Lidl }           # fg sync selects this store chip for noah
+  noah: { store: Supermarkt }     # fg sync folds every other store for noah
 expect:                           # checked through suggest_items after seeding
   usuals: { home: [Milch] }
   due: { home: [Milch] }
@@ -252,7 +260,7 @@ their handles.
 | `B tick "Milch"` | Taps the row's checkbox ("Milch abhaken") |
 | `C edit "Bananen" quantity "6"` / `name "Banane"` | Opens the row, retypes the field, Speichern |
 | `A delete "Brot"` | Opens the row, Löschen |
-| `A store "Lidl"` / `A store "Alle"` | Shops at that store: folds every other store section except "Ohne Laden" ("Alle" unfolds all; design H has no store chips) |
+| `A store "Supermarkt"` / `A store "Alle"` | Shops at that store: folds every other store section except "Ohne Laden" ("Alle" unfolds all; design H has no store chips) |
 | `A offline` / `A online` | Cuts the client off: offline emulation plus closing its open realtime socket, so the app sees a real disconnect / reconnects |
 | `A reload` | Reloads the page |
 | `expect B,C see "X" [within 2000ms]` | Each client shows a list row named X ("X" or "X …", e.g. "Bananen 8"); default 3000 ms |

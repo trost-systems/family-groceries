@@ -177,17 +177,17 @@ select throws_ok(
 select pg_temp.login('00000000-0000-0000-0000-0000000032c1');
 
 -- The store memory follows the canonical key too (guess_store, parse_item, the insert).
-update public.items set store_id = (select id from public.stores where household_id = (select id from hc) and seed_key = 'lidl')
+update public.items set store_id = public.add_store((select id from hc), 'Wochenmarkt')
 where name = 'Mohrrüben';
 select is(
-  (select seed_key from public.stores where id = public.guess_store((select id from hc), 'Karotten', null, null)),
-  'lidl', 'a store remembered for Mohrrüben is guessed for Karotten'
+  (select name from public.stores where id = public.guess_store((select id from hc), 'Karotten', null, null)),
+  'Wochenmarkt', 'a store remembered for Mohrrüben is guessed for Karotten'
 );
 insert into public.items (household_id, name) select id, 'Gelbe Rüben' from hc;
 select is(
-  (select s.seed_key from public.items i join public.stores s on s.id = i.store_id
+  (select s.name from public.items i join public.stores s on s.id = i.store_id
    where i.household_id = (select id from hc) and i.name = 'Gelbe Rüben'),
-  'lidl', 'and an insert of Gelbe Rüben lands there'
+  'Wochenmarkt', 'and an insert of Gelbe Rüben lands there'
 );
 
 -- A renamed item gets the new name's canonical key; the text stays as typed.

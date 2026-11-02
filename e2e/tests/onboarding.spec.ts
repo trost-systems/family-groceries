@@ -77,14 +77,15 @@ test('AC1-3: sign-in, consent, Step 1, create with picked stores, invite with a 
   await expect(page.getByRole('button', { name: /^Haushalt erstellen/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Einladung annehmen/ })).toBeVisible();
 
-  await createHousehold(page);
+  await createHousehold(page, { stores: ['dm', 'Lidl', 'Wochenmarkt'] });
   const [household] = await householdsCreatedBy(email);
   expect(household.name).toBe('Unser Haushalt');
   expect(await membersOf(household.id), 'the user is its only member').toEqual([await userIdOf(email)]);
   const { data: role } = await adminClient().from('household_members').select('role').eq('household_id', household.id).single();
   expect(role!.role).toBe('owner');
   const { data: stores } = await adminClient().from('stores').select('name').eq('household_id', household.id).order('sort_order');
-  expect((stores as { name: string }[]).map((s) => s.name)).toEqual(['dm', 'Lidl', 'Edeka']);
+  expect((stores as { name: string }[]).map((s) => s.name), 'two from the offer and an own one, in the order picked')
+    .toEqual(['dm', 'Lidl', 'Wochenmarkt']);
 
   // AC3 on the web: Chromium here has no Web Share, so the invite shows with its code and link.
   await page.getByRole('button', { name: 'Partner einladen', exact: true }).click();
@@ -156,7 +157,7 @@ test('AC5 and AC12: a typed code joins; events once, without names, emails, code
   const owner = await ownerContext.newPage();
   const ownerEmail = newEmail('ac12-owner');
   await signUp(owner, ownerEmail, '/', { consent: 'accept' });
-  await createHousehold(owner, { name: 'Familie Geheim' });
+  await createHousehold(owner, { name: 'Familie Geheim', stores: ['Supermarkt', 'Drogerie', 'Wochenmarkt'] });
   await owner.getByRole('button', { name: 'Partner einladen', exact: true }).click();
   await expect(inviteCodeLabel(owner).first()).toBeVisible();
   const [code] = await shownInviteCodes(owner);

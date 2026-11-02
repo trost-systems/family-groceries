@@ -27,6 +27,9 @@ Deno.test({
         );
       }
       const [mine, theirs] = households;
+      // Job 64: new households start without stores, so this list names its own.
+      await admin`insert into public.stores (household_id, name, sort_order)
+                  values (${mine}, 'Lidl', 0), (${mine}, 'dm', 1)`;
       await asUser(users[1], (tx) => addItems(tx, theirs, [{ name: 'Brot' }, { name: 'Käse' }]));
 
       await asUser(users[0], async (tx) => {
@@ -34,9 +37,9 @@ Deno.test({
         assertEquals(empty.counts, { open: 0, checkedLast24h: 0 });
 
         await addItems(tx, mine, [
-          { name: 'Milch' },
+          { name: 'Milch', store: 'Lidl' },
           { name: 'Zahnpasta', store: 'dm' },
-          { name: 'Äpfel' },
+          { name: 'Äpfel', store: 'Lidl' },
           { name: 'Butter' },
           { name: 'Salz' },
         ]);

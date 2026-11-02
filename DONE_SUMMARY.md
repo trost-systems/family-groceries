@@ -475,3 +475,4 @@ app.hummlist.com links to the list, the add sheet, a store, the More tab and its
 ## Job 67: paywall release readiness, PR #187, not merged
 
 The paywall go-live is now the ordered checklist `docs/PAYWALL_RELEASE.md`, with an owner per step and nothing flipped. The audit with every flag on found 13 bugs, all fixed with tests: a failed renewal ended Premium on day one of the grace period, a restore of a lapsed plan blocked Buy until the app restarted, offline showed "bald verfügbar", and others. Store builds read the Premium switches from repository variables. PR #153 is rebased and green but not merged. The legal gaps are in the PR. Details: [docs/done/67-paywall-ready.md](docs/done/67-paywall-ready.md).
+- Job 64, polish from the Play reshoot (no default stores, Premium hidden before launch, one open item per name, three whole due rows): [docs/done/64-polish-seed.md](docs/done/64-polish-seed.md)

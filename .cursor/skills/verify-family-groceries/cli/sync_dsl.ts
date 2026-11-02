@@ -6,7 +6,7 @@
  *   B tick "Milch"
  *   expect A,C gone "Milch"
  *   C edit "Bananen" quantity "6"
- *   A offline / A online / A reload / A store "Lidl"
+ *   A offline / A online / A reload / A store "Supermarkt"
  *   wait 500ms
  *   screenshot "after-edit"
  *

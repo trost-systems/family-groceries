@@ -40,12 +40,12 @@ export async function wasmAllowList(page: Page, list: { blink?: boolean; webkit?
   });
 }
 
-/** A new account with a household, made through the API, and its list filled with [names]. */
-export async function householdWithItems(email: string, names: string[]): Promise<void> {
+/** A new account with a household and [stores], made through the API, and its list filled with [names]. */
+export async function householdWithItems(email: string, names: string[], { stores = [] }: { stores?: string[] } = {}): Promise<void> {
   const { error } = await anonClient().auth.signUp({ email, password });
   if (error) throw error;
   const api = await apiAs(email);
-  const { data: household, error: created } = await api.rpc('create_household', { p_name: 'Messung' });
+  const { data: household, error: created } = await api.rpc('create_household', { p_name: 'Messung', p_stores: stores });
   if (created) throw created;
   const householdId = (household as { id: string }).id;
   for (let i = 0; i < names.length; i += 50) {

@@ -11,7 +11,7 @@ end $$;
 
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000e1', 'erik@example.com');
 select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
-create temp table he as select id from public.create_household('Erik');
+create temp table he as select id from public.create_household(p_name => 'Erik', p_stores => array['dm', 'Lidl', 'Edeka']);
 grant select on he to authenticated;
 
 create function pg_temp.cat(p_seed text) returns uuid language sql as $$

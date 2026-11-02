@@ -20,7 +20,7 @@ A delete "Brot"
 A offline
 A online
 B reload
-ida store "Lidl"
+ida store "Supermarkt"
 expect A text "Offline"
 wait 500ms
 screenshot "after-edit"
@@ -36,7 +36,7 @@ screenshot "after-edit"
       { kind: 'act', client: 'A', action: 'offline' },
       { kind: 'act', client: 'A', action: 'online' },
       { kind: 'act', client: 'B', action: 'reload' },
-      { kind: 'act', client: 'C', action: 'store', store: 'Lidl' },
+      { kind: 'act', client: 'C', action: 'store', store: 'Supermarkt' },
       { kind: 'expect', clients: ['A'], check: 'text', text: 'Offline', withinMs: DEFAULT_WITHIN_MS },
       { kind: 'wait', ms: 500 },
       { kind: 'screenshot', name: 'after-edit' },
