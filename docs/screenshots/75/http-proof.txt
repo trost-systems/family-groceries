@@ -1,0 +1,13 @@
+switch: f
+== off
+create_api_token: {"code":"42501","details":null,"hint":"The public API is switched off on this server (app_switches.public_api).","message":"api_disabled"}
+GET /items no key: 404 {"error":{"code":"not_found","message":"No such endpoint."}} ratelimit-headers=0
+GET /items bogus key: 404 {"error":{"code":"not_found","message":"No such endpoint."}} ratelimit-headers=0
+auth failures counted: 0
+== on
+minted: fgp_…
+GET /items key: 200 {"data":[],"counts":{"open":0,"checkedLast24h":0},"nextCursor":null} ratelimit-headers=3
+== off again
+GET /items same key: 404 {"error":{"code":"not_found","message":"No such endpoint."}} ratelimit-headers=0
+last_used kept, key listed: [{"kind":"api","revoked_at":null}]
+MCP unaffected (PAT create): fgp_

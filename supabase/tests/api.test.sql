@@ -5,6 +5,9 @@
 begin;
 select plan(65);
 
+-- The API is switched off after the migrations (public_api_switch.test.sql); these run with it on.
+update public.app_switches set enabled = true where key = 'public_api';
+
 create function pg_temp.login(uid uuid, claims jsonb default '{}') returns void language plpgsql as $$
 begin
   perform set_config('role', 'authenticated', true);

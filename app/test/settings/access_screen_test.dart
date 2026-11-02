@@ -400,6 +400,22 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('while the server has the API off no key is made', (
+      tester,
+    ) async {
+      await pumpAccess(
+        tester,
+        flags: {'public-api'},
+        seed: (r) => r.apiRefusal = 'api_disabled',
+      );
+      await createApiKey(tester, 'Home Assistant', scope: 'api-scope-write');
+      expect(
+        find.text('Die API ist noch nicht freigeschaltet.'),
+        findsOneWidget,
+      );
+      expect(find.text(apiSecret), findsNothing);
+    });
   });
 
   group('Siri', () {

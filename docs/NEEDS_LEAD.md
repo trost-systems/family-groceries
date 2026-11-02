@@ -1223,7 +1223,8 @@ no dashboard, console or hosted database. Merging deploys the `api` function and
    can call, so someone who knows it can make a key and use the API before the flag is on. It
    reaches only their own household, under RLS, the limits and (later) the Premium lock. If that
    is not acceptable, a server switch in `app_switches` checked by `create_api_token` is a small
-   follow-up (DECISIONS "Job 73", 10).
+   follow-up (DECISIONS "Job 73", 10). Done in job 75: the server switch `app_switches.public_api`
+   (off) closes both, see "Job 75" below.
 3. **The address throttle keys on the gateway's `X-Real-IP`** (checked on the hosted project
    before the deploy, DECISIONS "Job 73" 8: hosted Supabase passes `X-Forwarded-For` on as the
    client wrote it, `X-Real-IP` and `cf-connecting-ip` are the real address). Only unknown keys
@@ -1287,3 +1288,37 @@ household, like the others. `docs/PAYWALL_RELEASE.md` section 6 says so.
   v1; the MCP's OAuth server could carry it.
 - **A user guide** for hummlist.com (DE and EN, how to make a key and a first Shortcut) can follow
   once the flag rolls out.
+
+## Job 75: the API's server switch (2026-11-02)
+
+The PostHog flag `public-api` hides only the app's API section. Since job 75 the server has its
+own switch, `public.app_switches` key `public_api`, seeded **off** by
+`supabase/migrations/20261102200000_public_api_switch.sql`. While it is off:
+
+- `create_api_token` refuses with `api_disabled` (SQLSTATE 42501); the app shows „Die API ist noch
+  nicht freigeschaltet.“ (EN "The API isn't available yet.") if someone reaches the button.
+- every request to the `api` function answers `404` with `{"error":{"code":"not_found",...}}`,
+  exactly like an unknown path, without rate-limit headers, before any key lookup, counter or
+  read. Keys made before stay listed in the app and can be revoked; they work again once the
+  switch is on.
+- MCP, Siri and Alexa do not read the switch and behave as before.
+
+The deploy of this migration (`supabase-deploy.yml` after the merge) is the only production change.
+Nothing else was switched.
+
+### Turning the API on (when Hummlist Launch says so)
+
+1. Server: in the SQL editor of project `jdwqrallbpdbshrdhenk` (or the Management API's
+   `database/query`, service role):
+   `update public.app_switches set enabled = true where key = 'public_api';`
+   Check: `select public.app_switch('public_api');` is `true`, and
+   `curl -s https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/api/v1/items` answers `401`
+   `missing_token` instead of `404`.
+2. App: roll out the PostHog flag `public-api` (project 319492) and set it in
+   `releases/flags.json` in a PR, so the held changelog item goes out.
+3. Off again: the same update with `false`. Requests answer 404 at once, keys stay.
+
+Order: server first, then the flag, so nobody sees a button that answers „noch nicht
+freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
+API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
+depend on it.

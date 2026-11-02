@@ -2810,6 +2810,12 @@ abstract class AppLocalizations {
   /// **'API-Schlüssel kannst du nur hier in der App erstellen, während du angemeldet bist.'**
   String get apiKeySessionRequired;
 
+  /// Snack bar: the server refused to create an API key because the public API is switched off on it (api_disabled, job 75)
+  ///
+  /// In de, this message translates to:
+  /// **'Die API ist noch nicht freigeschaltet.'**
+  String get apiDisabled;
+
   /// PLACEHOLDER (job 73): Hummlist Launch writes the final copy. Zugänge, API section, locked household (job 50): the keys stay, unused for now; new ones can still be made
   ///
   /// In de, this message translates to:

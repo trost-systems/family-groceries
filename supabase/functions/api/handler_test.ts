@@ -1,7 +1,15 @@
 import { sha256Hex } from '../_shared/auth.ts';
 import { assert, assertEquals, assertFalse } from '@std/assert';
 import { ToolError } from '../_shared/list.ts';
-import { type Begin, type Deps, type Execution, handle, type Key, routePath } from './handler.ts';
+import {
+  type Begin,
+  beginOf,
+  type Deps,
+  type Execution,
+  handle,
+  type Key,
+  routePath,
+} from './handler.ts';
 
 const BASE = 'http://localhost/api/v1';
 const TOKEN = 'fgp_' + 'a'.repeat(43);
@@ -419,6 +427,49 @@ Deno.test('one log line per request: template, status, key id; never the id or a
   const text = JSON.stringify(deps.logs);
   assertFalse(text.includes(ID));
   assertFalse(text.includes('Geheimladen'));
+});
+
+Deno.test('switched off, every request answers like an unknown path: 404, no limits, nothing runs', async () => {
+  const absent = await (await handle(call('/lists'), fake())).json();
+  assertEquals(absent, { error: { code: 'not_found', message: 'No such endpoint.' } });
+  for (
+    const req of [
+      call('/items'),
+      call('/items', { token: null }),
+      post(JSON.stringify({ items: [{ name: 'Milch' }] })),
+    ]
+  ) {
+    const deps = fake({ begin: { outcome: 'disabled' }, premium: 'throws' });
+    const res = await handle(req, deps);
+    assertEquals(res.status, 404, `${req.method} ${req.url}`);
+    assertEquals(await res.json(), absent);
+    assertEquals([...res.headers.keys()].filter((h) => h.startsWith('x-ratelimit-')), []);
+    assertEquals(res.headers.get('retry-after'), null);
+    assert(/^[0-9a-f-]{36}$/.test(res.headers.get('x-request-id') ?? ''));
+    assertEquals(res.headers.get('access-control-allow-origin'), '*');
+    assertEquals(deps.executed, []);
+    assertEquals(deps.logs.map((l) => [l.status, l.route, l.tokenId]), [[404, null, null]]);
+  }
+  const preflight = fake({ begin: { outcome: 'disabled' } });
+  const res = await handle(new Request(`${BASE}/items`, { method: 'OPTIONS' }), preflight);
+  assertEquals(res.status, 204);
+});
+
+Deno.test("api_begin's disabled row carries no key and no rate", () => {
+  assertEquals(
+    beginOf({
+      outcome: 'disabled',
+      token_id: null,
+      user_id: null,
+      household_id: null,
+      scopes: null,
+      rate_limit: 0,
+      rate_remaining: 0,
+      rate_reset: 0,
+      retry_after: null,
+    }),
+    { outcome: 'disabled' },
+  );
 });
 
 Deno.test('OPTIONS answers CORS for the API headers without touching the key', async () => {

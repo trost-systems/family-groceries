@@ -2,9 +2,16 @@
 // the app's session adds, lists, ticks and moves items that the open list shows, a read key
 // cannot write, every answer carries the rate-limit headers, and a burst ends in 429.
 import { expect, test } from './fixtures';
-import { apiAs, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { adminClient, apiAs, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 
 const api = `${functionsUrl}/api/v1`;
+
+// The API is switched off after the migrations (job 75). No afterAll turns it off again: with
+// fullyParallel another worker may still be running a test of this file.
+test.beforeAll(async () => {
+  const { error } = await adminClient().from('app_switches').update({ enabled: true }).eq('key', 'public_api');
+  if (error) throw error;
+});
 
 /** A key made the way the app makes one: create_api_token from the member's own session. */
 async function apiKey(email: string, scopes: string[]): Promise<string> {

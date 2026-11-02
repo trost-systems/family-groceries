@@ -703,6 +703,8 @@
   "@tooManyApiKeys": {"description": "Snack bar: the member already has 10 active API keys (docs/API.md, Limits)"},
   "apiKeySessionRequired": "API-Schlüssel kannst du nur hier in der App erstellen, während du angemeldet bist.",
   "@apiKeySessionRequired": {"description": "Snack bar: the server refused to create an API key outside the app's own sign-in (session_required)"},
+  "apiDisabled": "Die API ist noch nicht freigeschaltet.",
+  "@apiDisabled": {"description": "Snack bar: the server refused to create an API key because the public API is switched off on it (api_disabled, job 75)"},
   "apiPremium": "Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.",
   "@apiPremium": {"description": "PLACEHOLDER (job 73): Hummlist Launch writes the final copy. Zugänge, API section, locked household (job 50): the keys stay, unused for now; new ones can still be made"}
 }
