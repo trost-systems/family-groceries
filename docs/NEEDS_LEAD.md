@@ -1322,3 +1322,19 @@ Order: server first, then the flag, so nobody sees a button that answers „noch
 freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
 API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
 depend on it.
+
+## Job 77: store-screenshot frame proposals (2026-11-02)
+
+- **PR #204** (https://github.com/trost-systems/family-groceries/pull/204). It is a preview PR
+  with ci-ok green, and it is not to be merged (brief). If it is merged anyway, production leaves
+  the page out (`site/build.mjs` drops `public/internal/`).
+- **Preview path:** `/internal/store-frames` on the hummlist-site preview,
+  https://hummlist-site-git-job-77-store-frames-proposals-peter-trost.vercel.app/internal/store-frames
+  (Vercel login). The page shows P1 Wabenband, P2 Großschrift, P3 Schwebend, P4 Lupe and P5 Ein
+  Einkauf side by side, the research summary, and each full set with its feature graphic.
+- **Full-size PNGs** for upload once Peter picks a direction:
+  `/workspace/hummlist/research/77-store-frames/P1` to `P5`. Each folder holds `phone-1.png` to
+  `phone-6.png` and `feature-graphic.png`.
+- **Peter decides:** which direction (or a mix, for example P2's captions with P4's callouts).
+  The rendered set is then the upload set. A tablet set or an English set is a new run of the
+  same generator. A mascot would need artwork first (DECISIONS "Job 77" item 3).

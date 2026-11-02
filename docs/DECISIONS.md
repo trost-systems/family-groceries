@@ -6800,3 +6800,42 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    Deno integration tests save and restore it like `integration_lock`, the e2e spec turns it on
    for the local stack only. Production's value comes only from the migration's default.
 8. **Local ports 576xx**, since 751xx is past 65535.
+
+## Job 77: five store-screenshot frame proposals, 2026-11-02
+
+Peter likes the content of job 65's de-DE Play screenshots and finds the frames boring. Job 77
+renders five alternative frames from the same captures. The research is in
+`docs/store/frame-research.md`, the generator in `design/store-frames/`, and the review page is
+`/internal/store-frames` on the site's preview deployments.
+
+1. **The captures move into the repo, the capture setup does not.** Job 65's generator and its
+   `play-listing` scenario lived only in the research folder and a local patch ("not for main").
+   The six captures (`design/store-frames/raw/de-DE/`, 1080 × 2400, about 1 MB) are now inputs in
+   the repo. Every frame is code over them, so the frames can be re-rendered without a local
+   stack. Re-capturing stays job 65's process. A new capture only needs `shots.mjs` re-measured.
+2. **One strip per proposal.** Every proposal draws one 6480 × 1920 page that is cut into six
+   shots. A panorama whose band runs across the cuts (P1) and single frames (P2 to P5) then share
+   one render path. Without the strip, a panorama would need special code.
+3. **No mascot.** The brief allowed the Hummel. Hummlist has no mascot artwork, and design 6b and
+   the hummlist-ui-craft skill say "never a bee mascot". So the proposals repeat the hexagon, the
+   honey colour and the member avatars instead. A mascot would need real artwork and Peter's call.
+4. **P3 has a device bezel, and only P3.** A plain navy bezel, not a real phone's shape. Play
+   advises against device imagery (research section 2.2), so P3 suits the App Store set more
+   than Play. It is in the set because the brief asked for a tilted or floating device.
+5. **Text is measured, not estimated.** `build.mjs` sums the line boxes of each shot's frame text
+   and fails above 20 %, which is Play's guidance. Measured on this commit: 4.6 % to 12.7 %.
+8. **Crops come from the pixels.** A fresh-eye review of the first render found words sliced at
+   crop edges. `kit.mjs` now finds each capture's clean cut lines: runs of at least 16 pixel rows
+   in one background colour across the full width, never inside the tab bar. Frames crop only at
+   those lines, picking the tallest window that holds the shot's lifted row and centres it best.
+   A new capture needs no hand-measured crop.
+6. **The review page is preview-only.** It lives in `site/public/internal/`, carries
+   `noindex, nofollow` (the site sends `X-Robots-Tag: noindex` on every response anyway), and
+   has no sitemap entry (the site has no sitemap). `site/build.mjs` deletes `internal/` from
+   production builds, so a merge would not publish unapproved proposals on hummlist.com.
+   `site/test/internal.test.mjs` covers both sides. No domain, alias or deployment protection
+   setting changed.
+7. **Captions follow job 65's approved spec** (headlines, never-say list, FG1 tagline „Eine
+   Einkaufsliste, die der ganze Haushalt mitsummt.“) where a proposal uses full sentences. P2 and
+   P5 write their own short German lines in the same claims. Nothing names a retailer, says
+   "kostenlos", or claims automatic sorting.
