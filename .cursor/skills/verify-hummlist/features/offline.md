@@ -17,7 +17,7 @@ The list keeps working without a connection. Adding, ticking, putting back, edit
 Needs a connection, exact texts (DE / EN):
 
 - Reordering stores or categories, also moving or hiding categories in a store's own order: „Die Reihenfolge lässt sich nur mit Verbindung ändern.“ / "Reordering needs a connection." (snackbar; nothing changes).
-- Adding, renaming or deleting a store (in Mehr → Läden or inline in the store picker): „Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.“ / "Adding, renaming or deleting stores needs a connection." (snackbar; nothing changes).
+- Adding, renaming or deleting a store (under Liste → Anpassen or inline in the store picker): „Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.“ / "Adding, renaming or deleting stores needs a connection." (snackbar; nothing changes).
 - Creating, renaming or deleting categories: the change shows, the write fails and the screen reverts with „Die Änderung konnte nicht gespeichert werden.“ / "The change could not be saved." (the same text for any catalog edit the server refuses). Before the app has noticed it is offline, a store change takes this path too.
 - Creating or joining a household: „Keine Internetverbindung. Versuche es erneut, sobald du online bist.“ / "No internet connection. Try again once you're online."
 - Export your data: „Keine Internetverbindung. Deine Daten wurden nicht exportiert.“ / "No internet connection. Your data was not exported."
@@ -43,7 +43,7 @@ Preconditions:
 - **Cold start offline with a lapsed token.** Also set `session.expires_at` in the `sb-*-auth-token` localStorage entry to the past (as `expireStoredSession` in `e2e/tests/offline-start.spec.ts`), `cutOff`, reload: `itemRow(page,'Reis')` visible within 3 s.
 - **Sync back.** `network.restore()`: poll the API as the user (`apiAs(email)` then `from('items').select('name, status')`) until it shows Apfelsaft `bought`, Käse `active`, Reis `active`; `getByText(/^Offline:/)` count 0 within 15 s. Another session of the same user sees the result.
 - **Suggestions offline.** Needs a history, so use `launch.sh --scenario heavy-history` (items on the list are not offered). While cut off, `typeInto(addField(page), 'Duschgl')`: a row button whose name contains `Duschgel, Schon mal gekauft` shows. Clear the field: the „Wieder fällig“ rows still show.
-- **Store needs a connection.** While cut off, add a store in Mehr → Läden: `getByText('Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.')` and no new store.
+- **Store needs a connection.** While cut off, add a store under Liste → Anpassen („Laden hinzufügen“; the dialog stays open): `getByText('Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.')` and no new store.
 - **Pending state.** Hold item writes with `page.route('**/rest/v1/items**', ...)` for non-GET methods; `tick(...)` shows `getByText(/^\d+ Änderung(en)? w(ird|erden) synchronisiert$/)`; release it and it disappears.
 - **Sign-out clears cache.** `openMore(page,'Abmelden')`; `Object.keys(localStorage).filter(k => /\b(list|household)\./.test(k)).length` is 0.
 - **Expired token retried.** Fake a 401 JWT answer on item writes with `page.route`; the write retries with a fresh token and no „Änderung abgelehnt“ snackbar (test in `offline-start.spec.ts`).
@@ -56,5 +56,5 @@ Preconditions:
 - Offline matching: `getByText(/^Offline:/)` also matches the tooltip/semantic label; expect count 1.
 - Sign-in, sign-up, accepting an invite and password reset need the server: offline behaviour of the login screen is unverified (not read in detail).
 - An offline start before the first ever sync shows nothing cached: unverified (not exercised in specs).
-- Item order changes by dragging items between categories/stores use item moves (queued); reordering the stores or categories themselves needs a connection.
+- Moving an item to another category or store in the edit sheet is an item edit (queued); reordering the stores or categories themselves needs a connection.
 - Queued changes are tied to the device: a second device only sees them after sync.

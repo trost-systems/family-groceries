@@ -38,9 +38,16 @@ class const FoldoutChips({
   /// The category chip without a category.
   required final String categoryLabel,
 
-  /// When set, no store means "not decided yet": the chip shows this and
-  /// no option is selected (the add sheet before a store is known).
-  final String? storeAutoLabel,
+  /// Hummlist picks the store until the user does (the add sheet): the
+  /// chip shows its pick muted with the automatic mark, and no store means
+  /// "not known yet", with no option selected.
+  final bool storeAuto = false,
+
+  /// Hummlist picks the category until the user does, like [storeAuto].
+  final bool categoryAuto = false,
+
+  /// Beside the chips on their first line (the add sheet's Schließen).
+  final Widget? trailing,
 
   /// Offers "+ Neuer Laden" among the stores: the name typed there becomes
   /// a store of the household, or finds the one it already has, and is
@@ -81,42 +88,60 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
         .where((c) => c.id == w.categoryId)
         .firstOrNull;
     final l10n = AppLocalizations.of(context);
-    final storeName = store?.name ?? w.storeAutoLabel ?? w.storeLabel;
-    final shownCategory = switch (category) {
-      final c? => categoryName(c, l10n),
-      null => w.categoryLabel,
+    final (storeText, storeSemantics) = switch (store) {
+      final s? when w.storeAuto => (s.name, l10n.storeAutoValue(s.name)),
+      final s? => (s.name, l10n.chipStore(s.name)),
+      null when w.storeAuto => (l10n.chipStoreShort, l10n.storeAuto),
+      null => (w.storeLabel, l10n.chipStore(w.storeLabel)),
+    };
+    final (categoryText, categorySemantics) = switch (category) {
+      final c? when w.categoryAuto => (
+        categoryName(c, l10n),
+        l10n.categoryAutoValue(categoryName(c, l10n)),
+      ),
+      final c? => (
+        categoryName(c, l10n),
+        l10n.chipCategory(categoryName(c, l10n)),
+      ),
+      null when w.categoryAuto => (l10n.chipCategoryShort, l10n.categoryAuto),
+      null => (w.categoryLabel, w.categoryLabel),
     };
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Chip(
-              key: const ValueKey('chip-store'),
-              leading: const Icon(Icons.storefront_outlined, size: 20),
-              label: storeName,
-              // The automatic labels already say what the chip is.
-              semanticsLabel: store == null && w.storeAutoLabel != null
-                  ? storeName
-                  : l10n.chipStore(storeName),
-              open: _fold == _Fold.store,
-              changed: w.storeChanged,
-              onTap: () => _toggle(_Fold.store),
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _Chip(
+                    key: const ValueKey('chip-store'),
+                    leading: Icons.storefront_outlined,
+                    label: storeText,
+                    semanticsLabel: storeSemantics,
+                    auto: w.storeAuto,
+                    open: _fold == _Fold.store,
+                    changed: w.storeChanged,
+                    onTap: () => _toggle(_Fold.store),
+                  ),
+                  _Chip(
+                    key: const ValueKey('chip-category'),
+                    leading: Icons.category_outlined,
+                    label: categoryText,
+                    semanticsLabel: categorySemantics,
+                    auto: w.categoryAuto,
+                    open: _fold == _Fold.category,
+                    changed: w.categoryChanged,
+                    onTap: () => _toggle(_Fold.category),
+                  ),
+                ],
+              ),
             ),
-            _Chip(
-              key: const ValueKey('chip-category'),
-              leading: const Icon(Icons.category_outlined, size: 20),
-              label: shownCategory,
-              semanticsLabel: category == null
-                  ? shownCategory
-                  : l10n.chipCategory(shownCategory),
-              open: _fold == _Fold.category,
-              changed: w.categoryChanged,
-              onTap: () => _toggle(_Fold.category),
-            ),
+            ?w.trailing,
           ],
         ),
         AnimatedSize(
@@ -129,7 +154,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
               catalog: w.catalog,
               storeId: w.storeId,
               noStoreLabel: w.storeLabel,
-              undecided: w.storeAutoLabel != null,
+              undecided: w.storeAuto,
               onPick: (id) => _pick(() => w.onStore(id)),
               onCreate: w.onCreateStore,
             ),
@@ -150,11 +175,14 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
 }
 
 class const _Chip({
-  required final Widget leading,
+  required final IconData leading,
   required final String label,
 
   /// Names the chip apart from the option of the same name.
   required final String semanticsLabel,
+
+  /// Hummlist's pick, not the user's: muted, with the automatic mark.
+  required final bool auto,
   required final bool open,
   required final bool changed,
   required final VoidCallback onTap,
@@ -168,7 +196,7 @@ class const _Chip({
     final (face, onFace) = switch ((changed, open)) {
       (true, _) => (t.honey, t.onHoney),
       (false, true) => (t.honeySoft, t.text),
-      (false, false) => (t.surfaceRaised, t.text),
+      (false, false) => (t.surfaceRaised, auto ? t.textMuted : t.text),
     };
     // The button's own web semantics node would take the add field's text
     // input with it on a tap; this node only taps.
@@ -201,8 +229,15 @@ class const _Chip({
           mainAxisSize: MainAxisSize.min,
           spacing: HlSpace.s1,
           children: [
-            leading,
-            Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+            // Hummlist's pick wears the automatic mark where the chip's
+            // icon goes; the user's pick brings the icon back.
+            if (auto)
+              Icon(autoMark, size: 18, color: t.accent)
+            else
+              Icon(leading, size: 20),
+            Flexible(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
             AnimatedRotation(
               turns: open ? 0.5 : 0,
               duration: hlMotion(context, HlDuration.short),
@@ -215,6 +250,9 @@ class const _Chip({
     );
   }
 }
+
+/// Marks a chip whose value Hummlist picked.
+const autoMark = Icons.hdr_auto_outlined;
 
 /// More stores than this get a search field above them: two rows of
 /// options on a phone.

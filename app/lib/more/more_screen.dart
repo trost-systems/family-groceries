@@ -12,8 +12,6 @@ import 'package:family_groceries/feedback/feedback_sheet.dart';
 import 'package:family_groceries/household/archived_households.dart';
 import 'package:family_groceries/household/invites_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/list/categories_screen.dart';
-import 'package:family_groceries/more/stores_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/purchases/premium_screen.dart';
@@ -190,7 +188,7 @@ class const _MoreList({
           key: const ValueKey('more-join'),
           icon: Icons.group_add_outlined,
           label: l10n.joinOtherHousehold,
-          onTap: () => context.go(joinCodePath),
+          onTap: () => context.go(moreJoinPath),
         ),
         if (showArchived)
           _Row(
@@ -199,19 +197,6 @@ class const _MoreList({
             label: l10n.archivedTitle,
             onTap: () => unawaited(showArchivedHouseholds(context)),
           ),
-        _Row(
-          key: const ValueKey('more-categories'),
-          icon: Icons.category_outlined,
-          label: l10n.manageCategories,
-          onTap: () => unawaited(openCategories(context)),
-        ),
-        _Row(
-          key: const ValueKey('more-stores'),
-          icon: Icons.storefront_outlined,
-          label: l10n.storesTitle,
-          detail: l10n.storesRowHint,
-          onTap: () => unawaited(openStores(context)),
-        ),
         _PremiumRow(selected: selected == MorePage.premium),
         HlSectionLabel(
           l10n.accessTitle,

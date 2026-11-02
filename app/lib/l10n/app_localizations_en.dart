@@ -531,15 +531,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disconnectBody => 'The app loses access to your list right away.';
 
   @override
-  String get editStoreLayout => 'Edit order';
-
-  @override
-  String get manageCategories => 'Manage categories';
-
-  @override
-  String get categoriesTitle => 'Categories';
-
-  @override
   String get categoriesHint =>
       'Items without a store, and stores without their own order, follow this order. Tap a category to rename it.';
 
@@ -574,13 +565,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogSaveFailed => 'The change could not be saved.';
 
   @override
-  String storeLayoutTitle(String store) {
-    return '$store: order';
-  }
-
-  @override
   String get storeLayoutHint =>
-      'Order the categories the way you walk through the store.';
+      'Order the categories the way you walk through the store. Tap a category to rename it.';
 
   @override
   String newItemsFrom(int count, String name) {
@@ -624,20 +610,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get collapseSection => 'Collapse';
 
   @override
-  String get moveStoreUp => 'Move store up';
-
-  @override
-  String get moveStoreDown => 'Move store down';
-
-  @override
-  String get moveCategoryUp => 'Move category up';
-
-  @override
-  String get moveCategoryDown => 'Move category down';
-
-  @override
-  String get listHint =>
-      'Tap ticks off · Swipe left edits · Hold and drag moves';
+  String get listHint => 'Tap ticks off · Hold to edit';
 
   @override
   String get listHintDismiss => 'Got it';
@@ -803,6 +776,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeAuto => 'Store: automatic';
 
   @override
+  String get chipStoreShort => 'Store';
+
+  @override
+  String get chipCategoryShort => 'Category';
+
+  @override
+  String storeAutoValue(String name) {
+    return 'Store: automatic, $name';
+  }
+
+  @override
+  String categoryAutoValue(String name) {
+    return 'Category: automatic, $name';
+  }
+
+  @override
   String get typeToSuggest => 'Type to see suggestions';
 
   @override
@@ -863,11 +852,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storesTitle => 'Stores';
 
   @override
-  String get storesRowHint => 'Order and walking route';
+  String get listEdit => 'Edit';
+
+  @override
+  String get noStoreRowHint => 'Categories for items without a store';
+
+  @override
+  String get storeAdd => 'Add store';
+
+  @override
+  String get storeRenameHint => 'Tap to rename';
+
+  @override
+  String get deleteCategoryEverywhere => 'It disappears from every store.';
 
   @override
   String get storesHint =>
-      'Drag to change the order of the stores in the list. Tap a store to edit its walking route.';
+      'Drag the stores into the order they have on the list. Tap a store to rename it and order its categories.';
 
   @override
   String dragStore(String store) {
@@ -926,14 +927,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storesEmpty =>
       'No stores yet. Add one and the list sorts your items along its walking route.';
-
-  @override
-  String storeMenu(String store) {
-    return 'Options for $store';
-  }
-
-  @override
-  String get storeRenameAction => 'Rename';
 
   @override
   String storeDeleteBody(int count) {
@@ -1179,7 +1172,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skipStoresHint =>
-      'Start without stores. You can add them later under More → Stores.';
+      'Start without stores. You can add them later under List → Edit.';
 
   @override
   String get householdOffline =>

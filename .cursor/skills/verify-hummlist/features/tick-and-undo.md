@@ -11,13 +11,13 @@ A tap on an item's row ticks it off: a line draws across the item's words, the r
 - `tu-delete-undo` „Löschen“ / "Delete" at the bottom of the edit sheet removes the item and shows the snackbar „<Name> gelöscht“ / "<Name> deleted" with the action „Rückgängig“ / "Undo", which brings the item back (the server row is re-created).
 - `tu-added-undo` after an add, the add sheet shows „✓ Hinzugefügt: <Name>“ (or „✓ Hinzugefügt: <Name> → <Store>“) with „Rückgängig“ until the next keystroke; Undo removes the item again (and forgets a category picked on that add, see classifier).
 - `tu-merge-undo` an add of exactly an open item (same name, brand and details) is not added: the note says „<Name> steht schon auf der Liste“ / "<Name> is already on the list" without a button. When the add is another spelling of an open item, it goes through and the note offers „Zusammenführen“ / "Merge"; afterwards „Zusammengeführt: <item>“ with „Rückgängig“ undoes the merge. Outside the add sheet the same offer is a snackbar „<Name> steht schon auf der Liste“ with „Zusammenführen“ (6 s).
-- `tu-no-swipe-delete` a swipe left on a row opens the edit sheet, it does not delete.
+- `tu-no-swipe-delete` a swipe across a row does nothing: it neither deletes, ticks nor edits (job 78; a hold edits).
 
 ## How to get to it (user POV)
 
 - Tick: tap an item row on the list tab.
 - Put back: scroll to the bottom of the list, tap „Zuletzt verwendet“ / "Recently used" to unfold it, tap the item.
-- Delete and its undo: hold the row (or right click, or swipe left) to open „Bearbeiten“, tap „Löschen“, then „Rückgängig“ in the snackbar.
+- Delete and its undo: hold the row (or right click it) to open „Bearbeiten“, tap „Löschen“, then „Rückgängig“ in the snackbar.
 - Add undo: type an item in the add bar and tap „Rückgängig“ in the note under it.
 - Screen reader users: a row also offers the actions „Bearbeiten“ and „Löschen“ (delete without the sheet, same snackbar with „Rückgängig“).
 
@@ -40,7 +40,7 @@ Preconditions:
 
 ## Gotchas
 
-- A used row's gestures are off except the tap: no tick, swipe, hold or drag. Its accessible name ends in „Wieder auf die Liste“; `itemRow` excludes names ending that way, `usedRow` requires it.
+- A used row's gestures are off except the tap: no tick, right click or hold. Its accessible name ends in „Wieder auf die Liste“; `itemRow` excludes names ending that way, `usedRow` requires it.
 - „Zuletzt verwendet“ is folded by default and the list is long: scroll to it (`reveal`) before clicking.
 - The add sheet's rows for an empty field are also named „<Name>, Zuletzt verwendet“; while the sheet is open a `getByRole('button', { name: 'Zuletzt verwendet' })` without `exact: true` can match them (`putBack` in `e2e/tests/helpers.ts` does not pass `exact`).
 - In English the used row's name ends in "Back on the list", not a translation of the German; `usedRow`'s pattern is German only.

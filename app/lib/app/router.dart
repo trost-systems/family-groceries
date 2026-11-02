@@ -10,7 +10,10 @@ import 'package:family_groceries/household/join_screen.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/list/list_link.dart';
+import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/list/store_details_screen.dart';
+import 'package:family_groceries/list/stores_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
@@ -27,6 +30,14 @@ const listLinkPath = '/list';
 const addPath = '/add';
 const loginPath = '/login';
 
+/// The List tab's Anpassen (job 78): the stores screen, and below it one
+/// store's details or, for [noStoreSegment], the categories of the section
+/// without a store.
+const editPath = '/edit';
+const noStoreSegment = 'none';
+String storeDetailsPath(String? storeId) =>
+    '$editPath/${storeId ?? noStoreSegment}';
+
 /// Onboarding (job 22): Step 1 chooses, Step 2a creates, Step 3 invites
 /// the partner; Step 2b is the join screen ([joinCodePath], [joinPath]).
 const welcomePath = '/welcome';
@@ -36,6 +47,10 @@ const invitePartnerPath = '/welcome/invite';
 /// The join screen for a typed code: onboarding's "Einladung annehmen" and
 /// More's "Anderem Haushalt beitreten".
 const joinCodePath = '/join';
+
+/// More's „Anderem Haushalt beitreten“: the join screen inside the More
+/// tab, so back returns to More (job 78).
+const moreJoinPath = '/more/join';
 
 /// The analytics consent (job 19), asked once per install right after the
 /// first sign-in. Not [consentPath], which is MCP's OAuth consent.
@@ -70,10 +85,11 @@ String joinPath(String code) => '/join/$code';
 
 /// The fixed screen names feedback and analytics report (job 21): a
 /// route's name, never its path, so an invite code or anything typed can't
-/// get in. Pages pushed on top of a route (categories, stores) and sheets
-/// (add, edit) report the route under them.
+/// get in. Sheets (add, edit) report the route under them; the List tab's
+/// Anpassen pages are `stores`, never a store's id.
 const screenNames = {
   'list',
+  'stores',
   'more',
   'access',
   'account',
@@ -97,6 +113,7 @@ const screenNames = {
 /// `/settings` link's section (it redirects to Zugänge or Konto).
 String screenNameOf(Uri location) => switch (location.path) {
   listPath || '' => 'list',
+  _ when location.pathSegments.firstOrNull == 'edit' => 'stores',
   morePath => 'more',
   accessPath => 'access',
   accountPath => 'account',
@@ -113,13 +130,14 @@ String screenNameOf(Uri location) => switch (location.path) {
   invitePartnerPath => 'onboarding_invite',
   analyticsConsentPath => 'analytics_consent',
   consentPath => 'oauth_consent',
+  moreJoinPath => 'join',
   _ when location.pathSegments.firstOrNull == 'join' => 'join',
   _ => 'other',
 };
 
 /// Whether [location] is in the More tab (More itself or one of its
-/// pages); the list is `/` itself. Signed in, any other shell path goes to
-/// the list.
+/// pages); the list is `/` itself, with its Anpassen pages below
+/// ([inListTab]). Signed in, any other shell path goes to the list.
 bool inMoreTab(Uri location) => const {
   settingsPath,
   morePath,
@@ -129,7 +147,15 @@ bool inMoreTab(Uri location) => const {
   premiumPath,
   appSettingsPath,
   languagePath,
+  moreJoinPath,
 }.contains(location.path);
+
+/// Whether [location] is one of the List tab's Anpassen pages: the stores
+/// at [editPath], one store's details below it.
+bool inListTab(Uri location) {
+  final segments = location.pathSegments;
+  return segments.firstOrNull == 'edit' && segments.length <= 2;
+}
 
 /// The invite code in [uri]: a `/join/<code>` link's or one carried as
 /// `?invite=`.
@@ -159,9 +185,9 @@ const _beforeHousehold = {welcomePath, createHouseholdPath, joinCodePath};
 /// interrupted and the app asks the next time it is opened.
 ///
 /// Without a household: Step 1 ([welcomePath]), or the join screen at once
-/// for an invite. In one: the list, the More tab, Step 3 right after
-/// creating ([invitePartnerPath]), or the join screen for an invite (which
-/// warns before switching).
+/// for an invite. In one: the list and its Anpassen pages, the More tab,
+/// Step 3 right after creating ([invitePartnerPath]), or the join screen
+/// for an invite (which warns before switching).
 String? authRedirect(
   Session session,
   Uri uri, {
@@ -208,7 +234,8 @@ String? authRedirect(
     InHousehold()
         when uri.path == invitePartnerPath ||
             uri.path == joinCodePath ||
-            inMoreTab(uri) =>
+            inMoreTab(uri) ||
+            inListTab(uri) =>
       uri.toString(),
     InHousehold() => listPath,
   };
@@ -287,6 +314,32 @@ class RedirectMemory() {
   }
 }
 
+/// The List tab's routes: the list at `/`, its Anpassen pages below it
+/// ([editPath], [storeDetailsPath]), so back pops to the list.
+List<RouteBase> listTabRoutes() => [
+  GoRoute(
+    path: listPath,
+    builder: (_, _) => const ListScreen(),
+    routes: [
+      GoRoute(
+        path: editPath.substring(1),
+        builder: (_, _) => const StoresScreen(),
+        routes: [
+          GoRoute(
+            path: ':store',
+            builder: (_, state) => StoreDetailsScreen(
+              storeId: switch (state.pathParameters['store']) {
+                noStoreSegment => null,
+                final id => id,
+              },
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+];
+
 /// The More tab's routes: the list at `/more` with its pages below it, so
 /// back pops to the list, and the redirect for old `/settings` links.
 List<RouteBase> moreTabRoutes() => [
@@ -307,6 +360,7 @@ List<RouteBase> moreTabRoutes() => [
             paywallEntry: PaywallEntry.parse(state.uri.queryParameters['from']),
           ),
         ),
+      GoRoute(path: 'join', builder: (_, _) => const JoinScreen()),
       GoRoute(
         path: 'settings',
         builder: (_, _) => const MoreScreen(page: MorePage.settings),
@@ -322,6 +376,53 @@ List<RouteBase> moreTabRoutes() => [
   GoRoute(
     path: settingsPath,
     redirect: (_, state) => legacySettingsRedirect(state.uri),
+  ),
+];
+
+/// Every route of the app; [repository] overrides the Supabase list
+/// repository, for tests.
+List<RouteBase> appRoutes({ListRepository? repository}) => [
+  StatefulShellRoute.indexedStack(
+    builder: (_, _, shell) => AppShell(shell: shell, repository: repository),
+    branches: [
+      StatefulShellBranch(routes: listTabRoutes()),
+      StatefulShellBranch(routes: moreTabRoutes()),
+    ],
+  ),
+  GoRoute(
+    path: loginPath,
+    builder: (_, state) => LoginScreen(
+      invite: state.uri.queryParameters['invite'],
+      next: state.uri.queryParameters['next'],
+    ),
+  ),
+  GoRoute(
+    path: analyticsConsentPath,
+    builder: (_, _) => const AnalyticsConsentScreen(),
+  ),
+  GoRoute(
+    path: welcomePath,
+    builder: (_, _) => const WelcomeScreen(),
+    routes: [
+      GoRoute(path: 'create', builder: (_, _) => const CreateHouseholdScreen()),
+      GoRoute(path: 'invite', builder: (_, _) => const InvitePartnerScreen()),
+    ],
+  ),
+  GoRoute(
+    path: consentPath,
+    builder: (_, state) => ConsentScreen(
+      authorizationId: state.uri.queryParameters['authorization_id'],
+    ),
+  ),
+  // Only ever a step: the redirect goes on to the list, which then opens
+  // the sheet or the store. Routes, so that a redirect to one (a sign-in's
+  // `next`) is redirected again; the App shows a spinner while loading.
+  for (final path in const [listLinkPath, addPath, '/stores/:id'])
+    GoRoute(path: path, builder: (_, _) => const SizedBox.shrink()),
+  GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
+  GoRoute(
+    path: '/join/:code',
+    builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
   ),
 ];
 
@@ -357,60 +458,7 @@ GoRouter buildRouter(
       }
       return target;
     },
-    routes: [
-      StatefulShellRoute.indexedStack(
-        builder: (_, _, shell) => AppShell(shell: shell),
-        branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
-            ],
-          ),
-          StatefulShellBranch(routes: moreTabRoutes()),
-        ],
-      ),
-      GoRoute(
-        path: loginPath,
-        builder: (_, state) => LoginScreen(
-          invite: state.uri.queryParameters['invite'],
-          next: state.uri.queryParameters['next'],
-        ),
-      ),
-      GoRoute(
-        path: analyticsConsentPath,
-        builder: (_, _) => const AnalyticsConsentScreen(),
-      ),
-      GoRoute(
-        path: welcomePath,
-        builder: (_, _) => const WelcomeScreen(),
-        routes: [
-          GoRoute(
-            path: 'create',
-            builder: (_, _) => const CreateHouseholdScreen(),
-          ),
-          GoRoute(
-            path: 'invite',
-            builder: (_, _) => const InvitePartnerScreen(),
-          ),
-        ],
-      ),
-      GoRoute(
-        path: consentPath,
-        builder: (_, state) => ConsentScreen(
-          authorizationId: state.uri.queryParameters['authorization_id'],
-        ),
-      ),
-      // Only ever a step: the redirect goes on to the list, which then opens
-      // the sheet or the store. Routes, so that a redirect to one (a sign-in's
-      // `next`) is redirected again; the App shows a spinner while loading.
-      for (final path in const [listLinkPath, addPath, '/stores/:id'])
-        GoRoute(path: path, builder: (_, _) => const SizedBox.shrink()),
-      GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
-      GoRoute(
-        path: '/join/:code',
-        builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
-      ),
-    ],
+    routes: appRoutes(),
   );
 }
 

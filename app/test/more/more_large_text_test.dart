@@ -18,8 +18,6 @@ void main() {
         for (final row in [
           'more-invite',
           'more-join',
-          'more-categories',
-          'more-stores',
           'more-access',
           'menu-account',
           'more-sign-out',

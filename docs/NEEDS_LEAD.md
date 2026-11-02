@@ -1322,3 +1322,24 @@ Order: server first, then the flag, so nobody sees a button that answers „noch
 freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
 API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
 depend on it.
+
+## Job 78: list and stores management (2026-11-02)
+
+Calls made without Peter (DECISIONS, Job 78); say if one should go the other way:
+
+1. Trash on a category inside a store's details deletes the category for the whole household
+   (categories are shared), after a dialog that says so. The alternative, hiding it in that store
+   only, needs the list to honour the per-store `hidden` flag, which it does not today.
+2. The pseudo-store is labelled „Ohne Laden“ / "No store", as on the list, not „Kein Laden“.
+3. Store deletion keeps the confirm dialog and has no undo (there is no undo for it in the app).
+4. Item drag to another store or category on the list is gone too, not only reordering; moving an
+   item happens in its edit sheet.
+5. The "automatic" mark on the add sheet's chips is a circled „A“, not a sparkle.
+6. Store deletion has no undo: the server deletes the store and untags its items, so an undo would
+   have to recreate the store, its layout and every tag. Kept as a confirm dialog; a real undo is
+   its own job if wanted.
+7. Please decide item 1 explicitly: a trash icon inside one store's details may read as "remove
+   from this store". Keeping household-wide deletion needs no change; per-store hiding needs the
+   list to honour the `hidden` flag (a follow-up job).
+8. The store and category rows are raised hex pills as on the old screens; the reviewer found them
+   heavier than Settings' rows. Say if they should become plain rows like Settings.

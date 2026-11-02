@@ -11,6 +11,10 @@ class const HexPill({
   required final Widget child,
   final VoidCallback? onTap,
   final FocusNode? focusNode,
+
+  /// A row fixed in place (the stores screen's "Ohne Laden"): a sunken
+  /// face without the edge, so it never reads as one of the pills to drag.
+  final bool flat = false,
   super.key,
 }) extends StatelessWidget {
   static const height = 56.0;
@@ -32,7 +36,7 @@ class const HexPill({
     final lifted =
         context.dependOnInheritedWidgetOfExactType<_Lifted>() != null;
     final face = Material(
-      color: t.surfaceRaised,
+      color: flat ? t.surfaceSunken : t.surfaceRaised,
       shape: HexBorder(
         side: BorderSide(color: t.border, width: HlBorder.width),
       ),
@@ -58,7 +62,12 @@ class const HexPill({
     );
     return Padding(
       padding: margin,
-      child: lifted
+      child: flat
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: HlDepth.edge),
+              child: face,
+            )
+          : lifted
           ? DecoratedBox(
               decoration: ShapeDecoration(
                 shape: const HexBorder(),

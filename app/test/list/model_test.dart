@@ -155,17 +155,7 @@ void main() {
     );
   });
 
-  test('a placed item takes the gap next to its anchor', () {
-    final group = [
-      item('a', key: 1024),
-      item('b', key: 2048),
-      item('c', key: 4096),
-    ];
-    expect(placeKey(group, group[1], Edge.before), 1536);
-    expect(placeKey(group, group[1], Edge.after), 3072);
-    expect(placeKey(group, group[0], Edge.before), 0);
-    expect(placeKey(group, group[2], Edge.after), 5120);
-    expect(placeKey([item('n')], item('n'), Edge.after), isNull);
+  test("a queued place shows the item in its anchor's group at its key", () {
     final placed = visibleItems(
       {'x': item('x', store: 'dm', key: 1)},
       [

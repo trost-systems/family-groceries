@@ -261,38 +261,44 @@ class const _Content({
     final storeId = pickedStore == null ? first?.storeId : pickedStore.value;
     final categoryId = sheet.category ?? first?.categoryId;
     final fixed = <Widget>[
-      _Header(onClose: onClose),
       FocusTraversalOrder(
         order: const NumericFocusOrder(3),
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-            child: FoldoutChips(
-              catalog: catalog,
-              storeId: storeId,
-              categoryId: categoryId,
-              storeLabel: l10n.noStore,
-              storeAutoLabel: pickedStore == null && storeId == null
-                  ? l10n.storeAuto
-                  : null,
-              categoryLabel: l10n.categoryAuto,
-              storeChanged:
-                  pickedStore != null && pickedStore.value != first?.storeId,
-              categoryChanged:
-                  sheet.category != null && sheet.category != first?.categoryId,
-              onCreateStore: list.addStore,
-              onStore: (id) {
-                context.read<AddSheetCubit>().pickStore(id);
-                onPicked();
-              },
-              onCategory: (id) {
-                context.read<AddSheetCubit>().pickCategory(id);
-                onPicked();
-              },
-            ),
+          child: Stack(
+            children: [
+              const _GrabHandle(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 18, 4, 10),
+                child: FoldoutChips(
+                  catalog: catalog,
+                  storeId: storeId,
+                  categoryId: categoryId,
+                  storeLabel: l10n.noStore,
+                  storeAuto: pickedStore == null,
+                  categoryAuto: sheet.category == null,
+                  categoryLabel: l10n.categoryAuto,
+                  storeChanged:
+                      pickedStore != null &&
+                      pickedStore.value != first?.storeId,
+                  categoryChanged:
+                      sheet.category != null &&
+                      sheet.category != first?.categoryId,
+                  onCreateStore: list.addStore,
+                  onStore: (id) {
+                    context.read<AddSheetCubit>().pickStore(id);
+                    onPicked();
+                  },
+                  onCategory: (id) {
+                    context.read<AddSheetCubit>().pickCategory(id);
+                    onPicked();
+                  },
+                  trailing: _CloseButton(onClose: onClose),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -413,78 +419,51 @@ class const _Content({
   }
 }
 
-class const _Header({required final VoidCallback onClose})
+/// The sheet's grab handle, centred over the chips.
+class const _GrabHandle() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Positioned(
+    top: 7,
+    left: 0,
+    right: 0,
+    child: Center(
+      child: Container(
+        width: 32,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          borderRadius: BorderRadius.circular(HlRadius.full),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Schließen as an icon beside the chips. No title: adding happens on a
+/// row or with Enter, and Peter read "Hinzufügen" up here as a button
+/// (job 78).
+class const _CloseButton({required final VoidCallback onClose})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        Positioned(
-          top: 7,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: scheme.outlineVariant,
-                borderRadius: BorderRadius.circular(HlRadius.full),
-              ),
-            ),
-          ),
+    return FocusTraversalOrder(
+      order: const NumericFocusOrder(4),
+      // A tap on a web semantics button node takes the add field's text
+      // input with it; this node only taps.
+      child: Semantics(
+        button: true,
+        label: l10n.close,
+        onTap: onClose,
+        excludeSemantics: true,
+        child: IconButton(
+          key: const ValueKey('add-sheet-close'),
+          tooltip: l10n.close,
+          onPressed: onClose,
+          style: IconButton.styleFrom(visualDensity: VisualDensity.standard),
+          icon: const Icon(Icons.close),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-          child: _TextAndAction(
-            text: Semantics(
-              header: true,
-              child: Text(
-                l10n.addButton,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            action: FocusTraversalOrder(
-              order: const NumericFocusOrder(4),
-              // A tap on a web semantics button node takes the add
-              // field's text input with it; this node only taps.
-              child: Semantics(
-                button: true,
-                label: l10n.close,
-                onTap: onClose,
-                excludeSemantics: true,
-                child: TextButton(
-                  key: const ValueKey('add-sheet-close'),
-                  onPressed: onClose,
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.standard,
-                    minimumSize: const Size(0, 44),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    textStyle: const TextStyle(
-                      fontFamily: HlFont.sans,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  child: Text(
-                    l10n.close,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -747,10 +726,9 @@ class const _DedupeNote({
   }
 }
 
-/// A label beside its action: the sheet's title beside Schließen, a note
-/// beside Rückgängig or Zusammenführen. The action takes at most half the
-/// width, so a large text scale doesn't squeeze the label to a letter per
-/// line beside it.
+/// A note beside its action, Rückgängig or Zusammenführen. The action takes
+/// at most half the width, so a large text scale doesn't squeeze the label
+/// to a letter per line beside it.
 class const _TextAndAction({required final Widget text, final Widget? action})
     extends StatelessWidget {
   @override

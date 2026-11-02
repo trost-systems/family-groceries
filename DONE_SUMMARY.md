@@ -27,6 +27,7 @@
 - Job 70, sign-in without autofocus; Google and Apple first, email behind „Weiter mit E-Mail“: [docs/done/70-login-no-autofocus.md](docs/done/70-login-no-autofocus.md)
 - Job 74, one privacy-safe log line per Alexa request: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md)
 - Job 76, the add-sheet.spec.ts:139 flake: Escape right after an add reopened the sheet on the web (app bug), plus a CI cache for WebKit's apt packages: [docs/done/76-add-sheet-flake.md](docs/done/76-add-sheet-flake.md)
+- Job 78, stores and categories under Liste → Anpassen, nothing on the list drags, a compact add sheet, back from joining returns to More: [docs/done/78-list-manage-ux.md](docs/done/78-list-manage-ux.md)
 
 ## Job 1: foundation (2026-10-22)
 

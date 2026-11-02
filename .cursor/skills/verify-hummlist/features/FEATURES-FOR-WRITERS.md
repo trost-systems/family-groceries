@@ -90,7 +90,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **How to get there.**
 1. Tab „Mehr“ (EN: "More"), section „Haushalt“ (EN: "Household"), row „Partner einladen“ (EN: "Invite your partner").
 2. Tap „Neue Einladung“ (EN: "New invite"), then share it with „Teilen“ (EN: "Share") or copy it with „Link kopieren“ / „Code kopieren“ (EN: "Copy link" / "Copy code").
-3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") in the same section, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link.
+3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") in the same section, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to „Mehr“ (job 78, 2026-11-02).
 4. To revoke: on the invites page tap „Widerrufen“ (EN: "Revoke") on an invite.
 
 **Never claim.**
@@ -128,9 +128,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **How to get there.**
 1. Open Hummlist and stay on the „Liste“ (EN: "List") tab.
-2. Type into „Was brauchst du?“ (EN: "What do you need?") or tap it.
-3. Press Enter for the first suggestion, or tap another row. Before you take a row you can choose a store („Laden: automatisch“, EN: "Store: automatic") and a category („Kategorie: automatisch“, EN: "Category: automatic"); the chips show the store and category Hummlist picked, once it knows them. The store chip also offers „Neuer Laden“ (EN: "New store") to add a store on the spot.
-4. Close with „Schließen“ (EN: "Close"), Escape, or a tap on the list behind. The sheet stays closed until you tap the field or type again, also when you close it right after an add. Closing while Enter still waits for its suggestions adds nothing.
+2. Type into „Was brauchst du?“ (EN: "What do you need?") or tap anywhere on it.
+3. Press Enter for the first suggestion, or tap another row. Before you take a row you can choose a store and a category with the two chips at the top of the sheet. Until you do, they show what Hummlist picked, in grey with a small "A" for automatic (just „Laden“ / "Store" while it knows no store). The store chip also offers „Neuer Laden“ (EN: "New store") to add a store on the spot.
+4. Close with the ✕ at the top right („Schließen“, EN: "Close"), Escape, or a tap on the list behind. The sheet stays closed until you tap the field or type again, also when you close it right after an add. Closing while Enter still waits for its suggestions adds nothing.
 
 **Never claim.**
 - That suggestions forgive any spelling. They forgive one wrong letter in short words and two in longer ones ("Hafermlch" finds Hafermilch) and find a word from 4 letters inside it ("milch" finds Hafermilch), online and offline alike.
@@ -139,8 +139,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"). Two people adding the same item at the same moment also end up with one.
 
 **Last verified.** job 61 branch (quantities), 2026-11-01 (CET), driven on the Linux app with fg; main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
-**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [quick-add.md](./quick-add.md).
-**Last verified.** job 76 branch (job/76-add-sheet-flake), 2026-11-02 (CET), closing right after an add, driven on the web build (`add-sheet.spec.ts`, 20 repeats) and by widget tests. Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** job 78, 2026-11-02 (CET), the bar and sheet driven on the web build (verify-hummlist journey `list-manage`, e2e `add-sheet.spec.ts`) and by widget tests and goldens at 358 and 390 px; closing right after an add: job 76 branch, 2026-11-02 (CET), `add-sheet.spec.ts`, 20 repeats. Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
@@ -187,17 +186,18 @@ What Hummlist does today, in plain words, with the exact button and screen label
 1. Open the list and tap an item to tick it.
 2. Scroll to the bottom and tap „Zuletzt verwendet“ (EN: "Recently used") to unfold it.
 3. Tap the item to put it back; a note says „<Name> steht wieder auf der Liste“ (EN: "<Name> is back on the list").
-4. To delete: hold the item (or swipe it left), tap „Löschen“ (EN: "Delete"), then „Rückgängig“ (EN: "Undo") if it was a slip.
+4. To delete: hold the item (or right-click it on a computer), tap „Löschen“ (EN: "Delete"), then „Rückgängig“ (EN: "Undo") if it was a slip.
 
 **Never claim.**
 - That ticking shows an undo message; it does not. Undo for a tick is the „Zuletzt verwendet“ section.
 - A check box next to each item: there is none.
-- That swiping deletes; swiping left opens editing.
+- That swiping does anything on a row: it neither deletes nor edits (since job 78); holding opens editing.
 - That ticked items vanish after a fixed time or can be counted past 20 there.
 
 **Unverified.** Whether ticked items are ever removed from the section by age: no cleanup job was found in the code, but it was not run.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [tick-and-undo.md](./tick-and-undo.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist).
+**Last verified.** job 78, 2026-11-02 (CET), the swipe's removal by the app's widget tests (`app/test/list/list_screen_test.dart`); the e2e specs were rewritten but not run. Recipe: [tick-and-undo.md](./tick-and-undo.md).
 
 ## Edit an item
 
@@ -205,16 +205,18 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.
-2. Swipe an item to the left, press and hold it, or right-click it on a computer. (A plain tap ticks the item off instead.)
+2. Press and hold an item, or right-click it on a computer. (A plain tap ticks the item off instead.)
 3. In the sheet „Bearbeiten“ (EN: "Edit") change „Bezeichnung“ (EN: "Name"), „Marke“ (EN: "Brand"), „Menge“ (EN: "Qty") with the buttons „Eins weniger“ / „Eins mehr“ (EN: "One less" / "One more"), or „Eigenschaften“ (EN: "Details"), or pick another store or category with the chips. The store chip also offers „Neuer Laden“ (EN: "New store", the row with a plus) to add a store and pick it. Hummlist remembers the new store or category the next time the item is added.
 4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back. If someone put the same item on the list in the meantime, Undo shows theirs, as they wrote it, instead of a second one.
 
 **Never claim.**
-- That a swipe deletes an item; it opens the edit sheet.
+- That a swipe deletes or edits an item; a swipe does nothing, a hold opens the edit sheet.
 - That Undo after a delete always brings back your own quantity: when the item is on the list again by then, the one there stays as it is.
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
+- That holding and dragging moves an item on the list; nothing on the list drags since job 78. Holding opens this sheet.
 
+**Last verified.** job 78, 2026-11-02 (CET), by the app's widget tests (`app/test/list/list_screen_test.dart`); the e2e specs were rewritten but not run. Recipe: [edit-item.md](./edit-item.md).
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); undo onto an open item: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [edit-item.md](./edit-item.md).
 
 ## Automatic category (the classifier)
@@ -223,8 +225,8 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **How to get there.**
 1. Type an item in the add bar on the „Liste“ tab and add it; it appears under its category.
-2. To correct it, hold the item and tap the category chip (it shows the current category, such as „Kühlregal“), pick another one, tap „Fertig“ (EN: "Done"). Or hold the item and drag it onto another category heading.
-3. To choose before adding, tap the category chip in the add sheet (it shows the guess, or „Kategorie: automatisch“ / "Category: automatic" before you type).
+2. To correct it, hold the item and tap the category chip (it shows the current category, such as „Kühlregal“), pick another one, tap „Fertig“ (EN: "Done").
+3. To choose before adding, tap the category chip in the add sheet (it shows the guess in grey with a small "A" for automatic, or „Kategorie“ / "Category" before you type).
 
 **Never claim.**
 - That it understands every word, or any typo; very short words and unusual typos stay in „Sonstiges“ on purpose.
@@ -234,16 +236,16 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Offline.** An item added without a connection shows under „Wird einsortiert …“ (EN: "Sorting …") until the connection is back, then moves under its category. Online, items arrive already sorted.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [classifier.md](./classifier.md).
+**Last verified.** job 78, 2026-11-02 (CET), by the app's widget tests (`app/test/list/list_screen_test.dart`, `app/test/list/add_sheet_test.dart`) and driven on the web build (verify-hummlist). Recipe: [classifier.md](./classifier.md).
 
 ## Categories
 
 **What it does.** Items on the list sit under categories such as Obst & Gemüse or Getränke. Every household starts with 11 and can add its own, rename any, reorder them, and delete any except „Sonstiges“. A new category goes just before „Sonstiges“. When a category is deleted, its items move to a category the user picks („Sonstiges“ unless changed).
 
 **How to get there.**
-1. Tap „Mehr“ (EN: "More") in the tab bar.
-2. Tap „Kategorien verwalten“ (EN: "Manage categories").
-3. Tap a category to rename it, the trash icon to delete it, the handle to drag it; „Kategorie hinzufügen“ (EN: "Add category") adds one.
+1. On the list, tap „Anpassen“ (EN: "Edit") top right.
+2. Tap „Ohne Laden“ (EN: "No store"), the last row, for the household's own order; or tap a store for that store's order of the same categories.
+3. Tap a category to rename it, the trash icon to delete it (it disappears from every store), the handle to drag it; „Kategorie hinzufügen“ (EN: "Add category") adds one.
 
 The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges (EN: Fruit & veg, Bread & bakery, Chilled, Meat & fish, Pantry, Sweets & snacks, Drinks, Frozen, Household, 👶 Drugstore, Other).
 
@@ -255,29 +257,28 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Whether there is a limit on the number of categories: none found in the app.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [categories.md](./categories.md).
+**Last verified.** job 78, 2026-11-02 (CET), from code and widget tests; e2e specs updated, not yet run. Recipe: [categories.md](./categories.md).
 
 ## Stores, walk order and the sections of the list
 
-**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. Hold and drag moves an item to another store, category or place, and the household remembers which store an item belongs to. A new household has the stores it picked at the start; you can change their order and add your own stores (Rewe, the market, the bakery), each with its own walking order, rename them or delete them.
+**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. An item moves to another store or category in its edit sheet, and the household remembers which store an item belongs to. The list itself never drags: the order of stores and categories is changed in „Anpassen“. A new household has the stores it picked at the start; you can change their order and add your own stores (Rewe, the market, the bakery), each with its own walking order, rename them or delete them.
 
 **How to get there.**
 1. Open the „Liste“ tab (EN: "List"): each store is a section; tap a store's name to fold it.
-2. Hold a store's name (or right click it) for the menu: „Laden nach oben“ / „Laden nach unten“ (EN: "Move store up" / "Move store down") and „Reihenfolge bearbeiten“ (EN: "Edit order") for the category order of that store.
-3. Hold an item and drag it onto a store's name to put it in that store.
-4. Tap „Mehr“ (EN: "More"), then „Läden“ (EN: "Stores"), to reorder the stores or open a store's category order; „Neuer Laden“ (EN: "New store", the row with a plus) adds one, the ⋮ next to a store renames or deletes it.
+2. Hold a store's name (or right click it) to open that store in „Anpassen“, where its category order is changed. Holding a category heading opens the store it sits in.
+3. Hold an item (or right-click it), tap the store chip and pick a store to put it in that store.
+4. On the list, tap „Anpassen“ (EN: "Edit") top right: the stores in list order, „Ohne Laden“ (EN: "No store") last. Drag the handle to reorder, the trash icon deletes a store, „Laden hinzufügen“ (EN: "Add store") adds one. Tap a store to rename it (its name on top) and to order its categories.
 5. While adding or editing an item, open the store chip and tap „Neuer Laden“ (EN: "New store", the row with a plus), type the name and press Enter: the store is created and chosen for the item.
 
 **Never claim.**
 - Store logos, chain colours or official store maps. Store names appear as plain names in a small hexagonal label. The walking orders are researched defaults that can differ from a real shop.
-- That swiping or tapping moves items between stores; it is hold and drag, or the edit sheet's store choice.
+- That items, stores or categories can be dragged around on the list; moving an item is the edit sheet's store or category choice, and ordering lives in „Anpassen“ (job 78).
 - That the app knows prices, opening hours or store locations.
 - That stores can be added, renamed or deleted without a connection; the app asks for one.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [stores-walk-order.md](./stores-walk-order.md).
-**Note.** The onboarding skip hint says „Du kannst sie später unter Mehr → Läden anlegen.“ / "You can add them later under More → Stores." (job 68); Mehr → Läden has „Neuer Laden“.
+**Note.** The onboarding skip hint says „Du kannst sie später unter Liste → Anpassen anlegen.“ / "You can add them later under List → Edit." (jobs 68, 78).
 
-**Last verified.** job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/stores-add.spec.ts and stores.spec.ts. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** job 78, 2026-11-02 (CET), from code and widget tests; e2e specs updated, not yet run. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 
@@ -366,7 +367,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. More collects household entries (invite partner, join another household, categories, stores; Premium only once it is on sale), access, account and sign-out, feedback, help, settings, and the legal pages, with the app version at the bottom. Help, imprint and privacy open pages on hummlist.com in the browser.
+**What it does.** The app has two tabs, List and More. More collects household entries (invite partner, join another household; Premium only once it is on sale; categories and stores are under the list's „Anpassen“ since job 78), access, account and sign-out, feedback, help, settings, and the legal pages, with the app version at the bottom. Help, imprint and privacy open pages on hummlist.com in the browser.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the bottom bar (on wide screens: the rail on the left).
@@ -379,7 +380,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That the Siri guide exists in English beyond the German-only notice.
 - A sign-out from anywhere but More.
 
-**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [more-help.md](./more-help.md).
+**Last verified.** job 78 branch (job/78-a), 2026-11-02 (CET), More's household rows and the join screen's back from code and widget tests; the rest job 64 branch (job/64-polish-seed), 2026-11-02, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [more-help.md](./more-help.md).
 
 ## Account: data export and deletion
 

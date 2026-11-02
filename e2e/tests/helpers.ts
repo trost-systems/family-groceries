@@ -247,8 +247,14 @@ export async function finger(
   await send('pointerup', last);
 }
 
+/** A finger held still on the middle of [target] for 700 ms, then lifted. */
+export async function fingerHold(page: Page, target: Locator): Promise<void> {
+  const b = (await target.boundingBox())!;
+  await finger(page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { hold: 700 });
+}
+
 /** A finger swipe to the left across most of [target]'s width, along its middle. */
-export async function swipeLeft(page: Page, target: Locator, options: { onMove?: () => Promise<void> } = {}): Promise<void> {
+export async function swipeLeft(page: Page, target: Locator, options: { pause?: number; onMove?: () => Promise<void> } = {}): Promise<void> {
   const b = (await target.boundingBox())!;
   const y = b.y + b.height / 2;
   await finger(page, [{ x: b.x + b.width - 30, y }, { x: b.x + 30, y }], options);

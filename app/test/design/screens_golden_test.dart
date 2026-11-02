@@ -37,6 +37,9 @@ import 'fonts.dart';
 const _phone = Size(390, 844);
 const _desktop = Size(1280, 800);
 
+/// The 358 px compact design (hummlist-ui-craft).
+const _compact = Size(358, 780);
+
 Item _item(
   String id,
   String name,
@@ -327,6 +330,19 @@ void main() {
       );
     });
 
+    // Job 78: the chips share their line with Schließen, also at 358 px.
+    testWidgets('add sheet compact, $mode', (tester) async {
+      await _pumpShell(tester, brightness, size: _compact);
+      final field = find.byKey(const ValueKey('add-item-field'));
+      await tester.tap(field);
+      await tester.enterText(field, 'Milch');
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/add-sheet-compact-$mode.png'),
+      );
+    });
+
     // Job 58: "+ Neuer Laden" turned into its field, a name typed.
     testWidgets('add sheet new store, $mode', (tester) async {
       await _pumpShell(tester, brightness);
@@ -382,32 +398,25 @@ void main() {
       );
     });
 
-    // Job 57: the settings rows as hex pills.
-    for (final (name, key) in [
-      ('categories', 'more-categories'),
-      ('stores', 'more-stores'),
+    // Job 57: the settings rows as hex pills; job 78: the List tab's
+    // Anpassen, the stores and one store's or no store's details.
+    for (final (name, location) in [
+      ('stores', editPath),
+      ('no-store', storeDetailsPath(null)),
+      ('store-details', storeDetailsPath('lidl')),
     ]) {
       testWidgets('$name, $mode', (tester) async {
-        await pumpMore(tester, theme: ThemeMode.values.byName(mode));
-        await tester.tap(find.byKey(ValueKey(key)));
-        await tester.pumpAndSettle();
+        await pumpMore(
+          tester,
+          location: location,
+          theme: ThemeMode.values.byName(mode),
+          routes: listTabRoutes(),
+        );
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('goldens/$name-$mode.png'),
         );
       });
     }
-
-    testWidgets('store layout, $mode', (tester) async {
-      await pumpMore(tester, theme: ThemeMode.values.byName(mode));
-      await tester.tap(find.byKey(const ValueKey('more-stores')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('store-row-lidl')));
-      await tester.pumpAndSettle();
-      await expectLater(
-        find.byType(MaterialApp),
-        matchesGoldenFile('goldens/store-layout-$mode.png'),
-      );
-    });
   }
 }

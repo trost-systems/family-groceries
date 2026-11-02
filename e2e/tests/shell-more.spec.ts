@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Locator, test, type Page } from './fixtures';
+import { openStores, storeRow } from './catalog';
 import {
   addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
   openEmailSignIn,
@@ -29,29 +30,30 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
-  await wheelTo(page, page.getByRole('button', { name: 'Anderem Haushalt beitreten' }));
-  await page.getByRole('button', { name: 'Anderem Haushalt beitreten' }).click();
-  await expect(page).toHaveURL(/\/join$/);
-  await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toBeVisible();
-  await page.getByRole('button', { name: 'Abbrechen' }).click();
-  await expect(addField(page)).toBeVisible();
-  await openMore(page);
-  await wheelTo(page, page.getByRole('button', { name: 'Kategorien verwalten' }));
+  // Job 78: More pushes the join screen, so back (and Abbrechen) returns to More, not the list.
+  for (const leave of ['Zurück', 'Abbrechen']) {
+    await wheelTo(page, page.getByRole('button', { name: 'Anderem Haushalt beitreten' }));
+    await page.getByRole('button', { name: 'Anderem Haushalt beitreten' }).click();
+    await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toBeVisible();
+    await page.getByRole('button', { name: leave, exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Mehr' }), `${leave} returns to More`).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toHaveCount(0);
+  }
+  await expect(page.getByRole('button', { name: 'Kategorien verwalten' }), 'job 78: under Liste → Anpassen now').toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Kategorien verwalten' }).click();
-  await expect(page.getByRole('heading', { name: 'Kategorien' })).toBeVisible();
-  await page.getByRole('button', { name: 'Zurück' }).click();
-
-  await page.getByRole('button', { name: /^Läden/ }).click();
-  await expect(page.getByRole('heading', { name: 'Läden' })).toBeVisible();
+  // Job 78: Liste → Anpassen lists every store, Ohne Laden last; a store opens its details.
+  await openStores(page);
   for (const store of ['Supermarkt', 'Drogerie']) {
     // The list hides stores without items (job 17b); this screen lists every store.
-    await expect(page.getByRole('button', { name: new RegExp(`^${store}\\b`) }), `${store} is listed though empty`).toBeVisible();
+    await expect(storeRow(page, store), `${store} is listed though empty`).toBeVisible();
   }
-  await page.getByRole('button', { name: /^Supermarkt/ }).click();
-  await expect(page.getByRole('heading', { name: 'Supermarkt: Reihenfolge' }), 'a store opens its walking order').toBeVisible();
+  await expect(storeRow(page, null)).toBeVisible();
+  await storeRow(page, 'Supermarkt').click();
+  await expect(page.getByRole('heading', { name: 'Supermarkt', exact: true }), 'a store opens its details').toBeVisible();
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(addField(page), 'back twice: the list').toBeVisible();
+  await openMore(page);
 
   // Job 29d: Zugänge and Konto are two pages, each with its own route.
   await page.getByRole('button', { name: /^Zugänge/ }).click();

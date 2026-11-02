@@ -42,6 +42,13 @@ void main() {
     (household, '/more', null),
     // The draft privacy page is gone; an old link lands on the list.
     (household, '/more/privacy', '/'),
+    // Job 78: the List tab's Anpassen pages.
+    (household, '/edit', null),
+    (household, '/edit/lidl', null),
+    (household, '/edit/none', null),
+    (household, '/edit/lidl/more', '/'),
+    (NeedsHousehold('u'), '/edit/lidl', '/welcome'),
+    (SignedOut(), '/edit', '/login'),
     (household, '/more/access', null),
     (household, '/more/account', null),
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),

@@ -77,37 +77,11 @@ List<CategoryBlock> _blocks(
   ];
 }
 
-/// The sections the list shows: the ones with active items. While an item
-/// is dragged ([dropping]) every store shows, an empty one folded, and the
-/// section without a store too, so an item can be dropped into any of them.
-List<StoreSection> shownSections(
-  List<StoreSection> sections, {
-  required bool dropping,
-}) => [
+/// The sections the list shows: the ones with active items.
+List<StoreSection> shownSections(List<StoreSection> sections) => [
   for (final section in sections)
-    if (dropping || section.count > 0) section,
+    if (section.count > 0) section,
 ];
-
-/// [columns] (cut from the sections with items) with the other sections of
-/// [shown] each in the column of the section before it, or the first one: a
-/// store that shows only during a drag joins in place, and no store changes
-/// column under the finger.
-List<List<StoreSection>> withDropTargets(
-  List<List<StoreSection>> columns,
-  List<StoreSection> shown,
-) {
-  final columnOf = {
-    for (final (i, column) in columns.indexed)
-      for (final section in column) section.key: i,
-  };
-  final result = [for (final _ in columns) <StoreSection>[]];
-  var at = 0;
-  for (final section in shown) {
-    at = columnOf[section.key] ?? at;
-    result[at].add(section);
-  }
-  return result;
-}
 
 /// [sections] cut into at most [count] columns, each a run of whole sections
 /// in order, so that the tallest column (by [weight]) is as short as it can
@@ -155,83 +129,4 @@ List<List<StoreSection>> columnsOf(
     end = start;
   }
   return columns;
-}
-
-/// Which half of a [height] tall row the pointer at [y] is in.
-Edge edgeAt(double y, double height) =>
-    y < height / 2 ? Edge.before : Edge.after;
-
-/// [ids] with [moved] taken out and put [edge] of [target]. Unchanged when
-/// either is missing or they are the same.
-List<String> reordered(
-  List<String> ids,
-  String moved,
-  String target,
-  Edge edge,
-) {
-  if (moved == target || !ids.contains(moved) || !ids.contains(target)) {
-    return ids;
-  }
-  final next = [...ids]..remove(moved);
-  final at = next.indexOf(target) + (edge == Edge.after ? 1 : 0);
-  return next..insert(at, moved);
-}
-
-/// What dropping a dragged item does.
-sealed class const ItemDrop();
-
-/// Directly [edge] of [anchorId], in the anchor's store and category.
-final class const PlaceDrop(final String anchorId, final Edge edge)
-    extends ItemDrop;
-
-/// To the end of category [categoryId] in [storeId] (null: no store).
-final class const MoveDrop({
-  required final String? storeId,
-  required final String categoryId,
-}) extends ItemDrop;
-
-/// Dropping [item] [edge] of [anchor], whose block is [block]; null when the
-/// item would stay where it is.
-ItemDrop? dropOnRow(Item item, Item anchor, Edge edge, List<Item> block) {
-  if (item.id == anchor.id) {
-    return null;
-  }
-  final sameGroup =
-      item.storeId == anchor.storeId && item.categoryId == anchor.categoryId;
-  if (sameGroup) {
-    final from = block.indexWhere((i) => i.id == item.id);
-    final to = block.indexWhere((i) => i.id == anchor.id);
-    if (from >= 0 && to >= 0 && from == to + (edge == Edge.before ? -1 : 1)) {
-      return null;
-    }
-  }
-  return PlaceDrop(anchor.id, edge);
-}
-
-/// Dropping [item] on the divider of [categoryId] in [storeId], whose block
-/// is [block]: to the end of it; null when it is last there already.
-ItemDrop? dropOnCategory(
-  Item item,
-  String? storeId,
-  String categoryId,
-  List<Item> block,
-) {
-  if (item.storeId == storeId &&
-      item.categoryId == categoryId &&
-      block.lastOrNull?.id == item.id) {
-    return null;
-  }
-  return MoveDrop(storeId: storeId, categoryId: categoryId);
-}
-
-/// Dropping [item] on the divider of [storeId] (folded or not): it keeps its
-/// category and goes to the end of that category in the store, which every
-/// store has (a store walks the categories it has no layout row for in route
-/// order). Null when it is in that store already or still unclassified.
-ItemDrop? dropOnStore(Item item, String? storeId) {
-  final categoryId = item.categoryId;
-  if (categoryId == null || item.storeId == storeId) {
-    return null;
-  }
-  return MoveDrop(storeId: storeId, categoryId: categoryId);
 }

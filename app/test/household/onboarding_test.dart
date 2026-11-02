@@ -121,11 +121,11 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pump();
       await tapKey(tester, 'onboarding-store-Lidl');
-      // Mehr → Läden is where stores are added later (job 58).
+      // Liste → Anpassen is where stores are added later (jobs 58, 78).
       expect(
         find.text(
           'Ohne Läden starten. '
-          'Du kannst sie später unter Mehr → Läden anlegen.',
+          'Du kannst sie später unter Liste → Anpassen anlegen.',
         ),
         findsOneWidget,
       );
@@ -134,7 +134,7 @@ void main() {
       expect(
         find.text(
           'Ohne Läden starten. '
-          'Du kannst sie später unter Mehr → Läden anlegen.',
+          'Du kannst sie später unter Liste → Anpassen anlegen.',
         ),
         findsNothing,
         reason: 'created: Step 3',

@@ -481,8 +481,27 @@ class FakeRepository() implements ListRepository {
       storeId: () => anchor.storeId,
     );
     return moved.copyWith(
-      sortKey: () => placeKey(groupOf(moved), anchor, edge),
+      sortKey: () => _keyNextTo(groupOf(moved), anchor, edge),
     );
+  }
+
+  /// Like `place_item`: halfway to the anchor's neighbour in [group], or
+  /// 1024 past the anchor at an end.
+  static double? _keyNextTo(List<Item> group, Item anchor, Edge edge) {
+    final key = anchor.sortKey;
+    if (key == null) {
+      return null;
+    }
+    final at = group.indexWhere((i) => i.id == anchor.id);
+    final next = switch (edge) {
+      Edge.before => at > 0 ? group[at - 1].sortKey : null,
+      Edge.after => at + 1 < group.length ? group[at + 1].sortKey : null,
+    };
+    return switch ((edge, next)) {
+      (_, final n?) => (key + n) / 2,
+      (Edge.before, null) => key - 1024,
+      (Edge.after, null) => key + 1024,
+    };
   }
 
   /// Stands in for the server's splitter: splits on commas and "und".

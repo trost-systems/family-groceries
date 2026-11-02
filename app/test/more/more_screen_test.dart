@@ -59,11 +59,12 @@ void main() {
     await pumpMore(tester);
     expect(key('more-screen'), findsOneWidget);
     expect(find.text('Mehr'), findsOneWidget);
+    // Job 78: stores and categories are the List tab's Anpassen now.
+    expect(find.text('Kategorien verwalten'), findsNothing);
+    expect(find.text('Läden'), findsNothing);
     for (final row in [
       'more-invite',
       'more-join',
-      'more-categories',
-      'more-stores',
       'more-access',
       'menu-account',
       'more-sign-out',

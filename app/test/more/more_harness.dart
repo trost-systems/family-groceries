@@ -117,6 +117,13 @@ Future<More> pumpMore(
   /// Instead of `moreTabRoutes()`, e.g. a More built like a release build.
   List<RouteBase>? routes,
 
+  /// The app's own routes and shell (`appRoutes`) behind the auth redirect,
+  /// instead of `routes`, for navigation across tabs and screens.
+  bool app = false,
+
+  /// The list's server before the list loads.
+  void Function(FakeRepository repo)? seed,
+
   /// The store, the purchases function's claim and the household's entitlement
   /// rows; a store that sells and a household without Lifetime by default.
   FakePurchaseRepository? store,
@@ -184,19 +191,25 @@ Future<More> pumpMore(
   );
   addTearDown(lock.close);
   final repo = FakeRepository();
+  seed?.call(repo);
   final feedback = FakeFeedbackRepository();
   final feedbackCubit = FeedbackCubit(feedback, analytics: shownAnalytics);
   addTearDown(feedbackCubit.close);
   final screens = ScreenTracker();
   final router = GoRouter(
     initialLocation: location,
-    routes: [
-      // As in the app, the list sits above the tabs (AppShell's ListScope).
-      ShellRoute(
-        builder: (_, _, child) => ListScope(repository: repo, child: child),
-        routes: routes ?? [...moreTabRoutes()],
-      ),
-    ],
+    redirect: app ? (_, state) => authRedirect(session.state, state.uri) : null,
+    routes: app
+        ? appRoutes(repository: repo)
+        : [
+            // As in the app, the list sits above the tabs (AppShell's
+            // ListScope).
+            ShellRoute(
+              builder: (_, _, child) =>
+                  ListScope(repository: repo, child: child),
+              routes: routes ?? [...moreTabRoutes()],
+            ),
+          ],
   );
   addTearDown(router.dispose);
   // As App does: the tracker follows the router.

@@ -14,8 +14,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// The household's list for both tabs: the List tab shows it, More manages
-/// its categories and stores. A new household gets a new list.
+/// The household's list above both tabs: the List tab shows it and its
+/// Anpassen pages manage its categories and stores; it keeps syncing while
+/// More is open. A new household gets a new list.
 class const ListScope({
   required final Widget child,
   super.key,

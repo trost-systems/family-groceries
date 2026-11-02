@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
-import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -16,7 +16,6 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
-import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -24,6 +23,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 /// The List tab: a status bar on top, the list, and the add bar at the
 /// bottom, which opens the add sheet. Needs the list scope
@@ -63,11 +63,18 @@ class const ShoppingList({
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => BlocProvider(
-    create: (context) => AddSheetCubit(context.read<ListCubit>()),
-    // The list's snackbars float above the add bar, not above the tabs.
-    child: ScaffoldMessenger(child: _ShoppingList(dictation: dictation)),
-  );
+  Widget build(BuildContext context) {
+    // Another household brings another ListCubit while the tabs stay
+    // (joining or restoring one from More): the sheet and the screen start
+    // over with it, or adds would go to the household that was left.
+    final list = context.select<ListCubit, ListCubit>((cubit) => cubit);
+    return BlocProvider(
+      key: ObjectKey(list),
+      create: (_) => AddSheetCubit(list),
+      // The list's snackbars float above the add bar, not above the tabs.
+      child: ScaffoldMessenger(child: _ShoppingList(dictation: dictation)),
+    );
+  }
 }
 
 class const _ShoppingList({required final Dictation? dictation})
@@ -501,9 +508,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
   }
 }
 
-/// The input, in the thumb zone: the leading disc, the field, clear while
-/// the sheet is open, and the microphone. It never moves while the sheet
-/// opens, grows or closes.
+/// The input, in the thumb zone: the field, clear while the sheet is open,
+/// and the microphone, in one hex that is a tap target as a whole (Peter,
+/// job 78). It never moves while the sheet opens, grows or closes.
 class const _AddBar({
   required final TextEditingController input,
   required final FocusNode focus,
@@ -525,14 +532,24 @@ class const _AddBar({
     final sheet = context.watch<AddSheetCubit>().state;
     final list = context.watch<ListCubit>();
     final open = sheet.open;
-    final first = sheetRows(sheet, list).firstOrNull?.entry;
     final t = HummlistColors.of(Theme.of(context).brightness);
+    void show() {
+      cubit.show();
+      // Text the microphone left behind.
+      if (input.text.isNotEmpty) {
+        cubit.type(input.text);
+      }
+    }
+
     // The hex is the container's, never the field's: an InputBorder on the
     // field changes its padding when focused (DECISIONS, Job 52 item 7).
     final compose = Container(
       height: _composeHeight,
-      padding: const EdgeInsets.symmetric(
-        horizontal: HlHex.tip * _composeHeight - HlSpace.s1,
+      // The text starts clear of the tip; the buttons' own padding keeps
+      // their icons clear of the other one.
+      padding: const EdgeInsetsDirectional.only(
+        start: HlHex.tip * _composeHeight + HlSpace.s1,
+        end: HlHex.tip * _composeHeight - HlSpace.s1,
       ),
       decoration: ShapeDecoration(
         color: t.surfaceRaised,
@@ -543,17 +560,6 @@ class const _AddBar({
       child: Row(
         spacing: HlSpace.s2,
         children: [
-          _Disc(
-            open: open,
-            icon: first == null
-                ? null
-                : nameIcon(
-                    first.name,
-                    list.state.catalog.categories
-                        .where((c) => c.id == first.categoryId)
-                        .firstOrNull,
-                  ),
-          ),
           Expanded(
             child: Focus(
               focusNode: barFocus,
@@ -612,13 +618,7 @@ class const _AddBar({
                       border: InputBorder.none,
                       counterText: '',
                     ),
-                    onTap: () {
-                      cubit.show();
-                      // Text the microphone left behind.
-                      if (input.text.isNotEmpty) {
-                        cubit.type(input.text);
-                      }
-                    },
+                    onTap: show,
                     onChanged: cubit.type,
                     // Keeps the soft keyboard up after submitting.
                     onEditingComplete: () {},
@@ -681,7 +681,18 @@ class const _AddBar({
                     height: addBarHeight,
                     padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
                     alignment: Alignment.center,
-                    child: compose,
+                    // A tap on the hex around the field counts as one on
+                    // the field. No semantics node of its own: on the web
+                    // one this size would take the field's taps.
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      excludeFromSemantics: true,
+                      onTap: () {
+                        show();
+                        focus.requestFocus();
+                      },
+                      child: compose,
+                    ),
                   ),
                 ),
               ),
@@ -696,42 +707,11 @@ class const _AddBar({
 /// The compose field's height: the site's `.compose`.
 const _composeHeight = 52.0;
 
-/// "+" on lemon while closed; open, the first row's icon, popping in.
-class const _Disc({required final bool open, required final String? icon})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
-    final Widget face = !open
-        ? Icon(Icons.add, size: 22, color: t.onHoney)
-        : icon == null
-        ? Icon(Icons.search, size: 18, color: t.text)
-        : Text(icon!, style: const TextStyle(fontSize: 18));
-    return ExcludeSemantics(
-      child: AnimatedSwitcher(
-        duration: hlMotion(context, HlDuration.short),
-        switchInCurve: HlEasing.standard,
-        transitionBuilder: (child, animation) => ScaleTransition(
-          scale: Tween<double>(begin: 0.6, end: 1).animate(animation),
-          child: child,
-        ),
-        layoutBuilder: (current, previous) =>
-            Stack(alignment: Alignment.center, children: [?current]),
-        child: PointyHex(
-          key: ValueKey((open, icon)),
-          face: open ? t.honeySoft : t.honey,
-          size: 38,
-          child: face,
-        ),
-      ),
-    );
-  }
-}
-
-/// The bar above the list: how many partner adds are new, and the sync
-/// state; no household name and no count (Peter, DECISIONS Job 29a). It is
-/// [height] tall in every state, so the list below never moves when either
-/// comes or goes. It sits in the list's frame (job 57).
+/// The bar above the list: how many partner adds are new, the sync state
+/// and Anpassen, which opens the stores and categories; no household name
+/// and no count (Peter, DECISIONS Job 29a). It is [height] tall in every
+/// state, so the list below never moves when either comes or goes. It sits
+/// in the list's frame (job 57).
 class const _Header() extends StatelessWidget {
   /// Below the top safe area; also the sync icon's square tap target.
   static const height = 44.0;
@@ -789,6 +769,19 @@ class const _Header() extends StatelessWidget {
                   const SizedBox.square(
                     dimension: height,
                     child: _SyncIndicator(),
+                  ),
+                  // Large text shrinks the label rather than the bar: the
+                  // bar keeps its height and the new-items line its room.
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 128),
+                    child: TextButton(
+                      key: const ValueKey('list-edit'),
+                      onPressed: () => context.go(editPath),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l10n.listEdit),
+                      ),
+                    ),
                   ),
                 ],
               ),

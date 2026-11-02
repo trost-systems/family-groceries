@@ -388,19 +388,22 @@ void main() {
     });
   }
 
-  for (final (row, title) in [
-    ('more-categories', 'categories'),
-    ('more-stores', 'stores'),
+  // Job 78: both are the List tab's Anpassen.
+  for (final (location, title) in [
+    (editPath, 'stores'),
+    (storeDetailsPath(null), 'categories'),
+    (storeDetailsPath('lidl'), 'store details'),
   ]) {
     testWidgets('locked, define on: $title show no paywall', (tester) async {
       await pumpMore(
         tester,
+        location: location,
         size: const Size(390, 1600),
         integrationLock: true,
         premium: FakePremiumServer(lock: true),
+        routes: listTabRoutes(),
       );
-      await tester.tap(key(row));
-      await tester.pumpAndSettle();
+      expect(find.byType(FloatingActionButton), findsOneWidget);
       expectNoPremium(title);
     });
   }

@@ -20,7 +20,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Start every recipe from the baseline unless its preconditions say otherwise. `fg up --fresh` restores the baseline: database reset and both users reseeded. Then `fg login` each client again.
 - Prefer ValueKeys (`--key`), then field labels (`--label`), tooltips (`--tooltip`), exact text (`--text`), and coordinates last.
-- A list row is one tap target (a checkbox to screen readers, job 57): `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, and `fg drag` moves it. The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
+- A list row is one tap target (a checkbox to screen readers, job 57): `fg tap --text "<row text>"` ticks it, `fg marionette -- long-press --text "<row text>"` opens its edit sheet, whose chips move it (the list has no drag since job 78). The row text reads the quantity first ("2 l Milch", "6× Bananen"), a row without a quantity the name. To act on something inside a row, scope to it: `--row "<row text>"`.
 - Seeded scenario runs share the stack with the baseline household. Read with `--as peter` (or `--as <run>:<handle>`) so a query sees one household, and filter `--write` preconditions by household.
 - Wait for state with `fg wait`. Never use sleep.
 - `fg type --key add-item-field --input <item> --submit` adds through the add sheet, which stays open after the add: wait for its note (`fg wait --contains "Hinzugefügt: <item>"`), then `fg press escape` before you check or touch the list. While the sheet is open, `fg find` and `fg wait` don't see the list's rows, and the tabs don't take taps.
@@ -51,7 +51,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [List and walk order](./list-walk-order.md) covers design H's list: store sections and category dividers, walk order, a tap that ticks with undo, dragging rows onto rows, category and store dividers, reordering stores and categories by drag or divider menu, folds and the explainer card kept per device, and a partner's adds and moves.
+- [List and walk order](./list-walk-order.md) covers design H's list: store sections and category dividers, walk order, a tap that ticks with undo, a hold that edits (nothing drags), a divider hold that opens its store's details, folds and the explainer card kept per device, and a partner's adds and moves.
 - [Quick add](./quick-add.md) covers the add bar and the add sheet: autofocus on desktop, rows with their sources, Enter for the first row, store and category chips, the added note with undo, due usuals, closing, and tick with undo, delete and re-add from history.
 - [Shell and More](./shell-more.md) covers the tabs (Liste, Mehr; a rail from 840 px), every entry of the More tab, the licenses and the imprint and privacy links (and how to read them on a host without a browser).
 - [Settings](./settings.md) covers Mehr → Einstellungen: light, dark or the device's theme and the language list, both applied at once and kept on the device across restarts and sign-out.
@@ -61,8 +61,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Household](./household.md) covers creating a household, inviting by code and joining with it, the invite list and revoking.
 - [Onboarding](./onboarding.md) covers the steps after sign-in: create or join, invite the partner, the pending invite link, errors and events.
 - [Classifier](./classifier.md) covers automatic categories for new items, moving an item to another category, and learning from the move.
-- [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", adding your own store (store chip, Mehr → Läden, onboarding) and renaming or deleting it, tagging items to a store by drag or edit sheet and remembering it, and each store's layout screen.
-- [Categories](./categories.md) covers Mehr → Kategorien verwalten (also from the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
+- [Stores](./stores.md) covers stores as list sections in their own category order, "Ohne Laden", adding your own store (store chip, Liste → Anpassen, onboarding) and renaming or deleting it, tagging items to a store in the edit sheet and remembering it, and each store's details (from Anpassen or a hold on its divider).
+- [Categories](./categories.md) covers Liste → Anpassen → Ohne Laden (also a hold on the "Ohne Laden" divider): adding, renaming, deleting and reordering categories.
 - [Analytics and error tracking](./analytics.md) covers the analytics question after the first sign-in (before onboarding or the list), what is sent after a yes and that nothing is sent after a no, Mehr → Nutzungsdaten, the internal device mark with "Testfehler senden", and error tracking from the app and the edge functions.
 - [Feedback](./feedback.md) covers Mehr → Feedback senden: the note with optional kind and contact, what is attached, the length limits, the error with Retry, and the row in `public.feedback` (insert-only).
 - [MCP access](./mcp-access.md) covers the consent page an AI app opens (web build only) and Mehr → Zugänge: the MCP URL, creating and revoking access tokens, and disconnecting OAuth apps, each cut off on the next request.
