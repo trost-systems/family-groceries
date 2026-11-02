@@ -6218,3 +6218,57 @@ Peter asked for Home Screen widgets with Anton Borri's `home_widget` package
   the site has no hold mechanism, only `since:` and drafts, and a version
   would publish them with the next release whether or not the device test
   passed.
+
+## Job 65: automated store screenshots and the re-filmed demo videos (2026-11-02)
+
+- **65.1 Rebuilt from the brief, without the approved v2 set.** The manual pipeline, its scenario
+  (box branch `play-graphics/scenario`), the approved de-DE v2 output and the ASO spec live on the
+  box under `/workspace/hummlist/play-graphics`, `/workspace/hummlist-aso` and
+  `/home/box/fg-wt/play-graphics`. None of them is synced to the Hetzner runner and there is no
+  ssh to the box (asked on the board, NEEDS_LEAD). The scenes, sizes and captions here follow the
+  brief, the store rules and the site copy. Only the feature graphic's two lines are the approved
+  text. Every other caption is `status: draft` until the lead compares the set with v2.
+- **65.2 Web build, not an emulator.** The screenshots film the release web build (wasm,
+  production defines) at each device's CSS viewport and device pixel ratio, through the
+  verify-hummlist launcher. No emulator is allowed here, and it is the build users get at
+  app.hummlist.com. Native-only chrome (status bar, keyboard) is not drawn (hummlist-ui-craft).
+- **65.3 One frame per device: caption band, device body, app to the bottom edge.** Each device
+  has a real device's CSS viewport (`sets.mjs`). The screen gets that shape at the height left
+  under the caption, and the body's foot bleeds off the edge, so the whole app with its tab bar is
+  in view. The captions use the site's cobalt, Bricolage and Inter. The icon comes from
+  `AppIcon-1024.png`, which `design/app-icon` generates, never redrawn.
+- **65.4 Scenes per device.** The empty add sheet opens at half the screen height (`add_sheet.dart`,
+  `_firstOpenShare`). On the 780 px Play phone that leaves one „Wieder fällig“ row, so the Play
+  phone shows the edit sheet instead and the due scene runs on the iPhone (900 px) and the iPad.
+  Mehr is not shown: it lists „Hummlist Premium“. Mehr → Läden is not shown either: its disclaimer
+  names dm, Lidl and EDEKA.
+- **65.5 Generic stores only (legal N-23).** `create_household` still adds dm, Lidl and Edeka on
+  main, and fg seed asserts them. `marketing/store-screenshots/seed.mjs` deletes every store the
+  scenario does not name, through the app's `delete_store`, as the owner. Once job 64's
+  `p_default_stores` default lands, it deletes nothing and stays correct.
+- **65.6 Determinism by a fake page clock.** Playwright's clock is installed before the app loads,
+  at the moment the run was seeded, not at a calendar date. The scenario's times count from that
+  moment, and the add sheet's 30-day recent rows are computed on the device. A clock pinned to a
+  date would have let the 35-day-old purchases into those rows a week later (found in review).
+  A scene pauses the clock on the 16 ms animation-frame grid counted from its start and steps it
+  by named amounts. No scene shows a date. The tick never commits, because the clock stops before the 440 ms leave
+  animation ends. Three full runs matched byte for byte (`compare.mjs`). Before the grid
+  alignment, a 1 px anti-aliased end of the strike-through and the caret's blink phase differed
+  between runs.
+- **65.7 The site videos keep job 54's Linux capture.** The originals came from the Linux profile
+  build under Xvfb with real X input, not from an emulator, so the brief's fallback (Playwright
+  video of the web build) did not apply. `remake.sh` re-films only the household and the members.
+  household-sync now has two phones instead of three. The CI workflow does not film the videos:
+  its runner has no xdotool and no GTK toolchain, and the videos are committed site files, not
+  release artifacts.
+- **65.8 Item→store memory places the videos' adds.** Honig, Marmelade and Eier were bought once,
+  35 days ago, at the Supermarkt. That is outside the 30-day recently-used rows and never due, so
+  the screenshots keep their content. The adds land mid-list where the camera is, instead of in an
+  „Ohne Laden“ section below the fold.
+- **65.9 The e2e gate reuses a parent's lock.** `flock /tmp/fg-e2e.lock scripts/gates/e2e.sh`
+  deadlocked: the gate's own `flock 9` waited for the parent's lock on another descriptor. An
+  orphaned waiter from such a run held every e2e run on the Hetzner runner for about an hour
+  until it was killed. The gate now checks for an ancestor with the lock file open, as `fg sync`
+  does, and `scripts/e2e-gate-test.sh` covers it. The test fails on the old gate.
+- **65.10 fg port blocks up to 654.** Job 65's block 651 was refused (500 to 649). 655 would need
+  ports past 65535.
