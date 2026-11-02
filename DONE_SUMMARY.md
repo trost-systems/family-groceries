@@ -25,6 +25,7 @@
 - Job 50, integration lock: Siri, Alexa and MCP need Hummlist Premium behind the server switch `integration_lock` and the app define `INTEGRATION_LOCK` (both off): [docs/done/50-integration-lock.md](docs/done/50-integration-lock.md)
 - Job 63, Home Screen widgets on iPhone (WidgetKit) and Android (Glance) with home_widget, held (`home-widgets`) and waiting for Apple portal steps before merge: [docs/done/63-home-widgets.md](docs/done/63-home-widgets.md)
 - Job 70, sign-in without autofocus; Google and Apple first, email behind „Weiter mit E-Mail“: [docs/done/70-login-no-autofocus.md](docs/done/70-login-no-autofocus.md)
+- Job 74, one privacy-safe log line per Alexa request: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md)
 
 ## Job 1: foundation (2026-10-22)
 
@@ -498,3 +499,7 @@ An undone delete or an offline add whose item another member had put on the list
 job 64's duplicate skip. `put_item` now answers with the open item and the app folds its copy (and
 its queued tick or edit) into it. At the largest text scales the third „Wieder fällig“ row and the
 rest of the list fit or scroll. Details, tests and screenshots: [docs/done/64b-dup-skip-undo.md](docs/done/64b-dup-skip-undo.md).
+
+## Job 74: one privacy-safe log line per Alexa request
+
+The alexa function logs `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>` once per request (skill events included), with no tokens, ids, item names, utterances or addresses; a test feeds them through every reply kind and checks none appears. docs/ALEXA.md "Request log" has the logs query. PR only, deploys from main after the lead merges. Details: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md).

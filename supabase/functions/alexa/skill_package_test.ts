@@ -279,6 +279,7 @@ Deno.test('every intent of each model has its own answer in the handler', async 
     revoke: () => Promise.resolve(),
     counted: () => Promise.resolve(),
     report: () => {},
+    log: () => {},
   } as unknown as Deps;
   const handler = createHandler(deps);
   for (const locale of Object.keys(models)) {

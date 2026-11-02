@@ -1,0 +1,12 @@
+# Job 74: alexa/index.ts run locally (deno, test CA, no database), driven by scripts/alexa-say.sh.
+# Requests: launch unlinked, add "Zahnpasta und Senf" unlinked, launch en-US, read with token tok-SECRET-4711
+# (no database: error), SkillDisabled for amzn1.ask.account.SECRETUSER (no database: 500), unsigned, stale, GET.
+# The function log, complete:
+alexa: LaunchRequest - de-DE linked=false -> link
+alexa: IntentRequest AddItemIntent de-DE linked=false -> link
+alexa: LaunchRequest - en-US linked=false -> link
+alexa: IntentRequest ReadListIntent de-DE linked=true -> error
+alexa: AlexaSkillEvent.SkillDisabled - de-DE linked=false -> error
+alexa: - - - linked=false -> refused missing_signature
+alexa: - - - linked=false -> refused stale_timestamp
+alexa: - - - linked=false -> refused

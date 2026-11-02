@@ -6688,3 +6688,20 @@ answers for Legal Review in docs/NEEDS_LEAD.md "Job 72".
   headings wrap to two lines; the edit sheet's „Abbrechen“ takes at most half its row and
   „Fertig“ moves above „Löschen“ when both do not fit; a hexagon narrower than its tips is drawn
   as a rhombus. Nothing changes at text scale 1.0 (the goldens are unchanged).
+## Job 74: one privacy-safe request line in the Alexa function, 2026-11-02
+
+1. **More reply kinds than the brief's seven** (`link|launch|added|read|help|empty|error`):
+   `no-household`, `goodbye`, `reprompt`, `not-understood`, `too-long`, `rate-limited` and
+   `refused` too (`locked` was dropped on the rebase onto #195: Alexa is free, no Premium check). Folding them in would mislabel exactly the answers a launch bug is debugged
+   by (a goodbye is not help, a refused signature is not an error of ours). They are one list,
+   `replyKinds` in `alexa/handler.ts`; the test fails when a kind has no case.
+2. **`linked` means "Alexa sent an access token"**, not "the token resolved". That is the fact
+   Amazon controls; whether we accepted it shows in the kind (`linked=true -> link` is a dead
+   token). Help and stop never authenticate, so a resolved-only flag would read false for them.
+3. **The line goes through `Deps.log`**, so the tests read it without stubbing `console`, and
+   is written in a `finally`: an exception still logs `-> error`.
+4. **It replaces the two warnings** ("alexa request refused: <reason>", "Alexa reported an
+   error"): a refusal is `-> refused <reason>`, `System.ExceptionEncountered` is its request
+   type. One line per request, no second format to grep.
+5. **Fields are reduced to one word of `[A-Za-z0-9_.:-]`, 64 characters**: they come from a
+   verified Amazon body, but a stray space or newline would break the format or let free text in.

@@ -8,11 +8,18 @@ import { telemetryFor } from '../_shared/telemetry.ts';
 import type { Added } from '../voice/handler.ts';
 import type { ParsedItem } from '../voice/parse.ts';
 import { countAdds } from './analytics.ts';
-import { createHandler, type Deps, type Linked } from './handler.ts';
+import {
+  createHandler,
+  type Deps,
+  type Linked,
+  type ReplyKind,
+  replyKinds,
+  requestLine,
+} from './handler.ts';
 import { confirmation, readLimit, speech } from './speech.ts';
 import type { AnalyticsSubject } from './store.ts';
 import { makeTestCa, testCertUrl, testSkillId } from './test_ca.ts';
-import { type Envelope, verifyRequest } from './verify.ts';
+import { type Envelope, VerificationError, verifyRequest } from './verify.ts';
 
 const HH_A = '0a0a0a0a-0000-4000-8000-00000000000a';
 const HH_B = '0b0b0b0b-0000-4000-8000-00000000000b';
@@ -42,6 +49,8 @@ class World {
   links = new Map<string, Set<string>>();
   revokedSessions: string[] = [];
   reports: unknown[] = [];
+  /** The request lines the handler logged. */
+  lines: string[] = [];
   taken = new Map<string, number>();
   failAdds = false;
   failList = false;
@@ -130,6 +139,7 @@ class World {
         return Promise.resolve();
       },
       report: (e) => this.reports.push(e),
+      log: (line) => this.lines.push(line),
       ...over,
     };
   }
@@ -919,4 +929,238 @@ Deno.test('de-DE LaunchRequest: the whole response is a valid Alexa answer that 
       shouldEndSession: false,
     },
   });
+});
+
+Deno.test('job 74: one request line per request, each reply kind, no personal data', async () => {
+  const grant = 'tok-SECRET-4711';
+  const alexaUser = 'amzn1.ask.account.SECRETALEXAUSER';
+  const world = new World();
+  world.link(grant, 'user-SECRET-peter', HH_A, 'session-SECRET-1');
+  world.link('tok-SECRET-nohouse', 'user-SECRET-nohouse', null);
+  world.link('tok-SECRET-limit', 'user-SECRET-limit', HH_B);
+  world.taken.set('user-SECRET-limit', 30);
+  world.rows.push({ household: HH_A, name: 'Zahnpasta', quantity: null, addedBy: 'x' });
+  const ask = { token: grant, user: alexaUser };
+  const cases: [string, ReplyKind, () => Promise<{ status: number }>, string][] = [
+    [
+      'link',
+      'link',
+      () => send(world.deps(), envelope({ type: 'LaunchRequest' })),
+      'alexa: LaunchRequest - de-DE linked=false -> link',
+    ],
+    [
+      'revoked',
+      'link',
+      () => send(world.deps(), envelope(intent('ReadListIntent'), { token: 'tok-SECRET-gone' })),
+      'alexa: IntentRequest ReadListIntent de-DE linked=true -> link',
+    ],
+    [
+      'no household',
+      'no-household',
+      () =>
+        send(world.deps(), envelope({ type: 'LaunchRequest' }, { token: 'tok-SECRET-nohouse' })),
+      'alexa: LaunchRequest - de-DE linked=true -> no-household',
+    ],
+    [
+      'launch',
+      'launch',
+      () => send(world.deps(), envelope({ type: 'LaunchRequest', locale: 'en-GB' }, ask)),
+      'alexa: LaunchRequest - en-GB linked=true -> launch',
+    ],
+    [
+      'added',
+      'added',
+      () =>
+        send(world.deps(), envelope(intent('AddItemIntent', 'Kaffeebohnen und Hafermilch'), ask)),
+      'alexa: IntentRequest AddItemIntent de-DE linked=true -> added',
+    ],
+    [
+      'read',
+      'read',
+      () => send(world.deps(), envelope(intent('ReadListIntent'), ask)),
+      'alexa: IntentRequest ReadListIntent de-DE linked=true -> read',
+    ],
+    [
+      'help',
+      'help',
+      () => send(world.deps(), envelope(intent('AMAZON.HelpIntent'), ask)),
+      'alexa: IntentRequest AMAZON.HelpIntent de-DE linked=true -> help',
+    ],
+    [
+      'goodbye',
+      'goodbye',
+      () => send(world.deps(), envelope(intent('AMAZON.StopIntent'))),
+      'alexa: IntentRequest AMAZON.StopIntent de-DE linked=false -> goodbye',
+    ],
+    [
+      'reprompt',
+      'reprompt',
+      () => send(world.deps(), envelope(intent('AMAZON.FallbackIntent'), ask)),
+      'alexa: IntentRequest AMAZON.FallbackIntent de-DE linked=true -> reprompt',
+    ],
+    [
+      'not understood',
+      'not-understood',
+      () =>
+        send(
+          world.deps(),
+          envelope(intent('AddItemIntent', 'äh'), { ...ask, attributes: { retry: 1 } }),
+        ),
+      'alexa: IntentRequest AddItemIntent de-DE linked=true -> not-understood',
+    ],
+    [
+      'too long',
+      'too-long',
+      () => send(world.deps(), envelope(intent('AddItemIntent', 'Geheimzutat '.repeat(100)), ask)),
+      'alexa: IntentRequest AddItemIntent de-DE linked=true -> too-long',
+    ],
+    [
+      'rate limited',
+      'rate-limited',
+      () =>
+        send(
+          world.deps(),
+          envelope(intent('AddItemIntent', 'Senf'), { token: 'tok-SECRET-limit' }),
+        ),
+      'alexa: IntentRequest AddItemIntent de-DE linked=true -> rate-limited',
+    ],
+    [
+      'database down',
+      'error',
+      () =>
+        send(
+          world.deps({ listItems: () => Promise.reject(new Error('Zahnpasta timeout')) }),
+          envelope(intent('ReadListIntent'), ask),
+        ),
+      'alexa: IntentRequest ReadListIntent de-DE linked=true -> error',
+    ],
+    [
+      'session ended',
+      'empty',
+      () =>
+        send(
+          world.deps(),
+          envelope({ type: 'SessionEndedRequest', reason: 'USER_INITIATED' }, ask),
+        ),
+      'alexa: SessionEndedRequest - de-DE linked=true -> empty',
+    ],
+    [
+      'Alexa reports an error',
+      'empty',
+      () =>
+        send(
+          world.deps(),
+          envelope({
+            type: 'System.ExceptionEncountered',
+            error: { type: 'INVALID_RESPONSE', message: 'Zahnpasta' },
+          }),
+        ),
+      'alexa: System.ExceptionEncountered - de-DE linked=false -> empty',
+    ],
+    [
+      'account linked',
+      'empty',
+      () =>
+        send(
+          world.deps(),
+          envelope({
+            type: 'AlexaSkillEvent.SkillAccountLinked',
+            locale: undefined,
+            body: { accessToken: grant },
+          }, { user: alexaUser }),
+        ),
+      'alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty',
+    ],
+    [
+      'skill disabled',
+      'empty',
+      () =>
+        send(
+          world.deps(),
+          envelope({ type: 'AlexaSkillEvent.SkillDisabled', locale: undefined, body: {} }, {
+            user: alexaUser,
+          }),
+        ),
+      'alexa: AlexaSkillEvent.SkillDisabled - - linked=false -> empty',
+    ],
+    [
+      'skill event fails',
+      'error',
+      () =>
+        send(
+          world.deps({ revoke: () => Promise.reject(new Error(`no row for ${alexaUser}`)) }),
+          envelope({ type: 'AlexaSkillEvent.SkillDisabled', locale: undefined, body: {} }, {
+            user: alexaUser,
+          }),
+        ),
+      'alexa: AlexaSkillEvent.SkillDisabled - - linked=false -> error',
+    ],
+    [
+      'refused',
+      'refused',
+      () =>
+        send(
+          world.deps({ verify: () => Promise.reject(new VerificationError('bad_signature')) }),
+          envelope(intent('AddItemIntent', 'Zahnpasta'), ask),
+        ),
+      'alexa: - - - linked=false -> refused bad_signature',
+    ],
+    [
+      'not a POST',
+      'refused',
+      async () => await createHandler(world.deps())(new Request('http://local/alexa')),
+      'alexa: - - - linked=false -> refused',
+    ],
+  ];
+  for (const [name, , run, line] of cases) {
+    const before = world.lines.length;
+    await run();
+    assertEquals(world.lines.slice(before), [line], name);
+  }
+  assertEquals(
+    new Set(cases.map(([, kind]) => kind)),
+    new Set(replyKinds),
+    'every reply kind is covered',
+  );
+  const log = world.lines.join('\n');
+  for (
+    const secret of [
+      grant,
+      'tok-SECRET',
+      alexaUser,
+      'SECRET',
+      'user-',
+      'session-',
+      HH_A,
+      HH_B,
+      'amzn1',
+      'Zahnpasta',
+      'Kaffeebohnen',
+      'Hafermilch',
+      'Geheimzutat',
+      'Senf',
+      'äh',
+    ]
+  ) {
+    assertFalse(log.includes(secret), `the log names ${secret}`);
+  }
+  assert(world.rows.some((r) => r.name === 'Kaffeebohnen'), 'the add went through');
+});
+
+Deno.test('job 74: odd request fields cannot put free text or a second line into the log', () => {
+  const line = requestLine(
+    {
+      version: '1.0',
+      request: {
+        type: 'IntentRequest\nalexa: forged',
+        timestamp: '',
+        locale: 'de DE',
+        intent: { name: 'Füg Milch hinzu' },
+      },
+    },
+    'help',
+  );
+  assertEquals(line.split('\n').length, 1);
+  assertEquals(line.split(' ').length, 7);
+  assertFalse(line.includes('Milch hinzu'));
 });
