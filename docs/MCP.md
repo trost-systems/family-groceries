@@ -69,7 +69,7 @@ name is enough. An id works too.
 
 | Tool | Input | What it does |
 | --- | --- | --- |
-| `list_items` | `store?`, `category?` | Open items in aisle order, and inside a category in the household's walk order (`sort_key`, the order the app's drag and drop sets), then by age. With `store`: that store's items plus untagged ones, in that store's order. |
+| `list_items` | `store?`, `category?` | Open items in aisle order, and inside a category in the household's walk order (`sort_key`, the order the app's drag and drop sets), then by age. With `store`: that store's items plus untagged ones, in that store's order. Next to `items`, `counts: {open, checkedLast24h}` counts the whole list whatever the filter: open items, and items ticked in the last 24 hours (one query on `items_household_status_idx`). |
 | `add_items` | `items: [{name, quantity?, brand?, properties?, category?, store?}]` (1–50) | Adds items through `public.add_item`, the add path Siri shares. The name is split by the parser (`public.parse_item`): "Windeln Pampers Größe 3" becomes name "Windeln", brand "Pampers", properties "Größe 3"; "2 Gurken" becomes name "Gurken", quantity "2". A non-blank `quantity` (max 40), `brand` (max 60) or `properties` (max 120, comma-separated) replaces the parsed value. The category comes from the household's learned corrections, then the German dictionary. The store comes from where the item was last bought, else a store brand's store (Balea: dm), else dm for drugstore items. Items already on the list come back under `alreadyOnList` instead of being duplicated: name, brand and properties are compared, so "Gurke" is "2 Gurken" but "Windeln Größe 5" is not "Windeln Größe 4". An explicit `category` is learned like a correction. A new item whose spelling variant or synonym is already open ("Karotten" with "Möhren", `public.similar_items`, job 32b) is still added and reported under `similarOnList: [{added, onList: [item]}]`; nothing is merged. |
 | `tick_items` | `items: [name or id]` (1–50) | Ticks items off; they move to "Zuletzt verwendet". Unresolvable or already ticked names come back under `notFound` with the reason, so a repeated call changes nothing. |
 | `move_item` | `item`, `category?`, `store?` (`null` removes the store) | Changes category and/or store through `public.move_item`; the item goes to the end of its new group in the walk order. The household remembers both: the next `add_items` (or app add) of that item uses them. `store: null` forgets the store. |
@@ -117,6 +117,33 @@ Add a custom connector with the endpoint URL and no client ID or secret.
 Claude registers itself and opens the consent page. Not tested from this box
 (it needs a Claude account and the hosted endpoint); the e2e test runs the
 same flow with the official MCP SDK client.
+
+The tester guide is on the site: `/de/anleitungen/claude` and
+`/en/guides/claude` (`site/content/guides/*/claude.md`).
+
+**The ~10 s wait after Erlauben (job 62, 2026-11-01).** Testers saw a blank
+page for about 10 s after allowing Claude. Trace (`e2e`, local stack,
+Chromium; production timings with curl from the Hetzner runner):
+
+| Step | Time |
+| --- | --- |
+| Tap **Erlauben** → `POST …/oauth/authorizations/<id>/consent` answered | 20–50 ms |
+| Answer → browser requests the client's `redirect_uri` | 1–7 ms |
+| Production token endpoint (`/auth/v1/oauth/token`) | ~0.2 s |
+| Production `POST https://mcp.hummlist.com` (401), cold / warm | 2.0 s / 0.35 s |
+| `https://claude.ai/api/mcp/auth_callback` with an invalid code | 0.18 s, then 307 to `claude.ai/settings/connectors?step=…` |
+
+Our side redirects within about 50 ms, so the wait is not ours. Claude's
+callback exchanges the code and connects to the server before it answers,
+then sends the window to its own connectors page; that is where the time
+goes. While the callback is pending the browser keeps our page up (checked
+in Chromium with a callback held for 6 s), so the consent page now says so:
+after the server records the decision it shows „Verbunden“ and „Fertig, du
+kannst zu Claude zurückkehren.“ (denied: „Nicht verbunden“, „Abgelehnt, du
+kannst zu Claude zurückkehren.“) instead of the old „Weiterleitung …“ line
+under disabled buttons. Once Claude's page loads, what it shows is Claude's.
+Our only share of Claude's wait is the token call and a cold function start
+(up to ~2 s).
 
 ### Claude Code
 

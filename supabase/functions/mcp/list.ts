@@ -82,11 +82,17 @@ function itemsById(tx: Tx, ids: readonly string[]): Promise<Item[]> {
     where i.id = any(${ids}::uuid[])`;
 }
 
+/**
+ * The whole list's size, whatever the filter: open items, and items ticked in the last 24 hours
+ * (the shopping trip so far). One scan of items_household_status_idx.
+ */
+export type Counts = { open: number; checkedLast24h: number };
+
 export async function listItems(
   tx: Tx,
   household: string,
   filter: { store?: string; category?: string },
-): Promise<{ store: string | null; category: string | null; items: Item[] }> {
+): Promise<{ store: string | null; category: string | null; counts: Counts; items: Item[] }> {
   const store = filter.store ? resolve(await stores(tx, household), filter.store, 'Laden') : null;
   const category = filter.category
     ? resolve(await categories(tx, household), filter.category, 'Kategorie')
@@ -106,7 +112,12 @@ export async function listItems(
       and (${storeId}::uuid is null or i.store_id is null or i.store_id = ${storeId}::uuid)
       and (${categoryId}::uuid is null or i.category_id = ${categoryId}::uuid)
     order by coalesce(o.sort_order, c.sort_order), c.name, i.sort_key, i.created_at, i.id`;
-  return { store: store?.name ?? null, category: category?.name ?? null, items };
+  const [counts] = await tx<Counts[]>`
+    select count(*) filter (where status = 'active')::int as "open",
+           count(*) filter (where status = 'bought' and bought_at > now() - interval '24 hours')::int
+             as "checkedLast24h"
+    from public.items where household_id = ${household}`;
+  return { store: store?.name ?? null, category: category?.name ?? null, counts, items };
 }
 
 export type NewItem = {
