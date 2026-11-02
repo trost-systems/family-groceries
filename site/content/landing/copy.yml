@@ -31,10 +31,10 @@ hero.badge:
   status: reused
   source: "Help page (/support, /en/support): „noch in einem geschlossenen Test für Familie und Freunde“."
 hero.title:
-  de: "Eine Einkaufsliste, die der ganze Haushalt mitsummt."
-  en: "A shopping list your whole household hums along to."
+  de: "Gemeinsam einkaufen, ohne Werbung"
+  en: "Shop together, no ads"
   status: draft
-  source: "6b prototype hero; English new."
+  source: "Peter 2026-11-01 (FG2, via Hummlist Launch); English approved too."
 hero.lead:
   de: "Einer tippt „Milch“, alle sehen es sofort. Sortiert nach Laden und nach dem Weg durch die Regale."
   en: "One of you types “milk”, everyone sees it right away. Sorted by store and by your way through the aisles."
