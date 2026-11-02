@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Mehr-Menü: fünf Prototypen (intern)</title>
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/internal/menu-prototypes/review.css">
+</head>
+<body>
+<main>
+<p class="internal">Intern · nur in Vorschau-Deployments · nicht indexiert</p>
+<h1>Mehr-Menü: fünf Prototypen</h1>
+<p class="lead">Fünf Varianten des Tabs „Mehr“, gebaut in der echten Flutter-App (Debug-Builds: Labor-Symbol oben rechts in „Mehr“ schaltet zwischen heutigem Menü, M-P1 bis M-P5 und der Update-Karte um). Aufnahmen 390 pt breit und so lang wie das Menü, Design 6b Hex Frische. Erzeugt mit <code>app/test/more/menu_prototypes_screenshots_test.dart</code> und <code>node design/menu-prototypes/build.mjs</code>, Stand 2026-11-02, Code in PR #206.</p>
+<p class="note">Für alle gilt: nur Menüzeilen und unten die Version. Der Schalter für Nutzungsdaten liegt auf der Unterseite Datenschutz. Ganz oben ist Platz für genau eine Karte, wenn ein Update bereitliegt (Shorebird-Patch: „Neu starten“, neue Store-Version: „Aktualisieren“). Läden und Kategorien fehlen, weil sie mit Job 78 in „Anpassen“ auf der Liste wandern. „Archivierte Haushalte“ und „Hilfe &amp; Kontakt“ erscheinen wie heute nur, wenn sie freigeschaltet sind; Premium nur, solange es angeboten wird. In der Übersicht markiert die gestrichelte Linie, wie weit man ohne Scrollen sieht (iPhone 13/14: 844 pt minus Statusleiste und Tab-Leiste, also 714 pt). Die Update-Karte ist eine Attrappe: ihre Knöpfe schließen sie nur, und „1.4.0“ ist ein Beispiel. Noch prüft nichts, ob ein Patch oder eine neue Store-Version bereitliegt.</p>
+<nav class="toc"><a href="#heute">Heute</a><a href="#p1">M-P1 Klar gegliedert</a><a href="#p2">M-P2 Gruppen</a><a href="#p3">M-P3 Luftig</a><a href="#p4">M-P4 Kompakt</a><a href="#p5">M-P5 Nach Aufgaben</a><a href="#recherche">Recherche</a></nav>
+
+<h2>Auf einen Blick</h2>
+<p class="note">Hell, ohne Update-Karte, nebeneinander. Ganz links das heutige Menü.</p>
+<div class="compare">
+<div class="compare-col"><p class="compare-label"><a href="#heute">Heute</a></p><div class="fold"><img src="/internal/menu-prototypes/now-de-light.webp" alt="Heutiges Mehr-Menü, hell" width="390" height="1400" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p1">M-P1 Klar gegliedert</a></p><div class="fold"><img src="/internal/menu-prototypes/p1-de-light.webp" alt="M-P1 Klar gegliedert, hell" width="390" height="1108" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p2">M-P2 Gruppen</a></p><div class="fold"><img src="/internal/menu-prototypes/p2-de-light.webp" alt="M-P2 Gruppen, hell" width="390" height="825" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p3">M-P3 Luftig</a></p><div class="fold"><img src="/internal/menu-prototypes/p3-de-light.webp" alt="M-P3 Luftig, hell" width="390" height="1270" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p4">M-P4 Kompakt</a></p><div class="fold"><img src="/internal/menu-prototypes/p4-de-light.webp" alt="M-P4 Kompakt, hell" width="390" height="752" loading="lazy"></div></div>
+<div class="compare-col"><p class="compare-label"><a href="#p5">M-P5 Nach Aufgaben</a></p><div class="fold"><img src="/internal/menu-prototypes/p5-de-light.webp" alt="M-P5 Nach Aufgaben, hell" width="390" height="1141" loading="lazy"></div></div>
+</div>
+
+<h2>Die Vorschläge</h2>
+<table class="summary"><thead><tr><th>Prototyp</th><th>Richtung</th><th>Abwägung</th></tr></thead><tbody>
+<tr><td><a href="#p1">M-P1 Klar gegliedert</a></td><td>Das heutige Menü, aufgeräumt</td><td>Am wenigsten Umgewöhnung. Mit Hinweiszeilen bleibt es lang: das Rechtliche liegt unterhalb des ersten Bildschirms.</td></tr>
+<tr><td><a href="#p2">M-P2 Gruppen</a></td><td>Eingerückte Gruppen ohne Überschriften</td><td>Am kürzesten mit Symbolen, passt fast auf einen Bildschirm. Ohne Überschriften erklärt sich jede Gruppe nur über ihre Zeilen; die Gruppenflächen sind keine Karten, wirken aber kräftiger.</td></tr>
+<tr><td><a href="#p3">M-P3 Luftig</a></td><td>Deutlich mehr Abstand zwischen den Gruppen</td><td>Am ruhigsten und am leichtesten zu überfliegen, aber am längsten: nur drei Gruppen auf dem ersten Bildschirm.</td></tr>
+<tr><td><a href="#p4">M-P4 Kompakt</a></td><td>Dicht, nur Text, Werte am Zeilenende</td><td>Alles auf einem Bildschirm, ohne Scrollen. Wirkt am nüchternsten; ohne Hinweise muss man wissen, was hinter „Zugänge“ steckt.</td></tr>
+<tr><td><a href="#p5">M-P5 Nach Aufgaben</a></td><td>Überschriften sagen, was man tun will</td><td>Am freundlichsten und am meisten nach Hummlist. Die Aufgaben-Überschriften sind länger und müssen gepflegt werden, wenn neue Zeilen dazukommen.</td></tr>
+</tbody></table>
+
+<section id="heute" class="proposal">
+<h2>Heute <span class="direction">Zum Vergleich</span></h2>
+<p class="rationale">Das Menü auf main: sieben Gruppen, Läden und Kategorien noch drin, der Schalter für Nutzungsdaten mitten in der Liste.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/now-de-light.webp" alt="Heutiges Mehr-Menü, hell" width="390" height="1400" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/now-de-dark.webp" alt="Heutiges Mehr-Menü, dunkel" width="390" height="1400" loading="lazy"><figcaption>Dunkel</figcaption></figure></div>
+</section>
+<section id="p1" class="proposal">
+<h2>M-P1 Klar gegliedert <span class="direction">Das heutige Menü, aufgeräumt</span></h2>
+<p class="rationale">Gleiche Optik wie heute (kleine Großbuchstaben mit Linie, Symbole, Hinweiszeilen), aber fünf klare Gruppen: Haushalt, Verbindungen, Konto, Hilfe, Über Hummlist. Der Schalter für Nutzungsdaten ist auf die Seite Datenschutz gewandert; Abmelden steht am Ende von Konto.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am wenigsten Umgewöhnung. Mit Hinweiszeilen bleibt es lang: das Rechtliche liegt unterhalb des ersten Bildschirms.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/p1-de-light.webp" alt="M-P1 Klar gegliedert: Hell" width="390" height="1108" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p1-de-dark.webp" alt="M-P1 Klar gegliedert: Dunkel" width="390" height="1108" loading="lazy"><figcaption>Dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p1-de-light-update.webp" alt="M-P1 Klar gegliedert: Mit Update-Karte, hell" width="390" height="1365" loading="lazy"><figcaption>Mit Update-Karte, hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p1-de-dark-update.webp" alt="M-P1 Klar gegliedert: Mit Update-Karte, dunkel" width="390" height="1365" loading="lazy"><figcaption>Mit Update-Karte, dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p1-de-light-privacy.webp" alt="M-P1 Klar gegliedert: Unterseite Datenschutz" width="390" height="844" loading="lazy"><figcaption>Unterseite Datenschutz</figcaption></figure><figure><img src="/internal/menu-prototypes/p1-en-light-update.webp" alt="M-P1 Klar gegliedert: Englisch, mit Update-Karte" width="390" height="1339" loading="lazy"><figcaption>Englisch, mit Update-Karte</figcaption></figure></div>
+</section>
+<section id="p2" class="proposal">
+<h2>M-P2 Gruppen <span class="direction">Eingerückte Gruppen ohne Überschriften</span></h2>
+<p class="rationale">Wie die iOS-Einstellungen: Zeilen in umrandeten Gruppen (2 px Kontur, Sticker-Schatten), Gruppierung nur über Abstand, Symbole auf getönten Waben. Konto steht oben, Rechtliches ist eine Unterseite, Abmelden eine eigene Gruppe in Fehlerfarbe.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am kürzesten mit Symbolen, passt fast auf einen Bildschirm. Ohne Überschriften erklärt sich jede Gruppe nur über ihre Zeilen; die Gruppenflächen sind keine Karten, wirken aber kräftiger.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/p2-de-light.webp" alt="M-P2 Gruppen: Hell" width="390" height="825" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p2-de-dark.webp" alt="M-P2 Gruppen: Dunkel" width="390" height="825" loading="lazy"><figcaption>Dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p2-de-light-update.webp" alt="M-P2 Gruppen: Mit Update-Karte, hell" width="390" height="1060" loading="lazy"><figcaption>Mit Update-Karte, hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p2-de-dark-update.webp" alt="M-P2 Gruppen: Mit Update-Karte, dunkel" width="390" height="1060" loading="lazy"><figcaption>Mit Update-Karte, dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p2-de-light-privacy.webp" alt="M-P2 Gruppen: Unterseite Datenschutz" width="390" height="844" loading="lazy"><figcaption>Unterseite Datenschutz</figcaption></figure><figure><img src="/internal/menu-prototypes/p2-en-light-update.webp" alt="M-P2 Gruppen: Englisch, mit Update-Karte" width="390" height="1060" loading="lazy"><figcaption>Englisch, mit Update-Karte</figcaption></figure></div>
+</section>
+<section id="p3" class="proposal">
+<h2>M-P3 Luftig <span class="direction">Deutlich mehr Abstand zwischen den Gruppen</span></h2>
+<p class="rationale">48 px zwischen den Gruppen (heute 20), Überschriften in Bricolage, 64 px hohe Zeilen mit Hinweis. Jede Gruppe steht für sich; Konto und Abmelden rücken nach unten, das Rechtliche wird eine Zeile. Abmelden steht hier in normaler Schrift in der Gruppe Konto; M-P2 und M-P4 zeigen es dagegen abgesetzt in Fehlerfarbe.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am ruhigsten und am leichtesten zu überfliegen, aber am längsten: nur drei Gruppen auf dem ersten Bildschirm.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/p3-de-light.webp" alt="M-P3 Luftig: Hell" width="390" height="1270" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p3-de-dark.webp" alt="M-P3 Luftig: Dunkel" width="390" height="1270" loading="lazy"><figcaption>Dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p3-de-light-update.webp" alt="M-P3 Luftig: Mit Update-Karte, hell" width="390" height="1555" loading="lazy"><figcaption>Mit Update-Karte, hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p3-de-dark-update.webp" alt="M-P3 Luftig: Mit Update-Karte, dunkel" width="390" height="1555" loading="lazy"><figcaption>Mit Update-Karte, dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p3-de-light-privacy.webp" alt="M-P3 Luftig: Unterseite Datenschutz" width="390" height="844" loading="lazy"><figcaption>Unterseite Datenschutz</figcaption></figure><figure><img src="/internal/menu-prototypes/p3-en-light-update.webp" alt="M-P3 Luftig: Englisch, mit Update-Karte" width="390" height="1509" loading="lazy"><figcaption>Englisch, mit Update-Karte</figcaption></figure></div>
+</section>
+<section id="p4" class="proposal">
+<h2>M-P4 Kompakt <span class="direction">Dicht, nur Text, Werte am Zeilenende</span></h2>
+<p class="rationale">Keine Symbole, keine Hinweise, 48 px Zeilen, drei Gruppen. Einstellungen zeigt den aktuellen Stand („Hell · Deutsch“). Rechtliches ist eine Unterseite, Abmelden steht allein am Ende in Fehlerfarbe.</p>
+<p class="rationale"><strong>Abwägung:</strong> Alles auf einem Bildschirm, ohne Scrollen. Wirkt am nüchternsten; ohne Hinweise muss man wissen, was hinter „Zugänge“ steckt.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/p4-de-light.webp" alt="M-P4 Kompakt: Hell" width="390" height="752" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p4-de-dark.webp" alt="M-P4 Kompakt: Dunkel" width="390" height="752" loading="lazy"><figcaption>Dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p4-de-light-update.webp" alt="M-P4 Kompakt: Mit Update-Karte, hell" width="390" height="983" loading="lazy"><figcaption>Mit Update-Karte, hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p4-de-dark-update.webp" alt="M-P4 Kompakt: Mit Update-Karte, dunkel" width="390" height="983" loading="lazy"><figcaption>Mit Update-Karte, dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p4-de-light-privacy.webp" alt="M-P4 Kompakt: Unterseite Datenschutz" width="390" height="844" loading="lazy"><figcaption>Unterseite Datenschutz</figcaption></figure><figure><img src="/internal/menu-prototypes/p4-en-light-update.webp" alt="M-P4 Kompakt: Englisch, mit Update-Karte" width="390" height="983" loading="lazy"><figcaption>Englisch, mit Update-Karte</figcaption></figure></div>
+</section>
+<section id="p5" class="proposal">
+<h2>M-P5 Nach Aufgaben <span class="direction">Überschriften sagen, was man tun will</span></h2>
+<p class="rationale">Gruppen nach Aufgaben: Gemeinsam einkaufen, Mit Siri, Alexa und KI, Hilfe und Feedback, Du und deine Daten. Symbole auf Waben in Gruppenfarbe. Das Rechtliche steht als leiser Fußbereich in kleinerer Schrift über der Version.</p>
+<p class="rationale"><strong>Abwägung:</strong> Am freundlichsten und am meisten nach Hummlist. Die Aufgaben-Überschriften sind länger und müssen gepflegt werden, wenn neue Zeilen dazukommen.</p>
+<div class="shots"><figure><img src="/internal/menu-prototypes/p5-de-light.webp" alt="M-P5 Nach Aufgaben: Hell" width="390" height="1141" loading="lazy"><figcaption>Hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p5-de-dark.webp" alt="M-P5 Nach Aufgaben: Dunkel" width="390" height="1141" loading="lazy"><figcaption>Dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p5-de-light-update.webp" alt="M-P5 Nach Aufgaben: Mit Update-Karte, hell" width="390" height="1402" loading="lazy"><figcaption>Mit Update-Karte, hell</figcaption></figure><figure><img src="/internal/menu-prototypes/p5-de-dark-update.webp" alt="M-P5 Nach Aufgaben: Mit Update-Karte, dunkel" width="390" height="1402" loading="lazy"><figcaption>Mit Update-Karte, dunkel</figcaption></figure><figure><img src="/internal/menu-prototypes/p5-de-light-privacy.webp" alt="M-P5 Nach Aufgaben: Unterseite Datenschutz" width="390" height="844" loading="lazy"><figcaption>Unterseite Datenschutz</figcaption></figure><figure><img src="/internal/menu-prototypes/p5-en-light-update.webp" alt="M-P5 Nach Aufgaben: Englisch, mit Update-Karte" width="390" height="1376" loading="lazy"><figcaption>Englisch, mit Update-Karte</figcaption></figure></div>
+</section>
+
+<section id="recherche">
+<h2>Recherche</h2>
+<p class="rationale">Die Recherche (iOS-Einstellungen, Things, Todoist, Bring!, AnyList, Revolut, Spotify, Duolingo, Material 3, Apple HIG) mit Quellen und Folgerungen steht im Repository unter <code>docs/design/menu-research.md</code>. Kurz: nach Häufigkeit ordnen, Überschriften nur wo die Gruppe nicht selbsterklärend ist, eine Symbolsprache, Konto löschen eine Ebene tiefer, Schalter auf Unterseiten, Update-Hinweis oben und nur wenn nötig, Version klein am Ende.</p>
+</section>
+</main>
+</body>
+</html>

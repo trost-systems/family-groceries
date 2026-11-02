@@ -6800,3 +6800,27 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    Deno integration tests save and restore it like `integration_lock`, the e2e spec turns it on
    for the local stack only. Production's value comes only from the migration's default.
 8. **Local ports 576xx**, since 751xx is past 65535.
+
+## Job 79: More menu prototypes, 2026-11-02
+
+1. **Prototypes live in the real app, behind a debug-only switcher.** The More app bar shows a
+   lab icon only when `kDebugMode` (`showMenuPrototypeSwitch`); release builds never show it and
+   today's menu is untouched. The code is one part file, `app/lib/more/menu_prototypes.dart`:
+   each prototype is data (sections of row ids plus a look record: row height, section gap,
+   header style, icon style, grouping, hints) drawn by one renderer that reuses the real rows'
+   actions. Picking a direction later means turning one prototype's data into the menu and
+   deleting the file.
+2. **Submenus are pushed with `Navigator`, not new routes.** Privacy (the usage-data switch and
+   the policy) and Legal (imprint, policy, licenses) are prototype pages; a router path would
+   touch `router.dart` and the deep links for a throwaway. The chosen design adds real routes.
+3. **Grouped surfaces in M-P2 are not cards.** The brief allows one card (the update card). The
+   inset groups are list containers like iOS Settings; the review page names the tradeoff.
+4. **The update card is a static mock.** No Shorebird or store version check exists yet; the
+   card shows the two states (patch: "Neu starten", store: "Aktualisieren" with a sample version)
+   and both buttons only dismiss it in the prototype.
+5. **Screenshots come from widget tests (SCREENSHOT_DIR), not a Playwright run of the web
+   build.** That is the repo's screenshot path for app screens (jobs 50, 52) and needs no local
+   stack: the real More routes, fonts, light and dark, DE and EN, 2x, as tall as each menu.
+6. **The review page is static HTML under `site/public/internal/`**, like job 77's: noindex,
+   built only on preview and local builds (`site/build.mjs` drops `internal/` in production).
+   The same guard is in job 77's PR; whichever lands second keeps one copy.

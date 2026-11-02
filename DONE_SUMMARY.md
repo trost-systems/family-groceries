@@ -511,3 +511,7 @@ A versioned REST API (`/v1`) next to the MCP server lets people automate their l
 ## Job 75: the API is off on the server until switched on
 
 The PostHog flag `public-api` only hid the app's API section; anyone signed in could still make a key and use the API. A server switch, `app_switches.public_api`, now starts off (migration `20261102200000_public_api_switch.sql`). While off, `create_api_token` refuses with `api_disabled` (the app says „Die API ist noch nicht freigeschaltet.“) and every `api` request answers 404 `not_found` before any key lookup or counter. MCP, Siri and Alexa don't read it. How to turn it on: docs/NEEDS_LEAD.md "Job 75" and docs/API.md "Switched off". Details: [docs/done/75-api-server-flag-gate.md](docs/done/75-api-server-flag-gate.md).
+
+## Job 79: More menu research and five prototypes (not merged)
+
+Research in docs/design/menu-research.md; five More prototypes (M-P1 to M-P5) in the app behind a debug-only switcher; review page /internal/menu-prototypes on the PR's site preview. Review 0 fixes: one section per app in the research doc, no stale commit hash on the review page, 20 px below the update card in M-P4. Details: [docs/done/79-menu-prototypes.md](docs/done/79-menu-prototypes.md).

@@ -2821,6 +2821,180 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
   String get apiPremium;
+
+  /// Debug builds only (job 79): tooltip of the More app bar button that opens the menu prototype switcher
+  ///
+  /// In de, this message translates to:
+  /// **'Menü-Prototypen'**
+  String get menuProtoSwitch;
+
+  /// Debug builds only (job 79): the switcher's option for the menu as it ships
+  ///
+  /// In de, this message translates to:
+  /// **'Heutiges Menü'**
+  String get menuProtoCurrent;
+
+  /// Debug builds only (job 79): switch in the prototype switcher that shows the update card on top
+  ///
+  /// In de, this message translates to:
+  /// **'Update-Karte zeigen'**
+  String get menuProtoUpdateCard;
+
+  /// Debug builds only (job 79): prototype name
+  ///
+  /// In de, this message translates to:
+  /// **'M-P1 Klar gegliedert'**
+  String get menuProtoP1;
+
+  /// Debug builds only (job 79): prototype name
+  ///
+  /// In de, this message translates to:
+  /// **'M-P2 Gruppen'**
+  String get menuProtoP2;
+
+  /// Debug builds only (job 79): prototype name
+  ///
+  /// In de, this message translates to:
+  /// **'M-P3 Luftig'**
+  String get menuProtoP3;
+
+  /// Debug builds only (job 79): prototype name
+  ///
+  /// In de, this message translates to:
+  /// **'M-P4 Kompakt'**
+  String get menuProtoP4;
+
+  /// Debug builds only (job 79): prototype name
+  ///
+  /// In de, this message translates to:
+  /// **'M-P5 Nach Aufgaben'**
+  String get menuProtoP5;
+
+  /// PROTOTYPE (job 79): update card on top of More when an over-the-air patch is downloaded
+  ///
+  /// In de, this message translates to:
+  /// **'Update bereit'**
+  String get updatePatchTitle;
+
+  /// PROTOTYPE (job 79): update card body, patch downloaded
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.'**
+  String get updatePatchBody;
+
+  /// PROTOTYPE (job 79): update card button, patch downloaded
+  ///
+  /// In de, this message translates to:
+  /// **'Neu starten'**
+  String get updatePatchAction;
+
+  /// PROTOTYPE (job 79): update card title when the store has a newer version
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Version da'**
+  String get updateStoreTitle;
+
+  /// PROTOTYPE (job 79): update card body, newer store version
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version} ist im Store. Aktualisiere, um alles Neue zu bekommen.'**
+  String updateStoreBody(String version);
+
+  /// PROTOTYPE (job 79): update card button, opens the store
+  ///
+  /// In de, this message translates to:
+  /// **'Aktualisieren'**
+  String get updateStoreAction;
+
+  /// PROTOTYPE (job 79): tooltip of the update card's close button
+  ///
+  /// In de, this message translates to:
+  /// **'Später'**
+  String get updateLater;
+
+  /// PROTOTYPE (job 79): More row and page with the usage-data switch and the privacy policy
+  ///
+  /// In de, this message translates to:
+  /// **'Datenschutz'**
+  String get menuPrivacy;
+
+  /// PROTOTYPE (job 79): under the Privacy row
+  ///
+  /// In de, this message translates to:
+  /// **'Nutzungsdaten, Datenschutzerklärung'**
+  String get menuPrivacyHint;
+
+  /// PROTOTYPE (job 79): the privacy policy link on the Privacy page
+  ///
+  /// In de, this message translates to:
+  /// **'Datenschutzerklärung'**
+  String get menuPrivacyPolicy;
+
+  /// PROTOTYPE (job 79): under the Legal row
+  ///
+  /// In de, this message translates to:
+  /// **'Impressum, Datenschutzerklärung, Lizenzen'**
+  String get menuLegalHint;
+
+  /// PROTOTYPE (job 79): More section header over Access
+  ///
+  /// In de, this message translates to:
+  /// **'Verbindungen'**
+  String get menuSecConnections;
+
+  /// PROTOTYPE (job 79): More section header
+  ///
+  /// In de, this message translates to:
+  /// **'Hilfe'**
+  String get menuSecHelp;
+
+  /// PROTOTYPE (job 79): More section header over the legal pages
+  ///
+  /// In de, this message translates to:
+  /// **'Über Hummlist'**
+  String get menuSecAbout;
+
+  /// PROTOTYPE (job 79): More section header over Settings and Privacy (airy prototype)
+  ///
+  /// In de, this message translates to:
+  /// **'Einstellungen und Datenschutz'**
+  String get menuSecApp;
+
+  /// PROTOTYPE (job 79): More section header (compact prototype)
+  ///
+  /// In de, this message translates to:
+  /// **'Konto und Zugänge'**
+  String get menuSecAccountAccess;
+
+  /// PROTOTYPE (job 79): More section header (compact prototype)
+  ///
+  /// In de, this message translates to:
+  /// **'App und Hilfe'**
+  String get menuSecAppHelp;
+
+  /// PROTOTYPE (job 79): More section header, by task
+  ///
+  /// In de, this message translates to:
+  /// **'Gemeinsam einkaufen'**
+  String get menuTaskShare;
+
+  /// PROTOTYPE (job 79): More section header, by task
+  ///
+  /// In de, this message translates to:
+  /// **'Mit Siri, Alexa und KI'**
+  String get menuTaskConnect;
+
+  /// PROTOTYPE (job 79): More section header, by task
+  ///
+  /// In de, this message translates to:
+  /// **'Du und deine Daten'**
+  String get menuTaskYou;
+
+  /// PROTOTYPE (job 79): More section header, by task
+  ///
+  /// In de, this message translates to:
+  /// **'Hilfe und Feedback'**
+  String get menuTaskHelp;
 }
 
 class _AppLocalizationsDelegate

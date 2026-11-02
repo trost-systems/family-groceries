@@ -228,6 +228,8 @@ Future<void> _pumpEditSheet(WidgetTester tester, Brightness brightness) async {
 
 void main() {
   setUpAll(() async {
+    // The goldens show More as it ships, without the debug prototype switch.
+    showMenuPrototypeSwitch = false;
     // Supabase listens for deep links; with no plugin the listen fails late,
     // inside whichever test runs then.
     TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
