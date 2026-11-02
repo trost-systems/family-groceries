@@ -507,3 +507,7 @@ The alexa function logs `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <k
 ## Job 73: the Hummlist API, PR #197, not merged
 
 A versioned REST API (`/v1`) next to the MCP server lets people automate their list (curl, Shortcuts, n8n, Home Assistant) with API keys made under Mehr → Zugänge (read, or read and write), with Postgres rate limits, idempotency keys, cursor pages and the Premium lock. MCP and API share one list module. The key UI waits for the PostHog flag `public-api` (off). Review 0 fixes: the migration runs after job 72's and keeps Alexa free, the address throttle keys on the gateway's `X-Real-IP` (verified on hosted: `X-Forwarded-For` is forgeable), and only unknown keys count or get blocked. Details: [docs/done/73-public-api.md](docs/done/73-public-api.md).
+
+## Job 75: the API is off on the server until switched on
+
+The PostHog flag `public-api` only hid the app's API section; anyone signed in could still make a key and use the API. A server switch, `app_switches.public_api`, now starts off (migration `20261102200000_public_api_switch.sql`). While off, `create_api_token` refuses with `api_disabled` (the app says „Die API ist noch nicht freigeschaltet.“) and every `api` request answers 404 `not_found` before any key lookup or counter. MCP, Siri and Alexa don't read it. How to turn it on: docs/NEEDS_LEAD.md "Job 75" and docs/API.md "Switched off". Details: [docs/done/75-api-server-flag-gate.md](docs/done/75-api-server-flag-gate.md).

@@ -1712,6 +1712,9 @@ class AppLocalizationsDe extends AppLocalizations {
       'API-Schlüssel kannst du nur hier in der App erstellen, während du angemeldet bist.';
 
   @override
+  String get apiDisabled => 'Die API ist noch nicht freigeschaltet.';
+
+  @override
   String get apiPremium =>
       'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.';
 }

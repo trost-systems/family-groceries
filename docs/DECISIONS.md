@@ -6757,7 +6757,8 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
 10. **The flag gates the app's UI only.** With `public-api` off nobody sees the API section, but
     `create_api_token` and the function work for anyone who calls them: the API reaches only the
     caller's own household under RLS and its limits, so a server switch would protect nothing. API
-    keys that exist are always listed, so they can always be revoked.
+    keys that exist are always listed, so they can always be revoked. (Superseded by job 75: the
+    server switch `app_switches.public_api` now closes token creation and the function.)
 11. **Requests are strict, responses grow.** Unknown body fields and query parameters are a 400, so
     a field added to v1 later can never change what an old request meant.
 12. **camelCase fields**, like the MCP tools' JSON, so one item shape serves both docs.
@@ -6774,3 +6775,28 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
 15. **Older app builds list API keys among their MCP tokens** (they read an unknown kind as `pat`);
     their delete button still revokes the key. Nothing to do: the API section ships with this build.
 16. **Local ports 583xx**, since 731xx is past 65535.
+
+## Job 75: the API has a server switch, 2026-11-02
+
+1. **`app_switches.public_api`, seeded off**, like `household_archive`, `premium_offer` and
+   `integration_lock`: one table, one reader (`app_switch`), flipped by the service role. A PostHog
+   flag can be bypassed by calling the RPC or the function directly; the lead ruled (brief) that an
+   open, free API before launch is not acceptable, which overrides job 73's decision 10.
+2. **Checked inside `api_begin`, the one database call every request already makes**, as its first
+   statement: a new outcome `disabled`. No second round trip, and a switched-off API reads no key,
+   counts no failure and touches no bucket, day or `last_used_at`.
+3. **404 `not_found`, the same body as an unknown path, and no rate-limit headers.** The brief
+   allowed 404 or 403. A 403 would announce an API that exists but is closed and invite probing;
+   404 says nothing beyond "no such endpoint", and a client sees the same answer whether or not it
+   sent a key. CORS and `X-Request-Id` stay, so a support request can still be traced in the logs.
+4. **`create_api_token` refuses with `api_disabled` (42501)** right after the sign-in check, before
+   the session, membership and scope checks, so a closed server gives one clear reason. The app maps
+   it to its own message instead of the generic error.
+5. **Existing keys are kept, listable and revocable.** Turning the switch off and on again must not
+   cost anyone their keys; while off they simply get 404.
+6. **MCP, Siri, Alexa and `integration_gate` are untouched.** The switch is the API's alone; MCP
+   tokens (kind `pat`) never went through `api_begin`.
+7. **Tests flip the switch inside their own scope**: pgTAP inside its rolled-back transaction, the
+   Deno integration tests save and restore it like `integration_lock`, the e2e spec turns it on
+   for the local stack only. Production's value comes only from the migration's default.
+8. **Local ports 576xx**, since 751xx is past 65535.

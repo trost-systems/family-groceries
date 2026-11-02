@@ -237,6 +237,7 @@ String _errorText(AppLocalizations l10n, Object error, AccessKind kind) =>
       (AccessError(code: 'too_many_tokens'), _) => l10n.tooManyTokens,
       (AccessError(code: 'session_required'), AccessKind.api) =>
         l10n.apiKeySessionRequired,
+      (AccessError(code: 'api_disabled'), AccessKind.api) => l10n.apiDisabled,
       (AccessError(:final code), _) => l10n.genericError(code),
       _ => l10n.genericError('$error'),
     };

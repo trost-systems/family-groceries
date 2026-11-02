@@ -5,7 +5,7 @@ import { PAT_PREFIX, sha256Hex } from '../_shared/auth.ts';
 import { asUser, asUserWithin, serviceDb } from '../_shared/db.ts';
 import { ToolError } from '../_shared/list.ts';
 import { type Access, requirePremiumWith } from '../_shared/premium.ts';
-import { ApiError, internalError, unavailable } from './errors.ts';
+import { ApiError, internalError, noSuchEndpoint, unavailable } from './errors.ts';
 import {
   AUTH_FAILURE_WINDOW_SECONDS,
   AUTH_FAILURES,
@@ -25,8 +25,9 @@ export type Key = { tokenId: string; userId: string; householdId: string; scopes
 /** Where the caller stands against the limit closest to running out (docs/API.md "Limits"). */
 export type Rate = { limit: number; remaining: number; reset: number };
 
-/** public.api_begin's outcome for one request. */
+/** public.api_begin's outcome for one request; `disabled` while app_switches.public_api is off. */
 export type Begin =
+  | { outcome: 'disabled' }
   | { outcome: 'blocked'; rate: Rate; retryAfter: number }
   | { outcome: 'invalid'; rate: Rate }
   | { outcome: 'limited'; rate: Rate; retryAfter: number; key: Key }
@@ -96,6 +97,8 @@ async function serve(req: Request, deps: Deps, trace: Trace): Promise<Reply> {
     deps.report(e);
     return errorReply(unavailable());
   }
+  // Switched off, the API looks absent: an unknown path's answer, no limits, nothing traced.
+  if (begun.outcome === 'disabled') return errorReply(noSuchEndpoint());
   const rate = {
     'x-ratelimit-limit': String(begun.rate.limit),
     'x-ratelimit-remaining': String(begun.rate.remaining),
@@ -110,7 +113,12 @@ async function serve(req: Request, deps: Deps, trace: Trace): Promise<Reply> {
   return { ...reply, headers: { ...rate, ...reply.headers } };
 }
 
-async function authorized(req: Request, deps: Deps, begun: Begin, trace: Trace): Promise<Reply> {
+async function authorized(
+  req: Request,
+  deps: Deps,
+  begun: Exclude<Begin, { outcome: 'disabled' }>,
+  trace: Trace,
+): Promise<Reply> {
   switch (begun.outcome) {
     case 'blocked':
       throw new ApiError(
@@ -203,7 +211,7 @@ function match(method: string, path: string): { route: Route; id: string | null 
     }
     return [{ route, id }];
   });
-  if (candidates.length === 0) throw new ApiError(404, 'not_found', 'No such endpoint.');
+  if (candidates.length === 0) throw noSuchEndpoint();
   const found = candidates.find((c) => c.route.method === method);
   if (found) return found;
   throw new ApiError(
@@ -383,6 +391,8 @@ type BeginRow = {
 export function beginOf(row: BeginRow): Begin {
   const rate = { limit: row.rate_limit, remaining: row.rate_remaining, reset: row.rate_reset };
   switch (row.outcome) {
+    case 'disabled':
+      return { outcome: 'disabled' };
     case 'blocked':
       return { outcome: 'blocked', rate, retryAfter: row.retry_after ?? rate.reset };
     case 'invalid':

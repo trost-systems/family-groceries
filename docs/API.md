@@ -13,7 +13,33 @@ ticks and moves items for both, through the same database functions the app and 
 - Function: `supabase/functions/api/` (`index.ts`, `handler.ts`, `routes.ts`, `limits.ts`).
 - Database: `supabase/migrations/20261102130000_public_api.sql` (API keys, rate counters,
   idempotency records, the integration lock for `api`), tests in `supabase/tests/api.test.sql`.
+- Server switch: `public.app_switches.public_api`, off after the migrations
+  (`supabase/migrations/20261102200000_public_api_switch.sql`, tests in
+  `supabase/tests/public_api_switch.test.sql`). See [Switched off](#switched-off).
 - App: More → Zugänge → "API", shown only while the PostHog flag `public-api` is on.
+
+## Switched off
+
+The API runs only on a server where `app_switches.public_api` is on. The migrations add it off,
+so a new database, the local stack and production start without the API. While it is off:
+
+- every request answers `404 not_found`, the same answer as an unknown path, without rate
+  headers. Nothing is read, counted or written, and no key is marked as used;
+- the app cannot create API keys: `create_api_token` raises `api_disabled` (SQLSTATE `42501`) and
+  the app shows "Die API ist noch nicht freigeschaltet.";
+- members can still list and revoke the keys they have. MCP, Siri and Alexa do not read the
+  switch.
+
+To turn the API on in production (project `jdwqrallbpdbshrdhenk`), run this as the service role,
+in the dashboard's SQL editor or through the Management API:
+
+```sql
+update public.app_switches set enabled = true where key = 'public_api';
+```
+
+Then turn on the PostHog flag `public-api`, which shows the API section in the app. Setting
+`enabled = false` switches the API off again. Keys made in between stay and work again when it is
+back on.
 
 ## Base URL
 
@@ -214,7 +240,7 @@ arguments, so that file is the one place to change them.
 | Body | 64 KiB | `413` |
 | Page size | 1 to 100, default 50 | |
 | Idempotency keys | kept 24 hours | |
-| API keys | 10 active per member | `create_api_token` refuses an 11th |
+| API keys | 10 active per member | `create_api_token` refuses an 11th (`too_many_tokens`); with the API switched off it refuses all (`api_disabled`) |
 
 Every response says where the caller stands:
 
@@ -227,7 +253,8 @@ Every response says where the caller stands:
 
 A refused request (`429`) does not count against the limits. Every other authenticated request
 does, errors included: a `400`, `403` or `404` uses up a request like a `200`. `X-Request-Id` (a UUID) comes with every response;
-the rate headers are missing only on a `503` from a database that could not count the request.
+the rate headers are missing only on a `503` from a database that could not count the request
+and while the API is [switched off](#switched-off).
 
 ## Versioning
 

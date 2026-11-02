@@ -426,7 +426,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** The third-party connector screens of Claude and ChatGPT.
 
-**Held: the Hummlist API.** Built but switched off for everyone (job 73, PostHog flag `public-api`). When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
+**Held: the Hummlist API.** Built but switched off for everyone: the app hides it (job 73, PostHog flag `public-api`) and the server refuses keys and requests (job 75, server switch `public_api`). When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
 
 **Last verified.** job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
 

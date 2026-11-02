@@ -1695,6 +1695,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can only create API keys here in the app while you\'re signed in.';
 
   @override
+  String get apiDisabled => 'The API isn\'t available yet.';
+
+  @override
   String get apiPremium =>
       'The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium.';
 }

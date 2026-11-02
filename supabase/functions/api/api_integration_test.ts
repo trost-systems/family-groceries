@@ -1,7 +1,7 @@
 // Job 73: the api function through handle() with its production wiring against the local stack
 // (FG_DB_TEST=1, see _shared/add_paths_integration_test.ts): keys, limits, idempotency,
-// pagination, households and the integration lock.
-import { assert, assertEquals, assertFalse } from '@std/assert';
+// pagination, households, the integration lock and the public_api switch (job 75).
+import { assert, assertEquals, assertFalse, assertRejects } from '@std/assert';
 import postgres from 'postgres';
 import { sha256Hex } from '../_shared/auth.ts';
 import { asUser } from '../_shared/db.ts';
@@ -60,8 +60,8 @@ function api(
 async function withMembers(work: (sql: postgres.Sql, members: Member[]) => Promise<void>) {
   const sql = admin();
   const users = [crypto.randomUUID(), crypto.randomUUID()];
-  const [lock] = await sql<{ enabled: boolean }[]>`
-    select enabled from public.app_switches where key = 'integration_lock'`;
+  const switches = await sql<{ key: string; enabled: boolean }[]>`
+    select key, enabled from public.app_switches where key in ('integration_lock', 'public_api')`;
   const log = console.log;
   console.log = () => {};
   try {
@@ -77,10 +77,13 @@ async function withMembers(work: (sql: postgres.Sql, members: Member[]) => Promi
       members.push({ userId, householdId });
     }
     await sql`update public.app_switches set enabled = false where key = 'integration_lock'`;
+    await setPublicApi(sql, true);
     await work(sql, members);
   } finally {
     console.log = log;
-    await sql`update public.app_switches set enabled = ${lock.enabled} where key = 'integration_lock'`;
+    for (const { key, enabled } of switches) {
+      await sql`update public.app_switches set enabled = ${enabled} where key = ${key}`;
+    }
     for (const userId of users) {
       await sql`delete from public.households where id in (
         select household_id from public.household_members where user_id = ${userId})`;
@@ -89,6 +92,9 @@ async function withMembers(work: (sql: postgres.Sql, members: Member[]) => Promi
     await sql.end();
   }
 }
+
+const setPublicApi = (sql: postgres.Sql, on: boolean) =>
+  sql`update public.app_switches set enabled = ${on} where key = 'public_api'`;
 
 /** Fills a key's bucket again, so one test can make more than a burst of requests. */
 const refill = (sql: postgres.Sql, tokenId: string) =>
@@ -396,4 +402,41 @@ test('a revoked key is 401; the integration lock without Premium is 402 until it
     const revoked = await api(key.token, 'GET', '/items');
     assertEquals(revoked.status, 401);
     assertEquals((await revoked.json()).error.code, 'invalid_token');
+  }));
+
+test('switched off, no key can be made and a key from before gets 404 until it is on', () =>
+  withMembers(async (sql, [mine]) => {
+    const key = await mint(sql, mine, ['read', 'write']);
+    const added = await api(key.token, 'POST', '/items', { body: { items: [{ name: 'Tee' }] } });
+    assertEquals(added.status, 201);
+    await added.body?.cancel();
+
+    await setPublicApi(sql, false);
+    const error = await assertRejects(() => mint(sql, mine, ['read'])) as postgres.PostgresError;
+    assertEquals([error.code, error.message], ['42501', 'api_disabled']);
+    const [{ keys }] = await sql<{ keys: number }[]>`
+      select count(*)::int as keys from public.personal_access_tokens where user_id = ${mine.userId}`;
+    assertEquals(keys, 1, 'only the key from before');
+
+    const [before] = await sql<{ last_used_at: Date }[]>`
+      select last_used_at from public.personal_access_tokens where id = ${key.id}`;
+    for (const [method, body] of [['GET', undefined], ['POST', { items: [{ name: 'Kaffee' }] }]]) {
+      const off = await api(key.token, method as string, '/items', { body });
+      assertEquals(off.status, 404, `${method} while off`);
+      assertEquals(await off.json(), {
+        error: { code: 'not_found', message: 'No such endpoint.' },
+      });
+      assertEquals([...off.headers.keys()].filter((h) => h.startsWith('x-ratelimit-')), []);
+    }
+    const [after] = await sql<{ last_used_at: Date }[]>`
+      select last_used_at from public.personal_access_tokens where id = ${key.id}`;
+    assertEquals(after.last_used_at, before.last_used_at, 'a request while off is not a use');
+    const names = await sql<{ name: string }[]>`
+      select name from public.items where household_id = ${mine.householdId}`;
+    assertEquals(names.map((r) => r.name), ['Tee'], 'nothing was added while off');
+
+    await setPublicApi(sql, true);
+    const on = await api(key.token, 'GET', '/items');
+    assertEquals(on.status, 200, 'the same key works once the API is on');
+    assertEquals((await on.json()).data.map((i: Item) => i.name), ['Tee']);
   }));

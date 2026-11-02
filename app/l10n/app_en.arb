@@ -623,5 +623,6 @@
   "revokeApiKeyBody": "Scripts using it lose access right away.",
   "tooManyApiKeys": "At most 10 active API keys. Revoke one first.",
   "apiKeySessionRequired": "You can only create API keys here in the app while you're signed in.",
+  "apiDisabled": "The API isn't available yet.",
   "apiPremium": "The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium."
 }

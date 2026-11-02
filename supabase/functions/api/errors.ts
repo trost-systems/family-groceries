@@ -49,6 +49,8 @@ export class ApiError extends Error {
   }
 }
 
+export const noSuchEndpoint = () => new ApiError(404, 'not_found', 'No such endpoint.');
+
 export const unavailable = () =>
   new ApiError(
     503,

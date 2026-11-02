@@ -86,8 +86,9 @@ abstract interface class AccessRepository() {
   /// An MCP token.
   Future<NewToken> createToken(String name);
 
-  /// Throws [AccessError] `too_many_tokens` (10 per member) or
-  /// `session_required` (not the app's own sign-in).
+  /// Throws [AccessError] `too_many_tokens` (10 per member),
+  /// `session_required` (not the app's own sign-in) or `api_disabled` (the
+  /// server's public API is switched off).
   Future<NewToken> createApiToken(String name, ApiScopes scopes);
 
   Future<void> revokeToken(String id);
