@@ -1,0 +1,29 @@
+# A typed line's name and Menge (job 61): app/lib/list/entry.dart parseEntry and the server's
+# public.parse_item read every row the same (tested by app/test/list/entry_test.dart and the db
+# gate's supabase/functions/_shared/add_paths_integration_test.ts). A bare number at the end is
+# the Menge only when it is 1 to 20, does not follow a size or unit word, and the rest is a word
+# the dictionary knows or the household bought before (history). The server's name here is its
+# name and Eigenschaften joined ("Windeln" + "Größe 4"). Tab-separated; an empty cell is none.
+# text	name	quantity	history
+Karotten 2	Karotten	2
+2 Karotten	Karotten	2
+Karotten x2	Karotten	2
+2x Karotten	Karotten	2
+Milch 2x	Milch	2
+Eier   10	Eier	10
+Wasser 6	Wasser	6
+carrots 2	carrots	2
+2 carrots	carrots	2
+Vitamin D3	Vitamin D3
+Windeln Größe 4	Windeln Größe 4
+7up	7up
+Büroklammern 100	Büroklammern 100
+Karotten 21	Karotten 21
+Karotten 0	Karotten 0
+Kaffee Nr. 5	Kaffee Nr. 5
+Waschmittel Stufe 3	Waschmittel Stufe 3
+T-Shirt size 2	T-Shirt size 2
+Cola 1,5 L	Cola	1,5 L
+Hack 500 g	Hack	500 g
+Plimbel 3	Plimbel 3
+Plimbel 3	Plimbel	3	Plimbel

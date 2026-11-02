@@ -63,8 +63,9 @@ const cases: [string, string[]][] = [
   ['ein paar Äpfel', ['ein paar Äpfel']],
   ['ein Dutzend Eier', ['1 Dutzend Eier']],
   ['Eier zehn Stück', ['10 Stück Eier']],
-  ['Eier 10', ['10 Eier']],
-  ['Gurken zwei', ['2 Gurken']],
+  // A bare count at the end stays in the text: public.parse_item reads it (job 61).
+  ['Eier 10', ['Eier 10']],
+  ['Gurken zwei', ['Gurken 2']],
 
   // Units.
   ['1 kg Mehl', ['1 kg Mehl']],

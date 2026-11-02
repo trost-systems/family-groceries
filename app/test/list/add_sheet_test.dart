@@ -358,6 +358,50 @@ void main() {
     expect(focus(tester).hasFocus, isTrue);
   });
 
+  group('a tapped row keeps the typed quantity', () {
+    for (final text in [
+      'Karotten 2',
+      '2 Karotten',
+      'Karotten x2',
+      '2x Karotten',
+    ]) {
+      testWidgets('"$text", tapped before its rows arrive', (tester) async {
+        await pumpList(tester);
+        await open(tester);
+        await type(tester, 'Karotten');
+        final gate = repo.suggestGate = Completer<void>();
+        await tester.enterText(field(), text);
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.text('Karotten · 2'), findsOneWidget);
+        await tester.tap(row(0));
+        gate.complete();
+        await tester.pumpAndSettle();
+        final item = repo.rows.values.single;
+        expect((item.name, item.quantity), ('Karotten', '2'));
+      });
+    }
+
+    testWidgets('without the server, from the parse on the device', (
+      tester,
+    ) async {
+      await pumpList(tester);
+      repo.online = false;
+      await open(tester);
+      await type(tester, 'Karotten 2');
+      expect(find.text('Karotten · 2'), findsOneWidget);
+      await tester.tap(row(0));
+      await tester.pumpAndSettle();
+      final item = tester
+          .element(field())
+          .read<ListCubit>()
+          .state
+          .items
+          .values
+          .single;
+      expect((item.name, item.quantity), ('Karotten', '2'));
+    });
+  });
+
   group('Enter takes the first row', () {
     const eggs = [
       Suggestion(

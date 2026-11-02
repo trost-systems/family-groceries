@@ -95,7 +95,10 @@ class AddSheetCubit(
         text: text,
         added: () => null,
         suggestions:
-            known ?? (state.suggestions.isEmpty ? _offline(key) : null),
+            known ??
+            (state.suggestions.isEmpty
+                ? _offline(key)
+                : _withTyped(state.suggestions, key)),
         answered: known == null ? null : key,
       ),
     );
@@ -267,10 +270,44 @@ class AddSheetCubit(
     return rows;
   }
 
+  /// The rows for an earlier text, shown until those for [key] arrive,
+  /// with the quantity typed now: a tap on one keeps it ("2 Karotten" while
+  /// the rows still answer "Karotten").
+  List<Suggestion> _withTyped(List<Suggestion> rows, String key) {
+    final quantity = _parse(key).quantity;
+    if (quantity == null) {
+      return rows;
+    }
+    return [
+      for (final Suggestion(:source, :entry) in rows)
+        Suggestion(
+          source,
+          ParsedEntry(
+            name: entry.name,
+            brand: entry.brand,
+            properties: entry.properties,
+            quantity: quantity,
+            storeId: entry.storeId,
+            categoryId: entry.categoryId,
+          ),
+        ),
+    ];
+  }
+
+  /// The typed line as the device reads it: a bare number at the end counts
+  /// after a name the household has bought or has on the list.
+  Entry _parse(String key) => parseEntry(
+    key,
+    history: [
+      for (final usual in _list.state.usuals) usual.name,
+      for (final item in _list.state.items.values) item.name,
+    ],
+  );
+
   /// Without the server: the typed line split into name and quantity on
   /// the device, then the usuals that start like it.
   List<Suggestion> _offline(String key) {
-    final typed = parseEntry(key);
+    final typed = _parse(key);
     final seen = <String>{};
     return [
       for (final suggestion in [
