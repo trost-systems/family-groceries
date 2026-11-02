@@ -1,5 +1,10 @@
 {
-  "flags": {},
+  "flags": {
+    "public-api": {
+      "rollout": "off",
+      "note": "the Hummlist API keys under Mehr > Zugänge show only while the PostHog flag public-api is on (job 73)"
+    }
+  },
   "holds": {
     "alexa-certification": {
       "released": false,

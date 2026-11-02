@@ -8,6 +8,23 @@ enum AccessKind() {
 
   /// Made by the app for native Siri on one iPhone, bound to its session.
   siri,
+
+  /// Made by the user for the public REST API (job 73, docs/API.md); never
+  /// accepted by the MCP server or Siri.
+  api,
+}
+
+/// What an API key may do: the two scope sets the server accepts.
+enum ApiScopes(final List<String> wire) {
+  read(['read']),
+  readWrite(['read', 'write']);
+
+  /// The row's `scopes`; null for every kind but [AccessKind.api].
+  static ApiScopes? parse(Object? scopes) => switch (scopes) {
+    final List<Object?> s when s.contains('write') => readWrite,
+    List<Object?>() => read,
+    _ => null,
+  };
 }
 
 /// A personal access token as the settings list shows it. The secret itself
@@ -21,12 +38,20 @@ class const AccessToken({
   required final String hint,
   required final DateTime createdAt,
   final AccessKind kind = AccessKind.pat,
+
+  /// Set exactly for [AccessKind.api].
+  final ApiScopes? scopes,
   final DateTime? lastUsedAt,
 }) {
   factory fromJson(Map<String, dynamic> json) => AccessToken(
     id: json['id']! as String,
     name: json['name']! as String,
-    kind: json['kind'] == 'siri' ? AccessKind.siri : AccessKind.pat,
+    kind: switch (json['kind']) {
+      'siri' => AccessKind.siri,
+      'api' => AccessKind.api,
+      _ => AccessKind.pat,
+    },
+    scopes: ApiScopes.parse(json['scopes']),
     hint: json['token_hint']! as String,
     createdAt: DateTime.parse(json['created_at']! as String).toLocal(),
     lastUsedAt: switch (json['last_used_at']) {
@@ -58,7 +83,12 @@ abstract interface class AccessRepository() {
   /// Active tokens, newest first. Revoked tokens are not listed.
   Future<List<AccessToken>> fetchTokens();
 
+  /// An MCP token.
   Future<NewToken> createToken(String name);
+
+  /// Throws [AccessError] `too_many_tokens` (10 per member) or
+  /// `session_required` (not the app's own sign-in).
+  Future<NewToken> createApiToken(String name, ApiScopes scopes);
 
   Future<void> revokeToken(String id);
 
@@ -73,7 +103,7 @@ class SupabaseAccessRepository(final SupabaseClient _client)
   Future<List<AccessToken>> fetchTokens() => _guard(() async {
     final rows = await _client.rest
         .from('personal_access_tokens')
-        .select('id, name, kind, token_hint, created_at, last_used_at')
+        .select('id, name, kind, scopes, token_hint, created_at, last_used_at')
         .isFilter('revoked_at', null)
         .order('created_at', ascending: false);
     return rows.map(AccessToken.fromJson).toList();
@@ -92,6 +122,21 @@ class SupabaseAccessRepository(final SupabaseClient _client)
       token: row['token']! as String,
     );
   });
+
+  @override
+  Future<NewToken> createApiToken(String name, ApiScopes scopes) =>
+      _guard(() async {
+        final row = await _client
+            .rpc<List<Map<String, dynamic>>>(
+              'create_api_token',
+              params: {'p_name': name, 'p_scopes': scopes.wire},
+            )
+            .single();
+        return NewToken(
+          name: row['name']! as String,
+          token: row['token']! as String,
+        );
+      });
 
   @override
   Future<void> revokeToken(String id) => _guard(

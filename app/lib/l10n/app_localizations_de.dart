@@ -1655,4 +1655,63 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get integrationPaused => 'Pausiert: braucht Hummlist Premium';
+
+  @override
+  String get apiHeader => 'API';
+
+  @override
+  String get apiBody =>
+      'Für eigene Skripte und Automationen: Lies und ändere eure Liste über HTTP, mit einem API-Schlüssel.';
+
+  @override
+  String get apiDocs => 'API-Dokumentation';
+
+  @override
+  String get noApiKeys => 'Kein aktiver API-Schlüssel.';
+
+  @override
+  String get createApiKey => 'API-Schlüssel erstellen';
+
+  @override
+  String get apiKeyNameHint => 'z. B. Home Assistant';
+
+  @override
+  String get apiScopeRead => 'Nur lesen';
+
+  @override
+  String get apiScopeReadBody =>
+      'Liest die Liste, Kategorien und Läden. Ändert nichts.';
+
+  @override
+  String get apiScopeReadWrite => 'Lesen und schreiben';
+
+  @override
+  String get apiScopeReadWriteBody =>
+      'Kann auch Einträge hinzufügen, abhaken und verschieben.';
+
+  @override
+  String get apiKeyCreated => 'API-Schlüssel erstellt';
+
+  @override
+  String get apiKeyShownOnce =>
+      'Kopiere den Schlüssel jetzt. Er wird nicht noch einmal angezeigt.';
+
+  @override
+  String get revokeApiKeyTitle => 'API-Schlüssel widerrufen?';
+
+  @override
+  String get revokeApiKeyBody =>
+      'Skripte, die ihn benutzen, verlieren sofort den Zugriff.';
+
+  @override
+  String get tooManyApiKeys =>
+      'Höchstens 10 aktive API-Schlüssel. Widerrufe erst einen.';
+
+  @override
+  String get apiKeySessionRequired =>
+      'API-Schlüssel kannst du nur hier in der App erstellen, während du angemeldet bist.';
+
+  @override
+  String get apiPremium =>
+      'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.';
 }

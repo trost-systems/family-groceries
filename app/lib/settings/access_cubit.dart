@@ -39,6 +39,13 @@ class AccessCubit(
     return token;
   }
 
+  /// Throws [AccessError], e.g. `too_many_tokens` or `session_required`.
+  Future<NewToken> createApi(String name, ApiScopes scopes) async {
+    final token = await _repo.createApiToken(name, scopes);
+    await _loadTokens();
+    return token;
+  }
+
   Future<void> revoke(String id) async {
     await _repo.revokeToken(id);
     await _loadTokens();

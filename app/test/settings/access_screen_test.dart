@@ -1,8 +1,10 @@
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../siri/fake_siri_channel.dart';
@@ -13,6 +15,12 @@ class FakeAccessRepository() implements AccessRepository {
   final apps = <ConnectedApp>[];
   final disconnected = <String>[];
   var limitReached = false;
+
+  /// The server's refusal of the next API key, e.g. `session_required`.
+  String? apiRefusal;
+
+  /// The scopes of every API key asked for.
+  final apiScopes = <ApiScopes>[];
 
   @override
   Future<List<AccessToken>> fetchTokens() async => [
@@ -38,6 +46,25 @@ class FakeAccessRepository() implements AccessRepository {
   }
 
   @override
+  Future<NewToken> createApiToken(String name, ApiScopes scopes) async {
+    apiScopes.add(scopes);
+    if (apiRefusal case final code?) {
+      throw AccessError(code);
+    }
+    tokens.add(
+      AccessToken(
+        id: 'a${tokens.length}',
+        name: name,
+        kind: AccessKind.api,
+        scopes: scopes,
+        hint: '9876',
+        createdAt: DateTime(2026, 11, 2),
+      ),
+    );
+    return NewToken(name: name, token: apiSecret);
+  }
+
+  @override
   Future<void> revokeToken(String id) async => revoked.add(id);
 
   @override
@@ -50,6 +77,8 @@ class FakeAccessRepository() implements AccessRepository {
   Future<void> disconnect(String clientId) async => disconnected.add(clientId);
 }
 
+const apiSecret = 'fgp_apikeyapikeyapikeyapikeyapikeyapike9876';
+
 void main() {
   late FakeAccessRepository repo;
 
@@ -58,16 +87,26 @@ void main() {
     void Function(FakeAccessRepository repo)? seed,
     SiriChannel? siri,
     String language = 'de',
+
+    /// The flags PostHog serves; none provided at all when null.
+    Set<String>? flags,
   }) async {
     repo = FakeAccessRepository();
     seed?.call(repo);
+    final Widget screen = AccessScreen(repository: repo, siri: siri);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: Locale(language),
         home: Scaffold(
-          body: AccessScreen(repository: repo, siri: siri),
+          body: switch (flags) {
+            null => screen,
+            final on => BlocProvider(
+              create: (_) => Flags(forced: on),
+              child: screen,
+            ),
+          },
         ),
       ),
     );
@@ -182,6 +221,185 @@ void main() {
     expect(repo.disconnected, ['client-1']);
     expect(find.text('Claude'), findsNothing);
     expect(find.text('Noch keine App verbunden.'), findsOneWidget);
+  });
+
+  group('API', () {
+    Finder key(String k) => find.byKey(ValueKey(k));
+
+    AccessToken apiKey(String name, ApiScopes scopes) => AccessToken(
+      id: name,
+      name: name,
+      kind: AccessKind.api,
+      scopes: scopes,
+      hint: 'beef',
+      createdAt: DateTime(2026, 10, 30),
+    );
+
+    void twoKeys(FakeAccessRepository r) => r.tokens.addAll([
+      apiKey('Home Assistant', ApiScopes.readWrite),
+      apiKey('Dashboard', ApiScopes.read),
+    ]);
+
+    Future<void> openCreate(WidgetTester tester) async {
+      await tester.scrollUntilVisible(key('api-create'), 200);
+      await tester.tap(key('api-create'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> createApiKey(
+      WidgetTester tester,
+      String name, {
+      String? scope,
+    }) async {
+      await openCreate(tester);
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), name);
+      if (scope != null) {
+        await tester.tap(key(scope));
+        await tester.pumpAndSettle();
+      }
+      await tapText(tester, 'Erstellen');
+    }
+
+    testWidgets('flag off and no keys: no API section', (tester) async {
+      await pumpAccess(tester, flags: {});
+      expect(key('api-section'), findsNothing);
+      expect(key('api-create'), findsNothing);
+    });
+
+    testWidgets('no Flags above the screen counts as off', (tester) async {
+      await pumpAccess(tester);
+      expect(key('api-section'), findsNothing);
+    });
+
+    testWidgets('flag off: existing keys stay listed to revoke, nothing new', (
+      tester,
+    ) async {
+      await pumpAccess(tester, seed: twoKeys, flags: {});
+      expect(key('api-section'), findsOneWidget);
+      expect(key('api-key-tile'), findsNWidgets(2));
+      expect(key('api-create'), findsNothing);
+      expect(key('api-url'), findsNothing);
+      expect(
+        find.text(
+          '…beef · Lesen und schreiben · Erstellt am 30.10.2026 · '
+          'Noch nie benutzt',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '…beef · Nur lesen · Erstellt am 30.10.2026 · '
+          'Noch nie benutzt',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Kein aktiver Token.'),
+        findsOneWidget,
+        reason: 'API keys are not MCP tokens',
+      );
+
+      await tester.tap(find.byTooltip('Dashboard widerrufen'));
+      await tester.pumpAndSettle();
+      expect(find.text('API-Schlüssel widerrufen?'), findsOneWidget);
+      await tapText(tester, 'Widerrufen');
+      expect(repo.revoked, ['Dashboard']);
+      expect(key('api-key-tile'), findsOneWidget);
+    });
+
+    testWidgets('flag on: URL, docs, and an empty list', (tester) async {
+      await pumpAccess(tester, flags: {'public-api'});
+      expect(find.text('API'), findsOneWidget);
+      expect(
+        find.text(
+          'https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/api/v1',
+        ),
+        findsOneWidget,
+      );
+      expect(key('api-docs'), findsOneWidget);
+      expect(find.text('Kein aktiver API-Schlüssel.'), findsOneWidget);
+      expect(key('api-premium'), findsNothing);
+    });
+
+    testWidgets('a read-only key by default, shown once', (tester) async {
+      await pumpAccess(tester, flags: {'public-api'});
+      await createApiKey(tester, 'Dashboard');
+
+      expect(repo.apiScopes, [ApiScopes.read]);
+      expect(find.text('API-Schlüssel erstellt'), findsOneWidget);
+      expect(
+        find.text(
+          'Kopiere den Schlüssel jetzt. Er wird nicht noch einmal angezeigt.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(apiSecret), findsOneWidget);
+      await tapText(tester, 'Fertig');
+
+      expect(find.text(apiSecret), findsNothing);
+      expect(key('api-key-tile'), findsOneWidget);
+      expect(
+        find.text(
+          '…9876 · Nur lesen · Erstellt am 2.11.2026 · '
+          'Noch nie benutzt',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Kein aktiver Token.'), findsOneWidget);
+    });
+
+    testWidgets('a read-and-write key, in English', (tester) async {
+      await pumpAccess(tester, flags: {'public-api'}, language: 'en');
+      await openCreate(tester);
+      expect(find.text('Read only'), findsOneWidget);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Name'),
+        'Home Assistant',
+      );
+      await tester.tap(key('api-scope-write'));
+      await tester.pumpAndSettle();
+      await tapText(tester, 'Create');
+
+      expect(repo.apiScopes, [ApiScopes.readWrite]);
+      expect(find.text('API key created'), findsOneWidget);
+      expect(find.text(apiSecret), findsOneWidget);
+      await tapText(tester, 'Done');
+      expect(find.textContaining('Read and write'), findsOneWidget);
+    });
+
+    testWidgets('the API key limit is explained', (tester) async {
+      await pumpAccess(
+        tester,
+        flags: {'public-api'},
+        seed: (r) => r.apiRefusal = 'too_many_tokens',
+      );
+      await createApiKey(tester, 'Eleventh', scope: 'api-scope-write');
+      expect(repo.apiScopes, [ApiScopes.readWrite]);
+      expect(
+        find.text('Höchstens 10 aktive API-Schlüssel. Widerrufe erst einen.'),
+        findsOneWidget,
+      );
+      expect(find.text(apiSecret), findsNothing);
+    });
+
+    testWidgets('outside the app session no key is made', (tester) async {
+      await pumpAccess(
+        tester,
+        flags: {'public-api'},
+        language: 'en',
+        seed: (r) => r.apiRefusal = 'session_required',
+      );
+      await openCreate(tester);
+      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'x');
+      await tapText(tester, 'Create');
+      expect(
+        find.text(
+          "You can only create API keys here in the app while you're "
+          'signed in.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 
   group('Siri', () {

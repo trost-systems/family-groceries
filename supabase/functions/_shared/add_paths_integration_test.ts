@@ -1,12 +1,12 @@
 // Job 32a (Spec #8 AC7): the MCP and the voice/Siri add paths classify spelling variants, synonyms
 // and typos through the shared database classifier, and keep the text as said or typed. Runs the
-// functions' real add code (mcp/list.ts, voice/items.ts) as a signed-in user against a database
+// functions' real add code (_shared/list.ts, voice/items.ts) as a signed-in user against a database
 // with the repo's migrations: the db gate sets FG_DB_TEST=1 and SUPABASE_DB_URL to the local stack.
 // Without FG_DB_TEST the tests are skipped (the functions gate has no database).
 import { assertEquals } from '@std/assert';
 import postgres from 'postgres';
 import { asUser, type Tx } from './db.ts';
-import { addItems as mcpAddItems } from '../mcp/list.ts';
+import { addItems as mcpAddItems } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { parseSentence } from '../voice/parse.ts';
 

@@ -1,9 +1,9 @@
 // Job 62: list_items reports the whole list's counts next to the items, whatever the filter, and
-// only the caller's household. Runs mcp/list.ts as a signed-in user against the local stack
-// (FG_DB_TEST=1, see _shared/add_paths_integration_test.ts).
+// only the caller's household. Runs _shared/list.ts as a signed-in user against the local stack
+// (FG_DB_TEST=1, see add_paths_integration_test.ts).
 import { assertEquals } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from '../_shared/db.ts';
+import { asUser } from './db.ts';
 import { addItems, listItems, tickItems } from './list.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
@@ -43,7 +43,8 @@ Deno.test({
           { name: 'Butter' },
           { name: 'Salz' },
         ]);
-        await tickItems(tx, mine, ['Butter', 'Salz']);
+        const { ticked } = await tickItems(tx, mine, ['Butter', 'butter', 'Salz']);
+        assertEquals(ticked.map((i) => i.name).sort(), ['Butter', 'Salz'], 'each ticked item once');
       });
       await admin`update public.items set bought_at = now() - interval '2 days'
                   where household_id = ${mine} and name = 'Salz'`;

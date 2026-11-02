@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
@@ -21,7 +24,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Ways in from outside the app: the MCP endpoint, Siri, personal access
-/// tokens and OAuth-connected apps (`/more/access`). A page of the More
+/// tokens, API keys and OAuth-connected apps (`/more/access`). A page of the More
 /// tab, which gives it its frame.
 class const AccessScreen({
   super.key,
@@ -62,6 +65,13 @@ bool _isShortcutToken(AccessToken token) =>
       caseSensitive: false,
     ).hasMatch(token.name);
 
+/// The PostHog flag that offers the public REST API (job 73).
+const _publicApiFlag = 'public-api';
+
+final _apiDocs = Uri.parse(
+  'https://github.com/trost-systems/family-groceries/blob/main/docs/API.md',
+);
+
 class const _Access({required final bool onIphone}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -76,6 +86,14 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
         if (t.kind == AccessKind.siri) t,
     ];
     final shortcutTokens = tokens.where(_isShortcutToken).toList();
+    final apiKeys = [
+      for (final t in tokens)
+        if (t.kind == AccessKind.api) t,
+    ];
+    // No Flags above (a screen on its own, in tests): off.
+    final apiOffered = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(_publicApiFlag) ?? false,
+    );
     final access = _accessOf(context);
     final paused = access is IntegrationsLocked;
     return Align(
@@ -143,6 +161,13 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 ),
               ),
             ),
+            if (apiOffered || apiKeys.isNotEmpty)
+              ..._apiSection(
+                context,
+                apiKeys: apiKeys,
+                offered: apiOffered,
+                paused: paused,
+              ),
             HlSectionLabel(
               l10n.connectedApps,
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -205,11 +230,16 @@ void _copy(BuildContext context, String text) {
   ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).copied)));
 }
 
-String _errorText(AppLocalizations l10n, Object error) => switch (error) {
-  AccessError(code: 'too_many_tokens') => l10n.tooManyTokens,
-  AccessError(:final code) => l10n.genericError(code),
-  _ => l10n.genericError('$error'),
-};
+String _errorText(AppLocalizations l10n, Object error, AccessKind kind) =>
+    switch ((error, kind)) {
+      (AccessError(code: 'too_many_tokens'), AccessKind.api) =>
+        l10n.tooManyApiKeys,
+      (AccessError(code: 'too_many_tokens'), _) => l10n.tooManyTokens,
+      (AccessError(code: 'session_required'), AccessKind.api) =>
+        l10n.apiKeySessionRequired,
+      (AccessError(:final code), _) => l10n.genericError(code),
+      _ => l10n.genericError('$error'),
+    };
 
 Future<bool> _confirm(
   BuildContext context, {
@@ -238,17 +268,19 @@ Future<bool> _confirm(
   return confirmed ?? false;
 }
 
-/// Runs [action], showing a failure as a snack bar.
+/// Runs [action] on a credential of [kind], showing a failure as a snack
+/// bar.
 Future<void> _attempt(
   BuildContext context,
-  Future<void> Function() action,
-) async {
+  Future<void> Function() action, {
+  AccessKind kind = AccessKind.pat,
+}) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.of(context);
   try {
     await action();
   } on Object catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(_errorText(l10n, e))));
+    messenger.showSnackBar(SnackBar(content: Text(_errorText(l10n, e, kind))));
   }
 }
 
@@ -267,11 +299,39 @@ Future<void> _createToken(BuildContext context) async {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => _NewTokenDialog(token: token),
+        builder: (_) => _NewTokenDialog(token: token, kind: AccessKind.pat),
       );
     }
   });
 }
+
+Future<void> _createApiKey(BuildContext context) async {
+  final cubit = context.read<AccessCubit>();
+  final picked = await showDialog<(String, ApiScopes)>(
+    context: context,
+    builder: (_) => const _ApiKeyDialog(),
+  );
+  if (picked == null || !context.mounted) {
+    return;
+  }
+  final (name, scopes) = picked;
+  await _attempt(context, kind: AccessKind.api, () async {
+    final token = await cubit.createApi(name, scopes);
+    if (context.mounted) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _NewTokenDialog(token: token, kind: AccessKind.api),
+      );
+    }
+  });
+}
+
+String _scopesLabel(AppLocalizations l10n, ApiScopes scopes) =>
+    switch (scopes) {
+      ApiScopes.read => l10n.apiScopeRead,
+      ApiScopes.readWrite => l10n.apiScopeReadWrite,
+    };
 
 /// The list's category label, for a settings group: 11 px heavy caps,
 /// 0.12 em tracking, muted, and a hairline rule after it.
@@ -369,13 +429,18 @@ class const _TokenTile({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final lastUsed = token.lastUsedAt;
-    final siri = token.kind == AccessKind.siri;
     return ListTile(
-      leading: Icon(siri ? Icons.mic_none : Icons.key),
+      key: token.kind == AccessKind.api ? const ValueKey('api-key-tile') : null,
+      leading: Icon(switch (token.kind) {
+        AccessKind.pat => Icons.key,
+        AccessKind.siri => Icons.mic_none,
+        AccessKind.api => Icons.api,
+      }),
       title: Text(label),
       subtitle: _Subtitle(
         [
           l10n.tokenHint(token.hint),
+          if (token.scopes case final scopes?) _scopesLabel(l10n, scopes),
           l10n.createdOn(token.createdAt),
           if (lastUsed == null) l10n.neverUsed else l10n.lastUsedOn(lastUsed),
         ].join(' · '),
@@ -392,11 +457,15 @@ class const _TokenTile({
   Future<void> _revoke(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final cubit = context.read<AccessCubit>();
-    final siri = token.kind == AccessKind.siri;
+    final (title, body) = switch (token.kind) {
+      AccessKind.pat => (l10n.revokeTokenTitle, l10n.revokeTokenBody),
+      AccessKind.siri => (l10n.revokeSiriTitle, l10n.revokeSiriBody),
+      AccessKind.api => (l10n.revokeApiKeyTitle, l10n.revokeApiKeyBody),
+    };
     final confirmed = await _confirm(
       context,
-      title: siri ? l10n.revokeSiriTitle : l10n.revokeTokenTitle,
-      body: siri ? l10n.revokeSiriBody : l10n.revokeTokenBody,
+      title: title,
+      body: body,
       action: l10n.revoke,
     );
     if (confirmed && context.mounted) {
@@ -409,6 +478,75 @@ class const _TokenTile({
 /// (Legal Review N-27), so its connection never shows as paused. The grant
 /// carries no redirect URIs, so its name is all the app can go by.
 const _alexaClientName = 'Amazon Alexa';
+
+/// Job 73: the public REST API. Its keys are listed whenever there are
+/// any, so they can always be revoked; the URL, the docs and new keys only
+/// while the `public-api` flag is on. Rows of the page's list, not one
+/// widget, so screen readers get the heading and each row on their own.
+List<Widget> _apiSection(
+  BuildContext context, {
+  required List<AccessToken> apiKeys,
+  required bool offered,
+  required bool paused,
+}) {
+  final l10n = AppLocalizations.of(context);
+  return [
+    HlSectionLabel(
+      key: const ValueKey('api-section'),
+      l10n.apiHeader,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+    ),
+    if (offered) ...[
+      ListTile(
+        key: const ValueKey('api-url'),
+        title: const SelectionArea(child: Text(Environment.apiUrl)),
+        subtitle: Text(l10n.apiBody),
+        trailing: IconButton(
+          tooltip: l10n.copy,
+          icon: const Icon(Icons.copy),
+          onPressed: () => _copy(context, Environment.apiUrl),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: LegalLink(
+            key: const ValueKey('api-docs'),
+            url: _apiDocs,
+            builder: (context, open) => TextButton.icon(
+              icon: const Icon(Icons.open_in_new),
+              onPressed: open,
+              label: Text(l10n.apiDocs),
+            ),
+          ),
+        ),
+      ),
+    ],
+    if (paused)
+      Padding(
+        key: const ValueKey('api-premium'),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Text(l10n.apiPremium),
+      ),
+    for (final apiKey in apiKeys)
+      _TokenTile(token: apiKey, label: apiKey.name, paused: paused),
+    if (offered && apiKeys.isEmpty) ListTile(title: Text(l10n.noApiKeys)),
+    if (offered)
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.tonalIcon(
+            key: const ValueKey('api-create'),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.createApiKey),
+            onPressed: () => unawaited(_createApiKey(context)),
+          ),
+        ),
+      ),
+  ];
+}
 
 class const _AppTile({
   required final ConnectedApp app,
@@ -561,19 +699,100 @@ class _NameDialogState() extends State<_NameDialog> {
   }
 }
 
-/// The only time the secret is shown.
-class const _NewTokenDialog({required final NewToken token})
-    extends StatelessWidget {
+/// A new API key's name and what it may do; pops both.
+class const _ApiKeyDialog() extends StatefulWidget {
+  @override
+  State<_ApiKeyDialog> createState() => _ApiKeyDialogState();
+}
+
+class _ApiKeyDialogState() extends State<_ApiKeyDialog> {
+  final _name = TextEditingController();
+
+  /// Read only unless the user asks for more.
+  var _scopes = ApiScopes.read;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop((_name.text.trim(), _scopes));
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(l10n.tokenCreated),
+      title: Text(l10n.createApiKey),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.tokenShownOnce),
+          TextField(
+            controller: _name,
+            autofocus: true,
+            maxLength: 60,
+            decoration: InputDecoration(
+              labelText: l10n.tokenName,
+              hintText: l10n.apiKeyNameHint,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          RadioGroup<ApiScopes>(
+            groupValue: _scopes,
+            onChanged: (scopes) => setState(() => _scopes = scopes ?? _scopes),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final scopes in ApiScopes.values)
+                  HexRadioTile<ApiScopes>(
+                    key: ValueKey(switch (scopes) {
+                      ApiScopes.read => 'api-scope-read',
+                      ApiScopes.readWrite => 'api-scope-write',
+                    }),
+                    value: scopes,
+                    title: Text(_scopesLabel(l10n, scopes)),
+                    subtitle: Text(switch (scopes) {
+                      ApiScopes.read => l10n.apiScopeReadBody,
+                      ApiScopes.readWrite => l10n.apiScopeReadWriteBody,
+                    }),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.create)),
+      ],
+    );
+  }
+}
+
+/// The only time the secret is shown.
+class const _NewTokenDialog({
+  required final NewToken token,
+
+  /// An MCP token or an API key, as the dialog calls it.
+  required final AccessKind kind,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final (title, shownOnce) = kind == AccessKind.api
+        ? (l10n.apiKeyCreated, l10n.apiKeyShownOnce)
+        : (l10n.tokenCreated, l10n.tokenShownOnce);
+    return AlertDialog(
+      title: Text(title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(shownOnce),
           const SizedBox(height: 16),
           Row(
             children: [

@@ -97,6 +97,9 @@ class const AnalyticsConfig({
   required final bool householdGroups,
   final Set<String> internalHouseholds = const {},
   final Set<String> internalEmailDomains = const {},
+
+  /// Flags on without PostHog ([Flags.forced]).
+  final Set<String> forcedFlags = const {},
 });
 
 /// Product analytics, error tracking and feature flags for PostHog EU, on
@@ -128,7 +131,7 @@ class Analytics(
   );
 
   /// The runtime toggles PostHog serves this install, all off until then.
-  final flags = Flags();
+  late final flags = Flags(forced: _config.forcedFlags);
 
   String? _installId;
   AnalyticsUser? _user;

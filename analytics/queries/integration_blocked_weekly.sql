@@ -36,7 +36,7 @@ WITH
     SELECT household, toStartOfWeek(toTimeZone(timestamp, 'Europe/Berlin'), 1) AS week,
       min(timestamp) AS first_at,
       max(integration = 'siri') AS siri, max(integration = 'alexa') AS alexa,
-      max(integration = 'mcp') AS mcp
+      max(integration = 'mcp') AS mcp, max(integration = 'api') AS api
     FROM household_events
     WHERE event = 'integration_blocked'
     GROUP BY household, week
@@ -59,6 +59,7 @@ SELECT
   countIf(b.siri) AS siri,
   countIf(b.alexa) AS alexa,
   countIf(b.mcp) AS mcp,
+  countIf(b.api) AS api,
   countIf(c.household != '') AS paying_within_14_days
 FROM blocked AS b
 LEFT JOIN converted AS c ON c.household = b.household AND c.week = b.week

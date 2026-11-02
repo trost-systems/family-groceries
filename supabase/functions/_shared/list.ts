@@ -1,0 +1,460 @@
+// The shopping-list operations behind the MCP tools and the API. Every function runs as the
+// signed-in user (asUser), so RLS confines it to the caller's household; household_id filters
+// only narrow the query plan.
+import type { Tx } from './db.ts';
+
+export type ToolErrorReason = 'not_found' | 'ambiguous' | 'invalid';
+
+/** What a name or id was meant to find. */
+export type Subject = 'item' | 'store' | 'category';
+
+/**
+ * A request the list cannot carry out. The message is German (the MCP tools show it); the API
+ * answers from the structure.
+ */
+export class ToolError extends Error {
+  constructor(
+    message: string,
+    readonly reason: ToolErrorReason,
+    readonly subject: Subject | null,
+    /** The names to choose from: every option when not found, the matches when ambiguous. */
+    readonly candidates: string[] = [],
+    readonly query?: string,
+  ) {
+    super(message);
+  }
+}
+
+const LABELS: Record<Subject, string> = { item: 'Eintrag', store: 'Laden', category: 'Kategorie' };
+
+export type Named = { id: string; name: string };
+
+/** An item as the MCP tools show it. */
+export type Item = {
+  id: string;
+  name: string;
+  /** Marke, e.g. "Pampers". */
+  brand: string | null;
+  /** Eigenschaften, comma-separated, e.g. "Größe 3, Big Pack". */
+  properties: string | null;
+  quantity: string | null;
+  category: string;
+  store: string | null;
+};
+
+/** An item as the API shows it (docs/API.md "Resources"). */
+export type ApiItem = Item & {
+  categoryId: string;
+  storeId: string | null;
+  status: 'open' | 'ticked';
+  /** ISO 8601 with Postgres' full precision, e.g. "2026-11-02T08:00:00.123456+00:00". */
+  addedAt: string;
+};
+
+/** Lowercase, umlauts folded, everything but letters and digits dropped: "👶 Drogerie" ~ "drogerie". */
+export function fold(text: string): string {
+  return text.toLowerCase()
+    .replaceAll('ä', 'ae').replaceAll('ö', 'oe').replaceAll('ü', 'ue').replaceAll('ß', 'ss')
+    .replace(/[^\p{L}\p{N}]+/gu, '');
+}
+
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Finds one entry by id, its name in any case, or a unique folded or partial name: "kuehlregal",
+ * "Kühlregal" and "kühl" all find "Kühlregal", and "aldi süd" finds "Aldi Süd" next to "Aldi Sued".
+ */
+export function resolve<T extends Named>(
+  options: readonly T[],
+  query: string,
+  subject: Subject,
+): T {
+  const what = LABELS[subject];
+  const byId = UUID.test(query) ? options.find((o) => o.id === query.toLowerCase()) : undefined;
+  if (byId) return byId;
+  const key = query.trim().replace(/\s+/g, ' ').toLowerCase();
+  const named = options.filter((o) => o.name.trim().replace(/\s+/g, ' ').toLowerCase() === key);
+  if (named.length === 1) return named[0];
+  const q = fold(query);
+  const exact = options.filter((o) => fold(o.name) === q);
+  if (exact.length === 1) return exact[0];
+  const partial = q === '' ? [] : options.filter((o) => fold(o.name).includes(q));
+  if (exact.length === 0 && partial.length === 1) return partial[0];
+  const matches = (exact.length > 1 ? exact : partial).map((c) => c.name);
+  if (matches.length > 1) {
+    throw new ToolError(
+      `${what} „${query}“ ist nicht eindeutig: ${matches.join(', ')}.`,
+      'ambiguous',
+      subject,
+      matches,
+      query,
+    );
+  }
+  const names = options.map((o) => o.name);
+  throw new ToolError(
+    `${what} „${query}“ nicht gefunden. Vorhanden: ${names.join(', ') || '(keine)'}.`,
+    'not_found',
+    subject,
+    names,
+    query,
+  );
+}
+
+export function categories(tx: Tx, household: string): Promise<(Named & { sort_order: number })[]> {
+  return tx`select id, name, sort_order from public.categories
+            where household_id = ${household} order by sort_order, name`;
+}
+
+export function stores(tx: Tx, household: string): Promise<(Named & { sort_order: number })[]> {
+  return tx`select id, name, sort_order from public.stores
+            where household_id = ${household} order by sort_order, name`;
+}
+
+function activeItems(
+  tx: Tx,
+  household: string,
+): Promise<(Named & { store_id: string | null })[]> {
+  return tx`select id, name, store_id from public.items
+            where household_id = ${household} and status = 'active' order by created_at`;
+}
+
+/** The API item's columns over items i, categories c and stores s. */
+const apiColumns = (tx: Tx) =>
+  tx`i.id, i.name, i.brand, i.properties, i.quantity, c.name as category,
+     c.id as "categoryId", s.name as store, s.id as "storeId",
+     case i.status when 'active' then 'open' else 'ticked' end as status,
+     to_json(i.created_at) #>> '{}' as "addedAt"`;
+
+/** The MCP projection of an item, in the tools' key order. */
+const toItem = ({ id, name, brand, properties, quantity, category, store }: ApiItem): Item => ({
+  id,
+  name,
+  brand,
+  properties,
+  quantity,
+  category,
+  store,
+});
+
+/** Items by id in any status, once each, in the database's order. */
+function itemRows(tx: Tx, ids: readonly string[]): Promise<ApiItem[]> {
+  return tx<ApiItem[]>`
+    select ${apiColumns(tx)}
+    from public.items i
+    join public.categories c on c.id = i.category_id
+    left join public.stores s on s.id = i.store_id
+    where i.id = any(${ids}::uuid[])`;
+}
+
+/** Items by id in any status, in the order of [ids]. */
+export async function apiItemsById(tx: Tx, ids: readonly string[]): Promise<ApiItem[]> {
+  const rows = await itemRows(tx, ids);
+  return [...new Set(ids)].flatMap((id) => rows.filter((r) => r.id === id));
+}
+
+/** The MCP tools' rows: once each and in the database's order, as tick_items has always listed. */
+async function itemsById(tx: Tx, ids: readonly string[]): Promise<Item[]> {
+  return (await itemRows(tx, ids)).map(toItem);
+}
+
+const itemNotFound = (id: string) =>
+  new ToolError(`Eintrag „${id}“ nicht gefunden.`, 'not_found', 'item', [], id);
+
+/** One item of the household by id, open or ticked. */
+export async function itemById(tx: Tx, household: string, id: string): Promise<ApiItem> {
+  const [row] = await tx<ApiItem[]>`
+    select ${apiColumns(tx)}
+    from public.items i
+    join public.categories c on c.id = i.category_id
+    left join public.stores s on s.id = i.store_id
+    where i.id = ${id}::uuid and i.household_id = ${household}`;
+  if (!row) throw itemNotFound(id);
+  return row;
+}
+
+/**
+ * The whole list's size, whatever the filter: open items, and items ticked in the last 24 hours
+ * (the shopping trip so far). One scan of items_household_status_idx.
+ */
+export type Counts = { open: number; checkedLast24h: number };
+
+export async function counts(tx: Tx, household: string): Promise<Counts> {
+  const [row] = await tx<Counts[]>`
+    select count(*) filter (where status = 'active')::int as "open",
+           count(*) filter (where status = 'bought' and bought_at > now() - interval '24 hours')::int
+             as "checkedLast24h"
+    from public.items where household_id = ${household}`;
+  return row;
+}
+
+export type Filter = { store?: string; category?: string };
+
+/** The store and category a filter names, each null when not given. */
+export async function resolveFilter(
+  tx: Tx,
+  household: string,
+  filter: Filter,
+): Promise<{ store: Named | null; category: Named | null }> {
+  return {
+    store: filter.store ? resolve(await stores(tx, household), filter.store, 'store') : null,
+    category: filter.category
+      ? resolve(await categories(tx, household), filter.category, 'category')
+      : null,
+  };
+}
+
+/**
+ * An open item's place in the aisle order, the key a page continues after. sortKey and addedAt
+ * are Postgres text, so the comparison sees the exact float and microseconds (they go in as text:
+ * postgres.js would pass a timestamptz parameter through Date, which keeps milliseconds only).
+ */
+export type Position = {
+  rank: number;
+  category: string;
+  sortKey: string;
+  addedAt: string;
+  id: string;
+};
+
+export type OpenItem = ApiItem & { position: Position };
+
+/**
+ * Open items in aisle order. A store view shows the store's own items plus untagged ones, in that
+ * store's aisle order; inside a category, the household's walk order (sort_key; null as
+ * 'Infinity' sorts last, like nulls, and keeps the keyset one comparable tuple). [page] continues
+ * after a position.
+ */
+export async function openItems(
+  tx: Tx,
+  household: string,
+  filter: { storeId: string | null; categoryId: string | null },
+  page: { after: Position | null; limit: number | null } = { after: null, limit: null },
+): Promise<OpenItem[]> {
+  const { storeId, categoryId } = filter;
+  const { after, limit } = page;
+  const rows = await tx<(ApiItem & { rank: number; sortKey: string })[]>`
+    select ${apiColumns(tx)},
+           coalesce(o.sort_order, c.sort_order) as rank,
+           coalesce(i.sort_key, 'Infinity'::float8)::text as "sortKey"
+    from public.items i
+    join public.categories c on c.id = i.category_id
+    left join public.stores s on s.id = i.store_id
+    left join public.store_category_order o
+      on o.store_id = ${storeId}::uuid and o.category_id = i.category_id
+    where i.household_id = ${household} and i.status = 'active'
+      and (${storeId}::uuid is null or i.store_id is null or i.store_id = ${storeId}::uuid)
+      and (${categoryId}::uuid is null or i.category_id = ${categoryId}::uuid)
+      ${
+    after
+      ? tx`and (coalesce(o.sort_order, c.sort_order), c.name,
+                coalesce(i.sort_key, 'Infinity'::float8), i.created_at, i.id)
+             > (${after.rank}::int, ${after.category}::text, ${after.sortKey}::text::float8,
+                ${after.addedAt}::text::timestamptz, ${after.id}::uuid)`
+      : tx``
+  }
+    order by coalesce(o.sort_order, c.sort_order), c.name,
+             coalesce(i.sort_key, 'Infinity'::float8), i.created_at, i.id
+    ${limit === null ? tx`` : tx`limit ${limit}`}`;
+  return rows.map(({ rank, sortKey, ...item }) => ({
+    ...item,
+    position: { rank, category: item.category, sortKey, addedAt: item.addedAt, id: item.id },
+  }));
+}
+
+export async function listItems(
+  tx: Tx,
+  household: string,
+  filter: Filter,
+): Promise<{ store: string | null; category: string | null; counts: Counts; items: Item[] }> {
+  const { store, category } = await resolveFilter(tx, household, filter);
+  const items = await openItems(tx, household, {
+    storeId: store?.id ?? null,
+    categoryId: category?.id ?? null,
+  });
+  return {
+    store: store?.name ?? null,
+    category: category?.name ?? null,
+    counts: await counts(tx, household),
+    items: items.map(toItem),
+  };
+}
+
+export type NewItem = {
+  name: string;
+  brand?: string;
+  properties?: string;
+  quantity?: string;
+  category?: string;
+  store?: string;
+};
+
+/** A blank optional field is not given: the parsed value stays. */
+const given = (value: string | undefined) => value?.trim() || null;
+
+/** What an add did, by item id: the new items, the ones already open, similar open ones. */
+export type Added = {
+  added: string[];
+  existing: string[];
+  similar: { added: string; onList: string[] }[];
+};
+
+/**
+ * Adds items through public.add_item, the shared add path (also Siri's): it splits the name into
+ * Bezeichnung, Marke, Eigenschaften and Menge ("Windeln Pampers Größe 3", "2 Gurken"), classifies
+ * with the household's learned corrections, picks the store, and returns the existing row for an
+ * item already on the list ("Gurke" is "2 Gurken"). An explicit quantity, brand, properties or
+ * store replaces the parsed one. An explicit category is applied as an update, so the classifier
+ * learns it like a correction in the app. A new item whose spelling variant or synonym is already
+ * open ("Karotten" with "Möhren", public.similar_items) is still added and reported under
+ * `similar` with the open items; nothing is merged (job 32b).
+ */
+export async function addItemIds(
+  tx: Tx,
+  household: string,
+  wanted: readonly NewItem[],
+): Promise<Added> {
+  const [cats, shops, active] = await Promise.all([
+    categories(tx, household),
+    stores(tx, household),
+    activeItems(tx, household),
+  ]);
+  const seen = new Set(active.map((i) => i.id));
+  const added: string[] = [];
+  const existing: string[] = [];
+  for (const item of wanted) {
+    const category = item.category ? resolve(cats, item.category, 'category').id : null;
+    const store = item.store ? resolve(shops, item.store, 'store').id : null;
+    const [row] = await tx<{ id: string; category_id: string }[]>`
+      select id, category_id from public.add_item(
+        ${household}, ${item.name}, ${store}, ${given(item.brand)}, ${given(item.properties)},
+        ${given(item.quantity)})`;
+    if (!row) continue;
+    if (seen.has(row.id)) {
+      existing.push(row.id);
+      continue;
+    }
+    seen.add(row.id);
+    added.push(row.id);
+    if (category && category !== row.category_id) {
+      await tx`update public.items set category_id = ${category} where id = ${row.id}`;
+    }
+  }
+  const similar: { added: string; onList: string[] }[] = [];
+  for (const id of added) {
+    const open = await tx<{ id: string }[]>`select id from public.similar_items(${id})`;
+    if (open.length) similar.push({ added: id, onList: open.map((o) => o.id) });
+  }
+  return { added, existing, similar };
+}
+
+/** addItemIds for the MCP tools: the items, and the new item's name under similarOnList. */
+export async function addItems(
+  tx: Tx,
+  household: string,
+  wanted: readonly NewItem[],
+): Promise<{
+  added: Item[];
+  alreadyOnList: Item[];
+  similarOnList: { added: string; onList: Item[] }[];
+}> {
+  const { added, existing, similar } = await addItemIds(tx, household, wanted);
+  const rows = await itemsById(tx, [...added, ...existing, ...similar.flatMap((s) => s.onList)]);
+  const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id)!);
+  return {
+    added: pick(added),
+    alreadyOnList: pick(existing),
+    similarOnList: similar.map((s) => ({ added: pick([s.added])[0].name, onList: pick(s.onList) })),
+  };
+}
+
+export async function tickItems(
+  tx: Tx,
+  household: string,
+  refs: readonly string[],
+): Promise<{ ticked: Item[]; notFound: { item: string; reason: string }[] }> {
+  const active = await activeItems(tx, household);
+  const ids: string[] = [];
+  const notFound: { item: string; reason: string }[] = [];
+  for (const ref of refs) {
+    try {
+      ids.push(resolve(active, ref, 'item').id);
+    } catch (e) {
+      if (!(e instanceof ToolError)) throw e;
+      notFound.push({ item: ref, reason: e.message });
+    }
+  }
+  if (ids.length > 0) {
+    await tx`update public.items set status = 'bought' where id = any(${ids}::uuid[])`;
+  }
+  return { ticked: await itemsById(tx, ids), notFound };
+}
+
+/**
+ * Ticks (bought) or unticks (active) one item of the household by id. An item that already has
+ * the status is left alone, so repeating the call changes nothing.
+ */
+export async function setItemStatus(
+  tx: Tx,
+  household: string,
+  id: string,
+  status: 'active' | 'bought',
+): Promise<ApiItem> {
+  await tx`update public.items set status = ${status}
+           where id = ${id}::uuid and household_id = ${household} and status <> ${status}`;
+  return await itemById(tx, household, id);
+}
+
+export type Move = { category?: string; store?: string | null };
+
+const nothingToMove = () =>
+  new ToolError('Gib eine Kategorie oder einen Laden an.', 'invalid', null);
+
+/**
+ * Changes category and/or store through public.move_item: the item goes to the end of its new
+ * group, and the triggers learn both. A store left out stays; null untags.
+ */
+async function moveOpen(
+  tx: Tx,
+  household: string,
+  item: { id: string; store_id: string | null },
+  move: Move,
+): Promise<void> {
+  const category = move.category === undefined
+    ? null
+    : resolve(await categories(tx, household), move.category, 'category').id;
+  const store = move.store === undefined
+    ? item.store_id
+    : move.store === null || move.store.trim() === ''
+    ? null
+    : resolve(await stores(tx, household), move.store, 'store').id;
+  await tx`select from public.move_item(${item.id}, ${store}, ${category})`;
+}
+
+/** Moves an open item named by its name or id (the MCP tool). */
+export async function moveItem(
+  tx: Tx,
+  household: string,
+  move: Move & { item: string },
+): Promise<Item> {
+  if (move.category === undefined && move.store === undefined) throw nothingToMove();
+  const item = resolve(await activeItems(tx, household), move.item, 'item');
+  await moveOpen(tx, household, item, move);
+  const [moved] = await itemsById(tx, [item.id]);
+  return moved;
+}
+
+/** Moves an open item by id (the API); a ticked or unknown one is not found. */
+export async function moveItemById(
+  tx: Tx,
+  household: string,
+  id: string,
+  move: Move,
+): Promise<ApiItem> {
+  if (move.category === undefined && move.store === undefined) throw nothingToMove();
+  const [item] = await tx<{ id: string; store_id: string | null }[]>`
+    select id, store_id from public.items
+    where id = ${id}::uuid and household_id = ${household} and status = 'active'`;
+  if (!item) throw itemNotFound(id);
+  await moveOpen(tx, household, item, move);
+  return await itemById(tx, household, id);
+}

@@ -1,0 +1,477 @@
+openapi: 3.1.0
+info:
+  title: Hummlist API
+  version: 1.0.0
+  summary: One household's Hummlist shopping list over HTTP.
+  description: >-
+    The guide is docs/API.md in the family-groceries repository: authentication with API keys,
+    scopes, idempotency, errors, rate limits and versioning. Every response carries
+    X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and X-Request-Id.
+  contact:
+    url: https://github.com/trost-systems/family-groceries/blob/main/docs/API.md
+servers:
+  - url: https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/api
+    description: Production
+  - url: http://127.0.0.1:54321/functions/v1/api
+    description: Local stack (scripts/dev.sh)
+security:
+  - apiKey: []
+# The headers of every successful response, written once (a YAML anchor).
+x-ok-headers: &ok
+  X-RateLimit-Limit: { $ref: '#/components/headers/Limit' }
+  X-RateLimit-Remaining: { $ref: '#/components/headers/Remaining' }
+  X-RateLimit-Reset: { $ref: '#/components/headers/Reset' }
+  X-Request-Id: { $ref: '#/components/headers/RequestId' }
+  Idempotent-Replayed: { $ref: '#/components/headers/Replayed' }
+tags:
+  - name: items
+  - name: catalog
+paths:
+  /v1/items:
+    get:
+      operationId: listItems
+      tags: [items]
+      summary: Open items in aisle order
+      description: >-
+        With store, that store's items plus the ones without a store, in the store's aisle
+        order. counts is always the whole list's. Requires the read scope.
+      parameters:
+        - name: store
+          in: query
+          description: A store id or name (any case, umlauts optional, a unique part is enough).
+          schema: { type: string, minLength: 1, maxLength: 60 }
+        - name: category
+          in: query
+          description: A category id or name, matched like store.
+          schema: { type: string, minLength: 1, maxLength: 60 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: cursor
+          in: query
+          description: nextCursor of the previous page, with the same store and category.
+          schema: { type: string }
+      responses:
+        '200':
+          description: One page of open items.
+          headers: *ok
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [data, counts, nextCursor]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Item' } }
+                  counts: { $ref: '#/components/schemas/Counts' }
+                  nextCursor: { type: [string, 'null'] }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+    post:
+      operationId: addItems
+      tags: [items]
+      summary: Add 1 to 50 items
+      description: >-
+        Names are split like everywhere in Hummlist ("2 Gurken" is Gurken, quantity 2). An item
+        already on the list is not added again (alreadyOnList); a spelling variant or synonym of
+        an open item is added and reported (similarOnList). One transaction: an unknown store or
+        category fails the whole batch. Requires the write scope.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items: { $ref: '#/components/schemas/NewItem' }
+      responses:
+        '200':
+          description: Nothing new; every item was already on the list.
+          headers: *ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddResult' }
+        '201':
+          description: At least one item was added.
+          headers: *ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AddResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ItemId'
+    get:
+      operationId: getItem
+      tags: [items]
+      summary: One item, open or ticked
+      description: Requires the read scope.
+      responses:
+        '200': { $ref: '#/components/responses/OneItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+    patch:
+      operationId: moveItem
+      tags: [items]
+      summary: Move an open item to another category and/or store
+      description: >-
+        The item goes to the end of its new group, and the household remembers both for the next
+        time the item is added. Requires the write scope.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                category:
+                  description: A category id or name.
+                  type: string
+                  minLength: 1
+                  maxLength: 60
+                store:
+                  description: A store id or name; null removes the store.
+                  type: [string, 'null']
+                  minLength: 1
+                  maxLength: 60
+      responses:
+        '200': { $ref: '#/components/responses/OneItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/items/{id}/tick:
+    parameters:
+      - $ref: '#/components/parameters/ItemId'
+    post:
+      operationId: tickItem
+      tags: [items]
+      summary: Tick an item (bought)
+      description: A ticked item stays ticked; safe to repeat. Requires the write scope.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/OneItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/items/{id}/untick:
+    parameters:
+      - $ref: '#/components/parameters/ItemId'
+    post:
+      operationId: untickItem
+      tags: [items]
+      summary: Put a ticked item back on the list
+      description: An open item stays open; safe to repeat. Requires the write scope.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200': { $ref: '#/components/responses/OneItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/categories:
+    get:
+      operationId: listCategories
+      tags: [catalog]
+      summary: The household's categories in aisle order
+      description: Requires the read scope.
+      responses:
+        '200': { $ref: '#/components/responses/Catalog' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+  /v1/stores:
+    get:
+      operationId: listStores
+      tags: [catalog]
+      summary: The household's stores
+      description: Requires the read scope.
+      responses:
+        '200': { $ref: '#/components/responses/Catalog' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '402': { $ref: '#/components/responses/PremiumRequired' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        default: { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: fgp_ followed by 43 base64url characters
+      description: >-
+        An API key from the Hummlist app (More, Zugänge, API) with the scope read, or read and
+        write. MCP tokens, Siri credentials and OAuth tokens are not accepted.
+  parameters:
+    ItemId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: >-
+        The first successful response for this key is replayed for 24 hours (per API key) with
+        Idempotent-Replayed true. The same key with another request is a 422
+        idempotency_key_reused.
+      schema: { type: string, pattern: '^[\x21-\x7e]{1,255}$' }
+  headers:
+    Limit:
+      description: Size of the limit closest to running out (20 per key, 1000 per household and day; 20 unknown keys per address when unauthenticated).
+      schema: { type: integer }
+    Remaining:
+      description: Requests left in that limit after this one.
+      schema: { type: integer }
+    Reset:
+      description: Seconds until that limit is full again.
+      schema: { type: integer }
+    RetryAfter:
+      description: Seconds until the next request can succeed.
+      schema: { type: integer }
+    RequestId:
+      description: Identifies this request in our logs.
+      schema: { type: string, format: uuid }
+    Replayed:
+      description: true when the response is a stored one for the Idempotency-Key.
+      schema: { type: string, enum: ['true'] }
+  schemas:
+    Item:
+      type: object
+      additionalProperties: false
+      required: [id, name, brand, properties, quantity, category, categoryId, store, storeId, status, addedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, examples: [Windeln] }
+        brand: { type: [string, 'null'], examples: [Pampers] }
+        properties: { type: [string, 'null'], examples: ['Größe 3, Big Pack'] }
+        quantity: { type: [string, 'null'], examples: ['2', '500 g'] }
+        category: { type: string, examples: [Drogerie] }
+        categoryId: { type: string, format: uuid }
+        store: { type: [string, 'null'], examples: [dm] }
+        storeId: { type: [string, 'null'], format: uuid }
+        status: { type: string, enum: [open, ticked] }
+        addedAt: { type: string, format: date-time, examples: ['2026-11-02T08:00:00.123456+00:00'] }
+    NewItem:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120, examples: ['Windeln Pampers Größe 3'] }
+        quantity: { type: string, minLength: 1, maxLength: 40 }
+        brand: { type: string, maxLength: 60 }
+        properties: { type: string, maxLength: 120 }
+        category: { type: string, minLength: 1, maxLength: 60, description: 'A category id or name; learned like a correction in the app.' }
+        store: { type: string, minLength: 1, maxLength: 60, description: A store id or name. }
+    AddResult:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          type: object
+          additionalProperties: false
+          required: [added, alreadyOnList, similarOnList]
+          properties:
+            added: { type: array, items: { $ref: '#/components/schemas/Item' } }
+            alreadyOnList: { type: array, items: { $ref: '#/components/schemas/Item' } }
+            similarOnList:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [itemId, onList]
+                properties:
+                  itemId: { type: string, format: uuid, description: The item just added. }
+                  onList: { type: array, items: { $ref: '#/components/schemas/Item' } }
+    Counts:
+      type: object
+      additionalProperties: false
+      required: [open, checkedLast24h]
+      properties:
+        open: { type: integer, minimum: 0 }
+        checkedLast24h: { type: integer, minimum: 0 }
+    Named:
+      type: object
+      additionalProperties: false
+      required: [id, name, sortOrder]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        sortOrder: { type: integer }
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_json
+                - validation_failed
+                - invalid_cursor
+                - invalid_id
+                - invalid_idempotency_key
+                - missing_token
+                - invalid_token
+                - premium_required
+                - insufficient_scope
+                - not_found
+                - item_not_found
+                - method_not_allowed
+                - conflict
+                - payload_too_large
+                - unsupported_media_type
+                - store_not_found
+                - category_not_found
+                - ambiguous_store
+                - ambiguous_category
+                - idempotency_key_reused
+                - rate_limited
+                - auth_throttled
+                - internal_error
+                - unavailable
+            message: { type: string, description: English text for a developer; may change. }
+            details: { type: object }
+  responses:
+    OneItem:
+      description: The item.
+      headers: *ok
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/Item' }
+    Catalog:
+      description: The whole list (short; nextCursor is always null).
+      headers: *ok
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [data, nextCursor]
+            properties:
+              data: { type: array, items: { $ref: '#/components/schemas/Named' } }
+              nextCursor: { type: 'null' }
+    Error:
+      description: An error. A 503 unavailable carries Retry-After.
+      headers:
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    BadRequest:
+      description: invalid_json, validation_failed, invalid_cursor, invalid_id or invalid_idempotency_key.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: missing_token or invalid_token.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PremiumRequired:
+      description: premium_required; the household needs Hummlist Premium for the API. Nothing was read or changed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: insufficient_scope (details.required names the scope).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: item_not_found.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: conflict; the change clashes with the list's current state.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PayloadTooLarge:
+      description: payload_too_large; the body is over 64 KiB.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnsupportedMediaType:
+      description: unsupported_media_type; send application/json.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unprocessable:
+      description: store_not_found, category_not_found, ambiguous_store, ambiguous_category or idempotency_key_reused.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: rate_limited or auth_throttled.
+      headers:
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+        X-RateLimit-Limit: { $ref: '#/components/headers/Limit' }
+        X-RateLimit-Remaining: { $ref: '#/components/headers/Remaining' }
+        X-RateLimit-Reset: { $ref: '#/components/headers/Reset' }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

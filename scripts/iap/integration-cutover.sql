@@ -16,6 +16,8 @@ with household as (
           where t.household_id = h.id and t.revoked_at is null and t.kind = 'pat') as shortcut_tokens,
          (select count(*) from public.personal_access_tokens t
           where t.household_id = h.id and t.revoked_at is null and t.kind = 'siri') as siri_iphones,
+         (select count(*) from public.personal_access_tokens t
+          where t.household_id = h.id and t.revoked_at is null and t.kind = 'api') as api_keys,
          (select count(*) from public.alexa_links l
           join public.household_members m on m.user_id = l.user_id
           where m.household_id = h.id) as alexa_links,
@@ -28,10 +30,10 @@ with household as (
          public.household_has_premium(h.id) as premium
   from public.households h
 )
-select id as household_id, members, shortcut_tokens, siri_iphones, alexa_links, oauth_connections,
-       token_last_used
+select id as household_id, members, shortcut_tokens, siri_iphones, api_keys, alexa_links,
+       oauth_connections, token_last_used
 from household
-where not premium and shortcut_tokens + siri_iphones + alexa_links + oauth_connections > 0
+where not premium and shortcut_tokens + siri_iphones + api_keys + alexa_links + oauth_connections > 0
 order by token_last_used desc nulls last;
 
 with household as (

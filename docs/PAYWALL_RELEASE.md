@@ -42,7 +42,7 @@ it takes no purchase define. While a variable is unset the build sells
 nothing and locks nothing.
 
 The Home Screen widgets are not part of the lock. They show the list the
-app already has and never call Siri's, Alexa's or the MCP endpoint, so they
+app already has and never call Siri's, Alexa's, the MCP or the API endpoint, so they
 stay free with every switch on. Whether widgets should be Premium is
 undecided (Peter). Locking them would be new work, not a switch.
 
@@ -277,9 +277,13 @@ Premium that uses an integration now. Peter sees the numbers before 6.4.
 update public.app_switches set enabled = true, changed_at = now() where key = 'integration_lock';
 ```
 
-From this moment Siri (Shortcut and native), Alexa (add, read, launch) and
-MCP tool calls refuse households without Premium, with the Premium sentence.
-Nothing is deleted or disconnected.
+From this moment Siri (Shortcut and native), Alexa (add, read, launch),
+MCP tool calls and the Hummlist API (job 73, `docs/API.md`) refuse
+households without Premium: Siri, Alexa and MCP with the Premium sentence,
+the API with `402 premium_required`. Nothing is deleted or disconnected.
+The API's keys keep working once the household unlocks; the API section
+under Mehr › Zugänge shows a Premium line while the lock is shown. Job 72
+takes Alexa out of the lock; whatever it leaves in, the API stays in.
 
 6.5 **Lead**: the app side. Set the variable `INTEGRATION_LOCK=true` in the
 `release` environment and in the Vercel project's environment (production

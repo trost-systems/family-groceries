@@ -1207,3 +1207,83 @@ as `supabase_read_only_user`, and the logs endpoint):
 
    Run it against main's skill.json: job 69 changes skill.json (English locales), so a
    difference may be job 69's not yet deployed change rather than a hand edit.
+
+## Job 73: the Hummlist API (2026-11-02)
+
+The API (`docs/API.md`, `docs/api/openapi.yaml`) ships dark: the app shows the API section under
+Mehr → Zugänge only while the PostHog flag `public-api` is on, and this job turned nothing on, in
+no dashboard, console or hosted database. Merging deploys the `api` function and the migration
+(`supabase-deploy.yml`) like any other.
+
+### For the lead
+
+1. **Create the flag** `public-api` in PostHog project 319492 (Hummlist; never emotely 262464),
+   off. `releases/flags.json` has it as `"rollout": "off"`, so the changelog item waits for it.
+2. **The function works without the flag.** `create_api_token` is an RPC any signed-in app session
+   can call, so someone who knows it can make a key and use the API before the flag is on. It
+   reaches only their own household, under RLS, the limits and (later) the Premium lock. If that
+   is not acceptable, a server switch in `app_switches` checked by `create_api_token` is a small
+   follow-up (DECISIONS "Job 73", 10).
+3. **The address throttle keys on the gateway's `X-Real-IP`** (checked on the hosted project
+   before the deploy, DECISIONS "Job 73" 8: hosted Supabase passes `X-Forwarded-For` on as the
+   client wrote it, `X-Real-IP` and `cf-connecting-ip` are the real address). Only unknown keys
+   count and are blocked; valid, missing and ended keys never are (DECISIONS 14). Optional smoke
+   after the deploy: `for i in $(seq 21); do curl -s -o /dev/null -w '%{http_code} ' -H
+   "Authorization: Bearer fgp_x$i" -H 'X-Forwarded-For: 198.51.100.'$i
+   https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/api/v1/items; done` ends in `429`
+   despite the rotating `X-Forwarded-For`; that blocks only unknown keys from that address for
+   10 minutes.
+4. **The integration-lock card's copy** names Siri, Alexa and AI assistants
+   (`integrationPremiumTitle`, `integrationPremiumBody` in `app/l10n/app_*.arb`) and the held
+   changelog item for `integration-lock` too. Neither mentions the API; the API section has its own
+   Premium line. Whether the card should name the API is copy for Hummlist Launch.
+5. **The PostHog insight** "Locked integrations" (`analytics/queries/integration_blocked_weekly.sql`)
+   gained an `api` column. If the insight in PostHog is a copy of the query, paste the new one.
+6. **A public domain** (`api.hummlist.com`, a Vercel rewrite like `mcp-proxy/`) needs Peter's OK;
+   the API is served under the Supabase functions URL meanwhile.
+
+### Premium (Addendum 1, Q41 = PA2)
+
+The API is behind the integration lock: `integration_gate(household, 'api')`, called by the
+function after the rate limit and before any read or write (`supabase/functions/api/handler.ts`).
+A household without Premium gets `402 premium_required` while `app_switches.integration_lock` is
+on; while it is off (until the paywall release, `docs/PAYWALL_RELEASE.md` 6.4) every household may
+use the API. Refusals report `integration_blocked` with `integration: api`, once an hour per
+household, like the others. `docs/PAYWALL_RELEASE.md` section 6 says so.
+
+### Legal Review: privacy facts
+
+- **Per API key** (`public.personal_access_tokens`, kind `api`): the member who made it, the
+  household, a name the user typed, the SHA-256 hash of the key, its last four characters, the
+  scopes (`read`, or `read` and `write`), created, last used, revoked. The key itself is shown once
+  and never stored. Retention as for every access key: 30 days after it ended, then deleted
+  (`purge_access_tokens`, Legal N-4); at once with the account or the household. The data export
+  (`export_my_data`) lists API keys among `access_tokens` (name, hint, dates), without scopes.
+- **Rate counters** (service only, no client reads them): per key a fill level and its last time
+  (`api_token_buckets`), per household a request count per UTC day (`api_household_days`). Deleted
+  daily by `purge_api_rate` (pg_cron `purge-api-rate`, 03:41 UTC): days before yesterday, buckets
+  unused for a day. Basis (f), abuse protection.
+- **Failed authentications** (`api_auth_failures`): only for keys we never issued, the SHA-256 of
+  the caller's IP address as the gateway saw it (`X-Real-IP`), never the address, a window start
+  and a count; ended windows are deleted as new failures come and daily once a day old. A hash of an IPv4 address
+  can be reversed by trying all addresses, so it is pseudonymous, not anonymous: kept at most about
+  two days. Basis (f).
+- **Idempotency records** (`api_idempotency`): the key, the client's Idempotency-Key, a hash of the
+  request and the stored response, which contains item names; 24 hours, deleted daily, at once with
+  the key, household or account.
+- **Logs**: one line per request in the Supabase function logs (request id, method, route template,
+  status, duration, the key's id); never a body, item name, header value or address. Errors go to
+  PostHog error tracking with the template words only (`_shared/telemetry.ts`).
+- `docs/PRIVACY_DATA_MAP.md` has the five rows. The privacy page (`site/`) is Legal's to change: it
+  names MCP and Siri access keys but not the API.
+- **Premium terms**: the terms draft (PR #153) lists what Premium includes (Siri, connections
+  with AI assistants over MCP). With Q41 = PA2 it should name the Hummlist API too. Not changed here (legal text).
+
+### Open questions
+
+- **Webhooks** (outgoing events such as "item added") are the obvious v2, so automations need not
+  poll. Not built (brief).
+- **OAuth for third-party apps** (Zapier as a registered client with `read`/`write` scopes) is not in
+  v1; the MCP's OAuth server could carry it.
+- **A user guide** for hummlist.com (DE and EN, how to make a key and a first Shortcut) can follow
+  once the flag rolls out.

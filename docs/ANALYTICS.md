@@ -15,7 +15,7 @@ decisions in [DECISIONS.md](DECISIONS.md), "Job 19" and "Job 44"; open steps in
 | Net unlock revenue | Revenue per month after VAT and store fee, refunds subtracted, restores zero | [`revenue_monthly.sql`](../analytics/queries/revenue_monthly.sql) |
 | Household retention | Share of an install-week cohort still adding or ticking in week 1-12 and month 1-11 | [`retention_weekly.sql`](../analytics/queries/retention_weekly.sql), [`retention_monthly.sql`](../analytics/queries/retention_monthly.sql) |
 | Manual reorders | Category (route order, store layout) and store reorders per household | [`reorders.sql`](../analytics/queries/reorders.sql) |
-| Locked integrations (job 50) | How many households did Siri or MCP refuse per week (Alexa until job 72) (each integration too), and how many of them bought Hummlist Premium within 14 days? | [`integration_blocked_weekly.sql`](../analytics/queries/integration_blocked_weekly.sql) |
+| Locked integrations (job 50) | How many households did Siri, MCP or the API (job 73) refuse per week (Alexa until job 72) (each integration too), and how many of them bought Hummlist Premium within 14 days? | [`integration_blocked_weekly.sql`](../analytics/queries/integration_blocked_weekly.sql) |
 | Internal filter | Installs and households excluded from every query above | [`internal.sql`](../analytics/queries/internal.sql) |
 | Privacy scan (AC4) | No item names, list text, e-mails, IPs or GeoIP in the project | [`privacy_scan.sql`](../analytics/queries/privacy_scan.sql) |
 
@@ -157,7 +157,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `purchase_restored` | server only | `product_id`, `app_store` |
 | `siri_add` | server only (job 51): a Siri add reached the `voice` function, signed in with the app's Siri credential or a Shortcut's PAT; once per request, after authentication, for a user whose newest consent answer is yes (the Alexa lookup) | `result` (`success`, `fail`), `reason` (`added`, `nothing_added`, `no_text`, `too_long`, `nothing_understood`, `server`, `premium_required` (job 50: the household is locked); `no_household` is allowed but not sent yet), `language` (`en`, `de`), `source` (`native`: the Siri credential, `shortcut`: a PAT), `count` (items understood, 0 to 30). Never a name or the text |
 | `siri_read` | server only (job 51): "What's on my Hummlist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`, `premium_required` (job 50); `no_household` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
-| `integration_blocked` | server only (job 50): a household without Hummlist Premium used Siri or MCP while the server's `integration_lock` switch is on and was refused; at most once an hour per household and integration (`integration_blocks`), for a caller whose newest consent answer is yes (the Alexa lookup). Off while the switch is off | `integration` (`siri`, `mcp`; Alexa stays free since job 72, so `alexa` is refused) and the household id. Never what was said, a tool name or its arguments |
+| `integration_blocked` | server only (job 50): a household without Hummlist Premium used Siri, MCP or the API (job 73) while the server's `integration_lock` switch is on and was refused; at most once an hour per household and integration (`integration_blocks`), for a caller whose newest consent answer is yes (the Alexa lookup). Off while the switch is off | `integration` (`siri`, `mcp`, `api`; Alexa stays free since job 72, so `alexa` is refused) and the household id. Never what was said, a tool name or its arguments |
 | `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy) |
 
 Rules that keep it one event per user action (AC3, AC9):
@@ -332,6 +332,10 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
   install whose yes was given under an older text (no `/flags` until the new yes; Peter kept the
   flag lookups on 2026-11-01 instead of PR #164, which stays unmerged). A change that must reach everyone
   ships without a flag.
+- **Forcing a flag locally.** `--dart-define=FLAGS_ON=public-api` (comma-separated keys,
+  `Environment.flagsOn`) turns flags on whatever PostHog serves, only in a build whose
+  `POSTHOG_HOST` is not PostHog EU (local, fg, e2e and verify-hummlist builds); store and
+  Vercel builds ignore it (`startAnalytics`, `Flags.forced`).
 - **Reading a flag sends nothing** (`sendFeatureFlagEvent` off, no `$feature_flag_called`).
   Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new
   ones.

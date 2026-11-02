@@ -26,6 +26,9 @@ Future<Analytics> startAnalytics(AnalyticsStore store) async {
       internalHouseholds: csvSet(Environment.analyticsInternalHouseholds),
       internalEmailDomains: csvSet(Environment.analyticsInternalEmailDomains),
       householdGroups: Environment.analyticsHouseholdGroups,
+      forcedFlags: host == posthogEuHost
+          ? const {}
+          : csvSet(Environment.flagsOn),
     ),
   );
   await analytics.load();

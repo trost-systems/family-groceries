@@ -606,5 +606,22 @@
   "integrationPremiumLater": "Later: Google Assistant and Apple Watch",
   "integrationPremiumBuy": "Unlock Hummlist Premium",
   "integrationPremiumSoon": "Coming soon.",
-  "integrationPaused": "Paused: needs Hummlist Premium"
+  "integrationPaused": "Paused: needs Hummlist Premium",
+  "apiHeader": "API",
+  "apiBody": "For your own scripts and automations: read and change your list over HTTP with an API key.",
+  "apiDocs": "API documentation",
+  "noApiKeys": "No active API key.",
+  "createApiKey": "Create API key",
+  "apiKeyNameHint": "e.g. Home Assistant",
+  "apiScopeRead": "Read only",
+  "apiScopeReadBody": "Reads the list, categories and stores. Changes nothing.",
+  "apiScopeReadWrite": "Read and write",
+  "apiScopeReadWriteBody": "Can also add, tick off and move items.",
+  "apiKeyCreated": "API key created",
+  "apiKeyShownOnce": "Copy the key now. It won't be shown again.",
+  "revokeApiKeyTitle": "Revoke API key?",
+  "revokeApiKeyBody": "Scripts using it lose access right away.",
+  "tooManyApiKeys": "At most 10 active API keys. Revoke one first.",
+  "apiKeySessionRequired": "You can only create API keys here in the app while you're signed in.",
+  "apiPremium": "The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium."
 }

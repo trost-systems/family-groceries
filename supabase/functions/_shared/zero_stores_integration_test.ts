@@ -5,7 +5,7 @@
 import { assertEquals, assertRejects } from '@std/assert';
 import postgres from 'postgres';
 import { asUser } from './db.ts';
-import { addItems as mcpAddItems, listItems, moveItem, stores, ToolError } from '../mcp/list.ts';
+import { addItems as mcpAddItems, listItems, moveItem, stores, ToolError } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { openItems } from '../alexa/store.ts';
 

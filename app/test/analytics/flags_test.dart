@@ -1,4 +1,5 @@
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -84,5 +85,17 @@ void main() {
     await off.decide(granted: true);
     expect(off.flags.isOn('new-thing'), isFalse);
     await off.close();
+  });
+
+  test('a forced flag is on whatever PostHog serves', () async {
+    final flags = Flags(forced: {'public-api'});
+    expect(flags.isOn('public-api'), isTrue);
+    flags.replace({'public-api': false, 'other': true});
+    expect(flags.isOn('public-api'), isTrue);
+    expect(flags.isOn('other'), isTrue);
+    flags.clear();
+    expect(flags.isOn('public-api'), isTrue);
+    expect(flags.isOn('other'), isFalse);
+    await flags.close();
   });
 }
