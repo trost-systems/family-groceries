@@ -24,10 +24,13 @@ for script in scripts/vercel.sh scripts/gates/e2e.sh .cursor/skills/verify-famil
     || { echo "web-prod: $script builds the web app without --wasm" >&2; exit 1; }
 done
 
-# Job 22: universal links and App Links read these two from app.hummlist.com/.well-known/; the
-# build must copy them unchanged (vercel.json serves them as JSON).
+# Job 22 and 66: universal links and App Links read these two from app.hummlist.com/.well-known/;
+# the build must copy them unchanged (vercel.json serves them as JSON), and Apple and Google
+# drop a file that does not parse (test/app/deep_links_config_test.dart checks the contents).
 for file in .well-known/apple-app-site-association .well-known/assetlinks.json; do
   cmp -s "web/$file" "$out/$file" || { echo "web-prod: $out/$file is missing or differs from web/$file" >&2; exit 1; }
+  python3 -I -c 'import json, sys; json.load(open(sys.argv[1]))' "$out/$file" \
+    || { echo "web-prod: $out/$file is not valid JSON" >&2; exit 1; }
 done
 
 # Job 33c (legal review H-02): the engine and every font load from our origin, never gstatic.com.
