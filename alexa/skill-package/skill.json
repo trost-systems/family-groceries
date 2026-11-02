@@ -12,16 +12,116 @@
             "Alexa, frag Hummlist, was auf der Liste steht",
             "Alexa, öffne Hummlist"
           ],
-          "keywords": ["Einkaufsliste", "Einkaufen", "Einkaufszettel", "Haushalt", "Liste"],
+          "keywords": [
+            "Einkaufsliste",
+            "Einkaufen",
+            "Einkaufszettel",
+            "Haushalt",
+            "Liste"
+          ],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        },
+        "en-US": {
+          "name": "Hummlist",
+          "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
+          "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
+          "examplePhrases": [
+            "Alexa, ask Hummlist to add milk and eggs",
+            "Alexa, ask Hummlist what's on the list",
+            "Alexa, open Hummlist"
+          ],
+          "keywords": [
+            "shopping list",
+            "groceries",
+            "grocery list",
+            "household",
+            "list"
+          ],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        },
+        "en-GB": {
+          "name": "Hummlist",
+          "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
+          "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
+          "examplePhrases": [
+            "Alexa, ask Hummlist to add milk and eggs",
+            "Alexa, ask Hummlist what's on the list",
+            "Alexa, open Hummlist"
+          ],
+          "keywords": [
+            "shopping list",
+            "groceries",
+            "grocery list",
+            "household",
+            "list"
+          ],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        },
+        "en-AU": {
+          "name": "Hummlist",
+          "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
+          "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
+          "examplePhrases": [
+            "Alexa, ask Hummlist to add milk and eggs",
+            "Alexa, ask Hummlist what's on the list",
+            "Alexa, open Hummlist"
+          ],
+          "keywords": [
+            "shopping list",
+            "groceries",
+            "grocery list",
+            "household",
+            "list"
+          ],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        },
+        "en-CA": {
+          "name": "Hummlist",
+          "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
+          "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
+          "examplePhrases": [
+            "Alexa, ask Hummlist to add milk and eggs",
+            "Alexa, ask Hummlist what's on the list",
+            "Alexa, open Hummlist"
+          ],
+          "keywords": [
+            "shopping list",
+            "groceries",
+            "grocery list",
+            "household",
+            "list"
+          ],
+          "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
+          "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
+        },
+        "en-IN": {
+          "name": "Hummlist",
+          "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
+          "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
+          "examplePhrases": [
+            "Alexa, ask Hummlist to add milk and eggs",
+            "Alexa, ask Hummlist what's on the list",
+            "Alexa, open Hummlist"
+          ],
+          "keywords": [
+            "shopping list",
+            "groceries",
+            "grocery list",
+            "household",
+            "list"
+          ],
           "smallIconUri": "file://assets/images/de-DE_smallIconUri.png",
           "largeIconUri": "file://assets/images/de-DE_largeIconUri.png"
         }
       },
-      "isAvailableWorldwide": false,
-      "distributionCountries": ["DE", "AT", "CH", "LU", "LI"],
+      "isAvailableWorldwide": true,
       "distributionMode": "PUBLIC",
       "category": "SHOPPING",
-      "testingInstructions": "Siehe docs/ALEXA.md, Abschnitt Zertifizierung: Testkonto und Testschritte (Entwurf, von Hummlist Ops vor der Einreichung eingesetzt)."
+      "testingInstructions": "Hummlist is a shared shopping list for one household. The skill adds items to the list of the linked account's household and reads the open items back. It is free: no purchases, no ads. Account linking is required. Test account credentials: see the certification test-account field. Linking opens the Hummlist consent page: sign in, then tap \"Erlauben\" (German) or \"Allow\" (English). German (de-DE): \"Alexa, sag Hummlist, füg Milch und Eier hinzu\" adds two items and confirms them. \"Alexa, frag Hummlist, was auf der Liste steht\" reads the open items. \"Alexa, öffne Hummlist\" asks what to add. \"Hilfe\", \"Stopp\". English (en-US, en-GB, en-AU, en-CA, en-IN): \"Alexa, ask Hummlist to add milk and eggs\", \"Alexa, ask Hummlist what's on the list\", \"Alexa, open Hummlist\", \"help\", \"stop\". The items appear in the Hummlist app (iOS, Android, web: https://app.hummlist.com) signed in with the same account. Disabling the skill revokes the link. Deutsch: Hummlist ist eine gemeinsame Einkaufsliste für einen Haushalt. Der Skill setzt Sachen auf die Liste des verknüpften Kontos und liest die offenen Einträge vor. Zugangsdaten des Testkontos: siehe das Feld für das Testkonto."
     },
     "apis": {
       "custom": {
@@ -38,8 +138,12 @@
         "sslCertificateType": "Wildcard"
       },
       "subscriptions": [
-        { "eventName": "SKILL_ACCOUNT_LINKED" },
-        { "eventName": "SKILL_DISABLED" }
+        {
+          "eventName": "SKILL_ACCOUNT_LINKED"
+        },
+        {
+          "eventName": "SKILL_DISABLED"
+        }
       ]
     },
     "permissions": [],
@@ -51,8 +155,22 @@
       "containsAds": false,
       "locales": {
         "de-DE": {
-          "privacyPolicyUrl": "https://hummlist.com/datenschutz",
-          "termsOfUseUrl": "https://hummlist.com/impressum"
+          "privacyPolicyUrl": "https://hummlist.com/datenschutz"
+        },
+        "en-US": {
+          "privacyPolicyUrl": "https://hummlist.com/en/privacy"
+        },
+        "en-GB": {
+          "privacyPolicyUrl": "https://hummlist.com/en/privacy"
+        },
+        "en-AU": {
+          "privacyPolicyUrl": "https://hummlist.com/en/privacy"
+        },
+        "en-CA": {
+          "privacyPolicyUrl": "https://hummlist.com/en/privacy"
+        },
+        "en-IN": {
+          "privacyPolicyUrl": "https://hummlist.com/en/privacy"
         }
       }
     }

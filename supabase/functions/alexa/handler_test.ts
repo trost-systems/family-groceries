@@ -923,3 +923,130 @@ Deno.test('unlocked again (bought or renewed): the same link adds at once, no re
   assertStringIncludes(said(peter.reply) ?? '', 'Eier');
   assertEquals(world.revokedSessions, [], 'no link was touched');
 });
+
+Deno.test('a carrier word Alexa leaves in the slot ("Milch drauf") is not part of the item', async () => {
+  const world = linkedWorld();
+  const { reply } = await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', 'Milch und Eier drauf'), { token: 'tok-peter' }),
+  );
+  assertFalse(said(reply)!.includes('drauf'), said(reply));
+  assertEquals(world.rows.map((r) => r.name), ['Milch', 'Eier']);
+});
+
+const english = (request: Record<string, unknown>, ask: Ask = {}) =>
+  envelope({ ...request, locale: 'en-GB' }, ask);
+
+Deno.test('English (en-*): an add is split by the English parser and read back in English', async () => {
+  const world = linkedWorld();
+  const one = await send(
+    world.deps(),
+    english(intent('AddItemIntent', 'two liters of milk'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(one.reply), 'I put 2 liters of milk on Hummlist.');
+  assertEquals(one.reply.response.card?.content, 'I put 2 liters of milk on Hummlist.');
+  const two = await send(
+    world.deps(),
+    english(intent('AddItemIntent', 'milk and a dozen eggs'), { token: 'tok-peter' }),
+  );
+  assertEquals(said(two.reply), 'I put 1 dozen eggs on Hummlist. Already on Hummlist: milk.');
+  assertEquals(
+    world.rows.map((r) => [r.name, r.quantity]),
+    [['milk', '2 l'], ['eggs', '1 dozen']],
+    'names as heard, like Siri in English',
+  );
+});
+
+Deno.test('English: launch, help, stop, read, re-prompt and unlinked answer in English', async () => {
+  const world = linkedWorld();
+  const reply = async (request: Record<string, unknown>, ask: Ask = { token: 'tok-peter' }) =>
+    (await send(world.deps(), english(request, ask))).reply;
+
+  const launch = await reply({ type: 'LaunchRequest' });
+  assertEquals(said(launch), 'What should go on the list?');
+  assertEquals(
+    launch.response.reprompt?.outputSpeech.text,
+    'What should go on the list? Say for example: milk and eggs.',
+  );
+  assertEquals(launch.response.shouldEndSession, false);
+  assertEquals(launch.response.directives?.[0].type, 'Dialog.ElicitSlot');
+
+  assertStringIncludes(said(await reply(intent('AMAZON.HelpIntent')))!, 'add milk and eggs');
+  assertEquals(said(await reply(intent('AMAZON.StopIntent'))), 'Bye for now.');
+  assertEquals(said(await reply(intent('ReadListIntent'))), 'Your Hummlist is empty.');
+  await reply(intent('AddItemIntent', 'milk and bread'));
+  assertEquals(
+    said(await reply(intent('ReadListIntent'))),
+    'There are 2 things on your Hummlist: milk and bread.',
+  );
+  assertEquals(
+    said(await reply(intent('AMAZON.FallbackIntent'))),
+    "I didn't understand that. What should go on the list?",
+  );
+  assertEquals(
+    said(
+      await reply(intent('AMAZON.FallbackIntent'), {
+        token: 'tok-peter',
+        attributes: { retry: 1 },
+      }),
+    ),
+    "Sorry, I didn't understand that. I didn't add anything to Hummlist.",
+  );
+  const unlinked = await reply({ type: 'LaunchRequest' }, {});
+  assertEquals(
+    said(unlinked),
+    'Please link your Hummlist account in the Alexa app first. I sent you a card there.',
+  );
+  assertEquals(unlinked.response.card?.type, 'LinkAccount');
+});
+
+Deno.test('English replies never mention Premium (Alexa is not Premium)', async () => {
+  const { speechEnglish } = await import('./speech_en.ts');
+  for (const text of Object.values(speechEnglish)) {
+    assertFalse(/premium|unlock|buy|subscri/i.test(text), text);
+  }
+});
+
+Deno.test('a request without a locale, or in de-DE, is German', async () => {
+  const world = linkedWorld();
+  const bare = envelope({ type: 'LaunchRequest' }, { token: 'tok-peter' });
+  delete (bare.request as { locale?: string }).locale;
+  assertEquals(said((await send(world.deps(), bare)).reply), speech.launch);
+});
+
+Deno.test('de-DE LaunchRequest: the whole response is a valid Alexa answer that keeps the session', async () => {
+  const world = linkedWorld();
+  const res = await createHandler(world.deps())(
+    new Request('http://local/alexa', {
+      method: 'POST',
+      body: JSON.stringify(envelope({ type: 'LaunchRequest' }, { token: 'tok-peter' })),
+    }),
+  );
+  assertEquals(res.status, 200);
+  assertStringIncludes(res.headers.get('content-type') ?? '', 'application/json');
+  const raw = await res.text();
+  assert(new TextEncoder().encode(raw).length < 24_000, 'Alexa takes at most 24 kB');
+  assertEquals(JSON.parse(raw), {
+    version: '1.0',
+    sessionAttributes: {},
+    response: {
+      outputSpeech: { type: 'PlainText', text: 'Was soll auf die Liste?' },
+      reprompt: {
+        outputSpeech: {
+          type: 'PlainText',
+          text: 'Was soll auf die Liste? Sag zum Beispiel: Milch und Eier.',
+        },
+      },
+      directives: [{
+        type: 'Dialog.ElicitSlot',
+        slotToElicit: 'items',
+        updatedIntent: {
+          name: 'AddItemIntent',
+          confirmationStatus: 'NONE',
+          slots: { items: { name: 'items', confirmationStatus: 'NONE' } },
+        },
+      }],
+      shouldEndSession: false,
+    },
+  });
+});

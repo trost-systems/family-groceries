@@ -4,7 +4,7 @@ description: "Mit dem Alexa-Skill „Hummlist“ setzt du Sachen per Sprache auf
 slug: alexa
 locale: de
 translation_key: alexa
-updated: 2026-10-30
+updated: 2026-11-02
 ---
 
 # Hummlist per Alexa: Skill einrichten
@@ -14,12 +14,12 @@ Mit dem Alexa-Skill **Hummlist** setzt du Sachen per Alexa auf deine Hummlist, o
 > **Du:** Alexa, sag Hummlist, füg Milch und Eier hinzu.
 > **Alexa:** Ich habe Milch und Eier auf die Hummlist gesetzt.
 
-Alexa schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Der Skill funktioniert bisher nur auf Deutsch.
+Alexa schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Der Skill versteht Deutsch und Englisch, je nachdem, auf welche Sprache dein Alexa-Gerät eingestellt ist.
 
 ## Was du brauchst
 
 - einen Einladungslink zum Beta-Test des Skills
-- ein Amazon-Konto, die Alexa-App auf deinem Handy und ein Alexa-Gerät, das auf Deutsch eingestellt ist
+- ein Amazon-Konto, die Alexa-App auf deinem Handy und ein Alexa-Gerät, das auf Deutsch (oder Englisch) eingestellt ist
 - die Hummlist-App, in der du angemeldet bist und zu einem Haushalt gehörst
 - etwa fünf Minuten
 
@@ -56,6 +56,20 @@ Ab jetzt geht es ohne Hände, von jedem Alexa-Gerät in deinem Amazon-Konto.
 > - Deine Sprache nimmt Amazon auf und wandelt sie in Text um. Das geschieht nach den Alexa-Nutzungsbedingungen und der Datenschutzerklärung von Amazon. Wie lange Amazon Sprachaufnahmen aufbewahrt und wie du sie löschst, stellst du in der Alexa-App ein.
 > - Alles Weitere steht in der [Datenschutzerklärung](/datenschutz) unter „Siri, Alexa und KI-Assistenten“.
 
+## Damit Alexa Hummlist erreicht {#hummlist-erreichen}
+
+Alexa hat eigene Einkaufslisten. Damit dein Satz bei Hummlist ankommt und nicht dort, muss „sag Hummlist“, „frag Hummlist“ oder „öffne Hummlist“ darin vorkommen:
+
+- „Alexa, sag Hummlist, ich brauche Milch.“
+- „Alexa, sag Hummlist, füge Milch hinzu.“
+- „Alexa, sag Hummlist, setz Milch drauf.“
+- „Alexa, frag Hummlist, was auf der Liste steht.“
+- „Alexa, öffne Hummlist.“ Danach sagst du, was auf die Liste soll.
+
+Sag nicht „Alexa, setz Milch auf die Hummlist“. Diesen Satz behandelt Alexa selbst: Sie sucht unter ihren eigenen Listen eine namens „Hummlist“ und antwortet zum Beispiel „Ich konnte keine Liste finden unter Hummlist“, oder sie setzt die Milch auf ihre eigene Einkaufsliste.
+
+Alexa versteht den Namen am besten, wenn du ihn deutlich in zwei Silben sagst: „Humm-list“. Antwortet sie mit ihrer eigenen Einkaufsliste oder mit „Ich weiß nicht“, sag zuerst „Alexa, öffne Hummlist“ und dann, was auf die Liste soll.
+
 ## So kannst du sprechen
 
 Fang mit „Alexa, sag Hummlist, …“ an. Sag mehrere Sachen in einem Satz und sag zwischen ihnen „und“. Eine Pause allein trennt nicht: Aus „Butter, Brot und Käse“ wird bei Alexa „Butter brot“ und „Käse“. Statt „und“ gehen auch „sowie“, „noch“, „auch“, „außerdem“ und „plus“.
@@ -90,7 +104,9 @@ Statt „was auf der Liste steht“ geht auch „Alexa, frag Hummlist, was brauc
 | Was passiert | Woran es liegt | Was hilft |
 | --- | --- | --- |
 | Alexa kennt den Skill „Hummlist“ nicht, oder du findest ihn nicht in der Alexa-App. | Du hast die Einladung zum Beta-Test noch nicht angenommen, oder sie ging an eine andere Adresse als die deines Amazon-Kontos. | Nimm die Einladung an (Schritt 1). Ist sie abgelaufen, frag Peter nach einem neuen Link. |
-| Alexa kennt den Skill nicht, obwohl du die Einladung angenommen hast. | Dein Alexa-Gerät ist nicht auf Deutsch eingestellt. Den Skill gibt es bisher nur auf Deutsch. | Stell die Sprache des Geräts auf Deutsch: Alexa-App → **Mehr** → **Einstellungen** → **Geräteeinstellungen** → dein Gerät → Zahnrad oben rechts → unter **Allgemein** auf **Sprache**. |
+| Alexa kennt den Skill nicht, obwohl du die Einladung angenommen hast. | Dein Alexa-Gerät ist auf eine Sprache eingestellt, die der Skill nicht kann. Er kann Deutsch und Englisch. | Stell die Sprache des Geräts auf Deutsch: Alexa-App → **Mehr** → **Einstellungen** → **Geräteeinstellungen** → dein Gerät → Zahnrad oben rechts → unter **Allgemein** auf **Sprache**. |
+| Alexa sagt „Ich konnte keine Liste finden unter Hummlist“ oder setzt die Sache auf ihre eigene Einkaufsliste. | Im Satz fehlte „sag Hummlist“, zum Beispiel bei „Setz Milch auf die Hummlist“. Dann landet er bei Alexas eigenen Listen. | Sag „Alexa, sag Hummlist, setz Milch drauf“ oder erst „Alexa, öffne Hummlist“ (siehe [Damit Alexa Hummlist erreicht](#hummlist-erreichen)). |
+| Alexa antwortet „Ich weiß nicht“ oder versteht einen anderen Namen. | Alexa hat „Hummlist“ nicht erkannt. | Sag den Namen deutlich in zwei Silben, „Humm-list“, oder fang mit „Alexa, öffne Hummlist“ an. |
 | „Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.“ | Der Skill ist nicht oder nicht mehr mit deinem Hummlist-Konto verknüpft. | Tippe auf der Seite des Skills in der Alexa-App auf **Konto verknüpfen** und mach weiter wie in Schritt 2. |
 | „Du bist noch in keinem Haushalt …“ | Dein Hummlist-Konto gehört zu keinem Haushalt. | Leg in der App einen Haushalt an oder tritt einem bei. |
 | „Mehr als dreißig auf einmal gehen nicht …“ | Du hast mehr als 30 Sachen in einem Satz gesagt. Die ersten 30 stehen auf der Liste. | Sag den Rest noch einmal. |

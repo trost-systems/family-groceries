@@ -6471,3 +6471,51 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
 6. **The onboarding skip hint names the place.** „Du kannst sie später unter Mehr → Läden anlegen.“
    / "You can add them later under More → Stores." Mehr → Läden has „Neuer Laden“ since job 58, so
    the promise holds; the old "unter Mehr" left out where.
+
+## Job 69: Alexa skill icon and phrasings that reach the skill, 2026-11-02
+
+1. **The skill icons come from `design/app-icon/build.mjs`**, like every other platform icon:
+   the light icon at 108 and 512 px, full bleed and without a mask, the same art as the App
+   Store icon. The lint gate's `build.mjs --check` fails when a committed skill icon differs, so
+   the regenerate-and-compare check the brief asks for is the one that already guards the app
+   icons (it flagged the old basket icons as stale). Opaque RGB, since the cobalt fills the square;
+   should Amazon crop to a circle, the art (radius 380 of 512) stays inside.
+2. **Invocation name stays `hummlist`** (ADDENDUM 1, Peter's Q36 = V3); no research, no swap prep.
+3. **One-shot samples**: „setz/setze/pack/packe/schreib {items} drauf“, „ich brauche noch“,
+   „füg/füge noch {items} hinzu“. No sample names Hummlist: „setz Milch auf die Hummlist“
+   never reaches the skill (Alexa's own lists take it), so the fix for it is the guide.
+4. **„drauf“ is trailing filler in the shared splitter** (`voice/parse.ts`): „Setz Milch drauf“
+   through Siri added „Milch drauf“. Alexa gets the slot without it when the new samples match,
+   and the splitter catches it when a slot keeps it.
+5. **Guide ↔ model test lives in the site tests**: they already read the repo (`REPO_DIR`), the
+   functions tests run without file access.
+6. **Development-stage deploy from the box**: the Hetzner runner has no ASK CLI login (the LWA
+   tokens are in the box's ops secrets), so the job ships `scripts/alexa-deploy-dev.sh` and the
+   box runs it. It cannot certify, publish or invite.
+7. **Local ports 569xx**, since 691xx is past 65535.
+8. **ADDENDA 3-7 extend PR #193** instead of a second PR: the icon and guide part was green, and
+   the English locales change the same package files.
+9. **The launch bug (ADDENDUM 3A) is upstream of the skill** (inferred, not reproduced: the
+   simulator needs the box): production edge logs and
+   `alexa_links` show no request after the 08:25:41 link event, so no response shape could have
+   caused „Ich weiß nicht“. The launch response is still pinned in a test (the whole JSON). The
+   check that tells the two remaining causes apart (misheard name, Echo on another account) is
+   Peter's (NEEDS_PETER, Job 69).
+10. **English goes into `speech_en.ts` and `voices.ts`**, not into `speech.ts`: job 68 rewrites
+    `speech.ts` in parallel, and `Voice.speech` is typed with `speech.ts`'s keys, so a German line
+    added there fails the type check until English has it too.
+11. **English names are stored as heard** ("milk"), like Siri in English (`voice/parse_en.ts`);
+    German keeps its capitals rule.
+12. **No Alexa line says Premium, buying or unlocking** (ADDENDUM 7, Legal N-27; review 0): the
+    German and English lock lines say only that Hummlist takes no voice requests for the
+    household right now. `skill_package_test.ts` scans both speech modules. Job 72 removes the
+    lock itself.
+13. **No tick-off intent in English**: de-DE has none, and „mirroring de-DE“ (ADDENDUM 3B) keeps
+    both languages on add and read. Ticking off by voice would be new work for both.
+14. **`usesPersonalInfo` stays true**: account linking signs in to a Hummlist account with an
+    e-mail address, which is personal information in Amazon's sense.
+15. **Testing instructions without Ops' draft**: the draft lives on the box only. `skill.json`
+    has a German and English text without credentials; the test fails on a password. Ops' draft
+    can replace it (keep its placeholders).
+16. **Five identical English models** instead of one shared file: the ASK package needs one file
+    per locale; a test keeps them equal.

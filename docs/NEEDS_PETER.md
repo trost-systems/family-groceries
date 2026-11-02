@@ -1194,3 +1194,31 @@ Everything is ready for the switches. Nothing is on yet. [`PAYWALL_RELEASE.md`](
 5. The App Store review submission and the Play production release (step 5.5).
 6. Which beta households keep Siri, Alexa and AI assistants free, then the integration lock (steps 6.1 and 6.4).
 7. Whether the Home Screen widgets should become Premium. Today they stay free. Making them Premium would be new work.
+
+## Job 69: „Alexa, öffne Hummlist“ answered „Ich weiß nicht“ (2026-11-02)
+
+The logs say the request never reached Hummlist (inferred from timestamps; the simulator run
+that would reproduce it needs the box, docs/ALEXA_CERTIFICATION.md "Results"). The function's logs on 2026-11-02 show four requests to
+`alexa`: 07:38 CET (the deploy's unsigned smoke check, refused on purpose), then 08:16, 08:25:34
+and 08:25:41, which match the skill being linked, disabled and linked again. Nothing came after
+08:25:41, and the one link Hummlist holds was last used at 08:25:41. So for „öffne Hummlist“
+Alexa did not call the skill at all. Two causes fit, and only your account can tell them apart:
+
+1. **Alexa misheard the name.** Alexa app → **Mehr** → **Einstellungen** → **Alexa-Datenschutz**
+   → **Sprachaufnahmen-Verlauf**: the entry for that request shows what Alexa heard. „öffne
+   homelist“ or „öffne hamlist“ means speech recognition. The guide now says to say
+   „Humm-list“ in two syllables, or „Alexa, öffne Hummlist“ first.
+2. **The Echo isn't on the account with the skill.** The skill was enabled and linked on Lea's
+   account. If the Echo is registered to your account, or Alexa takes your voice profile, Alexa
+   looks for the skill in your account and doesn't find it. Check in the Alexa app of the
+   account the Echo belongs to (**Geräte** → the Echo → **Registriert für**), and enable and link
+   the skill there (the beta invitation has to go to that account's e-mail).
+
+**Simulator result (box, 2026-11-02 ~11:00 CET):** typed „öffne hummlist“ does **not** reach the
+skill either, in any of the six locales, for the developer account (p.trost93@gmail.com). So
+cause 1 is ruled out as the only cause. Amazon's validation passes and the endpoint answers when
+it is called directly. Please open the developer console (developer.amazon.com → Hummlist →
+**Test**), check that testing is set to „Development“, and type „öffne hummlist“ in the simulator
+there. Then check which Amazon country the developer account and Lea's account use (Alexa app →
+Einstellungen → Info/Über: Host Name alexa.amazon.de). Details in docs/ALEXA_CERTIFICATION.md
+„Results“.

@@ -334,6 +334,7 @@ light core and a dot of check remains
 | iOS | `Runner/AppIcon.icon` (Icon Composer bundle, the layered iOS 26 icon) and `Assets.xcassets/AppIcon.appiconset` (one 1024 icon, light, dark and tinted, for older iOS), both named `AppIcon` |
 | Android | `mipmap-anydpi-v26/ic_launcher.xml` and `ic_launcher_round.xml` (background, foreground and monochrome vector drawables), legacy `mipmap-*/ic_launcher.png` and `ic_launcher_round.png` |
 | Web | `favicon.png`, `favicon.svg`, `icons/Icon-192.png`, `Icon-512.png`, the maskable pair, `icons/apple-touch-icon.png`; `manifest.json` colours |
+| Alexa | `alexa/skill-package/assets/images/de-DE_smallIconUri.png` (108 px) and `de-DE_largeIconUri.png` (512 px): the light icon full bleed, like the App Store icon. Should Amazon crop it to a circle, the art stays inside |
 
 `scripts/gates/ios.sh` (CI, macos-26) checks that the built app's
 `Assets.car` holds the AppIcon in light, dark and tinted, the icon stacks

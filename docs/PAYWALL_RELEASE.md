@@ -252,6 +252,11 @@ A sale with the placeholder copy is possible but not recommended.
 
 ## 6. The integration lock (after the sale is live)
 
+Alexa certification (job 69): the reviewer's household relies on the lock being off. Don't turn
+`integration_lock` on while the skill is in certification, or grant the reviewer account Premium
+first (6.2, needs Peter). Job 72 takes Alexa out of the lock (Alexa is free, Legal N-27); once
+that is on main this note no longer applies.
+
 6.1 **Peter's yes**: the households that keep the integrations for free
 (beta households). Spec #4 says no grandfathering.
 

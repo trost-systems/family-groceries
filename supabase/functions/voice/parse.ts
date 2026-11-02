@@ -69,7 +69,7 @@ const leadingFiller = [
 /** Filler after an item ("auf die Liste setzen", "bitte", "mehr"). */
 const trailingFiller = [
   ...words(
-    'bitte|danke|mehr|mal|da|mehr da|auf|hinzu|hinzufügen|dazu|mit|setzen|schreiben|' +
+    'bitte|danke|mehr|mal|da|mehr da|auf|drauf|hinzu|hinzufügen|dazu|mit|setzen|schreiben|' +
       'aufschreiben|notieren|kaufen|holen|mitbringen|besorgen|brauchen|nötig|' +
       'nicht vergessen|vergessen|nicht|ist alle|sind alle|ist leer|sind leer|ist aus|aus',
   ),

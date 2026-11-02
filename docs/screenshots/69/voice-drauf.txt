@@ -1,0 +1,16 @@
+# Job 69: Siri/voice sentences with „drauf“ against the local stack (fg fn call voice --as peter), 2026-11-02T08:32:30+01:00, branch cfe8d4c+worktree
+
+> Setz Milch drauf
+HTTP 200 "Hinzugefügt: Milch." 
+items: [["Milch","Kühlregal",false]]
+
+> Pack Eier und Butter mit drauf
+HTTP 200 "Hinzugefügt: Eier, Butter." 
+items: [["Eier","Kühlregal",false],["Butter","Kühlregal",false]]
+
+> Setz Milch drauf
+HTTP 200 "Schon auf der Liste: Milch." 
+items: [["Milch","Kühlregal",true]]
+
+> fg db query --as peter: active items
+[{"name":"Butter"},{"name":"Eier"},{"name":"Milch"}]

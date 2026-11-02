@@ -1,18 +1,21 @@
-# Alexa skill "Hummlist" (de-DE)
+# Alexa skill "Hummlist" (de-DE, en-*)
 
 A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu", and Milch and Eier land
 on the household's Hummlist within seconds, categorized and sorted like items typed in the app.
 "Alexa, frag Hummlist, was auf der Liste steht" reads the open items aloud. Spec #7, job 31.
-English (en-US, en-GB) is a later step.
+On an Echo set to English (en-US, en-GB, en-AU, en-CA, en-IN), "Alexa, ask Hummlist to add milk
+and eggs" does the same in English (job 69). Certification readiness:
+[ALEXA_CERTIFICATION.md](ALEXA_CERTIFICATION.md).
 
 | | |
 | --- | --- |
 | Skill name, invocation name | `Hummlist`, `hummlist` (always in full; a test fails on "Humm" alone) |
 | Endpoint (and skill events) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa` (`sslCertificateType: Wildcard`) |
 | Function | [`supabase/functions/alexa/`](../supabase/functions/alexa/) |
-| Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json`, icons), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
+| Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json` and the five identical `en-*.json`, icons from `design/app-icon/build.mjs`), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
 | Account linking | [`alexa/account-linking.json`](../alexa/account-linking.json) (no secret), [`scripts/alexa-oauth-client.sh`](../scripts/alexa-oauth-client.sh) |
-| Local testing | [`scripts/alexa-test-ca.sh`](../scripts/alexa-test-ca.sh), [`scripts/alexa-say.sh`](../scripts/alexa-say.sh), [`e2e/tests/alexa.spec.ts`](../e2e/tests/alexa.spec.ts) |
+| Local testing | [`scripts/alexa-test-ca.sh`](../scripts/alexa-test-ca.sh), [`scripts/alexa-say.sh`](../scripts/alexa-say.sh) (`--locale en-US`), [`e2e/tests/alexa.spec.ts`](../e2e/tests/alexa.spec.ts), [`alexa-en.spec.ts`](../e2e/tests/alexa-en.spec.ts) |
+| Amazon (ASK CLI signed in) | [`scripts/alexa-deploy-dev.sh`](../scripts/alexa-deploy-dev.sh), [`alexa-validate.sh`](../scripts/alexa-validate.sh), [`alexa-simulate.sh`](../scripts/alexa-simulate.sh) |
 | Decisions | [DECISIONS.md](DECISIONS.md), "Job 31" |
 | Manual steps | [NEEDS_PETER.md](NEEDS_PETER.md), "Job 31" |
 
@@ -26,7 +29,8 @@ Echo ──> Alexa (speech to text, intent "AddItemIntent", slot items = "milch 
          2. the linked token (context.System.user.accessToken) ─> _shared/auth.ts authenticate():
             a Supabase OAuth access token whose session still exists; its user's CURRENT
             household from household_members  ── else "Bitte verknüpfe …" + LinkAccount card
-         3. voice/parse.ts splits "milch und eier" (the Siri splitter)
+         3. voice/parse.ts splits "milch und eier" (the Siri splitter; voice/parse_en.ts for an
+            en-* request, alexa/voices.ts picks by request.locale)
          4. 30 items a minute per user (alexa_take_adds)
          5. voice/items.ts adds through public.add_item as the user, under RLS (classifier,
             store memory, duplicates) ─> Realtime ─> every member's app
@@ -64,9 +68,11 @@ reported to error tracking). Quantities are said in words: "2 l" is "2 Liter", "
 
 **Integration lock (job 50, off).** With the server switch `integration_lock` on, a linked
 household without Hummlist Premium (`requirePremium`, `_shared/premium.ts`) hears instead of an
-add "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe
-nichts hinzugefügt." and, for `ReadListIntent` and LaunchRequest, its first two sentences, each
-with a Simple card and the session ended (placeholder copy, `speech.ts` `premium`/`premiumAdd`).
+add "Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts
+hinzugefügt." and, for `ReadListIntent` and LaunchRequest, its first sentence, each with a Simple
+card and the session ended (`speech.ts` `premium`/`premiumAdd`; English in `speech_en.ts`). Alexa
+is not Premium (Legal N-27), so neither language mentions Premium or unlocking (job 69); job 72
+takes Alexa out of the lock.
 Nothing is added, read or counted against the rate limit. The check runs after verification and
 after the link is resolved, so an unverified or unlinked request never gets it. Help, Stop,
 Cancel, Fallback, account linking and the skill events never ask; the link, its session and
@@ -176,6 +182,28 @@ keeps its hash. It is never in the repo, the function's environment or a log.
   before certification (NEEDS_PETER, Job 31).
 - "Meine Daten exportieren" lists the stored analytics answers and the Alexa links (last use).
 
+## Invocation name and Alexa's own lists
+
+**Languages.** `alexa/voices.ts` picks the language per request from `request.locale`: de-DE
+(and a request without a locale) is German (`speech.ts`, `voice/parse.ts`, German capitals for
+names heard in lowercase); every en-* locale is English (`speech_en.ts`, `voice/parse_en.ts`,
+names stored as heard, like Siri in English). The five English models are one model
+(`skill_package_test.ts` keeps them identical). English one-shots: "Alexa, ask Hummlist to add
+milk", "Alexa, tell Hummlist we need milk", "Alexa, ask Hummlist what's on the list"; "Alexa, add
+milk to Hummlist" goes to Alexa's own lists, as in German.
+
+The invocation name stays `hummlist` (Peter, 2026-11-02). On a German Echo Alexa sometimes hears
+it as „Homelist“ or „Hamlist“, or only „Liste“, and then answers „Ich weiß nicht“ or opens her
+own shopping list. Saying the name clearly as two syllables, „Humm-list“, helps; „Alexa, öffne
+Hummlist“ first, then the items, is the fallback. The guide says both.
+
+Alexa's built-in lists take any sentence without the invocation pattern: „Alexa, setz Milch auf
+die Hummlist“ ends at „Ich konnte keine Liste finden unter Hummlist“. Only „Alexa, sag/frag
+Hummlist, …“ and „Alexa, öffne Hummlist“ reach the skill. The guide lists those phrasings, and
+`site/test/content.test.mjs` checks that each „Alexa, sag/frag Hummlist, …“ in the guides matches
+a sample utterance of the de-DE model; `skill_package_test.ts` keeps the common one-shot forms
+(„ich brauche Milch“, „füge Milch hinzu“, „setz Milch drauf“) in the model.
+
 ## Deploy
 
 Deployed by job 31b (2026-10-30) to Peter's Amazon Developer account: skill
@@ -215,8 +243,12 @@ The steps below are how it was done and how to redo it.
    account, after linking in the Alexa app (Skills → Hummlist → Konto verknüpfen). The beta
    checklist below is the full run.
 
-Changes to the model or manifest later: edit the files, then `ask deploy --target skill-metadata`
-from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
+Changes to the model, manifest or icons later: commit them, then run
+`ALEXA_SKILL_ID=<skill id> scripts/alexa-deploy-dev.sh` where the ASK CLI is signed in (the box,
+job 69). It writes the state file below, runs `ask deploy --target skill-metadata` (development
+stage only), restores `alexa/`, waits for the de-DE model build and checks over SMAPI that the
+development stage serves the name „Hummlist“, the invocation name `hummlist` and both icons. By
+hand: `ask deploy --target skill-metadata` from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
 creates a second skill:
 
 ```bash
@@ -264,25 +296,16 @@ an invitation link. Peter, Lea, Max and Barbie first.
    (AC8).
 8. Link again, then Mehr → Zugänge → "Amazon Alexa trennen": the next request asks to link (AC8).
 
-**Certification** (only with Peter's yes, after the privacy policy naming the skill is public).
-Ops prepares in the console as drafts for Peter: Distribution → privacy policy URL
-`https://hummlist.com/datenschutz`, terms `https://hummlist.com/impressum`, the store texts from
-`skill.json`, the icons, and the testing instructions below with a test account (a fresh Hummlist
-account with a household and a few items; its password goes into the console field only).
+**Certification**: [ALEXA_CERTIFICATION.md](ALEXA_CERTIFICATION.md) has what is ready, what
+Amazon's validation said and what is left (the test account, the submit). The privacy policy URLs
+are in `skill.json` (`/datenschutz`, `/en/privacy`); no terms URL until the terms pages are live.
+The testing instructions are in `skill.json` too, without credentials (the test account goes
+into the console field only).
 Certification usually asks about a one-word invocation name: "Hummlist" is the product's brand
 (the app's name in the stores), which is the documented exception.
 
-**Testing instructions (draft, for the certification form):**
-
-> Hummlist is a shared shopping list for a household. The skill adds items to the list of the
-> linked account's household and reads the open items back. Account linking is required: use
-> the test account below (e-mail and password in the field "Test account"). Linking opens the
-> Hummlist consent page; sign in and tap "Erlauben".
-> Try: "Alexa, sag Hummlist, füg Milch und Eier hinzu" (adds two items and confirms them),
-> "Alexa, frag Hummlist, was auf der Liste steht" (reads the open items), "Alexa, öffne
-> Hummlist" (asks what to add), "Hilfe", "Stopp". The items appear in the Hummlist app (iOS,
-> Android, web: https://app.hummlist.com) signed in with the same account. Disabling the skill
-> revokes the link.
+**Testing instructions**: `publishingInformation.testingInstructions` in `skill.json`, German and
+English, checked by `skill_package_test.ts` (no credentials).
 
 ## Testing
 
@@ -290,7 +313,8 @@ Certification usually asks about a one-word invocation name: "Hummlist" is the p
   verification rule, Amazon's real chain), `handler_test.ts` (intents, read-back, re-prompt,
   unlinked and revoked, two households and a switch, errors, rate limit, long input, analytics
   and error-tracking payloads), `skill_package_test.ts` (AC11 and the package's structure),
-  `config_test.ts` (the test CA only in a local stack).
+  `config_test.ts` (the test CA only in a local stack). English: the `English …` tests at the end
+  of `handler_test.ts`, and every locale's model in `skill_package_test.ts`.
 - `alexa/store_integration_test.ts` against the stack's database (the db gate): the production
   wiring adds and reads like the app, keeps households apart, limits, links and revokes.
 - `supabase/tests/alexa.test.sql` (pgTAP): no client reaches the tables or functions; the
@@ -299,7 +323,8 @@ Certification usually asks about a one-word invocation name: "Hummlist" is the p
   and the layla redirect through the app's consent page, a refresh, signed requests adding
   "Milch" visible on another member's screen within 5 s, categories as typed, re-prompt,
   revocation in Zugänge and by SkillDisabled, two households and a switch, forged, stale and
-  foreign-skill requests refused. It writes a redacted transcript of the linking
+  foreign-skill requests refused. `e2e/tests/alexa-en.spec.ts`: the same linking, then an en-US
+  add, duplicate and read in English. It writes a redacted transcript of the linking
   (`alexa-account-linking-transcript.txt` in the screenshots artifact).
 - By hand on a local stack: `scripts/alexa-test-ca.sh` runs with every `supabase_up`
   (scripts/lib.sh); restart the stack once if it was running before. Then
