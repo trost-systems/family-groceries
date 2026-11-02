@@ -6,8 +6,12 @@ merge to main"). The Release workflow (`.github/workflows/release.yml`) starts
 when CI (`ci.yml`) finishes green on a push to `main` and ships the newest
 green `main` commit:
 
-- iOS to TestFlight, internal group "Familie" only. No external groups, no
-  Beta App Review, no App Store submission.
+- iOS to TestFlight, internal group "Familie". The workflow itself never
+  adds a build to an external group, never submits to Beta App Review and
+  never submits to the App Store (`distribute_external: false`,
+  `skip_submission: true` in the `Fastfile`). External TestFlight is a
+  separate step done by hand in App Store Connect, below
+  ([External TestFlight](#external-testflight)).
 - Android to the Play internal testing track.
 
 The web app is not part of these runs: `https://app.hummlist.com` is public,
@@ -22,12 +26,54 @@ that needs a browser is in [`NEEDS_LEAD.md`](NEEDS_LEAD.md); decisions are in
 ## Public releases
 
 There is no public release path yet: no Play production track, no App Store
-review, no external TestFlight group, and the Paid Applications agreement
-stays unaccepted. Nothing in this workflow promotes a build beyond the
-internal testers. A public release will be a separate, later step with a
+review, and the Paid Applications agreement stays unaccepted. Nothing in this
+workflow promotes a build beyond the internal testers; external TestFlight
+(below) is a manual step in App Store Connect on a build the workflow already
+uploaded. A public release will be a separate, later step with a
 manual gate: a build that the internal testers have had, after a full
 end-to-end pass on it, weekly or more often once that is quick and reliable.
 It needs its own job and Peter's go.
+
+### External TestFlight
+
+Peter approved the first external TestFlight build on 2026-11-02, submitted
+to Beta App Review with a target of 2026-11-09 (2026-11-10 at the latest).
+External testers need Apple's Beta App Review; the internal group
+"Familie" does not. The steps, all in App Store Connect (TestFlight tab of
+the app "Hummlist"), are done by Hummlist Ops, not by the Release workflow
+and not by an agent:
+
+1. **Pick the build.** A `VALID` build that `release.yml` uploaded and the
+   internal testers have had (the run summary names it: "Build N of SHA:
+   TestFlight success"). No separate upload: external testing uses the same
+   build as internal testing.
+2. **Check the build's flags.** The build must sell nothing and lock
+   nothing: the `release` environment variables `REVENUECAT_PURCHASES` and
+   `INTEGRATION_LOCK` (table in [Secrets and variables](#secrets-and-variables))
+   were unset when it was built, and the server switches
+   `app_switches.premium_offer` and `app_switches.integration_lock` are off.
+   The integration lock stays off until the Alexa skill is certified
+   ([`ALEXA_CERTIFICATION.md`](ALEXA_CERTIFICATION.md)).
+3. **External group.** Create an external group (or reuse it) and add the
+   build to it. Testers join by e-mail invitation or a public link.
+4. **Test Information.** Fill in Beta App Description, feedback e-mail,
+   What to Test (the workflow already set it in de-DE and en-US) and the
+   Beta App Review contact.
+5. **Sign-in for the reviewer.** Hummlist needs a sign-in, so the review
+   information has "Sign-in required" with the review account
+   `hello+appreview@hummlist.com`. Its password is in
+   `~/groceries-ops/secrets/apple-reviewer-password.txt` on the build box.
+   Copy it from there into App Store Connect only; never write it into the
+   repo, a PR, an issue, a log or a chat.
+6. **Submit for review.** The first build of a version goes through Beta
+   App Review. Later builds of the same
+   version may skip a full review; a new version (`version` in
+   `app/pubspec.yaml`) needs a review again.
+
+Every external build expires after 90 days like the internal ones. Promoting
+a build to external testers is still not a public release: nothing is
+recorded in `releases/releases.json`, and the App Store review stays a
+separate, later step.
 
 What is public is recorded in [`releases/releases.json`](../releases/README.md),
 empty until the first public release. The public release step, once it exists,
@@ -284,7 +330,7 @@ Run lanes from `app/` with `bundle exec fastlane <platform> <lane>`.
 | --- | --- |
 | `ios certificates` | Creates or renews the distribution certificate and profiles in the match repo. Run by the manual Certificates workflow only; the team keeps its three distribution certificates, so don't run it. |
 | `ios preflight` | Fails if either App Store profile (the app's, the widget's) is not `ACTIVE`, naming the ones that are not; writes TestFlight's highest build number and whether any build is installable to `TESTFLIGHT_JSON`. The plan job runs it. |
-| `ios beta` | Installs the certificate and both profiles from match (read-only), signs `Runner` and `HomeWidget` manually, each with its own profile, runs `flutter build ipa`. `RELEASE_UPLOAD=true` uploads to TestFlight (internal only, one retry), otherwise `altool --validate-app` validates the IPA. |
+| `ios beta` | Installs the certificate and both profiles from match (read-only), signs `Runner` and `HomeWidget` manually, each with its own profile, runs `flutter build ipa`. `RELEASE_UPLOAD=true` uploads to TestFlight (internal group only, no external group, no review submission; one retry), otherwise `altool --validate-app` validates the IPA. |
 | `ios wait_processing` | Sets What to Test (de-DE and en-US) as soon as the build shows up (a refusal only warns), then polls until it is `VALID` (at most `WAIT_MINUTES`, 45). Fails on `INVALID`, `FAILED`, an expired build or two API errors in a row. |
 | `ios renew_profile` | Regenerates both App Store profiles (every identifier in the `Matchfile`) with the existing certificate `GN85KDC962` and pushes them to the match repo ([Capabilities](#capabilities)). |
 | `android build` | `flutter build appbundle`, signed with `android/key.properties`. |
