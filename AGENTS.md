@@ -48,6 +48,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   them from the PRs' `## Changelog` notes into `releases/changelog/<v>.json`
   drafts with the store "What's new" texts; `record.mjs` moves a draft into
   the record.
+- `marketing/store-screenshots/`, `scripts/store-screenshots.sh`: the Play and App Store
+  screenshots, feature graphic and icon from the real web build with the demo household „Unser
+  Haushalt“, captions in `captions.yaml`, deterministic reruns; `--videos` re-films the site's demo
+  loops (`marketing/videos/`). CI: `store-screenshots.yml`, by hand (`docs/STORE_SCREENSHOTS.md`).
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
   `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).

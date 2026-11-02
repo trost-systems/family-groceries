@@ -51,7 +51,7 @@ const LAYOUT = {
       anna: { box: { x: 54, y: -204.5, w: 250.6, h: 514.6 }, appTop: 0, z: 3, fadeTop: [252, 284] },
       jonas: { box: { x: 40, y: 264, w: 250.6, h: 200 }, appTop: 0, z: 4 },
     },
-    tags: { jonas: { x: 236, y: 252 }, anna: { x: 252, y: 82 } },
+    tags: { jonas: { x: 236, y: 252 }, anna: { x: 252, y: 100 } },
   },
 };
 

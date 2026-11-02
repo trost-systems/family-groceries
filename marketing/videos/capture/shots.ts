@@ -125,7 +125,7 @@ export const shots: Record<string, Shot> = {
       const toJonas = await until(s, jonas, item, added);
       await sleep(1200);
       // Anna closes the sheet the way a phone user does, by tapping the list above it.
-      await s.tap(anna, { x: 200, y: 470 });
+      await s.tap(anna, { x: 200, y: 300 });
       await gone(anna, { key: 'add-sheet-close' });
       await sleep(1600);
       await s.tap(jonas, { text: item }, { dx: 118 });

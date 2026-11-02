@@ -60,10 +60,16 @@ export async function openAs(browser, { run, handle, device, lang, dark = false 
   return { context, page, L, user, errors };
 }
 
-/** Stops the page clock: from here on, frames come only from step(). */
+/**
+ * Stops the page clock: from here on, frames come only from step(). The fake requestAnimationFrame
+ * fires every 16 ms counted from the clock's install time, so the clock stops on that grid and
+ * every later frame lands at the same phase, whatever the host took to get here.
+ */
 export async function pause(page) {
   const now = await page.evaluate(() => Date.now());
-  await page.clock.pauseAt(now + 1000);
+  const grid = 16;
+  const from = FIXED_TIME.getTime();
+  await page.clock.pauseAt(from + Math.ceil((now + 1000 - from) / grid) * grid);
 }
 
 /** Runs the paused clock forward by ms: timers fire and Flutter draws the frames in between. */

@@ -1,5 +1,26 @@
 # Review: household-sync
 
+## Job 65 re-take (2026-11-02)
+
+Re-filmed with the demo household „Unser Haushalt“ (Anna and Jonas, `demo-haushalt` /
+`demo-household-en`), replacing the Brandt family. Two real app instances (the current app, 6b
+design after job 57) on one clock. Anna adds Eier; item→store memory puts the row in the
+Supermarkt's chilled rows on Jonas's screen, with the app's „1 neu von Anna“ note and mint row.
+Jonas ticks it off and it leaves both lists. 11.2 s.
+
+- Layout: two phones. Wide: Anna leads on the right (running off top and bottom), Jonas steps back
+  at her left edge as the quiet satellite, caption above him. Compact: Anna on top, Jonas as a
+  band below. The compact Anna tag moved down (y 100) so it no longer covers the „7 Artikel“ count.
+- Measured in the takes (Enter to the row on Jonas's screen, Marionette poll included): DE 946 ms,
+  EN 498 ms; the text alternatives in `site/content/landing/copy.yml` say "knapp eine Sekunde" and
+  "half a second".
+- Seams (SSIM first against last frame): DE wide 0.9965, compact 0.9974; EN wide 0.9966,
+  compact 0.9975. Files: MP4 0.33 to 0.46 MB, WebM 0.36 to 0.46 MB, posters 31 to 38 KB.
+- Review: own contact sheets and posters (one fix: the Anna tag). Not watched at real speed by a
+  person.
+
+## Job 54 (the Brandt family, replaced)
+
 Mia, Noah and Ida (the fictional Brandt family) on three real app instances filmed on one clock.
 Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency, with the app's own
 "1 neu von Mia Brandt" note and mint row; Noah ticks it off and it leaves all three lists.

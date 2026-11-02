@@ -1,5 +1,18 @@
 # Review: add-tick
 
+## Job 65 re-take (2026-11-02)
+
+Re-filmed with the demo household „Unser Haushalt“ (Anna, `demo-haushalt` / `demo-household-en`)
+in the current app (6b design after job 57). Anna's list is scrolled to the Supermarkt's pantry
+rows; she types Honig and Marmelade (Honey, Jam), item→store memory files them under Vorrat &
+Konserven there, and she ticks both off again. Same words and layout as job 54.
+
+- Seams (SSIM): DE wide 0.9977, compact 0.9971; EN wide 0.9977, compact 0.9971. 10.6 to 11.0 s;
+  MP4 0.44 to 0.74 MB, WebM 0.43 to 0.54 MB, posters 25 to 28 KB.
+- Review: own contact sheets and posters, no changes needed. Not watched at real speed by a person.
+
+## Job 54 (the Brandt family, replaced)
+
 Mia types two items into the real add sheet, closes it, the rows sit in their category, and she
 ticks both off again. One take per language, one phone, 10.5 to 10.8 s.
 

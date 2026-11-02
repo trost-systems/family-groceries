@@ -54,9 +54,12 @@ in the app or its design needs new takes.
 
 ## The test data
 
-- `add-tick`, `household-sync`: `test/fixtures/scenarios/demo-familie.yaml` and
-  `demo-family-en.yaml`, the fictional Brandt family (Mia, Noah, Ida) with no store tags, so no
-  retailer shows.
+- `add-tick`, `household-sync`: `test/fixtures/scenarios/demo-haushalt.yaml` and
+  `demo-household-en.yaml`, the demo household „Unser Haushalt“ (Anna, Jonas) of the store
+  screenshots, with four generic stores only (job 65, `docs/STORE_SCREENSHOTS.md`). The take seeds
+  it with `marketing/store-screenshots/seed.mjs`, which deletes the dm, Lidl and Edeka stores that
+  `create_household` adds. `scripts/store-screenshots.sh --videos` (or `remake.sh`) re-films both
+  videos and rebuilds their site files in one go.
 - `mcp-chat`: `solo-long-list.yaml`, Sam in "Sams Wohnung". The take signs Sam in over the auth
   API, creates a personal access token with the app's own RPC, keeps it in memory only, and calls
   the local `mcp` function; the fixture teardown deletes token and user.
