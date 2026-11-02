@@ -7,6 +7,7 @@ import {
   premiumEntitlementId,
   reconcileUrl,
 } from './promotional.ts';
+import { RevenueCatUnavailable } from '../../supabase/functions/purchases/promotional.ts';
 
 const HOME = 'eb021cef-9284-4e67-91a8-2c63780db5ae';
 
@@ -105,5 +106,13 @@ Deno.test('grantEntitlement: a refusal fails', async () => {
       HOME,
       fetch as typeof globalThis.fetch,
     )
+  );
+});
+
+Deno.test('grantEntitlement: RevenueCat never answering times out as RevenueCatUnavailable', async () => {
+  const hang = () => new Promise<Response>(() => {});
+  await assertRejects(
+    () => grantEntitlement({ secretKey: 'sk_test', projectId: 'proj1' }, HOME, hang, 20),
+    RevenueCatUnavailable,
   );
 });

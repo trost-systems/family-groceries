@@ -12,7 +12,9 @@ class const ServerLock({
   /// without Hummlist Premium.
   required final bool enforced,
 
-  /// `premium_offer` is on: Hummlist Premium may be sold.
+  /// `premium_offer` is on, or could not be read: the card links to the
+  /// Premium page, which says what it found. Only a switch read as off
+  /// makes it "coming soon".
   required final bool offerOpen,
 });
 
@@ -25,13 +27,15 @@ class IntegrationLockCubit(
 }) extends Cubit<ServerLock?> {
   this : super(null);
 
-  /// Reads both switches again; a read that fails counts as off.
+  /// Reads both switches again. A lock that cannot be read counts as off
+  /// (the server decides); an offer that cannot be read as open.
   Future<void> refresh() async {
     if (!enabled) {
       return;
     }
     final enforced = await _server.integrationLock();
-    final offerOpen = enforced && await _server.offerOpen();
+    final offerOpen =
+        enforced && await _server.offerSwitch() != OfferSwitch.off;
     if (!isClosed) {
       emit(ServerLock(enforced: enforced, offerOpen: offerOpen));
     }

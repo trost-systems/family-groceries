@@ -32,14 +32,17 @@ class const PremiumScreen({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => BlocProvider(
-    create: (context) => PremiumPageCubit(
-      context.read<PremiumServer>(),
-      context.read<StorePriceReader>(),
-      context.read<Entitlements>(),
-      sells: context.read<PurchaseCubit>().state.noSale == null,
-      analytics: context.read<Analytics?>(),
-      entry: entry,
-    ),
+    create: (context) {
+      final purchases = context.read<PurchaseCubit>()..pageOpened();
+      return PremiumPageCubit(
+        context.read<PremiumServer>(),
+        context.read<StorePriceReader>(),
+        context.read<Entitlements>(),
+        sells: purchases.state.noSale == null,
+        analytics: context.read<Analytics?>(),
+        entry: entry,
+      );
+    },
     child: const _PremiumView(),
   );
 }

@@ -16,7 +16,12 @@
 // REVENUECAT_DELETIONS_SECRET (the function's Ops secret, sent as x-deletions-secret) and
 // SUPABASE_PROJECT_REF (default: the hosted project) or PURCHASES_URL (the local stack's
 // http://127.0.0.1:54321/functions/v1/purchases). Prints no key, secret or token.
-import type { Fetch, RevenueCatKey } from '../../supabase/functions/purchases/deletions.ts';
+import {
+  type Fetch,
+  type RevenueCatKey,
+  revenueCatTimeoutMs,
+  within,
+} from '../../supabase/functions/purchases/deletions.ts';
 import {
   fetchPromotional,
   type PromotionalPremium,
@@ -79,12 +84,19 @@ export function grantedForGood(p: PromotionalPremium): boolean {
  * Grants [householdId]'s RevenueCat customer the premium entitlement until [testerGrantEnd]
  * (POST .../customers/{id}/actions/grant_entitlement). A customer RevenueCat doesn't know yet
  * (404: the household never opened the purchase screen) is created first (POST .../customers).
+ * Throws [RevenueCatUnavailable] for a refusal, and when RevenueCat takes longer than [timeoutMs].
  */
 export async function grantEntitlement(
   key: RevenueCatKey,
   householdId: string,
-  fetch: Fetch,
+  untimed: Fetch,
+  timeoutMs = revenueCatTimeoutMs,
 ): Promise<void> {
+  const timed = within(untimed, timeoutMs);
+  const fetch: Fetch = (url, init) =>
+    timed(url, init).catch(() => {
+      throw new RevenueCatUnavailable(null);
+    });
   const project = `https://api.revenuecat.com/v2/projects/${encodeURIComponent(key.projectId)}`;
   const headers = {
     authorization: `Bearer ${key.secretKey}`,

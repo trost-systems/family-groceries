@@ -111,7 +111,8 @@ class _AppState() extends State<App> {
   StreamSubscription<Uri?>? _widgetLaunches;
 
   /// Sends what analytics has queued when the app goes to the background
-  /// or the tab is hidden: it may not come back.
+  /// or the tab is hidden: it may not come back. Back in front, it reads the
+  /// household's unlock again: a plan may have ended meanwhile.
   late final AppLifecycleListener _lifecycle;
 
   @override
@@ -119,6 +120,7 @@ class _AppState() extends State<App> {
     super.initState();
     _lifecycle = AppLifecycleListener(
       onHide: () => unawaited(widget.analytics.flush()),
+      onResume: () => unawaited(widget.entitlements.refresh()),
     );
     _router.routerDelegate.addListener(_onRoute);
     // The first location may be set before anyone listens (a reload on

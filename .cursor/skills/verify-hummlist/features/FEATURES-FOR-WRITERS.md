@@ -491,6 +491,8 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That Google Assistant or Apple Watch exist (the page says only "later").
 - That there is a free trial.
 
+**When it goes on sale.** Nothing changes for users until Peter's go; the switches and their order are in `docs/PAYWALL_RELEASE.md`. Write launch copy from `docs/PURCHASES.md`, not from this section.
+
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [premium.md](./premium.md).

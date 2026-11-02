@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { RecordError, STORE_LIMITS, parseDraft, parseRecord } from '../../site/releases.mjs';
-import { NoteError, parseNote, parseOverride, sanitize, storeText, storeTexts } from './changelog.mjs';
+import { NoteError, checkGates, gateOf, parseNote, parseOverride, sanitize, storeText, storeTexts } from './changelog.mjs';
 
 const cli = fileURLToPath(new URL('changelog.mjs', import.meta.url));
 const recordCli = fileURLToPath(new URL('record.mjs', import.meta.url));
@@ -595,6 +595,32 @@ describe('gated items, pending.json and the override', () => {
     assert.equal(r.code, 1);
     assert.match(r.stderr, /has the store texts of 1\.4\.0, but there is no .*1\.4\.0\.json; run: node scripts\/release\/changelog\.mjs draft/);
     rmSync(path('1.4.0.override.md'));
+  });
+});
+
+describe('two holds on one item', () => {
+  const gates = (released = {}) => ({
+    flags: {},
+    holds: {
+      'premium-launch': { released: released.premium ?? false, note: 'not on sale yet', match: ['premium'] },
+      'integration-lock': { released: released.lock ?? false, note: 'the lock is off' },
+      'new-design': { released: true, note: '' },
+    },
+  });
+  const lock = { category: 'new', de: 'Siri gehört zu Hummlist Premium.', en: 'Siri is part of Hummlist Premium.', hold: 'integration-lock' };
+
+  test('an item whose own hold is closed may name another held word; a released or missing hold may not', () => {
+    assert.doesNotThrow(() => checkGates([lock], gates()));
+    for (const hold of ['new-design', undefined]) {
+      assert.throws(() => checkGates([{ ...lock, hold }], gates()), /mentions "premium": add the line "hold: premium-launch"/, `hold ${hold}`);
+    }
+  });
+
+  test('it is public only once both holds are released', () => {
+    assert.equal(gateOf(lock, gates()).open, false);
+    assert.equal(gateOf(lock, gates({ lock: true })).open, false, 'premium still held');
+    assert.equal(gateOf(lock, gates({ premium: true })).open, false, 'its own hold still closed');
+    assert.equal(gateOf(lock, gates({ lock: true, premium: true })).open, true);
   });
 });
 

@@ -192,6 +192,10 @@ class Entitlements(
   Future<void> Function()? _unwatch;
   Timer? _nextEnd;
 
+  /// Counts the reads started; only the latest one may emit, so an older
+  /// read that finishes last never overwrites a newer one.
+  var _reads = 0;
+
   /// The clock premium is computed with (a test's fake one).
   DateTime get clock => now();
 
@@ -256,20 +260,31 @@ class Entitlements(
     }
   }
 
-  /// Reads the household's rows again; offline it keeps what it knew.
+  /// Reads the household's rows again; offline it keeps what it knew, and
+  /// emits it again so that listeners compute premium at the new clock (a
+  /// plan may have ended since).
   Future<void> refresh() async {
     final householdId = _householdId;
     if (householdId == null) {
       return;
     }
+    final read = ++_reads;
+    HouseholdUnlocks unlocks;
     try {
-      final unlocks = await _source.unlocks(householdId);
-      if (!isClosed && householdId == _householdId) {
-        emit(EntitlementsKnown(householdId: householdId, unlocks: unlocks));
-        _wakeAtNextEnd(unlocks);
-      }
+      unlocks = await _source.unlocks(householdId);
     } on Object {
       // The next (re)connect reads again.
+      if (state
+          case EntitlementsKnown(householdId: final known, unlocks: final last)
+          when known == householdId) {
+        unlocks = last;
+      } else {
+        return;
+      }
+    }
+    if (!isClosed && read == _reads && householdId == _householdId) {
+      emit(EntitlementsKnown(householdId: householdId, unlocks: unlocks));
+      _wakeAtNextEnd(unlocks);
     }
   }
 
@@ -299,7 +314,8 @@ class Entitlements(
 
 /// The rows this build understands, whether one is a promotional grant, and
 /// how many are Lifetime purchases. A row without `premium_source` (a server
-/// before job 49) is Lifetime.
+/// before job 49) is Lifetime; one with a source this build does not know is
+/// dropped.
 HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
   final premium = [
     for (final row in rows)
@@ -307,8 +323,11 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
   ];
   final parsed = [
     for (final row in premium)
-      ?switch (PremiumSource.parse(row['premium_source']) ??
-          PremiumSource.lifetime) {
+      // A later server's kind (null here) unlocks nothing in this build.
+      ?switch (switch (row['premium_source']) {
+        null => PremiumSource.lifetime,
+        final wire => PremiumSource.parse(wire),
+      }) {
         PremiumSource.yearly => switch (DateTime.tryParse(
           '${row['expires_at']}',
         )) {
@@ -330,7 +349,10 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
             null => null,
           },
         },
-        final source => PremiumRow(source: source),
+        PremiumSource.lifetime => const PremiumRow(
+          source: PremiumSource.lifetime,
+        ),
+        null => null,
       },
   ];
   return HouseholdUnlocks(

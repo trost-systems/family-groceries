@@ -219,9 +219,32 @@ void main() {
         ).buy('home', PremiumPlan.yearly),
         isA<Bought>(),
       );
+      expect(native.calls.last.method, 'purchaseSubscriptionOption');
       expect(
         native.calls.last.arguments,
-        containsPair('productIdentifier', 'com.hummlist.app.yearly:yearly'),
+        containsPair('optionIdentifier', playBasePlanId),
+      );
+    });
+
+    test('on Play the base plan, the price the page shows, never a trial '
+        "RevenueCat's default option would pick", () async {
+      native
+        ..products = {'$yearlyProductId:$playBasePlanId'}
+        ..trialOffer = true;
+      expect(
+        await RevenueCatRepository(
+          AppStore.google,
+          'goog_public',
+        ).buy('home', PremiumPlan.yearly),
+        isA<Bought>(),
+      );
+      expect(native.calls.last.method, 'purchaseSubscriptionOption');
+      expect(
+        native.calls.last.arguments,
+        allOf(
+          containsPair('productIdentifier', yearlyProductId),
+          containsPair('optionIdentifier', playBasePlanId),
+        ),
       );
     });
 
@@ -240,6 +263,16 @@ void main() {
       native.owned = ['$yearlyProductId:$playBasePlanId'];
       expect(await repository().restore('home'), isA<Restored>());
     });
+
+    test(
+      'a lapsed yearly plan restores nothing: no unlock to wait for',
+      () async {
+        native.lapsed = ['$yearlyProductId:$playBasePlanId', yearlyProductId];
+        expect(await repository().restore('home'), isA<NothingToRestore>());
+        native.owned = [yearlyProductId];
+        expect(await repository().restore('home'), isA<Restored>());
+      },
+    );
 
     test(
       'a yearly plan another household has (receipt in use): elsewhere',

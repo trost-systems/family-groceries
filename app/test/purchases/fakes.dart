@@ -10,8 +10,8 @@ import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 
 /// A store that answers what the test set, or holds a purchase in [held]
-/// while [hold] is set. [calls] lists every call, in order: the page and app
-/// start must make none (H-67).
+/// and a restore in [heldRestores] while [hold] is set. [calls] lists every
+/// call, in order: the page and app start must make none (H-67).
 class FakePurchaseRepository({
   @override final NoSale? withoutStore,
   var BuyOutcome bought = const Bought(
@@ -23,6 +23,7 @@ class FakePurchaseRepository({
   final restores = <String>[];
   var hold = false;
   final held = <Completer<BuyOutcome>>[];
+  final heldRestores = <Completer<RestoreOutcome>>[];
 
   /// `buy <household> <plan>` and `restore <household>`, in order.
   List<String> get calls => _calls;
@@ -48,7 +49,12 @@ class FakePurchaseRepository({
   Future<RestoreOutcome> restore(String householdId) async {
     restores.add(householdId);
     _calls.add('restore $householdId');
-    return restored;
+    if (!hold) {
+      return restored;
+    }
+    final answer = Completer<RestoreOutcome>();
+    heldRestores.add(answer);
+    return await answer.future;
   }
 }
 
@@ -81,6 +87,11 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
 
   /// Reads fail (offline) while set.
   var offline = false;
+
+  /// Reads wait in [heldReads] while set, for the test to answer in any
+  /// order.
+  var holdReads = false;
+  final heldReads = <Completer<HouseholdUnlocks>>[];
   final watching = <String>{};
   void Function()? _onChange;
 
@@ -91,6 +102,11 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
   Future<HouseholdUnlocks> unlocks(String householdId) async {
     if (offline) {
       throw Exception('offline');
+    }
+    if (holdReads) {
+      final answer = Completer<HouseholdUnlocks>();
+      heldReads.add(answer);
+      return await answer.future;
     }
     return unlocksOf(
       rowsNow ??
@@ -153,10 +169,16 @@ class FakePremiumServer({
   /// my_yearly_plan fails (offline) while set.
   var mineFails = false;
 
+  /// premium_offer cannot be read (offline) while set.
+  var offerFails = false;
+
   @override
-  Future<bool> offerOpen() async {
+  Future<OfferSwitch> offerSwitch() async {
     calls.add('offer');
-    return offer;
+    if (offerFails) {
+      return OfferSwitch.unreadable;
+    }
+    return offer ? OfferSwitch.on : OfferSwitch.off;
   }
 
   @override

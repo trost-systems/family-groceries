@@ -78,3 +78,17 @@ Deno.test('an id that is no uuid is never put into a URL', async () => {
   assertEquals((await deleteDueCustomers(q.queue, key, rc.fetch)).failed, 1);
   assertEquals(rc.calls, []);
 });
+
+Deno.test('a RevenueCat call that never answers times out: the row stays, the others go on', async () => {
+  const q = fakeQueue([A, B]);
+  const rc = fakeRevenueCat({ [B]: { del: 200, get: 404 } });
+  const fetch: Fetch = (url, init) =>
+    url.endsWith(A) ? new Promise<Response>(() => {}) : rc.fetch(url, init);
+  assertEquals(await deleteDueCustomers(q.queue, key, fetch, 20), {
+    due: 2,
+    deleted: 1,
+    pending: 0,
+    failed: 1,
+  });
+  assertEquals(q.done, [B]);
+});
