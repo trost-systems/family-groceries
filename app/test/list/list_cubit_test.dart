@@ -230,6 +230,68 @@ void main() {
     await settle();
     expect(repo.rows[item.id]!.categoryId, 'chilled');
   });
+  group('an add that is already on the list (job 64b)', () {
+    // The partner's rows land on the server without realtime, as on a
+    // phone whose channel dropped: the answer to the add is all the app
+    // hears.
+    Item? open(String name) => cubit.state.items.values
+        .where((i) => i.name == name && i.status == ItemStatus.active)
+        .firstOrNull;
+
+    test('an undone delete whose item the partner added again shows the '
+        "partner's item, unchanged", () async {
+      final mine = (cubit.addEntry(parseEntry('2 Milch')) as Added).item;
+      await settle();
+      final saved = cubit.state.items[mine.id]!;
+      cubit.delete(mine.id);
+      await settle();
+      final leas = repo.remoteAdd('Milch', quantity: '1 l');
+      cubit.restore(saved);
+      await settle();
+      expect(open('Milch')?.id, leas.id);
+      expect(open('Milch')?.quantity, '1 l');
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.where((i) => i.name == 'Milch'), hasLength(1));
+    });
+
+    test('an offline add replayed after the partner added it is the '
+        "partner's item, and what was done offline goes to it", () async {
+      repo.online = false;
+      final butter = (cubit.addEntry(parseEntry('Butter')) as Added).item;
+      cubit
+        ..edit(butter.id, const ItemChanges(quantity: SetTo('2')))
+        ..tick(butter.id);
+      final cheese = (cubit.addEntry(parseEntry('Käse')) as Added).item;
+      cubit.delete(cheese.id);
+      await settle();
+      final leasButter = repo.remoteAdd('butter');
+      final leasCheese = repo.remoteAdd('Käse');
+
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.keys, unorderedEquals([leasButter.id, leasCheese.id]));
+      expect(repo.rows[leasButter.id]!.status, ItemStatus.bought);
+      expect(repo.rows[leasButter.id]!.quantity, '2');
+      expect(
+        open('Käse')?.id,
+        leasCheese.id,
+        reason: "deleting my offline copy leaves the partner's Käse",
+      );
+    });
+
+    test('a retried add whose answer was lost keeps its own item', () async {
+      repo.loseNextAnswer = true;
+      final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
+      await settle();
+      repo.emitStatus!(ConnectionStatus.online);
+      await elapse(const Duration(seconds: 4));
+      expect(open('Brot')?.id, id);
+      expect(cubit.state.pending, isEmpty);
+    });
+  });
+
   test('adds carry no store; a tick keeps the store an item has', () async {
     final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
     await settle();

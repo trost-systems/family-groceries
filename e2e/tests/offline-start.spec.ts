@@ -105,7 +105,7 @@ test('a write the server answers with an expired token is retried, not dropped',
   await signUpWithHousehold(page, email);
   let refused = 0;
   // The token can lapse between the client's refresh check and the server, e.g. on a phone woken from sleep.
-  await page.route('**/rest/v1/items?**', async (route) => {
+  await page.route('**/rest/v1/rpc/put_item', async (route) => {
     if (route.request().method() !== 'POST' || refused > 0) return route.fallback();
     refused++;
     await route.fulfill({

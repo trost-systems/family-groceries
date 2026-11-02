@@ -349,10 +349,7 @@ class ListCubit(
       createdAt: now,
       updatedAt: now,
     );
-    _enqueue(AddItem(item));
-    if (noStore) {
-      _enqueue(EditItem(item.id, const ItemChanges(storeId: SetTo(null))));
-    }
+    _enqueue(AddItem(item, noStore: noStore));
     _track('item_added', {'source': source.name, ..._actor()});
     return Added(item);
   }
@@ -507,6 +504,7 @@ class ListCubit(
     AddItem(
       item.copyWith(status: ItemStatus.active, boughtAt: () => null),
       restored: true,
+      noStore: item.storeId == null,
     ),
   );
 
@@ -840,10 +838,19 @@ class ListCubit(
           ? ({...server}..remove(key))
           : mergeServerRow(server, value);
     }
+    // Job 64b: the add was on the list already as another item (an undone
+    // delete, a replayed add); what is queued for this copy goes to it.
+    final kept = op is AddItem && row == null
+        ? rows.keys.where((id) => id != op.itemId).firstOrNull
+        : null;
     emit(
       state.copyWith(
         server: server,
-        pending: [...state.pending.where((p) => !identical(p, op))],
+        pending: [
+          for (final p in state.pending)
+            if (!identical(p, op))
+              ?(kept == null ? p : p.ontoKept(op.itemId, kept)),
+        ],
         connection: ConnectionStatus.online,
       ),
     );

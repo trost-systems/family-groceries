@@ -21,23 +21,33 @@ class const HlSectionLabel(
         header: true,
         label: text,
         excludeSemantics: true,
-        child: Row(
-          spacing: HlSpace.s3,
-          children: [
-            Text(
-              // German capitals spell ß as SS (SÜSSES), as CSS does.
-              text.toUpperCase().replaceAll('ß', 'SS'),
-              maxLines: 1,
-              softWrap: false,
-              style: TextStyle(
-                fontSize: _size,
-                fontWeight: FontWeight.w800,
-                letterSpacing: _size * 0.12,
-                color: t.textMuted,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            spacing: HlSpace.s3,
+            children: [
+              // Large text wraps a long title instead of running it past
+              // the row. Not Flexible: that would split the row with the
+              // rule and cut the title at half.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: (constraints.maxWidth - HlSpace.s3).clamp(0, 1e9),
+                ),
+                child: Text(
+                  // German capitals spell ß as SS (SÜSSES), as CSS does.
+                  text.toUpperCase().replaceAll('ß', 'SS'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: _size,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: _size * 0.12,
+                    color: t.textMuted,
+                  ),
+                ),
               ),
-            ),
-            Expanded(child: Container(height: 1, color: t.divider)),
-          ],
+              Expanded(child: Container(height: 1, color: t.divider)),
+            ],
+          ),
         ),
       ),
     );

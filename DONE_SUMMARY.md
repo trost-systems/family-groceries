@@ -492,3 +492,9 @@ German Siri opened Hummlist for every phrase because it writes the name as a Ger
 ## Job 72: Alexa link data cleanup (Legal N-24, N-28) and fact answers, PR pending
 
 Ending an Alexa connection now deletes what the server kept about it at once: the link and the add counter go with the session (Zugänge "trennen", disabling the skill, linking again, signing out everywhere). Disabling the skill also removes "Amazon Alexa" from Zugänge, which it did not before. A daily job deletes counters of a past minute, revoked Alexa grants, and Alexa sessions unused for 12 months with their link and grant. The Alexa skill is no longer part of Premium: the integration lock never covers it, and the app's Premium copy no longer names it (Legal Review N-27). The answers to Legal Review's fact questions 3, 4, 5, 6 and 9 are in docs/NEEDS_LEAD.md "Job 72". Details: [docs/done/72-alexa-data-cleanup.md](docs/done/72-alexa-data-cleanup.md).
+## Job 64b: an add that is already on the list never vanishes; large text fits (2026-11-02)
+
+An undone delete or an offline add whose item another member had put on the list vanished after
+job 64's duplicate skip. `put_item` now answers with the open item and the app folds its copy (and
+its queued tick or edit) into it. At the largest text scales the third „Wieder fällig“ row and the
+rest of the list fit or scroll. Details, tests and screenshots: [docs/done/64b-dup-skip-undo.md](docs/done/64b-dup-skip-undo.md).

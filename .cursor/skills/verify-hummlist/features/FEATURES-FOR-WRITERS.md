@@ -206,14 +206,15 @@ What Hummlist does today, in plain words, with the exact button and screen label
 1. Open the „Liste“ (EN: "List") tab.
 2. Swipe an item to the left, press and hold it, or right-click it on a computer. (A plain tap ticks the item off instead.)
 3. In the sheet „Bearbeiten“ (EN: "Edit") change „Bezeichnung“ (EN: "Name"), „Marke“ (EN: "Brand"), „Menge“ (EN: "Qty") with the buttons „Eins weniger“ / „Eins mehr“ (EN: "One less" / "One more"), or „Eigenschaften“ (EN: "Details"), or pick another store or category with the chips. The store chip also offers „Neuer Laden“ (EN: "New store", the row with a plus) to add a store and pick it. Hummlist remembers the new store or category the next time the item is added.
-4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back.
+4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back. If someone put the same item on the list in the meantime, Undo shows theirs, as they wrote it, instead of a second one.
 
 **Never claim.**
 - That a swipe deletes an item; it opens the edit sheet.
+- That Undo after a delete always brings back your own quantity: when the item is on the list again by then, the one there stays as it is.
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); undo onto an open item: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [edit-item.md](./edit-item.md).
 
 ## Automatic category (the classifier)
 
@@ -295,7 +296,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Working offline
 
-**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so. Changes to categories made offline are not saved: the app says so and puts them back.
+**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so. Changes to categories made offline are not saved: the app says so and puts them back. If someone else added the same item while you were offline, your add becomes theirs when it syncs (no second row), and what you did to it offline, like ticking it off, goes to theirs.
 
 **How to get there.**
 1. Open „Liste“ (EN: "List") and use it as usual with the connection off.
@@ -309,7 +310,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Offline sign-in, and a first start offline before the list was ever synced (not covered by specs or read in detail).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [offline.md](./offline.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); an offline add someone else made meanwhile: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [offline.md](./offline.md).
 
 # Settings, help and account
 

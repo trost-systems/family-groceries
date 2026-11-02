@@ -167,9 +167,11 @@ for (const spec of config.clients) {
   c.page = await context.newPage();
   c.page.on('response', (/** @type {any} */ res) => {
     const req = res.request();
-    // Item writes only: the app also POSTs RPCs (suggest_items) that are no ack of an action.
-    if (req.method() !== 'GET' && new URL(req.url()).pathname === '/rest/v1/items' && req.url().startsWith(supabaseUrl)) {
-      c.writes.push({ at: Date.now(), method: req.method(), path: new URL(req.url()).pathname.replace('/rest/v1/', ''), status: res.status() });
+    // Item writes only (an add is the put_item RPC): the app also POSTs RPCs (suggest_items) that
+    // are no ack of an action.
+    const path = new URL(req.url()).pathname;
+    if (req.method() !== 'GET' && (path === '/rest/v1/items' || path === '/rest/v1/rpc/put_item') && req.url().startsWith(supabaseUrl)) {
+      c.writes.push({ at: Date.now(), method: req.method(), path: path.replace('/rest/v1/', ''), status: res.status() });
     }
   });
   c.page.on('pageerror', (/** @type {Error} */ e) => log(`${c.label}: page error ${e.message}`));

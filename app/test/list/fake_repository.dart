@@ -281,6 +281,10 @@ class FakeRepository() implements ListRepository {
         touched = _merge(op, mergeId, otherId);
       case UnmergeItems(:final mergeId, :final merged):
         touched = _unmerge(op, mergeId, merged.id);
+      case AddItem(:final item) when _openTwin(item) != null:
+        // put_item: the open item the add already is, unchanged.
+        final kept = _openTwin(item)!;
+        touched = {op.itemId: null, kept.id: kept};
       default:
         return {op.itemId: _sendOne(op)};
     }
@@ -338,6 +342,28 @@ class FakeRepository() implements ListRepository {
       rows[otherId] = _stamp(merge.merged);
     }
     return {op.itemId: rows[op.itemId], otherId: rows[otherId]};
+  }
+
+  /// As `items_skip_duplicate`: another open row with the same name, brand
+  /// and details (in any order), for a new open item.
+  Item? _openTwin(Item item) {
+    String key(Item i) => [
+      foldName(i.name),
+      foldName(i.brand ?? ''),
+      ((i.properties ?? '')
+              .split(',')
+              .map(foldName)
+              .where((p) => p.isNotEmpty)
+              .toList()
+            ..sort())
+          .join(','),
+    ].join('|');
+    if (rows.containsKey(item.id) || item.status != ItemStatus.active) {
+      return null;
+    }
+    return rows.values
+        .where((r) => r.status == ItemStatus.active && key(r) == key(item))
+        .firstOrNull;
   }
 
   Item _stamp(Item item) => Item(

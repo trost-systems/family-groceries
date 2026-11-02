@@ -171,3 +171,53 @@ Deno.test({
       assertEquals((await openRows(anna, householdId)).length, 4);
     }),
 });
+
+/** The app's add since job 64b (ItemOp AddItem): put_item answers with the row the add is. */
+const putItem = (
+  tx: postgres.TransactionSql,
+  householdId: string,
+  id: string,
+  name: string,
+  quantity: string | null = null,
+) =>
+  tx<{ id: string; name: string; quantity: string | null }[]>`
+    select id, name, quantity from public.put_item(${id}, ${householdId}, ${name}, ${quantity})`
+    .then((rows) => [...rows]);
+
+Deno.test({
+  name:
+    "an offline add replayed while the partner adds the same item answers with the partner's row",
+  ignore: !enabled,
+  sanitizeResources: false,
+  fn: () =>
+    withCouple(async (anna, ben, householdId) => {
+      const [annas, bens] = await overlapping(
+        (release) =>
+          as(anna, async (tx) => {
+            const rows = await putItem(tx, householdId, crypto.randomUUID(), 'Butter', '250 g');
+            await release;
+            return rows;
+          }),
+        () => as(ben, (tx) => putItem(tx, householdId, crypto.randomUUID(), 'butter', '2')),
+      );
+      assertEquals(annas.length, 1);
+      assertEquals(bens, annas, "Ben's replay waits for Anna's add and answers with her row");
+      assertEquals((await openRows(ben, householdId)).map((r) => r.name), ['Butter']);
+    }),
+});
+
+Deno.test({
+  name: "undoing a delete while the partner's copy is open answers with that copy, unchanged",
+  ignore: !enabled,
+  sanitizeResources: false,
+  fn: () =>
+    withCouple(async (anna, ben, householdId) => {
+      const annasId = crypto.randomUUID();
+      await as(anna, (tx) => putItem(tx, householdId, annasId, 'Käse', '200 g'));
+      await as(anna, (tx) => tx`delete from public.items where id = ${annasId}`);
+      const [bens] = await as(ben, (tx) => putItem(tx, householdId, crypto.randomUUID(), 'Käse'));
+      const undo = await as(anna, (tx) => putItem(tx, householdId, annasId, 'Käse', '200 g'));
+      assertEquals(undo, [bens], 'the undo gets a row back: the open Käse');
+      assertEquals((await openRows(anna, householdId)).length, 1);
+    }),
+});

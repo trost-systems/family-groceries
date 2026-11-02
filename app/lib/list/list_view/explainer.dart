@@ -7,10 +7,34 @@ import 'package:flutter/material.dart';
 /// The temporary card at the top that names the gestures, until dismissed.
 class const ExplainerCard({required final VoidCallback onDismiss, super.key})
     extends StatelessWidget {
+  /// The largest text scale at which the button fits beside the hint on a
+  /// 320 px phone.
+  static const _rowScale = 1.3;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final t = HummlistColors.of(Theme.of(context).brightness);
+    final icon = Icon(Icons.touch_app_outlined, size: 22, color: t.brand);
+    final text = Text(
+      l10n.listHint,
+      style: TextStyle(fontSize: 13, height: 1.35, color: t.text),
+    );
+    final dismiss = TextButton(
+      key: const ValueKey('list-hint-dismiss'),
+      onPressed: onDismiss,
+      style: TextButton.styleFrom(
+        minimumSize: const Size(0, 44),
+        textStyle: const TextStyle(
+          fontFamily: HlFont.sans,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      child: Text(l10n.listHintDismiss),
+    );
+    // Large text would squeeze the hint beside the button to a word per
+    // line, or push the button out of the card.
+    final large = MediaQuery.textScalerOf(context).scale(1) > _rowScale;
     return Padding(
       key: const ValueKey('list-hint'),
       padding: const EdgeInsets.symmetric(
@@ -26,30 +50,29 @@ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
             HlSpace.s2,
             HlSpace.s2,
           ),
-          child: Row(
-            spacing: HlSpace.s3,
-            children: [
-              Icon(Icons.touch_app_outlined, size: 22, color: t.brand),
-              Expanded(
-                child: Text(
-                  l10n.listHint,
-                  style: TextStyle(fontSize: 13, height: 1.35, color: t.text),
+          child: large
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      spacing: HlSpace.s3,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        icon,
+                        Expanded(child: text),
+                      ],
+                    ),
+                    dismiss,
+                  ],
+                )
+              : Row(
+                  spacing: HlSpace.s3,
+                  children: [
+                    icon,
+                    Expanded(child: text),
+                    dismiss,
+                  ],
                 ),
-              ),
-              TextButton(
-                key: const ValueKey('list-hint-dismiss'),
-                onPressed: onDismiss,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  textStyle: const TextStyle(
-                    fontFamily: HlFont.sans,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                child: Text(l10n.listHintDismiss),
-              ),
-            ],
-          ),
         ),
       ),
     );

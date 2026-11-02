@@ -84,10 +84,15 @@ class const HexBorder({
   /// Vertices run clockwise on screen. Each corner becomes a circular arc
   /// tangent to both sides: the tangent points sit radius / tan(angle / 2)
   /// from the vertex, clamped to half the shorter side so neighbouring fillets
-  /// never overlap.
-  static Path _roundedPolygon(List<Offset> v, double radius) {
+  /// never overlap. A hexagon no wider than its two tips has coincident
+  /// vertices (it is a rhombus); they count once.
+  static Path _roundedPolygon(List<Offset> vertices, double radius) {
     final path = Path();
-    if (radius <= 0) {
+    final v = [
+      for (final (i, p) in vertices.indexed)
+        if (p != vertices[(i - 1 + vertices.length) % vertices.length]) p,
+    ];
+    if (radius <= 0 || v.length < 3) {
       return path..addPolygon(v, true);
     }
     final n = v.length;
