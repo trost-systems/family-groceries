@@ -20,7 +20,7 @@ void main() {
     (NeedsHousehold('u'), '/welcome/create', null),
     (NeedsHousehold('u'), '/join', null),
     (NeedsHousehold('u'), '/welcome/invite', '/welcome'),
-    (NeedsHousehold('u'), '/more/invites', '/welcome'),
+    (NeedsHousehold('u'), '/more/invites', '/welcome?next=%2Fmore%2Finvites'),
     (household, '/welcome/create', '/welcome/invite'),
     (household, '/welcome/invite', null),
     (household, '/join', null),
@@ -45,17 +45,22 @@ void main() {
     (household, '/more/access', null),
     (household, '/more/account', null),
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),
-    (SignedOut(), '/more/account', '/login'),
+    (SignedOut(), '/more/account', '/login?next=%2Fmore%2Faccount'),
     (household, '/more/settings', null),
-    // Hummlist Lifetime is for a household: never signed out or before one.
+    // Hummlist Lifetime is for a household: never signed out or before one
+    // (job 66: there after sign-in and onboarding).
     (household, '/more/lifetime', null),
-    (SignedOut(), '/more/lifetime', '/login'),
-    (NeedsHousehold('u'), '/more/lifetime', '/welcome'),
+    (SignedOut(), '/more/lifetime', '/login?next=%2Fmore%2Flifetime'),
+    (NeedsHousehold('u'), '/more/lifetime', '/welcome?next=%2Fmore%2Flifetime'),
     (household, '/more/settings/language', null),
-    (SignedOut(), '/more/settings/language', '/login'),
-    (NeedsHousehold('u'), '/more/access', '/welcome'),
+    (
+      SignedOut(),
+      '/more/settings/language',
+      '/login?next=%2Fmore%2Fsettings%2Flanguage',
+    ),
+    (NeedsHousehold('u'), '/more/access', '/welcome?next=%2Fmore%2Faccess'),
     (household, '/more/nothing-here', '/'),
-    (SignedOut(), '/more', '/login'),
+    (SignedOut(), '/more', '/login?next=%2Fmore'),
     (SignedOut(), '/settings', '/login'),
     (SignedOut(), consent, '/login?$next'),
     (SignedOut(), '/login?$next', null),
@@ -225,4 +230,171 @@ void main() {
       expect(authRedirect(session, Uri.parse(from)), to);
     });
   }
+
+  // Job 66: the app links (deep_links.dart). Signed in they open their
+  // screen; `/list`, `/add` and `/stores/<id>` are the list (which then
+  // opens the sheet or shows the store, list_link.dart).
+  const links = <(Session, String, String?)>[
+    (household, '/list', '/'),
+    (household, '/add', '/'),
+    (household, '/stores/s1', '/'),
+    (household, '/more', null),
+    (household, '/more/invites', null),
+    (household, '/more/settings', null),
+    (household, '/join/ABCD2345', null),
+    (household, '/nope', '/'),
+    (SignedOut(), '/nope', '/login'),
+    // A More page that isn't one: no `next` to nowhere.
+    (SignedOut(), '/more/nothing-here', '/login'),
+    (household, '/login?next=%2Fmore%2Fnothing-here', '/'),
+    (household, 'https://app.hummlist.com/add', '/'),
+    // Signed out, sign-in continues there.
+    (SignedOut(), '/more/invites', '/login?next=%2Fmore%2Finvites'),
+    (SignedOut(), '/more/settings', '/login?next=%2Fmore%2Fsettings'),
+    (SignedOut(), '/add', '/login?next=%2Fadd'),
+    (SignedOut(), '/stores/s1', '/login?next=%2Fstores%2Fs1'),
+    (SignedOut(), '/list', '/login?next=%2Flist'),
+    (SignedOut(), 'https://app.hummlist.com/add', '/login?next=%2Fadd'),
+    (
+      SignedOut(),
+      '/more/lifetime?from=x',
+      '/login?next=%2Fmore%2Flifetime%3Ffrom%3Dx',
+    ),
+    (SignedOut(), '/login?next=%2Fadd', null),
+    (household, '/login?next=%2Fadd', '/add'),
+    (household, '/login?next=%2Fmore%2Finvites', '/more/invites'),
+    (
+      household,
+      '/login?next=%2Fmore%2Flifetime%3Ffrom%3Dx',
+      '/more/lifetime?from=x',
+    ),
+    // Without a household: through onboarding, then there.
+    (NeedsHousehold('u'), '/login?next=%2Fadd', '/welcome?next=%2Fadd'),
+    (NeedsHousehold('u'), '/add', '/welcome?next=%2Fadd'),
+    (NeedsHousehold('u'), '/welcome?next=%2Fadd', null),
+    (NeedsHousehold('u'), '/welcome/create?next=%2Fadd', null),
+    (household, '/welcome/create?next=%2Fadd', '/add'),
+    (household, '/welcome?next=%2Fmore%2Finvites', '/more/invites'),
+    // An invite link keeps to its own way, `next` never carries one.
+    (SignedOut(), '/login?next=%2Fjoin%2FABCD2345', '/login'),
+    (household, '/login?next=%2Fjoin%2FABCD2345', '/'),
+    // No open redirect: only a same-origin app link.
+    (SignedOut(), '/login?next=https%3A%2F%2Fevil.example', '/login'),
+    (SignedOut(), '/login?next=%2F%2Fevil.example%2Fmore', '/login'),
+    (SignedOut(), '/login?next=%2Fnope', '/login'),
+    (household, '/login?next=https%3A%2F%2Fevil.example', '/'),
+    (household, '/login?next=%2F%2Fevil.example%2Fmore', '/'),
+    (household, '/login?next=%2Fnope', '/'),
+    (
+      NeedsHousehold('u'),
+      '/welcome?next=%2F%2Fevil.example%2Fmore',
+      '/welcome',
+    ),
+  ];
+  for (final (session, from, to) in links) {
+    test('link: ${session.runtimeType} at $from goes to ${to ?? 'stays'}', () {
+      expect(authRedirect(session, Uri.parse(from)), to);
+    });
+  }
+
+  test('a link next is asked for consent first, and carried', () {
+    expect(
+      authRedirect(
+        household,
+        Uri.parse('/login?next=%2Fadd'),
+        askConsent: true,
+      ),
+      '/analytics-consent?next=%2Fadd',
+    );
+    expect(
+      authRedirect(
+        const NeedsHousehold('u'),
+        Uri.parse('/more/invites'),
+        askConsent: true,
+      ),
+      '/analytics-consent?next=%2Fmore%2Finvites',
+    );
+    expect(
+      authRedirect(household, Uri.parse('/analytics-consent?next=%2Fadd')),
+      '/add',
+    );
+    expect(
+      authRedirect(
+        const NeedsHousehold('u'),
+        Uri.parse('/analytics-consent?next=%2Fadd'),
+      ),
+      '/welcome?next=%2Fadd',
+    );
+  });
+
+  test('a sign-out carries no link to the next sign-in', () {
+    expect(
+      authRedirect(
+        const SignedOut(),
+        Uri.parse('/more/account'),
+        justSignedOut: true,
+      ),
+      '/login',
+    );
+  });
+
+  // The redirect's memory (buildRouter): a sign-in that leaves the app
+  // comes back at `/` and the link leads on from memory; a sign-out
+  // forgets it.
+  group('RedirectMemory', () {
+    test('a link survives the sign-in callback at /, once', () {
+      final memory = RedirectMemory();
+      final callback = Uri.parse('com.hummlist.app://login-callback?code=a');
+      expect(
+        memory.redirect(const SignedOut(), Uri.parse('/add')),
+        '/login?next=%2Fadd',
+      );
+      expect(
+        memory.redirect(const SignedOut(), callback),
+        '/login?next=%2Fadd',
+      );
+      expect(memory.redirect(household, callback), '/add');
+      expect(memory.redirect(household, Uri.parse('/')), isNull);
+    });
+
+    test('without a household it rides along onboarding', () {
+      final memory = RedirectMemory();
+      expect(
+        memory.redirect(const SignedOut(), Uri.parse('/more/invites')),
+        '/login?next=%2Fmore%2Finvites',
+      );
+      expect(
+        memory.redirect(const NeedsHousehold('u'), Uri.parse('/')),
+        '/welcome?next=%2Fmore%2Finvites',
+      );
+    });
+
+    test('a sign-out at a link forgets it and carries none', () {
+      final memory = RedirectMemory();
+      expect(memory.redirect(household, Uri.parse('/more/account')), isNull);
+      expect(
+        memory.redirect(const SignedOut(), Uri.parse('/more/account')),
+        '/login',
+      );
+      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
+    });
+
+    test('signed out, a link opened later still continues', () {
+      final memory = RedirectMemory()
+        ..redirect(household, Uri.parse('/'))
+        ..redirect(const SignedOut(), Uri.parse('/'));
+      expect(
+        memory.redirect(const SignedOut(), Uri.parse('/stores/s1')),
+        '/login?next=%2Fstores%2Fs1',
+      );
+    });
+
+    test('a sign-out before the link was used drops it', () {
+      final memory = RedirectMemory()
+        ..redirect(const SignedOut(), Uri.parse('/add'))
+        ..redirect(const NeedsHousehold('u'), Uri.parse('/'));
+      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
+      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
+    });
+  });
 }

@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/consent_screen.dart';
+import 'package:family_groceries/app/deep_links.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/household/create_household_screen.dart';
 import 'package:family_groceries/household/invite_partner_screen.dart';
 import 'package:family_groceries/household/join_screen.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
+import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
@@ -18,6 +20,11 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 const listPath = '/';
+
+/// App links to the list (job 66): the list itself, with the add sheet
+/// open, or at a store (`/stores/<id>`, [listLinkOf]).
+const listLinkPath = '/list';
+const addPath = '/add';
 const loginPath = '/login';
 
 /// Onboarding (job 22): Step 1 chooses, Step 2a creates, Step 3 invites
@@ -140,8 +147,11 @@ const _beforeHousehold = {welcomePath, createHouseholdPath, joinCodePath};
 /// The only auth gate. An invite code from a `/join/<code>` link survives
 /// sign-in, the analytics consent and onboarding as the `invite` query
 /// parameter and as [pendingInvite] (kept on the device, for when the
-/// location loses it: the mobile apps' sign-in callback, an app kill), an
-/// OAuth consent URL as the `next` query parameter.
+/// location loses it: the mobile apps' sign-in callback, an app kill). The
+/// `next` query parameter carries an OAuth consent URL or an app link's
+/// location (job 66, [appLinks]), [pendingNext] the link when the location
+/// lost it. [justSignedOut]: the user signed out here, which carries no
+/// link to the next sign-in.
 ///
 /// [askConsent]: this install has not decided on analytics yet. Signed in,
 /// it goes to the analytics consent first, before onboarding and before the
@@ -157,11 +167,23 @@ String? authRedirect(
   Uri uri, {
   bool askConsent = false,
   String? pendingInvite,
+  String? pendingNext,
+  bool justSignedOut = false,
 }) {
   final invite = inviteIn(uri) ?? pendingInvite;
-  final next = uri.path == consentPath
+  final consent = uri.path == consentPath
       ? uri.toString()
-      : _consentOnly(uri.queryParameters['next']);
+      : _vetted(
+          uri.queryParameters['next'],
+          (next) => next.path == consentPath,
+        );
+  // Signed in, a link location is the screen itself, never a `next`.
+  final link = justSignedOut || invite != null
+      ? null
+      : _vetted(uri.queryParameters['next'], _continues) ??
+            (session is InHousehold ? null : _linkHere(uri)) ??
+            pendingNext;
+  final next = consent ?? link;
   String carry(String path) => next != null
       ? Uri(path: path, queryParameters: {'next': next}).toString()
       : invite != null && inviteIn(Uri(path: path)) == null
@@ -170,11 +192,11 @@ String? authRedirect(
   final target = switch (session) {
     SessionLoading() => null,
     SignedOut() => carry(loginPath),
-    NeedsHousehold() || InHousehold() when askConsent && next == null => carry(
-      analyticsConsentPath,
-    ),
+    NeedsHousehold() || InHousehold() when askConsent && consent == null =>
+      carry(analyticsConsentPath),
     NeedsHousehold() when invite != null => carry(joinPath(invite)),
-    // An MCP authorization (`next`) rides along onboarding's steps.
+    // An MCP authorization or a link (`next`) rides along onboarding's
+    // steps.
     NeedsHousehold() when _beforeHousehold.contains(uri.path) => carry(
       uri.path,
     ),
@@ -198,16 +220,71 @@ String? authRedirect(
 String legacySettingsRedirect(Uri uri) =>
     uri.queryParameters['section'] == 'account' ? accountPath : accessPath;
 
-/// A same-origin consent URL, or null: `next` must not become an open
-/// redirect.
-String? _consentOnly(String? next) {
+/// [next] if it is a same-origin location that [allowed] takes, or null:
+/// `next` must not become an open redirect.
+String? _vetted(String? next, bool Function(Uri next) allowed) {
   final uri = next == null ? null : Uri.tryParse(next);
-  return uri != null &&
-          !uri.hasScheme &&
-          !uri.hasAuthority &&
-          uri.path == consentPath
+  return uri != null && !uri.hasScheme && !uri.hasAuthority && allowed(uri)
       ? next
       : null;
+}
+
+/// An app link sign-in continues to, if it leads to a screen: an invite
+/// link goes by its code.
+bool _continues(Uri location) =>
+    isAppLink(location) &&
+    (location.path == listLinkPath ||
+        listLinkOf(location) != null ||
+        inMoreTab(location));
+
+/// [uri] itself as a `next`, without the platform's scheme and host, if it
+/// is a link sign-in continues to.
+String? _linkHere(Uri uri) {
+  final here = Uri(path: uri.path, query: uri.hasQuery ? uri.query : null);
+  return _continues(here) ? here.toString() : null;
+}
+
+/// What the redirect keeps between its runs: the session it saw last, to
+/// tell a sign-out, and a link's location while signed out. In memory
+/// only: a sign-in that leaves the app (a magic link, Apple on Android)
+/// comes back to the same process at `/`.
+class RedirectMemory() {
+  Session? _last;
+  String? _next;
+
+  /// [authRedirect] with what this remembers.
+  String? redirect(
+    Session session,
+    Uri uri, {
+    bool askConsent = false,
+    String? pendingInvite,
+  }) {
+    final justSignedOut =
+        session is SignedOut &&
+        (_last is NeedsHousehold || _last is InHousehold);
+    _last = session;
+    if (justSignedOut) {
+      _next = null;
+    } else if (session is SignedOut) {
+      _next =
+          _vetted(uri.queryParameters['next'], _continues) ??
+          _linkHere(uri) ??
+          _next;
+    }
+    final target = authRedirect(
+      session,
+      uri,
+      askConsent: askConsent,
+      pendingInvite: pendingInvite,
+      pendingNext: _next,
+      justSignedOut: justSignedOut,
+    );
+    // Signed in, the link is in the location now (or was the location).
+    if (session is InHousehold) {
+      _next = null;
+    }
+    return target;
+  }
 }
 
 /// The More tab's routes: the list at `/more` with its pages below it, so
@@ -252,70 +329,90 @@ GoRouter buildRouter(
   SessionCubit session,
   Analytics analytics,
   PendingInvite pendingInvite,
-) => GoRouter(
-  refreshListenable: Listenable.merge([
-    _StreamListenable(session.stream),
-    _StreamListenable(analytics.stream),
-  ]),
-  redirect: (context, state) {
-    // A link's code is kept the moment it arrives, before sign-in.
-    if (inviteIn(state.uri) case final code?) {
-      pendingInvite.remember(code);
-    }
-    return authRedirect(
-      session.state,
-      state.uri,
-      askConsent: analytics.asksConsent,
-      pendingInvite: pendingInvite.code,
-    );
-  },
-  routes: [
-    StatefulShellRoute.indexedStack(
-      builder: (_, _, shell) => AppShell(shell: shell),
-      branches: [
-        StatefulShellBranch(
-          routes: [
-            GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
-          ],
-        ),
-        StatefulShellBranch(routes: moreTabRoutes()),
-      ],
-    ),
-    GoRoute(
-      path: loginPath,
-      builder: (_, state) => LoginScreen(
-        invite: state.uri.queryParameters['invite'],
-        next: state.uri.queryParameters['next'],
+  ListLinks listLinks,
+) {
+  final memory = RedirectMemory();
+  return GoRouter(
+    refreshListenable: Listenable.merge([
+      _StreamListenable(session.stream),
+      _StreamListenable(analytics.stream),
+    ]),
+    redirect: (context, state) {
+      // A link's code is kept the moment it arrives, before sign-in.
+      if (inviteIn(state.uri) case final code?) {
+        pendingInvite.remember(code);
+      }
+      final target = memory.redirect(
+        session.state,
+        state.uri,
+        askConsent: analytics.asksConsent,
+        pendingInvite: pendingInvite.code,
+      );
+      // Only once in the household: a sign-in or consent on the way would
+      // fire it early.
+      if (session.state is InHousehold && target == listPath) {
+        if (listLinkOf(state.uri) case final link?) {
+          listLinks.pending = link;
+        }
+      }
+      return target;
+    },
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (_, _, shell) => AppShell(shell: shell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: listPath, builder: (_, _) => const ListScreen()),
+            ],
+          ),
+          StatefulShellBranch(routes: moreTabRoutes()),
+        ],
       ),
-    ),
-    GoRoute(
-      path: analyticsConsentPath,
-      builder: (_, _) => const AnalyticsConsentScreen(),
-    ),
-    GoRoute(
-      path: welcomePath,
-      builder: (_, _) => const WelcomeScreen(),
-      routes: [
-        GoRoute(
-          path: 'create',
-          builder: (_, _) => const CreateHouseholdScreen(),
+      GoRoute(
+        path: loginPath,
+        builder: (_, state) => LoginScreen(
+          invite: state.uri.queryParameters['invite'],
+          next: state.uri.queryParameters['next'],
         ),
-        GoRoute(path: 'invite', builder: (_, _) => const InvitePartnerScreen()),
-      ],
-    ),
-    GoRoute(
-      path: consentPath,
-      builder: (_, state) => ConsentScreen(
-        authorizationId: state.uri.queryParameters['authorization_id'],
       ),
-    ),
-    GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
-    GoRoute(
-      path: '/join/:code',
-      builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
-    ),
-  ],
-);
+      GoRoute(
+        path: analyticsConsentPath,
+        builder: (_, _) => const AnalyticsConsentScreen(),
+      ),
+      GoRoute(
+        path: welcomePath,
+        builder: (_, _) => const WelcomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'create',
+            builder: (_, _) => const CreateHouseholdScreen(),
+          ),
+          GoRoute(
+            path: 'invite',
+            builder: (_, _) => const InvitePartnerScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: consentPath,
+        builder: (_, state) => ConsentScreen(
+          authorizationId: state.uri.queryParameters['authorization_id'],
+        ),
+      ),
+      // Only ever a step: the redirect goes on to the list, which then opens
+      // the sheet or the store. Routes, so that a redirect to one (a sign-in's
+      // `next`) is redirected again; the App shows a spinner while loading.
+      for (final path in const [listLinkPath, addPath, '/stores/:id'])
+        GoRoute(path: path, builder: (_, _) => const SizedBox.shrink()),
+      GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
+      GoRoute(
+        path: '/join/:code',
+        builder: (_, state) => JoinScreen(link: state.pathParameters['code']),
+      ),
+    ],
+  );
+}
 
 class _StreamListenable(Stream<Object?> stream) extends ChangeNotifier {
   this {

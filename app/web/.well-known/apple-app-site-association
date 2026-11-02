@@ -3,7 +3,14 @@
     "details": [
       {
         "appIDs": ["VCZSHMZY25.com.hummlist.app"],
-        "components": [{ "/": "/join/*", "comment": "Invite links open the app's join screen." }]
+        "components": [
+          { "/": "/list", "comment": "The list." },
+          { "/": "/add", "comment": "The list with the add sheet open." },
+          { "/": "/stores/*", "comment": "The list at one store's section." },
+          { "/": "/more", "comment": "The More tab." },
+          { "/": "/more/*", "comment": "A page of the More tab, e.g. /more/invites." },
+          { "/": "/join/*", "comment": "Invite links open the app's join screen." }
+        ]
       }
     ]
   }

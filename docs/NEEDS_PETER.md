@@ -1154,3 +1154,32 @@ Then the device test, on an iPhone (TestFlight build) and an Android phone:
 - [ ] German and English phone language; light and dark mode.
 - [ ] If all is well, set `home-widgets` to `"released": true` in
   `releases/flags.json` and remove `draft: true` from both widget guides.
+
+## Job 66: deep links (app.hummlist.com opens the app)
+
+Nothing to set up: Associated Domains is on for `com.hummlist.app` (L6, again confirmed by Ops on
+2026-11-02 for job 63) and Google already verifies app.hummlist.com for the Play signing key. The
+new paths open the iPhone app once app.hummlist.com serves the new
+`/.well-known/apple-app-site-association`, that is with the next *dispatched* Release run (the
+web follows the store release), and Apple's CDN has fetched it (up to a day). Android needs only
+the new build. Route table: `docs/DEEP_LINKS.md`.
+
+1. **Device check, iPhone and Android** (no simulator or emulator on the build machines), with
+   the TestFlight / Play internal build of this release installed. Send yourself these links in
+   a message (Notes or Mail work too; typing them into Safari does not trigger the app):
+   `https://app.hummlist.com/more/invites`, `https://app.hummlist.com/add`,
+   `https://app.hummlist.com/more/settings`, `https://app.hummlist.com/list`,
+   `https://app.hummlist.com/irgendwas` and `https://app.hummlist.com/stores/<id>` (the id of one
+   of your stores: `select id, name from stores` in the SQL editor, or ask the lead).
+   1. Signed in: each link opens the Hummlist app (not the browser). `/more/invites` shows
+      „Einladungen“, `/add` the list with the add field open, `/more/settings` „Einstellungen“,
+      `/list` and `/irgendwas` the list, `/stores/<id>` the list at that store.
+   2. Signed out (Mehr → Konto → „Abmelden“): tap `/more/invites`. The app opens on „Anmelden“;
+      sign in with Apple or Google: „Einladungen“ opens.
+   3. If the browser opens instead: long-press the link, choose „In Hummlist öffnen“, and tell the
+      lead which link and phone (the domain file is not live yet, or Apple has not fetched it).
+   4. Invite links (`/join/<code>`) and sign-in by email link still work as before (job 22 list).
+
+   Not checked on a device yet: the Associated Domains entitlement (`applinks:app.hummlist.com`
+   in `Runner.entitlements`) and the Android filter were checked by reading the files and by
+   `deep_links_config_test.dart`; the routing itself by the web build (`e2e/tests/deep-links.spec.ts`).

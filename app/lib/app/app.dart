@@ -16,6 +16,7 @@ import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -81,10 +82,12 @@ class const App({
 }
 
 class _AppState() extends State<App> {
+  final _listLinks = ListLinks();
   late final GoRouter _router = buildRouter(
     widget.session,
     widget.analytics,
     widget.pendingInvite,
+    _listLinks,
   );
   late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
@@ -148,6 +151,7 @@ class _AppState() extends State<App> {
     unawaited(_widgetLaunches?.cancel());
     _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
+    _listLinks.dispose();
     unawaited(_language.close());
     unawaited(_feedback.close());
     unawaited(_theme.close());
@@ -165,6 +169,7 @@ class _AppState() extends State<App> {
       RepositoryProvider.value(value: _device),
       RepositoryProvider.value(value: widget.invites),
       RepositoryProvider.value(value: widget.pendingInvite),
+      RepositoryProvider.value(value: _listLinks),
       RepositoryProvider.value(value: _sharer),
       RepositoryProvider.value(value: widget.premium),
       RepositoryProvider.value(value: widget.storePrices),

@@ -13,6 +13,7 @@ import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/dictation.dart';
 import 'package:family_groceries/list/dictation_button.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
@@ -81,6 +82,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   RejectionNotices? _notices;
   SheetOpenNotifier? _sheetOpen;
   AddSheetRequest? _addSheetRequest;
+  ListLinks? _links;
   StreamSubscription<DedupeHint>? _hints;
 
   /// The duplicate hint on screen, until it closes.
@@ -111,6 +113,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
       ?..listTab = _openRequested;
     // A widget's Add that started the app came before this tab.
     WidgetsBinding.instance.addPostFrameCallback((_) => _openRequested());
+    _links = context.read<ListLinks?>()?..changes.addListener(_linked);
+    // A cold start's `/add` came before this list was built.
+    _linked();
   }
 
   /// A Home Screen widget's Add: the sheet opens, ready for typing.
@@ -119,6 +124,20 @@ class _ShoppingListState() extends State<_ShoppingList> {
       context.read<AddSheetCubit>().show();
       _inputFocus.requestFocus();
     }
+  }
+
+  /// An `/add` link opens the sheet with the field focused. After the
+  /// frame: the router asks during its own work, the tab may still be
+  /// switching to the list.
+  void _linked() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _links?.take<AddLink>() != null) {
+        _openOnFocus = false;
+        context.read<AddSheetCubit>().show();
+        _inputFocus.requestFocus();
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _focusChanged() {
@@ -147,6 +166,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
 
   @override
   void dispose() {
+    _links?.changes.removeListener(_linked);
     _sheetOpen?.removeListener(_followShell);
     if (_addSheetRequest?.listTab == _openRequested) {
       _addSheetRequest?.listTab = null;

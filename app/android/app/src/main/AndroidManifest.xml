@@ -37,13 +37,20 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="com.hummlist.app" android:host="login-callback"/>
             </intent-filter>
-            <!-- Invite links (job 22): https://app.hummlist.com/join/<code> opens the
-                 app's join screen; app/web/.well-known/assetlinks.json verifies it. -->
+            <!-- App Links (docs/DEEP_LINKS.md): these app.hummlist.com paths open the app,
+                 lib/app/deep_links.dart's table; app/web/.well-known/assetlinks.json
+                 verifies the domain. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https" android:host="app.hummlist.com" android:pathPrefix="/join/"/>
+                <data android:scheme="https" android:host="app.hummlist.com"/>
+                <data android:path="/list"/>
+                <data android:path="/add"/>
+                <data android:pathPrefix="/stores/"/>
+                <data android:path="/more"/>
+                <data android:pathPrefix="/more/"/>
+                <data android:pathPrefix="/join/"/>
             </intent-filter>
         </activity>
         <!-- The Home Screen widget (job 63, docs/HOME_WIDGETS.md). -->

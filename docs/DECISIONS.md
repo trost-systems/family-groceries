@@ -6218,3 +6218,51 @@ Peter asked for Home Screen widgets with Anton Borri's `home_widget` package
   the site has no hold mechanism, only `since:` and drafts, and a version
   would publish them with the next release whether or not the device test
   passed.
+
+## Job 66: deep links (app.hummlist.com opens the app), 2026-11-02
+
+Peter (Notion comment, 2026-11-01): app.hummlist.com links, e.g. the E2 onboarding email's
+`/more/invites`, should open the matching screen of the installed app and the web app otherwise.
+Route table and how to add a link: `docs/DEEP_LINKS.md`.
+
+1. **An explicit list of paths, not `/*`.** `appLinks` in `app/lib/app/deep_links.dart` claims
+   `/list`, `/add`, `/stores/*`, `/more`, `/more/*` and `/join/*`; the AASA `components` and the
+   Android filter's `<data android:path|pathPrefix>` are checked against it
+   (`deep_links_config_test.dart`, which fails when one drifts). `/` is not claimed: web sign-in
+   (Google, Apple, magic link) returns there with a PKCE code that only the browser that started
+   it can redeem, and on a phone with the app installed a claimed root could hand that return to
+   the app. For the same reason the sign-in, onboarding, analytics-consent and MCP consent pages
+   stay unclaimed, and the legacy `/settings` (Zugänge) too. `/list` is the list's link instead.
+2. **One `next` parameter for every continuation.** It carried only the MCP consent URL; now it
+   also carries an app link's location, vetted (relative, no scheme or authority, a path the
+   router shows signed in: `/list`, `/add`, `/stores/<id>`, the More tab; anything else is
+   dropped, so it is no open redirect). Signed out, a link goes to `/login?next=<location>`; an
+   account without a household carries it through onboarding (`_keepNext`) and lands on it
+   instead of Step 3. The analytics question is skipped only for an MCP consent `next`, as
+   before; a link waits until it is answered. Invites keep their own `invite` mechanism.
+3. **A link-continuing web sign-in returns to `/?next=<link>`,** not to the link, so the browser
+   (unclaimed root) and not the app receives the code.
+4. **A sign-out carries nothing.** `RedirectMemory` in `router.dart` remembers the last session;
+   a change from signed in to signed out sends plain `/login`, so the next person to sign in on
+   that device does not land on the previous user's Konto page.
+5. **The pending link lives in memory only.** A sign-in that leaves the app (magic link, Apple on
+   Android) comes back through `com.hummlist.app://login-callback`, which go_router sees as `/`;
+   `RedirectMemory` keeps the link for that and clears it once signed in. Unlike invites
+   (`PendingInvite`, 7 days on the device) a lost link costs a tap, not a join, so after an app
+   kill the app opens the list.
+6. **`/add` and `/stores/<id>` are requests to the list, not pages.** The redirect sends both to
+   `/` and, once the session is in a household, puts a `ListLink` (`AddLink`, `StoreLink`) into
+   `ListLinks` (`app/lib/list/list_link.dart`), which the list takes once: the add sheet opens
+   with the field focused, or the store's section unfolds and its divider scrolls to the top
+   (lazy rows: the list jumps toward the estimated offset and looks again, at most six frames).
+   An unknown id, another household's store or a store without open items leaves the list as is.
+   The URL never stays on them, so back and reload behave as on the list.
+7. **One verified Android filter** with all paths, so `autoVerify` covers them together and the
+   manifest lists them where the test reads them. The sign-in callback keeps its own filter.
+   Flutter's deep linking stays at its default (on) on both platforms; no Info.plist change.
+8. **Home Screen widgets (job 63, #185, landed while this job ran).** Its
+   `hummlist-widget://open|add` and its own `AddSheetRequest` are left alone, next to `ListLinks`
+   in the list screen. The widget's Add could become `router.go('/add')` and its request could go;
+   that touches job 63's files, so it is a follow-up, not part of this job.
+9. **Changelog category.** The brief asked for one `added` item; the changelog gate knows `new`,
+   `improved` and `fixed`, so the item is `new`.

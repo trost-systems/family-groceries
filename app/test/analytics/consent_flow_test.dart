@@ -8,6 +8,7 @@ import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,7 +51,12 @@ void main() {
     analytics.setUser(const AnalyticsUser(email: 'neu@gmail.com'));
     final session = FakeSession();
     whenListen(session, const Stream<Session>.empty(), initialState: state);
-    final router = buildRouter(session, analytics, PendingInvite(cache));
+    final router = buildRouter(
+      session,
+      analytics,
+      PendingInvite(cache),
+      ListLinks(),
+    );
     addTearDown(router.dispose);
     addTearDown(analytics.close);
     await tester.pumpWidget(

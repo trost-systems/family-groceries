@@ -53,6 +53,7 @@ Getting started
 - [privacy-consent](./privacy-consent.md): the analytics question after the first sign-in on a device, its exact text, and changing it later under Mehr → Nutzungsdaten.
 - [onboarding](./onboarding.md): „Willkommen bei Hummlist“, creating a household with or without the default stores, joining with a code, the invite step.
 - [household-invites](./household-invites.md): inviting a partner by code or link (7 days, single use), joining, revoking, switching households.
+- [app-links](./app-links.md): app.hummlist.com links to the list, the add sheet, a store, More's pages and invites; they open the installed app or the web app and wait through sign-in.
 
 The list
 
