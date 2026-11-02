@@ -93,6 +93,15 @@ interface Due {
   internal: boolean;
 }
 
+/**
+ * A lifecycle event for a transaction not recorded yet is answered 503 for this long after it
+ * happened: its INITIAL_PURCHASE may still be on its way, and RevenueCat delivers it again later.
+ */
+export const lifecycleWaitMs = 2 * 3_600_000;
+
+/** Thrown inside the event's transaction, so its id rolls back with it. */
+class NotRecordedYet extends Error {}
+
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** The routes, as the function sees its path (without the gateway's /functions/v1). */
@@ -113,6 +122,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
   const badRequest = () => json({ error: 'bad_request' }, { status: 400 });
   // RevenueCat's API failed: nothing was stored, the event id rolled back, RevenueCat retries.
   const unavailable = () => json({ error: 'revenuecat_unavailable' }, { status: 502 });
+  const notRecordedYet = () => json({ error: 'not_recorded_yet' }, { status: 503 });
 
   async function send(due: Due | null) {
     if (!due) return;
@@ -146,6 +156,10 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
       if (err instanceof RevenueCatUnavailable) {
         log({ event: e.type, promotional: 'revenuecat_unavailable' });
         return unavailable();
+      }
+      if (err instanceof NotRecordedYet) {
+        log({ event: e.type, lifecycle: 'not_recorded_yet' });
+        return notRecordedYet();
       }
       throw err;
     }
@@ -181,6 +195,12 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
           }
           case 'lifecycle': {
             const outcome = await ledger.lifecycle(action.change);
+            if (
+              outcome === 'unknown' &&
+              deps.now().getTime() - action.change.eventAt.getTime() < lifecycleWaitMs
+            ) {
+              throw new NotRecordedYet();
+            }
             if (outcome !== 'updated') log({ event: e.type, lifecycle: outcome });
             return { status: outcome, due: null };
           }

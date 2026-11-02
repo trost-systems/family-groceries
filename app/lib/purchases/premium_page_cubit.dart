@@ -15,10 +15,11 @@ sealed class const Offer();
 final class const OfferLoading() extends Offer;
 
 /// Nothing is sold here: this build sells nothing, or the server switch
-/// `premium_offer` is off or could not be read.
+/// `premium_offer` is off.
 final class const OfferClosed() extends Offer;
 
-/// The store did not answer: no purchase without a price (A2-5).
+/// The store did not answer: no purchase without a price (A2-5). Or the
+/// server switch could not be read (offline).
 final class const OfferUnavailable() extends Offer;
 
 /// The store's own prices, exactly as it formats them for the store
@@ -72,9 +73,19 @@ class PremiumPageCubit(
 
   Future<void> _open() async {
     unawaited(_readMine());
-    if (!sells || !await _server.offerOpen()) {
+    if (!sells) {
       _emitOffer(const OfferClosed());
       return;
+    }
+    switch (await _server.offerSwitch()) {
+      case OfferSwitch.off:
+        _emitOffer(const OfferClosed());
+        return;
+      case OfferSwitch.unreadable:
+        _emitOffer(const OfferUnavailable());
+        return;
+      case OfferSwitch.on:
+        break;
     }
     final offer = switch (await _prices.read()) {
       PricesRead(:final prices) when prices.isNotEmpty => OfferPrices(prices),

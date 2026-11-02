@@ -26,8 +26,8 @@ final class const FlowAwaitingApproval() extends PurchaseFlow;
 final class const FlowUnlocking() extends PurchaseFlow;
 
 /// The unlock takes longer than [unlockWait] (RevenueCat's webhook is late
-/// or retrying). Buy stays off for this visit: the purchase is done and
-/// another one would be paid twice.
+/// or retrying). Buy stays off for the rest of this app run, until the
+/// unlock arrives: the purchase is done and another one would be paid twice.
 final class const FlowUnlockDelayed() extends PurchaseFlow;
 
 final class const FlowCanceled() extends PurchaseFlow;
@@ -129,7 +129,9 @@ class PurchaseCubit(
   }
 
   void _onEntitlements() {
-    if ((state.flow is FlowUnlocking || state.flow is FlowUnlockDelayed) &&
+    if ((state.flow is FlowUnlocking ||
+            state.flow is FlowUnlockDelayed ||
+            state.flow is FlowAwaitingApproval) &&
         _arrived) {
       _unlockTimeout?.cancel();
       _emit(flow: const FlowIdle());
@@ -150,6 +152,13 @@ class PurchaseCubit(
     _emit(flow: const FlowBuying());
     final outcome = await _store.buy(household, plan);
     if (isClosed) {
+      return;
+    }
+    if (household != _household) {
+      // The session moved on: the new household's page shows nothing of it.
+      if (outcome case Bought(:final transaction?)) {
+        unawaited(_claim(household, transaction));
+      }
       return;
     }
     switch (outcome) {
@@ -184,7 +193,7 @@ class PurchaseCubit(
     _plan = PremiumPlan.yearly;
     _emit(flow: const FlowRestoring());
     final outcome = await _store.restore(household);
-    if (isClosed) {
+    if (isClosed || household != _household) {
       return;
     }
     switch (outcome) {
@@ -194,6 +203,26 @@ class PurchaseCubit(
         _emit(flow: const FlowNothingRestored());
       case StoreProblem():
         _failed(outcome);
+    }
+  }
+
+  /// The Premium page opens: a note on how the last try ended is old news.
+  /// What is still under way stays.
+  void pageOpened() {
+    switch (state.flow) {
+      case FlowCanceled() ||
+          FlowNotAvailable() ||
+          FlowFailed() ||
+          FlowUsedElsewhere() ||
+          FlowNothingRestored():
+        _emit(flow: const FlowIdle());
+      case FlowIdle() ||
+          FlowBuying() ||
+          FlowRestoring() ||
+          FlowAwaitingApproval() ||
+          FlowUnlocking() ||
+          FlowUnlockDelayed():
+        break;
     }
   }
 
@@ -230,7 +259,9 @@ class PurchaseCubit(
       }
       switch (result) {
         case Claimed(status: ClaimStatus.elsewhere):
-          if (state.flow is FlowUnlocking || state.flow is FlowUnlockDelayed) {
+          if (household == _household &&
+              (state.flow is FlowUnlocking ||
+                  state.flow is FlowUnlockDelayed)) {
             _unlockTimeout?.cancel();
             _emit(flow: const FlowUsedElsewhere());
           }

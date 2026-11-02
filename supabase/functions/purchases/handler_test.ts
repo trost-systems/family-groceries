@@ -1030,13 +1030,30 @@ Deno.test('lifecycle events update the plan by transaction and log no reasons (H
 
 Deno.test('a lifecycle event for an unknown transaction writes nothing and grants nothing', async () => {
   const w = world();
+  const old = yearly('EXPIRATION', { event_timestamp_ms: NOW.getTime() - 3 * 3_600_000 });
   const logs = await logsOf(async () => {
-    await expect(await w.deliver(yearly('EXPIRATION')), 200, { status: 'unknown' });
+    await expect(await w.deliver(old), 200, { status: 'unknown' });
   });
   assertEquals(logs.slice(1), [
     JSON.stringify({ fn: 'purchases', event: 'EXPIRATION', lifecycle: 'unknown' }),
   ]);
   assertEquals(w.books.rows.size, 0);
+  await expect(await w.deliver(old), 200, { status: 'duplicate' });
+});
+
+Deno.test('a recent lifecycle event before its purchase is refused unstored, so RevenueCat delivers it again', async () => {
+  const w = world();
+  const billing = yearly('BILLING_ISSUE', { event_timestamp_ms: NOW.getTime() - 3_600_000 });
+  const logs = await logsOf(async () => {
+    await expect(await w.deliver(billing), 503, { error: 'not_recorded_yet' });
+  });
+  assertEquals(logs.slice(1), [
+    JSON.stringify({ fn: 'purchases', event: 'BILLING_ISSUE', lifecycle: 'not_recorded_yet' }),
+  ]);
+  assertEquals(w.books.eventIds.has(billing.id as string), false);
+  await w.deliver(yearly('INITIAL_PURCHASE', { event_timestamp_ms: NOW.getTime() - 7_200_000 }));
+  await expect(await w.deliver(billing), 200, { status: 'updated' });
+  assertEquals(w.books.lifecycles.at(-1)?.state.billingIssue, true);
 });
 
 Deno.test('a refund of the yearly plan (CUSTOMER_SUPPORT) revokes it with purchase_refunded', async () => {

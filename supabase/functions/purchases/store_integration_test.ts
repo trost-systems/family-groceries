@@ -368,6 +368,14 @@ Deno.test({
           true,
           false,
         ]);
+        // RevenueCat's CANCELLATION (BILLING_ERROR) next to it has the period's end only: the grace
+        // period stays.
+        assertEquals(
+          await deliver('CANCELLATION', { cancelReason: 'BILLING_ERROR', expiresInDays: 0 }),
+          'updated',
+        );
+        p = await premium(peter.householdId);
+        assertEquals([p.has, days(p.expires_at)], [true, 14]);
         // Without a grace period it ends with the period.
         assertEquals(await deliver('BILLING_ISSUE', { expiresInDays: 0 }), 'updated');
         assertEquals((await premium(peter.householdId)).has, false);
@@ -378,9 +386,14 @@ Deno.test({
 
         // TRANSFER and a restore into another household move nothing (H-56).
         assertEquals(await deliver('TRANSFER', { transferTo: max.householdId }), 'ignored');
-        assertEquals(await deliver('RENEWAL', {}, max.householdId), 'used_elsewhere');
+        // A RENEWAL under another App User ID still renews the plan where it is bound.
+        assertEquals(
+          await deliver('RENEWAL', { expiresInDays: 500 }, max.householdId),
+          'used_elsewhere',
+        );
         assertEquals((await premium(max.householdId)).has, false);
-        assertEquals((await premium(peter.householdId)).has, true);
+        p = await premium(peter.householdId);
+        assertEquals([p.has, days(p.expires_at)], [true, 500]);
 
         // EXPIRATION ends it at read time; the row, the household and its list stay.
         await sql`insert into public.items (household_id, name) values (${peter.householdId}, 'Milch')`;
@@ -412,25 +425,33 @@ Deno.test({
         assertEquals(await deliver('EXPIRATION', { expiresInDays: -1 }), 'updated');
         assertEquals((await premium(peter.householdId)).source, 'lifetime');
 
-        // An event for a transaction never seen writes nothing.
-        const unknown = testEvent(
-          {
-            type: 'EXPIRATION',
-            appUserId: max.householdId,
-            transactionId: `${tx}X`,
-            productId: yearlyId,
-          },
-          new Date(),
-        )!;
-        eventIds.push((unknown.event as { id: string }).id);
-        const res = await handler(
-          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
-            method: 'POST',
-            headers: { authorization: AUTH },
-            body: JSON.stringify(unknown),
-          }),
-        );
-        assertEquals((await res.json()).status, 'unknown');
+        // An event for a transaction never seen writes nothing. A recent one is refused with its id
+        // unstored, so RevenueCat delivers it again once the purchase may be recorded.
+        const unknown = async (eventAgoMs: number) => {
+          const e = testEvent(
+            {
+              type: 'EXPIRATION',
+              appUserId: max.householdId,
+              transactionId: `${tx}X`,
+              productId: yearlyId,
+              eventAgoMs,
+            },
+            new Date(),
+          )!;
+          const id = (e.event as { id: string }).id;
+          eventIds.push(id);
+          const res = await handler(
+            new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+              method: 'POST',
+              headers: { authorization: AUTH },
+              body: JSON.stringify(e),
+            }),
+          );
+          const stored = await sql`select from public.revenuecat_events where id = ${id}`;
+          return [res.status, (await res.json()).status ?? null, stored.length];
+        };
+        assertEquals(await unknown(60_000), [503, null, 0]);
+        assertEquals(await unknown(3 * 3_600_000), [200, 'unknown', 1]);
         assertEquals(
           (await sql`select from public.purchases where transaction_id = ${`${tx}X`}`).length,
           0,
