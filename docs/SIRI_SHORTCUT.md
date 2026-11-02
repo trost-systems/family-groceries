@@ -153,8 +153,8 @@ Liste“ und Artikel lässt der Server weg. Zahlwörter werden zu Ziffern
 dazu; Siri sagt dann „Schon auf der Liste: Milch.“
 Steht eine andere Schreibweise oder ein Synonym schon auf der Liste
 („Karotten“, während „Möhren“ offen ist), kommt der Eintrag trotzdem dazu,
-und Siri sagt zusätzlich „Möhren steht schon auf der Liste.“ Zusammenführen
-geht in der App.
+und Siri nennt ihn bei dem, was schon da ist: „Hinzugefügt: Karotten. Schon
+auf der Liste: Möhren.“ Zusammenführen geht in der App.
 
 ## Was Siri bei Problemen sagt
 

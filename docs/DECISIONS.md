@@ -6428,3 +6428,46 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
   the sheet no longer hands focus back to the input, which reopened it), and a non-focusable
   `Focus` around the sheet takes Escape from its rows and chips. That wrapper has
   `includeSemantics: false`: with semantics on, a node the size of the list area took every tap.
+
+## Job 68: account deletion Premium warning, voice read-back wording (2026-11-02)
+
+1. **Account deletion never archives.** Peter's rule for the last member of an unlocked household
+   (offer the archive, else confirm that Premium is not refunded, job 43) assumes someone can bring
+   the archive back. Only the archiving user can (`unarchive_household`), and DECISIONS 43.11
+   deletes their archived households with their account. An archive made by deleting the account
+   would be data nobody can ever reach, kept for 24 months for nothing. So the deletion dialog
+   offers no archive; its warning says why and names the one way the household keeps its Premium:
+   invite someone, and delete the account after they joined (the household then stays with them,
+   `FateKept`). This is also what the deletion page already promises (point 3). Peter can override
+   it in NEEDS_LEAD "Job 68".
+2. **What the dialog says (behind `HOUSEHOLD_ARCHIVE`).** For the last member of a household with
+   premium now (`leaves_unlocked()`, the archive rule of DECISIONS 47.22, so a yearly plan or a
+   promotional grant counts as well as Lifetime): a red card with what ends, the refund help link
+   (job 43's sheet) and a box "Ich habe verstanden: Hummlist Premium endet und wird nicht
+   automatisch erstattet." that Delete waits for, on top of the typed LÖSCHEN. "nicht automatisch":
+   Apple and Google may still refund on request, which the refund help explains. The user's
+   archived households are named too, since they go with the account; one with premium asks for
+   the same tick. A yearly plan's billing warning (H-85) still comes first, unchanged.
+3. **Shown with job 43's `HOUSEHOLD_ARCHIVE` or the `premium_offer` switch.** The texts wait for
+   the same Legal Review as the archive UI, so the define shows them. But once Premium is on sale
+   (`premium_offer`, read right before the dialog opens, false when unreadable) the warning must
+   not depend on a second step: then it shows too, archive UI or not. Today both are off, so
+   releases show the dialog exactly as before (testers' promotional grants included). The texts
+   agree with `app/web/konto-loeschen.html` as it stands: the last member's household goes "mit
+   … einer Freischaltung mit Hummlist Lifetime", archived households go too, refunds are on the
+   help page; that page is not edited here.
+4. **`leaves_unlocked()` is a new RPC** rather than the app's `Entitlements`: the dialog then has
+   the server's rule and no loading state to wait for, and `household_has_premium` stays
+   service-only.
+5. **One read-back sentence per outcome (Alexa, and Siri in German and English).** "Karotten und
+   Mohrrüben sind auf der Hummlist. Möhren steht schon auf der Hummlist." put "sind auf" and
+   "steht schon" side by side. Now the added items get one sentence in the perfect tense ("Ich habe
+   Karotten und Mohrrüben auf die Hummlist gesetzt."), and everything already open, exact
+   duplicates first and then the other spellings or synonyms of new items, gets one ("Schon auf der
+   Hummlist: Milch und Möhren."), each name once. The Alexa skill is German only (de-DE model), so
+   the English half of the brief is Siri's voice function, which had the same three-sentence
+   shape. The app's own snackbar ("Möhren steht schon auf der Liste" with Zusammenführen) is a
+   different surface and stays.
+6. **The onboarding skip hint names the place.** „Du kannst sie später unter Mehr → Läden anlegen.“
+   / "You can add them later under More → Stores." Mehr → Läden has „Neuer Laden“ since job 58, so
+   the promise holds; the old "unter Mehr" left out where.

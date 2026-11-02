@@ -22,10 +22,10 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
 - Add phrases (sample utterances): „füg {items} hinzu“, „füge {items} hinzu“, „füg {items} zur liste hinzu“, „füg {items} zur einkaufsliste hinzu“, „{items} hinzufügen“, „setz {items} auf die liste“, „pack {items} auf die liste“, „schreib {items} auf“, „trag {items} ein“, „notier {items}“, „wir brauchen {items}“, „ich brauche {items}“, „{items} auf die liste“, „dass wir {items} brauchen“ and more. Read phrases: „was steht auf der liste“, „was auf der einkaufsliste steht“, „was wir brauchen“, „was muss ich kaufen“, „lies die liste vor“, „die liste“ and more. Item names given in lower case are capitalized the German way („milch ohne laktose“ becomes „Milch ohne Laktose“).
 - Exact spoken replies (German only):
   - one item added: „Ich habe Milch auf die Hummlist gesetzt.“
-  - several added: „Milch und Eier sind auf der Hummlist.“ / „Milch, Eier und Brot sind auf der Hummlist.“
+  - several added: „Ich habe Milch und Eier auf die Hummlist gesetzt.“ / „Ich habe Milch, Eier und Brot auf die Hummlist gesetzt.“
   - mix: „Ich habe Eier auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.“
   - already there only: „Schon auf der Hummlist: Milch.“
-  - similar: „Möhren steht schon auf der Hummlist.“ (several: „… stehen schon auf der Hummlist.“)
+  - similar (a spelling variant or synonym is open, the new item is added anyway): it joins the „Schon auf der Hummlist:“ sentence after the exact ones, each name once (job 68): „Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Milch und Möhren.“
   - units are spoken out: 2 l becomes „2 Liter“, kg „Kilo“, g „Gramm“, ml „Milliliter“.
   - more than thirty things: the confirmation is followed by „Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.“
   - read: „Auf der Hummlist stehen 3 Sachen: Milch, Eier und Brot.“ / one item „Auf der Hummlist steht eine Sache: Milch.“ / more than ten: „Auf der Hummlist stehen 12 Sachen: a, b, … und 2 weitere.“ (exactly one more: „und eine weitere“) / empty: „Die Hummlist ist leer.“
@@ -51,7 +51,7 @@ Preconditions:
 
 - **Link the account (UI part).** `linkAccount(...)` registers a confidential OAuth client named like Alexa and opens the authorize URL with PKCE and the Alexa redirect `https://layla.amazon.com/api/skill/link/<vendor id>` in the signed-in page. The consent page shows „Zugriff erlauben?“ and `getByText('Amazon Alexa')`; click `getByRole('button', { name: 'Erlauben' })`; the callback carries a code; exchange it for an access token with HTTP Basic.
 - **Zugänge shows it.** `openMore(page, 'Zugänge')`; `page.getByText('Amazon Alexa').first()` is visible under „Verbundene Apps“.
-- **Add.** `say(token, 'Milch und Eier')` (or `scripts/alexa-say.sh --url "$API" --token "$TOKEN" "Milch und Eier"`): `response.outputSpeech.text` is „Milch und Eier sind auf der Hummlist.“; in the partner's page `itemRow(lea, 'Eier')` is visible within 5 seconds without reload; both are under category „Kühlregal“ (`getByRole('heading', { name: 'Kühlregal' })`).
+- **Add.** `say(token, 'Milch und Eier')` (or `scripts/alexa-say.sh --url "$API" --token "$TOKEN" "Milch und Eier"`): `response.outputSpeech.text` is „Ich habe Milch und Eier auf die Hummlist gesetzt.“; in the partner's page `itemRow(lea, 'Eier')` is visible within 5 seconds without reload; both are under category „Kühlregal“ (`getByRole('heading', { name: 'Kühlregal' })`).
 - **Duplicate / read / re-prompt / launch.** `say(token, 'Milch')` gives „Schon auf der Hummlist: Milch.“; `scripts/alexa-say.sh … --read` gives „Auf der Hummlist stehen N Sachen: …“; `say(token, 'äh')` then `--retry` gives the two not-understood sentences, `shouldEndSession` false then true; `--launch` with no token gives the link sentence and a `LinkAccount` card.
 - **Revoke.** `getByRole('button', { name: 'Amazon Alexa trennen' }).click()`, `getByRole('button', { name: 'Trennen', exact: true }).click()`, `getByText('Noch keine App verbunden.')`; the next add answers the link sentence and adds nothing; the refresh token is refused. Or `--disable` (SkillDisabled).
 - **Verify.** `--unsigned` and `--stale` answer HTTP 400 (`missing_signature`, `stale_timestamp`); no item is added.

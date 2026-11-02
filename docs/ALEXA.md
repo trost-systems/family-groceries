@@ -30,7 +30,7 @@ Echo ──> Alexa (speech to text, intent "AddItemIntent", slot items = "milch 
          4. 30 items a minute per user (alexa_take_adds)
          5. voice/items.ts adds through public.add_item as the user, under RLS (classifier,
             store memory, duplicates) ─> Realtime ─> every member's app
-         6. read-back: "Milch und Eier sind auf der Hummlist."
+         6. read-back: "Ich habe Milch und Eier auf die Hummlist gesetzt."
 ```
 
 Nothing from the request body chooses a household: only the token's user and their membership at
@@ -43,7 +43,7 @@ Invocation: "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öf
 
 | Intent | Examples (de-DE.json has them all) | Answer |
 | --- | --- | --- |
-| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | one item: "Ich habe Milch auf die Hummlist gesetzt." · several: "Milch und Eier sind auf der Hummlist." · open already: "Schon auf der Hummlist: Milch." · another spelling open (job 32b): "… Möhren steht schon auf der Hummlist." (added anyway) |
+| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | added: "Ich habe Milch und Eier auf die Hummlist gesetzt." · open already, with other spellings of new items (job 32b, added anyway; job 68): "Schon auf der Hummlist: Milch und Möhren." |
 | `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Hummlist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Hummlist ist leer." |
 | LaunchRequest | "Alexa, öffne Hummlist" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
 | `AMAZON.HelpIntent` | "Hilfe" | what the skill does, with the two examples; the session stays open |
@@ -252,8 +252,8 @@ an invitation link. Peter, Lea, Max and Barbie first.
 2. "Alexa, sag Hummlist, füg Milch hinzu": Alexa says "Ich habe Milch auf die Hummlist gesetzt.";
    Milch appears on another member's phone within 5 seconds, in Kühlregal (AC1, AC3).
 3. "Alexa, sag Hummlist, füg Milch und Eier hinzu": "Ich habe Eier … Schon auf der Hummlist:
-   Milch." Then with two new things ("Brot und Äpfel"): "Brot und Äpfel sind auf der Hummlist."
-   (AC2).
+   Milch." Then with two new things ("Brot und Äpfel"): "Ich habe Brot und Äpfel auf die Hummlist
+   gesetzt." (AC2).
 4. "Alexa, sag Hummlist, füg zwei Liter Hafermilch hinzu": the app shows "Hafermilch" with 2 l.
 5. "Alexa, öffne Hummlist", then mumble something: "Das habe ich nicht verstanden. Was soll auf
    die Liste?"; mumble again: "… Ich habe nichts auf die Hummlist gesetzt."; nothing added (AC4).

@@ -80,6 +80,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That any store is pre-installed, recommended or a partner: nothing is picked until you pick it, and the shops have nothing to do with Hummlist.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [onboarding.md](./onboarding.md).
+**Last verified.** job 68 branch, 2026-11-02 (CET), skip hint by app/test/household/onboarding_test.dart; job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/onboarding.spec.ts and stores-add.spec.ts. Recipe: [onboarding.md](./onboarding.md).
 
 ## Household and invites
 
@@ -271,6 +272,9 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That stores can be added, renamed or deleted without a connection; the app asks for one.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Note.** The onboarding skip hint says „Du kannst sie später unter Mehr → Läden anlegen.“ / "You can add them later under More → Stores." (job 68); Mehr → Läden has „Neuer Laden“.
+
+**Last verified.** job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/stores-add.spec.ts and stores.spec.ts. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 
@@ -393,6 +397,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [account-deletion.md](./account-deletion.md).
+- That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium, and households the user archived go too. Premium is not refunded automatically. The app's warning about this is held (it appears with the archive UI or the Premium sale).
+
+**Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
+
+**Last verified.** job 68 branch, 2026-11-02 (CET), Premium warning by the widget tests (`app/test/settings/account_test.dart`) and e2e/tests/household-bound.spec.ts; main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [account-deletion.md](./account-deletion.md).
 
 # Connections and Premium
 
@@ -436,6 +445,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and the Shortcut's server answers driven against the web build's local stack (verify-hummlist); Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
+**Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
 
 ## Home Screen widget (held)
 
@@ -460,7 +470,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Alexa skill (beta)
 
-**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Milch und Eier sind auf der Hummlist.“ „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). The skill is in beta, German only, and not yet certified by Amazon, so it is not for everyone.
+**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Ich habe Milch und Eier auf die Hummlist gesetzt.“ What is open already it names in one sentence: „Schon auf der Hummlist: Milch.“ „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). The skill is in beta, German only, and not yet certified by Amazon, so it is not for everyone.
 
 **How to get there.**
 1. Ask for a beta invitation (the link comes from Peter, who needs the email address of your Amazon account); accept it.
@@ -477,6 +487,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Unverified.** Real Alexa voice, the Alexa app screens and the beta invitation flow (no device or Amazon account here).
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
+**Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [alexa.md](./alexa.md).
 
 ## Hummlist Premium (held)
 

@@ -8,7 +8,7 @@ A user can put things on the Hummlist by voice with Siri on an iPhone. Two ways 
 - `siri-reply-added` spoken reply German: „Hinzugefügt: Milch, 2 Gurken, Klopapier.“
 - `siri-amounts` an amount said before or after the item is its quantity: „zwei Gurken“, „Eier zehn Stück“, „Möhren zwei“ (reply „Hinzugefügt: 2 Möhren.“). A bare count after the item counts only from 1 to 20 after a known name; otherwise it stays in the name („Büroklammern hundert“ → „Hinzugefügt: Büroklammern 100.“).
 - `siri-reply-existing` already on the list: „Schon auf der Liste: Milch.“ (nothing added for it). Mixed: „Hinzugefügt: Brot. Schon auf der Liste: Milch.“
-- `siri-reply-similar` a spelling variant or synonym is open: item is added and Siri adds „Möhren steht schon auf der Liste.“ (several: „… stehen schon auf der Liste.“).
+- `siri-reply-similar` a spelling variant or synonym is open: item is added and Siri names the open one in the „Schon auf der Liste:“ sentence, after the exact ones, each name once (job 68): „Hinzugefügt: Karotten. Schon auf der Liste: Milch, Möhren.“
 - `siri-errors` the exact sentences, German and English (see below).
 - `siri-limits` at most thirty items per sentence: „Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.“ (EN "More than thirty at once doesn't work; please say the rest again."); text over 1000 characters is refused (too_long).
 - `siri-native-add` native Siri adds in German or English; English reply „Added milk, eggs and bread to Hummlist.“
@@ -30,7 +30,7 @@ A user can put things on the Hummlist by voice with Siri on an iPhone. Two ways 
   - too long: „Das war zu lang. Sag höchstens dreißig Dinge auf einmal.“ / "That was too long, so nothing was added. Say at most thirty things at once."
   - server: „Das hat leider nicht geklappt. Versuch es gleich noch einmal.“ / "Sorry, that didn't work, nothing was added. Please try again in a moment."
   - not POST: „Bitte schick den Text per POST.“ / "Please send the text with POST."
-- Other replies: EN existing "Already on the list: milk." ; EN similar "<Name> is already on the list." (several: "<Names> are already on the list."); parse-only (the app's microphone, German) „Verstanden: Milch, Brot.“ / EN "Got it: milk and bread."
+- Other replies: EN existing "Already on the list: milk." ; EN similar "Added Karotten to Hummlist. Already on the list: Milch and Möhren."; parse-only (the app's microphone, German) „Verstanden: Milch, Brot.“ / EN "Got it: milk and bread."
 - Items appear on all phones within seconds.
 
 ## Driving it with Playwright
@@ -42,8 +42,7 @@ Preconditions:
 
 - **Create the key in the UI.** `openMore(page, 'Zugänge')`, `getByRole('button', { name: 'Token erstellen' })`, `typeInto(getByRole('textbox', { name: 'Name' }), 'Siri')`, `getByRole('button', { name: 'Erstellen' })`, read `getByText(/^fgp_/)`, `getByRole('button', { name: 'Fertig' })`.
 - **Dictate.** `say(token, 'Zwei Gurken und Klopapier')` returns status 200 and JSON `speech` „Hinzugefügt: 2 Gurken, Klopapier.“; `say(token, 'Milch und Brot', '?format=text')` returns the body only. In the app: `openTab(page, 'Liste')`; `itemRow(page, 'Klopapier')` visible without reload.
-- **Amount after the item.** `say(token, 'Möhren zwei', '?format=text')` is 200; the body starts „Hinzugefügt: 2 Möhren.“ (if Karotten or Karrotten are already open, for example from earlier steps, the note „Karotten und Karrotten stehen schon auf der Liste.“ follows) and the Möhren row has quantity „2“ (`itemRow(page, 'Möhren')`). `say(token, 'Büroklammern hundert', '?format=text')` answers „Hinzugefügt: Büroklammern 100.“ (name „Büroklammern 100“, no quantity).
-- **Duplicate and similar.** Say „Milch“ twice: second answer „Schon auf der Liste: Milch.“. Say „Möhren“ then „Karotten“: both on the list, speech ends „Möhren steht schon auf der Liste.“
+- **Duplicate and similar.** Say „Milch“ twice: second answer „Schon auf der Liste: Milch.“. Say „Möhren“ then „Karotten“: both on the list, speech „Hinzugefügt: Karotten. Schon auf der Liste: Möhren.“
 - **Errors.** `say('fgp_not-a-token', 'Milch', '?format=text')` is 401 with the unauthorized sentence; text „Bitte, danke“ is 422 with „Ich habe nichts verstanden …“.
 - **Native, English.** `ask(token, { text: 'milk, eggs and bread', mode: 'add', lang: 'en' })`: `outcome` `added`, `speech` "Added milk, eggs and bread to Hummlist."; again with `milk`: `nothing_added`, "Already on the list: milk."; `ask(token, { mode: 'read', lang: 'en' })`: `total` 3, speech starts "There are 3 things on your Hummlist: "; German `lang: 'de'`: „Auf der Hummlist stehen 3 Sachen: “. A request without `lang` answers exactly as the Shortcut always did and has no `outcome`.
 - **Ending.** Revoke in the app (`getByRole('button', { name: 'Siri widerrufen' })`, then `getByRole('button', { name: 'Widerrufen' })`): the next request is 401. For the Siri credential: signing out the session that created it also gives 401, `outcome` `unauthorized`; the MCP endpoint answers 401 to it.

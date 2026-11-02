@@ -699,6 +699,44 @@ class AppLocalizationsEn extends AppLocalizations {
       'To keep a copy first, use “Export my data” under Account.';
 
   @override
+  String accountDeletePremium(String household) {
+    return '“$household” has Hummlist Premium. It belongs to the household and ends with it. Archiving isn\'t possible here, because an archived household is deleted with your account. To keep the household with Premium, invite someone first and delete your account only after they have joined.';
+  }
+
+  @override
+  String accountDeleteArchived(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your archived households $names are deleted with your account.',
+      one: 'Your archived household $names is deleted with your account.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountDeleteArchivedPremium(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Your archived households $names are deleted with your account, and their Hummlist Premium with them.',
+      one:
+          'Your archived household $names is deleted with your account, and its Hummlist Premium with it.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String quotedName(String name) {
+    return '“$name”';
+  }
+
+  @override
+  String get accountDeletePremiumAck =>
+      'I understand: Hummlist Premium ends and isn\'t refunded automatically.';
+
+  @override
   String get accountDeleteConfirmLabel => 'Type DELETE to confirm';
 
   @override
@@ -1138,7 +1176,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skipStoresHint =>
-      'Start without stores. You can add them later under More.';
+      'Start without stores. You can add them later under More → Stores.';
 
   @override
   String get householdOffline =>

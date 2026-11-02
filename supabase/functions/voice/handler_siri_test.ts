@@ -95,7 +95,7 @@ Deno.test('everything already on the list is nothing_added, still a 200', async 
   ]);
 });
 
-Deno.test('English similar note, one and several', async () => {
+Deno.test('English: an open variant is named with the items already on the list', async () => {
   const { handle } = fakeDeps({
     addItems: (_c, items) =>
       asAdded([])(_c, items).then((added) =>
@@ -104,11 +104,7 @@ Deno.test('English similar note, one and several', async () => {
   });
   assertEquals(
     (await answer(handle, post({ text: 'carrot', lang: 'en' }))).body.speech,
-    'Added carrot to Hummlist. Carrots is already on the list.',
-  );
-  assertEquals(
-    copy.en.similar(['Carrots', 'milk', 'eggs']),
-    'Carrots, milk and eggs are already on the list.',
+    'Added carrot to Hummlist. Already on the list: Carrots.',
   );
 });
 

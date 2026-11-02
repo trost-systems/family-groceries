@@ -8,6 +8,7 @@ class FakeAccountRepository() implements AccountRepository {
   @override
   String? email = 'peter@fg.test';
   HouseholdFate fateResult = const FateKept('Zuhause', ['Lea']);
+  var archived = <ArchivedFate>[];
   AccountError? fateError;
   var deleteResult = const AccountDeleted(AppleUnlink.notLinked);
   AccountError? deleteError;
@@ -20,11 +21,11 @@ class FakeAccountRepository() implements AccountRepository {
   var exportCalls = 0;
 
   @override
-  Future<HouseholdFate> fate() async {
+  Future<AccountFate> fate() async {
     if (fateError case final error?) {
       throw error;
     }
-    return fateResult;
+    return AccountFate(fateResult, archived: archived);
   }
 
   @override

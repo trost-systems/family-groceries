@@ -67,27 +67,21 @@ export const speech = {
 } as const;
 
 /**
- * The read-back after an add: "Milch und Eier sind auf der Hummlist." One item reads "Ich habe
- * Milch auf die Hummlist gesetzt.", which holds for "Eier" too (a single name can be plural).
- * Items that were open already: "Schon auf der Hummlist: Milch." A new item with another spelling
- * or synonym open (job 32b): "Möhren steht schon auf der Hummlist."
+ * The read-back after an add, one sentence per outcome. Added: "Ich habe Milch und Eier auf die
+ * Hummlist gesetzt." Open already, the exact items and then the other spellings or synonyms of
+ * new ones (job 32b, added anyway), each name once: "Schon auf der Hummlist: Milch und Möhren."
  */
 export function confirmation(results: readonly Added[]): string {
-  const added = results.filter((r) => !r.alreadyOnList).map(said);
-  const existing = results.filter((r) => r.alreadyOnList).map(said);
-  const parts: string[] = [];
-  if (added.length === 1) parts.push(`Ich habe ${added[0]} auf die Hummlist gesetzt.`);
-  if (added.length > 1) parts.push(`${enumerate(added)} sind auf der Hummlist.`);
-  if (existing.length) parts.push(`Schon auf der Hummlist: ${enumerate(existing)}.`);
-  // Job 32b: a new item whose other spelling or synonym is open was added anyway; say which.
-  const similar = [
-    ...new Set(results.flatMap((r) => (r.alreadyOnList ? [] : r.similarOnList ?? []))),
+  const added = results.filter((r) => !r.alreadyOnList);
+  const open = [
+    ...new Set([
+      ...results.filter((r) => r.alreadyOnList).map(said),
+      ...added.flatMap((r) => r.similarOnList ?? []),
+    ]),
   ];
-  if (similar.length) {
-    parts.push(
-      `${enumerate(similar)} ${similar.length === 1 ? 'steht' : 'stehen'} schon auf der Hummlist.`,
-    );
-  }
+  const parts: string[] = [];
+  if (added.length) parts.push(`Ich habe ${enumerate(added.map(said))} auf die Hummlist gesetzt.`);
+  if (open.length) parts.push(`Schon auf der Hummlist: ${enumerate(open)}.`);
   return parts.join(' ');
 }
 

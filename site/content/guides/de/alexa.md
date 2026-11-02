@@ -12,7 +12,7 @@ updated: 2026-10-30
 Mit dem Alexa-Skill **Hummlist** setzt du Sachen per Alexa auf deine Hummlist, ohne die App zu öffnen. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar: Du brauchst eine Einladung. Danach läuft es so:
 
 > **Du:** Alexa, sag Hummlist, füg Milch und Eier hinzu.
-> **Alexa:** Milch und Eier sind auf der Hummlist.
+> **Alexa:** Ich habe Milch und Eier auf die Hummlist gesetzt.
 
 Alexa schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Der Skill funktioniert bisher nur auf Deutsch.
 
@@ -46,7 +46,7 @@ Alexa meldet sich mit deinem Hummlist-Konto an, nicht mit einem Token. Du musst 
 ## Schritt 3: Ausprobieren
 
 1. Sag zu deinem Alexa-Gerät: „Alexa, sag Hummlist, füg Milch und Eier hinzu“.
-2. Alexa antwortet „Milch und Eier sind auf der Hummlist.“, und die Einträge stehen in der App.
+2. Alexa antwortet „Ich habe Milch und Eier auf die Hummlist gesetzt.“, und die Einträge stehen in der App.
 
 Ab jetzt geht es ohne Hände, von jedem Alexa-Gerät in deinem Amazon-Konto.
 
@@ -70,7 +70,7 @@ Fang mit „Alexa, sag Hummlist, …“ an. Sag mehrere Sachen in einem Satz und
 
 Füllwörter wie „bitte“, „wir brauchen“ und „noch“ lässt Hummlist weg. Mengen wie „zwei Liter Milch“ werden ein einziger Eintrag mit Menge, die App zeigt die Menge vor dem Namen. Alexa sagt dir danach, was auf der Liste gelandet ist, bei einer Sache zum Beispiel „Ich habe 2 Liter Milch auf die Hummlist gesetzt.“
 
-Was schon auf der Liste steht, kommt nicht doppelt dazu. Alexa sagt dann zum Beispiel „Schon auf der Hummlist: Milch.“ Steht etwas Ähnliches schon drauf, etwa Möhren, wenn du Karotten sagst, kommt der neue Eintrag trotzdem dazu, und Alexa sagt „Möhren steht schon auf der Hummlist.“
+Was schon auf der Liste steht, kommt nicht doppelt dazu. Alexa sagt dann zum Beispiel „Schon auf der Hummlist: Milch.“ Steht etwas Ähnliches schon drauf, etwa Möhren, wenn du Karotten sagst, kommt der neue Eintrag trotzdem dazu, und Alexa sagt „Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.“
 
 Du kannst den Skill auch erst öffnen: „Alexa, öffne Hummlist“. Alexa fragt „Was soll auf die Liste?“, und du sagst nur noch „Milch und Eier“.
 

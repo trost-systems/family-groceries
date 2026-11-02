@@ -1,13 +1,6 @@
 import { assertEquals, assertMatch } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
-import {
-  type Added,
-  type Caller,
-  confirmation,
-  createHandler,
-  type Deps,
-  similarNote,
-} from './handler.ts';
+import { type Added, type Caller, confirmation, createHandler, type Deps } from './handler.ts';
 import type { ParsedItem } from './parse.ts';
 
 const caller: Caller = { userId: 'u1', householdId: 'h1' };
@@ -238,31 +231,41 @@ Deno.test('a new item with a similar one open is added, and Siri says what is op
   const body = await (await handle(post({ text: '500 g Karotten und Milch' }))).json();
   assertEquals(
     body.speech,
-    'Hinzugefügt: 500 g Karotten, Milch. Möhren steht schon auf der Liste.',
+    'Hinzugefügt: 500 g Karotten, Milch. Schon auf der Liste: Möhren.',
   );
   assertEquals(body.items[0].similarOnList, ['Möhren']);
   assertEquals(body.items[0].alreadyOnList, false);
 });
 
-Deno.test('the similar note names several open items once each', () => {
-  assertEquals(similarNote(['Möhren']), 'Möhren steht schon auf der Liste.');
-  assertEquals(similarNote(['Möhren', 'Milch']), 'Möhren und Milch stehen schon auf der Liste.');
-  assertEquals(
-    similarNote(['Möhren', 'Milch', 'Semmeln']),
-    'Möhren, Milch und Semmeln stehen schon auf der Liste.',
-  );
-  const item = (name: string, similarOnList: string[]): Added => ({
+Deno.test('open variants join the exact duplicates in one sentence, each name once (job 68)', () => {
+  const item = (name: string, alreadyOnList: boolean, similarOnList: string[] = []): Added => ({
     name,
     brand: null,
     properties: null,
     quantity: null,
     category: 'Obst & Gemüse',
-    alreadyOnList: false,
+    alreadyOnList,
     similarOnList,
   });
   assertEquals(
-    confirmation([item('Karotten', ['Möhren']), item('Mohrrüben', ['Möhren'])]),
-    'Hinzugefügt: Karotten, Mohrrüben. Möhren steht schon auf der Liste.',
+    confirmation([item('Karotten', false, ['Möhren']), item('Mohrrüben', false, ['Möhren'])]),
+    'Hinzugefügt: Karotten, Mohrrüben. Schon auf der Liste: Möhren.',
+  );
+  assertEquals(
+    confirmation([item('Karotten', false, ['Möhren']), item('Milch', true)]),
+    'Hinzugefügt: Karotten. Schon auf der Liste: Milch, Möhren.',
+  );
+  assertEquals(
+    confirmation([item('Möhren', true), item('Karotten', false, ['Möhren'])]),
+    'Hinzugefügt: Karotten. Schon auf der Liste: Möhren.',
+  );
+  assertEquals(
+    confirmation([item('Karotten', false, ['Möhren']), item('Milch', true)], 'en'),
+    'Added Karotten to Hummlist. Already on the list: Milch and Möhren.',
+  );
+  assertEquals(
+    confirmation([item('Milch', true), item('Eier', true)], 'en'),
+    'Already on the list: Milch and Eier.',
   );
 });
 

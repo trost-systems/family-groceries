@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { editSheet, itemRow, listArea, openEdit, reveal, storeDivider } from './helpers';
+import { boxIfBuilt, editSheet, itemRow, listArea, openEdit, reveal, storeDivider } from './helpers';
 
 /** The list's group headings, top to bottom. */
 export async function groupHeadings(page: Page): Promise<string[]> {
@@ -134,7 +134,7 @@ export async function holdAndDrop(
   const bottom = list.bottom;
   let lastY: number | undefined;
   for (let i = 0; i < 80; i++) {
-    const box = await to.boundingBox({ timeout: 200 }).catch(() => null);
+    const box = await boxIfBuilt(to);
     if (box && box.y > top + 60 && box.y + box.height < bottom - 60) break;
     // On screen and no longer moving: the list is at its end (a target at the very top or bottom
     // never leaves the edge zone). On screen from the start: nothing to scroll.

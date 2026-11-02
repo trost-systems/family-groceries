@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from './fixtures';
-import { apiAs, newEmail, openPremium, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
+import { adminClient, apiAs, newEmail, nextFrames, openMore, openPremium, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
 import { archiveSwitchOn, buy, householdOf, report } from './iap';
 
 // Job 43: Hummlist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
@@ -189,4 +189,58 @@ test.describe('in English', () => {
     );
     await screenshot(page, 'job43-refund-help-en-390');
   });
+});
+
+// Job 68: deleting the account as the last member of an unlocked household, or with an unlocked
+// archived household, says that Hummlist Premium ends and is not refunded; Delete waits for the
+// tick. Neither household is archived: an archive would go with the account (DECISIONS 68).
+test('account deletion: the last member of an unlocked household confirms that Premium is not refunded', async ({ browser }) => {
+  const email = newEmail('acct68');
+  const page = await newPage(browser);
+  await signUpWithHousehold(page, email);
+  // The household from onboarding gets Lifetime and is archived; it goes with the account too.
+  expect(await buy(email, `6800${Date.now()}`)).toBe('granted');
+  const archivedId = await householdOf(email);
+  const api = await apiAs(email);
+  expect((await api.rpc('leave_current_household', { p_archive: true })).data).toBe('archived');
+  // A new household, also with Lifetime, whose last member the user is.
+  const { error } = await api.rpc('create_household', { p_name: 'Zuhause' });
+  expect(error).toBeNull();
+  const homeId = await householdOf(email);
+  expect(await buy(email, `6801${Date.now()}`)).toBe('granted');
+
+  await page.reload();
+  await openMore(page, 'Konto');
+  await page.getByRole('button', { name: 'Konto löschen', exact: true }).click();
+  await expect(page.getByRole('group', { name: /^„Zuhause“ hat Hummlist Premium\. Es gehört zum Haushalt und endet mit ihm\. Archivieren geht hier nicht/ })).toBeVisible();
+  // The dialog's paragraphs reach the screen reader as one text.
+  await expect(page.getByText(/Dein archivierter Haushalt „Unser Haushalt“ wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium\./)).toBeVisible();
+  const ack = page.getByRole('checkbox', { name: 'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.' });
+  await expect(ack).toBeVisible();
+  // Scroll the dialog in Flutter first: a click on the field below the fold would land on the
+  // canvas where the box is now.
+  await page.mouse.move(195, 400);
+  await page.mouse.wheel(0, 1000);
+  await nextFrames(page);
+  await expect(ack, 'the box starts unticked').not.toBeChecked();
+  await typeInto(page.getByRole('textbox', { name: 'Zum Bestätigen LÖSCHEN eingeben' }), 'LÖSCHEN');
+  await expect(ack).not.toBeChecked();
+  const deleteButton = page.getByRole('button', { name: 'Endgültig löschen' });
+  await expect(deleteButton, 'Delete waits for the tick').toBeDisabled();
+  await screenshot(page, 'job68-delete-premium-de-390');
+
+  await page.getByRole('button', { name: 'Erstattung bei Apple oder Google anfragen' }).click();
+  await expect(page.getByRole('link', { name: 'Bei Apple anfragen' })).toHaveAttribute('href', 'https://reportaproblem.apple.com/');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('link', { name: 'Bei Apple anfragen' })).toHaveCount(0);
+
+  await ack.click();
+  await expect(ack).toBeChecked();
+  await screenshot(page, 'job68-delete-premium-ticked-de-390');
+  await deleteButton.click();
+  await expect(page.getByText('Dein Konto wurde gelöscht.')).toBeVisible();
+
+  const { count } = await adminClient().from('households').select('*', { count: 'exact', head: true })
+    .in('id', [homeId, archivedId]);
+  expect(count, 'both households are deleted, neither archived').toBe(0);
 });

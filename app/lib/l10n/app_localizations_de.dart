@@ -705,6 +705,45 @@ class AppLocalizationsDe extends AppLocalizations {
       'Mit „Meine Daten exportieren“ unter Konto kannst du vorher eine Kopie sichern.';
 
   @override
+  String accountDeletePremium(String household) {
+    return '„$household“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.';
+  }
+
+  @override
+  String accountDeleteArchived(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Deine archivierten Haushalte $names werden mit deinem Konto gelöscht.',
+      one: 'Dein archivierter Haushalt $names wird mit deinem Konto gelöscht.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String accountDeleteArchivedPremium(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Deine archivierten Haushalte $names werden mit deinem Konto gelöscht, und mit ihnen ihr Hummlist Premium.',
+      one:
+          'Dein archivierter Haushalt $names wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String quotedName(String name) {
+    return '„$name“';
+  }
+
+  @override
+  String get accountDeletePremiumAck =>
+      'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.';
+
+  @override
   String get accountDeleteConfirmLabel => 'Zum Bestätigen LÖSCHEN eingeben';
 
   @override
@@ -1149,7 +1188,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get skipStoresHint =>
-      'Ohne Läden starten. Du kannst sie später unter Mehr anlegen.';
+      'Ohne Läden starten. Du kannst sie später unter Mehr → Läden anlegen.';
 
   @override
   String get householdOffline =>

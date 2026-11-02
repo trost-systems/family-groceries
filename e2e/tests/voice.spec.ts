@@ -74,7 +74,7 @@ test('Siri adds Karotten with Möhren open and says Möhren is on the list (job 
   const said = await say(token, 'ein Kilo Karotten und Milch');
   expect(said.status).toBe(200);
   const body = JSON.parse(said.body);
-  expect(body.speech).toBe('Hinzugefügt: 1 kg Karotten, Milch. Möhren steht schon auf der Liste.');
+  expect(body.speech).toBe('Hinzugefügt: 1 kg Karotten, Milch. Schon auf der Liste: Möhren.');
   expect(body.items.map((i: { name: string; similarOnList: string[] }) => [i.name, i.similarOnList]))
     .toEqual([['Karotten', ['Möhren']], ['Milch', []]]);
   // Nothing is dropped or merged: both carrots are on the list, as said.

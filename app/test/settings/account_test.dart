@@ -10,6 +10,7 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/account_screen.dart';
+import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +44,7 @@ void main() {
     Widget home, {
     FakePremiumServer? premium,
     FakeEntitlementsSource? rows,
+    Locale locale = const Locale('de'),
   }) async {
     auth = FakeAuth()..user = user;
     addTearDown(auth.close);
@@ -87,7 +89,7 @@ void main() {
           child: MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            locale: const Locale('de'),
+            locale: locale,
             home: home,
           ),
         ),
@@ -495,6 +497,195 @@ void main() {
       await tapDelete(tester);
       expect(
         find.byKey(const ValueKey('account-delete-dialog')),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('Hummlist Premium that ends with the account (job 68)', () {
+    /// The dialog alone, with the archive UI's flag as [premiumWarning].
+    Future<void> openWith(
+      WidgetTester tester, {
+      required bool premiumWarning,
+      Locale locale = const Locale('de'),
+    }) async {
+      await pump(
+        tester,
+        Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              key: const ValueKey('open'),
+              onPressed: () => unawaited(
+                showDialog<AccountDeleted>(
+                  context: context,
+                  builder: (_) => DeleteAccountDialog(
+                    repository: account,
+                    premiumWarning: premiumWarning,
+                  ),
+                ),
+              ),
+              child: const SizedBox.square(dimension: 40),
+            ),
+          ),
+        ),
+        locale: locale,
+      );
+      await tapKey(tester, 'open');
+    }
+
+    const premiumText =
+        '„Zuhause“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit '
+        'ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird '
+        'mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, '
+        'lade vorher jemanden ein und lösche dein Konto erst, wenn die Person '
+        'beigetreten ist.';
+    final ack = find.byKey(const ValueKey('account-delete-premium-ack'));
+
+    testWidgets('the last member of an unlocked household confirms that '
+        'Premium is not refunded before Delete works', (tester) async {
+      account.fateResult = const FateDeleted('Zuhause', unlocked: true);
+      await openWith(tester, premiumWarning: true);
+
+      expect(find.text(premiumText), findsOneWidget);
+      expect(
+        find.text(
+          'Ich habe verstanden: Hummlist Premium endet und wird nicht '
+          'automatisch erstattet.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('account-delete-refund-help')),
+        findsOneWidget,
+      );
+      await confirm(tester);
+      expect(confirmEnabled(tester), isFalse, reason: 'not acknowledged yet');
+
+      await tapKey(tester, 'account-delete-premium-ack');
+      expect(confirmEnabled(tester), isTrue);
+      await tapKey(tester, 'account-delete-confirm');
+      expect(account.deleteCalls, 1);
+    });
+
+    testWidgets('the refund help opens from the warning', (tester) async {
+      account.fateResult = const FateDeleted('Zuhause', unlocked: true);
+      await openWith(tester, premiumWarning: true);
+      await tapKey(tester, 'account-delete-refund-help');
+      expect(find.textContaining('reportaproblem.apple.com'), findsWidgets);
+    });
+
+    testWidgets('unticking the box disables Delete again', (tester) async {
+      account.fateResult = const FateDeleted('Zuhause', unlocked: true);
+      await openWith(tester, premiumWarning: true);
+      await confirm(tester);
+      await tapKey(tester, 'account-delete-premium-ack');
+      await tapKey(tester, 'account-delete-premium-ack');
+      expect(confirmEnabled(tester), isFalse);
+    });
+
+    testWidgets('a household without premium asks nothing more', (
+      tester,
+    ) async {
+      account.fateResult = const FateDeleted('Zuhause');
+      await openWith(tester, premiumWarning: true);
+      expect(find.text(premiumText), findsNothing);
+      expect(ack, findsNothing);
+      await confirm(tester);
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    testWidgets('with the archive UI off the dialog stays as before', (
+      tester,
+    ) async {
+      account
+        ..fateResult = const FateDeleted('Zuhause', unlocked: true)
+        ..archived = [const ArchivedFate('Ferien', unlocked: true)];
+      await openWith(tester, premiumWarning: false);
+      expect(find.text(premiumText), findsNothing);
+      expect(ack, findsNothing);
+      expect(
+        find.byKey(const ValueKey('account-delete-archived')),
+        findsNothing,
+      );
+      await confirm(tester);
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    testWidgets('an unlocked archived household goes too, and asks the same', (
+      tester,
+    ) async {
+      account
+        ..fateResult = const FateKept('Zuhause', ['Lea'])
+        ..archived = [const ArchivedFate('Ferien', unlocked: true)];
+      await openWith(tester, premiumWarning: true);
+      expect(
+        find.text(
+          'Dein archivierter Haushalt „Ferien“ wird mit deinem Konto '
+          'gelöscht, und mit ihm sein Hummlist Premium.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(premiumText), findsNothing, reason: 'Lea keeps it');
+      await confirm(tester);
+      expect(confirmEnabled(tester), isFalse);
+      await tapKey(tester, 'account-delete-premium-ack');
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    testWidgets('archived households without premium are named, nothing '
+        'more is asked', (tester) async {
+      account
+        ..fateResult = const FateNone()
+        ..archived = [const ArchivedFate('Ferien'), const ArchivedFate('Büro')];
+      await openWith(tester, premiumWarning: true);
+      expect(
+        find.text(
+          'Deine archivierten Haushalte „Ferien“ und „Büro“ werden mit deinem '
+          'Konto gelöscht.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Meine Daten exportieren'), findsOneWidget);
+      expect(ack, findsNothing);
+      await confirm(tester);
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    for (final (offer, shown) in [(true, true), (false, false)]) {
+      testWidgets('from the account page with the Premium sale '
+          '${offer ? 'open' : 'closed'} and the archive UI off, the warning '
+          'is ${shown ? 'shown' : 'hidden'}', (tester) async {
+        account.fateResult = const FateDeleted('Zuhause', unlocked: true);
+        await pump(
+          tester,
+          settings(),
+          premium: FakePremiumServer(offer: offer),
+        );
+        await tapKey(tester, 'account-delete');
+        expect(find.text(premiumText), shown ? findsOneWidget : findsNothing);
+        await confirm(tester);
+        expect(confirmEnabled(tester), !shown);
+      });
+    }
+
+    testWidgets('in English', (tester) async {
+      account.fateResult = const FateDeleted('Home', unlocked: true);
+      await openWith(tester, premiumWarning: true, locale: const Locale('en'));
+      expect(
+        find.text(
+          '“Home” has Hummlist Premium. It belongs to the household and ends '
+          "with it. Archiving isn't possible here, because an archived "
+          'household is deleted with your account. To keep the household '
+          'with Premium, invite someone first and delete your account only '
+          'after they have joined.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          "I understand: Hummlist Premium ends and isn't refunded "
+          'automatically.',
+        ),
         findsOneWidget,
       );
     });

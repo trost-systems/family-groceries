@@ -90,7 +90,7 @@ Deno.test({
       );
       assertEquals(
         confirmation(added),
-        'Hinzugefügt: 500 g Karotten. Schon auf der Liste: Möhren. Möhren steht schon auf der Liste.',
+        'Hinzugefügt: 500 g Karotten. Schon auf der Liste: Möhren.',
       );
       assertEquals(
         (await openItems(userId, householdId)).map((i) =>
