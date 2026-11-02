@@ -469,3 +469,6 @@ Households add their own stores right in the add and edit sheets' store options 
 **Changed expectation.** `entry_test.dart` 'Eier   10' is now Eier with 10 (was Eier 10, no quantity).
 
 **Open.** None known. Offline typo matching for the known-name check stays server-only (the app matches exact and compound words).
+## Job 66: deep links (app.hummlist.com opens the app), PR #188
+
+app.hummlist.com links to the list, the add sheet, a store, the More tab and its pages, and invites open the installed iPhone or Android app, or the web app where it isn't installed; signed out they wait through sign-in (and onboarding) and then open their screen. Details: [docs/done/66-deep-links.md](docs/done/66-deep-links.md).

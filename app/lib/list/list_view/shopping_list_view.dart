@@ -5,6 +5,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/categories_screen.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
 import 'package:family_groceries/list/list_view/drag.dart';
 import 'package:family_groceries/list/list_view/explainer.dart';
@@ -107,6 +108,7 @@ class _ShoppingListViewState()
   final _visibleFresh = <String>{};
   final _seenTimers = <String, Timer>{};
   var _onScreen = _shows(WidgetsBinding.instance.lifecycleState);
+  ListLinks? _links;
 
   /// Inactive still shows the app: a web tab whose window lost focus, or an
   /// iOS app under the control center.
@@ -128,10 +130,14 @@ class _ShoppingListViewState()
         }
       },
     );
+    _links = context.read<ListLinks?>()?..changes.addListener(_linked);
+    // A cold start's link came before this list was built.
+    _linked();
   }
 
   @override
   void dispose() {
+    _links?.changes.removeListener(_linked);
     _cancelSeenTimers();
     _lifecycle.dispose();
     _scroller.dispose();
@@ -141,6 +147,114 @@ class _ShoppingListViewState()
   }
 
   ListCubit get _cubit => context.read<ListCubit>();
+
+  /// A `/stores/<id>` link, once the list is loaded ([build] asks again
+  /// then). After the frame: the router asks during its own work.
+  void _linked() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_cubit.state.loaded) {
+        return;
+      }
+      if (_links?.take<StoreLink>() case StoreLink(:final storeId)) {
+        unawaited(_reveal(storeId));
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  /// Scrolls the divider of [storeId] to the top, unfolding its section.
+  /// No section (an unknown store, one without open items): the list as
+  /// it is. The rows are built lazily, so a far divider may not be there
+  /// yet: the list jumps toward it and looks again, a few frames at most.
+  Future<void> _reveal(String storeId) async {
+    final state = _cubit.state;
+    final section = shownSections(
+      sectionsOf(state.items.values, state.catalog),
+      dropping: false,
+    ).where((s) => s.store?.id == storeId && s.count > 0).firstOrNull;
+    if (section == null) {
+      return;
+    }
+    if (state.prefs.folded.contains(section.key)) {
+      _cubit.toggleFold(section.key);
+    }
+    // Until the divider is there and stays at the top: rows laid out for
+    // the first time correct the list's estimated extent.
+    for (var attempt = 0; attempt < 6; attempt++) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scroll.hasClients) {
+        return;
+      }
+      final divider = _built(ValueKey('store-${section.key}'))
+          ?.findRenderObject();
+      if (divider == null) {
+        _jumpToward(section.key);
+        continue;
+      }
+      final position = _scroll.position;
+      final to = RenderAbstractViewport.of(divider)
+          .getOffsetToReveal(divider, 0)
+          .offset
+          .clamp(position.minScrollExtent, position.maxScrollExtent);
+      if ((to - position.pixels).abs() < 1) {
+        return;
+      }
+      position.jumpTo(to);
+    }
+  }
+
+  /// The element of [key] if the list has built it.
+  Element? _built(Key key) {
+    Element? found;
+    void visit(Element element) {
+      if (element.widget.key == key) {
+        found = element;
+      } else if (found == null) {
+        element.visitChildren(visit);
+      }
+    }
+
+    _viewport.currentContext?.visitChildElements(visit);
+    return found;
+  }
+
+  /// Jumps to where the section of [key] about starts: its share of its
+  /// column, by the weights the columns are balanced with.
+  void _jumpToward(String key) {
+    final width = _viewport.currentContext?.size?.width;
+    if (width == null) {
+      return;
+    }
+    final state = _cubit.state;
+    final resting = shownSections(
+      sectionsOf(state.items.values, state.catalog),
+      dropping: false,
+    );
+    final weight = _weightIn(state);
+    final column = columnsOf(
+      resting,
+      ShoppingListView.frameOf(width, resting.length).columns,
+      weight,
+    ).firstWhere((c) => c.any((s) => s.key == key), orElse: () => resting);
+    double sum(Iterable<StoreSection> sections) =>
+        sections.fold(0, (total, s) => total + weight(s));
+    final share =
+        sum(column.takeWhile((s) => s.key != key)) / math.max(1, sum(column));
+    final position = _scroll.position;
+    position.jumpTo(
+      (share * position.maxScrollExtent).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      ),
+    );
+  }
+
+  /// How tall a section stands in its column, roughly: a folded one a
+  /// divider, an open one its rows and category dividers too.
+  static double Function(StoreSection section) _weightIn(ListState state) =>
+      (s) => state.prefs.folded.contains(s.key)
+      ? 1
+      : 1 + s.count + 0.6 * s.blocks.length;
 
   void _snack(String text, {VoidCallback? undo}) {
     final l10n = AppLocalizations.of(context);
@@ -406,7 +520,13 @@ class _ShoppingListViewState()
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => BlocListener<ListCubit, ListState>(
+    listenWhen: (a, b) => !a.loaded && b.loaded,
+    listener: (_, _) => _linked(),
+    child: _list(context),
+  );
+
+  Widget _list(BuildContext context) {
     final state = context.watch<ListCubit>().state;
     if (!state.loaded) {
       return const Center(child: CircularProgressIndicator());
@@ -467,13 +587,7 @@ class _ShoppingListViewState()
         s.count == 0 ||
         active is DraggedStore ||
         state.prefs.folded.contains(s.key);
-    final balanced = columnsOf(
-      resting,
-      columnCount,
-      (s) => state.prefs.folded.contains(s.key)
-          ? 1
-          : 1 + s.count + 0.6 * s.blocks.length,
-    );
+    final balanced = columnsOf(resting, columnCount, _weightIn(state));
     // The empty sections that show only while an item is dragged join the
     // column of the section before them.
     final columns = dropping ? withDropTargets(balanced, shown) : balanced;

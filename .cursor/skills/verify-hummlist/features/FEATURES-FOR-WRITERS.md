@@ -99,6 +99,25 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Last verified.** main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [household-invites.md](./household-invites.md).
 
+## Links into the app
+
+**What it does.** A link to app.hummlist.com opens that screen of Hummlist: in the iPhone or Android app when it is installed, otherwise in the browser. A link can open the list, the add field, one store's part of the list, the More tab and its pages (for example „Einladungen“ / "Invites" or „Einstellungen“ / "Settings"), or an invite. Someone who is signed out signs in first and then lands on the linked screen; a new account sets up its household first.
+
+**Links to use.**
+- The list: `https://app.hummlist.com/list`
+- Add something: `https://app.hummlist.com/add` (opens the add field, ready to type)
+- Invite your partner: `https://app.hummlist.com/more/invites`
+- Settings (theme, language): `https://app.hummlist.com/more/settings`
+- The More tab: `https://app.hummlist.com/more`
+- A store's part of the list: `https://app.hummlist.com/stores/<id>`. The id belongs to one household, so this link only works for its members; don't put it in emails to everyone.
+
+**Never claim.**
+- That the iPhone app opens these links before the next app release. Until then the iPhone opens them in the browser (invite links already open the app).
+- Links that fill in an item ("add Milch") or tick something off: a link only opens a screen.
+- That a link keeps working after the app was closed during sign-in on the phone: it then opens the list.
+
+**Last verified.** job/66-deep-links, 2026-11-02 (CET), web build with e2e/tests/deep-links.spec.ts. Phone apps: unverified on a device. Recipe: [app-links.md](./app-links.md).
+
 # The list
 
 ## Quick add
