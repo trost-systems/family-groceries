@@ -120,7 +120,10 @@ Deno.test({
   async fn() {
     await withUsers(2, async ([peter, max]) => {
       const said = await ask(peter.userId, add('Milch und Eier'));
-      assertEquals(said.response.outputSpeech.text, 'Milch und Eier sind auf der Hummlist.');
+      assertEquals(
+        said.response.outputSpeech.text,
+        'Ich habe Milch und Eier auf die Hummlist gesetzt.',
+      );
       // Typed in the app: a plain insert, classified by the same trigger.
       await asUser(max.userId, (tx) =>
         tx`insert into public.items (household_id, name) values
@@ -135,7 +138,7 @@ Deno.test({
       );
       assertEquals(
         more.response.outputSpeech.text,
-        '2 Liter Hafermilch, 1 Kilo Äpfel und Weißwurst sind auf der Hummlist. Schon auf der Hummlist: Milch.',
+        'Ich habe 2 Liter Hafermilch, 1 Kilo Äpfel und Weißwurst auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.',
       );
       const items = await open(peter.householdId);
       assertEquals(items.length, 5);
@@ -248,7 +251,7 @@ Deno.test({
       const said = await ask(peter.userId, add('ein Kilo Karotten'));
       assertEquals(
         said.response.outputSpeech.text,
-        'Ich habe 1 Kilo Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.',
+        'Ich habe 1 Kilo Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.',
       );
       assertEquals((await open(peter.householdId)).map(([n, q]) => [n, q]), [
         ['Möhren', '500 g'],

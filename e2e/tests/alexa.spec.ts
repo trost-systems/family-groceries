@@ -89,7 +89,7 @@ test('Alexa: link with a confidential client, then adds land live for another me
 
   // Several items, quantities, umlauts and ß; a duplicate of an open item is not added twice.
   expect(await say(token, 'Milch, zwei Liter Hafermilch, Äpfel und Weißwurst'))
-    .toBe('2 Liter Hafermilch, Äpfel und Weißwurst sind auf der Hummlist. Schon auf der Hummlist: Milch.');
+    .toBe('Ich habe 2 Liter Hafermilch, Äpfel und Weißwurst auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.');
   await within(5_000, (timeout) => expect(itemRow(lea, 'Weißwurst')).toBeVisible({ timeout }));
   await expect(itemRow(lea, 'Hafermilch')).toHaveAccessibleName(/^Hafermilch (Neu )?2 l$/);
   await expect(itemRow(lea, 'Milch')).toHaveCount(1);
@@ -155,7 +155,7 @@ test('Alexa: two households stay apart, a household switch moves the adds, disab
   const alexaUser = 'amzn1.ask.account.MAX';
 
   // AC2: two items, categorized as typed in the app.
-  expect(await say(token, 'Milch und Eier', { alexaUser })).toBe('Milch und Eier sind auf der Hummlist.');
+  expect(await say(token, 'Milch und Eier', { alexaUser })).toBe('Ich habe Milch und Eier auf die Hummlist gesetzt.');
   expect(await openNames(maxEmail)).toEqual(typed);
   await within(5_000, (timeout) => expect(itemRow(max, 'Eier')).toBeVisible({ timeout }));
 

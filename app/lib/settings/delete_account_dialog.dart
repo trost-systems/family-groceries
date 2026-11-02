@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
+import 'package:family_groceries/purchases/premium_server.dart';
+import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
@@ -19,10 +22,21 @@ Future<void> deleteAccount(BuildContext context) async {
       !context.mounted) {
     return;
   }
+  // The Premium warning comes with the archive UI's Legal Review or with
+  // the Premium sale, whichever is first (DECISIONS 68.3).
+  final premiumWarning =
+      Environment.householdArchive ||
+      await context.read<PremiumServer>().offerSwitch() == OfferSwitch.on;
+  if (!context.mounted) {
+    return;
+  }
   final deleted = await showDialog<AccountDeleted>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => DeleteAccountDialog(repository: repository),
+    builder: (_) => DeleteAccountDialog(
+      repository: repository,
+      premiumWarning: premiumWarning,
+    ),
   );
   if (deleted != null) {
     await session.accountDeleted(
@@ -48,19 +62,23 @@ final class const _LoadingFate() extends _Step;
 final class const _FateFailed(final AccountError error) extends _Step;
 
 final class const _Confirming(
-  final HouseholdFate fate, [
+  final AccountFate fate, [
 
   /// Why the last attempt deleted nothing.
   final AccountError? error,
 ]) extends _Step;
 
-final class const _Deleting(final HouseholdFate fate) extends _Step;
+final class const _Deleting(final AccountFate fate) extends _Step;
 
 /// Pops with the [AccountDeleted] answer once the server deleted the
 /// account.
 class const DeleteAccountDialog({
   required final AccountRepository repository,
   super.key,
+
+  /// When the account takes a household's Hummlist Premium with it, say so
+  /// and have the user confirm that it is not refunded (job 68).
+  final bool premiumWarning = false,
 }) extends StatefulWidget {
   @override
   State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
@@ -69,6 +87,9 @@ class const DeleteAccountDialog({
 class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
   final _confirmation = TextEditingController();
   _Step _step = const _LoadingFate();
+
+  /// The user ticked that Hummlist Premium is not refunded.
+  var _premiumAcknowledged = false;
 
   @override
   void initState() {
@@ -94,7 +115,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
     }
   }
 
-  Future<void> _delete(HouseholdFate fate) async {
+  Future<void> _delete(AccountFate fate) async {
     setState(() => _step = _Deleting(fate));
     try {
       final deleted = await widget.repository.delete();
@@ -147,8 +168,28 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
               if (fate == null && error == null)
                 const Center(child: CircularProgressIndicator())
               else if (fate != null) ...[
-                Text(_fateText(l10n, fate)),
-                if (fate is! FateNone) ...[
+                Text(_fateText(l10n, fate.household)),
+                if (widget.premiumWarning) ...[
+                  if (fate.archived.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      key: const ValueKey('account-delete-archived'),
+                      _archivedText(l10n, fate.archived),
+                    ),
+                  ],
+                  if (fate.endsPremium) ...[
+                    const SizedBox(height: 12),
+                    _PremiumWarning(
+                      fate: fate,
+                      acknowledged: _premiumAcknowledged,
+                      onChanged: deleting
+                          ? null
+                          : (ack) => setState(() => _premiumAcknowledged = ack),
+                    ),
+                  ],
+                ],
+                if (fate.household is! FateNone ||
+                    fate.archived.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(l10n.accountDeleteExportHint),
                 ],
@@ -192,7 +233,10 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
             ),
             onPressed: switch (step) {
               _Confirming(:final fate)
-                  when isDeleteConfirmation(_confirmation.text) =>
+                  when isDeleteConfirmation(_confirmation.text) &&
+                      (_premiumAcknowledged ||
+                          !widget.premiumWarning ||
+                          !fate.endsPremium) =>
                 () => unawaited(_delete(fate)),
               _ => null,
             },
@@ -212,6 +256,71 @@ String _fateText(AppLocalizations l10n, HouseholdFate fate) => switch (fate) {
   FateDeleted(:final householdName) => l10n.accountDeleteDeleted(householdName),
   FateNone() => l10n.accountDeleteNone,
 };
+
+String _archivedText(AppLocalizations l10n, List<ArchivedFate> archived) {
+  final names = _joinNames(l10n, [
+    for (final a in archived) l10n.quotedName(a.name),
+  ]);
+  return archived.any((a) => a.unlocked)
+      ? l10n.accountDeleteArchivedPremium(archived.length, names)
+      : l10n.accountDeleteArchived(archived.length, names);
+}
+
+/// What ends with the account and that it is not refunded, with the refund
+/// help and the box the user ticks before Delete works.
+class const _PremiumWarning({
+  required final AccountFate fate,
+  required final bool acknowledged,
+  required final ValueChanged<bool>? onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      key: const ValueKey('account-delete-premium'),
+      margin: EdgeInsets.zero,
+      color: scheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (fate.household case FateDeleted(
+              :final householdName,
+              unlocked: true,
+            ))
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  l10n.accountDeletePremium(householdName),
+                  style: TextStyle(color: scheme.onErrorContainer),
+                ),
+              ),
+            RefundHelpLink(
+              key: const ValueKey('account-delete-refund-help'),
+              label: l10n.joinLifetimeRefundLink,
+            ),
+            CheckboxListTile(
+              key: const ValueKey('account-delete-premium-ack'),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: acknowledged,
+              onChanged: onChanged == null
+                  ? null
+                  : (value) => onChanged!(value ?? false),
+              title: Text(
+                l10n.accountDeletePremiumAck,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: scheme.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// `Lea`, `Lea und Max`, `Anna, Lea und Max`.
 String _joinNames(AppLocalizations l10n, List<String> names) =>

@@ -79,6 +79,17 @@ export async function listArea(page: Page): Promise<{ top: number; bottom: numbe
 }
 
 /**
+ * [target]'s box, or null when it is not in the page (a lazy list has not built it) or not visible.
+ * Asked by count first, which waits for the page to answer: a short boundingBox timeout also runs
+ * out while the page is busy (a slow CI host, a rebuild after a realtime change), and a row on
+ * screen then looked missing, so the list was wheeled away from it blindly.
+ */
+export async function boxIfBuilt(target: Locator): Promise<{ x: number; y: number; width: number; height: number } | null> {
+  if ((await target.count()) === 0) return null;
+  return target.boundingBox({ timeout: 5_000 }).catch(() => null);
+}
+
+/**
  * Scrolls the list with the mouse wheel until [target] is fully on screen, at least [margin] px
  * inside the list's top and bottom edges. The list builds rows lazily, so a row far off screen is
  * not in the page at all until the list scrolls near it; it is looked for downwards first, then
@@ -90,7 +101,7 @@ export async function reveal(page: Page, target: Locator, margin = 0): Promise<v
   await page.mouse.move(page.viewportSize()!.width / 2, (top + bottom) / 2);
   let lastY: number | undefined;
   for (let i = 0; i < 40; i++) {
-    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
+    const box = await boxIfBuilt(target);
     const onScreen = box && box.y >= top && box.y + box.height <= bottom;
     if (onScreen && box.y >= top + margin && box.y + box.height <= bottom - margin) return;
     if (onScreen && box.y === lastY) return;
@@ -599,7 +610,7 @@ export async function wheelTo(page: Page, target: Locator): Promise<void> {
   // From 840 px More's list is the 360 px pane on the left.
   await page.mouse.move(size.width >= 840 ? 180 : size.width / 2, size.height / 3);
   for (let i = 0; i < 40; i++) {
-    const box = await target.boundingBox({ timeout: 200 }).catch(() => null);
+    const box = await boxIfBuilt(target);
     if (box && box.y >= 0 && box.y + box.height <= bottom) return;
     const down = box ? box.y + box.height > bottom : i < 20;
     await page.mouse.wheel(0, down ? 250 : -250);

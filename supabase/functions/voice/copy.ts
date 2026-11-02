@@ -27,8 +27,6 @@ export interface Copy {
   spoken(item: ParsedItem): string;
   added(said: string[]): string;
   existing(said: string[]): string;
-  /** Open items another spelling or synonym of a new one is (job 32b). */
-  similar(names: string[]): string;
   parsed(said: string[]): string;
   /** The open items, the first readLimit of them by name. */
   listing(said: string[], total: number): string;
@@ -65,8 +63,6 @@ export const copy: Record<Lang, Copy> = {
     spoken,
     added: (said) => `Hinzugefügt: ${said.join(', ')}.`,
     existing: (said) => `Schon auf der Liste: ${said.join(', ')}.`,
-    similar: (names) =>
-      `${und(names)} ${names.length === 1 ? 'steht' : 'stehen'} schon auf der Liste.`,
     parsed: (said) => `Verstanden: ${said.join(', ')}.`,
     listing: (said, total) => {
       if (total === 0) return 'Die Hummlist ist leer.';
@@ -97,7 +93,6 @@ export const copy: Record<Lang, Copy> = {
     spoken: spokenEnglish,
     added: (said) => `Added ${and(said)} to Hummlist.`,
     existing: (said) => `Already on the list: ${and(said)}.`,
-    similar: (names) => `${and(names)} ${names.length === 1 ? 'is' : 'are'} already on the list.`,
     parsed: (said) => `Got it: ${and(said)}.`,
     listing: (said, total) => {
       if (total === 0) return 'Your Hummlist is empty.';

@@ -1,12 +1,11 @@
 # Alexa skill
 
-A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the items land on the household's list, categorized like typed ones and visible to every member within seconds; Alexa reads back what it added ("Milch und Eier sind auf der Hummlist."). "Alexa, frag Hummlist, was auf der Liste steht" reads the open items. The account is linked once in the Alexa app through the app's consent page ("Amazon Alexa"), shows under Mehr → Zugänge, and is cut off there, by disabling the skill, or by linking again.
+A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the items land on the household's list, categorized like typed ones and visible to every member within seconds; Alexa reads back what it added ("Ich habe Milch und Eier auf die Hummlist gesetzt."). "Alexa, frag Hummlist, was auf der Liste steht" reads the open items. The account is linked once in the Alexa app through the app's consent page ("Amazon Alexa"), shows under Mehr → Zugänge, and is cut off there, by disabling the skill, or by linking again.
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts, a bare trailing count such as "Karotten 2") to the linked user's current household and reads them back.
-- `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again.
-- `alexa-similar` a new item whose spelling variant or synonym is open is added anyway and the open one named ("Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.").
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's current household and reads them back.
+- `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again. An open spelling variant or synonym of a new item (job 32b) joins that one sentence, each name once: "Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren." (job 68).
 - `alexa-read` reads the open items in aisle order, at most 10, then "und N weitere"; an empty list has its own sentence.
 - `alexa-reprompt` asks once when nothing was understood, then says "… Ich habe nichts auf die Hummlist gesetzt."; nothing is added.
 - `alexa-unlinked` asks to link the account (LinkAccount card) when there is no token or it was revoked.
@@ -28,7 +27,7 @@ Preconditions:
 - Run `scripts/alexa-test-ca.sh` once before `fg up` (it writes the test CA into `supabase/functions/.env`, which fg's stack links; `fg up` doesn't run it). A running stack doesn't load the new variables, and `fg up --fresh` only resets the database: run `fg down`, then `fg up`. Baseline from `features/README.md`; peter and lea signed in.
 - An access token for peter as Alexa holds it: run the linking in a browser as `e2e/tests/alexa-helpers.ts` `linkAccount` does (register with `scripts/alexa-oauth-client.sh <vendor id, 6-20 capitals or digits such as LOCALTEST1> "$(fg env | jq -r .apiUrl)"`, open the authorize URL with PKCE and the layla redirect, "Erlauben" on peter's web client, exchange the code with HTTP Basic). Keep the token in a shell variable `TOKEN`, never in a file.
 
-- **Add.** `scripts/alexa-say.sh --url "$(fg env | jq -r .apiUrl)" --token "$TOKEN" "Milch und Eier"` answers `outputSpeech.text` "Milch und Eier sind auf der Hummlist."; `fg wait --client lea --text Eier` succeeds on lea's client within 5 seconds without a tap. `fg db query --as peter "select i.name, c.name from items i join categories c on c.id = i.category_id where i.status = 'active'"` shows Kühlregal for both.
+- **Add.** `scripts/alexa-say.sh --url "$(fg env | jq -r .apiUrl)" --token "$TOKEN" "Milch und Eier"` answers `outputSpeech.text` "Ich habe Milch und Eier auf die Hummlist gesetzt."; `fg wait --client lea --text Eier` succeeds on lea's client within 5 seconds without a tap. `fg db query --as peter "select i.name, c.name from items i join categories c on c.id = i.category_id where i.status = 'active'"` shows Kühlregal for both.
 - **Duplicate.** The same call with "Milch" answers "Schon auf der Hummlist: Milch."; the Milch count stays 1.
 - **Read.** `scripts/alexa-say.sh … --token "$TOKEN" --read` answers "Auf der Hummlist stehen 2 Sachen: …".
 - **Re-prompt.** `… --token "$TOKEN" "äh"` answers "Das habe ich nicht verstanden. Was soll auf die Liste?" with `shouldEndSession` false; `… --token "$TOKEN" --retry "ähm"` answers "Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt."

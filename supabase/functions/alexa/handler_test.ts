@@ -291,7 +291,7 @@ Deno.test('AC2/AC3: "Milch und Eier" adds two items and reads both back', async 
     world.deps(),
     envelope(intent('AddItemIntent', 'Milch und Eier'), { token: 'tok-peter' }),
   );
-  assertEquals(said(reply), 'Milch und Eier sind auf der Hummlist.');
+  assertEquals(said(reply), 'Ich habe Milch und Eier auf die Hummlist gesetzt.');
   assertEquals(world.rows.map((r) => r.name), ['Milch', 'Eier']);
 });
 
@@ -306,7 +306,7 @@ Deno.test('German input: quantities, number words, umlauts, ß, commas', async (
   );
   assertEquals(
     said(reply),
-    '2 Liter Milch, 1 Kilo Äpfel, 3 Weißwurst und Brot sind auf der Hummlist.',
+    'Ich habe 2 Liter Milch, 1 Kilo Äpfel, 3 Weißwurst und Brot auf die Hummlist gesetzt.',
   );
   assertEquals(
     world.rows.map((r) => [r.name, r.quantity]),
@@ -532,7 +532,7 @@ Deno.test('rate limit: 30 items a minute per user, then a German answer and noth
     world.deps(),
     envelope(intent('AddItemIntent', thirty), { token: 'tok-peter' }),
   );
-  assertStringIncludes(said(first.reply)!, 'sind auf der Hummlist');
+  assertStringIncludes(said(first.reply)!, 'auf die Hummlist gesetzt.');
   assertEquals(world.rows.length, 30);
   const more = await send(
     world.deps(),
@@ -759,7 +759,7 @@ Deno.test('a lowercase utterance (as Alexa may hear it) is stored with German ca
   );
   assertEquals(
     said(reply),
-    'Milch, 2 Liter Hafermilch, Äpfel und Milch ohne Laktose sind auf der Hummlist.',
+    'Ich habe Milch, 2 Liter Hafermilch, Äpfel und Milch ohne Laktose auf die Hummlist gesetzt.',
   );
   // Heard with capitals: left as heard (the Siri splitter capitalizes the first letter only).
   const asHeard = linkedWorld();
@@ -776,7 +776,7 @@ Deno.test('job 32b: a new item with another spelling open is added, and Alexa na
   const karotten = { ...added('Karotten'), similarOnList: ['Möhren'] };
   assertEquals(
     confirmation([karotten]),
-    'Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.',
+    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.',
   );
   assertEquals(
     confirmation([
@@ -784,12 +784,22 @@ Deno.test('job 32b: a new item with another spelling open is added, and Alexa na
       { ...added('Mohrrüben'), similarOnList: ['Möhren'] },
       added('Milch', true),
     ]),
-    'Karotten und Mohrrüben sind auf der Hummlist. Schon auf der Hummlist: Milch. ' +
-      'Möhren steht schon auf der Hummlist.',
+    'Ich habe Karotten und Mohrrüben auf die Hummlist gesetzt. Schon auf der Hummlist: Milch und Möhren.',
   );
   assertEquals(
     confirmation([{ ...added('Karotten'), similarOnList: ['Möhren', 'Gelbe Rüben'] }]),
-    'Ich habe Karotten auf die Hummlist gesetzt. Möhren und Gelbe Rüben stehen schon auf der Hummlist.',
+    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren und Gelbe Rüben.',
+  );
+});
+
+Deno.test('job 68: an open variant that is also an exact duplicate is named once', () => {
+  assertEquals(
+    confirmation([added('Möhren', true), { ...added('Karotten'), similarOnList: ['Möhren'] }]),
+    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.',
+  );
+  assertEquals(
+    confirmation([added('Milch', true), added('Möhren', true)]),
+    'Schon auf der Hummlist: Milch und Möhren.',
   );
 });
 

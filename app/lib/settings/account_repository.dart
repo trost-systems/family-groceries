@@ -16,10 +16,33 @@ final class const FateKept(
 ) extends HouseholdFate;
 
 /// The user is the last member, so [householdName] goes too.
-final class const FateDeleted(final String householdName) extends HouseholdFate;
+final class const FateDeleted(
+  final String householdName, {
+
+  /// It has Hummlist Premium now, which ends with it (`leaves_unlocked`).
+  final bool unlocked = false,
+}) extends HouseholdFate;
 
 /// The user is in no household.
 final class const FateNone() extends HouseholdFate;
+
+/// A household the user archived (job 43). It has no members, so it is
+/// deleted with the account (DECISIONS 43.11).
+@immutable
+class const ArchivedFate(final String name, {final bool unlocked = false});
+
+/// Everything deleting the account takes with it besides the account.
+@immutable
+class const AccountFate(
+  final HouseholdFate household, {
+  final List<ArchivedFate> archived = const [],
+}) {
+  /// Hummlist Premium of some household ends with the account.
+  bool get endsPremium => switch (household) {
+    FateDeleted(unlocked: true) => true,
+    _ => archived.any((a) => a.unlocked),
+  };
+}
 
 /// Whether the server revoked the app's Sign in with Apple grant.
 enum AppleUnlink(final String wire) {
@@ -80,7 +103,7 @@ abstract interface class AccountRepository() {
   String? get email;
 
   /// Throws [AccountError].
-  Future<HouseholdFate> fate();
+  Future<AccountFate> fate();
 
   /// Deletes the account on the server, re-authorizing with Apple first
   /// where that is possible. Throws [AccountError]; then nothing was
@@ -105,7 +128,24 @@ class SupabaseAccountRepository(
   String? get email => _client.auth.currentUser?.email;
 
   @override
-  Future<HouseholdFate> fate() => _guard(() async {
+  Future<AccountFate> fate() => _guard(() async {
+    final (household, archived) = await (
+      _householdFate(),
+      _client.rpc<List<dynamic>>('archived_households'),
+    ).wait;
+    return AccountFate(
+      household,
+      archived: [
+        for (final row in archived.cast<Map<String, dynamic>>())
+          ArchivedFate(
+            row['name']! as String,
+            unlocked: row['unlocked'] == true,
+          ),
+      ],
+    );
+  });
+
+  Future<HouseholdFate> _householdFate() async {
     final userId = _client.auth.currentUser!.id;
     final membership = await _client.rest
         .from('household_members')
@@ -128,7 +168,10 @@ class SupabaseAccountRepository(
       final others = {for (final row in members) row['user_id']! as String}
         ..remove(userId);
       if (others.isEmpty) {
-        return FateDeleted(name);
+        return FateDeleted(
+          name,
+          unlocked: await _client.rpc<bool>('leaves_unlocked'),
+        );
       }
       return FateKept(name, [
         for (final profile in profiles)
@@ -142,7 +185,7 @@ class SupabaseAccountRepository(
       ]);
     }
     return const FateNone();
-  });
+  }
 
   @override
   Future<AccountDeleted> delete() => _guard(() async {

@@ -121,11 +121,20 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pump();
       await tapKey(tester, 'onboarding-store-Lidl');
+      // Mehr → Läden is where stores are added later (job 58).
+      expect(
+        find.text(
+          'Ohne Läden starten. '
+          'Du kannst sie später unter Mehr → Läden anlegen.',
+        ),
+        findsOneWidget,
+      );
       await tapKey(tester, 'skip-stores');
       expect(o.session.creates, [('WG Sonnenallee', '')]);
       expect(
         find.text(
-          'Ohne Läden starten. Du kannst sie später unter Mehr anlegen.',
+          'Ohne Läden starten. '
+          'Du kannst sie später unter Mehr → Läden anlegen.',
         ),
         findsNothing,
         reason: 'created: Step 3',

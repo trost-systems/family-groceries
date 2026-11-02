@@ -91,22 +91,25 @@ export const said = (item: Added, lang: Lang = 'de') =>
   [copy[lang].spoken(item), item.brand, item.properties?.replaceAll(', ', ' ')].filter(Boolean)
     .join(' ');
 
-/** The confirmation Siri speaks. */
+/**
+ * The confirmation Siri speaks, one sentence per outcome: "Hinzugefügt: Karotten. Schon auf der
+ * Liste: Möhren, Milch." The open ones are the exact items, then the other spellings or synonyms
+ * of new ones (job 32b, added anyway), each name once.
+ */
 export function confirmation(results: Added[], lang: Lang = 'de'): string {
   const say = copy[lang];
-  const list = (items: Added[]) => items.map((item) => said(item, lang));
   const added = results.filter((r) => !r.alreadyOnList);
-  const existing = results.filter((r) => r.alreadyOnList);
-  const similar = [...new Set(added.flatMap((r) => r.similarOnList ?? []))];
+  const open = [
+    ...new Set([
+      ...results.filter((r) => r.alreadyOnList).map((item) => said(item, lang)),
+      ...added.flatMap((r) => r.similarOnList ?? []),
+    ]),
+  ];
   return [
-    added.length ? say.added(list(added)) : '',
-    existing.length ? say.existing(list(existing)) : '',
-    similar.length ? say.similar(similar) : '',
+    added.length ? say.added(added.map((item) => said(item, lang))) : '',
+    open.length ? say.existing(open) : '',
   ].filter(Boolean).join(' ');
 }
-
-/** "Möhren steht schon auf der Liste.", "Möhren und Milch stehen schon auf der Liste." */
-export const similarNote = (names: string[], lang: Lang = 'de') => copy[lang].similar(names);
 
 interface Body {
   text: string | null;

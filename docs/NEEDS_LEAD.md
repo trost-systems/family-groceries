@@ -1042,3 +1042,34 @@ None new.
     server round trip), visible when typing at speed.
   - Your own additions (here through MCP) get no "new" highlight, unlike another member's mint
     row; the mcp-chat video adds a mint marker beside the phone to point at them.
+
+## Job 68: account deletion and Hummlist Premium (2026-11-02, for Legal Review)
+
+**Outcome (DECISIONS 68.1 to 68.3).** Deleting the account never archives a household:
+
+- **Last member of a household with Premium** (Lifetime, a yearly plan or a promotional grant):
+  the household is deleted with the account, its Premium ends. With `HOUSEHOLD_ARCHIVE` on, the
+  dialog says so, explains that archiving isn't possible there and that inviting someone keeps the
+  household, links the refund help, and Delete waits for the tick „Ich habe verstanden: Hummlist
+  Premium endet und wird nicht automatisch erstattet.“ (EN "I understand: Hummlist Premium ends and
+  isn't refunded automatically.").
+- **Households the user archived** are deleted with the account (DECISIONS 43.11, unchanged;
+  pgTAP `supabase/tests/leaves_unlocked.test.sql`). The dialog names them; one with Premium asks
+  for the same tick. Their purchases keep naming the deleted household, so they never unlock
+  another one; the purchase rows follow the normal 30-day deletion.
+- **Why no archive:** only the archiving user can bring an archive back, and their account is what
+  is being deleted, so the archive would be unreachable data kept for 24 months.
+
+**For Legal Review:** the strings `accountDeletePremium`, `accountDeleteArchived`,
+`accountDeleteArchivedPremium`, `accountDeletePremiumAck` in `app/l10n/app_de.arb` /
+`app_en.arb`. They match `app/web/konto-loeschen.html` today (household deleted "mit … einer
+Freischaltung mit Hummlist Lifetime", archived households deleted too), which job 68 did not
+edit.
+
+**Lead decision needed only if you disagree:** to make account deletion archive instead, someone
+other than the deleted user would need a way back in (for example an invite into an archived
+household), which job 43 rules out.
+
+**When it shows:** with `HOUSEHOLD_ARCHIVE` (NEEDS_LEAD "Job 43", step 4) or as soon as the
+`premium_offer` server switch opens the Premium sale, whichever comes first. Nothing to flip for
+this job; Legal Review should approve the four strings before either happens.

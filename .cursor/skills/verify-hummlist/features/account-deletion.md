@@ -7,7 +7,9 @@ Every signed-in user can export their data as a JSON file and delete their accou
 - `acct-entry` the Konto page: the email, „Meine Daten exportieren“ and „Konto löschen“.
 - `acct-export` saves a JSON file `einkauf-daten-YYYY-MM-DD.json` (on web a browser download) and shows „Daten exportiert“ (on platforms that report a path: „Daten exportiert: <path>“).
 - `acct-fate-kept` for a member of a shared household the dialog says the household stays for the others.
-- `acct-fate-deleted` for the last member the dialog says the household is deleted too, with its list, history, categories and stores.
+- `acct-fate-deleted` for the last member the dialog says the household is deleted too.
+- `acct-premium` (job 68; with the `HOUSEHOLD_ARCHIVE` define or the `premium_offer` server switch on, so not in today's releases; the e2e build has the define) the last member of a household with Hummlist Premium sees a red card: „„<Haushalt>“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.“, the link „Erstattung bei Apple oder Google anfragen“ (the refund help sheet) and the checkbox „Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.“ (EN "I understand: Hummlist Premium ends and isn't refunded automatically."). „Endgültig löschen“ waits for the tick as well as the word. The household is deleted, never archived.
+- `acct-archived` (same switches) households the user archived are named: „Dein archivierter Haushalt „<Name>“ wird mit deinem Konto gelöscht.“ / „Deine archivierten Haushalte „A“ und „B“ werden mit deinem Konto gelöscht.“; one with Premium adds „, und mit ihm sein Hummlist Premium.“ and asks for the same tick. They are deleted with the account.
 - `acct-confirm-word` „Endgültig löschen“ stays disabled until the field holds LÖSCHEN, LOESCHEN or DELETE (any case, spaces around ignored, in either language).
 - `acct-deleted` after deletion the sign-in screen shows „Dein Konto wurde gelöscht.“
 - `acct-welcome` a user without a household deletes the account from the welcome screen.
@@ -35,7 +37,7 @@ Preconditions:
 
 - Never delete the seeded demo users. Sign up a throwaway through the UI (`signUpWithHousehold(page, newEmail('acct'))` from e2e/tests/helpers.ts) or, for the shared case, a second browser context that signs up and uses `joinWithCode(b, await createInviteCode(a))`.
 - Local stack up; `apiAs(email)` / `adminClient()` from helpers give a second view of the database.
-- Spec: `e2e/tests/account.spec.ts`, run with `scripts/verify.sh --only e2e -- tests/account.spec.ts`.
+- Spec: `e2e/tests/account.spec.ts` (the Premium case: `e2e/tests/household-bound.spec.ts`, job 68), run with `scripts/verify.sh --only e2e -- tests/account.spec.ts`.
 
 - **Open the Konto page.** `await openMore(page, 'Konto')`. `page.getByRole('button', { name: 'Konto löschen', exact: true })` is visible; URL `/more/account`.
 - **Export.** `const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /^Meine Daten exportieren/ }).click()])`. `download.suggestedFilename()` is `einkauf-daten-<YYYY-MM-DD>.json` (the device's local date; the e2e spec computes it in Europe/Berlin); parse the file: `format` is `family-groceries-export`, `account.email` the user's, `items_added` the items they added, the text contains no `token_hash`.

@@ -1208,6 +1208,36 @@ abstract class AppLocalizations {
   /// **'Mit „Meine Daten exportieren“ unter Konto kannst du vorher eine Kopie sichern.'**
   String get accountDeleteExportHint;
 
+  /// No description provided for @accountDeletePremium.
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.'**
+  String accountDeletePremium(String household);
+
+  /// names: quoted and joined, like „Ferien“ und „Büro“
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Dein archivierter Haushalt {names} wird mit deinem Konto gelöscht.} other{Deine archivierten Haushalte {names} werden mit deinem Konto gelöscht.}}'**
+  String accountDeleteArchived(int count, String names);
+
+  /// No description provided for @accountDeleteArchivedPremium.
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Dein archivierter Haushalt {names} wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium.} other{Deine archivierten Haushalte {names} werden mit deinem Konto gelöscht, und mit ihnen ihr Hummlist Premium.}}'**
+  String accountDeleteArchivedPremium(int count, String names);
+
+  /// A household name inside a sentence
+  ///
+  /// In de, this message translates to:
+  /// **'„{name}“'**
+  String quotedName(String name);
+
+  /// No description provided for @accountDeletePremiumAck.
+  ///
+  /// In de, this message translates to:
+  /// **'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.'**
+  String get accountDeletePremiumAck;
+
   /// No description provided for @accountDeleteConfirmLabel.
   ///
   /// In de, this message translates to:
@@ -1949,7 +1979,7 @@ abstract class AppLocalizations {
   /// No description provided for @skipStoresHint.
   ///
   /// In de, this message translates to:
-  /// **'Ohne Läden starten. Du kannst sie später unter Mehr anlegen.'**
+  /// **'Ohne Läden starten. Du kannst sie später unter Mehr → Läden anlegen.'**
   String get skipStoresHint;
 
   /// No description provided for @householdOffline.

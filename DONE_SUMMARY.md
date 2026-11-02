@@ -476,3 +476,7 @@ app.hummlist.com links to the list, the add sheet, a store, the More tab and its
 
 The paywall go-live is now the ordered checklist `docs/PAYWALL_RELEASE.md`, with an owner per step and nothing flipped. The audit with every flag on found 13 bugs, all fixed with tests: a failed renewal ended Premium on day one of the grace period, a restore of a lapsed plan blocked Buy until the app restarted, offline showed "bald verfügbar", and others. Store builds read the Premium switches from repository variables. PR #153 is rebased and green but not merged. The legal gaps are in the PR. Details: [docs/done/67-paywall-ready.md](docs/done/67-paywall-ready.md).
 - Job 64, polish from the Play reshoot (no default stores, Premium hidden before launch, one open item per name, three whole due rows): [docs/done/64-polish-seed.md](docs/done/64-polish-seed.md)
+
+## Job 68: account deletion Premium warning, Alexa read-back wording (2026-11-02), PR #191
+
+The deletion dialog warns the last member of a household with Hummlist Premium that Premium ends and isn't refunded automatically (a box to tick, refund help), and names archived households, which go with the account; shown with `HOUSEHOLD_ARCHIVE` or the `premium_offer` switch, so not in today's releases. Deleting the account never archives (DECISIONS and NEEDS_LEAD "Job 68"). Alexa and Siri now say one sentence for what was added and one for what was already there. The onboarding skip hint names Mehr → Läden. Details: [docs/done/68-delete-warn-alexa.md](docs/done/68-delete-warn-alexa.md).
