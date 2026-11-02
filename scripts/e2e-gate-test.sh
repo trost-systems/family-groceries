@@ -49,6 +49,24 @@ expect_calls "npx playwright test --shard=2/2" --shard=2/2
 expect_calls "$lock" -- tests/integration-lock.spec.ts
 expect_calls "$lock -g English --workers=1" tests/integration-lock.spec.ts -g English --workers=1
 
+# Job 65: run under `flock <lock>` (the lock held by the parent), the gate goes on instead of
+# waiting for itself; a plain run still takes the lock itself.
+: >"$tmp/calls"
+PATH="$tmp/bin:$PATH" FG_E2E_LOCK="$tmp/lock" FG_SYNC_SMOKE=0 \
+  timeout 20 flock "$tmp/lock" "$tmp/repo/scripts/gates/e2e.sh" tests/purchases.spec.ts >/dev/null 2>&1 \
+  || fail "e2e.sh under flock <lock> exited $? (124: it waited for its own parent's lock)"
+[[ "$(cat "$tmp/calls")" == "npx playwright test tests/purchases.spec.ts" ]] || fail "e2e.sh under flock <lock> did not run playwright"
+# ... while a lock held by an unrelated process still makes it wait.
+flock "$tmp/lock" sleep 30 &
+holder=$!
+sleep 0.5
+rc=0
+PATH="$tmp/bin:$PATH" FG_E2E_LOCK="$tmp/lock" FG_SYNC_SMOKE=0 \
+  timeout 3 "$tmp/repo/scripts/gates/e2e.sh" tests/purchases.spec.ts >/dev/null 2>&1 || rc=$?
+kill "$holder" 2>/dev/null || true
+wait "$holder" 2>/dev/null || true
+[[ $rc == 124 ]] || fail "e2e.sh did not wait for a lock held by another process (exit $rc)"
+
 if [[ $failures -gt 0 ]]; then
   echo "e2e-gate-test: $failures failed" >&2
   exit 1

@@ -19,16 +19,36 @@ case "${FG_SYNC_SMOKE:-auto}" in
 esac
 
 LOCK="${FG_E2E_LOCK:-/tmp/fg-e2e.lock}"
-exec 9>>"$LOCK"
-if ! flock -n 9; then
-  log "waiting for the box-wide e2e lock $LOCK; last recorded holder (a plain 'flock $LOCK <cmd>' records nothing): $(grep . "$LOCK" || echo none recorded)"
-  flock 9
-  log "got the e2e lock"
+# Job 65: `flock /tmp/fg-e2e.lock scripts/gates/e2e.sh` holds the lock on the parent's descriptor,
+# and a second flock on this script's own descriptor waited for it forever (an orphaned waiter
+# held up every e2e run on the Hetzner runner for an hour). A process above this one with the
+# file open holds it already, as fg sync assumes too (cli/sync.ts heldByAncestor).
+lock_held_above() {
+  local target pid=$PPID fd
+  target="$(readlink -f "$LOCK")"
+  while [[ $pid -gt 1 ]]; do
+    for fd in /proc/"$pid"/fd/*; do
+      [[ "$(readlink "$fd" 2>/dev/null)" == "$target" ]] && return 0
+    done
+    pid="$(sed 's/.*) //' "/proc/$pid/stat" 2>/dev/null | cut -d' ' -f2)"
+    [[ -n $pid ]] || return 1
+  done
+  return 1
+}
+if lock_held_above; then
+  log "the e2e lock $LOCK is held by a parent process; using it"
+else
+  exec 9>>"$LOCK"
+  if ! flock -n 9; then
+    log "waiting for the box-wide e2e lock $LOCK; last recorded holder (a plain 'flock $LOCK <cmd>' records nothing): $(grep . "$LOCK" || echo none recorded)"
+    flock 9
+    log "got the e2e lock"
+  fi
+  holder="$REPO_ROOT (pid $$, since $(date '+%H:%M:%S'))"
+  echo "$holder" >"$LOCK"
+  # Clear the record on the way out, so the next waiter isn't told about a run that has ended.
+  trap '[[ "$(cat "$LOCK" 2>/dev/null)" == "$holder" ]] && : >"$LOCK"' EXIT
 fi
-holder="$REPO_ROOT (pid $$, since $(date '+%H:%M:%S'))"
-echo "$holder" >"$LOCK"
-# Clear the record on the way out, so the next waiter isn't told about a run that has ended.
-trap '[[ "$(cat "$LOCK" 2>/dev/null)" == "$holder" ]] && : >"$LOCK"' EXIT
 
 supabase_up
 log "web build against the local stack"

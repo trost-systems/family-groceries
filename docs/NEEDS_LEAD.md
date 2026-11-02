@@ -1037,3 +1037,20 @@ None new.
     server round trip), visible when typing at speed.
   - Your own additions (here through MCP) get no "new" highlight, unlike another member's mint
     row; the mcp-chat video adds a mint marker beside the phone to point at them.
+
+## Job 65: store screenshots
+
+- **Compare with the approved de-DE v2 set.** The v2 output, capture scripts and the ASO spec
+  (`/workspace/hummlist/play-graphics/`, `/workspace/hummlist-aso/de-DE-play-screenshot-spec-2026-11-01.md`)
+  are not on the Hetzner runner, so the set here was rebuilt from the brief. Hold the contact sheet
+  (PR body, `docs/screenshots/65/`) beside v2. Copy the approved scene captions into
+  `marketing/store-screenshots/captions.yaml` with `status: approved`, and say which scenes or
+  devices v2 has that this set lacks (`sets.mjs` is the one place to change).
+- **English captions and the en-US set are drafts.** English item names still get category icons
+  instead of their own (the job 54 finding above), so every English fruit shows the carrot.
+- **The CI workflow can be dispatched only once it is on main** (GitHub runs `workflow_dispatch`
+  for workflows on the default branch). It was proven on this branch with a temporary push trigger,
+  which was removed before the PR (run linked in the PR).
+- **FEATURES-FOR-WRITERS.md** says "Clips and screenshots use the fictional Brandt family". The
+  store set and the site videos now use „Unser Haushalt“ (Anna, Jonas); the how-to clips still use
+  the Brandt family. Not edited here, because jobs 61 to 64 all change that file.
