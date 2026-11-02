@@ -18,7 +18,7 @@ A list belongs to a household. A new user goes through onboarding (`features/onb
 
 - Sign up or sign in as a user without a household. After the analytics question (builds with a key), "Willkommen bei Hummlist" offers "Haushalt erstellen" and "Einladung annehmen".
 - Tap "Mehr" in the tab bar, then "Partner einladen" or "Anderem Haushalt beitreten" under "Haushalt".
-- Open an invite link (`/join/<code>`). The web build opens it, also before sign-in (the code is kept on the device through sign-in). The release phone apps claim `https://app.hummlist.com/join/*` (universal links, App Links) once app.hummlist.com serves the `.well-known` files. The fg debug build sets no `APP_URL`, so its invites show the code only.
+- Open an invite link (`/join/<code>`). The web build opens it, also before sign-in (the code is kept on the device through sign-in). The release phone apps claim `https://app.hummlist.com/join/*` and the other app links of `docs/DEEP_LINKS.md` (`/more/invites` included; universal links, App Links) once app.hummlist.com serves the `.well-known` files. The web side of every link: verify-hummlist `features/app-links.md`. The fg debug build sets no `APP_URL`, so its invites show the code only.
 
 ## Driving it with fg
 

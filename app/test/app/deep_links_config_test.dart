@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:family_groceries/app/deep_links.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Job 22: invite links (https://app.hummlist.com/join/<code>) open the
-/// installed app. Five files must agree, and a mismatch only shows on a
+/// Job 22 and 66: the app URL's paths in [appLinks] open the installed app.
+/// Five files must agree with that table, and a mismatch only shows on a
 /// device: the iOS entitlement, Android's verified intent filter, the two
 /// files the web build serves under `/.well-known/`, and Vercel's rules
 /// that serve them as JSON instead of the app's index.html.
@@ -35,7 +36,7 @@ void main() {
     expect(entitlements, contains('com.apple.developer.applesignin'));
   });
 
-  test('apple-app-site-association names the app and /join/* only', () {
+  test('apple-app-site-association names the app and the table', () {
     final aasa = jsonDecode(
       File('web/.well-known/apple-app-site-association').readAsStringSync(),
     ) as Map<String, Object?>;
@@ -43,11 +44,12 @@ void main() {
         ((aasa['applinks']! as Map)['details']! as List).single as Map;
     expect(details['appIDs'], ['$teamId.${bundleId()}']);
     expect((details['components']! as List).map((c) => (c as Map)['/']), [
-      '/join/*',
+      for (final link in appLinks)
+        if (link.prefix) '${link.path}*' else link.path,
     ]);
   });
 
-  test('Android verifies an https filter for /join/ on the app URL', () {
+  test('Android verifies an https filter for the table on the app URL', () {
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
     final filter = RegExp(
@@ -57,7 +59,10 @@ void main() {
     expect(filter, contains('android.intent.category.BROWSABLE'));
     expect(filter, contains('android:scheme="https"'));
     expect(filter, contains('android:host="${appUrl.host}"'));
-    expect(filter, contains('android:pathPrefix="/join/"'));
+    final paths = RegExp('android:(path|pathPrefix)="([^"]*)"')
+        .allMatches(filter)
+        .map((m) => (path: m[2]!, prefix: m[1] == 'pathPrefix'));
+    expect(paths, appLinks);
     // The sign-in callback keeps its own filter.
     expect(
       manifest,
@@ -99,7 +104,13 @@ void main() {
     final rewrite =
         ((vercel['rewrites']! as List).single as Map)['source']! as String;
     final spa = RegExp('^$rewrite\$');
-    expect(spa.hasMatch('/join/ABCD2345'), isTrue);
+    // Without the app every link opens the web app.
+    for (final link in appLinks) {
+      final path = link.prefix
+          ? '${link.path}4f9c2e1a-7b3d-4c8e-9a6f-2d1e0b5c8a7f'
+          : link.path;
+      expect(spa.hasMatch(path), isTrue, reason: path);
+    }
     expect(spa.hasMatch('/.well-known/apple-app-site-association'), isFalse);
     expect(spa.hasMatch('/.well-known/assetlinks.json'), isFalse);
     final headers = (vercel['headers']! as List).cast<Map<String, Object?>>();

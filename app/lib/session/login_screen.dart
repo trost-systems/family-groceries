@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/brand_block.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -19,7 +20,8 @@ class const LoginScreen({
   /// Carried through so a magic link lands back on the invite.
   final String? invite,
 
-  /// A consent URL to return to after sign-in, already vetted by the router.
+  /// A consent URL or an app link's location to return to after sign-in,
+  /// already vetted by the router.
   final String? next,
 }) extends StatelessWidget {
   @override
@@ -31,7 +33,16 @@ class const LoginScreen({
       _ => null,
     };
     final panel = SignInPanel(
-      returnPath: next ?? (invite == null ? '/' : '/join/$invite'),
+      returnPath: switch (next) {
+        final next? when Uri.parse(next).path == consentPath => next,
+        // Back at the root, which the apps don't claim: a claimed link
+        // would open the app with a code only this browser can redeem.
+        final next? => Uri(
+          path: '/',
+          queryParameters: {'next': next},
+        ).toString(),
+        null => invite == null ? '/' : '/join/$invite',
+      },
       header: const BrandBlock(),
     );
     return Scaffold(

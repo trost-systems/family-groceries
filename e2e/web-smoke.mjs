@@ -32,7 +32,9 @@ async function head(path) {
 }
 
 const httpChecks = !process.env.SMOKE_BROWSER_ONLY;
-for (const path of httpChecks ? ['/', '/oauth/consent', '/join/ABC123', '/settings', '/join/AB.CD', '/lists/a.b'] : []) {
+for (const path of httpChecks ? ['/', '/oauth/consent', '/join/ABC123', '/settings', '/join/AB.CD', '/lists/a.b',
+  // Job 66: every app link (docs/DEEP_LINKS.md) opens the web app where the app is not installed.
+  '/list', '/add', '/stores/4f9c2e1a-7b3d-4c8e-9a6f-2d1e0b5c8a7f', '/more', '/more/invites', '/more/settings'] : []) {
   const r = await head(path);
   check(r.status === 200 && r.type.startsWith('text/html') && r.body.includes('flutter_bootstrap.js'), `${path} serves index.html (${r.status}, ${r.type})`);
   check(/no-cache/.test(r.cache), `${path} Cache-Control: ${r.cache}`);
@@ -49,11 +51,13 @@ if (httpChecks) {
   check(wasm.status === 200 && wasm.type.startsWith('application/wasm') && /max-age=0/.test(wasm.cache), `/main.dart.wasm ${wasm.status}, ${wasm.type}, Cache-Control: ${wasm.cache}`);
   const mjs = await head('/main.dart.mjs');
   check(mjs.status === 200 && mjs.type.includes('javascript') && /max-age=0/.test(mjs.cache), `/main.dart.mjs ${mjs.status}, ${mjs.type}, Cache-Control: ${mjs.cache}`);
-  // Job 22: universal links (iOS) and App Links (Android) for /join/<code>. Apple fetches the
-  // association without following redirects and wants JSON.
+  // Job 22 and 66: universal links (iOS) and App Links (Android) for the paths of
+  // docs/DEEP_LINKS.md. Apple fetches the association without following redirects and wants JSON.
   const aasa = await head('/.well-known/apple-app-site-association');
-  check(aasa.status === 200 && aasa.type.startsWith('application/json') && JSON.parse(aasa.body).applinks.details[0].appIDs.includes('VCZSHMZY25.com.hummlist.app'),
-    `/.well-known/apple-app-site-association ${aasa.status}, ${aasa.type}`);
+  const details = aasa.status === 200 ? JSON.parse(aasa.body).applinks.details[0] : null;
+  check(aasa.type.startsWith('application/json') && details?.appIDs.includes('VCZSHMZY25.com.hummlist.app')
+    && details.components.some((c) => c['/'] === '/more/*'),
+    `/.well-known/apple-app-site-association ${aasa.status}, ${aasa.type}, claims /more/*`);
   const links = await head('/.well-known/assetlinks.json');
   check(links.status === 200 && links.type.startsWith('application/json') && JSON.parse(links.body)[0].target.package_name === 'com.hummlist.app',
     `/.well-known/assetlinks.json ${links.status}, ${links.type}`);
