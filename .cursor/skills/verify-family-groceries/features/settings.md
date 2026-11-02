@@ -12,13 +12,13 @@ Mehr → Einstellungen (`/more/settings`) holds what belongs to the device, not 
 
 ## How to get to it (user POV)
 
-- Tap "Mehr", scroll to "Einstellungen" and tap it. Turn "Wie das System" off, then "Dunkel" on (or off for light). Tap "Sprache" and pick a language.
+- Tap "Mehr", scroll to "Einstellungen" and tap it. Under "Darstellung" tap "System", "Hell" or "Dunkel". Tap "Sprache" and pick a language.
 
 ## Driving it with fg
 
 Preconditions: baseline from `features/README.md`; peter signed in on the list. The Linux client's device setting is light, so `theme-system` shows light.
 
-- **`st-open`.** `fg tap --key tab-more`, `fg wait --key more-screen`, `fg marionette -- scroll-to --key more-settings`, `fg tap --key more-settings`, `fg wait --key settings-screen`; `fg find --text Darstellung` counts 1. `fg screenshot --name st-settings`.
+- **`st-open`.** `fg tap --key tab-more`, `fg wait --key more-screen`, `fg marionette -- scroll-to --key more-settings`, `fg tap --key more-settings`, `fg wait --key settings-screen`; `fg find --key theme-mode` counts 1 (the section header's visible text is in capitals, "DARSTELLUNG"). `fg screenshot --name st-settings`.
 - **`st-theme`.** `fg screenshot --name st-light` (`theme-system` picked). `fg tap --key theme-dark`, `fg screenshot --name st-dark`: the page is dark at once (compare the two PNGs). `fg tap --key tab-list`, `fg wait --key add-item-field`, `fg screenshot --name st-dark-list`: the list, its store dividers and the add bar are dark too. Open the add sheet (`fg tap --key add-item-field`) and an edit sheet (`features/edit-item.md`) for their dark screenshots.
 - **`st-theme-kept`.** With Dunkel picked, `fg restart`, `fg wait --key add-item-field`, `fg screenshot --name st-dark-restart` is dark. `fg logout`, `fg screenshot --name st-dark-login` is dark. `fg login peter`, then back to Einstellungen and `fg tap --key theme-system` restores light.
 - **`st-language`.** On Einstellungen, `fg tap --key settings-language`, `fg wait --key language-screen`, `fg screenshot --name st-language`. `fg tap --key language-en`, `fg wait --text Language`: the title and the tabs read English at once ("List", "More"). `fg back` returns to Einstellungen, now "Settings"; `fg find --text English` names the pick.

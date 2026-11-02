@@ -9,7 +9,7 @@ A user signs in with email and password, creates an account with "Registrieren",
 - `auth-signup` creates an account. Locally, email confirmation is off, so the user lands on the welcome screen.
 - `auth-magic-send` sends a sign-in link and shows "Wir haben dir einen Anmeldelink geschickt. Öffne ihn auf diesem Gerät."
 - `auth-magic-open` signs the user in when the link is opened on the device.
-- `auth-signout` signs out from the More tab ("Mehr", then "Abmelden", key `more-sign-out`) or from the welcome screen's logout icon (tooltip "Abmelden").
+- `auth-signout` signs out from the More tab ("Mehr", then "Abmelden", key `more-sign-out`) or from the logout icon (tooltip "Abmelden") on the welcome screen and on the analytics question (builds with a PostHog key only).
 - `auth-session` keeps the user signed in across an app restart.
 - `auth-form-check` refuses to send an email without "@" ("Bitte eine gültige E-Mail-Adresse eingeben") or a password under 6 characters ("Mindestens 6 Zeichen"), under the fields.
 - `auth-legal` shows "Impressum · Datenschutz" ("Imprint · Privacy" in English; keys `legal-imprint`, `legal-privacy`) at the bottom of the login screen, on screen without scrolling. Each opens hummlist.com (`/impressum`, `/datenschutz`; English `/en/imprint`, `/en/privacy`) in the browser, never inside the app.
@@ -36,7 +36,7 @@ Preconditions:
 - **Magic link, open.** Android only: run `adb -s <serial from fg env> shell am start -a android.intent.action.VIEW -d "<link with 127.0.0.1 replaced by 10.0.2.2>"`, then `fg wait --key add-item-field`. On linux, report `auth-magic-open` as not drivable (see Gotchas).
 - **Sign-out.** Run `fg logout --client lea`: it taps `tab-more`, scrolls to `more-sign-out` and taps it. The result is `"screen": "login"`. By hand: `fg tap --key tab-more --client lea`, `fg wait --key more-screen --client lea`, `fg marionette --client lea -- scroll-to --key more-sign-out`, `fg tap --key more-sign-out --client lea`, `fg wait --key login-email --client lea`. From the welcome screen (after **Sign-up**), run `fg tap --tooltip Abmelden --client lea` and `fg wait --key login-email --client lea`.
 - **Session survives restart.** Sign in with `fg login lea`, then run `fg restart --client lea`, then `fg wait --key add-item-field --client lea`.
-- **Provider buttons.** Not drivable with fg: every fg build leaves the provider defines unset, and the Linux app never shows the buttons. Run `scripts/gates/e2e.sh --workers=1 tests/social-sign-in.spec.ts` (it builds the web app with `app/config/e2e.json` and signs in through a fake OpenID provider). A real Google or Apple round trip needs a real account; `features/web-hosting.md` reaches the providers' pages from production.
+- **Provider buttons.** Not drivable with fg: every fg build leaves the provider defines unset, and the Linux app has no Google or Apple flow at all, so it never shows the buttons, defines or not. Run `scripts/gates/e2e.sh --workers=1 tests/social-sign-in.spec.ts` (it builds the web app with `app/config/e2e.json` and signs in through a fake OpenID provider). A real Google or Apple round trip needs a real account; `features/web-hosting.md` reaches the providers' pages from production.
 - **Proof.** Take `fg screenshot --name auth-<sub-feature>` after each step, and record the mail with `fg mail --to lea > $(fg env | jq -r .evidenceDir)/auth-magic-mail.json`.
 
 ## Gotchas

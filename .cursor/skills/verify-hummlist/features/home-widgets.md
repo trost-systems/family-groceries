@@ -1,12 +1,12 @@
 # Home Screen widgets (held)
 
-On iPhone and Android, Hummlist has a Home Screen widget: how many items are open, the next items with their quantity and the store's full name in a hex pill, and in the medium size a „Hinzufügen“ / "Add" button. A tap opens the list; Add opens it with the add sheet. The widget shows what the app last saw and works offline from that; it never ticks items off. Its announcement is held (`home-widgets` hold in releases/flags.json) until Peter's device test on iPhone and Android.
+On iPhone and Android, Hummlist has a Home Screen widget: how many items are open, the next items with their quantity and (medium size) the store's full name in a hex pill, and in the medium size a „Hinzufügen“ / "Add" button. A tap opens the list; Add opens it with the add sheet. The widget shows what the app last saw and works offline from that; it never ticks items off. Its announcement is held (`home-widgets` hold in releases/flags.json) until Peter's device test on iPhone and Android.
 
 ## Sub-features
 
-- `widget-small` small (iPhone systemSmall, Android 2x2): the count („3 offen“ / "3 open") and three items.
-- `widget-medium` medium (iPhone systemMedium, Android 4 columns): the count, five items with store pills, the Add button, „+N weitere“ / "+N more".
-- `widget-empty` „Alles erledigt“ / "All done" when nothing is open.
+- `widget-small` small (iPhone systemSmall, Android 2x2): the count („3 offen“ / "3 open"), up to three items without store pills, „+N weitere“ / "+N more" when more are open.
+- `widget-medium` medium (iPhone systemMedium, Android 4 columns): the count, up to five items, a store pill on the first item of each store, the Add button, „+N weitere“ / "+N more".
+- `widget-empty` „Alles erledigt“ / "All done" when nothing is open; the medium size keeps the Add button.
 - `widget-prompts` „Melde dich in Hummlist an“ / "Sign in to Hummlist"; „Richte deinen Haushalt in Hummlist ein“ / "Set up your household in Hummlist"; „Öffne Hummlist, um deine Liste zu sehen“ / "Open Hummlist to see your list" before the app ever ran.
 - `widget-open` tap: the list. `widget-add` Add: the list with the add sheet open and the keyboard up.
 
@@ -22,7 +22,7 @@ Preconditions:
 
 - Not on the web: the web build has no widgets and ignores the widget links. Nothing here is drivable with Playwright.
 
-- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens). Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
+- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens; 22 tests pass on 2026-11-02). Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
 - **Guides.** On a local or preview site build both guides show with the draft banner; production leaves them out.
 
 ## Gotchas

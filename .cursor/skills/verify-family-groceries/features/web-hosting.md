@@ -1,6 +1,6 @@
 # Hosted web app
 
-Anyone opens the production web app on Vercel and gets the sign-in page. Deep links such as `/oauth/consent` (MCP connections), `/join/CODE` (invites) and `/settings` boot the app on that route. "Mit Google anmelden" leads to Google's sign-in for the hosted Supabase project, and "Mit Apple anmelden" to Apple's for the Services ID `com.petertrost.familygroceries.web`. Each push to `main` deploys to `https://preview.app.hummlist.com`, behind Vercel Authentication. Production (`https://app.hummlist.com`) is the `release` branch, which `release.yml` moves to the commit it ships to the stores (`docs/DEPLOY.md`, section "Web app"). Branches get preview URLs.
+Anyone opens the production web app on Vercel and gets the sign-in page. Deep links such as `/oauth/consent` (MCP and Alexa connections, ending on "Verbunden" after "Erlauben") and `/join/CODE` (invites) boot the app on that route; the old `/settings` redirects to Zugänge (Konto with `?section=account`). "Mit Google anmelden" leads to Google's sign-in for the hosted Supabase project, and "Mit Apple anmelden" to Apple's for the Services ID `com.petertrost.familygroceries.web`. Each push to `main` deploys to `https://preview.app.hummlist.com`, behind Vercel Authentication. Production (`https://app.hummlist.com`) is the `release` branch, which `release.yml` moves to the commit it ships to the stores (`docs/DEPLOY.md`, section "Web app"). Branches get preview URLs.
 
 ## Sub-features
 

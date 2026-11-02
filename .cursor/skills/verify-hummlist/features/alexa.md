@@ -4,13 +4,13 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's household and reads them back.
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's household and reads them back. A bare count after the name („Karotten 2“) is the quantity, as when typed.
 - `alexa-duplicate` names open items without adding them again.
 - `alexa-similar` a spelling variant or synonym already open is added anyway and named.
 - `alexa-read` reads the open items in aisle order, at most ten, then „und N weitere“; an empty list has its own sentence.
 - `alexa-reprompt` asks once when nothing was understood, then gives up; nothing is added.
 - `alexa-unlinked` asks to link the account (a link card in the Alexa app) when there is no link or it was cut.
-- `alexa-link` account linking: Alexa app → Skills → Hummlist → „Zur Verwendung aktivieren“ / „Konto verknüpfen“ opens the Hummlist consent page „Zugriff erlauben?“ for „Amazon Alexa“; afterwards Mehr → Zugänge lists „Amazon Alexa“ under „Verbundene Apps“.
+- `alexa-link` account linking: Alexa app → Skills → Hummlist → „Zur Verwendung aktivieren“ / „Konto verknüpfen“ opens the Hummlist consent page „Zugriff erlauben?“ for „Amazon Alexa“; after „Erlauben“ it shows „Verbunden“ / „Fertig, du kannst zu Amazon Alexa zurückkehren.“ until the Alexa app takes over; afterwards Mehr → Zugänge lists „Amazon Alexa“ under „Verbundene Apps“.
 - `alexa-revoke` Alexa is cut off at once by „Amazon Alexa trennen“ then „Trennen“ in Zugänge, or by disabling the skill in the Alexa app; linking again restores it.
 - `alexa-help` help and stop.
 - `alexa-verify` requests not signed by Amazon, stale or for another skill are refused (HTTP 400) before anything is read.
@@ -47,7 +47,7 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
 Preconditions:
 
 - Alexa itself cannot be driven. Only the skill's server side is, over HTTP against the LOCAL stack, as `e2e/tests/alexa.spec.ts` does: run `scripts/alexa-test-ca.sh` once before the stack starts (restart the stack if it was already running), then use `scripts/alexa-say.sh` or the helpers in `e2e/tests/alexa-helpers.ts` (`alexaRequest`, `addIntent`, `readIntent`, `postToAlexa`, `say`, `registerAlexaClient`, `linkAccount`). Never call production.
-- Seeded household „Familie Brandt“ (baseline, three members), two of them signed in in two browser contexts for the live-sync check. Run: `scripts/verify.sh --only e2e -- tests/alexa.spec.ts`.
+- The spec signs up its own accounts (peter and lea, max and nina) and needs no seed. Run: `scripts/verify.sh --only e2e -- tests/alexa.spec.ts` (3 tests). By hand on the demo-familie seed, link mia and watch the list in noah's browser context instead of lea's.
 
 - **Link the account (UI part).** `linkAccount(...)` registers a confidential OAuth client named like Alexa and opens the authorize URL with PKCE and the Alexa redirect `https://layla.amazon.com/api/skill/link/<vendor id>` in the signed-in page. The consent page shows „Zugriff erlauben?“ and `getByText('Amazon Alexa')`; click `getByRole('button', { name: 'Erlauben' })`; the callback carries a code; exchange it for an access token with HTTP Basic.
 - **Zugänge shows it.** `openMore(page, 'Zugänge')`; `page.getByText('Amazon Alexa').first()` is visible under „Verbundene Apps“.
