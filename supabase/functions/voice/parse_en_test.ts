@@ -10,6 +10,10 @@ const cases: [string, string[]][] = [
   ['two cucumbers and a pack of eggs', ['2 cucumbers', '1 pack of eggs']],
   ['add milk to Hummlist', ['milk']],
   ['Add milk to my Hummlist', ['milk']],
+  // Job 71: how English Siri may write the app name (INAlternativeAppNames).
+  ['add milk to my Humm List', ['milk']],
+  ['put milk on the hum list', ['milk']],
+  ['add milk to Humlist', ['milk']],
   ['add milk to my shopping list', ['milk']],
   ['put eggs on the list please', ['eggs']],
   ['Hey Siri, add milk', ['milk']],

@@ -442,10 +442,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That it needs Premium (it does not today).
 - That the voice microphone in the app works on the web (iOS and Android apps only).
 
-**Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions.
+**Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the first device test (2 Nov 2026) only opened the app; the fix (Siri now also takes the name as „Hummliste“, and sentences like „Füge etwas zur Hummlist hinzu“) waits for the next device test.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and the Shortcut's server answers driven against the web build's local stack (verify-hummlist); Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 **Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
+**Last verified.** PR #194 (job 71), 2026-11-02 (CET): the German native-Siri request driven against the web build's local stack (e2e `voice.spec.ts`) and the iOS build's Siri training read from CI; Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 
 ## Home Screen widget (held)
 

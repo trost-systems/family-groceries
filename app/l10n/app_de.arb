@@ -158,7 +158,7 @@
   "siriHeader": "Siri",
   "siriThisIphone": "Siri (dieses iPhone)",
   "siriOtherIphone": "Siri (anderes iPhone)",
-  "siriWorksWithoutSetup": "Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zu Hummlist hinzu“.",
+  "siriWorksWithoutSetup": "Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zur Hummlist hinzu“.",
   "siriShowPhrases": "Siri-Sätze anzeigen",
   "siriOldShortcutHint": "Den alten Kurzbefehl brauchst du nicht mehr. Seinen Token „{name}“ kannst du unten löschen.",
   "@siriOldShortcutHint": {"placeholders": {"name": {"type": "String"}}},

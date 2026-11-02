@@ -875,7 +875,7 @@ abstract class AppLocalizations {
   /// No description provided for @siriWorksWithoutSetup.
   ///
   /// In de, this message translates to:
-  /// **'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zu Hummlist hinzu“.'**
+  /// **'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zur Hummlist hinzu“.'**
   String get siriWorksWithoutSetup;
 
   /// No description provided for @siriShowPhrases.

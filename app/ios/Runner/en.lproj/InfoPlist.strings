@@ -1,0 +1,4 @@
+/* How English Siri writes the spoken app name; App Shortcut phrases match these too (INAlternativeAppNames). */
+"HUMMLIST_NAME_1" = "Humm List";
+"HUMMLIST_NAME_2" = "Hum List";
+"HUMMLIST_NAME_3" = "Humlist";

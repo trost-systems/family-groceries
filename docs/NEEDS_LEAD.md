@@ -725,9 +725,9 @@ English (Settings → Siri → Language) for lines 1 to 5, then to German for li
 4. Airplane mode on, then line 1 → Siri says nothing was added. No item appears after airplane
    mode goes off again.
 5. HomePod (if one is paired, Personal Requests on): line 1 → the full sentence is spoken.
-6. "Hey Siri, füge etwas zu Hummlist hinzu" → "Was soll auf die Liste?" → "Milch, Eier und Brot"
-   → "Hinzugefügt: Milch, Eier, Brot."
-7. "Hey Siri, füge Milch zu Hummlist hinzu" → no follow-up question.
+6. "Hey Siri, füge etwas zur Hummlist hinzu" → "Was soll auf die Liste?" → "Milch, Eier und Brot"
+   → "Hinzugefügt: Milch, Eier, Brot." (German device: the checks in "Job 71" below.)
+7. "Hey Siri, füge Milch zur Hummlist hinzu" → no follow-up question.
 8. "Hey Siri, was steht auf meiner Hummlist?" → reads the list.
 9. Mehr → Abmelden, then line 6 → "Öffne Hummlist und melde dich an …", nothing added.
 10. The old Shortcut ("Hey Siri, Einkaufsliste") still answers as before.
@@ -1073,3 +1073,41 @@ household), which job 43 rules out.
 **When it shows:** with `HOUSEHOLD_ARCHIVE` (NEEDS_LEAD "Job 43", step 4) or as soon as the
 `premium_offer` server switch opens the Premium sale, whichever comes first. Nothing to flip for
 this job; Legal Review should approve the four strings before either happens.
+
+## Job 71: German native Siri only opened the app (2026-11-02)
+
+Nothing here blocks the merge. Lea's iPhone (German system and Siri language) opened Hummlist
+for every German phrase of build 1097; English worked on Peter's iPhone. Root cause and fix:
+DONE_SUMMARY.md "Job 71". Test with the first TestFlight build that contains this PR, on a phone
+whose Siri language is German. Sign in, open the list once, close the app.
+
+### 1. Is German active for Hummlist's Siri phrases?
+
+German setting names differ between iOS versions, so the English ones are given.
+
+1. Settings → Siri → Siri Responses → **Always Show Speech** on. Siri then shows what it heard.
+2. Kurzbefehle app → Kurzbefehle → **Hummlist**: the tiles read „Zu Hummlist hinzufügen“ and
+   „Meine Hummlist vorlesen“. English tiles mean the phone did not take the German phrases.
+3. Turn on **Type to Siri** (Settings → Accessibility → Siri, or Settings → Siri), then type
+   „Füge etwas zur Hummlist hinzu“. Siri asks „Was soll auf die Liste?“. Typing skips speech
+   recognition, so this tests the phrase alone.
+
+### 2. Spoken, German
+
+4. „Hey Siri, füge etwas zur Hummlist hinzu“ → „Was soll auf die Liste?“ → „Milch, Eier und
+   Brot“ → „Hinzugefügt: Milch, Eier, Brot.“ The app stays closed. Note the words Siri shows for
+   the app name (Hummlist, Hummliste, Humm Liste, Hummelliste, or something else).
+5. Also run the intent: „Füge etwas zu Hummlist hinzu“, „Setz etwas auf meine Hummlist“,
+   „Füge Milch zur Hummlist hinzu“ (Milch was on the list before), „Was steht auf meiner
+   Hummlist?“, „Lies die Hummlist vor“.
+6. Lines 8 to 11 of "Job 51" section 1 (offline, signed out, old Shortcut, Premium lock).
+
+### 3. What the results mean
+
+- Step 3 works but step 4 opens the app: Siri hears the name as a word the app does not list.
+  Send the word Siri showed. It goes into `app/ios/Runner/de.lproj/InfoPlist.strings` (at most
+  three names) and the voice parser (`supabase/functions/voice/parse.ts`).
+- Step 3 also opens the app, or step 2 shows English tiles: the phone does not use the German
+  phrases. Do "Job 51" section 2 (the Siri capability and entitlement; Apple reads the
+  alternative app names only with it, according to its documentation), then test again.
+- Everything works: tell the lead. The `native-siri` hold stays until Hummlist Launch.

@@ -273,6 +273,14 @@ for (
     ['Füge Milch zu meiner Hummlist hinzu', ['Milch']],
     ['Setz Milch und Eier auf die Hummlist', ['Milch', 'Eier']],
     ['Hummlist, Milch', ['Milch']],
+    // Job 71: German Siri writes the app name as German words, and says "zur Hummlist".
+    ['Füge Milch zur Hummlist hinzu', ['Milch']],
+    ['Setz Milch auf meine Hummlist', ['Milch']],
+    ['Füge Milch zur Hummliste hinzu', ['Milch']],
+    ['Setz Milch und Eier auf die Hummelliste', ['Milch', 'Eier']],
+    ['Hummliste, Milch', ['Milch']],
+    ['Füge Karotten 2 zur Hummliste hinzu', ['Karotten 2']],
+    ['zwei Karotten und Milch', ['2 Karotten', 'Milch']],
   ] as [string, string[]][]
 ) {
   Deno.test(`"${sentence}" -> ${JSON.stringify(expected)}`, () => {

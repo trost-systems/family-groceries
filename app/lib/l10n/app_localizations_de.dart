@@ -475,7 +475,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get siriWorksWithoutSetup =>
-      'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zu Hummlist hinzu“.';
+      'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zur Hummlist hinzu“.';
 
   @override
   String get siriShowPhrases => 'Siri-Sätze anzeigen';

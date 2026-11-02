@@ -18,6 +18,12 @@ for key in CFBundleShortVersionString CFBundleVersion; do
   [[ $app_value == "$widget_value" ]] ||
     { echo "ios: HomeWidget.appex $key is '$widget_value', the app's '$app_value'" >&2; exit 1; }
 done
+# Siri matches the App Shortcut phrases with the training Xcode writes into Metadata.appintents:
+# German must know the app name the way German Siri writes it, and no language may train an
+# unresolved InfoPlist.strings variable as the name (job 71).
+ssu=build/ios/iphonesimulator/Runner.app/Metadata.appintents/root.ssu.yaml
+grep -q Hummliste "$ssu" || { echo "ios: $ssu does not train the German app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
+if grep -n HUMMLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
 xcrun --sdk iphonesimulator assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car >build/ios/assets.json
 # Each wanted asset needs a rendition whose JSON mentions every listed word (the appearance).
 python3 - build/ios/assets.json <<'PY'

@@ -61,6 +61,21 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>HUMMLIST_NAME_1</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>HUMMLIST_NAME_2</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>HUMMLIST_NAME_3</string>
+		</dict>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hummlist braucht das Mikrofon, damit du Einträge diktieren kannst.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

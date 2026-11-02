@@ -279,6 +279,24 @@ test('native Siri: the credential the app mints adds in English, reads back, and
   await expect(itemRow(page, 'butter')).toHaveCount(0);
 });
 
+test('native Siri in German: the app name as German Siri writes it never lands in an item', async ({ page }) => {
+  const email = newEmail('voice-siri-de');
+  await signUpWithHousehold(page, email);
+  const { data } = await (await apiAs(email)).rpc('create_siri_credential');
+  const [{ token }] = data as { token: string }[];
+
+  const added = await ask(token, { text: 'Füge Milch zur Hummliste hinzu', mode: 'add', lang: 'de' });
+  expect([added.status, added.body.outcome, added.body.speech]).toEqual([200, 'added', 'Hinzugefügt: Milch.']);
+  const asked = await ask(token, { text: 'Karotten 2 und Brot auf die Hummelliste', mode: 'add', lang: 'de' });
+  expect(asked.body.items.map((i: { name: string; quantity: string | null }) => [i.name, i.quantity])).toEqual([
+    ['Karotten', '2'],
+    ['Brot', null],
+  ]);
+  for (const name of ['Milch', 'Karotten', 'Brot']) await expect(itemRow(page, name)).toBeVisible();
+  await expect(page.getByText(/Hummliste|Hummelliste/)).toHaveCount(0);
+  await screenshot(page, 'voice-05-native-siri-german');
+});
+
 test('the Shortcut recipe with a PAT answers exactly as before job 51', async ({ page }) => {
   const email = newEmail('voice-recipe');
   await signUpWithHousehold(page, email);

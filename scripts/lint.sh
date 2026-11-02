@@ -26,6 +26,9 @@ base="${1:-origin/main}"
 if ! git rev-parse -q --verify "$base^{commit}" >/dev/null && [[ "$base" == origin/main ]]; then
   git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
 fi
+log "Siri phrases"
+deno run --allow-read scripts/siri-phrases.ts
+
 log "schema check against $base"
 # The check before its unit tests: a bad migration fails the test over the repository's own
 # migrations too, and the check's message is the one that says what to do.
