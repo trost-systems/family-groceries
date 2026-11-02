@@ -228,13 +228,18 @@ void main() {
       ),
       UnmergeItems('x', mergeId: 'm', kept: item('x'), merged: item('y')),
       AddItem(item('x'), restored: true),
+      AddItem(item('x'), noStore: true),
     ];
     for (final op in ops) {
       final back = ItemOp.fromJson(op.toJson());
       expect(back.runtimeType, op.runtimeType);
       expect(back.toJson(), op.toJson());
     }
-    expect((ItemOp.fromJson(ops.last.toJson()) as AddItem).restored, isTrue);
+    expect(
+      (ItemOp.fromJson(ops[ops.length - 2].toJson()) as AddItem).restored,
+      isTrue,
+    );
+    expect((ItemOp.fromJson(ops.last.toJson()) as AddItem).noStore, isTrue);
     expect((ItemOp.fromJson(ops.first.toJson()) as AddItem).restored, isFalse);
     expect(
       Item.fromJson({...item('x').toJson(), 'categorized_via': 'synonym'})

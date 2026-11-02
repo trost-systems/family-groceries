@@ -293,8 +293,41 @@ class SupabaseListRepository(
       kept: op.itemId,
       merged: merged.id,
     ),
+    AddItem() => await _add(op),
     _ => {op.itemId: await _sendOne(op)},
   };
+
+  /// `put_item` answers with the row the add is: its own, or the open item
+  /// that was already on the list (then this id is gone, answered as null).
+  /// No row: the id is taken by a row this user cannot see.
+  Future<Map<String, Item?>> _add(AddItem op) => _refusable(() async {
+    final AddItem(:item, :noStore) = op;
+    final row = _singleRow(
+      await _client.rpc<dynamic>(
+        'put_item',
+        params: {
+          'p_id': item.id,
+          'p_household': householdId,
+          'p_name': item.name,
+          'p_quantity': item.quantity,
+          'p_brand': item.brand,
+          'p_properties': item.properties,
+          'p_category': item.categoryId,
+          // None given: the server fills in the remembered store.
+          'p_store': item.storeId,
+          // A restored item keeps its place.
+          'p_sort_key': item.sortKey,
+          'p_status': item.status.name,
+          'p_no_store': noStore,
+        },
+      ),
+    );
+    return switch (row == null ? null : Item.fromJson(row)) {
+      null => {op.itemId: null},
+      final own when own.id == op.itemId => {own.id: own},
+      final kept => {op.itemId: null, kept.id: kept},
+    };
+  });
 
   /// `merge_items` and `unmerge_items` answer `{kept, merged}`, each the row
   /// or null. `P0002`: an item (or the merge, when it never landed) is gone;
@@ -329,23 +362,6 @@ class SupabaseListRepository(
     final items = _client.rest.from('items');
     final List<Map<String, dynamic>> rows;
     switch (op) {
-      case AddItem(:final item):
-        rows = await items
-            .upsert({
-              'id': item.id,
-              'household_id': householdId,
-              'name': item.name,
-              'quantity': item.quantity,
-              'brand': ?item.brand,
-              'properties': ?item.properties,
-              'category_id': ?item.categoryId,
-              // None given: the server fills in the remembered store.
-              'store_id': ?item.storeId,
-              // A restored item keeps its place.
-              'sort_key': ?item.sortKey,
-              'status': item.status.name,
-            }, ignoreDuplicates: true)
-            .select(_itemColumns);
       case SetStatus(:final status, :final storeId):
         rows = await items
             .update({'status': status.name, 'store_id': ?storeId})
@@ -371,11 +387,10 @@ class SupabaseListRepository(
       case DeleteItem():
         await items.delete().eq('id', op.itemId).select('id');
         return null;
-      case MergeItems() || UnmergeItems():
-        // Two rows each; send answers them through _merge.
-        throw StateError('$op goes through _merge');
+      case AddItem() || MergeItems() || UnmergeItems():
+        throw StateError('$op goes through _add or _merge');
     }
-    // No row back: the item is gone, or an upsert hit an existing id.
+    // No row back: the item is gone.
     return rows.isEmpty
         ? await _fetchItem(op.itemId)
         : Item.fromJson(rows.single);

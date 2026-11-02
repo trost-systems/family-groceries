@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
+import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/model.dart';
@@ -26,6 +27,7 @@ void main() {
     WidgetTester tester, {
     void Function(FakeRepository repo)? seed,
     Size size = screen,
+    ListPrefs? prefs,
   }) async {
     tester.view
       ..devicePixelRatio = 3
@@ -44,7 +46,8 @@ void main() {
         locale: const Locale('de'),
         home: BlocProvider(
           create: (_) =>
-              ListCubit(repo, MemoryListCache(), userId: 'peter')..start(),
+              ListCubit(repo, MemoryListCache()..prefs = prefs, userId: 'peter')
+                ..start(),
           child: const ShoppingList(),
         ),
       ),
@@ -239,7 +242,7 @@ void main() {
       expect((repo.sent.single as AddItem).item.storeId, 'dm');
     });
 
-    testWidgets('Ohne Laden adds, then clears the remembered store', (
+    testWidgets('Ohne Laden adds without the remembered store, in one op', (
       tester,
     ) async {
       await pumpList(tester, seed: (r) => r.suggestions['milch'] = milk);
@@ -248,12 +251,12 @@ void main() {
       await pick(tester, 'chip-store', 'store-option-none');
       await tester.tap(row(1));
       await tester.pumpAndSettle();
-      expect(repo.sent, hasLength(2));
-      final add = repo.sent.first as AddItem;
-      expect((add.item.storeId, add.item.brand), (null, 'Weihenstephan'));
-      final edit = repo.sent.last as EditItem;
-      expect(edit.itemId, add.item.id);
-      expect(edit.changes.toColumns(), {'store_id': null});
+      expect(repo.sent, hasLength(1));
+      final add = repo.sent.single as AddItem;
+      expect(
+        (add.item.storeId, add.item.brand, add.noStore),
+        (null, 'Weihenstephan', true),
+      );
       expect(repo.rows.values.single.storeId, isNull);
     });
   });
@@ -443,6 +446,60 @@ void main() {
       expect(find.text('✓ Hinzugefügt: Eier'), findsOneWidget);
       threeWhole(['Milch', 'Brot', 'Butter']);
     });
+  }
+
+  // The app doesn't clamp the text scale; 2.0 is the largest Android font
+  // size, 3.0 iOS's largest accessibility size.
+  for (final scale in [2.0, 3.0]) {
+    for (final size in [const Size(360, 640), const Size(320, 568)]) {
+      testWidgets('at text scale $scale the third due row scrolls whole into '
+          'view above the input (${size.width.toInt()}x'
+          '${size.height.toInt()})', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await pumpList(
+          tester,
+          size: size,
+          // The list's explainer card has its own large-text overflow.
+          prefs: const ListPrefs(hintDismissed: true),
+          seed: (r) => r.usuals = [
+            for (final name in ['Eier', 'Milch', 'Brot', 'Butter'])
+              Usual(name: name, due: true),
+          ],
+        );
+        await open(tester);
+        final third = row(2);
+        await tester.scrollUntilVisible(
+          third,
+          40,
+          scrollable: find
+              .descendant(of: content(), matching: find.byType(Scrollable))
+              .first,
+        );
+        await tester.ensureVisible(third);
+        await tester.pumpAndSettle();
+        expect(tester.getSemantics(third).label, 'Brot, Wieder fällig');
+        final rect = tester.getRect(third);
+        final viewport = tester.getRect(
+          find.ancestor(of: third, matching: find.byType(Scrollable)).first,
+        );
+        expect(rect.top, greaterThanOrEqualTo(viewport.top - 0.5));
+        expect(rect.top, greaterThanOrEqualTo(surface(tester).top - 0.5));
+        expect(
+          rect.bottom,
+          lessThanOrEqualTo(viewport.bottom + 0.5),
+          reason: 'Brot is not cut by the list',
+        );
+        expect(
+          rect.bottom,
+          lessThanOrEqualTo(barTop(tester) + 0.5),
+          reason: 'Brot is not cut by the input',
+        );
+        // A tap would add Brot to the list behind the sheet, whose rows
+        // have large-text overflows of their own.
+        expect(third.hitTestable(), findsOneWidget, reason: 'Brot is tappable');
+      });
+    }
   }
 
   group('Enter takes the first row', () {

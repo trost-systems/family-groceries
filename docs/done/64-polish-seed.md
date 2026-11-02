@@ -19,8 +19,9 @@ duplicate check; „Wieder fällig“ showed one item; the last row sat half beh
    household that has Premium. No flag changed.
 3. **One open item per name, a real race** (`20261102084412_one_open_item.sql`). Not a helper
    shortcut: the app checks only its own list, so two members adding at once both inserted. A
-   BEFORE INSERT trigger with a per-household advisory lock skips the second open copy; the app
-   acknowledges it like a replayed add; `add_item` (MCP, Siri, Alexa) takes the lock and returns
+   BEFORE INSERT trigger with a per-household advisory lock skips the second open copy; the app's
+   upsert got no row back and dropped its copy (an undone delete or a replayed offline add
+   vanished; job 64b answers with the open row, `put_item`); `add_item` (MCP, Siri, Alexa) takes the lock and returns
    the open row. Job 61's files untouched (`parse_item` stays theirs).
 4. **„Wieder fällig“: the rule was right, the sheet hid it.** `suggest_items` returned 11 due
    items for heavy-history; the empty sheet's half-screen cap left one row on a 360 px phone

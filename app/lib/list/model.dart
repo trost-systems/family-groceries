@@ -566,6 +566,7 @@ sealed class const ItemOp(final String itemId) {
       'add' => AddItem(
         Item.fromJson(json['item']! as Map<String, Object?>),
         restored: json['restored'] == true,
+        noStore: json['no_store'] == true,
       ),
       'status' => SetStatus(
         id,
@@ -612,6 +613,72 @@ sealed class const ItemOp(final String itemId) {
   /// The item as the user should see it once this op lands.
   Item? apply(Item? current);
 
+  /// This op once the add of [from] turned out to be the open item [kept]
+  /// (`put_item`, DECISIONS Job 64b): changes go to [kept]; a delete is
+  /// dropped, since it removed only this copy and [kept] is someone's entry;
+  /// null when nothing is left to do. Adds and merge undos stay as they are.
+  ItemOp? ontoKept(String from, String kept) {
+    final touches = switch (this) {
+      PlaceItem(:final anchorId) => anchorId == from,
+      MergeItems(:final otherId) => otherId == from,
+      _ => false,
+    };
+    if (itemId != from && !touches) {
+      return this;
+    }
+    String to(String id) => id == from ? kept : id;
+    return switch (this) {
+      AddItem() || UnmergeItems() => this,
+      DeleteItem() => null,
+      SetStatus(:final status, :final at, :final storeId) => SetStatus(
+        kept,
+        status,
+        at,
+        storeId: storeId,
+      ),
+      EditItem(:final changes) => EditItem(kept, changes),
+      MoveItem(:final categoryId, :final storeId) => MoveItem(
+        kept,
+        categoryId: categoryId,
+        storeId: storeId,
+      ),
+      PlaceItem(
+        :final anchorId,
+        :final edge,
+        :final categoryId,
+        :final storeId,
+        :final sortKey,
+      ) =>
+        to(itemId) == to(anchorId)
+            ? null
+            : PlaceItem(
+                to(itemId),
+                anchorId: to(anchorId),
+                edge: edge,
+                categoryId: categoryId,
+                storeId: storeId,
+                sortKey: sortKey,
+              ),
+      MergeItems(
+        :final mergeId,
+        :final otherId,
+        :final quantity,
+        :final brand,
+        :final properties,
+      ) =>
+        to(itemId) == to(otherId)
+            ? null
+            : MergeItems(
+                to(itemId),
+                mergeId: mergeId,
+                otherId: to(otherId),
+                quantity: quantity,
+                brand: brand,
+                properties: properties,
+              ),
+    };
+  }
+
   /// Folds this op into [view], the items by id. Ops on one item apply to
   /// it; a merge or its undo touches two.
   void applyTo(Map<String, Item> view) {
@@ -626,10 +693,11 @@ sealed class const ItemOp(final String itemId) {
   Map<String, Object?> toJson() => {
     'item_id': itemId,
     ...switch (this) {
-      AddItem(:final item, :final restored) => {
+      AddItem(:final item, :final restored, :final noStore) => {
         'op': 'add',
         'item': item.toJson(),
         if (restored) 'restored': true,
+        if (noStore) 'no_store': true,
       },
       SetStatus(:final status, :final at, :final storeId) => {
         'op': 'status',
@@ -688,8 +756,15 @@ sealed class const ItemOp(final String itemId) {
 }
 
 /// [restored]: a deleted item put back (the delete's undo), not a new add.
-final class AddItem(final Item item, {final bool restored = false})
-    extends ItemOp {
+/// [noStore]: without a store; otherwise a missing store is the remembered
+/// one. The server answers with the open item the add already is when the
+/// list has one (`put_item`), and the app folds this item into it
+/// ([ItemOp.ontoKept]).
+final class AddItem(
+  final Item item, {
+  final bool restored = false,
+  final bool noStore = false,
+}) extends ItemOp {
   this : super(item.id);
 
   @override

@@ -152,39 +152,52 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
-                child: Row(
-                  spacing: 4,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.editTitle(widget.item.name),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurfaceVariant,
+                child: LayoutBuilder(
+                  builder: (context, constraints) => Row(
+                    spacing: 4,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.editTitle(widget.item.name),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                    TextButton(
-                      key: const ValueKey('edit-cancel'),
-                      style: TextButton.styleFrom(
-                        // Desktop defaults to compact density, which
-                        // shrinks targets under 44 px.
-                        visualDensity: VisualDensity.standard,
-                        minimumSize: const Size(0, 44),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        textStyle: const TextStyle(
-                          fontFamily: HlFont.sans,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                      // At most half the row, so large text doesn't squeeze
+                      // the title to a letter per line.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: constraints.maxWidth / 2,
+                        ),
+                        child: TextButton(
+                          key: const ValueKey('edit-cancel'),
+                          style: TextButton.styleFrom(
+                            // Desktop defaults to compact density, which
+                            // shrinks targets under 44 px.
+                            visualDensity: VisualDensity.standard,
+                            minimumSize: const Size(0, 44),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            textStyle: const TextStyle(
+                              fontFamily: HlFont.sans,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            l10n.cancel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(l10n.cancel),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -294,8 +307,11 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Large text stacks Fertig over Löschen.
+                child: OverflowBar(
+                  alignment: MainAxisAlignment.spaceBetween,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  overflowDirection: VerticalDirection.up,
                   children: [
                     TextButton(
                       key: const ValueKey('edit-delete'),

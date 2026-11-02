@@ -6397,8 +6397,9 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
   so two members (or a phone and Siri) adding "Milch" at the same moment both inserted. A BEFORE
   INSERT trigger (`items_skip_duplicate`) takes a per-household advisory lock and skips an active
   insert whose key (`open_item_key`: the app's `_sameItem` rule, name and brand folded, details in
-  any order) is already open. The app's upsert then gets no row and acknowledges its add with the
-  row that is there, exactly as for a replayed add, so no app change and old builds behave too.
+  any order) is already open. The app's upsert then got no row back, looked its own id up, found
+  nothing and dropped its copy; it did not get the row that is there (corrected in Job 64b: an
+  undone delete or a replayed offline add vanished until the next reload).
   `add_item` (MCP, Siri, Alexa) takes the same lock before its own check and returns the open row
   when the trigger skipped. Updates are not checked: putting an item back or an edit that makes
   two rows alike stays possible. Not a unique index: existing duplicates would block the
@@ -6637,3 +6638,53 @@ answers for Legal Review in docs/NEEDS_LEAD.md "Job 72".
 8. **The 12-month purge is proved end to end for one user (ADDENDUM 2):** an only Alexa session
    unused for 12 months takes its link, its counter and the grant (the Zugänge entry) in the same
    `purge_alexa()` run.
+## Job 64b: an add that is already on the list never vanishes, 2026-11-02
+
+- **The bug.** Job 64's `items_skip_duplicate` skips an open insert whose item is already open.
+  The app's add was an upsert; skipped, it got no row back, looked its own id up, found nothing
+  and dropped its copy. An undone delete while another member had put the item back, or an
+  offline add replayed after someone added the same item, disappeared until the next reload or
+  realtime event, and a tick or edit queued for it offline was lost. The e2e spec
+  `already-on-list.spec.ts` failed on main that way (empty list after Rückgängig; the offline tick
+  never reached the server).
+- **The server answers with the row the add is.** The trigger notes the open item it matched in a
+  transaction setting (`family_groceries.open_duplicate`). `put_item`, the app's add from now on,
+  inserts the client's id or answers with: its own row (a retry), else the noted open item. One
+  round trip, and the answer is the row the trigger actually matched, not a second lookup that
+  could disagree. `add_item` (MCP, Siri, Alexa) reads the same note instead of its own fallback
+  query, which could return an empty row when its key and the trigger's differed. The lock
+  (`lock_household_items`) and `parse_item` are unchanged. `put_item` is security invoker: RLS
+  decides as for the upsert, and the noted id is read under RLS, so another household learns
+  nothing. Old builds keep their upsert; the server answers them as before.
+- **Keep the existing row, do not merge quantities.** The add takes the open item as it is
+  (quantity, store, details). This is the rule the app already applies when you type an item that
+  is open („steht schon auf der Liste“, nothing merged) and what `add_item` returns. Merging
+  (Job 32b's rule) stays an explicit tap: two people noticing that the milk is out is not "buy
+  two", and Peter's Job 32b call was "show a hint, still add by default", never a silent merge.
+- **The app folds its copy into that item.** `send` answers `{own id: null, kept id: row}`; the
+  cubit shows the kept row at once (no realtime needed) and moves the ops queued for its copy onto
+  it (`ItemOp.ontoKept`): a tick, edit, move or placement go to the kept item; a delete of the copy
+  is dropped, since the kept item is someone else's entry (or an older one); a merge that would
+  pair the item with itself is dropped. Adds and merge undos stay as they are (a later restore of
+  the copy resolves on the server again).
+- **"No store" is part of the add.** It was a second op (`EditItem` store null) after the add; folded
+  onto a kept item, it would have cleared that item's store. `AddItem.noStore` sends it in the add
+  (`p_no_store`). A restored item without a store now keeps having none instead of picking up the
+  remembered store („keeps its place“). Ops cached by older builds (an add plus the edit) still
+  replay as before.
+- **Large text: the third „Wieder fällig“ row was out of reach** (the job 64 review's note). The app
+  does not clamp the text scale (Android's largest is 2.0, iOS's accessibility sizes about 3.0),
+  and at 2.0 and 3.0 on a 320 or 360 px phone the sheet gave the rows no room at all: beside a
+  full-width „Schließen“ the title wrapped a letter per line, and header and chips filled the
+  sheet. A label's button now takes at most half its row (`_TextAndAction`, also for the added
+  and duplicate notes); the "everything scrolls" threshold (200 px) grows with the text scale; the
+  three-row cap adds up a row's real height at that scale instead of 60 px. Scrolling to the third
+  row is fine; a widget test scrolls it whole into view above the input and hit-tests it.
+- **The rest of the list at large text.** The same tests found more: the explainer card, store
+  headers, category dividers, Mehr headings and the edit sheet overflowed, and a store badge
+  squeezed to 18.5 px (the count took the header's width) crashed the hexagon with NaN. A label
+  in a row now gets a width limit and wraps or ends in „…“; above text scale 1.3 the explainer's
+  „Verstanden“ moves under the hint; the store count takes at most half the header; dividers and
+  headings wrap to two lines; the edit sheet's „Abbrechen“ takes at most half its row and
+  „Fertig“ moves above „Löschen“ when both do not fit; a hexagon narrower than its tips is drawn
+  as a rhombus. Nothing changes at text scale 1.0 (the goldens are unchanged).

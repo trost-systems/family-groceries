@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   /// A repository whose PostgREST answers every write with [status] and [body].
-  SupabaseListRepository answering(int status, Map<String, Object?> body) =>
+  SupabaseListRepository answering(int status, Object body) =>
       SupabaseListRepository(
         SupabaseClient(
           'http://127.0.0.1:1',
@@ -56,5 +56,38 @@ void main() {
         reason: code,
       );
     }
+  });
+
+  group('an add answers with the row it is (put_item, job 64b)', () {
+    Map<String, Object?> row(String id) => {
+      'id': id,
+      'name': 'Brot',
+      'quantity': '1',
+      'category_id': 'bakery',
+      'store_id': 'bakery-store',
+      'status': 'active',
+      'created_at': '2026-10-28T00:00:00Z',
+      'updated_at': '2026-10-28T00:00:00Z',
+    };
+
+    test('its own row', () async {
+      final rows = await answering(200, [row('item-1')]).send(add);
+      expect(rows.keys, ['item-1']);
+      expect(rows['item-1']!.categoryId, 'bakery');
+    });
+
+    test(
+      'the open item it already is: this id is gone, that row is there',
+      () async {
+        final rows = await answering(200, [row('leas-brot')]).send(add);
+        expect(rows['item-1'], isNull);
+        expect(rows.containsKey('item-1'), isTrue);
+        expect(rows['leas-brot']!.storeId, 'bakery-store');
+      },
+    );
+
+    test('no row: the item is gone', () async {
+      expect(await answering(200, <Object>[]).send(add), {'item-1': null});
+    });
   });
 }

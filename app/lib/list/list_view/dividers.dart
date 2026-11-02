@@ -241,67 +241,76 @@ class const _Head({
         ? scheme.outline
         : HummlistColors.of(scheme.brightness).brand;
     final reduce = MediaQuery.disableAnimationsOf(context);
-    return Row(
-      spacing: 10,
-      children: [
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) => Row(
-              spacing: 10,
-              children: [
-                // The badge is the store's name; "no store" gets a neutral
-                // one of the same shape.
-                StoreBadge(
-                  store ?? Store(id: '', name: name, sortOrder: 0),
-                  height: 32,
-                  maxWidth: (constraints.maxWidth - 22).clamp(0, 1e9),
-                ),
-                Expanded(
-                  child: Container(
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: tint,
-                      borderRadius: BorderRadius.circular(HlRadius.full),
+    return LayoutBuilder(
+      builder: (context, outer) => Row(
+        spacing: 10,
+        children: [
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) => Row(
+                spacing: 10,
+                children: [
+                  // The badge is the store's name; "no store" gets a neutral
+                  // one of the same shape.
+                  StoreBadge(
+                    store ?? Store(id: '', name: name, sortOrder: 0),
+                    height: 32,
+                    maxWidth: (constraints.maxWidth - 22).clamp(0, 1e9),
+                  ),
+                  Expanded(
+                    child: Container(
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: tint,
+                        borderRadius: BorderRadius.circular(HlRadius.full),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        Text.rich(
-          TextSpan(
-            children: [
+          // At most half the row, so large text wraps the count instead of
+          // squeezing the store's badge to nothing.
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: outer.maxWidth / 2),
+            child: Text.rich(
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               TextSpan(
-                text: '${section.count}',
-                style: TextStyle(
-                  fontFamily: HlFont.display,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: scheme.onSurface,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+                children: [
+                  TextSpan(
+                    text: '${section.count}',
+                    style: TextStyle(
+                      fontFamily: HlFont.display,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  TextSpan(text: ' ${l10n.itemsWord(section.count)}'),
+                ],
               ),
-              TextSpan(text: ' ${l10n.itemsWord(section.count)}'),
-            ],
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
           ),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: scheme.onSurfaceVariant,
+          AnimatedRotation(
+            turns: folded ? -0.25 : 0,
+            duration: reduce ? Duration.zero : HlDuration.short,
+            curve: HlEasing.standard,
+            child: Icon(
+              Icons.expand_more,
+              size: 22,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        AnimatedRotation(
-          turns: folded ? -0.25 : 0,
-          duration: reduce ? Duration.zero : HlDuration.short,
-          curve: HlEasing.standard,
-          child: Icon(
-            Icons.expand_more,
-            size: 22,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -521,25 +530,34 @@ class const _Line({
           clipBehavior: Clip.none,
           children: [
             Container(
-              height: 32,
+              constraints: const BoxConstraints(minHeight: 32),
               padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
-              child: Row(
-                spacing: 10,
-                children: [
-                  Text(
-                    // German capitals spell ß as SS (SÜSSES), as CSS does.
-                    label.toUpperCase().replaceAll('ß', 'SS'),
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 11 * 0.12,
-                      color: color,
+              child: LayoutBuilder(
+                builder: (context, constraints) => Row(
+                  spacing: 10,
+                  children: [
+                    // Large text wraps a long name instead of running it
+                    // past the row.
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: (constraints.maxWidth - 10).clamp(0, 1e9),
+                      ),
+                      child: Text(
+                        // German capitals spell ß as SS (SÜSSES), as CSS does.
+                        label.toUpperCase().replaceAll('ß', 'SS'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 11 * 0.12,
+                          color: color,
+                        ),
+                      ),
                     ),
-                  ),
-                  Expanded(child: Container(height: 1, color: rule)),
-                ],
+                    Expanded(child: Container(height: 1, color: rule)),
+                  ],
+                ),
               ),
             ),
             if (edge != null)

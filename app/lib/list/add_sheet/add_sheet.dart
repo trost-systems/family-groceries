@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
@@ -33,7 +34,22 @@ const _firstOpenRows = 3;
 /// A suggestion row's height (its minimum; a larger text scale grows it).
 const _rowHeight = 60.0;
 
-/// Room for the header, the chips and a row; with less, all of it scrolls.
+const _nameSize = 18.0;
+const _nameLeading = 1.2;
+const _detailSize = 13.0;
+const _detailLeading = 1.3;
+
+/// A suggestion row's height at [scaler], its name and details one line
+/// each: 16 px padding, the 2 px gap and the border around the two lines.
+double _rowExtent(TextScaler scaler) => math.max(
+  _rowHeight,
+  19 +
+      scaler.scale(_nameSize) * _nameLeading +
+      scaler.scale(_detailSize) * _detailLeading,
+);
+
+/// Room for the header, the chips and a row at text scale 1; with less, all
+/// of it scrolls. The header and the chips grow with the text.
 const _roomy = 200.0;
 
 /// The rows the sheet shows: the suggestions for what is typed, or, before
@@ -346,6 +362,7 @@ class const _Content({
     // Before typing, a note (the last add, a duplicate hint or merge) sits
     // above the capped rows, so it never pushes them out of view.
     final firstOpen = sheet.text.trim().isEmpty;
+    final scaler = MediaQuery.textScalerOf(context);
     return AnimatedOpacity(
       opacity: sheet.open ? 1 : 0,
       duration: hlMotion(context, HlDuration.short),
@@ -357,7 +374,7 @@ class const _Content({
           container: true,
           explicitChildNodes: true,
           label: l10n.addButton,
-          child: maxHeight < _roomy
+          child: maxHeight < _roomy * scaler.scale(16) / 16
               // Too little room to keep the chips put: everything scrolls.
               ? ListView(
                   shrinkWrap: true,
@@ -376,7 +393,7 @@ class const _Content({
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
                             maxHeight: firstOpen
-                                ? _firstOpenRows * _rowHeight
+                                ? _firstOpenRows * _rowExtent(scaler)
                                 : double.infinity,
                           ),
                           child: ListView(
@@ -421,48 +438,50 @@ class const _Header({required final VoidCallback onClose})
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    l10n.addButton,
-                    style: TextStyle(
+          child: _TextAndAction(
+            text: Semantics(
+              header: true,
+              child: Text(
+                l10n.addButton,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            action: FocusTraversalOrder(
+              order: const NumericFocusOrder(4),
+              // A tap on a web semantics button node takes the add
+              // field's text input with it; this node only taps.
+              child: Semantics(
+                button: true,
+                label: l10n.close,
+                onTap: onClose,
+                excludeSemantics: true,
+                child: TextButton(
+                  key: const ValueKey('add-sheet-close'),
+                  onPressed: onClose,
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.standard,
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    textStyle: const TextStyle(
+                      fontFamily: HlFont.sans,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: scheme.onSurfaceVariant,
                     ),
+                  ),
+                  child: Text(
+                    l10n.close,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
-              FocusTraversalOrder(
-                order: const NumericFocusOrder(4),
-                // A tap on a web semantics button node takes the add
-                // field's text input with it; this node only taps.
-                child: Semantics(
-                  button: true,
-                  label: l10n.close,
-                  onTap: onClose,
-                  excludeSemantics: true,
-                  child: TextButton(
-                    key: const ValueKey('add-sheet-close'),
-                    onPressed: onClose,
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.standard,
-                      minimumSize: const Size(0, 44),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      textStyle: const TextStyle(
-                        fontFamily: HlFont.sans,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    child: Text(l10n.close),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ],
@@ -555,8 +574,8 @@ class const _SuggestionRow({
                           ],
                         ),
                         style: TextStyle(
-                          fontSize: 18,
-                          height: 1.2,
+                          fontSize: _nameSize,
+                          height: _nameLeading,
                           fontWeight: FontWeight.w600,
                           color: scheme.onSurface,
                         ),
@@ -582,8 +601,8 @@ class const _SuggestionRow({
                           ],
                         ),
                         style: TextStyle(
-                          fontSize: 13,
-                          height: 1.3,
+                          fontSize: _detailSize,
+                          height: _detailLeading,
                           fontWeight: FontWeight.w500,
                           color: t.textMuted,
                         ),
@@ -642,38 +661,40 @@ class const _AddedNote(
     return Padding(
       key: const ValueKey('added-note'),
       padding: const EdgeInsets.fromLTRB(24, 6, 12, 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              container: true,
-              liveRegion: true,
-              child: Text(
-                added ? '✓ $text' : text,
-                style: TextStyle(fontSize: 16, color: scheme.onSurface),
-              ),
-            ),
+      child: _TextAndAction(
+        text: Semantics(
+          container: true,
+          liveRegion: true,
+          child: Text(
+            added ? '✓ $text' : text,
+            style: TextStyle(fontSize: 16, color: scheme.onSurface),
           ),
-          if (added)
-            // Exposed like the rows: a tap on a web semantics button node
-            // takes the text input's connection with it.
-            Semantics(
-              container: true,
-              button: true,
-              label: l10n.undo,
-              excludeSemantics: true,
-              onTap: onUndo,
-              child: TextButton(
-                key: const ValueKey('added-undo'),
-                style: TextButton.styleFrom(
-                  visualDensity: VisualDensity.standard,
-                  minimumSize: const Size(0, 44),
+        ),
+        action: !added
+            ? null
+            :
+              // Exposed like the rows: a tap on a web semantics button node
+              // takes the text input's connection with it.
+              Semantics(
+                container: true,
+                button: true,
+                label: l10n.undo,
+                excludeSemantics: true,
+                onTap: onUndo,
+                child: TextButton(
+                  key: const ValueKey('added-undo'),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.standard,
+                    minimumSize: const Size(0, 44),
+                  ),
+                  onPressed: onUndo,
+                  child: Text(
+                    l10n.undo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                onPressed: onUndo,
-                child: Text(l10n.undo),
               ),
-            ),
-        ],
       ),
     );
   }
@@ -694,40 +715,58 @@ class const _DedupeNote({
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 12, 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              container: true,
-              liveRegion: true,
-              child: Text(
-                text,
-                style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
-              ),
-            ),
+      child: _TextAndAction(
+        text: Semantics(
+          container: true,
+          liveRegion: true,
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 15, color: scheme.onSurfaceVariant),
           ),
-          // Exposed like the added note's Rückgängig: a tap on a web
-          // semantics button node takes the text input's connection with it.
-          Semantics(
-            container: true,
-            button: true,
-            label: action,
-            excludeSemantics: true,
-            onTap: onAction,
-            child: TextButton(
-              key: actionKey,
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.standard,
-                minimumSize: const Size(0, 44),
-              ),
-              onPressed: onAction,
-              child: Text(action),
+        ),
+        // Exposed like the added note's Rückgängig: a tap on a web
+        // semantics button node takes the text input's connection with it.
+        action: Semantics(
+          container: true,
+          button: true,
+          label: action,
+          excludeSemantics: true,
+          onTap: onAction,
+          child: TextButton(
+            key: actionKey,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.standard,
+              minimumSize: const Size(0, 44),
             ),
+            onPressed: onAction,
+            child: Text(action, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+/// A label beside its action: the sheet's title beside Schließen, a note
+/// beside Rückgängig or Zusammenführen. The action takes at most half the
+/// width, so a large text scale doesn't squeeze the label to a letter per
+/// line beside it.
+class const _TextAndAction({required final Widget text, final Widget? action})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => Row(
+      children: [
+        Expanded(child: text),
+        ?(action == null
+            ? null
+            : ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth / 2),
+                child: action,
+              )),
+      ],
+    ),
+  );
 }
 
 String sourceLabel(AppLocalizations l10n, SuggestionSource source) =>

@@ -5,6 +5,7 @@ The list keeps working without a connection. Adding, ticking, putting back, edit
 ## Sub-features
 
 - `offline-queue` item changes (add, tick, put back, edit, move, delete) show at once, are queued and retried until the server confirms; the same change is applied once even when an answer was lost.
+- `offline-already-there` an add made offline whose item another member put on the list meanwhile (same name, brand and details) becomes that member's item when it syncs: no second row, their quantity and store stay. What was done offline to it goes to their item: a tick ticks it, an edit changes it; an offline delete removes only the own copy, so theirs stays (job 64b; `e2e/tests/already-on-list.spec.ts`).
 - `offline-indicator` crossed-out cloud at the right of the bar above the list, accessible name „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN "Offline: changes will sync once the connection is back"); while online with unsent changes: „1 Änderung wird synchronisiert“ / „{n} Änderungen werden synchronisiert“ (EN "Syncing 1 change" / "Syncing {n} changes").
 - `offline-start` cold start without network (even with a lapsed login token) shows the cached list within seconds, the add field focused, the indicator at once.
 - `offline-retry` while offline the app retries about every 3 s and on app resume; the indicator disappears when the queue is empty and the connection is back.
