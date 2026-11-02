@@ -14,7 +14,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 ## Never claim (everywhere)
 
 - That Hummlist Premium can be bought, or any price, plan, trial or discount. Premium is not on sale and nothing is locked behind it today.
-- That Siri, Alexa or AI assistants need Premium. Today they don't.
+- That Siri, Alexa or AI assistants need Premium. Today they don't, and the Alexa skill stays free for good.
 - Siri without setup ("just say Hey Siri", no Shortcut) as available. It is built, but its announcement waits for Hummlist Launch. Today Siri works through a Shortcut the user sets up once, in German.
 - That the Alexa skill is launched, certified or in the Alexa Skill Store. It is a beta by invitation, in German and English.
 - Store logos or chain colours, official store layouts, prices, offers or opening hours. Store names are plain names; walking orders are researched defaults.
@@ -417,7 +417,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 4. To end access: the bin icon „<Name> widerrufen“ (EN: "Revoke <name>") then „Widerrufen“, or „<App> trennen“ (EN: "Disconnect <app>") then „Trennen“.
 
 **Never claim.**
-- That it needs Premium (it does not today).
+- That it needs Premium (it is free, also after Premium launches).
 - That the assistant sees more than the list (it reads and changes shopping items, categories and stores only).
 - That a key can be viewed again after creation (shown once).
 - That ended keys are deleted at once (the record stays 30 days, then a daily clean-up deletes it; the key itself stops working immediately).
@@ -440,7 +440,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That Siri works without setup as a released feature (held until Hummlist Launch).
 - That it works on Apple Watch, AirPods or CarPlay (untested), or Android, or in the browser.
 - That English sentences are split correctly through the Shortcut (German only).
-- That it needs Premium (it does not today).
+- That it needs Premium (it is free, also after Premium launches).
 - That the voice microphone in the app works on the web (iOS and Android apps only).
 
 **Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the first device test (2 Nov 2026) only opened the app; the fix (Siri now also takes the name as „Hummliste“, and sentences like „Füge etwas zur Hummlist hinzu“) waits for the next device test.
@@ -479,30 +479,32 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 1. Ask for a beta invitation (the link comes from Peter, who needs the email address of your Amazon account); accept it.
 2. In the Alexa app open the skill „Hummlist“ and tap „Zur Verwendung aktivieren“.
 3. Sign in to Hummlist and tap „Erlauben“ on the page „Zugriff erlauben?“ (it names „Amazon Alexa“). The page then says „Verbunden“ (EN "Connected") until the Alexa app takes over.
-4. Say „Alexa, sag Hummlist, …“ (EN: "Alexa, ask Hummlist to …", "Alexa, tell Hummlist …", "Alexa, open Hummlist") (for example „… ich brauche Milch“, „… füge Milch hinzu“, „… setz Milch drauf“), „Alexa, frag Hummlist, …“ or „Alexa, öffne Hummlist“. The name works best said clearly in two syllables, „Humm-list“. To end it: Hummlist → „Mehr“ (EN: "More") → „Zugänge“ (EN: "Access") → „Amazon Alexa trennen“ (EN: "Disconnect Amazon Alexa") → „Trennen“, or disable the skill in the Alexa app.
+4. Say „Alexa, sag Hummlist, …“ (EN: "Alexa, ask Hummlist to …", "Alexa, tell Hummlist …", "Alexa, open Hummlist") (for example „… ich brauche Milch“, „… füge Milch hinzu“, „… setz Milch drauf“), „Alexa, frag Hummlist, …“ or „Alexa, öffne Hummlist“. The name works best said clearly in two syllables, „Humm-list“. To end it: Hummlist → „Mehr“ (EN: "More") → „Zugänge“ (EN: "Access") → „Amazon Alexa trennen“ (EN: "Disconnect Amazon Alexa") → „Trennen“, or disable the skill in the Alexa app. Disabling the skill also removes „Amazon Alexa“ from Zugänge. A connection nobody used for 12 months is removed, Zugänge entry included.
 
 **Never claim.**
 - That the skill is certified, in the public Alexa Skill Store, or available to everyone.
 - That it speaks any language besides German and English, or that everyone can find it in the Skill Store (it is listed for every country only once certified).
-- That it needs Premium (it does not today).
+- That it needs Premium (it is free, also after Premium launches).
 - That it works for ticking items off or moving them (add and read only).
 - That „Alexa, setz Milch auf die Hummlist“ (EN "Alexa, add milk to Hummlist") works: without „sag/frag/öffne Hummlist“ ("ask/tell/open Hummlist") Alexa's own lists take the sentence.
+- Exact deletion periods beyond what the privacy policy says (its wording waits for Peter's approval).
 
 **Unverified.** Real Alexa voice, the Alexa app screens and the beta invitation flow (no device or Amazon account here).
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
 **Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [alexa.md](./alexa.md).
 **Last verified.** job/69-alexa-icon-invocation, 2026-11-02 (CET), from the code and the skill package tests (sample utterances, guide phrasings), and the shared splitter live on the local stack (a real Alexa device is needed for the voice and the icon in the Alexa app). Recipe: [alexa.md](./alexa.md).
+**Last verified.** job/72-alexa-data-cleanup 29e1784, 2026-11-02 (CET), from code and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
 
 ## Hummlist Premium (held)
 
-**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with three lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone"), „Alexa-Skill“ (EN: "Alexa skill") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and the Mehr row says „Freigeschaltet“ (EN: "Unlocked").
+**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with two lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and the Mehr row says „Freigeschaltet“ (EN: "Unlocked").
 
 **How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (testers). The page opens from its link.
 
 **Never claim.**
 - That Premium can be bought, or any price, plan or discount (yearly and Lifetime are planned, not for sale).
-- That Siri, Alexa or AI assistants need Premium today (they do not).
+- That Siri, Alexa or AI assistants need Premium today (they do not), or that Alexa ever will (the skill stays free).
 - That Google Assistant or Apple Watch exist (the page says only "later").
 - That there is a free trial.
 - That Mehr shows Hummlist Premium to everyone (it does once Premium is on sale).
@@ -511,4 +513,4 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
-**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [premium.md](./premium.md).
+**Last verified.** job/72-alexa-data-cleanup, 2026-11-02 (CET), from code and the app tests (Alexa removed from the card and the hint). Recipe: [premium.md](./premium.md).

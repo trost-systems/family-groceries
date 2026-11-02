@@ -3,8 +3,8 @@
 Hummlist sells **Hummlist Premium** for the whole household, in two ways (Peter, Spec #4,
 2026-10-31): **yearly**, an auto-renewing subscription `com.hummlist.app.yearly` (EUR 9.99 a
 year in Germany), and **Lifetime**, a one-time purchase `com.hummlist.app.lifetime` (EUR 29.99).
-Both grant one entitlement, `premium`, which unlocks the integrations (Siri, Alexa, MCP/AI
-assistants) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
+Both grant one entitlement, `premium`, which unlocks the integrations (Siri, MCP/AI
+assistants; the Alexa skill stays free, job 72) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
 gated by it yet, and nothing is sold: the
 purchase screen is behind the build define `REVENUECAT_PURCHASES` and the server switch
 `premium_offer`, both off, until Peter turns them on. Built in job 25 (sandbox, our own store
@@ -534,11 +534,12 @@ until Peter says go:
   (`app/config/e2e.json`).
 
 What a locked household gets: Siri says "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es
-in der App freischalten. Ich habe nichts hinzugefügt." (HTTP 200, `premium_required`); Alexa the
-same sentence (adds) or its first two sentences (reading, launch), with a card; an MCP tool call a
+in der App freischalten. Ich habe nichts hinzugefügt." (HTTP 200, `premium_required`); an MCP tool call a
 tool result with `isError: true` and HTTP 200 (German, or English for a client that prefers it).
-Nothing is added, queued or kept. OAuth discovery, initialize and tools/list, Alexa's help, stop,
-linking and skill events stay free. All copy is a placeholder until Hummlist Launch.
+Nothing is added, queued or kept. OAuth discovery, initialize and tools/list stay free. Alexa is
+not locked at all (job 72, Legal Review N-27): `integration_gate` answers `alexa` open
+(`20261102120000_alexa_free.sql`), the alexa function no longer asks, and its Zugänge tile never
+shows as paused. All copy is a placeholder until Hummlist Launch.
 
 What it never does: delete, revoke or disconnect anything. A lapsed yearly plan (or a refund)
 locks again at read time; tokens, the Siri credential, the Alexa link, OAuth connections and the
@@ -546,7 +547,7 @@ list stay, and buying or renewing opens everything at once, for every member, wi
 Connecting while locked is allowed. A failing check answers with the endpoint's normal "try again"
 error, never with the premium answer and never by adding.
 
-`integration_blocked` (`integration`: `siri`, `alexa`, `mcp`) goes to PostHog at most once an hour
+`integration_blocked` (`integration`: `siri`, `mcp`) goes to PostHog at most once an hour
 per household and integration (`integration_blocks`), only with the caller's analytics yes;
 `paywall_viewed` (`entry_point`: `more`, `integrations`) when the Premium page offers a plan with
 its price (docs/ANALYTICS.md).

@@ -272,7 +272,6 @@ Deno.test('every intent of each model has its own answer in the handler', async 
     verify: (_h: Headers, body: Uint8Array) =>
       Promise.resolve(JSON.parse(new TextDecoder().decode(body))),
     authenticate: () => Promise.resolve({ userId: 'u', householdId: 'h', sessionId: 's' }),
-    requirePremium: () => Promise.resolve('open'),
     takeAdds: () => Promise.resolve(true),
     addItems: () => Promise.resolve([]),
     listItems: () => Promise.resolve([]),

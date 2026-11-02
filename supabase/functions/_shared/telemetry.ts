@@ -86,7 +86,8 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
   },
   // Job 50: a household without Hummlist Premium used an integration while the lock is on (at
   // most once an hour per household and integration, _shared/premium.ts). Never what was said.
-  integration_blocked: { integration: oneOf('siri', 'alexa', 'mcp') },
+  // Alexa stays free (job 72), so it is never blocked.
+  integration_blocked: { integration: oneOf('siri', 'mcp') },
 };
 
 /** Properties every server event carries besides its own. */

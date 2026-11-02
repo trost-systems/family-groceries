@@ -44,9 +44,12 @@ class FakeSession() extends MockCubit<Session> implements SessionCubit;
 /// Rows the fake server answers for `personal_access_tokens`.
 final serverTokens = <Map<String, Object?>>[];
 
+/// The OAuth grants (connected apps) the fake auth server answers.
+final serverGrants = <Map<String, Object?>>[];
+
 /// Supabase against a server that answers every request with `[]`, or
-/// [serverTokens]: More's access page builds its repository from the
-/// global client. Once per test file, in `setUpAll`.
+/// [serverTokens] and [serverGrants]: More's access page builds its
+/// repository from the global client. Once per test file, in `setUpAll`.
 Future<void> fakeSupabase() async {
   SharedPreferences.setMockInitialValues({});
   PackageInfo.setMockInitialValues(
@@ -61,11 +64,11 @@ Future<void> fakeSupabase() async {
     publishableKey: 'test',
     httpClient: MockClient(
       (request) async => http.Response(
-        jsonEncode(
-          request.url.path.endsWith('personal_access_tokens')
-              ? serverTokens
-              : const <Object>[],
-        ),
+        jsonEncode(switch (request.url.path) {
+          final p when p.endsWith('personal_access_tokens') => serverTokens,
+          final p when p.endsWith('/user/oauth/grants') => serverGrants,
+          _ => const <Object>[],
+        }),
         200,
         headers: {'content-type': 'application/json'},
         // postgrest reads the method back from the response.

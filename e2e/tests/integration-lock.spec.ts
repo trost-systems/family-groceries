@@ -1,8 +1,9 @@
-// Job 50 (Spec #4): Siri, Alexa and MCP are part of Hummlist Premium once the server's
-// integration_lock switch is on. A household without premium is refused in context and nothing is
-// added; the integration settings say so for every member, with connections paused, not removed;
-// a yearly plan opens all three within one sync with the same credentials; its expiry locks them
-// again and deletes nothing. A tester's grant works throughout.
+// Job 50 (Spec #4): Siri and MCP are part of Hummlist Premium once the server's integration_lock
+// switch is on. A household without premium is refused in context and nothing is added; the
+// integration settings say so for every member, with connections paused, not removed; a yearly
+// plan opens both within one sync with the same credentials; its expiry locks them again and
+// deletes nothing. A tester's grant works throughout. Alexa stays free (job 72, Legal Review
+// N-27): it adds throughout and its connection never shows as paused.
 //
 // The switch is global, so this spec runs alone after the suite (scripts/gates/e2e.sh,
 // FG_E2E_INTEGRATION_LOCK): it turns the switch on and off again.
@@ -28,7 +29,6 @@ test.describe.configure({ mode: 'serial' });
 
 const voicePremium =
   'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.';
-const alexaLocked = 'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt.';
 const mcpPremium =
   'Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert.';
 
@@ -87,8 +87,8 @@ const card = (page: Page) => page.getByRole('heading', { name: 'Teil von Hummlis
 const tile = (page: Page, name: string) => page.getByRole('group', { name: new RegExp(`^${name} `) });
 const paused = (page: Page) => page.getByRole('group', { name: /Pausiert: braucht Hummlist Premium$/ });
 
-test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a yearly plan opens '
-  + 'all three for every member with the same credentials; its expiry locks again and keeps everything', async ({ browser, baseURL }) => {
+test('locked household: Siri and MCP refuse in context and add nothing, Alexa adds; a yearly plan opens '
+  + 'both for every member with the same credentials; its expiry locks again and keeps everything', async ({ browser, baseURL }) => {
   test.setTimeout(240_000);
   const peterEmail = newEmail('lock-peter');
   const leaEmail = newEmail('lock-lea');
@@ -109,12 +109,12 @@ test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a
   const mcp = await connectWithToken(shortcut);
 
   expect(await siri(shortcut, 'Milch, zwei Gurken und Klopapier')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Eier')).toBe(alexaLocked);
+  expect(await alexaSay(alexa.access_token, 'Eier'), 'Alexa is never locked').toBe('Ich habe Eier auf die Hummlist gesetzt.');
   const tools = (await mcp.listTools()).tools.map((t) => t.name);
   expect(tools, 'tools/list stays reachable').toContain('add_items');
   expect(await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).toEqual({ isError: true, text: mcpPremium });
   expect(await toolText(mcp, 'list_items')).toEqual({ isError: true, text: mcpPremium });
-  expect(await openNames(peterEmail), 'nothing was added').toEqual([]);
+  expect(await openNames(peterEmail), 'only the Alexa add went through').toEqual(['Eier']);
 
   // Both members see it in the integration settings; the web sells nothing.
   await openMore(peter, 'Zugänge');
@@ -127,7 +127,8 @@ test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a
     .toHaveCount(0);
   await expect(paused(peter).first(), 'the connections stay, paused').toBeVisible();
   await expect(tile(peter, 'Kurzbefehl')).toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
-  await expect(tile(peter, 'Amazon Alexa')).toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
+  await expect(tile(peter, 'Amazon Alexa'), 'Alexa is free, never paused')
+    .not.toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
   await screenshot(peter, 'job50-web-access-locked-de-390');
 
   // Peter subscribes on his iPhone: within one sync everything opens, for Lea too, same credentials.
@@ -138,22 +139,24 @@ test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a
   await expect(paused(peter), 'no connection paused any more').toHaveCount(0);
   await screenshot(peter, 'job50-web-access-unlocked-de-390');
   expect(await siri(shortcut, 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
-  expect(await alexaSay(alexa.access_token, 'Eier')).toBe('Ich habe Eier auf die Hummlist gesetzt.');
+  expect(await alexaSay(alexa.access_token, 'Butter')).toBe('Ich habe Butter auf die Hummlist gesetzt.');
   expect((await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).isError).toBe(false);
-  expect(await openNames(peterEmail)).toEqual(['Milch', 'Eier', 'Kaffee']);
+  expect(await openNames(peterEmail)).toEqual(['Eier', 'Milch', 'Butter', 'Kaffee']);
 
   // The plan expires: locked again at read time, nothing deleted or disconnected.
   expect((await rcEvent('EXPIRATION', household, tx, { productId: yearlyId, expiresInDays: -1 })).body)
     .toEqual({ status: 'updated' });
   await expect(card(lea), 'locked again, live').toBeVisible({ timeout: 10_000 });
   expect(await siri(shortcut, 'Brot')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Brot')).toBe(alexaLocked);
+  expect(await alexaSay(alexa.access_token, 'Käse'), 'lapsed: Alexa stays open').toBe('Ich habe Käse auf die Hummlist gesetzt.');
   expect((await toolText(mcp, 'list_items')).isError).toBe(true);
-  expect(await openNames(peterEmail), 'the list stays').toEqual(['Milch', 'Eier', 'Kaffee']);
+  expect(await openNames(peterEmail), 'the list stays').toEqual(['Eier', 'Milch', 'Butter', 'Kaffee', 'Käse']);
   const { data: tokens } = await (await apiAs(peterEmail)).from('personal_access_tokens').select('name, revoked_at');
   expect(tokens, 'no token revoked').toEqual([{ name: 'Kurzbefehl', revoked_at: null }]);
-  await expect(tile(peter, 'Amazon Alexa'), 'the Alexa link stays, paused')
+  await expect(tile(peter, 'Kurzbefehl'), 'the Shortcut token stays, paused')
     .toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/, { timeout: 10_000 });
+  await expect(tile(peter, 'Amazon Alexa'), 'the Alexa link stays, never paused')
+    .not.toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
   await screenshot(peter, 'job50-web-access-paused-de-390');
 
   // Renewed: open again, still the same credentials.

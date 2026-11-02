@@ -2441,13 +2441,13 @@ abstract class AppLocalizations {
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). More: under Hummlist Premium while it may be offered
   ///
   /// In de, this message translates to:
-  /// **'Siri, Alexa und KI-Assistenten'**
+  /// **'Siri und KI-Assistenten'**
   String get premiumRowHint;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: what is included (Spec #4)
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri, Alexa und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.'**
+  /// **'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.'**
   String get premiumBody;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has premium
@@ -2675,7 +2675,7 @@ abstract class AppLocalizations {
   /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: why the connections are paused; nothing is removed
   ///
   /// In de, this message translates to:
-  /// **'Siri, Alexa und KI-Assistenten gehören zu Hummlist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Hummlist Premium hat.'**
+  /// **'Siri und KI-Assistenten gehören zu Hummlist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Hummlist Premium hat.'**
   String get integrationPremiumBody;
 
   /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
@@ -2683,12 +2683,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Siri auf dem iPhone'**
   String get integrationPremiumSiri;
-
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
-  ///
-  /// In de, this message translates to:
-  /// **'Alexa-Skill'**
-  String get integrationPremiumAlexa;
 
   /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
   ///

@@ -6584,3 +6584,56 @@ the Google sheet.
    keyboard for again when the app resumes after a cancel. Widget tests cover both providers
    through a full inactive/paused/resumed cycle.
 4. **Port block 570xx instead of 701xx.** 70121 is over 65535 (memory "port blocks above 65").
+
+## Job 72: Alexa data cleanup (Legal Review N-24, N-28), 2026-11-02
+
+Migration `20261102093000_alexa_cleanup.sql`; the retention table is in docs/ALEXA.md, the fact
+answers for Legal Review in docs/NEEDS_LEAD.md "Job 72".
+
+1. **A trigger on `auth.sessions`, not only the daily job.** Every way an Alexa connection ends
+   deletes its Hummlist session (GoTrue's grant revocation, `alexa_revoke`, sign-out everywhere,
+   account deletion), so an `after delete ... for each statement` trigger with a transition
+   table removes the links and, with the user's last link, the counter, in the same
+   transaction. The hosted `postgres` role has TRIGGER on `auth.sessions` (checked read-only),
+   and the repo already has triggers on `auth.users`. The trigger only deletes from two public
+   tables by indexed columns (new index `alexa_links_session`), so a GoTrue sign-out cannot fail
+   on it short of a database error. `alexa_remember` lost its own stale-link cleanup: the
+   trigger does it.
+2. **SkillDisabled deletes the grant.** Zugänge lists active `auth.oauth_consents` rows, and
+   `alexa_revoke` left Amazon's in place, so a disabled skill stayed listed. It is deleted once
+   the user holds no other session of the Alexa client (a second Echo account linked to the same
+   Hummlist user keeps it). Linking again (`p_keep` set) keeps it. GoTrue's own revocation only
+   sets `revoked_at`; the daily job deletes revoked Alexa grants, because the text promises
+   deletion.
+3. **The Alexa client is found by its redirect URIs** (`alexa_client_ids()`: Amazon's
+   `/api/skill/link/` URLs on layla, pitangui, alexa.amazon.co.jp), not by the name "Amazon
+   Alexa": dynamic registration lets anyone name a client that. A client with Amazon's redirect
+   gets its codes sent to Amazon, so treating it as Alexa harms nobody.
+4. **Counters go once their minute has passed**, not once a day old: the rate check starts a
+   new window after a minute anyway, and with a daily job "older than a day" would keep one up
+   to two days.
+5. **Unused means neither `last_seen` nor the session's `refreshed_at`/`updated_at`/`created_at`
+   moved for 12 months**, and the 12-month rule deletes sessions; their links follow because
+   their session is gone. `last_seen` alone misses an Alexa session whose link was never
+   written or not moved (a failed `alexa_remember`, a user without a household whose token
+   Alexa still refreshes), and deleting such a link while its session lives would leave
+   SkillDisabled unable to revoke it. Grants with no session left go after a day's grace, unless
+   GoTrue made an authorization for that user and client in the last day (it reuses an existing
+   grant without moving `granted_at`, so a link in progress must not lose it). That also clears
+   the entry after "sign out everywhere", when the link no longer works.
+6. **pgTAP fix, unrelated to the feature:** `alexa.test.sql`'s "same answer given again" case
+   tied two `decided_at = now()` rows and failed on a database with a different heap order
+   (it failed on this runner on main's file too); the nil-UUID row now moves a minute back first.
+
+7. **Alexa stays free (ADDENDUM 1, Peter Q39 = AP1, Legal Review N-27).** The alexa function lost
+   its Premium check (`requirePremium`, `speech.premium`/`premiumAdd`), `Integration` is
+   `'siri' | 'mcp'`, and `integration_blocked` no longer allows `alexa`. A new migration
+   (`20261102120000_alexa_free.sql`) makes `integration_gate` answer `alexa` open instead of
+   dropping it from the check constraints: an alexa function deployed before this one still asks,
+   and squawk forbids narrowing what old builds use. The app drops Alexa from the Premium copy and
+   card, and never shows the Amazon Alexa tile in Zugänge as paused; it matches the grant by the
+   client name "Amazon Alexa", the only field the grant list carries (the server matches by
+   redirect URIs).
+8. **The 12-month purge is proved end to end for one user (ADDENDUM 2):** an only Alexa session
+   unused for 12 months takes its link, its counter and the grant (the Zugänge entry) in the same
+   `purge_alexa()` run.

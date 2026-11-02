@@ -1,7 +1,8 @@
 # Paywall release: the go-live checklist
 
 This is the ordered list of switches that put Hummlist Premium on sale and,
-after that, lock Siri, Alexa and AI assistants behind it. Every step names its
+after that, lock Siri and AI assistants behind it. The Alexa skill stays free
+(Peter Q39, Legal Review N-27, job 72): the lock never covers it. Every step names its
 owner. A step marked **Peter's yes** waits for Peter to say yes in his own
 words. Nothing here has been flipped yet (job 67, 2026-11-02). The behaviour
 behind the switches is in [`PURCHASES.md`](PURCHASES.md). The old per-job
@@ -169,8 +170,8 @@ published, a one-line PR points `termsUrl` at `/nutzungsbedingungen` and
 terms page can replace it there too (Legal decides).
 
 4.3 **Legal**: privacy section 9 names `paywall_viewed` and
-`integration_blocked` (and the Siri events), and section 7 says that Siri,
-Alexa and AI assistants need Hummlist Premium. This is needed before 6.4,
+`integration_blocked` (and the Siri events), and section 7 says that Siri
+and AI assistants need Hummlist Premium (not Alexa, which stays free). This is needed before 6.4,
 not before the sale.
 
 4.4 **Ops, after Legal**: the App Store privacy label and the Play Data
