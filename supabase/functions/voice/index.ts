@@ -3,7 +3,7 @@ import { authenticate } from '../_shared/auth.ts';
 import { asUser, serviceDb } from '../_shared/db.ts';
 import { requirePremiumWith } from '../_shared/premium.ts';
 import { telemetryFor, withTelemetry } from '../_shared/telemetry.ts';
-import { listItems } from '../mcp/list.ts';
+import { listItems } from '../_shared/list.ts';
 import { createHandler } from './handler.ts';
 import { addItems } from './items.ts';
 

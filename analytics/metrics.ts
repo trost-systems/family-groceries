@@ -328,6 +328,7 @@ export interface BlockedWeek {
   siri: number;
   alexa: number;
   mcp: number;
+  api: number;
   payingWithin14Days: number;
 }
 
@@ -354,9 +355,9 @@ export function blockedHouseholdsByWeek(events: Event[]): Map<string, BlockedWee
   for (const [key, b] of blocked) {
     const week = key.slice(0, 10);
     const w = weeks.get(week) ??
-      { households: 0, siri: 0, alexa: 0, mcp: 0, payingWithin14Days: 0 };
+      { households: 0, siri: 0, alexa: 0, mcp: 0, api: 0, payingWithin14Days: 0 };
     w.households++;
-    for (const integration of ['siri', 'alexa', 'mcp'] as const) {
+    for (const integration of ['siri', 'alexa', 'mcp', 'api'] as const) {
       if (b.seen.has(integration)) w[integration]++;
     }
     if (

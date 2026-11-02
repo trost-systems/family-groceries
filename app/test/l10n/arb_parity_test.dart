@@ -17,6 +17,7 @@ const sameInBothLanguages = {
   'inviteLinkLabel': '"Link" is English too',
   'tokenHint': 'only an ellipsis and the token hint',
   'tokenName': '"Name" is English too',
+  'apiHeader': '"API" is the word in both (job 73)',
   'categoryName': '"Name" is English too',
   'appVersion': '"Version" is English too',
   'feedbackSection': '"Feedback" is German too',

@@ -2713,6 +2713,108 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Pausiert: braucht Hummlist Premium'**
   String get integrationPaused;
+
+  /// Zugänge (More → Zugänge), job 73: label of the public REST API section
+  ///
+  /// In de, this message translates to:
+  /// **'API'**
+  String get apiHeader;
+
+  /// Zugänge, API section (shown while the public-api flag is on): below the API's base URL
+  ///
+  /// In de, this message translates to:
+  /// **'Für eigene Skripte und Automationen: Lies und ändere eure Liste über HTTP, mit einem API-Schlüssel.'**
+  String get apiBody;
+
+  /// Zugänge, API section: link to docs/API.md on GitHub
+  ///
+  /// In de, this message translates to:
+  /// **'API-Dokumentation'**
+  String get apiDocs;
+
+  /// Zugänge, API section: the user has no API key yet
+  ///
+  /// In de, this message translates to:
+  /// **'Kein aktiver API-Schlüssel.'**
+  String get noApiKeys;
+
+  /// Zugänge, API section: button and dialog title for a new API key
+  ///
+  /// In de, this message translates to:
+  /// **'API-Schlüssel erstellen'**
+  String get createApiKey;
+
+  /// Create API key dialog: hint in the name field
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. Home Assistant'**
+  String get apiKeyNameHint;
+
+  /// An API key's scope: may read the list, change nothing. Also on the key's row
+  ///
+  /// In de, this message translates to:
+  /// **'Nur lesen'**
+  String get apiScopeRead;
+
+  /// Create API key dialog: what the read-only choice allows
+  ///
+  /// In de, this message translates to:
+  /// **'Liest die Liste, Kategorien und Läden. Ändert nichts.'**
+  String get apiScopeReadBody;
+
+  /// An API key's scope: may read and change the list. Also on the key's row
+  ///
+  /// In de, this message translates to:
+  /// **'Lesen und schreiben'**
+  String get apiScopeReadWrite;
+
+  /// Create API key dialog: what the read-and-write choice allows
+  ///
+  /// In de, this message translates to:
+  /// **'Kann auch Einträge hinzufügen, abhaken und verschieben.'**
+  String get apiScopeReadWriteBody;
+
+  /// Dialog title right after an API key was created
+  ///
+  /// In de, this message translates to:
+  /// **'API-Schlüssel erstellt'**
+  String get apiKeyCreated;
+
+  /// The new API key's dialog: the key is shown only this once
+  ///
+  /// In de, this message translates to:
+  /// **'Kopiere den Schlüssel jetzt. Er wird nicht noch einmal angezeigt.'**
+  String get apiKeyShownOnce;
+
+  /// Confirm dialog title before revoking an API key
+  ///
+  /// In de, this message translates to:
+  /// **'API-Schlüssel widerrufen?'**
+  String get revokeApiKeyTitle;
+
+  /// Confirm dialog before revoking an API key
+  ///
+  /// In de, this message translates to:
+  /// **'Skripte, die ihn benutzen, verlieren sofort den Zugriff.'**
+  String get revokeApiKeyBody;
+
+  /// Snack bar: the member already has 10 active API keys (docs/API.md, Limits)
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens 10 aktive API-Schlüssel. Widerrufe erst einen.'**
+  String get tooManyApiKeys;
+
+  /// Snack bar: the server refused to create an API key outside the app's own sign-in (session_required)
+  ///
+  /// In de, this message translates to:
+  /// **'API-Schlüssel kannst du nur hier in der App erstellen, während du angemeldet bist.'**
+  String get apiKeySessionRequired;
+
+  /// PLACEHOLDER (job 73): Hummlist Launch writes the final copy. Zugänge, API section, locked household (job 50): the keys stay, unused for now; new ones can still be made
+  ///
+  /// In de, this message translates to:
+  /// **'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
+  String get apiPremium;
 }
 
 class _AppLocalizationsDelegate

@@ -24,15 +24,36 @@ function db(): Sql {
 /** The service connection, for credential and bookkeeping tables no client may touch. */
 export const serviceDb = (): Sql => db();
 
+/** Makes the rest of transaction [tx] run as `userId` (role authenticated), under RLS. */
+async function becomeUser(tx: Tx, userId: string): Promise<void> {
+  const claims = JSON.stringify({ sub: userId, role: 'authenticated' });
+  await tx`select set_config('role', 'authenticated', true),
+                  set_config('request.jwt.claims', ${claims}, true)`;
+}
+
 /** Runs `work` in one transaction as `userId`, under RLS. */
 export async function asUser<T>(userId: string, work: (tx: Tx) => Promise<T>): Promise<T> {
-  const claims = JSON.stringify({ sub: userId, role: 'authenticated' });
   const result = await db().begin(async (tx) => {
-    await tx`select set_config('role', 'authenticated', true),
-                    set_config('request.jwt.claims', ${claims}, true)`;
+    await becomeUser(tx, userId);
     return await work(tx);
   });
   return result as T;
+}
+
+/**
+ * Runs `work` as `userId` inside a transaction of the service connection, then switches back:
+ * bookkeeping before and after it (the API's idempotency records) commits or rolls back with it.
+ */
+export async function asUserWithin<T>(
+  tx: Tx,
+  userId: string,
+  work: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  await becomeUser(tx, userId);
+  const result = await work(tx);
+  await tx`set local role none`;
+  await tx`select set_config('request.jwt.claims', '', true)`;
+  return result;
 }
 
 export async function householdOf(userId: string): Promise<string | null> {

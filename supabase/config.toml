@@ -447,6 +447,11 @@ import_map = "./functions/deno.json"
 # Only the app's own session may delete an account; the function checks the JWT itself.
 verify_jwt = false
 
+[functions.api]
+import_map = "./functions/deno.json"
+# The public REST API (docs/API.md): API keys only, checked by the function itself.
+verify_jwt = false
+
 [functions.health]
 import_map = "./functions/deno.json"
 verify_jwt = false

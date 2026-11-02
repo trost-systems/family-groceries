@@ -6705,3 +6705,72 @@ answers for Legal Review in docs/NEEDS_LEAD.md "Job 72".
    type. One line per request, no second format to grep.
 5. **Fields are reduced to one word of `[A-Za-z0-9_.:-]`, 64 characters**: they come from a
    verified Amazon body, but a stray space or newline would break the format or let free text in.
+
+## Job 73: the Hummlist API, 2026-11-02
+
+Peter: "Let's add an API alongside the MCP so people can build automations for the app." "Keep
+rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Guide
+[`API.md`](API.md), contract [`api/openapi.yaml`](api/openapi.yaml).
+
+1. **One list module for MCP and API.** `mcp/list.ts` moved to `_shared/list.ts`; the MCP tools and
+   the API call the same add, list, tick and move code, which calls the same database functions as
+   the app and Siri. The two differ only in how they render an item (the API adds ids, status and
+   `addedAt`). The MCP tool results are unchanged: its tests changed only their import paths.
+2. **API keys are personal access tokens of a third kind, `api`, with scopes.** Not the MCP tokens
+   with a scope column: a key for an automation should not also open the MCP server, and the
+   MCP's 20 tokens keep their meaning. `authenticate_access_token` already passed only `pat` and
+   session-bound `siri` rows, so MCP and Siri refuse an API key without a code change; the API's
+   lookup (`api_begin`) takes only `api` rows. Scopes are `{read}` or `{read,write}`; write alone
+   would be a key that adds items it cannot read back.
+3. **Only the app's own session makes a key** (`create_api_token` refuses a `client_id` claim or
+   a missing `session_id`), like the Siri credential: an OAuth-connected assistant cannot mint
+   itself a long-lived key.
+4. **Ids in the path, names allowed in bodies and filters.** REST paths take item ids (a name in a
+   path would fuzzy-match). `store` and `category` take an id or a name, matched like the MCP tools,
+   because a Shortcut or an n8n flow knows "dm", not a UUID.
+5. **One database call per request for authentication and limits** (`api_begin`): the address's
+   failure budget, the key, the key's token bucket and the household's day, in one transaction
+   with row locks in a fixed order. The limits are arguments from `api/limits.ts`, so the numbers
+   live in one file. A token bucket (20, refilled at one a second) gives the asked-for "60 a
+   minute, burst 20" exactly; a fixed minute window would allow 120 across a window edge.
+6. **Every response carries X-RateLimit-* of the limit closest to running out**, unauthenticated
+   ones the failed-authentication budget, so "on every response" holds without inventing a limit.
+   Reset is seconds until full again (delta seconds, as in the IETF RateLimit draft), not an epoch.
+7. **Idempotency inside the operation's transaction.** The claim on `(key id, Idempotency-Key)`,
+   the operation as the user and the stored response commit together; a concurrent duplicate
+   waits on the row lock and replays. An error stores nothing: nothing changed, so a retry may run
+   again. Records live 24 hours.
+8. **The address is the gateway's `X-Real-IP`, never `X-Forwarded-For`** (review 0, lead's
+   must-fix 2). Checked on the hosted project on 2026-11-02: a request to `health` with forged
+   `X-Forwarded-For: 203.0.113.77` and `X-Real-IP: 203.0.113.78` reached the function with
+   `x-forwarded-for` exactly as forged and `x-real-ip` and `cf-connecting-ip` set to the runner's
+   real address (function_edge_logs, read through the Management API's logs endpoint); a forged
+   `cf-connecting-ip` makes Cloudflare refuse the request (403). The local Kong overwrites
+   `X-Real-IP` with the socket peer too (`proxy_set_header X-Real-IP $remote_addr`, no
+   `set_real_ip_from`). So a caller can no longer rotate addresses or name a victim's. Without the
+   header all callers share one budget instead of the throttle going off. Keys have 256 random
+   bits, so the throttle's job is to cap work and rows, not to protect a secret.
+9. **Premium through the integration lock** (`integration_gate(household, 'api')`), checked after
+   the rate limit (a locked household still counts requests) and before validation of the body.
+   `402 premium_required`, not 403: the key is fine, the household needs Premium, and the key works
+   again once it unlocks.
+10. **The flag gates the app's UI only.** With `public-api` off nobody sees the API section, but
+    `create_api_token` and the function work for anyone who calls them: the API reaches only the
+    caller's own household under RLS and its limits, so a server switch would protect nothing. API
+    keys that exist are always listed, so they can always be revoked.
+11. **Requests are strict, responses grow.** Unknown body fields and query parameters are a 400, so
+    a field added to v1 later can never change what an old request meant.
+12. **camelCase fields**, like the MCP tools' JSON, so one item shape serves both docs.
+13. **Served under the Supabase functions URL**; `api.hummlist.com` needs Peter's OK (brief).
+14. **Only unknown keys count against an address, and only they are blocked** (lead's must-fix
+    3). A valid key always goes through; a missing key or one we know that ended (revoked, its
+    creator left, an MCP or Siri token) answers 401 and counts nothing, so a Zap polling with a
+    revoked key cannot block everyone behind the same Zapier, n8n or Home Assistant Cloud
+    address. This gives up hiding which guesses are valid keys from a blocked address, which is
+    worthless against 256-bit keys. An ended key is known for 30 days after it ended (then the
+    daily `purge_access_tokens` deletes it and it counts as unknown). New failures delete up to a
+    hundred ended windows each, so `api_auth_failures` holds about the addresses of the last ten
+    minutes however fast someone sends.
+15. **Older app builds list API keys among their MCP tokens** (they read an unknown kind as `pat`);
+    their delete button still revokes the key. Nothing to do: the API section ships with this build.
+16. **Local ports 583xx**, since 731xx is past 65535.

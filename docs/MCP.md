@@ -258,6 +258,9 @@ client                         mcp function                Supabase Auth        
   |------------------------------->| verify via JWKS, then run the tool as the user         |
 ```
 
+The tools' list operations live in `supabase/functions/_shared/list.ts`, which the
+Hummlist API (`docs/API.md`) runs too, so both answer alike.
+
 The function (`supabase/functions/mcp/handler.ts`):
 
 1. Serves Protected Resource Metadata (RFC 9728) at
@@ -463,7 +466,7 @@ stack or the hosted project, not only the docs:
   plaintext, owner-only visibility, cross-household isolation, one-way revoke,
   token death on leaving the household.
 - `supabase/functions/_shared/auth_test.ts`, `mcp/handler_test.ts`,
-  `mcp/list_test.ts` (Deno): signature, expiry, audience, issuer and role
+  `_shared/list_test.ts` (Deno): signature, expiry, audience, issuer and role
   checks; PAT lookup; 401/403 challenges; Origin rules; name matching.
 - `e2e/tests/mcp.spec.ts` (Playwright with the MCP SDK client against the
   local stack and the Flutter web build):

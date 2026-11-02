@@ -25,13 +25,16 @@ export FG_PORT_PREFIX="$VH_PREFIX" FG_PROJECT_ID="$VH_PROJECT_ID" FG_STACK_WORKD
 
 # What a production build gets (app/config/auth.json minus the hosted Google client and APP_URL),
 # with the e2e stand-in PostHog host so nothing reaches a real PostHog project.
+# VH_DEFINES adds space-separated NAME=value pairs, e.g. "FLAGS_ON=public-api INTEGRATION_LOCK=true".
 vh_defines() {
-  cat <<'JSON'
+  local extra="" pair
+  for pair in ${VH_DEFINES:-}; do extra+="$(printf ',\n  "%s": "%s"' "${pair%%=*}" "${pair#*=}")"; done
+  cat <<JSON
 {
   "GOOGLE_WEB_CLIENT_ID": "family-groceries-e2e",
   "SIGN_IN_WITH_APPLE": "true",
   "POSTHOG_PROJECT_API_KEY": "phc_e2e_fake_collector",
-  "POSTHOG_HOST": "https://posthog.invalid"
+  "POSTHOG_HOST": "https://posthog.invalid"$extra
 }
 JSON
 }

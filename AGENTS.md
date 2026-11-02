@@ -48,6 +48,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   them from the PRs' `## Changelog` notes into `releases/changelog/<v>.json`
   drafts with the store "What's new" texts; `record.mjs` moves a draft into
   the record.
+- `supabase/functions/api/`: the public REST API (`/v1/...`, API keys with scopes, Postgres
+  rate limits, idempotency), sharing `_shared/list.ts` with the `mcp` function. Guide
+  `docs/API.md`, contract `docs/api/openapi.yaml` (checked by the lint gate against
+  `api/routes.ts`). Its key UI sits behind the PostHog flag `public-api`.
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
   `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).

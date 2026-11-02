@@ -185,6 +185,7 @@ class _AppState() extends State<App> {
         BlocProvider.value(value: widget.entitlements),
         BlocProvider.value(value: widget.purchases),
         BlocProvider.value(value: widget.analytics),
+        BlocProvider.value(value: widget.analytics.flags),
         BlocProvider.value(value: _language),
         BlocProvider.value(value: _feedback),
         BlocProvider.value(value: _theme),

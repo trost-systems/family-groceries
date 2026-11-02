@@ -135,4 +135,17 @@ select (select id from fx where key = 'home'), id, now() - interval '1 day' from
 insert into public.integration_blocks (household_id, integration, reported_at)
 values ((select id from fx where key = 'home'), 'mcp', now() - interval '2 hours');
 
+-- Job 73: an API key with its rate counters, a failed authentication and an idempotency record.
+insert into public.personal_access_tokens (household_id, user_id, name, token_hash, token_hint, kind, scopes)
+select (select id from fx where key = 'home'), id, 'Home Assistant', repeat('d', 64), 'abcd', 'api', '{read,write}'
+from auth.users where email = 'peter@backup.test';
+insert into public.api_token_buckets (token_id, tokens, refilled_at)
+select id, 12.5, now() from public.personal_access_tokens where token_hash = repeat('d', 64);
+insert into public.api_household_days (household_id, day, requests)
+values ((select id from fx where key = 'home'), current_date, 8);
+insert into public.api_auth_failures (ip_hash, window_start, failures) values (repeat('e', 64), now(), 3);
+insert into public.api_idempotency (token_id, key, request_hash, status, body)
+select id, 'backup-drill', repeat('f', 64), 201, '{"data":{"added":[]}}'
+from public.personal_access_tokens where token_hash = repeat('d', 64);
+
 commit;

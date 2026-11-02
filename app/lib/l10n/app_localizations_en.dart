@@ -1642,4 +1642,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get integrationPaused => 'Paused: needs Hummlist Premium';
+
+  @override
+  String get apiHeader => 'API';
+
+  @override
+  String get apiBody =>
+      'For your own scripts and automations: read and change your list over HTTP with an API key.';
+
+  @override
+  String get apiDocs => 'API documentation';
+
+  @override
+  String get noApiKeys => 'No active API key.';
+
+  @override
+  String get createApiKey => 'Create API key';
+
+  @override
+  String get apiKeyNameHint => 'e.g. Home Assistant';
+
+  @override
+  String get apiScopeRead => 'Read only';
+
+  @override
+  String get apiScopeReadBody =>
+      'Reads the list, categories and stores. Changes nothing.';
+
+  @override
+  String get apiScopeReadWrite => 'Read and write';
+
+  @override
+  String get apiScopeReadWriteBody => 'Can also add, tick off and move items.';
+
+  @override
+  String get apiKeyCreated => 'API key created';
+
+  @override
+  String get apiKeyShownOnce => 'Copy the key now. It won\'t be shown again.';
+
+  @override
+  String get revokeApiKeyTitle => 'Revoke API key?';
+
+  @override
+  String get revokeApiKeyBody => 'Scripts using it lose access right away.';
+
+  @override
+  String get tooManyApiKeys => 'At most 10 active API keys. Revoke one first.';
+
+  @override
+  String get apiKeySessionRequired =>
+      'You can only create API keys here in the app while you\'re signed in.';
+
+  @override
+  String get apiPremium =>
+      'The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium.';
 }

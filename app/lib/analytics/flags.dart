@@ -9,11 +9,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// after a no, in a build without a project key, and offline until a first
 /// answer. Later the SDK serves the values it last received, also offline.
 /// Changelog and release holds stay in `releases/flags.json`, not here.
-class Flags() extends Cubit<Map<String, bool>> {
+class Flags({
+  /// On whatever PostHog serves: the `FLAGS_ON` define of a build that
+  /// cannot reach PostHog.
+  final Set<String> forced = const {},
+}) extends Cubit<Map<String, bool>> {
   this : super(const {});
 
   /// Whether the flag [key] is on for this install; off when unknown.
-  bool isOn(String key) => state[key] ?? false;
+  bool isOn(String key) => forced.contains(key) || (state[key] ?? false);
 
   /// The values PostHog served; `Analytics` only.
   void replace(Map<String, bool> values) => emit(Map.unmodifiable(values));

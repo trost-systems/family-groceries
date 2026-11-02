@@ -241,8 +241,8 @@ Deno.test('integration_blocked (job 50): households per Berlin week, per integra
   assertEquals(
     blockedHouseholdsByWeek(blockedEvents),
     new Map([
-      ['2027-04-05', { households: 2, siri: 1, alexa: 1, mcp: 1, payingWithin14Days: 1 }],
-      ['2027-04-12', { households: 2, siri: 0, alexa: 1, mcp: 1, payingWithin14Days: 0 }],
+      ['2027-04-05', { households: 2, siri: 1, alexa: 1, mcp: 1, api: 1, payingWithin14Days: 1 }],
+      ['2027-04-12', { households: 2, siri: 0, alexa: 1, mcp: 1, api: 0, payingWithin14Days: 0 }],
     ]),
   );
 });

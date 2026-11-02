@@ -264,8 +264,9 @@ export const blockedEvents: Event[] = [
   blocked('2027-04-07T18:00:00Z', 30, H30, 'alexa'),
   ev('purchase_completed', '2027-04-09T10:00:00Z', id(30), H30, premium('yearly', 't')),
 
-  // H31: MCP, bought 20 days later: not within 14 days.
+  // H31: MCP and the API (job 73), bought 20 days later: not within 14 days.
   blocked('2027-04-06T12:00:00Z', 31, H31, 'mcp'),
+  blocked('2027-04-06T12:05:00Z', 31, H31, 'api'),
   ev('purchase_completed', '2027-04-26T12:00:00Z', id(31), H31, premium('lifetime', 'u')),
 
   // H32: a tester's household (is_internal): left out.

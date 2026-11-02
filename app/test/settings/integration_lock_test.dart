@@ -106,6 +106,32 @@ void main() {
     expect(more.purchases.premium.calls, containsAll(['lock', 'offer']));
   });
 
+  testWidgets('locked: API keys stay listed as paused, with the hint', (
+    tester,
+  ) async {
+    serverTokens.add({
+      'id': 'a1',
+      'name': 'Home Assistant',
+      'kind': 'api',
+      'scopes': ['read', 'write'],
+      'token_hint': '9876',
+      'created_at': '2026-11-01T10:00:00Z',
+      'last_used_at': null,
+    });
+    await access(tester);
+    expect(key('api-premium'), findsOneWidget);
+    expect(
+      find.text(
+        'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben '
+        'und funktionieren wieder, sobald dein Haushalt Premium hat.',
+      ),
+      findsOneWidget,
+    );
+    expect(key('api-key-tile'), findsOneWidget);
+    expect(key('access-paused'), findsNWidgets(2));
+    expect(find.byTooltip('Home Assistant widerrufen'), findsOneWidget);
+  });
+
   testWidgets('English', (tester) async {
     await access(tester, language: 'en');
     expect(find.text('Part of Hummlist Premium'), findsOneWidget);

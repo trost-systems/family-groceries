@@ -503,3 +503,7 @@ rest of the list fit or scroll. Details, tests and screenshots: [docs/done/64b-d
 ## Job 74: one privacy-safe log line per Alexa request
 
 The alexa function logs `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>` once per request (skill events included), with no tokens, ids, item names, utterances or addresses; a test feeds them through every reply kind and checks none appears. docs/ALEXA.md "Request log" has the logs query. PR only, deploys from main after the lead merges. Details: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md).
+
+## Job 73: the Hummlist API, PR #197, not merged
+
+A versioned REST API (`/v1`) next to the MCP server lets people automate their list (curl, Shortcuts, n8n, Home Assistant) with API keys made under Mehr → Zugänge (read, or read and write), with Postgres rate limits, idempotency keys, cursor pages and the Premium lock. MCP and API share one list module. The key UI waits for the PostHog flag `public-api` (off). Review 0 fixes: the migration runs after job 72's and keeps Alexa free, the address throttle keys on the gateway's `X-Real-IP` (verified on hosted: `X-Forwarded-For` is forgeable), and only unknown keys count or get blocked. Details: [docs/done/73-public-api.md](docs/done/73-public-api.md).

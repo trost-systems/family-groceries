@@ -4,7 +4,7 @@
 import { sha256Hex } from '../_shared/auth.ts';
 import { CONSENT_TEXT_VERSION } from '../_shared/consent_version.ts';
 import type { Sql, Tx } from '../_shared/db.ts';
-import { listItems as mcpListItems } from '../mcp/list.ts';
+import { listItems as mcpListItems } from '../_shared/list.ts';
 import type { Spoken } from './speech.ts';
 
 /** Alexa's user id is stored hashed (alexa_links.alexa_user_hash). */

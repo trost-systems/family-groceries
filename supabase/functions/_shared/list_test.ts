@@ -22,29 +22,29 @@ Deno.test('fold ignores case, umlauts, emoji and punctuation', () => {
 
 Deno.test('resolve finds by id, folded exact name, or unique partial name', () => {
   assertEquals(
-    resolve(categories, '00000000-0000-0000-0000-000000000002', 'Kategorie').name,
+    resolve(categories, '00000000-0000-0000-0000-000000000002', 'category').name,
     'Kühlregal',
   );
-  assertEquals(resolve(categories, 'kuehlregal', 'Kategorie').name, 'Kühlregal');
-  assertEquals(resolve(categories, 'Drogerie', 'Kategorie').name, '👶 Drogerie');
-  assertEquals(resolve(categories, 'obst', 'Kategorie').name, 'Obst & Gemüse');
-  assertEquals(resolve(categories, 'Süßes', 'Kategorie').name, 'Süßes & Snacks');
+  assertEquals(resolve(categories, 'kuehlregal', 'category').name, 'Kühlregal');
+  assertEquals(resolve(categories, 'Drogerie', 'category').name, '👶 Drogerie');
+  assertEquals(resolve(categories, 'obst', 'category').name, 'Obst & Gemüse');
+  assertEquals(resolve(categories, 'Süßes', 'category').name, 'Süßes & Snacks');
 });
 
 Deno.test('an exact name wins over longer names containing it', () => {
-  assertEquals(resolve(items, 'milch', 'Eintrag').name, 'Milch');
-  assertEquals(resolve(items, 'Gurken', 'Eintrag').name, 'Gurken');
+  assertEquals(resolve(items, 'milch', 'item').name, 'Milch');
+  assertEquals(resolve(items, 'Gurken', 'item').name, 'Gurken');
 });
 
 Deno.test('ambiguous and unknown names are tool errors that name the options', () => {
-  const ambiguous = assertThrows(() => resolve(items, 'gurk', 'Eintrag'), ToolError);
+  const ambiguous = assertThrows(() => resolve(items, 'gurk', 'item'), ToolError);
   assertEquals(ambiguous.message, 'Eintrag „gurk“ ist nicht eindeutig: Gurken, Gurkenwasser.');
-  const unknown = assertThrows(() => resolve(items, 'Brot', 'Eintrag'), ToolError);
+  const unknown = assertThrows(() => resolve(items, 'Brot', 'item'), ToolError);
   assertEquals(
     unknown.message,
     'Eintrag „Brot“ nicht gefunden. Vorhanden: Milch, Hafermilch, Gurken, Gurkenwasser.',
   );
-  assertThrows(() => resolve(items, '!!!', 'Eintrag'), ToolError);
+  assertThrows(() => resolve(items, '!!!', 'item'), ToolError);
 });
 
 const stores = [
@@ -55,20 +55,20 @@ const stores = [
 ];
 
 Deno.test("a household's own stores resolve like the preset ones", () => {
-  assertEquals(resolve(stores, 'rewe  city', 'Laden').name, 'Rewe City');
-  assertEquals(resolve(stores, 'Rewe', 'Laden').name, 'Rewe City');
-  assertEquals(resolve(stores, 'DM', 'Laden').name, 'dm');
+  assertEquals(resolve(stores, 'rewe  city', 'store').name, 'Rewe City');
+  assertEquals(resolve(stores, 'Rewe', 'store').name, 'Rewe City');
+  assertEquals(resolve(stores, 'DM', 'store').name, 'dm');
 });
 
 Deno.test('a store name in any case wins over another that only folds the same', () => {
-  assertEquals(resolve(stores, 'aldi süd', 'Laden').id, 'b0000000-0000-0000-0000-000000000003');
-  assertEquals(resolve(stores, 'ALDI SUED', 'Laden').id, 'b0000000-0000-0000-0000-000000000004');
-  const ambiguous = assertThrows(() => resolve(stores, 'aldi', 'Laden'), ToolError);
+  assertEquals(resolve(stores, 'aldi süd', 'store').id, 'b0000000-0000-0000-0000-000000000003');
+  assertEquals(resolve(stores, 'ALDI SUED', 'store').id, 'b0000000-0000-0000-0000-000000000004');
+  const ambiguous = assertThrows(() => resolve(stores, 'aldi', 'store'), ToolError);
   assertEquals(ambiguous.message, 'Laden „aldi“ ist nicht eindeutig: Aldi Süd, Aldi Sued.');
 });
 
 Deno.test('a deleted or renamed store is the friendly unknown-store error', () => {
-  const unknown = assertThrows(() => resolve(stores, 'Lidl', 'Laden'), ToolError);
+  const unknown = assertThrows(() => resolve(stores, 'Lidl', 'store'), ToolError);
   assertEquals(
     unknown.message,
     'Laden „Lidl“ nicht gefunden. Vorhanden: dm, Rewe City, Aldi Süd, Aldi Sued.',
@@ -76,6 +76,6 @@ Deno.test('a deleted or renamed store is the friendly unknown-store error', () =
 });
 
 Deno.test('a household without stores gets the unknown-store error, not a crash', () => {
-  const unknown = assertThrows(() => resolve([], 'Lidl', 'Laden'), ToolError);
+  const unknown = assertThrows(() => resolve([], 'Lidl', 'store'), ToolError);
   assertEquals(unknown.message, 'Laden „Lidl“ nicht gefunden. Vorhanden: (keine).');
 });

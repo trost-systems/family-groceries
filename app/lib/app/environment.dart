@@ -124,6 +124,15 @@ abstract final class Environment() {
       ? 'https://mcp.hummlist.com'
       : '$supabaseUrl/functions/v1/mcp';
 
+  /// The public REST API's base URL (job 73, docs/API.md "Base URL").
+  static const apiUrl = '$supabaseUrl/functions/v1/api/v1';
+
+  /// Feature flags on whatever PostHog says, comma-separated
+  /// (`FLAGS_ON=public-api`), for local builds and screenshots. A build that
+  /// sends to PostHog EU ignores it (`startAnalytics`), so no store or
+  /// Vercel build can ship a forced flag.
+  static const flagsOn = String.fromEnvironment('FLAGS_ON');
+
   /// Where native Siri's intents send what was said (job 51).
   static const voiceUrl = '$supabaseUrl/functions/v1/voice';
 }

@@ -4,7 +4,15 @@ import { z } from 'zod';
 import type { Auth } from '../_shared/auth.ts';
 import type { Access } from '../_shared/premium.ts';
 import { asUser, type Tx } from '../_shared/db.ts';
-import { addItems, categories, listItems, moveItem, stores, tickItems, ToolError } from './list.ts';
+import {
+  addItems,
+  categories,
+  listItems,
+  moveItem,
+  stores,
+  tickItems,
+  ToolError,
+} from '../_shared/list.ts';
 
 const INSTRUCTIONS = `Hummlist: die gemeinsame Einkaufsliste eines Haushalts (deutsch).
 Einträge haben einen Namen (z. B. "Windeln"), optional eine Marke ("Pampers"), Eigenschaften

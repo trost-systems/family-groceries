@@ -39,7 +39,7 @@ The ready signal is the last line: `READY http://127.0.0.1:<prefix>81 run=<run>`
 
 `--fresh` replaces the seeded run. `--rebuild` forces the build. State lives in `~/.cache/verify-hummlist/<prefix>/`: `instance.json`, the `fg/runs/<run>.json` credentials (mode 600; never paste them) and the build and serve logs.
 
-The build has production defines with two local swaps. Google sign-in points at a fake client id. PostHog points at the e2e stand-in host, `https://posthog.invalid`, so nothing reaches a real analytics project. It has none of the e2e-only switches (LEGAL_DRAFTS, HOUSEHOLD_ARCHIVE, INTEGRATION_LOCK), so it shows what a normal user sees.
+The build has production defines with two local swaps. Google sign-in points at a fake client id. PostHog points at the e2e stand-in host, `https://posthog.invalid`, so nothing reaches a real analytics project. It has none of the e2e-only switches (LEGAL_DRAFTS, HOUSEHOLD_ARCHIVE, INTEGRATION_LOCK), so it shows what a normal user sees. To build with more defines, set `VH_DEFINES` to space-separated `NAME=value` pairs for `launch.sh`, for example `VH_DEFINES="FLAGS_ON=public-api INTEGRATION_LOCK=true"`. `FLAGS_ON` turns PostHog feature flags on in a build that cannot reach PostHog (docs/ANALYTICS.md, "Feature flags"). The build stamp includes them, so the next plain `launch.sh` rebuilds without them.
 
 Teardown is `helpers/cleanup.sh` (see Cleanup).
 
@@ -85,7 +85,7 @@ A journey is `journeys/<feature-id>.mjs`, a plain Node script on `helpers/lib.mj
 
 Find widgets by role and accessible name, never by coordinates. Semantics are on in the web build. A row's name is the item name, then the quantity. Menu rows join label and hint. `helpers/lib.mjs` also has `reveal` (like the one in `e2e/tests/helpers.ts`: wheel a lazily built row into view). The richer TypeScript helpers (`tick`, `putBack`, `openEdit`, `openMore`, `actionSnackBar`, `cutOff`, `finger`) are in `e2e/tests/helpers.ts`. A feature's existing specs run with `scripts/verify.sh --only e2e -- tests/<spec>`. That is the e2e build under `/tmp/fg-e2e.lock`, not this instance.
 
-Local Playwright here is one browser per journey. When you run the e2e suite yourself, use `flock /tmp/fg-e2e.lock` and `--workers=1`.
+Local Playwright here is one browser per journey. When you run the e2e suite yourself, use `flock /tmp/fg-e2e.lock` and `--workers=1`. Around `helpers/launch.sh` use `flock -o /tmp/fg-e2e.lock`: without `-o` the web server it leaves running inherits the lock and every other job's e2e waits until it stops (job 73).
 
 ## Evidence
 
