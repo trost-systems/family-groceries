@@ -40,5 +40,6 @@ export function productionDeps(
       countAdds(telemetry, await analyticsSubject(serviceDb(), linked.userId), added);
     },
     report: (e) => telemetry.exception(e),
+    log: (line) => console.log(line),
   };
 }

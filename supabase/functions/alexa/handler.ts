@@ -40,12 +40,37 @@ export interface Deps {
   counted(linked: Linked, added: Added[]): Promise<void>;
   /** Error tracking (telemetry.ts); scrubbed there. */
   report(error: unknown): void;
+  /** Writes the one request line (requestLine) to the function log. */
+  log(line: string): void;
 }
+
+/**
+ * What a request was answered with, for the request line. The job 74 brief named link, launch,
+ * added, read, help, empty and error; the others are answers those would mislabel.
+ */
+export const replyKinds = [
+  'link',
+  'no-household',
+  'launch',
+  'added',
+  'read',
+  'help',
+  'goodbye',
+  'reprompt',
+  'not-understood',
+  'too-long',
+  'rate-limited',
+  'empty',
+  'error',
+  'refused',
+] as const;
+export type ReplyKind = typeof replyKinds[number];
 
 interface Reply {
   speech?: string;
   reprompt?: string;
   end: boolean;
+  kind: ReplyKind;
   card?: 'link' | string;
   /** Ask for the items again, on AddItemIntent. */
   elicit?: boolean;
@@ -86,23 +111,41 @@ const accessTokenOf = (envelope: Envelope) =>
 const alexaUserOf = (envelope: Envelope) =>
   envelope.context?.System?.user?.userId ?? envelope.session?.user?.userId;
 
+/** One token of the line: never spaces or free text, whatever Alexa sent. */
+const word = (value: string | undefined) =>
+  value ? value.replace(/[^\w.:-]/g, '_').slice(0, 64) : '-';
+
+/**
+ * `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>`, the only line a request logs
+ * (docs/ALEXA.md, "Request log"). Ids, tokens, slot values and addresses never go in.
+ */
+export function requestLine(envelope: Envelope | undefined, kind: ReplyKind): string {
+  const request = envelope?.request;
+  const linked = Boolean(envelope && (accessTokenOf(envelope) ?? request?.body?.accessToken));
+  return `alexa: ${word(request?.type)} ${word(request?.intent?.name)} ${
+    word(request?.locale)
+  } linked=${linked} -> ${kind}`;
+}
+
 export function createHandler(deps: Deps) {
   /** The linked account, or the reply to give instead (link card, no household, error). */
   async function linkedOrReply(envelope: Envelope): Promise<Linked | Reply> {
     const { speech } = speechFor(envelope.request.locale);
     const token = accessTokenOf(envelope);
-    if (!token) return { speech: speech.linkAccount, card: 'link', end: true };
+    if (!token) return { speech: speech.linkAccount, card: 'link', end: true, kind: 'link' };
     let linked: Linked;
     try {
       linked = await deps.authenticate(token);
     } catch (e) {
       if (e instanceof AuthError) {
-        if (e.reason === 'no_household') return { speech: speech.noHousehold, end: true };
+        if (e.reason === 'no_household') {
+          return { speech: speech.noHousehold, end: true, kind: 'no-household' };
+        }
         // Revoked in the app, the account deleted, signed out everywhere, or expired: unlinked.
-        return { speech: speech.linkAccount, card: 'link', end: true };
+        return { speech: speech.linkAccount, card: 'link', end: true, kind: 'link' };
       }
       deps.report(e);
-      return { speech: speech.failed, end: true };
+      return { speech: speech.failed, end: true, kind: 'error' };
     }
     const alexaUser = alexaUserOf(envelope);
     if (alexaUser) {
@@ -116,24 +159,29 @@ export function createHandler(deps: Deps) {
   /** One more try at most, then "nicht verstanden"; never a guess (AC4). */
   function notUnderstood(envelope: Envelope): Reply {
     const { speech } = speechFor(envelope.request.locale);
-    return envelope.session?.attributes?.retry ? { speech: speech.notUnderstood, end: true } : {
-      speech: speech.notUnderstoodOnce,
-      reprompt: speech.notUnderstoodReprompt,
-      elicit: true,
-      end: false,
-      attributes: { retry: 1 },
-    };
+    return envelope.session?.attributes?.retry
+      ? { speech: speech.notUnderstood, end: true, kind: 'not-understood' }
+      : {
+        speech: speech.notUnderstoodOnce,
+        reprompt: speech.notUnderstoodReprompt,
+        elicit: true,
+        end: false,
+        kind: 'reprompt',
+        attributes: { retry: 1 },
+      };
   }
 
   async function addItems(envelope: Envelope): Promise<Reply> {
     const voice = speechFor(envelope.request.locale);
     const { speech } = voice;
     const text = envelope.request.intent?.slots?.items?.value?.trim() ?? '';
-    if (text.length > maxTextLength) return { speech: speech.tooLong, end: true };
+    if (text.length > maxTextLength) return { speech: speech.tooLong, end: true, kind: 'too-long' };
     const heard = text ? voice.parse(text, maxItems + 1) : [];
     if (heard.length === 0) {
       // Not even linked: ask to link instead of asking again.
-      if (!accessTokenOf(envelope)) return { speech: speech.linkAccount, card: 'link', end: true };
+      if (!accessTokenOf(envelope)) {
+        return { speech: speech.linkAccount, card: 'link', end: true, kind: 'link' };
+      }
       return notUnderstood(envelope);
     }
     const linked = await linkedOrReply(envelope);
@@ -146,18 +194,20 @@ export function createHandler(deps: Deps) {
     let added: Added[];
     try {
       if (!await deps.takeAdds(linked, items.length)) {
-        return { speech: speech.rateLimited, end: true };
+        return { speech: speech.rateLimited, end: true, kind: 'rate-limited' };
       }
       added = await deps.addItems(linked, items);
     } catch (e) {
       deps.report(e);
-      return { speech: speech.failed, end: true };
+      return { speech: speech.failed, end: true, kind: 'error' };
     }
     await deps.counted(linked, added).catch((e) => deps.report(e));
     // The server's parser can still find no item in a piece ("1 Packung"): nothing to read back.
-    if (added.length === 0) return { speech: speech.notUnderstood, end: true };
+    if (added.length === 0) {
+      return { speech: speech.notUnderstood, end: true, kind: 'not-understood' };
+    }
     const said = voice.confirmation(added) + cut;
-    return { speech: said, card: said, end: true };
+    return { speech: said, card: said, end: true, kind: 'added' };
   }
 
   async function readList(envelope: Envelope): Promise<Reply> {
@@ -167,10 +217,10 @@ export function createHandler(deps: Deps) {
     if (isReply(linked)) return linked;
     try {
       const said = voice.listing(await deps.listItems(linked));
-      return { speech: said, card: said, end: true };
+      return { speech: said, card: said, end: true, kind: 'read' };
     } catch (e) {
       deps.report(e);
-      return { speech: speech.listFailed, end: true };
+      return { speech: speech.listFailed, end: true, kind: 'error' };
     }
   }
 
@@ -178,7 +228,13 @@ export function createHandler(deps: Deps) {
     const { speech } = speechFor(envelope.request.locale);
     const linked = await linkedOrReply(envelope);
     if (isReply(linked)) return linked;
-    return { speech: speech.launch, reprompt: speech.launchReprompt, elicit: true, end: false };
+    return {
+      speech: speech.launch,
+      reprompt: speech.launchReprompt,
+      elicit: true,
+      end: false,
+      kind: 'launch',
+    };
   }
 
   async function intent(envelope: Envelope): Promise<Reply> {
@@ -189,11 +245,11 @@ export function createHandler(deps: Deps) {
       case 'ReadListIntent':
         return await readList(envelope);
       case 'AMAZON.HelpIntent':
-        return { speech: speech.help, reprompt: speech.helpReprompt, end: false };
+        return { speech: speech.help, reprompt: speech.helpReprompt, end: false, kind: 'help' };
       case 'AMAZON.StopIntent':
       case 'AMAZON.CancelIntent':
       case 'AMAZON.NavigateHomeIntent':
-        return { speech: speech.goodbye, end: true };
+        return { speech: speech.goodbye, end: true, kind: 'goodbye' };
       default:
         // AMAZON.FallbackIntent and anything this model does not know.
         return notUnderstood(envelope);
@@ -218,40 +274,57 @@ export function createHandler(deps: Deps) {
     }
   }
 
-  return async (req: Request): Promise<Response> => {
-    if (req.method !== 'POST') return json({ error: 'method' }, { status: 405 });
-    const body = new Uint8Array(await req.arrayBuffer());
-    let envelope: Envelope;
-    try {
-      envelope = await deps.verify(req.headers, body);
-    } catch (e) {
-      if (e instanceof VerificationError) {
-        console.warn(e.message);
-        return json({ error: e.reason }, { status: 400 });
-      }
-      throw e;
-    }
+  /** The answer to a verified request and its kind. */
+  async function respond(envelope: Envelope): Promise<[Response, ReplyKind]> {
     const type = envelope.request.type;
     if (type.startsWith('AlexaSkillEvent.')) {
       try {
         await skillEvent(envelope);
       } catch (e) {
         deps.report(e);
-        return json({ error: 'server' }, { status: 500 });
+        return [json({ error: 'server' }, { status: 500 }), 'error'];
       }
-      return empty();
+      return [empty(), 'empty'];
     }
+    let reply: Reply;
     switch (type) {
       case 'LaunchRequest':
-        return alexaResponse(await launch(envelope));
+        reply = await launch(envelope);
+        break;
       case 'IntentRequest':
-        return alexaResponse(await intent(envelope));
+        reply = await intent(envelope);
+        break;
       default:
         // SessionEndedRequest, System.ExceptionEncountered and the rest want no speech.
-        if (type === 'System.ExceptionEncountered') {
-          console.warn('alexa: Alexa reported an error with our last response');
-        }
-        return empty();
+        return [empty(), 'empty'];
+    }
+    return [alexaResponse(reply), reply.kind];
+  }
+
+  return async (req: Request): Promise<Response> => {
+    if (req.method !== 'POST') {
+      deps.log(requestLine(undefined, 'refused'));
+      return json({ error: 'method' }, { status: 405 });
+    }
+    const body = new Uint8Array(await req.arrayBuffer());
+    let envelope: Envelope;
+    try {
+      envelope = await deps.verify(req.headers, body);
+    } catch (e) {
+      if (!(e instanceof VerificationError)) {
+        deps.log(requestLine(undefined, 'error'));
+        throw e;
+      }
+      deps.log(`${requestLine(undefined, 'refused')} ${e.reason}`);
+      return json({ error: e.reason }, { status: 400 });
+    }
+    let kind: ReplyKind = 'error';
+    try {
+      const [response, answered] = await respond(envelope);
+      kind = answered;
+      return response;
+    } finally {
+      deps.log(requestLine(envelope, kind));
     }
   };
 }

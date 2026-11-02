@@ -191,6 +191,44 @@ keeps its hash. It is never in the repo, the function's environment or a log.
   before certification (NEEDS_PETER, Job 31).
 - "Meine Daten exportieren" lists the stored analytics answers and the Alexa links (last use).
 
+## Request log
+
+The function writes exactly one line per request to its log (`requestLine` in
+`supabase/functions/alexa/handler.ts`), so a missing line means the request never reached
+Hummlist:
+
+```
+alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind>
+alexa: IntentRequest AddItemIntent de-DE linked=true -> added
+alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty
+alexa: - - - linked=false -> refused bad_signature
+```
+
+- `linked` says whether Alexa sent an access token (for `SkillAccountLinked`, the one in the event
+  body). `linked=true -> link` means the token was revoked, expired or not ours.
+- Reply kinds: `link` (link card), `no-household`, `launch`, `added`, `read`, `help`, `goodbye`,
+  `reprompt` (the one second try), `not-understood`, `too-long`, `rate-limited`, `empty` (session end, `System.ExceptionEncountered` and the skill
+  events, which want no speech), `error` (the apology or a 500; the exception is in PostHog error
+  tracking) and `refused` (verification failed, with its reason, or not a POST; nothing from the
+  body is trusted, so type, intent and locale are `-`).
+- Never in the line: tokens, Alexa, user, household or session ids, item names, utterances, IP
+  addresses. Each field is cut to one word of `[A-Za-z0-9_.:-]`. `handler_test.ts` ("job 74")
+  feeds tokens, ids and item names through every kind and checks none appears.
+
+Read it in the dashboard (Edge Functions → alexa → Logs) or through the Management API, about the
+last 24 hours per query (`SUPABASE_ACCESS_TOKEN` from the ops env):
+
+```bash
+curl -sS -G "https://api.supabase.com/v1/projects/jdwqrallbpdbshrdhenk/analytics/endpoints/logs" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  --data-urlencode "sql=select timestamp, event_message from logs where source = 'function_logs' and event_message like 'alexa: %' order by timestamp desc limit 50" \
+  --data-urlencode "iso_timestamp_start=$(date -u -d '-23 hours' +%FT%TZ)" \
+  --data-urlencode "iso_timestamp_end=$(date -u +%FT%TZ)"
+```
+
+`source = 'function_edge_logs'` has the same requests with status and response size, if a line
+is missing.
+
 ## Invocation name and Alexa's own lists
 
 **Languages.** `alexa/voices.ts` picks the language per request from `request.locale`: de-DE
@@ -272,9 +310,9 @@ ask deploy rewrites `skill.json` and `ask-resources.json` in its own JSON style;
 **Smoke test without a device.** `ask smapi invoke-skill-end-point -s <skill id>
 --endpoint-region Default --skill-request-body file:<request.json>` makes Amazon sign a request
 and send it to the function: an unlinked LaunchRequest or AddItemIntent answers "Bitte verknüpfe
-zuerst dein Hummlist-Konto …" with a LinkAccount card. The function logs only refusals
-("alexa request refused: <reason>", 400), so a 200 with no such line means the signature check
-passed.
+zuerst dein Hummlist-Konto …" with a LinkAccount card, and the function logs
+`alexa: LaunchRequest - de-DE linked=false -> link` ([Request log](#request-log)). A refused one
+logs `alexa: - - - linked=false -> refused <reason>` and answers 400.
 
 ## Beta and certification
 
