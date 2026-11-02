@@ -9,18 +9,20 @@
 #   scripts/alexa-say.sh [options] --disable            AlexaSkillEvent.SkillDisabled
 # Options: --token <OAuth access token from account linking> (none: an unlinked user),
 #          --user <Alexa user id> (default amzn1.ask.account.LOCAL), --retry (the second try after
-#          the re-prompt), --unsigned, --stale (timestamp 200 s old), --url <API URL>.
+#          the re-prompt), --unsigned, --stale (timestamp 200 s old), --url <API URL>,
+#          --locale <Alexa locale> (default de-DE; en-US and the other en-* get English).
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 key="$REPO_ROOT/supabase/.temp/alexa-test/leaf.key"
 skill='amzn1.ask.skill.00000000-0000-4000-8000-00000000e2e0'
-token='' user='amzn1.ask.account.LOCAL' kind='add' items='' sign=1 skew=0 attributes='null'
+token='' user='amzn1.ask.account.LOCAL' kind='add' items='' sign=1 skew=0 attributes='null' locale='de-DE'
 url="${SUPABASE_URL:-}"
 while (($#)); do
   case $1 in
     --token) token=$2; shift ;;
     --user) user=$2; shift ;;
     --url) url=$2; shift ;;
+    --locale) locale=$2; shift ;;
     --read) kind='read' ;;
     --launch) kind='launch' ;;
     --disable) kind='disable' ;;
@@ -45,14 +47,14 @@ case $kind in
   launch) request='{"type":"LaunchRequest"}' ;;
   disable) request='{"type":"AlexaSkillEvent.SkillDisabled","body":{}}' ;;
 esac
-body="$(jq -cn --arg skill "$skill" --arg user "$user" --arg token "$token" --arg ts "$timestamp" \
+body="$(jq -cn --arg locale "$locale" --arg skill "$skill" --arg user "$user" --arg token "$token" --arg ts "$timestamp" \
   --argjson request "$request" --argjson attributes "$attributes" '
   ({userId: $user} + (if $token == "" then {} else {accessToken: $token} end)) as $u
   | {version: "1.0",
      session: {new: ($attributes == null), sessionId: "amzn1.echo-api.session.local",
                application: {applicationId: $skill}, attributes: $attributes, user: $u},
      context: {System: {application: {applicationId: $skill}, user: $u}},
-     request: ({requestId: "amzn1.echo-api.request.local", timestamp: $ts, locale: "de-DE"} + $request)}')"
+     request: ({requestId: "amzn1.echo-api.request.local", timestamp: $ts, locale: $locale} + $request)}')"
 headers=(-H 'content-type: application/json')
 if ((sign)); then
   signature="$(printf '%s' "$body" | openssl dgst -sha256 -sign "$key" | base64 | tr -d '\n')"

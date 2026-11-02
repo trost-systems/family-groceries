@@ -1,4 +1,5 @@
-// POST /functions/v1/alexa: the endpoint of the custom Alexa skill "Hummlist" (de-DE).
+// POST /functions/v1/alexa: the endpoint of the custom Alexa skill "Hummlist" (de-DE, en-*;
+// the request's locale picks the language, voices.ts).
 // Every request is verified first (verify.ts); a refused one answers 400 and touches nothing.
 // The linked account is the Supabase OAuth access token Alexa got through account linking; its
 // user's CURRENT household (household_members, read per request) is the one written to, never
@@ -9,8 +10,9 @@ import { json } from '../_shared/http.ts';
 import type { RequirePremium } from '../_shared/premium.ts';
 import type { Added } from '../voice/handler.ts';
 import { maxTextLength } from '../voice/handler.ts';
-import { maxItems, type ParsedItem, parseSentence } from '../voice/parse.ts';
-import { clip, confirmation, germanCase, listing, speech, type Spoken } from './speech.ts';
+import { maxItems, type ParsedItem } from '../voice/parse.ts';
+import { clip, speech, type Spoken } from './speech.ts';
+import { speechFor } from './voices.ts';
 import { type Envelope, VerificationError } from './verify.ts';
 
 /** The account behind a linked Alexa user. */
@@ -93,6 +95,7 @@ const alexaUserOf = (envelope: Envelope) =>
 export function createHandler(deps: Deps) {
   /** The linked account, or the reply to give instead (link card, no household, error). */
   async function linkedOrReply(envelope: Envelope): Promise<Linked | Reply> {
+    const { speech } = speechFor(envelope.request.locale);
     const token = accessTokenOf(envelope);
     if (!token) return { speech: speech.linkAccount, card: 'link', end: true };
     let linked: Linked;
@@ -137,19 +140,23 @@ export function createHandler(deps: Deps) {
   }
 
   /** One more try at most, then "nicht verstanden"; never a guess (AC4). */
-  const notUnderstood = (envelope: Envelope): Reply =>
-    envelope.session?.attributes?.retry ? { speech: speech.notUnderstood, end: true } : {
+  function notUnderstood(envelope: Envelope): Reply {
+    const { speech } = speechFor(envelope.request.locale);
+    return envelope.session?.attributes?.retry ? { speech: speech.notUnderstood, end: true } : {
       speech: speech.notUnderstoodOnce,
       reprompt: speech.notUnderstoodReprompt,
       elicit: true,
       end: false,
       attributes: { retry: 1 },
     };
+  }
 
   async function addItems(envelope: Envelope): Promise<Reply> {
+    const voice = speechFor(envelope.request.locale);
+    const { speech } = voice;
     const text = envelope.request.intent?.slots?.items?.value?.trim() ?? '';
     if (text.length > maxTextLength) return { speech: speech.tooLong, end: true };
-    const heard = text ? parseSentence(text, maxItems + 1) : [];
+    const heard = text ? voice.parse(text, maxItems + 1) : [];
     if (heard.length === 0) {
       // Not even linked: ask to link instead of asking again.
       if (!accessTokenOf(envelope)) return { speech: speech.linkAccount, card: 'link', end: true };
@@ -159,7 +166,7 @@ export function createHandler(deps: Deps) {
     if (isReply(linked)) return linked;
     const items = heard.slice(0, maxItems).map((item) => ({
       ...item,
-      name: germanCase(item.name, text),
+      name: voice.name(item.name, text),
     }));
     const cut = heard.length > maxItems ? ` ${speech.tooMany}` : '';
     let added: Added[];
@@ -175,15 +182,17 @@ export function createHandler(deps: Deps) {
     await deps.counted(linked, added).catch((e) => deps.report(e));
     // The server's parser can still find no item in a piece ("1 Packung"): nothing to read back.
     if (added.length === 0) return { speech: speech.notUnderstood, end: true };
-    const said = confirmation(added) + cut;
+    const said = voice.confirmation(added) + cut;
     return { speech: said, card: said, end: true };
   }
 
   async function readList(envelope: Envelope): Promise<Reply> {
+    const voice = speechFor(envelope.request.locale);
+    const { speech } = voice;
     const linked = await unlockedOrReply(envelope, speech.premium, speech.listFailed);
     if (isReply(linked)) return linked;
     try {
-      const said = listing(await deps.listItems(linked));
+      const said = voice.listing(await deps.listItems(linked));
       return { speech: said, card: said, end: true };
     } catch (e) {
       deps.report(e);
@@ -192,6 +201,7 @@ export function createHandler(deps: Deps) {
   }
 
   async function launch(envelope: Envelope): Promise<Reply> {
+    const { speech } = speechFor(envelope.request.locale);
     // Locked: say why right away instead of asking for items it would not add.
     const linked = await unlockedOrReply(envelope, speech.premium, speech.failed);
     if (isReply(linked)) return linked;
@@ -199,6 +209,7 @@ export function createHandler(deps: Deps) {
   }
 
   async function intent(envelope: Envelope): Promise<Reply> {
+    const { speech } = speechFor(envelope.request.locale);
     switch (envelope.request.intent?.name) {
       case 'AddItemIntent':
         return await addItems(envelope);

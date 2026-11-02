@@ -28,6 +28,7 @@ test.describe.configure({ mode: 'serial' });
 
 const voicePremium =
   'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.';
+const alexaLocked = 'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt.';
 const mcpPremium =
   'Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert.';
 
@@ -108,7 +109,7 @@ test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a
   const mcp = await connectWithToken(shortcut);
 
   expect(await siri(shortcut, 'Milch, zwei Gurken und Klopapier')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Eier')).toBe(voicePremium);
+  expect(await alexaSay(alexa.access_token, 'Eier')).toBe(alexaLocked);
   const tools = (await mcp.listTools()).tools.map((t) => t.name);
   expect(tools, 'tools/list stays reachable').toContain('add_items');
   expect(await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).toEqual({ isError: true, text: mcpPremium });
@@ -146,7 +147,7 @@ test('locked household: Siri, Alexa and MCP refuse in context and add nothing; a
     .toEqual({ status: 'updated' });
   await expect(card(lea), 'locked again, live').toBeVisible({ timeout: 10_000 });
   expect(await siri(shortcut, 'Brot')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Brot')).toBe(voicePremium);
+  expect(await alexaSay(alexa.access_token, 'Brot')).toBe(alexaLocked);
   expect((await toolText(mcp, 'list_items')).isError).toBe(true);
   expect(await openNames(peterEmail), 'the list stays').toEqual(['Milch', 'Eier', 'Kaffee']);
   const { data: tokens } = await (await apiAs(peterEmail)).from('personal_access_tokens').select('name, revoked_at');

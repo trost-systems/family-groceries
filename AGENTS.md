@@ -57,6 +57,7 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - `supabase/functions/alexa/`: the Alexa skill's endpoint (request verification, intents,
   read-back); the skill package (manifest, de-DE model) is `alexa/skill-package/`. Local requests
   are signed with `scripts/alexa-test-ca.sh`'s test CA (`scripts/alexa-say.sh`, `docs/ALEXA.md`).
+  `scripts/alexa-deploy-dev.sh` uploads the package to the development stage (ASK CLI signed in).
 - `scripts/`: `bootstrap.sh` (toolchain), `dev.sh` (local stack + web dev
   server), `gates/<gate>.sh` (one per CI job), `verify.sh` (runs the gates
   locally), `lint.sh` (the lint rules below, run by the lint gate),

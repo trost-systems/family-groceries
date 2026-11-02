@@ -4,8 +4,10 @@ A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's current household and reads them back.
-- `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again. An open spelling variant or synonym of a new item (job 32b) joins that one sentence, each name once: "Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren." (job 68).
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts, a bare trailing count such as "Karotten 2") to the linked user's current household and reads them back.
+- `alexa-english` an en-US (or other en-*) request is split by the English parser and answered in English ("I put milk and eggs on Hummlist."); de-DE and a request without a locale stay German.
+- `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again.
+- `alexa-similar` a new item whose spelling variant or synonym is open is added anyway and the open one named ("Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.").
 - `alexa-read` reads the open items in aisle order, at most 10, then "und N weitere"; an empty list has its own sentence.
 - `alexa-reprompt` asks once when nothing was understood, then says "… Ich habe nichts auf die Hummlist gesetzt."; nothing is added.
 - `alexa-unlinked` asks to link the account (LinkAccount card) when there is no token or it was revoked.
@@ -13,10 +15,10 @@ A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the
 - `alexa-revoke` cuts Alexa off at once: "Amazon Alexa trennen" under Zugänge, or the skill disabled in the Alexa app.
 - `alexa-verify` refuses unsigned, tampered, stale and foreign-skill requests with 400 before anything is read.
 - `alexa-help` help ("Mit Hummlist setzt du Sachen auf eure Einkaufsliste. …", session open) and stop, cancel or home ("Bis bald.").
-- `alexa-locked` (job 50, off by default): with `app_switches.integration_lock` on, a linked household without Hummlist Premium hears for an add "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." and for reading or launch the first two sentences, with a card, session ended; nothing is added or read, the rate limit is untouched. Help, stop, linking and skill events stay free; the link stays and works again once the household has Premium. Drive with `scripts/alexa-say.sh` after `fg db query --write "update app_switches set enabled = true where key = 'integration_lock'"`; e2e: `e2e/tests/integration-lock.spec.ts`.
+- `alexa-locked` (job 50, off by default): with `app_switches.integration_lock` on, a linked household without Hummlist Premium hears for an add "Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt." (English: "Hummlist can't take voice requests for your household right now. I didn't add anything.") and for reading or launch the first sentence, with a card, session ended; nothing is added or read, the rate limit is untouched. Help, stop, linking and skill events stay free; the link stays and works again once the household has Premium. Drive with `scripts/alexa-say.sh` after `fg db query --write "update app_switches set enabled = true where key = 'integration_lock'"`; e2e: `e2e/tests/integration-lock.spec.ts`.
 ## How to get to it (user POV)
 
-- An Echo or the Alexa app, after the skill is enabled and linked (beta, docs/ALEXA.md): "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öffne Hummlist".
+- An Echo or the Alexa app, after the skill is enabled and linked (beta, docs/ALEXA.md): "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öffne Hummlist". Without one of these patterns ("Alexa, setz Milch auf die Hummlist") Alexa's own lists take the sentence (docs/ALEXA.md, "Invocation name and Alexa's own lists").
 - Linking: Alexa app → Skills → Hummlist → Konto verknüpfen, which opens the app's consent page (web).
 - Locally there is no Alexa: `scripts/alexa-say.sh` sends the request Alexa would send, signed with the local test CA.
 
@@ -27,7 +29,9 @@ Preconditions:
 - Run `scripts/alexa-test-ca.sh` once before `fg up` (it writes the test CA into `supabase/functions/.env`, which fg's stack links; `fg up` doesn't run it). A running stack doesn't load the new variables, and `fg up --fresh` only resets the database: run `fg down`, then `fg up`. Baseline from `features/README.md`; peter and lea signed in.
 - An access token for peter as Alexa holds it: run the linking in a browser as `e2e/tests/alexa-helpers.ts` `linkAccount` does (register with `scripts/alexa-oauth-client.sh <vendor id, 6-20 capitals or digits such as LOCALTEST1> "$(fg env | jq -r .apiUrl)"`, open the authorize URL with PKCE and the layla redirect, "Erlauben" on peter's web client, exchange the code with HTTP Basic). Keep the token in a shell variable `TOKEN`, never in a file.
 
-- **Add.** `scripts/alexa-say.sh --url "$(fg env | jq -r .apiUrl)" --token "$TOKEN" "Milch und Eier"` answers `outputSpeech.text` "Ich habe Milch und Eier auf die Hummlist gesetzt."; `fg wait --client lea --text Eier` succeeds on lea's client within 5 seconds without a tap. `fg db query --as peter "select i.name, c.name from items i join categories c on c.id = i.category_id where i.status = 'active'"` shows Kühlregal for both.
+- **Add.** `scripts/alexa-say.sh --url "$(fg env | jq -r .apiUrl)" --token "$TOKEN" "Milch und Eier"` answers `outputSpeech.text` "Milch und Eier sind auf der Hummlist."; `fg wait --client lea --text Eier` succeeds on lea's client within 5 seconds without a tap. `fg db query --as peter "select i.name, c.name from items i join categories c on c.id = i.category_id where i.status = 'active'"` shows Kühlregal for both.
+- **Carrier word left in the slot.** The same call with "Milch drauf" adds "Milch" (the splitter drops a trailing "drauf"); `fg fn call voice --body '{"text":"Setz Milch drauf"}'` shows the same through Siri's path.
+- **English.** Add `--locale en-US` to any call: "two liters of milk and eggs" answers "I put 2 liters of milk and eggs on Hummlist." and stores `milk` (2 l) and `eggs`; `--launch --locale en-US` without a token answers "Please link your Hummlist account in the Alexa app first. …". `e2e/tests/alexa-en.spec.ts` runs it with linking.
 - **Duplicate.** The same call with "Milch" answers "Schon auf der Hummlist: Milch."; the Milch count stays 1.
 - **Read.** `scripts/alexa-say.sh … --token "$TOKEN" --read` answers "Auf der Hummlist stehen 2 Sachen: …".
 - **Re-prompt.** `… --token "$TOKEN" "äh"` answers "Das habe ich nicht verstanden. Was soll auf die Liste?" with `shouldEndSession` false; `… --token "$TOKEN" --retry "ähm"` answers "Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt."

@@ -58,11 +58,11 @@ export const speech = {
   listFailed:
     'Entschuldigung, ich komme gerade nicht an die Hummlist. Versuch es bitte gleich noch einmal.',
   emptyList: 'Die Hummlist ist leer.',
-  // Job 50, the integration lock: the household has no Hummlist Premium. PLACEHOLDER copy (Spec #4
-  // AC2); the final text comes from Hummlist Launch.
-  premium: 'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten.',
+  // Job 50, the integration lock: the household may not use Alexa. Alexa is not Premium (Legal
+  // N-27, job 69), so the lines say nothing about buying or unlocking; job 72 removes the lock.
+  premium: 'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an.',
   premiumAdd:
-    'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
+    'Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt.',
   cardTitle: 'Hummlist',
 } as const;
 

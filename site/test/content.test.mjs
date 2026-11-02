@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildSite, guide, hrefs, htmlRoutes, CONTENT_DIR } from './helpers.mjs';
+import { buildSite, guide, hrefs, htmlRoutes, CONTENT_DIR, REPO_DIR } from './helpers.mjs';
 
 const listed = (doc) => doc.querySelectorAll('main li').map((li) => ({ href: li.querySelector('a').getAttribute('href'), text: li.text }));
 
@@ -28,7 +28,7 @@ test('each index lists only its own locale with title and description', () => {
   assert.deepEqual(en.map((g) => g.href), ['/en/guides/claude', '/en/guides/widget', '/en/guides/alexa', '/en/guides/siri-shortcut']);
   assert.match(en[0].text, /Connect Hummlist to Claude/);
   assert.match(en[1].text, /Hummlist on your Home Screen: the widget/);
-  assert.match(en[2].text, /Hummlist with Alexa \(German only for now\)/);
+  assert.match(en[2].text, /Hummlist with Alexa: set up the skill/);
   assert.match(en[3].text, /Hummlist with Siri \(German only for now\)/);
   assert.match(en[3].text, /works in German only for now/);
 });
@@ -74,10 +74,11 @@ test('the EN stub says German only and links to the German guide', () => {
   assert.ok(hrefs(doc, 'main a').includes('/de/anleitungen/siri-kurzbefehl'));
 });
 
-test('the EN Alexa stub says German only and links to the German guide', () => {
+test('the EN Alexa guide is a full English guide that links the German one', () => {
   const doc = buildSite().page('/en/guides/alexa');
-  assert.match(doc.querySelector('main').text, /only works in German/);
+  assert.match(doc.querySelector('main').text, /Alexa, ask Hummlist to add milk and eggs/);
   assert.ok(hrefs(doc, 'main a').includes('/de/anleitungen/alexa'));
+  assert.ok(hrefs(doc, 'main a').includes('#reach-hummlist'));
 });
 
 test('the dialogue renders as separate lines and other paragraphs get no line break', () => {
@@ -108,4 +109,22 @@ test('the imprint pair shows the VAT ID (§ 5 Abs. 1 Nr. 6 DDG) under the person
   const en = page('/en/imprint').querySelector('main').text;
   assert.match(en, /VAT ID pursuant to § 27a UStG: DE369514299/);
   for (const text of [de, en]) assert.doesNotMatch(text, /IAKUVO/);
+});
+
+test('every invocation phrase in the Alexa guides matches a sample of that language\'s skill model', () => {
+  const words = (s) => s.toLowerCase().replace(/[,.!?]/g, '').split(/\s+/).filter(Boolean).join(' ');
+  const samplesOf = (locale) =>
+    JSON.parse(readFileSync(join(REPO_DIR, `alexa/skill-package/interactionModels/custom/${locale}.json`), 'utf8'))
+      .interactionModel.languageModel.intents.flatMap((i) => i.samples)
+      .map((sample) => new RegExp(`^${words(sample).split(' ').map((w) => (w.startsWith('{') ? '.+' : w)).join(' ')}$`));
+  const guides = [
+    ['de', 'de-DE', /Alexa, (?:sag|frag) Hummlist, ([a-zäöüß][^“”"|\n]*)/gi],
+    ['en', 'en-US', /Alexa, (?:ask|tell) Hummlist (?:to )?([a-z][^“”"|\n]*)/gi],
+  ];
+  for (const [locale, model, pattern] of guides) {
+    const samples = samplesOf(model);
+    const phrases = [...readFileSync(join(CONTENT_DIR, 'guides', locale, 'alexa.md'), 'utf8').matchAll(pattern)].map((m) => m[1].trim());
+    assert.ok(phrases.length >= 5, `${locale}: found ${phrases.length} phrases`);
+    for (const phrase of phrases) assert.ok(samples.some((s) => s.test(words(phrase))), `${locale}: no sample matches „${phrase}“`);
+  }
 });

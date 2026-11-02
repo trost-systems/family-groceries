@@ -959,8 +959,8 @@ Turning it on is Peter's go. Decisions: DECISIONS "Job 50". Behavior: docs/PURCH
 | --- | --- | --- |
 | `supabase/functions/voice/copy.ts` | `failures.premium_required` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt. |
 | `app/ios/Runner/Localizable.xcstrings` (job 51, used only when the server sends no speech) | `siri.locked` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. |
-| `supabase/functions/alexa/speech.ts` | `premiumAdd` | the voice sentence above |
-| `supabase/functions/alexa/speech.ts` | `premium` (read, launch) | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. |
+| `supabase/functions/alexa/speech.ts` | `premiumAdd` | Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt. (job 69: Alexa is not Premium) |
+| `supabase/functions/alexa/speech.ts` | `premium` (read, launch) | Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. |
 | `supabase/functions/mcp/tools.ts` | `premiumRequired.de` / `.en` | Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert. |
 | `app/l10n/app_de.arb` / `app_en.arb` | `integrationPremiumTitle`, `integrationPremiumBody`, `integrationPremiumSiri`, `integrationPremiumAlexa`, `integrationPremiumAi`, `integrationPremiumLater`, `integrationPremiumBuy`, `integrationPremiumSoon`, `integrationPaused` | the integration settings' card and the paused label (descriptions marked PLACEHOLDER) |
 

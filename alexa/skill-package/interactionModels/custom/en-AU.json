@@ -1,0 +1,136 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "hummlist",
+      "intents": [
+        {
+          "name": "AddItemIntent",
+          "slots": [
+            {
+              "name": "items",
+              "type": "AMAZON.SearchQuery",
+              "samples": [
+                "{items}",
+                "add {items}",
+                "we need {items}",
+                "i need {items}",
+                "put {items} on the list"
+              ]
+            }
+          ],
+          "samples": [
+            "add {items}",
+            "add {items} to the list",
+            "add {items} to my list",
+            "add {items} to our list",
+            "add {items} to the shopping list",
+            "add {items} to my shopping list",
+            "put {items} on the list",
+            "put {items} on my list",
+            "put {items} on the shopping list",
+            "put {items} on my shopping list",
+            "put {items} down",
+            "put down {items}",
+            "write down {items}",
+            "write {items} down",
+            "note {items}",
+            "remember {items}",
+            "we need {items}",
+            "i need {items}",
+            "we need more {items}",
+            "i need more {items}",
+            "we also need {items}",
+            "we're out of {items}",
+            "we are out of {items}",
+            "we ran out of {items}",
+            "buy {items}",
+            "get {items}",
+            "pick up {items}",
+            "that we need {items}",
+            "that i need {items}"
+          ]
+        },
+        {
+          "name": "ReadListIntent",
+          "slots": [],
+          "samples": [
+            "what's on the list",
+            "what is on the list",
+            "what's on my list",
+            "what is on my list",
+            "what's on our list",
+            "what's on the shopping list",
+            "what is on the shopping list",
+            "what's on my shopping list",
+            "what do we need",
+            "what do i need",
+            "what do we need to buy",
+            "what do i need to buy",
+            "what we need",
+            "what i need to buy",
+            "read the list",
+            "read my list",
+            "read me the list",
+            "read out the list",
+            "read the shopping list",
+            "the list"
+          ]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        }
+      ],
+      "types": []
+    },
+    "dialog": {
+      "intents": [
+        {
+          "name": "AddItemIntent",
+          "delegationStrategy": "SKILL_RESPONSE",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "items",
+              "type": "AMAZON.SearchQuery",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.AddItemIntent.items"
+              }
+            }
+          ]
+        }
+      ],
+      "delegationStrategy": "SKILL_RESPONSE"
+    },
+    "prompts": [
+      {
+        "id": "Elicit.Slot.AddItemIntent.items",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What should go on the list?"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -35,6 +35,8 @@ const cases: [string, string[]][] = [
   ['Setz Butter auf die Einkaufsliste', ['Butter']],
   ['Setze bitte Butter auf die Liste', ['Butter']],
   ['Füg Joghurt hinzu', ['Joghurt']],
+  ['Setz Milch drauf', ['Milch']],
+  ['Pack Milch und Eier mit drauf', ['Milch', 'Eier']],
   ['Kauf bitte noch Brot', ['Brot']],
   ['Wir haben keine Milch mehr', ['Milch']],
   ['Es fehlt Zucker', ['Zucker']],
