@@ -142,7 +142,7 @@ test('Dunkel switches every screen at once and survives a reload; System follows
   test.setTimeout(240_000);
   const email = newEmail('theme');
   await page.goto('/');
-  await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expectTheme(page, 'light', 'the login of a light browser');
   await screenshot(page, 'theme-light-12-login');
   await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Bäckerei', 'Drogerie'] });
@@ -179,7 +179,7 @@ test('Dunkel switches every screen at once and survives a reload; System follows
   await pickTheme(page, 'dark');
   await page.getByRole('button', { name: 'Zurück' }).click();
   await page.getByRole('button', { name: /^Abmelden/ }).click();
-  await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expectTheme(page, 'dark', 'the pick outlives the session');
   await screenshot(page, 'theme-dark-12-login');
 });

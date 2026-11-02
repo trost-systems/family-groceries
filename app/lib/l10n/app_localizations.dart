@@ -518,6 +518,12 @@ abstract class AppLocalizations {
   /// **'Anmeldung abgebrochen'**
   String get signInCanceled;
 
+  /// No description provided for @continueWithEmail.
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter mit E-Mail'**
+  String get continueWithEmail;
+
   /// No description provided for @orWithEmail.
   ///
   /// In de, this message translates to:

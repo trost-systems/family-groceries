@@ -302,6 +302,18 @@ export async function typeInto(field: Locator, text: string): Promise<void> {
 }
 
 /**
+ * Opens the email form on the login screen. Builds with Google or Apple keep it behind
+ * „Weiter mit E-Mail“ / "Continue with email" (job 70); builds without them show it right away.
+ */
+export async function openEmailSignIn(page: Page, { button = 'Weiter mit E-Mail', field = 'E-Mail' } = {}): Promise<void> {
+  const more = page.getByRole('button', { name: button });
+  const email = page.getByRole('textbox', { name: field });
+  await expect(more.or(email)).toBeVisible({ timeout: 15_000 });
+  if (await more.isVisible()) await more.click();
+  await expect(email).toBeVisible();
+}
+
+/**
  * Signs up in a fresh browser context, then answers the analytics consent that follows the first
  * sign-in on an install (job 19): declined unless [consent] says otherwise. Ends on onboarding
  * (or its join form for an invite link).
@@ -313,6 +325,7 @@ export async function signUp(
   { consent = 'decline' }: { consent?: ConsentChoice } = {},
 ): Promise<void> {
   await page.goto(path);
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Registrieren' }).click();

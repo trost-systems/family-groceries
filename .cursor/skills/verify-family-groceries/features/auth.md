@@ -13,7 +13,7 @@ A user signs in with email and password, creates an account with "Registrieren",
 - `auth-session` keeps the user signed in across an app restart.
 - `auth-form-check` refuses to send an email without "@" ("Bitte eine gültige E-Mail-Adresse eingeben") or a password under 6 characters ("Mindestens 6 Zeichen"), under the fields.
 - `auth-legal` shows "Impressum · Datenschutz" ("Imprint · Privacy" in English; keys `legal-imprint`, `legal-privacy`) at the bottom of the login screen, on screen without scrolling. Each opens hummlist.com (`/impressum`, `/datenschutz`; English `/en/imprint`, `/en/privacy`) in the browser, never inside the app.
-- `auth-providers` shows "Mit Google anmelden" (key `sign-in-google`) and "Mit Apple anmelden" (key `sign-in-apple`) above the form, with the divider "oder mit E-Mail", in builds that configure them. They redirect to the provider and back to the page the user started from, link an existing account with the same email, and a cancel shows "Anmeldung abgebrochen".
+- `auth-providers` shows "Mit Google anmelden" (key `sign-in-google`) and "Mit Apple anmelden" (key `sign-in-apple`) and "Weiter mit E-Mail" (key `sign-in-email`, opens the form under the divider "oder mit E-Mail") in builds that configure them; the linux build configures none and shows the form at once. No field is focused on open, and a provider tap closes the keyboard (job 70). They redirect to the provider and back to the page the user started from, link an existing account with the same email, and a cancel shows "Anmeldung abgebrochen".
 
 ## How to get to it (user POV)
 

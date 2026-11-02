@@ -7,6 +7,7 @@ import {
   addField, addItem, adminClient, answerConsent, apiAs, type Collector, confirmJoin, createHousehold, createInviteCode,
   cutOff, eventNames, fakeCollector, inviteCodeLabel, itemRow, joinWithCode, latestLinkFor, newEmail, openMore, password,
   screenshot, shownInviteCodes, signUp, signUpWithHousehold, skipInvite, typeInto, viaFakeProvider, within,
+  openEmailSignIn,
 } from './helpers';
 
 /** Waits until [collector] got exactly [names] among the events named there, in order. */
@@ -216,6 +217,7 @@ test('AC6: an invite link survives sign-in when the location loses it (password)
   // The location drops the invite (as the apps' sign-in callback does): the device kept it.
   await page.goto('/');
   await expect(page).toHaveURL(new RegExp(`/login\\?invite=${code}$`));
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), newEmail('ac6-pw'));
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Registrieren' }).click();
@@ -229,6 +231,7 @@ test('AC6: magic link sign-in lands on the join screen', async ({ page }) => {
   const { code, household } = await householdWithInvite('ac6-magic');
   const email = newEmail('ac6-magic');
   await page.goto(`/join/${code}`);
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' }).click();
   await expect(page.getByText(/Anmeldelink geschickt/).first()).toBeVisible();
@@ -443,6 +446,7 @@ test('two people racing for one code: exactly one joins', async () => {
 test('AC11: onboarding, the share text and errors in English', async ({ browser }) => {
   const page = await newPage(browser, { locale: 'en-US', permissions: ['clipboard-read', 'clipboard-write'] });
   await page.goto('/');
+  await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
   await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('english'));
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
   await page.getByRole('button', { name: 'Sign up' }).click();
@@ -473,15 +477,16 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
     test(`screenshots ${lang} ${size}`, async ({ browser }) => {
       test.skip(!process.env.SCREENSHOT_DIR, 'only when screenshots are asked for');
       const t = lang === 'de'
-        ? { email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben', create: 'Haushalt erstellen',
+        ? { withEmail: 'Weiter mit E-Mail', email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben', create: 'Haushalt erstellen',
           join: 'Einladung annehmen', skip: /^Überspringen/, invite: 'Partner einladen', code: 'Einladungscode', next: 'Weiter',
           later: 'Weiter zur Liste', more: 'Partner einladen', newInvite: 'Neue Einladung' }
-        : { email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow", create: 'Create a household',
+        : { withEmail: 'Continue with email', email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow", create: 'Create a household',
           join: 'Join with an invite', skip: /^Skip/, invite: 'Invite your partner', code: 'Invite code', next: 'Continue',
           later: 'Go to the list', more: 'Invite your partner', newInvite: 'New invite' };
       const shot = (page: Page, n: string, name: string) => screenshot(page, `job22-${lang}-${size}-${n}-${name}`);
       const page = await newPage(browser, { locale, viewport });
       await page.goto('/');
+      await openEmailSignIn(page, { button: t.withEmail, field: t.email });
       await typeInto(page.getByRole('textbox', { name: t.email }), newEmail(`shots-${lang}`));
       await typeInto(page.getByRole('textbox', { name: t.password }), password);
       await page.getByRole('button', { name: t.signUp }).click();
@@ -520,6 +525,7 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
       const joiner = await newPage(browser, { locale, viewport });
       const joinerEmail = newEmail(`shots-join-${lang}`);
       await joiner.goto(`/join/${code}`);
+      await openEmailSignIn(joiner, { button: t.withEmail, field: t.email });
       await typeInto(joiner.getByRole('textbox', { name: t.email }), joinerEmail);
       await typeInto(joiner.getByRole('textbox', { name: t.password }), password);
       await joiner.getByRole('button', { name: t.signUp }).click();

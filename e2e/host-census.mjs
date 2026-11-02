@@ -32,6 +32,10 @@ for (const name of names.split(',')) {
   });
   await page.goto(url);
   await page.locator('flt-semantics-host, flutter-view').first().waitFor({ state: 'attached', timeout: 60_000 });
+  // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
+  const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });
+  await withEmail.or(page.getByRole('textbox', { name: 'E-Mail' })).waitFor();
+  if (await withEmail.isVisible()) await withEmail.click();
   const field = page.getByRole('textbox', { name: 'E-Mail' });
   await field.click();
   await page.keyboard.insertText('🍎 Äpfel 牛奶 خبز Молоко');

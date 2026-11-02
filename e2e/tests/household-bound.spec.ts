@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from './fixtures';
-import { adminClient, apiAs, newEmail, nextFrames, openMore, openPremium, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
+import { adminClient, apiAs, newEmail, nextFrames, openEmailSignIn, openMore, openPremium, openTab, password, screenshot, signUpWithHousehold, typeInto } from './helpers';
 import { archiveSwitchOn, buy, householdOf, report } from './iap';
 
 // Job 43: Hummlist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
@@ -169,6 +169,7 @@ test.describe('in English', () => {
     const email = newEmail('iap43-en');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();

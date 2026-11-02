@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from './fixtures';
 import {
   addField, addItem, answerConsent, apiAs, itemRow, newEmail, openMore, screenshot, signUpWithHousehold, supabaseUrl, typeInto,
   viaFakeProvider, createHousehold, skipInvite,
+  openEmailSignIn,
 } from './helpers';
 
 const google = (page: Page) => page.getByRole('button', { name: 'Mit Google anmelden' });
@@ -21,16 +22,27 @@ async function signOut(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/login$/);
 }
 
-test('the login screen offers Google, Apple, password and magic link', async ({ page }) => {
+test('the login screen offers Google and Apple first and email behind one button, nothing focused', async ({ page }) => {
+  // Flutter web adds its <input> only for a focused field.
+  const fieldFocused = () => page.evaluate(() => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? ''));
   await page.goto('/');
   await expect(google(page)).toBeVisible();
   await expect(apple(page)).toBeVisible();
+  const email = page.getByRole('button', { name: 'Weiter mit E-Mail' });
+  await expect(email).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'E-Mail' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Registrieren' })).toHaveCount(0);
+  expect(await fieldFocused(), 'nothing focused on open').toBe(false);
+  await screenshot(page, '01-login-providers-first');
+
+  await email.click();
   await expect(page.getByText('oder mit E-Mail')).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Passwort' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Anmelden', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Registrieren' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Anmeldelink per E-Mail senden' })).toBeVisible();
+  expect(await fieldFocused(), 'opening the email form focuses no field').toBe(false);
   await screenshot(page, '01-login-all-methods');
 });
 
@@ -103,6 +115,7 @@ test('password sign-in still works next to the providers', async ({ page }) => {
   const email = newEmail('pw-next-to-social');
   await signUpWithHousehold(page, email);
   await signOut(page);
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), 'test-password-123');
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();

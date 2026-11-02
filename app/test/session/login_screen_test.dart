@@ -98,15 +98,99 @@ void main() {
     }
   }
 
-  testWidgets('shows every configured method', (tester) async {
+  Finder emailField() => find.widgetWithText(TextFormField, 'E-Mail');
+  Finder continueWithEmail() => find.text('Weiter mit E-Mail');
+  bool fieldFocused() => find
+      .byType(EditableText)
+      .evaluate()
+      .any((e) => (e.widget as EditableText).focusNode.hasFocus);
+
+  testWidgets('offers the providers first and email as one more button', (
+    tester,
+  ) async {
     await pumpLogin(tester);
     expect(google(), findsOneWidget);
     expect(apple(), findsOneWidget);
-    expect(find.text('oder mit E-Mail'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'E-Mail'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Anmelden'), findsOneWidget);
-    expect(find.text('Anmeldelink per E-Mail senden'), findsOneWidget);
+    expect(continueWithEmail(), findsOneWidget);
+    expect(
+      tester.getTopLeft(continueWithEmail()).dy,
+      greaterThan(tester.getTopLeft(apple()).dy),
+    );
+    expect(emailField(), findsNothing);
+    expect(find.text('Registrieren'), findsNothing);
   });
+
+  testWidgets('Weiter mit E-Mail shows every email method, unfocused', (
+    tester,
+  ) async {
+    await pumpLogin(tester);
+    await tester.tap(continueWithEmail());
+    await tester.pumpAndSettle();
+    expect(continueWithEmail(), findsNothing);
+    expect(find.text('oder mit E-Mail'), findsOneWidget);
+    expect(emailField(), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Passwort'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Anmelden'), findsOneWidget);
+    expect(find.text('Registrieren'), findsOneWidget);
+    expect(find.text('Anmeldelink per E-Mail senden'), findsOneWidget);
+    expect(fieldFocused(), isFalse);
+    expect(tester.testTextInput.isVisible, isFalse);
+  });
+
+  for (final (name, flows) in [
+    ('with providers', both),
+    ('email only', const <SocialProvider, SignInFlow>{}),
+  ]) {
+    testWidgets('$name: opens with no field focused and no keyboard', (
+      tester,
+    ) async {
+      await pumpLogin(tester, flows: flows);
+      if (flows.isNotEmpty) {
+        await tester.tap(continueWithEmail());
+        await tester.pumpAndSettle();
+      }
+      expect(fieldFocused(), isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+
+      await tester.tap(emailField());
+      await tester.pump();
+      expect(fieldFocused(), isTrue);
+      expect(tester.testTextInput.isVisible, isTrue);
+    });
+  }
+
+  for (final (name, provider) in [('Google', google), ('Apple', apple)]) {
+    testWidgets('$name closes the keyboard; a cancel does not reopen it', (
+      tester,
+    ) async {
+      await pumpLogin(tester);
+      await tester.tap(continueWithEmail());
+      await tester.pumpAndSettle();
+      await tester.tap(emailField());
+      await tester.pump();
+      expect(tester.testTextInput.isVisible, isTrue);
+
+      native.error = const SocialSignInCanceled();
+      await tester.tap(provider());
+      await tester.pump();
+      expect(fieldFocused(), isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+
+      // The provider's sheet backgrounds the app; returning resumes it.
+      [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ].forEach(tester.binding.handleAppLifecycleStateChanged);
+      await tester.pumpAndSettle();
+      expect(find.text('Anmeldung abgebrochen'), findsOneWidget);
+      expect(fieldFocused(), isFalse);
+      expect(tester.testTextInput.isVisible, isFalse);
+    });
+  }
 
   testWidgets('opens on the brand; both providers are 48 px tall', (
     tester,
@@ -129,7 +213,8 @@ void main() {
     expect(google(), findsNothing);
     expect(apple(), findsNothing);
     expect(find.text('oder mit E-Mail'), findsNothing);
-    expect(find.widgetWithText(TextFormField, 'E-Mail'), findsOneWidget);
+    expect(continueWithEmail(), findsNothing);
+    expect(emailField(), findsOneWidget);
   });
 
   testWidgets('shows only Google when Apple is not configured', (tester) async {

@@ -18,6 +18,7 @@ import {
   signUpWithHousehold,
   tick,
   typeInto, createHousehold, skipInvite, confirmJoin,
+  openEmailSignIn,
 } from './helpers';
 
 // Job 19: analytics to PostHog EU, asked for right after the first sign-in (Peter, 2026-10-27).
@@ -139,8 +140,9 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   const collector = await fakeCollector(context);
   const page = await context.newPage();
   await page.goto('/');
-  await expect(page.getByRole('textbox', { name: 'E-Mail' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   expect(await storedInstallId(page), 'no install id at the login').toBeNull();
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), newEmail('consent-no'));
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Registrieren' }).click();
@@ -277,6 +279,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   const collector = await fakeCollector(context);
   const page = await context.newPage();
   await page.goto('/');
+  await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
   await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('consent-en'));
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
   await page.getByRole('button', { name: 'Sign up' }).click();
@@ -333,6 +336,7 @@ test('an invite link survives sign-in and consent, ends on joining, and counts a
   const page = await context.newPage();
   await page.goto(`/join/${code}`);
   await expect(page).toHaveURL(new RegExp(`/login\\?invite=${code}$`));
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), newEmail('consent-member'));
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Registrieren' }).click();
@@ -360,6 +364,7 @@ test('a member with a household is asked once on a new install, then goes to the
   const collector = await fakeCollector(context);
   const page = await context.newPage();
   await page.goto('/');
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
@@ -372,6 +377,7 @@ test('a member with a household is asked once on a new install, then goes to the
 
   // Signing out and in again on this install does not ask again.
   await openMore(page, 'Abmelden');
+  await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();

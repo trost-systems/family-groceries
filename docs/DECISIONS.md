@@ -6561,3 +6561,26 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
    shown phrase Siri lacks, main's Info.plist) each fail it.
 7. **Changelog `none`.** Native Siri is behind the `native-siri` hold and unannounced.
 8. **Local ports 587xx.** 711xx is past 65535, and job 47's stack holds 571xx.
+
+## Job 70: sign-in without autofocus, Google and Apple first, 2026-11-02
+
+From Peter's device test: the email field took focus on open, and the keyboard stayed up over
+the Google sheet.
+
+1. **No field on the login screen takes focus by itself.** The email field lost `autofocus`; the
+   keyboard opens when the user taps a field. The invite-code field on the join screen keeps its
+   autofocus: it is not a credential, and the user went there to type the code.
+2. **Where Google or Apple is offered, the email form waits behind „Weiter mit E-Mail“ /
+   "Continue with email".** The button is the app's secondary button at the providers' 48 px,
+   under them. Two fields and three buttons under two provider buttons read as "make an email
+   account"; one button each says three equal ways in. Opening the form focuses no field either:
+   the brief says the keyboard opens only on a tap in a field. Builds without providers (the
+   Linux desktop build, a web build without Google) show the form at once, as before, so
+   `fg login` and the Marionette keys are unchanged. The provider labels stay „Mit Google
+   anmelden“ / „Mit Apple anmelden“: Google's and Apple's guidelines allow them, and "anmelden"
+   does not promise an existing account.
+3. **A provider tap unfocuses first.** `FocusManager.instance.primaryFocus?.unfocus()` before the
+   provider's sheet or redirect. With nothing focused there is nothing for Flutter to show the
+   keyboard for again when the app resumes after a cancel. Widget tests cover both providers
+   through a full inactive/paused/resumed cycle.
+4. **Port block 570xx instead of 701xx.** 70121 is over 65535 (memory "port blocks above 65").

@@ -84,6 +84,7 @@
   "signInWithGoogle": "Sign in with Google",
   "signInWithApple": "Sign in with Apple",
   "signInCanceled": "Sign-in canceled",
+  "continueWithEmail": "Continue with email",
   "orWithEmail": "or with email",
   "onboardingTitle": "Welcome to Hummlist",
   "onboardingBody": "Hummlist shares one shopping list with everyone in your household. Create a new household or accept an invite.",

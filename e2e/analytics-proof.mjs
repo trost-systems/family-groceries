@@ -45,6 +45,10 @@ const answers = [];
 page.on('response', async (r) => { if (r.url().includes('posthog.com')) answers.push({ url: r.url(), status: r.status(), body: await r.text().catch(() => '') }); });
 page.on('requestfailed', (r) => { if (r.url().includes('posthog.com')) answers.push({ url: r.url(), failed: r.failure()?.errorText }); });
 await page.goto(`${app}/`);
+// Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
+const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });
+await withEmail.or(page.getByRole('textbox', { name: 'E-Mail' })).waitFor();
+if (await withEmail.isVisible()) await withEmail.click();
 for (const [name, text] of [['E-Mail', user.email], ['Passwort', 'irrelevant-password']]) {
   const field = page.getByRole('textbox', { name });
   for (let i = 0; i < 10; i++) {
