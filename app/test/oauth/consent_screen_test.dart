@@ -11,6 +11,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class FakeConsentApi({required final ConsentRequest details})
     implements ConsentApi {
   final decisions = <String>[];
+
+  /// The client and device label each approval recorded.
+  final devices = <String>[];
   Exception? failure;
 
   /// When set, approve answers only once it completes.
@@ -25,8 +28,13 @@ class FakeConsentApi({required final ConsentRequest details})
   }
 
   @override
-  Future<Uri> approve(String authorizationId) async {
+  Future<Uri> approve(
+    String authorizationId, {
+    required String clientId,
+    required String device,
+  }) async {
     decisions.add('approve $authorizationId');
+    devices.add('$clientId $device');
     await hold?.future;
     return Uri.parse('https://client.example/cb?code=granted');
   }
@@ -40,6 +48,7 @@ class FakeConsentApi({required final ConsentRequest details})
 
 void main() {
   const request = NeedsConsent(
+    clientId: 'client-claude',
     clientName: 'Claude',
     clientUri: 'https://claude.ai',
     email: 'peter@example.com',
@@ -113,6 +122,9 @@ void main() {
     await pumpConsent(tester);
     await tapButton(tester, 'Erlauben');
     expect(api.decisions, ['approve auth-1']);
+    expect(api.devices, [
+      'client-claude Android',
+    ], reason: 'the approval names the device it was given on');
     expect(visited, [Uri.parse('https://client.example/cb?code=granted')]);
     expect(find.text('Verbunden'), findsOneWidget);
     expect(

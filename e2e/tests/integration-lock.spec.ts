@@ -84,7 +84,11 @@ const newPage = async (browser: Browser) => {
 
 const card = (page: Page) => page.getByRole('heading', { name: 'Teil von Hummlist Premium' });
 /** A connection's tile: one group named by its texts, "Pausiert: …" last while locked. */
-const tile = (page: Page, name: string) => page.getByRole('group', { name: new RegExp(`^${name} `) });
+// A token row is a group. A connected app's row opens its details (job 80), so it is a button,
+// told from its „<name> trennen“ button by the details after the name.
+const tile = (page: Page, name: string) =>
+  page.getByRole('group', { name: new RegExp(`^${name} `) })
+    .or(page.getByRole('button', { name: new RegExp(`^${name} .* · `) }));
 const paused = (page: Page) => page.getByRole('group', { name: /Pausiert: braucht Hummlist Premium$/ });
 
 test('locked household: Siri and MCP refuse in context and add nothing, Alexa adds; a yearly plan opens '

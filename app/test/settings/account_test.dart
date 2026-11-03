@@ -12,6 +12,7 @@ import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/account_screen.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
@@ -394,6 +395,46 @@ void main() {
       expect(find.byKey(const ValueKey('account-delete')), findsOneWidget);
       expect(find.text('MCP-SERVER'), findsNothing);
       expect(find.text('Zugriffstoken'), findsNothing);
+    });
+
+    testWidgets('the address is copied with its button, not selected', (
+      tester,
+    ) async {
+      final copied = <Object?>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied.add((call.arguments as Map<Object?, Object?>)['text']);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await pump(tester, settings());
+      final email = find.text('peter@fg.test');
+      expect(
+        find.ancestor(of: email, matching: find.byType(SelectableRegion)),
+        findsNothing,
+      );
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('account-email-copy'))),
+        isSemantics(
+          isButton: true,
+          tooltip: 'E-Mail-Adresse kopieren',
+          hasTapAction: true,
+        ),
+        reason: 'screen readers announce the button by its purpose',
+      );
+      await tester.tap(find.byTooltip('E-Mail-Adresse kopieren'));
+      await tester.pump();
+      expect(copied, ['peter@fg.test']);
+      expect(find.text('Kopiert'), findsOneWidget);
     });
 
     testWidgets('a sign-in without an email shows no address row', (

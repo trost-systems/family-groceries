@@ -477,8 +477,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get siriOtherIphone => 'Siri (anderes iPhone)';
 
   @override
-  String get siriWorksWithoutSetup =>
-      'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zur Hummlist hinzu“.';
+  String get siriSayHint =>
+      'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.';
 
   @override
   String get siriShowPhrases => 'Siri-Sätze anzeigen';
@@ -1710,4 +1710,65 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get apiPremium =>
       'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.';
+
+  @override
+  String get accessTokensHint =>
+      'Mit einem Token baust du eigene Automationen, die eure Liste pflegen, etwa ein Skript oder einen Assistenten am MCP-Server.';
+
+  @override
+  String get accessTokensHintWithApi =>
+      'Mit einem Token baust du eigene Automationen am MCP-Server, die eure Liste pflegen. Für Programme ohne MCP gibt es unten die API.';
+
+  @override
+  String lastActiveOn(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Zuletzt aktiv $dateString';
+  }
+
+  @override
+  String get notActiveYet => 'Noch nicht aktiv';
+
+  @override
+  String appDevice(String device) {
+    return 'Freigegeben auf $device';
+  }
+
+  @override
+  String appCanTitle(String name) {
+    return 'Was $name darf';
+  }
+
+  @override
+  String get appCanEmail => 'Deine E-Mail-Adresse sehen.';
+
+  @override
+  String get appCanProfile => 'Deinen Namen sehen.';
+
+  @override
+  String get appCanPhone => 'Deine Telefonnummer sehen.';
+
+  @override
+  String get appCanStay => 'Verbunden bleiben, bis du die Verbindung trennst.';
+
+  @override
+  String get copyEmail => 'E-Mail-Adresse kopieren';
+
+  @override
+  String get tipEditTitle => 'Artikel bearbeiten';
+
+  @override
+  String get tipEditBody =>
+      'Halte einen Artikel gedrückt, ohne ihn zu ziehen, und ändere Menge, Marke, Laden und mehr.';
+
+  @override
+  String get tipAmountsTitle => 'Menge gleich mittippen';
+
+  @override
+  String get tipAmountsBody =>
+      'Schreib „2 Gurken“ oder „Milch 2 l“, und Hummlist erkennt die Menge.';
+
+  @override
+  String get tipDismiss => 'Tipp ausblenden';
 }

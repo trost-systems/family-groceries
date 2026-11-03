@@ -116,7 +116,19 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
     app.getByRole('group', { name: mcpUrl.href }),
     'a build for another project than production shows that project\'s function URL',
   ).toBeVisible();
+  // Job 80: where it was approved and when it was last active, not its scopes.
+  await expect.poll(async () => (await db.rpc('connected_app_details')).data)
+    .toEqual([expect.objectContaining({ client_id: provider.client!.client_id, device: 'Chrome · Linux' })]);
+  const appRow = app.getByRole('button', { name: /^Claude \(E2E\) Chrome · Linux · Verbunden am \S+ · Zuletzt aktiv \S+$/ });
+  await expect(appRow).toBeVisible();
+  await expect(app.getByText('Deine Anmeldung bestätigen')).toHaveCount(0);
   await screenshot(app, 'mcp-04-settings-connected-app');
+  await appRow.click();
+  await expect(app.getByText('Freigegeben auf Chrome · Linux')).toBeVisible();
+  await expect(app.getByText(/^Einträge deiner Einkaufsliste lesen/)).toBeVisible();
+  await screenshot(app, 'mcp-04b-connected-app-details');
+  await app.keyboard.press('Escape');
+  await expect(app.getByText('Freigegeben auf Chrome · Linux')).toHaveCount(0);
 
   // Disconnecting cuts the client off at once, although its access token has not expired.
   expect(claims.exp * 1000 - Date.now(), 'the access token is still far from expiry').toBeGreaterThan(30 * 60_000);

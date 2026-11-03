@@ -148,4 +148,8 @@ insert into public.api_idempotency (token_id, key, request_hash, status, body)
 select id, 'backup-drill', repeat('f', 64), 201, '{"data":{"added":[]}}'
 from public.personal_access_tokens where token_hash = repeat('d', 64);
 
+-- Job 80: where a connected app was approved.
+insert into public.oauth_app_devices (user_id, client_id, device)
+select id, '00000000-0000-4000-8000-0000000b0080', 'Chrome · macOS' from auth.users where email = 'peter@backup.test';
+
 commit;

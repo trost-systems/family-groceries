@@ -6923,3 +6923,47 @@ simplify the stores screen, drop drag on the list, and tighten the add bar and a
     because it can't be moved, renamed or deleted. Whether the rows should be lighter, closer to
     Settings' plain list rows, is a look call for the lead (NEEDS_LEAD Job 78).
 17. **Local ports 578xx**, since 781xx is past 65535.
+## Job 80: connected apps, token hint, Siri text, email copy, 2026-11-02
+
+- **Connected apps show a device, not scopes.** The scope list („Deine Anmeldung bestätigen ·
+  Deine E-Mail-Adresse · Dauerhaft angemeldet bleiben“) on every row meant nothing to users. A row
+  now reads „Chrome · macOS · Verbunden am … · Zuletzt aktiv …“; the scopes moved into a details
+  sheet in plain words (tap on the row), which also has the disconnect button. The trailing
+  disconnect icon stays: e2e and the deletion page's instructions („Tippe auf das Symbol zum
+  Trennen“) use it.
+- **Where the device label comes from.** Supabase Auth's sessions for an OAuth client carry the
+  client's HTTP library as user agent (production on 2026-11-02: `undici`, `python-httpx`,
+  `Apache-HttpClient`, `codex-mcp-client`), so they cannot name a device. The consent page knows
+  the user's browser, so it records a short label after „Erlauben“ (`record_oauth_device`). Only
+  the label is stored, checked by the server (40 characters, letters, digits, `.()·-`), never the
+  user agent, IP or location; a trigger on `auth.oauth_consents` deletes it with the grant
+  (NEEDS_LEAD "Job 80" for Legal Review). A failed recording never blocks the connection. A
+  client approved before skips the consent page and keeps its old label (or none).
+- **„Zuletzt aktiv“ is the newest token refresh** of the client's sessions in `auth.sessions`,
+  which Auth already stores. Apps refresh about hourly while in use, so the day shown is right;
+  counting every MCP request would need a write per request for a date-level display.
+- **The token hint follows the API flag.** While the API section is hidden the hint speaks of
+  automations on the MCP server only; with the flag on it points to the API below for programs
+  without MCP. Siri text: „Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.“ replaces
+  „Siri funktioniert jetzt ohne Einrichtung“, which suggested earlier users had to set it up.
+- **The account email is not selectable** (a selection on a single line fought with taps and
+  long-presses); a copy button with the tooltip „E-Mail-Adresse kopieren“ copies it and shows
+  „Kopiert“.
+
+## Job 80: tips card, 2026-11-02
+
+1. **One tip per start.** The List tab picks its tip once, when it is built. The X hides the card
+   and stores its id; the next tip in the queue waits for the next app start, so the user never
+   meets a stack of cards.
+2. **Not on an empty list, and not beside the gesture card.** The tip shows only when the list has
+   an active item (the same test as the empty state) and the gesture card ("Tippen hakt ab …") is
+   dismissed. The first empty list stays clean, and there is never more than one card.
+3. **In the list's scroll view**, right under the gesture card's slot, not in the column above the
+   list: at a large text scale the card is taller than a small phone's free space and would
+   overflow a fixed column, while in the list it scrolls away.
+4. **Dismissed ids per user on this device** (`DeviceCache`, key `tips.<user id>`), kept across
+   sign-outs: ids only, nothing personal, and a returning user has already seen them.
+5. **Targeting:** a tip names its surfaces (iOS, Android, web, macOS, Windows, Linux; none means
+   everywhere) and an inclusive `x.y.z` version range compared per segment (0.1.10 after 0.1.9),
+   build number ignored. A tip with a range is skipped when the version cannot be read. The queue
+   is `tips` in `app/lib/tips/tips.dart`.

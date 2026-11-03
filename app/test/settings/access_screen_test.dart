@@ -91,6 +91,10 @@ void main() {
     /// The flags PostHog serves; none provided at all when null.
     Set<String>? flags,
   }) async {
+    // Tall enough for every section without scrolling.
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     repo = FakeAccessRepository();
     seed?.call(repo);
     final Widget screen = AccessScreen(repository: repo, siri: siri);
@@ -193,26 +197,104 @@ void main() {
     expect(find.text('Kein aktiver Token.'), findsOneWidget);
   });
 
-  testWidgets('connected apps can be disconnected', (tester) async {
+  ConnectedApp claude({String? device, DateTime? lastUsedAt}) => ConnectedApp(
+    clientId: 'client-1',
+    name: 'Claude',
+    grantedAt: DateTime(2026, 10, 21),
+    scopes: const ['openid', 'email', 'offline_access'],
+    device: device,
+    lastUsedAt: lastUsedAt,
+  );
+
+  testWidgets('a connected app names its device and last activity', (
+    tester,
+  ) async {
     await pumpAccess(
       tester,
       seed: (r) => r.apps.add(
-        ConnectedApp(
-          clientId: 'client-1',
-          name: 'Claude',
-          grantedAt: DateTime(2026, 10, 21),
-          scopes: const ['openid', 'email'],
-        ),
+        claude(device: 'Chrome · macOS', lastUsedAt: DateTime(2026, 11, 2)),
       ),
     );
-    expect(find.text('Claude'), findsOneWidget);
     expect(
       find.text(
-        'Verbunden am 21.10.2026 · Deine Anmeldung bestätigen · '
-        'Deine E-Mail-Adresse',
+        'Chrome · macOS · Verbunden am 21.10.2026 · Zuletzt aktiv 2.11.2026',
       ),
       findsOneWidget,
     );
+    expect(
+      find.textContaining('Anmeldung bestätigen'),
+      findsNothing,
+      reason: 'the scopes are no longer listed as text',
+    );
+  });
+
+  testWidgets('a grant from before job 80 shows its date only', (tester) async {
+    await pumpAccess(tester, seed: (r) => r.apps.add(claude()));
+    expect(find.text('Verbunden am 21.10.2026'), findsOneWidget);
+  });
+
+  testWidgets('a tap opens the details in plain words, in German', (
+    tester,
+  ) async {
+    await pumpAccess(
+      tester,
+      seed: (r) => r.apps.add(claude(device: 'Safari · iOS')),
+    );
+    await tapText(tester, 'Claude');
+    final details = find.byKey(const ValueKey('app-details'));
+    Finder inSheet(String text) =>
+        find.descendant(of: details, matching: find.text(text));
+    expect(inSheet('Freigegeben auf Safari · iOS'), findsOneWidget);
+    expect(inSheet('Verbunden am 21.10.2026'), findsOneWidget);
+    expect(inSheet('Noch nicht aktiv'), findsOneWidget);
+    expect(inSheet('WAS CLAUDE DARF'), findsOneWidget);
+    expect(
+      inSheet(
+        'Einträge deiner Einkaufsliste lesen, hinzufügen, abhaken und '
+        'verschieben. Claude und sein Anbieter erhalten dabei die Inhalte '
+        'eurer Liste.',
+      ),
+      findsOneWidget,
+    );
+    expect(inSheet('Deine E-Mail-Adresse sehen.'), findsOneWidget);
+    expect(
+      inSheet('Verbunden bleiben, bis du die Verbindung trennst.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('app-details-disconnect')));
+    await tester.pumpAndSettle();
+    await tapText(tester, 'Trennen');
+    expect(repo.disconnected, ['client-1']);
+    expect(details, findsNothing, reason: 'the sheet closes once it is gone');
+    expect(find.text('Noch keine App verbunden.'), findsOneWidget);
+  });
+
+  testWidgets('the details in English; cancelling keeps the sheet', (
+    tester,
+  ) async {
+    await pumpAccess(
+      tester,
+      language: 'en',
+      seed: (r) => r.apps.add(
+        claude(device: 'Firefox · Linux', lastUsedAt: DateTime(2026, 11, 3)),
+      ),
+    );
+    await tapText(tester, 'Claude');
+    expect(find.text('Approved on Firefox · Linux'), findsOneWidget);
+    expect(find.text('Last active 11/3/2026'), findsOneWidget);
+    expect(find.text('WHAT CLAUDE CAN DO'), findsOneWidget);
+    expect(find.text('See your email address.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('app-details-disconnect')));
+    await tester.pumpAndSettle();
+    await tapText(tester, 'Cancel');
+    expect(repo.disconnected, isEmpty);
+    expect(find.byKey(const ValueKey('app-details')), findsOneWidget);
+  });
+
+  testWidgets('connected apps can be disconnected', (tester) async {
+    await pumpAccess(tester, seed: (r) => r.apps.add(claude()));
+    expect(find.text('Claude'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Claude trennen'));
     await tester.pumpAndSettle();
@@ -264,6 +346,14 @@ void main() {
       await pumpAccess(tester, flags: {});
       expect(key('api-section'), findsNothing);
       expect(key('api-create'), findsNothing);
+      expect(
+        find.text(
+          'Mit einem Token baust du eigene Automationen, die eure Liste '
+          'pflegen, etwa ein Skript oder einen Assistenten am MCP-Server.',
+        ),
+        findsOneWidget,
+        reason: 'the token hint names no API while it is hidden',
+      );
     });
 
     testWidgets('no Flags above the screen counts as off', (tester) async {
@@ -318,6 +408,13 @@ void main() {
       );
       expect(key('api-docs'), findsOneWidget);
       expect(find.text('Kein aktiver API-Schlüssel.'), findsOneWidget);
+      expect(
+        find.text(
+          'Mit einem Token baust du eigene Automationen am MCP-Server, die '
+          'eure Liste pflegen. Für Programme ohne MCP gibt es unten die API.',
+        ),
+        findsOneWidget,
+      );
       expect(key('api-premium'), findsNothing);
     });
 
@@ -442,8 +539,7 @@ void main() {
 
       expect(
         find.text(
-          'Siri funktioniert jetzt ohne Einrichtung. '
-          'Sag: „Füge etwas zur Hummlist hinzu“.',
+          'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.',
         ),
         findsOneWidget,
       );
@@ -470,7 +566,7 @@ void main() {
       );
 
       expect(
-        find.text('Siri now works without setup: say “Add to Hummlist”.'),
+        find.text('For example, say “Hey Siri, add to Hummlist”.'),
         findsOneWidget,
       );
       expect(find.text('Siri (this iPhone)'), findsOneWidget);

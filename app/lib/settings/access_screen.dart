@@ -6,8 +6,8 @@ import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/section_label.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_features_card.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -136,6 +136,19 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
             HlSectionLabel(
               l10n.accessTokens,
               padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+            ),
+            Padding(
+              key: const ValueKey('access-tokens-hint'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              // Points at the API only where the API section offers it.
+              child: Text(
+                apiOffered
+                    ? l10n.accessTokensHintWithApi
+                    : l10n.accessTokensHint,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
             ..._section(
               context,
@@ -350,7 +363,7 @@ class const _SiriCard({required final List<AccessToken> shortcutTokens})
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.siriWorksWithoutSetup),
+            Text(l10n.siriSayHint),
             for (final token in shortcutTokens)
               Padding(
                 key: const ValueKey('siri-legacy-hint'),
@@ -549,6 +562,8 @@ List<Widget> _apiSection(
   ];
 }
 
+/// A connected app: where it was approved and when it was connected and
+/// last active (job 80). A tap opens [_AppDetails].
 class const _AppTile({
   required final ConnectedApp app,
   final bool paused = false,
@@ -556,36 +571,158 @@ class const _AppTile({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final lastUsed = app.lastUsedAt;
     return ListTile(
+      key: ValueKey('app-${app.clientId}'),
       leading: const Icon(Icons.smart_toy_outlined),
       title: Text(app.name),
       subtitle: _Subtitle(
         [
+          ?app.device,
           l10n.connectedOn(app.grantedAt),
-          for (final scope in app.scopes) scopeLabel(l10n, scope),
+          if (lastUsed != null) l10n.lastActiveOn(lastUsed),
         ].join(' · '),
         paused: paused,
+      ),
+      onTap: () => unawaited(
+        showModalBottomSheet<void>(
+          context: context,
+          // Above the tab bar, like a dialog.
+          useRootNavigator: true,
+          showDragHandle: true,
+          isScrollControlled: true,
+          builder: (_) => BlocProvider.value(
+            value: context.read<AccessCubit>(),
+            child: _AppDetails(app: app, paused: paused),
+          ),
+        ),
       ),
       trailing: IconButton(
         tooltip: l10n.disconnectApp(app.name),
         icon: const Icon(Icons.link_off),
-        onPressed: () => unawaited(_disconnect(context)),
+        onPressed: () => unawaited(_disconnectApp(context, app)),
       ),
     );
   }
+}
 
-  Future<void> _disconnect(BuildContext context) async {
+/// Asks, then disconnects [app]; true once it is gone.
+Future<bool> _disconnectApp(BuildContext context, ConnectedApp app) async {
+  final l10n = AppLocalizations.of(context);
+  final cubit = context.read<AccessCubit>();
+  final confirmed = await _confirm(
+    context,
+    title: l10n.disconnectTitle(app.name),
+    body: l10n.disconnectBody,
+    action: l10n.disconnect,
+  );
+  if (!confirmed || !context.mounted) {
+    return false;
+  }
+  var done = false;
+  await _attempt(context, () async {
+    await cubit.disconnect(app.clientId);
+    done = true;
+  });
+  return done;
+}
+
+/// What a connected app may do, in plain words, and the way to disconnect
+/// it. The scopes' own names ("Deine Anmeldung bestätigen") said little.
+class const _AppDetails({
+  required final ConnectedApp app,
+  required final bool paused,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final cubit = context.read<AccessCubit>();
-    final confirmed = await _confirm(
-      context,
-      title: l10n.disconnectTitle(app.name),
-      body: l10n.disconnectBody,
-      action: l10n.disconnect,
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
     );
-    if (confirmed && context.mounted) {
-      await _attempt(context, () => cubit.disconnect(app.clientId));
-    }
+    final lastUsed = app.lastUsedAt;
+    final can = [
+      l10n.consentListAccess(app.name),
+      for (final scope in app.scopes)
+        ?switch (scope) {
+          'email' => l10n.appCanEmail,
+          'profile' => l10n.appCanProfile,
+          'phone' => l10n.appCanPhone,
+          'offline_access' => l10n.appCanStay,
+          _ => null,
+        },
+    ];
+    return SafeArea(
+      child: SingleChildScrollView(
+        key: const ValueKey('app-details'),
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(app.name, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            for (final line in [
+              ?switch (app.device) {
+                final device? => l10n.appDevice(device),
+                null => null,
+              },
+              l10n.connectedOn(app.grantedAt),
+              if (lastUsed == null)
+                l10n.notActiveYet
+              else
+                l10n.lastActiveOn(lastUsed),
+            ])
+              Text(line, style: muted),
+            if (paused)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  l10n.integrationPaused,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            HlSectionLabel(
+              l10n.appCanTitle(app.name),
+              padding: const EdgeInsets.only(top: 24, bottom: 8),
+            ),
+            for (final sentence in can)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.check,
+                      size: 20,
+                      color: HummlistColors.of(theme.brightness).brand,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(sentence)),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              key: const ValueKey('app-details-disconnect'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.colorScheme.error,
+              ),
+              icon: const Icon(Icons.link_off),
+              label: Text(l10n.disconnectApp(app.name)),
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                if (await _disconnectApp(context, app)) {
+                  navigator.pop();
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

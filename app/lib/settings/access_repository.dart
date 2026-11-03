@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show immutable;
+import 'package:flutter/foundation.dart' show debugPrint, immutable;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// What a token is for.
@@ -72,6 +72,14 @@ class const ConnectedApp({
   required final String name,
   required final DateTime grantedAt,
   required final List<String> scopes,
+
+  /// Where it was approved, like `Chrome · macOS`; null for grants from
+  /// before job 80 or a label that could not be recorded.
+  final String? device,
+
+  /// Its newest token refresh, about hourly while in use; null before the
+  /// first.
+  final DateTime? lastUsedAt,
 });
 
 /// The server refused a request; [code] is its message, e.g.
@@ -149,7 +157,9 @@ class SupabaseAccessRepository(final SupabaseClient _client)
 
   @override
   Future<List<ConnectedApp>> fetchApps() => _guard(() async {
+    final details = _details();
     final grants = await _client.auth.oauth.listGrants();
+    final byClient = await details;
     return [
       for (final grant in grants)
         ConnectedApp(
@@ -157,9 +167,38 @@ class SupabaseAccessRepository(final SupabaseClient _client)
           name: grant.client.clientName ?? grant.client.clientId,
           grantedAt: grant.grantedAt.toLocal(),
           scopes: grant.scopes,
+          device: byClient[grant.client.clientId]?.device,
+          lastUsedAt: byClient[grant.client.clientId]?.lastUsedAt,
         ),
     ];
   });
+
+  /// Job 80's device label and last activity per client id. Never throws:
+  /// a server without them yet (the web app deploys next to the migration)
+  /// or a failed call leaves the rows without, and a failure of the grants
+  /// themselves must not leave this future's error unhandled.
+  Future<Map<String, ({String? device, DateTime? lastUsedAt})>>
+  _details() async {
+    final List<Map<String, dynamic>> rows;
+    try {
+      rows = await _client.rpc<List<Map<String, dynamic>>>(
+        'connected_app_details',
+      );
+    } on Object catch (e) {
+      debugPrint('connected_app_details: $e');
+      return const {};
+    }
+    return {
+      for (final row in rows)
+        row['client_id']! as String: (
+          device: row['device'] as String?,
+          lastUsedAt: switch (row['last_used_at']) {
+            final String at => DateTime.parse(at).toLocal(),
+            _ => null,
+          },
+        ),
+    };
+  }
 
   @override
   Future<void> disconnect(String clientId) =>

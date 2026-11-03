@@ -474,8 +474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get siriOtherIphone => 'Siri (other iPhone)';
 
   @override
-  String get siriWorksWithoutSetup =>
-      'Siri now works without setup: say “Add to Hummlist”.';
+  String get siriSayHint => 'For example, say “Hey Siri, add to Hummlist”.';
 
   @override
   String get siriShowPhrases => 'Show Siri phrases';
@@ -1693,4 +1692,65 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get apiPremium =>
       'The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium.';
+
+  @override
+  String get accessTokensHint =>
+      'Use a token to build your own automations that manage your list, like a script or an assistant on the MCP server.';
+
+  @override
+  String get accessTokensHintWithApi =>
+      'Use a token to build your own automations on the MCP server that manage your list. For programs without MCP, use the API below.';
+
+  @override
+  String lastActiveOn(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Last active $dateString';
+  }
+
+  @override
+  String get notActiveYet => 'Not active yet';
+
+  @override
+  String appDevice(String device) {
+    return 'Approved on $device';
+  }
+
+  @override
+  String appCanTitle(String name) {
+    return 'What $name can do';
+  }
+
+  @override
+  String get appCanEmail => 'See your email address.';
+
+  @override
+  String get appCanProfile => 'See your name.';
+
+  @override
+  String get appCanPhone => 'See your phone number.';
+
+  @override
+  String get appCanStay => 'Stay connected until you disconnect it.';
+
+  @override
+  String get copyEmail => 'Copy email address';
+
+  @override
+  String get tipEditTitle => 'Edit an item';
+
+  @override
+  String get tipEditBody =>
+      'Press and hold an item without dragging it to change its quantity, brand, store and more.';
+
+  @override
+  String get tipAmountsTitle => 'Type the amount too';
+
+  @override
+  String get tipAmountsBody =>
+      'Write “2 cucumbers” or “milk 2 l” and Hummlist picks up the amount.';
+
+  @override
+  String get tipDismiss => 'Hide tip';
 }

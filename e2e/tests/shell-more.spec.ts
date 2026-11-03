@@ -236,7 +236,7 @@ test.describe('with an English browser', () => {
     await expect(page.getByRole('heading', { name: 'More' })).toBeVisible();
     await expectNoGerman(page, 'More', german);
     await page.getByRole('button', { name: /^Access/ }).click();
-    await expect(page.getByText('MCP server')).toBeVisible();
+    await expect(page.getByText('MCP server', { exact: true })).toBeVisible();
     await expectNoGerman(page, 'access', german);
     await page.getByRole('button', { name: 'Back' }).click();
     await page.getByRole('button', { name: /^Account/ }).click();
