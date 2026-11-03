@@ -38,7 +38,8 @@ enum VoiceFailure: String, CaseIterable {
 enum VoiceResult: Equatable {
   case added(speech: String)
   case nothingAdded(speech: String)
-  case read(speech: String)
+  /// `items` are the open items as Siri's Lists domain shows them ("2 kg Mehl").
+  case read(speech: String, items: [String])
   case lockedHousehold(speech: String?)
   case failed(VoiceFailure)
 }
@@ -100,9 +101,15 @@ struct VoiceClient {
   }
 
   private struct Reply: Decodable {
+    struct Item: Decodable {
+      let name: String
+      let quantity: String?
+    }
+
     let outcome: String?
     let error: String?
     let speech: String?
+    let items: [Item]?
   }
 
   static func result(status: Int, body: Data, mode: VoiceMode) -> VoiceResult {
@@ -116,7 +123,11 @@ struct VoiceClient {
       switch (mode, code) {
       case (.add, "added"): return .added(speech: speech)
       case (.add, "nothing_added"): return .nothingAdded(speech: speech)
-      case (.read, "read"): return .read(speech: speech)
+      case (.read, "read"):
+        let items = (reply?.items ?? []).map { item in
+          item.quantity.map { "\($0) \(item.name)" } ?? item.name
+        }
+        return .read(speech: speech, items: items)
       default: return .failed(.noAnswer)
       }
     }

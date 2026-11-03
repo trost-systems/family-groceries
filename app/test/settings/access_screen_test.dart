@@ -538,9 +538,7 @@ void main() {
       await pumpAccess(tester, siri: thisIphone('here-id'), seed: twoIphones);
 
       expect(
-        find.text(
-          'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.',
-        ),
+        find.text('Sag zum Beispiel: „Hey Siri, etwas auf Hummlist setzen“.'),
         findsOneWidget,
       );
       expect(find.text('Siri (dieses iPhone)'), findsOneWidget);
@@ -549,8 +547,8 @@ void main() {
       expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
 
       await tapText(tester, 'Siri-Sätze anzeigen');
-      expect(find.text('„Füge etwas zur Hummlist hinzu“'), findsOneWidget);
-      expect(find.text('„Was steht auf meiner Hummlist?“'), findsOneWidget);
+      expect(find.text('„Etwas auf Hummlist setzen“'), findsOneWidget);
+      expect(find.text('„Hummlist, was steht drauf?“'), findsOneWidget);
       expect(find.text('„Add to Hummlist“'), findsOneWidget);
       expect(find.text('Auf Englisch'), findsOneWidget);
       await tapText(tester, 'Schließen');
@@ -576,7 +574,7 @@ void main() {
       expect(find.text('“Add something to my Hummlist”'), findsOneWidget);
       expect(find.text('“Add <item> to Hummlist”'), findsOneWidget);
       expect(find.text("“What's on my Hummlist?”"), findsOneWidget);
-      expect(find.text('“Füge <Eintrag> zur Hummlist hinzu”'), findsOneWidget);
+      expect(find.text('“Füge <Eintrag> zu Hummlist hinzu”'), findsOneWidget);
     });
 
     testWidgets('a Siri credential is revoked like a token', (tester) async {

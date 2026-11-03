@@ -239,3 +239,74 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   `app/ios/RunnerTests/SiriTests.swift`, run by `scripts/gates/ios.sh` on CI's macOS runner.
   Real Siri voice only on a device (NEEDS_LEAD, "Job 51").
 
+
+## Routing auf Deutsch (Job 92)
+
+Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 92".
+
+Build 1119 trained every German phrase, yet German Siri failed two ways:
+
+1. **Name not recognised, Reminders wins.** Siri writes the spoken name as common words („Ham
+   Liste“, „Home-Liste“). „Füge X zur <…>liste hinzu“ and „Einkaufsliste“ are the built-in
+   Reminders grammar, so Siri put the item on a Reminders list.
+2. **Name recognised, „Hummlist unterstützt das nicht“.** An App Shortcut phrase with `${item}`
+   matches only the item names the app registered. Any other item fell through to SiriKit's Lists
+   domain, which the app did not handle.
+
+The fix:
+
+- **Phrases** (`de.lproj/AppShortcuts.strings`): German phrases name the app first or as the
+  object: „Hummlist, füge etwas hinzu“, „Etwas auf Hummlist setzen“, „Mit Hummlist einkaufen“,
+  „Hummlist, was steht drauf“. „Hummlist Einkaufsliste“ and „Auf meine Hummlist“ are gone. The
+  add phrases without an item come first, so Siri asks „Was soll auf die Liste?“ and any item
+  works. `scripts/siri-phrases.ts` (lint gate) and RunnerTests reject „Einkaufsliste“, a phrase
+  that starts with a preposition and ends with the app name, and an item phrase before a
+  parameterless one.
+- **Spoken names** (`INAlternativeAppNames`, three per language, Apple's limit): German „Humm
+  Liste“, „Hummliste“, „Ham Liste“; English „Humm List“, „Hum List“, „Humlist“. Each has
+  `INAlternativeAppNamePronunciationHint` („humm liste“ / "hum list"). `CFBundleSpokenName` is
+  „Humm List“. Apple documents no key that prefers one alternative name for App Shortcuts, so
+  there is none.
+- **Parameters at launch.** `AppDelegate` calls `HummlistShortcuts.updateAppShortcutParameters()`
+  in `didFinishLaunching`, so every install or update refreshes the item phrases, not only once a
+  list has loaded.
+- **SiriKit Lists fallback** (`AppIntents/SiriKitLists.swift`): `AppDelegate`'s
+  `application(_:handlerFor:)` handles `INAddTasksIntent` (the task titles go to `voice`, mode
+  `add`, as one sentence) and `INSearchForNotebookItemsIntent` (mode `read`, the open items come
+  back as tasks Siri reads). In-app, no Intents extension. Needs `com.apple.developer.siri`
+  (`Runner.entitlements`, the App ID capability and match profiles from #221),
+  `INIntentsSupported` and `NSSiriUsageDescription`. SiriKit routes intents only after the user
+  allowed Siri for the app: `SiriBridge` asks once (`INPreferences.requestSiriAuthorization`)
+  when the app stores the Siri credential after sign-in. A list name the user says is ignored;
+  the household has one list. Siri speaks its own confirmation here, not `voice`'s sentence.
+  Signed out, no household or the integration lock answer `failureRequiringAppLaunch` (Siri
+  offers to open the app); other failures `failure`.
+
+### Gerätetest Deutsch
+
+Before the `native-siri` hold ends, on a German iPhone with the build that contains job 92:
+
+1. Einstellungen › Allgemein › Sprache & Region: any. Einstellungen › Siri › Sprache: **Deutsch
+   (Deutschland)**.
+2. Einstellungen › Siri › Antworten › **Transkription immer anzeigen**: on.
+3. Einstellungen › Apps › Hummlist › Siri: **Mit Siri verwenden** and **Von dieser App lernen**
+   on. After the first start in a household, iOS asked once whether Hummlist may use Siri.
+4. Open Hummlist once, signed in, in a household, and let the list load.
+5. Kurzbefehle app: the Hummlist tile shows **Zu Hummlist hinzufügen** and **Meine Hummlist
+   vorlesen**. Note if it is missing.
+6. Type to Siri (Einstellungen › Bedienungshilfen › Siri › Für Siri tippen), then voice, each:
+
+   | Phrase | Expected |
+   | --- | --- |
+   | Hummlist, füge etwas hinzu | Siri asks „Was soll auf die Liste?“; answer „Milch und Brot“: „Hinzugefügt: Milch, Brot.“ |
+   | Etwas auf Hummlist setzen | as above |
+   | Mit Hummlist einkaufen | as above |
+   | Füge etwas zu Hummlist hinzu | as above |
+   | Füge Zahnpasta zu Hummlist hinzu | Zahnpasta on the list (SiriKit or a suggested item), not Reminders |
+   | Füge Milch zur Hummliste hinzu | Milch on the list, not Reminders |
+   | Hummlist, was steht drauf | Siri reads the open items |
+   | Was steht auf meiner Hummlist | as above |
+
+7. Per phrase record the build number, what Siri wrote (screenshot of the transcript), and the
+   outcome (added, Reminders, „unterstützt das nicht“, app opened). Transcripts that spell the
+   name differently are the input for the three German alternative names.

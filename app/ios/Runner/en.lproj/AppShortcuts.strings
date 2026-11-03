@@ -1,6 +1,7 @@
-"${applicationName} add" = "${applicationName} add";
 "${applicationName} add ${item}" = "${applicationName} add ${item}";
 "${applicationName} add something" = "${applicationName} add something";
+"${applicationName} add" = "${applicationName} add";
+"${applicationName} what's on the list" = "${applicationName} what's on the list";
 "Add ${item} to ${applicationName}" = "Add ${item} to ${applicationName}";
 "Add ${item} to my ${applicationName}" = "Add ${item} to my ${applicationName}";
 "Add something to ${applicationName}" = "Add something to ${applicationName}";
@@ -13,6 +14,7 @@
 "Put something on my ${applicationName}" = "Put something on my ${applicationName}";
 "Read ${applicationName}" = "Read ${applicationName}";
 "Read my ${applicationName}" = "Read my ${applicationName}";
+"Shop with ${applicationName}" = "Shop with ${applicationName}";
 "What's on ${applicationName}" = "What's on ${applicationName}";
 "What's on my ${applicationName}" = "What's on my ${applicationName}";
 "What's on the ${applicationName}" = "What's on the ${applicationName}";

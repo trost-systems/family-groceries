@@ -94,6 +94,11 @@ struct ItemSuggestionQuery: EntityStringQuery {
 /// en.lproj and de.lproj AppShortcuts.strings (RunnerTests and scripts/siri-phrases.ts check
 /// that). A .strings table maps one phrase to one translation, so the German variants with an
 /// article ("zur Hummlist") come with English phrases of their own.
+///
+/// The phrases without an item come first: Siri then asks for the items, which works for any
+/// item, while an `item` phrase matches only the names the app suggested. German phrases name the
+/// app first or as the object ("Hummlist, füge etwas hinzu"), never "Einkaufsliste" or a bare
+/// "auf meine Hummlist": those are Reminders' grammar, and Reminders wins (job 92).
 @available(iOS 17.0, *)
 struct HummlistShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
@@ -101,16 +106,17 @@ struct HummlistShortcuts: AppShortcutsProvider {
       intent: AddItemsIntent(),
       phrases: [
         "Add to \(.applicationName)",
-        "Add something to my \(.applicationName)",
-        "Add something to \(.applicationName)",
         "\(.applicationName) add",
-        "Add \(\.$item) to \(.applicationName)",
-        "Add \(\.$item) to my \(.applicationName)",
-        "Put \(\.$item) on \(.applicationName)",
+        "Add something to my \(.applicationName)",
+        "Shop with \(.applicationName)",
+        "Add something to \(.applicationName)",
         "Add to my \(.applicationName)",
         "Put something on \(.applicationName)",
         "Put something on my \(.applicationName)",
         "\(.applicationName) add something",
+        "Add \(\.$item) to \(.applicationName)",
+        "Add \(\.$item) to my \(.applicationName)",
+        "Put \(\.$item) on \(.applicationName)",
         "\(.applicationName) add \(\.$item)",
         "Put \(\.$item) on my \(.applicationName)",
       ],
@@ -119,6 +125,7 @@ struct HummlistShortcuts: AppShortcutsProvider {
     AppShortcut(
       intent: ReadListIntent(),
       phrases: [
+        "\(.applicationName) what's on the list",
         "What's on my \(.applicationName)",
         "What's on \(.applicationName)",
         "Read my \(.applicationName)",

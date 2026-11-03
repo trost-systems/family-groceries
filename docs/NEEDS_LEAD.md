@@ -1449,3 +1449,26 @@ Legal-relevant, for information; nothing waits on Legal:
   2026-03-31), because your box copy never reached hz. Provenance and checksums are in
   `docs/legal/dpas/README.md`. If you want Ops' exact download instead, replace the file and its
   checksum.
+## Job 92: German Siri routing (2026-11-03)
+
+- **PRs.** #221 (CI profile renewal lane, `com.apple.developer.siri` entitlement; landed first,
+  addendum 1) and #222 (phrases, spoken names, launch registration, SiriKit Lists fallback).
+  #222 merges on your review + green CI. Changelog `none` (`native-siri` held).
+- **German spoken names (three, Apple's limit):** „Humm Liste“, „Hummliste“, „Ham Liste“, each
+  with the pronunciation hint „humm liste“. „Hummelliste“ is dropped (no transcript showed it);
+  „Home-Liste“ is not used (another app's name). Revisit when Peter's transcripts arrive
+  (NEEDS_PETER „Job 92“ 1).
+- **Part 2 is in #222, not split.** The capability exists and the profiles are renewed, so no
+  build-setting gate: the entitlement is on main with #221.
+- **`INPreferredForAppShortcuts`** from the brief is not an Apple key (the
+  INAlternativeAppNames documentation lists only `INAlternativeAppName` and
+  `INAlternativeAppNamePronunciationHint`); not added.
+- **Siri permission prompt.** SiriKit routes only after the user allowed Siri for the app. The app
+  asks once, right after it sets up the Siri credential (signed in, in a household). Say if you
+  want it later, e.g. behind a button on Zugänge.
+- **Profiles renewed** (Certificates runs 41733105879 `profiles`, 41733197123 `renew_profile`):
+  `match AppStore com.hummlist.app` went INVALID to ACTIVE, the widget's stayed ACTIVE (renewed
+  too), no certificate created; the match repo still holds only `GN85KDC962`.
+- **Development and ad hoc profiles.** The portal has none for either App ID; the match repo has
+  only the distribution certificate and App Store profiles. Development profiles are Xcode's (automatic signing) and renew themselves;
+  match would have to create a development certificate, which the lane refuses.

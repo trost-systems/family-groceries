@@ -1245,3 +1245,25 @@ side. These five checks tell us where. `scripts/alexa/diagnose.sh` (docs/ALEXA.m
 
 The linked half of `scripts/alexa/smoke.sh` also needs the certification test account
 (docs/ALEXA_CERTIFICATION.md „Left for the console“, item 1) and an access token of it. Until then only the unlinked half runs.
+## Job 92: German Siri routing (2026-11-03)
+
+PRs #221 (profiles, Siri entitlement) and #222 (phrases, spoken names, SiriKit Lists). Ops
+enabled the SiriKit capability on `com.hummlist.app`; CI regenerated the App Store profiles with
+the existing certificate. On an iPhone with Siri set to Deutsch (Deutschland):
+
+1. **Transcripts on build 1119.** Einstellungen › Siri › Antworten › „Transkription immer
+   anzeigen“ on. Say each phrase of docs/SIRI_SHORTCUT.md „Gerätetest Deutsch“ and screenshot
+   what Siri wrote. The three German spoken names (today „Humm Liste“, „Hummliste“, „Ham Liste“)
+   are picked from what Siri writes; send the screenshots to the lead.
+2. **Kurzbefehle app.** Does a Hummlist section with „Zu Hummlist hinzufügen“ and „Meine
+   Hummlist vorlesen“ appear?
+3. **Siri for Hummlist.** Einstellungen › Apps › Hummlist › Siri: „Mit Siri verwenden“ and „Von
+   dieser App lernen“ on. On the build with job 92, the app asks once after sign-in whether
+   Hummlist may use Siri: allow it.
+4. **SiriKit capability.** Done by Ops on 2026-11-03 (App ID `com.hummlist.app`, team
+   VCZSHMZY25). CI renewed the App Store profile the same evening (Certificates run 41733197123:
+   `match AppStore com.hummlist.app` INVALID before, ACTIVE after, certificate `GN85KDC962`
+   unchanged). Nothing left here.
+5. **German retest** on the first TestFlight build that contains #222, by the protocol in
+   docs/SIRI_SHORTCUT.md „Gerätetest Deutsch“, before the `native-siri` hold ends. Record build
+   number, transcript and outcome per phrase.

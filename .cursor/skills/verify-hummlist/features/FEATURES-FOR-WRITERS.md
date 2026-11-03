@@ -470,10 +470,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That it needs Premium (it is free, also after Premium launches).
 - That the voice microphone in the app works on the web (iOS and Android apps only).
 
-**Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the first device test (2 Nov 2026) only opened the app; the fix (Siri now also takes the name as „Hummliste“, and sentences like „Füge etwas zur Hummlist hinzu“) waits for the next device test.
+**Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the device tests on build 1119 (3 Nov 2026) sent „Füge … zur Hummliste hinzu“ to Reminders or answered „Hummlist unterstützt das nicht“. The fix (sentences that name Hummlist first or as the object, like „Etwas auf Hummlist setzen“ and „Hummlist, was steht drauf?“; any item in „Füge Zahnpasta zu Hummlist hinzu“; Siri asks once to be allowed for Hummlist) waits for the next German device test. Never write „Einkaufsliste“ as a Hummlist Siri sentence: Siri gives it to Reminders.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and the Shortcut's server answers driven against the web build's local stack (verify-hummlist); Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 **Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
+**Last verified.** PR #222 (job 92), 2026-11-03 (CET): the phrase tables and spoken names by `scripts/siri-phrases.ts` and RunnerTests, the Zugänge phrase list by the widget tests, the Siri training read from CI; Siri itself needs a German iPhone (docs/SIRI_SHORTCUT.md, „Gerätetest Deutsch“). Recipe: [siri.md](./siri.md).
 **Last verified.** PR #194 (job 71), 2026-11-02 (CET): the German native-Siri request driven against the web build's local stack (e2e `voice.spec.ts`) and the iOS build's Siri training read from CI; Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 **Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [siri.md](./siri.md).
 
