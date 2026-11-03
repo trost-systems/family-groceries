@@ -55,7 +55,7 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   await seed(page, email, lidl);
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
   await expect(storeDivider(page, 'dm')).toHaveAccessibleName(/^dm, 1 Artikel/);
-  await expect(storeDivider(page, 'Edeka'), 'a store without items does not show').toHaveCount(0);
+  await expect(storeDivider(page, 'EDEKA'), 'a store without items does not show').toHaveCount(0);
   await expect(page.getByRole('button', { name: /, 0 Artikel/ }), 'no "0 Artikel" anywhere').toHaveCount(0);
   await expect.poll(() => sectionItems(page, 'Lidl')).toEqual(['Äpfel Elstar 1 kg', 'Bananen Bio 6', 'Gurke', 'Milch Milbona · 1,5 % 2 l', 'Joghurt']);
   await expect.poll(() => sectionHeadings(page, 'Lidl')).toEqual(['Obst & Gemüse', 'Kühlregal']);
@@ -100,11 +100,11 @@ test('stores and categories are dividers that scroll away, stores fold for good,
     .toEqual(['Brot & Backwaren', 'Obst & Gemüse', 'Kühlregal']);
   await expect(storeDivider(page, 'Ohne Laden'), 'its last item moved out, the section without a store hides').toHaveCount(0);
 
-  await setStore(page, 'Zahnpasta', 'Edeka');
-  await expect(storeDivider(page, 'Edeka'), 'an empty store shows once an item moves in').toHaveAccessibleName(/^Edeka, 1 Artikel/);
+  await setStore(page, 'Zahnpasta', 'EDEKA');
+  await expect(storeDivider(page, 'EDEKA'), 'an empty store shows once an item moves in').toHaveAccessibleName(/^EDEKA, 1 Artikel/);
   await expect(storeDivider(page, 'dm'), 'its last item moved out, dm hides').toHaveCount(0);
   await expect(storeDivider(page, 'Ohne Laden'), 'still empty, hidden').toHaveCount(0);
-  await expect.poll(() => storeOf(page, 'Zahnpasta')).toBe('Edeka');
+  await expect.poll(() => storeOf(page, 'Zahnpasta')).toBe('EDEKA');
   await page.mouse.move(240, 400);
   await page.mouse.wheel(0, -2000);
   await expect(storeDivider(page, 'Lidl')).toBeInViewport();
@@ -199,18 +199,18 @@ test('wide screens put the stores in columns, and an item moves across them', as
   await page.getByRole('button', { name: 'Verstanden' }).click();
   await seed(page, email, [
     ...lidl,
-    { name: 'Hack', store: 'Edeka', category: 'Fleisch/Wurst/Fisch', quantity: '500 g', key: 1024 },
-    { name: 'Schokolade', store: 'Edeka', category: 'Süßes & Snacks', brand: 'Ritter Sport', key: 1024 },
+    { name: 'Hack', store: 'EDEKA', category: 'Fleisch/Wurst/Fisch', quantity: '500 g', key: 1024 },
+    { name: 'Schokolade', store: 'EDEKA', category: 'Süßes & Snacks', brand: 'Ritter Sport', key: 1024 },
   ]);
   const columns = async (names: string[]) =>
     new Set(await Promise.all(names.map(async (n) => (await storeDivider(page, n).boundingBox())?.x ?? NaN))).size;
-  await expect.poll(() => columns(['dm', 'Lidl', 'Edeka', 'Ohne Laden']), { message: 'three columns at 1366 px' }).toBe(3);
+  await expect.poll(() => columns(['dm', 'Lidl', 'EDEKA', 'Ohne Laden']), { message: 'three columns at 1366 px' }).toBe(3);
   expect((await itemRow(page, 'Gurke').boundingBox())!.width, 'a readable row width').toBeLessThanOrEqual(560);
   await screenshot(page, 'walk-05-wide-1366');
 
-  expect(await stores(page), 'a screen reader reads column by column').toEqual(['dm', 'Lidl', 'Edeka', 'Ohne Laden']);
-  await setStore(page, 'Brot', 'Edeka');
-  await expect.poll(() => storeOf(page, 'Brot'), { message: 'into another column' }).toBe('Edeka');
+  expect(await stores(page), 'a screen reader reads column by column').toEqual(['dm', 'Lidl', 'EDEKA', 'Ohne Laden']);
+  await setStore(page, 'Brot', 'EDEKA');
+  await expect.poll(() => storeOf(page, 'Brot'), { message: 'into another column' }).toBe('EDEKA');
 
   await page.setViewportSize({ width: 820, height: 1180 });
   await expect.poll(() => columns(['dm', 'Lidl']), { message: 'one column at 820 px' }).toBe(1);

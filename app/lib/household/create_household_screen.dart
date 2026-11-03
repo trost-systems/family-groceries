@@ -64,12 +64,17 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
     );
   }
 
+  /// A typed name of an offered chain ticks its chip; one already picked
+  /// stays picked.
   Future<bool> _addOwn(String name) async {
-    final clean = name.trim().replaceAll(RegExp(r'\s+'), ' ');
-    final key = storeNameKey(clean);
+    final key = storeNameKey(name);
+    final offered = popularStores.where((p) => storeNameKey(p) == key);
     setState(() {
       if (!_stores.any((s) => storeNameKey(s) == key)) {
-        _stores = [..._stores, clean];
+        _stores = [
+          ..._stores,
+          offered.firstOrNull ?? name.trim().replaceAll(RegExp(r'\s+'), ' '),
+        ];
       }
       _naming = false;
     });
@@ -114,7 +119,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
     final problem = _problem;
     final own = [
       for (final s in _stores)
-        if (!popularStores.any((p) => storeNameKey(p) == storeNameKey(s))) s,
+        if (!popularStores.contains(s)) s,
     ];
     return OnboardingPage(
       title: l10n.createHousehold,

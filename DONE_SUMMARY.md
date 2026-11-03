@@ -521,3 +521,6 @@ Connected apps in Zugänge show where they were approved („Chrome · macOS“,
 ## Job 89: a count said after the item is its quantity again
 
 Dictating „Gurken zwei“ (in-app dictation, Siri, Alexa; DE and EN „cucumbers two“) sets the quantity again. Job 61 had passed the count back into the name for the typed rule, which in-app dictation never ran. Typed input is unchanged. Details: [docs/done/89-fix-voice-quantity-words.md](docs/done/89-fix-voice-quantity-words.md).
+## Job 88: an own store named like an offered chain ticks the chain
+
+In onboarding, typing an own store such as „edeka“ now ticks the EDEKA chip instead of keeping a hidden store; server already deduplicated. PR #214. Details: [docs/done/88-fix-onboarding-own-store-chain.md](docs/done/88-fix-onboarding-own-store-chain.md).

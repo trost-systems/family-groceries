@@ -101,6 +101,67 @@ void main() {
       ]);
     });
 
+    group('an own store named like an offered chain ticks the chain', () {
+      Future<void> typeOwn(WidgetTester tester, String name) async {
+        await tapKey(tester, 'onboarding-store-own');
+        await tester.enterText(key('store-new-field'), name);
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+      }
+
+      bool ticked(WidgetTester tester, String store) =>
+          tester.widget<FilterChip>(key('onboarding-store-$store')).selected;
+
+      for (final typed in ['Edeka', 'edeka', ' EDEKA ', '  eDeKa  ']) {
+        testWidgets('"$typed" ticks EDEKA', (tester) async {
+          final o = await pumpOnboarding(tester, location: '/welcome/create');
+          await typeOwn(tester, typed);
+          expect(ticked(tester, 'EDEKA'), isTrue);
+          expect(find.byType(FilterChip), findsNWidgets(popularStores.length));
+          await tapKey(tester, 'create-household');
+          expect(o.session.creates, [('Unser Haushalt', 'EDEKA')]);
+        });
+      }
+
+      testWidgets('typing it twice keeps one, ticked', (tester) async {
+        final o = await pumpOnboarding(tester, location: '/welcome/create');
+        await typeOwn(tester, 'Dm');
+        await typeOwn(tester, 'DM');
+        await typeOwn(tester, 'Bio Laden');
+        await typeOwn(tester, 'bio   LADEN');
+        expect(ticked(tester, 'dm'), isTrue);
+        expect(ticked(tester, 'Bio Laden'), isTrue);
+        expect(
+          find.byType(FilterChip),
+          findsNWidgets(popularStores.length + 1),
+        );
+        await tapKey(tester, 'create-household');
+        expect(o.session.creates, [('Unser Haushalt', 'dm, Bio Laden')]);
+      });
+
+      testWidgets('its chip then unticks it', (tester) async {
+        final o = await pumpOnboarding(tester, location: '/welcome/create');
+        await typeOwn(tester, 'lidl');
+        expect(ticked(tester, 'Lidl'), isTrue);
+        await tapKey(tester, 'onboarding-store-Lidl');
+        expect(ticked(tester, 'Lidl'), isFalse);
+        await tapKey(tester, 'create-household');
+        expect(o.session.creates, [('Unser Haushalt', '')]);
+      });
+
+      testWidgets('its chip ticked off and on again creates it once', (
+        tester,
+      ) async {
+        final o = await pumpOnboarding(tester, location: '/welcome/create');
+        await typeOwn(tester, 'lidl');
+        await tapKey(tester, 'onboarding-store-Lidl');
+        await tapKey(tester, 'onboarding-store-Lidl');
+        expect(ticked(tester, 'Lidl'), isTrue);
+        await tapKey(tester, 'create-household');
+        expect(o.session.creates, [('Unser Haushalt', 'Lidl')]);
+      });
+    });
+
     testWidgets('the own-store row reads as a button, not a check box', (
       tester,
     ) async {

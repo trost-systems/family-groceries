@@ -64,11 +64,11 @@ test('/stores/<id> opens the list at that store, unfolded', async ({ page }) => 
   const { data: categories } = await api.from('categories').select('id, name');
   const store = (name: string) => stores!.find((s) => s.name === name)!;
   const category = categories!.find((c) => c.name === 'Vorrat & Konserven')!.id;
-  // Enough rows above Edeka that its section starts below the window.
+  // Enough rows above EDEKA that its section starts below the window.
   const rows = [
     ...Array.from({ length: 14 }, (_, i) => ({ name: `Dose ${i + 1}`, store: 'dm' })),
     ...Array.from({ length: 14 }, (_, i) => ({ name: `Glas ${i + 1}`, store: 'Lidl' })),
-    { name: 'Nudeln', store: 'Edeka' },
+    { name: 'Nudeln', store: 'EDEKA' },
   ];
   const { error } = await api.from('items').insert(rows.map((r, i) => ({
     household_id: stores![0].household_id, name: r.name, store_id: store(r.store).id, category_id: category, sort_key: i,
@@ -76,19 +76,19 @@ test('/stores/<id> opens the list at that store, unfolded', async ({ page }) => 
   if (error) throw error;
   await page.reload();
   await expect(itemRow(page, 'Dose 1')).toBeVisible();
-  await expect(storeDivider(page, 'Edeka')).not.toBeInViewport();
+  await expect(storeDivider(page, 'EDEKA')).not.toBeInViewport();
 
-  await page.goto(`/stores/${store('Edeka').id}`);
+  await page.goto(`/stores/${store('EDEKA').id}`);
   await expect(page).toHaveURL(/\/$/);
-  await expect(storeDivider(page, 'Edeka')).toBeInViewport();
+  await expect(storeDivider(page, 'EDEKA')).toBeInViewport();
   await expect(itemRow(page, 'Nudeln')).toBeInViewport();
   await screenshot(page, 'deep-links-04-store');
 
   // A folded store unfolds for its link.
-  await storeDivider(page, 'Edeka').click();
+  await storeDivider(page, 'EDEKA').click();
   await expect(itemRow(page, 'Nudeln')).toHaveCount(0);
   await page.goto('/');
-  await page.goto(`/stores/${store('Edeka').id}`);
+  await page.goto(`/stores/${store('EDEKA').id}`);
   await expect(itemRow(page, 'Nudeln')).toBeInViewport();
 
   // Another household's or a deleted store: just the list.

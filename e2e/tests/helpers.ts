@@ -489,10 +489,9 @@ export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord',
 
 /**
  * The chains with a researched walking order, for specs that test chain behaviour (layouts, dm's
- * hidden categories, brand defaults such as Pampers -> dm). "Edeka" is typed, so it keeps that
- * spelling; the server makes it the Edeka chain all the same.
+ * hidden categories, brand defaults such as Pampers -> dm).
  */
-export const chainStores = ['dm', 'Lidl', 'Edeka'];
+export const chainStores = ['dm', 'Lidl', 'EDEKA'];
 
 /**
  * Onboarding (job 22) from Step 1: "Haushalt erstellen", then Step 2a with [name] (the prefilled
