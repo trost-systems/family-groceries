@@ -8,6 +8,7 @@
 #                                              match repo
 #   bundle exec fastlane ios preflight         profile check, newest TestFlight
 #                                              builds as JSON
+#   bundle exec fastlane ios profiles          the App IDs' profiles and states
 #   bundle exec fastlane ios renew_profile     new App Store profiles after a
 #                                              capability change
 #   bundle exec fastlane ios beta              build the IPA; upload it to
@@ -109,21 +110,56 @@ platform :ios do
     UI.message("TestFlight: #{state}")
   end
 
-  # After a capability change on an App ID: new App Store profiles (the app's
-  # and the widget's, from the Matchfile) signed by the existing certificate,
-  # pushed to the match repo. match creates a
-  # certificate only when the repo holds none, and certificate_id pins the one
-  # it has, so this never creates or revokes a certificate.
-  desc "Regenerate the App Store profiles in the match repo with the existing certificate"
+  desc "List every profile of the signed App IDs with its type and state"
+  lane :profiles do
+    asc_api_key
+    report_profiles
+  end
+
+  # After a capability change on an App ID: new profiles (the app's and the
+  # widget's, from the Matchfile) signed by the existing distribution
+  # certificate, pushed to the match repo. MATCH_TYPES is appstore, or
+  # appstore,adhoc. match creates a certificate only when the repo holds none
+  # of the type: the repo has the distribution one only, so development is
+  # refused, and the certificate must still be on the portal. This never
+  # creates or revokes a certificate.
+  desc "Regenerate the App Store (and ad hoc) profiles in the match repo with the existing certificate"
   lane :renew_profile do
-    match(
-      readonly: false,
-      force: ENV.fetch("MATCH_FORCE", "true") == "true",
-      certificate_id: ENV.fetch("MATCH_CERTIFICATE_ID", "GN85KDC962"),
-      renew_expired_certs: false,
-      api_key: asc_api_key,
-      team_id: ENV.fetch("APPLE_TEAM_ID")
-    )
+    api_key = asc_api_key
+    certificate_id = ENV.fetch("MATCH_CERTIFICATE_ID", "GN85KDC962")
+    types = ENV.fetch("MATCH_TYPES", "appstore").split(",").map(&:strip)
+    unknown = types - %w[appstore adhoc]
+    unless unknown.empty?
+      UI.user_error!("MATCH_TYPES #{unknown.join(', ')}: the match repo has no development certificate, " \
+                     "so match would create one. Development profiles are Xcode's (automatic signing).")
+    end
+    certificate = Spaceship::ConnectAPI::Certificate.all.find { |c| c.id == certificate_id }
+    if certificate.nil? || Time.parse(certificate.expiration_date) < Time.now
+      UI.user_error!("Certificate #{certificate_id} is #{certificate ? 'expired' : 'not on the portal'}: " \
+                     "match would create a new one. Stop and ask the account holder.")
+    end
+    report_profiles
+    types.each do |type|
+      match(
+        type: type,
+        readonly: false,
+        force: ENV.fetch("MATCH_FORCE", "true") == "true",
+        certificate_id: certificate_id,
+        renew_expired_certs: false,
+        api_key: api_key,
+        team_id: ENV.fetch("APPLE_TEAM_ID")
+      )
+    end
+    report_profiles
+  end
+
+  def report_profiles
+    profiles = Spaceship::ConnectAPI::Profile.all(includes: "bundleId")
+                                             .select { |p| SIGNED_TARGETS.key?(p.bundle_id&.identifier) }
+    UI.message("No profiles for #{SIGNED_TARGETS.keys.join(', ')}") if profiles.empty?
+    profiles.sort_by { |p| [p.bundle_id.identifier, p.profile_type, p.name] }.each do |p|
+      UI.message("#{p.bundle_id.identifier}  #{p.profile_type}  #{p.profile_state}  '#{p.name}'  expires #{p.expiration_date}")
+    end
   end
 
   desc "Build the release IPA; upload it to TestFlight (RELEASE_UPLOAD=true) or validate it"
