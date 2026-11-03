@@ -292,6 +292,22 @@ void main() {
       expect(itemIcon(named('Reis'), null), '🍚');
       expect(itemIcon(named('Quark'), chilled), '🥛');
       expect(itemIcon(named('Creme'), baby), '👶');
+      const produce = Category(
+        id: 'p',
+        name: 'Obst & Gemüse',
+        sortOrder: 0,
+        seedKey: 'produce',
+      );
+      expect(itemIcon(named('Apples'), produce), '🍎');
+      expect(itemIcon(named("Lamb's lettuce"), produce), '🥬');
+      expect(itemIcon(named('Tomatoes'), produce), '🍅');
+      expect(itemIcon(named('Sourdough bread'), null), '🍞');
+      expect(itemIcon(named('Oat milk'), chilled), '🥛');
+      expect(itemIcon(named('Himbeer'), produce), '🥕', reason: 'not beer');
+      expect(itemIcon(named('Beer'), null), '🍺');
+      expect(itemIcon(named('Pineapple'), produce), '🥕', reason: 'not apple');
+      expect(itemIcon(named('Quince'), produce), '🥕', reason: 'not mince');
+      expect(itemIcon(named('Orangensaft'), null), '🧃', reason: 'German');
       final de = lookupAppLocalizations(const Locale('de'));
       final en = lookupAppLocalizations(const Locale('en'));
       expect(categoryLabel(baby, de), 'Drogerie');

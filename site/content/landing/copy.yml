@@ -222,15 +222,15 @@ demo.pause:
   status: draft
   source: "New: label of the demo videos' pause button."
 demo.add-tick:
-  de: "Video ohne Ton: Ins Eingabefeld der Hummlist-App tippt jemand „Honig“ und „Marmelade“, beide landen unter Vorrat & Konserven. Danach hakt je ein Tipp sie wieder ab."
-  en: "Silent video: someone types “Honey” and “Jam” into the Hummlist app’s input field, and both land under Pantry. Then one tap each ticks them off again."
+  de: "Video ohne Ton: Ins Eingabefeld der Hummlist-App tippt jemand „Honig“ und „Marmelade“, beide landen beim Supermarkt unter Vorrat & Konserven. Danach hakt je ein Tipp sie wieder ab."
+  en: "Silent video: someone types “Honey” and “Jam” into the Hummlist app’s input field, and both land at the Supermarket under Pantry. Then one tap each ticks them off again."
   status: draft
-  source: "Job 54: text alternative of the add-tick video; matches its take (marketing/videos/capture/shots.ts)."
+  source: "Job 54: text alternative of the add-tick video; matches its take (marketing/videos/capture/shots.ts). Job 65: re-filmed with the demo household „Unser Haushalt“."
 demo.household-sync:
-  de: "Video ohne Ton: drei Handys der Familie Brandt. Mia setzt Eier auf die Liste, eine halbe Sekunde später stehen sie bei Noah und Ida, mit dem Hinweis „1 neu von Mia Brandt“. Noah hakt sie ab, und sie verschwinden bei allen."
-  en: "Silent video: three phones of the Brandt family. Mia puts eggs on the list; half a second later they are on Noah’s and Ida’s phones, with the note “1 new from Mia Brandt”. Noah ticks them off, and they disappear for everyone."
+  de: "Video ohne Ton: zwei Handys von „Unser Haushalt“. Anna setzt Eier auf die Liste, knapp eine Sekunde später stehen sie bei Jonas, mit dem Hinweis „1 neu von Anna“. Jonas hakt sie ab, und sie verschwinden bei beiden."
+  en: "Silent video: two phones of “Our household”. Anna puts eggs on the list; half a second later they are on Jonas’s phone, with the note “1 new from Anna”. Jonas ticks them off, and they disappear for both."
   status: draft
-  source: "Job 54: text alternative of the household-sync video; half a second is the measured sync time of the take."
+  source: "Job 54: text alternative of the household-sync video. Job 65: re-filmed with the demo household „Unser Haushalt“ (Anna, Jonas); the time is the measured sync time of the take."
 demo.mcp-chat:
   de: "Video ohne Ton: Ein KI-Chat bekommt „Schreib Honig und Marmelade auf“. Hummlist meldet beide unter Vorrat & Konserven, und sie erscheinen in der App. Per Sprache folgt „Hab beides gekauft, hak es ab“, und beide verschwinden wieder."
   en: "Silent video: an AI chat gets “Put honey and jam on the list”. Hummlist reports both under Pantry, and they appear in the app. By voice follows “Bought both, tick them off”, and both disappear again."

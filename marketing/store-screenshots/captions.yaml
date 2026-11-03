@@ -1,0 +1,69 @@
+# Every word the store screenshots and the feature graphic put on screen besides the app's own.
+# One entry per scene (sets.mjs names the scenes each device shows) plus the feature graphic.
+# A scene has a two-line `title` (one line each, in P2's big type) and a `sub`; the feature graphic
+# a `title` whose last words, `accent`, are set in cobalt.
+# status: approved (signed off by Hummlist Launch) or draft. The pipeline renders drafts too and
+# lists them in out/manifest.json, so nothing unapproved goes to a store unnoticed.
+# Never: Premium, prices, retailer names, a shortened "Hummlist" (compose.mjs fails on them).
+# The German scene captions are job 77's P2 texts, the set Peter picked on 2026-11-02.
+
+de-DE:
+  feature:
+    # FG1, approved by Peter on 2026-11-01 ("fine for now").
+    title: Eine Einkaufsliste, die der ganze Haushalt
+    accent: mitsummt.
+    status: approved
+  list:
+    title: ["Eine Liste.", "Für alle."]
+    sub: Für Partner, Familie oder WG. Ohne Werbung.
+    status: draft
+  sync:
+    title: ["Du schreibst.", "Anna sieht’s."]
+    sub: Sofort bei allen auf der Liste.
+    status: draft
+  add:
+    title: ["Kurz getippt,", "schon drauf."]
+    sub: Mit Menge und Vorschlägen aus euren Einkäufen.
+    status: draft
+  order:
+    title: ["Dein Laden,", "dein Weg."]
+    sub: Halten und ziehen. Jeder Laden hat seine Reihenfolge.
+    status: draft
+  tick:
+    title: ["Tipp.", "Erledigt."]
+    sub: Keine Werbung. Nur eure Liste.
+    status: draft
+  invite:
+    title: ["Komm mit", "auf die Liste."]
+    sub: Partner per Link oder Code einladen.
+    status: draft
+
+en-US:
+  feature:
+    title: A shopping list the whole household
+    accent: hums along to.
+    status: draft
+  list:
+    title: ["One list.", "For everyone."]
+    sub: For partners, families or flatmates. No ads.
+    status: draft
+  sync:
+    title: ["You add it.", "Anna sees it."]
+    sub: Right away, on everyone’s list.
+    status: draft
+  add:
+    title: ["A few letters,", "and it’s on."]
+    sub: With amounts and suggestions from what you buy.
+    status: draft
+  order:
+    title: ["Your store,", "your route."]
+    sub: Hold and drag. Every store has its own order.
+    status: draft
+  tick:
+    title: ["Tap.", "Done."]
+    sub: No ads. Just your list.
+    status: draft
+  invite:
+    title: ["Come join", "the list."]
+    sub: Invite your partner with a link or a code.
+    status: draft

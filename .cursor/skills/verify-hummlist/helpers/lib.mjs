@@ -10,7 +10,6 @@ import { execFileSync } from 'node:child_process';
 
 export const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const fromE2e = createRequire(resolve(repo, 'e2e/package.json'));
-export const { chromium } = fromE2e('@playwright/test');
 const { createClient } = fromE2e('@supabase/supabase-js');
 
 /** launch.sh's record of the instance: URLs, run id, credentials file, evidence dir. */
@@ -92,6 +91,8 @@ export async function typeInto(field, text, { perKey = 0 } = {}) {
  * app follows while its language is "System". Video goes to `videoDir` when given.
  */
 export async function openApp(inst, { lang = 'de', viewport = { width: 390, height: 844 }, dpr = 2, dark = false, videoDir, headless = true } = {}) {
+  // Loaded here, not at import: a Playwright test runner that imports these helpers has its own copy.
+  const { chromium } = fromE2e('@playwright/test');
   const browser = await chromium.launch({ headless });
   const context = await browser.newContext({
     baseURL: inst.webUrl,

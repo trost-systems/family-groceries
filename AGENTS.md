@@ -52,6 +52,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   rate limits, idempotency), sharing `_shared/list.ts` with the `mcp` function. Guide
   `docs/API.md`, contract `docs/api/openapi.yaml` (checked by the lint gate against
   `api/routes.ts`). Its key UI sits behind the PostHog flag `public-api`.
+- `marketing/store-screenshots/`, `scripts/store-screenshots.sh`: the Play and App Store
+  screenshots, feature graphic and icon from the real web build with the demo household „Unser
+  Haushalt“, captions in `captions.yaml`, deterministic reruns; `--videos` re-films the site's demo
+  loops (`marketing/videos/`). CI: `store-screenshots.yml`, by hand (`docs/STORE_SCREENSHOTS.md`).
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
   `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).
