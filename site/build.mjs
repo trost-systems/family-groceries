@@ -7,6 +7,7 @@ import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
 import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
 import { APP_URL, CopyError, readCopy, renderLanding } from './landing.mjs';
+import { AgentError, agentHead, checkAgentSite, readPublicApi, readStage, readVercel, writeAgentFiles } from './agent.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(SITE_DIR, '..');
@@ -388,7 +389,7 @@ ${page.notices.length > 0 ? `${comments}<meta name="robots" content="noindex">\n
 <meta name="description" content="${description}">
 <link rel="canonical" href="${url}">
 ${alternates}
-<meta property="og:title" content="${title}">
+${agentHead(page, url)}<meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
 <meta property="og:type" content="${page.ogType}">
 <meta property="og:url" content="${url}">
@@ -488,8 +489,10 @@ export function checkHtml(file, html, outDir, siteUrl) {
   for (const tag of ['iframe', 'object', 'embed']) {
     if (doc.querySelector(tag)) fail(name, `<${tag}> is not allowed`);
   }
-  // Only script files from this site (the CSP blocks inline code and other origins anyway).
+  // Only script files from this site (the CSP blocks inline code and other origins anyway), and
+  // JSON-LD, which is data the browser never runs.
   for (const script of doc.querySelectorAll('script')) {
+    if (script.getAttribute('type') === 'application/ld+json' && !script.getAttribute('src')) continue;
     if (!script.getAttribute('src') || script.innerHTML.trim() !== '') fail(name, '<script> is allowed only as a file from this site, without inline code');
   }
   const resources = [
@@ -635,6 +638,7 @@ export function build({
   repoDir = REPO_DIR,
   env = {},
   config = readConfig(),
+  stage = readStage(),
 } = {}) {
   const live = liveVersion(repoDir);
   const versions = { live: live.live, firstPublic: live.firstPublic, production: isProduction(env) };
@@ -689,8 +693,12 @@ export function build({
   for (const { page, html } of rendered) write(page.route, html);
   write('/', rootPage(config));
   write('/404', notFoundPage(config));
+  const publicApi = readPublicApi(repoDir);
+  writeAgentFiles({ outDir, rendered, siteUrl: config.siteUrl, contentDir, repoDir, publicApi });
 
   for (const file of htmlFiles(outDir)) checkHtml(file, readFileSync(file, 'utf8'), outDir, config.siteUrl);
+  const { problems } = checkAgentSite({ dist: outDir, siteUrl: config.siteUrl, vercel: readVercel(), stage, publicApi });
+  if (problems.length > 0) throw new BuildError(`agent checks failed:\n  ${problems.map((p) => `${p.check}: ${p.file}: ${p.message}`).join('\n  ')}`);
 
   return { routes: ['/', ...pages.map((p) => p.route)], warnings, live };
 }
@@ -702,7 +710,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`live version: ${live.live} (from ${live.source})`);
     console.log(`built ${routes.length} pages into dist/`);
   } catch (error) {
-    if (!(error instanceof BuildError || error instanceof RecordError || error instanceof CopyError)) throw error;
+    if (!(error instanceof BuildError || error instanceof RecordError || error instanceof CopyError || error instanceof AgentError)) throw error;
     console.error(`build failed: ${error.message}`);
     process.exit(1);
   }

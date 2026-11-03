@@ -7084,3 +7084,55 @@ on the way:
    the policy with the legal rows. In builds without a PostHog key the row is hidden, since its
    page would be empty. This also makes the approved consent text and the privacy policy right
    again: they say „Mehr → Nutzungsdaten“. Replaces items 3 and 4's Datenschutz page.
+
+## Job 93: hummlist.com for AI agents, deterministic checks, 2026-11-03
+
+1. **Checks over rules.** Peter: "Deterministic checks are very much preferred over skills /
+   rules." Everything that can be decided from the built site, the served site or the MCP
+   endpoint is a check with a fixture test that breaks it; what can't is a short checklist in
+   `docs/AGENT_FIRST.md`, not a skill.
+2. **The build checks read only `dist`.** `site/agent.mjs` generates the agent files from the
+   rendered pages, and a second half checks the output as an agent sees it, deriving the public
+   page set from the HTML (every page without a `noindex` meta tag, minus `/404` and the root
+   redirect) rather than from the generator's list. A generator bug can't hide behind itself.
+3. **Two gates.** The offline checks run inside `npm run build`, so the `site` gate and every
+   Vercel build fail on them. What needs the network or a browser (the live MCP probe, the
+   served site, the waitlist form in Chromium) is the new `site-agent` gate, always run like
+   `site`, part of `ci-ok`.
+4. **The MCP probe never uses a real household.** CI probes `https://mcp.hummlist.com` without
+   credentials (discovery; `initialize` and `tools/list` report SKIP). The authenticated part
+   runs in `e2e/tests/mcp-smoke.spec.ts` with a throwaway household's access token on the local
+   stack. No CI secret for a production test household: none exists, and discovery plus the
+   local server cover the same code.
+5. **`MCP_PROTOCOL_VERSION`, default 2025-11-25.** The brief asked for a TODO for 2026-07-28.
+   Our server (SDK 2.3.1) already answers `server/discover`, so that branch is implemented and
+   proven in the e2e spec; the TODO is only the default's switch. The server is unchanged.
+6. **`site/config/stage.ts` is the stage setting** job 82 (ADDENDUM 8) also plans. The build
+   reads its `stage` line as text: CI runs Node 22, which can't import `.ts`. Job 93 created it
+   with `'waitlist'`; job 82 uses the same file.
+7. **Robots allow everything.** The site is `noindex` by header until launch; a `Disallow` would
+   hide that header from crawlers, and agents should still read `llms.txt` and the twins. The
+   check fails on any `Disallow` that covers a `noindex` page, for every user-agent group.
+8. **The sitemap lists the public page set even while the header says `noindex`.** It is what
+   launch day needs; the launch guard makes sure the header goes when `stage` becomes
+   `'launch'`.
+9. **Twins come from the rendered HTML** (turndown), not from the Markdown sources: the landing
+   and changelog have no Markdown source, and production hides `since` content the sources
+   still hold. One path for every page kind.
+10. **The waitlist check switches on by itself** once Legal's consent texts
+    (`site/content/legal/consent/`) are on main, which arrive with job 82. Proven on job 82's
+    branch: it passes on `/de` and `/en` and fails when the source text changes by one
+    character. "Pending confirmation" means the proxy answers 202 Accepted and the thank-you
+    text asks to confirm by mail; the edge function's own answer stays job 82's (same answer
+    for every address).
+11. **OpenAPI is published only while `public-api` is on** in `releases/flags.json` (any rollout
+    but `off`). It is off, so the check reports its skip reason.
+12. **The FAQ is found by its heading, not by an anchor in Legal's files** (review 0). The help
+    pages sit in `site/content/legal/`, and the brief allows no legal-text edits. So
+    `FAQ_HEADINGS` in `site/agent.mjs` names the section titles („Häufige Fragen", "Common
+    questions"). If a heading is renamed without updating the list, the `jsonld` check fails
+    (the FAQPage would disappear).
+13. **The live MCP probe stays blocking.** An outage of mcp.hummlist.com fails `site-agent` on
+    unrelated PRs. That is wanted: agents read about that endpoint on the site, and the
+    probe's curl retries already absorb cold starts.
+

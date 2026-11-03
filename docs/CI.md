@@ -16,7 +16,8 @@ the same things.
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
 | `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh`, the generated design tokens and app icon against their source (`design/tokens/build.mjs --check`, `design/app-icon/build.mjs --check`) | yes |
 | `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/`, its `pending.json` and overrides, and `releases/flags.json`; the note's `flag:` / `hold:` keys must be in that file ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
-| `site` | The guides site in `site/`: build checks, tests, a production build; no real access token in the repo | yes |
+| `site` | The guides site in `site/`: build checks (with the agent checks: llms.txt, `.md` twins, robots, sitemap, hreflang, JSON-LD, links, launch guard), tests, a production build; no real access token in the repo | yes |
+| `site-agent` | hummlist.com for AI agents ([`AGENT_FIRST.md`](AGENT_FIRST.md)): the MCP probe's fixture tests and `scripts/mcp-smoke.sh https://mcp.hummlist.com` without credentials, the built site served like Vercel serves it (llms.txt, twins, sitemap, OpenAPI when `public-api` is on) and the waitlist form in Chromium | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
 | `fg-cli` | Deno fmt, lint and tests for the verify skill's CLI | yes |
@@ -75,8 +76,9 @@ the sleeping phone).
 The `changes` job (`scripts/ci-changes.sh`) reads the PR's changed files:
 
 - Only `docs/` and Markdown changed (the verify skill's files under
-  `.cursor/` and `.claude/` count as code): only `gitleaks`, `lint` and
-  `site` run. `site` always runs because the guides are Markdown.
+  `.cursor/` and `.claude/` count as code): only `gitleaks`, `lint`,
+  `site` and `site-agent` run. Both site gates always run because the guides
+  are Markdown.
 - `android` and `ios` run when `app/ios/`, `app/android/` or `app/pubspec.*`
   changed. They compile the app's Swift and Kotlin and the plugin registrant
   generated from pubspec. A Dart change in `app/lib/` is compiled by the

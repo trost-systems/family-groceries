@@ -46,13 +46,34 @@ can be advertised, so a spoofed signal cannot point a client anywhere
 else (`docs/DECISIONS.md`, Job 26).
 
 `scripts/mcp-smoke.sh <endpoint>` checks a host the way a client discovers
-it (401, metadata on the same host, authorization server metadata, then
-`initialize` and `tools/list` when `MCP_SMOKE_TOKEN` holds a token):
+it: the 401, metadata on the same host, the authorization server metadata
+and the hint-less `openid-configuration` fallback. When `MCP_SMOKE_TOKEN`
+holds a token (a personal access token or an OAuth access token), it also
+runs the handshake and `tools/list`. It never prints the token.
 
 ```bash
 scripts/mcp-smoke.sh https://mcp.hummlist.com
 scripts/mcp-smoke.sh https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
+MCP_SMOKE_TOKEN=fgp_… MCP_PROTOCOL_VERSION=2026-07-28 scripts/mcp-smoke.sh <endpoint>
 ```
+
+`MCP_PROTOCOL_VERSION` picks the protocol revision. The default is
+`2025-11-25`, which most clients speak today. For it, `initialize` must
+answer 200 with that `protocolVersion`, a `serverInfo.name` and
+`capabilities.tools`. The script keeps an `mcp-session-id` if the server
+returns one, and `notifications/initialized` must get 202. For `2026-07-28`
+(the stateless revision, no `initialize`), `server/discover` must list the
+version in `supportedVersions`, name the server in
+`_meta["io.modelcontextprotocol/serverInfo"]` and offer
+`capabilities.tools`. Every request then carries the `_meta` envelope and the
+`mcp-method` header, as the SDK client does. In both revisions, `tools/list`
+must return tools that each have a name, a description and an `inputSchema`
+of type `object`, `add_items` among them. Any other version exits 2.
+
+`node --test scripts/mcp-smoke.test.mjs` runs the script against a fake
+server (`scripts/mcp-smoke-fixture.mjs`) and shows that each check fails on
+the breakage it exists for. `e2e/tests/mcp-smoke.spec.ts` runs it in both
+revisions against the local stack, with a throwaway household's token.
 
 Vercel's limits for the proxy are in
 [`mcp-proxy/README.md`](../mcp-proxy/README.md#vercel-limits-docs-read-2026-10-28).

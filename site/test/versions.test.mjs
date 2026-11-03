@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { cpSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { buildSite, guide, legal, alternates, hrefs, htmlRoutes, meta, record, serve, tempDir, REAL_PUBSPEC, REAL_RECORD, SITE_DIR } from './helpers.mjs';
+import { buildSite, guide, legal, alternates, hrefs, htmlRoutes, meta, record, serve, tempDir, REAL_FLAGS, REAL_PUBSPEC, REAL_RECORD, SITE_DIR } from './helpers.mjs';
 import { RecordError, parseRecord } from '../releases.mjs';
 
 const PROD = { VERCEL_ENV: 'production' };
@@ -37,11 +37,12 @@ test('the CLI logs the live version and reports a bad record as a build failure'
   const root = tempDir();
   const site = join(root, 'site');
   mkdirSync(site);
-  for (const f of ['build.mjs', 'releases.mjs', 'landing.mjs', 'config.json', 'package.json', 'public', 'content']) cpSync(join(SITE_DIR, f), join(site, f), { recursive: true });
+  for (const f of ['build.mjs', 'releases.mjs', 'landing.mjs', 'agent.mjs', 'config.json', 'vercel.json', 'package.json', 'config', 'scripts', 'public', 'content']) cpSync(join(SITE_DIR, f), join(site, f), { recursive: true });
   symlinkSync(join(SITE_DIR, 'node_modules'), join(site, 'node_modules'));
   mkdirSync(join(root, 'releases'));
   mkdirSync(join(root, 'app'));
   writeFileSync(join(root, 'app/pubspec.yaml'), REAL_PUBSPEC);
+  writeFileSync(join(root, 'releases/flags.json'), REAL_FLAGS);
   const run = () => spawnSync(process.execPath, [join(site, 'build.mjs')], { encoding: 'utf8', env: { ...process.env, VERCEL_ENV: '' } });
 
   writeFileSync(join(root, 'releases/releases.json'), REAL_RECORD);
@@ -152,7 +153,7 @@ test('a section waiting for a version: production removes it, preview marks it',
   assert.equal(preview.querySelectorAll('.draft-banner').length, 3);
   assert.equal(meta(preview, 'robots'), undefined, 'a page with a versioned section stays indexable');
 
-  const en = buildSite({ files: { 'guides/en/new.md': guide({ locale: 'en', slug: 'new', body: '# New\n\n## Later {since=1.4.0}\n\nText.\n' }) } }).page(NEW);
+  const en = buildSite({ files: { 'guides/en/new.md': guide({ locale: 'en', slug: 'new', body: '# New\n\nIntro.\n\n## Later {since=1.4.0}\n\nText.\n' }) } }).page(NEW);
   assert.equal(en.querySelector('.draft-banner').text, BANNER_EN);
 
   const released = buildSite({ files, env: PROD, repo: STORES_1_4 }).page(NEU);

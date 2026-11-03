@@ -14,6 +14,7 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8',
+  '.md': 'text/markdown; charset=utf-8',
   '.json': 'application/json',
   '.xml': 'application/xml',
   '.js': 'text/javascript; charset=utf-8',
@@ -25,7 +26,7 @@ const TYPES = {
 };
 
 // Sources here are plain paths or regex groups like "/(.*)", which path-to-regexp treats like a regex.
-const matchesSource = (source, path) => new RegExp(`^${source}$`).test(path);
+export const matchesSource = (source, path) => new RegExp(`^${source}$`).test(path);
 
 // Like Vercel, a `has` value is a regex that must match the whole header value; no value means present.
 function matchesHas(has = [], req) {

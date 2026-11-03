@@ -140,6 +140,22 @@ jobs:
           cache-dependency-path: site/package-lock.json
       - run: scripts/gates/site.sh
 
+  # Job 93: hummlist.com for AI agents, the checks that need the network or a browser (the MCP
+  # probe, the served site, the waitlist form). Always runs, like site.
+  site-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            site/package-lock.json
+            site/checks/package-lock.json
+      - run: scripts/gates/site-agent.sh
+
   fg-cli:
     needs: changes
     if: needs.changes.outputs.heavy == 'true'
@@ -291,7 +307,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, changelog, db, functions, site, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, changelog, db, functions, site, site-agent, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
