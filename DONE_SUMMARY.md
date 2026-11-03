@@ -517,3 +517,7 @@ The PostHog flag `public-api` only hid the app's API section; anyone signed in c
 ## Job 80: Access screen, tips card, account email
 
 Connected apps in Zugänge show where they were approved („Chrome · macOS“, a short label the consent page records; no user agent, IP or location) and when they were last active, with a plain-words details sheet instead of scope text. A token hint mentions automations (API-aware). The Siri card no longer says "now works without setup". A dismissible tips card (typed queue, platform and version targeting, per user per device) sits at the top of the List tab. The Konto email has a copy button. Legal Review line for the device label: NEEDS_LEAD "Job 80". Details: [docs/done/80-polish-access-tips-account.md](docs/done/80-polish-access-tips-account.md).
+
+## Job 89: a count said after the item is its quantity again
+
+Dictating „Gurken zwei“ (in-app dictation, Siri, Alexa; DE and EN „cucumbers two“) sets the quantity again. Job 61 had passed the count back into the name for the typed rule, which in-app dictation never ran. Typed input is unchanged. Details: [docs/done/89-fix-voice-quantity-words.md](docs/done/89-fix-voice-quantity-words.md).

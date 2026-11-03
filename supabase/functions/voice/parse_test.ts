@@ -65,9 +65,16 @@ const cases: [string, string[]][] = [
   ['ein paar Äpfel', ['ein paar Äpfel']],
   ['ein Dutzend Eier', ['1 Dutzend Eier']],
   ['Eier zehn Stück', ['10 Stück Eier']],
-  // A bare count at the end stays in the text: public.parse_item reads it (job 61).
-  ['Eier 10', ['Eier 10']],
-  ['Gurken zwei', ['Gurken 2']],
+  // A count said after the item is its Menge, like one said before it (job 89).
+  ['Eier 10', ['10 Eier']],
+  ['Gurken zwei', ['2 Gurken']],
+  ['Gurken 2', ['2 Gurken']],
+  ['Büroklammern hundert', ['100 Büroklammern']],
+  ['Gurken zwei drauf', ['2 Gurken']],
+  ['Setz Gurken zwei auf die Liste', ['2 Gurken']],
+  ['Milch, Gurken zwei und Brot', ['Milch', '2 Gurken', 'Brot']],
+  ['Hack 500 Gramm', ['500 g Hack']],
+  ['Milch zwei Liter', ['2 l Milch']],
 
   // Units.
   ['1 kg Mehl', ['1 kg Mehl']],
@@ -235,6 +242,31 @@ Deno.test('keeps quantity apart from the name', () => {
   ]);
 });
 
+const spokenCounts: [string, string][] = [
+  ['eins', '1'],
+  ['zwei', '2'],
+  ['drei', '3'],
+  ['vier', '4'],
+  ['fünf', '5'],
+  ['sechs', '6'],
+  ['sieben', '7'],
+  ['acht', '8'],
+  ['neun', '9'],
+  ['zehn', '10'],
+  ['elf', '11'],
+  ['zwölf', '12'],
+  ['zwanzig', '20'],
+  ['dreißig', '30'],
+];
+for (const [word, count] of spokenCounts) {
+  Deno.test(`"Gurken ${word}" and "Gurken ${count}" are ${count} Gurken`, () => {
+    const expected = [{ name: 'Gurken', quantity: count }];
+    assertEquals(parseSentence(`Gurken ${word}`), expected);
+    assertEquals(parseSentence(`Gurken ${count}`), expected);
+    if (word !== 'eins') assertEquals(parseSentence(`${word} Gurken`), expected);
+  });
+}
+
 Deno.test('stops at the item cap', () => {
   const sentence = Array.from({ length: 50 }, (_, i) => `Artikel${i}`).join(', ');
   assertEquals(parseSentence(sentence).length, maxItems);
@@ -279,7 +311,7 @@ for (
     ['Füge Milch zur Hummliste hinzu', ['Milch']],
     ['Setz Milch und Eier auf die Hummelliste', ['Milch', 'Eier']],
     ['Hummliste, Milch', ['Milch']],
-    ['Füge Karotten 2 zur Hummliste hinzu', ['Karotten 2']],
+    ['Füge Karotten 2 zur Hummliste hinzu', ['2 Karotten']],
     ['zwei Karotten und Milch', ['2 Karotten', 'Milch']],
   ] as [string, string[]][]
 ) {

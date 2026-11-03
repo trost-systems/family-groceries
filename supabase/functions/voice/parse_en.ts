@@ -122,6 +122,9 @@ const units = new Map(unitList.flatMap(([spellings, unit]) => spellings.map((s) 
 
 const isArticle = (token: string) => /^(a|an)$/i.test(token);
 
+/** A number after these is part of the name: "diapers size 4", "flour type 405". */
+const sizeWords = new Set(['size', 'type', 'no', 'number', 'stage']);
+
 /** Digits ("2", "1.5", "500g") or a number word; glued is a unit written onto the digits. */
 function readNumber(token: string): { value: number; glued: string } | null {
   const digits = /^(0|[1-9]\d{0,5}|(?:0|[1-9]\d{0,5})[.,]\d{1,3})(\p{L}*)$/u.exec(token);
@@ -176,7 +179,7 @@ function readPiece(segment: string[]): ParsedItem | null {
 
   const first = tokens.length > 1 ? readNumber(tokens[0]) : null;
   const gluedUnit = first?.glued ? units.get(first.glued.toLowerCase()) : undefined;
-  if (!first || (first.glued && !gluedUnit)) return item(tokens, null);
+  if (!first || (first.glued && !gluedUnit)) return trailingCount(tokens) ?? item(tokens, null);
   const article = isArticle(tokens[0]);
   tokens = tokens.slice(1);
   let unit = gluedUnit ?? null;
@@ -187,6 +190,18 @@ function readPiece(segment: string[]): ParsedItem | null {
   if (unit && tokens.length > 1 && tokens[0].toLowerCase() === 'of') tokens = tokens.slice(1);
   if (unit) return item(tokens, amountOf(first.value, unit));
   return item(tokens, article ? null : amountOf(first.value, null));
+}
+
+/** "cucumbers two", "cucumbers 2": a count said after the item is its quantity (job 89). */
+function trailingCount(tokens: string[]): ParsedItem | null {
+  if (tokens.length < 2) return null;
+  const [before, last] = tokens.slice(-2);
+  const count = readNumber(last);
+  if (
+    !count || count.glued || isArticle(last) || readNumber(before) ||
+    sizeWords.has(before.toLowerCase())
+  ) return null;
+  return item(tokens.slice(0, -1), amountOf(count.value, null));
 }
 
 function item(tokens: string[], quantity: string | null): ParsedItem | null {

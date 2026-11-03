@@ -6,7 +6,7 @@ A user can put things on the Hummlist by voice with Siri on an iPhone. Two ways 
 
 - `siri-shortcut` the Shortcut recipe: access key „Siri“ (Mehr → Zugänge → „Token erstellen“), then the shortcut „Einkaufsliste“ (dictate text in German, POST to the voice address with `Authorization: Bearer fgp_…`, speak the result). German only for splitting.
 - `siri-reply-added` spoken reply German: „Hinzugefügt: Milch, 2 Gurken, Klopapier.“
-- `siri-amounts` an amount said before or after the item is its quantity: „zwei Gurken“, „Eier zehn Stück“, „Möhren zwei“ (reply „Hinzugefügt: 2 Möhren.“). A bare count after the item counts only from 1 to 20 after a known name; otherwise it stays in the name („Büroklammern hundert“ → „Hinzugefügt: Büroklammern 100.“).
+- `siri-amounts` an amount said before or after the item is its quantity: „zwei Gurken“, „Eier zehn Stück“, „Möhren zwei“ (reply „Hinzugefügt: 2 Möhren.“). A bare count after the item, as a word or digits, is always the quantity („Eier dreißig“ → 30 Eier, „Büroklammern hundert“ → „Hinzugefügt: 100 Büroklammern.“); only after a size word (Größe, Typ, Nr., Stufe) it stays in the name (job 89; typed text keeps the stricter rule of `supabase/tests/quantity_parse.tsv`).
 - `siri-reply-existing` already on the list: „Schon auf der Liste: Milch.“ (nothing added for it). Mixed: „Hinzugefügt: Brot. Schon auf der Liste: Milch.“
 - `siri-reply-similar` a spelling variant or synonym is open: item is added and Siri names the open one in the „Schon auf der Liste:“ sentence, after the exact ones, each name once (job 68): „Hinzugefügt: Karotten. Schon auf der Liste: Milch, Möhren.“
 - `siri-errors` the exact sentences, German and English (see below).

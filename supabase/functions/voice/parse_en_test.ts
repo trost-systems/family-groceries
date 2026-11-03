@@ -27,6 +27,14 @@ const cases: [string, string[]][] = [
   ['a couple of lemons', ['a couple of lemons']],
   ['a few onions', ['a few onions']],
   ['twelve eggs', ['12 eggs']],
+  // A count said after the item is its quantity, like one said before it (job 89).
+  ['cucumbers two', ['2 cucumbers']],
+  ['cucumbers 2', ['2 cucumbers']],
+  ['two cucumbers', ['2 cucumbers']],
+  ['add cucumbers two to my list', ['2 cucumbers']],
+  ['milk, cucumbers two and bread', ['milk', '2 cucumbers', 'bread']],
+  ['diapers size 4', ['diapers size 4']],
+  ['cucumbers a', ['cucumbers a']],
   ['a dozen eggs', ['1 dozen eggs']],
   ['two dozen eggs', ['2 dozen eggs']],
   ['3 bottles of wine', ['3 bottles of wine']],
@@ -61,6 +69,31 @@ Deno.test('EN keeps the quantity apart from the name', () => {
     { name: 'eggs', quantity: '1 pack' },
   ]);
 });
+
+const spokenCounts: [string, string][] = [
+  ['one', '1'],
+  ['two', '2'],
+  ['three', '3'],
+  ['four', '4'],
+  ['five', '5'],
+  ['six', '6'],
+  ['seven', '7'],
+  ['eight', '8'],
+  ['nine', '9'],
+  ['ten', '10'],
+  ['eleven', '11'],
+  ['twelve', '12'],
+  ['twenty', '20'],
+  ['thirty', '30'],
+];
+for (const [word, count] of spokenCounts) {
+  Deno.test(`EN "cucumbers ${word}" and "cucumbers ${count}" are ${count} cucumbers`, () => {
+    const expected = [{ name: 'cucumbers', quantity: count }];
+    assertEquals(parseEnglish(`cucumbers ${word}`), expected);
+    assertEquals(parseEnglish(`cucumbers ${count}`), expected);
+    assertEquals(parseEnglish(`${word} cucumbers`), expected);
+  });
+}
 
 Deno.test('EN stops at the item cap', () => {
   const sentence = Array.from({ length: 40 }, (_, i) => `thing${i}`).join(', ');

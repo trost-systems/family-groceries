@@ -370,8 +370,12 @@ function readPiece(segment: string[]): Piece | null {
   return piece(tokens, article && amount === 1 ? null : amountOf(amount!, null));
 }
 
-/** "Eier zehn Stück", "Milch 2 Liter", "Joghurt 3x": an amount said after the item. */
-function trailingAmount(tokens: string[]): { rest: string[]; quantity: string | null } | null {
+/**
+ * "Eier zehn Stück", "Milch 2 Liter", "Gurken zwei": an amount said after the item. Spoken, a
+ * bare count there is always the Menge; the typed rule (job 61) that keeps "Büroklammern 100"
+ * whole is for typing, and in-app dictation never reaches it (job 89).
+ */
+function trailingAmount(tokens: string[]): { rest: string[]; quantity: string } | null {
   const at = (i: number) => tokens[tokens.length - i];
   const allowed = (before: string | undefined) =>
     before !== undefined && !sizeWords.has(before.toLowerCase()) && !readNumber(before);
@@ -380,11 +384,6 @@ function trailingAmount(tokens: string[]): { rest: string[]; quantity: string | 
   if (last && !isArticle(at(1)) && allowed(at(2))) {
     const unit = last.glued ? units[last.glued.toLowerCase()] : null;
     if (last.glued && !unit && !multipliers.has(last.glued.toLowerCase())) return null;
-    // A bare count goes to public.parse_item as digits, which keeps it as the Menge only after
-    // a known name and up to 20 ("Karotten zwei", not "Büroklammern hundert"; job 61).
-    if (!last.glued) {
-      return { rest: [...tokens.slice(0, -1), formatNumber(last.value)], quantity: null };
-    }
     return { rest: tokens.slice(0, -1), quantity: amountOf(last.value, unit) };
   }
   const unit = units[at(1)?.toLowerCase() ?? ''];

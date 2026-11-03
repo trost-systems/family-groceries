@@ -94,6 +94,25 @@ Deno.test('parse mode splits without adding', async () => {
   assertEquals(calls, []);
 });
 
+Deno.test('parse mode, the in-app dictation, reads a count said after the item', async () => {
+  const { handle } = fakeDeps();
+  for (
+    const [text, lang, items] of [
+      ['Gurken zwei und Milch', 'de', [{ name: 'Gurken', quantity: '2' }, {
+        name: 'Milch',
+        quantity: null,
+      }]],
+      ['cucumbers two and milk', 'en', [{ name: 'cucumbers', quantity: '2' }, {
+        name: 'milk',
+        quantity: null,
+      }]],
+    ] as const
+  ) {
+    const res = await handle(post({ text, mode: 'parse', lang }));
+    assertEquals((await res.json()).items, items, text);
+  }
+});
+
 const errors: [string, () => Request, Partial<Deps>, number, string, RegExp][] = [
   [
     'wrong token',
