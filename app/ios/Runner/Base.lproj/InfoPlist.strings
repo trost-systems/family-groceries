@@ -1,4 +1,10 @@
 /* The fallback for other languages: the English names (INAlternativeAppNames). */
 "HUMMLIST_NAME_1" = "Humm List";
+"HUMMLIST_HINT_1" = "hum list";
 "HUMMLIST_NAME_2" = "Hum List";
+"HUMMLIST_HINT_2" = "hum list";
 "HUMMLIST_NAME_3" = "Humlist";
+"HUMMLIST_HINT_3" = "hum list";
+/* How Siri says the app name. */
+"CFBundleSpokenName" = "Humm List";
+"NSSiriUsageDescription" = "Siri adds items to your Hummlist and reads it to you.";

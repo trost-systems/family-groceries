@@ -1,5 +1,6 @@
 import Flutter
 import Foundation
+import Intents
 
 /// The `hummlist/siri` channel: lib/siri keeps the Keychain credential and the item suggestions
 /// in step with the session. `read` never returns the token.
@@ -20,6 +21,7 @@ final class SiriBridge: NSObject, FlutterPlugin {
       }
       do {
         try credentials.save(credential)
+        Self.askForSiri()
         result(nil)
       } catch let failure as SiriCredentialStore.Failure {
         result(FlutterError(code: "keychain", message: "status \(failure.status)", details: nil))
@@ -40,6 +42,14 @@ final class SiriBridge: NSObject, FlutterPlugin {
       result(nil)
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  /// SiriKit hands the app its Lists intents only once the user allowed Siri for it. Asked once,
+  /// when the app first sets Siri up (signed in, in a household); the answer lives in Settings.
+  private static func askForSiri() {
+    if INPreferences.siriAuthorizationStatus() == .notDetermined {
+      INPreferences.requestSiriAuthorization { _ in }
     }
   }
 

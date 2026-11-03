@@ -478,7 +478,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get siriSayHint =>
-      'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.';
+      'Sag zum Beispiel: „Hey Siri, etwas auf Hummlist setzen“.';
 
   @override
   String get siriShowPhrases => 'Siri-Sätze anzeigen';

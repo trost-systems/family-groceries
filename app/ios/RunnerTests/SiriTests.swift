@@ -1,3 +1,5 @@
+import Intents
+import UIKit
 import XCTest
 
 @testable import Runner
@@ -107,7 +109,14 @@ final class VoiceClientTests: XCTestCase {
     let already = await send(.http(200, #"{"outcome":"nothing_added","speech":"Already on the list: milk."}"#))
     XCTAssertEqual(already, .nothingAdded(speech: "Already on the list: milk."))
     let read = await send(.http(200, #"{"outcome":"read","speech":"Milk and eggs.","items":[],"total":2}"#), mode: .read)
-    XCTAssertEqual(read, .read(speech: "Milk and eggs."))
+    XCTAssertEqual(read, .read(speech: "Milk and eggs.", items: []))
+  }
+
+  func testReadKeepsTheOpenItemsWithTheirQuantity() async {
+    let read = await send(
+      .http(200, #"{"outcome":"read","speech":"Milch, 2 kg Mehl.","items":[{"name":"Milch","quantity":null},{"name":"Mehl","quantity":"2 kg"}],"total":2}"#),
+      mode: .read)
+    XCTAssertEqual(read, .read(speech: "Milch, 2 kg Mehl.", items: ["Milch", "2 kg Mehl"]))
   }
 
   func testA200WithoutAKnownOutcomeIsNoSuccess() async {
@@ -173,6 +182,109 @@ final class VoiceClientTests: XCTestCase {
       let result = await send(.failure(code))
       XCTAssertEqual(result, .failed(failure), "\(code)")
     }
+  }
+}
+
+/// The SiriKit Lists handlers against a stubbed `voice` (a made-up credential, no real household).
+final class SiriKitListsTests: XCTestCase {
+  override func setUp() {
+    StubProtocol.requests = []
+  }
+
+  private func client(signedIn: Bool = true) -> VoiceClient {
+    let config = VoiceClient.configuration()
+    config.protocolClasses = [StubProtocol.self]
+    let credential = SiriCredential(
+      token: "fgp_test", id: "c1", userId: "u1", sessionId: "s1",
+      url: URL(string: "https://example.supabase.co/functions/v1/voice")!)
+    return VoiceClient(session: URLSession(configuration: config)) { signedIn ? credential : nil }
+  }
+
+  private func addTasks(_ titles: [String]?) -> INAddTasksIntent {
+    INAddTasksIntent(
+      targetTaskList: INTaskList(
+        title: INSpeakableString(spokenPhrase: "Einkaufsliste"), tasks: [], groupName: nil,
+        createdDateComponents: nil, modifiedDateComponents: nil, identifier: nil),
+      taskTitles: titles?.map { INSpeakableString(spokenPhrase: $0) },
+      spatialEventTrigger: nil, temporalEventTrigger: nil, priority: .notFlagged)
+  }
+
+  private func lastBody() throws -> [String: String] {
+    let body = try XCTUnwrap(StubProtocol.requests.last?.body)
+    return try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+  }
+
+  func testTheTitlesGoToVoiceAsOneSentence() async throws {
+    StubProtocol.reply = .http(200, #"{"outcome":"added","speech":"Hinzugefügt: Zahnpasta, Brot."}"#)
+    let response = await AddTasksHandler(client: client())
+      .respond(to: addTasks(["Zahnpasta", " Brot ", ""]))
+    let body = try lastBody()
+    XCTAssertEqual(body["text"], "Zahnpasta, Brot")
+    XCTAssertEqual(body["mode"], "add")
+    XCTAssertNotNil(body["lang"], "the language follows the text (VoiceLanguage)")
+    XCTAssertEqual(response.code, .success)
+    XCTAssertEqual(response.addedTasks?.map(\.title.spokenPhrase), ["Zahnpasta", "Brot"])
+  }
+
+  func testAlreadyOnTheListIsStillASuccess() async {
+    StubProtocol.reply = .http(200, #"{"outcome":"nothing_added","speech":"Schon auf der Liste: Milch."}"#)
+    let response = await AddTasksHandler(client: client()).respond(to: addTasks(["Milch"]))
+    XCTAssertEqual(response.code, .success)
+  }
+
+  func testFailuresTheAppCanFixOpenTheApp() async {
+    let cases: [(StubProtocol.Reply, INAddTasksIntentResponseCode)] = [
+      (.http(401, ""), .failureRequiringAppLaunch),
+      (.http(403, #"{"outcome":"no_household","error":"no_household","speech":"x"}"#), .failureRequiringAppLaunch),
+      (.http(403, #"{"outcome":"premium_required","error":"premium_required","speech":"x"}"#), .failureRequiringAppLaunch),
+      (.http(500, #"{"outcome":"server","error":"server","speech":"x"}"#), .failure),
+      (.failure(.notConnectedToInternet), .failure),
+    ]
+    for (reply, code) in cases {
+      StubProtocol.reply = reply
+      let response = await AddTasksHandler(client: client()).respond(to: addTasks(["Milch"]))
+      XCTAssertEqual(response.code, code, "\(reply)")
+    }
+    let signedOut = await AddTasksHandler(client: client(signedIn: false)).respond(to: addTasks(["Milch"]))
+    XCTAssertEqual(signedOut.code, .failureRequiringAppLaunch)
+  }
+
+  func testEachSpokenTitleResolvesAndNoneMeansAsk() {
+    let handler = AddTasksHandler(client: client())
+    let resolved = expectation(description: "titles resolved")
+    handler.resolveTaskTitles(for: addTasks(["Zahnpasta", "", "Brot"])) { results in
+      XCTAssertEqual(results.count, 2)
+      resolved.fulfill()
+    }
+    let asked = expectation(description: "no titles")
+    handler.resolveTaskTitles(for: addTasks(nil)) { results in
+      XCTAssertEqual(results.count, 1, "one needsValue: Siri asks what to add")
+      asked.fulfill()
+    }
+    wait(for: [resolved, asked], timeout: 1)
+  }
+
+  func testSearchReadsTheOpenItemsAsTasks() async throws {
+    StubProtocol.reply = .http(
+      200, #"{"outcome":"read","speech":"Milch, 2 kg Mehl.","items":[{"name":"Milch","quantity":null},{"name":"Mehl","quantity":"2 kg"}],"total":2}"#)
+    let response = await SearchTasksHandler(client: client()).respond()
+    XCTAssertEqual(try lastBody()["mode"], "read")
+    XCTAssertNil(try lastBody()["text"])
+    XCTAssertEqual(response.code, .success)
+    XCTAssertEqual(response.tasks?.map(\.title.spokenPhrase), ["Milch", "2 kg Mehl"])
+    XCTAssertEqual(response.taskLists?.first?.tasks.count, 2)
+  }
+
+  @MainActor
+  func testTheAppHandsOutBothHandlers() throws {
+    let delegate = try XCTUnwrap(UIApplication.shared.delegate as? AppDelegate)
+    let selector = #selector(UIApplicationDelegate.application(_:handlerFor:))
+    XCTAssertTrue(delegate.responds(to: selector), "iOS finds the handler through the selector")
+    XCTAssertTrue(delegate.application(.shared, handlerFor: addTasks(["Milch"])) is AddTasksHandler)
+    XCTAssertTrue(delegate.application(.shared, handlerFor: INSearchForNotebookItemsIntent()) is SearchTasksHandler)
+    XCTAssertNil(delegate.application(.shared, handlerFor: INSendMessageIntent()))
+    let supported = Bundle.main.object(forInfoDictionaryKey: "INIntentsSupported") as? [String]
+    XCTAssertEqual(Set(supported ?? []), ["INAddTasksIntent", "INSearchForNotebookItemsIntent"])
   }
 }
 
@@ -327,8 +439,15 @@ final class AppShortcutPhraseTests: XCTestCase {
   private let runner = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Runner")
 
+  private func intentsSource() throws -> String {
+    try String(contentsOf: runner.appendingPathComponent("AppIntents/HummlistIntents.swift"), encoding: .utf8)
+  }
+
   private func codePhrases() throws -> [String] {
-    let source = try String(contentsOf: runner.appendingPathComponent("AppIntents/HummlistIntents.swift"), encoding: .utf8)
+    try phrases(in: intentsSource())
+  }
+
+  private func phrases(in source: String) throws -> [String] {
     let literal = try NSRegularExpression(pattern: #""([^"\n]*\\\(\.applicationName\)[^"\n]*)""#)
     let range = NSRange(source.startIndex..., in: source)
     return literal.matches(in: source, range: range).map {
@@ -381,8 +500,56 @@ final class AppShortcutPhraseTests: XCTestCase {
     XCTAssertNotEqual(names["de"], names["en"])
   }
 
+  private func table(_ name: String, _ lang: String) throws -> [String: String] {
+    let path = try XCTUnwrap(
+      Bundle.main.path(forResource: name, ofType: "strings", inDirectory: nil, forLocalization: lang),
+      "the app ships \(lang).lproj/\(name).strings")
+    return try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String], lang)
+  }
+
+  /// German Siri hands "Füge X zur <…>liste hinzu" and "Einkaufsliste" to Reminders, and a bare
+  /// "Auf meine Hummlist" is a fragment of that grammar (job 92).
+  func testGermanPhrasesStayOutOfRemindersGrammar() throws {
+    let prepositions: Set<String> = ["auf", "zu", "zur", "zum", "in", "im", "an", "mit", "für"]
+    for phrase in try table("AppShortcuts", "de").values {
+      XCTAssertTrue(phrase.contains("${applicationName}"), phrase)
+      XCTAssertFalse(phrase.lowercased().contains("einkaufsliste"), phrase)
+      let first = phrase.split(separator: " ").first.map { $0.lowercased() } ?? ""
+      if prepositions.contains(first) {
+        XCTAssertFalse(phrase.hasSuffix("${applicationName}"), "\(phrase) is a fragment without a verb")
+      }
+    }
+  }
+
+  /// Siri asks for the items after a phrase without one, which works for any item; an item phrase
+  /// matches only the names the app suggested.
+  func testAddPhrasesWithoutAnItemComeFirst() throws {
+    let source = try intentsSource()
+    let start = try XCTUnwrap(source.range(of: "intent: AddItemsIntent()"))
+    let end = try XCTUnwrap(source.range(of: "shortTitle:", range: start.upperBound..<source.endIndex))
+    let add = try phrases(in: String(source[start.upperBound..<end.lowerBound]))
+    let withItem = add.map { $0.contains("${item}") }
+    XCTAssertEqual(withItem.first, false)
+    XCTAssertEqual(withItem, withItem.sorted { !$0 && $1 }, "\(add)")
+  }
+
+  func testEveryAlternativeNameHasAPronunciationHint() throws {
+    let entries = try XCTUnwrap(
+      Bundle.main.object(forInfoDictionaryKey: "INAlternativeAppNames") as? [[String: String]])
+    XCTAssertLessThanOrEqual(entries.count, 3)
+    for lang in ["en", "de", "Base"] {
+      let strings = try table("InfoPlist", lang)
+      for entry in entries {
+        let hint = try XCTUnwrap(entry["INAlternativeAppNamePronunciationHint"], "\(entry)")
+        XCTAssertFalse((strings[hint] ?? "").isEmpty, "\(lang) lacks \(hint)")
+      }
+      XCTAssertEqual(strings["CFBundleSpokenName"], "Humm List", lang)
+      XCTAssertFalse((strings["NSSiriUsageDescription"] ?? "").isEmpty, "\(lang) lacks NSSiriUsageDescription")
+    }
+  }
+
   func testAtMostTenAppShortcuts() throws {
-    let source = try String(contentsOf: runner.appendingPathComponent("AppIntents/HummlistIntents.swift"), encoding: .utf8)
+    let source = try intentsSource()
     let count = source.components(separatedBy: "AppShortcut(\n").count - 1
     XCTAssertGreaterThan(count, 0)
     XCTAssertLessThanOrEqual(count, 10)

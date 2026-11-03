@@ -1,4 +1,5 @@
 import Flutter
+import Intents
 import Speech
 import StoreKit
 import UIKit
@@ -9,7 +10,21 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // After every install or update, not only once a list has loaded and the app pushed its
+    // suggestions: Siri trains the App Shortcut phrases with these parameters (job 92).
+    if #available(iOS 17.0, *) {
+      HummlistShortcuts.updateAppShortcutParameters()
+    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// SiriKit's Lists domain in-app (SiriKitLists.swift): what no App Shortcut phrase matches.
+  override func application(_ application: UIApplication, handlerFor intent: INIntent) -> Any? {
+    switch intent {
+    case is INAddTasksIntent: return AddTasksHandler(client: .live())
+    case is INSearchForNotebookItemsIntent: return SearchTasksHandler(client: .live())
+    default: return nil
+    }
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {

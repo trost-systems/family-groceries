@@ -10,9 +10,9 @@ const siriPhrases = (
     "What's on my Hummlist?",
   ],
   de: [
-    'Füge etwas zur Hummlist hinzu',
-    'Setz etwas auf meine Hummlist',
-    'Füge <Eintrag> zur Hummlist hinzu',
-    'Was steht auf meiner Hummlist?',
+    'Etwas auf Hummlist setzen',
+    'Hummlist, füge etwas hinzu',
+    'Füge <Eintrag> zu Hummlist hinzu',
+    'Hummlist, was steht drauf?',
   ],
 );

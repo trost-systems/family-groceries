@@ -159,7 +159,7 @@
   "siriHeader": "Siri",
   "siriThisIphone": "Siri (dieses iPhone)",
   "siriOtherIphone": "Siri (anderes iPhone)",
-  "siriSayHint": "Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.",
+  "siriSayHint": "Sag zum Beispiel: „Hey Siri, etwas auf Hummlist setzen“.",
   "@siriSayHint": {"description": "Zugänge, Siri card on this iPhone (job 80): one example sentence, no hint that Siri ever needed setting up"},
   "siriShowPhrases": "Siri-Sätze anzeigen",
   "siriOldShortcutHint": "Den alten Kurzbefehl brauchst du nicht mehr. Seinen Token „{name}“ kannst du unten löschen.",

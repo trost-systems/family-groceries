@@ -881,7 +881,7 @@ abstract class AppLocalizations {
   /// Zugänge, Siri card on this iPhone (job 80): one example sentence, no hint that Siri ever needed setting up
   ///
   /// In de, this message translates to:
-  /// **'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.'**
+  /// **'Sag zum Beispiel: „Hey Siri, etwas auf Hummlist setzen“.'**
   String get siriSayHint;
 
   /// No description provided for @siriShowPhrases.

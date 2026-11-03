@@ -7194,3 +7194,32 @@ on the way:
   version: last updated March 17, 2026, effective March 31, 2026. `docs/legal/dpas/README.md` is
   the new index with both DPAs and their checksums. If Legal wants the byte-identical download,
   replace the PDF with the box copy and update its checksum there.
+## Job 92: German Siri routing (2026-11-03)
+
+- **App-first German phrases, no „Einkaufsliste“.** German Siri gives „Füge X zur <…>liste
+  hinzu“, „Einkaufsliste“ and fragments like „Auf meine Hummlist“ to Reminders when it does not
+  recognise the name. The phrases now name the app first or as the object („Hummlist, füge etwas
+  hinzu“, „Etwas auf Hummlist setzen“, „Mit Hummlist einkaufen“, „Hummlist, was steht drauf“). The
+  older article forms („Füge etwas zur Hummlist hinzu“) stay as extra phrases; the lint gate
+  rejects the two removed shapes. Zugänge and its card show the app-first ones.
+- **Parameterless add phrases first.** Siri's follow-up question takes any item; an `${item}`
+  phrase matches only the 50 names the app registered.
+- **Spoken names from Siri's spellings.** „Humm Liste“, „Hummliste“, „Ham Liste“ (the lead's
+  device evidence), all with the hint „humm liste“; „Hummelliste“ dropped. `CFBundleSpokenName`
+  „Humm List“ in every language, as the brief asks. No `INPreferredForAppShortcuts`: Apple
+  documents no such key.
+- **Parameters at launch.** `updateAppShortcutParameters()` in `didFinishLaunching` as well as
+  after the suggestions push, so a fresh install or update trains the item phrases at once.
+- **SiriKit Lists in-app, ungated.** `INAddTasksIntent` and `INSearchForNotebookItemsIntent` via
+  `application(_:handlerFor:)` (iOS 14+, no extension), through the same `VoiceClient` and
+  Keychain credential as the App Intents. Ops enabled the capability and #221 renewed the profiles
+  before #222, so the build-setting gate the brief allowed would only add a state to maintain.
+  A named list is ignored (one list per household); „already on the list“ counts as success,
+  since the item is there. `VoiceResult.read` now carries the open items for the read handler.
+- **Siri permission asked at credential setup.** `INPreferences.requestSiriAuthorization` once,
+  when the app stores the Siri credential after sign-in in a household: the moment Siri becomes
+  usable, and never on a launch Siri caused.
+- **Profiles from CI, never a certificate.** `certificates.yml` lane `renew_profile` (confirm
+  `renew`) and read-only `profiles`. The lane refuses `development` (the match repo has no
+  development certificate, so match would create one) and stops when certificate `GN85KDC962` is
+  missing or expired on the portal.
