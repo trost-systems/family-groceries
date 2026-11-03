@@ -18,7 +18,7 @@ EN labels: "Send feedback", "Close", "Your message", "What did you notice?", "Ki
 
 ## How to get to it (user POV)
 
-- „Mehr“ / "More" → section „Feedback“ → row „Feedback senden“ / "Send feedback" (hint „Fehler, Ideen und Fragen an Peter“ / "Bugs, ideas and questions for Peter"). It is the only entry point (no shake gesture, none from the list).
+- „Mehr“ / "More" → row „Feedback senden“ / "Send feedback" (first in the group with „Hilfe & Kontakt“, above the „Rechtliches“ rows; no hint since job 85). It is the only entry point (no shake gesture, none from the list).
 - Works from a phone and beside an open More page on wide screens; the note's "screen" is the page the user was on before More (e.g. the list), or the open More page on wide layouts.
 
 ## Driving it with Playwright

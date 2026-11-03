@@ -316,7 +316,7 @@ test('wide: feedback beside an open More page names that page (1366x1024)', asyn
   const email = newEmail('feedback-wide');
   await signUpWithHousehold(page, email);
   await openTab(page, 'Mehr');
-  await page.getByRole('button', { name: /^Konto Daten exportieren/ }).click();
+  await page.getByRole('button', { name: 'Konto', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/account$/);
   const entry = page.getByRole('button', { name: /^Feedback senden( |$)/ });
   await entry.scrollIntoViewIfNeeded();

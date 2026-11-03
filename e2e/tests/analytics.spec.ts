@@ -35,7 +35,7 @@ async function quietFor(page: Page, collector: Collector, before: number) {
   expect(collector.requests.length, `requests: ${collector.requests.join(', ')}`).toBe(before);
 }
 
-/** Wheels More's list until [target] is on screen above the tab bar; the switch sits below the fold. */
+/** Wheels the page until [target] is on screen above the tab bar. */
 async function wheelIntoView(page: Page, target: Locator): Promise<void> {
   const size = page.viewportSize() ?? { width: 480, height: 900 };
   const tabs = await page.getByRole('tab').first().boundingBox({ timeout: 2000 }).catch(() => null);
@@ -50,13 +50,11 @@ async function wheelIntoView(page: Page, target: Locator): Promise<void> {
   }).toPass();
 }
 
-/** The usage-data switch under More (a switch, or a checkbox for some engines). */
+/** The usage-data switch under More → Nutzungsdaten (job 85; a switch, or a checkbox for some engines). */
 async function analyticsSwitch(page: Page) {
-  await openTab(page, 'Mehr');
-  await expect(page).toHaveURL(/\/(more|settings)\b/);
-  // The tab comes back to the page it was left on; a second tap goes to More's list.
-  if (!new URL(page.url()).pathname.endsWith('/more')) await openTab(page, 'Mehr');
-  await expect(page).toHaveURL(/\/more$/);
+  await openMore(page, 'Nutzungsdaten');
+  await expect(page).toHaveURL(/\/more\/usage-data$/);
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
   const toggle = page.getByRole('switch', { name: /^Nutzungsdaten und Fehlerberichte senden/ })
     .or(page.getByRole('checkbox', { name: /^Nutzungsdaten und Fehlerberichte senden/ }));
   await wheelIntoView(page, toggle);
@@ -181,7 +179,7 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   await quietFor(page, collector, 0);
   expect(await posthogJsLoaded(page), 'nor after a no').toBe(false);
 
-  // The switch under More shows the decision.
+  // The switch under More → Nutzungsdaten shows the decision.
   await expect(await analyticsSwitch(page)).not.toBeChecked();
   expect(collector.leaks).toEqual([]);
   const log = await context.newPage();
@@ -255,7 +253,7 @@ test('accepting sends first_open once, then one event per action, no list text; 
     'first_open', 'household_created', 'item_added', 'item_added', 'item_ticked', 'item_ticked', 'item_ticked', 'item_added',
   ]);
 
-  // Off under More: nothing more, at once.
+  // Off under More → Nutzungsdaten: nothing more, at once.
   const toggle = await analyticsSwitch(page);
   await expect(toggle).toBeChecked();
   await screenshot(page, 'analytics-04-more-switch-on');
@@ -274,7 +272,7 @@ test('accepting sends first_open once, then one event per action, no list text; 
   await screenshot(log, 'analytics-06-collector-accepted');
 });
 
-test('in English: the consent text links the English policy; the switch under More', async ({ browser }) => {
+test('in English: the consent text links the English policy; the switch under More → Usage data', async ({ browser }) => {
   const context = await browser.newContext({ locale: 'en-US' });
   const collector = await fakeCollector(context);
   const page = await context.newPage();
@@ -314,6 +312,9 @@ test('in English: the consent text links the English policy; the switch under Mo
 
   await page.getByRole('tab', { name: 'More', exact: true }).or(page.getByRole('button', { name: /^More Tab / })).click();
   await expect(page).toHaveURL(/\/more$/);
+  await page.getByRole('button', { name: 'Usage data', exact: true }).click();
+  await expect(page).toHaveURL(/\/more\/usage-data$/);
+  await expect(page.getByRole('heading', { name: 'Usage data' })).toBeVisible();
   const toggle = page.getByRole('switch', { name: /^Send usage data and error reports/ })
     .or(page.getByRole('checkbox', { name: /^Send usage data and error reports/ }));
   await wheelIntoView(page, toggle);

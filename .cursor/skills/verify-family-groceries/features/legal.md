@@ -1,19 +1,19 @@
 # Help page and legal links
 
-The help and contact page lives on the guides site (`site/`, hummlist.com): `/support` (German) and `/en/support`, from `site/content/legal/support.md` and `support-en.md`. Peter approved the text on 2026-10-30 (#126), so both pages are published in every build without a banner, and the site footer links them. The app opens them from More → "Hilfe & Kontakt" in every build. The privacy policy and its app links are job 33a/33b's; the imprint is `sm-imprint` in `shell-more.md`; the guides on the same site are `features/guides.md`.
+The help and contact page lives on the guides site (`site/`, hummlist.com): `/support` (German) and `/en/support`, from `site/content/legal/support.md` and `support-en.md`. Peter approved the text on 2026-10-30 (#126), so both pages are published in every build without a banner, and the site footer links them. The app opens them from More → "Hilfe & Kontakt" in every build. The privacy policy and its app links are job 33a/33b's (in the app: the row "Datenschutzerklärung" under the label "Rechtliches" on More); the imprint is `sm-imprint` in `shell-more.md`; the guides on the same site are `features/guides.md`.
 
 ## Sub-features
 
-- `lg-help-row` More shows "Hilfe & Kontakt" / "Help & contact" (`more-help`, detail "Fragen, Anleitungen und unsere E-Mail-Adresse") under "Feedback senden", in release builds too (`supportPagePublished` in `app/lib/app/guides.dart`).
+- `lg-help-row` More shows "Hilfe & Kontakt" / "Help & contact" (`more-help`, one line with an external-link icon, no detail since job 85) under "Feedback senden", in release builds too (`supportPagePublished` in `app/lib/app/guides.dart`).
 - `lg-help-open` a tap opens https://hummlist.com/support (German UI) or https://hummlist.com/en/support (any other language) in the system browser (a new tab on the web); the app stays on More.
 - `lg-pages` https://hummlist.com/support and https://hummlist.com/en/support answer 200 without an "ENTWURF" / "DRAFT" banner and link the Alexa guide (`/de/anleitungen/alexa`, English `/en/guides/alexa`). The whole site still sends `X-Robots-Tag: noindex` until the beta launch.
 - `lg-draft` the site's draft mechanism stays for other pages: `draft: true` shows a page with the banner, an HTML comment and `noindex` in preview and local builds, and `VERCEL_ENV=production` builds leave it out (404). The purchases privacy pages (`/datenschutz-kaeufe`, `/en/privacy-purchases`) answer 404 in production that way.
 
 ## How to get to it (user POV)
 
-- Tap "Mehr", scroll below "Feedback senden" and tap "Hilfe & Kontakt".
+- Tap "Mehr", scroll to "Feedback senden" and tap "Hilfe & Kontakt" below it.
 - Open https://hummlist.com/support, or follow the footer link on any page of the site.
-- Imprint and privacy also sit under the login form as "Impressum · Datenschutz" (`legal-imprint`, `legal-privacy`; web e2e `e2e/tests/legal.spec.ts`).
+- Imprint and privacy also sit under the login form as "Impressum · Datenschutz" (`legal-imprint`, `legal-privacy`; web e2e `e2e/tests/legal.spec.ts`), and in the app as direct rows on More under the label "Rechtliches" (`more-imprint`, `more-privacy-policy`, `more-terms`, `more-licenses`; `features/shell-more.md`, `sm-legal`). The imprint is two taps from the list (Mehr, Impressum).
 
 ## Driving it with fg
 

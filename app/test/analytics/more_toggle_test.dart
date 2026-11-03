@@ -20,6 +20,15 @@ void main() {
       Tristate.isTrue;
   final version = find.byKey(const ValueKey('more-version'));
 
+  /// More, then its Nutzungsdaten row: the switch lives on that page.
+  Future<void> openUsageData(WidgetTester tester, Analytics analytics) async {
+    await pumpMore(tester, analytics: analytics, size: const Size(390, 2000));
+    expect(toggle, findsNothing, reason: 'not on the menu');
+    await tester.tap(find.byKey(const ValueKey('more-usage-data')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('more-usage-data-page')), findsOneWidget);
+  }
+
   late MemoryAnalyticsStore store;
   setUp(() => store = MemoryAnalyticsStore());
 
@@ -32,18 +41,21 @@ void main() {
     return (analytics, sink);
   }
 
-  testWidgets('a build without a key has no usage-data section', (
+  testWidgets('a build without a key has no Nutzungsdaten row or switch', (
     tester,
   ) async {
-    await pumpMore(tester);
+    await pumpMore(tester, size: const Size(390, 2000));
+    expect(find.byKey(const ValueKey('more-settings')), findsOneWidget);
+    expect(find.byKey(const ValueKey('more-usage-data')), findsNothing);
     expect(toggle, findsNothing);
+    expect(find.text('Nutzungsdaten'), findsNothing);
   });
 
   testWidgets('the switch shows the decision; off stops sending at once', (
     tester,
   ) async {
     final (analytics, sink) = await consented();
-    await pumpMore(tester, analytics: analytics, size: const Size(390, 2000));
+    await openUsageData(tester, analytics);
     expect(toggle, findsOneWidget);
     expect(on(tester), isTrue);
 

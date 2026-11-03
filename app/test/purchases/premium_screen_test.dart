@@ -585,13 +585,6 @@ void main() {
     testWidgets('a row opens the page', (tester) async {
       final more = await pumpMore(tester);
       await showRow(tester);
-      expect(
-        find.descendant(
-          of: key('more-lifetime'),
-          matching: find.text('Siri und KI-Assistenten'),
-        ),
-        findsOneWidget,
-      );
       await tester.tap(key('more-lifetime'));
       await tester.pumpAndSettle();
       expect(key('lifetime-screen'), findsOneWidget);
@@ -601,20 +594,31 @@ void main() {
       );
     });
 
-    testWidgets('the row says when the household has it', (tester) async {
-      await pumpMore(
+    for (final unlocked in [false, true]) {
+      testWidgets('the row is its title alone (M-P2), unlocked: $unlocked', (
         tester,
-        entitlements: FakeEntitlementsSource(unlockedNow: true),
-      );
-      await showRow(tester);
-      expect(
-        find.descendant(
-          of: key('more-lifetime'),
-          matching: find.text('Freigeschaltet'),
-        ),
-        findsOneWidget,
-      );
-    });
+      ) async {
+        await pumpMore(
+          tester,
+          entitlements: FakeEntitlementsSource(unlockedNow: unlocked),
+        );
+        await showRow(tester);
+        expect(
+          find.descendant(
+            of: key('more-lifetime'),
+            matching: find.byType(Text),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: key('more-lifetime'),
+            matching: find.text('Hummlist Premium'),
+          ),
+          findsOneWidget,
+        );
+      });
+    }
 
     testWidgets('the row asks for nothing while the unlock is unknown', (
       tester,
@@ -644,6 +648,7 @@ void main() {
               find.descendant(
                 of: key('more-lifetime'),
                 matching: find.byType(ListTile),
+                matchRoot: true,
               ),
             )
             .selected,

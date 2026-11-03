@@ -56,6 +56,18 @@ void main() {
     expect(more.router.state.uri.path, listPath);
   });
 
+  // Job 85: Rechtliches was a page; its rows sit on More now.
+  testWidgets('the old link /more/legal opens More, its tab selected', (
+    tester,
+  ) async {
+    final more = await pumpMore(tester, location: moreLegalPath, app: true);
+    expect(more.router.state.uri.path, morePath);
+    expect(key('more-screen'), findsOneWidget);
+    await tester.scrollUntilVisible(key('more-imprint'), 200);
+    expect(key('more-imprint'), findsOneWidget);
+    expect(tab(tester), 1);
+  });
+
   testWidgets('More and back keeps the List tab where it was', (tester) async {
     await pumpMore(tester, location: editPath, app: true);
     await tester.tap(key('tab-more'));

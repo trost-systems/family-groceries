@@ -74,7 +74,7 @@ Settings, help and account
 - [theme](./theme.md): light, dark or device theme under Mehr → Einstellungen.
 - [language](./language.md): German, English or the device's language, and which texts stay German.
 - [feedback](./feedback.md): Mehr → „Feedback senden“.
-- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on hummlist.com (Siri, Alexa, Claude), imprint, privacy, licenses, version.
+- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on hummlist.com (Siri, Alexa, Claude), the Nutzungsdaten page and the Rechtliches rows (imprint, privacy policy, terms, licenses), version.
 - [account-deletion](./account-deletion.md): Mehr → Konto: data export, account deletion, deleting single data without deleting the account.
 
 Connections and Premium

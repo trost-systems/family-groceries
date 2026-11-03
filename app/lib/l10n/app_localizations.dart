@@ -1544,29 +1544,11 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{In diesem Laden sind keine offenen Artikel.} =1{1 offener Artikel kommt zu „Ohne Laden“.} other{{count} offene Artikel kommen zu „Ohne Laden“.}} Sein Laufweg geht mit.'**
   String storeDeleteBody(int count);
 
-  /// More: under Zugänge
-  ///
-  /// In de, this message translates to:
-  /// **'MCP-Server, Zugangsschlüssel, verbundene Apps'**
-  String get accessRowHint;
-
-  /// More: under Konto
-  ///
-  /// In de, this message translates to:
-  /// **'Daten exportieren, Konto löschen'**
-  String get accountRowHint;
-
   /// More: the settings page (theme, language)
   ///
   /// In de, this message translates to:
   /// **'Einstellungen'**
   String get settingsTitle;
-
-  /// More: under Einstellungen
-  ///
-  /// In de, this message translates to:
-  /// **'Darstellung und Sprache'**
-  String get settingsRowHint;
 
   /// Settings: section with the theme segments (system, light, dark); also names the group
   ///
@@ -1616,7 +1598,7 @@ abstract class AppLocalizations {
   /// **'Wie Gerät ({language})'**
   String languageSystemPicked(String language);
 
-  /// More: section
+  /// More: label above the legal rows (imprint, privacy policy, terms, licenses)
   ///
   /// In de, this message translates to:
   /// **'Rechtliches'**
@@ -1628,7 +1610,7 @@ abstract class AppLocalizations {
   /// **'Impressum'**
   String get imprint;
 
-  /// More: privacy policy
+  /// The sign-in footer: link to the privacy policy
   ///
   /// In de, this message translates to:
   /// **'Datenschutz'**
@@ -1639,6 +1621,54 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Lizenzen'**
   String get licenses;
+
+  /// More → Datenschutz and Rechtliches: the link to the privacy policy on the site
+  ///
+  /// In de, this message translates to:
+  /// **'Datenschutzerklärung'**
+  String get privacyPolicy;
+
+  /// More: update card title when an over-the-air patch is downloaded (no update check yet, job 85)
+  ///
+  /// In de, this message translates to:
+  /// **'Update bereit'**
+  String get updatePatchTitle;
+
+  /// More: update card body, patch downloaded
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.'**
+  String get updatePatchBody;
+
+  /// More: update card button, patch downloaded
+  ///
+  /// In de, this message translates to:
+  /// **'Neu starten'**
+  String get updatePatchAction;
+
+  /// More: update card title when the store has a newer version
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Version da'**
+  String get updateStoreTitle;
+
+  /// More: update card body, newer store version
+  ///
+  /// In de, this message translates to:
+  /// **'Version {version} ist im Store. Aktualisiere, um alles Neue zu bekommen.'**
+  String updateStoreBody(String version);
+
+  /// More: update card button, opens the store
+  ///
+  /// In de, this message translates to:
+  /// **'Aktualisieren'**
+  String get updateStoreAction;
+
+  /// More: tooltip of the update card close button
+  ///
+  /// In de, this message translates to:
+  /// **'Später'**
+  String get updateLater;
 
   /// More: bottom line
   ///
@@ -1742,7 +1772,7 @@ abstract class AppLocalizations {
   /// **'Nicht erlauben'**
   String get analyticsDecline;
 
-  /// More: section with the analytics switch
+  /// More: the row and page with the usage-data switch; the consent text and privacy policy name this path (Mehr → Nutzungsdaten)
   ///
   /// In de, this message translates to:
   /// **'Nutzungsdaten'**
@@ -1784,35 +1814,17 @@ abstract class AppLocalizations {
   /// **'Testfehler senden'**
   String get sendTestError;
 
-  /// More: section heading above Feedback senden
-  ///
-  /// In de, this message translates to:
-  /// **'Feedback'**
-  String get feedbackSection;
-
   /// More: opens the feedback form; also the form's title
   ///
   /// In de, this message translates to:
   /// **'Feedback senden'**
   String get feedbackRow;
 
-  /// More: under Feedback senden
-  ///
-  /// In de, this message translates to:
-  /// **'Fehler, Ideen und Fragen an Peter'**
-  String get feedbackRowHint;
-
   /// More: opens the help and contact page on hummlist.com in the browser
   ///
   /// In de, this message translates to:
   /// **'Hilfe & Kontakt'**
   String get helpRow;
-
-  /// More: under Hilfe & Kontakt
-  ///
-  /// In de, this message translates to:
-  /// **'Fragen, Anleitungen und unsere E-Mail-Adresse'**
-  String get helpRowHint;
 
   /// Feedback form: label of the text field
   ///
@@ -2174,12 +2186,6 @@ abstract class AppLocalizations {
   /// **'Kauf wiederherstellen'**
   String get lifetimeRestore;
 
-  /// No description provided for @lifetimeUnlocked.
-  ///
-  /// In de, this message translates to:
-  /// **'Freigeschaltet'**
-  String get lifetimeUnlocked;
-
   /// No description provided for @lifetimeUnlockedBody.
   ///
   /// In de, this message translates to:
@@ -2425,12 +2431,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Hummlist Premium'**
   String get premiumTitle;
-
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). More: under Hummlist Premium while it may be offered
-  ///
-  /// In de, this message translates to:
-  /// **'Siri und KI-Assistenten'**
-  String get premiumRowHint;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: what is included (Spec #4)
   ///

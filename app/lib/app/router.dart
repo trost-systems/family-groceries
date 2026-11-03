@@ -78,6 +78,13 @@ const appSettingsPath = '/more/settings';
 /// The language list below Einstellungen.
 const languagePath = '/more/settings/language';
 
+/// More's Nutzungsdaten: the usage-data switch.
+const usageDataPath = '/more/usage-data';
+
+/// A Rechtliches page More had before its rows moved onto More itself
+/// (job 85); old links land on More.
+const moreLegalPath = '/more/legal';
+
 /// Before job 29d both were one page here (Konto at `?section=account`);
 /// old links redirect ([legacySettingsRedirect]).
 const settingsPath = '/settings';
@@ -97,6 +104,7 @@ const screenNames = {
   'lifetime',
   'settings',
   'language',
+  'usage_data',
   'login',
   'welcome',
   'onboarding_create',
@@ -121,6 +129,7 @@ String screenNameOf(Uri location) => switch (location.path) {
   premiumPath => 'lifetime',
   appSettingsPath => 'settings',
   languagePath => 'language',
+  usageDataPath => 'usage_data',
   settingsPath when location.queryParameters['section'] == 'account' =>
     'account',
   settingsPath => 'access',
@@ -147,6 +156,8 @@ bool inMoreTab(Uri location) => const {
   premiumPath,
   appSettingsPath,
   languagePath,
+  usageDataPath,
+  moreLegalPath,
   moreJoinPath,
 }.contains(location.path);
 
@@ -352,6 +363,7 @@ List<RouteBase> moreTabRoutes() => [
         ('account', MorePage.account),
         ('invites', MorePage.invites),
         ('lifetime', MorePage.premium),
+        ('usage-data', MorePage.usageData),
       ])
         GoRoute(
           path: path,
@@ -361,6 +373,7 @@ List<RouteBase> moreTabRoutes() => [
           ),
         ),
       GoRoute(path: 'join', builder: (_, _) => const JoinScreen()),
+      GoRoute(path: 'legal', redirect: (_, _) => morePath),
       GoRoute(
         path: 'settings',
         builder: (_, _) => const MoreScreen(page: MorePage.settings),

@@ -30,7 +30,7 @@ test('Hilfe & Kontakt opens the German help page outside the app', async ({ page
 
   const help = page.getByRole('button', { name: /^Hilfe & Kontakt/ });
   await wheelTo(page, help);
-  await expect(help).toContainText('Fragen, Anleitungen und unsere E-Mail-Adresse');
+  await expect(help, 'job 85: no hint under the row').toHaveAccessibleName('Hilfe & Kontakt');
   await screenshot(page, 'job24-more-help-de-390');
   await opensInNewTab(page, help, 'https://hummlist.com/support');
   await page.setViewportSize({ width: 1366, height: 1024 });

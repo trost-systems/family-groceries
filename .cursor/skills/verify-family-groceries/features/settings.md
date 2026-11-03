@@ -4,7 +4,7 @@ Mehr → Einstellungen (`/more/settings`) holds what belongs to the device, not 
 
 ## Sub-features
 
-- `st-open` opens Einstellungen from More (`more-settings`, "Einstellungen", "Darstellung und Sprache") → `settings-screen`. Back returns to More. From 840 px it opens beside More's list.
+- `st-open` opens Einstellungen from More (`more-settings`, "Einstellungen", one line since job 85) → `settings-screen`. Back returns to More. From 840 px it opens beside More's list.
 - `st-theme` one segmented control `theme-mode` with three segments: `theme-system` ("System", picked by default), `theme-light` ("Hell") and `theme-dark` ("Dunkel"); EN System / Light / Dark. A tap picks a segment, the yellow hex slides to it and the whole app repaints at once. The stored value is still `system`, `light` or `dark` under the same key, so a pick from before job 57 reads 1:1.
 - `st-theme-kept` the theme pick survives `fg restart` and sign-out (the login screen shows it too).
 - `st-language` the row `settings-language` ("Sprache", its line names the pick: "Deutsch", "English" or "Wie Gerät (Deutsch)") opens `language-screen` (`/more/settings/language`): `language-system` ("Wie Gerät", its line "Gerade Deutsch" names what the device gives) and one hex radio row per language in its own name, `language-de` ("Deutsch"), `language-en` ("English"). A pick switches every text at once; the page stays open. Back returns to Einstellungen.

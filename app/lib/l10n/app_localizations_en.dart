@@ -940,16 +940,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get accessRowHint => 'MCP server, access tokens, connected apps';
-
-  @override
-  String get accountRowHint => 'Export your data, delete your account';
-
-  @override
   String get settingsTitle => 'Settings';
-
-  @override
-  String get settingsRowHint => 'Appearance and language';
 
   @override
   String get appearance => 'Appearance';
@@ -990,6 +981,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get licenses => 'Licenses';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get updatePatchTitle => 'Update ready';
+
+  @override
+  String get updatePatchBody =>
+      'Hummlist has downloaded improvements. Restart the app to use them.';
+
+  @override
+  String get updatePatchAction => 'Restart';
+
+  @override
+  String get updateStoreTitle => 'New version available';
+
+  @override
+  String updateStoreBody(String version) {
+    return 'Version $version is in the store. Update to get everything new.';
+  }
+
+  @override
+  String get updateStoreAction => 'Update';
+
+  @override
+  String get updateLater => 'Later';
 
   @override
   String appVersion(String version) {
@@ -1069,19 +1087,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendTestError => 'Send a test error';
 
   @override
-  String get feedbackSection => 'Feedback';
-
-  @override
   String get feedbackRow => 'Send feedback';
 
   @override
-  String get feedbackRowHint => 'Bugs, ideas and questions for Peter';
-
-  @override
   String get helpRow => 'Help & contact';
-
-  @override
-  String get helpRowHint => 'Questions, guides and our email address';
 
   @override
   String get feedbackMessage => 'Your message';
@@ -1296,9 +1305,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lifetimeRestore => 'Restore purchase';
 
   @override
-  String get lifetimeUnlocked => 'Unlocked';
-
-  @override
   String get lifetimeUnlockedBody =>
       'Hummlist Lifetime is unlocked for your whole household. Thank you!';
 
@@ -1454,9 +1460,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumTitle => 'Hummlist Premium';
-
-  @override
-  String get premiumRowHint => 'Siri and AI assistants';
 
   @override
   String get premiumBody =>

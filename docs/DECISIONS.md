@@ -7029,3 +7029,58 @@ as „edeka“ made a hidden duplicate of the EDEKA chip.
 4. **e2e uses the chip's spelling.** `chainStores` in `e2e/tests/helpers.ts` typed „Edeka“ to get
    a store spelled that way; it now ticks the EDEKA chip, so the specs name the store „EDEKA“.
 5. **Legal N-23.** Nothing new is shown: the chips stay plain text from `popularStores`.
+
+## Job 85: More is M-P2, 2026-11-02
+
+Peter picked M-P2 from job 79's prototypes (PR #206, `docs/design/menu-research.md`). Calls made
+on the way:
+
+1. **The menu is data.** `_Item` in `more_screen.dart` names each row's glyph, key and hex face;
+   `_Item.groups` is the order: Konto and Premium; invite, join, archived; Zugänge; Einstellungen
+   and Datenschutz; feedback, help, Rechtliches; Abmelden alone. A row that may not show (Premium
+   before the offer, invite outside a household, help and archive behind their flags) drops out,
+   and a group without rows drops with it. The Premium decision moved up into the list, so a
+   hidden Premium row leaves no hairline behind.
+2. **No row hints.** M-P2 shows one line per row. The hint strings (`accessRowHint`,
+   `accountRowHint`, `premiumRowHint`, `lifetimeUnlocked`, …) and the „Feedback“ section label are
+   gone. The Premium page still says whether the household has Premium.
+3. **Datenschutz and Rechtliches are pages of the More branch** (`/more/privacy`,
+   `/more/legal`, `MorePage.privacy` and `.legal`), like Konto and Einstellungen, so back, a
+   reload, deep links and the wide layout (beside the list, row selected) work as for the other
+   pages. Their screen names are `privacy` and `legal`. The prototype pushed plain routes, which
+   the wide layout and the address bar would not show.
+4. **The usage-data switch is the same widget under the same heading.** The Datenschutz page
+   keeps the section „Nutzungsdaten“ with „Nutzungsdaten und Fehlerberichte senden“ and its hint,
+   only in builds with a PostHog key, and calls `Analytics.decide` as before. Below it the
+   privacy policy link. The heading stays so the approved consent text's „Mehr → Nutzungsdaten“
+   still leads somewhere recognisable; the text itself is versioned and Legal-approved, so it is
+   not changed here (NEEDS_LEAD Job 85).
+5. **The policy link is „Datenschutzerklärung“ / "Privacy policy"** (`privacyPolicy`), since
+   „Datenschutz“ / "Privacy" now names the menu row and page. It appears on both pages.
+6. **The update card is a typed stub.** The app has no update check (no Shorebird, no store
+   lookup), so `AppUpdates` (`app/lib/more/app_update.dart`) has one implementation,
+   `NoAppUpdates`, which never offers anything. The card renders `PatchReady` („Update bereit“,
+   „Neu starten“) and `StoreVersion` („Neue Version da“, „Aktualisieren“); closing it hides it
+   until More is built anew. Wiring a real check means one new `AppUpdates` passed to
+   `MoreScreen`.
+7. **Job 79's prototype switcher never landed** (PR #206 is a draft, not for merge), so there was
+   nothing to remove from main.
+
+### Job 85, addendum 1 (Peter via lead, 2026-11-03)
+
+8. **Rechtliches is a section of More, not a page.** Below help, a small „Rechtliches“ label
+   (the list's section label) heads a group of direct rows: Impressum, Datenschutzerklärung,
+   „Nutzungsbedingungen (EULA)“ (`termsUrl`, as on the Premium page: Apple's EULA on iOS, the
+   support page elsewhere until Hummlist has terms) and Lizenzen. The imprint is two taps from
+   the list (Mehr → Impressum), as §5 DDG wants it („unmittelbar erreichbar“). The privacy
+   notes for purchases (`/datenschutz-kaeufe`) are not linked anywhere in the app today, so
+   they get no row. The `/more/legal` page is gone; the path redirects to `/more`. The label is
+   the only section label on More: M-P2 has none, but a legal group without a name read like
+   more help rows. Replaces item 3's Rechtliches page and item 5's second policy link.
+9. **The usage-data row is „Nutzungsdaten“, not „Datenschutz“.** Next to a „Datenschutzerklärung“
+   row, a „Datenschutz“ row that holds a switch was easy to mistake for the policy. The row,
+   the page title and the route (`/more/usage-data`, screen name `usage_data`) now say what is
+   there; the page holds only the switch. It sits with Einstellungen (a setting of this device),
+   the policy with the legal rows. In builds without a PostHog key the row is hidden, since its
+   page would be empty. This also makes the approved consent text and the privacy policy right
+   again: they say „Mehr → Nutzungsdaten“. Replaces items 3 and 4's Datenschutz page.

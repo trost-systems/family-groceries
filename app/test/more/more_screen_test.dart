@@ -42,7 +42,11 @@ void main() {
 
   bool selected(WidgetTester tester, String k) => tester
       .widget<ListTile>(
-        find.descendant(of: key(k), matching: find.byType(ListTile)),
+        find.descendant(
+          of: key(k),
+          matching: find.byType(ListTile),
+          matchRoot: true,
+        ),
       )
       .selected;
 
@@ -53,6 +57,9 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  String path(More more) =>
+      more.router.routerDelegate.currentConfiguration.uri.toString();
+
   testWidgets('a phone shows the list alone, with the version at the end', (
     tester,
   ) async {
@@ -62,15 +69,7 @@ void main() {
     // Job 78: stores and categories are the List tab's Anpassen now.
     expect(find.text('Kategorien verwalten'), findsNothing);
     expect(find.text('Läden'), findsNothing);
-    for (final row in [
-      'more-invite',
-      'more-join',
-      'more-access',
-      'menu-account',
-      'more-sign-out',
-      'more-feedback',
-      'more-settings',
-    ]) {
+    for (final row in menuRows) {
       // In order, top to bottom: the list is taller than a phone.
       await tester.scrollUntilVisible(key(row), 200);
       expect(key(row), findsOneWidget, reason: row);
@@ -80,9 +79,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Version 1.2.3 (45)'), findsOneWidget);
   });
-
-  String path(More more) =>
-      more.router.routerDelegate.currentConfiguration.uri.toString();
 
   testWidgets('Partner einladen opens Einladungen; back returns to More', (
     tester,
@@ -172,33 +168,79 @@ void main() {
     });
   }
 
-  for (final (device, privacy, imprint) in [
+  for (final (device, imprint, privacy, terms) in [
     (
       const Locale('de', 'DE'),
-      'https://hummlist.com/datenschutz',
       'https://hummlist.com/impressum',
+      'https://hummlist.com/datenschutz',
+      'https://hummlist.com/support',
     ),
     (
       const Locale('en', 'US'),
-      'https://hummlist.com/en/privacy',
       'https://hummlist.com/en/imprint',
+      'https://hummlist.com/en/privacy',
+      'https://hummlist.com/en/support',
     ),
   ]) {
-    testWidgets('$device: the legal rows open the site in the browser', (
-      tester,
-    ) async {
+    testWidgets('$device: the legal rows on More open the site in the '
+        'browser', (tester) async {
       final launcher = fakeLauncher();
-      await pumpMore(tester, device: [device]);
-      await tester.scrollUntilVisible(key('more-licenses'), 200);
-      await tapKey(tester, 'more-privacy');
-      await tapKey(tester, 'more-imprint');
+      final more = await pumpMore(tester, device: [device]);
+      for (final row in ['more-imprint', 'more-privacy-policy', 'more-terms']) {
+        await tapKey(tester, row);
+        expect(path(more), morePath, reason: '$row: More stays open');
+      }
       expect(launcher.opened, [
-        (privacy, PreferredLaunchMode.externalApplication),
         (imprint, PreferredLaunchMode.externalApplication),
+        (privacy, PreferredLaunchMode.externalApplication),
+        (terms, PreferredLaunchMode.externalApplication),
       ]);
-      expect(key('more-screen'), findsOneWidget, reason: 'More stays open');
     });
   }
+
+  testWidgets("on iOS Nutzungsbedingungen is Apple's standard EULA", (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final launcher = fakeLauncher();
+    await pumpMore(tester);
+    await tapKey(tester, 'more-terms');
+    expect(launcher.opened, [
+      (
+        'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+        PreferredLaunchMode.externalApplication,
+      ),
+    ]);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  // DDG §5: the imprint is reachable at once, from the list in two taps.
+  testWidgets('from the list: Mehr, then Impressum opens the imprint', (
+    tester,
+  ) async {
+    final launcher = fakeLauncher();
+    final more = await pumpMore(tester, location: listPath, app: true);
+    await tester.tap(key('tab-more'));
+    await tester.pumpAndSettle();
+    expect(path(more), morePath);
+    await tester.scrollUntilVisible(key('more-imprint'), 200);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: key('more-screen'), matching: key('more-imprint')),
+      findsOneWidget,
+      reason: 'a row of More itself',
+    );
+    await tester.tap(key('more-imprint'));
+    await tester.pumpAndSettle();
+    expect(launcher.opened, [
+      (
+        'https://hummlist.com/impressum',
+        PreferredLaunchMode.externalApplication,
+      ),
+    ]);
+    expect(path(more), morePath);
+  });
 
   // Job 64: before the launch nobody sees Hummlist Premium in More.
   group('Hummlist Premium', () {
@@ -230,9 +272,8 @@ void main() {
       );
     });
 
-    testWidgets('is listed once offered, with its hint', (tester) async {
+    testWidgets('is listed once offered', (tester) async {
       expect(await listed(tester, offer: true), isTrue);
-      expect(find.text('Siri und KI-Assistenten'), findsOneWidget);
     });
 
     testWidgets('is listed on the web once offered: bought in the apps', (
@@ -254,7 +295,6 @@ void main() {
         ),
         isTrue,
       );
-      expect(find.text('Freigeschaltet'), findsOneWidget);
     });
   });
 
