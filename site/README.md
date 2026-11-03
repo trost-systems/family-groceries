@@ -146,6 +146,25 @@ its path stays a 404. The help pages `/support` and `/en/support` are drafts unt
 them (job 24). To publish, delete the `draft: true` line and then set the footer flag; a footer
 link to a draft fails the production build.
 
+## Internal previews
+
+`/internal/waitlist` (job 83) shows the waitlist landing variations V1 to V5, each at
+`/internal/waitlist/v<n>/de` and `/en`, for Peter and Hummlist Launch to compare. Preview and local
+builds only: a production build writes no page under `/internal` and deletes `dist/internal`.
+Every page has `noindex`.
+
+- `content/internal/waitlist-variations.yml`: Launch's draft copy, verbatim. Each variant lists its
+  blocks in page order (`hero`, `points`, `extra`, `note`, `chat`, `steps`, `line`, `faq`,
+  `closing`); `waitlist-variations.mjs` renders each type and fails the build on an unknown type,
+  a missing field, or German and English blocks that differ. `notes` are the copy's reviewer
+  markers (`[LEGAL CHECK]`, `[PM CHECK: …]`), shown as dashed tags; `[LEGAL: …]` placeholders stay
+  in the text, marked yellow.
+- The form is a mock (`public/internal/waitlist.js`): it checks the fields and shows the states
+  (sending, check your inbox, confirmed, already on the list), and sends nothing. `?s=inbox`,
+  `?s=confirmed` or `?s=known` opens a state. Its markup and `public/internal/waitlist.css` are
+  job 82's waitlist form, so the chosen variant ports onto the real form.
+- `checks/waitlist-variations.mjs` drives every page in Chromium (`checks/README.md`).
+
 ## Placeholders
 
 Write open facts as `[PETER: what is missing]`. Preview builds warn; a production build

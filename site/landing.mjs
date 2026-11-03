@@ -110,7 +110,7 @@ export function mediaFor(publicDir, name, locale, { shape, video = false }) {
   return media;
 }
 
-function picture({ posters }, alt, { className = '', eager = false, hidden = false } = {}) {
+export function picture({ posters }, alt, { className = '', eager = false, hidden = false } = {}) {
   const { wide, compact } = posters;
   const sources = [
     compact.dark && [`${COMPACT} and ${DARK}`, compact.dark, compact.size],

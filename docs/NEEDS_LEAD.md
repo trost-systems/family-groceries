@@ -1385,3 +1385,35 @@ alexa functions deploy with the next `supabase-deploy.yml`/release run.
 - **Your call: typed „zwei Gurken“ offline.** The app's offline parser keeps „zwei Gurken“ as the
   name while the server reads Gurken ×2 (pre-existing, typed path, out of this job's scope). Porting
   the number words to `app/lib/list/entry.dart` would be a small follow-up job.
+
+## Job 83: waitlist landing variations V1–V5 (2026-11-03)
+
+PR: https://github.com/trost-systems/family-groceries/pull/218 (preview only, do not merge).
+Preview (Vercel login, project `hummlist-site`):
+https://hummlist-site-git-job-83-waitlist-variations-peter-trost.vercel.app/internal/waitlist
+lists the variants; each is `/internal/waitlist/v1/de` … `/internal/waitlist/v5/en`.
+`?s=inbox`, `?s=confirmed` or `?s=known` opens a thank-you state directly.
+
+Calls made without Peter or Launch (DECISIONS, Job 83); say if one should go the other way:
+
+1. The copy has no error texts for the form ("wie v1, Abschnitt 3"; v1 was not in the brief).
+   Missing or invalid email and missing phone use job 82's draft wording; "Einen Moment …" is
+   from the copy, "One moment …" is mine.
+2. The FAQ sections are headed „FAQ“; the copy names no heading (V5's „Fragen?“ toggle is as
+   written).
+3. `[INSTALL-FAQ]` is replaced by the four install questions from the install FAQ draft, verbatim.
+   Their last answer names a date („die erste am 15. November“), which the variant rules
+   otherwise rule out ("Kein anderes Datum"). Launch should decide which rule wins.
+4. Addendum 2 changed only the German first sentence of V1's founder note. The English note still
+   says "I'm Peter, and I'm building Hummlist because my family wanted…", so DE and EN now say
+   different things.
+5. V4's copy says „Halt eine Kategorie gedrückt und zieh sie dahin…“. Since job 78 the list
+   itself does not drag. Categories are sorted in a store's details under Liste → Anpassen, with
+   drag handles. The V4 animation shows rows with drag handles, which matches the app.
+6. „Zurück zu hummlist.com“ on the confirmed page goes back to the variant itself in the preview.
+7. V3's „(Uhrzeiten sind Illustration, keine Behauptung.)“ reads as a note to us, so it shows as
+   a reviewer tag, not as page copy.
+8. V2's English hero shows the landing's existing MCP chat poster. Its list side has German item
+   names (Thunfisch, Senf). That is the classic landing's asset, unchanged here.
+9. The footer links the real Impressum and Datenschutz pages, which still have the classic
+   header with the „Im Browser öffnen“ button (job 82 changes that header).

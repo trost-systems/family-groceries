@@ -1,0 +1,515 @@
+# Waitlist landing variations V1-V5 (job 83): an internal preview, never built for production.
+# Source: Hummlist Launch, "Landing page hummlist.com: Warteliste, Varianten V1–V5 (02.11.2026)"
+# and "Installations-FAQ (02.11.2026)". The copy is a draft and verbatim; do not edit it here
+# without a new copy version from Launch.
+#
+# Each variant lists its blocks in page order. `notes` are the reviewer markers of the source
+# ([LEGAL CHECK], [PM CHECK: …], [PETER CHECK: …]); the page shows them as review tags. The
+# [LEGAL: …] placeholders are part of the copy and stay visible. `install: true` on an FAQ marks
+# where the source says [INSTALL-FAQ]; the install entries from `shared` go there.
+
+shared:
+  de:
+    review: "Interne Vorschau"
+    overview: "Alle Varianten"
+    skip: "Zum Inhalt"
+    variant: "Variante"
+    language: "Sprache"
+    state: "Zustand"
+    states: { page: "Seite", inbox: "Postfach", confirmed: "Bestätigt", known: "Schon drauf" }
+    mock: "Mock: Link in der Mail antippen"
+    header-cta: "Auf die Warteliste"
+    faq: "FAQ"
+    form:
+      email: "E-Mail-Adresse"
+      email-placeholder: "name@beispiel.de"
+      email-hint: "Am besten die E-Mail deiner Apple-ID bzw. deines Google-Kontos"
+      platform: "Dein Handy:"
+      ios: "iPhone"
+      android: "Android"
+      button: "Auf die Warteliste"
+      below: "Wir schreiben dir nur zur Beta und zum Start der App. Abmelden geht jederzeit."
+      consent: "[LEGAL: Einwilligungstext + Link Datenschutzerklärung]"
+      sending: "Einen Moment …"
+      known: "Diese E-Mail steht schon auf der Warteliste. Deine Einladung kommt per E-Mail."
+      email-missing: "Bitte gib deine E-Mail-Adresse ein."
+      email-invalid: "Diese E-Mail-Adresse sieht nicht richtig aus. Prüf sie bitte noch mal."
+      platform-missing: "Bitte wähl iPhone oder Android."
+    inbox:
+      title: "Fast geschafft, check dein Postfach"
+      body: "Wir haben dir eine E-Mail an [E-MAIL] geschickt. Tipp darin auf „E-Mail bestätigen“, dann stehst du auf der Warteliste."
+      small: "Nichts angekommen? Schau im Spam-Ordner nach oder trag dich mit der richtigen Adresse noch mal ein."
+    confirmed:
+      title: "Du stehst auf der Warteliste"
+      body: "Danke! Die Beta startet im November, und wir laden jede Woche neue Tester:innen ein. Deine Einladung kommt per E-Mail an diese Adresse."
+      back: "Zurück zu hummlist.com"
+    install:
+      - q: "Wie installiere ich die Beta auf dem iPhone?"
+        a: "Deine Einladung kommt per E-Mail von Apple (TestFlight), an die Adresse, mit der du dich auf der Warteliste eingetragen hast. Lad dir zuerst Apples kostenlose App „TestFlight“ aus dem App Store. Öffne dann die Einladungsmail auf deinem iPhone, tipp auf den Knopf darin und installier Hummlist in TestFlight. Einen öffentlichen Link gibt es nicht."
+      - q: "Wie installiere ich die Beta auf Android?"
+        a: "In deiner Einladungsmail ist ein Knopf „Beta beitreten“. Öffne ihn auf deinem Handy, und zwar mit dem Play Store im selben Google-Konto wie die E-Mail-Adresse, an die die Einladung ging. Bestätige dort die Teilnahme und installier Hummlist dann aus dem Play Store. Updates kommen danach ganz normal über den Play Store."
+      - q: "Ich habe mich mit der falschen E-Mail eingetragen. Was jetzt?"
+        a: "Die Einladung klappt nur mit der E-Mail deiner Apple-ID (iPhone) bzw. deines Google-Kontos (Android). Trag dich auf hummlist.com einfach noch mal mit der richtigen Adresse ein."
+      - q: "Meine Einladung ist nicht angekommen. Was kann ich tun?"
+        a: "Schau im Spam-Ordner nach und bei Gmail auch im Tab „Werbung“. Wir verschicken die Einladungen in Wellen: die erste am 15. November, danach jede Woche. Auf dem iPhone kommt die TestFlight-Mail von Apple, nicht von Hummlist. Fehlt sie dann immer noch, schreib an support@hummlist.com."
+  en:
+    review: "Internal preview"
+    overview: "All variants"
+    skip: "Skip to content"
+    variant: "Variant"
+    language: "Language"
+    state: "State"
+    states: { page: "Page", inbox: "Inbox", confirmed: "Confirmed", known: "Already on it" }
+    mock: "Mock: tap the link in the email"
+    header-cta: "Join the waitlist"
+    faq: "FAQ"
+    form:
+      email: "Email address"
+      email-placeholder: "name@example.com"
+      email-hint: "Ideally the email of your Apple ID or Google account"
+      platform: "Your phone:"
+      ios: "iPhone"
+      android: "Android"
+      button: "Join the waitlist"
+      below: "We'll only email you about the beta and the app's launch. Unsubscribe anytime."
+      consent: "[LEGAL: consent text + link to privacy policy]"
+      sending: "One moment …"
+      known: "This email is already on the waitlist. Your invite will come by email."
+      email-missing: "Please enter your email address."
+      email-invalid: "This email address doesn't look right. Please check it."
+      platform-missing: "Please choose iPhone or Android."
+    inbox:
+      title: "Almost there, check your inbox"
+      body: "We sent an email to [EMAIL]. Tap \"Confirm email\" in it, and you're on the waitlist."
+      small: "Nothing arrived? Check your spam folder, or sign up again with the right address."
+    confirmed:
+      title: "You're on the waitlist"
+      body: "Thank you! The beta starts in November, and we invite new testers every week. Your invite will come by email to this address."
+      back: "Back to hummlist.com"
+    install:
+      - q: "How do I install the beta on iPhone?"
+        a: "Your invite comes by email from Apple (TestFlight), sent to the address you used for the waitlist. First, get Apple's free TestFlight app from the App Store. Then open the invite email on your iPhone, tap the button in it, and install Hummlist in TestFlight. There's no public link."
+      - q: "How do I install the beta on Android?"
+        a: "Your invite email has a \"Join the beta\" button. Open it on your phone, with the Play Store signed in to the same Google account as the email address the invite went to. Accept there, then install Hummlist from the Play Store. After that, updates arrive as normal Play Store updates."
+      - q: "I signed up with the wrong email. What now?"
+        a: "The invite only works with the email of your Apple ID (iPhone) or Google account (Android). Just sign up again on hummlist.com/en with the right address."
+      - q: "My invite hasn't arrived. What can I do?"
+        a: "Check your spam folder, and in Gmail the Promotions tab too. We send invites in waves: the first on November 15, then every week. On iPhone, the TestFlight email comes from Apple, not from Hummlist. If it's still missing, write to support@hummlist.com."
+
+variants:
+  v1:
+    name: "Ohne Werbung, verbessert (approved Hero-Titel)"
+    angle: "„Ohne Werbung“ ist das einzige Kern-Versprechen, das die großen Konkurrenten nicht ohne Haken geben können, also führen wir damit und machen es greifbar."
+    order: "Header (Logo + „Auf die Warteliste“) → Hero mit Formular → 4 Value Points → MCP-Extra (kleiner Block) → Gründer-Notiz → FAQ → Abschluss-CTA → Footer"
+    de:
+      meta:
+        title: "Hummlist: gemeinsam einkaufen, ohne Werbung"
+        description: "Die gemeinsame Einkaufsliste ohne Banner und Prospekt-Angebote, bei allen sofort aktuell. Beta im November: Trag dich jetzt auf die Warteliste ein."
+      thanks: "Bis dahin: Schreib schon mal auf, was auf eure erste Liste kommt."
+      blocks:
+        - type: hero
+          badge: "Beta im November"
+          title: "Gemeinsam einkaufen, ohne Werbung"
+          visual: hero
+          subline: "Auf eurer Liste steht nur, was ihr braucht. Keine Banner, keine Prospekt-Angebote zwischen Milch und Brot."
+          small: "Für Paare, Familien und WGs, auf iPhone und Android."
+          form:
+            heading: "Sei bei der Beta dabei"
+            intro: "Die Beta startet im November und ist kostenlos. Trag dich ein, dann schicken wir dir die Einladung per E-Mail."
+        - type: points
+          items:
+            - { title: "Wirklich keine Werbung.", body: "Keine Banner, keine gesponserten Einträge, kein „Jetzt upgraden“ mitten im Einkauf." }
+            - { title: "Bei allen sofort aktuell.", body: "Du schreibst zu Hause Butter drauf, und wer gerade im Laden steht, sieht sie direkt." }
+            - { title: "Sortiert wie dein Laden.", body: "Zieh die Kategorien in die Reihenfolge, in der du durch deinen Laden gehst. Hummlist sortiert deine Artikel automatisch in Kategorien und lernt aus deinen Korrekturen." }
+            - { title: "Schnell drauf.", body: "Tipp „2 Gurken“ oder sprich es ein, Hummlist erkennt die Menge." }
+        - type: extra
+          heading: "Wenn du magst: Verbinde Hummlist mit Claude & Co."
+          body: "Über MCP können Claude und andere KI-Assistenten auf eure Liste schreiben. Zum Beispiel: Rezept rein, Zutaten auf die Liste. Musst du nicht nutzen, Hummlist funktioniert auch ganz ohne. Siri, bald."
+          notes: ["[LEGAL CHECK]"]
+        - type: note
+          text: "Ich wollte eine App, die ich mit meiner Frau teilen und KI für mich verwalten kann. In der Beta testest du sie mit uns und sagst uns direkt, was fehlt."
+          signature: "— Peter"
+          notes: ["[PETER CHECK: Gründer-Notiz in eigenen Worten bestätigen]"]
+        - type: faq
+          items:
+            - { q: "Was ist Hummlist?", a: "Eine gemeinsame Einkaufsliste für alle, die zusammen einkaufen. Jede Änderung ist sofort bei allen da, und es gibt keine Werbung." }
+            - { q: "Wann geht's los?", a: "Die Beta startet im November. Danach laden wir jede Woche neue Tester:innen ein, die Einladung kommt per E-Mail." }
+            - { q: "Was kostet die Beta?", a: "Die Beta ist kostenlos." }
+            - { q: "Brauche ich ein Konto?", a: "Ja, du meldest dich in der App an, zum Beispiel mit Apple, Google oder deiner E-Mail. So bleibt eure Liste auf allen Handys gleich." }
+            - { q: "Was passiert mit meiner E-Mail-Adresse?", a: "Wir nutzen sie nur für die Warteliste, die Einladung und Neuigkeiten zum Start. Mehr in der [LEGAL: Link Datenschutzerklärung]." }
+            - { install: true }
+        - type: closing
+          line: "Einkaufen ohne Werbung, ab November."
+          button: "Auf die Warteliste"
+    en:
+      meta:
+        title: "Hummlist: shop together, no ads"
+        description: "The shared grocery list without banners or sponsored deals, up to date for everyone. Beta in November: join the waitlist now."
+      thanks: "Until then: start jotting down what goes on your first list."
+      blocks:
+        - type: hero
+          badge: "Beta in November"
+          title: "Shop together, no ads"
+          visual: hero
+          subline: "Your list only has what you need on it. No banners, no sponsored deals between the milk and the bread."
+          small: "For couples, families and roommates, on iPhone and Android."
+          form:
+            heading: "Be part of the beta"
+            intro: "The beta starts in November and is free. Sign up and we'll email you the invite."
+        - type: points
+          items:
+            - { title: "Really no ads.", body: "No banners, no sponsored items, no \"Upgrade now\" in the middle of your shop." }
+            - { title: "Up to date for everyone.", body: "You add butter at home, and whoever is at the store sees it right away." }
+            - { title: "Sorted like your store.", body: "Drag the categories into the order you walk through your store. Hummlist sorts items into categories automatically and learns from your corrections." }
+            - { title: "Quick to add.", body: "Type \"2 cucumbers\" or say it out loud, and Hummlist picks up the amount." }
+        - type: extra
+          heading: "If you like: connect Hummlist to Claude & co."
+          body: "Claude and other AI assistants can add to your list via MCP. For example: paste a recipe, get the ingredients on your list. You don't have to use it; Hummlist works fine without it. Siri, coming soon."
+          notes: ["[LEGAL CHECK]"]
+        - type: note
+          text: "I'm Peter, and I'm building Hummlist because my family wanted a grocery list that just works, without ads. In the beta you test it with us and tell us directly what's missing."
+          signature: "— Peter"
+          notes: ["[PETER CHECK: confirm founder note in his own words]"]
+        - type: faq
+          items:
+            - { q: "What is Hummlist?", a: "A shared grocery list for everyone who shops together. Every change shows up for everyone right away, and there are no ads." }
+            - { q: "When does it start?", a: "The beta starts in November. After that we invite new testers every week; the invite comes by email." }
+            - { q: "What does the beta cost?", a: "The beta is free." }
+            - { q: "Do I need an account?", a: "Yes, you sign in in the app, for example with Apple, Google or your email. That keeps your list the same on every phone." }
+            - { q: "What happens with my email address?", a: "We only use it for the waitlist, your invite and news about the launch. More in the [LEGAL: link to privacy policy]." }
+            - { install: true }
+        - type: closing
+          line: "Grocery shopping without ads, starting in November."
+          button: "Join the waitlist"
+
+  v2:
+    name: "Claude schreibt mit (MCP als Haupt-Unterschied), NEUER Hero-Titel"
+    angle: "Hummlist ist die Einkaufsliste, auf die dein KI-Assistent schreiben kann: konkret, nützlich, kein KI-Hype."
+    order: "Header → Hero mit Formular → „So sieht das aus“ (3 Beispiel-Sätze, als Chat-Blasen gestaltet) → Was Hummlist sonst kann (3 Punkte) → „Muss ich KI nutzen?“-Beruhigung → FAQ → Abschluss-CTA → Footer"
+    meta-notes: ["[LEGAL CHECK]"]
+    de:
+      meta:
+        title: "Hummlist: die Einkaufsliste für euch und Claude"
+        description: "Gemeinsame Einkaufsliste ohne Werbung, die du über MCP mit Claude & Co. verbindest. Beta im November: Trag dich auf die Warteliste ein."
+      thanks: "Mit der Einladung bekommst du auch eine kurze Anleitung, wie du Claude mit Hummlist verbindest."
+      thanks-notes: ["[LEGAL CHECK]", "[PM CHECK: gibt es diese Anleitung zum Beta-Start?]"]
+      blocks:
+        - type: hero
+          badge: "Beta im November"
+          title: "Sag's Claude. Es steht auf eurer Liste."
+          visual: mcp-chat
+          subline: "Hummlist ist eure gemeinsame Einkaufsliste ohne Werbung. Verbinde sie über MCP mit Claude und anderen KI-Assistenten, dann landen zum Beispiel die Zutaten aus einem Rezept direkt auf der Liste für den ganzen Haushalt."
+          notes: ["[LEGAL CHECK]"]
+          form:
+            heading: "Teste es in der Beta"
+            intro: "Die Beta startet im November und ist kostenlos. Die Verbindung zu Claude & Co. ist in der Beta mit dabei."
+            notes: ["[LEGAL CHECK]"]
+        - type: chat
+          heading: "So sieht das aus"
+          items:
+            - { ask: "„Setz die Zutaten für dieses Lasagne-Rezept auf unsere Einkaufsliste.“", result: "Hackfleisch, Lasagneplatten, passierte Tomaten … erscheinen auf der Liste." }
+            - { ask: "„Wir grillen Samstag zu sechst. Was fehlt uns noch?“", result: "Claude schreibt die fehlenden Sachen auf eure Liste." }
+            - { ask: "„Was steht gerade auf unserer Einkaufsliste?“", result: "Claude liest dir die Liste vor." }
+          below: "Funktioniert mit Claude und anderen KI-Assistenten, die MCP können. Siri, bald."
+          notes: ["[LEGAL CHECK]", "[PM CHECK: Beispiele 2 und 3 (Vorschlagen/Lesen) bestätigen, dass MCP das heute kann; Beispiel 1 = Hinzufügen]"]
+        - type: points
+          heading: "Was Hummlist sonst kann"
+          items:
+            - { title: "Keine Werbung.", body: "Nur eure Sachen auf der Liste, keine Banner, keine Angebote." }
+            - { title: "Bei allen sofort aktuell.", body: "Was Claude, du oder dein Partner draufschreibt, sehen alle im Haushalt sofort." }
+            - { title: "Sortiert wie dein Laden.", body: "Kategorien in der Reihenfolge deines Ladens. Hummlist sortiert deine Artikel automatisch in Kategorien und lernt aus deinen Korrekturen." }
+        - type: line
+          style: reassure
+          text: "Kein Muss: Hummlist funktioniert auch ganz ohne KI. Tippen oder einsprechen geht immer."
+        - type: faq
+          items:
+            - { q: "Was ist MCP?", a: "Ein offener Standard, über den KI-Assistenten wie Claude mit anderen Apps arbeiten können. Damit kann Claude auf eure Hummlist schreiben, wenn du das erlaubst.", notes: ["[LEGAL CHECK]"] }
+            - { q: "Liest Claude dann alles mit?", a: "Claude kommt nur an eure Liste, wenn du die Verbindung selbst einrichtest, und du kannst sie jederzeit wieder trennen.", notes: ["[LEGAL CHECK]", "[PM CHECK: Trennen/Widerrufen der Verbindung bestätigen]"] }
+            - { q: "Muss ich KI nutzen?", a: "Nein. Hummlist ist eine ganz normale Einkaufsliste. Claude & Co. ist ein Extra für alle, die es wollen." }
+            - { q: "Wann geht's los?", a: "Die Beta startet im November. Danach laden wir jede Woche neue Tester:innen ein." }
+            - { q: "Was kostet die Beta?", a: "Die Beta ist kostenlos." }
+            - { install: true }
+        - type: closing
+          line: "Eure Einkaufsliste, auch für Claude & Co."
+          button: "Auf die Warteliste"
+          notes: ["[LEGAL CHECK]"]
+    en:
+      meta:
+        title: "Hummlist: the grocery list for you and Claude"
+        description: "A shared grocery list with no ads that you can connect to Claude & co. via MCP. Beta in November: join the waitlist."
+      thanks: "With your invite you'll also get a short guide to connecting Claude to Hummlist."
+      thanks-notes: ["[LEGAL CHECK]", "[PM CHECK: will this guide exist at beta start?]"]
+      blocks:
+        - type: hero
+          badge: "Beta in November"
+          title: "Tell Claude. It's on your list."
+          visual: mcp-chat
+          subline: "Hummlist is your shared grocery list with no ads. Connect it to Claude and other AI assistants via MCP, and the ingredients from a recipe, for example, land right on your household's list."
+          notes: ["[LEGAL CHECK]"]
+          form:
+            heading: "Try it in the beta"
+            intro: "The beta starts in November and is free. Connecting Claude & co. is included in the beta."
+            notes: ["[LEGAL CHECK]"]
+        - type: chat
+          heading: "What it looks like"
+          items:
+            - { ask: "\"Put the ingredients for this lasagna recipe on our grocery list.\"", result: "Ground beef, lasagna sheets, crushed tomatoes … appear on the list." }
+            - { ask: "\"We're grilling for six on Saturday. What are we missing?\"", result: "Claude adds what's missing to your list." }
+            - { ask: "\"What's on our grocery list right now?\"", result: "Claude reads it back to you." }
+          below: "Works with Claude and other AI assistants that support MCP. Siri, coming soon."
+          notes: ["[LEGAL CHECK]", "[PM CHECK: confirm MCP supports examples 2 and 3 (suggest/read) today; example 1 = add]"]
+        - type: points
+          heading: "What else Hummlist does"
+          items:
+            - { title: "No ads.", body: "Just your stuff on the list, no banners, no deals." }
+            - { title: "Up to date for everyone.", body: "Whatever Claude, you or your partner adds, everyone in the household sees right away." }
+            - { title: "Sorted like your store.", body: "Categories in your store's order. Hummlist sorts items into categories automatically and learns from your corrections." }
+        - type: line
+          style: reassure
+          text: "Not required: Hummlist works fine without any AI. Typing or saying it always works."
+        - type: faq
+          items:
+            - { q: "What is MCP?", a: "An open standard that lets AI assistants like Claude work with other apps. With it, Claude can add to your Hummlist if you allow it.", notes: ["[LEGAL CHECK]"] }
+            - { q: "Does Claude see everything?", a: "Claude only gets to your list if you set up the connection yourself, and you can disconnect it anytime.", notes: ["[LEGAL CHECK]", "[PM CHECK: confirm disconnect/revoke]"] }
+            - { q: "Do I have to use AI?", a: "No. Hummlist is a regular grocery list. Claude & co. is an extra for anyone who wants it." }
+            - { q: "When does it start?", a: "The beta starts in November. After that we invite new testers every week." }
+            - { q: "What does the beta cost?", a: "The beta is free." }
+            - { install: true }
+        - type: closing
+          line: "Your grocery list, ready for Claude & co."
+          button: "Join the waitlist"
+          notes: ["[LEGAL CHECK]"]
+
+  v3:
+    name: "Der Haushalt, der wirklich synchron bleibt, NEUER Hero-Titel"
+    angle: "Nicht „ihr könnt teilen“ (sagen alle), sondern der konkrete Moment, in dem es zählt: zu Hause draufgeschrieben, im Laden schon da, auch wenn ihr euch aufteilt."
+    order: "Header → Hero mit Formular → „Ein Einkauf mit Hummlist“ (3 Szenen als kurze Schritte mit Handy-Screens) → 3 Value Points → MCP-Zeile → FAQ → Abschluss-CTA → Footer"
+    de:
+      meta:
+        title: "Hummlist: eure Einkaufsliste, bei allen sofort aktuell"
+        description: "Zu Hause draufgeschrieben, im Laden schon da: die gemeinsame Einkaufsliste für euren Haushalt, ohne Werbung. Beta im November."
+      thanks: "Wenn die Einladung da ist, lad als Erstes deinen Partner ein. Dann seht ihr sofort, wie es sich anfühlt."
+      blocks:
+        - type: hero
+          badge: "Beta im November"
+          title: "Zu Hause aufgeschrieben, im Laden schon da"
+          visual: hero
+          subline: "Hummlist ist die Einkaufsliste für euren Haushalt. Was einer draufschreibt, sehen alle sofort. Ohne Werbung."
+          form:
+            heading: "Testet es zusammen in der Beta"
+            intro: "Die Beta startet im November und ist kostenlos. Trag dich ein, deinen Partner lädst du dann in der App ein."
+        - type: steps
+          heading: "Ein Einkauf mit Hummlist"
+          visual: household-sync
+          items:
+            - { title: "17:40, Küche:", body: "Du merkst, die Butter ist alle, und schreibst sie drauf." }
+            - { title: "17:42, Supermarkt:", body: "Dein Partner steht schon im Laden und sieht die Butter sofort auf der Liste." }
+            - { title: "17:50, Kasse:", body: "Ihr habt euch aufgeteilt, jeder hakt ab, was er hat. Keiner kauft doppelt, keiner vergisst was." }
+          notes: ["(Uhrzeiten sind Illustration, keine Behauptung.)"]
+        - type: points
+          items:
+            - { title: "Ein Haushalt, eine Liste.", body: "Partner per Link einladen, fertig. Ab dann kauft ihr zusammen ein." }
+            - { title: "Sortiert wie dein Laden.", body: "Kategorien in der Reihenfolge, in der ihr durch den Laden geht. Hummlist sortiert deine Artikel automatisch in Kategorien und lernt aus deinen Korrekturen." }
+            - { title: "Keine Werbung.", body: "Auf eurer Liste steht nur, was ihr braucht." }
+        - type: line
+          style: mcp
+          text: "Auch Claude kann mitschreiben: Verbinde Hummlist mit Claude & Co., dann landen etwa die Zutaten aus einem Rezept direkt auf eurer gemeinsamen Liste. Siri, bald."
+          notes: ["[LEGAL CHECK]"]
+        - type: faq
+          items:
+            - { q: "Was ist Hummlist?", a: "Eine gemeinsame Einkaufsliste für Paare, Familien und WGs. Jede Änderung ist sofort bei allen da, und es gibt keine Werbung." }
+            - { q: "Muss sich mein Partner auch eintragen?", a: "Nein. Es reicht, wenn einer von euch eingeladen ist. Den Rest des Haushalts lädst du dann in der App per Link ein.", notes: ["[PM CHECK: können eingeladene Haushaltsmitglieder ohne eigene Beta-Einladung beitreten, auch auf der anderen Plattform?]"] }
+            - { q: "Wir haben ein iPhone und ein Android. Geht das?", a: "Ja, Hummlist gibt es für beide, und eure Liste ist auf beiden gleich." }
+            - { q: "Wann geht's los?", a: "Die Beta startet im November. Danach laden wir jede Woche neue Tester:innen ein." }
+            - { q: "Was kostet die Beta?", a: "Die Beta ist kostenlos." }
+            - { install: true }
+        - type: closing
+          line: "Nie wieder „Hast du die Butter?“"
+          button: "Auf die Warteliste"
+    en:
+      meta:
+        title: "Hummlist: your grocery list, up to date for everyone"
+        description: "Added at home, already there at the store: the shared grocery list for your household, with no ads. Beta in November."
+      thanks: "When your invite arrives, invite your partner first. Then you'll see right away how it feels."
+      blocks:
+        - type: hero
+          badge: "Beta in November"
+          title: "Added at home, already there at the store"
+          visual: hero
+          subline: "Hummlist is the grocery list for your household. Whatever one of you adds, everyone sees right away. No ads."
+          form:
+            heading: "Try it together in the beta"
+            intro: "The beta starts in November and is free. Sign up, then invite your partner in the app."
+        - type: steps
+          heading: "One shop with Hummlist"
+          visual: household-sync
+          items:
+            - { title: "5:40 pm, kitchen:", body: "You notice the butter's gone and add it." }
+            - { title: "5:42 pm, store:", body: "Your partner is already at the store and sees the butter on the list right away." }
+            - { title: "5:50 pm, checkout:", body: "You split up, each of you checks off what you've got. Nobody buys twice, nobody forgets anything." }
+          notes: ["(Times are illustration, not a claim.)"]
+        - type: points
+          items:
+            - { title: "One household, one list.", body: "Invite your partner with a link, done. From then on you shop together." }
+            - { title: "Sorted like your store.", body: "Categories in the order you walk through the store. Hummlist sorts items into categories automatically and learns from your corrections." }
+            - { title: "No ads.", body: "Your list only has what you need on it." }
+        - type: line
+          style: mcp
+          text: "Claude can add things too: connect Hummlist to Claude & co., and the ingredients from a recipe land right on your shared list. Siri, coming soon."
+          notes: ["[LEGAL CHECK]"]
+        - type: faq
+          items:
+            - { q: "What is Hummlist?", a: "A shared grocery list for couples, families and roommates. Every change shows up for everyone right away, and there are no ads." }
+            - { q: "Does my partner need to sign up too?", a: "No. One of you getting the invite is enough; you invite the rest of your household in the app with a link.", notes: ["[PM CHECK: can invited household members join without their own beta invite, also on the other platform?]"] }
+            - { q: "We have one iPhone and one Android. Does that work?", a: "Yes, Hummlist is on both, and your list is the same on both." }
+            - { q: "When does it start?", a: "The beta starts in November. After that we invite new testers every week." }
+            - { q: "What does the beta cost?", a: "The beta is free." }
+            - { install: true }
+        - type: closing
+          line: "No more \"Did you get the butter?\""
+          button: "Join the waitlist"
+
+  v4:
+    name: "Sortiert, wie du durch den Laden gehst, NEUER Hero-Titel"
+    angle: "Die Liste folgt deinem Weg durch deinen Laden, weil *du* die Reihenfolge festlegst, statt einer Standard-Sortierung."
+    order: "Header → Hero mit Formular und kurzem Video/Animation (Kategorie wird an die richtige Stelle gezogen) → „So geht's“ (3 Schritte) → 3 Value Points → MCP-Zeile → FAQ → Abschluss-CTA → Footer"
+    de:
+      meta:
+        title: "Hummlist: die Einkaufsliste, sortiert wie dein Laden"
+        description: "Zieh die Kategorien in die Reihenfolge deines Ladens und kauf ohne Zickzack ein, gemeinsam und ohne Werbung. Beta im November."
+      thanks: "Tipp für den Start: Sortier die Kategorien beim ersten Einkauf direkt im Laden, dann passt es sofort."
+      blocks:
+        - type: hero
+          badge: "Beta im November"
+          title: "Deine Liste, sortiert wie dein Laden"
+          subline: "Einmal die Kategorien in die Reihenfolge deines Ladens ziehen, dann gehst du die Liste einfach von oben nach unten ab. Kein Zurücklaufen zum Gemüse. Gemeinsam und ohne Werbung."
+          visual: sort
+          form:
+            heading: "Probier's beim nächsten Einkauf"
+            intro: "Die Beta startet im November und ist kostenlos. Trag dich ein, dann schicken wir dir die Einladung per E-Mail."
+        - type: steps
+          heading: "So geht's"
+          items:
+            - { title: "Draufschreiben.", body: "Tipp „2 Gurken“ oder sprich es ein. Hummlist sortiert deine Artikel automatisch in Kategorien und lernt aus deinen Korrekturen." }
+            - { title: "Einmal sortieren.", body: "Halt eine Kategorie gedrückt und zieh sie dahin, wo sie in deinem Laden kommt: Obst vorne, Tiefkühl hinten." }
+            - { title: "Abhaken.", body: "Im Laden gehst du die Liste von oben nach unten ab." }
+        - type: points
+          items:
+            - { title: "Für den ganzen Haushalt.", body: "Alle sehen dieselbe Liste, jede Änderung ist sofort bei allen da." }
+            - { title: "Keine Werbung.", body: "Keine Banner, keine Angebote auf deiner Liste." }
+            - { title: "Schnell drauf.", body: "Tippen oder einsprechen, Hummlist erkennt die Menge." }
+        - type: line
+          style: mcp
+          text: "Und wenn Claude für dich ein Rezept raussucht, kann es die Zutaten gleich auf deine Liste setzen. Hummlist funktioniert mit Claude und anderen KI-Assistenten mit MCP. Siri, bald."
+          notes: ["[LEGAL CHECK]"]
+        - type: faq
+          items:
+            - { q: "Sortiert Hummlist die Gänge von allein?", a: "Hummlist sortiert deine Artikel automatisch in Kategorien und lernt aus deinen Korrekturen. Die Reihenfolge der Kategorien legst du fest, so wie du durch deinen Laden gehst." }
+            - { q: "Muss ich das jedes Mal neu sortieren?", a: "Nein. Die Reihenfolge bleibt, bis du sie änderst.", notes: ["[PM CHECK: bleibt die Reihenfolge pro Laden/Haushalt gespeichert, und sieht sie der ganze Haushalt?]"] }
+            - { q: "Was ist Hummlist?", a: "Eine gemeinsame Einkaufsliste für euren Haushalt, bei allen sofort aktuell und ohne Werbung." }
+            - { q: "Wann geht's los?", a: "Die Beta startet im November. Danach laden wir jede Woche neue Tester:innen ein." }
+            - { q: "Was kostet die Beta?", a: "Die Beta ist kostenlos." }
+            - { install: true }
+        - type: closing
+          line: "Einmal durch den Laden, ohne Zickzack."
+          button: "Auf die Warteliste"
+    en:
+      meta:
+        title: "Hummlist: the grocery list sorted like your store"
+        description: "Drag the categories into your store's order and shop without the zigzag, together and with no ads. Beta in November."
+      thanks: "Tip for day one: sort the categories while you're in the store on your first shop, and it fits right away."
+      blocks:
+        - type: hero
+          badge: "Beta in November"
+          title: "Your list, sorted the way you walk the store"
+          subline: "Drag the categories into your store's order once, then just work down the list from top to bottom. No doubling back for the veggies. Shared, and no ads."
+          visual: sort
+          form:
+            heading: "Try it on your next shop"
+            intro: "The beta starts in November and is free. Sign up and we'll email you the invite."
+        - type: steps
+          heading: "How it works"
+          items:
+            - { title: "Add it.", body: "Type \"2 cucumbers\" or say it. Hummlist sorts items into categories automatically and learns from your corrections." }
+            - { title: "Sort once.", body: "Hold a category and drag it to where it comes in your store: produce first, frozen last." }
+            - { title: "Check it off.", body: "In the store, you work down the list from top to bottom." }
+        - type: points
+          items:
+            - { title: "For the whole household.", body: "Everyone sees the same list, and every change shows up for everyone right away." }
+            - { title: "No ads.", body: "No banners, no deals on your list." }
+            - { title: "Quick to add.", body: "Type it or say it, and Hummlist picks up the amount." }
+        - type: line
+          style: mcp
+          text: "And when Claude finds you a recipe, it can put the ingredients right on your list. Hummlist works with Claude and other AI assistants via MCP. Siri, coming soon."
+          notes: ["[LEGAL CHECK]"]
+        - type: faq
+          items:
+            - { q: "Does Hummlist sort the aisles by itself?", a: "Hummlist sorts items into categories automatically and learns from your corrections. You set the order of the categories, the way you walk through your store." }
+            - { q: "Do I have to sort it every time?", a: "No. The order stays until you change it.", notes: ["[PM CHECK: is the order saved per store/household and shared with the whole household?]"] }
+            - { q: "What is Hummlist?", a: "A shared grocery list for your household, up to date for everyone and with no ads." }
+            - { q: "When does it start?", a: "The beta starts in November. After that we invite new testers every week." }
+            - { q: "What does the beta cost?", a: "The beta is free." }
+            - { install: true }
+        - type: closing
+          line: "One trip through the store, no zigzag."
+          button: "Join the waitlist"
+
+  v5:
+    name: "Ein Screen, minimal (approved Hero-Titel)"
+    angle: "Alles auf einem Handy-Bildschirm: Titel, ein Satz, drei Häkchen, Formular. Nichts zum Scrollen."
+    order: "Logo → Badge → Titel → Subline → 3 Häkchen → Formular (direkt) → eine MCP-Zeile klein → Link „Fragen?“ klappt 3 FAQ auf → Footer. Kein Header-Button, keine weiteren Abschnitte."
+    header-cta: false
+    de:
+      meta:
+        title: "Hummlist: gemeinsam einkaufen, ohne Werbung"
+        description: "Die Einkaufsliste für euren Haushalt: ohne Werbung, bei allen sofort aktuell, sortiert wie dein Laden. Beta im November."
+      thanks: "Bis bald auf eurer Liste."
+      blocks:
+        - type: hero
+          minimal: true
+          badge: "Beta im November"
+          title: "Gemeinsam einkaufen, ohne Werbung"
+          subline: "Die Einkaufsliste für euren Haushalt, bei allen sofort aktuell und sortiert wie dein Laden."
+          checks:
+            - "Keine Werbung, keine Angebote auf der Liste"
+            - "Was einer draufschreibt, sehen alle sofort"
+            - "Für iPhone und Android"
+          form:
+            button: "Einladung sichern"
+            below: "Die Beta ist kostenlos. Wir schreiben dir nur zur Beta und zum Start."
+          mcp: "Auch mit Claude & Co. verbindbar, über MCP. Siri, bald."
+          mcp-notes: ["[LEGAL CHECK]"]
+        - type: faq
+          collapsed: "Fragen?"
+          items:
+            - { q: "Wann geht's los?", a: "Die Beta startet im November. Danach laden wir jede Woche neue Tester:innen ein." }
+            - { q: "Brauche ich ein Konto?", a: "Ja, du meldest dich in der App an, zum Beispiel mit Apple, Google oder deiner E-Mail." }
+            - { q: "Was passiert mit meiner E-Mail?", a: "Nur Warteliste, Einladung und Start-News. [LEGAL: Link Datenschutzerklärung]" }
+            - { install: true }
+    en:
+      meta:
+        title: "Hummlist: shop together, no ads"
+        description: "The grocery list for your household: no ads, up to date for everyone, sorted like your store. Beta in November."
+      thanks: "See you on your list soon."
+      blocks:
+        - type: hero
+          minimal: true
+          badge: "Beta in November"
+          title: "Shop together, no ads"
+          subline: "The grocery list for your household, up to date for everyone and sorted like your store."
+          checks:
+            - "No ads, no deals on your list"
+            - "Whatever one of you adds, everyone sees right away"
+            - "For iPhone and Android"
+          form:
+            button: "Get my invite"
+            below: "The beta is free. We'll only email you about the beta and the launch."
+          mcp: "Also connects to Claude & co. via MCP. Siri, coming soon."
+          mcp-notes: ["[LEGAL CHECK]"]
+        - type: faq
+          collapsed: "Questions?"
+          items:
+            - { q: "When does it start?", a: "The beta starts in November. After that we invite new testers every week." }
+            - { q: "Do I need an account?", a: "Yes, you sign in in the app, for example with Apple, Google or your email." }
+            - { q: "What happens with my email?", a: "Only the waitlist, your invite and launch news. [LEGAL: link to privacy policy]" }
+            - { install: true }

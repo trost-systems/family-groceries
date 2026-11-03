@@ -7004,3 +7004,31 @@ regression from job 61.
   that row `spoken` and NEEDS_LEAD „Job 89“ asks whether to port the number words.
 - **Alexa skill model: unchanged.** The slot is free text; nothing in `alexa/skill-package/`
   changes, so nothing to deploy or certify.
+
+## Job 83: waitlist landing variations V1–V5 as an internal preview, 2026-11-03
+
+1. **One preview, a switcher, never production.** `/internal/waitlist` (index) and
+   `/internal/waitlist/v<n>/<de|en>`, built by `site/waitlist-variations.mjs` from
+   `site/content/internal/waitlist-variations.yml`. A production build writes no page there and
+   deletes `dist/internal`. Every page has `noindex` (the site's `X-Robots-Tag` too).
+2. **Self-contained, on job 82's form.** #210 has not landed, so nothing is shared at runtime. The
+   form markup and `public/internal/waitlist.css` are a copy of 82's `wl-*` form, so the chosen
+   variant moves onto the real form without a redesign.
+3. **Copy as typed blocks in page order.** A variant is a list of blocks (`hero`, `points`,
+   `extra`, `note`, `chat`, `steps`, `line`, `faq`, `closing`), one renderer per type. An
+   unknown type, a missing field, or German and English blocks that differ fail the build. A
+   test pins each variant's order to Launch's "Reihenfolge".
+4. **The mock sends nothing.** `public/internal/waitlist.js` has no fetch and the form no action.
+   It validates, shows sending, then "check your inbox" with the typed address; a dashed mock
+   button opens the confirmed page; `?s=` opens a state. The Chromium check fails on any request
+   after the page has loaded.
+5. **Review chrome looks like review chrome.** A one-line dashed strip on top (variant, language,
+   state) and dashed monospace tags for the copy's `[LEGAL CHECK]`, `[PM CHECK]` and
+   `[PETER CHECK]` markers. `[LEGAL: …]` placeholders stay in the text, marked yellow.
+6. **Visuals from what exists, plus one animation.** V1 and V3 show the landing's hero phone,
+   V2 the MCP chat poster, V3's steps the household poster. V4's "Video/Animation" is a CSS
+   animation of the stores scene: Frozen starts on top, is held and dragged to the bottom, and the
+   other rows move up as it passes. It plays once when in view; without JavaScript or with reduced
+   motion the list stands sorted.
+7. **Mobile first.** At 390 × 844 the email field shows without scrolling on every variant
+   (checked, review strip excluded). V5's hero is tighter still, so the button shows too.

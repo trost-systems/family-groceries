@@ -91,13 +91,18 @@ test('every page and file carries the privacy headers, noindex included, and no 
   }
 });
 
-test('the landing pages load one script, /demo.js; no file in the build has an inline script or an external resource', () => {
+test('the landing pages load one script, /demo.js, the waitlist variations /internal/waitlist.js; no file in the build has an inline script or an external resource', () => {
   const files = readdirSync(site.outDir, { recursive: true }).filter((f) => /\.(html|css)$/.test(f));
   assert.ok(files.length >= 9);
   for (const file of files) {
     const text = readFileSync(join(site.outDir, file), 'utf8');
     const scripts = [...text.matchAll(/<script[^>]*>/gi)].map((m) => m[0]);
-    assert.deepEqual(scripts, ['de.html', 'en.html'].includes(file) ? ['<script src="/demo.js" defer>'] : [], file);
+    const expected = ['de.html', 'en.html'].includes(file)
+      ? ['<script src="/demo.js" defer>']
+      : file.startsWith('internal/waitlist/')
+        ? ['<script src="/internal/waitlist.js" defer>']
+        : [];
+    assert.deepEqual(scripts, expected, file);
     assert.doesNotMatch(text, /<script[^>]*>[^<]/i, file);
     assert.doesNotMatch(text, /<iframe/i, file);
     assert.doesNotMatch(text, /(src|srcset)="(https?:)?\/\//i, file);

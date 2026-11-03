@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildSite, alternates, hrefs, htmlRoutes, meta, record, serve } from './helpers.mjs';
+import { buildSite, alternates, hrefs, publicRoutes, meta, record, serve } from './helpers.mjs';
 import { RecordError } from '../releases.mjs';
 
 const PROD = { VERCEL_ENV: 'production' };
@@ -193,7 +193,7 @@ test('the two changelog pages pair with each other', () => {
 test('every page with a footer links the changelog of its language', () => {
   for (const env of [{}, PROD]) {
     const { outDir, page } = buildSite({ env });
-    const routes = htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404');
+    const routes = publicRoutes(outDir).filter((r) => r !== '/' && r !== '/404');
     for (const route of ['/de/anleitungen', '/en/guides', '/de/anleitungen/alexa', '/en/guides/alexa', '/impressum', '/en/imprint', '/datenschutz', '/en/privacy']) {
       assert.ok(routes.includes(route), route);
     }

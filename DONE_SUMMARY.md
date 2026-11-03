@@ -521,3 +521,7 @@ Connected apps in Zugänge show where they were approved („Chrome · macOS“,
 ## Job 89: a count said after the item is its quantity again
 
 Dictating „Gurken zwei“ (in-app dictation, Siri, Alexa; DE and EN „cucumbers two“) sets the quantity again. Job 61 had passed the count back into the name for the typed rule, which in-app dictation never ran. Typed input is unchanged. Details: [docs/done/89-fix-voice-quantity-words.md](docs/done/89-fix-voice-quantity-words.md).
+
+## Job 83: waitlist landing variations V1–V5 (internal preview)
+
+Launch's five waitlist variations in DE and EN under `/internal/waitlist` on the site's Vercel preview, with a mock form that sends nothing. Never in production builds. PR #218, not for merge. Details: [docs/done/83-waitlist-variations.md](docs/done/83-waitlist-variations.md).

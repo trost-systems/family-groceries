@@ -11,6 +11,7 @@ cd checks && npm ci
 flock /tmp/fg-e2e.lock node crawl.mjs ../dist        # pages, links, CSP, axe, targets, focus, motion
 flock /tmp/fg-e2e.lock node contrast.mjs ../dist     # text and non-text contrast, with a table
 flock /tmp/fg-e2e.lock node lighthouse.mjs ../dist   # Lighthouse scores, JSON and summary in --out
+flock /tmp/fg-e2e.lock node waitlist-variations.mjs ../dist --out /tmp/wv  # job 83 preview: mock form, fold, axe
 flock /tmp/fg-e2e.lock node selftest.mjs ../dist     # proves crawl.mjs reports each breakage
 ```
 

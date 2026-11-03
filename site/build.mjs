@@ -7,6 +7,7 @@ import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
 import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
 import { APP_URL, CopyError, readCopy, renderLanding } from './landing.mjs';
+import { readVariations, variationPages } from './waitlist-variations.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = join(SITE_DIR, '..');
@@ -612,6 +613,20 @@ function landingPages(contentDir, publicDir, config) {
   return { pages, copy };
 }
 
+function internalPages(contentDir, publicDir, copy) {
+  const alt = Object.fromEntries(
+    Object.keys(LOCALES).map((locale) => [
+      locale,
+      Object.fromEntries(
+        Object.entries({ hero: 'hero.image', 'mcp-chat': 'demo.mcp-chat', 'household-sync': 'demo.household-sync', sort: 'feature.stores.image' }).map(
+          ([name, id]) => [name, copy.get(id)[locale]],
+        ),
+      ),
+    ]),
+  );
+  return variationPages({ data: readVariations(contentDir), head: HEAD_ASSETS, publicDir, alt });
+}
+
 function changelogPages(repoDir, production) {
   const entries = changelogEntries(repoDir, production);
   return Object.keys(LOCALES).map((locale) => ({
@@ -687,6 +702,9 @@ export function build({
     writeFileSync(file, html);
   };
   for (const { page, html } of rendered) write(page.route, html);
+  // The waitlist variations are an internal preview (job 83): never in a production build.
+  if (versions.production) rmSync(join(outDir, 'internal'), { recursive: true, force: true });
+  else for (const { route, html } of internalPages(contentDir, publicDir, landing.copy)) write(route, html);
   write('/', rootPage(config));
   write('/404', notFoundPage(config));
 

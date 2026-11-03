@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSite, guide, legal, hrefs, alternates, htmlRoutes } from './helpers.mjs';
+import { buildSite, guide, legal, hrefs, alternates, publicRoutes } from './helpers.mjs';
 
 const SITE = 'https://hummlist.com';
 const switchLink = (doc) => {
@@ -58,7 +58,7 @@ test('the site name links to the landing page of its language, in the header and
 
 test('every page links the guides, the changelog and the web app in the header', () => {
   const { outDir, page } = buildSite();
-  for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
+  for (const route of publicRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
     const doc = page(route);
     const de = doc.querySelector('html').getAttribute('lang') === 'de';
     const nav = doc.querySelectorAll('header nav.nav a').map((a) => [a.text, a.getAttribute('href')]);
@@ -85,7 +85,7 @@ test('with nothing published the footer links only the imprint', () => {
   assert.deepEqual(footer(page('/de/anleitungen/siri-kurzbefehl')), [...SITE_LINKS.de, ['Impressum', '/impressum']]);
   assert.deepEqual(footer(page('/en/guides')), [...SITE_LINKS.en, ['Imprint', '/en/imprint']]);
   assert.deepEqual(footer(page('/de')), [...SITE_LINKS.de, ['Impressum', '/impressum']]);
-  for (const route of htmlRoutes(outDir)) {
+  for (const route of publicRoutes(outDir)) {
     const links = page(route).querySelectorAll('footer a').map((a) => a.getAttribute('href'));
     for (const path of LEGAL_PATHS) assert.ok(!links.includes(path), `${route} links ${path} in the footer`);
     assert.equal(page(route).querySelectorAll('footer li').filter((li) => !li.text.trim()).length, 0, `${route} has empty footer items`);
@@ -94,7 +94,7 @@ test('with nothing published the footer links only the imprint', () => {
 
 test('the published privacy policy is in the footer of every page, support is not', () => {
   const { outDir, page } = buildSite({ config: { privacyPublished: true, supportPublished: false } });
-  for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
+  for (const route of publicRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
     const locale = page(route).querySelector('html').getAttribute('lang');
     const expected = locale === 'de'
       ? [...SITE_LINKS.de, ['Impressum', '/impressum'], ['Datenschutz', '/datenschutz']]

@@ -92,6 +92,10 @@ export function htmlRoutes(outDir) {
     .map((f) => (f === 'index.html' ? '/' : `/${f.slice(0, -5)}`));
 }
 
+// The routes of the public site: without the internal previews under /internal (job 83), which
+// have no site header or footer.
+export const publicRoutes = (outDir) => htmlRoutes(outDir).filter((r) => !r.startsWith('/internal/'));
+
 // A copy of public/ plus `files` (path relative to public/ -> Buffer or text, or null to delete).
 export function publicWith(files) {
   const dir = join(tempDir(), 'public');

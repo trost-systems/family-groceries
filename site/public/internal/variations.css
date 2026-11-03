@@ -1,0 +1,662 @@
+/* The waitlist variations V1-V5 (job 83), on top of landing.css and job 82's form styles
+   (waitlist.css here). Review chrome (rv-*) is deliberately plain so nobody mistakes it for the
+   design. */
+
+/* Review chrome: one line on top of the page that scrolls sideways on phones, so it costs the
+   fold only its own 28 px; the source's markers; the mock link. */
+.rv-bar {
+  overflow-x: auto;
+  padding: 2px var(--gutter);
+  border-bottom: 1px dashed var(--hl-color-text-muted);
+  background: var(--hl-color-surface-sunken);
+  color: var(--hl-color-text);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.rv-bar p {
+  margin: 0;
+}
+
+.rv-bar a {
+  color: var(--hl-color-text);
+  padding-inline: 2px;
+}
+
+.rv-bar a[aria-current="page"] {
+  font-weight: var(--hl-font-weight-heavy);
+  text-decoration-thickness: 3px;
+}
+
+.rv-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hl-space-1);
+}
+
+.rv-note {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px dashed var(--hl-color-ink);
+  border-radius: 4px;
+  background: var(--hl-color-surface-sunken);
+  color: var(--hl-color-text);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: var(--hl-font-weight-medium);
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.wv-legal {
+  padding: 0 0.3em;
+  border: var(--hl-border-width-thin) solid var(--hl-color-ink);
+  border-radius: 4px;
+  background: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  font-weight: var(--hl-font-weight-bold);
+  letter-spacing: 0;
+}
+
+.rv-mock {
+  min-height: var(--hl-size-target);
+  padding: var(--hl-space-2) var(--hl-space-3);
+  border: 1px dashed var(--hl-color-ink);
+  border-radius: var(--hl-radius-s);
+  background: var(--hl-color-surface-sunken);
+  color: var(--hl-color-text);
+  font: inherit;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+/* Header: only the logo and the jump to the form. */
+.wv .site-header .header-cta {
+  --ring-gap: var(--hl-color-surface);
+}
+
+/* Hero: the form card must show on a 390 x 844 phone without scrolling, so the copy is tighter
+   than the classic landing's. */
+.wv .hero-block {
+  padding-top: var(--hl-space-5);
+}
+
+.wv .hero-copy {
+  gap: var(--hl-space-3);
+}
+
+.wv .hero-copy .lead {
+  font-size: var(--hl-type-body-size);
+  line-height: var(--hl-type-body-line);
+}
+
+@media (max-width: 719px) {
+  .wv .display {
+    font-size: 2.125rem;
+  }
+
+  .wv .hero-block {
+    padding-inline: var(--hl-space-4);
+  }
+
+  .wv .wl-card {
+    gap: var(--hl-space-3);
+  }
+}
+
+@media (min-width: 720px) {
+  .wv .hero-copy .lead {
+    font-size: var(--hl-type-body-l-size);
+    line-height: var(--hl-type-body-l-line);
+  }
+}
+
+.wv .hero .rv-note {
+  border-color: var(--hl-color-on-cobalt);
+}
+
+/* V2's hero shows a demo card instead of the phone: framed, with room under it. */
+.wv-visual--card {
+  margin: 0 0 var(--hl-space-5);
+}
+
+.wv-visual--card .media-frame {
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .wv-visual--card {
+    margin-bottom: var(--hl-space-7);
+  }
+}
+
+/* V5: one screen. Three ticks, the card, the small MCP line, nothing else in the block. */
+.wv-checks {
+  display: grid;
+  gap: var(--hl-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.wv-checks li {
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+}
+
+.wv-checks .tick {
+  --s: 24px;
+}
+
+.wv-hero--minimal .hero-copy {
+  padding-bottom: var(--hl-space-4);
+}
+
+@media (max-width: 719px) {
+  .wv-hero--minimal .display {
+    font-size: 1.875rem;
+  }
+
+  .wv-hero--minimal .wv-checks {
+    gap: var(--hl-space-1);
+    font-size: 0.9375rem;
+    font-weight: var(--hl-font-weight-medium);
+  }
+
+  .wv-hero--minimal .wv-checks .tick {
+    --s: 20px;
+  }
+}
+
+.wv-hero-mcp {
+  display: grid;
+  gap: var(--hl-space-2);
+  padding-bottom: var(--hl-space-5);
+  font-size: var(--hl-type-label-size);
+  line-height: var(--hl-type-label-line);
+}
+
+.wv-hero--minimal .hero-block > .wl-card {
+  margin-bottom: var(--hl-space-4);
+}
+
+@media (min-width: 1000px) {
+  .wv-hero--minimal .hero-block:has(> .wl-card) {
+    grid-template-areas: "copy card" "mcp card";
+  }
+
+  .wv-hero-mcp {
+    grid-area: mcp;
+    align-self: end;
+    padding-bottom: var(--hl-space-7);
+  }
+}
+
+/* Value points: one raised list, a tick per point. */
+.wv-points .headline {
+  margin-bottom: var(--hl-space-5);
+}
+
+.wv-point-list {
+  display: grid;
+  gap: var(--hl-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wv-point {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--hl-space-3);
+  align-items: start;
+  padding: var(--hl-space-4);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-surface-raised);
+  color: var(--hl-color-text);
+  box-shadow: var(--sticker);
+}
+
+.wv-point strong,
+.wv-step-list strong {
+  display: block;
+  margin-bottom: var(--hl-space-1);
+  font-family: var(--hl-type-title-family);
+  font-size: var(--hl-type-title-size);
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: var(--hl-type-title-line);
+  letter-spacing: var(--hl-type-headline-tracking);
+}
+
+@media (min-width: 720px) {
+  .wv-point-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--hl-space-4);
+  }
+
+  .wv-point {
+    padding: var(--hl-space-5);
+  }
+}
+
+@media (min-width: 1000px) {
+  .wv-point-list:has(> :nth-child(3):last-child) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* V1's MCP extra: a small mist block, quieter than the points. */
+.wv-extra {
+  display: grid;
+  gap: var(--hl-space-3);
+  max-width: 48rem;
+  padding: var(--hl-space-5);
+}
+
+/* V1's founder note. */
+.wv-note {
+  display: grid;
+  gap: var(--hl-space-3);
+  max-width: 44rem;
+  margin: 0 0 var(--hl-space-2);
+  padding: var(--hl-space-5);
+  border-left: 6px solid var(--hl-color-honey-edge);
+}
+
+.wv-note blockquote {
+  margin: 0;
+  font-family: var(--hl-type-title-family);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  font-weight: var(--hl-font-weight-bold);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.wv-note figcaption {
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+/* V2's examples: the request as the user's bubble, the result as a Hummlist card. */
+.wv-chat {
+  display: grid;
+  gap: var(--hl-space-5);
+  padding: var(--hl-space-6) var(--hl-space-4);
+}
+
+.wv-thread {
+  display: grid;
+  gap: var(--hl-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wv-exchange {
+  display: grid;
+  gap: var(--hl-space-2);
+}
+
+.wv-ask {
+  justify-self: end;
+  max-width: 85%;
+  padding: var(--hl-space-3) var(--hl-space-4);
+  border-radius: 20px 20px 6px 20px;
+  background: var(--hl-color-cobalt);
+  color: var(--hl-color-on-cobalt);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.wv-result {
+  display: grid;
+  gap: var(--hl-space-1);
+  justify-self: start;
+  max-width: 85%;
+  padding: var(--hl-space-3) var(--hl-space-4);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-m);
+  background: var(--hl-color-surface-raised);
+  color: var(--hl-color-text);
+  box-shadow: var(--hl-shadow-sticker-s);
+}
+
+.wv-result-head {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.wv-result .mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+.wv-below {
+  font-weight: var(--hl-font-weight-bold);
+}
+
+@media (min-width: 720px) {
+  .wv-chat {
+    padding: var(--hl-space-7);
+  }
+
+  .wv-thread {
+    max-width: 44rem;
+  }
+
+  .wv-ask,
+  .wv-result {
+    max-width: 75%;
+  }
+}
+
+/* V3 and V4: three numbered steps; V3 shows the household phones beside them. */
+.wv-steps {
+  display: grid;
+  gap: var(--hl-space-5);
+  padding: var(--hl-space-6) var(--hl-space-4);
+}
+
+.wv-steps-copy {
+  display: grid;
+  gap: var(--hl-space-5);
+  align-content: start;
+}
+
+.wv-step-list {
+  display: grid;
+  gap: var(--hl-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wv-step-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--hl-space-3);
+  align-items: start;
+}
+
+.wv-steps .step {
+  --s: 34px;
+  --face: var(--hl-color-surface-raised);
+  color: var(--hl-color-text);
+  font-family: var(--hl-type-headline-family);
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.wv-steps .media-frame {
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .wv-steps {
+    padding: var(--hl-space-7);
+  }
+}
+
+@media (min-width: 1000px) {
+  .wv-steps--visual {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--hl-space-7);
+    align-items: center;
+  }
+}
+
+/* One-line blocks: V2's reassurance, V3/V4's MCP line. */
+.wv-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hl-space-3);
+  max-width: 48rem;
+  padding: var(--hl-space-4) var(--hl-space-5);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-l);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.wv-line--reassure {
+  background: var(--hl-color-mint-soft);
+  color: var(--hl-color-text);
+}
+
+.wv-line--mcp {
+  background: var(--hl-color-accent-soft);
+  color: var(--hl-color-on-accent-soft);
+}
+
+.wv-line + .rv-notes,
+.wv-steps-copy .rv-notes,
+.faq-item .rv-notes {
+  margin-top: var(--hl-space-2);
+}
+
+.faq-item .rv-notes {
+  padding: 0 var(--hl-space-5) var(--hl-space-4);
+}
+
+/* V5's questions: one "Fragen?" toggle that opens the list. */
+.wv-more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hl-size-target);
+  margin-bottom: var(--hl-space-3);
+  font-weight: var(--hl-font-weight-heavy);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3em;
+  cursor: pointer;
+  list-style: none;
+}
+
+.wv-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.wv-faq-gap,
+.faq-section .section-head {
+  margin-top: 0;
+}
+
+/* The confirmed page, shown in place of the landing. */
+.wv-confirmed .wl-page {
+  justify-items: start;
+  max-width: 40rem;
+}
+
+.wv-confirmed .tick {
+  --s: 40px;
+}
+
+.wv-confirmed .wl-page:focus {
+  outline: none;
+}
+
+.wv-blocks {
+  display: grid;
+  gap: var(--hl-space-6);
+}
+
+@media (min-width: 720px) {
+  .wv-blocks {
+    gap: var(--hl-space-8);
+  }
+}
+
+.wv-blocks[hidden],
+.wv-confirmed[hidden] {
+  display: none;
+}
+
+/* V4: the categories sort themselves. The rows sit in fixed slots; the last (Frozen) starts in
+   slot one and is dragged to the bottom while the others move up. Without JavaScript or with
+   reduced motion the list stands sorted. */
+.wv-visual--sort {
+  margin: 0 0 var(--hl-space-5);
+}
+
+.wv-sort {
+  --row: 48px;
+  --gap: 10px;
+  --step: calc(var(--row) + var(--gap));
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--hl-space-3);
+  max-width: 26rem;
+  margin: 0;
+  padding: var(--hl-space-4);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-surface);
+  color: var(--hl-color-text);
+  box-shadow: var(--sticker);
+}
+
+.wv-sort ol,
+.wv-sort ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wv-sort-slots {
+  display: grid;
+  gap: var(--gap);
+}
+
+.wv-sort-slots li {
+  display: grid;
+  place-items: center;
+  height: var(--row);
+}
+
+.wv-sort .step {
+  --s: 32px;
+  --face: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+  font-family: var(--hl-type-headline-family);
+  font-size: 15px;
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.wv-sort-chips {
+  position: relative;
+  height: calc(5 * var(--row) + 4 * var(--gap));
+}
+
+.wv-sort-chip {
+  --h: var(--row);
+  --at: var(--to);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  justify-content: flex-start;
+  gap: var(--hl-space-2);
+  padding-right: calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-2));
+  font-weight: var(--hl-font-weight-bold);
+  transform: translateY(calc(var(--at) * var(--step)));
+  filter: drop-shadow(0 2px 0 var(--hl-color-edge));
+}
+
+.wv-sort-chip:nth-child(1) { --from: 1; --to: 0; }
+.wv-sort-chip:nth-child(2) { --from: 2; --to: 1; }
+.wv-sort-chip:nth-child(3) { --from: 3; --to: 2; }
+.wv-sort-chip:nth-child(4) { --from: 4; --to: 3; }
+.wv-sort-chip:nth-child(5) { --from: 0; --to: 4; }
+
+.wv-sort-chip .emo {
+  font-size: 18px;
+}
+
+.wv-sort-chip .grip {
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+  color: var(--hl-color-text-muted);
+}
+
+.wv-sort-chip .grip svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.wv-sort.is-ready .wv-sort-chip {
+  --at: var(--from);
+}
+
+.wv-sort.is-playing .wv-sort-chip {
+  animation: wv-shift var(--hl-motion-duration-long) var(--hl-motion-easing-standard) var(--delay) both;
+}
+
+.wv-sort.is-playing .is-dragged {
+  z-index: 1;
+  --face: var(--hl-color-honey);
+  animation: wv-drag 2.4s linear 0.4s both;
+}
+
+/* The others move up one slot as the dragged row passes them, top first. */
+.wv-sort-chip:nth-child(1) { --delay: 0.75s; }
+.wv-sort-chip:nth-child(2) { --delay: 1.2s; }
+.wv-sort-chip:nth-child(3) { --delay: 1.65s; }
+.wv-sort-chip:nth-child(4) { --delay: 2.1s; }
+
+@keyframes wv-shift {
+  from { transform: translateY(calc(var(--from) * var(--step))); }
+  to { transform: translateY(calc(var(--to) * var(--step))); }
+}
+
+@keyframes wv-drag {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 2px 0 var(--hl-color-edge)); }
+  12% { transform: translateY(-2px) scale(1.04); filter: drop-shadow(0 8px 0 var(--hl-color-edge)); }
+  88% { transform: translateY(calc(4 * var(--step) - 2px)) scale(1.04); filter: drop-shadow(0 8px 0 var(--hl-color-edge)); }
+  100% { transform: translateY(calc(4 * var(--step))) scale(1); filter: drop-shadow(0 2px 0 var(--hl-color-edge)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wv-sort .wv-sort-chip {
+    --at: var(--to);
+    animation: none;
+  }
+}
+
+/* The index of variants. */
+.wv-index-list {
+  display: grid;
+  gap: var(--hl-space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.wv-index-item {
+  padding: var(--hl-space-5);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-surface-raised);
+  box-shadow: var(--sticker);
+}
+
+.prose .wv-index-item h2 {
+  margin-top: 0;
+}
+
+.wv-index-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hl-space-3);
+}
+
+.wv-index-links .hex {
+  text-decoration: none;
+}
