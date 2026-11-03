@@ -73,14 +73,14 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **How to get there.**
 1. Sign up or sign in. If the app asks about usage data, answer it.
 2. On „Willkommen bei Hummlist“ (EN: "Welcome to Hummlist") tap „Haushalt erstellen“ (EN: "Create a household") or „Einladung annehmen“ (EN: "Join with an invite").
-3. Creating: choose the name, tap the stores you shop at (or „Eigenen Laden hinzufügen“, EN: "Add your own store", and type a name such as „Wochenmarkt“), then „Haushalt erstellen“ (EN: "Create a household"); „Überspringen“ (EN: "Skip") starts without stores.
+3. Creating: choose the name, tap the stores you shop at (or „Eigenen Laden hinzufügen“, EN: "Add your own store", and type a name such as „Wochenmarkt“; typing one of the ten, „edeka“ say, ticks it), then „Haushalt erstellen“ (EN: "Create a household"); „Überspringen“ (EN: "Skip") starts without stores.
 4. Next screen „Partner einladen“ (EN: "Invite your partner"): make an invite or tap „Später“ (EN: "Later") to go to the list.
 
 **Never claim.**
 - A tour, a tutorial or a newsletter or email opt-in in the app: there is none.
 - That any store is pre-installed, recommended or a partner: nothing is picked until you pick it, and the shops have nothing to do with Hummlist.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [onboarding.md](./onboarding.md).
+**Last verified.** job 88 branch, 2026-11-03 (CET), typed chain names driven on the web build (verify-hummlist) and by app/test/household/onboarding_test.dart; main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build. Recipe: [onboarding.md](./onboarding.md).
 **Last verified.** job 68 branch, 2026-11-02 (CET), skip hint by app/test/household/onboarding_test.dart; job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/onboarding.spec.ts and stores-add.spec.ts. Recipe: [onboarding.md](./onboarding.md).
 
 ## Household and invites

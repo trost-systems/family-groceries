@@ -64,7 +64,7 @@ trip with absolute times, and the counts the seed checks.
    with `add_store`, as the app does, then sets the walk orders a scenario
    gives (`set_store_layout`). Fixtures use generic store names
    (Supermarkt, Drogerie, Bäckerei, Wochenmarkt); `add_store` would make
-   dm, Lidl or Edeka that chain.
+   dm, Lidl or EDEKA that chain.
 4. Replays the history oldest trip first, through the real triggers: the
    adder inserts the items (classifier, `added_by`, the `added` event), the
    shopper ticks them (the `bought` event, item→store memory when the trip

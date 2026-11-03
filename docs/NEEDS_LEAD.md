@@ -1385,3 +1385,9 @@ alexa functions deploy with the next `supabase-deploy.yml`/release run.
 - **Your call: typed „zwei Gurken“ offline.** The app's offline parser keeps „zwei Gurken“ as the
   name while the server reads Gurken ×2 (pre-existing, typed path, out of this job's scope). Porting
   the number words to `app/lib/list/entry.dart` would be a small follow-up job.
+
+## Job 88: onboarding own store named like a chain (2026-11-03)
+
+PR #214. No Legal items: nothing new is shown. One call made without Peter (DECISIONS, Job 88):
+a typed „edeka“ is now stored as „EDEKA“, the chip's spelling, because it ticks that chip. The
+server already allowed only one store per name key, so no server guard was added.

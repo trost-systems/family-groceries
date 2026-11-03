@@ -38,10 +38,10 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
   await screenshot(page, '05-store-lidl');
 
   for (const item of ['Äpfel', 'Brot', 'Hack', 'Milch']) {
-    await setStore(page, item, 'Edeka');
-    await expect.poll(() => storeOf(page, item)).toBe('Edeka');
+    await setStore(page, item, 'EDEKA');
+    await expect.poll(() => storeOf(page, item)).toBe('EDEKA');
   }
-  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'Edeka: counters before the chilled aisle' })
+  await expect.poll(() => sectionHeadings(page, 'EDEKA'), { message: 'EDEKA: counters before the chilled aisle' })
     .toEqual(['Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch', 'Kühlregal']);
 
   for (const item of ['Klopapier', 'Chips']) {
@@ -55,22 +55,22 @@ test('STORE ORDERING: each store section walks its own order, editable on its la
   await page.mouse.move(0, 899);
   await screenshot(page, '06-store-dm');
 
-  await openStoreDetails(page, 'Edeka');
+  await openStoreDetails(page, 'EDEKA');
   await dragHandle(page, 'Kühlregal verschieben', 'Obst & Gemüse verschieben');
   await screenshot(page, '07-store-details');
   await openTab(page, 'Liste');
-  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'the reorder applies to the Edeka section' })
+  await expect.poll(() => sectionHeadings(page, 'EDEKA'), { message: 'the reorder applies to the EDEKA section' })
     .toEqual(['Kühlregal', 'Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch']);
   await page.reload();
   await expect(addField(page)).toBeFocused();
-  await expect.poll(() => sectionHeadings(page, 'Edeka'), { message: 'the Edeka order was saved' })
+  await expect.poll(() => sectionHeadings(page, 'EDEKA'), { message: 'the EDEKA order was saved' })
     .toEqual(['Kühlregal', 'Obst & Gemüse', 'Brot & Backwaren', 'Fleisch/Wurst/Fisch']);
 
   await tick(page, 'Hack');
   await expect(itemRow(page, 'Hack')).toHaveCount(0);
   await addItem(page, 'Hack');
-  await expect.poll(() => storeOf(page, 'Hack'), { message: 'bought at Edeka last time, so added there' })
-    .toBe('Edeka');
+  await expect.poll(() => storeOf(page, 'Hack'), { message: 'bought at EDEKA last time, so added there' })
+    .toBe('EDEKA');
   await enterItem(page, 'Zahnpasta');
   await expect(addedNote(page, 'Zahnpasta steht schon auf der Liste')).toBeVisible();
   await closeSheet(page);

@@ -7004,3 +7004,28 @@ regression from job 61.
   that row `spoken` and NEEDS_LEAD „Job 89“ asks whether to port the number words.
 - **Alexa skill model: unchanged.** The slot is free text; nothing in `alexa/skill-package/`
   changes, so nothing to deploy or certify.
+
+## Job 88: an own store named like an offered chain ticks the chain, 2026-11-03
+
+Peter's bug of 2026-11-03 (20:07 CET): in onboarding, „Eigenen Laden hinzufügen“ with a name such
+as „edeka“ made a hidden duplicate of the EDEKA chip.
+
+1. **PR #186 (job 64) did not touch this flow.** It changed the defaults (no store seeded unless
+   picked) and the list, not `create_household_screen.dart`, whose own-store code dates from job 58
+   (#176). The fix builds on main as it is.
+2. **The cause was in the app only.** `_addOwn` kept the typed spelling („edeka“) in the picked
+   list. The chips compared exact names, so EDEKA showed unticked and the typed entry was hidden
+   (it matched an offered chain, so it got no own chip). A tap on EDEKA then removed the hidden
+   entry (the toggle compares by `storeNameKey`) and still showed unticked: the first tap seemed
+   to do nothing. Now a typed name whose key (trimmed, spacing collapsed, case folded) is an
+   offered chain adds that chain's own spelling, so its chip ticks and toggles as if tapped. A
+   name already picked stays picked, once.
+3. **No server change.** The server never stored two rows: `stores_household_name_key` is a
+   unique index on `(household_id, store_name_key(name))` and `add_store` (which
+   `create_household` calls per picked name) does `on conflict do nothing`, so every writer (app,
+   MCP, API, scripts) gets one store per key. `supabase/tests/stores.test.sql` already covers
+   `p_stores => ['EDEKA', 'REWE', 'dm', 'rewe']` giving three stores. Only the stored spelling
+   changes: a typed „edeka“ is now stored as „EDEKA“, as the chip names it.
+4. **e2e uses the chip's spelling.** `chainStores` in `e2e/tests/helpers.ts` typed „Edeka“ to get
+   a store spelled that way; it now ticks the EDEKA chip, so the specs name the store „EDEKA“.
+5. **Legal N-23.** Nothing new is shown: the chips stay plain text from `popularStores`.
