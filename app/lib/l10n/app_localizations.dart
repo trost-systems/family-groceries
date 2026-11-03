@@ -878,11 +878,11 @@ abstract class AppLocalizations {
   /// **'Siri (anderes iPhone)'**
   String get siriOtherIphone;
 
-  /// No description provided for @siriWorksWithoutSetup.
+  /// Zugänge, Siri card on this iPhone (job 80): one example sentence, no hint that Siri ever needed setting up
   ///
   /// In de, this message translates to:
-  /// **'Siri funktioniert jetzt ohne Einrichtung. Sag: „Füge etwas zur Hummlist hinzu“.'**
-  String get siriWorksWithoutSetup;
+  /// **'Sag zum Beispiel: „Hey Siri, füge etwas zur Hummlist hinzu“.'**
+  String get siriSayHint;
 
   /// No description provided for @siriShowPhrases.
   ///
@@ -2809,6 +2809,102 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
   String get apiPremium;
+
+  /// Zugänge, under the access token heading while the public API is hidden (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Mit einem Token baust du eigene Automationen, die eure Liste pflegen, etwa ein Skript oder einen Assistenten am MCP-Server.'**
+  String get accessTokensHint;
+
+  /// Zugänge, under the access token heading while the public-api flag is on (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Mit einem Token baust du eigene Automationen am MCP-Server, die eure Liste pflegen. Für Programme ohne MCP gibt es unten die API.'**
+  String get accessTokensHintWithApi;
+
+  /// Zugänge, connected app row and details: the newest token refresh of the app (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Zuletzt aktiv {date}'**
+  String lastActiveOn(DateTime date);
+
+  /// Zugänge, connected app details: the app has not used its access yet (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Noch nicht aktiv'**
+  String get notActiveYet;
+
+  /// Zugänge, connected app details: the browser and system the user approved the app on, e.g. Chrome · macOS (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Freigegeben auf {device}'**
+  String appDevice(String device);
+
+  /// Zugänge, connected app details sheet: heading of the plain-words permissions (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Was {name} darf'**
+  String appCanTitle(String name);
+
+  /// Connected app details: the email scope in plain words (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Deine E-Mail-Adresse sehen.'**
+  String get appCanEmail;
+
+  /// Connected app details: the profile scope in plain words (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Deinen Namen sehen.'**
+  String get appCanProfile;
+
+  /// Connected app details: the phone scope in plain words (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Telefonnummer sehen.'**
+  String get appCanPhone;
+
+  /// Connected app details: the offline_access scope in plain words (job 80)
+  ///
+  /// In de, this message translates to:
+  /// **'Verbunden bleiben, bis du die Verbindung trennst.'**
+  String get appCanStay;
+
+  /// Account screen (job 80): tooltip and screen reader label of the copy button next to the email address
+  ///
+  /// In de, this message translates to:
+  /// **'E-Mail-Adresse kopieren'**
+  String get copyEmail;
+
+  /// List tab tip card (job 80): title of the tip that a hold without dragging opens an item's edit sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Artikel bearbeiten'**
+  String get tipEditTitle;
+
+  /// List tab tip card (job 80): a hold released without moving (touch or mouse) opens the edit sheet with these fields; a hold that moves drags instead
+  ///
+  /// In de, this message translates to:
+  /// **'Halte einen Artikel gedrückt, ohne ihn zu ziehen, und ändere Menge, Marke, Laden und mehr.'**
+  String get tipEditBody;
+
+  /// List tab tip card (job 80): title of the tip that the amount can be typed with the item
+  ///
+  /// In de, this message translates to:
+  /// **'Menge gleich mittippen'**
+  String get tipAmountsTitle;
+
+  /// List tab tip card (job 80): the quoted examples must parse with a Menge (app/test/tips/tips_test.dart checks them with parseEntry)
+  ///
+  /// In de, this message translates to:
+  /// **'Schreib „2 Gurken“ oder „Milch 2 l“, und Hummlist erkennt die Menge.'**
+  String get tipAmountsBody;
+
+  /// List tab tip card (job 80): tooltip and screen reader label of the X that hides the tip
+  ///
+  /// In de, this message translates to:
+  /// **'Tipp ausblenden'**
+  String get tipDismiss;
 }
 
 class _AppLocalizationsDelegate

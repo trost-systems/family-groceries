@@ -5,6 +5,7 @@ import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:family_groceries/settings/export_saver.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Who is signed in, exporting the account's data and deleting the account
@@ -31,7 +32,17 @@ class const AccountScreen({
               ListTile(
                 key: const ValueKey('account-email'),
                 leading: const Icon(Icons.account_circle_outlined),
-                title: SelectionArea(child: Text(email)),
+                title: Text(email),
+                trailing: IconButton(
+                  key: const ValueKey('account-email-copy'),
+                  tooltip: l10n.copyEmail,
+                  icon: const Icon(Icons.copy),
+                  onPressed: () {
+                    unawaited(Clipboard.setData(ClipboardData(text: email)));
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(l10n.copied)));
+                  },
+                ),
               ),
             Builder(
               builder: (tile) => ListTile(

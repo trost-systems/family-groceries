@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/oauth/device_label.dart';
+import 'package:family_groceries/oauth/user_agent.dart';
 import 'package:family_groceries/session/session_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +21,7 @@ final class const AlreadyApproved(final Uri redirect) extends ConsentRequest;
 
 @immutable
 final class const NeedsConsent({
+  required final String clientId,
   required final String clientName,
   required final List<String> scopes,
   final String? clientUri,
@@ -29,12 +33,19 @@ final class const NeedsConsent({
 abstract interface class ConsentApi() {
   Future<ConsentRequest> getDetails(String authorizationId);
 
-  Future<Uri> approve(String authorizationId);
+  /// Also records [device] for [clientId] (job 80), which Zugänge shows.
+  Future<Uri> approve(
+    String authorizationId, {
+    required String clientId,
+    required String device,
+  });
 
   Future<Uri> deny(String authorizationId);
 }
 
-class SupabaseConsentApi(final GoTrueOAuthApi _oauth) implements ConsentApi {
+class SupabaseConsentApi(final SupabaseClient _client) implements ConsentApi {
+  GoTrueOAuthApi get _oauth => _client.auth.oauth;
+
   @override
   Future<ConsentRequest> getDetails(String authorizationId) async =>
       switch (await _oauth.getAuthorizationDetails(authorizationId)) {
@@ -46,6 +57,7 @@ class SupabaseConsentApi(final GoTrueOAuthApi _oauth) implements ConsentApi {
           :final scope,
         ) =>
           NeedsConsent(
+            clientId: client.clientId,
             clientName: client.clientName ?? client.clientId,
             clientUri: client.clientUri,
             email: user.email,
@@ -57,8 +69,25 @@ class SupabaseConsentApi(final GoTrueOAuthApi _oauth) implements ConsentApi {
       };
 
   @override
-  Future<Uri> approve(String authorizationId) async =>
-      _redirect(await _oauth.approveAuthorization(authorizationId));
+  Future<Uri> approve(
+    String authorizationId, {
+    required String clientId,
+    required String device,
+  }) async {
+    final redirect = _redirect(
+      await _oauth.approveAuthorization(authorizationId),
+    );
+    try {
+      await _client.rpc<void>(
+        'record_oauth_device',
+        params: {'p_client': clientId, 'p_device': device},
+      );
+    } on Object catch (e) {
+      // The connection works without its label; Zugänge then shows none.
+      debugPrint('oauth consent: no device label: $e');
+    }
+    return redirect;
+  }
 
   @override
   Future<Uri> deny(String authorizationId) async =>
@@ -100,7 +129,7 @@ class const ConsentScreen({
     return ConsentView(
       authorizationId: authorizationId,
       household: session.household,
-      api: api ?? SupabaseConsentApi(Supabase.instance.client.auth.oauth),
+      api: api ?? SupabaseConsentApi(Supabase.instance.client),
       navigate: navigate ?? _openHere,
     );
   }
@@ -174,7 +203,14 @@ class _ConsentViewState() extends State<ConsentView> {
         _show(_Deciding(request));
         final id = widget.authorizationId!;
         final redirect = await (approve
-            ? widget.api.approve(id)
+            ? widget.api.approve(
+                id,
+                clientId: request.clientId,
+                device: deviceLabel(
+                  platform: defaultTargetPlatform,
+                  userAgent: browserUserAgent(),
+                ),
+              )
             : widget.api.deny(id));
         _show(_Left(request: request, approved: approve));
         await widget.navigate(redirect);

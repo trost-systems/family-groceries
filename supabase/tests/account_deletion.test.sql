@@ -325,7 +325,7 @@ select is(
       'build', '7', 'os_version', 'iOS 18.1', 'locale', 'de', 'household_id', (select id from he),
       'is_internal', true)),
     'connected_apps', jsonb_build_array(jsonb_build_object('client_name', 'Claude', 'scopes', 'openid email',
-      'granted_at', now(), 'revoked_at', null)),
+      'granted_at', now(), 'revoked_at', null, 'device', null)),
     'analytics_decisions', '[]'::jsonb,
     'alexa_links', '[]'::jsonb,
     -- Job 25: Emil bought nothing (purchases.test.sql covers a buyer's export).

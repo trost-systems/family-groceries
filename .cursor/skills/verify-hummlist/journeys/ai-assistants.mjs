@@ -1,0 +1,80 @@
+// Feature ai-assistants, sub-features ai-apps and ai-app-details (job 80), entry point Mehr →
+// Zugänge. Gives the member a connected app the way an approval leaves it (a client registered over
+// DCR, the grant, a session and the consent page's device label, written as postgres since a real approval
+// needs an MCP client: e2e/tests/mcp.spec.ts drives that), then proves the row names the device
+// and the last activity, the token hint, and the details sheet in plain words.
+//
+//   node journeys/ai-assistants.mjs <evidence dir> [--lang de|en]
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { apiAs, capture, instance, logger, member, openApp, openTab, repo, signIn } from '../helpers/lib.mjs';
+
+const [dir, ...rest] = process.argv.slice(2);
+const lang = rest.includes('--lang') ? rest[rest.indexOf('--lang') + 1] : 'de';
+if (!dir) throw new Error('usage: ai-assistants.mjs <evidence dir> [--lang de|en]');
+
+const log = logger(dir);
+const inst = instance();
+const user = member(inst);
+const project = /^project_id = "(.*)"$/m.exec(readFileSync(join(repo, 'supabase/config.toml'), 'utf8'))[1];
+const sql = (query) =>
+  execFileSync('docker', ['exec', '-i', `supabase_db_${project}`, 'psql', '-U', 'postgres', '-v', 'ON_ERROR_STOP=1', '-tA'], {
+    input: query,
+    encoding: 'utf8',
+  });
+// The client registers itself as an MCP host does (dynamic client registration), so Auth knows it.
+const registered = await (await fetch(`${inst.apiUrl}/auth/v1/oauth/clients/register`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ client_name: 'Claude', redirect_uris: ['https://claude.ai/api/mcp/auth_callback'] }),
+})).json();
+const client = registered.client_id;
+if (!client) throw new Error(`client registration failed: ${JSON.stringify(registered)}`);
+sql(`
+  insert into auth.oauth_consents (id, user_id, client_id, scopes, granted_at)
+  values (gen_random_uuid(), '${user.id}', '${client}', 'openid email offline_access', now() - interval '3 days');
+  insert into auth.sessions (id, user_id, oauth_client_id, created_at, updated_at)
+  values (gen_random_uuid(), '${user.id}', '${client}', now() - interval '3 days', now() - interval '2 hours');
+  insert into public.oauth_app_devices (user_id, client_id, device) values ('${user.id}', '${client}', 'Chrome · macOS');
+`);
+const api = await apiAs(inst, user);
+const details = (await api.rpc('connected_app_details')).data;
+log(`connected_app_details as ${user.handle}: ${JSON.stringify(details)}`);
+
+const { browser, page, L, errors } = await openApp(inst, { lang, videoDir: dir });
+let failed = null;
+try {
+  await signIn(page, L, user);
+  await openTab(page, L, 'tabMore');
+  await page.getByRole('button', { name: new RegExp(`^${L('accessTitle')}`) }).first().click();
+  await page.getByText(L('accessTokensHint')).waitFor({ timeout: 15_000 });
+  log(`token hint shown: „${L('accessTokensHint')}“`);
+  const row = page.getByRole('button', { name: /^Claude Chrome · macOS · / });
+  await row.waitFor({ timeout: 15_000 });
+  log(`row: „${await row.getAttribute('aria-label') ?? await row.textContent()}“`);
+  if ((await page.getByText(L('scopeOpenid')).count()) > 0) throw new Error('the scopes are still listed on the row');
+  await page.mouse.wheel(0, 600);
+  await capture(page, dir, '01-access-connected-app');
+
+  await row.click();
+  await page.getByText(L('appDevice', { device: 'Chrome · macOS' })).waitFor({ timeout: 10_000 });
+  await page.getByText(L('appCanEmail')).waitFor();
+  await page.getByText(L('appCanStay')).waitFor();
+  log('details sheet: device, what it may do, disconnect button');
+  await capture(page, dir, '02-app-details');
+  await page.keyboard.press('Escape');
+  if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
+} catch (error) {
+  failed = error;
+  await capture(page, dir, '99-failure').catch(() => {});
+} finally {
+  await page.context().close();
+  await browser.close();
+  sql(`delete from auth.oauth_consents where client_id = '${client}'; delete from auth.sessions where oauth_client_id = '${client}'; delete from auth.oauth_clients where id = '${client}';`);
+}
+if (failed) {
+  log(`FAIL: ${failed.message}`);
+  process.exit(1);
+}
+log(`PASS ai-assistants (evidence: ${dir})`);

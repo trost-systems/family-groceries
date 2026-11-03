@@ -4,7 +4,7 @@ Every signed-in user can export their data as a JSON file and delete their accou
 
 ## Sub-features
 
-- `acct-entry` the Konto page: the email, „Meine Daten exportieren“ and „Konto löschen“.
+- `acct-entry` the Konto page: the email, „Meine Daten exportieren“ and „Konto löschen“. The email is plain text (not selectable since job 80) with a copy button on the right (key `account-email-copy`, tooltip and screen-reader name „E-Mail-Adresse kopieren“ / "Copy email address"); a tap copies the address and shows „Kopiert“ / "Copied". The export's `connected_apps` carry each app's `device` label (job 80).
 - `acct-export` saves a JSON file `einkauf-daten-YYYY-MM-DD.json` (on web a browser download) and shows „Daten exportiert“ (on platforms that report a path: „Daten exportiert: <path>“).
 - `acct-fate-kept` for a member of a shared household the dialog says the household stays for the others.
 - `acct-fate-deleted` for the last member the dialog says the household is deleted too.

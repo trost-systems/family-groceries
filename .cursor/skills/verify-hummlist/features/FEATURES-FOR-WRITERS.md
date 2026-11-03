@@ -219,6 +219,20 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **Last verified.** job 78, 2026-11-02 (CET), by the app's widget tests (`app/test/list/list_screen_test.dart`); the e2e specs were rewritten but not run. Recipe: [edit-item.md](./edit-item.md).
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); undo onto an open item: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [edit-item.md](./edit-item.md).
 
+## Tips on the list
+
+**What it does.** Once there is something on the list, a small card at the top shows one tip at a time, for example how to edit an item or that the amount can be typed with the item. The X hides a tip for good on that device; the next one shows from the next app start on. A new, empty list shows no tip.
+
+**How to get there.**
+1. Open Hummlist with at least one item on the list („Liste“, EN: "List").
+2. Read the card at the top; tap the X („Tipp ausblenden“, EN: "Hide tip") to hide it.
+
+**Never claim.**
+- That tips sync between devices or members (they are per device and user).
+- That tips show news or offers today (the two tips are how-tos).
+
+**Last verified.** job/80-polish-access-tips-account, 2026-11-02 (CET), by the widget tests and goldens (`app/test/tips/`) and driven on the web build (verify-hummlist). Recipe: [tips.md](./tips.md).
+
 ## Automatic category (the classifier)
 
 **What it does.** When an item is added, Hummlist sorts it into a category on its own, such as Kühlregal for Hafermilch, using a built-in German word list of about 1,200 terms plus common spelling variants, regional words, some English words and small typos. While you type, the add sheet already shows the category it will use. Anything unknown goes to „Sonstiges“. If you move an item to another category, or pick another one before adding, the household remembers it and the same item lands there next time, also under another spelling of the same word (Karotten, Möhren). This works the same for items added in the app, by voice, through the AI-assistant connection, Siri and Alexa.
@@ -384,7 +398,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Account: data export and deletion
 
-**What it does.** Every user can download a copy of their data as a JSON file and delete their account for good. Before deleting, the app says what happens to the shared household: it stays for the others (the user's items remain, without their name) or, for the last member, it is deleted with its list, history, categories and stores. The user confirms by typing a word. Single data can also be removed without deleting the account: an item from the list, an access key or connected app on Zugänge, and usage data by switching it off.
+**What it does.** The Konto page shows the signed-in email address with a copy button („Kopiert“, EN "Copied"). Every user can download a copy of their data as a JSON file and delete their account for good. Before deleting, the app says what happens to the shared household: it stays for the others (the user's items remain, without their name) or, for the last member, it is deleted with its list, history, categories and stores. The user confirms by typing a word. Single data can also be removed without deleting the account: an item from the list, an access key or connected app on Zugänge, and usage data by switching it off.
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More").
@@ -400,7 +414,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [account-deletion.md](./account-deletion.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the email copy button: job/80-polish-access-tips-account, 2026-11-02 (CET), by app/test/settings/account_test.dart. Recipe: [account-deletion.md](./account-deletion.md).
 - That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium, and households the user archived go too. Premium is not refunded automatically. The app's warning about this is held (it appears with the archive UI or the Premium sale).
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
@@ -411,7 +425,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## AI assistants (MCP) and access keys
 
-**What it does.** An AI assistant such as Claude can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. After „Erlauben“ the page shows „Verbunden“ and „Fertig, du kannst zu Claude zurückkehren.“ (EN: "Connected", "Done, you can return to Claude.") while the assistant finishes connecting (Claude takes up to about 10 seconds). Asked what's on the list, the assistant also gets how many items are open on the whole list and how many were ticked in the last 24 hours. An amount written before or after the item, like „2 Gurken“ or „Gurken 3“, becomes the amount; numbers that belong to the name stay in it („Windeln Größe 4“, „Büroklammern 100“). In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Nothing needs Premium today. Setup guide: hummlist.com/de/anleitungen/claude (EN /en/guides/claude).
+**What it does.** An AI assistant such as Claude can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. After „Erlauben“ the page shows „Verbunden“ and „Fertig, du kannst zu Claude zurückkehren.“ (EN: "Connected", "Done, you can return to Claude.") while the assistant finishes connecting (Claude takes up to about 10 seconds). Asked what's on the list, the assistant also gets how many items are open on the whole list and how many were ticked in the last 24 hours. An amount written before or after the item, like „2 Gurken“ or „Gurken 3“, becomes the amount; numbers that belong to the name stay in it („Windeln Größe 4“, „Büroklammern 100“). In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Each connected assistant shows where it was approved, like „Chrome · macOS“, when it was connected and when it was last active; a tap on it explains in plain words what it may do, with the button to disconnect it. A short text under „Zugriffstoken“ says that a token lets you build your own automations that manage the list. Nothing needs Premium today. Setup guide: hummlist.com/de/anleitungen/claude (EN /en/guides/claude).
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More") and tap „Zugänge“ (EN: "Access").
@@ -423,6 +437,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That it needs Premium (it is free, also after Premium launches).
 - That the assistant sees more than the list (it reads and changes shopping items, categories and stores only).
 - That a key can be viewed again after creation (shown once).
+- That Hummlist knows where an assistant is used or tracks its location: it only keeps the browser and system name of the page where the user approved it (gone once disconnected); „Zuletzt aktiv“ is the day of the assistant's last sign-in refresh, not of every request.
 - That ended keys are deleted at once (the record stays 30 days, then a daily clean-up deletes it; the key itself stops working immediately).
 - Any specific assistant as officially supported or tested (Claude and ChatGPT are named in the app text; ChatGPT needs a Business or Enterprise workspace).
 
@@ -430,7 +445,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Held: the Hummlist API.** Built but switched off for everyone: the app hides it (job 73, PostHog flag `public-api`) and the server refuses keys and requests (job 75, server switch `public_api`). When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
 
-**Last verified.** job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
+**Last verified.** job/80-polish-access-tips-account, 2026-11-02 (CET), the connected-app row, details sheet and token hint by the widget tests and e2e/tests/mcp.spec.ts on the web build. job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
 
 ## Siri
 

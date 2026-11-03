@@ -1343,3 +1343,31 @@ Calls made without Peter (DECISIONS, Job 78); say if one should go the other way
    list to honour the `hidden` flag (a follow-up job).
 8. The store and category rows are raised hex pills as on the old screens; the reviewer found them
    heavier than Settings' rows. Say if they should become plain rows like Settings.
+## Job 80: connected apps name their device (2026-11-02, for Legal Review)
+
+Mehr › Zugänge no longer lists a connected app's scopes ("Deine Anmeldung bestätigen · Deine
+E-Mail-Adresse · Dauerhaft angemeldet bleiben"). Each row now reads like
+„Chrome · macOS · Verbunden am 2.11.2026 · Zuletzt aktiv 2.11.2026“, and a tap opens a sheet
+that says in plain words what the app may do, with „Claude trennen“.
+
+New personal data, kept minimal (`supabase/migrations/20261102213000_connected_app_devices.sql`):
+
+- `public.oauth_app_devices`: per user and OAuth client one short label of the browser and
+  system the user approved the connection in (`Chrome · macOS`, `Safari · iOS`, `iOS` in an
+  app). The app derives it on the device (`app/lib/oauth/device_label.dart`) and sends only the
+  label; the server refuses anything longer than 40 characters or outside letters, digits, space,
+  `.()·-`, so a whole user agent cannot be stored. No IP address, no location, no user agent.
+- Why not Supabase's own session data: the sessions of an OAuth client carry the client's HTTP
+  library as user agent (in production today: `undici` for Cursor, `python-httpx/0.28.1` for
+  Claude, `Apache-HttpClient` for Alexa, `codex-mcp-client` for Codex), which names no device.
+- Retention: the label goes when the grant ends (Trennen, `alexa_revoke`, the Alexa purge: a
+  trigger on `auth.oauth_consents`) and with the account. It is in the data export under
+  `connected_apps[].device`. `docs/PRIVACY_DATA_MAP.md` has the row.
+- „Zuletzt aktiv“ is read from `auth.sessions` (the newest token refresh of that client), which
+  Supabase Auth already stores; nothing new is kept for it.
+
+**For Legal Review:** the privacy policy's section on connected apps (MCP, Alexa) may need one
+line, e.g. „Beim Verbinden speichern wir, in welchem Browser und auf welchem System du die
+Verbindung freigegeben hast (z. B. „Chrome · macOS“), damit du deine Verbindungen unter Zugänge
+unterscheiden kannst. Die Angabe wird gelöscht, sobald du die Verbindung trennst.“ I did not
+change any legal text.

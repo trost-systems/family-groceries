@@ -134,6 +134,9 @@ It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and ho
 | `helpers/lib.mjs` | `import { ... } from '<repo>/.cursor/skills/verify-hummlist/helpers/lib.mjs'` in a journey or clip script |
 | `journeys/quick-add.mjs` | `drive.sh quick-add [--lang en] [--prefix Joghu]` |
 | `journeys/tick-and-undo.mjs` | `drive.sh tick-and-undo [--lang en] [--item Butter]` |
+| `journeys/ai-assistants.mjs` | `drive.sh ai-assistants [--lang en]`: a connected app's row (device, dates), the token hint and the details sheet |
+| `journeys/tips.mjs` | `drive.sh tips [--lang en] [--dark]`: the List tab's tip, dismiss, the next tip after a reload |
+| `journeys/account-deletion.mjs` | `drive.sh account-deletion [--lang en]`: the Konto page's email copy button and the clipboard |
 
 How-to clips (GIF for emails, MP4/WebM for the site) of the same build: [hummlist-howto-clips](../hummlist-howto-clips/SKILL.md).
 
