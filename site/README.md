@@ -50,7 +50,8 @@ updated: 2026-10-27                                 # shown under the guide
 ```
 
 German guides live at `/de/anleitungen/<slug>`, English ones at `/en/guides/<slug>`. The body
-starts with exactly one `# ` heading and must not skip heading levels; images need alt text. A
+starts with exactly one `# ` heading and an intro paragraph before the first `##`, and must not
+skip heading levels; images need alt text. A
 missing field, a second h1, a skipped level, an image without alt, a script, an external resource
 or a link to a page that doesn't exist fails the build with the file and the reason.
 
@@ -151,6 +152,19 @@ link to a draft fails the production build.
 Write open facts as `[PETER: what is missing]`. Preview builds warn; a production build
 (`VERCEL_ENV=production`) fails while any published page still contains one.
 
+## For AI agents
+
+`agent.mjs` (job 93) writes what agents read next to the HTML: a Markdown twin of every page at
+its URL plus `.md` (`/de.md`, `/en/guides/claude.md`, linked from the page's head), `llms.txt`
+(head from `content/llms.md`, the link sections generated), `llms-full.txt` (every listed twin),
+`sitemap.xml`, `robots.txt`, JSON-LD in the head (`WebSite` on landing pages, `TechArticle` on
+guides, `FAQPage` from the help pages' „Häufige Fragen“ / "Common questions" section (`FAQ_HEADINGS`)) and, only while
+`releases/flags.json` has `public-api` on, `openapi.yaml`. Then its checks read the finished
+`dist/` the way an agent does and fail the build with every problem: twins, llms.txt structure and
+links, robots.txt, hreflang pairs, the sitemap, JSON-LD, guide and FAQ structure, links with
+fragments, the API description, and at `launch` in `config/stage.ts` any noindex left.
+`node agent.mjs [dist]` runs the checks alone.
+
 ## Vercel
 
 Every push to `main` is a production deployment and goes live on hummlist.com; other branches get
@@ -163,4 +177,5 @@ Step" on; everything else comes from `vercel.json` (install
 `npm ci`, build `npm run build`, output `dist`). `/` redirects by `Accept-Language`: `de…` to
 `/de`, any other language to `/en`, no header to `/de` (the landing pages).
 `dist/index.html` (meta refresh) only serves hosts without these redirects. Every response
-carries `X-Robots-Tag: noindex` until the beta launch; remove that header then.
+carries `X-Robots-Tag: noindex` until the launch; with the stage `launch` in `config/stage.ts`
+the build fails until that header is gone.

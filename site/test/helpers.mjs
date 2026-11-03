@@ -14,6 +14,8 @@ export const CONTENT_DIR = join(SITE_DIR, 'content');
 export const REPO_DIR = join(SITE_DIR, '..');
 export const REAL_RECORD = readFileSync(join(REPO_DIR, 'releases/releases.json'), 'utf8');
 export const REAL_PUBSPEC = readFileSync(join(REPO_DIR, 'app/pubspec.yaml'), 'utf8');
+export const REAL_FLAGS = readFileSync(join(REPO_DIR, 'releases/flags.json'), 'utf8');
+export const REAL_OPENAPI = readFileSync(join(REPO_DIR, 'docs/api/openapi.yaml'), 'utf8');
 
 const temps = [];
 after(() => temps.forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -26,10 +28,11 @@ export function tempDir() {
 
 // The files the build reads from outside site/: the real ones unless given, null for missing.
 // `drafts` maps a file name in releases/changelog/ to its text (today's repo has none).
-export function repoDir({ record = REAL_RECORD, pubspec = REAL_PUBSPEC, drafts = {} } = {}) {
+export function repoDir({ record = REAL_RECORD, pubspec = REAL_PUBSPEC, flags = REAL_FLAGS, openapi = REAL_OPENAPI, drafts = {} } = {}) {
   const dir = tempDir();
   const draftFiles = Object.entries(drafts).map(([name, text]) => [`releases/changelog/${name}`, text]);
-  for (const [rel, text] of [['releases/releases.json', record], ['app/pubspec.yaml', pubspec], ...draftFiles]) {
+  const files = [['releases/releases.json', record], ['app/pubspec.yaml', pubspec], ['releases/flags.json', flags], ['docs/api/openapi.yaml', openapi], ...draftFiles];
+  for (const [rel, text] of files) {
     if (text === null) continue;
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), text);
@@ -64,7 +67,7 @@ export function record(versions, patch = (data) => data) {
 
 // Builds the real content plus `files` (path relative to content/ -> text, or null to delete),
 // against `repo` (see repoDir).
-export function buildSite({ files = {}, env = {}, config = {}, repo = {}, publicDir } = {}) {
+export function buildSite({ files = {}, env = {}, config = {}, repo = {}, publicDir, stage } = {}) {
   const root = tempDir();
   const contentDir = join(root, 'content');
   const outDir = join(root, 'dist');
@@ -77,7 +80,7 @@ export function buildSite({ files = {}, env = {}, config = {}, repo = {}, public
       writeFileSync(file, text);
     }
   }
-  const result = build({ contentDir, outDir, publicDir, repoDir: repoDir(repo), env, config: { ...readConfig(), ...config } });
+  const result = build({ contentDir, outDir, publicDir, repoDir: repoDir(repo), env, config: { ...readConfig(), ...config }, stage });
   return { ...result, outDir, page: (route) => readPage(outDir, route) };
 }
 
@@ -122,7 +125,7 @@ export function legal({ locale, path, key, title = `Legal ${key}`, body = `# ${t
 export const hrefs = (doc, selector = 'a') => doc.querySelectorAll(selector).map((a) => a.getAttribute('href'));
 export const meta = (doc, key) => doc.querySelector(`meta[property="${key}"], meta[name="${key}"]`)?.getAttribute('content');
 export const alternates = (doc) =>
-  Object.fromEntries(doc.querySelectorAll('link[rel="alternate"]').map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]));
+  Object.fromEntries(doc.querySelectorAll('link[rel="alternate"][hreflang]').map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')]));
 
 const get = (base, path) =>
   new Promise((resolve, reject) => {

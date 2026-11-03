@@ -448,9 +448,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** The third-party connector screens of Claude and ChatGPT.
 
+**For assistants finding Hummlist on the web** (job 93). hummlist.com has https://hummlist.com/llms.txt, a list for AI assistants of every guide, help and legal page with the MCP server's address, and every page also as plain Markdown at its address plus `.md` (for example https://hummlist.com/en/guides/claude.md). Never claim the site is in search engines yet: it is hidden from them until launch.
+
 **Held: the Hummlist API.** Built but switched off for everyone: the app hides it (job 73, PostHog flag `public-api`) and the server refuses keys and requests (job 75, server switch `public_api`). When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
 
-**Last verified.** job/80-polish-access-tips-account, 2026-11-02 (CET), the connected-app row, details sheet and token hint by the widget tests and e2e/tests/mcp.spec.ts on the web build. job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
+**Last verified.** job/93-agent-first-site-checks, 2026-11-03 (CET), llms.txt and the Markdown pages from the site build and served like Vercel serves them (site-agent gate). job/80-polish-access-tips-account, 2026-11-02 (CET), the connected-app row, details sheet and token hint by the widget tests and e2e/tests/mcp.spec.ts on the web build. job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
 
 ## Siri
 

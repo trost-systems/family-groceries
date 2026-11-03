@@ -1410,3 +1410,18 @@ Legal-relevant, for information; nothing waits on Legal:
    changes.
 3. The Premium row no longer shows „Freigeschaltet“ (M-P2 has no row hints); the Premium page
    still shows the household's status.
+
+## Job 93: agent-first site checks (2026-11-03)
+
+1. Review and merge PR #223 (the brief asks for lead review before the merge). The land
+   sequence is `scripts/push-pr.sh`, then `scripts/merge-pr.sh --wait 223` under the merge lock.
+2. Copy Scout's `/workspace/hummlist/research/agent-first-website-2026-11.md` to hz, or compare
+   it with `docs/AGENT_FIRST.md` "Needs a rule" yourself. The file never reached hz, so that
+   checklist is the job's own reading.
+3. Merge order with job 82 (#210). Both PRs add `site/config/stage.ts` with the same line, so
+   the second one rebases. After job 82 is on main, the `site-agent` gate runs the waitlist
+   form check (labels, no CAPTCHA, axe, consent byte for byte, pending confirmation). It passed
+   on job 82's branch at e874cd3 (`site/checks/agent-forms.test.mjs` copied into a worktree of
+   that commit, 12/12). After rebasing onto job 82, confirm that the `site-agent` log no longer
+   says `# SKIP waits for job 82`.
+

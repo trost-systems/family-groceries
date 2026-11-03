@@ -524,3 +524,6 @@ Dictating „Gurken zwei“ (in-app dictation, Siri, Alexa; DE and EN „cucumbe
 ## Job 88: an own store named like an offered chain ticks the chain
 
 In onboarding, typing an own store such as „edeka“ now ticks the EDEKA chip instead of keeping a hidden store; server already deduplicated. PR #214. Details: [docs/done/88-fix-onboarding-own-store-chain.md](docs/done/88-fix-onboarding-own-store-chain.md).
+## Job 93: hummlist.com for AI agents, deterministic checks
+
+Agents get llms.txt, a Markdown twin of every page, a sitemap, robots and JSON-LD. Each is checked in CI with fixture tests, and so are the launch guard, the MCP probe (live discovery plus a throwaway household on the local stack) and the waitlist form, which stays skipped until job 82. PR #223, not merged (lead review). Details: [docs/done/93-agent-first-site-checks.md](docs/done/93-agent-first-site-checks.md).
