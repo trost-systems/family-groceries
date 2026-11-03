@@ -4,7 +4,7 @@ A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu" and the
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts, a bare trailing count such as "Karotten 2") to the linked user's current household and reads them back.
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts, a count said after the item such as "Karotten zwei" or "Karotten 2") to the linked user's current household and reads them back.
 - `alexa-english` an en-US (or other en-*) request is split by the English parser and answered in English ("I put milk and eggs on Hummlist."); de-DE and a request without a locale stay German.
 - `alexa-duplicate` names open items ("Schon auf der Hummlist: Milch.") without adding them again.
 - `alexa-similar` a new item whose spelling variant or synonym is open is added anyway and the open one named ("Ich habe Karotten auf die Hummlist gesetzt. Möhren steht schon auf der Hummlist.").

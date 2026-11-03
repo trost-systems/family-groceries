@@ -4,7 +4,7 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
 
 ## Sub-features
 
-- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's household and reads them back. A bare count after the name („Karotten 2“) is the quantity, as when typed.
+- `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's household and reads them back. A count said after the name, as a word or digits („Karotten zwei“, „Karotten 2“, "carrots two"), is the quantity, like one said before it (job 89).
 - `alexa-duplicate` names open items without adding them again.
 - `alexa-similar` a spelling variant or synonym already open is added anyway and named.
 - `alexa-read` reads the open items in aisle order, at most ten, then „und N weitere“; an empty list has its own sentence.

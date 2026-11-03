@@ -33,7 +33,8 @@ void main() {
     final rows = File('../supabase/tests/quantity_parse.tsv')
         .readAsLinesSync()
         .where((l) => l.trim().isNotEmpty && !l.startsWith('#'))
-        .map((l) => l.split('\t'));
+        .map((l) => l.split('\t'))
+        .where((cells) => cells.elementAtOrNull(4) != 'spoken');
     for (final [text, name, ...rest] in rows) {
       final quantity = rest.firstOrNull ?? '';
       final history = rest.elementAtOrNull(1) ?? '';

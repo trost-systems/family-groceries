@@ -817,6 +817,19 @@ Deno.test('a carrier word Alexa leaves in the slot ("Milch drauf") is not part o
 const english = (request: Record<string, unknown>, ask: Ask = {}) =>
   envelope({ ...request, locale: 'en-GB' }, ask);
 
+Deno.test('job 89: a count said after the item is its Menge, in German and English', async () => {
+  const world = linkedWorld();
+  await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', 'Gurken zwei drauf'), { token: 'tok-peter' }),
+  );
+  await send(
+    world.deps(),
+    english(intent('AddItemIntent', 'cucumbers three'), { token: 'tok-peter' }),
+  );
+  assertEquals(world.rows.map((r) => [r.name, r.quantity]), [['Gurken', '2'], ['cucumbers', '3']]);
+});
+
 Deno.test('English (en-*): an add is split by the English parser and read back in English', async () => {
   const world = linkedWorld();
   const one = await send(

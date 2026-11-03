@@ -4,7 +4,11 @@
 # the Menge only when it is 1 to 20, does not follow a size or unit word, and the rest is a word
 # the dictionary knows or the household bought before (history). The server's name here is its
 # name and Eigenschaften joined ("Windeln" + "Größe 4"). Tab-separated; an empty cell is none.
-# text	name	quantity	history
+# Said is different (job 89): the voice splitter (supabase/functions/voice/parse.ts, parse_en.ts;
+# Siri, Alexa, in-app dictation) reads any count said after the item as the Menge, as a word or
+# digits. A row with mode `typed` is only typed, one with `spoken` only said; no mode is both.
+# lang is the splitter a said row goes through: de (none) or en.
+# text	name	quantity	history	mode	lang
 Karotten 2	Karotten	2
 2 Karotten	Karotten	2
 Karotten x2	Karotten	2
@@ -12,18 +16,33 @@ Karotten x2	Karotten	2
 Milch 2x	Milch	2
 Eier   10	Eier	10
 Wasser 6	Wasser	6
-carrots 2	carrots	2
-2 carrots	carrots	2
+carrots 2	carrots	2			en
+2 carrots	carrots	2			en
 Vitamin D3	Vitamin D3
 Windeln Größe 4	Windeln Größe 4
 7up	7up
-Büroklammern 100	Büroklammern 100
-Karotten 21	Karotten 21
-Karotten 0	Karotten 0
+Büroklammern 100	Büroklammern 100			typed
+Karotten 21	Karotten 21			typed
+Karotten 0	Karotten 0			typed
 Kaffee Nr. 5	Kaffee Nr. 5
 Waschmittel Stufe 3	Waschmittel Stufe 3
 T-Shirt size 2	T-Shirt size 2
 Cola 1,5 L	Cola	1,5 L
 Hack 500 g	Hack	500 g
-Plimbel 3	Plimbel 3
+Plimbel 3	Plimbel 3			typed
 Plimbel 3	Plimbel	3	Plimbel
+Büroklammern 100	Büroklammern	100		spoken
+Karotten 21	Karotten	21		spoken
+Plimbel 3	Plimbel	3		spoken
+Gurken 2	Gurken	2
+zwei Gurken	Gurken	2		spoken
+Gurken zwei	Gurken zwei			typed
+Gurken zwei	Gurken	2		spoken
+Eier dreißig	Eier	30		spoken
+cucumbers 2	cucumbers	2			en
+cucumbers two	cucumbers two			typed	en
+cucumbers two	cucumbers	2		spoken	en
+two cucumbers	two cucumbers			typed	en
+Hack 500 Gramm	Hack	500 g		spoken
+Milch zwei Liter	Milch	2 l		spoken
+two cucumbers	cucumbers	2		spoken	en

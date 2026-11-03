@@ -1371,3 +1371,17 @@ line, e.g. „Beim Verbinden speichern wir, in welchem Browser und auf welchem S
 Verbindung freigegeben hast (z. B. „Chrome · macOS“), damit du deine Verbindungen unter Zugänge
 unterscheiden kannst. Die Angabe wird gelöscht, sobald du die Verbindung trennst.“ I did not
 change any legal text.
+
+## Job 89: spoken quantity words (2026-11-03)
+
+PR #215. Merges on lead review + green CI; the voice and
+alexa functions deploy with the next `supabase-deploy.yml`/release run.
+
+- **Alexa skill model: no change.** Nothing under `alexa/skill-package/` changed; no skill deploy
+  and no certification step.
+- **Behaviour change to confirm.** Spoken, any count after the item is the quantity again
+  („Büroklammern hundert“ → 100 Büroklammern, „Eier dreißig“ → 30 Eier). Typed text keeps job 61's
+  stricter rule. Say if speech should keep a cap (e.g. 1 to 30) instead.
+- **Your call: typed „zwei Gurken“ offline.** The app's offline parser keeps „zwei Gurken“ as the
+  name while the server reads Gurken ×2 (pre-existing, typed path, out of this job's scope). Porting
+  the number words to `app/lib/list/entry.dart` would be a small follow-up job.

@@ -9,6 +9,7 @@ import { asUser, type Tx } from './db.ts';
 import { addItems as mcpAddItems } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { parseSentence } from '../voice/parse.ts';
+import { parseEnglish } from '../voice/parse_en.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
 
@@ -94,51 +95,57 @@ const quantityRows = async () =>
     .split('\n')
     .filter((line) => line.trim() !== '' && !line.startsWith('#'))
     .map((line) => {
-      const [text, name, quantity = '', history = ''] = line.split('\t');
-      return { text, name, quantity: quantity || null, history };
+      const [text, name, quantity = '', history = '', mode = '', lang = 'de'] = line.split('\t');
+      return { text, name, quantity: quantity || null, history, mode, lang };
     });
 
 type Added = { name: string; properties: string | null; quantity: string | null };
-/** Each path, how it adds a line, and the name it keeps (the voice path
- * capitalizes it, reads a period as the end of a sentence and writes units its own way). */
+/** Each path, the rows it reads (typed or said), how it adds a line, and the name it keeps (the
+ * German splitter capitalizes it, reads a period as the end of a sentence and writes units its
+ * own way). */
 const addPaths: [
   string,
-  (tx: Tx, householdId: string, text: string) => Promise<Added[]>,
-  (name: string, quantity: string | null) => [string, string | null],
+  'typed' | 'spoken',
+  (tx: Tx, householdId: string, text: string, lang: string) => Promise<Added[]>,
+  (name: string, quantity: string | null, lang: string) => [string, string | null],
 ][] = [
   [
     'MCP add_items',
+    'typed',
     async (tx, householdId, text) => (await mcpAddItems(tx, householdId, [{ name: text }])).added,
     (name, quantity) => [name, quantity],
   ],
   [
     'voice and Siri',
-    (tx, householdId, text) => voiceAddItems(tx, householdId, parseSentence(text)),
-    (name, quantity) => [
-      (name[0].toUpperCase() + name.slice(1)).replaceAll('.', ''),
-      quantity?.toLowerCase() ?? null,
-    ],
+    'spoken',
+    (tx, householdId, text, lang) =>
+      voiceAddItems(tx, householdId, (lang === 'en' ? parseEnglish : parseSentence)(text)),
+    (name, quantity, lang) =>
+      lang === 'en' ? [name, quantity] : [
+        (name[0].toUpperCase() + name.slice(1)).replaceAll('.', ''),
+        quantity?.toLowerCase() ?? null,
+      ],
   ],
 ];
 
-for (const [path, add, kept] of addPaths) {
+for (const [path, mode, add, kept] of addPaths) {
   Deno.test({
-    name: `${path} reads a typed quantity as supabase/tests/quantity_parse.tsv says`,
+    name: `${path} reads a ${mode} quantity as supabase/tests/quantity_parse.tsv says`,
     ignore: !enabled,
     sanitizeResources: false,
     fn: async () => {
-      for (const row of await quantityRows()) {
+      for (const row of (await quantityRows()).filter((r) => r.mode === '' || r.mode === mode)) {
         await withHousehold(async (userId, householdId) => {
           const added = await asUser(userId, async (tx) => {
             if (row.history) {
               await tx`insert into public.items (household_id, name, status, bought_at)
                 values (${householdId}, ${row.history}, 'bought', now() - interval '3 days')`;
             }
-            return await add(tx, householdId, row.text);
+            return await add(tx, householdId, row.text, row.lang);
           });
           assertEquals(
             added.map((i) => [[i.name, i.properties].filter(Boolean).join(' '), i.quantity]),
-            [kept(row.name, row.quantity)],
+            [kept(row.name, row.quantity, row.lang)],
             `${row.text}${row.history ? ` after ${row.history}` : ''}`,
           );
         });

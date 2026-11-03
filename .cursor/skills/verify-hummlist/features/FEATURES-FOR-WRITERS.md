@@ -159,7 +159,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Dictation
 
-**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. It then says what it added.
+**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. It then says what it added.
 
 **How to get there.**
 1. Open the Hummlist app on an iPhone or Android phone, on the „Liste“ (EN: "List") tab.
@@ -171,12 +171,12 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That dictation works in the web app or on a computer; there is no microphone button there.
 - That the voice is sent to a server or stored; recognition happens on the device.
 - That it understands languages other than German.
-- That an amount said after the item („Gurken zwei“) is kept as the amount when dictating. Examples put the amount first („zwei Gurken“).
 - That it works on phones without German offline speech data; the app then asks to download it or to type instead.
 
 **Unverified.** Behaviour on real devices (permission prompts, recognizer) was read from code, not run.
 
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main; on the web build only the missing microphone and the sentence splitting were driven (verify-hummlist), the microphone needs a phone. Recipe: [dictation.md](./dictation.md).
+**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [dictation.md](./dictation.md).
 
 ## Ticking items, "Zuletzt verwendet" and undo
 
@@ -449,7 +449,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Siri
 
-**What it does.** On an iPhone the user can add things to the Hummlist by voice: they say a sentence like „Milch, zwei Gurken und Klopapier“, Hummlist splits it into items, files each under a category and Siri reads back „Hinzugefügt: Milch, 2 Gurken, Klopapier.“ An amount said after the item counts too: „Möhren zwei“ adds 2 Möhren. Today this works with a Shortcut the user sets up once (about five minutes, German only). Siri without any setup (iOS 17 and newer, German and English, also reads the list aloud) is built but its announcement is held until Hummlist Launch.
+**What it does.** On an iPhone the user can add things to the Hummlist by voice: they say a sentence like „Milch, zwei Gurken und Klopapier“, Hummlist splits it into items, files each under a category and Siri reads back „Hinzugefügt: Milch, 2 Gurken, Klopapier.“ An amount said after the item counts too, as a word or digits: „Möhren zwei“ adds 2 Möhren, „Eier dreißig“ 30 Eier. Today this works with a Shortcut the user sets up once (about five minutes, German only). Siri without any setup (iOS 17 and newer, German and English, also reads the list aloud) is built but its announcement is held until Hummlist Launch.
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More") → „Zugänge“ (EN: "Access") → „Token erstellen“ (EN: "Create token"), name it Siri, copy the key once.
@@ -468,6 +468,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and the Shortcut's server answers driven against the web build's local stack (verify-hummlist); Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 **Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
 **Last verified.** PR #194 (job 71), 2026-11-02 (CET): the German native-Siri request driven against the web build's local stack (e2e `voice.spec.ts`) and the iOS build's Siri training read from CI; Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
+**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [siri.md](./siri.md).
 
 ## Home Screen widget (held)
 
@@ -515,6 +516,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [alexa.md](./alexa.md).
 **Last verified.** job/69-alexa-icon-invocation, 2026-11-02 (CET), from the code and the skill package tests (sample utterances, guide phrasings), and the shared splitter live on the local stack (a real Alexa device is needed for the voice and the icon in the Alexa app). Recipe: [alexa.md](./alexa.md).
 **Last verified.** job/72-alexa-data-cleanup 29e1784, 2026-11-02 (CET), from code and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
+**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [alexa.md](./alexa.md).
 
 ## Hummlist Premium (held)
 

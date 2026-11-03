@@ -6967,3 +6967,40 @@ simplify the stores screen, drop drag on the list, and tighten the add bar and a
    everywhere) and an inclusive `x.y.z` version range compared per segment (0.1.10 after 0.1.9),
    build number ignored. A tip with a range is skipped when the version cannot be read. The queue
    is `tips` in `app/lib/tips/tips.dart`.
+
+## Job 89: a count said after the item is its quantity again (2026-11-03)
+
+Peter dictated „Gurken zwei“ in the app and got the item „Gurken 2“ with no quantity, a
+regression from job 61.
+
+- **Root cause.** Job 61 made the voice splitter (`voice/parse.ts`) hand a bare count after the
+  item back as digits in the name („Gurken zwei“ → name „Gurken 2“, no quantity), so that
+  `public.parse_item`'s typed rule would decide. Only `add_item` runs `parse_item`. In-app
+  dictation calls the voice function with `mode: parse` and adds the returned name and quantity
+  itself, so it stored „Gurken 2“ as the name. Siri and Alexa went through `add_item` and got the
+  typed rule, which keeps the number in the name unless it is 1 to 20 after a known name („Eier
+  dreißig“, „Büroklammern hundert“, „Plimbel drei“ all stayed in the name). Reproduced on the local
+  stack: `mode: parse` with „Gurken zwei“ returned `{"name":"Gurken 2","quantity":null}`.
+- **Fix at the root: the splitter decides for speech, as it did before job 61.** A count said
+  after the item, as a word or digits, is the quantity in every voice path (Siri, Alexa, in-app
+  dictation), because they all share the splitter and pass its quantity to `add_item` as the
+  explicit one. The typed rule exists because typed text has „Vitamin D3“, „7up“ and „Büroklammern
+  100“ written as part of the product. Speech has no such product names worth the cost; spoken
+  „Größe vier“, „Typ 405“, „Nr. 5“, „Stufe 3“ still stay in the name (size words, unchanged).
+  Typed input is unchanged (MCP, the app's add sheet, `parse_item`).
+- **English gets the same.** `parse_en.ts` never read an amount after the item, so „cucumbers
+  two“ stayed one name. It now reads a bare count there, with its own size words (size, type, no,
+  number, stage: „diapers size 4“ stays whole). Units after an English item („milk 2 liters“) stay
+  as they were (in the name), because the brief keeps today's unit behaviour.
+- **Trailing „ein“/„eine“ is not a count.** „Gurken eins“ is 1, but „ein“, „eine“ and their
+  inflections after an item stay as they were: „Trag Milch ein“ would otherwise become Milch ×1.
+- **One table, two modes.** `supabase/tests/quantity_parse.tsv` gains a `mode` column (`typed`,
+  `spoken`, none = both) and a `lang` column (the splitter a spoken row goes through, de or en).
+  `entry_test.dart` and the MCP path read the typed rows; the voice path in
+  `add_paths_integration_test.ts` reads the spoken ones with the German or English splitter.
+- **Found, not fixed: typed „zwei Gurken“ offline.** The server reads Gurken ×2; the app's
+  offline `parseEntry` keeps „zwei Gurken“ as the name. Online the add sheet uses the server's
+  parse, so only offline adds see it. Typed behaviour is out of this job's scope; the table marks
+  that row `spoken` and NEEDS_LEAD „Job 89“ asks whether to port the number words.
+- **Alexa skill model: unchanged.** The slot is free text; nothing in `alexa/skill-package/`
+  changes, so nothing to deploy or certify.
