@@ -1322,3 +1322,39 @@ Order: server first, then the flag, so nobody sees a button that answers „noch
 freigeschaltet“. Whether the integration lock (`integration_lock`, Premium) should be on before the
 API opens is the paywall release's call (`docs/PAYWALL_RELEASE.md` 6.4); the API switch does not
 depend on it.
+## Job 65: store screenshots
+
+- **Compare with the approved de-DE v2 set.** The v2 output, capture scripts and the ASO spec
+  (`/workspace/hummlist/play-graphics/`, `/workspace/hummlist-aso/de-DE-play-screenshot-spec-2026-11-01.md`)
+  are not on the Hetzner runner, so the set here was rebuilt from the brief. Hold the contact sheet
+  (PR body, `docs/screenshots/65/`) beside v2. Copy the approved scene captions into
+  `marketing/store-screenshots/captions.yaml` with `status: approved`, and say which scenes or
+  devices v2 has that this set lacks (`sets.mjs` is the one place to change).
+- **English captions and the en-US set are drafts.** English item names still get category icons
+  instead of their own (the job 54 finding above), so every English fruit shows the carrot.
+- **The CI workflow can be dispatched only once it is on main** (GitHub runs `workflow_dispatch`
+  for workflows on the default branch). It was proven on this branch with a temporary push trigger,
+  which was removed before the PR (run linked in the PR).
+- **FEATURES-FOR-WRITERS.md** says "Clips and screenshots use the fictional Brandt family". The
+  store set and the site videos now use „Unser Haushalt“ (Anna, Jonas); the how-to clips still use
+  the Brandt family. Not edited here, because jobs 61 to 64 all change that file.
+
+## Job 84: store screenshots in frame P2
+
+- **PR #212, not for merge.** It carries job 65's pipeline (#190), rebased onto main, plus P2 as
+  its frame. Land #190 first, or close it and land this PR in its place.
+- **CI:** the run that counts is the `ci-ok` check on the PR's head commit (Checks tab).
+- **Preview:** `/internal/store-frames-final` on the PR's hummlist-site preview deployment (Vercel
+  login). Production builds leave `site/public/internal/` out.
+- **Files:** `store/screenshots/<locale>/<device>/<n>-<scene>.png` for de-DE and en-US:
+  `play-phone` (1080 × 1920), `appstore-iphone69` (1320 × 2868, the 6.9-inch slot, which also takes
+  6.7-inch), `appstore-iphone65` (1284 × 2778), the tablets `play-tablet7`, `play-tablet10` and
+  `appstore-ipad13` (four shots each), `<locale>/play/feature-graphic.png` and `icon-512.png`, plus
+  `manifest.json` (size, sha256, caption status, text share) and `summary.md`.
+- **Captions to sign off** (`marketing/store-screenshots/captions.yaml`, all `draft` except the
+  German tagline): the German P2 texts Peter saw, and the new English drafts, among them the
+  English tagline "A shopping list the whole household hums along to." Set `status: approved` for
+  each one Peter accepts, then rerun `scripts/store-screenshots.sh --locale all --publish`.
+- **Nothing was uploaded** to Play Console or App Store Connect. Upload the PNGs only after Peter
+  says so. Play takes at most 8 per device type (6 here). App Store Connect takes 10 per size.
+- **Not in this set:** the voice shot (Q35 N1), a dark-mode shot (job 65 had one; P2's six don't).

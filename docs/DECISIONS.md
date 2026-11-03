@@ -6846,3 +6846,121 @@ rate limiting etc in mind there." Addendum 1 (Q41 = PA2): the API is Premium. Gu
    archive directory at a cached one (key: runner image and version, Playwright lockfile, ffmpeg),
    so apt only fetches packages missing there. Only `apt-get update` still reads the mirror.
 6. **Local ports 577xx**, since 761xx is past 65535.
+## Job 65: automated store screenshots and the re-filmed demo videos (2026-11-02)
+
+- **65.1 Rebuilt from the brief, without the approved v2 set.** The manual pipeline, its scenario
+  (box branch `play-graphics/scenario`), the approved de-DE v2 output and the ASO spec live on the
+  box under `/workspace/hummlist/play-graphics`, `/workspace/hummlist-aso` and
+  `/home/box/fg-wt/play-graphics`. None of them is synced to the Hetzner runner and there is no
+  ssh to the box (asked on the board, NEEDS_LEAD). The scenes, sizes and captions here follow the
+  brief, the store rules and the site copy. Only the feature graphic's two lines are the approved
+  text. Every other caption is `status: draft` until the lead compares the set with v2.
+- **65.2 Web build, not an emulator.** The screenshots film the release web build (wasm,
+  production defines) at each device's CSS viewport and device pixel ratio, through the
+  verify-hummlist launcher. No emulator is allowed here, and it is the build users get at
+  app.hummlist.com. Native-only chrome (status bar, keyboard) is not drawn (hummlist-ui-craft).
+- **65.3 One frame per device: caption band, device body, app to the bottom edge.** Each device
+  has a real device's CSS viewport (`sets.mjs`). The screen gets that shape at the height left
+  under the caption, and the body's foot bleeds off the edge, so the whole app with its tab bar is
+  in view. The captions use the site's cobalt, Bricolage and Inter. The icon comes from
+  `AppIcon-1024.png`, which `design/app-icon` generates, never redrawn.
+- **65.4 Scenes per device.** The empty add sheet opens at half the screen height (`add_sheet.dart`,
+  `_firstOpenShare`). On the 780 px Play phone that leaves one „Wieder fällig“ row, so the Play
+  phone shows the edit sheet instead and the due scene runs on the iPhone (900 px) and the iPad.
+  Mehr is not shown: it lists „Hummlist Premium“. Mehr → Läden is not shown either: its disclaimer
+  names dm, Lidl and EDEKA.
+- **65.5 Generic stores only (legal N-23).** `create_household` still adds dm, Lidl and Edeka on
+  main, and fg seed asserts them. `marketing/store-screenshots/seed.mjs` deletes every store the
+  scenario does not name, through the app's `delete_store`, as the owner. Once job 64's
+  `p_default_stores` default lands, it deletes nothing and stays correct.
+- **65.6 Determinism by a fake page clock.** Playwright's clock is installed before the app loads,
+  at the moment the run was seeded, not at a calendar date. The scenario's times count from that
+  moment, and the add sheet's 30-day recent rows are computed on the device. A clock pinned to a
+  date would have let the 35-day-old purchases into those rows a week later (found in review).
+  A scene pauses the clock on the 16 ms animation-frame grid counted from its start and steps it
+  by named amounts. No scene shows a date. The tick never commits, because the clock stops before the 440 ms leave
+  animation ends. Three full runs matched byte for byte (`compare.mjs`). Before the grid
+  alignment, a 1 px anti-aliased end of the strike-through and the caret's blink phase differed
+  between runs.
+- **65.7 The site videos keep job 54's Linux capture.** The originals came from the Linux profile
+  build under Xvfb with real X input, not from an emulator, so the brief's fallback (Playwright
+  video of the web build) did not apply. `remake.sh` re-films only the household and the members.
+  household-sync now has two phones instead of three. The CI workflow does not film the videos:
+  its runner has no xdotool and no GTK toolchain, and the videos are committed site files, not
+  release artifacts.
+- **65.8 Item→store memory places the videos' adds.** Honig, Marmelade and Eier were bought once,
+  35 days ago, at the Supermarkt. That is outside the 30-day recently-used rows and never due, so
+  the screenshots keep their content. The adds land mid-list where the camera is, instead of in an
+  „Ohne Laden“ section below the fold.
+- **65.9 The e2e gate reuses a parent's lock.** `flock /tmp/fg-e2e.lock scripts/gates/e2e.sh`
+  deadlocked: the gate's own `flock 9` waited for the parent's lock on another descriptor. An
+  orphaned waiter from such a run held every e2e run on the Hetzner runner for about an hour
+  until it was killed. The gate now checks for an ancestor with the lock file open, as `fg sync`
+  does, and `scripts/e2e-gate-test.sh` covers it. The test fails on the old gate.
+- **65.10 fg port blocks up to 654.** Job 65's block 651 was refused (500 to 649). 655 would need
+  ports past 65535.
+
+## Job 84: the store screenshots in frame P2 (2026-11-03)
+
+Peter picked P2 „Großschrift“ from job 77's five proposals (PR #204) on 2026-11-02, 21:55.
+
+- **84.1 P2 is the frame of job 65's pipeline, not of job 77's generator.** Job 77 framed
+  committed German captures of one size. Job 65's pipeline (PR #190, open) films the real app
+  for every locale and device. So P2 moved into `marketing/store-screenshots/frame.mjs` and
+  replaced the cobalt frame there. Job 77's kit pieces (clean cuts from the pixels, card window,
+  text share) came along; its other four proposals did not. This branch carries #190's commit,
+  rebased onto main, because #190 is not merged yet.
+- **84.2 P2's six scenes and order.** list, sync, add, order, tick, invite, as Peter saw them.
+  Job 65's due, edit and dark scenes are gone. The sync shot has Jonas add through his own add
+  sheet so that his confirmation is real UI for the sticker. The add scene types „2 Hafer“, not
+  „3 Jogh“: on this household Joghurt is already on the list, so „3 Jogh“ showed only catalogue
+  rows, and the caption promises suggestions from the household's own shops.
+- **84.3 One phone capture for every phone size.** 360 × 800 CSS pixels at 3×, as job 77's set.
+  Play and the App Store then show the same app at the same type size, and the capture runs
+  once per locale and scene. Tablets keep their own 800 × 1280 capture with the first four scenes.
+- **84.4 App Store sizes: 6.9-inch (1320 × 2868) and 6.5-inch (1284 × 2778).** The brief asked for
+  6.7 and 6.5. App Store Connect's 6.9-inch slot is the required one and also takes 6.7-inch
+  files (1290 × 2796), so a separate 6.7-inch set would add files without a slot. 6.5-inch has its
+  own slot and is added. The iPad set stays, because the app targets iPad (device family 1,2)
+  and App Store Connect asks for iPad screenshots then.
+- **84.5 The invite shows https://app.hummlist.com.** The web build's invite link is its own
+  origin. The scene's page runs at https://app.hummlist.com, and Playwright answers every request
+  to it from the local build. Chromium's local network checks are off in the capture browser, so
+  that page can reach the stack on 127.0.0.1. The invite's code and date change per run, so
+  `compare.mjs` treats those two files as expected to differ.
+- **84.6 Captions.** German: P2's texts, `draft` (Peter picked the frame and saw the texts, but
+  nobody signed them off as store copy). The tagline FG1 is `approved`. English: new drafts.
+  Every caption line must fit one line at 132 px on the Play shot. A longer line gets smaller type,
+  and the manifest records the size. `compose.mjs` fails on retailer names (Legal N-23), on a
+  shortened "Hummlist", on Premium or prices, on more than 20 % text and on a caption that runs
+  into the card.
+- **84.7 Clean cuts need 8 CSS pixels of background.** At 16 px, the gaps between two lines of a
+  paragraph counted as cuts, and the iPhone invite card began mid-sentence. At 3× the paragraph
+  gaps are 20 to 22 px, and the gaps between the order screen's tiles are 24 px.
+- **84.8 The final PNGs are checked in under `store/screenshots/`** (`--publish`), with the
+  manifest. The review page `/internal/store-frames-final` shows WebP copies. `site/build.mjs`
+  leaves `public/internal/` out of production with job 77's hunk, carried here unchanged so that
+  #204 and this PR merge in either order.
+- **84.9 Review round (independent pass, nothing must-fix; all six should-fixes taken).** `--publish`
+  refuses a partial run, so the checked-in manifest always describes every file. The card's ink
+  border sits outside the capture (`content-box`) instead of hiding 10 px of it. English icon
+  names match whole words in their own table (`_englishWords`): endings misfired ("Pineapple" got
+  the apple, "Quince" the meat), and English writes compounds apart anyway; singulars were added.
+  The feature graphic gets the same text check. Job 65's dead dark-mode path and stale doc lines
+  are gone. `real` left the retailer list: it would reject ordinary English captions.
+- **84.10 Review 0 fixes.** The sync sticker was the confirmation text plus 12 px, so it also
+  caught the divider above and the top of the next suggestion („Bananen“). It is now the text
+  and its undo button plus 6 px, and its edge rows are plain sheet white. The invite button kept
+  the blue focus ring of the test's mouse click, which a phone never shows after a tap: the scene
+  blurs it. The review page says the date it was built, not a commit, which a squash replaces.
+  The PR body names the CI check (`ci-ok` on the head) rather than one run, so `push-pr.sh`
+  rounds don't leave it stale.
+- **84.11 Review 1 fixes.** The sync scene found Jonas's confirmation with a page-wide
+  `getByText`, and Flutter web also puts that text into a screen-reader announcement. When both
+  were present, Playwright's strict mode failed the capture (en-US tablet, one of the reviewer's
+  runs). It now looks inside the add sheet only. On tablets the sheet is narrower than the screen,
+  and the sticker, cut at the screen's width, showed the grey scrim at both ends. It now takes the
+  sheet's own columns. `frame.mjs` fails when a sticker band's edge pixels are not one colour, and
+  that check rejects the old tablet band. Proof: two full runs at 20 of 20, `compare.mjs` 58 of 64
+  identical (the 6 invite shots differ as expected), and the four sync captures repeated five
+  times each, 20 of 20.

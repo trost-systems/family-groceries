@@ -512,3 +512,7 @@ A versioned REST API (`/v1`) next to the MCP server lets people automate their l
 ## Job 75: the API is off on the server until switched on
 
 The PostHog flag `public-api` only hid the app's API section; anyone signed in could still make a key and use the API. A server switch, `app_switches.public_api`, now starts off (migration `20261102200000_public_api_switch.sql`). While off, `create_api_token` refuses with `api_disabled` (the app says „Die API ist noch nicht freigeschaltet.“) and every `api` request answers 404 `not_found` before any key lookup or counter. MCP, Siri and Alexa don't read it. How to turn it on: docs/NEEDS_LEAD.md "Job 75" and docs/API.md "Switched off". Details: [docs/done/75-api-server-flag-gate.md](docs/done/75-api-server-flag-gate.md).
+
+## Job 84: the store screenshots in frame P2
+
+P2 „Großschrift“, the frame Peter picked, is now the store screenshot pipeline's frame: German and English, Play phone and tablets, App Store 6.9-inch (also takes 6.7-inch), 6.5-inch and iPad, from the real web app. The PNGs are in `store/screenshots/`, the review page is `/internal/store-frames-final` on the preview, and nothing was uploaded. English item names now get their own icons. Review 0 fixes: a clean sync sticker, no focus ring on the invite, and a dated review page. Review 1 fixes: a sync capture that can't race the screen-reader announcement, tablet stickers without the scrim, and a check on sticker edges. Details: [docs/done/84-store-frames-p2.md](docs/done/84-store-frames-p2.md).

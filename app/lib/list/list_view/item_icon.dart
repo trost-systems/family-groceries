@@ -9,6 +9,9 @@ String itemIcon(Item item, Category? category) => nameIcon(item.name, category);
 /// The icon for a name, as [itemIcon]: the add sheet's rows have no item.
 String nameIcon(String name, Category? category) {
   for (final word in foldName(name).split(RegExp('[^a-z]+'))) {
+    if (_englishWords[word] case final emoji?) {
+      return emoji;
+    }
     for (final (ending, emoji) in _items) {
       if (word.endsWith(ending)) {
         return emoji;
@@ -137,3 +140,82 @@ const _items = [
   ('bier', '🍺'),
   ('wein', '🍷'),
 ];
+
+/// English names as whole words: English writes compounds apart ("oat
+/// milk"), and an ending would misfire ("pineapple", "quince", "beer" in
+/// "Himbeer").
+const _englishWords = {
+  'toothpaste': '🪥',
+  'toothbrush': '🪥',
+  'tissues': '🤧',
+  'diapers': '👶',
+  'nappies': '👶',
+  'soap': '🧼',
+  'detergent': '🧺',
+  'sponge': '🧽',
+  'bananas': '🍌',
+  'banana': '🍌',
+  'apples': '🍎',
+  'apple': '🍎',
+  'pears': '🍐',
+  'pear': '🍐',
+  'lemons': '🍋',
+  'lemon': '🍋',
+  'oranges': '🍊',
+  'orange': '🍊',
+  'grapes': '🍇',
+  'grape': '🍇',
+  'strawberries': '🍓',
+  'strawberry': '🍓',
+  'cucumbers': '🥒',
+  'cucumber': '🥒',
+  'tomatoes': '🍅',
+  'tomato': '🍅',
+  'potatoes': '🥔',
+  'potato': '🥔',
+  'carrots': '🥕',
+  'carrot': '🥕',
+  'onions': '🧅',
+  'onion': '🧅',
+  'garlic': '🧄',
+  'peppers': '🫑',
+  'pepper': '🫑',
+  'lettuce': '🥬',
+  'broccoli': '🥦',
+  'mushrooms': '🍄',
+  'pretzels': '🥨',
+  'pretzel': '🥨',
+  'bread': '🍞',
+  'milk': '🥛',
+  'cheese': '🧀',
+  'yogurt': '🥛',
+  'yoghurt': '🥛',
+  'eggs': '🥚',
+  'egg': '🥚',
+  'mince': '🥩',
+  'meat': '🥩',
+  'sausages': '🌭',
+  'sausage': '🌭',
+  'bacon': '🥓',
+  'chicken': '🍗',
+  'fish': '🐟',
+  'salmon': '🐟',
+  'pasta': '🍝',
+  'rice': '🍚',
+  'flour': '🌾',
+  'sugar': '🧂',
+  'salt': '🧂',
+  'honey': '🍯',
+  'coffee': '☕',
+  'tea': '🍵',
+  'chocolate': '🍫',
+  'crisps': '🍿',
+  'cookies': '🍪',
+  'cookie': '🍪',
+  'biscuits': '🍪',
+  'biscuit': '🍪',
+  'water': '💧',
+  'juice': '🧃',
+  'beer': '🍺',
+  'wine': '🍷',
+};
