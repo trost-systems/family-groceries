@@ -449,8 +449,17 @@ does not exist yet fails the same way ("is missing"). The sequence:
    register the App ID `com.hummlist.app.HomeWidget`; enable App Groups on
    both `com.hummlist.app` and `com.hummlist.app.HomeWidget` and assign the
    group to each.
-2. From the build box, in `app/` (the box reaches GitHub over HTTPS only, so
-   the match URL is the HTTPS one; `gh` is the git credential helper):
+2. From CI: Actions, Certificates, Run workflow on `main` with lane
+   `renew_profile` and confirm `renew` (`gh workflow run certificates.yml
+   -f lane=renew_profile -f confirm=renew`). The log lists every profile of
+   both App IDs with its type and state before and after; lane `profiles`
+   lists them without changing anything. `match_types` `appstore,adhoc` also
+   renews an ad hoc profile. Development profiles stay Xcode's: the match repo
+   holds no development certificate, and the lane refuses rather than let
+   match create one. It also stops when certificate `GN85KDC962` is gone from
+   the portal. Or from the build box, in `app/` (the box reaches GitHub over
+   HTTPS only, so the match URL is the HTTPS one; `gh` is the git credential
+   helper):
 
    ```bash
    set -a; . ~/groceries-ops/env; set +a   # MATCH_PASSWORD

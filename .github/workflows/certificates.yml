@@ -1,6 +1,10 @@
-# Creates or renews the App Store distribution certificate and profile in the
-# match repo (`fastlane ios certificates`, docs/RELEASE.md). match imports the
-# new certificate into a macOS keychain, so the lane needs a Mac; this runs it
+# Signing material in the match repo (docs/RELEASE.md), one lane per dispatch:
+#   certificates   create or renew the App Store distribution certificate and
+#                  profile (`fastlane ios certificates`); confirm "create"
+#   renew_profile  new profiles with the existing certificate after a
+#                  capability change, never a certificate; confirm "renew"
+#   profiles       list the App IDs' profiles and their states; read-only
+# match imports into a macOS keychain, so the lanes need a Mac; this runs them
 # on a GitHub macOS runner instead of Peter's Mac.
 #
 # Manual only (Actions tab, Certificates, Run workflow) and only from `main`.
@@ -12,10 +16,19 @@ name: Certificates
 on:
   workflow_dispatch:
     inputs:
+      lane:
+        description: Lane to run
+        type: choice
+        options: [certificates, renew_profile, profiles]
+        default: certificates
       confirm:
-        description: Type "create" to create or renew the certificate and profile
+        description: Type "create" (certificates) or "renew" (renew_profile); profiles needs none
         type: string
-        required: true
+        required: false
+      match_types:
+        description: Profile types for renew_profile (appstore or appstore,adhoc)
+        type: string
+        default: appstore
 
 concurrency:
   group: certificates
@@ -26,7 +39,11 @@ permissions:
 
 jobs:
   certificates:
-    if: github.ref == 'refs/heads/main' && inputs.confirm == 'create'
+    if: >-
+      github.ref == 'refs/heads/main'
+      && ((inputs.lane == 'certificates' && inputs.confirm == 'create')
+          || (inputs.lane == 'renew_profile' && inputs.confirm == 'renew')
+          || inputs.lane == 'profiles')
     runs-on: macos-26
     timeout-minutes: 30
     environment: release
@@ -83,8 +100,10 @@ jobs:
             echo "MATCH_KEYCHAIN_NAME=$keychain"
             echo "MATCH_KEYCHAIN_PASSWORD=$password"
           } >> "$GITHUB_ENV"
-      - run: bundle exec fastlane ios certificates
+      - run: bundle exec fastlane ios "$LANE"
         env:
+          LANE: ${{ inputs.lane }}
+          MATCH_TYPES: ${{ inputs.match_types }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID || secrets.APPLE_TEAM_ID }}
           MATCH_GIT_URL: ${{ vars.MATCH_GIT_URL || secrets.MATCH_GIT_URL }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
