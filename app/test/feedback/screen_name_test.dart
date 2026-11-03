@@ -11,6 +11,8 @@ void main() {
       '/edit': 'stores',
       '/edit/none': 'stores',
       '/edit/3f0c-Hafermilch': 'stores',
+      '/more/usage-data': 'usage_data',
+      // Gone in job 85: the switch moved, the legal rows sit on More.
       '/more/privacy': 'other',
       '/more/access': 'access',
       '/more/account': 'account',

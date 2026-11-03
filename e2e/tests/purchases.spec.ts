@@ -102,7 +102,7 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   expect(await report(peterEmail, transactionId), 'a refunded purchase does not unlock again').toBe('revoked');
 });
 
-test('More lists Premium only once the household has it (premium_offer off), then live with Freigeschaltet', async ({ page }) => {
+test('More lists Premium only once the household has it (premium_offer off), live', async ({ page }) => {
   const email = newEmail('iap-row');
   await page.setViewportSize({ width: 390, height: 844 });
   await signUpWithHousehold(page, email);
@@ -111,10 +111,10 @@ test('More lists Premium only once the household has it (premium_offer off), the
   await expect(lifetimeRow(page), 'not listed before the launch (job 64)').toHaveCount(0);
   await screenshot(page, 'job25-more-de-390');
   expect(await buy(email, `2001${Date.now()}`)).toBe('granted');
-  await expect(lifetimeRow(page), 'the row says so, live').toContainText('Freigeschaltet', { timeout: 10_000 });
+  await expect(lifetimeRow(page), 'listed once the household has it, live').toBeVisible({ timeout: 10_000 });
   await screenshot(page, 'job25-more-unlocked-de-390');
   await page.setViewportSize({ width: 1366, height: 1024 });
-  await expect(lifetimeRow(page)).toContainText('Freigeschaltet');
+  await expect(lifetimeRow(page)).toBeVisible();
   await screenshot(page, 'job25-more-unlocked-de-1366');
 });
 

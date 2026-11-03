@@ -950,16 +950,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get accessRowHint => 'MCP-Server, Zugangsschlüssel, verbundene Apps';
-
-  @override
-  String get accountRowHint => 'Daten exportieren, Konto löschen';
-
-  @override
   String get settingsTitle => 'Einstellungen';
-
-  @override
-  String get settingsRowHint => 'Darstellung und Sprache';
 
   @override
   String get appearance => 'Darstellung';
@@ -1000,6 +991,33 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get licenses => 'Lizenzen';
+
+  @override
+  String get privacyPolicy => 'Datenschutzerklärung';
+
+  @override
+  String get updatePatchTitle => 'Update bereit';
+
+  @override
+  String get updatePatchBody =>
+      'Hummlist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.';
+
+  @override
+  String get updatePatchAction => 'Neu starten';
+
+  @override
+  String get updateStoreTitle => 'Neue Version da';
+
+  @override
+  String updateStoreBody(String version) {
+    return 'Version $version ist im Store. Aktualisiere, um alles Neue zu bekommen.';
+  }
+
+  @override
+  String get updateStoreAction => 'Aktualisieren';
+
+  @override
+  String get updateLater => 'Später';
 
   @override
   String appVersion(String version) {
@@ -1079,19 +1097,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sendTestError => 'Testfehler senden';
 
   @override
-  String get feedbackSection => 'Feedback';
-
-  @override
   String get feedbackRow => 'Feedback senden';
 
   @override
-  String get feedbackRowHint => 'Fehler, Ideen und Fragen an Peter';
-
-  @override
   String get helpRow => 'Hilfe & Kontakt';
-
-  @override
-  String get helpRowHint => 'Fragen, Anleitungen und unsere E-Mail-Adresse';
 
   @override
   String get feedbackMessage => 'Deine Nachricht';
@@ -1309,9 +1318,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get lifetimeRestore => 'Kauf wiederherstellen';
 
   @override
-  String get lifetimeUnlocked => 'Freigeschaltet';
-
-  @override
   String get lifetimeUnlockedBody =>
       'Hummlist Lifetime ist für euren ganzen Haushalt freigeschaltet. Danke!';
 
@@ -1468,9 +1474,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get premiumTitle => 'Hummlist Premium';
-
-  @override
-  String get premiumRowHint => 'Siri und KI-Assistenten';
 
   @override
   String get premiumBody =>

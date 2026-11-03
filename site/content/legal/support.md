@@ -56,7 +56,7 @@ Unsere Erstattungen nach den 48 Stunden sind freiwillig. Deine gesetzlichen Rech
 
 ### Wie schalte ich die Nutzungsdaten aus?
 
-Tippe auf **Mehr** und schalte unter **Nutzungsdaten** den Schalter **Nutzungsdaten und Fehlerberichte senden** aus. Ab dann sendet die App nichts mehr an PostHog. Du kannst ihn jederzeit wieder einschalten.
+Tippe auf **Mehr** und dann auf **Nutzungsdaten**. Schalte dort **Nutzungsdaten und Fehlerberichte senden** aus. Ab dann sendet die App nichts mehr an PostHog. Du kannst ihn jederzeit wieder einschalten.
 
 ### Kann ich Sachen per Siri auf die Liste setzen?
 

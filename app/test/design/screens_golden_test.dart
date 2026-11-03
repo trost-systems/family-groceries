@@ -12,6 +12,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/more/app_update.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/login_screen.dart';
@@ -28,6 +29,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
+import '../analytics/fakes.dart' show MemoryAnalyticsStore, loadedAnalytics;
 import '../list/fake_repository.dart';
 import '../more/more_harness.dart';
 import '../purchases/fakes.dart';
@@ -395,6 +397,70 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/more-$mode.png'),
+      );
+    });
+
+    // Job 85, M-P2: the store's update card on top of More.
+    testWidgets('more with an update, $mode', (tester) async {
+      await pumpMore(
+        tester,
+        theme: ThemeMode.values.byName(mode),
+        updates: FakeAppUpdates(const StoreVersion('1.4.0')),
+      );
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/more-update-$mode.png'),
+      );
+    });
+
+    testWidgets('more in English, $mode', (tester) async {
+      await pumpMore(
+        tester,
+        theme: ThemeMode.values.byName(mode),
+        device: const [Locale('en', 'US')],
+      );
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/more-en-$mode.png'),
+      );
+    });
+
+    // Job 85 addendum: the Rechtliches label and its rows, sign-out and the
+    // version at the end of More, in a build that sends usage data.
+    for (final (lang, device) in const [
+      ('de', Locale('de', 'DE')),
+      ('en', Locale('en', 'US')),
+    ]) {
+      testWidgets('more scrolled to the end, $lang, $mode', (tester) async {
+        await pumpMore(
+          tester,
+          theme: ThemeMode.values.byName(mode),
+          device: [device],
+          analytics: await loadedAnalytics(MemoryAnalyticsStore()),
+        );
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('more-version')),
+          200,
+        );
+        await tester.pumpAndSettle();
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/more-end-$lang-$mode.png'),
+        );
+      });
+    }
+
+    // In a build that sends usage data, the switch is on this page.
+    testWidgets('usage data, $mode', (tester) async {
+      await pumpMore(
+        tester,
+        location: usageDataPath,
+        theme: ThemeMode.values.byName(mode),
+        analytics: await loadedAnalytics(MemoryAnalyticsStore()),
+      );
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/more-usage-data-$mode.png'),
       );
     });
 

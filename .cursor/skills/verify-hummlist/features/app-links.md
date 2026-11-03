@@ -7,7 +7,7 @@ A link to `https://app.hummlist.com/<path>` opens that screen of Hummlist: in th
 - `al-list` `/list` opens the list; the address becomes `/`.
 - `al-add` `/add` opens the list with the add sheet open (group „Hinzufügen“ / "Add") and the field „Was brauchst du?“ / "What do you need?" focused; the address becomes `/`.
 - `al-store` `/stores/<store id>` opens the list scrolled so that store's divider („<Store>, N Artikel“) is in view, unfolded if it was folded (the fold is then off for good, as after a tap). An id the household does not have, or a store without open items, opens the list as it is.
-- `al-more` `/more`, `/more/invites` („Einladungen“), `/more/settings` („Einstellungen“), `/more/settings/language`, `/more/access` („Zugänge“), `/more/account` („Konto“), `/more/lifetime` (Premium page) open that page of the More tab; back goes to More.
+- `al-more` `/more`, `/more/invites` („Einladungen“), `/more/settings` („Einstellungen“), `/more/settings/language`, `/more/access` („Zugänge“), `/more/account` („Konto“), `/more/lifetime` (Premium page), `/more/usage-data` („Nutzungsdaten“, builds with an analytics key) open that page of the More tab; back goes to More. `/more/legal` (a former page) lands on `/more`.
 - `al-join` `/join/<code>` opens the join screen with the code (see household-invites, `link-join`).
 - `al-unknown` any other path, signed in, opens the list. Signed out it opens the sign-in page without carrying the path.
 - `al-signed-out` signed out, a link above opens „Anmelden“ with `?next=<path>` in the address; after sign-in (and the usage-data question on a new device) the link's screen opens.

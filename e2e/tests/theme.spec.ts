@@ -133,7 +133,7 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await expect(copied).toHaveCount(0);
   await page.getByRole('button', { name: 'Zurück' }).click();
 
-  await page.getByRole('button', { name: /^Konto Daten/ }).click();
+  await page.getByRole('button', { name: 'Konto', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeVisible();
   await shot('11', 'account');
   await page.getByRole('button', { name: 'Zurück' }).click();

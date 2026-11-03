@@ -1391,3 +1391,22 @@ alexa functions deploy with the next `supabase-deploy.yml`/release run.
 PR #214. No Legal items: nothing new is shown. One call made without Peter (DECISIONS, Job 88):
 a typed „edeka“ is now stored as „EDEKA“, the chip's spelling, because it ticks that chip. The
 server already allowed only one store per name key, so no server guard was added.
+
+## Job 85: More menu M-P2 (2026-11-02, addendum 1 on 2026-11-03)
+
+PR #211, rebased onto main after #207 merged; lands with `scripts/merge-pr.sh --wait 211` under
+the merge lock after lead review.
+
+Legal-relevant, for information; nothing waits on Legal:
+
+1. Addendum 1 put the legal rows on More itself: Mehr → Impressum is two taps from the list
+   (§5 DDG), with Datenschutzerklärung, „Nutzungsbedingungen (EULA)“ and Lizenzen next to it.
+   The terms row uses the Premium page's placeholder label and link (`termsUrl`: Apple's EULA
+   on iOS, the support page elsewhere; H-93, NEEDS_LEAD Job 49), so it changes when those do.
+   „Datenschutz bei Käufen“ is not linked anywhere in the app today and has no row.
+2. The usage-data switch is under Mehr → Nutzungsdaten again (a row of its own, page title
+   „Nutzungsdaten“). The approved consent text (version 2026-11-01) and the privacy policy say
+   exactly that path, so the wording issue raised in the first round is gone; no legal text
+   changes.
+3. The Premium row no longer shows „Freigeschaltet“ (M-P2 has no row hints); the Premium page
+   still shows the household's status.

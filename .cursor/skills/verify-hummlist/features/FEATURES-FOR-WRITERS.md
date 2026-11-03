@@ -49,12 +49,12 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Usage-data question (analytics consent)
 
-**What it does.** Right after the first sign-in on a device, Hummlist asks once whether it may collect usage data. A no sends nothing at all. A yes sends pseudonymous usage data and error reports to PostHog on servers in the EU. Both answers are equally prominent, and the user can change the answer any time in More. Anyone who said yes to an earlier wording of the question is asked again with the current, shorter text, and nothing is sent until they answer. A no stays a no.
+**What it does.** Right after the first sign-in on a device, Hummlist asks once whether it may collect usage data. A no sends nothing at all. A yes sends pseudonymous usage data and error reports to PostHog on servers in the EU. Both answers are equally prominent, and the user can change the answer any time under More → Nutzungsdaten. Anyone who said yes to an earlier wording of the question is asked again with the current, shorter text, and nothing is sent until they answer. A no stays a no.
 
 **How to get there.**
 1. Sign in for the first time on a device: the question „Darf Hummlist Nutzungsdaten erfassen?“ (EN: "May Hummlist collect usage data?") appears.
 2. Answer „Erlauben“ (EN: "Allow") or „Nicht erlauben“ (EN: "Don't allow").
-3. To change it later: tab „Mehr“ (EN: "More"), section „Nutzungsdaten“ (EN: "Usage data"), switch „Nutzungsdaten und Fehlerberichte senden“ (EN: "Send usage data and error reports").
+3. To change it later: tab „Mehr“ (EN: "More"), „Nutzungsdaten“ (EN: "Usage data"), the switch „Nutzungsdaten und Fehlerberichte senden“ (EN: "Send usage data and error reports").
 
 **Never claim.**
 - That list contents, names or email addresses are collected: the text says they are never sent.
@@ -64,7 +64,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Note.** Every released app and app.hummlist.com ask this question (checked 2026-11-01).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [privacy-consent.md](./privacy-consent.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the switch under Mehr → Nutzungsdaten: job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), by `e2e/tests/analytics.spec.ts` and `shell-more.spec.ts`. Recipe: [privacy-consent.md](./privacy-consent.md).
 
 ## Getting started: first sign-in to the list
 
@@ -88,9 +88,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **What it does.** One household shares one shopping list. A member invites a partner with an 8-character code and a link; each invite is valid for 7 days and works for one person. The partner types the code or opens the link and joins. A member can revoke open invites at any time.
 
 **How to get there.**
-1. Tab „Mehr“ (EN: "More"), section „Haushalt“ (EN: "Household"), row „Partner einladen“ (EN: "Invite your partner").
+1. Tab „Mehr“ (EN: "More"), row „Partner einladen“ (EN: "Invite your partner").
 2. Tap „Neue Einladung“ (EN: "New invite"), then share it with „Teilen“ (EN: "Share") or copy it with „Link kopieren“ / „Code kopieren“ (EN: "Copy link" / "Copy code").
-3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") in the same section, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to „Mehr“ (job 78, 2026-11-02).
+3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") right below it, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to „Mehr“ (job 78, 2026-11-02).
 4. To revoke: on the invites page tap „Widerrufen“ (EN: "Revoke") on an invite.
 
 **Never claim.**
@@ -99,7 +99,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - Invites that stay valid longer than 7 days or work for several people.
 - Purchases or Premium tied to joining: Premium is not on sale yet.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [household-invites.md](./household-invites.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the More rows without hints: job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), `shell-more.spec.ts`. Recipe: [household-invites.md](./household-invites.md).
 
 ## Links into the app
 
@@ -381,20 +381,25 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. More collects household entries (invite partner, join another household; Premium only once it is on sale; categories and stores are under the list's „Anpassen“ since job 78), access, account and sign-out, feedback, help, settings, and the legal pages, with the app version at the bottom. Help, imprint and privacy open pages on hummlist.com in the browser.
+**What it does.** The app has two tabs, List and More. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, once it is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, and the app version at the bottom. Categories and stores are under the list's „Anpassen“ since job 78. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the bottom bar (on wide screens: the rail on the left).
-2. Pick an entry, e.g. „Hilfe & Kontakt“ (EN: "Help & contact"), „Impressum“ (EN: "Imprint"), „Datenschutz“ (EN: "Privacy"), „Lizenzen“ (EN: "Licenses"), „Abmelden“ (EN: "Sign out").
-3. Help page on the web: hummlist.com/support (EN: hummlist.com/en/support), with support@hummlist.com and answers to common questions.
-4. Guides on hummlist.com: Siri Shortcut in German (the English page says it is German-only for now), Alexa skill in German and English („Hummlist per Alexa: Skill einrichten“, EN "Hummlist with Alexa: set up the skill"), and „Hummlist mit Claude verbinden“ (EN "Connect Hummlist to Claude"), in German and English. The app itself links no guide.
+2. Pick an entry, e.g. „Hilfe & Kontakt“ (EN: "Help & contact"), „Nutzungsdaten“ (EN: "Usage data"), „Abmelden“ (EN: "Sign out").
+3. Imprint, privacy policy, terms and licenses: scroll to „Rechtliches“ (EN: "Legal") and tap „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") or „Lizenzen“ (EN: "Licenses").
+4. Help page on the web: hummlist.com/support (EN: hummlist.com/en/support), with support@hummlist.com and answers to common questions.
+5. Guides on hummlist.com: Siri Shortcut in German (the English page says it is German-only for now), Alexa skill in German and English („Hummlist per Alexa: Skill einrichten“, EN "Hummlist with Alexa: set up the skill"), and „Hummlist mit Claude verbinden“ (EN "Connect Hummlist to Claude"), in German and English. The app itself links no guide.
 
 **Never claim.**
 - A guides section inside the app, a help chat or an in-app browser.
 - That the Siri guide exists in English beyond the German-only notice.
 - A sign-out from anywhere but More.
+- An update notice in More: the app does not check for updates yet.
+- That More shows the household's name: it no longer does (job 85).
+- That „Rechtliches“ is a page of its own: its entries are rows on More.
+- Terms of use of Hummlist's own: the terms row shows Apple's standard terms on iPhone and the help page elsewhere.
 
-**Last verified.** job 78 branch (job/78-a), 2026-11-02 (CET), More's household rows and the join screen's back from code and widget tests; the rest job 64 branch (job/64-polish-seed), 2026-11-02, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [more-help.md](./more-help.md).
+**Last verified.** job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), the M-P2 menu with the Nutzungsdaten page and the Rechtliches rows on More, from code and driven on the web build (e2e `shell-more.spec.ts`, `help.spec.ts`, `analytics.spec.ts`; screenshots `docs/screenshots/85/`). Recipe: [more-help.md](./more-help.md).
 
 ## Account: data export and deletion
 
@@ -402,7 +407,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More").
-2. Under „Konto“ (EN: "Account") tap the row „Konto“ (EN: "Account").
+2. Tap „Konto“ (EN: "Account"), the first row.
 3. Tap „Meine Daten exportieren“ (EN: "Export my data") for the copy, or „Konto löschen“ (EN: "Delete account"), type LÖSCHEN (EN: DELETE) and tap „Endgültig löschen“ (EN: "Delete for good").
 4. Without the app: app.hummlist.com/konto-loeschen.html explains all steps; single data is at app.hummlist.com/konto-loeschen.html#einzelne-daten under „Einzelne Daten löschen, ohne das Konto zu löschen“.
 
@@ -414,7 +419,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the email copy button: job/80-polish-access-tips-account, 2026-11-02 (CET), by app/test/settings/account_test.dart. Recipe: [account-deletion.md](./account-deletion.md).
+**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the email copy button: job/80-polish-access-tips-account, 2026-11-02 (CET), by app/test/settings/account_test.dart; the Konto row: job/85-more-menu-mp2, 2026-11-02 (CET), `shell-more.spec.ts`. Recipe: [account-deletion.md](./account-deletion.md).
 - That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium, and households the user archived go too. Premium is not refunded automatically. The app's warning about this is held (it appears with the archive UI or the Premium sale).
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
@@ -520,7 +525,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Hummlist Premium (held)
 
-**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with two lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and the Mehr row says „Freigeschaltet“ (EN: "Unlocked").
+**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with two lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and they see the row „Hummlist Premium“ in Mehr.
 
 **How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (testers). The page opens from its link.
 
@@ -535,4 +540,4 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
-**Last verified.** job/72-alexa-data-cleanup, 2026-11-02 (CET), from code and the app tests (Alexa removed from the card and the hint). Recipe: [premium.md](./premium.md).
+**Last verified.** job/72-alexa-data-cleanup, 2026-11-02 (CET), from code and the app tests (Alexa removed from the card and the hint); the Mehr row without hint: job/85-more-menu-mp2, 2026-11-02 (CET), `purchases.spec.ts`. Recipe: [premium.md](./premium.md).

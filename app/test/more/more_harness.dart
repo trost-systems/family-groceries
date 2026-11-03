@@ -14,6 +14,8 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_scope.dart';
+import 'package:family_groceries/more/app_update.dart';
+import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
@@ -40,6 +42,17 @@ import '../purchases/fakes.dart';
 import '../settings/fake_account.dart';
 
 class FakeSession() extends MockCubit<Session> implements SessionCubit;
+
+/// An update source that always offers [update] and records what is applied.
+final class FakeAppUpdates(final AppUpdate? update) implements AppUpdates {
+  final applied = <AppUpdate>[];
+
+  @override
+  Future<AppUpdate?> available() async => update;
+
+  @override
+  Future<void> apply(AppUpdate update) async => applied.add(update);
+}
 
 /// Rows the fake server answers for `personal_access_tokens`.
 final serverTokens = <Map<String, Object?>>[];
@@ -147,6 +160,9 @@ Future<More> pumpMore(
 
   /// The `INTEGRATION_LOCK` define (job 50); the switch is `premium.lock`.
   bool integrationLock = false,
+
+  /// More's update source; set, More is the only route (no pages).
+  AppUpdates? updates,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -207,7 +223,17 @@ Future<More> pumpMore(
             ShellRoute(
               builder: (_, _, child) =>
                   ListScope(repository: repo, child: child),
-              routes: routes ?? [...moreTabRoutes()],
+              routes:
+                  routes ??
+                  switch (updates) {
+                    final updates? => [
+                      GoRoute(
+                        path: morePath,
+                        builder: (_, _) => MoreScreen(updates: updates),
+                      ),
+                    ],
+                    null => [...moreTabRoutes()],
+                  },
             ),
           ],
   );
@@ -279,3 +305,28 @@ Future<More> pumpMore(
     session: session,
   );
 }
+
+/// More's rows top to bottom (M-P2, job 85) in [menuGroups]' inset groups,
+/// for a household member with Premium offered and the help page published,
+/// in a build without analytics (no Nutzungsdaten row).
+const menuGroups = [
+  ['menu-account', 'more-lifetime'],
+  ['more-invite', 'more-join'],
+  ['more-access'],
+  ['more-settings'],
+  ['more-feedback', 'more-help'],
+  legalRows,
+  ['more-sign-out'],
+];
+
+/// The rows below the „Rechtliches“ label, right on More (DDG §5: the
+/// imprint one tap from the tab).
+const legalRows = [
+  'more-imprint',
+  'more-privacy-policy',
+  'more-terms',
+  'more-licenses',
+];
+
+/// [menuGroups] flattened.
+final menuRows = [for (final group in menuGroups) ...group];

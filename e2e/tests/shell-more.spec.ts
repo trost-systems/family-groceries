@@ -13,7 +13,7 @@ async function openMore(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
 }
 
-test('More opens every entry; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
+test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit on More; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
   const email = newEmail('more');
   await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   await openMore(page);
@@ -65,7 +65,7 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
-  await page.getByRole('button', { name: /^Konto Daten/ }).click();
+  await page.getByRole('button', { name: 'Konto', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/account$/);
   await expect(page.getByRole('heading', { name: 'Konto' })).toBeVisible();
   // Selectable text is a group named by its text on web, like the MCP URL.
@@ -77,13 +77,43 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
+  // Job 85: the rows carry no hints; one label, Rechtliches, above the legal rows.
+  await expect(page.getByText('Daten exportieren, Konto löschen'), 'no row hints').toHaveCount(0);
+
+  // Job 85: Nutzungsdaten is a page with the usage-data switch (this build has a PostHog key), nothing else.
+  const usageRow = page.getByRole('button', { name: 'Nutzungsdaten', exact: true });
+  await wheelTo(page, usageRow);
+  await usageRow.click();
+  await expect(page).toHaveURL(/\/more\/usage-data$/);
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  await expect(page.getByRole('switch', { name: /^Nutzungsdaten und Fehlerberichte senden/ })
+    .or(page.getByRole('checkbox', { name: /^Nutzungsdaten und Fehlerberichte senden/ }))).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Datenschutzerklärung', exact: true }), 'the policy is a More row, not here')
+    .toHaveCount(0);
+  await screenshot(page, 'more-06-usage-data');
+  await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
+  await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
+
+  const legalRows = ['Impressum', 'Datenschutzerklärung', 'Nutzungsbedingungen (EULA)', 'Lizenzen'];
+  const signOut = page.getByRole('button', { name: /^Abmelden/ });
+  await wheelTo(page, signOut);
+  await screenshot(page, 'more-07-legal');
+  const top = async (target: Locator) => (await target.boundingBox())!.y;
+  const order = [
+    page.getByRole('button', { name: 'Hilfe & Kontakt', exact: true }),
+    page.getByRole('heading', { name: 'Rechtliches', exact: true }),
+    ...legalRows.map((name) => page.getByRole('button', { name, exact: true })),
+    signOut,
+  ];
+  const ys = [];
+  for (const target of order) ys.push(await top(target));
+  expect(ys, 'help, then the Rechtliches label, its four rows, then Abmelden').toEqual([...ys].sort((a, b) => a - b));
+
   await page.context().route('https://hummlist.com/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
-  for (const [name, url] of [
-    ['Datenschutz', 'https://hummlist.com/datenschutz'],
-    ['Impressum', 'https://hummlist.com/impressum'],
-  ]) {
-    const row = page.getByRole('button', { name: new RegExp(`^${name}`) });
+  async function opensSitePage(name: string, url: string) {
+    const row = page.getByRole('button', { name, exact: true });
     await wheelTo(page, row);
     const popup = page.waitForEvent('popup');
     await row.click();
@@ -91,18 +121,43 @@ test('More opens every entry; licenses name Hummlist; sign-out ends at the login
     await (await popup).close();
     await expect(page, 'the app stays on More').toHaveURL(/\/more$/);
   }
+  await opensSitePage('Datenschutzerklärung', 'https://hummlist.com/datenschutz');
+  // Apple's EULA on iOS; the web build links the support page until there are terms of our own.
+  await opensSitePage('Nutzungsbedingungen (EULA)', 'https://hummlist.com/support');
 
-  await wheelTo(page, page.getByRole('button', { name: /^Lizenzen/ }));
-  await page.getByRole('button', { name: /^Lizenzen/ }).click();
+  await page.getByRole('button', { name: 'Lizenzen', exact: true }).click();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the licenses page names the app and lists packages' })
     .toMatch(/Hummlist[\s\S]*Flutter[\s\S]*bloc/);
   await screenshot(page, 'more-02-licenses');
   await page.getByRole('button', { name: 'Zurück' }).click();
+  await expect(page).toHaveURL(/\/more$/);
+  await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
 
   await wheelTo(page, page.getByRole('button', { name: /^Abmelden/ }));
   await page.getByRole('button', { name: /^Abmelden/ }).click();
   await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
+});
+
+test('the Impressum is two taps from the list: Mehr, Impressum (DDG §5); old /more/legal links land on More', async ({ page }) => {
+  await signUpWithHousehold(page, newEmail('imprint'));
+  await expect(addField(page)).toBeVisible();
+  await page.context().route('https://hummlist.com/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await moreTab(page).click();
+  const imprint = page.getByRole('button', { name: 'Impressum', exact: true });
+  await wheelTo(page, imprint);
+  const popup = page.waitForEvent('popup');
+  await imprint.click();
+  expect((await popup).url(), 'the imprint on the site, in a new tab').toBe('https://hummlist.com/impressum');
+  await (await popup).close();
+  await expect(page, 'the app stays on More').toHaveURL(/\/more$/);
+
+  await page.goto('/more/legal');
+  await expect(page, 'the Rechtliches page is gone; its link lands on More').toHaveURL(/\/more$/);
+  await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
+  await wheelTo(page, imprint);
+  await expect(page.getByRole('heading', { name: 'Rechtliches', exact: true })).toBeVisible();
 });
 
 test('old /settings links open the right page; back from a deep link goes to More', async ({ page }) => {
@@ -170,7 +225,8 @@ function germanTexts(): string[] {
     }
     for (const piece of outside.split('\u0000')) {
       const text = piece.trim();
-      if (text.length >= 5 && /\p{L}{4}/u.test(text)) pieces.add(text);
+      // A piece English shares ("Version" in „Version {version} ist im Store.“) is no German tell.
+      if (text.length >= 5 && /\p{L}{4}/u.test(text) && !String(en[key]).includes(text)) pieces.add(text);
     }
   }
   return [...pieces];
@@ -244,6 +300,18 @@ test.describe('with an English browser', () => {
     await expectNoGerman(page, 'account', german);
     await screenshot(page, 'en-03-settings');
     await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: 'Usage data', exact: true }).click();
+    await expect(page.getByRole('switch', { name: /^Send usage data and error reports/ })
+      .or(page.getByRole('checkbox', { name: /^Send usage data and error reports/ }))).toBeVisible();
+    await expectNoGerman(page, 'usage data', german);
+    await page.getByRole('button', { name: 'Back' }).click();
+    await wheelTo(page, page.getByRole('button', { name: /^Sign out/ }));
+    for (const name of ['Imprint', 'Privacy policy', 'Terms of Use (EULA)', 'Licenses']) {
+      await expect(page.getByRole('button', { name, exact: true }), `${name} under Legal`).toBeVisible();
+    }
+    await expect(page.getByRole('heading', { name: 'Legal', exact: true })).toBeVisible();
+    await expectNoGerman(page, 'More, the legal rows', german);
+    await wheelTo(page, page.getByRole('button', { name: /^Settings/ }));
     await page.getByRole('button', { name: /^Settings/ }).click();
     await expect(page.getByRole('radio', { name: 'Dark', exact: true })).toBeVisible();
     await expectNoGerman(page, 'settings', german);
@@ -273,17 +341,22 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await page.keyboard.press('Escape');
 
   await page.getByRole('button', { name: /^Mehr Tab/ }).click();
-  await expect(page.getByRole('button', { name: /^Konto Daten/ }), 'the sections on the left').toBeVisible();
+  await expect(page.getByRole('button', { name: 'Konto', exact: true }), 'the sections on the left').toBeVisible();
   await expect(page.getByText('MCP-Server', { exact: true }), 'and a page beside them').toBeVisible();
-  const list = (await page.getByRole('button', { name: /^Konto Daten/ }).boundingBox())!;
+  const list = (await page.getByRole('button', { name: 'Konto', exact: true }).boundingBox())!;
   const detail = (await page.getByText('MCP-Server', { exact: true }).boundingBox())!;
   expect(detail.x, 'two panes side by side').toBeGreaterThan(list.x + list.width - 1);
-  await page.getByRole('button', { name: /^Konto Daten/ }).click();
+  await page.getByRole('button', { name: 'Konto', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/account$/);
   await expect(page.getByRole('button', { name: 'Konto löschen', exact: true })).toBeInViewport();
   await expect(page.getByText('MCP-Server', { exact: true }), 'the pane shows Konto alone').toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Zurück' }), 'beside the list there is nothing to go back to').toHaveCount(0);
   await screenshot(page, 'wide-02-more-1366');
+  // Job 85: the legal rows stay in the left pane, the Impressum one tap away.
+  await wheelTo(page, page.getByRole('button', { name: 'Impressum', exact: true }));
+  await expect(page.getByRole('heading', { name: 'Rechtliches', exact: true })).toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Impressum', exact: true })).toBeInViewport();
+  await wheelTo(page, page.getByRole('button', { name: /^Zugänge/ }));
   await page.getByRole('button', { name: /^Zugänge/ }).click();
   await expect(page).toHaveURL(/\/more\/access$/);
   await expect(page.getByText('MCP-Server', { exact: true })).toBeVisible();
@@ -295,7 +368,7 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await page.getByRole('button', { name: /^Sprache Wie Gerät/ }).click();
   await expect(page).toHaveURL(/\/more\/settings\/language$/);
   await expect(page.getByRole('radio', { name: 'English', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Konto Daten/ }), 'the list stays').toBeVisible();
+  await expect(page.getByRole('button', { name: 'Konto', exact: true }), 'the list stays').toBeVisible();
   await screenshot(page, 'wide-04-language-1366');
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more\/settings$/);

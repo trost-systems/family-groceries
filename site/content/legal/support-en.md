@@ -56,7 +56,7 @@ Our refunds after the 48 hours are voluntary. They don't affect your statutory r
 
 ### How do I turn off usage data?
 
-Tap **More** and, under **Usage data**, turn off **Send usage data and error reports**. From then on the app sends nothing to PostHog. You can turn it back on at any time.
+Tap **More**, then **Usage data**, and turn off **Send usage data and error reports**. From then on the app sends nothing to PostHog. You can turn it back on at any time.
 
 ### Can I add items with Siri?
 

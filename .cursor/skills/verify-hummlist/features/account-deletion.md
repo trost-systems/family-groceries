@@ -14,12 +14,12 @@ Every signed-in user can export their data as a JSON file and delete their accou
 - `acct-deleted` after deletion the sign-in screen shows „Dein Konto wurde gelöscht.“
 - `acct-welcome` a user without a household deletes the account from the welcome screen.
 - `acct-offline` offline, deletion and export are refused with a message; nothing is deleted.
-- `acct-partial` deleting single data without deleting the account: an item (edit sheet → „Löschen“, with „Rückgängig“), an access key (revoke) and a connected app (disconnect) on Zugänge, and usage data (switch off „Nutzungsdaten und Fehlerberichte senden“ in Mehr). History entries and „Zuletzt verwendet“ entries cannot be deleted in the app.
+- `acct-partial` deleting single data without deleting the account: an item (edit sheet → „Löschen“, with „Rückgängig“), an access key (revoke) and a connected app (disconnect) on Zugänge, and usage data (switch off „Nutzungsdaten und Fehlerberichte senden“ under Mehr → Nutzungsdaten). History entries and „Zuletzt verwendet“ entries cannot be deleted in the app.
 - `acct-apple` iOS only: after the typed confirmation Apple asks again, and the app revokes the Apple sign-in. Not drivable on web.
 
 ## How to get to it (user POV)
 
-- Tab „Mehr“ / "More" → section „Konto“ / "Account" → row „Konto“ / "Account" (hint „Daten exportieren, Konto löschen“ / "Export your data, delete your account"). On the Konto page: „Meine Daten exportieren“ / "Export my data" (hint „Alles, was über dich gespeichert ist, als JSON-Datei.“ / "Everything stored about you, as a JSON file.") and „Konto löschen“ / "Delete account".
+- Tab „Mehr“ / "More" → row „Konto“ / "Account" (the first row; no hint since job 85). On the Konto page: „Meine Daten exportieren“ / "Export my data" (hint „Alles, was über dich gespeichert ist, als JSON-Datei.“ / "Everything stored about you, as a JSON file.") and „Konto löschen“ / "Delete account".
 - Signed in without a household, the welcome screen has a „Konto löschen“ / "Delete account" button below the onboarding choices.
 - Dialog „Konto löschen?“ / "Delete account?". It says: „Dein Konto, dein Profil, deine Zugangs-Tokens und deine verbundenen Apps werden endgültig gelöscht. Das lässt sich nicht rückgängig machen.“ (EN: "Your account, profile, access tokens and connected apps will be deleted for good. This can't be undone."). Then one of:
   - shared household: „Der Haushalt „<Haushalt>“ bleibt für <Namen> mit der ganzen Liste erhalten. Deine Einträge bleiben dort, aber ohne deinen Namen.“ (two or more others: „Lea und Max“, „Anna, Lea und Max“; names unavailable: „… bleibt für die anderen Mitglieder mit der ganzen Liste erhalten. …“). EN: "The household “<household>” stays with <names>, list and all. Your items stay there, but without your name."
@@ -51,11 +51,11 @@ Preconditions:
 ## Gotchas
 
 - Deleting the last member deletes the household: do not use a throwaway that created its own household to test the shared case.
-- Exact accessible name `Konto löschen` is both the Konto-page tile and the welcome-screen button; with `exact: true` it does not match „Konto“ alone. In More, the row's name starts with „Konto“ and continues with its hint, so use `openMore(page, 'Konto')`.
+- Exact accessible name `Konto löschen` is both the Konto-page tile and the welcome-screen button; with `exact: true` it does not match „Konto“ alone. In More, the row's name is exactly „Konto“ (job 85: no hint); `openMore(page, 'Konto')` finds it.
 - Type the confirmation word with `typeInto`, not synthetic keys. DE app accepts LÖSCHEN, LOESCHEN and DELETE.
 - The dialog cannot be dismissed by clicking outside; use „Abbrechen“. While deleting, the buttons are disabled.
 - On web the export is a browser download; the success snackbar reads „Daten exportiert“ (no path).
 - The billing warning „Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.“ appears before the dialog only for someone who pays a renewing yearly plan; other members of a household with a billed yearly plan see „Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.“ instead. Nothing is sold today (premium-launch hold), so a normal user never sees it.
 - Apple revocation (iOS) and the hint „Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.“ cannot be driven on web. unverified (no iOS surface).
 - Legal texts (page, dialog) are quoted, never edit them; the page is static HTML served by the web build, not a Flutter route.
-- The Zugänge partial-deletion paths are in the ai-assistants map. The „Nutzungsdaten“ section (switch „Nutzungsdaten und Fehlerberichte senden“ / "Send usage data and error reports") shows in Mehr only when analytics is enabled in the build; unverified whether the e2e build shows it.
+- The Zugänge partial-deletion paths are in the ai-assistants map. The „Nutzungsdaten“ row on Mehr and its page (switch „Nutzungsdaten und Fehlerberichte senden“ / "Send usage data and error reports") show only when analytics is enabled in the build; the e2e build has it (`e2e/tests/shell-more.spec.ts` checks the switch, job 85). The public page's sentence „Tippe auf Mehr und scrolle zu Nutzungsdaten.“ matches the app again: the row „Nutzungsdaten“ is on Mehr.

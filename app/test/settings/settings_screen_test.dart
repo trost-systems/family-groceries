@@ -47,7 +47,6 @@ void main() {
     expect(key('more-language'), findsNothing, reason: 'no segments in More');
     // Below the fold on a phone, and not built until scrolled to.
     await tester.scrollUntilVisible(key('more-settings'), 200);
-    expect(find.text('Darstellung und Sprache'), findsOneWidget);
     await tapKey(tester, 'more-settings');
     expect(path(more), '/more/settings');
     expect(find.text('Einstellungen'), findsOneWidget, reason: 'the title');
@@ -330,6 +329,7 @@ void main() {
               find.descendant(
                 of: key('more-settings'),
                 matching: find.byType(ListTile),
+                matchRoot: true,
               ),
             )
             .selected,

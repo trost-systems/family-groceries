@@ -19,7 +19,7 @@ One household shares one list. Its name shows under „Partner einladen“ / "In
 ## How to get to it (user POV)
 
 - Right after creating a household: Step 3 „Partner einladen“ (see onboarding).
-- Later: tab „Mehr“ / "More", section „Haushalt“ / "Household", row „Partner einladen“ (shows the household's name as detail), page „Einladungen“.
+- Later: tab „Mehr“ / "More", row „Partner einladen“ / "Invite your partner" (second group, one line; since job 85 no section heading and no household name), page „Einladungen“.
 - Joining: row „Anderem Haushalt beitreten“ in the same section; or an invite link; or at first run „Einladung annehmen“.
 - Household name: shown only as the detail of the row „Partner einladen“; it is set once when creating.
 

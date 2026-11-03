@@ -1,6 +1,7 @@
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   const household = InHousehold('u', Household(id: 'h', name: 'H'));
@@ -40,8 +41,11 @@ void main() {
     // An invite link opens the join page wherever it points.
     (household, '/settings?invite=ABCD2345', '/join/ABCD2345'),
     (household, '/more', null),
-    // The draft privacy page is gone; an old link lands on the list.
-    (household, '/more/privacy', '/'),
+    // Job 85: Nutzungsdaten is a page of More; the old Rechtliches link
+    // stays in the tab for the router to send to More.
+    (household, '/more/usage-data', null),
+    (household, '/more/legal', null),
+    (SignedOut(), '/more/usage-data', '/login?next=%2Fmore%2Fusage-data'),
     // Job 78: the List tab's Anpassen pages.
     (household, '/edit', null),
     (household, '/edit/lidl', null),
@@ -403,5 +407,28 @@ void main() {
       expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
       expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
     });
+  });
+
+  // A page added below `/more` but missing from inMoreTab was sent to the
+  // list by authRedirect (job 85).
+  test('every page of the More tab stays put for a member', () {
+    Iterable<String> paths(RouteBase route, String base) sync* {
+      if (route is GoRoute) {
+        final path = route.path.startsWith('/')
+            ? route.path
+            : '$base/${route.path}';
+        yield path;
+        for (final child in route.routes) {
+          yield* paths(child, path);
+        }
+      }
+    }
+
+    final more = [for (final route in moreTabRoutes()) ...paths(route, '')]
+        .where((p) => p.startsWith(morePath));
+    expect(more, containsAll([usageDataPath, moreLegalPath]));
+    for (final path in more) {
+      expect(authRedirect(household, Uri.parse(path)), isNull, reason: path);
+    }
   });
 }
