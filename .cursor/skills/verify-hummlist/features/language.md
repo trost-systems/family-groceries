@@ -29,8 +29,8 @@ Preconditions:
 
 ## Gotchas
 
-- Only de and en exist; any other device language falls back to German.
-- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill speaks German only, the sign-in and confirmation emails are Supabase's English defaults, and add-sheet catalogue rows („Aus dem Katalog“) are German words in both UI languages (driven 2026-11-01).
+- Only de and en exist. The first of them in the device's preferred languages wins (fr, en gives English); German only when neither is listed.
+- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill answers in English on an English Alexa device and in German otherwise, the AI-assistant (MCP) tools answer in German (only the held Premium-lock message follows the client's Accept-Language), the Hummlist API's error messages (held) are English, the sign-in and confirmation emails are Supabase's English defaults, and add-sheet catalogue rows („Aus dem Katalog“) are German words in both UI languages (driven 2026-11-01).
 - The setting is per device: a fresh browser context starts on „Wie Gerät“.
-- The page title of the old language list uses native names „Deutsch“ and „English“ in both UI languages.
+- Einstellungen has a section heading „Sprache“ / "Language" too, so `heading 'Language'` is true on both pages: pair it with the URL check.
 - Back-button names flip with the language („Zurück“ / "Back").

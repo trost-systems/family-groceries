@@ -11,7 +11,7 @@ Under Mehr → Einstellungen the user picks how the app looks: like the device, 
 
 ## How to get to it (user POV)
 
-- „Mehr“ / "More" → „Einstellungen“ / "Settings" (no hint since job 85) → section „Darstellung“ / "Appearance" with one segmented control of three hexagonal segments: „System“ / "System", „Hell“ / "Light", „Dunkel“ / "Dark". One tap selects; a honey hex marks the pick.
+- „Mehr“ / "More" → „Einstellungen“ / "Settings" → section „Darstellung“ / "Appearance" with one segmented control of three hexagonal segments: „System“ / "System", „Hell“ / "Light", „Dunkel“ / "Dark". One tap selects; a honey hex marks the pick.
 - Deep link `/more/settings`. (The old `/settings` link goes to Zugänge, `/more/access`, not here.)
 
 ## Driving it with Playwright
@@ -22,7 +22,7 @@ Preconditions:
 
 - **Open settings.** `openMore(page, 'Einstellungen')`. Observable: URL `/more/settings`, `getByRole('heading',{name:'Einstellungen'})` visible, `getByRole('radio',{name:'System', exact:true})` is checked.
 - **Pick a theme.** Click `getByRole('radio',{name:'Dunkel', exact:true})`. Observable: that radio `toBeChecked()`; the page background turns near black at once. Proof is pixels, not DOM: read the screenshot pixel at x=2, mid-height (luminance below 0.05 dark, above 0.7 light); `luminanceAt`/`expectTheme` in `e2e/tests/theme.spec.ts`.
-- **Persist.** `page.reload()`, go to the list: still dark. Sign out via `getByRole('button',{name:/^Abmelden/})`: the login screen is dark too.
+- **Persist.** `page.reload()`, go to the list: still dark. Back („Zurück“) to More, then `openMore(page, 'Abmelden')` (it wheels the lazy list to the row): the login screen is dark too.
 - **Device follows.** Pick „System“, then `page.emulateMedia({colorScheme:'dark'})` and back to `light`: the background changes live.
 - **Hell beats a dark device.** Emulate dark, pick „Hell“: stays light.
 - Spec: `scripts/verify.sh --only e2e -- tests/theme.spec.ts`.

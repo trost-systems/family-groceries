@@ -1,6 +1,6 @@
 # Live sync between household members
 
-Members of one household see each other's changes without reloading: an item one adds appears on the other's list, a tick makes it vanish, edits and moves show in the new place, a delete removes it. Partner adds the user has not looked at yet are tinted and the bar above the list says „1 neu von Noah Brandt“ (the partner's display name) until each item has been more than half on screen for 3 seconds. A small icon at the right of that bar shows the sync state: nothing when synced, a cloud with an arrow when changes are being sent, a crossed-out cloud when offline.
+Members of one household see each other's changes without reloading: an item one adds appears on the other's list, a tick makes it vanish, edits and moves show in the new place, a delete removes it. Partner adds the user has not looked at yet are tinted and the bar above the list says „1 neu von Noah Brandt“ (the partner's display name) until each item has been more than half on screen for 3 seconds. A small icon between that text and „Anpassen“ / "Edit" (since job 78) shows the sync state: nothing when synced, a cloud with an arrow when changes are being sent, a crossed-out cloud when offline.
 
 ## Sub-features
 
@@ -15,7 +15,7 @@ Members of one household see each other's changes without reloading: an item one
 
 ## How to get to it (user POV)
 
-- No screen of its own: two members signed in to the same household (one invites with „Mehr“ → „Partner einladen“, the other joins with the link or code), both on „Liste“. The bar is the strip at the top of the list; the icon sits at its right end.
+- No screen of its own: two members signed in to the same household (one invites with „Mehr“ → „Partner einladen“, the other joins with the link or code), both on „Liste“. The bar is the strip at the top of the list; the icon sits just left of „Anpassen“ / "Edit" at its right end.
 
 ## Driving it with Playwright
 

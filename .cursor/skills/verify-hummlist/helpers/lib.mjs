@@ -190,15 +190,33 @@ export async function openTab(page, L, key) {
 }
 
 /**
- * Scrolls the list with the mouse wheel until [target] is on screen. The list builds rows lazily,
- * so a row far below is not in the page until the list scrolls near it (e2e helpers' reveal).
+ * Scrolls with the mouse wheel until [target] is fully on screen, above the add bar when there is
+ * one (e2e helpers' reveal). The list builds rows lazily, so a row far below is not in the page
+ * until the list scrolls near it; a built row below the screen still counts as visible to
+ * Playwright, so a click there lands on whatever is drawn at that spot. A target the list cannot
+ * move further (its start or end) is as far in as it gets.
  */
 export async function reveal(page, target) {
   const { width, height } = page.viewportSize();
-  await page.mouse.move(width / 2, height / 3);
+  const top = async (locator) => ((await locator.count()) ? await locator.boundingBox({ timeout: 5_000 }).catch(() => null) : null)?.y ?? height;
+  const hint = new RegExp(`^(${escape(labels('de')('addFieldHint'))}|${escape(labels('en')('addFieldHint'))})$`);
+  const tabs = await top(page.getByRole('tablist'));
+  const bottom = Math.min((await top(page.getByRole('textbox', { name: hint }))) - 12, tabs > height / 2 ? tabs : height);
+  await page.mouse.move(width / 2, Math.min(height / 3, bottom / 2));
+  // A row cut off at the list's edge keeps only its visible part as its box, so a box that touches
+  // the edge counts as cut off until the wheel no longer moves it. 44: the bar above the list.
+  const listTop = 44;
+  let last;
   for (let i = 0; i < 40; i++) {
-    if (await target.isVisible().catch(() => false)) return;
-    await page.mouse.wheel(0, i < 20 ? 300 : -300);
+    const box = (await target.count()) ? await target.boundingBox({ timeout: 5_000 }).catch(() => null) : null;
+    const inside = box && box.y > listTop + 0.5 && box.y + box.height < bottom - 0.5;
+    const stuck = box && last && box.y === last.y && box.height === last.height;
+    if ((inside && stuck) || (stuck && last.wheeled)) return;
+    const down = box ? box.y + box.height >= bottom - 0.5 : i < 20;
+    const wheeled = !inside;
+    const near = box && box.y < bottom && box.y + box.height > listTop;
+    if (wheeled) await page.mouse.wheel(0, (down ? 1 : -1) * (near ? 100 : 250));
+    last = box && { y: box.y, height: box.height, wheeled };
     await page.waitForTimeout(150);
   }
   throw new Error(`could not scroll ${target} into view`);

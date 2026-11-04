@@ -19,11 +19,14 @@ A small card at the top of the List tab shows one tip at a time (job 80). The X 
 
 Preconditions: a seeded household with items (launch.sh's demo household); `signIn` from helpers/lib.mjs dismisses the gesture card, so the first tip shows right after sign-in.
 
-- **Card.** `page.getByRole('button', { name: 'Tipp ausblenden' })` visible; `page.getByText('Artikel bearbeiten')` visible.
-- **Dismiss.** Click „Tipp ausblenden“: the card goes; reload the page and sign-in state persists: the next tip („Menge gleich mittippen“) shows.
+- **Card.** `page.getByRole('button', { name: 'Tipp ausblenden' })` visible; the ARIA snapshot (`page.locator('body').ariaSnapshot()`) contains „Artikel bearbeiten Halte einen Artikel gedrückt …“ (title and text are one merged node, which `getByText` does not reach on the web build).
+- **Dismiss.** Click „Tipp ausblenden“: the card goes; after `page.reload()` (still signed in) the next tip („Menge gleich mittippen“) shows and the first does not come back.
+- **Scripted.** `helpers/drive.sh tips [--lang en] [--dark]` (`journeys/tips.mjs`): first tip, X, reload, next tip; PASS or FAIL (driven 2026-11-04, DE and EN).
 - Widget tests: `app/test/tips/tip_card_test.dart`, `app/test/tips/tips_test.dart`; goldens `app/test/design/tip_card_golden_test.dart`.
 
 ## Gotchas
 
 - The queue is read once per List tab build, so the next tip never appears right after a dismiss in the same session.
 - A brand new household sees no tip until its first item is on the list and the gesture card is dismissed.
+- Signing out forgets the dismissed gesture card („Tippen hakt ab · Halten bearbeitet“, per device, list and user), so after signing in again the tip waits until „Verstanden“ is tapped again; dismissed tips stay dismissed.
+- The tip card appears just after „Verstanden“ and pushes the list down; let the list settle before clicking a row by position.

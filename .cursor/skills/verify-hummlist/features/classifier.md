@@ -27,10 +27,10 @@ Every new item gets a category without the user choosing one: the server looks a
 
 Preconditions:
 
-- A fresh account in its own household: `signUpWithHousehold(page, newEmail('learn'))` (onboarding picks dm, Lidl and Edeka). Learning is per household and persistent, so do not reuse a household for first-guess checks.
+- A fresh account in its own household: `signUpWithHousehold(page, newEmail('learn'), { stores: chainStores })` (dm, Lidl, EDEKA; without `stores` the household has none, since job 64). Learning is per household and persistent, so do not reuse a household for first-guess checks.
 - Seeded categories untouched (a renamed category changes the divider text).
 
-- **Preview.** Type `Zahnbürste` into the add field without Enter: `getByRole('button', { name: 'Kategorie: 👶 Drogerie' })` and `getByRole('button', { name: 'Laden: dm' })` show in the sheet.
+- **Preview.** Type `Zahnbürste` into the add field without Enter: `addSheet(page).getByRole('button', { name: 'Kategorie: automatisch, 👶 Drogerie' })` and `{ name: 'Laden: automatisch, dm' }` show in the sheet (with no stores, as on the demo-familie baseline, the store chip reads „Laden: automatisch“; driven 2026-11-04).
 - **Auto-categorize.** `addItem(page, 'Hafermilch')`, then `expectGroup(page, 'Hafermilch', 'Kühlregal')` (nearest level-2 heading above the row, `e2e/tests/catalog.ts`). Observable: also `groupHeadings(page)`. A word not in the list (`Quietscheentchen`) → heading „Sonstiges“.
 - **Correct in the edit sheet.** `setCategory(page, 'Hafermilch', 'Getränke')` (`e2e/tests/catalog.ts`). Observable: `expectGroup(page, 'Hafermilch', 'Getränke')` (add `Apfelsaft` first so Getränke has a divider).
 - **Correct in the sheet.** `openEdit(page, 'Zahnbürste')`, `pickInSheet(page, 'Kategorie', 'Haushalt')`, `saveEdit(page)`; heading becomes „Haushalt“.
@@ -51,5 +51,5 @@ Preconditions:
 - Shown category names follow the app language only for seeded, unrenamed categories; the harness runs German.
 - A brand that stands for a product becomes that product: „Pampers“ is the item Windeln with the brand Pampers, so it lands in „👶 Drogerie“. Own brands of dm, Lidl and Edeka also guess that store.
 - Renaming an item in the edit sheet keeps its category; the classifier runs on adds only.
-- A bare number at the end („Karotten 2“) becomes the quantity only when the word is known to the word list or the household; see quick-add.
+- Typed, a bare number at the end („Karotten 2“) becomes the quantity only when the word is known to the word list or the household; see quick-add. Said (dictation, Siri, Alexa), a count after the item is always the quantity unless a size word comes before it („Gurken zwei“, job 89).
 - Offline (add with no network, `cutOff` from the e2e helpers): the item shows under „Wird einsortiert …“ until the connection is back, then under its category (driven 2026-11-02: Linsen → „Vorrat & Konserven“; no spec).
