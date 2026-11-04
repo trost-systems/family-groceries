@@ -152,4 +152,8 @@ from public.personal_access_tokens where token_hash = repeat('d', 64);
 insert into public.oauth_app_devices (user_id, client_id, device)
 select id, '00000000-0000-4000-8000-0000000b0080', 'Chrome · macOS' from auth.users where email = 'peter@backup.test';
 
+-- Job 43b: the free beta unlock's queue (granted for the household, until the beta's end).
+insert into public.beta_promo_grants (beta_household, granted_at, ends_at)
+select id, now(), '2027-12-31 23:00+00' from fx where key = 'home';
+
 commit;

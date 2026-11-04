@@ -743,5 +743,13 @@
   "tipAmountsBody": "Schreib „2 Gurken“ oder „Milch 2 l“, und Hummlist erkennt die Menge.",
   "@tipAmountsBody": {"description": "List tab tip card (job 80): the quoted examples must parse with a Menge (app/test/tips/tips_test.dart checks them with parseEntry)"},
   "tipDismiss": "Tipp ausblenden",
-  "@tipDismiss": {"description": "List tab tip card (job 80): tooltip and screen reader label of the X that hides the tip"}
+  "@tipDismiss": {"description": "List tab tip card (job 80): tooltip and screen reader label of the X that hides the tip"},
+  "betaEndNoticeTitle": "Kostenlose Beta-Freischaltung endet am {date}",
+  "@betaEndNoticeTitle": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}, "description": "FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice on the list (N-55): title; {date} is the household's grant end"},
+  "betaEndNoticeBodySiri": "Die kostenlose Beta-Freischaltung von Hummlist Premium endet am {date}. Ab dem {date} gehören Einträge per Siri und die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.",
+  "@betaEndNoticeBodySiri": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}, "description": "FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice text, sentence 2 = 5a (Siri and AI): only when native Siri is live in this build (NATIVE_SIRI_LIVE, iOS)"},
+  "betaEndNoticeBodyAi": "Die kostenlose Beta-Freischaltung von Hummlist Premium endet am {date}. Ab dem {date} gehört die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.",
+  "@betaEndNoticeBodyAi": {"placeholders": {"date": {"type": "DateTime", "format": "yMMMMd"}}, "description": "FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice text, sentence 2 = 5b fallback (AI only): native Siri is not live in this build"},
+  "betaEndNoticePrivacyLink": "Mehr dazu in der Datenschutzerklärung",
+  "@betaEndNoticePrivacyLink": {"description": "FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice: link to the privacy policy's #premium-beta section (same text as the Premium page's link)"}
 }

@@ -10,10 +10,14 @@
 //   REVENUECAT_SECRET_KEY, REVENUECAT_PROJECT_ID: a v2 secret key and the project, for deleting
 //     the customers of deleted households (deletions.ts); without them that route does nothing.
 //   REVENUECAT_DELETIONS_SECRET: what the daily workflow sends as x-deletions-secret; without it
-//     the deletion route answers 503 and deletes nothing (fail closed).
+//     the deletion route answers 503 and deletes nothing (fail closed). The beta grant route
+//     (job 43b) takes the same secret.
+//   BETA_PROMO_ENDS_AT: optional, the end of the free beta unlock (ISO 8601); default
+//     2027-12-31 midnight in Berlin. Unreadable or past: the beta grant route answers 503.
 // Without the first or the last the webhook answers 503 not_configured; the app's claim works.
 import type { Env } from '../_shared/telemetry.ts';
 import { localStackUrl } from '../alexa/config.ts';
+import { defaultBetaEnd } from './beta_promo.ts';
 import type { RevenueCatKey } from './deletions.ts';
 
 export interface WebhookSecrets {
@@ -33,6 +37,8 @@ export interface PurchasesConfig {
   revenueCat: RevenueCatKey | null;
   /** Null: the deletion route refuses every call (503). */
   deletionsSecret: string | null;
+  /** Null: BETA_PROMO_ENDS_AT is unreadable or past; the beta grant route answers 503. */
+  betaPromoEndsAt: Date | null;
 }
 
 export function configFrom(env: Env): PurchasesConfig {
@@ -49,5 +55,12 @@ export function configFrom(env: Env): PurchasesConfig {
     region: value('SB_REGION'),
     revenueCat: secretKey && projectId ? { secretKey, projectId } : null,
     deletionsSecret: value('REVENUECAT_DELETIONS_SECRET'),
+    betaPromoEndsAt: betaEnd(value('BETA_PROMO_ENDS_AT'), new Date()),
   };
+}
+
+/** [raw] as the beta's end; the default without it; null when unreadable or not in the future. */
+export function betaEnd(raw: string | null, now: Date): Date | null {
+  const end = raw === null ? defaultBetaEnd : new Date(raw);
+  return Number.isNaN(end.getTime()) || end <= now ? null : end;
 }

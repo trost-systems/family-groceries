@@ -11,6 +11,9 @@
 //   POST /purchases/revenuecat/reconcile  Ops: stores a household's promotional premium as
 //                                         RevenueCat has it now (body {"householdId"}), with the
 //                                         same x-deletions-secret (scripts/iap/promotional.ts)
+//   POST /purchases/revenuecat/beta-grants  the free beta unlock for queued households (job 43b,
+//                                         beta_promo.ts), same x-deletions-secret; nothing while
+//                                         the server switch beta_promo is off
 //   POST /purchases/claim       the app, signed in (its own session, not a PAT or OAuth app): "I
 //                               bought this transaction for this household" (H-55)
 // Routes match exactly, after the gateway's /functions/v1 prefix.
@@ -26,6 +29,7 @@ import type { Claim, LifecycleOutcome, PromotionalOutcome, Recorded, Revoked } f
 import { RevenueCatUnavailable } from './promotional.ts';
 import { type Refund, type Sale, type StorePurchase, webhookPath } from './types.ts';
 import type { DeletionOutcome } from './deletions.ts';
+import type { BetaOutcome } from './beta_promo.ts';
 
 /** The writes one event may make, all in the transaction that records its id. */
 export interface Ledger {
@@ -75,6 +79,11 @@ export interface Deps {
   reconcile: ((householdId: string) => Promise<PromotionalOutcome>) | null;
   /** Null without REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID: the route skips. */
   deleteDueCustomers: (() => Promise<DeletionOutcome>) | null;
+  /**
+   * Grants the queued households the free beta unlock (job 43b). Null without the RevenueCat key
+   * or with an unusable BETA_PROMO_ENDS_AT: the route answers 503.
+   */
+  grantBetaPromo: (() => Promise<BetaOutcome>) | null;
   /** Whom analytics events for [userId] go to: null unless their latest answer in the app was yes. */
   subject(userId: string): Promise<Subject | null>;
   event(name: PurchaseEvent, sale: Sale, subject: Subject): Promise<void>;
@@ -110,6 +119,7 @@ export const routes = {
   webhook: webhookPath,
   deletions: '/purchases/revenuecat/deletions',
   reconcile: '/purchases/revenuecat/reconcile',
+  betaGrants: '/purchases/revenuecat/beta-grants',
   claim: '/purchases/claim',
   testEvent: '/purchases/test/event',
 } as const;
@@ -320,6 +330,17 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
     return json(outcome, { status: outcome.failed > 0 ? 502 : 200 });
   }
 
+  async function betaGrants(req: Request): Promise<Response> {
+    if (!deps.deletionsSecret) return notConfigured();
+    if (!await sameSecret(req.headers.get('x-deletions-secret') ?? '', deps.deletionsSecret)) {
+      return json({ error: 'invalid_token' }, { status: 401 });
+    }
+    if (!deps.grantBetaPromo) return notConfigured();
+    const outcome = await deps.grantBetaPromo();
+    log({ betaGrants: JSON.stringify(outcome) });
+    return json(outcome, { status: outcome.status === 'done' && outcome.failed > 0 ? 502 : 200 });
+  }
+
   async function reconcile(req: Request): Promise<Response> {
     if (!deps.deletionsSecret) return notConfigured();
     if (!await sameSecret(req.headers.get('x-deletions-secret') ?? '', deps.deletionsSecret)) {
@@ -356,6 +377,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
       if (path === routes.webhook) return await webhook(req);
       if (path === routes.deletions) return await deletions(req);
       if (path === routes.reconcile) return await reconcile(req);
+      if (path === routes.betaGrants) return await betaGrants(req);
       if (path === routes.claim) return await claimRoute(req);
       if (path === routes.testEvent && deps.local) return await localEvent(req);
     }

@@ -1,0 +1,59 @@
+# The free beta unlock of Hummlist Premium (job 43b, docs/PURCHASES.md "Free premium in the beta"):
+# every 15 minutes the purchases function grants the queued households their RevenueCat promotional
+# grant. While the server switch beta_promo is off it answers {"status":"off"} and does nothing. It
+# runs only with the Ops secret: the repository secret REVENUECAT_DELETIONS_SECRET goes out as
+# x-deletions-secret, as for the deletions. Without that secret the run skips quietly (no issue
+# every 15 minutes before the Lead's setup).
+name: Beta Premium grants
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: beta-promo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  grant:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+      GH_TOKEN: ${{ github.token }}
+      OPS_SECRET: ${{ secrets.REVENUECAT_DELETIONS_SECRET }}
+      ISSUE_TITLE: 'Beta Premium grants failed'
+    steps:
+      - name: Grant queued households the free beta unlock
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ] || [ -z "$OPS_SECRET" ]; then
+            echo "SUPABASE_PROJECT_REF or REVENUECAT_DELETIONS_SECRET is not set yet; nothing to do."
+            exit 0
+          fi
+          url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/purchases/revenuecat/beta-grants?forceFunctionRegion=eu-central-1"
+          code=$(curl -sS --max-time 120 --retry 2 --retry-delay 15 -o grants.json -w '%{http_code}' \
+            -X POST -H "x-deletions-secret: $OPS_SECRET" "$url") || true
+          echo "Beta grants: HTTP ${code:-none} $(head -c 300 grants.json 2>/dev/null)"
+          [ "$code" = 200 ]
+      - name: Report the failure in an issue
+        if: failure()
+        run: |
+          body="Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID failed. Queued households wait for their free beta unlock until a run succeeds. docs/PURCHASES.md, section Free premium in the beta, says what to do."
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == env.ISSUE_TITLE))[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --body "$body"
+          fi
+      - name: Close the failure issue
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq '.[] | select(.title == env.ISSUE_TITLE) | .number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID is green again."
+          done

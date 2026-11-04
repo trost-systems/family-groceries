@@ -152,6 +152,7 @@ id, never anonymous.
 | `GET /purchases` | smoke checks | `{configured}` |
 | `POST /purchases/revenuecat/webhook` | RevenueCat | The webhook (above). `Authorization` must equal `REVENUECAT_WEBHOOK_AUTH` whole (it includes `Bearer `). 401 without the right `Authorization` (or, with `REVENUECAT_WEBHOOK_HMAC_SECRET`, a bad or stale `X-RevenueCat-Webhook-Signature`: `t=…,v1=…`, HMAC-SHA256 over `"<t>.<raw body>"`, 5 minutes). 200 for everything it processed or ignores, 500 when the database fails and 503 `not_recorded_yet` for a recent lifecycle event that came before its purchase, so RevenueCat retries (5 times over about 80 minutes). The event id is stored in the same transaction as the writes |
 | `POST /purchases/revenuecat/deletions` | the daily workflow | Deletes due RevenueCat customers ("Retention"); at most 25 per run, each customer at most once an hour. Needs `x-deletions-secret` equal to `REVENUECAT_DELETIONS_SECRET` (constant-time compare): 401 without or with a wrong one, 503 `not_configured` while the secret is unset (fail closed; job 47) |
+| `POST /purchases/revenuecat/beta-grants` | `beta-promo.yml`, every 15 minutes | Grants queued households the free beta unlock ("Free premium in the beta"); `{"status":"off"}` while `beta_promo` is off. Same `x-deletions-secret`; 503 without it, without RevenueCat's key or with an unusable `BETA_PROMO_ENDS_AT`; 502 when a grant failed (it stays queued) |
 | `POST /purchases/revenuecat/reconcile` | Ops (`scripts/iap/promotional.ts reconcile --apply`) | Reads one household's promotional grants at RevenueCat and stores the result, as the webhook does ("Free premium"). Body `{householdId}` (a UUID, else 400). Same `x-deletions-secret` as the deletion route (401 wrong, 503 unset). `{status}`: `granted`, `updated`, `unchanged`, `removed`, `no_household`; 502 `revenuecat_unavailable` when RevenueCat doesn't answer; 503 without `REVENUECAT_SECRET_KEY`/`REVENUECAT_PROJECT_ID` |
 | `POST /purchases/claim` | the app, signed in | Records the buyer of a transaction in the household it names (`householdId`, the purchase's App User ID), for a member of it at the purchase time (first member wins); 20 a minute per user |
 | `POST /purchases/test/event` | local stack only (404 elsewhere) | Builds a RevenueCat event and processes it like the webhook, without the secret: the debug fake store, fg and e2e use it |
@@ -258,6 +259,61 @@ The row ends at read time too: the app and `household_premium` treat a promotion
 end as no premium, before RevenueCat's `EXPIRATION` deletes it. Apps from before this change read
 `premium_source` `promotional` as Lifetime (unlocked, no Buy); RevenueCat ending the grant deletes
 the row, so they lose it then.
+
+### Free premium in the beta (job 43b)
+
+During the beta every household gets Hummlist Premium free of charge until Hummlist Premium launches
+(ADDENDUM 7 and 8, Legal Review N-50 to N-58, approved by Peter 2026-11-03). It is a promotional
+grant like the testers', made by the purchases function instead of the Lead, with a real end.
+**Off until the Lead turns on the server switch `beta_promo`**, and only after the beta-wide privacy
+section (this PR's `site/content/legal/datenschutz.md` §5) is live and the Lead confirmed it
+(Peter's answer to Q51: from 9 Nov).
+
+1. **Queue.** While `beta_promo` is on, an insert trigger queues every new household in
+   `public.beta_promo_grants` (service only). Households created before that are queued by the
+   backfill: `scripts/iap/beta_promo.ts backfill` (a dry run counts them; `--apply` only on the
+   Lead's OK).
+2. **Grant.** Every 15 minutes `.github/workflows/beta-promo.yml` calls
+   `POST /purchases/revenuecat/beta-grants` (the Ops secret `x-deletions-secret`). With the switch
+   off it answers `{"status":"off"}` and does nothing. With it on it takes up to 25 queued
+   households (each at most every 10 minutes) and reads RevenueCat's promotional state for each:
+   - A grant for good (ending 2099 or later, or without an end: testers, app review) is
+     **skipped**. Revoking the beta grant at launch would end theirs too, since RevenueCat's revoke
+     ends every promotional grant of the entitlement.
+   - A grant already running to the beta's end is recorded as it is.
+   - Anyone else gets `grant_entitlement` (API v2) with `expires_at` = `BETA_PROMO_ENDS_AT`
+     (default 2027-12-31, midnight in Berlin; never 2100). An unknown customer is created first.
+   - Each one is then reconciled into `entitlements` (`source` `promotional`), as for the testers.
+   RevenueCat gets the household id and the grant's dates, nothing else. The app's SDK stays off
+   (N-51).
+3. **What members see.** On the Premium page, the beta title and subtitle with the privacy link
+   (PR #217's strings). Nothing is sold in the beta: `premium_offer` and `REVENUECAT_PURCHASES`
+   stay off (N-53). From 28 days before the grant's end, the N-55 notice: a banner on the list,
+   only for households whose promotional grant ends before 2099 (beta households, not testers or
+   app review), closable (×), in-app only. Its sentence 2 names Siri only in builds where native
+   Siri is live (the `native-siri` release hold is released; `NATIVE_SIRI_LIVE`, iOS), otherwise
+   only the AI assistants.
+4. **Launch.**
+   - `scripts/iap/beta_promo.ts set-end --ends-at <ISO> --apply` moves every running beta grant
+     to the real end (revoke, then grant the new end: RevenueCat never shortens a grant). It
+     refuses an end less than 28 days away, so the notice runs 4 weeks first. Set the function
+     secret `BETA_PROMO_ENDS_AT` to the same moment for households to come.
+   - After the end, `scripts/iap/beta_promo.ts revoke --apply` ends any grant that is left. It
+     refuses while a grant hasn't reached its end. It is never run automatically.
+5. **Objection** (support, Art. 21): `scripts/iap/beta_promo.ts object --household <id> --apply`
+   ends the household's free unlock for good and queues its RevenueCat customer for deletion at
+   once, unless it bought something.
+6. **Retention (N-52).** When a beta grant ends (its end, a revoke, an objection),
+   `beta_promo_ended` queues the household's RevenueCat customer in `revenuecat_deletions`, due 30
+   days later (an objection: at once). A household that bought something is not queued. One that
+   has Premium again by the time it is due (a purchase, a new grant) leaves the queue
+   (`revenuecat_deletions_take`). The daily purge (`purge_purchases`) ends grants whose end has
+   passed. Deleted households are queued as before (job 43). This is what lets the privacy policy
+   use retention variant A.
+7. **Analytics (N-56).** Every beta household has a promotional row, so it counts as internal:
+   the app marks its events `is_internal` (`testerHousehold`), and the server's
+   `household_internal()` does the same for purchase events. The privacy text says so.
+8. **Store review notes (N-57):** `docs/store/iap-review-notes.md`.
 
 ### Who receives what (Legal Review H-53)
 
@@ -594,7 +650,8 @@ setup"). Without
 | `REVENUECAT_TOMBSTONE_HMAC_KEY` | The one key for the tombstone HMACs; never rotate it while tombstones count |
 | `REVENUECAT_SECRET_KEY` | A v2 secret key (`customer_information:customers:read_write`, which includes reading subscriptions) for deleting customers and reading promotional grants; never in the app. Unset: promotional events answer 503 (RevenueCat retries) and the reconcile route 503 |
 | `REVENUECAT_PROJECT_ID` | The RevenueCat project (Hummlist) |
-| `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow and `scripts/iap/promotional.ts reconcile --apply` send as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion and reconcile routes refuse every call |
+| `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow and `scripts/iap/promotional.ts reconcile --apply` send as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion, reconcile and beta grant routes refuse every call |
+| `BETA_PROMO_ENDS_AT` | Optional (job 43b): the end of the free beta unlock, ISO 8601 with offset; default 2027-12-31 midnight in Berlin. Set it to the launch end with `beta_promo.ts set-end` |
 
 Expected prices (the drift check's constants, `expectedPrices` in `scripts/iap/product.ts`; never
 shown in the app, which shows only what the store returns):

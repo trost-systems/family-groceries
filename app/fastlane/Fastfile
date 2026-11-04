@@ -59,9 +59,23 @@ ANALYTICS_DEFINES = %w[POSTHOG_PROJECT_API_KEY POSTHOG_HOST ANALYTICS_INTERNAL_H
 PREMIUM_DEFINES = %w[REVENUECAT_PURCHASES REVENUECAT_APPLE_API_KEY REVENUECAT_GOOGLE_API_KEY
                      INTEGRATION_LOCK].freeze
 
+# releases/flags.json at the repo root: a hold released there switches its define on.
+FLAGS_JSON = File.expand_path("../../releases/flags.json", __dir__)
+
+# Each build define and the hold it follows: NATIVE_SIRI_LIVE (the beta-end notice N-55 names Siri,
+# app/lib/app/environment.dart) once native Siri is released.
+HOLD_DEFINES = { "NATIVE_SIRI_LIVE" => "native-siri" }.freeze
+
+def hold_defines
+  holds = JSON.parse(File.read(FLAGS_JSON)).fetch("holds")
+  HOLD_DEFINES.select { |_, hold| holds.dig(hold, "released") == true }
+              .map { |name, _| "--dart-define=#{name}=true" }
+end
+
 def analytics_defines
   (ANALYTICS_DEFINES + PREMIUM_DEFINES).reject { |name| ENV.fetch(name, "").empty? }
-                                       .map { |name| "--dart-define=#{name}=#{ENV.fetch(name)}" }
+                                       .map { |name| "--dart-define=#{name}=#{ENV.fetch(name)}" } +
+    hold_defines
 end
 
 platform :ios do

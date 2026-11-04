@@ -1774,4 +1774,32 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tipDismiss => 'Tipp ausblenden';
+
+  @override
+  String betaEndNoticeTitle(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Kostenlose Beta-Freischaltung endet am $dateString';
+  }
+
+  @override
+  String betaEndNoticeBodySiri(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Die kostenlose Beta-Freischaltung von Hummlist Premium endet am $dateString. Ab dem $dateString gehören Einträge per Siri und die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.';
+  }
+
+  @override
+  String betaEndNoticeBodyAi(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Die kostenlose Beta-Freischaltung von Hummlist Premium endet am $dateString. Ab dem $dateString gehört die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.';
+  }
+
+  @override
+  String get betaEndNoticePrivacyLink =>
+      'Mehr dazu in der Datenschutzerklärung';
 }

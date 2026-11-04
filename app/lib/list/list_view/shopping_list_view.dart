@@ -12,6 +12,7 @@ import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/purchases/beta_end_notice.dart';
 import 'package:family_groceries/tips/tip_card.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -428,6 +429,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
           padding: EdgeInsets.symmetric(horizontal: side),
           sliver: SliverMainAxisGroup(
             slivers: [
+              const SliverToBoxAdapter(child: BetaEndNotice()),
               if (!state.prefs.hintDismissed)
                 SliverToBoxAdapter(
                   child: ExplainerCard(

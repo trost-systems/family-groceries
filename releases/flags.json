@@ -3,6 +3,10 @@
     "public-api": {
       "rollout": "off",
       "note": "the Hummlist API keys under Mehr > Zugänge show only while the PostHog flag public-api is on (job 73)"
+    },
+    "beta-promo": {
+      "rollout": "off",
+      "note": "free Hummlist Premium for every beta household: only while the server switch beta_promo is on (job 43b, after Legal Review and the live privacy text)"
     }
   },
   "holds": {
