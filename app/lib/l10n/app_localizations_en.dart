@@ -1636,8 +1636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get integrationPremiumSiri => 'Siri on iPhone';
 
   @override
-  String get integrationPremiumAi =>
-      'AI assistants like ChatGPT or Claude (MCP)';
+  String get integrationPremiumAi => 'AI assistants that support MCP';
 
   @override
   String get integrationPremiumLater =>
