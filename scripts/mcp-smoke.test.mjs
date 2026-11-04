@@ -7,15 +7,30 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { startFake, token } from './mcp-smoke-fixture.mjs';
 
+/** Stands for the fake's own client document URL in a test's env. */
+const documentUrl = Symbol('documentUrl');
+
 const script = fileURLToPath(new URL('mcp-smoke.sh', import.meta.url));
 
-/** Runs the smoke test against a fake with `breaks`; resolves with its exit code and output. */
+/**
+ * Runs the smoke test against a fake with `breaks`; resolves with its exit code and output.
+ * `env` may name the fake's client document as `{ documentUrl }` in MCP_SMOKE_CIMD_CLIENT.
+ */
 async function smoke(breaks = [], env = {}) {
   const fake = await startFake(new Set(breaks));
+  const resolved = Object.fromEntries(Object.entries(env)
+    .map(([key, value]) => [key, value === documentUrl ? fake.documentUrl : value]));
   try {
     return await new Promise((done) => {
       execFile('bash', [script, fake.url], {
-        env: { ...process.env, MCP_SMOKE_TOKEN: token, MCP_PROTOCOL_VERSION: '', ...env },
+        env: {
+          ...process.env,
+          MCP_SMOKE_TOKEN: token,
+          MCP_PROTOCOL_VERSION: '',
+          MCP_SMOKE_CIMD: '',
+          MCP_SMOKE_CIMD_CLIENT: '',
+          ...resolved,
+        },
       }, (error, stdout, stderr) => done({ code: error ? error.code : 0, out: stdout + stderr }));
     });
   } finally {
@@ -42,6 +57,8 @@ const breakages = [
   ['prm-resource', /^FAIL protected resource metadata: want 200 with resource/m],
   ['no-registration', /^FAIL authorization server metadata: want 200 with issuer .* authorization\/token\/registration/m],
   ['no-hintless', /^FAIL hint-less discovery:/m],
+  // A 2025 client sent to the front would have to register again (DECISIONS, job 94).
+  ['legacy-gets-front', /^FAIL hint-less discovery: want 200 with issuer "http:\/\/127\.0\.0\.1:\d+\/functions\/v1\/mcp\/oauth"/m],
   ['protocol-version', /^FAIL initialize: want 200 with protocol 2025-11-25/m],
   ['no-input-schema', /^FAIL tools\/list: tools without a name, a description or an object inputSchema: list_items$/m],
   ['no-add-items', /^FAIL tools\/list: no add_items among list_items$/m],
@@ -55,18 +72,70 @@ for (const [breakage, line] of breakages) {
   });
 }
 
-test('protocol 2026-07-28: server/discover and tools/list pass, without initialize', async () => {
-  const { code, out } = await smoke([], { MCP_PROTOCOL_VERSION: '2026-07-28' });
+const modern = { MCP_PROTOCOL_VERSION: '2026-07-28' };
+const cimd = { ...modern, MCP_SMOKE_CIMD: '1', MCP_SMOKE_CIMD_CLIENT: documentUrl };
+
+test('protocol 2026-07-28: every check passes without initialize, server/discover a hard check', async () => {
+  const { code, out } = await smoke([], cimd);
   assert.equal(code, 0, out);
-  assert.match(out, /^PASS server\/discover: 200, protocol 2026-07-28, server fixture, tools capability$/m);
-  assert.match(out, /^PASS tools\/list: list_items,add_items$/m);
-  assert.doesNotMatch(out, /initialize/);
+  assert.deepEqual(failLines(out), []);
+  assert.doesNotMatch(out, /^SKIP /m);
+  for (const check of [
+    'no token: 401, resource_metadata on the same host (http://127.0.0.1:',
+    'protected resource metadata: 200',
+    'authorization server metadata:',
+    'client ID metadata documents: http://127.0.0.1:',
+    'rediscovery:',
+    'client ID metadata documents: a non-https client_id URL gets 400 invalid_client, no redirect',
+    'client ID metadata documents: http://127.0.0.1:',
+    'server/discover: 200, protocol 2026-07-28, server fixture, tools capability',
+    'tools/list: list_items,add_items',
+    'tools/list: resultType complete, ttlMs 3600000, cacheScope private',
+    'Mcp-Method: a header that disagrees with the body gets 400, HeaderMismatch (-32020)',
+    'Mcp-Name: tools/call without it gets 400, HeaderMismatch (-32020)',
+    'unknown version: UnsupportedProtocolVersion (-32022) naming 2026-07-28',
+  ]) {
+    assert.match(out, new RegExp(`^PASS ${check.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'm'));
+  }
+  assert.match(out, /^PASS no token: 401, resource_metadata on the same host \(.*\/cimd\)$/m);
+  assert.doesNotMatch(out, /initialize|hint-less/);
 });
 
-test('protocol 2026-07-28: a server that does not list the version fails', async () => {
-  const { code, out } = await smoke(['protocol-version'], { MCP_PROTOCOL_VERSION: '2026-07-28' });
-  assert.equal(code, 1, out);
-  assert.match(out, /^FAIL server\/discover: want 200 with protocol 2026-07-28/m);
+test('protocol 2026-07-28 without a token: server/discover gets the 401, the rest SKIP', async () => {
+  const { code, out } = await smoke([], { ...modern, MCP_SMOKE_TOKEN: '' });
+  assert.equal(code, 0, out);
+  assert.match(out, /^PASS no token: 401/m);
+  assert.match(out, /^SKIP server\/discover \+ tools\/list: MCP_SMOKE_TOKEN not set$/m);
+});
+
+const modernBreakages = [
+  ['protocol-version', /^FAIL server\/discover: want 200 with protocol 2026-07-28/m],
+  ['discover-no-server-info', /^FAIL server\/discover: want 200 with protocol 2026-07-28, a server name/m],
+  ['no-ttl', /^FAIL tools\/list: want resultType "complete", a whole ttlMs >= 0 .*"ttlMs":null/m],
+  ['bad-cache-scope', /^FAIL tools\/list: want .* cacheScope public or private; got .*"cacheScope":"shared"/m],
+  ['no-method-check', /^FAIL Mcp-Method: want 400 with error -32020/m],
+  ['no-name-check', /^FAIL Mcp-Name: want 400 with error -32020/m],
+  ['no-version-error', /^FAIL unknown version: want error -32022/m],
+  ['no-cimd-flag', /^FAIL client ID metadata documents: want client_id_metadata_document_supported: true/m],
+  ['no-cimd-hint', /^FAIL client ID metadata documents: want client_id_metadata_document_supported: true .*\/auth\/v1;/m],
+  ['no-rediscovery', /^FAIL rediscovery: want 200 with authorization_servers \["http:\/\/127\.0\.0\.1:\d+\/functions\/v1\/mcp\/oauth"\]/m],
+  ['front-accepts-bad-client', /^FAIL client ID metadata documents: want 400 invalid_client without a redirect/m],
+  ['front-keeps-url', /^FAIL client ID metadata documents: want a 302 to the authorization endpoint with the document's client/m],
+  ['no-registration', /^FAIL authorization server metadata: want 200 with issuer .*mcp\/oauth.* authorization\/token\/registration/m],
+];
+
+for (const [breakage, line] of modernBreakages) {
+  test(`protocol 2026-07-28: a server with ${breakage} fails that check`, async () => {
+    const { code, out } = await smoke([breakage], cimd);
+    assert.equal(code, 1, out);
+    assert.match(out, line);
+  });
+}
+
+test('MCP_SMOKE_CIMD needs protocol 2026-07-28', async () => {
+  const { code, out } = await smoke([], { MCP_SMOKE_CIMD: '1' });
+  assert.equal(code, 2, out);
+  assert.match(out, /MCP_SMOKE_CIMD needs MCP_PROTOCOL_VERSION=2026-07-28/);
 });
 
 test('the token never reaches the output, even when the server echoes it in an error', async () => {

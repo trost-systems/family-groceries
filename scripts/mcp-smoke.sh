@@ -5,7 +5,10 @@
 # Discovery needs no credentials. MCP_SMOKE_TOKEN (a personal access token or OAuth access token)
 # enables the handshake and tools/list checks; without it they report SKIP. The token is never
 # printed. MCP_PROTOCOL_VERSION picks the protocol revision (default 2025-11-25).
-# Usage: [MCP_SMOKE_TOKEN=…] [MCP_PROTOCOL_VERSION=…] scripts/mcp-smoke.sh <mcp endpoint URL>
+# In 2026-07-28, MCP_SMOKE_CIMD=1 adds the Client ID Metadata Document checks of the
+# authorization server front (job 94), and MCP_SMOKE_CIMD_CLIENT=<document URL> sends that
+# client through its authorize endpoint (a real fetch of the document; it registers the client).
+# Usage: [MCP_SMOKE_TOKEN=…] [MCP_PROTOCOL_VERSION=…] [MCP_SMOKE_CIMD=1] scripts/mcp-smoke.sh <url>
 #   e.g. https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp or https://mcp.hummlist.com
 # Prints PASS/FAIL/SKIP per check; exits 1 on any FAIL, 2 on a usage error.
 set -uo pipefail
@@ -13,8 +16,8 @@ set -uo pipefail
 [[ $# == 1 ]] || { echo "usage: $0 <mcp endpoint URL>" >&2; exit 2; }
 base="${1%/}"
 
-# TODO: switch the default to protocol 2026-07-28 once the MCP clients people connect with
-# (Claude, ChatGPT, Cursor) speak it; our server answers both today (e2e/tests/mcp-smoke.spec.ts).
+# The default stays 2025-11-25 while the MCP clients people connect with (Claude, ChatGPT, Cursor)
+# speak it; the server answers both (DECISIONS, job 94). CI runs the script in both.
 version="${MCP_PROTOCOL_VERSION:-2025-11-25}"
 # Per revision: the handshake request, how its answer proves the version, the server name and the
 # tools capability, and the _meta envelope every 2026-era request carries.
@@ -43,6 +46,13 @@ case $version in
     exit 2
     ;;
 esac
+cimd="${MCP_SMOKE_CIMD:-}"
+cimd_client="${MCP_SMOKE_CIMD_CLIENT:-}"
+if [[ (-n $cimd || -n $cimd_client) && $era != modern ]]; then
+  echo "MCP_SMOKE_CIMD needs MCP_PROTOCOL_VERSION=2026-07-28: only 2026-era clients use the front" >&2
+  exit 2
+fi
+if [[ -n $cimd_client ]]; then cimd=1; fi
 
 origin() { sed -E 's#^([a-z]+://[^/]+).*#\1#' <<<"$1"; }
 work="$(mktemp -d)"
@@ -154,13 +164,60 @@ fi
 # authorization server and probes <endpoint>/.well-known/openid-configuration (the root-level
 # probes on supabase.co hit Supabase's gateway). It must find a token endpoint there without a
 # token, or the refresh never starts (incident 2026-10-31, docs/MCP.md).
-request asfallback "$base/.well-known/openid-configuration"
-if [[ $(status asfallback) == 200 ]] && jq -e --arg iss "$issuer" '.issuer == $iss and
-    (.token_endpoint | type == "string") and (.grant_types_supported | index("refresh_token"))' \
-  "$work/asfallback.body" >/dev/null 2>&1; then
-  pass "hint-less discovery: $base/.well-known/openid-configuration names the token endpoint"
-else
-  fail "hint-less discovery: want 200 with issuer \"$issuer\" and a refresh_token token endpoint at $base/.well-known/openid-configuration; $(got asfallback)"
+if [[ $era == legacy ]]; then
+  request asfallback "$base/.well-known/openid-configuration"
+  if [[ $(status asfallback) == 200 ]] && jq -e --arg iss "$issuer" '.issuer == $iss and
+      (.token_endpoint | type == "string") and (.grant_types_supported | index("refresh_token"))' \
+    "$work/asfallback.body" >/dev/null 2>&1; then
+    pass "hint-less discovery: $base/.well-known/openid-configuration names the token endpoint"
+  else
+    fail "hint-less discovery: want 200 with issuer \"$issuer\" and a refresh_token token endpoint at $base/.well-known/openid-configuration; $(got asfallback)"
+  fi
+fi
+
+# Job 94: 2026-era clients are pointed at an authorization server that resolves a client_id URL
+# (Client ID Metadata Documents) and still registers dynamically.
+if [[ -n $cimd ]]; then
+  if [[ -n $as_ok ]] && jq -e '.client_id_metadata_document_supported == true' "$work/as.body" \
+    >/dev/null 2>&1; then
+    pass "client ID metadata documents: $issuer advertises client_id_metadata_document_supported"
+  else
+    fail "client ID metadata documents: want client_id_metadata_document_supported: true in the metadata of $issuer; $(got as)"
+  fi
+
+  # A 2026-era client that lost the 401's hint asks the well-known URL with its version.
+  request rediscover "$base/.well-known/oauth-protected-resource" -H "mcp-protocol-version: $version"
+  if [[ $(status rediscover) == 200 ]] &&
+    jq -e --arg iss "$issuer" '.authorization_servers[0] == $iss' "$work/rediscover.body" >/dev/null 2>&1; then
+    pass "rediscovery: $base/.well-known/oauth-protected-resource names $issuer for $version"
+  else
+    fail "rediscovery: want 200 with authorization_servers [\"$issuer\"] at $base/.well-known/oauth-protected-resource with mcp-protocol-version $version; $(got rediscover)"
+  fi
+
+  authorize_endpoint="$(jq -r '.authorization_endpoint // empty' "$work/as.body" 2>/dev/null)"
+  pkce='response_type=code&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=mcp-smoke'
+  request badclient "$authorize_endpoint?$pkce&client_id=http%3A%2F%2Fmcp-smoke.invalid%2Fclient.json&redirect_uri=http%3A%2F%2F127.0.0.1%3A9%2Fcb"
+  if [[ $(status badclient) == 400 && -z $(header badclient location) ]] &&
+    jq -e '.error == "invalid_client"' "$work/badclient.body" >/dev/null 2>&1; then
+    pass 'client ID metadata documents: a non-https client_id URL gets 400 invalid_client, no redirect'
+  else
+    fail "client ID metadata documents: want 400 invalid_client without a redirect for an http client_id URL at ${authorize_endpoint:-<no authorization_endpoint>}; $(got badclient)"
+  fi
+
+  if [[ -n $cimd_client ]]; then
+    request cimddoc "$cimd_client"
+    redirect_uri="$(jq -r '.redirect_uris[0] // empty' "$work/cimddoc.body" 2>/dev/null)"
+    request cimdauth "$authorize_endpoint?$pkce&client_id=$(jq -rn --arg v "$cimd_client" '$v | @uri')&redirect_uri=$(jq -rn --arg v "$redirect_uri" '$v | @uri')"
+    location="$(header cimdauth location)"
+    mapped="$(sed -nE 's/.*[?&]client_id=([^&]*).*/\1/p' <<<"$location")"
+    request upstream "${location:-$authorize_endpoint}"
+    if [[ $(status cimdauth) == 302 && -n $mapped && $mapped != *%3A%2F%2F* &&
+      $(status upstream) == 302 && $(header upstream location) != "$redirect_uri"* ]]; then
+      pass "client ID metadata documents: $cimd_client signs in as client $mapped, on to $(header upstream location | sed 's/[?].*//')"
+    else
+      fail "client ID metadata documents: want a 302 to the authorization endpoint with the document's client, then a 302 to sign-in or consent, for $cimd_client; $(got cimdauth) location='$location' then $(got upstream)"
+    fi
+  fi
 fi
 
 if [[ -z ${MCP_SMOKE_TOKEN:-} ]]; then
@@ -204,6 +261,47 @@ else
     fail "tools/list: no add_items among $names"
   else
     pass "tools/list: $names"
+  fi
+
+  if [[ $era == modern ]]; then
+    # 2026-07-28 requirements on every answer the client may cache or must route by.
+    if jq -e '.result | .resultType == "complete" and (.ttlMs | type == "number" and . >= 0 and
+        floor == .) and (.cacheScope == "public" or .cacheScope == "private")' <<<"$tools" >/dev/null 2>&1; then
+      pass "tools/list: resultType complete, ttlMs $(jq -r .result.ttlMs <<<"$tools"), cacheScope $(jq -r .result.cacheScope <<<"$tools")"
+    else
+      fail "tools/list: want resultType \"complete\", a whole ttlMs >= 0 and cacheScope public or private; got $(jq -c '.result | {resultType, ttlMs, cacheScope}' <<<"$tools" 2>/dev/null)"
+    fi
+
+    # A request whose Mcp-Method header disagrees with its body is refused (HeaderMismatch).
+    body="$(jq -cn --argjson meta "$meta" '{jsonrpc: "2.0", id: 3, method: "tools/list", params: {_meta: $meta}}')"
+    request mismatch -X POST "$base" -H 'content-type: application/json' \
+      -H 'accept: application/json, text/event-stream' -H "mcp-protocol-version: $version" \
+      -H 'mcp-method: tools/call' "${auth[@]}" -d "$body"
+    if [[ $(status mismatch) == 400 ]] && jq -e '.error.code == -32020' <<<"$(rpc mismatch 3)" >/dev/null 2>&1; then
+      pass 'Mcp-Method: a header that disagrees with the body gets 400, HeaderMismatch (-32020)'
+    else
+      fail "Mcp-Method: want 400 with error -32020 for mcp-method tools/call on a tools/list body; $(got mismatch)"
+    fi
+
+    # tools/call needs Mcp-Name; without it the call is refused before any tool runs.
+    mcp_post noname tools/call 4 '{"name": "list_items", "arguments": {}}' "${auth[@]}"
+    if [[ $(status noname) == 400 ]] && jq -e '.error.code == -32020' <<<"$(rpc noname 4)" >/dev/null 2>&1; then
+      pass 'Mcp-Name: tools/call without it gets 400, HeaderMismatch (-32020)'
+    else
+      fail "Mcp-Name: want 400 with error -32020 for tools/call without an mcp-name header; $(got noname)"
+    fi
+
+    unknown_meta="$(jq -c '.["io.modelcontextprotocol/protocolVersion"] = "2099-01-01"' <<<"$meta")"
+    body="$(jq -cn --argjson meta "$unknown_meta" '{jsonrpc: "2.0", id: 5, method: "server/discover", params: {_meta: $meta}}')"
+    request unsupported -X POST "$base" -H 'content-type: application/json' \
+      -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2099-01-01' \
+      -H 'mcp-method: server/discover' "${auth[@]}" -d "$body"
+    if jq -e --arg v "$version" '.error.code == -32022 and (.error.data.supported | index($v) != null)' \
+      <<<"$(rpc unsupported 5)" >/dev/null 2>&1; then
+      pass "unknown version: UnsupportedProtocolVersion (-32022) naming $version"
+    else
+      fail "unknown version: want error -32022 with $version in data.supported for protocol 2099-01-01; $(got unsupported)"
+    fi
   fi
 fi
 

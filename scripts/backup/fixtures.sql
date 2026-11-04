@@ -162,4 +162,11 @@ values (repeat('b', 64), 'waitlist-en-v1', 'en', false, now() - interval '2 days
   now() - interval '2 days', now() - interval '1 day', now(), 'unsubscribed');
 insert into public.waitlist_rate (key_hash, window_start, hits) values (repeat('c', 64), date_trunc('hour', now()), 2);
 
+-- Job 94: an MCP client known by its Client ID Metadata Document URL.
+insert into public.oauth_cimd_clients (client_id, auth_client_id, client_name, redirect_uris, fresh_until)
+values ('https://client.backup.test/mcp.json', '00000000-0000-4000-8000-0000000b0094', 'Backup Client',
+  array['http://127.0.0.1:8976/callback'], now() + interval '1 hour');
+insert into public.oauth_cimd_rate (key, window_start, hits)
+values ('fetch:client.backup.test', date_trunc('hour', now()), 1);
+
 commit;

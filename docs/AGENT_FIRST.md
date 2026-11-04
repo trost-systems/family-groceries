@@ -48,8 +48,8 @@ Every check has a fixture test that breaks one thing and expects that check to f
 The MCP probe never uses a real household. CI runs it without credentials against
 `https://mcp.hummlist.com` (discovery only; `initialize` and `tools/list` report `SKIP`), and
 `e2e/tests/mcp-smoke.spec.ts` runs it with an access token of a throwaway household on the local
-stack. `MCP_PROTOCOL_VERSION` picks the protocol version (default `2025-11-25`, what the server
-speaks today).
+stack. `MCP_PROTOCOL_VERSION` picks the protocol version (default `2025-11-25`); CI runs both
+`2025-11-25` and `2026-07-28`, and `server/discover` is a hard check (docs/MCP.md).
 
 ## Run it locally
 
