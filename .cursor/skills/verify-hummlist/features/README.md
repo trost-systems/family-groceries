@@ -16,7 +16,7 @@ This directory is the maintained record of what Hummlist does today, one file pe
 ## Driving conventions
 
 - Start every recipe from the baseline unless its preconditions say otherwise. `launch.sh --fresh` reseeds the baseline (new run, old run torn down).
-- Find widgets by ARIA role and accessible name. Semantics are on in the web build. Rows, chips and menu entries are buttons whose name joins label and hint ("Läden Reihenfolge und Laufweg"), so match names with a start-anchored regex.
+- Find widgets by ARIA role and accessible name. Semantics are on in the web build. Rows, chips and menu entries are buttons whose name joins label and hint ("Ohne Laden Kategorien für Artikel ohne Laden"), so match names with a start-anchored regex.
 - Labels in recipes are German (the browser locale is de-DE). For English runs, look labels up by ARB key with `labels('en')` instead of translating by hand.
 - Type with `typeInto` (focus first, then insert text). Synthetic key events drop umlauts.
 - A snackbar with an action keeps its text in a group's aria-label: find it with `actionSnackBar(page, '<text>')` (e2e helpers). `getByText` hits the screen-reader copy that the engine soon clears.

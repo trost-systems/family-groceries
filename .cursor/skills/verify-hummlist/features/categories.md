@@ -25,8 +25,8 @@ Every household starts with 11 categories (fruit and veg, bread, chilled, …, �
 
 Preconditions:
 
-- Signed in on the list. For a deterministic route use a fresh account: `signUpWithHousehold(page, newEmail('categories'))` (onboarding picks dm, Lidl and Edeka; 11 seeded categories). A seeded „Familie Brandt“ may have renamed or extra categories: read the screen first.
-- An item without a store to see route order (e2e adds Windeln with the add sheet's „Laden: …“ chip set to „Ohne Laden“, and Bier).
+- Signed in on the list. For a deterministic route use a fresh account: `signUpWithHousehold(page, newEmail('categories'))` (no stores; 11 seeded categories). A seeded „Familie Brandt“ may have renamed or extra categories: read the screen first.
+- An item without a store to see route order (in a household without stores every item is one: e2e adds Windeln and Bier).
 
 - **Open.** `openStoreDetails(page, null)` (`e2e/tests/catalog.ts`: Liste, „Anpassen“, „Ohne Laden“). Observable: heading „Ohne Laden“; the 11 categories as buttons in route order; `page.getByRole('button', { name: 'Sonstiges löschen' })` count 0.
 - **Add.** `page.getByRole('button', { name: 'Kategorie hinzufügen' }).click()`, `typeInto(page.getByRole('textbox', { name: 'Name' }), 'Baby')`, `page.getByRole('button', { name: 'Speichern' }).click()`. Observable: `page.getByRole('button', { name: 'Baby', exact: true })` visible, listed just above „Sonstiges“.
@@ -39,7 +39,7 @@ Preconditions:
 
 ## Gotchas
 
-- Rows are buttons whose name is the category name; „Baby“ with `exact: true` avoids hitting „Babysachen“ or the drag handle „Baby verschieben“.
+- Rows are buttons whose name is the category name, except that a leading emoji is left out of the row's name (`{ name: 'Drogerie', exact: true }`; its trash „👶 Drogerie löschen“ and handle „👶 Drogerie verschieben“ keep it; driven 2026-11-04); „Baby“ with `exact: true` avoids hitting „Babysachen“ or the drag handle „Baby verschieben“.
 - The new category dialog's title and the button share the text „Kategorie hinzufügen“; wait for the textbox „Name“.
 - The delete dropdown opens as a menu: pick with `getByRole('menuitem', …)`.
 - Category changes persist and change the divider order in „Ohne Laden“ and in every store; use a fresh account for order assertions.

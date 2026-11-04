@@ -29,7 +29,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Sign-up and sign-in
 
-**What it does.** A new or returning user signs in with Google or Apple, or with email: email and password, a new account with "Registrieren", or a sign-in link by email opened on the same device. Google and Apple come first; email is one more button below them, „Weiter mit E-Mail“ (EN: "Continue with email"). The keyboard opens only when the user taps a field. Signing out is in the More tab. The login screen links the imprint and the privacy policy.
+**What it does.** A new or returning user signs in with Google or Apple, or with email: email and password, a new account with „Registrieren“ (EN: "Sign up"), or a sign-in link by email opened on the same device. Google and Apple come first; email is one more button below them, „Weiter mit E-Mail“ (EN: "Continue with email"). The keyboard opens only when the user taps a field. Signing out is in the More tab. The login screen links the imprint and the privacy policy. Right after deleting the account, the login screen confirms „Dein Konto wurde gelöscht.“ (EN: "Your account was deleted.").
 
 **How to get there.**
 1. Open Hummlist while signed out: the login screen appears. It opens on the Hummlist logo and name and has no title.
@@ -44,12 +44,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That the emails are in German or come from a "Hummlist" template: today they are short English emails ("Your sign-in link", "Confirm your email address").
 - Passkeys, phone-number sign-in or other providers than Google and Apple.
 - That users need an email and password account: Google or Apple is enough.
+- A "Forgot password" button or password reset in the app: there is none. Someone who forgot the password uses „Anmeldelink per E-Mail senden“ (EN: "Email me a sign-in link").
 
-**Last verified.** job/70-login-no-autofocus f48d081 (job 70), 2026-11-02 (CET), from code and driven on the web build (verify-hummlist, DE and EN, light and dark); email subjects from the hosted project's auth settings (2026-11-01). Recipe: [sign-in.md](./sign-in.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): login screen, the email form, a signed-out link through sign-in, sign-up, the sign-in email in the local inbox; email subjects on the hosted project from its auth settings (2026-11-01). Recipe: [sign-in.md](./sign-in.md).
 
 ## Usage-data question (analytics consent)
 
-**What it does.** Right after the first sign-in on a device, Hummlist asks once whether it may collect usage data. A no sends nothing at all. A yes sends pseudonymous usage data and error reports to PostHog on servers in the EU. Both answers are equally prominent, and the user can change the answer any time under More → Nutzungsdaten. Anyone who said yes to an earlier wording of the question is asked again with the current, shorter text, and nothing is sent until they answer. A no stays a no.
+**What it does.** Right after the first sign-in on a device, Hummlist asks once whether it may collect usage data. A no sends nothing to PostHog; Hummlist only notes the no with the account, so voice events stay off too. A yes sends pseudonymous usage data and error reports to PostHog on servers in the EU. Both answers are equally prominent, and the user can change the answer any time under More → Nutzungsdaten. Anyone who said yes to an earlier wording of the question is asked again with the current, shorter text, and nothing is sent until they answer. A no stays a no.
 
 **How to get there.**
 1. Sign in for the first time on a device: the question „Darf Hummlist Nutzungsdaten erfassen?“ (EN: "May Hummlist collect usage data?") appears.
@@ -64,11 +65,11 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Note.** Every released app and app.hummlist.com ask this question (checked 2026-11-01).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the switch under Mehr → Nutzungsdaten: job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), by `e2e/tests/analytics.spec.ts` and `shell-more.spec.ts`. Recipe: [privacy-consent.md](./privacy-consent.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): the question after sign-up, „Erlauben“, „Nicht erlauben“ and the switch under Mehr → Nutzungsdaten. Recipe: [privacy-consent.md](./privacy-consent.md).
 
 ## Getting started: first sign-in to the list
 
-**What it does.** After the first sign-in, a new user creates a household or accepts an invite. Creating asks for a household name (prefilled "Unser Haushalt") and which stores you shop at: pick from ten common ones (EDEKA, REWE, Lidl, Aldi Süd, Aldi Nord, Kaufland, Netto, Penny, dm, Rossmann) and add your own, or skip and add them later. Then Hummlist offers to invite the partner and opens the shopping list. Someone who opens an invite link goes straight to joining.
+**What it does.** After the first sign-in, a new user creates a household or accepts an invite. Creating asks for a household name (prefilled „Unser Haushalt“, EN: "Our household") and which stores you shop at: pick from ten common ones (EDEKA, REWE, Lidl, Aldi Süd, Aldi Nord, Kaufland, Netto, Penny, dm, Rossmann) and add your own, or skip and add them later. Then Hummlist offers to invite the partner and opens the shopping list. Someone who opens an invite link goes straight to joining.
 
 **How to get there.**
 1. Sign up or sign in. If the app asks about usage data, answer it.
@@ -80,8 +81,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - A tour, a tutorial or a newsletter or email opt-in in the app: there is none.
 - That any store is pre-installed, recommended or a partner: nothing is picked until you pick it, and the shops have nothing to do with Hummlist.
 
-**Last verified.** job 88 branch, 2026-11-03 (CET), typed chain names driven on the web build (verify-hummlist) and by app/test/household/onboarding_test.dart; main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build. Recipe: [onboarding.md](./onboarding.md).
-**Last verified.** job 68 branch, 2026-11-02 (CET), skip hint by app/test/household/onboarding_test.dart; job 58 branch (PR #176), 2026-11-01 (CET), by e2e/tests/onboarding.spec.ts and stores-add.spec.ts. Recipe: [onboarding.md](./onboarding.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): a new account creating a household with REWE, an own store and typed „edeka“, the invite step. Recipe: [onboarding.md](./onboarding.md).
 
 ## Household and invites
 
@@ -90,7 +90,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **How to get there.**
 1. Tab „Mehr“ (EN: "More"), row „Partner einladen“ (EN: "Invite your partner").
 2. Tap „Neue Einladung“ (EN: "New invite"), then share it with „Teilen“ (EN: "Share") or copy it with „Link kopieren“ / „Code kopieren“ (EN: "Copy link" / "Copy code").
-3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") right below it, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to „Mehr“ (job 78, 2026-11-02).
+3. To join: „Anderem Haushalt beitreten“ (EN: "Join another household") right below it, enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to „Mehr“. Someone already in a household first sees „Du bist schon in einem Haushalt“ (EN: "You're already in a household") with what joining means for the old household.
 4. To revoke: on the invites page tap „Widerrufen“ (EN: "Revoke") on an invite.
 
 **Never claim.**
@@ -99,11 +99,11 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - Invites that stay valid longer than 7 days or work for several people.
 - Purchases or Premium tied to joining: Premium is not on sale yet.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the More rows without hints: job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), `shell-more.spec.ts`. Recipe: [household-invites.md](./household-invites.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): a new invite, joining by link after sign-up, the warning for someone already in a household. Recipe: [household-invites.md](./household-invites.md).
 
 ## Links into the app
 
-**What it does.** A link to app.hummlist.com opens that screen of Hummlist: in the iPhone or Android app when it is installed, otherwise in the browser. A link can open the list, the add field, one store's part of the list, the More tab and its pages (for example „Einladungen“ / "Invites" or „Einstellungen“ / "Settings"), or an invite. Someone who is signed out signs in first and then lands on the linked screen; a new account sets up its household first.
+**What it does.** From the next app release (see the first Never-claim below), a link to app.hummlist.com opens that screen of Hummlist: in the iPhone or Android app when it is installed, otherwise in the browser. A link can open the list, the add field, one store's part of the list, the More tab and its pages (for example „Einladungen“ / "Invites" or „Einstellungen“ / "Settings"), or an invite. Someone who is signed out signs in first and then lands on the linked screen; a new account sets up its household first.
 
 **Links to use.**
 - The list: `https://app.hummlist.com/list`
@@ -114,17 +114,17 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - A store's part of the list: `https://app.hummlist.com/stores/<id>`. The id belongs to one household, so this link only works for its members; don't put it in emails to everyone.
 
 **Never claim.**
-- That the iPhone app opens these links before the next app release. Until then the iPhone opens them in the browser (invite links already open the app).
+- That these links (other than invite links) work before the next app release. Until then app.hummlist.com and both phone apps open the plain list for them, and a link opened while signed out forgets its page. Invite links already work everywhere and open the apps.
 - Links that fill in an item ("add Milch") or tick something off: a link only opens a screen.
 - That a link keeps working after the app was closed during sign-in on the phone: it then opens the list.
 
-**Last verified.** job/66-deep-links, 2026-11-02 (CET), web build with e2e/tests/deep-links.spec.ts. Phone apps: unverified on a device. Recipe: [app-links.md](./app-links.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): /add, /stores/<id>, /more/invites, unknown paths, signed-out links and invite links. app.hummlist.com and the phone apps get them with the next release. Phone apps: unverified on a device. Recipe: [app-links.md](./app-links.md).
 
 # The list
 
 ## Quick add
 
-**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type, in front or behind ("2 l Milch", "6x Eier", "zwei Gurken", "Karotten 2", "Karotten x2"), and a number that belongs to the item is not taken as an amount ("Windeln Größe 4", "Vitamin D3", "7up"); and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
+**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, kinds, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type, in front or behind ("2 l Milch", "6x Eier", "zwei Gurken", "Karotten 2", "Karotten x2"), and a number that belongs to the item is not taken as an amount ("Windeln Größe 4", "Vitamin D3", "7up"); and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
 
 **How to get there.**
 1. Open Hummlist and stay on the „Liste“ (EN: "List") tab.
@@ -138,12 +138,11 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"). Two people adding the same item at the same moment also end up with one.
 
-**Last verified.** job 61 branch (quantities), 2026-11-01 (CET), driven on the Linux app with fg; main 3d66cee, 2026-11-01 (CET), from code on main; typo rows driven on the web build at 113e756 (verify-hummlist journey, typo probe, how-to clip DE and EN), offline and recent rows from job 59's own drives (#179). Recipe: [quick-add.md](./quick-add.md).
-**Last verified.** job 78, 2026-11-02 (CET), the bar and sheet driven on the web build (verify-hummlist journey `list-manage`, e2e `add-sheet.spec.ts`) and by widget tests and goldens at 358 and 390 px; closing right after an add: job 76 branch, 2026-11-02 (CET), `add-sheet.spec.ts`, 20 repeats. Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): quantities, „steht schon auf der Liste“, the three rows on opening, store and category chips (DE and EN). Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
-**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the usual quantity. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed. Below them come the items used in the last 30 days, marked „Zuletzt verwendet“ (EN: "Recently used"), up to 10 rows in all. The sheet opens small, with three of them; the others scroll.
+**What it does.** Hummlist notices what a household buys regularly. When you open the add bar with nothing typed, items that are probably running out show up as „Wieder fällig“ (EN: "Due again"); one tap puts them on the list with the quantity from last time. An item shows up once it was bought on at least two different days and about its usual time between purchases has passed. Below them come the items used in the last 30 days, marked „Zuletzt verwendet“ (EN: "Recently used"), up to 10 rows in all. The sheet opens small, with three of them; the others scroll.
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.
@@ -154,12 +153,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That Hummlist sends reminders or notifications about due items; it only shows them in the add sheet.
 - That it works from a single purchase; it needs at least two purchase days.
 - That it predicts quantities by season or guesses new items; it only repeats what the household bought.
+- That an item stays due until it is bought: it drops out after about four times its usual time between purchases.
 
-**Last verified.** job 64 branch (job/64-polish-seed), 2026-11-02 (CET), from code on the branch, driven on the web build (360×640, 390×844) and by widget, pgTAP and Deno tests. Recipe: [usuals.md](./usuals.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): an item bought on two days a week apart shows as „Wieder fällig“ and comes back with its last quantity. Recipe: [usuals.md](./usuals.md).
 
 ## Dictation
 
-**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. It then says what it added.
+**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. It then shows a short message with what it added.
 
 **How to get there.**
 1. Open the Hummlist app on an iPhone or Android phone, on the „Liste“ (EN: "List") tab.
@@ -175,8 +175,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Unverified.** Behaviour on real devices (permission prompts, recognizer) was read from code, not run.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main; on the web build only the missing microphone and the sentence splitting were driven (verify-hummlist), the microphone needs a phone. Recipe: [dictation.md](./dictation.md).
-**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [dictation.md](./dictation.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code; on the web build only the missing microphone and the sentence splitting were driven (verify-hummlist), the microphone needs a phone. Recipe: [dictation.md](./dictation.md).
 
 ## Ticking items, "Zuletzt verwendet" and undo
 
@@ -191,17 +190,16 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **Never claim.**
 - That ticking shows an undo message; it does not. Undo for a tick is the „Zuletzt verwendet“ section.
 - A check box next to each item: there is none.
-- That swiping does anything on a row: it neither deletes nor edits (since job 78); holding opens editing.
+- That swiping does anything on a row: it neither deletes nor edits; holding opens editing.
 - That ticked items vanish after a fixed time or can be counted past 20 there.
 
 **Unverified.** Whether ticked items are ever removed from the section by age: no cleanup job was found in the code, but it was not run.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist).
-**Last verified.** job 78, 2026-11-02 (CET), the swipe's removal by the app's widget tests (`app/test/list/list_screen_test.dart`); the e2e specs were rewritten but not run. Recipe: [tick-and-undo.md](./tick-and-undo.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): tick, „Zuletzt verwendet“, put back, delete with „Rückgängig“ (DE and EN). Recipe: [tick-and-undo.md](./tick-and-undo.md).
 
 ## Edit an item
 
-**What it does.** Every item can be changed after it is on the list: its name, brand, details (like "Größe 3" or "1,5 %"), quantity, store and category. The list row shows the brand and details in small text under the name. Items can also be deleted from the same sheet, with an undo.
+**What it does.** Every item can be changed after it is on the list: its name, brand, details (like "Größe 3" or "1,5 %"), quantity, store and category. The list row shows the quantity in bold in front of the name („6× Bananen“) and the brand and details in small text under the name. Items can also be deleted from the same sheet, with an undo.
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.
@@ -214,14 +212,13 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That Undo after a delete always brings back your own quantity: when the item is on the list again by then, the one there stays as it is.
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
-- That holding and dragging moves an item on the list; nothing on the list drags since job 78. Holding opens this sheet.
+- That holding and dragging moves an item on the list; nothing on the list drags. Holding opens this sheet.
 
-**Last verified.** job 78, 2026-11-02 (CET), by the app's widget tests (`app/test/list/list_screen_test.dart`); the e2e specs were rewritten but not run. Recipe: [edit-item.md](./edit-item.md).
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); undo onto an open item: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): brand, quantity, store, delete with „Rückgängig“. Recipe: [edit-item.md](./edit-item.md).
 
 ## Tips on the list
 
-**What it does.** Once there is something on the list, a small card at the top shows one tip at a time, for example how to edit an item or that the amount can be typed with the item. The X hides a tip for good on that device; the next one shows from the next app start on. A new, empty list shows no tip.
+**What it does.** Once there is something on the list, a small card at the top shows one tip at a time, for example how to edit an item or that the amount can be typed with the item. The X hides a tip for good on that device; the next one shows from the next app start on. A new, empty list shows no tip, and the first tip waits until the user has tapped „Verstanden“ (EN: "Got it") on the "tap ticks, hold edits" card.
 
 **How to get there.**
 1. Open Hummlist with at least one item on the list („Liste“, EN: "List").
@@ -231,7 +228,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That tips sync between devices or members (they are per device and user).
 - That tips show news or offers today (the two tips are how-tos).
 
-**Last verified.** job/80-polish-access-tips-account, 2026-11-02 (CET), by the widget tests and goldens (`app/test/tips/`) and driven on the web build (verify-hummlist). Recipe: [tips.md](./tips.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist) (DE and EN). Recipe: [tips.md](./tips.md).
 
 ## Automatic category (the classifier)
 
@@ -250,7 +247,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Offline.** An item added without a connection shows under „Wird einsortiert …“ (EN: "Sorting …") until the connection is back, then moves under its category. Online, items arrive already sorted.
 
-**Last verified.** job 78, 2026-11-02 (CET), by the app's widget tests (`app/test/list/list_screen_test.dart`, `app/test/list/add_sheet_test.dart`) and driven on the web build (verify-hummlist). Recipe: [classifier.md](./classifier.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): the category shown before adding, Drogerie and Sonstiges. Recipe: [classifier.md](./classifier.md).
 
 ## Categories
 
@@ -271,7 +268,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Whether there is a limit on the number of categories: none found in the app.
 
-**Last verified.** job 78, 2026-11-02 (CET), from code and widget tests; e2e specs updated, not yet run. Recipe: [categories.md](./categories.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): „Anpassen“ → „Ohne Laden“, adding a category, the duplicate message. Recipe: [categories.md](./categories.md).
 
 ## Stores, walk order and the sections of the list
 
@@ -286,13 +283,13 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Never claim.**
 - Store logos, chain colours or official store maps. Store names appear as plain names in a small hexagonal label. The walking orders are researched defaults that can differ from a real shop.
-- That items, stores or categories can be dragged around on the list; moving an item is the edit sheet's store or category choice, and ordering lives in „Anpassen“ (job 78).
+- That items, stores or categories can be dragged around on the list; moving an item is the edit sheet's store or category choice, and ordering lives in „Anpassen“.
 - That the app knows prices, opening hours or store locations.
 - That stores can be added, renamed or deleted without a connection; the app asks for one.
 
 **Note.** The onboarding skip hint says „Du kannst sie später unter Liste → Anpassen anlegen.“ / "You can add them later under List → Edit." (jobs 68, 78).
 
-**Last verified.** job 78, 2026-11-02 (CET), from code and widget tests; e2e specs updated, not yet run. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): adding stores in „Anpassen“, the duplicate-name message, moving items to a store, a store's section on the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 
@@ -301,14 +298,14 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **How to get there.**
 1. Both people join the same household: one uses „Mehr“ (EN: "More") → „Partner einladen“ (EN: "Invite your partner"), the other opens the link or enters the code.
 2. Open „Liste“ (EN: "List"). Changes appear on its own.
-3. Strip above the list: „1 neu von Noah Brandt“ (EN: "1 new from Noah Brandt"). A small cloud icon on its right appears while changes are being sent or the phone is offline.
+3. Strip above the list: „1 neu von Noah Brandt“ (EN: "1 new from Noah Brandt"). A small cloud icon next to „Anpassen“ (EN: "Edit") appears while changes are being sent or the phone is offline.
 
 **Never claim.**
 - Sync with people outside the household, or with a read-only guest view.
 - Push notifications for a partner's changes.
 - That the list updates with the app fully closed in the background.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [live-sync.md](./live-sync.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist) with two members side by side: a partner's add marked new, a partner's tick. Recipe: [live-sync.md](./live-sync.md).
 
 ## Working offline
 
@@ -316,7 +313,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **How to get there.**
 1. Open „Liste“ (EN: "List") and use it as usual with the connection off.
-2. Look for the crossed-out cloud on the right of the strip above the list: „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN: "Offline: changes will sync once the connection is back").
+2. Look for the crossed-out cloud in the strip above the list, just left of „Anpassen“ (EN: "Edit"): „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN: "Offline: changes will sync once the connection is back").
 3. When the connection returns, the cloud goes away on its own.
 
 **Never claim.**
@@ -326,7 +323,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Offline sign-in, and a first start offline before the list was ever synced (not covered by specs or read in detail).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); an offline add someone else made meanwhile: job 64b branch (job/64b-dup-skip-undo), 2026-11-02 (CET), driven on the web build (`already-on-list.spec.ts`). Recipe: [offline.md](./offline.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): add and tick offline, the offline note, adding a store refused, sync when back. Recipe: [offline.md](./offline.md).
 
 # Settings, help and account
 
@@ -343,7 +340,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - A scheduled or automatic day/night switch beyond „System“.
 - The old label „Wie Gerät“ for the theme (it is „System“ since 2026-11-01).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [theme.md](./theme.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist). Recipe: [theme.md](./theme.md).
 
 ## App language
 
@@ -356,9 +353,10 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Never claim.**
 - Any language besides German and English.
 - That the language is stored in the account or follows the user to other devices.
+- That Alexa or AI assistants answer in the app's language: Alexa answers in the language of the Alexa device (German or English), AI assistants get German answers.
 - That everything is English once the app is set to English: suggestions from the catalogue („Aus dem Katalog“) stay German words, the Siri Shortcut answers in German and the sign-in emails are short English emails whatever the app language.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [language.md](./language.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist). Recipe: [language.md](./language.md).
 
 ## Feedback
 
@@ -377,11 +375,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** How quickly or by what channel Peter sees notes (not in the app).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist). Recipe: [feedback.md](./feedback.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): a note sent and stored. Recipe: [feedback.md](./feedback.md).
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, once it is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, and the app version at the bottom. Categories and stores are under the list's „Anpassen“ since job 78. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
+**What it does.** The app has two tabs, List and More. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, for a household that has Premium (testers) or once Premium is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, and the app version at the bottom. Categories and stores are under the list's „Anpassen“. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the bottom bar (on wide screens: the rail on the left).
@@ -395,11 +393,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That the Siri guide exists in English beyond the German-only notice.
 - A sign-out from anywhere but More.
 - An update notice in More: the app does not check for updates yet.
-- That More shows the household's name: it no longer does (job 85).
+- That More shows the household's name: it no longer does.
 - That „Rechtliches“ is a page of its own: its entries are rows on More.
 - Terms of use of Hummlist's own: the terms row shows Apple's standard terms on iPhone and the help page elsewhere.
 
-**Last verified.** job/85-more-menu-mp2 8399b9c, 2026-11-03 (CET), the M-P2 menu with the Nutzungsdaten page and the Rechtliches rows on More, from code and driven on the web build (e2e `shell-more.spec.ts`, `help.spec.ts`, `analytics.spec.ts`; screenshots `docs/screenshots/85/`). Recipe: [more-help.md](./more-help.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): every row in order, help, imprint, privacy policy, terms, licenses, Nutzungsdaten. Recipe: [more-help.md](./more-help.md).
 
 ## Account: data export and deletion
 
@@ -415,16 +413,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - History entries or „Zuletzt verwendet“ entries can be deleted one by one in the app (they cannot; history goes with the household, single entries on request by email to support@hummlist.com).
 - Deletion can be undone, or happens later (it is immediate and final).
 - Backups or logs vanish at once (backups are kept up to 90 days, logs 1 day, per the deletion page).
-- That the delete dialog mentions Hummlist Premium, or that a household's Premium stays when its last member deletes their account (the household goes, and its Premium with it).
+- That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium (also a tester's gift), and households the user archived go too. Premium is not refunded automatically. Today's app does not warn about this; the warning is held until the archive UI or the Premium sale.
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build (verify-hummlist); the email copy button: job/80-polish-access-tips-account, 2026-11-02 (CET), by app/test/settings/account_test.dart; the Konto row: job/85-more-menu-mp2, 2026-11-02 (CET), `shell-more.spec.ts`. Recipe: [account-deletion.md](./account-deletion.md).
-- That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium, and households the user archived go too. Premium is not refunded automatically. The app's warning about this is held (it appears with the archive UI or the Premium sale).
-
-**Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
-
-**Last verified.** job 68 branch, 2026-11-02 (CET), Premium warning by the widget tests (`app/test/settings/account_test.dart`) and e2e/tests/household-bound.spec.ts; main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [account-deletion.md](./account-deletion.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): the email copy button, the delete dialog for a member of a shared household (nothing deleted). Recipe: [account-deletion.md](./account-deletion.md).
 
 # Connections and Premium
 
@@ -442,17 +435,17 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That it needs Premium (it is free, also after Premium launches).
 - That the assistant sees more than the list (it reads and changes shopping items, categories and stores only).
 - That a key can be viewed again after creation (shown once).
-- That Hummlist knows where an assistant is used or tracks its location: it only keeps the browser and system name of the page where the user approved it (gone once disconnected); „Zuletzt aktiv“ is the day of the assistant's last sign-in refresh, not of every request.
+- That Hummlist knows where an assistant is used or tracks its location: it only keeps the browser and system name of the page where the user approved it (gone once disconnected); „Zuletzt aktiv“ is the day the assistant last signed in or refreshed its sign-in, not of every request.
 - That ended keys are deleted at once (the record stays 30 days, then a daily clean-up deletes it; the key itself stops working immediately).
 - Any specific assistant as officially supported or tested (Claude and ChatGPT are named in the app text; ChatGPT needs a Business or Enterprise workspace).
 
 **Unverified.** The third-party connector screens of Claude and ChatGPT.
 
-**For assistants finding Hummlist on the web** (job 93). hummlist.com has https://hummlist.com/llms.txt, a list for AI assistants of every guide, help and legal page with the MCP server's address, and every page also as plain Markdown at its address plus `.md` (for example https://hummlist.com/en/guides/claude.md). Never claim the site is in search engines yet: it is hidden from them until launch.
+**For assistants finding Hummlist on the web.** hummlist.com has https://hummlist.com/llms.txt, a list for AI assistants of every guide, help and legal page with the MCP server's address, and every page also as plain Markdown at its address plus `.md` (for example https://hummlist.com/en/guides/claude.md). Never claim the site is in search engines yet: it is hidden from them until launch.
 
-**Held: the Hummlist API.** Built but switched off for everyone: the app hides it (job 73, PostHog flag `public-api`) and the server refuses keys and requests (job 75, server switch `public_api`). When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
+**Held: the Hummlist API.** Built but switched off for everyone: the app hides it and the server refuses its keys and requests. When it is on, Zugänge gets a section „API“ with an address, a link „API-Dokumentation“ and the button „API-Schlüssel erstellen“ (EN "Create API key"): the user names the key, picks „Nur lesen“ or „Lesen und schreiben“ (EN "Read only", "Read and write") and copies it once. Scripts and automations then read and change the list over HTTP. Do not announce it until Hummlist Launch says so. Never claim it today, nor a short address like api.hummlist.com (none exists).
 
-**Last verified.** job/93-agent-first-site-checks, 2026-11-03 (CET), llms.txt and the Markdown pages from the site build and served like Vercel serves them (site-agent gate). job/80-polish-access-tips-account, 2026-11-02 (CET), the connected-app row, details sheet and token hint by the widget tests and e2e/tests/mcp.spec.ts on the web build. job/73-public-api, 2026-11-02 (CET), the API section driven on the web build with the flag forced on (verify-hummlist); the rest main aa339cc, 2026-11-02 (CET), from code on main and driven on the web build; the page after „Erlauben“ by the e2e specs. Recipe: [ai-assistants.md](./ai-assistants.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): a key made on Zugänge used by an AI assistant over MCP, the connected-app row and its details, revoking; the held API from code only. Recipe: [ai-assistants.md](./ai-assistants.md).
 
 ## Siri
 
@@ -472,11 +465,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the device tests on build 1119 (3 Nov 2026) sent „Füge … zur Hummliste hinzu“ to Reminders or answered „Hummlist unterstützt das nicht“. The fix (sentences that name Hummlist first or as the object, like „Etwas auf Hummlist setzen“ and „Hummlist, was steht drauf?“; any item in „Füge Zahnpasta zu Hummlist hinzu“; Siri asks once to be allowed for Hummlist) waits for the next German device test. Never write „Einkaufsliste“ as a Hummlist Siri sentence: Siri gives it to Reminders.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and the Shortcut's server answers driven against the web build's local stack (verify-hummlist); Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
-**Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [siri.md](./siri.md).
-**Last verified.** PR #222 (job 92), 2026-11-03 (CET): the phrase tables and spoken names by `scripts/siri-phrases.ts` and RunnerTests, the Zugänge phrase list by the widget tests, the Siri training read from CI; Siri itself needs a German iPhone (docs/SIRI_SHORTCUT.md, „Gerätetest Deutsch“). Recipe: [siri.md](./siri.md).
-**Last verified.** PR #194 (job 71), 2026-11-02 (CET): the German native-Siri request driven against the web build's local stack (e2e `voice.spec.ts`) and the iOS build's Siri training read from CI; Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
-**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [siri.md](./siri.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and the Shortcut's requests driven against the web build's local stack (verify-hummlist); the German Siri sentences from code at 9c497005 (the phrase tables, the iPhone hint „Hey Siri, etwas auf Hummlist setzen“). Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 
 ## Home Screen widget (held)
 
@@ -497,12 +486,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Everything on a real device: the look in light and dark, both sizes, the taps.
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and by the app's widget tests (native widgets need a device). Recipe: [home-widgets.md](./home-widgets.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and by the app's 22 widget tests (native widgets need a device). Recipe: [home-widgets.md](./home-widgets.md).
 
 ## Alexa skill (beta)
 
-**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Ich habe Milch und Eier auf die Hummlist gesetzt.“ What is open already it names in one sentence: „Schon auf der Hummlist: Milch.“ „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). The skill is in beta, German only, and not yet certified by Amazon, so it is not for everyone.
-**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Milch und Eier sind auf der Hummlist.“ „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). On an Alexa device set to English it understands „Alexa, ask Hummlist to add milk and eggs“ and „Alexa, ask Hummlist what's on the list“ and answers in English ("I put milk and eggs on Hummlist."). The skill is in beta and not yet certified by Amazon, so it is not for everyone.
+**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Ich habe Milch und Eier auf die Hummlist gesetzt.“ What is open already it names in one sentence: „Schon auf der Hummlist: Milch.“ An amount said after the item counts too: „Zwiebeln drei“ adds 3 Zwiebeln. „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). On an Alexa device set to English it understands "Alexa, ask Hummlist to add milk and eggs" and "Alexa, ask Hummlist what's on the list" and answers in English ("I put milk and eggs on Hummlist."). The skill is in beta and not yet certified by Amazon, so it is not for everyone.
 
 **How to get there.**
 1. Ask for a beta invitation (the link comes from Peter, who needs the email address of your Amazon account); accept it.
@@ -520,17 +508,15 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real Alexa voice, the Alexa app screens and the beta invitation flow (no device or Amazon account here).
 
-**Last verified.** main aa339cc, 2026-11-02 (CET), from code on main and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
-**Last verified.** job 68 branch, 2026-11-02 (CET), from code and unit tests (`supabase/functions/alexa`, `supabase/functions/voice`); main 1b6d204, 2026-11-01 (CET), from code on main. Recipe: [alexa.md](./alexa.md).
-**Last verified.** job/69-alexa-icon-invocation, 2026-11-02 (CET), from the code and the skill package tests (sample utterances, guide phrasings), and the shared splitter live on the local stack (a real Alexa device is needed for the voice and the icon in the Alexa app). Recipe: [alexa.md](./alexa.md).
-**Last verified.** job/72-alexa-data-cleanup 29e1784, 2026-11-02 (CET), from code and by the e2e specs on the web build (a real Alexa device is needed for the voice). Recipe: [alexa.md](./alexa.md).
-**Last verified.** job/89-fix-voice-quantity-words, 2026-11-03 (CET), from the voice function on a local stack (split-only and add, German and English) and the splitter, handler, Alexa handler and add-path tests; dictation itself needs a phone, Alexa a device. Recipe: [alexa.md](./alexa.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and the skill's server side on the web build's local stack (linking on the consent page, adding, reading, English, disconnecting); a real Alexa device is needed for the voice. Recipe: [alexa.md](./alexa.md).
 
 ## Hummlist Premium (held)
 
 **What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with two lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and they see the row „Hummlist Premium“ in Mehr.
 
 **How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (testers). The page opens from its link.
+
+**Note.** The privacy policy explains the free unlock in the section „Hummlist Premium in der Beta“ (hummlist.com/datenschutz#premium-beta): testers and Apple's and Google's app review get Premium for free until the team ends it, and it never turns into a paid purchase.
 
 **Never claim.**
 - That Premium can be bought, or any price, plan or discount (yearly and Lifetime are planned, not for sale).
@@ -543,4 +529,4 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
-**Last verified.** job/72-alexa-data-cleanup, 2026-11-02 (CET), from code and the app tests (Alexa removed from the card and the hint); the Mehr row without hint: job/85-more-menu-mp2, 2026-11-02 (CET), `purchases.spec.ts`. Recipe: [premium.md](./premium.md).
+**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): no Mehr row, the page without buy buttons. Recipe: [premium.md](./premium.md).
