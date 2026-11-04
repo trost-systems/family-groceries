@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IntentPhrases</key>
+	<array>
+		<dict>
+			<key>IntentName</key>
+			<string>INAddTasksIntent</string>
+			<key>IntentExamples</key>
+			<array>
+				<string>Add milk to my shopping list in Hummlist</string>
+				<string>Add bread to Hummlist</string>
+			</array>
+		</dict>
+		<dict>
+			<key>IntentName</key>
+			<string>INSearchForNotebookItemsIntent</string>
+			<key>IntentExamples</key>
+			<array>
+				<string>Show my shopping list in Hummlist</string>
+				<string>What's on Hummlist?</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

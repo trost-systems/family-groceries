@@ -7321,3 +7321,25 @@ price, store product or legal page changed.
       shown the line in every iOS build before Siri's device test. The function has its own name,
       not #224's `nativeSiriLive()` in beta_end_notice.dart, so no file both PRs add collides;
       once both land, one can call the other.
+
+## Job 95: SiriKit example phrases for ITMS-90626 (2026-11-04)
+
+- **In the app bundle, in each language.** App Store Connect flagged build 1130 because
+  `INAddTasksIntent` and `INSearchForNotebookItemsIntent` (job 92) had no example phrases in `de`
+  and `en`. Apple reads them from `AppIntentVocabulary.plist` in the iOS app's `<lang>.lproj`.
+  The app handles the intents in-app and has no Intents extension, so `Runner/de.lproj` and
+  `Runner/en.lproj` carry the files, as one variant group in Copy Bundle Resources. There were no
+  `ParameterVocabularies`, and Apple allows the key to be absent.
+- **German examples without „Einkaufsliste“.** The brief proposed „Füge Milch zu meiner
+  Einkaufsliste in Hummlist hinzu“. Job 92 found that German Siri gives „Einkaufsliste“ to
+  Reminders, and the phrase lint rejects it. The German examples use the wording that job 92
+  showed reaching `INAddTasksIntent`: „Füge Milch zu Hummlist hinzu“, „Füge Brot zu meiner
+  Hummlist hinzu“, „Was steht auf Hummlist?“, „Zeig meine Hummlist“. English keeps the brief's
+  "shopping list in Hummlist" forms. Every example names the app, and none names a retailer.
+- **One check, three places.** `scripts/siri-vocabulary.py` collects every intent that a bundle
+  declares (`INIntentsSupported`, an extension's `IntentsSupported`, `IN…Intent` in
+  `NSUserActivityTypes`). It requires at least one example that names the app for each intent in
+  `de`, `en` and every other `.lproj` except Base. The lint gate runs it on `app/ios` and runs its
+  fixture tests. The ios gate runs it on the built simulator app. The Fastfile runs it on the
+  signed IPA before an upload or a validation. Python, because built plists are binary and
+  `plistlib` reads both formats.

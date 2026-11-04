@@ -24,6 +24,9 @@ done
 ssu=build/ios/iphonesimulator/Runner.app/Metadata.appintents/root.ssu.yaml
 grep -q Hummliste "$ssu" || { echo "ios: $ssu does not train the German app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
 if grep -n HUMMLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
+# App Store Connect wants SiriKit example phrases in every language for each declared intent
+# (ITMS-90626): the built app must carry them, not only the source tree.
+"$REPO_ROOT/scripts/siri-vocabulary.py" build/ios/iphonesimulator/Runner.app
 xcrun --sdk iphonesimulator assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car >build/ios/assets.json
 # Each wanted asset needs a rendition whose JSON mentions every listed word (the appearance).
 python3 - build/ios/assets.json <<'PY'
