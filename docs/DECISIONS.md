@@ -7223,3 +7223,101 @@ on the way:
   `renew`) and read-only `profiles`. The lane refuses `development` (the match repo has no
   development certificate, so match would create one) and stops when certificate `GN85KDC962` is
   missing or expired on the portal.
+
+
+## Job 87: PW-P4 „Haushalt“ is the Hummlist Premium page, 2026-11-03
+
+Peter picked PW-P4 from job 81's prototypes (#208, preview only, not merged). This job builds it as
+the real page at `/more/lifetime` on the offer states of jobs 43 and 49. No flag, switch, define,
+price, store product or legal page changed.
+
+1. **One page, every state.** The hero (member hexes, „Einer kauft. Alle haben es.“, the household
+   sentence, the benefits) is on top in every state: offer, unknown, unlocked, beta, web, coming
+   soon. Below it the status lines and notes of job 49 stay as they were, same keys and order. The
+   plans, buy button, terms, restore and links appear only when the page offers a plan with its
+   store price, as before (A2-5, H-84). The web gets the same hero and its note „Hummlist Premium
+   kaufst du in der iPhone- oder Android-App …“: no price, no buy, no restore, ever.
+2. **Plans as two tiles side by side (R13), one buy button.** The picked tile is honey; the button
+   names the picked plan („Jährlich abschließen“ / „Lifetime kaufen“), and the picked plan's terms
+   sit right under it. A storefront without a Lifetime price (BR, MX, IN) or a household whose
+   yearly plan runs gets one tile at full width. Prices are the store's, formatted by the store;
+   „inkl. MwSt.“ only after a euro price (K.13.P.3). The price is the largest text in a tile (L1,
+   L2), the period and VAT one line under it („pro Jahr inkl. MwSt.“, „einmalig inkl. MwSt.“):
+   „29,99 € einmalig“ in one line broke in two in a half-width tile. So job 49's placeholders
+   `premiumYearlyPrice` and `premiumLifetimePrice` ("{price} / Jahr", "{price} einmalig") became
+   `premiumPerYear` and `premiumOneTime`, same words, still placeholders for K.13. No monthly figure (L3, Q2), no badge, no discount, no
+   countdown, no reviews (L9, R12).
+3. **Q1 preselection: yearly is picked when the page opens, visibly.** It is the first tile, as on
+   today's page; the honey fill, the button's label („Jährlich abschließen“) and the yearly terms
+   under the button all say what a tap buys, so nothing is preselected out of sight. The page does
+   not call yearly "recommended". The alternative (nothing picked, the button appears after a tap)
+   is the default of `PremiumPage.picked` (premium_page_cubit.dart) plus a disabled state; Legal Review
+   decides (NEEDS_LEAD Job 87, Q1).
+4. **Household binding before purchase (Q6).** Above the button: „Premium gehört dann zum Haushalt
+   „{Name}“ und bleibt dort, auch wenn du den Haushalt später verlässt.“ It names the household the
+   purchase would go to, which is job 43's rule (the purchase belongs to the household it was bought
+   in). Marked for Legal Review in the ARB.
+5. **Free unlocks: Legal's final texts (review 0).** Peter approved Legal's beta texts on
+   2026-11-03 at 20:32, and the page uses them verbatim. A household with a RevenueCat promotional
+   grant sees a honey card. Its title depends on the server switch `premium_offer`:
+   - Off: „In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet“.
+   - On: „Kostenlos freigeschaltet (Test und App-Prüfung)“. After the launch only testers and app
+     review get free unlocks, and nothing in a grant tells the groups apart.
+   - Not read yet, or offline: only „Freigeschaltet“.
+
+   Under every title come the subtitle („Du zahlst nichts, und nichts verlängert sich automatisch.
+   …“) and „Mehr dazu in der Datenschutzerklärung“, which links to `/datenschutz#premium-beta` (EN
+   `/en/privacy#premium-beta`). The old „Hummlist Premium geschenkt (bis …)“ lines are gone. To know
+   the switch, the page reads it in every build, the web and non-selling store builds included
+   (`PremiumPage.launch`). That is a Postgres RPC, not RevenueCat (H-67 holds). Prices are still read
+   only when the build sells and the switch is on. NEEDS_LEAD "Job 87" asks the lead to confirm the
+   split.
+6. **Benefits.** Siri, AI assistants (MCP), and the Hummlist API, the API line only while the
+   PostHog flag `public-api` is on (its key UI is behind the same flag). No Alexa (N-27). The old
+   "later: Google Assistant and Apple Watch" sentence is gone from the page: a paywall should not
+   sell features that do not exist yet.
+7. **Cancellation and restore (L5, L6).** The yearly terms keep job 49's approved sentence on
+   managing and cancelling in the App Store or Google Play; „Abo verwalten oder kündigen“ opens the
+   store's sheet once a plan runs. Restore, Terms (EULA) and Privacy sit under the button on every
+   offer; the refund link stays at the bottom.
+8. **Prototype scaffolding.** None of job 81's prototype code is on main, so nothing to delete; #208
+   and its branch stay as they are.
+9. **The unlocked state is a honey sticker** under the hero (same key `lifetime-unlocked`, same
+   texts), so a household that has Premium sees its status as the page's main block instead of
+   a plain list row.
+10. **`publicApiFlag` moved to `analytics/flags.dart`**, so the Premium page and Zugänge read the
+    same constant without the purchases code importing the settings screen.
+11. **Job 86's capture.** `test_driver/paywall_review.dart` (#213) builds the page from the same
+    providers, so it keeps working. The page now has one Buy button: the capture shows both tiles
+    with their prices and „Jährlich abschließen“; for Lifetime's review shot, tap the Lifetime
+    tile (`premium-card-lifetime`) first, and the button becomes `premium-buy-lifetime`.
+12. **The pick lives in `PremiumPageCubit`**, not in widget state: the page is a lazy list, and a
+    pick held by the tiles' State reset to yearly when they scrolled out and back (review).
+13. **Hidden before sales start (review 0, Legal's final texts).** These are gone from the page:
+    - „Hummlist Premium ist bald verfügbar.“ (`premiumComingSoon`, deleted).
+    - „… ist für euren ganzen Haushalt freigeschaltet. Danke!“ (`premiumUnlockedBody`, deleted
+      everywhere: the hero already says Premium covers the household).
+    - On the web, „Hummlist Premium kaufst du in der iPhone- oder Android-App …“ (`premiumWeb`),
+      until `premium_offer` is on.
+
+    Before sales start, a household without Premium sees the hero and the refund link only.
+14. **„{period}, inkl. MwSt.“** (`premiumWithVat`), so a tile reads „29,99 €“ over „einmalig, inkl.
+    MwSt.“, the format of handoff 5(c). `premiumVat` is gone.
+15. **Local ports 597xx.** 587xx is job 71's stack on the Hetzner runner.
+16. **Legal Review N-67 to N-71 (2026-11-04).**
+    - N-67: the brand-free AI line, word for word.
+    - N-68: `_Hero(selling:)` shows the slogan only when `premium_offer` reads on and the build
+      sells.
+    - N-69: the refund link shows only once `premium_offer` is on, or for a household that bought
+      Lifetime twice.
+    - N-70: `ActivePremium.testerGrant` (a grant without end, or to `testerGrantEnd`, 2100-01-01,
+      as `scripts/iap/promotional.ts` grants testers) picks the tester line; any other grant gets
+      the beta line, whatever the switch says. This replaces item 5's switch rule. The page no
+      longer needs the "switch not read" title, so `premiumStatusUnlocked` is deleted.
+    - N-71 (Addendum 3): `siriBenefitShown` needs the build define `NATIVE_SIRI_LIVE` and
+      Zugänge's `siriChannelFor` (the iPhone app). The define is #224's: `Environment.nativeSiriLive`,
+      and the Fastfile's `HOLD_DEFINES`, which turns it on once the `native-siri` hold is released.
+      Both are copied byte for byte so the PRs merge cleanly. A platform check alone would have
+      shown the line in every iOS build before Siri's device test. The function has its own name,
+      not #224's `nativeSiriLive()` in beta_end_notice.dart, so no file both PRs add collides;
+      once both land, one can call the other.

@@ -141,7 +141,7 @@ test('Lifetime while a yearly plan runs: Lifetime wins, the plan keeps billing a
   expect((await rcEvent('RENEWAL', maxHousehold, tx, { productId: yearlyId })).body)
     .toEqual({ status: 'used_elsewhere' });
   await openPremium(max);
-  await expect(max.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)).toBeVisible();
+  await expect(max.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
   await expect(status(max), 'Max has no Premium').toHaveCount(0);
 });
 

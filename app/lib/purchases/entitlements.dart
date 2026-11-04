@@ -75,7 +75,18 @@ final class const ActivePremium(
 
   /// Yearly: one of the active plans renews.
   final bool renews = false,
-}) extends Premium;
+}) extends Premium {
+  /// A promotional grant for testers or app review: without end, or to
+  /// [testerGrantEnd] as `scripts/iap/promotional.ts grant` gives it. A beta
+  /// household's grant ends before (Legal Review N-70).
+  bool get testerGrant =>
+      source == PremiumSource.promotional &&
+      (expiresAt == null || !expiresAt!.isBefore(testerGrantEnd));
+}
+
+/// Where testers' and app review's promotional grants end
+/// (`testerGrantEnd` in scripts/iap/promotional.ts).
+final testerGrantEnd = DateTime.utc(2100);
 
 /// What the household has unlocked, as its rows say. Nothing is gated by it
 /// yet.

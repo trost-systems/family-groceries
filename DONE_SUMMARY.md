@@ -532,3 +532,9 @@ Agents get llms.txt, a Markdown twin of every page, a sitemap, robots and JSON-L
 ## Job 91: Alexa dispatch diagnosis
 
 Alexa's „Verbindungsproblem“ comes from Amazon: no spoken request has ever reached the `alexa` function, and account linking works. `scripts/alexa/diagnose.sh` shows, for a window, every call the function got, the Alexa OAuth steps and the live links, with no personal data. `scripts/alexa/smoke.sh` has Amazon call the endpoint. docs/ALEXA.md „Troubleshooting“ maps Alexa's errors to causes and fixes. Token rotation is compatible with Amazon, so no config change. Peter's checks: NEEDS_PETER „Job 91“. The Vercel DPA is in `docs/legal/dpas/` (rendered from the public page, same 2026-03-17 version; index `docs/legal/dpas/README.md`). Details: [docs/done/91-alexa-dispatch-diag.md](docs/done/91-alexa-dispatch-diag.md).
+
+
+
+## Job 87: PW-P4 „Haushalt“ is the Hummlist Premium page
+
+Peter's pick from job 81 is now the real paywall at `/more/lifetime`. Every state shows the household hero. When a plan is on offer, the page shows two plan tiles side by side with the store's prices, the household binding line, one Buy button for the picked plan, its terms, Restore, Terms and Privacy. Beta builds (flags off) show no price and no Buy. A free unlock shows Legal's approved beta texts (title, subtitle, privacy link) while `premium_offer` is off; „bald verfügbar“, „Danke!“ and the web's buy-in-the-app note are hidden until sales start. The web shows the hero only. Merge waits for Legal Review sign-off (NEEDS_LEAD "Job 87"). Details: [docs/done/87-paywall-pw-p4.md](docs/done/87-paywall-pw-p4.md).

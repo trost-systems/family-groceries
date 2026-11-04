@@ -43,7 +43,27 @@ class const PremiumPage({
 
   /// Null while unknown: the subscriber-only notices stay hidden.
   final MyYearlyPlan? mine,
-});
+
+  /// The server switch `premium_offer` as read when the page opened, in
+  /// every build: whether Hummlist Premium has started. Null until read.
+  final OfferSwitch? launch,
+
+  /// The plan the Buy button buys while it is offered. Yearly when the page
+  /// opens, visibly picked (Legal Review Q1, DECISIONS "Job 87").
+  final PremiumPlan picked = PremiumPlan.yearly,
+}) {
+  PremiumPage copyWith({
+    Offer? offer,
+    MyYearlyPlan? mine,
+    OfferSwitch? launch,
+    PremiumPlan? picked,
+  }) => PremiumPage(
+    offer: offer ?? this.offer,
+    mine: mine ?? this.mine,
+    launch: launch ?? this.launch,
+    picked: picked ?? this.picked,
+  );
+}
 
 /// The Premium page's reads, made when it opens: the server switch, then
 /// (only when it is on) one store price query, and the caller's own yearly
@@ -73,11 +93,18 @@ class PremiumPageCubit(
 
   Future<void> _open() async {
     unawaited(_readMine());
+    // Every build reads the switch, also one that sells nothing: a server
+    // read, never RevenueCat (H-67).
+    final launch = await _server.offerSwitch();
+    if (isClosed) {
+      return;
+    }
+    emit(state.copyWith(launch: launch));
     if (!sells) {
       _emitOffer(const OfferClosed());
       return;
     }
-    switch (await _server.offerSwitch()) {
+    switch (launch) {
       case OfferSwitch.off:
         _emitOffer(const OfferClosed());
         return;
@@ -118,7 +145,7 @@ class PremiumPageCubit(
     try {
       final mine = await _server.myYearlyPlan();
       if (!isClosed) {
-        emit(PremiumPage(offer: state.offer, mine: mine));
+        emit(state.copyWith(mine: mine));
       }
     } on Object {
       // Offline: the subscriber's notices wait for the next change.
@@ -127,9 +154,12 @@ class PremiumPageCubit(
 
   void _emitOffer(Offer offer) {
     if (!isClosed) {
-      emit(PremiumPage(offer: offer, mine: state.mine));
+      emit(state.copyWith(offer: offer));
     }
   }
+
+  /// The user picked [plan]'s tile.
+  void pick(PremiumPlan plan) => emit(state.copyWith(picked: plan));
 
   @override
   Future<void> close() async {

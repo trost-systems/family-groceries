@@ -1,5 +1,6 @@
 import { type Browser, expect, type Page, test } from './fixtures';
 import {
+  adminClient,
   apiAs,
   functionsUrl,
   joinWithCode,
@@ -15,7 +16,8 @@ import {
 import { buy, claim, householdOf, rcEvent, report } from './iap';
 
 // Job 25, as of job 43: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
-// shows that the purchase is in the iPhone or Android app, and the household's unlock. RevenueCat's
+// shows the household's unlock, and (job 87, Legal Review's final texts) says where to buy only once
+// sales start (premium_offer on; off on the e2e stack). RevenueCat's
 // part is played by events posted to the real webhook with the local secret (iap.ts), so the
 // purchase runs through the function, Postgres, RLS and Realtime (with the H-55 column grants).
 
@@ -25,6 +27,10 @@ const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Hummlist 
 const webNote = (page: Page) => page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./);
 /** The status tile: its title says which Premium the household has (job 49). */
 const unlocked = (page: Page) => page.getByText(/^Hummlist Premium (Lifetime|aktiv|über)/);
+/** Job 87: PW-P4's hero body, on every state of the page, the web's included. */
+const hero = (page: Page) => page.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.');
+/** Its buying slogan, only while sales are on (Legal Review N-68): never on the e2e stack. */
+const slogan = (page: Page) => page.getByText('Einer kauft. Alle haben es.');
 
 test('the web shows the unlock live for both partners, sells nothing, and a refund locks again', async ({ browser }) => {
   const peterEmail = newEmail('iap-peter');
@@ -46,18 +52,25 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
 
   await openPremium(peter);
   await expect(peter).toHaveURL(/\/more\/lifetime$/);
-  await expect(webNote(peter)).toBeVisible();
-  await expect(peter.getByRole('button', { name: /Weiter zum Kauf|kaufen/ }), 'no buy button on the web').toHaveCount(0);
+  await expect(hero(peter)).toBeVisible();
+  await expect(slogan(peter), 'no buying slogan while nothing is sold (N-68)').toHaveCount(0);
+  await expect(peter.getByText(/^Doppelt gekauft\?/), 'no refund link before sales start (N-69)').toHaveCount(0);
+  await expect(peter.getByText(/ChatGPT|Claude/), 'no assistant brand (N-67)').toHaveCount(0);
+  await expect(webNote(peter), 'nothing about buying before sales start').toHaveCount(0);
+  await expect(peter.getByText(/€|\d,\d\d/), 'no price on the web').toHaveCount(0);
+  await expect(peter.getByRole('button', { name: /Weiter zum Kauf|kaufen|abschließen/ }), 'no buy button on the web').toHaveCount(0);
   await expect(peter.getByRole('button', { name: 'Kauf wiederherstellen' }), 'no restore on the web').toHaveCount(0);
   await expect(unlocked(peter)).toHaveCount(0);
   expect(revenueCat, 'no request to RevenueCat from app start or the Lifetime page').toEqual([]);
   await screenshot(peter, 'job25-web-de-390');
   await peter.setViewportSize({ width: 1366, height: 1024 });
-  await expect(webNote(peter)).toBeVisible();
+  await expect(hero(peter)).toBeVisible();
+  await expect(webNote(peter), 'nothing about buying before sales start').toHaveCount(0);
   await screenshot(peter, 'job25-web-de-1366');
   await peter.setViewportSize({ width: 390, height: 844 });
   await openPremium(lea);
-  await expect(webNote(lea)).toBeVisible();
+  await expect(hero(lea)).toBeVisible();
+  await expect(webNote(lea), 'nothing about buying before sales start').toHaveCount(0);
 
   // Peter buys on his iPhone; both web pages show it without a reload.
   const transactionId = `2000${Date.now()}`;
@@ -84,7 +97,8 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
   expect(await report(maxEmail, transactionId)).toBe('used_elsewhere');
   expect((await rcEvent('TRANSFER', await householdOf(maxEmail), transactionId)).body).toEqual({ status: 'ignored' });
   await openPremium(max);
-  await expect(webNote(max)).toBeVisible();
+  await expect(hero(max)).toBeVisible();
+  await expect(webNote(max), 'nothing about buying before sales start').toHaveCount(0);
   await expect(unlocked(max), 'Max stays locked').toHaveCount(0);
 
   // Without RevenueCat's secret nothing is recorded.
@@ -98,7 +112,8 @@ test('the web shows the unlock live for both partners, sells nothing, and a refu
     .toEqual({ status: 'unchanged' });
   await expect(unlocked(peter)).toHaveCount(0, { timeout: 10_000 });
   await expect(unlocked(lea)).toHaveCount(0, { timeout: 10_000 });
-  await expect(webNote(lea)).toBeVisible();
+  await expect(hero(lea)).toBeVisible();
+  await expect(webNote(lea), 'nothing about buying before sales start').toHaveCount(0);
   expect(await report(peterEmail, transactionId), 'a refunded purchase does not unlock again').toBe('revoked');
 });
 
@@ -118,10 +133,34 @@ test('More lists Premium only once the household has it (premium_offer off), liv
   await screenshot(page, 'job25-more-unlocked-de-1366');
 });
 
+test('a household given Premium in the beta sees the approved beta texts, nothing to buy (N-53)', async ({ page }) => {
+  const email = newEmail('iap-beta');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signUpWithHousehold(page, email);
+  const { data, error } = await adminClient().rpc('promotional_premium_sync',
+    { p_household: await householdOf(email), p_active: true, p_expires_at: new Date(Date.now() + 60 * 86_400_000).toISOString() });
+  expect(error).toBeNull();
+  expect(data).toBe('granted');
+  await openPremium(page);
+  await expect(page.getByText('In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet'))
+    .toBeVisible({ timeout: 10_000 });
+  await expect(hero(page)).toBeVisible();
+  await expect(slogan(page), 'no buying slogan above „Du zahlst nichts“ (N-68)').toHaveCount(0);
+  await expect(page.getByText('Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose '
+    + 'Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mehr dazu in der Datenschutzerklärung' }))
+    .toHaveAttribute('href', 'https://hummlist.com/datenschutz#premium-beta');
+  await expect(page.getByText(/Test und App-Prüfung/), 'premium_offer is off: the beta line').toHaveCount(0);
+  await expect(page.getByText(/Danke!|bald verfügbar|kaufst du in der/), 'hidden before sales start').toHaveCount(0);
+  await expect(page.getByText(/€/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /kaufen|abschließen|wiederherstellen/ })).toHaveCount(0);
+  await screenshot(page, 'job87-beta-web-de-390');
+});
+
 test.describe('in English', () => {
   test.use({ locale: 'en-US' });
 
-  test('the page says where to buy, and Unlocked', async ({ page }) => {
+  test('the page shows the hero, nothing to buy, and Unlocked', async ({ page }) => {
     const email = newEmail('iap-en');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
@@ -134,8 +173,10 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page).toHaveURL(/\/welcome\/invite$/);
     await page.goto('/more/lifetime');
-    const note = page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./);
-    await expect(note).toBeVisible();
+    await expect(page.getByText('Hummlist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
+    await expect(page.getByText('One buys. Everyone has it.')).toHaveCount(0);
+    await expect(page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./),
+      'nothing about buying before sales start').toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Restore purchase' })).toHaveCount(0);
     await screenshot(page, 'job25-web-en-390');
     await page.setViewportSize({ width: 1366, height: 1024 });

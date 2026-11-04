@@ -99,6 +99,12 @@ abstract final class Environment() {
     'REVENUECAT_PURCHASES',
   );
 
+  /// Native Siri (job 51, with the German fix of PR #194) is live in this
+  /// build: the beta-end notice (N-55) then names Siri among Hummlist
+  /// Premium's features. Store builds pass it exactly when
+  /// `releases/flags.json` releases the `native-siri` hold (Fastfile).
+  static const nativeSiriLive = bool.fromEnvironment('NATIVE_SIRI_LIVE');
+
   /// RevenueCat's public SDK keys (`appl_…`, `goog_…`); empty also means
   /// "coming soon". Never committed: release builds pass them in.
   static const revenueCatIosKey = String.fromEnvironment(

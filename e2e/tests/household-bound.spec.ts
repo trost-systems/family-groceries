@@ -143,7 +143,7 @@ test('the last member archives an unlocked household, its purchase stays its own
   expect(await report(frankEmail, frankTx)).toBe('restored');
 });
 
-test('the web says to buy in the app, also in English', async ({ browser }) => {
+test('the web says nothing about buying before sales start, also in English', async ({ browser }) => {
   const email = newEmail('iap43-web');
   const page = await newPage(browser);
   await signUpWithHousehold(page, email);
@@ -152,20 +152,19 @@ test('the web says to buy in the app, also in English', async ({ browser }) => {
   await expect(page.getByRole('button', { name: /^Hummlist Premium/ }), 'not listed before the launch (job 64)')
     .toHaveCount(0);
   await openPremium(page);
-  await expect(
-    page.getByText(
-      'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.',
-    ),
-  ).toBeVisible();
+  // Job 87, Legal Review's final texts: nothing about buying before sales start (premium_offer off).
+  await expect(page.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
+  await expect(page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)).toHaveCount(0);
   await expect(buyButton(page)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Doppelt gekauft\?/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Doppelt gekauft\?/ }), 'no refund link before sales start (N-69)')
+    .toHaveCount(0);
   await screenshot(page, 'job43-web-de-390');
 });
 
 test.describe('in English', () => {
   test.use({ locale: 'en-US' });
 
-  test('the web copy and the refund help', async ({ page }) => {
+  test('the web copy, and the refund help once bought twice', async ({ page }) => {
     const email = newEmail('iap43-en');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
@@ -178,11 +177,14 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Create a household', exact: true }).click();
     await expect(page).toHaveURL(/\/welcome\/invite$/);
     await page.goto('/more/lifetime');
-    await expect(
-      page.getByText('You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household.'),
-    ).toBeVisible();
+    await expect(page.getByText('Hummlist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
+    await expect(page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./)).toHaveCount(0);
     await screenshot(page, 'job43-web-en-390');
-    await page.getByRole('button', { name: /^Bought it twice\?/ }).click();
+    // Before sales start the refund help shows only to a household that bought twice (N-69).
+    await expect(page.getByRole('button', { name: /^Bought it twice\?/ })).toHaveCount(0);
+    expect(await buy(email, `4310${Date.now()}`)).toBe('granted');
+    expect(await buy(email, `4311${Date.now()}`)).toBe('granted');
+    await page.getByRole('button', { name: /^Bought it twice\?/ }).click({ timeout: 10_000 });
     await expect(page.getByText('Request a refund', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ask Google' })).toHaveAttribute(
       'href',
