@@ -1650,8 +1650,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get integrationPremiumSiri => 'Siri auf dem iPhone';
 
   @override
-  String get integrationPremiumAi =>
-      'KI-Assistenten wie ChatGPT oder Claude (MCP)';
+  String get integrationPremiumAi => 'KI-Assistenten, die MCP unterstützen';
 
   @override
   String get integrationPremiumLater =>

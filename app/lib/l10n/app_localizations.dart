@@ -2705,7 +2705,7 @@ abstract class AppLocalizations {
   /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
   ///
   /// In de, this message translates to:
-  /// **'KI-Assistenten wie ChatGPT oder Claude (MCP)'**
+  /// **'KI-Assistenten, die MCP unterstützen'**
   String get integrationPremiumAi;
 
   /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: planned, not built yet

@@ -91,10 +91,7 @@ void main() {
       findsNothing,
       reason: 'Alexa stays free (Legal Review N-27)',
     );
-    expect(
-      find.text('KI-Assistenten wie ChatGPT oder Claude (MCP)'),
-      findsOneWidget,
-    );
+    expect(find.text('KI-Assistenten, die MCP unterstützen'), findsOneWidget);
     expect(key('integration-buy'), findsOneWidget);
     expect(find.text('Kurzbefehl'), findsOneWidget, reason: 'still listed');
     expect(key('access-paused'), findsOneWidget);
