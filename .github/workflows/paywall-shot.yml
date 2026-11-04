@@ -1,0 +1,36 @@
+# Job 86: the App Store in-app purchase review screenshot of the Premium page (German, light,
+# 1290x2796) from the iOS simulator (scripts/ios-paywall-shot.sh). Uploads the artifact
+# `paywall-ios-de`: the PNGs (yearly picked, Lifetime picked) and `ready-*` (StoreKit's answer, the
+# prices shown). By hand only.
+name: Paywall screenshot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.8
+
+jobs:
+  shot:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: scripts/ios-paywall-shot.sh "$RUNNER_TEMP/paywall-ios-de.png"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: paywall-ios-de
+          path: |
+            ${{ runner.temp }}/paywall-ios-de.png
+            ${{ runner.temp }}/paywall-ios-de-lifetime.png
+            /tmp/hummlist-paywall-shot/ready-*
+          if-no-files-found: ignore

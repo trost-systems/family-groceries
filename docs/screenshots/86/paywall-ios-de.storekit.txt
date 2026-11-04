@@ -1,0 +1,2 @@
+storekit: {PremiumPlan.yearly: StorePrice($9.99, USD), PremiumPlan.lifetime: StorePrice($29.99, USD)}
+shown: {PremiumPlan.yearly: StorePrice(9,99 €, EUR), PremiumPlan.lifetime: StorePrice(29,99 €, EUR)}

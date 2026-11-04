@@ -45,10 +45,10 @@ final class LifetimeStoreKitTests: XCTestCase {
     return ids
   }
 
-  func testTheProductIsANonConsumableAt999WithoutFamilySharing() async throws {
+  func testTheProductIsANonConsumableAt2999WithoutFamilySharing() async throws {
     let p = try await lifetime()
     XCTAssertEqual(p.type, .nonConsumable)
-    XCTAssertEqual(p.price, Decimal(string: "9.99"))
+    XCTAssertEqual(p.price, Decimal(string: "29.99"))
     XCTAssertEqual(p.displayName, "Hummlist Lifetime")
     XCTAssertFalse(p.isFamilyShareable)
   }

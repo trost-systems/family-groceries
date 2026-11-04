@@ -7343,3 +7343,42 @@ price, store product or legal page changed.
   fixture tests. The ios gate runs it on the built simulator app. The Fastfile runs it on the
   signed IPA before an upload or a validation. Python, because built plists are binary and
   `plistlib` reads both formats.
+
+## Job 86: the iOS paywall screenshot for the App Store's in-app purchase review, 2026-11-03
+
+1. **Taken on GitHub's macOS runner, not the Mac or Hetzner.** Neither the Mac runner (no
+   simulators, MAC.md) nor Hetzner (Linux) runs an iOS simulator. `paywall-shot.yml`
+   (by hand) runs `scripts/ios-paywall-shot.sh` on `macos-26` and uploads the PNG.
+2. **The real page, the server faked.** `app/test_driver/paywall_review.dart` is a debug-only
+   entrypoint: the real `AppShell`, More tab and `PremiumScreen` at
+   `/more/lifetime?from=integrations` (the integration lock's way in), with the test fakes for
+   the session (a household without Premium), the `premium_offer` switch (on), the store (no
+   purchase possible, none tapped) and the list. No Supabase project, app switch, flag or
+   release define changes. A full app against a backend was not possible: the macOS runner has
+   no Docker for a local stack, and production's switch must not move.
+3. **The German storefront's prices are set, StoreKit is still asked.** The page asks StoreKit
+   through its real channel (`ChannelStorePrices`). On the runner StoreKit answers from the App
+   Store sandbox's US storefront ($9.99 and $29.99, both products found): the simulator has no
+   sandbox account, and a German one cannot be signed in from a script. StoreKit's local test
+   store (`Hummlist.storekit`, storefront DEU) does not open there: every `SKTestSession` call
+   in the app's process failed with `SKInternalErrorDomain Code=3` ("Error saving configuration
+   file", "Error setting storefront to DEU"; runs 41541827168, 41545446614, 41549300712), and a
+   scheme naming the file as StoreKit configuration (Launch and Test action) did not change the
+   answer under `xcodebuild test` (run 41551931106). This is likely also what stopped job 25's
+   StoreKit tests in CI (25.16). So the entrypoint shows `9,99 €` and `29,99 €` in EUR, as
+   StoreKit formats App Store Connect's DEU base prices (`scripts/iap/product.ts`), and writes
+   StoreKit's real answer next to them; the script fails unless StoreKit returned both products.
+4. **Simulator.** A fresh iPhone 16 Plus (else 15 Plus, 15 Pro Max, 14 Pro Max: all 1290x2796)
+   on the newest iOS runtime, `AppleLanguages` de-DE and `AppleLocale` de_DE, light appearance,
+   the status bar at 9:41 with full bars. The script fails unless the PNG is 1290x2796.
+5. **PW-P4 (ADDENDUM 1).** Peter wants the screenshot to show PW-P4 (job 87). PW-P4 lists both
+   plans as tiles with one Buy for the picked one, so one screenshot cannot show both Buy
+   buttons. The script takes two from the same run: the yearly plan picked (the page's default)
+   and Lifetime picked, which the entrypoint does like a tap on its tile
+   (`PremiumPageCubit.pick`, reached from the `premium-card-lifetime` element) once the script has
+   the first. One screenshot per App Store product. Retaken after #217 merged (84e8da41, ADDENDUM
+   2): the entrypoint needed no change for Legal's N-67..N-71. The first retake got no StoreKit
+   answer within the page's 10 s timeout right after boot (run 41790415523); the entrypoint now
+   asks up to six times before it records StoreKit's answer.
+6. **Fixed on the way.** `LifetimeStoreKitTests` still expected Lifetime at 9.99, from before
+   job 49's price; it now expects 29.99 like `Hummlist.storekit`.
