@@ -50,7 +50,7 @@ void main() {
     final more = await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
     expect(key('premium-buy-yearly'), findsOneWidget);
-    expect(key('premium-buy-lifetime'), findsOneWidget);
+    expect(key('premium-card-lifetime'), findsOneWidget);
     expect(more.purchases.storePrices.reads, 1, reason: 'one store query');
     more.purchases.rows.change();
     await tester.pumpAndSettle();
@@ -88,6 +88,9 @@ void main() {
       'then opens the purchase', (tester) async {
     await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
+    await tester.tap(key('premium-card-lifetime'));
+    await tester.pump();
+    expect(native.calls, isEmpty, reason: 'picking a plan buys nothing');
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pumpAndSettle();
     expect(native.methods, [
@@ -105,6 +108,7 @@ void main() {
   ) async {
     await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(key('lifetime-restore'));
     await tester.tap(key('lifetime-restore'));
     await tester.pumpAndSettle();
     expect(native.methods, ['setupPurchases', 'restorePurchases']);

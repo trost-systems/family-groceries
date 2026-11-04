@@ -1,4 +1,4 @@
-// Job 25, 43, 49: PR screenshots of the Hummlist Premium page in its native
+// Job 25, 43, 49, 87: PR screenshots of the Hummlist Premium page in its native
 // states (the web build only shows the web state). Renders More's real page
 // with the fake store and the app's theme, in Roboto and the Material icons
 // from the Flutter SDK. Skipped unless SCREENSHOT_DIR is set:
@@ -57,6 +57,11 @@ Future<void> _buyLifetime(WidgetTester tester, More more) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _pickLifetime(WidgetTester tester, More more) async {
+  await tester.tap(find.byKey(const ValueKey('premium-card-lifetime')));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _buyYearly(WidgetTester tester, More more) async {
   await tester.tap(find.byKey(const ValueKey('premium-buy-yearly')));
   await tester.pump();
@@ -92,6 +97,7 @@ Scene _scene(
 
 final List<Scene> _scenes = [
   _scene('offer'),
+  _scene('offer-lifetime-picked', act: _pickLifetime),
   _scene(
     'offer-usd',
     prices: () => FakeStorePrices(
@@ -141,6 +147,11 @@ final List<Scene> _scenes = [
   ),
   _scene('lifetime', rows: (_) => [_lifetimeRow]),
   _scene('granted', rows: (_) => [promotionalRow()]),
+  _scene(
+    'granted-beta',
+    rows: (_) => [promotionalRow()],
+    premium: () => FakePremiumServer(offer: false),
+  ),
   _scene(
     'prices-unavailable',
     prices: () => FakeStorePrices(const PricesUnavailable()),

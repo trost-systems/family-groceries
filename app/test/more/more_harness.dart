@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
@@ -23,6 +24,7 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -64,6 +66,13 @@ final serverGrants = <Map<String, Object?>>[];
 /// [serverTokens] and [serverGrants]: More's access page builds its
 /// repository from the global client. Once per test file, in `setUpAll`.
 Future<void> fakeSupabase() async {
+  // Supabase listens for deep links; with no plugin the listen fails late,
+  // inside whichever test runs then.
+  TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
+      .setMockStreamHandler(
+        const EventChannel('com.llfbandit.app_links/events'),
+        MockStreamHandler.inline(onListen: (_, _) {}),
+      );
   SharedPreferences.setMockInitialValues({});
   PackageInfo.setMockInitialValues(
     appName: 'Hummlist',
@@ -163,6 +172,9 @@ Future<More> pumpMore(
 
   /// More's update source; set, More is the only route (no pages).
   AppUpdates? updates,
+
+  /// The PostHog flags that are on.
+  Set<String> flags = const {},
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -271,6 +283,7 @@ Future<More> pumpMore(
           BlocProvider.value(value: purchases.entitlements),
           BlocProvider.value(value: purchases.purchases),
           BlocProvider.value(value: lock),
+          BlocProvider(create: (_) => Flags(forced: flags)),
         ],
         child: Builder(
           builder: (context) => MaterialApp.router(

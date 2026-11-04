@@ -65,9 +65,6 @@ bool _isShortcutToken(AccessToken token) =>
       caseSensitive: false,
     ).hasMatch(token.name);
 
-/// The PostHog flag that offers the public REST API (job 73).
-const _publicApiFlag = 'public-api';
-
 final _apiDocs = Uri.parse(
   'https://github.com/trost-systems/family-groceries/blob/main/docs/API.md',
 );
@@ -92,7 +89,7 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
     ];
     // No Flags above (a screen on its own, in tests): off.
     final apiOffered = context.select<Flags?, bool>(
-      (flags) => flags?.isOn(_publicApiFlag) ?? false,
+      (flags) => flags?.isOn(publicApiFlag) ?? false,
     );
     final access = _accessOf(context);
     final paused = access is IntegrationsLocked;

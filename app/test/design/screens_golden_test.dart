@@ -19,7 +19,6 @@ import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -233,13 +232,6 @@ Future<void> _pumpEditSheet(WidgetTester tester, Brightness brightness) async {
 
 void main() {
   setUpAll(() async {
-    // Supabase listens for deep links; with no plugin the listen fails late,
-    // inside whichever test runs then.
-    TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
-        .setMockStreamHandler(
-          const EventChannel('com.llfbandit.app_links/events'),
-          MockStreamHandler.inline(onListen: (_, _) {}),
-        );
     await loadAppFonts();
     await fakeSupabase();
   });

@@ -2432,17 +2432,35 @@ abstract class AppLocalizations {
   /// **'Hummlist Premium'**
   String get premiumTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: what is included (Spec #4)
+  /// Premium page (PW-P4, job 87): the hero's title; one member buys, the household has it
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.'**
-  String get premiumBody;
+  /// **'Einer kauft. Alle haben es.'**
+  String get premiumHeroTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has premium
+  /// Premium page (PW-P4, job 87): under the hero title
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium ist für euren ganzen Haushalt freigeschaltet. Danke!'**
-  String get premiumUnlockedBody;
+  /// **'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.'**
+  String get premiumHeroBody;
+
+  /// Premium page (PW-P4, job 87): benefit line, Siri
+  ///
+  /// In de, this message translates to:
+  /// **'Per Siri auf die Liste, ohne die App zu öffnen'**
+  String get premiumBenefitSiri;
+
+  /// FINAL (Legal Review N-67, 2026-11-04; Peter 2026-10-31: no assistant brand named): Premium page, benefit line, AI assistants over MCP
+  ///
+  /// In de, this message translates to:
+  /// **'KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden'**
+  String get premiumBenefitAi;
+
+  /// Premium page (PW-P4, job 87): benefit line, the public API; only while the public-api flag is on
+  ///
+  /// In de, this message translates to:
+  /// **'Eigene Automationen mit der Hummlist API'**
+  String get premiumBenefitApi;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan that renews
   ///
@@ -2462,17 +2480,35 @@ abstract class AppLocalizations {
   /// **'Hummlist Premium Lifetime'**
   String get premiumStatusLifetime;
 
-  /// PLACEHOLDER (RevenueCat promotional, Nov 1): Hummlist Launch / Legal Review K.13 write the final copy. Premium page: a free grant without end (RevenueCat promotional) unlocks the household
+  /// Handoff 5(c), Legal Review final rule: the total price incl. VAT, e.g. „29,99 € einmalig, inkl. MwSt.“. Premium page, a plan tile: under the store's price, {period} is „pro Jahr“ or „einmalig“; only for a price in euros
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium geschenkt'**
-  String get premiumStatusGranted;
+  /// **'{period}, inkl. MwSt.'**
+  String premiumWithVat(String period);
 
-  /// PLACEHOLDER (RevenueCat promotional, Nov 1): Hummlist Launch / Legal Review K.13 write the final copy. Premium page: a free grant (RevenueCat promotional) unlocks the household until date
+  /// FINAL (Legal Review, approved by Peter 2026-11-03 20:32, handoff 2026-11-03-pm-revenuecat-final section 4): use exactly as written. Premium page: link under the free unlock's status to the privacy policy's section #premium-beta
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium geschenkt bis {date}'**
-  String premiumStatusGrantedUntil(DateTime date);
+  /// **'Mehr dazu in der Datenschutzerklärung'**
+  String get premiumBetaPrivacyLink;
+
+  /// FINAL (Legal Review, approved by Peter 2026-11-03 20:32, handoff 2026-11-03-pm-revenuecat-final section 4): use exactly as written. Premium page: under the free unlock's status
+  ///
+  /// In de, this message translates to:
+  /// **'Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.'**
+  String get premiumBetaBody;
+
+  /// FINAL (Legal Review, approved by Peter 2026-11-03 20:32, handoff 2026-11-03-pm-revenuecat-final section 4): use exactly as written. Premium page: status of a household with a free unlock (testers, app review) once sales started (premium_offer on)
+  ///
+  /// In de, this message translates to:
+  /// **'Kostenlos freigeschaltet (Test und App-Prüfung)'**
+  String get premiumStatusFree;
+
+  /// FINAL (Legal Review, approved by Peter 2026-11-03 20:32, handoff 2026-11-03-pm-revenuecat-final section 4): use exactly as written. Premium page: status of a household with a free unlock (promotional grant) while sales have not started (premium_offer off)
+  ///
+  /// In de, this message translates to:
+  /// **'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet'**
+  String get premiumStatusBeta;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household's rows are loading or offline; no Buy
   ///
@@ -2486,11 +2522,11 @@ abstract class AppLocalizations {
   /// **'Jährlich'**
   String get premiumYearlyTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's price for the yearly plan, exactly as StoreKit or Play Billing formats it
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, yearly tile: the billing period under the store's price, followed by „inkl. MwSt.“ for a euro price
   ///
   /// In de, this message translates to:
-  /// **'{price} / Jahr'**
-  String premiumYearlyPrice(String price);
+  /// **'pro Jahr'**
+  String get premiumPerYear;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the one-time purchase's card title
   ///
@@ -2498,11 +2534,11 @@ abstract class AppLocalizations {
   /// **'Lifetime'**
   String get premiumLifetimeTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's price for Lifetime, exactly as the store formats it
+  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, Lifetime tile: under the store's price, followed by „inkl. MwSt.“ for a euro price
   ///
   /// In de, this message translates to:
-  /// **'{price} einmalig'**
-  String premiumLifetimePrice(String price);
+  /// **'einmalig'**
+  String get premiumOneTime;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: Lifetime framed as three times the yearly price (Spec #4 AC9), without computing an amount
   ///
@@ -2510,17 +2546,17 @@ abstract class AppLocalizations {
   /// **'Einmal zahlen, für immer: so viel wie drei Jahre.'**
   String get premiumLifetimeValue;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: after a price in EUR only (Legal Review K.13.P.3)
-  ///
-  /// In de, this message translates to:
-  /// **'inkl. MwSt.'**
-  String get premiumVat;
-
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the subscription disclosures next to the yearly card and its Buy button (App Store Review Guidelines 3.1.2, Google Play)
   ///
   /// In de, this message translates to:
   /// **'Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.'**
   String get premiumYearlyTerms;
+
+  /// LEGAL REVIEW Q6 (job 87): the household binding, shown before purchase. Wording pending Legal Review.
+  ///
+  /// In de, this message translates to:
+  /// **'Premium gehört dann zum Haushalt „{household}“ und bleibt dort, auch wenn du den Haushalt später verlässt.'**
+  String premiumHousehold(String household);
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy the yearly plan; RevenueCat starts only on this tap (H-67)
   ///
@@ -2539,12 +2575,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Hummlist Premium ist gerade nicht verfügbar.'**
   String get premiumUnavailable;
-
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: purchases are off in this build or on the server (premium_offer)
-  ///
-  /// In de, this message translates to:
-  /// **'Hummlist Premium ist bald verfügbar.'**
-  String get premiumComingSoon;
 
   /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the terms; Apple's standard EULA on iOS, a placeholder page elsewhere (no Hummlist terms exist, H-93)
   ///

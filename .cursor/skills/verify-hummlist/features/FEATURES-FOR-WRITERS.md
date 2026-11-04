@@ -512,7 +512,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Hummlist Premium (held)
 
-**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page that explains Premium will unlock these connections for the whole household, with two lines: „Siri auf dem iPhone“ (EN: "Siri on iPhone") and „KI-Assistenten wie ChatGPT oder Claude (MCP)“ (EN: "AI assistants like ChatGPT or Claude (MCP)"). Today it says Premium is bought in the iPhone or Android app (web) or „bald verfügbar“ (phone apps); there are no prices or buy buttons. Households the team has gifted Premium (for example testers) see „Hummlist Premium geschenkt“ (EN: "Hummlist Premium, a gift"), or with an end date „Hummlist Premium geschenkt bis …“ (EN: "Hummlist Premium, a gift until …"; for testers the date is 1 January 2100), and they see the row „Hummlist Premium“ in Mehr.
+**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page about the household: „Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.“ (EN: "Hummlist Premium covers your whole household, including everyone who joins later."), „KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden“ (EN: "Connect AI assistants that support MCP to your list"), and, once native Siri is released, in the iPhone app „Per Siri auf die Liste, ohne die App zu öffnen“ (EN: "Add to the list with Siri, without opening the app"; hidden today). Today it shows nothing else: no slogan, no prices, no buy buttons, no „bald verfügbar“, no note about buying in the apps, no refund link. Never name an assistant brand for Premium (Legal Review N-67). Beta households with a free unlock see „In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet“ (EN: "Free in the beta, until Hummlist Premium launches") with „Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.“ (EN: "You pay nothing, and nothing renews automatically. We'll let you know at least 4 weeks before the free unlock ends.") and a link „Mehr dazu in der Datenschutzerklärung“ (EN: "More in the privacy policy"); these are Legal Review's approved texts. Testers and app review see „Kostenlos freigeschaltet (Test und App-Prüfung)“ (EN: "Unlocked free of charge (testing and app review)") instead. They also see the row „Hummlist Premium“ in Mehr.
 
 **How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (testers). The page opens from its link.
 
@@ -521,7 +521,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Never claim.**
 - That Premium can be bought, or any price, plan or discount (yearly and Lifetime are planned, not for sale).
 - That Siri, Alexa or AI assistants need Premium today (they do not), or that Alexa ever will (the skill stays free).
-- That Google Assistant or Apple Watch exist (the page says only "later").
+- That Google Assistant or Apple Watch exist or are coming.
 - That there is a free trial.
 - That Mehr shows Hummlist Premium to everyone (it does once Premium is on sale).
 
@@ -529,4 +529,4 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real store purchases (no store sandbox here); whether the analytics event for the paywall ever fires in production (it should not).
 
-**Last verified.** main 66eb585, 2026-11-04 (CET), from code and driven on the web build (verify-hummlist): no Mehr row, the page without buy buttons. Recipe: [premium.md](./premium.md).
+**Last verified.** job/87-paywall-pw-p4, 2026-11-04 (CET), the PW-P4 page from the widget tests and goldens and on the web build by e2e/tests/purchases.spec.ts; main 66eb585, 2026-11-04 (CET), driven on the web build (verify-hummlist): no Mehr row, the page without buy buttons. Recipe: [premium.md](./premium.md).

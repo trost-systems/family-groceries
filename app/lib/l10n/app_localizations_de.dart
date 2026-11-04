@@ -1476,12 +1476,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumTitle => 'Hummlist Premium';
 
   @override
-  String get premiumBody =>
-      'Hummlist Premium schaltet für euren ganzen Haushalt die Verbindungen frei: Siri und KI-Assistenten (MCP). Später kommen Google Assistant und die Apple Watch dazu.';
+  String get premiumHeroTitle => 'Einer kauft. Alle haben es.';
 
   @override
-  String get premiumUnlockedBody =>
-      'Hummlist Premium ist für euren ganzen Haushalt freigeschaltet. Danke!';
+  String get premiumHeroBody =>
+      'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.';
+
+  @override
+  String get premiumBenefitSiri =>
+      'Per Siri auf die Liste, ohne die App zu öffnen';
+
+  @override
+  String get premiumBenefitAi =>
+      'KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden';
+
+  @override
+  String get premiumBenefitApi => 'Eigene Automationen mit der Hummlist API';
 
   @override
   String premiumStatusRenews(DateTime date) {
@@ -1503,15 +1513,24 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumStatusLifetime => 'Hummlist Premium Lifetime';
 
   @override
-  String get premiumStatusGranted => 'Hummlist Premium geschenkt';
+  String premiumWithVat(String period) {
+    return '$period, inkl. MwSt.';
+  }
 
   @override
-  String premiumStatusGrantedUntil(DateTime date) {
-    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
-    final String dateString = dateDateFormat.format(date);
+  String get premiumBetaPrivacyLink => 'Mehr dazu in der Datenschutzerklärung';
 
-    return 'Hummlist Premium geschenkt bis $dateString';
-  }
+  @override
+  String get premiumBetaBody =>
+      'Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.';
+
+  @override
+  String get premiumStatusFree =>
+      'Kostenlos freigeschaltet (Test und App-Prüfung)';
+
+  @override
+  String get premiumStatusBeta =>
+      'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet';
 
   @override
   String get premiumChecking =>
@@ -1521,28 +1540,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumYearlyTitle => 'Jährlich';
 
   @override
-  String premiumYearlyPrice(String price) {
-    return '$price / Jahr';
-  }
+  String get premiumPerYear => 'pro Jahr';
 
   @override
   String get premiumLifetimeTitle => 'Lifetime';
 
   @override
-  String premiumLifetimePrice(String price) {
-    return '$price einmalig';
-  }
+  String get premiumOneTime => 'einmalig';
 
   @override
   String get premiumLifetimeValue =>
       'Einmal zahlen, für immer: so viel wie drei Jahre.';
 
   @override
-  String get premiumVat => 'inkl. MwSt.';
-
-  @override
   String get premiumYearlyTerms =>
       'Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.';
+
+  @override
+  String premiumHousehold(String household) {
+    return 'Premium gehört dann zum Haushalt „$household“ und bleibt dort, auch wenn du den Haushalt später verlässt.';
+  }
 
   @override
   String get premiumBuyYearly => 'Jährlich abschließen';
@@ -1553,9 +1570,6 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get premiumUnavailable =>
       'Hummlist Premium ist gerade nicht verfügbar.';
-
-  @override
-  String get premiumComingSoon => 'Hummlist Premium ist bald verfügbar.';
 
   @override
   String get premiumTermsLink => 'Nutzungsbedingungen (EULA)';

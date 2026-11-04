@@ -1,6 +1,7 @@
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/purchases/premium_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -51,6 +52,12 @@ void main() {
   bool enabled(WidgetTester tester, String k) =>
       tester.widget<ButtonStyleButton>(key(k)).onPressed != null;
 
+  /// Picks the Lifetime tile; Buy then buys Lifetime.
+  Future<void> pickLifetime(WidgetTester tester) async {
+    await tester.tap(key('premium-card-lifetime'));
+    await tester.pump();
+  }
+
   Future<More> openLifetime(
     WidgetTester tester, {
     FakePurchaseRepository? store,
@@ -59,6 +66,7 @@ void main() {
     AppLanguage? language,
     FakePremiumServer? premium,
     FakeStorePrices? prices,
+    Set<String> flags = const {},
   }) => pumpMore(
     tester,
     location: premiumPath,
@@ -70,47 +78,146 @@ void main() {
     api: api,
     entitlements: entitlements,
     language: language,
+    flags: flags,
   );
 
   testWidgets('offers both plans with the store prices, asking RevenueCat '
       'nothing (H-67)', (tester) async {
     final more = await openLifetime(tester);
     expect(key('lifetime-screen'), findsOneWidget);
+    expect(find.text('Einer kauft. Alle haben es.'), findsOneWidget);
     expect(
-      find.descendant(
-        of: key('lifetime-screen'),
-        matching: find.text('Hummlist Premium'),
+      find.text(
+        'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die '
+        'später dazukommen.',
       ),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Siri und KI-Assistenten (MCP)'),
+      find.text(
+        'KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden',
+      ),
       findsOneWidget,
+    );
+    expect(
+      find.textContaining(RegExp('ChatGPT|Claude|Gemini|Copilot')),
+      findsNothing,
+      reason: 'no assistant brand on the paywall (Legal Review N-67)',
     );
     expect(
       find.descendant(
         of: key('lifetime-screen'),
-        matching: find.textContaining('Alexa'),
+        matching: find.textContaining('Alexa', findRichText: true),
       ),
       findsNothing,
       reason: 'Alexa stays free (Legal Review N-27)',
     );
+    expect(find.textContaining('Google Assistant'), findsNothing);
     expect(enabled(tester, 'premium-buy-yearly'), isTrue);
-    expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
-    expect(
-      tester.getTopLeft(key('premium-card-yearly')).dy,
-      lessThan(tester.getTopLeft(key('premium-card-lifetime')).dy),
-      reason: 'yearly first',
-    );
-    expect(find.text('Kauf wiederherstellen'), findsOneWidget);
+    expect(key('premium-buy-lifetime'), findsNothing, reason: 'one Buy');
     expect(more.purchases.repository.calls, isEmpty);
     expect(more.purchases.storePrices.reads, 1, reason: 'one store query');
     shows({});
   });
 
+  testWidgets('both plans side by side, yearly picked; picking Lifetime '
+      'switches Buy and the terms', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final more = await openLifetime(tester);
+    final yearly = tester.getRect(key('premium-card-yearly'));
+    final lifetime = tester.getRect(key('premium-card-lifetime'));
+    expect(yearly.top, lifetime.top, reason: 'side by side');
+    expect(yearly.height, lifetime.height, reason: 'equal tiles');
+    expect(yearly.right, lessThan(lifetime.left), reason: 'yearly left');
+    expect(
+      tester.getSemantics(key('premium-card-yearly')),
+      isSemantics(
+        isButton: true,
+        isSelected: true,
+        isInMutuallyExclusiveGroup: true,
+      ),
+    );
+    expect(
+      tester.getSemantics(key('premium-card-lifetime')),
+      isSemantics(isButton: true, isSelected: false),
+    );
+    expect(key('premium-terms-yearly'), findsOneWidget);
+    expect(key('premium-terms-lifetime'), findsNothing);
+    expect(
+      find.text(
+        'Premium gehört dann zum Haushalt „Zuhause“ und bleibt dort, auch '
+        'wenn du den Haushalt später verlässt.',
+      ),
+      findsOneWidget,
+    );
+    expect(key('premium-household'), findsOneWidget);
+
+    await pickLifetime(tester);
+    expect(key('premium-buy-yearly'), findsNothing);
+    expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
+    expect(find.text('Lifetime kaufen'), findsOneWidget);
+    expect(
+      find.text('Einmal zahlen, für immer: so viel wie drei Jahre.'),
+      findsOneWidget,
+    );
+    expect(key('premium-terms-yearly'), findsNothing);
+    expect(
+      tester.getSemantics(key('premium-card-lifetime')),
+      isSemantics(isSelected: true),
+    );
+    expect(
+      tester.getSemantics(key('premium-card-yearly')),
+      isSemantics(isSelected: false),
+    );
+    expect(more.purchases.repository.calls, isEmpty, reason: 'only picked');
+    expect(key('lifetime-restore'), findsOneWidget);
+    expect(key('premium-terms'), findsOneWidget);
+    expect(key('premium-privacy'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  for (final on in [false, true]) {
+    testWidgets('the API benefit only while the public-api flag is on '
+        '(${on ? 'on' : 'off'})', (tester) async {
+      await openLifetime(tester, flags: {if (on) 'public-api'});
+      expect(
+        find.text('Eigene Automationen mit der Hummlist API'),
+        on ? findsOneWidget : findsNothing,
+      );
+    });
+  }
+
+  testWidgets('the hero in English', (tester) async {
+    await openLifetime(tester, language: AppLanguage.en, flags: {'public-api'});
+    expect(find.text('One buys. Everyone has it.'), findsOneWidget);
+    expect(
+      find.text(
+        'Hummlist Premium covers your whole household, including everyone '
+        'who joins later.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Connect AI assistants that support MCP to your list'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Your own automations with the Hummlist API'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Premium then belongs to the household “Zuhause” and stays there, '
+        'even if you leave it later.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('buy, unlocking, unlocked for the household', (tester) async {
     final store = FakePurchaseRepository()..hold = true;
     final more = await openLifetime(tester, store: store);
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     expect(store.buys, ['home']);
@@ -140,6 +247,7 @@ void main() {
       tester,
       store: FakePurchaseRepository(bought: const Pending()),
     );
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-pending'});
@@ -157,6 +265,7 @@ void main() {
       tester,
       store: FakePurchaseRepository(bought: const Canceled()),
     );
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-canceled'});
@@ -170,6 +279,7 @@ void main() {
       tester,
       store: FakePurchaseRepository(bought: const StoreFailed('E42')),
     );
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-error'});
@@ -186,6 +296,7 @@ void main() {
       store: FakePurchaseRepository(bought: const StoreOffline()),
     );
     shows({});
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-offline'});
@@ -202,6 +313,7 @@ void main() {
     final store = FakePurchaseRepository(bought: const ProductMissing());
     await openLifetime(tester, store: store);
     shows({});
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-unavailable'});
@@ -216,17 +328,85 @@ void main() {
     shows({'lifetime-canceled'});
   });
 
-  testWidgets('the purchase define off: coming soon, no Buy, no Restore', (
+  /// N-53: while nothing is sold, the page names no price and offers no
+  /// purchase of any kind.
+  /// Legal Review's final texts (2026-11-03): before sales start the page
+  /// says nothing about buying, coming soon or thanks.
+  void expectHiddenBeforeSales() {
+    for (final hidden in [
+      'bald verfügbar',
+      'kaufst du in der iPhone- oder Android-App',
+      'Danke!',
+      'coming soon',
+      'You can buy Hummlist Premium',
+      'Thank you!',
+    ]) {
+      expect(find.textContaining(hidden), findsNothing, reason: hidden);
+    }
+  }
+
+  /// Legal Review N-68: while nothing can be bought, the hero keeps its body
+  /// but not the buying slogan.
+  void expectBetaHero() {
+    expect(key('premium-hero-body'), findsOneWidget);
+    expect(key('premium-hero-title'), findsNothing);
+    expect(find.text('Einer kauft. Alle haben es.'), findsNothing);
+  }
+
+  void expectNothingForSale() {
+    for (final plan in PremiumPlan.values) {
+      expect(key('premium-price-${plan.name}'), findsNothing);
+      expect(key('premium-buy-${plan.name}'), findsNothing);
+      expect(key('premium-card-${plan.name}'), findsNothing);
+    }
+    for (final price in ['€', '9,99', '29,99']) {
+      expect(
+        find.textContaining(price, findRichText: true),
+        findsNothing,
+        reason: price,
+      );
+    }
+    expect(find.byType(FilledButton), findsNothing);
+    expect(key('lifetime-restore'), findsNothing);
+    expect(key('premium-household'), findsNothing);
+    expectHiddenBeforeSales();
+  }
+
+  testWidgets('N-53: the purchase define off shows the hero, no price, no '
+      'Buy, no Restore', (tester) async {
+    final store = FakePurchaseRepository(withoutStore: const PurchasesNotYet());
+    final more = await openLifetime(tester, store: store);
+    shows({});
+    expectBetaHero();
+    expectNothingForSale();
+    expect(store.calls, isEmpty, reason: 'no store is asked');
+    expect(more.purchases.storePrices.reads, 0);
+  });
+
+  testWidgets('N-53: premium_offer off shows the hero, no price, no Buy, no '
+      'Restore', (tester) async {
+    final more = await openLifetime(
+      tester,
+      premium: FakePremiumServer(offer: false),
+    );
+    shows({});
+    expectBetaHero();
+    expectNothingForSale();
+    expect(more.purchases.storePrices.reads, 0);
+    expect(more.purchases.repository.calls, isEmpty);
+  });
+
+  testWidgets('the web before sales start: the hero only, not where to buy', (
     tester,
   ) async {
-    final store = FakePurchaseRepository(withoutStore: const PurchasesNotYet());
-    await openLifetime(tester, store: store);
-    shows({'lifetime-unavailable'});
-    expect(find.text('Hummlist Premium ist bald verfügbar.'), findsOneWidget);
-    expect(key('premium-buy-lifetime'), findsNothing);
-    expect(key('premium-buy-yearly'), findsNothing);
-    expect(key('lifetime-restore'), findsNothing);
-    expect(store.calls, isEmpty, reason: 'no store is asked');
+    await openLifetime(
+      tester,
+      store: FakePurchaseRepository(withoutStore: const PurchasesUnsupported()),
+      premium: FakePremiumServer(offer: false),
+    );
+    shows({});
+    expectBetaHero();
+    expectNothingForSale();
   });
 
   for (final (what, store) in [
@@ -237,6 +417,7 @@ void main() {
       tester,
     ) async {
       await openLifetime(tester, store: store);
+      await pickLifetime(tester);
       await tester.tap(
         key(what == 'bought' ? 'premium-buy-lifetime' : 'lifetime-restore'),
       );
@@ -258,6 +439,7 @@ void main() {
       tester,
       api: FakeClaimApi(answers: const [Claimed(ClaimStatus.elsewhere)]),
     );
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pumpAndSettle();
     shows({'lifetime-used-elsewhere'});
@@ -288,12 +470,12 @@ void main() {
     tester,
   ) async {
     final more = await openLifetime(tester);
-    expect(key('premium-buy-lifetime'), findsOneWidget);
+    expect(key('premium-buy-yearly'), findsOneWidget);
     // The partner's purchase arrives over Realtime.
     more.purchases.unlock();
     await tester.pumpAndSettle();
     shows({'lifetime-unlocked'});
-    expect(key('premium-buy-lifetime'), findsNothing);
+    expect(find.byType(FilledButton), findsNothing);
     expect(key('lifetime-restore'), findsNothing);
   });
 
@@ -497,16 +679,11 @@ void main() {
   testWidgets('English', (tester) async {
     final store = FakePurchaseRepository()..hold = true;
     await openLifetime(tester, language: AppLanguage.en, store: store);
-    expect(
-      find.descendant(
-        of: key('lifetime-screen'),
-        matching: find.text('Hummlist Premium'),
-      ),
-      findsOneWidget,
-    );
     expect(find.text('Subscribe yearly'), findsOneWidget);
-    expect(find.text('Buy Lifetime'), findsOneWidget);
+    expect(find.text('Buy Lifetime'), findsNothing);
     expect(find.text('Restore purchase'), findsOneWidget);
+    await pickLifetime(tester);
+    expect(find.text('Buy Lifetime'), findsOneWidget);
     await tester.tap(key('premium-buy-lifetime'));
     store.held.single.complete(const Bought(null));
     await tester.pump();
@@ -527,6 +704,7 @@ void main() {
       tester,
       store: FakePurchaseRepository(bought: const Canceled()),
     );
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     shows({'lifetime-canceled'});
@@ -535,7 +713,11 @@ void main() {
     more.router.go(premiumPath);
     await tester.pumpAndSettle();
     shows({});
-    expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
+    expect(
+      enabled(tester, 'premium-buy-yearly'),
+      isTrue,
+      reason: 'a new visit starts on yearly',
+    );
     await tester.tap(key('lifetime-restore'));
     await tester.pump();
     shows({'lifetime-nothing-restored'});
@@ -557,9 +739,10 @@ void main() {
     more.router.go(premiumPath);
     await tester.pumpAndSettle();
     expect(more.purchases.repository.calls, isEmpty);
-    expect(key('premium-buy-lifetime'), findsOneWidget);
+    expect(key('premium-card-lifetime'), findsOneWidget);
     await tester.tap(key('lifetime-restore'));
     await tester.pump();
+    await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     expect(more.purchases.repository.calls, [
@@ -658,22 +841,25 @@ void main() {
   });
 
   group('Hummlist Premium: prices, disclosures, the offer (job 49)', () {
-    String priceOf(WidgetTester tester, PremiumPlan plan) =>
-        tester.widget<Text>(key('premium-price-${plan.name}')).data!;
+    /// The tile's price and the line under it, as shown.
+    String priceOf(WidgetTester tester, PremiumPlan plan) => [
+      for (final part in ['price', 'period'])
+        tester.widget<Text>(key('premium-$part-${plan.name}')).data!,
+    ].join(' ');
 
     testWidgets('euro prices exactly as the store sends them, with VAT', (
       tester,
     ) async {
       await openLifetime(tester);
-      expect(priceOf(tester, PremiumPlan.yearly), '9,99 € / Jahr inkl. MwSt.');
+      expect(
+        priceOf(tester, PremiumPlan.yearly),
+        '9,99 € pro Jahr, inkl. MwSt.',
+      );
       expect(
         priceOf(tester, PremiumPlan.lifetime),
-        '29,99 € einmalig inkl. MwSt.',
+        '29,99 € einmalig, inkl. MwSt.',
       );
-      expect(
-        find.text('Einmal zahlen, für immer: so viel wie drei Jahre.'),
-        findsOneWidget,
-      );
+
       expect(
         find.textContaining('mindestens 24 Stunden vor Ende der Laufzeit'),
         findsOneWidget,
@@ -686,6 +872,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('kann abweichen'), findsNothing);
+      await pickLifetime(tester);
+      expect(
+        find.text('Einmal zahlen, für immer: so viel wie drei Jahre.'),
+        findsOneWidget,
+      );
       expect(
         tester.widget<LegalLink>(key('premium-privacy')).url,
         Uri.parse('https://hummlist.com/datenschutz'),
@@ -730,8 +921,15 @@ void main() {
           }),
         ),
       );
-      expect(priceOf(tester, PremiumPlan.yearly), r'R$ 29,90 / Jahr');
+      expect(priceOf(tester, PremiumPlan.yearly), r'R$ 29,90 pro Jahr');
       expect(key('premium-card-lifetime'), findsNothing);
+      expect(key('premium-buy-lifetime'), findsNothing);
+      expect(
+        tester.getSize(key('premium-card-yearly')).width,
+        390 - 2 * 16,
+        reason: 'one tile, full width',
+      );
+      expect(key('premium-terms-yearly'), findsOneWidget);
       shows({});
       expect(more.purchases.repository.calls, isEmpty);
       await tester.tap(key('premium-buy-yearly'));
@@ -740,6 +938,38 @@ void main() {
       // "Unlocking" waits for an unlock that never comes here.
       await tester.pump(unlockWait);
     });
+
+    for (final (language, currency, yearly, lifetime) in [
+      (AppLanguage.de, 'BRL', r'R$ 29,90', r'R$ 89,90'),
+      (AppLanguage.en, 'CHF', 'CHF 10.00', 'CHF 30.00'),
+    ]) {
+      testWidgets('$currency at 358 px and text at 130 %: the tiles wrap, '
+          'nothing overflows', (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await pumpMore(
+          tester,
+          location: premiumPath,
+          size: const Size(358, 2600),
+          language: language,
+          prices: FakeStorePrices(
+            PricesRead({
+              PremiumPlan.yearly: StorePrice(yearly, currency),
+              PremiumPlan.lifetime: StorePrice(lifetime, currency),
+            }),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getRect(key('premium-card-yearly')).top,
+          tester.getRect(key('premium-card-lifetime')).top,
+        );
+        expect(
+          tester.getRect(key('premium-card-lifetime')).right,
+          lessThanOrEqualTo(358 - 16),
+        );
+      });
+    }
 
     testWidgets('a yearly-only storefront with yearly running: no Lifetime '
         'entry, no warning', (tester) async {
@@ -779,20 +1009,6 @@ void main() {
         expect(more.purchases.repository.calls, isEmpty);
       });
     }
-
-    testWidgets('the server switch off: no purchase UI, no store asked', (
-      tester,
-    ) async {
-      final more = await openLifetime(
-        tester,
-        premium: FakePremiumServer(offer: false),
-      );
-      expect(key('premium-buy-yearly'), findsNothing);
-      expect(key('premium-buy-lifetime'), findsNothing);
-      shows({'lifetime-unavailable'});
-      expect(more.purchases.storePrices.reads, 0);
-      expect(more.purchases.repository.calls, isEmpty);
-    });
 
     testWidgets('switch unreadable: unavailable, no price query', (
       tester,
@@ -958,30 +1174,39 @@ void main() {
       shows({});
     });
 
-    testWidgets('a promotional grant: its status and end, nothing to buy', (
-      tester,
-    ) async {
+    testWidgets('a grant to 2100-01-01 is a tester grant: the line for testers '
+        'and app review, also before sales start (N-70)', (tester) async {
       await openLifetime(
         tester,
+        premium: FakePremiumServer(offer: false),
         entitlements: FakeEntitlementsSource()
-          ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
+          ..rowsNow = [
+            {...promotionalRow(), 'expires_at': '2100-01-01T00:00:00Z'},
+          ],
       );
       expect(
-        find.textContaining('Hummlist Premium geschenkt bis '),
+        find.text('Kostenlos freigeschaltet (Test und App-Prüfung)'),
         findsOneWidget,
       );
+      expect(key('premium-beta-body'), findsOneWidget);
+      expect(find.textContaining('In der Beta'), findsNothing);
       expect(key('premium-card-lifetime'), findsNothing);
       expect(key('premium-card-yearly'), findsNothing);
       expect(key('premium-manage'), findsNothing);
     });
 
-    testWidgets('a promotional grant without end', (tester) async {
+    testWidgets('a grant without end is a tester grant, in English', (
+      tester,
+    ) async {
       await openLifetime(
         tester,
+        language: AppLanguage.en,
         entitlements: FakeEntitlementsSource()..rowsNow = [promotionalRow()],
       );
-      expect(find.text('Hummlist Premium geschenkt'), findsOneWidget);
-      expect(key('premium-card-lifetime'), findsNothing);
+      expect(
+        find.text('Unlocked free of charge (testing and app review)'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a failed renewal: only the subscriber is told', (
@@ -1032,15 +1257,98 @@ void main() {
       expect(key('premium-manage'), findsOneWidget);
     });
 
-    testWidgets('while the rows are unknown: no card, no price query result '
-        'shown', (tester) async {
+    testWidgets('while the rows are unknown: the hero, no card, no price '
+        'query result shown', (tester) async {
       await openLifetime(
         tester,
         entitlements: FakeEntitlementsSource()..offline = true,
       );
+      expect(find.text('Einer kauft. Alle haben es.'), findsOneWidget);
       expect(key('premium-card-yearly'), findsNothing);
       expect(key('premium-card-lifetime'), findsNothing);
+      expect(key('premium-price-yearly'), findsNothing);
+      expect(find.byType(FilledButton), findsNothing);
       shows({'lifetime-checking'});
+    });
+
+    testWidgets('a promotional grant before Hummlist Premium starts: the beta '
+        'status, nothing to buy', (tester) async {
+      await openLifetime(
+        tester,
+        premium: FakePremiumServer(offer: false),
+        entitlements: FakeEntitlementsSource()
+          ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
+      );
+      shows({'lifetime-unlocked'});
+      expect(
+        find.text(
+          'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die '
+          'kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen '
+          'vorher Bescheid.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Mehr dazu in der Datenschutzerklärung'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<LegalLink>(key('premium-beta-privacy')).url,
+        Uri.parse('https://hummlist.com/datenschutz#premium-beta'),
+      );
+      expect(find.textContaining('Test und App-Prüfung'), findsNothing);
+      expectBetaHero();
+      expectNothingForSale();
+    });
+
+    testWidgets('a beta grant keeps the beta line once sales start: the '
+        'grant decides, not the switch (N-70)', (tester) async {
+      await openLifetime(
+        tester,
+        entitlements: FakeEntitlementsSource()
+          ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
+      );
+      shows({'lifetime-unlocked'});
+      expect(
+        find.text(
+          'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Test und App-Prüfung'), findsNothing);
+    });
+
+    testWidgets('the beta status in English', (tester) async {
+      await openLifetime(
+        tester,
+        language: AppLanguage.en,
+        premium: FakePremiumServer(offer: false),
+        entitlements: FakeEntitlementsSource()
+          ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
+      );
+      expect(
+        find.text('Free in the beta, until Hummlist Premium launches'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          "You pay nothing, and nothing renews automatically. We'll let you "
+          'know at least 4 weeks before the free unlock ends.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('More in the privacy policy'), findsOneWidget);
+      expect(
+        tester.widget<LegalLink>(key('premium-beta-privacy')).url,
+        Uri.parse('https://hummlist.com/en/privacy#premium-beta'),
+      );
+      expectHiddenBeforeSales();
     });
   });
 
@@ -1055,5 +1363,112 @@ void main() {
       ),
     );
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('the picked plan stays picked when the tiles scroll away and '
+      'back', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.6;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpMore(tester, location: premiumPath, size: const Size(358, 300));
+    await tester.scrollUntilVisible(key('premium-card-lifetime'), 200);
+    await tester.ensureVisible(key('premium-card-lifetime'));
+    await tester.pumpAndSettle();
+    await pickLifetime(tester);
+    expect(
+      tester.getSemantics(key('premium-card-lifetime')),
+      isSemantics(isSelected: true, isButton: true, isEnabled: true),
+      reason: 'picked',
+    );
+    await tester.drag(key('lifetime-screen'), const Offset(0, -6000));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(key('premium-buy-lifetime'), -200);
+    expect(key('premium-buy-yearly'), findsNothing);
+  });
+
+  testWidgets('yearly picked, then the household gets yearly: only Lifetime, '
+      'picked, is left to buy', (tester) async {
+    final more = await openLifetime(tester);
+    expect(key('premium-buy-yearly'), findsOneWidget);
+    more.purchases.rows
+      ..rowsNow = [yearlyRow(from: DateTime.now())]
+      ..change();
+    await tester.pumpAndSettle();
+    expect(key('premium-card-yearly'), findsNothing);
+    expect(key('premium-buy-yearly'), findsNothing);
+    expect(key('premium-buy-lifetime'), findsOneWidget);
+    expect(key('premium-terms-lifetime'), findsOneWidget);
+  });
+
+  group('Legal Review N-69: the refund link', () {
+    testWidgets('hidden before sales start', (tester) async {
+      await openLifetime(tester, premium: FakePremiumServer(offer: false));
+      expect(key('lifetime-refund-help'), findsNothing);
+      expect(find.textContaining('Doppelt gekauft'), findsNothing);
+    });
+
+    testWidgets('shown before sales start to a household that bought twice', (
+      tester,
+    ) async {
+      await openLifetime(
+        tester,
+        premium: FakePremiumServer(offer: false),
+        entitlements: FakeEntitlementsSource()
+          ..rowsNow = [
+            {
+              'kind': 'premium',
+              'source': 'purchase',
+              'premium_source': 'lifetime',
+            },
+            {
+              'kind': 'premium',
+              'source': 'purchase',
+              'premium_source': 'lifetime',
+            },
+          ],
+      );
+      expect(key('lifetime-bought-twice'), findsOneWidget);
+      expect(key('lifetime-refund-help'), findsOneWidget);
+    });
+
+    testWidgets('shown once sales start', (tester) async {
+      await openLifetime(tester);
+      expect(key('lifetime-refund-help'), findsOneWidget);
+    });
+  });
+
+  group('Legal Review N-71: the Siri line only where native Siri is live', () {
+    const siri = 'Per Siri auf die Liste, ohne die App zu öffnen';
+
+    test('NATIVE_SIRI_LIVE and the iPhone app, nothing else', () {
+      for (final (define, web, platform, shown) in [
+        (false, false, TargetPlatform.iOS, false),
+        (true, false, TargetPlatform.iOS, true),
+        (true, false, TargetPlatform.android, false),
+        (true, true, TargetPlatform.iOS, false),
+        (true, true, TargetPlatform.android, false),
+      ]) {
+        expect(
+          siriBenefitShown(define: define, web: web, platform: platform),
+          shown,
+          reason: '$define $web $platform',
+        );
+      }
+    });
+
+    testWidgets('this build (NATIVE_SIRI_LIVE off): hidden on the iPhone', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await openLifetime(tester, premium: FakePremiumServer(offer: false));
+      expect(find.text(siri), findsNothing);
+      expect(
+        find.text(
+          'KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden',
+        ),
+        findsOneWidget,
+      );
+      debugDefaultTargetPlatformOverride = null;
+    });
   });
 }

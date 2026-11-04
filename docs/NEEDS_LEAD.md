@@ -1472,3 +1472,177 @@ Legal-relevant, for information; nothing waits on Legal:
 - **Development and ad hoc profiles.** The portal has none for either App ID; the match repo has
   only the distribution certificate and App Store profiles. Development profiles are Xcode's (automatic signing) and renew themselves;
   match would have to create a development certificate, which the lane refuses.
+
+
+## Job 87: PW-P4 „Haushalt“ as the real Premium page (2026-11-03)
+
+**Needs Legal Review sign-off before merge.** Branch `job/87-paywall-pw-p4`, PR #217. CI and the
+lead review are not enough on their own: the plan copy below is paywall copy. The beta strings are
+Legal's final texts, approved by Peter on 2026-11-03 at 20:32 (handoff
+`2026-11-03-pm-revenuecat-final.md`, section 4), used exactly as written.
+
+Nothing about buying shows while the flags stay off (N-53). Beta builds keep `premium_offer` and
+`REVENUECAT_PURCHASES` off, so no price, plan, Buy or Restore button renders, not even greyed out.
+The widget tests „N-53: …“ in `app/test/purchases/premium_screen_test.dart` and
+`e2e/tests/purchases.spec.ts` check this. Before sales start the page also hides
+„… ist bald verfügbar.“, „Hummlist Premium kaufst du in der iPhone- oder Android-App …“ (on the
+web too, for every household) and „… freigeschaltet. Danke!“. Two things are visible today:
+- The hero without its slogan, for every household on the web and in the store builds: the member
+  hexes, „Hummlist Premium gilt für euren ganzen Haushalt …“, the AI line, and the Siri line in
+  the iPhone app only. The page is reachable only by its link, or from Mehr for households that
+  have Premium.
+- For households with a free unlock (promotional grant): the beta or tester title, the subtitle and
+  the privacy link.
+
+Since Legal Review's changes of 2026-11-04 (N-67 to N-71, below), the slogan „Einer kauft. Alle
+haben es.“ and the refund link „Doppelt gekauft? …“ show only once sales are on.
+
+### Every user-visible paywall string, verbatim
+
+`{household}` is the household's name, `{date}` a date, `{code}` the store's error code,
+`{period}` is `premiumPerYear` or `premiumOneTime`. The tile shows the store's price, then
+„{period}, inkl. MwSt.“ under it (for example „9,99 €“ / „pro Jahr, inkl. MwSt.“, as in handoff
+5(c)). Prices are never in the copy. The store formats them; the DE storefront gives „9,99 €“ and
+„29,99 €“. No per-month figure. „inkl. MwSt.“ / "incl. VAT" shows only for a euro price, the English
+UI included.
+
+| Key | DE | EN |
+| --- | --- | --- |
+| `premiumTitle` | Hummlist Premium | Hummlist Premium |
+| `premiumHeroTitle` (only while sales are on, N-68) | Einer kauft. Alle haben es. | One buys. Everyone has it. |
+| `premiumHeroBody` | Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen. | Hummlist Premium covers your whole household, including everyone who joins later. |
+| `premiumBenefitSiri` (iPhone app with `NATIVE_SIRI_LIVE` only, hidden today, N-71) | Per Siri auf die Liste, ohne die App zu öffnen | Add to the list with Siri, without opening the app |
+| `premiumBenefitAi` (final, Legal N-67) | KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden | Connect AI assistants that support MCP to your list |
+| `premiumBenefitApi` | Eigene Automationen mit der Hummlist API | Your own automations with the Hummlist API |
+| `premiumStatusBeta` (final, Legal) | In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet | Free in the beta, until Hummlist Premium launches |
+| `premiumStatusFree` (final, Legal) | Kostenlos freigeschaltet (Test und App-Prüfung) | Unlocked free of charge (testing and app review) |
+| `premiumBetaBody` (final, Legal) | Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid. | You pay nothing, and nothing renews automatically. We'll let you know at least 4 weeks before the free unlock ends. |
+| `premiumBetaPrivacyLink` (final, Legal) | Mehr dazu in der Datenschutzerklärung | More in the privacy policy |
+| `premiumYearlyTitle` | Jährlich | Yearly |
+| `premiumPerYear` | pro Jahr | per year |
+| `premiumLifetimeTitle` | Lifetime | Lifetime |
+| `premiumOneTime` | einmalig | one-time |
+| `premiumWithVat` | {period}, inkl. MwSt. | {period}, incl. VAT |
+| `premiumHousehold` | Premium gehört dann zum Haushalt „{household}“ und bleibt dort, auch wenn du den Haushalt später verlässt. | Premium then belongs to the household “{household}” and stays there, even if you leave it later. |
+| `premiumBuyYearly` | Jährlich abschließen | Subscribe yearly |
+| `premiumBuyLifetime` | Lifetime kaufen | Buy Lifetime |
+| `premiumYearlyTerms` | Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play. | Hummlist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store's or Google Play's subscription settings. |
+| `premiumLifetimeValue` | Einmal zahlen, für immer: so viel wie drei Jahre. | Pay once, for good: as much as three years. |
+| `lifetimeRestore` | Kauf wiederherstellen | Restore purchase |
+| `premiumTermsLink` | Nutzungsbedingungen (EULA) | Terms of Use (EULA) |
+| `premiumPrivacyLink` | Datenschutzerklärung | Privacy policy |
+| `lifetimeRefundLink` (once sales are on, or after buying twice, N-69) | Doppelt gekauft? So bekommst du dein Geld zurück | Bought it twice? How to get your money back |
+| `premiumStatusLifetime` | Hummlist Premium Lifetime | Hummlist Premium Lifetime |
+| `premiumStatusRenews` | Hummlist Premium aktiv (jährlich, verlängert sich am {date}) | Hummlist Premium active (yearly, renews on {date}) |
+| `premiumStatusEnds` | Hummlist Premium aktiv (jährlich, läuft am {date} aus) | Hummlist Premium active (yearly, ends on {date}) |
+| `premiumChecking` | Wir prüfen, ob euer Haushalt Hummlist Premium schon hat … | Checking whether your household already has Hummlist Premium … |
+| `premiumUnavailable` | Hummlist Premium ist gerade nicht verfügbar. | Hummlist Premium is not available right now. |
+| `premiumWeb` | Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet. | You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household. |
+| `lifetimeUnlocking` | Wird freigeschaltet … | Unlocking … |
+| `lifetimePending` | Wartet auf Bestätigung | Waiting for approval |
+| `lifetimePendingBody` | Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern. | Hummlist Lifetime is unlocked as soon as the purchase is approved. This can take a while. |
+| `lifetimeUnlockDelayed` | Dein Kauf ist angekommen, die Freischaltung dauert nur länger als sonst. Sie erscheint hier von selbst; bitte nicht noch einmal kaufen. | Your purchase went through; unlocking just takes longer than usual. It appears here by itself, so please don't buy again. |
+| `lifetimeCanceled` | Kauf abgebrochen. | Purchase canceled. |
+| `lifetimeStoreFailed` | Der Kauf hat nicht geklappt ({code}). | The purchase didn't go through ({code}). |
+| `lifetimeStoreOffline` | Der Store ist gerade nicht erreichbar. Prüfe die Verbindung. | The store can't be reached right now. Check your connection. |
+| `lifetimeUsedElsewhere` | Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort. Hier schaltet er nichts frei. | This purchase belongs to another, earlier household and stays there. It unlocks nothing here. |
+| `premiumUsedElsewhereYearly` | Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen. | Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Hummlist Premium. |
+| `lifetimeNothingRestored` | Kein früherer Kauf gefunden. | No earlier purchase found. |
+| `lifetimeBoughtTwice` | Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen. | Your household bought Hummlist Lifetime more than once. One of the purchases can be refunded. |
+| `premiumTwoYearly` | Euer Haushalt hat zwei Jahresabos. Kündigen kann jedes nur, wer es abgeschlossen hat. | Your household has two yearly plans. Each can only be cancelled by whoever took it out. |
+| `premiumBillingIssue` | Apple bzw. Google konnten dein Jahresabo nicht abbuchen. Premium läuft noch bis {date}. Prüfe deine Zahlungsmethode im Store. | Apple or Google couldn't charge your yearly plan. Premium keeps running until {date}. Check your payment method in the store. |
+| `premiumLifetimeWhileYearly` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Hummlist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Hummlist can't cancel it. |
+| `premiumLifetimeWhileYearlySubscriber` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Hummlist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. You can cancel it in [Manage subscription]. Hummlist can't cancel it. |
+| `premiumBuyAnyway` | Trotzdem kaufen | Buy anyway |
+| `cancel` | Abbrechen | Cancel |
+| `premiumManage` | Abo verwalten oder kündigen | Manage or cancel subscription |
+| `premiumManageWeb` | Dein Jahresabo verwaltest du im App Store oder bei Google Play. | You manage your yearly plan in the App Store or on Google Play. |
+| `premiumManageApple` | App Store | App Store |
+| `premiumManageGoogle` | Google Play | Google Play |
+
+`premiumStatusGranted`, `premiumStatusGrantedUntil` („Hummlist Premium geschenkt (bis …)“),
+`premiumUnlockedBody`, `premiumComingSoon` and `premiumVat` are deleted. The refund help page behind
+`lifetimeRefundLink` (`refundHelp*`) and the dialogs before leaving or deleting with a running plan
+(`premiumBillingContinues*`) are unchanged and not part of this page.
+
+### Which free-unlock line shows when (Legal Review N-70)
+
+The grant decides, not the switch:
+- A promotional grant without end, or to 2100-01-01 or later, is a tester grant.
+  `scripts/iap/promotional.ts grant` gives exactly that (`testerGrantEnd`). It shows
+  „Kostenlos freigeschaltet (Test und App-Prüfung)“, before and after the launch.
+- Any grant that ends earlier is a beta grant. It shows „In der Beta kostenlos freigeschaltet, bis
+  Hummlist Premium startet“, also after `premium_offer` goes on.
+
+Under both come the subtitle and the link to `/datenschutz#premium-beta` (EN
+`/en/privacy#premium-beta`).
+
+**Operational consequence, please confirm:** beta households must get a grant with a real end date
+(RevenueCat dashboard, Grant with an end), not `promotional.ts grant`. Testers granted with
+`promotional.ts` so far see the tester line today.
+
+### Legal Review changes N-67 to N-71 (2026-11-04), done
+
+- N-67: the AI line names no brand: „KI-Assistenten, die MCP unterstützen, mit eurer Liste
+  verbinden“ / "Connect AI assistants that support MCP to your list". No assistant brand is
+  anywhere on the page (widget test).
+- N-68: „Einer kauft. Alle haben es.“ shows only when `premium_offer` is on and the build sells.
+  It never shows on the web or in beta builds. The body and the benefits stay.
+- N-69: the refund link shows only once `premium_offer` is on, or for a household that bought
+  Lifetime twice.
+- N-70: tester or beta line by the grant (above).
+- N-71 (Addendum 3, 2026-11-04): the Siri line shows only when the build define `NATIVE_SIRI_LIVE`
+  is on and this is the iPhone app. `Environment.nativeSiriLive` and the Fastfile's
+  `HOLD_DEFINES` are identical to #224, so the two merge cleanly. Fastlane passes the define once
+  `releases/flags.json` releases the `native-siri` hold. Today the hold is unreleased, so the line
+  is hidden everywhere. Release the hold only after native Siri passes the TestFlight voice test
+  (5a/5b).
+- N-72 (optional) is not done. The screenshots in `docs/screenshots/87/` are developer docs with
+  test data and fake store prices.
+
+### Open questions for Legal Review
+
+1. **Q1 preselection.** The yearly tile is picked when the page opens: honey fill, the button
+   reads „Jährlich abschließen“, the yearly terms stand under it. Nothing says "recommended". Is a
+   visible preselection of the subscription fine under UCPD / DSA Art. 25 when both prices are
+   fully shown, or should nothing be picked until the user taps a tile? The second is a small
+   change (the default of `PremiumPage.picked` in `app/lib/purchases/premium_page_cubit.dart`
+   plus a disabled button).
+2. **Q3 „Lifetime“ and „für immer“.** The Lifetime tile is titled „Lifetime“ and its line under
+   the button reads „Einmal zahlen, für immer: so viel wie drei Jahre.“ (job 49 placeholder). Does
+   „für immer“ need a definition (for example „solange es Hummlist gibt“), is „so viel wie drei
+   Jahre“ an acceptable price comparison, and is „Lifetime“ fine as a German product name?
+3. **Q4 withdrawal right.** The page adds no text about the right of withdrawal for digital
+   content or the consent to start it; the App Store / Play purchase sheet handles the purchase.
+   Does the page need a sentence?
+4. **Q6 household binding wording.** Above the button: „Premium gehört dann zum Haushalt
+   „{household}“ und bleibt dort, auch wenn du den Haushalt später verlässt.“ (EN „Premium then
+   belongs to the household “{household}” and stays there, even if you leave it later.“). It is
+   job 43's rule. Is this enough as pre-purchase information (UCPD Art. 7), and should it also
+   say that a yearly plan keeps billing the buyer after they leave (today said only in the leave
+   and delete dialogs, `premiumBillingContinues`)?
+5. **Renewal price in the yearly terms.** `premiumYearlyTerms` says the plan renews automatically,
+   but not at which price. The renewal price is the tile right above it („9,99 €“, „pro Jahr,
+   inkl. MwSt.“). Is that enough, or should the terms take a `{price}` („… verlängert sich
+   automatisch um ein Jahr zu {price} …“)?
+6. **Restore only next to an offer.** „Kauf wiederherstellen“ shows only while a plan is offered,
+   as on job 49's page. A household that already has Premium has nothing to restore here. Fine?
+7. **Benefit wording.** „ChatGPT oder Claude schreiben mit (MCP)“ names two third-party products;
+   „Eigene Automationen mit der Hummlist API“ shows only while the PostHog flag `public-api` is on.
+   No retailer names, logos or colours anywhere on the page (N-23). No Alexa (N-27).
+
+Resolved: the N-54 placeholder. Peter approved Legal's final beta texts (2026-11-03, 20:32). They are
+in the app verbatim, and their ARB descriptions say „FINAL (Legal Review …)“.
+
+### For the lead
+
+- Job 86 (#213) recaptures the IAP review screenshot from this branch. `test_driver/paywall_review.dart`
+  keeps working unchanged (same providers, `premium_offer` on in its fake). The page now has one
+  Buy button for the picked plan: the default capture shows both tiles with DE prices and
+  „Jährlich abschließen“; a Lifetime shot taps `premium-card-lifetime` first (button key becomes
+  `premium-buy-lifetime`).
+- PR #213 (job 86) is stacked on this branch and needs a rebase onto the new head of #217. The
+  capture still works: its fake has `premium_offer` on and sells, so the slogan shows. The Siri line
+  shows only if the capture build passes `--dart-define=NATIVE_SIRI_LIVE=true`.
+- Changelog: one `new` item with `hold: premium-launch`, so it stays out of the public changelog
+  until Premium is on sale.

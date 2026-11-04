@@ -1,5 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// The flag that offers the public REST API: its keys under Zugänge (job
+/// 73) and its line on the Premium page (job 87).
+const publicApiFlag = 'public-api';
+
 /// PostHog feature flags, the app's runtime toggles (job 44,
 /// docs/ANALYTICS.md "Feature flags"). Read a toggle with [isOn] wherever it
 /// matters; nothing else in the app reads PostHog flags.
