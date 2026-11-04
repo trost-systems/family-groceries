@@ -281,6 +281,11 @@ The fix:
   the household has one list. Siri speaks its own confirmation here, not `voice`'s sentence.
   Signed out, no household or the integration lock answer `failureRequiringAppLaunch` (Siri
   offers to open the app); other failures `failure`.
+- **Example phrases** (`Runner/<lang>.lproj/AppIntentVocabulary.plist`): App Store Connect wants
+  at least one example per SiriKit intent in each language (ITMS-90626 on build 1130), and the Siri
+  Guide shows them. Every example names the app. German examples avoid
+  „Einkaufsliste“. `scripts/siri-vocabulary.py` checks the source tree (lint gate), the built app
+  (ios gate) and the signed IPA (Fastfile) against every intent an `Info.plist` declares.
 
 ### Gerätetest Deutsch
 

@@ -1,0 +1,12 @@
+CI run 41788559517, job ios (macos-26), PR #229 head 651ef921:
+
+scripts/gates/ios.sh on build/ios/iphonesimulator/Runner.app:
+  siri-vocabulary: INAddTasksIntent, INSearchForNotebookItemsIntent have examples in de, en
+
+xcodebuild, target Runner, Copy Bundle Resources:
+  CopyPlistFile .../Runner.app/en.lproj/AppIntentVocabulary.plist <repo>/app/ios/Runner/en.lproj/AppIntentVocabulary.plist
+  CopyPlistFile .../Runner.app/de.lproj/AppIntentVocabulary.plist <repo>/app/ios/Runner/de.lproj/AppIntentVocabulary.plist
+
+Local (hz), check with the en file removed:
+  siri-vocabulary: .../app/ios/Runner/en.lproj/AppIntentVocabulary.plist is missing (INAddTasksIntent, INSearchForNotebookItemsIntent need examples)
+  exit=1

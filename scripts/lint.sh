@@ -28,6 +28,9 @@ if ! git rev-parse -q --verify "$base^{commit}" >/dev/null && [[ "$base" == orig
 fi
 log "Siri phrases"
 deno run --allow-read scripts/siri-phrases.ts
+log "SiriKit example phrases"
+scripts/siri-vocabulary.py app/ios
+python3 scripts/siri-vocabulary-test.py
 
 log "schema check against $base"
 # The check before its unit tests: a bad migration fails the test over the repository's own

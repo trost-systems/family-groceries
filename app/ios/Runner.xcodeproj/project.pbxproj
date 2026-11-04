@@ -22,6 +22,7 @@
 		92A1E0022EF0000000000000 /* SiriKitLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A1E0012EF0000000000000 /* SiriKitLists.swift */; };
 		51A1E00C2EF0000000000000 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = 51A1E00B2EF0000000000000 /* AppShortcuts.strings */; };
 		71A1E00C2EF0000000000000 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 71A1E00B2EF0000000000000 /* InfoPlist.strings */; };
+		81A1E00C2EF0000000000000 /* AppIntentVocabulary.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81A1E00B2EF0000000000000 /* AppIntentVocabulary.plist */; };
 		51A1E00E2EF0000000000000 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51A1E00D2EF0000000000000 /* Localizable.xcstrings */; };
 		51A1E0102EF0000000000000 /* SiriTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E00F2EF0000000000000 /* SiriTests.swift */; };
 		52A1C0DE0000000000000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 52A1C0DE0000000000000002 /* AppIcon.icon */; };
@@ -103,6 +104,8 @@
 		71A1E0F12EF0000000000000 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		71A1E0F22EF0000000000000 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		71A1E0F32EF0000000000000 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		81A1E0F12EF0000000000000 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = en; path = en.lproj/AppIntentVocabulary.plist; sourceTree = "<group>"; };
+		81A1E0F22EF0000000000000 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = de; path = de.lproj/AppIntentVocabulary.plist; sourceTree = "<group>"; };
 		52A1C0DE0000000000000002 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		57210B2C1B35E8492FE37E9D /* Hex.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Hex.swift; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -244,6 +247,7 @@
 				51A1E0112EF0000000000000 /* AppIntents */,
 				51A1E00B2EF0000000000000 /* AppShortcuts.strings */,
 				71A1E00B2EF0000000000000 /* InfoPlist.strings */,
+				81A1E00B2EF0000000000000 /* AppIntentVocabulary.plist */,
 				51A1E00D2EF0000000000000 /* Localizable.xcstrings */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
@@ -375,6 +379,7 @@
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				51A1E00C2EF0000000000000 /* AppShortcuts.strings in Resources */,
 				71A1E00C2EF0000000000000 /* InfoPlist.strings in Resources */,
+				81A1E00C2EF0000000000000 /* AppIntentVocabulary.plist in Resources */,
 				51A1E00E2EF0000000000000 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -479,6 +484,15 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		81A1E00B2EF0000000000000 /* AppIntentVocabulary.plist */ = {
+			isa = PBXVariantGroup;
+			children = (
+				81A1E0F12EF0000000000000 /* en */,
+				81A1E0F22EF0000000000000 /* de */,
+			);
+			name = AppIntentVocabulary.plist;
+			sourceTree = "<group>";
+		};
 		51A1E00B2EF0000000000000 /* AppShortcuts.strings */ = {
 			isa = PBXVariantGroup;
 			children = (

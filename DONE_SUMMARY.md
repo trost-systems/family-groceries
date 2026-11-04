@@ -538,3 +538,5 @@ Alexa's „Verbindungsproblem“ comes from Amazon: no spoken request has ever r
 ## Job 87: PW-P4 „Haushalt“ is the Hummlist Premium page
 
 Peter's pick from job 81 is now the real paywall at `/more/lifetime`. Every state shows the household hero. When a plan is on offer, the page shows two plan tiles side by side with the store's prices, the household binding line, one Buy button for the picked plan, its terms, Restore, Terms and Privacy. Beta builds (flags off) show no price and no Buy. A free unlock shows Legal's approved beta texts (title, subtitle, privacy link) while `premium_offer` is off; „bald verfügbar“, „Danke!“ and the web's buy-in-the-app note are hidden until sales start. The web shows the hero only. Merge waits for Legal Review sign-off (NEEDS_LEAD "Job 87"). Details: [docs/done/87-paywall-pw-p4.md](docs/done/87-paywall-pw-p4.md).
+
+- Job 95, SiriKit example phrases (ITMS-90626): [docs/done/95-siri-example-phrases.md](docs/done/95-siri-example-phrases.md)
