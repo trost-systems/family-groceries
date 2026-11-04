@@ -1425,3 +1425,27 @@ Legal-relevant, for information; nothing waits on Legal:
    that commit, 12/12). After rebasing onto job 82, confirm that the `site-agent` log no longer
    says `# SKIP waits for job 82`.
 
+## Job 91: Alexa dispatch diagnosis (2026-11-03)
+
+- **PR:** #219 (changelog `none`; merges on your review + ci-ok).
+- **Token lifetime:** compatible, no config change. Hosted: JWT 3600 s, rotation on, reuse
+  interval 10 s, no timebox or inactivity timeout; the Alexa session uses v1 refresh tokens.
+  Supabase accepts the direct parent of the current refresh token with no time limit (supabase/auth
+  `internal/tokens/service.go` 382-391), so one lost refresh answer at Amazon is harmless. Only a
+  token two rotations old after 10 s kills the link (`refresh_token_already_used`, shown by
+  diagnose.sh). One mismatch we can't change: Supabase answers that with 400 + `error_code`, not
+  OAuth's `invalid_grant`, so Alexa may show an error rather than the link card. DECISIONS
+  „Job 91“.
+- **diagnose.sh over 2026-11-03 07:00-12:00 CET:** two calls, both skill events (SkillDisabled
+  08:20:56, SkillAccountLinked 08:21:17, 200); linking authorize → 403 `bad_jwt` (expired app
+  sign-in) → authorize → consent approve → `authorization_code` 200 at 08:21:15; 1 link, 1 live
+  session, 1 live refresh token. No spoken request. Full output:
+  `docs/screenshots/91/diagnose-2026-11-03-0700-1200.txt`.
+- **smoke.sh on the box (your run, 21:42, head 98ba10a):** `PASS unlinked` (LinkAccount card,
+  438 ms at Amazon); diagnose.sh showed `alexa: LaunchRequest - de-DE linked=false -> link`.
+  Linked half skipped: no `ALEXA_SMOKE_TOKEN` until the certification test account exists.
+- **Vercel DPA (ADDENDUM 1):** committed as `docs/legal/dpas/vercel-dpa-2026-03-17.pdf`, a
+  Chromium print of the public page (same version: last updated 2026-03-17, effective
+  2026-03-31), because your box copy never reached hz. Provenance and checksums are in
+  `docs/legal/dpas/README.md`. If you want Ops' exact download instead, replace the file and its
+  checksum.

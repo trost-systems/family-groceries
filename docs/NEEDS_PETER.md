@@ -1222,3 +1222,26 @@ it is called directly. Please open the developer console (developer.amazon.com �
 there. Then check which Amazon country the developer account and Lea's account use (Alexa app →
 Einstellungen → Info/Über: Host Name alexa.amazon.de). Details in docs/ALEXA_CERTIFICATION.md
 „Results“.
+
+## Job 91: Alexa „Verbindungsproblem“, what only your accounts can show (2026-11-03)
+
+This morning's attempts never reached Hummlist. Linking at 08:21 worked, but no „öffne Hummlist“
+or „sag Hummlist …“ request has ever arrived at the skill. So Alexa stopped them on Amazon's
+side. These five checks tell us where. `scripts/alexa/diagnose.sh` (docs/ALEXA.md
+„Troubleshooting“) shows whether a request arrived; the lead can run it for you.
+
+1. **What Alexa heard.** Alexa app → **Mehr** → **Aktivität** → **Sprachverlauf**: for this
+   morning's attempts, note the exact words Alexa heard and the answer or card she gave.
+2. **Which account the Echo belongs to.** Alexa app → **Geräte** → the Echo → **Registriert
+   für**: which Amazon account? It must be the beta-invited account that linked Hummlist at
+   08:21 this morning. If it is another account, invite that account's e-mail address to the
+   beta, then enable and link the skill there.
+3. **Alexa+.** Is this Echo on Alexa+ (Early Access)? Alexa+ may treat beta skills differently.
+4. **The console test.** developer.amazon.com → Hummlist → **Test** tab: set it to
+   „Entwicklung“, choose Deutsch (Deutschland), and type „öffne Hummlist“. Note the time, so
+   the lead can check in diagnose.sh whether a LaunchRequest arrived.
+5. **The second beta tester.** Distribution → Beta Test: one tester is still NOT_ACCEPTED. Resend
+   the invitation, or remove the tester if they are not testing.
+
+The linked half of `scripts/alexa/smoke.sh` also needs the certification test account
+(docs/ALEXA_CERTIFICATION.md „Left for the console“, item 1) and an access token of it. Until then only the unlinked half runs.

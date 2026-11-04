@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "session": {
+    "new": true,
+    "sessionId": "amzn1.echo-api.session.SMOKE",
+    "application": { "applicationId": "SKILL_ID" },
+    "attributes": {},
+    "user": { "userId": "amzn1.ask.account.HUMMLIST-SMOKE" }
+  },
+  "context": {
+    "System": {
+      "application": { "applicationId": "SKILL_ID" },
+      "user": { "userId": "amzn1.ask.account.HUMMLIST-SMOKE" },
+      "apiEndpoint": "https://api.eu.amazonalexa.com"
+    }
+  },
+  "request": {
+    "type": "LaunchRequest",
+    "requestId": "amzn1.echo-api.request.SMOKE",
+    "timestamp": "2026-01-01T00:00:00Z",
+    "locale": "de-DE"
+  }
+}

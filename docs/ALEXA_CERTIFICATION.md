@@ -34,6 +34,7 @@ not on the Hetzner runner, so these run on the box from a checkout of the branch
 ALEXA_SKILL_ID=<skill id> scripts/alexa-deploy-dev.sh   # development stage only, then checks every locale
 ALEXA_SKILL_ID=<skill id> scripts/alexa-validate.sh     # Amazon's validation, development stage
 ALEXA_SKILL_ID=<skill id> scripts/alexa-simulate.sh     # typed utterances per locale, what Alexa sent
+ALEXA_SKILL_ID=<skill id> scripts/alexa/smoke.sh        # Amazon signs a LaunchRequest and calls the endpoint
 ```
 
 `alexa-simulate.sh` types, it does not speak: it shows whether an utterance reaches the skill and
@@ -70,6 +71,23 @@ Run from the box on 2026-11-02 (10:40-11:05 CET), branch `job/69-alexa-icon-invo
    - Still open (NEEDS_PETER „Job 69“): find out why Alexa won't route to the development skill for
      the developer account. Check the developer console's Test tab (stage „Development“, the
      simulator there), and the Alexa marketplace and country of the developer and tester accounts.
+
+**`simulate-skill` is not evidence (job 91).** Its „This utterance did not resolve to any
+intent in your skill“ is a known SMAPI artefact (BOARD, 2026-11-02 11:48). It came back for every
+utterance in every locale, the simulator never sent a request to the function, and the same
+answer appeared in October while the endpoint worked. The developer console's own Test tab did
+reach the function on 2026-11-02 at 11:24-11:27 and 11:43 CET: 200 with the LinkAccount reply
+(the lead's check, same BOARD line). So `simulate-skill` says nothing about whether an Echo
+reaches the skill. Trust `invoke-skill-end-point` instead, through `scripts/alexa/smoke.sh`.
+Amazon signs a de-DE LaunchRequest, the function verifies it, and the reply is checked: the
+LinkAccount card unlinked, the launch prompt linked. Then `scripts/alexa/diagnose.sh` shows the
+request line.
+
+The lead ran smoke.sh on the box on 2026-11-03: `PASS unlinked` (LinkAccount card, 438 ms at
+Amazon). diagnose.sh then showed
+`21:42:37 POST 200 alexa: LaunchRequest - de-DE linked=false -> link`. So the endpoint and its
+signature check work. For a device, ALEXA.md „Troubleshooting“ says how to tell whether a spoken
+request reached Hummlist at all. On 2026-11-03 none did (DECISIONS „Job 91“).
 
 ## Left for the console (lead, after Peter's retest)
 

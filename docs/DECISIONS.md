@@ -7136,3 +7136,61 @@ on the way:
     unrelated PRs. That is wanted: agents read about that endpoint on the site, and the
     probe's curl retries already absorb cold starts.
 
+## Job 91: Alexa „Verbindungsproblem“, diagnosis and token lifetime, 2026-11-03
+
+- **There is no code fix.** On 2026-11-03 the `alexa` function got two calls, both skill events:
+  08:20:56 `SkillDisabled` and 08:21:17 `SkillAccountLinked`, both 200. Account linking worked
+  end to end: authorize, consent, and Amazon's `authorization_code` exchange 200 at 08:21:15.
+  No LaunchRequest or IntentRequest has ever arrived. So Alexa's error comes from Amazon before
+  it calls the skill. The job adds what makes the next failure readable in minutes:
+  `scripts/alexa/diagnose.sh`, `scripts/alexa/smoke.sh`, and ALEXA.md „Troubleshooting“.
+- **diagnose.sh is read-only and fixed to jdwqrallbpdbshrdhenk.** It sends one logs query (function
+  lines, edge rows and auth rows together, because the Management API throttles back-to-back calls)
+  and one read-only SQL query. The window is at most 24 h, which is what the logs endpoint
+  returns. Times are shown in Europe/Berlin.
+  - Auth log rows hold e-mail addresses, names, IP addresses and user ids. The script builds its
+    OAuth lines from allow-listed fields only: path step, method, status, error code, consent
+    action, and the grant type derived from the event.
+  - It keeps only the Amazon Alexa client's flows: that client's authorize and token rows, the
+    authorizations it opened, and refreshes by users who hold an Alexa link.
+  - Any id it shows is the first 8 hex digits of its SHA-256. Fixture tests check that none of
+    the sensitive values reach the output.
+- **smoke.sh's linked run needs a token it cannot mint.** `invoke-skill-end-point` only reaches
+  the hosted function, so the linked variant needs a real OAuth access token of a test household
+  on production (`ALEXA_SMOKE_TOKEN`). Neither that account nor its token exists yet. Creating
+  users on production from a script is a write this job does not make. So the linked run is
+  skipped with a SKIP line until the certification test account exists
+  (ALEXA_CERTIFICATION.md „Left for the console“, item 1). The unlinked run proves on its own that Amazon calls the endpoint and that the
+  function's verification accepts it. CI runs `--dry-run` plus a fake `ask`, never Amazon.
+- **The refusal line stays `-> refused <reason>`.** The brief asked for `refused:<reason>`. The
+  deployed line already carries the reason (`alexa: - - - linked=false -> refused stale_timestamp`).
+  It is documented in ALEXA.md „Request log“, and production logs since v34 use that form, so
+  changing the separator would only split the history. `handler_test.ts` now runs the real
+  verifier and checks the line for a missing signature, a forged signature and a stale
+  timestamp. With the reason dropped, the test fails.
+- **Token lifetime is compatible with Amazon, so no config change.**
+  - Hosted auth config (Management API, read 2026-11-03): JWT 3600 s, refresh token rotation on,
+    reuse interval 10 s, `sessions_timebox` 0, `sessions_inactivity_timeout` 0, single session
+    off. The Alexa session uses v1 refresh tokens (`auth.sessions.refresh_token_counter` is null).
+  - Amazon asks for an access token of at least 1 h, refresh tokens that last at least 180 days
+    or never expire, a new refresh token on rotation, and old ones honoured until Alexa holds the
+    new one (developer.amazon.com, „Requirements for account linking“). We meet all of these:
+    nothing expires sessions, and 3600 s is the 1 h.
+  - The OAuth server's `refresh_token` grant is Supabase's normal refresh
+    (`internal/tokens/service.go`, supabase/auth `d7955e9`). A rotated token is accepted again
+    without a time limit if it is the direct parent of the current one, and the current token
+    comes back (lines 382-391). That covers Alexa losing one refresh answer. Older tokens are
+    accepted within 10 s. Only a token two or more rotations old, presented after 10 s, revokes
+    the family (`refresh_token_already_used`). That needs Alexa to lose two answers in a row.
+  - The one mismatch: Supabase answers a dead refresh with 400 and `error_code`, not OAuth's
+    `"error": "invalid_grant"`, which Amazon reads as „unlink“. Alexa may then show an error
+    instead of the link card. We cannot change Supabase's error shape. diagnose.sh prints such
+    failures, and the fix is to link again. A longer reuse interval would only help the
+    two-rotations case, so it stays at 10 s.
+- **Vercel DPA (ADDENDUM 1): rendered from the public page.** Ops' copy (downloaded 2026-11-02)
+  is on the box only, and the Hetzner runner never received it. So
+  `docs/legal/dpas/vercel-dpa-2026-03-17.pdf` is a Chromium print of https://vercel.com/legal/dpa
+  made on 2026-11-03, the way the RevenueCat DPA was committed. The page still shows the same
+  version: last updated March 17, 2026, effective March 31, 2026. `docs/legal/dpas/README.md` is
+  the new index with both DPAs and their checksums. If Legal wants the byte-identical download,
+  replace the PDF with the box copy and update its checksum there.

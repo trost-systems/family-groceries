@@ -1,0 +1,18 @@
+Alexa diagnosis, project jdwqrallbpdbshrdhenk
+Window 2026-11-03 07:00 to 12:00 Europe/Berlin (06:00Z to 11:00Z)
+
+Requests to the alexa function (2)
+  08:20:56  POST 200  2142 ms  alexa: AlexaSkillEvent.SkillDisabled - - linked=false -> empty
+  08:21:17  POST 200  1253 ms  alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty
+  No LaunchRequest, IntentRequest or SessionEndedRequest: Alexa never sent a spoken request in this window (docs/ALEXA.md, Troubleshooting).
+
+Account linking (OAuth, Amazon Alexa client)
+  08:21:00  authorize  GET 302  auth=883b43c0
+  08:21:01  authorization  GET 403 bad_jwt  auth=883b43c0
+  08:21:12  authorize  GET 302  auth=60095577
+  08:21:12  authorization  GET 200  auth=60095577
+  08:21:13  consent approve  POST 200  auth=60095577
+  08:21:15  token authorization_code  POST 200  user=483e57f9
+  bad_jwt on authorization: the browser sign-in had expired; the consent page asks again.
+
+alexa_links now: 1 links, 1 live sessions, 1 live refresh tokens, last seen 2026-11-03 08:21:17

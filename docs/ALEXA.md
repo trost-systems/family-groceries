@@ -16,6 +16,7 @@ and eggs" does the same in English (job 69). Certification readiness:
 | Account linking | [`alexa/account-linking.json`](../alexa/account-linking.json) (no secret), [`scripts/alexa-oauth-client.sh`](../scripts/alexa-oauth-client.sh) |
 | Local testing | [`scripts/alexa-test-ca.sh`](../scripts/alexa-test-ca.sh), [`scripts/alexa-say.sh`](../scripts/alexa-say.sh) (`--locale en-US`), [`e2e/tests/alexa.spec.ts`](../e2e/tests/alexa.spec.ts), [`alexa-en.spec.ts`](../e2e/tests/alexa-en.spec.ts) |
 | Amazon (ASK CLI signed in) | [`scripts/alexa-deploy-dev.sh`](../scripts/alexa-deploy-dev.sh), [`alexa-validate.sh`](../scripts/alexa-validate.sh), [`alexa-simulate.sh`](../scripts/alexa-simulate.sh) |
+| When it fails | [Troubleshooting](#troubleshooting): [`scripts/alexa/diagnose.sh`](../scripts/alexa/diagnose.sh) (what reached Hummlist), [`scripts/alexa/smoke.sh`](../scripts/alexa/smoke.sh) (Amazon calls the endpoint) |
 | Decisions | [DECISIONS.md](DECISIONS.md), "Job 31" |
 | Manual steps | [NEEDS_PETER.md](NEEDS_PETER.md), "Job 31" |
 
@@ -229,6 +230,64 @@ curl -sS -G "https://api.supabase.com/v1/projects/jdwqrallbpdbshrdhenk/analytics
 `source = 'function_edge_logs'` has the same requests with status and response size, if a line
 is missing.
 
+## Troubleshooting
+
+Start with one question: did the request reach Hummlist? Every request the function receives
+writes one [request line](#request-log). So a request with no line was stopped at Amazon, and
+nothing in this repo can fix it.
+
+```bash
+scripts/alexa/diagnose.sh --last 2h
+scripts/alexa/diagnose.sh --from '2026-11-03 07:00' --to '2026-11-03 12:00'   # Europe/Berlin, at most 24 h
+```
+
+It reads the production logs and the database without writing anything (`SUPABASE_ACCESS_TOKEN`
+from the ops env). It prints three sections. **Requests** has one row per call to the `alexa`
+function, with status, duration and the request line. A call that crashed before it could log
+shows as a row without a line. **Account linking** has the Amazon Alexa client's OAuth steps:
+authorize, the consent page, consent, and the token exchanges and refreshes, each with its status
+and error code. **alexa_links now** has the links, live sessions, live refresh tokens and the
+last use. It prints no tokens, e-mail addresses, names or IP addresses. Ids appear only as an
+8-character hash, so rows of the same flow can be matched.
+
+To check the path from Amazon to the function without an Echo, run
+`ALEXA_SKILL_ID=… scripts/alexa/smoke.sh` where the ASK CLI is signed in (the box). Amazon
+signs a de-DE LaunchRequest and sends it to the endpoint. Unlinked, it must come back with the
+LinkAccount card. Linked (`ALEXA_SMOKE_TOKEN`, an access token of a test account), it must come
+back with the launch prompt. `--dry-run` prints the requests without calling Amazon. If the
+smoke test passes but the Echo still fails, the endpoint and its verification work, and the
+fault is in how Amazon routes that device's requests.
+
+| What Alexa says or shows | Reached Hummlist? (diagnose.sh) | Likely cause | Fix |
+| --- | --- | --- | --- |
+| Nothing, „Ich weiß nicht“, „Das weiß ich leider nicht“, or Alexa's own shopping list opens | No row at that time | Alexa did not route to the skill. Either she misheard „Hummlist“, or the Echo's account has no enabled skill (see the beta rules below) | Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard. Say „Alexa, öffne Hummlist“ with „Humm-list“ in two syllables. Then check the beta rules |
+| „Beim Verbinden mit dem angeforderten Skill ist ein Problem aufgetreten“ or „Bei der Antwort des angeforderten Skills ist ein Problem aufgetreten“ | No row | Amazon did not call the endpoint for this account or device. On 2026-11-02 and 2026-11-03 this was the case for every spoken request: linking worked, and no LaunchRequest ever arrived | Check the beta rules, then run smoke.sh. If smoke.sh passes, the endpoint is fine and the problem is on Amazon's side: the account, the device, Alexa+, or the marketplace |
+| the same | `-> refused <reason>` | The function refused the request. `wrong_skill` means the function's `ALEXA_SKILL_ID` secret is not this skill's id. `stale_timestamp` means a clock more than 150 s off. `cert_*` or `bad_signature` means the request was not signed by Amazon | `wrong_skill`: set the secret ([Deploy](#deploy), step 5). Otherwise check that the console's endpoint is the URL in the table at the top |
+| the same | `-> error`, a 5xx, or a row with no line | Our bug, or the function did not answer in time. Alexa gives up after about 8 s | The exception is in PostHog error tracking. The row's duration shows a timeout |
+| „Es ist ein unerwartetes Kommunikationsproblem aufgetreten“ | No row | Amazon's own failure before the skill was chosen. One possible cause is Alexa+ (Early Access) handling a beta skill; that is a guess, Amazon does not document it | Try once more, try the Alexa app on the phone, and check whether the Echo is on Alexa+. If it repeats with no row, it is Amazon's problem; note the time and the device |
+| the same | A row | Read its kind as above | |
+| „Bitte verknüpfe zuerst dein Hummlist-Konto …“ and a LinkAccount card in the Alexa app | `linked=false -> link` | Alexa sent no token. The Amazon account the Echo uses has the skill enabled but not linked. Often this is a different account from the one that linked | Link in the Alexa app of the Echo's account: Skills → Hummlist → Konto verknüpfen |
+| the same | `linked=true -> link` | The token is revoked or expired: the link was removed under Zugänge, the account was deleted, or a refresh failed (see Account linking for `refresh_token_already_used`) | Link again. A refresh failure is in DECISIONS „Job 91“ |
+| Skill not found: no Hummlist in the Alexa app's skill search, or „Ich konnte den Skill nicht finden“ | No row | The skill is not live. Only beta testers can see it, through their invitation link, on amazon.de | Open the invitation link while signed in to the invited Amazon account (beta rules) |
+| The Alexa app reports that linking failed | No new link in alexa_links | Check the Account linking section. A 403 `bad_jwt` on `authorization` means the Hummlist sign-in in the browser had expired, and the consent page asks to sign in again. A `token` row that is not 200 means a problem with the client secret or PKCE | Try linking again and sign in on the consent page. A token error: [Account linking](#account-linking) |
+
+**Beta rules.** All four must hold for the Echo that is being tested:
+
+1. The beta invitation goes to the e-mail address of the Amazon account **the Echo is registered
+   to**: Alexa app → Geräte → the Echo → „Registriert für“. Another household member's account
+   does not count, and neither does the voice profile of the person speaking.
+2. The skill is enabled **and** linked on that same account, from the invitation link.
+3. The device language is **Deutsch (Deutschland)**: Alexa app → Geräte → the Echo → Sprache.
+4. The account is on the **amazon.de** marketplace (Alexa app → Einstellungen → Info: host
+   `alexa.amazon.de`). The skill's de-DE locale is only offered there.
+
+In the developer console, Test tab, stage „Entwicklung“, typing „öffne hummlist“ in Deutsch
+(Deutschland) should log a LaunchRequest in diagnose.sh. The SMAPI simulator (`simulate-skill`,
+`scripts/alexa-simulate.sh`) has answered „did not resolve to any intent“ for every utterance
+since October, and nothing ever reached the function. Treat that as a SMAPI artefact, not as
+evidence ([ALEXA_CERTIFICATION.md](ALEXA_CERTIFICATION.md), Results). smoke.sh is the check to
+trust.
+
 ## Invocation name and Alexa's own lists
 
 **Languages.** `alexa/voices.ts` picks the language per request from `request.locale`: de-DE
@@ -307,9 +366,10 @@ ask deploy rewrites `skill.json` and `ask-resources.json` in its own JSON style;
 (`git checkout -- alexa/`). It also keeps only what is inside `manifest`, which is why
 `manifestVersion` sits there (`skill_package_test.ts` checks it).
 
-**Smoke test without a device.** `ask smapi invoke-skill-end-point -s <skill id>
---endpoint-region Default --skill-request-body file:<request.json>` makes Amazon sign a request
-and send it to the function: an unlinked LaunchRequest or AddItemIntent answers "Bitte verknüpfe
+**Smoke test without a device.** `scripts/alexa/smoke.sh` ([Troubleshooting](#troubleshooting))
+wraps `ask smapi invoke-skill-end-point -s <skill id> --endpoint-region Default
+--skill-request-body file:<request.json>`, which makes Amazon sign a request and send it to the
+function: an unlinked LaunchRequest or AddItemIntent answers "Bitte verknüpfe
 zuerst dein Hummlist-Konto …" with a LinkAccount card, and the function logs
 `alexa: LaunchRequest - de-DE linked=false -> link` ([Request log](#request-log)). A refused one
 logs `alexa: - - - linked=false -> refused <reason>` and answers 400.
