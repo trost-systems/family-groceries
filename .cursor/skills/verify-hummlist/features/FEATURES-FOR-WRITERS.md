@@ -23,6 +23,8 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - Apple Watch, Google Assistant, Android voice assistants, push notifications, recipes, meal plans or price tracking. None exist.
 - That the microphone (dictation) works in the browser. It is in the iPhone and Android apps only.
 - Real people's names or lists. Clips and screenshots use the fictional Brandt family.
+- AI products or their makers (ChatGPT, OpenAI, Claude, Anthropic) as examples, claims or praise. Write „KI-Assistenten, die MCP unterstützen“ / "AI assistants that support MCP". Only setup instructions (the Claude guide, the app's MCP help text) and the trademark notice in the imprint name them (Legal N-79 to N-86; `scripts/brand-names.ts` fails the lint gate on the site and the ARB files).
+- Alexa as „sie“ / "she". Name the skill „Hummlist-Skill für Amazon Alexa“ / "Hummlist skill for Amazon Alexa" (Legal N-84).
 - Anything the sections below mark as held (Premium, native Siri, the Alexa skill's certification, the Home Screen widget, Premium-only connections).
 
 # Getting started
@@ -423,7 +425,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## AI assistants (MCP) and access keys
 
-**What it does.** An AI assistant such as Claude can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. After „Erlauben“ the page shows „Verbunden“ and „Fertig, du kannst zu Claude zurückkehren.“ (EN: "Connected", "Done, you can return to Claude.") while the assistant finishes connecting (Claude takes up to about 10 seconds). Asked what's on the list, the assistant also gets how many items are open on the whole list and how many were ticked in the last 24 hours. An amount written before or after the item, like „2 Gurken“ or „Gurken 3“, becomes the amount; numbers that belong to the name stay in it („Windeln Größe 4“, „Büroklammern 100“). In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Each connected assistant shows where it was approved, like „Chrome · macOS“, when it was connected and when it was last active; a tap on it explains in plain words what it may do, with the button to disconnect it. A short text under „Zugriffstoken“ says that a token lets you build your own automations that manage the list. Nothing needs Premium today. Setup guide: hummlist.com/de/anleitungen/claude (EN /en/guides/claude).
+**What it does.** An AI assistant that supports MCP can read the shopping list, add items, tick them off and move them to another category or store. The user connects it by signing in when the assistant asks (a page „Zugriff erlauben?“ with „Erlauben“ and „Ablehnen“) or with an access key made in the app, which is shown once. After „Erlauben“ the page shows „Verbunden“ and „Fertig, du kannst zu Claude zurückkehren.“ (EN: "Connected", "Done, you can return to Claude.") while the assistant finishes connecting (Claude takes up to about 10 seconds). Asked what's on the list, the assistant also gets how many items are open on the whole list and how many were ticked in the last 24 hours. An amount written before or after the item, like „2 Gurken“ or „Gurken 3“, becomes the amount; numbers that belong to the name stay in it („Windeln Größe 4“, „Büroklammern 100“). In the app the user sees the address, the keys and the connected assistants, and can revoke or disconnect any of them at once. Each connected assistant shows where it was approved, like „Chrome · macOS“, when it was connected and when it was last active; a tap on it explains in plain words what it may do, with the button to disconnect it. A short text under „Zugriffstoken“ says that a token lets you build your own automations that manage the list. Nothing needs Premium today. Setup guide: hummlist.com/de/anleitungen/claude (EN /en/guides/claude).
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More") and tap „Zugänge“ (EN: "Access").
@@ -432,7 +434,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 4. To end access: the bin icon „<Name> widerrufen“ (EN: "Revoke <name>") then „Widerrufen“, or „<App> trennen“ (EN: "Disconnect <app>") then „Trennen“.
 
 **Never claim.**
-- That it needs Premium (it is free, also after Premium launches).
+- That it needs Premium today. It doesn't. Once Peter turns the integration lock on (hold `integration-lock` in releases/flags.json), every tool tells a household without Premium „Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten …“; the Claude guides say so only from then (`::: once integration-lock`).
 - That the assistant sees more than the list (it reads and changes shopping items, categories and stores only).
 - That a key can be viewed again after creation (shown once).
 - That Hummlist knows where an assistant is used or tracks its location: it only keeps the browser and system name of the page where the user approved it (gone once disconnected); „Zuletzt aktiv“ is the day the assistant last signed in or refreshed its sign-in, not of every request.

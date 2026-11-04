@@ -12,10 +12,9 @@ import { serve } from './lib.mjs';
 const SITE = resolve(import.meta.dirname, '..');
 const DIST = join(SITE, 'dist');
 const { siteUrl } = JSON.parse(readFileSync(join(SITE, 'config.json'), 'utf8'));
-let port = Number(process.env.PORT ?? 57650);
 
 async function served(dist, publicApi = false) {
-  const site = await serve(dist, port++);
+  const site = await serve(dist);
   try {
     return await checkServed({ origin: site.origin, siteUrl, publicApi });
   } finally {

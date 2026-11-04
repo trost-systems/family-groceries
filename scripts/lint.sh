@@ -32,6 +32,10 @@ log "SiriKit example phrases"
 scripts/siri-vocabulary.py app/ios
 python3 scripts/siri-vocabulary-test.py
 
+log "AI brand names"
+deno run --allow-read scripts/brand-names.ts
+deno test -q --allow-read --allow-write scripts/brand-names_test.ts
+
 log "schema check against $base"
 # The check before its unit tests: a bad migration fails the test over the repository's own
 # migrations too, and the check's message is the one that says what to do.

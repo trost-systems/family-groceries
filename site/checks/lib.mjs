@@ -25,9 +25,10 @@ export function parseArgs(defaults) {
   return { dist, port, out, pages };
 }
 
-export async function serve(dist, port) {
+// Port 0 lets the system pick a free one.
+export async function serve(dist, port = 0) {
   const server = await startPreview({ dir: dist, port, host: '127.0.0.1' });
-  return { origin: `http://127.0.0.1:${port}`, close: () => new Promise((r) => server.close(r)) };
+  return { origin: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => server.close(r)) };
 }
 
 export const parseRgb = (css) => {

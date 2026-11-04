@@ -18,7 +18,7 @@ Mit einem Kurzbefehl setzt du Sachen per Siri auf deine Hummlist, ohne die App z
 
 Siri schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Das Aufteilen funktioniert bisher nur auf Deutsch.
 
-## Ohne Einrichtung: Siri kennt Hummlist {#ohne-einrichtung since=1.0.0}
+## Ohne Einrichtung: Siri kennt Hummlist {#ohne-einrichtung since=1.0.0 once=native-siri}
 
 > Entwurf für Hummlist Launch: Text und Sätze bitte vor dem Start prüfen.
 

@@ -6,7 +6,7 @@ import { CHECKS, checkAgentSite, readStage, readVercel } from '../agent.mjs';
 import { buildSite, serve, tempDir, REAL_FLAGS, REAL_OPENAPI, SITE_DIR } from './helpers.mjs';
 
 const SITE = 'https://hummlist.com';
-const FLAGS_ON = JSON.stringify({ flags: { 'public-api': { ...JSON.parse(REAL_FLAGS).flags['public-api'], rollout: 'on' } } });
+const FLAGS_ON = JSON.stringify({ ...JSON.parse(REAL_FLAGS), flags: { 'public-api': { ...JSON.parse(REAL_FLAGS).flags['public-api'], rollout: 'full' } } });
 const VERCEL = readVercel();
 const VERCEL_INDEXABLE = {
   ...VERCEL,
@@ -135,7 +135,7 @@ test('jsonld: support pages carry their FAQ, guides a TechArticle, landing pages
     acceptedAnswer: { '@type': 'Answer', text: 'Tap More, then Invite your partner. Share the link or the code. An invite is valid for 7 days and for one person. You can revoke open invites there too.' },
   });
   assert.deepEqual(faq.mainEntity.map((q) => q.name), base.page('/en/support').querySelectorAll('main h3').map((h) => h.text));
-  assert.deepEqual(ld('/de/anleitungen/alexa').map((d) => [d['@type'], d.dateModified, d.inLanguage]), [['TechArticle', '2026-11-02', 'de']]);
+  assert.deepEqual(ld('/de/anleitungen/alexa').map((d) => [d['@type'], d.dateModified, d.inLanguage]), [['TechArticle', '2026-11-04', 'de']]);
   assert.deepEqual(ld('/en'), [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Hummlist', url: `${SITE}/en`, inLanguage: 'en' }]);
 });
 
@@ -143,7 +143,7 @@ test('jsonld: broken JSON, a missing property, an unknown type and FAQ questions
   const ldOf = (t) => /<script type="application\/ld\+json">([^<]*)<\/script>/.exec(t)[1];
   const swap = (rel, change) => ({ [rel]: (t) => t.replace(ldOf(t), change(ldOf(t))) });
   assertCatches('jsonld', swap('en/guides/claude.html', (j) => j.slice(1)), /en\/guides\/claude\.html: JSON-LD does not parse/);
-  assertCatches('jsonld', swap('en/guides/claude.html', (j) => j.replace('"dateModified":"2026-11-01",', '')), /JSON-LD TechArticle needs "dateModified"/);
+  assertCatches('jsonld', swap('en/guides/claude.html', (j) => j.replace(/"dateModified":"[\d-]+",/, '')), /JSON-LD TechArticle needs "dateModified"/);
   assertCatches('jsonld', swap('en.html', (j) => j.replace('"WebSite"', '"Organization"')), /@type "Organization" is not one of WebSite, TechArticle, FAQPage/);
   assertCatches('jsonld', swap('support.html', (j) => j.replace('Wie lade ich', 'Wie bitte lade ich')), /support\.html: FAQPage questions .* differ from the FAQ section's h3s/);
   assertCatches('jsonld', { 'en/support.html': (t) => t.replace(/<script type="application\/ld\+json">[^<]*<\/script>/, '') }, /has a FAQ section but no FAQPage JSON-LD/);
