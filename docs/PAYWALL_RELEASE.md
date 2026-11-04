@@ -76,6 +76,13 @@ the non-consumable `com.hummlist.app.lifetime` (`6829223747`) each have a
 German and an English display name and description, a review screenshot and
 review notes, and the status "Ready to Submit". Family Sharing is off for
 both, and Apple never lets it be turned off again once on.
+The review screenshot comes from the iOS simulator: run the workflow
+"Paywall screenshot" (`paywall-shot.yml`, `scripts/ios-paywall-shot.sh`) and
+take `paywall-ios-de.png` (yearly picked) and `paywall-ios-de-lifetime.png`
+(Lifetime picked), 1290x2796, German, light, from its artifact. They show
+the German storefront's prices; StoreKit's own answer on the runner
+(the sandbox's US storefront) is in the artifact's `ready-yearly` (DECISIONS,
+job 86).
 
 2.2 **Ops**: Play Console. The subscription `com.hummlist.app.yearly` with
 base plan `yearly` (auto-renewing, 1 year, grace period 14 days, account

@@ -1646,3 +1646,31 @@ in the app verbatim, and their ARB descriptions say „FINAL (Legal Review …)�
   shows only if the capture build passes `--dart-define=NATIVE_SIRI_LIVE=true`.
 - Changelog: one `new` item with `hold: premium-launch`, so it stays out of the public changelog
   until Premium is on sale.
+
+## Job 86: the iOS paywall screenshots for the in-app purchase review (2026-11-03)
+
+The screenshots show PW-P4, the Premium page of job 87, as merged on main (84e8da41, with Legal's
+N-67..N-71). On the box (and on Hetzner) at the same path:
+
+- `/workspace/hummlist/research/iap-check/paywall-ios-de.png`: yearly picked, "Jährlich
+  abschließen". For `com.hummlist.app.yearly`.
+- `/workspace/hummlist/research/iap-check/paywall-ios-de-lifetime.png`: Lifetime picked,
+  "Lifetime kaufen". For `com.hummlist.app.lifetime`.
+
+Both are 1290x2796, German, light, from the iOS simulator (iPhone 16 Plus), run 41792307363. Each
+shows both products, "9,99 € pro Jahr, inkl. MwSt." and "29,99 € einmalig, inkl. MwSt.". PW-P4 has one Buy
+button, for the picked plan, so each product gets its own screenshot with its own button. Copies
+are in `docs/screenshots/86/` and `~/groceries-ops/jobs/86-iap-review-screenshot/`.
+
+1. Ops: upload each as the review screenshot of its product in App Store Connect (an Apple
+   account step; nothing was uploaded). The yearly file has no Lifetime button: the Lifetime slot
+   needs `paywall-ios-de-lifetime.png`.
+2. Know before uploading: the prices on them are set by the capture, not read from StoreKit. On
+   GitHub's macOS runner StoreKit answers from the sandbox's US storefront ($9.99, $29.99, both
+   products found; `paywall-ios-de.storekit.txt`), and StoreKit's local test store does not open
+   there (DECISIONS, job 86). The amounts and format match the German storefront and App Store
+   Connect's base prices. A capture with StoreKit's own German answer needs a Mac with Xcode and
+   a German sandbox account: `scripts/ios-paywall-shot.sh` runs there unchanged.
+3. #213 is rebased onto main (job 87 is in). Merge it after lead review: `scripts/merge-pr.sh
+   --wait 213`. It holds the capture entrypoint, the script, `paywall-shot.yml` (by hand) and the
+   Lifetime price fixed in `LifetimeStoreKitTests`.
