@@ -20,12 +20,14 @@ import {
   type Fetch,
   type RevenueCatKey,
   revenueCatTimeoutMs,
-  within,
 } from '../../supabase/functions/purchases/deletions.ts';
+import {
+  grantEntitlement as grantUntil,
+  premiumEntitlementId,
+} from '../../supabase/functions/purchases/grants.ts';
 import {
   fetchPromotional,
   type PromotionalPremium,
-  RevenueCatUnavailable,
 } from '../../supabase/functions/purchases/promotional.ts';
 
 export type Command = {
@@ -34,8 +36,7 @@ export type Command = {
   apply: boolean;
 };
 
-/** The premium entitlement's id in RevenueCat project proj9cb4a72e (lookup key "premium"). */
-export const premiumEntitlementId = 'entl654efcfce4';
+export { premiumEntitlementId };
 /** A tester's grant ends here: RevenueCat's grants need an end; this one is "for good". */
 export const testerGrantEnd = new Date('2100-01-01T00:00:00Z');
 
@@ -80,55 +81,13 @@ export function grantedForGood(p: PromotionalPremium): boolean {
   return p.active && (p.expiresAt === null || p.expiresAt >= testerGrantEnd);
 }
 
-/**
- * Grants [householdId]'s RevenueCat customer the premium entitlement until [testerGrantEnd]
- * (POST .../customers/{id}/actions/grant_entitlement). A customer RevenueCat doesn't know yet
- * (404: the household never opened the purchase screen) is created first (POST .../customers).
- * Throws [RevenueCatUnavailable] for a refusal, and when RevenueCat takes longer than [timeoutMs].
- */
-export async function grantEntitlement(
+/** Grants [householdId]'s RevenueCat customer the premium entitlement until [testerGrantEnd]. */
+export const grantEntitlement = (
   key: RevenueCatKey,
   householdId: string,
   untimed: Fetch,
   timeoutMs = revenueCatTimeoutMs,
-): Promise<void> {
-  const timed = within(untimed, timeoutMs);
-  const fetch: Fetch = (url, init) =>
-    timed(url, init).catch(() => {
-      throw new RevenueCatUnavailable(null);
-    });
-  const project = `https://api.revenuecat.com/v2/projects/${encodeURIComponent(key.projectId)}`;
-  const headers = {
-    authorization: `Bearer ${key.secretKey}`,
-    accept: 'application/json',
-    'content-type': 'application/json',
-  };
-  const grant = () =>
-    fetch(`${project}/customers/${encodeURIComponent(householdId)}/actions/grant_entitlement`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        entitlement_id: premiumEntitlementId,
-        expires_at: testerGrantEnd.getTime(),
-      }),
-    });
-  let res = await grant();
-  if (res.status === 404) {
-    await res.body?.cancel();
-    const created = await fetch(`${project}/customers`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id: householdId }),
-    });
-    await created.body?.cancel();
-    if (created.status !== 201 && created.status !== 200 && created.status !== 409) {
-      throw new RevenueCatUnavailable(created.status);
-    }
-    res = await grant();
-  }
-  await res.body?.cancel();
-  if (res.status !== 201 && res.status !== 200) throw new RevenueCatUnavailable(res.status);
-}
+) => grantUntil(key, householdId, testerGrantEnd, untimed, timeoutMs);
 
 async function reconcile(household: string): Promise<void> {
   const res = await fetch(reconcileUrl((k) => Deno.env.get(k)), {

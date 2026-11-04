@@ -4,12 +4,12 @@ description: "Datenschutzerklärung von Hummlist: welche Daten die App und die W
 locale: de
 path: /datenschutz
 translation_key: privacy
-updated: 2026-11-03
+updated: 2026-11-04
 ---
 
 # Datenschutzerklärung
 
-Stand: 3. November 2026
+Stand: 4. November 2026
 
 Hier steht, welche personenbezogenen Daten Hummlist verarbeitet, wozu, auf welcher Rechtsgrundlage, an wen sie gehen und welche Rechte du hast. Hummlist ist eine Einkaufslisten-App für Haushalte für iPhone, Android und Browser (app.hummlist.com) mit der Website hummlist.com.
 
@@ -52,9 +52,9 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ### Hummlist Premium in der Beta {#premium-beta}
 
-Für Tester und für die Prüfung der App durch Apple und Google schalten wir Hummlist Premium kostenlos frei; die Freischaltung gilt, bis wir sie beenden. Du kaufst dafür nichts und zahlst nichts, und die Freischaltung wird nie zu einem kostenpflichtigen Kauf oder Abo. Dafür legen wir deinen Haushalt bei unserem Auftragsverarbeiter RevenueCat, Inc. (USA, Abschnitte 12 und 13) mit der Kennung des Haushalts an (eine Zufallsnummer, nicht deine Konto-ID) und vergeben dort die kostenlose Freischaltung mit Beginn und Ende. RevenueCat erhält dafür nur diese Kennung und die Angaben zur Freischaltung, keine Namen, E-Mail-Adressen, Konto-IDs oder Listeninhalte; weil wir das erledigen und nicht die App, auch nicht deine IP-Adresse oder Gerätedaten. Unser Server fragt bei RevenueCat ab, welche Freischaltungen der Haushalt hat, und speichert davon nur, dass eine kostenlose Freischaltung besteht, seit wann und bis wann. Meldet RevenueCat eine Änderung, speichern wir nur die Kennung und die Art der Meldung, 90 Tage lang. Die Mitglieder des Haushalts sehen in der App, dass er kostenlos freigeschaltet ist. Sendet jemand aus diesem Haushalt Nutzungsdaten (Abschnitt 9), markieren wir sie als intern, damit sie nicht in unsere Auswertungen eingehen.
-Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (unser Interesse, die Freischaltung vor dem Verkaufsstart unter echten Bedingungen zu testen, Testern Hummlist Premium kostenlos zu geben, die App von Apple und Google prüfen zu lassen und Missbrauch zu verhindern). Du kannst jederzeit widersprechen (Abschnitt 15); dann beenden wir die kostenlose Freischaltung für deinen Haushalt und lassen seinen Datensatz bei RevenueCat löschen.
-Speicherdauer: Die Angabe bei uns löschen wir, wenn die Freischaltung endet oder wir sie beenden, spätestens mit dem Haushalt. Den Datensatz des Haushalts bei RevenueCat löschen wir 30 Tage nach dem Löschen des Haushalts.
+Während der Beta schalten wir Hummlist Premium für jeden Haushalt kostenlos frei, bis Hummlist Premium startet. Für Tester und für die Prüfung der App durch Apple und Google gilt die Freischaltung, bis wir sie beenden. Du kaufst dafür nichts und zahlst nichts, und die Freischaltung wird nie zu einem kostenpflichtigen Kauf oder Abo. Dafür legen wir deinen Haushalt bei unserem Auftragsverarbeiter RevenueCat, Inc. (USA, Abschnitte 12 und 13) mit der Kennung des Haushalts an (eine Zufallsnummer, nicht deine Konto-ID) und vergeben dort die kostenlose Freischaltung mit Beginn und Ende. RevenueCat erhält dafür nur diese Kennung und die Angaben zur Freischaltung, keine Namen, E-Mail-Adressen, Konto-IDs oder Listeninhalte; weil wir das erledigen und nicht die App, auch nicht deine IP-Adresse oder Gerätedaten. Unser Server fragt bei RevenueCat ab, welche Freischaltungen der Haushalt hat, und speichert davon nur, dass eine kostenlose Freischaltung besteht, seit wann und bis wann. Meldet RevenueCat eine Änderung, speichern wir nur die Kennung und die Art der Meldung, 90 Tage lang. Die Mitglieder des Haushalts sehen in der App, dass er kostenlos freigeschaltet ist. Sendet jemand aus diesem Haushalt Nutzungsdaten (Abschnitt 9), markieren wir sie als intern, damit sie nicht in unsere Auswertungen eingehen.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (unser Interesse, die Freischaltung vor dem Verkaufsstart unter echten Bedingungen zu testen, Beta-Haushalten und Testern Hummlist Premium kostenlos zu geben, die App von Apple und Google prüfen zu lassen und Missbrauch zu verhindern). Du kannst jederzeit widersprechen (Abschnitt 15); dann beenden wir die kostenlose Freischaltung für deinen Haushalt und lassen seinen Datensatz bei RevenueCat löschen.
+Speicherdauer: Die Angabe bei uns löschen wir, wenn die Freischaltung endet oder wir sie beenden, spätestens mit dem Haushalt. Den Datensatz des Haushalts bei RevenueCat löschen wir 30 Tage nach dem Ende der kostenlosen Freischaltung, wenn der Haushalt nichts gekauft hat, sonst 30 Tage nach dem Löschen des Haushalts.
 
 ## 6. Spracheingabe
 
@@ -118,7 +118,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherheit, Art. 32 DSGVO).
 Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach unseren Weisungen verarbeiten (Art. 28 DSGVO):
 
 - Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU; die Server-Funktion für Käufe läuft immer in Frankfurt am Main)
-- RevenueCat, Inc., Brandon (Florida), USA (kostenlose Freischaltung von Hummlist Premium für Tester und für die App-Prüfung (Abschnitt 5) und, sobald Hummlist Premium verkauft wird, Käufe in der App: Prüfung und Verwaltung der Freischaltung; Server bei Amazon Web Services in den USA)
+- RevenueCat, Inc., Brandon (Florida), USA (kostenlose Freischaltung von Hummlist Premium in der Beta, für Tester und für die App-Prüfung (Abschnitt 5) und, sobald Hummlist Premium verkauft wird, Käufe in der App: Prüfung und Verwaltung der Freischaltung; Server bei Amazon Web Services in den USA)
 - Vercel Inc. (Hosting von hummlist.com, app.hummlist.com, mcp.hummlist.com; Domain und DNS)
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
@@ -140,7 +140,7 @@ Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 
 ## 14. Speicherdauer
 
-Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Den Datensatz eines Haushalts bei RevenueCat löschen wir 30 Tage nach dem Löschen des Haushalts (Abschnitt 5). Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, kannst du ihn archivieren; wir löschen ihn, wenn er nicht innerhalb von 24 Monaten wieder aktiviert wird. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
+Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugangsschlüssel, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Den Datensatz eines Haushalts bei RevenueCat löschen wir 30 Tage nach dem Löschen des Haushalts, bei einer kostenlosen Freischaltung ohne Kauf schon 30 Tage nach ihrem Ende (Abschnitt 5). Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, kannst du ihn archivieren; wir löschen ihn, wenn er nicht innerhalb von 24 Monaten wieder aktiviert wird. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr.
 
 ## 15. Deine Rechte {#rechte}
 

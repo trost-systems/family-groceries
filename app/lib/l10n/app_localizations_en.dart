@@ -1756,4 +1756,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipDismiss => 'Hide tip';
+
+  @override
+  String betaEndNoticeTitle(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Free beta unlock ends on $dateString';
+  }
+
+  @override
+  String betaEndNoticeBodySiri(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'The free beta unlock of Hummlist Premium ends on $dateString. From $dateString, adding items with Siri and connecting AI assistants are part of Hummlist Premium. You can keep using the grocery list for free. Nothing is charged automatically. So there\'s nothing you need to do or cancel for the free unlock.';
+  }
+
+  @override
+  String betaEndNoticeBodyAi(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'The free beta unlock of Hummlist Premium ends on $dateString. From $dateString, connecting AI assistants is part of Hummlist Premium. You can keep using the grocery list for free. Nothing is charged automatically. So there\'s nothing you need to do or cancel for the free unlock.';
+  }
+
+  @override
+  String get betaEndNoticePrivacyLink => 'More in the privacy policy';
 }

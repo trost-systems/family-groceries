@@ -45,3 +45,8 @@ Preconditions:
 - Words in this feature for copy: „Hummlist Premium“ is the name; yearly and Lifetime are the planned plans but are not on sale. Do not announce a price.
 - `paywall_viewed` (entry points `more`, `integrations`) fires only when a plan with a store price is shown, so never in production today; it is also subject to analytics consent. unverified in a live run (read from code only).
 - Real store purchases cannot be driven on the box (no store). unverified (no store sandbox).
+
+## Free premium in the beta and its end notice (job 43b)
+
+- While the server switch `beta_promo` is on, every new household gets a RevenueCat promotional grant until the beta's end (default 2027-12-31), granted by the purchases function every 15 minutes (`POST /purchases/revenuecat/beta-grants`). Off by default; locally, drive the result with the promotional grant helper below.
+- **N-55 end notice.** A card on the list (`beta-end-notice`, close `beta-end-notice-close`, link `beta-end-notice-privacy`) from 28 days before the end of a household's promotional grant to the end, only when that grant ends before 2099 (beta households; testers' and reviewers' 2100 grants never show it) and the household bought nothing. Drive: `adminClient().rpc('promotional_premium_sync', { p_household, p_active: true, p_expires_at: <now + 10 days> })`, reload; the card shows „Kostenlose Beta-Freischaltung endet am <Datum>“ and the approved text (on the web and Android the AI-only sentence; the Siri sentence only in builds with `NATIVE_SIRI_LIVE` on iOS). Closing it hides it for that end date. `e2e/tests/beta-end-notice.spec.ts` drives this (driven 2026-11-04).

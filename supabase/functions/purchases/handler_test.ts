@@ -211,6 +211,7 @@ function world(overrides: Partial<Deps> = {}): World {
     deletionsSecret: DELETIONS_SECRET,
     reconcile: (householdId) => books.promotional(householdId),
     deleteDueCustomers: null,
+    grantBetaPromo: null,
     report: (e) => {
       throw e;
     },
@@ -1246,5 +1247,44 @@ Deno.test('the reconcile route: only with the Ops secret, a household id, and th
       'x-deletions-secret': '',
     }),
     503,
+  );
+});
+
+Deno.test('the beta grant route needs the Ops secret and reports a failed run (job 43b)', async () => {
+  const done = { status: 'done' as const, due: 1, granted: 1, skipped: 0, failed: 0 };
+  const failed = { ...done, granted: 0, failed: 1 };
+  const call = (deps: Partial<Deps>, secret?: string) =>
+    world(deps).handle(
+      '/revenuecat/beta-grants',
+      {},
+      secret === undefined ? {} : { 'x-deletions-secret': secret },
+    );
+  await expect(await call({ deletionsSecret: null }, 'x'), 503);
+  await expect(
+    await call({ deletionsSecret: 'ops', grantBetaPromo: () => Promise.resolve(done) }),
+    401,
+  );
+  await expect(
+    await call({ deletionsSecret: 'ops', grantBetaPromo: () => Promise.resolve(done) }, 'wrong'),
+    401,
+  );
+  await expect(await call({ deletionsSecret: 'ops' }, 'ops'), 503, { error: 'not_configured' });
+  await expect(
+    await call(
+      { deletionsSecret: 'ops', grantBetaPromo: () => Promise.resolve({ status: 'off' }) },
+      'ops',
+    ),
+    200,
+    { status: 'off' },
+  );
+  await expect(
+    await call({ deletionsSecret: 'ops', grantBetaPromo: () => Promise.resolve(done) }, 'ops'),
+    200,
+    done,
+  );
+  await expect(
+    await call({ deletionsSecret: 'ops', grantBetaPromo: () => Promise.resolve(failed) }, 'ops'),
+    502,
+    failed,
   );
 });

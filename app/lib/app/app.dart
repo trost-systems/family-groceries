@@ -17,6 +17,7 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_link.dart';
+import 'package:family_groceries/purchases/beta_end_notice.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -168,6 +169,7 @@ class _AppState() extends State<App> {
       RepositoryProvider.value(value: widget.social),
       RepositoryProvider.value(value: widget.cache),
       RepositoryProvider<TipStore>.value(value: widget.cache),
+      RepositoryProvider<BetaEndNoticeStore>.value(value: widget.cache),
       RepositoryProvider.value(value: widget.account),
       RepositoryProvider.value(value: _screens),
       RepositoryProvider.value(value: _device),

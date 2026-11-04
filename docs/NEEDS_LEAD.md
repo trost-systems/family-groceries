@@ -1472,3 +1472,62 @@ Legal-relevant, for information; nothing waits on Legal:
 - **Development and ad hoc profiles.** The portal has none for either App ID; the match repo has
   only the distribution certificate and App Store profiles. Development profiles are Xcode's (automatic signing) and renew themselves;
   match would have to create a development certificate, which the lane refuses.
+
+## Job 43b: free Hummlist Premium for every beta household (2026-11-04)
+
+**Draft PR. Needs Legal Review's sign-off, then yours, then green CI, before merge (Lead (e)).**
+`beta_promo` stays off. Nothing is sold; `premium_offer` and `REVENUECAT_PURCHASES` stay off.
+
+### Overlap with PR #217 (job 87, Premium page) and merge order
+
+- #217 carries Legal's final N-54 strings on the Premium page (beta title and subtitle, the
+  `#premium-beta` link, the testers' line) and hides `premiumUnlockedBody`, `premiumComingSoon`
+  and `premiumWeb`. This PR doesn't touch the Premium page or any `premium*` key.
+- The N-55 banner's link text („Mehr dazu in der Datenschutzerklärung“) is its own key here,
+  because `premiumBetaPrivacyLink` is only in #217. After both are merged, a one-line follow-up can
+  make the banner reuse #217's key.
+- **Merge #217 first, then rebase and merge this PR.** That way the Premium page shows the beta
+  wording before any household gets the beta grant. If this PR has to go first, keep `beta_promo`
+  off until #217 is live.
+- Follow-up after both (N-55, Legal's addendum): once the beta's end date is known, show it on the
+  Premium page too. That is #217's page.
+
+### Steps, in order
+
+1. Legal Review signs off the PR. It contains the live privacy text change (§5 beta-wide, variant
+   A, §12, §14, date) and the draft 5a cross-reference. Peter has approved these texts (3 Nov,
+   20:32). **Before merging, set `Stand` / `updated` in `datenschutz.md` and `privacy.md` to the
+   release date.**
+2. Merge (after #217). The migration adds `beta_promo` (off) and the queue table. The function gets
+   the `beta-grants` route, and the 15-minute workflow `beta-promo.yml` starts running. It answers
+   `off` until step 4.
+3. Optional: set the function secret `BETA_PROMO_ENDS_AT` (default 2027-12-31, midnight in Berlin;
+   ISO with offset). No new secret is needed otherwise. The route uses `REVENUECAT_SECRET_KEY`,
+   `REVENUECAT_PROJECT_ID` and `REVENUECAT_DELETIONS_SECRET`, and the workflow uses the repository
+   secret `REVENUECAT_DELETIONS_SECRET` (all from job 47).
+4. **Turn on `beta_promo` only when** the privacy policy with the beta-wide §5 is live on
+   hummlist.com, Peter's Q51 date (9 Nov) has come, and Peter has filed the TIA addendum and the
+   Art. 30 entry (N-50):
+   `update public.app_switches set enabled = true, changed_at = now() where key = 'beta_promo';`
+   From then on new households are queued and granted.
+5. **The backfill** (existing households), only on your OK after step 4:
+   `deno run --allow-env --allow-net --allow-read scripts/iap/beta_promo.ts backfill` (count), then
+   `... backfill --apply`. Then `beta_promo.ts status` until "queued 0".
+6. At launch: `beta_promo.ts set-end --ends-at <launch, ISO> --apply`, at least 28 days before
+   launch, so the N-55 banner runs 4 weeks. Set `BETA_PROMO_ENDS_AT` to the same moment. After the
+   end, `beta_promo.ts revoke --apply`.
+7. Support objections (Art. 21): `beta_promo.ts object --household <id> --apply`.
+8. Native Siri: when you release the `native-siri` hold in `releases/flags.json`, store builds from
+   then on get `NATIVE_SIRI_LIVE` (fastlane), and the N-55 banner names Siri (5a). Until then it
+   names only the AI assistants (5b).
+9. Store review notes (N-57): `docs/store/iap-review-notes.md`. Check its conditions on the
+   submission date: the Apple demo household's grant, `REVENUECAT_PURCHASES` off, TestFlight vs.
+   the public App Store.
+
+### Open, not checked from here
+
+- N-50 (Peter): the TIA addendum and the Art. 30 entry are in /workspace/legal/contracts; Peter
+  files both. N-58: the C2 send record in the acceptance file (Peter's own record).
+- The repository variable `REVENUECAT_PURCHASES` for the 9 Nov builds (Legal's addendum says unset).
+- Apple's view of a free server grant (guideline 3.1.1) and of "beta" on the public App Store
+  (2.2).

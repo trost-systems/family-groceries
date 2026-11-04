@@ -192,3 +192,22 @@ export async function promotional(
   }::timestamptz) as outcome`;
   return row.outcome;
 }
+
+/** The beta grant's queue (migration 20261104032933_beta_promo.sql). */
+export const betaPromo = (sql: Sql) => ({
+  on: async () => {
+    const [row] = await sql<{ on: boolean }[]>`select public.beta_promo_on() as on`;
+    return row.on;
+  },
+  take: async (limit: number) => {
+    const rows = await sql<{ id: string }[]>`
+      select public.beta_promo_take(${limit}::integer)::text as id`;
+    return rows.map((r) => r.id);
+  },
+  granted: async (householdId: string, endsAt: Date) => {
+    await sql`select public.beta_promo_granted(${householdId}::uuid, ${endsAt.toISOString()}::timestamptz)`;
+  },
+  skipped: async (householdId: string) => {
+    await sql`select public.beta_promo_skipped(${householdId}::uuid)`;
+  },
+});

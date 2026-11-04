@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/purchases/beta_end_notice.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/tips.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,12 @@ import 'package:shared_preferences_linux/shared_preferences_linux.dart';
 /// value that cannot be read counts as missing, and a failed write is
 /// dropped.
 class DeviceCache(final SharedPreferencesAsync _prefs)
-    implements SessionCache, AnalyticsStore, PendingInviteStore, TipStore {
+    implements
+        SessionCache,
+        AnalyticsStore,
+        PendingInviteStore,
+        TipStore,
+        BetaEndNoticeStore {
   /// On Linux, supabase_flutter's legacy SharedPreferences and
   /// SharedPreferencesAsync each rewrite the whole file from their own copy,
   /// so sharing shared_preferences.json loses the session. The other
@@ -58,6 +64,11 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// ids. Not under [forget]'s prefixes: ids only, and a user who signs in
   /// again has seen them.
   static const _tipsPrefix = 'tips.';
+
+  /// The end date of the free beta unlock whose notice (N-55) was closed,
+  /// per household. Not under [forget]'s prefixes: a date only, and a new
+  /// end shows the notice again anyway.
+  static const _betaEndPrefix = 'betaend.';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -206,6 +217,21 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   @override
   Future<void> saveDismissedTips(String userId, Set<String> ids) => _write(
     () => _prefs.setString('$_tipsPrefix$userId', jsonEncode([...ids])),
+  );
+
+  @override
+  Future<DateTime?> dismissedBetaEnd(String householdId) async =>
+      switch (await _readString('$_betaEndPrefix$householdId')) {
+        final at? => DateTime.tryParse(at),
+        null => null,
+      };
+
+  @override
+  Future<void> saveDismissedBetaEnd(String householdId, DateTime end) => _write(
+    () => _prefs.setString(
+      '$_betaEndPrefix$householdId',
+      end.toUtc().toIso8601String(),
+    ),
   );
 
   Future<String?> _readString(String key) async {

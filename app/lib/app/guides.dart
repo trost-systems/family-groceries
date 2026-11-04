@@ -28,6 +28,10 @@ Uri privacyPolicyUrl(String languageCode) => Uri.parse(
       : '$guidesBaseUrl/en/privacy',
 );
 
+/// The privacy policy's section on Hummlist Premium in the beta.
+Uri betaPrivacyUrl(String languageCode) =>
+    privacyPolicyUrl(languageCode).replace(fragment: 'premium-beta');
+
 /// Whether the help and contact page is live on hummlist.com. Peter
 /// approved its text on 2026-10-30, so `site/content/legal/support.md` and
 /// `support-en.md` are no longer drafts (docs/NEEDS_PETER.md, Job 24).

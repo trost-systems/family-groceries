@@ -2905,6 +2905,30 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Tipp ausblenden'**
   String get tipDismiss;
+
+  /// FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice on the list (N-55): title; {date} is the household's grant end
+  ///
+  /// In de, this message translates to:
+  /// **'Kostenlose Beta-Freischaltung endet am {date}'**
+  String betaEndNoticeTitle(DateTime date);
+
+  /// FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice text, sentence 2 = 5a (Siri and AI): only when native Siri is live in this build (NATIVE_SIRI_LIVE, iOS)
+  ///
+  /// In de, this message translates to:
+  /// **'Die kostenlose Beta-Freischaltung von Hummlist Premium endet am {date}. Ab dem {date} gehören Einträge per Siri und die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.'**
+  String betaEndNoticeBodySiri(DateTime date);
+
+  /// FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice text, sentence 2 = 5b fallback (AI only): native Siri is not live in this build
+  ///
+  /// In de, this message translates to:
+  /// **'Die kostenlose Beta-Freischaltung von Hummlist Premium endet am {date}. Ab dem {date} gehört die Verbindung mit KI-Assistenten zu Hummlist Premium. Die Einkaufsliste nutzt du weiter kostenlos. Es wird nichts automatisch berechnet. Für die kostenlose Freischaltung musst du also nichts tun und nichts kündigen.'**
+  String betaEndNoticeBodyAi(DateTime date);
+
+  /// FINAL (Peter-approved 2026-11-03 20:32, N-55 / ADDENDUM 12): use exactly as written. Beta-end notice: link to the privacy policy's #premium-beta section (same text as the Premium page's link)
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr dazu in der Datenschutzerklärung'**
+  String get betaEndNoticePrivacyLink;
 }
 
 class _AppLocalizationsDelegate

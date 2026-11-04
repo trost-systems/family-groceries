@@ -93,6 +93,7 @@ Deno.test({
           region: null,
           revenueCat: null,
           deletionsSecret: null,
+          betaPromoEndsAt: null,
         },
         telemetry,
         { authenticate: () => Promise.resolve(caller) },
@@ -261,6 +262,7 @@ Deno.test({
           region: null,
           revenueCat: null,
           deletionsSecret: null,
+          betaPromoEndsAt: null,
         },
         telemetry,
         { authenticate: () => Promise.resolve(caller) },
@@ -478,6 +480,7 @@ Deno.test({
           region: null,
           revenueCat: null,
           deletionsSecret: null,
+          betaPromoEndsAt: null,
         },
         telemetryFor('purchases', { get: () => undefined }),
       ));
@@ -554,6 +557,7 @@ Deno.test({
           region: null,
           revenueCat: { secretKey: 'sk_integration', projectId: 'projtest' },
           deletionsSecret: 'integration-ops',
+          betaPromoEndsAt: null,
         },
         telemetryFor('purchases', { get: () => undefined }),
         { fetch },
@@ -623,6 +627,97 @@ Deno.test({
         assertEquals(await premium(peter.householdId), true);
       } finally {
         await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
+      }
+    });
+  },
+});
+
+Deno.test({
+  name: 'Job 43b: the beta grant route drains the queue while beta_promo is on, and only then',
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withHouseholds(async (sql, peter, _lea, max) => {
+      const end = new Date('2027-12-31T23:00:00Z');
+      // RevenueCat: Peter's household has no grant until we grant it; Max's has a tester's.
+      const granted = new Set<string>();
+      const posts: string[] = [];
+      const fetch = (url: string, init?: RequestInit) => {
+        const id = url.match(/customers\/([0-9a-f-]{36})/)?.[1] ?? '';
+        if (init?.method === 'POST') {
+          posts.push(`${id} ${init.body}`);
+          granted.add(id);
+          return Promise.resolve(new Response(null, { status: 201 }));
+        }
+        const ends = id === max.householdId
+          ? Date.parse('2100-01-01T00:00:00Z')
+          : granted.has(id)
+          ? end.getTime()
+          : null;
+        const items = ends === null ? [] : [{
+          store: 'promotional',
+          gives_access: true,
+          ends_at: ends,
+          entitlements: { items: [{ lookup_key: 'premium' }] },
+        }];
+        return Promise.resolve(Response.json({ items, next_page: null }));
+      };
+      const handler = createHandler(productionDeps(
+        {
+          webhook: { authorization: AUTH, signingSecret: null, tombstoneKey: TOMBSTONE_KEY },
+          local: true,
+          region: null,
+          revenueCat: { secretKey: 'sk_integration', projectId: 'projtest' },
+          deletionsSecret: 'integration-ops',
+          betaPromoEndsAt: end,
+        },
+        telemetryFor('purchases', { get: () => undefined }),
+        { fetch },
+      ));
+      const run = async () =>
+        await (await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/beta-grants', {
+            method: 'POST',
+            headers: { 'x-deletions-secret': 'integration-ops' },
+          }),
+        )).json();
+      const ours = [peter.householdId, max.householdId];
+      try {
+        await sql`insert into public.beta_promo_grants (beta_household)
+                  select unnest(${ours}::uuid[])`;
+        assertEquals(await run(), { status: 'off' }, 'the switch is off');
+        assertEquals(posts, []);
+        await sql`update public.app_switches set enabled = true where key = 'beta_promo'`;
+        const outcome = await run();
+        assertEquals(outcome.status, 'done');
+        assertEquals(
+          posts.filter((p) => p.startsWith(max.householdId)),
+          [],
+          'a tester is not touched',
+        );
+        assertEquals(posts.filter((p) => p.startsWith(peter.householdId)), [
+          `${peter.householdId} {"entitlement_id":"entl654efcfce4","expires_at":${end.getTime()}}`,
+        ]);
+        const rows = await sql<
+          { beta_household: string; ends_at: Date | null; skipped: string | null }[]
+        >`
+          select beta_household, ends_at, skipped from public.beta_promo_grants
+          where beta_household = any(${ours}::uuid[])`;
+        const byId = new Map(rows.map((r) => [r.beta_household, r]));
+        assertEquals(byId.get(peter.householdId)?.ends_at?.getTime(), end.getTime());
+        assertEquals(byId.get(max.householdId)?.skipped, 'tester');
+        const premium = await sql<{ expires_at: Date | null }[]>`
+          select expires_at from public.entitlements
+          where household_id = ${peter.householdId}::uuid and source = 'promotional'`;
+        assertEquals(
+          premium.map((p) => p.expires_at?.getTime()),
+          [end.getTime()],
+          'the household has Premium until the beta end, as every member reads it',
+        );
+      } finally {
+        await sql`update public.app_switches set enabled = false where key = 'beta_promo'`;
+        await sql`delete from public.beta_promo_grants where beta_household = any(${ours}::uuid[])`;
       }
     });
   },

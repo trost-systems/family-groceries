@@ -10,7 +10,9 @@ import type { Deps, Ledger } from './handler.ts';
 import { hmacHex } from './revenuecat.ts';
 import { deleteDueCustomers, type Fetch } from './deletions.ts';
 import { fetchPromotional } from './promotional.ts';
+import { grantDue } from './beta_promo.ts';
 import {
+  betaPromo,
   claim,
   deletionDone,
   firstDelivery,
@@ -110,6 +112,18 @@ export function productionDeps(
           },
           config.revenueCat!,
           fetchApi,
+        )
+      : null,
+    grantBetaPromo: revenueCat && readPromotional && config.betaPromoEndsAt
+      ? () =>
+        grantDue(
+          betaPromo(serviceDb()),
+          revenueCat,
+          config.betaPromoEndsAt!,
+          fetchApi,
+          (householdId) =>
+            serviceDb().begin((tx) => promotional(tx, householdId, readPromotional(householdId))),
+          new Date(),
         )
       : null,
     report: (e) => telemetry.exception(e),

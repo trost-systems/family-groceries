@@ -7223,3 +7223,65 @@ on the way:
   `renew`) and read-only `profiles`. The lane refuses `development` (the match repo has no
   development certificate, so match would create one) and stops when certificate `GN85KDC962` is
   missing or expired on the portal.
+
+## Job 43b: free Hummlist Premium for every beta household (2026-11-04, needs Legal Review)
+
+ADDENDUM 7 (Peter, 2 Nov), 8 (PM guardrails), Q51 (Peter: household ids to RevenueCat from 9 Nov),
+Legal Review N-50 to N-58 and its handoff of 2026-11-03, the Lead's addendum of 3 Nov (a) to (e)
+and ADDENDUM 12. Where they conflict, the later one wins. Draft PR; `beta_promo` stays off.
+
+1. **Every household, not "TestFlight builds".** ADDENDUM 7 said households created by a testing
+   build. Legal N-53 and the Lead's (a) say every beta household, with the existing ones
+   backfilled. The app has no build-channel define, and every build is a beta build until launch,
+   so the server grants every household while `beta_promo` is on. Testers and app review keep
+   their grant for good (2100) and are skipped: RevenueCat's revoke ends every promotional grant of
+   an entitlement, so a beta grant on top would take theirs away at launch.
+2. **A queue and a 15-minute run, not a trigger that calls out.** The database has no `pg_net`,
+   and the grant needs RevenueCat's secret key, which lives only in the function. An insert trigger
+   on `households` queues a row while the switch is on. `beta-promo.yml` calls the function's
+   `beta-grants` route every 15 minutes with the existing Ops secret. A new household waits up to
+   about 15 minutes for its unlock. With the switch off the route does nothing and the trigger
+   queues nothing: no household id goes to RevenueCat (ADDENDUM 8.3, Q51).
+3. **The end: 2027-12-31 by default, configurable** (`BETA_PROMO_ENDS_AT`). ADDENDUM 7 said
+   2027-01-31; ADDENDUM 8 and Legal N-51 settled on a long fixed end (2027-12-31), never 2100,
+   plus a revoke at launch. RevenueCat never shortens a grant, so `beta_promo.ts set-end` revokes
+   and grants again. It refuses an end less than 28 days away, so the N-55 notice runs 4 weeks
+   first. `revoke` refuses while a grant hasn't reached its end. Neither runs automatically.
+4. **N-52 built, so the privacy text uses variant A.** A beta grant that ends (its end, a revoke,
+   an objection) queues the household's RevenueCat customer for deletion 30 days later (an
+   objection: at once), unless the household bought something. The deletion queue already served
+   deleted households; it now drops a row whose household has Premium again when it comes due.
+   The Lead's (a) allows variant A only when this job is in the same release, which this PR is.
+5. **The privacy swap is in this PR** (Lead (a)): the full beta-wide §5 first two sentences, „Beta-
+   Haushalten und“ in the legal-basis bracket, retention variant A in §5 and §14, „in der Beta, “
+   in §12, the date, and draft 5a's tester paragraph as the cross-reference (handoff 2.5). §13 was
+   already right (#216). No §4 service-mail sentence and no e-mail footer: Peter dropped them, and
+   N-55 is in-app only. The text is copied from the handoff word for word (checked by a script
+   against both §5 blocks). `Stand`/`updated` say 4 November 2026; the Lead sets the release date
+   when merging.
+6. **N-55 is a banner on the list, in-app only.** It shows from 28 days before the household's
+   grant end to the end, only for a promotional grant that ends before 2099 (beta households),
+   never for testers or app review, never for a household that also bought. Close (×) hides it
+   for that end date. A new end shows it again. [ENDDATUM] is the grant's real end, formatted for
+   the locale, never a made-up date. Sentence 2 names Siri (5a) only when native Siri is live in
+   that build: the define `NATIVE_SIRI_LIVE`, which fastlane sets from the `native-siri` release
+   hold in `releases/flags.json`, plus a platform with the native Siri channel (iOS). Otherwise it
+   uses 5b (AI assistants only). A PostHog flag was rejected: flags load only after the analytics
+   yes, and legal copy can't depend on consent.
+7. **The Premium page is #217's.** N-54 (the beta title, subtitle, privacy link, testers' label,
+   hiding `premiumUnlockedBody`, `premiumComingSoon` and `premiumWeb`, no price or buttons) is
+   already in open PR #217, approved word for word. This PR doesn't touch `premium_screen.dart`,
+   its cubit or the `premium*` keys. The notice's link text is its own key with the same final
+   text; once both are merged it can reuse `premiumBetaPrivacyLink`. Merge order: #217 first,
+   then this PR (rebase), so the Premium page's beta wording is live before the grant goes beta-wide.
+   Showing the end date on the Premium page once it is known (N-55) belongs to the Premium page: a
+   follow-up after #217 (NEEDS_LEAD Job 43b).
+8. **No new event; beta households are internal (N-56).** Every beta household has a promotional
+   row, which already marks it internal in the app (`testerHousehold`) and on the server
+   (`household_internal()`). The privacy text says so.
+9. **Promotional events stay out of the purchase ledger** (Legal condition): the beta grant
+   reaches the database only through `promotional_premium_sync`, as the testers' grants do. No
+   `purchases` row, no `purchase_completed`.
+10. **The backfill is a dry run here.** `scripts/iap/beta_promo.ts backfill` counts; `--apply` is
+    for the Lead's OK after the switch is on. No outreach, no prices, no IAP products; the flags
+    stay off.
