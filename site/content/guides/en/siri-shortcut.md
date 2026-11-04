@@ -15,7 +15,7 @@ If you're comfortable with German, you can follow the German guide: [Hummlist pe
 
 We'll update this page if that changes.
 
-## Siri without setup {#without-setup since=1.0.0}
+## Siri without setup {#without-setup since=1.0.0 once=native-siri}
 
 > Draft for Hummlist Launch: please review the text and phrases before launch.
 

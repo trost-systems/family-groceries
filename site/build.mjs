@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
 import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
-import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseRecord, publicReleases } from './releases.mjs';
+import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseGates, parseRecord, publicReleases } from './releases.mjs';
 import { APP_URL, CopyError, readCopy, renderLanding } from './landing.mjs';
 import { AgentError, agentHead, checkAgentSite, readPublicApi, readStage, readVercel, writeAgentFiles } from './agent.mjs';
 
@@ -37,6 +37,8 @@ export const LOCALES = {
       draft: 'ENTWURF: Freigabe durch Peter',
       unreleased: (v) => `Ab Version ${v}, noch nicht im Store`,
       since: (v) => `Ab App-Version ${v}`,
+      once: (key) => `Erst wenn ${key} freigegeben ist, noch nicht live`,
+      until: (key) => `Nur bis ${key} freigegeben ist`,
       changelog: {
         title: 'Neuigkeiten',
         description: 'Was jede Version von Hummlist neu bringt, verbessert und behebt.',
@@ -71,6 +73,8 @@ export const LOCALES = {
       draft: "DRAFT: pending Peter's approval",
       unreleased: (v) => `From version ${v}, not in the stores yet`,
       since: (v) => `From app version ${v}`,
+      once: (key) => `Only once ${key} is released, not live yet`,
+      until: (key) => `Only until ${key} is released`,
       changelog: {
         title: "What's new",
         description: 'What each version of Hummlist adds, improves and fixes.',
@@ -105,6 +109,14 @@ const noted = (since, versions) =>
   since !== undefined && versions.firstPublic !== null && compareVersions(since, versions.firstPublic) > 0;
 const banner = (text) => `<p class="draft-banner" role="note"><strong>${escapeHtml(text)}</strong></p>\n`;
 
+// `once` content waits for a hold in releases/flags.json to be released, `until` content goes when
+// it is: what users see follows the release decision, not the app version. Production renders only
+// the side that is current; preview and local builds show the other side too, with a banner.
+function checkGate(mode, key, file, holds, where) {
+  if (!Object.hasOwn(holds, key)) fail(file, `${where} "${mode}" names the hold "${key}", but releases/flags.json has only ${Object.keys(holds).join(', ')}`);
+  return { mode, key, shown: mode === 'once' ? holds[key] : !holds[key] };
+}
+
 function checkSince(value, file, kind, where) {
   if (kind !== 'guide') fail(file, `${where} "since" is only allowed on guides (legal texts and indexes are not versioned)`);
   if (!isVersion(value)) fail(file, `${where} "since" must be a version MAJOR.MINOR.PATCH, got ${JSON.stringify(value)}`);
@@ -112,17 +124,19 @@ function checkSince(value, file, kind, where) {
 }
 
 // `## Heading {#id since=1.4.0}`: `#id` gives the heading a stable anchor, e.g. /datenschutz#rechte
-// for the stores; `since=` versions the section up to the next heading of the same or a higher level.
-// Braces holding anything else stay text.
+// for the stores; `since=` versions the section up to the next heading of the same or a higher level,
+// `once=<hold>` or `until=<hold>` gates it on a hold. Braces holding anything else stay text.
 const HEADING_ATTRS = /\s*\{([^{}]*)\}$/;
 function headingAttrs(text) {
   const match = HEADING_ATTRS.exec(text);
   const parts = match?.[1].trim().split(/\s+/).filter(Boolean) ?? [];
-  if (parts.length === 0 || !parts.every((p) => /^#[a-z0-9-]+$/.test(p) || p.startsWith('since='))) return null;
+  if (parts.length === 0 || !parts.every((p) => /^#[a-z0-9-]+$/.test(p) || /^(since|once|until)=/.test(p))) return null;
+  const gate = parts.find((p) => /^(once|until)=/.test(p));
   return {
     index: match.index,
     id: parts.find((p) => p.startsWith('#'))?.slice(1),
     since: parts.find((p) => p.startsWith('since='))?.slice('since='.length),
+    gate: gate && { mode: gate.slice(0, gate.indexOf('=')), key: gate.slice(gate.indexOf('=') + 1) },
   };
 }
 
@@ -135,11 +149,15 @@ for (const rule of ['fence', 'code_block']) {
 }
 md.renderer.rules.table_open = () => '<table tabindex="0">\n';
 
-// `::: since 1.4.0` ... `:::` versions the blocks between; the `since` core rule decides what renders.
-md.use(container, 'since', {
-  validate: (params) => /^since\b/.test(params.trim()),
-  render: (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options),
-});
+// `::: since 1.4.0`, `::: once <hold>` or `::: until <hold>` ... `:::` versions or gates the blocks
+// between; the `since` core rule decides what renders.
+const BLOCKS = ['since', 'once', 'until'];
+for (const name of BLOCKS) {
+  md.use(container, name, {
+    validate: (params) => new RegExp(`^${name}\\b`).test(params.trim()),
+    render: (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options),
+  });
+}
 
 md.core.ruler.push('since', (state) => {
   const { file, kind, locale, versions, since: pageSince } = state.env;
@@ -151,6 +169,7 @@ md.core.ruler.push('since', (state) => {
   // A section or block repeats no note its guide already shows; unreleased content shows the banner instead.
   const inner = (since) => (pageSince !== undefined && compareVersions(since, pageSince) <= 0 ? [] : note(since));
   const notices = (since) => (released(since, versions) ? inner(since) : [html(banner(ui.unreleased(since)))]);
+  const gateBanner = (gate) => (gate && !gate.shown ? [html(banner(ui[gate.mode](gate.key)))] : []);
   const hidden = new Set();
   const unwrapped = new Set();
   const after = new Map();
@@ -161,7 +180,7 @@ md.core.ruler.push('since', (state) => {
   let h1Seen = false;
   tokens.forEach((token, i) => {
     if (token.type === 'paragraph_open' && tokens[i + 1].content.startsWith(':::')) {
-      fail(file, `"${tokens[i + 1].content.split('\n')[0]}" is not a block this site knows; a versioned block is "::: since 1.4.0" up to a line ":::"`);
+      fail(file, `"${tokens[i + 1].content.split('\n')[0]}" is not a block this site knows; a versioned block is "::: since 1.4.0" up to a line ":::", a gated one "::: once <hold>" or "::: until <hold>"`);
     }
     if (token.type === 'heading_open') {
       const last = tokens[i + 1].children.at(-1);
@@ -170,24 +189,28 @@ md.core.ruler.push('since', (state) => {
         if (attrs.id) token.attrSet('id', attrs.id);
         last.content = last.content.slice(0, attrs.index);
       }
-      if (attrs?.since !== undefined) {
-        const since = checkSince(attrs.since, file, kind, 'heading attribute');
-        if (token.level !== 0) fail(file, `heading attribute "since" only works on headings outside lists, quotes and blocks`);
+      if (attrs?.since !== undefined || attrs?.gate) {
+        const since = attrs.since === undefined ? undefined : checkSince(attrs.since, file, kind, 'heading attribute');
+        const gate = attrs.gate && checkGate(attrs.gate.mode, attrs.gate.key, file, versions.holds, 'heading attribute');
+        if (token.level !== 0) fail(file, `heading attribute "${since === undefined ? gate.mode : 'since'}" only works on headings outside lists, quotes and blocks`);
         const depth = Number(token.tag[1]);
         const next = tokens.findIndex((t, j) => j > i && t.type === 'heading_open' && t.level === 0 && Number(t.tag[1]) <= depth);
-        if (!released(since, versions) && versions.production) hide(i, (next === -1 ? tokens.length : next) - 1);
-        else insert(i + 2, notices(since));
+        if ((!released(since, versions) || gate?.shown === false) && versions.production) hide(i, (next === -1 ? tokens.length : next) - 1);
+        else insert(i + 2, [...(since === undefined ? [] : notices(since)), ...gateBanner(gate)]);
       }
       if (token.tag === 'h1' && !h1Seen) {
         h1Seen = true;
         if (pageSince !== undefined) insert(i + 2, note(pageSince));
       }
     }
-    if (token.type === 'container_since_open') {
-      const since = checkSince(token.info.trim().slice('since'.length).trim(), file, kind, 'block');
+    const block = BLOCKS.find((name) => token.type === `container_${name}_open`);
+    if (block) {
+      const param = token.info.trim().slice(block.length).trim();
+      const since = block === 'since' ? checkSince(param, file, kind, 'block') : undefined;
+      const gate = block === 'since' ? undefined : checkGate(block, param, file, versions.holds, 'block');
       // The plugin closes an unclosed block silently at its parent's end.
       if (!/^[\s>]*:{3,}\s*$/.test(lines[token.map[1]] ?? '')) fail(file, `"::: ${token.info.trim()}" is not closed; end it with a line ":::"`);
-      const close = tokens.findIndex((t, j) => j > i && t.type === 'container_since_close' && t.level === token.level);
+      const close = tokens.findIndex((t, j) => j > i && t.type === `container_${block}_close` && t.level === token.level);
       // The plugin's search for the closing line doesn't skip code fences, so a ":::" line in a
       // fence ends the block there and leaves the fence open up to it.
       const cut = tokens.slice(i, close).find((t) => {
@@ -197,13 +220,13 @@ md.core.ruler.push('since', (state) => {
         return end === t.map[0] || !closer.startsWith(t.markup) || closer.replace(/^[`~]+/, '').trim() !== '';
       });
       if (cut) fail(file, `a code fence inside "::: ${token.info.trim()}" holds a ":::" line, which ends the block; open and close the block with more colons ("::::")`);
-      if (released(since, versions)) {
+      if (gate ? gate.shown : released(since, versions)) {
         unwrapped.add(i).add(close);
-        insert(i, inner(since));
+        insert(i, gate ? [] : inner(since));
       } else if (versions.production) hide(i, close);
       else {
         token.attrSet('class', 'since-block');
-        insert(i, notices(since));
+        insert(i, gate ? gateBanner(gate) : notices(since));
       }
     }
   });
@@ -641,7 +664,8 @@ export function build({
   stage = readStage(),
 } = {}) {
   const live = liveVersion(repoDir);
-  const versions = { live: live.live, firstPublic: live.firstPublic, production: isProduction(env) };
+  const holds = Object.fromEntries(Object.entries(parseGates(readRepoFile(repoDir, 'releases/flags.json')).holds).map(([key, hold]) => [key, hold.released]));
+  const versions = { live: live.live, firstPublic: live.firstPublic, production: isProduction(env), holds };
   const pages = Object.keys(KINDS)
     .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir, versions)))
     .filter((page) => !(versions.production && page.notices.length > 0))

@@ -102,7 +102,7 @@ test('the landing pages promise nothing that is not there: no prices, no Alexa, 
 
 test('Siri is marked as coming soon and links the shortcut guide that works today', () => {
   const { page } = buildSite();
-  for (const [locale, badge, guide] of [['de', 'Bald', '/de/anleitungen/siri-kurzbefehl'], ['en', 'Coming soon', '/en/guides/siri-shortcut']]) {
+  for (const [locale, badge, guide] of [['de', 'Geplant', '/de/anleitungen/siri-kurzbefehl'], ['en', 'Planned', '/en/guides/siri-shortcut']]) {
     const card = page(`/${locale}`).querySelector('.assistant--siri');
     assert.equal(card.querySelector('[data-copy-id="voice.siri.badge"]').text, badge);
     assert.ok(card.querySelectorAll('a').some((a) => a.getAttribute('href') === guide), locale);

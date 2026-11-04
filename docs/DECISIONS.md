@@ -7382,3 +7382,38 @@ price, store product or legal page changed.
    asks up to six times before it records StoreKit's answer.
 6. **Fixed on the way.** `LifetimeStoreKitTests` still expected Lifetime at 9.99, from before
    job 49's price; it now expects 29.99 like `Hummlist.storekit`.
+## Job 96: brand names and claims in live Hummlist copy (Legal N-80 to N-86), 2026-11-04
+
+- **Legal's file was not on the Hetzner runner.** The brief names
+  `/workspace/legal/reviews/2026-11-04-hummlist-brand-names.md` as the source of truth, but that
+  path exists only on the box (research and legal files sync box -> hz never). Asked on the BOARD
+  at 07:57 and drafted every text from the brief in the style of #228 (N-79, „KI-Assistenten, die
+  MCP unterstützen“). The PR lists each drafted string; they get replaced byte for byte by Legal's
+  text before Peter approves. The checks don't depend on the wording.
+- **The native-Siri answer hangs on the `native-siri` hold, not on an app version.** The guides
+  hid their native section with `since=1.0.0`, which would show it the day 1.0.0 is in the stores
+  even if the hold is still on, and the help pages (legal kind, unversioned) had no gate at all,
+  so the claim went live with the support page. New site gates `::: once <hold>`,
+  `::: until <hold>` and the heading attribute `once=`/`until=` read `releases/flags.json`, the
+  same file the changelog follows (#217 builds the app's `NATIVE_SIRI_LIVE` from it). The guides keep
+  `since=1.0.0` and add `once=native-siri`. Preview shows both sides with a banner, like `since`,
+  so reviewers still see the draft; production shows only the current side.
+- **Test, not lint, for the native wording.** `site/test/gates.test.mjs` builds production with
+  every version live and the hold off, and scans every page, Markdown twin, llms*.txt and JSON
+  for native-only phrases; a second build with the hold released proves the phrase list matches
+  the real text. On main's support page it fails naming `support.html`.
+- **Brand check on sources with an allowlist.** `scripts/brand-names.ts` (lint gate) scans
+  `site/content`, text in `site/public` and ARB values (not `@` metadata). The built site would
+  be the truer surface, but llms-full.txt carries the whole Claude guide, so a route allowlist
+  could not tell a new mention from the guide. Allowed: the Claude guide (setup instructions for
+  that product), the llms.md example URL of it, `mcpServerBody`, `tokenNameHint`, the trademark
+  notice. `integrationPremiumAi` was allowed until #228 (N-79) landed and is gone since. A stale
+  entry fails too, so the list can't grow quietly.
+- **N-85: the skill speaks German and English.** `alexa/skill-package/skill.json` publishes
+  de-DE, en-US, en-GB, en-AU, en-CA and en-IN, each with an interaction model (#193); the
+  function answers English for every en-* locale (`supabase/functions/alexa/voices.ts`). The
+  English help answer now uses the English guide's phrases.
+- **The Siri Shortcut answer says German only in English.** A Shortcut request carries no `lang`,
+  so the voice function splits it as German (`voice/handler.ts`); the English guide says the same.
+- **Writers inherit the rules.** FEATURES-FOR-WRITERS' global „Never claim“ list gets the brand
+  rule and the Alexa naming, so emails and site copy written from it don't bring them back.

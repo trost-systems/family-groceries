@@ -89,6 +89,30 @@ versioned: `since` there fails too. Markers inside code fences stay text. A bloc
 holds a `:::` line fails too, because that line would end the block: mark such a block with four
 colons, `:::: since 1.4.0` up to `::::`.
 
+### Content gated on a hold
+
+Content that waits for a release decision rather than an app version names a hold in
+`../releases/flags.json` (`holds.<key>.released`):
+
+~~~markdown
+::: until native-siri
+Today's answer, shown until the hold is released.
+:::
+
+::: once native-siri
+The answer for after the release.
+:::
+
+## Ohne Einrichtung {#ohne-einrichtung once=native-siri}
+~~~
+
+Works in guides and legal pages, also next to `since=` on a heading (then both must allow it).
+Production renders only the side that is current, without a trace; preview and local builds show
+the other side too, under the banner "Erst wenn native-siri freigegeben ist, noch nicht live" or
+"Nur bis native-siri freigegeben ist". A hold flags.json doesn't have fails the build. Releasing
+the hold in flags.json is the only change the site needs; `test/gates.test.mjs` fails if any
+native-Siri wording renders while `native-siri` is held.
+
 ## Live version
 
 The build reads the live version from outside `site/`: the newest public release in

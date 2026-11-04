@@ -21,7 +21,7 @@ test('each index lists only its own locale with title and description', () => {
   assert.match(de[0].text, /Hummlist auf dem Home-Bildschirm: das Widget/);
   assert.match(de[1].text, /Hummlist mit Claude verbinden/);
   assert.match(de[2].text, /Hummlist per Alexa: Skill einrichten/);
-  assert.match(de[2].text, /Mit dem Alexa-Skill „Hummlist“ setzt du Sachen per Sprache auf deine Hummlist/);
+  assert.match(de[2].text, /Mit dem Hummlist-Skill für Amazon Alexa setzt du Sachen per Sprache auf deine Hummlist/);
   assert.match(de[3].text, /Hummlist per Siri: Kurzbefehl einrichten/);
   assert.match(de[3].text, /Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Hummlist/);
   const en = listed(page('/en/guides'));

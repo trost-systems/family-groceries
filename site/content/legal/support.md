@@ -4,7 +4,7 @@ description: "Hilfe zu Hummlist: so erreichst du uns, und Antworten auf häufige
 locale: de
 path: /support
 translation_key: support
-updated: 2026-11-01
+updated: 2026-11-04
 draft: false
 ---
 
@@ -60,15 +60,21 @@ Tippe auf **Mehr** und dann auf **Nutzungsdaten**. Schalte dort **Nutzungsdaten 
 
 ### Kann ich Sachen per Siri auf die Liste setzen?
 
+::: until native-siri
+Ja, über einen Kurzbefehl, den du einmal selbst in der Kurzbefehle-App anlegst. Danach sagst du zum Beispiel „Hey Siri, Einkaufsliste“ und dann, was auf die Liste soll. Wie das geht, steht in der Anleitung [Hummlist per Siri: Kurzbefehl einrichten](/de/anleitungen/siri-kurzbefehl). Apple wandelt deine Sprache in Text um; wir bekommen nur den Text, keine Aufnahme. Mehr dazu steht in der [Datenschutzerklärung, Abschnitt 7](/datenschutz). Dass Siri Hummlist auch ohne Kurzbefehl versteht, ist geplant, aber noch nicht verfügbar.
+:::
+
+::: once native-siri
 Ja. Auf dem iPhone geht das ab iOS 17 direkt mit der Hummlist-App, ohne eigenen Kurzbefehl, sobald du angemeldet bist und zu einem Haushalt gehörst: Sag zum Beispiel „Füge etwas zu Hummlist hinzu“, oder lass dir deine Liste vorlesen. Das klappt auf Deutsch und Englisch. Apple wandelt deine Sprache in Text um; wir bekommen nur den Text, keine Aufnahme. Mehr dazu steht in der [Datenschutzerklärung, Abschnitt 7](/datenschutz). Den älteren Weg über einen eigenen Kurzbefehl kannst du weiter nutzen, du brauchst ihn aber nicht mehr.
+:::
 
 ### Kann ich Sachen per Alexa auf die Liste setzen?
 
-Ja, mit dem Alexa-Skill „Hummlist“ (auf Deutsch). Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Hummlist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Hummlist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Alexa: Skill einrichten](/de/anleitungen/alexa).
+Ja, mit dem Hummlist-Skill für Amazon Alexa. Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Hummlist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Hummlist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Alexa: Skill einrichten](/de/anleitungen/alexa).
 
-### Kann ich Hummlist mit Claude, ChatGPT oder einem anderen KI-Assistenten nutzen?
+### Kann ich Hummlist mit einem KI-Assistenten nutzen?
 
-Ja, über den MCP-Server von Hummlist. Tippe auf **Mehr** und dann auf **Zugänge**. Dort steht die Adresse des MCP-Servers. Du verbindest den Assistenten per Anmeldung oder mit einem Zugriffstoken. Unter **Verbundene Apps** und **Zugriffstoken** siehst du jeden Zugang und kannst ihn jederzeit widerrufen.
+Ja, mit KI-Assistenten, die eigene MCP-Server einbinden können, über den MCP-Server von Hummlist. Ob dein Assistent das kann und in welchem Tarif, legt sein Anbieter fest. Eine Schritt-für-Schritt-Anleitung gibt es für [Claude](/de/anleitungen/claude). Tippe auf **Mehr** und dann auf **Zugänge**. Dort steht die Adresse des MCP-Servers. Du verbindest den Assistenten per Anmeldung oder mit einem Zugriffstoken. Unter **Verbundene Apps** und **Zugriffstoken** siehst du jeden Zugang und kannst ihn jederzeit widerrufen.
 
 ### Ich teste Hummlist über TestFlight oder Google Play. Was muss ich wissen?
 

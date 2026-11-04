@@ -1,15 +1,15 @@
 ---
 title: "Hummlist with Alexa: set up the skill"
-description: "With the Alexa skill \"Hummlist\" you add things to your Hummlist by voice: \"Alexa, ask Hummlist to add milk and eggs\". Here's how to set it up in a few minutes."
+description: "With the Hummlist skill for Amazon Alexa you add things to your Hummlist by voice: \"Alexa, ask Hummlist to add milk and eggs\". Here's how to set it up in a few minutes."
 slug: alexa
 locale: en
 translation_key: alexa
-updated: 2026-11-02
+updated: 2026-11-04
 ---
 
 # Hummlist with Alexa: set up the skill
 
-With the Alexa skill **Hummlist** you add things to your Hummlist by voice, without opening the app. The skill is still in a beta test and not available to everyone yet: you need an invitation. After that it works like this:
+With the **Hummlist** skill for Amazon Alexa you add things to your Hummlist by voice, without opening the app. The skill is still in a beta test and not available to everyone yet: you need an invitation. After that it works like this:
 
 > **You:** Alexa, ask Hummlist to add milk and eggs.
 > **Alexa:** I put milk and eggs on Hummlist.
@@ -50,7 +50,7 @@ Alexa signs in with your Hummlist account, not with a token. There's nothing to 
 
 ## How Alexa reaches Hummlist {#reach-hummlist}
 
-Alexa has shopping lists of her own. For your sentence to reach Hummlist and not those, it has to contain "ask Hummlist", "tell Hummlist" or "open Hummlist":
+The Alexa app has shopping lists of its own. For your sentence to reach Hummlist and not those, it has to contain "ask Hummlist", "tell Hummlist" or "open Hummlist":
 
 - "Alexa, ask Hummlist to add milk."
 - "Alexa, tell Hummlist we need milk."
@@ -58,9 +58,9 @@ Alexa has shopping lists of her own. For your sentence to reach Hummlist and not
 - "Alexa, ask Hummlist what's on the list."
 - "Alexa, open Hummlist." Then say what should go on the list.
 
-Don't say "Alexa, add milk to Hummlist". Alexa handles that sentence herself: she looks for one of her own lists called "Hummlist" and either says she can't find it or puts the milk on her own shopping list.
+Don't say "Alexa, add milk to Hummlist". Alexa handles that sentence without Hummlist: Alexa looks for a list called "Hummlist" in the Alexa app and either can't find it or puts the milk on the Alexa shopping list.
 
-Alexa recognizes the name best when you say it clearly as two syllables: "Humm-list". If she answers with her own shopping list or says she doesn't know, say "Alexa, open Hummlist" first and then what should go on the list.
+Alexa recognizes the name best when you say it clearly as two syllables: "Humm-list". If Alexa answers with the Alexa shopping list or doesn't know the name, say "Alexa, open Hummlist" first and then what should go on the list.
 
 ## How to talk to it
 
@@ -86,8 +86,8 @@ Ask "Alexa, ask Hummlist what's on the list" and Alexa reads at most 10 open ite
 
 | What happens | Why | What helps |
 | --- | --- | --- |
-| Alexa says she can't find a list called Hummlist, or puts the item on her own shopping list. | The sentence didn't contain "ask Hummlist", for example "Add milk to Hummlist". It went to Alexa's own lists. | Say "Alexa, ask Hummlist to add milk" or first "Alexa, open Hummlist" (see [How Alexa reaches Hummlist](#reach-hummlist)). |
-| Alexa says she doesn't know, or hears another name. | Alexa didn't recognize "Hummlist". | Say the name clearly as two syllables, "Humm-list", or start with "Alexa, open Hummlist". |
+| Alexa can't find a list called Hummlist, or puts the item on the Alexa shopping list. | The sentence didn't contain "ask Hummlist", for example "Add milk to Hummlist". It went to the lists in the Alexa app. | Say "Alexa, ask Hummlist to add milk" or first "Alexa, open Hummlist" (see [How Alexa reaches Hummlist](#reach-hummlist)). |
+| Alexa doesn't know the name, or hears another name. | Alexa didn't recognize "Hummlist". | Say the name clearly as two syllables, "Humm-list", or start with "Alexa, open Hummlist". |
 | "Please link your Hummlist account in the Alexa app first." | The skill isn't, or is no longer, linked to your Hummlist account. | On the skill's page in the Alexa app tap **Link account** and continue as in step 2. |
 | "You're not in a household yet …" | Your Hummlist account isn't in a household. | Create a household in the app or join one. |
 

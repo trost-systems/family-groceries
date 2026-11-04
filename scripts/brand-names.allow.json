@@ -1,0 +1,65 @@
+{
+  "entries": [
+    {
+      "file": "site/content/guides/de/claude.md",
+      "reason": "Setup guide for connecting Claude, and who processes the chat (Anthropic). Other brands in it still fail.",
+      "brands": [
+        "Claude",
+        "Anthropic"
+      ]
+    },
+    {
+      "file": "site/content/guides/en/claude.md",
+      "reason": "Setup guide for connecting Claude, and who processes the chat (Anthropic). Other brands in it still fail.",
+      "brands": [
+        "Claude",
+        "Anthropic"
+      ]
+    },
+    {
+      "file": "site/content/llms.md",
+      "contains": "https://hummlist.com/en/guides/claude.md",
+      "reason": "Example URL of that guide."
+    },
+    {
+      "file": "site/content/legal/impressum.md",
+      "contains": "Claude ist eine Marke von Anthropic",
+      "reason": "Trademark notice (Legal N-86)."
+    },
+    {
+      "file": "site/content/legal/imprint.md",
+      "contains": "Claude is a trademark of Anthropic",
+      "reason": "Trademark notice (Legal N-86)."
+    },
+    {
+      "file": "site/content/legal/support.md",
+      "contains": "Eine Schritt-für-Schritt-Anleitung gibt es für [Claude](/de/anleitungen/claude).",
+      "reason": "Link to the Claude guide (Legal N-81, referential use)."
+    },
+    {
+      "file": "site/content/legal/support-en.md",
+      "contains": "There's a step-by-step guide for [Claude](/en/guides/claude).",
+      "reason": "Link to the Claude guide (Legal N-81, referential use)."
+    },
+    {
+      "file": "app/l10n/app_de.arb",
+      "key": "mcpServerBody",
+      "reason": "Functional help text Legal allowed."
+    },
+    {
+      "file": "app/l10n/app_en.arb",
+      "key": "mcpServerBody",
+      "reason": "Functional help text Legal allowed."
+    },
+    {
+      "file": "app/l10n/app_de.arb",
+      "key": "tokenNameHint",
+      "reason": "Functional help text Legal allowed."
+    },
+    {
+      "file": "app/l10n/app_en.arb",
+      "key": "tokenNameHint",
+      "reason": "Functional help text Legal allowed."
+    }
+  ]
+}

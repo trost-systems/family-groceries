@@ -4,7 +4,7 @@ description: "Verbinde Claude in unter fünf Minuten mit deiner Hummlist. Dann s
 slug: claude
 locale: de
 translation_key: claude
-updated: 2026-11-01
+updated: 2026-11-04
 ---
 
 # Hummlist mit Claude verbinden
@@ -18,17 +18,21 @@ Die Einträge stehen sofort auf allen Geräten in eurem Haushalt, sortiert in ih
 
 ## Was du brauchst
 
-- ein Claude-Konto auf [claude.ai](https://claude.ai). Je nach Claude-Tarif ist die Zahl eigener Connectors begrenzt. In einer Claude-Organisation (Team oder Enterprise) muss eventuell ein Admin den Connector hinzufügen.
+- ein Claude-Konto auf [claude.ai](https://claude.ai). Mit Claude Free kannst du nur einen eigenen Connector hinzufügen. In einer Claude-Organisation (Team oder Enterprise) muss eventuell ein Admin den Connector hinzufügen.
 - die Hummlist-App, in der du angemeldet bist und zu einem Haushalt gehörst
 - einen Browser, am besten am Computer. Der Connector steht danach auch in der Claude-App auf dem Handy und am Desktop zur Verfügung.
+
+::: once integration-lock
+Der Zugang über KI-Assistenten braucht Hummlist Premium für deinen Haushalt.
+:::
 
 ## Schritt 1: Connector hinzufügen
 
 Die Namen der Menüpunkte in Claude stehen hier auf Deutsch, in Klammern auf Englisch. Sie können je nach Claude-Version leicht anders heißen.
 
 1. Öffne [claude.ai](https://claude.ai) und melde dich an.
-2. Öffne die **Einstellungen** (Settings) und dort **Connectors**.
-3. Klicke auf **Benutzerdefinierten Connector hinzufügen** (Add custom connector).
+2. Öffne **Anpassen** (Customize) und dort **Connectors**.
+3. Klicke auf **+ Hinzufügen** (+ Add) und dann auf **Benutzerdefinierten Connector hinzufügen** (Add custom connector).
 4. Gib als Name `Hummlist` ein und als URL:
 
    ```text
@@ -83,7 +87,7 @@ Was schon auf der Liste steht, kommt nicht doppelt dazu. Claude sagt dir dann, d
 Du hast zwei Möglichkeiten. Jede beendet die Verbindung sofort:
 
 - **In Hummlist:** Tippe auf **Mehr** und dann auf **Zugänge**. Tippe unter **Verbundene Apps** neben **Claude** auf das Symbol zum Trennen und bestätige mit **Trennen**.
-- **In Claude:** Öffne **Einstellungen** (Settings) → **Connectors**, wähle **Hummlist** und trenne oder entferne den Connector.
+- **In Claude:** Öffne **Anpassen** (Customize) → **Connectors** und klicke bei **Hummlist** auf **Entfernen** (Remove) oder im Drei-Punkte-Menü auf Entfernen.
 
 ## Für Fortgeschrittene: Claude Code und Codex
 
@@ -93,7 +97,7 @@ Du hast zwei Möglichkeiten. Jede beendet die Verbindung sofort:
 claude mcp add --transport http hummlist https://mcp.hummlist.com
 ```
 
-**Codex** (CLI, IDE-Erweiterung und ChatGPT-Desktop-App teilen sich `~/.codex/config.toml`) funktioniert genauso, ist aber kein offiziell unterstützter Weg:
+**Codex** (CLI und IDE-Erweiterung teilen sich `~/.codex/config.toml`) funktioniert genauso, ist aber kein offiziell unterstützter Weg:
 
 ```toml
 [mcp_servers.hummlist]

@@ -4,7 +4,7 @@ description: "Connect Claude to your Hummlist in under five minutes. Then Claude
 slug: claude
 locale: en
 translation_key: claude
-updated: 2026-11-01
+updated: 2026-11-04
 ---
 
 # Connect Hummlist to Claude
@@ -18,17 +18,21 @@ The items show up right away on every device in your household, sorted into thei
 
 ## What you need
 
-- a Claude account at [claude.ai](https://claude.ai). Depending on your Claude plan, the number of custom connectors may be limited. In a Claude organization (Team or Enterprise), an admin may have to add the connector.
+- a Claude account at [claude.ai](https://claude.ai). On Claude Free you can add only one custom connector. In a Claude organization (Team or Enterprise), an admin may have to add the connector.
 - the Hummlist app, signed in and part of a household
 - a browser, ideally on a computer. Afterwards the connector is also available in the Claude apps on your phone and desktop.
+
+::: once integration-lock
+AI assistant access needs Hummlist Premium for your household.
+:::
 
 ## Step 1: Add the connector
 
 Menu names in Claude may differ slightly between Claude versions.
 
 1. Open [claude.ai](https://claude.ai) and sign in.
-2. Open **Settings**, then **Connectors**.
-3. Click **Add custom connector**.
+2. Open **Customize**, then **Connectors**.
+3. Click **+ Add**, then **Add custom connector**.
 4. Enter `Hummlist` as the name and this URL:
 
    ```text
@@ -83,7 +87,7 @@ Anything already on the list isn't added twice. Claude tells you it's already th
 Either way ends the connection right away:
 
 - **In Hummlist:** Tap **More**, then **Access**. Under **Connected apps**, tap the disconnect icon next to **Claude** and confirm with **Disconnect**.
-- **In Claude:** Open **Settings** → **Connectors**, choose **Hummlist** and disconnect or remove it.
+- **In Claude:** Open **Customize** → **Connectors** and click **Remove** next to **Hummlist**, or Remove in its three-dot menu.
 
 ## For power users: Claude Code and Codex
 
@@ -93,7 +97,7 @@ Either way ends the connection right away:
 claude mcp add --transport http hummlist https://mcp.hummlist.com
 ```
 
-**Codex** (the CLI, the IDE extension and the ChatGPT desktop app share `~/.codex/config.toml`) works the same way, but isn't an officially supported path:
+**Codex** (the CLI and the IDE extension share `~/.codex/config.toml`) works the same way, but isn't an officially supported path:
 
 ```toml
 [mcp_servers.hummlist]

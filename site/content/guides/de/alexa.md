@@ -1,15 +1,15 @@
 ---
 title: "Hummlist per Alexa: Skill einrichten"
-description: "Mit dem Alexa-Skill „Hummlist“ setzt du Sachen per Sprache auf deine Hummlist: „Alexa, sag Hummlist, füg Milch und Eier hinzu“. So richtest du ihn in wenigen Minuten ein."
+description: "Mit dem Hummlist-Skill für Amazon Alexa setzt du Sachen per Sprache auf deine Hummlist: „Alexa, sag Hummlist, füg Milch und Eier hinzu“. So richtest du ihn in wenigen Minuten ein."
 slug: alexa
 locale: de
 translation_key: alexa
-updated: 2026-11-02
+updated: 2026-11-04
 ---
 
 # Hummlist per Alexa: Skill einrichten
 
-Mit dem Alexa-Skill **Hummlist** setzt du Sachen per Alexa auf deine Hummlist, ohne die App zu öffnen. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar: Du brauchst eine Einladung. Danach läuft es so:
+Mit dem **Hummlist**-Skill für Amazon Alexa setzt du Sachen per Sprache auf deine Hummlist, ohne die App zu öffnen. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar: Du brauchst eine Einladung. Danach läuft es so:
 
 > **Du:** Alexa, sag Hummlist, füg Milch und Eier hinzu.
 > **Alexa:** Ich habe Milch und Eier auf die Hummlist gesetzt.
@@ -66,9 +66,9 @@ Alexa hat eigene Einkaufslisten. Damit dein Satz bei Hummlist ankommt und nicht 
 - „Alexa, frag Hummlist, was auf der Liste steht.“
 - „Alexa, öffne Hummlist.“ Danach sagst du, was auf die Liste soll.
 
-Sag nicht „Alexa, setz Milch auf die Hummlist“. Diesen Satz behandelt Alexa selbst: Sie sucht unter ihren eigenen Listen eine namens „Hummlist“ und antwortet zum Beispiel „Ich konnte keine Liste finden unter Hummlist“, oder sie setzt die Milch auf ihre eigene Einkaufsliste.
+Sag nicht „Alexa, setz Milch auf die Hummlist“. Diesen Satz behandelt Alexa ohne Hummlist: Alexa sucht in den Listen der Alexa-App eine namens „Hummlist“ und antwortet zum Beispiel „Ich konnte keine Liste finden unter Hummlist“, oder setzt die Milch auf die Einkaufsliste der Alexa-App.
 
-Alexa versteht den Namen am besten, wenn du ihn deutlich in zwei Silben sagst: „Humm-list“. Antwortet sie mit ihrer eigenen Einkaufsliste oder mit „Ich weiß nicht“, sag zuerst „Alexa, öffne Hummlist“ und dann, was auf die Liste soll.
+Alexa versteht den Namen am besten, wenn du ihn deutlich in zwei Silben sagst: „Humm-list“. Antwortet Alexa mit der Einkaufsliste der Alexa-App oder mit „Ich weiß nicht“, sag zuerst „Alexa, öffne Hummlist“ und dann, was auf die Liste soll.
 
 ## So kannst du sprechen
 
@@ -88,14 +88,14 @@ Was schon auf der Liste steht, kommt nicht doppelt dazu. Alexa sagt dann zum Bei
 
 Du kannst den Skill auch erst öffnen: „Alexa, öffne Hummlist“. Alexa fragt „Was soll auf die Liste?“, und du sagst nur noch „Milch und Eier“.
 
-Hat Alexa nichts verstanden, fragt sie einmal nach: „Das habe ich nicht verstanden. Was soll auf die Liste?“ Klappt es auch dann nicht, sagt sie „Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt.“ Hummlist trägt nie etwas ein, das nur geraten ist. Alles, was du hinzufügst, sehen alle in eurem Haushalt sofort.
+Hat Alexa nichts verstanden, fragt Alexa einmal nach: „Das habe ich nicht verstanden. Was soll auf die Liste?“ Klappt es auch dann nicht, kommt die Antwort „Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt.“ Hummlist trägt nie etwas ein, das nur geraten ist. Alles, was du hinzufügst, sehen alle in eurem Haushalt sofort.
 
 ## Liste vorlesen lassen
 
 > **Du:** Alexa, frag Hummlist, was auf der Liste steht.
 > **Alexa:** Auf der Hummlist stehen 3 Sachen: 2 Liter Milch, Eier und Brot.
 
-Alexa liest höchstens 10 offene Einträge vor, in der Reihenfolge eurer Liste. Stehen mehr drauf, sagt sie am Ende zum Beispiel „… und 4 weitere.“ Ist die Liste leer, sagt sie „Die Hummlist ist leer.“ Danach ist der Skill fertig, Alexa fragt nicht weiter nach. Dieselben Einträge zeigt sie außerdem als Karte in der Alexa-App.
+Alexa liest höchstens 10 offene Einträge vor, in der Reihenfolge eurer Liste. Stehen mehr drauf, sagt Alexa am Ende zum Beispiel „… und 4 weitere.“ Ist die Liste leer, lautet die Antwort „Die Hummlist ist leer.“ Danach ist der Skill fertig, Alexa fragt nicht weiter nach. Dieselben Einträge erscheinen außerdem als Karte in der Alexa-App.
 
 Statt „was auf der Liste steht“ geht auch „Alexa, frag Hummlist, was brauchen wir?“ oder „Alexa, frag Hummlist, was muss ich kaufen?“
 
@@ -105,7 +105,7 @@ Statt „was auf der Liste steht“ geht auch „Alexa, frag Hummlist, was brauc
 | --- | --- | --- |
 | Alexa kennt den Skill „Hummlist“ nicht, oder du findest ihn nicht in der Alexa-App. | Du hast die Einladung zum Beta-Test noch nicht angenommen, oder sie ging an eine andere Adresse als die deines Amazon-Kontos. | Nimm die Einladung an (Schritt 1). Ist sie abgelaufen, frag Peter nach einem neuen Link. |
 | Alexa kennt den Skill nicht, obwohl du die Einladung angenommen hast. | Dein Alexa-Gerät ist auf eine Sprache eingestellt, die der Skill nicht kann. Er kann Deutsch und Englisch. | Stell die Sprache des Geräts auf Deutsch: Alexa-App → **Mehr** → **Einstellungen** → **Geräteeinstellungen** → dein Gerät → Zahnrad oben rechts → unter **Allgemein** auf **Sprache**. |
-| Alexa sagt „Ich konnte keine Liste finden unter Hummlist“ oder setzt die Sache auf ihre eigene Einkaufsliste. | Im Satz fehlte „sag Hummlist“, zum Beispiel bei „Setz Milch auf die Hummlist“. Dann landet er bei Alexas eigenen Listen. | Sag „Alexa, sag Hummlist, setz Milch drauf“ oder erst „Alexa, öffne Hummlist“ (siehe [Damit Alexa Hummlist erreicht](#hummlist-erreichen)). |
+| Alexa sagt „Ich konnte keine Liste finden unter Hummlist“ oder setzt die Sache auf die Einkaufsliste der Alexa-App. | Im Satz fehlte „sag Hummlist“, zum Beispiel bei „Setz Milch auf die Hummlist“. Dann landet er in den Listen der Alexa-App. | Sag „Alexa, sag Hummlist, setz Milch drauf“ oder erst „Alexa, öffne Hummlist“ (siehe [Damit Alexa Hummlist erreicht](#hummlist-erreichen)). |
 | Alexa antwortet „Ich weiß nicht“ oder versteht einen anderen Namen. | Alexa hat „Hummlist“ nicht erkannt. | Sag den Namen deutlich in zwei Silben, „Humm-list“, oder fang mit „Alexa, öffne Hummlist“ an. |
 | „Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.“ | Der Skill ist nicht oder nicht mehr mit deinem Hummlist-Konto verknüpft. | Tippe auf der Seite des Skills in der Alexa-App auf **Konto verknüpfen** und mach weiter wie in Schritt 2. |
 | „Du bist noch in keinem Haushalt …“ | Dein Hummlist-Konto gehört zu keinem Haushalt. | Leg in der App einen Haushalt an oder tritt einem bei. |

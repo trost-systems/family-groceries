@@ -4,7 +4,7 @@ description: "Help with Hummlist: how to reach us, and answers to common questio
 locale: en
 path: /en/support
 translation_key: support
-updated: 2026-11-01
+updated: 2026-11-04
 draft: false
 ---
 
@@ -60,15 +60,21 @@ Tap **More**, then **Usage data**, and turn off **Send usage data and error repo
 
 ### Can I add items with Siri?
 
+::: until native-siri
+Yes, with a Shortcut you set up once yourself in the Shortcuts app. Right now this only works in German; the guide [Hummlist with Siri](/en/guides/siri-shortcut) explains why and links to the German setup steps. Apple turns your speech into text; we only receive the text, not a recording. Section 7 of the [privacy policy](/en/privacy) has the details. Using Siri with Hummlist without a Shortcut is planned but not available yet.
+:::
+
+::: once native-siri
 Yes. On iPhone with iOS 17 or later you can do it directly with the Hummlist app, with no shortcut of your own, as soon as you're signed in and in a household: say for example "Add to Hummlist", or ask Siri to read out your list. It works in English and German. Apple turns your speech into text; we only receive the text, not a recording. Section 7 of the [privacy policy](/en/privacy) has the details. You can still use the older way with your own shortcut, but you no longer need it.
+:::
 
 ### Can I add items with Alexa?
 
-Yes, with the Alexa skill "Hummlist" (German only). Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, „Alexa, sag Hummlist, füg Milch und Eier hinzu“ ("add milk and eggs") or „Alexa, frag Hummlist, was auf der Liste steht“ ("what's on the list"). To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Hummlist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
+Yes, with the Hummlist skill for Amazon Alexa. Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, „Alexa, sag Hummlist, füg Milch und Eier hinzu“ ("add milk and eggs") or „Alexa, frag Hummlist, was auf der Liste steht“ ("what's on the list"). To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Hummlist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
 
-### Can I use Hummlist with Claude, ChatGPT or another AI assistant?
+### Can I use Hummlist with an AI assistant?
 
-Yes, through Hummlist's MCP server. Tap **More**, then **Access**. The MCP server's address is shown there. You connect the assistant by signing in or with an access token. Under **Connected apps** and **Access tokens** you see every connection and can revoke it at any time.
+Yes, with AI assistants that can add their own MCP servers, through Hummlist's MCP server. Whether your assistant can, and on which plan, is up to its provider. There's a step-by-step guide for [Claude](/en/guides/claude). Tap **More**, then **Access**. The MCP server's address is shown there. You connect the assistant by signing in or with an access token. Under **Connected apps** and **Access tokens** you see every connection and can revoke it at any time.
 
 ### I test Hummlist through TestFlight or Google Play. What should I know?
 
