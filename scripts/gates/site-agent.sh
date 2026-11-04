@@ -10,8 +10,14 @@ cd "$REPO_ROOT"
 
 log "MCP probe: fixture tests"
 node --test scripts/mcp-smoke.test.mjs
-log "MCP probe: https://mcp.hummlist.com, discovery only"
-scripts/mcp-smoke.sh https://mcp.hummlist.com
+# Both protocol eras, without credentials: the 401 for initialize and server/discover, the metadata
+# and its authorization server. Production runs main's last deploy; the checks of what a branch
+# changes run against its own server in e2e (mcp-smoke.spec.ts) and after the deploy in
+# smoke-remote.sh (DECISIONS, job 94).
+for version in 2025-11-25 2026-07-28; do
+  log "MCP probe: https://mcp.hummlist.com, discovery only, protocol $version"
+  MCP_PROTOCOL_VERSION=$version scripts/mcp-smoke.sh https://mcp.hummlist.com
+done
 
 log "site build"
 cd site

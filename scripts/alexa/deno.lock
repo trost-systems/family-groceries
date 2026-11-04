@@ -179,6 +179,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "npm:@modelcontextprotocol/client@2.3.1",
       "npm:@modelcontextprotocol/server@2.3.1",
       "npm:@peculiar/x509@1.14.3",
       "npm:jose@6.2.13",

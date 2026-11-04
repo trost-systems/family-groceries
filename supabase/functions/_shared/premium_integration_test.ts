@@ -128,7 +128,7 @@ function mcp(m: Member, telemetry: Telemetry) {
         headers: {
           'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
-          'mcp-protocol-version': '2025-06-18',
+          'mcp-protocol-version': '2025-11-25',
         },
         body: JSON.stringify({
           jsonrpc: '2.0',

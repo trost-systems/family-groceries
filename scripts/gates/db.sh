@@ -28,12 +28,17 @@ supabase/bench/suggest_latency.sh
 # Job 62: list_items counts the whole list, per household.
 # Job 64: two members adding the same item at once leave one open row (items_skip_duplicate).
 # Job 73: the api function's wiring (keys, limits, idempotency, pagination, households, lock).
+# Job 94: Client ID Metadata Documents through the mcp function and this stack's Supabase Auth.
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
+stack_env="$(supabase status -o env 2>/dev/null)"
+stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
+  SUPABASE_URL="$(stack_value API_URL)" SUPABASE_ANON_KEY="$(stack_value PUBLISHABLE_KEY)" \
+  SUPABASE_SERVICE_ROLE_KEY="$(stack_value SERVICE_ROLE_KEY)" \
   deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
   _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts \
   _shared/zero_stores_integration_test.ts _shared/list_integration_test.ts \
-  _shared/one_open_item_integration_test.ts api/api_integration_test.ts)
+  _shared/one_open_item_integration_test.ts api/api_integration_test.ts mcp/cimd_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

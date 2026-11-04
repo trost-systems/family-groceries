@@ -49,7 +49,12 @@ else
   fail "voice with a bad token: want 401 and WWW-Authenticate: Bearer; $(got voice) www-authenticate='$challenge'"
 fi
 
-"$(dirname "$0")/mcp-smoke.sh" "$fn/mcp" || fail 'mcp: scripts/mcp-smoke.sh (above)'
+MCP_PROTOCOL_VERSION=2025-11-25 "$(dirname "$0")/mcp-smoke.sh" "$fn/mcp" ||
+  fail 'mcp 2025-11-25: scripts/mcp-smoke.sh (above)'
+# The front's CIMD checks only read: no client document goes through authorize, so nothing is
+# registered in production (DECISIONS, job 94).
+MCP_PROTOCOL_VERSION=2026-07-28 MCP_SMOKE_CIMD=1 "$(dirname "$0")/mcp-smoke.sh" "$fn/mcp" ||
+  fail 'mcp 2026-07-28: scripts/mcp-smoke.sh (above)'
 
 # Job 31: Alexa signs every request; an unsigned one is refused before anything is read.
 request alexa -X POST "$fn/alexa" -H 'content-type: application/json' \
