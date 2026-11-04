@@ -1,0 +1,14 @@
+[
+  {
+    "links": 1,
+    "live_sessions": 1,
+    "live_refresh_tokens": 1,
+    "last_seen": "2026-11-03 08:21:17.123456+00",
+    "alexa_client_ids": [
+      "c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f"
+    ],
+    "linked_user_ids": [
+      "0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b"
+    ]
+  }
+]

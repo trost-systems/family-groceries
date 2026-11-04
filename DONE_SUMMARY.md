@@ -527,3 +527,7 @@ In onboarding, typing an own store such as „edeka“ now ticks the EDEKA chip 
 ## Job 93: hummlist.com for AI agents, deterministic checks
 
 Agents get llms.txt, a Markdown twin of every page, a sitemap, robots and JSON-LD. Each is checked in CI with fixture tests, and so are the launch guard, the MCP probe (live discovery plus a throwaway household on the local stack) and the waitlist form, which stays skipped until job 82. PR #223, not merged (lead review). Details: [docs/done/93-agent-first-site-checks.md](docs/done/93-agent-first-site-checks.md).
+
+## Job 91: Alexa dispatch diagnosis
+
+Alexa's „Verbindungsproblem“ comes from Amazon: no spoken request has ever reached the `alexa` function, and account linking works. `scripts/alexa/diagnose.sh` shows, for a window, every call the function got, the Alexa OAuth steps and the live links, with no personal data. `scripts/alexa/smoke.sh` has Amazon call the endpoint. docs/ALEXA.md „Troubleshooting“ maps Alexa's errors to causes and fixes. Token rotation is compatible with Amazon, so no config change. Peter's checks: NEEDS_PETER „Job 91“. The Vercel DPA is in `docs/legal/dpas/` (rendered from the public page, same 2026-03-17 version; index `docs/legal/dpas/README.md`). Details: [docs/done/91-alexa-dispatch-diag.md](docs/done/91-alexa-dispatch-diag.md).

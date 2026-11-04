@@ -259,6 +259,11 @@ Deno.test('a request the verifier refuses gets 400 and reaches nothing', async (
   });
   assertEquals(late.status, 400);
   assertEquals(world.rows, [], 'nothing was added');
+  assertEquals(world.lines, [
+    'alexa: - - - linked=false -> refused missing_signature',
+    'alexa: - - - linked=false -> refused bad_signature',
+    'alexa: - - - linked=false -> refused stale_timestamp',
+  ], 'each refusal logs its reason (job 91)');
 
   // The same request, signed: it goes through.
   const ok = await send(deps, body, {
