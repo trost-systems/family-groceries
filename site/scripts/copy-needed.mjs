@@ -33,7 +33,20 @@ export function readVideoCopy() {
   return Object.entries(raw).filter(([id]) => id !== '_');
 }
 
-export function copyNeeded(copy, videoCopy = [], historyCopy = Object.entries(HISTORY_COPY)) {
+/** Siri's and Alexa's new spoken sentences (job 112, Q79); the functions' tests check them. */
+export const VOICE_COPY = join(SITE_DIR, '../supabase/functions/voice/copy_needed.json');
+
+export function readVoiceCopy() {
+  const raw = JSON.parse(readFileSync(VOICE_COPY, 'utf8'));
+  return Object.entries(raw).filter(([id]) => id !== '_');
+}
+
+export function copyNeeded(
+  copy,
+  videoCopy = [],
+  historyCopy = Object.entries(HISTORY_COPY),
+  voiceCopy = readVoiceCopy(),
+) {
   const rows = (status) =>
     [...copy]
       .filter(([, e]) => e.status === status)
@@ -74,6 +87,16 @@ build time. Change the text there; this section follows.
 
 ${head}
 ${historyCopy.map(([id, e]) => `| \`${id}\` | ${cell(e.where)} | ${cell(e.de)} | ${cell(e.en)} | New: release timeline (job 105). | draft |`).join('\n')}
+` : ''}${voiceCopy.length ? `
+## Voice replies (Siri, Alexa)
+
+From \`supabase/functions/voice/copy_needed.json\` (job 112, Peter Q79): the yes/no question when
+the user says a plain name and the open item has its own brand or details. Examples with Butter
+(brand Weihenstephan) and Quark (brand Ehrmann) open; the names come from the list. Change the
+sentence in the functions and in that file together (\`voice/copy_needed_test.ts\` checks them).
+
+${head}
+${voiceCopy.map(([id, e]) => `| \`${id}\` | ${cell(e.where)} | ${cell(e.de)} | ${cell(e.en)} | New: Peter Q79, job 112. | draft |`).join('\n')}
 ` : ''}`;
 }
 

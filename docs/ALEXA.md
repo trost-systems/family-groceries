@@ -207,7 +207,7 @@ alexa: - - - linked=false -> refused bad_signature
 
 - `linked` says whether Alexa sent an access token (for `SkillAccountLinked`, the one in the event
   body). `linked=true -> link` means the token was revoked, expired or not ours.
-- Reply kinds: `link` (link card), `no-household`, `launch`, `added`, `read`, `help`, `goodbye`,
+- Reply kinds: `link` (link card), `no-household`, `launch`, `added`, `ask` (the yes/no question about a branded open item, Q79), `read`, `help`, `goodbye`,
   `reprompt` (the one second try), `not-understood`, `too-long`, `rate-limited`, `empty` (session end, `System.ExceptionEncountered` and the skill
   events, which want no speech), `error` (the apology or a 500; the exception is in PostHog error
   tracking) and `refused` (verification failed, with its reason, or not a POST; nothing from the

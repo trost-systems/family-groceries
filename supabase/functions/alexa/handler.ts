@@ -29,7 +29,12 @@ export interface Deps {
   authenticate(accessToken: string): Promise<Linked>;
   /** Takes [count] from the user's allowance (30 items a minute); false when it is used up. */
   takeAdds(linked: Linked, count: number): Promise<boolean>;
-  addItems(linked: Linked, items: ParsedItem[]): Promise<Added[]>;
+  /** `addVariants`: the yes to the Q79 question, held items are added (voice/items.ts). */
+  addItems(
+    linked: Linked,
+    items: ParsedItem[],
+    options?: { addVariants?: boolean },
+  ): Promise<Added[]>;
   /** The household's open items in aisle order. */
   listItems(linked: Linked): Promise<Spoken[]>;
   /** Remembers which session this Alexa user holds; [relinked] revokes the ones before it. */
@@ -53,6 +58,7 @@ export const replyKinds = [
   'no-household',
   'launch',
   'added',
+  'ask',
   'read',
   'help',
   'goodbye',
@@ -74,6 +80,8 @@ interface Reply {
   card?: 'link' | string;
   /** Ask for the items again, on AddItemIntent. */
   elicit?: boolean;
+  /** Q79: ask yes or no about these items (the slot's new value), on AddItemIntent. */
+  confirm?: string;
   attributes?: Record<string, unknown>;
 }
 
@@ -95,6 +103,16 @@ function alexaResponse(reply: Reply): Response {
         name: 'AddItemIntent',
         confirmationStatus: 'NONE',
         slots: { items: { name: 'items', confirmationStatus: 'NONE' } },
+      },
+    }];
+  }
+  if (reply.confirm) {
+    response.directives = [{
+      type: 'Dialog.ConfirmIntent',
+      updatedIntent: {
+        name: 'AddItemIntent',
+        confirmationStatus: 'NONE',
+        slots: { items: { name: 'items', value: reply.confirm, confirmationStatus: 'NONE' } },
       },
     }];
   }
@@ -191,12 +209,14 @@ export function createHandler(deps: Deps) {
       name: voice.name(item.name, text),
     }));
     const cut = heard.length > maxItems ? ` ${speech.tooMany}` : '';
+    // Q79: the yes or no to a question about held items; NONE on a first add.
+    const answer = envelope.request.intent?.confirmationStatus;
     let added: Added[];
     try {
       if (!await deps.takeAdds(linked, items.length)) {
         return { speech: speech.rateLimited, end: true, kind: 'rate-limited' };
       }
-      added = await deps.addItems(linked, items);
+      added = await deps.addItems(linked, items, { addVariants: answer === 'CONFIRMED' });
     } catch (e) {
       deps.report(e);
       return { speech: speech.failed, end: true, kind: 'error' };
@@ -205,6 +225,11 @@ export function createHandler(deps: Deps) {
     // The server's parser can still find no item in a piece ("1 Packung"): nothing to read back.
     if (added.length === 0) {
       return { speech: speech.notUnderstood, end: true, kind: 'not-understood' };
+    }
+    const ask = answer === 'NONE' || !answer ? voice.question(added) : null;
+    if (ask) {
+      const question = ask.question + cut;
+      return { speech: question, reprompt: question, confirm: ask.again, end: false, kind: 'ask' };
     }
     const said = voice.confirmation(added) + cut;
     return { speech: said, card: said, end: true, kind: 'added' };

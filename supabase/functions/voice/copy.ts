@@ -27,6 +27,8 @@ export interface Copy {
   spoken(item: ParsedItem): string;
   added(said: string[]): string;
   existing(said: string[]): string;
+  /** Q79 (copy pending Peter): the open variants, then whether to add the names anyway. */
+  ask(open: string[], wanted: string[]): string;
   parsed(said: string[]): string;
   /** The open items, the first readLimit of them by name. */
   listing(said: string[], total: number): string;
@@ -63,6 +65,10 @@ export const copy: Record<Lang, Copy> = {
     spoken,
     added: (said) => `Hinzugefügt: ${said.join(', ')}.`,
     existing: (said) => `Schon auf der Liste: ${said.join(', ')}.`,
+    ask: (open, wanted) =>
+      `${und(open)} ${open.length === 1 ? 'steht' : 'stehen'} schon drauf. Soll ich ${
+        und(wanted)
+      } trotzdem dazuschreiben?`,
     parsed: (said) => `Verstanden: ${said.join(', ')}.`,
     listing: (said, total) => {
       if (total === 0) return 'Die Hummlist ist leer.';
@@ -93,6 +99,10 @@ export const copy: Record<Lang, Copy> = {
     spoken: spokenEnglish,
     added: (said) => `Added ${and(said)} to Hummlist.`,
     existing: (said) => `Already on the list: ${and(said)}.`,
+    ask: (open, wanted) =>
+      `${and(open)} ${open.length === 1 ? 'is' : 'are'} already on the list. Should I add ${
+        and(wanted)
+      } anyway?`,
     parsed: (said) => `Got it: ${and(said)}.`,
     listing: (said, total) => {
       if (total === 0) return 'Your Hummlist is empty.';

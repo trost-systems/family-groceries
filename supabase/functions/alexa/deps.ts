@@ -26,8 +26,8 @@ export function productionDeps(
     verify,
     authenticate: resolve,
     takeAdds: (linked, count) => takeAdds(serviceDb(), linked.userId, count),
-    addItems: (linked, items) =>
-      asUser(linked.userId, (tx) => addItems(tx, linked.householdId, items)),
+    addItems: (linked, items, options) =>
+      asUser(linked.userId, (tx) => addItems(tx, linked.householdId, items, options)),
     listItems: (linked) => asUser(linked.userId, (tx) => openItems(tx, linked.householdId)),
     remember: async (alexaUser, linked, relinked) => {
       await remember(serviceDb(), alexaUser, linked, relinked);

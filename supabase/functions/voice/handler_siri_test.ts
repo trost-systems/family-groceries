@@ -484,3 +484,88 @@ Deno.test('every event the handler builds passes the server catalog', () => {
     });
   }
 });
+
+/** Butter Weihenstephan is open: a plain "Butter" is held unless the request is the yes. */
+const withBrandedButter =
+  (calls: { addVariants?: boolean }[] = []): Deps['addItems'] => (_caller, items, options = {}) => {
+    calls.push(options);
+    return Promise.resolve(items.map((item): Added => {
+      const butter = item.name.toLowerCase() === 'butter' && !options.addVariants;
+      return butter
+        ? {
+          name: 'Butter',
+          quantity: null,
+          brand: 'Weihenstephan',
+          properties: null,
+          category: 'Kühlregal',
+          alreadyOnList: true,
+          similarOnList: [],
+          held: item,
+        }
+        : {
+          ...item,
+          brand: null,
+          properties: null,
+          category: 'Sonstiges',
+          alreadyOnList: false,
+          similarOnList: [],
+          held: null,
+        };
+    }));
+  };
+
+Deno.test('Q79: a client that can ask gets one yes/no question for a branded open item', async () => {
+  const { handle, events } = fakeDeps({ addItems: withBrandedButter() });
+  const de = await answer(handle, post({ text: 'Milch und Butter', lang: 'de', ask: true }));
+  assertEquals(de.status, 200);
+  assertEquals(de.body.outcome, 'confirm');
+  assertEquals(
+    de.body.question,
+    'Hinzugefügt: Milch. Butter Weihenstephan steht schon drauf. Soll ich Butter trotzdem dazuschreiben?',
+  );
+  assertEquals(de.body.speech, 'Hinzugefügt: Milch. Schon auf der Liste: Butter Weihenstephan.');
+  assertEquals(de.body.again, 'Butter');
+  assertEquals(events.at(-1)?.reason, 'added', 'the event keeps its reasons');
+
+  const en = await answer(handle, post({ text: 'two butter', lang: 'en', ask: true }));
+  assertEquals(en.body.outcome, 'confirm');
+  assertEquals(
+    en.body.question,
+    'Butter Weihenstephan is already on the list. Should I add 2 butter anyway?',
+  );
+  assertEquals(en.body.speech, 'Already on the list: Butter Weihenstephan.');
+  assertEquals(en.body.again, '2 butter');
+  assertEquals(events.at(-1)?.reason, 'nothing_added');
+});
+
+Deno.test('Q79: the yes resends the held items with confirmed and adds them as said', async () => {
+  const calls: { addVariants?: boolean }[] = [];
+  const { handle } = fakeDeps({ addItems: withBrandedButter(calls) });
+  const { body } = await answer(
+    handle,
+    post({ text: 'Butter', lang: 'de', ask: true, confirmed: true }),
+  );
+  assertEquals(calls.at(-1), { addVariants: true });
+  assertEquals(body.outcome, 'added');
+  assertEquals(body.speech, 'Hinzugefügt: Butter.');
+});
+
+Deno.test('Q79: no question without ask (Shortcut, older apps): nothing added, already there', async () => {
+  const calls: { addVariants?: boolean }[] = [];
+  const { handle } = fakeDeps({ addItems: withBrandedButter(calls) });
+  const native = await answer(handle, post({ text: 'Butter', lang: 'de' }));
+  assertEquals(native.body.outcome, 'nothing_added');
+  assertEquals(native.body.speech, 'Schon auf der Liste: Butter Weihenstephan.');
+  assertFalse('question' in native.body);
+  const shortcut = await answer(handle, post({ text: 'Butter', ask: true }, { token: 'fgp_pat' }));
+  assertEquals(shortcut.body, {
+    speech: 'Schon auf der Liste: Butter Weihenstephan.',
+    items: shortcut.body.items,
+    truncated: false,
+  });
+  assertEquals(calls.map((c) => c.addVariants), [false, false], 'confirmed only counts with lang');
+  assertFalse(
+    [...native.body.items, ...shortcut.body.items].some((i: object) => 'held' in i),
+    'held stays on the server: the answer keeps its shape',
+  );
+});

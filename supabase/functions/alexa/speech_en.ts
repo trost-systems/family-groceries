@@ -1,5 +1,6 @@
 // What Alexa says in English (en-US, en-GB, en-AU, en-CA, en-IN). Same outcomes as speech.ts, one
 // sentence each. Alexa is not Premium (Legal N-27): the locked lines say nothing about buying.
+import { copy } from '../voice/copy.ts';
 import type { Added } from '../voice/handler.ts';
 import type { Spoken } from './speech.ts';
 
@@ -77,10 +78,34 @@ export function confirmationEnglish(results: readonly Added[]): string {
   return parts.join(' ');
 }
 
+/**
+ * Q79 (copy pending Peter): "Butter Weihenstephan is already on Hummlist. Should I add butter
+ * anyway?", after what was done, with the held items' text for the slot on a yes.
+ */
+export function questionEnglish(
+  results: readonly Added[],
+): { question: string; again: string } | null {
+  const held = results.filter((r) => r.held);
+  if (!held.length) return null;
+  const open = enumerateEnglish(held.map(saidEnglish));
+  const wanted = enumerateEnglish(
+    held.map((r) => saidEnglish({ ...r.held!, brand: null, properties: null })),
+  );
+  return {
+    question: [
+      confirmationEnglish(results.filter((r) => !r.held)),
+      `${open} ${held.length === 1 ? 'is' : 'are'} already on Hummlist. ` +
+      `Should I add ${wanted} anyway?`,
+    ].filter(Boolean).join(' '),
+    again: held.map((r) => copy.en.spoken(r.held!)).join(', '),
+  };
+}
+
 /** "There are 3 things on your Hummlist: milk, eggs and bread." */
 export function listingEnglish(items: readonly Spoken[], limit: number): string {
   if (items.length === 0) return speechEnglish.emptyList;
-  const read = items.slice(0, limit).map(saidEnglish);
+  // One more than the limit is read: "and 1 more" is no shorter than the item.
+  const read = items.slice(0, items.length > limit + 1 ? limit : undefined).map(saidEnglish);
   const rest = items.length - read.length;
   const head = items.length === 1
     ? 'There is one thing on your Hummlist'

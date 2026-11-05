@@ -38,8 +38,15 @@ struct AddItemsIntent: AppIntent {
       spoken = dictated
       lang = VoiceLanguage.of(dictated)
     }
-    let result = await client.send(text: spoken, mode: .add, lang: lang)
-    return .result(dialog: dialog(result.answer(mode: .add, copy: SiriCopy(lang))))
+    let result = await client.send(text: spoken, mode: .add, lang: lang, ask: true)
+    guard case .confirm(let speech, let question, let again) = result else {
+      return .result(dialog: dialog(result.answer(mode: .add, copy: SiriCopy(lang))))
+    }
+    // Q79: one yes/no question; a no, a cancel or no answer adds nothing more.
+    let yes = (try? await $text.requestConfirmation(for: spoken, dialog: dialog(question))) ?? false
+    guard yes else { return .result(dialog: dialog(speech)) }
+    let added = await client.send(text: again, mode: .add, lang: lang, confirmed: true)
+    return .result(dialog: dialog(added.answer(mode: .add, copy: SiriCopy(lang))))
   }
 }
 

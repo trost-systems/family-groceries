@@ -40,7 +40,7 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
     let text = titles.joined(separator: ", ")
     let result = await client.send(text: text, mode: .add, lang: VoiceLanguage.of(text))
     switch result {
-    case .added, .nothingAdded:
+    case .added, .nothingAdded, .confirm:
       let response = INAddTasksIntentResponse(code: .success, userActivity: nil)
       response.addedTasks = titles.map(task)
       return response
@@ -83,7 +83,7 @@ final class SearchTasksHandler: NSObject, INSearchForNotebookItemsIntentHandling
           createdDateComponents: nil, modifiedDateComponents: nil, identifier: nil)
       ]
       return response
-    case .added, .nothingAdded, .lockedHousehold, .failed:
+    case .added, .nothingAdded, .confirm, .lockedHousehold, .failed:
       return INSearchForNotebookItemsIntentResponse(code: .failure, userActivity: nil)
     }
   }

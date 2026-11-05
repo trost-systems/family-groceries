@@ -39,9 +39,16 @@ export interface Added extends Omit<SplitItem, 'storeId'> {
   alreadyOnList: boolean;
   /**
    * Open items that are another spelling or a synonym of this new one ("Möhren" for
-   * "Karotten"), by name; it was added anyway (job 32b). Empty when there are none.
+   * "Karotten"), or the same name with other details ("Butter gesalzen" for "Butter"), by name
+   * with brand and details; it was added anyway (job 32b). Empty when there are none.
    */
   similarOnList: string[];
+  /**
+   * The request as heard when this open item has the same name with its own brand or details
+   * ("Butter" with "Butter Weihenstephan" open): nothing was added, and a yes adds it
+   * (`addVariants`). Null otherwise.
+   */
+  held?: ParsedItem | null;
 }
 
 export interface Deps<C extends Caller = Caller> {
@@ -52,7 +59,8 @@ export interface Deps<C extends Caller = Caller> {
    * caller but the app's own session (in-app dictation is part of the free app).
    */
   requirePremium: RequirePremium;
-  addItems(caller: C, items: ParsedItem[]): Promise<Added[]>;
+  /** `addVariants`: the yes to a question, held items are added as said (items.ts). */
+  addItems(caller: C, items: ParsedItem[], options?: { addVariants?: boolean }): Promise<Added[]>;
   /** Splits brand, details and store off each item as add_item does, for mode parse. */
   splitItems(caller: C, items: ParsedItem[]): Promise<SplitItem[]>;
   /** The household's open items in the app's order, for mode read. */
@@ -79,6 +87,9 @@ const statuses: Record<FailureCode, number> = {
 
 /** What the native Siri client branches on; the failure codes are also `error`. */
 export type Outcome = 'added' | 'nothing_added' | 'parsed' | 'read' | FailureCode;
+
+/** A reply's outcome; `confirm` only for a client that said it can ask (`ask`). */
+type ReplyOutcome = Outcome | 'confirm';
 
 /** A server event for a Siri add or read (docs/ANALYTICS.md); never a name or text. */
 export type VoiceEvent = {
@@ -121,6 +132,28 @@ export function confirmation(results: Added[], lang: Lang = 'de'): string {
   ].filter(Boolean).join(' ');
 }
 
+/**
+ * Q79: the yes/no question when held items ("Butter" with "Butter Weihenstephan" open) are in the
+ * results, null otherwise: what was done, then "Butter Weihenstephan steht schon drauf. Soll ich
+ * Butter trotzdem dazuschreiben?". The held items' spoken text, to resend on a yes, is `again`.
+ */
+export function question(
+  results: Added[],
+  lang: Lang = 'de',
+): { question: string; again: string } | null {
+  const held = results.filter((r) => r.held);
+  if (!held.length) return null;
+  const say = copy[lang];
+  const wanted = held.map((r) => say.spoken(r.held!));
+  return {
+    question: [
+      confirmation(results.filter((r) => !r.held), lang),
+      say.ask(held.map((item) => said(item, lang)), wanted),
+    ].filter(Boolean).join(' '),
+    again: wanted.join(', '),
+  };
+}
+
 interface Body {
   text: string | null;
   mode: 'add' | 'parse' | 'read';
@@ -132,6 +165,10 @@ interface Body {
    * Without one (the Shortcut recipe) they stay exactly as before job 51.
    */
   tagged: boolean;
+  /** Q79: the client can ask a yes/no question (`"ask": true`, native Siri only). */
+  ask: boolean;
+  /** Q79: this is the yes to that question (`"confirmed": true`). */
+  confirmed: boolean;
 }
 
 const modes = ['add', 'parse', 'read'] as const;
@@ -142,23 +179,35 @@ const modes = ['add', 'parse', 'read'] as const;
  */
 async function readBody(req: Request): Promise<Body> {
   const raw = await req.text();
-  const plain = { mode: 'add', lang: 'de', tagged: false, split: false } as const;
+  const plain = {
+    mode: 'add',
+    lang: 'de',
+    tagged: false,
+    split: false,
+    ask: false,
+    confirmed: false,
+  } as const;
   if (!(req.headers.get('content-type') ?? '').includes('json')) return { ...plain, text: raw };
   try {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed === 'string') return { ...plain, text: parsed };
-    const { text, mode, lang, split } = (parsed ?? {}) as {
+    const { text, mode, lang, split, ask, confirmed } = (parsed ?? {}) as {
       text?: unknown;
       mode?: unknown;
       lang?: unknown;
       split?: unknown;
+      ask?: unknown;
+      confirmed?: unknown;
     };
+    const tagged = lang !== undefined;
     return {
       text: typeof text === 'string' ? text : null,
       mode: modes.find((m) => m === mode) ?? 'add',
       lang: lang === 'en' ? 'en' : 'de',
-      tagged: lang !== undefined,
+      tagged,
       split: split === true,
+      ask: tagged && ask === true,
+      confirmed: tagged && confirmed === true,
     };
   } catch {
     return { ...plain, text: null };
@@ -191,7 +240,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     const say = copy[body.lang];
     const send = (
       status: number,
-      { outcome, ...rest }: { outcome: Outcome; speech: string } & Record<string, unknown>,
+      { outcome, ...rest }: { outcome: ReplyOutcome; speech: string } & Record<string, unknown>,
     ) => reply(status, body.tagged ? { outcome, ...rest } : rest);
     const fail = (error: FailureCode) =>
       send(statuses[error], { outcome: error, error, speech: say.failures[error] });
@@ -286,13 +335,17 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     }
 
     try {
-      const added = await deps.addItems(caller, items);
+      const added = await deps.addItems(caller, items, { addVariants: body.confirmed });
       const outcome = added.some((a) => !a.alreadyOnList) ? 'added' : 'nothing_added';
       await track('siri_add', outcome, items.length);
+      // The speech is the answer for a no, a timeout and every client that cannot ask.
+      const ask = body.ask ? question(added, body.lang) : null;
       return send(200, {
-        outcome,
+        outcome: ask ? 'confirm' : outcome,
         speech: confirmation(added, body.lang) + cut,
-        items: added,
+        ...(ask && { question: ask.question + cut, again: ask.again }),
+        // `held` is the server's: the items keep the shape the Shortcut and older apps read.
+        items: added.map(({ held: _, ...item }) => item),
         truncated,
       });
     } catch (e) {

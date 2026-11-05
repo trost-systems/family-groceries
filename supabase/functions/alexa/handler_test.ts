@@ -38,11 +38,13 @@ interface Row {
   name: string;
   quantity: string | null;
   addedBy: string;
+  brand?: string;
 }
 
 /** A small stand-in for the database: tokens, households, items, links. */
 class World {
   rows: Row[] = [];
+  addOptions: { addVariants?: boolean }[] = [];
   /** access token -> user and session; a deleted entry is a revoked grant. */
   tokens = new Map<string, { userId: string; sessionId: string }>();
   householdOf = new Map<string, string | null>();
@@ -82,13 +84,29 @@ class World {
         this.taken.set(linked.userId, used);
         return Promise.resolve(true);
       },
-      addItems: (linked: Linked, items: ParsedItem[]) => {
+      addItems: (linked: Linked, items: ParsedItem[], options = {}) => {
         if (this.failAdds) return Promise.reject(new Error('connection reset'));
+        this.addOptions.push(options);
         const added: Added[] = [];
         for (const item of items) {
-          const existing = this.open(linked.householdId).find((r) =>
+          const named = this.open(linked.householdId).filter((r) =>
             r.name.toLowerCase() === item.name.toLowerCase()
           );
+          const existing = named.find((r) => !r.brand);
+          const variant = named.find((r) => r.brand);
+          if (!existing && variant && !options.addVariants) {
+            added.push({
+              name: variant.name,
+              quantity: variant.quantity,
+              brand: variant.brand!,
+              properties: null,
+              category: 'Kühlregal',
+              alreadyOnList: true,
+              similarOnList: [],
+              held: item,
+            });
+            continue;
+          }
           if (!existing) {
             this.rows.push({
               household: linked.householdId,
@@ -195,7 +213,15 @@ interface AlexaReply {
     outputSpeech?: { type: string; text: string };
     reprompt?: { outputSpeech: { text: string } };
     card?: { type: string; title?: string; content?: string };
-    directives?: { type: string; slotToElicit?: string; updatedIntent?: { name: string } }[];
+    directives?: {
+      type: string;
+      slotToElicit?: string;
+      updatedIntent?: {
+        name: string;
+        confirmationStatus?: string;
+        slots?: Record<string, { name: string; value?: string; confirmationStatus?: string }>;
+      };
+    }[];
     shouldEndSession?: boolean;
   };
 }
@@ -898,6 +924,30 @@ Deno.test('English: launch, help, stop, read, re-prompt and unlinked answer in E
   assertEquals(unlinked.response.card?.type, 'LinkAccount');
 });
 
+Deno.test('ReadListIntent: one item past the limit is read, not counted, in German and English', async () => {
+  const world = linkedWorld();
+  const eleven = Array.from({ length: readLimit + 1 }, (_, i) => `Teil${i}`);
+  await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', eleven.join(', ')), { token: 'tok-peter' }),
+  );
+  const read = async (request: Record<string, unknown>) =>
+    said((await send(world.deps(), request)).reply);
+  assertEquals(
+    await read(envelope(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `Auf der Hummlist stehen 11 Sachen: ${eleven.slice(0, -1).join(', ')} und Teil10.`,
+  );
+  assertEquals(
+    await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `There are 11 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and Teil10.`,
+  );
+  await send(world.deps(), envelope(intent('AddItemIntent', 'Teil11'), { token: 'tok-peter' }));
+  assertEquals(
+    await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `There are 12 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and 2 more.`,
+  );
+});
+
 Deno.test('English replies never mention Premium (Alexa is not Premium)', async () => {
   const { speechEnglish } = await import('./speech_en.ts');
   for (const text of Object.values(speechEnglish)) {
@@ -958,6 +1008,13 @@ Deno.test('job 74: one request line per request, each reply kind, no personal da
   world.link('tok-SECRET-limit', 'user-SECRET-limit', HH_B);
   world.taken.set('user-SECRET-limit', 30);
   world.rows.push({ household: HH_A, name: 'Zahnpasta', quantity: null, addedBy: 'x' });
+  world.rows.push({
+    household: HH_A,
+    name: 'Butter',
+    quantity: null,
+    addedBy: 'x',
+    brand: 'Kerrygold',
+  });
   const ask = { token: grant, user: alexaUser };
   const cases: [string, ReplyKind, () => Promise<{ status: number }>, string][] = [
     [
@@ -991,6 +1048,12 @@ Deno.test('job 74: one request line per request, each reply kind, no personal da
       () =>
         send(world.deps(), envelope(intent('AddItemIntent', 'Kaffeebohnen und Hafermilch'), ask)),
       'alexa: IntentRequest AddItemIntent de-DE linked=true -> added',
+    ],
+    [
+      'ask',
+      'ask',
+      () => send(world.deps(), envelope(intent('AddItemIntent', 'Butter'), ask)),
+      'alexa: IntentRequest AddItemIntent de-DE linked=true -> ask',
     ],
     [
       'read',
@@ -1181,4 +1244,104 @@ Deno.test('job 74: odd request fields cannot put free text or a second line into
   assertEquals(line.split('\n').length, 1);
   assertEquals(line.split(' ').length, 7);
   assertFalse(line.includes('Milch hinzu'));
+});
+
+const confirmed = (status: 'CONFIRMED' | 'DENIED', items: string) => ({
+  type: 'IntentRequest',
+  dialogState: 'IN_PROGRESS',
+  intent: {
+    name: 'AddItemIntent',
+    confirmationStatus: status,
+    slots: { items: { name: 'items', value: items } },
+  },
+});
+
+function brandedButter() {
+  const world = linkedWorld();
+  world.rows.push({
+    household: HH_A,
+    name: 'Butter',
+    quantity: null,
+    addedBy: 'peter',
+    brand: 'Weihenstephan',
+  });
+  return world;
+}
+
+Deno.test('Q79: a plain name with its branded item open asks one yes/no question', async () => {
+  const world = brandedButter();
+  const { reply } = await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', 'Milch und Butter'), { token: 'tok-peter' }),
+  );
+  const question =
+    'Ich habe Milch auf die Hummlist gesetzt. Butter Weihenstephan steht schon auf der Hummlist. ' +
+    'Soll ich Butter trotzdem dazuschreiben?';
+  assertEquals(said(reply), question);
+  assertEquals(reply.response.reprompt?.outputSpeech.text, question);
+  assertEquals(reply.response.shouldEndSession, false);
+  assertEquals(reply.response.directives, [{
+    type: 'Dialog.ConfirmIntent',
+    updatedIntent: {
+      name: 'AddItemIntent',
+      confirmationStatus: 'NONE',
+      slots: { items: { name: 'items', value: 'Butter', confirmationStatus: 'NONE' } },
+    },
+  }]);
+  assertEquals(world.rows.map((r) => [r.name, r.brand ?? null]), [
+    ['Butter', 'Weihenstephan'],
+    ['Milch', null],
+  ]);
+  assertEquals(world.lines.at(-1), 'alexa: IntentRequest AddItemIntent de-DE linked=true -> ask');
+});
+
+Deno.test('Q79: yes adds a second Butter, no adds nothing and says it is there', async () => {
+  const world = brandedButter();
+  const no = await send(
+    world.deps(),
+    envelope(confirmed('DENIED', 'Butter'), { token: 'tok-peter', attributes: {} }),
+  );
+  assertEquals(said(no.reply), 'Schon auf der Hummlist: Butter Weihenstephan.');
+  assertEquals(no.reply.response.shouldEndSession, true);
+  assertEquals(world.rows.length, 1, 'no: nothing added, nothing changed');
+  const yes = await send(
+    world.deps(),
+    envelope(confirmed('CONFIRMED', 'Butter'), { token: 'tok-peter', attributes: {} }),
+  );
+  assertEquals(said(yes.reply), 'Ich habe Butter auf die Hummlist gesetzt.');
+  assertEquals(world.addOptions.map((o) => o.addVariants ?? false), [false, true]);
+  assertEquals(world.rows.map((r) => [r.name, r.brand ?? null]), [
+    ['Butter', 'Weihenstephan'],
+    ['Butter', null],
+  ]);
+});
+
+Deno.test('Q79: no answer (the session ends) adds nothing', async () => {
+  const world = brandedButter();
+  await send(world.deps(), envelope(intent('AddItemIntent', 'Butter'), { token: 'tok-peter' }));
+  const ended = await send(
+    world.deps(),
+    envelope({ type: 'SessionEndedRequest', reason: 'EXCEEDED_MAX_REPROMPTS' }, {
+      token: 'tok-peter',
+    }),
+  );
+  assertEquals(ended.status, 200);
+  assertEquals(world.rows.length, 1);
+});
+
+Deno.test('Q79: English asks the same question in English', async () => {
+  const world = brandedButter();
+  const { reply } = await send(
+    world.deps(),
+    english(intent('AddItemIntent', 'butter'), { token: 'tok-peter' }),
+  );
+  assertEquals(
+    said(reply),
+    'Butter Weihenstephan is already on Hummlist. Should I add butter anyway?',
+  );
+  const no = await send(
+    world.deps(),
+    english(confirmed('DENIED', 'butter'), { token: 'tok-peter', attributes: {} }),
+  );
+  assertEquals(said(no.reply), 'Already on Hummlist: Butter Weihenstephan.');
 });

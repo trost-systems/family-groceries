@@ -30,13 +30,15 @@ supabase/bench/suggest_latency.sh
 # Job 73: the api function's wiring (keys, limits, idempotency, pagination, households, lock).
 # Job 104: the server's number words are supabase/tests/number_words.tsv, like the app's.
 # Job 111: in-app dictation splits brand and details as add_item does.
+# Job 112: a plain name whose item is open with a brand, a note or a product word (Q79), through
+# the Shortcut, native Siri and Alexa on parser-stored items.
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
   deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
   _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts \
   _shared/zero_stores_integration_test.ts _shared/list_integration_test.ts \
   _shared/one_open_item_integration_test.ts api/api_integration_test.ts _shared/number_words_integration_test.ts \
-  voice/split_integration_test.ts)
+  voice/split_integration_test.ts _shared/voice_variants_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 
