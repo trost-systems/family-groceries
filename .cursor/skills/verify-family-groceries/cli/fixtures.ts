@@ -425,16 +425,17 @@ export async function verifyRun(api: Api, m: Manifest, p: Plan, tokens: Record<s
     const hid = m.households[h.handle].id;
     const token = tokens[h.members[0]];
     const want = counts.households[h.handle];
-    const n = async (path: string) => rows(await api.rest(path, { token })).length;
-    check(`${h.handle}: members`, want.members, await n(`household_members?select=user_id&household_id=eq.${hid}`));
-    check(`${h.handle}: active items`, want.activeItems, await n(`items?select=id&household_id=eq.${hid}&status=eq.active`));
-    check(`${h.handle}: bought items`, want.boughtItems, await n(`items?select=id&household_id=eq.${hid}&status=eq.bought`));
-    check(`${h.handle}: stores`, want.stores, await n(`stores?select=id&household_id=eq.${hid}`));
-    check(`${h.handle}: categories`, want.categories, await n(`categories?select=id&household_id=eq.${hid}`));
+    // A count, not the rows: PostgREST returns at most max_rows (1000) of them.
+    const n = (table: string, filter: string) => api.count(table, `household_id=eq.${hid}${filter}`, token);
+    check(`${h.handle}: members`, want.members, await n('household_members', ''));
+    check(`${h.handle}: active items`, want.activeItems, await n('items', '&status=eq.active'));
+    check(`${h.handle}: bought items`, want.boughtItems, await n('items', '&status=eq.bought'));
+    check(`${h.handle}: stores`, want.stores, await n('stores', ''));
+    check(`${h.handle}: categories`, want.categories, await n('categories', ''));
     check(
       `${h.handle}: open invites`,
       want.openInvites,
-      await n(`invites?select=id&household_id=eq.${hid}&revoked_at=is.null&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`),
+      await n('invites', `&revoked_at=is.null&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`),
     );
     for (const member of h.members) {
       const foreign = rows(await api.rest(`items?select=household_id&household_id=neq.${hid}&limit=1`, { token: tokens[member] })).length +

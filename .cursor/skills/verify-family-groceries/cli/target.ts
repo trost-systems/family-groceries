@@ -164,14 +164,14 @@ export class Api {
     return this.call(`/rest/v1/rpc/${fn}`, { method: 'POST', body: JSON.stringify(body), token });
   }
 
-  /** Exact row count through the service role; reads no row content. */
-  async count(table: string, filter: string): Promise<number> {
+  /** Exact row count through the service role, or through RLS as `token`'s user; reads no row content. */
+  async count(table: string, filter: string, token?: string): Promise<number> {
     const res = await this.send(
       `Counting ${table}`,
       `${this.target.apiUrl}/rest/v1/${table}?select=*&limit=0${filter ? `&${filter}` : ''}`,
       {
         method: 'HEAD',
-        headers: this.headers(undefined, { prefer: 'count=exact' }),
+        headers: this.headers(token, { prefer: 'count=exact' }),
       },
     );
     await res.body?.cancel();
