@@ -977,6 +977,17 @@ void main() {
       },
     );
 
+    test('umlauts folded, "Broetchen" is the open Brötchen', () async {
+      final broetchen = await add('Brötchen', '4');
+      final saft = await add('Apfelsaft');
+      cubit.edit(saft.id, const ItemChanges(name: 'Broetchen'));
+      await settle();
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (broetchen.id, 'Brötchen', '5'),
+      ]);
+      expect(merges.single.result.name, 'Brötchen');
+    });
+
     test('a quantity typed in the same edit is added up', () async {
       final wasser = await add('Mineralwasser', '6');
       final saft = await add('Apfelsaft', '2');
@@ -1013,79 +1024,9 @@ void main() {
       expect(merges, isEmpty);
     });
 
-    test('a synonym folds in once the server keyed the new name', () async {
-      final moehren = await add('Möhren', '500 g');
-      final rueben = await add('Rüben', '1 kg');
-      repo.gate = Completer();
-      cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
-      await settle();
-      expect(activeNames(), ['Möhren', 'Karotten'], reason: 'no key yet');
-      repo.gate!.complete();
-      await settle();
-      expect(activeNames(), ['Möhren']);
-      expect(repo.rows.values.map((i) => (i.id, i.quantity)), [
-        (moehren.id, '1,5 kg'),
-      ]);
-      expect(merges.single.merged.name, 'Karotten');
-    });
-
-    test('a synonym folds in also when its new key arrived before the '
-        'acknowledgement', () async {
-      final moehren = await add('Möhren', '500 g');
-      final rueben = await add('Rüben', '1 kg');
-      repo.gate = Completer();
-      cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
-      await settle();
-      repo.emitItem!(
-        Item.fromJson({
-          ...repo.rows[rueben.id]!.toJson(),
-          'name': 'Karotten',
-          'canonical_key': 'mohr',
-        }),
-      );
-      await settle();
-      repo.gate!.complete();
-      await settle();
-      expect(activeNames(), ['Möhren']);
-      expect(repo.rows.values.map((i) => (i.id, i.quantity)), [
-        (moehren.id, '1,5 kg'),
-      ]);
-    });
-
-    test('a synonym rename made offline merges after a restart', () async {
-      final moehren = await add('Möhren', '500 g');
-      final rueben = await add('Rüben', '1 kg');
-      repo.online = false;
-      cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
-      await settle();
-      await cubit.close();
-      cubit = ListCubit(repo, cache, userId: 'peter')..start();
-      cubit.renameMerges.listen(merges.add);
-      await settle();
-      repo.online = true;
-      await cubit.resync();
-      await settle();
-      expect(activeNames(), ['Möhren']);
-      expect(repo.rows.values.map((i) => (i.id, i.quantity)), [
-        (moehren.id, '1,5 kg'),
-      ]);
-      expect(merges.single.merged.name, 'Karotten');
-    });
-
-    test('Rückgängig on a synonym merge also renames it back', () async {
-      final moehren = await add('Möhren', '500 g');
-      final rueben = await add('Rüben', '1 kg');
-      cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
-      await settle();
-      cubit.unmerge(merges.single);
-      await settle();
-      expect(cubit.state.pending, isEmpty);
-      expect(activeNames(), ['Möhren', 'Rüben']);
-      expect(repo.rows[moehren.id]!.quantity, '500 g');
-      expect(repo.rows[rueben.id]!.name, 'Rüben');
-    });
-
-    group('an add still queued, then edited', () {
+    // Addendum 3: only the same name merges. A synonym or a longer name is
+    // offered as for an add (DedupeHint), never merged.
+    group('a rename to a synonym or a longer name', () {
       late List<DedupeHint> hints;
 
       setUp(() {
@@ -1095,7 +1036,94 @@ void main() {
         addTearDown(sub.cancel);
       });
 
-      test('a brand never merges it into a synonym', () async {
+      List<(String, String)> offered() => [
+        for (final h in hints) (h.added.name, h.onList.name),
+      ];
+
+      test(
+        'is offered once the server keyed the new name, never merged',
+        () async {
+          await add('Möhren', '500 g');
+          final rueben = await add('Rüben', '1 kg');
+          repo.gate = Completer();
+          cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
+          await settle();
+          expect(hints, isEmpty, reason: 'no key yet');
+          repo.gate!.complete();
+          await settle();
+          expect(activeNames(), ['Möhren', 'Karotten']);
+          expect(offered(), [('Karotten', 'Möhren')]);
+          expect(merges, isEmpty);
+          expect(repo.sent.whereType<MergeItems>(), isEmpty);
+        },
+      );
+
+      test(
+        'also when its new key arrived before the acknowledgement',
+        () async {
+          await add('Möhren', '500 g');
+          final rueben = await add('Rüben', '1 kg');
+          repo.gate = Completer();
+          cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
+          await settle();
+          repo.emitItem!(
+            Item.fromJson({
+              ...repo.rows[rueben.id]!.toJson(),
+              'name': 'Karotten',
+              'canonical_key': 'mohr',
+            }),
+          );
+          await settle();
+          repo.gate!.complete();
+          await settle();
+          expect(activeNames(), ['Möhren', 'Karotten']);
+          expect(offered(), [('Karotten', 'Möhren')]);
+        },
+      );
+
+      test('also when made offline and sent after a restart', () async {
+        await add('Möhren', '500 g');
+        final rueben = await add('Rüben', '1 kg');
+        repo.online = false;
+        cubit.edit(rueben.id, const ItemChanges(name: 'Karotten'));
+        await settle();
+        await cubit.close();
+        cubit = ListCubit(repo, cache, userId: 'peter')..start();
+        final sub = cubit.hints.listen(hints.add);
+        addTearDown(sub.cancel);
+        await settle();
+        repo.online = true;
+        await cubit.resync();
+        await settle();
+        expect(activeNames(), ['Möhren', 'Karotten']);
+        expect(offered(), [('Karotten', 'Möhren')]);
+        expect(repo.sent.whereType<MergeItems>(), isEmpty);
+      });
+
+      test(
+        '"Butter" next to an open "Butter" Kerrygold stays two rows',
+        () async {
+          final kerrygold = cubit.addParsed(
+            const ParsedEntry(name: 'Butter', brand: 'Kerrygold'),
+          ) as Added;
+          await settle();
+          final saft = await add('Apfelsaft');
+          cubit.edit(saft.id, const ItemChanges(name: 'Butter'));
+          await settle();
+          expect(
+            [
+              for (final i in repo.rows.values)
+                if (i.status == ItemStatus.active) (i.name, i.brand),
+            ],
+            [('Butter', 'Kerrygold'), ('Butter', null)],
+          );
+          expect(merges, isEmpty);
+          expect(repo.sent.whereType<MergeItems>(), isEmpty);
+          expect(hints.map((h) => h.onList.id), [kerrygold.item.id]);
+        },
+      );
+
+      test('an add still queued, then a brand: no merge', () async {
         await add('Brötchen', '4');
         repo.online = false;
         final semmeln = cubit.addEntry(const Entry('Semmeln', null)) as Added;
@@ -1105,12 +1133,11 @@ void main() {
         await cubit.resync();
         await settle();
         expect(activeNames(), ['Brötchen', 'Semmeln']);
-        expect(merges, isEmpty);
         expect(repo.sent.whereType<MergeItems>(), isEmpty);
-        expect(hints.map((h) => h.onList.name), ['Brötchen'], reason: 'add');
+        expect(offered(), [('Semmeln', 'Brötchen')], reason: 'the add');
       });
 
-      test('a rename to a synonym is offered, not merged', () async {
+      test('an add still queued, then renamed to a synonym: offered', () async {
         repo.canonical['Rundstück'] = 'rund';
         await add('Brötchen', '4');
         repo.online = false;
@@ -1121,21 +1148,19 @@ void main() {
         await cubit.resync();
         await settle();
         expect(activeNames(), ['Brötchen', 'Semmeln']);
-        expect(merges, isEmpty);
         expect(repo.sent.whereType<MergeItems>(), isEmpty);
-        expect(hints.map((h) => (h.added.name, h.onList.name)), [
-          ('Semmeln', 'Brötchen'),
-        ]);
+        expect(offered(), [('Semmeln', 'Brötchen')]);
       });
-    });
 
-    test('a change of case beside an older synonym merges nothing', () async {
-      await add('Möhren');
-      final karotten = await add('Karotten');
-      cubit.edit(karotten.id, const ItemChanges(name: 'karotten'));
-      await settle();
-      expect(activeNames(), ['Möhren', 'karotten']);
-      expect(merges, isEmpty);
+      test('a change of case beside an older synonym offers nothing', () async {
+        await add('Möhren');
+        final karotten = await add('Karotten');
+        hints.clear();
+        cubit.edit(karotten.id, const ItemChanges(name: 'karotten'));
+        await settle();
+        expect(activeNames(), ['Möhren', 'karotten']);
+        expect(hints, isEmpty);
+      });
     });
 
     test(

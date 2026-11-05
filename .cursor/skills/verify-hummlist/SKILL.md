@@ -137,7 +137,7 @@ It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and ho
 | `journeys/ai-assistants.mjs` | `drive.sh ai-assistants [--lang en]`: a connected app's row (device, dates), the token hint and the details sheet |
 | `journeys/tips.mjs` | `drive.sh tips [--lang en] [--dark]`: the List tab's tip, dismiss, the next tip after a reload |
 | `journeys/account-deletion.mjs` | `drive.sh account-deletion [--lang en] [--dialog premium\|none]`: the Konto page's email copy button and the clipboard; with `--dialog`, whether „Konto löschen“ shows the Premium warning (then cancels) |
-| `journeys/edit-item.mjs` | `drive.sh edit-item [--from Apfelsaft] [--to Mineralwasser] [--onto Brötchen]` on `demo-familie`: a rename onto an open item merges, „Zusammengeführt“, Rückgängig |
+| `journeys/edit-item.mjs` | `drive.sh edit-item [--from Apfelsaft] [--to Mineralwasser] [--onto Brötchen]` on a fresh `demo-familie`: a rename onto an open item merges, „Zusammengeführt“, Rückgängig; with `--onto` (a synonym) nothing merges and the duplicate hint shows |
 | `journeys/offline.mjs` | `drive.sh offline [--lines "zwei Gurken\|two lemons"]`: lines added offline get the same name and Menge as online |
 | `journeys/list-manage.mjs` | `node .cursor/skills/verify-hummlist/journeys/list-manage.mjs <evidence dir> [--lang en] [--dark]` (no feature id of its own, so not through `drive.sh`): screenshots of the list, the add sheet, More, „Läden“, one store's details and „Ohne Laden“ for stores-walk-order and categories; adds and then deletes Wochenmarkt and Bäckerei; checks only that the page logs no errors |
 

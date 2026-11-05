@@ -1682,20 +1682,19 @@ are in `docs/screenshots/86/` and `~/groceries-ops/jobs/86-iap-review-screenshot
 PR "fix: rename dedupe, offline number words, last-member Premium warning". PR only: the lead
 reviews and merges. Two new migrations deploy with the next `supabase-deploy.yml` run.
 
-- **Copy review.** One new string, `accountDeletePremiumLastMember` (DE and EN). It is the job-68
-  Premium warning without its archive sentence. It now shows in release builds to the last
-  member of a household with Premium. Its texts waited for the archive UI's Legal Review
-  (DECISIONS 68.3); the brief asks for the warning regardless. Say if Legal should see it first.
-  The reused job-68 lines ship with it: a household with a gifted or tester unlock also reads
-  „Erstattung bei Apple oder Google anfragen“ and „… wird nicht automatisch erstattet“, for
-  Premium nobody paid for. A gift-specific wording would be a new string.
-- **Behaviour change to confirm: typed number words online.** „Gurken zwei“, „two apples“ and
+- **Copy.** Peter's plain-language texts (Addendum 5, Q73) replace `accountDeletePremiumLastMember`
+  (new) and `accountDeletePremiumAck` (existing, also the archive build's tick box) in DE and EN.
+  The card shows in every build, as Legal Review cleared (Addendum 4); the Legal re-check of the
+  new copy is pending. The reused refund link „Erstattung bei Apple oder Google anfragen“ also
+  shows for a gifted or tester unlock, where nobody paid; a gift-specific wording would be a new
+  string.
+- **Typed number words online (Addendum 3: fine, kept).** „Gurken zwei“, „two apples“ and
   „carrots two“ typed in the add sheet or sent through MCP now get a quantity online too, not
   only offline (DECISIONS 104.5). Before, the typed rule read only German words up front.
 - **Follow-up, voice code (out of scope here).** The Siri, Alexa and dictation splitters
   (`voice/parse.ts`, `parse_en.ts`) don't read the new number-word names. Spoken „Drei Glocken
   Spaghetti“ gives 3 × Glocken Spaghetti, and „Seven Up“ gives 7 × Up. Reading
   `supabase/tests/number_words.tsv`'s `name` rows there would be a small job.
-- **Rename merges a synonym.** Renaming to another word for an open item („Semmeln“ while
-  Brötchen is open) merges straight away, with Rückgängig. An add only offers that merge as a
-  hint. Say if a rename should offer the hint instead.
+- **Rename merges only the same name (Addendum 3, done).** A synonym or a name whose open item
+  has a brand („Butter“ next to „Butter“ Kerrygold) stays a second row and gets add's duplicate
+  hint.

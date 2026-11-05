@@ -9,7 +9,8 @@ squashed them into the one commit `main` takes.
 
 1. **A rename onto an open item merges into it** (vmaint-20261105 #12).
    - Renaming Apfelsaft to „Mineralwasser“ while Mineralwasser is open now folds Apfelsaft into
-     it. This works in any case, and for a synonym once the server has keyed the new name.
+     it. This works in any case, spacing or umlaut spelling. A synonym only gets add's duplicate
+     hint (review 1, Addendum 3).
    - Quantities add up. „Zusammengeführt: …“ shows with Rückgängig. If the merge can't be done,
      „… steht schon auf der Liste“ shows.
    - App: `ListCubit.edit`, `_mergeRename`, `_fold`, the `EditItem` acknowledgement, and
@@ -77,7 +78,7 @@ squashed them into the one commit `main` takes.
   - New cubit tests cover a queued add followed by a brand edit (no merge) and followed by a
     rename (hint, no merge). Both fail on the reviewed code.
 - **Nice to have, done.**
-  - Rückgängig on a synonym merge also renames the item back, so no duplicate is left. Live:
+  - (Removed in review 1 with the synonym merge.) Rückgängig on a synonym merge also renamed the item back. Live:
     Apfelsaft → „Semmeln“ merged into Brötchen ×5, then Rückgängig brought Apfelsaft back with
     one Brötchen.
   - The three identical widget cases are now one, and the kinds are proven in pgTAP.
@@ -90,12 +91,47 @@ squashed them into the one commit `main` takes.
 - **Tests after the round.** `flutter test` gives `+1798 ~88`, `flutter analyze` is clean and
   `scripts/lint.sh` passes. Live journeys PASS: rename, synonym with undo, and offline.
 
+## Review 1 (2026-11-05): fixed (lead Addenda 3 and 5)
+
+- **Must fix 1, Addendum 3 (exact-name-only rename merge).** A rename merges only when the new
+  name, brand and details match an open item after folding (case, spacing, umlauts), as add's
+  duplicate check does.
+  - A synonym („Semmeln“ while Brötchen is open) or a name whose open item has a brand („Butter“
+    while „Butter“ Kerrygold is open) stays a second row. Once the server has keyed the new name,
+    add's duplicate hint shows.
+  - The synonym merge, its undo-rename (`EditItem.nameBefore`, `Merge.renamedFrom`) and the
+    merge after the server's confirmation are removed. `EditItem.keyBefore` stays: it decides
+    when the hint is offered.
+  - Tests: the cubit's synonym tests now assert "offered, never merged". New cases cover
+    „Butter“ next to „Butter“ Kerrygold (two rows) and „Broetchen“ onto Brötchen (merges). The
+    widget test checks that the synonym only gets the hint.
+  - Live:
+    - Exact: merged, and Rückgängig brings Apfelsaft back.
+    - „Broetchen“: merged.
+    - „Semmeln“: no merge, the hint shows, Brötchen stays ×4.
+    - The reviewer's Butter probe: two open rows (Kerrygold and plain), no merge.
+- **Must fix 2, Addendum 5 (Peter's copy).** `accountDeletePremiumLastMember` and
+  `accountDeletePremiumAck` now hold Peter's DE and EN texts exactly.
+  - `accountDeletePremium` is unchanged.
+  - Updated to match: the widget tests (plus a new English release-card test),
+    `household-bound.spec.ts`, `features/account-deletion.md` (now points to the ARB keys), and
+    the DE and EN screenshots.
+  - NEEDS_COPY_REVIEW lists both keys and marks `accountDeletePremiumAck` as an edit of an
+    existing string.
+  - Live, gifted grant: the card and the tick box show the new texts in DE and EN.
+- **Docs.** DECISIONS 104.2, 104.3 and 104.8, NEEDS_LEAD, `features/edit-item.md`, the writers'
+  file, `journeys/edit-item.mjs` (`--onto` proves no merge and the hint, and it fails on an
+  ambiguous target) and the SKILL row are updated. The changelog `hold:` line now sits under
+  `fixed`.
+- **Tests.** `flutter test` gives `+1800 ~88` and `flutter analyze` is clean. `scripts/lint.sh`
+  passes. The e2e `household-bound`, `dedupe` and `edit-sheet` specs: 13 passed. No SQL changed
+  in this round.
+
 ## Missing, blocked or follow-up (docs/NEEDS_LEAD.md "Job 104")
 
 - The voice splitters (Siri, Alexa, dictation) don't read the number-word names yet: spoken
   „Seven Up“ gives 7 × Up. Voice code was off-limits for this job.
 - The copy review of `accountDeletePremiumLastMember`. It shows in releases now, though its
   job-68 siblings waited for Legal Review.
-- Two behaviour choices to confirm: synonym renames merge straight away, and typed number words
-  count online too.
+- Typed number words counting online too was confirmed by the lead (Addendum 3).
 - Offline, a multipack („6 x 1,5 l“) and the brand and details split still need the server.

@@ -321,9 +321,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // The same name merges before anything is sent; a synonym once the
-    // rename landed. Rückgängig brings Rüben back either way.
-    for (final (to, back) in [('möhren', 'Rüben'), ('Karotten', 'Rüben')]) {
+    for (final (to, back) in [('möhren', 'Rüben')]) {
       testWidgets('renaming Rüben to "$to" merges into Möhren and says so; '
           'Rückgängig brings $back back', (tester) async {
         await pumpList(tester);
@@ -342,6 +340,19 @@ void main() {
         expect(row(back), findsOneWidget);
       });
     }
+
+    testWidgets('renaming Rüben to the synonym "Karotten" only offers the '
+        'merge, as an add does', (tester) async {
+      await pumpList(tester);
+      await rename(tester, 'Rüben', 'Karotten');
+      expect(open(), [('Möhren', '500 g'), ('Karotten', '1 kg')]);
+      expect(
+        inSnackBar(find.text('Möhren steht schon auf der Liste')),
+        findsOneWidget,
+      );
+      expect(find.text('Zusammengeführt: 1,5 kg Möhren'), findsNothing);
+      expect(dedupeEvents(), ['dedupe_hint_shown']);
+    });
 
     testWidgets('a merge that cannot be done is refused as on the list', (
       tester,

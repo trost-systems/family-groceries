@@ -208,7 +208,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 2. Press and hold an item, or right-click it on a computer. (A plain tap ticks the item off instead.)
 3. In the sheet „Bearbeiten“ (EN: "Edit") change „Bezeichnung“ (EN: "Name"), „Marke“ (EN: "Brand"), „Menge“ (EN: "Qty") with the buttons „Eins weniger“ / „Eins mehr“ (EN: "One less" / "One more"), or „Eigenschaften“ (EN: "Details"), or pick another store or category with the chips. The store chip also offers „Neuer Laden“ (EN: "New store", the row with a plus) to add a store and pick it. Hummlist remembers the new store or category the next time the item is added.
 4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back. If someone put the same item on the list in the meantime, Undo shows theirs, as they wrote it, instead of a second one.
-5. Renaming an item to something that is already on the list (in any spelling of capitals, or another word for the same thing, like „Semmeln“ for „Brötchen“) does not make a second entry: the two become one. The item already there keeps its name, store and category, the amounts add up, and „Zusammengeführt: <amount> <name>“ (EN: "Merged: …") shows with „Rückgängig“ (EN: "Undo"). If they cannot be combined (the amount would get too long), Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list") and keeps the old name.
+5. Renaming an item to exactly the name of something already on the list (capital letters and spaces don't matter) does not make a second entry: the two become one. The item already there keeps its name, store and category, the amounts add up, and „Zusammengeführt: <amount> <name>“ (EN: "Merged: …") shows with „Rückgängig“ (EN: "Undo"). If they cannot be combined (the amount would get too long), Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list") and keeps the old name.
 
 **Never claim.**
 - That a swipe deletes or edits an item; a swipe does nothing, a hold opens the edit sheet.
@@ -216,9 +216,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
 - That holding and dragging moves an item on the list; nothing on the list drags. Holding opens this sheet.
-- That changing only the brand or details merges an item into another one; only a new name does.
+- That renaming to another word for the same thing („Semmeln“ while „Brötchen“ is on the list) or to an item with a brand merges them; Hummlist only points it out („Brötchen steht schon auf der Liste“ with „Zusammenführen“), as when adding.
 
-**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name, capitals, „Semmeln“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“. Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name, capitals) with „Zusammengeführt“ and „Rückgängig“; a synonym is only pointed out. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“. Recipe: [edit-item.md](./edit-item.md).
 
 ## Tips on the list
 

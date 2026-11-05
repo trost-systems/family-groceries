@@ -561,7 +561,6 @@ sealed class const ItemOp(final String itemId) {
         id,
         ItemChanges.fromColumns(json['changes']! as Map<String, Object?>),
         keyBefore: json['key_before'] as String?,
-        nameBefore: json['name_before'] as String?,
       ),
       'move' => MoveItem(
         id,
@@ -621,11 +620,10 @@ sealed class const ItemOp(final String itemId) {
         at,
         storeId: storeId,
       ),
-      EditItem(:final changes, :final keyBefore, :final nameBefore) => EditItem(
+      EditItem(:final changes, :final keyBefore) => EditItem(
         kept,
         changes,
         keyBefore: keyBefore,
-        nameBefore: nameBefore,
       ),
       MoveItem(:final categoryId, :final storeId) => MoveItem(
         kept,
@@ -695,11 +693,10 @@ sealed class const ItemOp(final String itemId) {
         'at': at.toIso8601String(),
         'store_id': storeId,
       },
-      EditItem(:final changes, :final keyBefore, :final nameBefore) => {
+      EditItem(:final changes, :final keyBefore) => {
         'op': 'edit',
         'changes': changes.toColumns(),
         'key_before': ?keyBefore,
-        'name_before': ?nameBefore,
       },
       MoveItem(:final categoryId, :final storeId) => {
         'op': 'move',
@@ -785,13 +782,10 @@ final class const EditItem(
   final ItemChanges changes, {
 
   /// The item's `canonical_key` when a rename was made: its acknowledgement
-  /// merges into a synonym only when the server keyed the item anew, also
-  /// when the new key arrived first (realtime, a resync, a restart). Null
-  /// when the server had not keyed it yet (an add still queued).
+  /// offers a merge with a synonym only when the server keyed the item anew,
+  /// also when the new key arrived first (realtime, a resync, a restart).
+  /// Null when the server had not keyed it yet (an add still queued).
   final String? keyBefore,
-
-  /// The name before the rename, which Rückgängig on such a merge restores.
-  final String? nameBefore,
 }) extends ItemOp {
   @override
   Item? apply(Item? current) => current == null ? null : changes.apply(current);

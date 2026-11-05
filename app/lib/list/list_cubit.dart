@@ -104,10 +104,6 @@ final class const Merge(
   required final Item kept,
   required final Item merged,
   required final Item result,
-
-  /// The merged item's name before a rename that landed before the merge:
-  /// the undo renames it back.
-  final String? renamedFrom,
 });
 
 const _maxResubscribe = Duration(seconds: 30);
@@ -167,9 +163,9 @@ class ListCubit(
   /// restore, a retry or a partner's add.
   Stream<DedupeHint> get hints => _hints.stream;
 
-  /// Job 104: an edit renamed an item to another open item (the same name in
-  /// any case, or once acknowledged another spelling or a synonym of it), so
-  /// it was folded into that one. The UI says so, with an undo.
+  /// Job 104: an edit renamed an item to another open item (the same name,
+  /// brand and details, in any case or spacing), so it was folded into that
+  /// one. The UI says so, with an undo.
   Stream<Merge> get renameMerges => _renameMerges.stream;
 
   /// Shows the cached list, if any, then connects. Ops queued before the
@@ -443,7 +439,6 @@ class ListCubit(
         id,
         changes,
         keyBefore: changes.name == null ? null : item?.canonicalKey,
-        nameBefore: changes.name == null ? null : item?.name,
       ),
     );
   }
@@ -529,19 +524,14 @@ class ListCubit(
   }
 
   /// Puts both items back as they were before [merge].
-  void unmerge(Merge merge) {
-    _enqueue(
-      UnmergeItems(
-        merge.kept.id,
-        mergeId: merge.id,
-        kept: merge.kept,
-        merged: merge.merged,
-      ),
-    );
-    if (merge.renamedFrom case final name?) {
-      _enqueue(EditItem(merge.merged.id, ItemChanges(name: name)));
-    }
-  }
+  void unmerge(Merge merge) => _enqueue(
+    UnmergeItems(
+      merge.kept.id,
+      mergeId: merge.id,
+      kept: merge.kept,
+      merged: merge.merged,
+    ),
+  );
 
   /// Puts a deleted item back, keeping its id, category and place.
   void restore(Item item) => _enqueue(
@@ -899,15 +889,10 @@ class ListCubit(
         connection: ConnectionStatus.online,
       ),
     );
-    // Job 104: once the server has keyed a renamed item anew, fold it into
-    // an open item that is another spelling or a synonym of it. Only a new
-    // name gives a new key. When the key before is unknown (the add was
-    // still queued) it is offered, as for an add.
-    if (op case EditItem(
-      changes: ItemChanges(name: _?),
-      :final keyBefore,
-      :final nameBefore,
-    )) {
+    // Job 104: a rename to another spelling or a synonym of an open item
+    // (known once the server keyed the new name) is offered, as for an add,
+    // never merged on its own. Only a new name gives a new key.
+    if (op case EditItem(changes: ItemChanges(name: _?), :final keyBefore)) {
       final renamed = state.items[op.itemId];
       final onList =
           renamed == null ||
@@ -915,30 +900,8 @@ class ListCubit(
               renamed.canonicalKey == keyBefore
           ? null
           : similarItems(renamed, state.items.values).firstOrNull;
-      if (renamed != null && onList != null && keyBefore == null) {
-        if (!_hints.isClosed) {
-          _hints.add(DedupeHint(renamed, onList));
-        }
-      } else if (renamed != null && onList != null) {
-        try {
-          final fold = _fold(onList, renamed);
-          _enqueue(fold.op);
-          if (!_renameMerges.isClosed) {
-            _renameMerges.add(
-              Merge(
-                fold.merge.id,
-                kept: fold.merge.kept,
-                merged: fold.merge.merged,
-                result: fold.merge.result,
-                renamedFrom: nameBefore,
-              ),
-            );
-          }
-        } on QuantityTooLong {
-          if (!_hints.isClosed) {
-            _hints.add(DedupeHint(renamed, onList));
-          }
-        }
+      if (renamed != null && onList != null && !_hints.isClosed) {
+        _hints.add(DedupeHint(renamed, onList));
       }
     }
     // Job 32b: once the server has keyed a new add, name an open item that

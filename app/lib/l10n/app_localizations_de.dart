@@ -687,7 +687,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String accountDeletePremiumLastMember(String household) {
-    return '„$household“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.';
+    return '„$household“ hat Hummlist Premium. Das gehört zum Haushalt. Löschst du dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. Warte, bis die Person beigetreten ist. Lösch dann dein Konto.';
   }
 
   @override
@@ -722,7 +722,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDeletePremiumAck =>
-      'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.';
+      'Ich weiß: Premium endet. Ich bekomme mein Geld nicht von selbst zurück.';
 
   @override
   String get accountDeleteConfirmLabel => 'Zum Bestätigen LÖSCHEN eingeben';

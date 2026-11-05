@@ -581,9 +581,9 @@ void main() {
         'lade vorher jemanden ein und lösche dein Konto erst, wenn die Person '
         'beigetreten ist.';
     const releaseText =
-        '„Zuhause“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit '
-        'ihm. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein '
-        'und lösche dein Konto erst, wenn die Person beigetreten ist.';
+        '„Zuhause“ hat Hummlist Premium. Das gehört zum Haushalt. Löschst du '
+        'dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. '
+        'Warte, bis die Person beigetreten ist. Lösch dann dein Konto.';
     final ack = find.byKey(const ValueKey('account-delete-premium-ack'));
 
     testWidgets('the last member of an unlocked household confirms that '
@@ -594,8 +594,8 @@ void main() {
       expect(find.text(premiumText), findsOneWidget);
       expect(
         find.text(
-          'Ich habe verstanden: Hummlist Premium endet und wird nicht '
-          'automatisch erstattet.',
+          'Ich weiß: Premium endet. Ich bekomme mein Geld nicht von selbst '
+          'zurück.',
         ),
         findsOneWidget,
       );
@@ -768,6 +768,28 @@ void main() {
       });
     }
 
+    testWidgets('in English, without the archive texts (job 104)', (
+      tester,
+    ) async {
+      account.fateResult = const FateDeleted('Home', unlocked: true);
+      await openWith(tester, archiveTexts: false, locale: const Locale('en'));
+      expect(
+        find.text(
+          '“Home” has Hummlist Premium. It belongs to the household. If you '
+          'delete your account, it ends. Do you want to keep it? Then ask '
+          'someone to join first. Wait until they have joined. Then delete '
+          'your account.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'I know: Premium ends. I will not get my money back on its own.',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('in English', (tester) async {
       account.fateResult = const FateDeleted('Home', unlocked: true);
       await openWith(tester, archiveTexts: true, locale: const Locale('en'));
@@ -783,8 +805,7 @@ void main() {
       );
       expect(
         find.text(
-          "I understand: Hummlist Premium ends and isn't refunded "
-          'automatically.',
+          'I know: Premium ends. I will not get my money back on its own.',
         ),
         findsOneWidget,
       );

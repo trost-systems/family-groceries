@@ -7509,25 +7509,24 @@ on 2026-11-04 (paths named below).
    `merge_quantities` adds the amounts up. The list shows the existing „Zusammengeführt: …“
    snackbar with Rückgängig, which brings the renamed item back under its old name. No new
    string.
-2. **Another spelling or a synonym merges once the server keyed it.** The app learns an item's
-   `canonical_key` only from the server, so a rename to „Semmeln“ while Brötchen is open lands
-   first. Its acknowledgement then folds it into Brötchen, but only when the rename changed the
-   key. Changing „Karotten“ to „karotten“ next to an older „Möhren“ merges nothing. Only a
-   changed name counts: a brand or details edit never merges into a synonym. When the key before
-   the rename is unknown (an add still queued offline), the app offers the merge as for an add,
-   instead of merging (review 0: an offline „Semmeln“ with a brand was folded into Brötchen).
-   Rückgängig on a synonym merge also renames the item back („Rüben“, not „Karotten“), so the
-   undo leaves no duplicate (`EditItem.nameBefore`, `Merge.renamedFrom`). The key
+2. **Only the same name merges; a synonym is offered, as for an add (lead, Addendum 3).** The
+   first build also merged a rename into another spelling or a synonym („Semmeln“ into
+   Brötchen) and into an item with a brand („Butter“ into „Butter“ Kerrygold, because
+   `similarItems` ignores a brand only one side has). The lead ruled: merge only when the new
+   name, brand and details match an open item after the normal folding (case, spacing,
+   umlauts), as add's duplicate check does. Everything else stays a second row. Once the
+   server has keyed the new name, the list shows add's duplicate hint („Brötchen steht schon auf
+   der Liste“ with Zusammenführen). The user can merge from there, and nothing merges on its
+   own. Only a changed name offers it, and only when the server keyed the item anew: the key
    before the rename is stored with the queued edit (`EditItem.keyBefore`), because the new key
-   can arrive before the acknowledgement: by realtime, by a resync after a lost answer, or after
-   a restart. Add only offers this merge as a hint.
-   A rename is an explicit statement that the item is that thing, so it merges straight away,
-   with an undo.
+   can arrive first (by realtime, by a resync after a lost answer, or after a restart). An add
+   still queued offline has no key yet, so its rename offers the hint too. Review 0's case, an
+   offline „Semmeln“ given a brand being folded into Brötchen, cannot happen any more: no merge
+   follows an acknowledgement. The undo-rename of review 0 (`nameBefore`, `renamedFrom`) went
+   with the synonym merge.
 3. **When a merge cannot be done, the rename is refused with „… steht schon auf der Liste“.**
    This covers a merged quantity over 40 characters, and another member's copy that reached the
-   server first. The rejection is `RenameTaken`. It shows the existing `alreadyOnList` text. For
-   a synonym the rename has already landed, so a merge that would be too long falls back to the
-   add's hint (Zusammenführen offered, then refused with the same reason).
+   server first. The rejection is `RenameTaken`. It shows the existing `alreadyOnList` text.
 4. **The server refuses a rename onto an open item for every writer.** `items_rename_duplicate`
    (before update of name, brand, properties) raises 23505 `already_on_list` when another open
    item has the same `open_item_key`. It takes the household's item lock like the insert check.
@@ -7569,7 +7568,11 @@ on 2026-11-04 (paths named below).
    the archive UI's Legal Review: the archived households' lines, and the sentence „Archivieren
    geht hier nicht …“. Without them the card uses `accountDeletePremiumLastMember`, the same
    text without that sentence. That is the one new string (NEEDS_COPY_REVIEW in the PR),
-   because explaining archiving in a build that has no archiving would confuse.
+   because explaining archiving in a build that has no archiving would confuse. Legal Review
+   (2026-11-05, N-10x) cleared the card for every build (lead, Addendum 4). Peter then approved
+   plain-language copy (Addendum 5, Q73) for it and for the tick box `accountDeletePremiumAck`,
+   an existing job-68 string that the archive build's card shares. `accountDeletePremium`, the
+   archive variant, is unchanged.
 9. **Ordered commits, one squash.** The branch has one commit per fix, and
    `job/104-gap-fixes-ordered` keeps them for review. `scripts/push-pr.sh` squashes them into the
    one commit `main` takes, as the brief asks.

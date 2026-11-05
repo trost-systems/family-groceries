@@ -218,7 +218,7 @@ test('account deletion: the last member of an unlocked household confirms that P
   await expect(page.getByRole('group', { name: /^„Zuhause“ hat Hummlist Premium\. Es gehört zum Haushalt und endet mit ihm\. Archivieren geht hier nicht/ })).toBeVisible();
   // The dialog's paragraphs reach the screen reader as one text.
   await expect(page.getByText(/Dein archivierter Haushalt „Unser Haushalt“ wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium\./)).toBeVisible();
-  const ack = page.getByRole('checkbox', { name: 'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.' });
+  const ack = page.getByRole('checkbox', { name: 'Ich weiß: Premium endet. Ich bekomme mein Geld nicht von selbst zurück.' });
   await expect(ack).toBeVisible();
   // Scroll the dialog in Flutter first: a click on the field below the fold would land on the
   // canvas where the box is now.
