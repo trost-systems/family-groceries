@@ -7621,3 +7621,35 @@ Public website guides and support pages still say "Hummlist" (copy review, not t
 9. **Ordered commits, one squash.** The branch has one commit per fix, and
    `job/104-gap-fixes-ordered` keeps them for review. `scripts/push-pr.sh` squashes them into the
    one commit `main` takes, as the brief asks.
+
+
+## Job 103: hill-climb of the hummlist.com UI (hc-ui-web), 2026-11-05
+
+1. **What the judges see is what visitors see.** `measure.sh` captures a production-mode build
+   (`VERCEL_ENV=production`) served locally, not the preview build: preview banners and drafts
+   are not part of the public pages. No Vercel preview was used, so no deploy happened.
+2. **Copy identity is checked, not assumed.** `copy-check.mjs` compares every page's text nodes
+   (in order) and its read or heard attributes with the baseline build. A structure change that
+   only wraps text (a `span.face` in a link, a class on a list) passes; a moved, added or edited
+   word fails. Adding the site header to the 404 page would add words to that page, so it was not
+   tried.
+3. **One iteration is one theme, not one declaration.** The score is the minimum of seven
+   category medians and moves in half points, so a change helps only if it lifts every category
+   at the floor at once. After iteration 1, each attempt bundled the judges' issues for the floor
+   categories; each bundle was kept or reverted as a whole, and a reverted bundle's ideas could
+   return inside a later bundle (iterations 3 to 6 build on each other in the log).
+4. **Three runs per candidate under one lock hold.** Five hill-climb jobs on hz share
+   `/tmp/fg-hc-measure.lock`; the wrapper takes the lock once and runs `measure.sh` three times
+   with `HC_LOCKED=1` (its own re-entry path), so measure.sh stayed frozen.
+5. **Stopped by the rule, not by ideas.** Iterations 2 to 6 tied the best (7.0) or fell below it,
+   which is the five-without-a-keep stop. Iteration 6 had six categories at 7.5 or more in all
+   three runs with layout at 7; its diff is kept as `tool/hillclimb/hc-ui-web/attempts/it6-near-miss.diff`
+   for a later job, not merged.
+6. **Code stays monospace (review 0).** Iteration 1 set inline and block code in bold Inter to
+   answer the judges' "Courier-style" complaint, which was hz's DejaVu fallback, not what
+   visitors see. Exact values (the voice URL, `claude mcp add`, the `fgp_` header) need a
+   monospace face where `l` and `I` differ, so code is back on `ui-monospace, SFMono-Regular,
+   Menlo, Consolas, "Liberation Mono", monospace` at weight 400; the chip padding stays. Re-measured
+   on main `c220980a`: 7, 7, 7, the score holds.
+7. **Pages without a header keep a centred column.** The left-edge rule lines text up with the
+   header; the 404 and root pages have none, so `body:not(:has(.site-header)) .prose` centres them.

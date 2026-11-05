@@ -463,10 +463,16 @@ a {
   }
 }
 
-/* Guides, legal pages, the changelog, 404 */
+/* Guides, legal pages, the changelog, 404: the text column starts on the header's left edge. */
 .prose {
   width: min(100% - 2 * var(--gutter), 44rem);
+  margin-inline: max(var(--gutter), (100% - var(--page)) / 2) auto;
   padding-block: var(--hl-space-5) var(--hl-space-6);
+}
+
+/* The 404 and root pages have no header to line up with: their column stays centred. */
+body:not(:has(.site-header)) .prose {
+  margin-inline: auto;
 }
 
 .prose h1,
@@ -479,7 +485,8 @@ a {
 
 .prose h1 {
   margin: var(--hl-space-4) 0 var(--hl-space-5);
-  font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3rem);
+  font-size: clamp(1.875rem, 1.2rem + 2.8vw, 3rem);
+  hyphens: auto;
   line-height: var(--hl-type-headline-l-line);
   letter-spacing: var(--hl-type-headline-l-tracking);
 }
@@ -502,9 +509,18 @@ a {
   margin: var(--hl-space-1) 0;
 }
 
-.prose blockquote {
+.prose blockquote > :first-child {
+  margin-top: 0;
+}
+
+.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.prose blockquote,
+.empty-note {
   margin: var(--hl-space-4) 0;
-  padding: var(--hl-space-3) var(--hl-space-4);
+  padding: var(--hl-space-4) var(--hl-space-5);
   border: var(--hl-border-width) solid var(--hl-color-border);
   border-radius: var(--hl-radius-m);
   background: var(--hl-color-surface-raised);
@@ -512,11 +528,12 @@ a {
 }
 
 .prose code {
-  padding: 0.1em 0.3em;
+  padding: 0.1em 0.35em;
   border-radius: 6px;
   background: var(--hl-color-surface-sunken);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.9em;
+  line-height: 1;
 }
 
 .prose pre {
@@ -530,6 +547,7 @@ a {
 .prose pre code {
   padding: 0;
   background: none;
+  line-height: inherit;
   overflow-wrap: normal;
 }
 
@@ -574,6 +592,8 @@ a {
 }
 
 .guide-list a {
+  display: inline-block;
+  line-height: var(--hl-type-title-line);
   font-family: var(--hl-type-headline-family);
   font-size: var(--hl-type-title-size);
   font-weight: var(--hl-font-weight-heavy);

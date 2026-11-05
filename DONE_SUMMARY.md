@@ -29,6 +29,7 @@
 - Job 76, the add-sheet.spec.ts:139 flake: Escape right after an add reopened the sheet on the web (app bug), plus a CI cache for WebKit's apt packages: [docs/done/76-add-sheet-flake.md](docs/done/76-add-sheet-flake.md)
 - Job 78, stores and categories under Liste → Anpassen, nothing on the list drags, a compact add sheet, back from joining returns to More: [docs/done/78-list-manage-ux.md](docs/done/78-list-manage-ux.md)
 - Job 92, German Siri routing: app-first phrases, spoken names with hints, the SiriKit Lists fallback for any item, and CI profile renewal after the Siri capability: [docs/done/92-siri-german-routing.md](docs/done/92-siri-german-routing.md)
+- Job 103, judge-panel hill-climb of the hummlist.com UI (6.5 to 7.0, stopped after five attempts without a keep; PR #242, lead merges): [docs/done/103-hc-ui-web.md](docs/done/103-hc-ui-web.md)
 
 ## Job 1: foundation (2026-10-22)
 

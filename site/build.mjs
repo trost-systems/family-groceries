@@ -613,7 +613,7 @@ function changelogBody(entries, locale) {
       '</section>\n',
     ].join('');
   });
-  return `<h1>${escapeHtml(ui.title)}</h1>\n${sections.length > 0 ? sections.join('') : `<p>${escapeHtml(ui.empty)}</p>\n`}`;
+  return `<h1>${escapeHtml(ui.title)}</h1>\n${sections.length > 0 ? sections.join('') : `<p class="empty-note">${escapeHtml(ui.empty)}</p>\n`}`;
 }
 
 // The release timeline per locale (history.mjs), from the record alone.
