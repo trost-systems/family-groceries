@@ -7733,3 +7733,39 @@ was on the exact name, and the app compared exact names.
    migration: the same 12 items with the same category name key, the same summed corrections per
    word and key, no store missing a category row, no duplicate key left; a second run merges 0
    (script and output in the job's ops dir, `proof/`).
+
+## Job 118: the ios gate builds once (flaky #258), 2026-11-05
+
+1. **Where the time went.** `scripts/ci-ios-phases.sh <run-id>...` splits each ios job log into
+   phases. On 19 ios jobs of 2026-11-05 (job 12.5-40.8 min, median ~20) the gate built the app
+   twice: `flutter build ios` (3.8-8.7 min) and then `xcodebuild test`, which resolved the Swift
+   packages again (0.7-4.7) and rebuilt everything into Xcode's own DerivedData (3.5-12.4),
+   since flutter builds with another `BUILD_DIR`. The simulator's first boot took 2.2-10.9 min.
+   The tests themselves run for seconds. The timed-out job of run 42024315158: build 8.4, boot
+   10.9, resolve 4.7, test build 12.4, tests 0.1.
+2. **One build.** `flutter build ios --config-only` (pub get, Generated.xcconfig, the SwiftPM
+   plugin package) and one `xcodebuild build-for-testing` into `build/ios/derived`; the app
+   checks read that build's `Runner.app` and `xcodebuild test-without-building` runs the tests
+   on it. It is the same scheme, configuration and SDK, and the build runs the same Run Script
+   phase that compiles the Dart (`flutter build ios` itself calls xcodebuild). Same 42 test cases
+   as main's ios job (passed-case lists diffed), same skip, same pass criteria.
+   `COMPILER_INDEX_STORE_ENABLE=NO` as flutter passes it: the index nobody reads.
+3. **The simulator boots after the build, not during it.** A/B on one commit, two runners each
+   (run 42044865628): booting in the background during the build made the build 6.9 and
+   11.1 min against 4.0 and 4.0 (3-core runners), jobs 10.1 and 15.2 against 12.3 and 12.4.
+   Booting before `--config-only` made flutter's xcodebuild calls take 4.5 min instead of 40 s.
+   Same mean, more spread, more code: sequential stays.
+4. **No cache.** Of the build, the Dart compile (the Run Script phase) took 2.4-3.4 min and changes with
+   every commit; the Swift packages took under 2 min. Caching DerivedData or SourcePackages would
+   save at most that, cost a restore and a save on every run and risk a stale incremental
+   build. Flutter itself is already cached by flutter-action.
+5. **Result.** ios jobs with one build and the boot after it: 12.3, 12.4 (run 42044865628), 15.0
+   and 21.5 min (run 42047651436, both attempts), 14.4 (run 42055488481), 8.5 (run 42059052688),
+   median 13.4, against 20.0
+   (12.5-40.8, n=19) before. The build phase is 4.0-5.5 min against 8.1-25.8 for the two builds
+   and resolve before. The 21.5 is a slow runner: boot 8.5, tests 4.3 (the app's first launch
+   on a just-booted simulator). Compare totals, not the tests phase: before it starts at the
+   first test suite, after at `[ios] phase tests`, so it now also holds xcodebuild's start, the
+   package graph check, the app's install and launch (1.0-4.3 min).
+6. **The timeout stays 40 min.** The timed-out job's phases minus the second build and second
+   resolve come to about 24 min (estimate); a hang still ends at 40.

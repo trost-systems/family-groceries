@@ -4,17 +4,33 @@
 # (light, dark, tinted, and the Icon Composer layered icon) and the launch screen's colour and mark
 # from design/app-icon/build.mjs. Then RunnerTests runs on the newest iPhone simulator installed,
 # without the StoreKit tests (scripts/ios-storekit-test.sh, DECISIONS 25.16). Needs macOS.
+# One build serves the checks and the tests: building twice (flutter build ios, then xcodebuild
+# test) let a slow runner hit the job's 40-minute limit (job 118, scripts/ci-ios-phases.sh).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT/app"
-flutter build ios --simulator --debug
+log "phase config"
+flutter build ios --config-only --simulator --debug
+udid="$(xcrun simctl list devices available -j | python3 -c '
+import json, re, sys
+devices = json.load(sys.stdin)["devices"]
+def version(runtime):
+    return [int(n) for n in re.findall(r"\d+", runtime.rsplit("iOS", 1)[-1])]
+ios = sorted((r for r in devices if ".SimRuntime.iOS-" in r), key=version, reverse=True)
+print(next(d["udid"] for r in ios for d in devices[r] if d["name"].startswith("iPhone")))')"
+log "phase build"
+derived=build/ios/derived
+xcodebuild build-for-testing -workspace ios/Runner.xcworkspace -scheme Runner -configuration Debug \
+  -destination "id=$udid" -derivedDataPath "$derived" COMPILER_INDEX_STORE_ENABLE=NO
+log "phase checks"
+app="$derived/Build/Products/Debug-iphonesimulator/Runner.app"
 # The Home Screen widget ships inside the app (docs/HOME_WIDGETS.md, scripts/ios/home-widget-target.rb).
-[[ -f build/ios/iphonesimulator/Runner.app/PlugIns/HomeWidget.appex/HomeWidget ]] ||
+[[ -f $app/PlugIns/HomeWidget.appex/HomeWidget ]] ||
   { echo "ios: Runner.app does not embed PlugIns/HomeWidget.appex" >&2; exit 1; }
 # App Store Connect rejects an extension whose version differs from the app's.
 for key in CFBundleShortVersionString CFBundleVersion; do
-  app_value="$(/usr/libexec/PlistBuddy -c "Print :$key" build/ios/iphonesimulator/Runner.app/Info.plist)"
-  widget_value="$(/usr/libexec/PlistBuddy -c "Print :$key" build/ios/iphonesimulator/Runner.app/PlugIns/HomeWidget.appex/Info.plist)"
+  app_value="$(/usr/libexec/PlistBuddy -c "Print :$key" "$app/Info.plist")"
+  widget_value="$(/usr/libexec/PlistBuddy -c "Print :$key" "$app/PlugIns/HomeWidget.appex/Info.plist")"
   [[ $app_value == "$widget_value" ]] ||
     { echo "ios: HomeWidget.appex $key is '$widget_value', the app's '$app_value'" >&2; exit 1; }
 done
@@ -22,16 +38,16 @@ done
 # German knows the app name the way German Siri may write it, but never as "… Liste", Reminders'
 # grammar (job 97), and no language may train an unresolved InfoPlist.strings variable as the
 # name (job 71).
-ssu=build/ios/iphonesimulator/Runner.app/Metadata.appintents/root.ssu.yaml
+ssu="$app/Metadata.appintents/root.ssu.yaml"
 grep -q Hamlist "$ssu" || { echo "ios: $ssu does not train the German alternative app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
 if grep -n -i -E "humm ?liste|ham liste" "$ssu"; then echo "ios: $ssu trains a German app name ending in Liste" >&2; exit 1; fi
 if grep -n HUMMLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
 # App Store Connect wants SiriKit example phrases in every language for each declared intent
 # (ITMS-90626): the built app must carry them, not only the source tree.
-"$REPO_ROOT/scripts/siri-vocabulary.py" build/ios/iphonesimulator/Runner.app
+"$REPO_ROOT/scripts/siri-vocabulary.py" "$app"
 # And the App Shortcuts Siri matches: Metadata.appintents and the de/en phrase sets (job 97).
-"$REPO_ROOT/scripts/app-shortcuts-bundle.py" build/ios/iphonesimulator/Runner.app
-xcrun --sdk iphonesimulator assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car >build/ios/assets.json
+"$REPO_ROOT/scripts/app-shortcuts-bundle.py" "$app"
+xcrun --sdk iphonesimulator assetutil --info "$app/Assets.car" >build/ios/assets.json
 # Each wanted asset needs a rendition whose JSON mentions every listed word (the appearance).
 python3 - build/ios/assets.json <<'PY'
 import json, sys
@@ -49,21 +65,16 @@ if missing:
 print('Assets.car has', ', '.join(want), 'and the AppIcon.icon stacks')
 PY
 
-udid="$(xcrun simctl list devices available -j | python3 -c '
-import json, re, sys
-devices = json.load(sys.stdin)["devices"]
-def version(runtime):
-    return [int(n) for n in re.findall(r"\d+", runtime.rsplit("iOS", 1)[-1])]
-ios = sorted((r for r in devices if ".SimRuntime.iOS-" in r), key=version, reverse=True)
-print(next(d["udid"] for r in ios for d in devices[r] if d["name"].startswith("iPhone")))')"
-log "simulator $udid"
+# Booting while it builds made the build 3 to 7 min slower on 3-core runners (job 118).
+log "phase boot $udid"
 xcrun simctl boot "$udid" 2>/dev/null || true
 xcrun simctl bootstatus "$udid" -b
 
+log "phase tests"
 result=/tmp/hummlist-runner-tests.xcresult
 rm -rf "$result"
-xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner -destination "id=$udid" \
-  -skip-testing:RunnerTests/LifetimeStoreKitTests -parallel-testing-enabled NO \
+xcodebuild test-without-building -workspace ios/Runner.xcworkspace -scheme Runner \
+  -destination "id=$udid" -derivedDataPath "$derived" -skip-testing:RunnerTests/LifetimeStoreKitTests -parallel-testing-enabled NO \
   -resultBundlePath "$result" || status=$?
 [[ -d $result ]] || exit "${status:-1}"
 xcrun xcresulttool get test-results summary --path "$result" | tee /tmp/hummlist-runner-tests.json
