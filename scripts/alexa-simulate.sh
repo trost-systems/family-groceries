@@ -11,8 +11,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 skill="${ALEXA_SKILL_ID:?set ALEXA_SKILL_ID (docs/ALEXA.md, Deploy)}"
 declare -A utterances=(
-  [de]='öffne hummlist|sag hummlist füge milch hinzu|sag hummlist ich brauche milch|sag hummlist setz milch drauf|frag hummlist was auf der liste steht'
-  [en]="open hummlist|ask hummlist to add milk|tell hummlist we need milk|ask hummlist to put milk on the list|ask hummlist what's on the list"
+  [de]='öffne humm list|sag humm list füge milch hinzu|sag humm list ich brauche milch|sag humm list setz milch drauf|frag humm list was auf der liste steht'
+  [en]="open humm list|ask humm list to add milk|tell humm list we need milk|ask humm list to put milk on the list|ask humm list what's on the list"
 )
 locales=("$@")
 ((${#locales[@]})) || mapfile -t locales < <(jq -r '.manifest.publishingInformation.locales | keys[]' alexa/skill-package/skill.json)

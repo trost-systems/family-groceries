@@ -8,9 +8,9 @@
           "summary": "Eure gemeinsame Einkaufsliste: Sachen per Zuruf auf die Hummlist setzen.",
           "description": "Mit Hummlist setzt du Sachen auf die Einkaufsliste eures Haushalts, ohne das Handy in die Hand zu nehmen. Sag einfach: Alexa, sag Hummlist, füg Milch und Eier hinzu. Die Sachen landen sofort auf der Hummlist aller im Haushalt, sortiert wie in der App. Du kannst auch fragen, was auf der Liste steht. Für den Skill brauchst du ein Hummlist-Konto, das du in der Alexa-App verknüpfst.",
           "examplePhrases": [
-            "Alexa, sag Hummlist, füg Milch und Eier hinzu",
-            "Alexa, frag Hummlist, was auf der Liste steht",
-            "Alexa, öffne Hummlist"
+            "Alexa, sag humm list, füg Milch und Eier hinzu",
+            "Alexa, frag humm list, was auf der Liste steht",
+            "Alexa, öffne humm list"
           ],
           "keywords": [
             "Einkaufsliste",
@@ -27,9 +27,9 @@
           "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
           "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
           "examplePhrases": [
-            "Alexa, ask Hummlist to add milk and eggs",
-            "Alexa, ask Hummlist what's on the list",
-            "Alexa, open Hummlist"
+            "Alexa, ask humm list to add milk and eggs",
+            "Alexa, ask humm list what's on the list",
+            "Alexa, open humm list"
           ],
           "keywords": [
             "shopping list",
@@ -46,9 +46,9 @@
           "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
           "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
           "examplePhrases": [
-            "Alexa, ask Hummlist to add milk and eggs",
-            "Alexa, ask Hummlist what's on the list",
-            "Alexa, open Hummlist"
+            "Alexa, ask humm list to add milk and eggs",
+            "Alexa, ask humm list what's on the list",
+            "Alexa, open humm list"
           ],
           "keywords": [
             "shopping list",
@@ -65,9 +65,9 @@
           "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
           "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
           "examplePhrases": [
-            "Alexa, ask Hummlist to add milk and eggs",
-            "Alexa, ask Hummlist what's on the list",
-            "Alexa, open Hummlist"
+            "Alexa, ask humm list to add milk and eggs",
+            "Alexa, ask humm list what's on the list",
+            "Alexa, open humm list"
           ],
           "keywords": [
             "shopping list",
@@ -84,9 +84,9 @@
           "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
           "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
           "examplePhrases": [
-            "Alexa, ask Hummlist to add milk and eggs",
-            "Alexa, ask Hummlist what's on the list",
-            "Alexa, open Hummlist"
+            "Alexa, ask humm list to add milk and eggs",
+            "Alexa, ask humm list what's on the list",
+            "Alexa, open humm list"
           ],
           "keywords": [
             "shopping list",
@@ -103,9 +103,9 @@
           "summary": "Your household's shared shopping list: add things to Hummlist by voice.",
           "description": "With Hummlist you add things to your household's shopping list without picking up your phone. Just say: Alexa, ask Hummlist to add milk and eggs. The items show up on everyone's Hummlist in your household right away, sorted like in the app. You can also ask what's on the list. The skill needs a Hummlist account, which you link in the Alexa app.",
           "examplePhrases": [
-            "Alexa, ask Hummlist to add milk and eggs",
-            "Alexa, ask Hummlist what's on the list",
-            "Alexa, open Hummlist"
+            "Alexa, ask humm list to add milk and eggs",
+            "Alexa, ask humm list what's on the list",
+            "Alexa, open humm list"
           ],
           "keywords": [
             "shopping list",

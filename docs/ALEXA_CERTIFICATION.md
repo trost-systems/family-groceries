@@ -11,7 +11,7 @@ live stage is untouched: the lead submits after Peter's device retest.
 
 | Field | Value | Checked by |
 | --- | --- | --- |
-| Name, invocation | „Hummlist“, `hummlist`, every locale | `skill_package_test.ts` AC11 |
+| Name, invocation | „Hummlist“, `humm list`, every locale | `skill_package_test.ts` AC11 |
 | Locales | de-DE (German model and replies), en-US, en-GB, en-AU, en-CA, en-IN (one English model and English replies) | `skill_package_test.ts`, `handler_test.ts` (English …), `e2e/tests/alexa-en.spec.ts` |
 | Availability | worldwide (`isAvailableWorldwide: true`, no country list; Peter Q38 AV3) | `skill_package_test.ts` |
 | Category | `SHOPPING` | |
