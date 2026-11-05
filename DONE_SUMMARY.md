@@ -558,3 +558,7 @@ A seeded fuzz harness drives the real list sync layer (cubit, cache, Supabase re
 ## Job 90: category names unique ignoring case, PR #220, not merged (lead review)
 
 „baby“ and „Baby“ are one category now: a unique index on the name key, create_category returns the existing one, and a migration merges existing duplicates into the fallback or the oldest (items, history, layouts, learned corrections, seed keys). The add and rename dialogs say „Eine Kategorie „Baby“ gibt es schon.“ in the dialog. Details: [docs/done/90-fix-category-case.md](docs/done/90-fix-category-case.md).
+
+## Job 118: the ios gate builds once (flaky #258), PR #259, not merged (lead review)
+
+The ios CI job built the app twice and timed out on a slow runner; it builds once now: median 20.0 -> 13.4 min, slowest 40.8 -> 21.5. Review 0: the phase script keeps matrix jobs that start in the same second. Details: [docs/done/118-fix-ios-ci-timeout.md](docs/done/118-fix-ios-ci-timeout.md).

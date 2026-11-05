@@ -253,6 +253,9 @@ Renovate app installed on Peter's account.
 counted from the run's start, and their median and range. With
 `--steps <job>` it adds the median step durations of one job. Use it before
 and after a CI change.
+`scripts/ci-ios-phases.sh <run-id>...` splits each ios job of those runs
+(every attempt) into the phases of `scripts/gates/ios.sh`: config, build,
+checks, boot, tests (DECISIONS, Job 118).
 
 ```bash
 scripts/ci-timings.sh --limit 10 --steps e2e
@@ -276,7 +279,9 @@ attempt only. Medians with the range over n runs, from `scripts/ci-timings.sh`.
 What a PR waits for now:
 
 - A change touching `app/ios/`, `app/android/` or `app/pubspec.*` waits for
-  ios-build, about 5 min (macOS runners vary from 3:34 to 5:24).
+  the ios job: 9-22 min since job 118 (one build, median 13.4, n=6; median
+  20.0 and up to 41 when the gate built the app twice, n=19). The rest is
+  the runner: a fresh simulator's first boot takes 2-11 min.
 - Any other code change waits for the slower e2e shard. Derived, not
   measured as `ci-ok`: 4:26 median (4:18-4:40) is the end time of `e2e (2)`
   in the 5 full runs above. One real filtered run so far: Dependabot's npm
