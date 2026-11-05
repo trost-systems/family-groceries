@@ -136,8 +136,11 @@ final class SimRepository(final Device device) extends SupabaseListRepository {
       );
       device.acked[op] = rows;
       return rows;
-    } on RejectedOp {
+    } on RejectedOp catch (e) {
       device.rejected.add(op);
+      if (op is EditItem && e.nameTaken) {
+        device.refusedRenames.add(op);
+      }
       rethrow;
     }
   }
@@ -223,12 +226,31 @@ final class Device(
   final acked = Map<ItemOp, Map<String, Item?>>.identity();
   final rejected = Set<ItemOp>.identity();
 
+  /// Renames the server refused for an open copy: the list folds them.
+  final refusedRenames = Set<EditItem>.identity();
+  final _movedOntoCopy = <ItemOp>[];
+
+  /// Each op moved away from an item with a refused rename: the item was
+  /// folded into its copy on the server.
+  void checkMoved() {
+    final mergedIds = {
+      for (final merge in backend.merges.values)
+        (merge['merged_row']! as Map)['id'],
+    };
+    for (final op in _movedOntoCopy) {
+      if (!mergedIds.contains(op.itemId)) {
+        fail('c$slot lost an op without an answer: ${_describe(op)}');
+      }
+    }
+  }
+
   /// Ops the user made that have not been acknowledged, refused or folded
   /// away by a documented rule yet.
   final open = Set<ItemOp>.identity();
   late ListCubit cubit;
   StreamSubscription<ListState>? _states;
   StreamSubscription<DedupeHint>? _hints;
+  StreamSubscription<Rejected>? _rejections;
   var _seen = const <ItemOp>[];
   DedupeHint? hint;
   Merge? lastMerge;
@@ -246,11 +268,17 @@ final class Device(
     _seen = cubit.state.pending;
     _states = cubit.stream.listen(_onState);
     _hints = cubit.hints.listen((h) => hint = h);
+    _rejections = cubit.rejections.listen((r) {
+      if (r is RenameTaken) {
+        fail('c$slot kept a rename apart from the open ${r.name}');
+      }
+    });
     cubit.start();
   }
 
   /// Every op that leaves the queue must have an answer from the server, a
-  /// refusal, or be one `ontoKept` folded away with the add it followed.
+  /// refusal, or be one `ontoKept` folded away with the add or refused
+  /// rename it followed.
   void _onState(ListState state) {
     final next = state.pending;
     if (identical(next, _seen)) {
@@ -267,6 +295,11 @@ final class Device(
         }
       }
     }
+    final renamed = {for (final op in refusedRenames) op.itemId};
+    final added = [
+      for (final op in next)
+        if (!before.contains(op)) op,
+    ];
     for (final op in _seen) {
       if (now.contains(op) || !open.remove(op)) {
         continue;
@@ -277,9 +310,19 @@ final class Device(
           folded.contains(op.itemId) ||
           (op is PlaceItem && folded.contains(op.anchorId)) ||
           (op is MergeItems && folded.contains(op.otherId));
-      if (!explained) {
-        fail('c$slot lost an op without an answer: ${_describe(op)}');
+      if (explained) {
+        continue;
       }
+      if (renamed.contains(op.itemId)) {
+        // Job 114: after a refused rename a later rename is replaced by one
+        // carrying both, or ontoKept moves the op onto the copy the item
+        // folds into, which the server must then have merged.
+        if (!added.any((a) => a.itemId == op.itemId && a is EditItem)) {
+          _movedOntoCopy.add(op);
+        }
+        continue;
+      }
+      fail('c$slot lost an op without an answer: ${_describe(op)}');
     }
     for (final op in next) {
       if (!before.contains(op)) {
@@ -300,6 +343,7 @@ final class Device(
     open.clear();
     unawaited(_states?.cancel());
     unawaited(_hints?.cancel());
+    unawaited(_rejections?.cancel());
     unawaited(cubit.close());
     for (final channel in [...channels]) {
       channel.sub
@@ -432,10 +476,16 @@ RunResult runScenario(
       }
       log('all online');
       fake.elapse(const Duration(seconds: 100));
+      for (final device in devices) {
+        device.checkMoved();
+      }
       _check(backend, devices, failures);
       if (strict) {
         for (final name in backend.resurrected) {
           failures.add('a replayed add put back $name after its delete');
+        }
+        for (final key in backend.reopened) {
+          failures.add('an untick opened $key a second time');
         }
       }
       for (final device in devices) {
@@ -635,6 +685,17 @@ void _check(FakeBackend backend, List<Device> devices, List<String> failures) {
         failures.add('$c shows ${want['name']} stale: ${diff.join('; ')}');
       }
     }
+  }
+  final open = <String, String>{};
+  for (final row in backend.rows.values) {
+    if (row['status'] != 'active') {
+      continue;
+    }
+    final key = FakeBackend.openKey(row);
+    if (open[key] case final twin? when !backend.reopened.contains(key)) {
+      failures.add('server has $twin open twice');
+    }
+    open[key] = row['name']! as String;
   }
   // Each committed column holds its value unless a later commit wrote it or
   // deleted the row: the server is last-writer-wins per column.

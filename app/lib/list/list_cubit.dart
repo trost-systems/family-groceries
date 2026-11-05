@@ -127,6 +127,18 @@ class ListCubit(
   final _rejections = StreamController<Rejected>.broadcast();
   final _hints = StreamController<DedupeHint>.broadcast();
   final _renameMerges = StreamController<Merge>.broadcast();
+
+  /// Renames sent again after a refusal; a second refusal is final.
+  final _resentRenames = Set<EditItem>.identity();
+
+  /// The rename each rename fold stands for, sent alone if the merge is
+  /// refused (the copy was ticked or deleted meanwhile).
+  final _foldedRenames = Map<MergeItems, EditItem>.identity();
+
+  /// Folds of refused renames, announced once the server merged them: the
+  /// fold happens long after the edit, and its merge may still be refused
+  /// (then the rename goes alone and there is nothing to undo).
+  final _unannounced = Map<MergeItems, Merge>.identity();
   Future<void> Function()? _unwatch;
   Timer? _retry;
   Timer? _catalogReload;
@@ -459,19 +471,24 @@ class ListCubit(
       return;
     }
     final item = state.items[id];
-    if (item != null && item.status == ItemStatus.active && changes.renames) {
-      final edited = changes.apply(item);
-      final key = _sameItem(edited.name, edited.brand, edited.properties);
-      final onList = state.items.values
-          .where(
-            (other) =>
-                other.id != id &&
-                other.status == ItemStatus.active &&
-                _sameItem(other.name, other.brand, other.properties) == key,
-          )
-          .firstOrNull;
-      if (onList != null) {
-        _mergeRename(item, changes, onList);
+    // The add's line is parsed when it syncs; so is its new name.
+    final deviceParsed =
+        changes.name != null &&
+        state.pending.any(
+          (op) => op is AddItem && op.itemId == id && op.deviceParsed,
+        );
+    if (item != null) {
+      if (_openCopy(item, changes, state.items) case final onList?) {
+        final rename = EditItem(
+          id,
+          changes,
+          keyBefore: item.canonicalKey,
+          deviceParsed: deviceParsed,
+        );
+        if (_renameOnto(item, rename, onList) case final ops?) {
+          emit(state.copyWith(pending: [...state.pending, ...ops]));
+          unawaited(_flush());
+        }
         return;
       }
     }
@@ -480,37 +497,158 @@ class ListCubit(
         id,
         changes,
         keyBefore: changes.name == null ? null : item?.canonicalKey,
-        // The add's line is parsed when it syncs; so is its new name.
-        deviceParsed:
-            changes.name != null &&
-            state.pending.any(
-              (op) => op is AddItem && op.itemId == id && op.deviceParsed,
-            ),
+        deviceParsed: deviceParsed,
       ),
     );
   }
 
-  /// Folds [item], edited by [changes], into [onList]. The amount and
-  /// details typed in the same edit go first, so the merge adds them up.
-  void _mergeRename(Item item, ItemChanges changes, Item onList) {
-    final details = ItemChanges(
-      quantity: changes.quantity,
-      brand: changes.brand,
-      properties: changes.properties,
-    );
-    final edited = details.apply(item);
+  /// The other open item of [items] that [item] would be once [changes]
+  /// rename it.
+  Item? _openCopy(Item item, ItemChanges changes, Map<String, Item> items) {
+    if (item.status != ItemStatus.active || !changes.renames) {
+      return null;
+    }
+    final edited = changes.apply(item);
+    final key = _sameItem(edited.name, edited.brand, edited.properties);
+    return items.values
+        .where(
+          (other) =>
+              other.id != item.id &&
+              other.status == ItemStatus.active &&
+              _sameItem(other.name, other.brand, other.properties) == key,
+        )
+        .firstOrNull;
+  }
+
+  /// The server refused [refused] for an open copy the list did not show
+  /// yet (another phone's rename or add, or a rename made offline). Once a
+  /// resync shows the copy, the item folds into it as [edit] would have, and
+  /// what was queued after the rename goes to the copy, as for an add that
+  /// turned out to be an open item. A delete queued after it wins: the
+  /// rename is dropped and the delete removes this item, so the copy keeps
+  /// its quantity. A rename queued after it wins too: the item keeps the
+  /// other changes (brand and details included) and takes that name. The
+  /// rename stays shown until then. A name typed offline is compared as the
+  /// server parsed it. False, with [refused] still queued, when the resync
+  /// or the parse failed.
+  Future<bool> _foldRefusedRename(EditItem refused) async {
+    if (!await resync()) {
+      return false;
+    }
+    final EditItem op;
+    if (refused.deviceParsed) {
+      try {
+        final parsed = await _repo.parse(refused.changes.name!);
+        op = EditItem(
+          refused.itemId,
+          parsed.ontoRename(refused.changes),
+          keyBefore: refused.keyBefore,
+        );
+      } on Object {
+        _goOffline();
+        return false;
+      }
+    } else {
+      op = refused;
+    }
+    _drop(refused);
+    final server = state.server;
+    final item = server[op.itemId];
+    if (item == null) {
+      return true;
+    }
+    if (state.pending.any((p) => p is DeleteItem && p.itemId == op.itemId)) {
+      return true;
+    }
+    final later = state.pending
+        .whereType<EditItem>()
+        .where((p) => p.itemId == op.itemId && p.changes.renames)
+        .firstOrNull;
+    if (later != null) {
+      // Brand and details ride with the later rename, which may set its own
+      // (a name typed offline always does, once parsed); sent with the old
+      // name they could be refused again.
+      final renamed = EditItem(
+        op.itemId,
+        ItemChanges.fromColumns({
+          if (!later.deviceParsed) ...{
+            if (op.changes.brand case SetTo(:final value)) 'brand': value,
+            if (op.changes.properties case SetTo(:final value))
+              'properties': value,
+          },
+          ...later.changes.toColumns(),
+        }),
+        keyBefore: later.keyBefore,
+        deviceParsed: later.deviceParsed,
+      );
+      final rest = ItemChanges(
+        quantity: op.changes.quantity,
+        categoryId: op.changes.categoryId,
+        storeId: op.changes.storeId,
+      );
+      emit(
+        state.copyWith(
+          pending: [
+            if (!rest.isEmpty) EditItem(op.itemId, rest),
+            for (final p in state.pending)
+              if (identical(p, later)) renamed else p,
+          ],
+        ),
+      );
+      return true;
+    }
+    final onList = _openCopy(item, op.changes, server);
+    if (onList == null) {
+      // Ticked, or the copy went, since the refusal: the rename fits now.
+      // Sent once more only: the server's folding can differ from
+      // [foldName] (Postgres lowercases letters Dart leaves alone).
+      _resend(op);
+      return true;
+    }
+    if (_renameOnto(item, op, onList, announce: false) case final ops?) {
+      emit(
+        state.copyWith(
+          pending: [
+            ...ops,
+            for (final p in state.pending) ?p.ontoKept(item.id, onList.id),
+          ],
+        ),
+      );
+    }
+    return true;
+  }
+
+  void _resend(EditItem rename) {
+    _resentRenames.add(rename);
+    emit(state.copyWith(pending: [rename, ...state.pending]));
+  }
+
+  /// The ops that fold [item], edited by [rename], into [onList]. The
+  /// amount typed in the same edit goes first, so the merge adds it up.
+  /// Brand and details are [onList]'s already; sent on their own, they would
+  /// be the refused rename again. Null, with a [RenameTaken], when the
+  /// merged quantity would not fit.
+  List<ItemOp>? _renameOnto(
+    Item item,
+    EditItem rename,
+    Item onList, {
+    bool announce = true,
+  }) {
+    final details = ItemChanges(quantity: rename.changes.quantity);
     final ({MergeItems op, Merge merge}) fold;
     try {
-      fold = _fold(onList, edited);
+      fold = _fold(onList, details.apply(item));
     } on QuantityTooLong {
       _report(RenameTaken(onList.name));
-      return;
+      return null;
     }
-    if (!details.isEmpty) {
-      _enqueue(EditItem(item.id, details));
+    if (announce) {
+      _renameMerges.add(fold.merge);
+    } else {
+      _unannounced[fold.op] = fold.merge;
     }
-    _enqueue(fold.op);
-    _renameMerges.add(fold.merge);
+    _foldedRenames[fold.op] = rename;
+    return [if (!details.isEmpty) EditItem(item.id, details), fold.op];
   }
 
   void delete(String id) => _enqueue(DeleteItem(id));
@@ -817,10 +955,12 @@ class ListCubit(
     }
   }
 
-  Future<void> resync() async {
+  /// False when the list could not be fetched.
+  Future<bool> resync() async {
     final number = ++_resyncsStarted;
     final heard = _Heard();
     _resyncsHeard.add(heard);
+    var fetched = true;
     try {
       final (catalog, rows) = await (
         _repo.fetchCatalog(),
@@ -831,11 +971,13 @@ class ListCubit(
         _showSnapshot(catalog, rows, heard);
       }
     } on Object {
+      fetched = false;
       _goOffline();
     } finally {
       _resyncsHeard.remove(heard);
     }
     unawaited(_flush());
+    return fetched;
   }
 
   void _showSnapshot(Catalog catalog, List<Item> rows, _Heard heard) {
@@ -914,11 +1056,25 @@ class ListCubit(
         _shownInFlight = null;
         try {
           _ack(op, await _repo.send(op), heard);
+          _forget(op);
         } on RejectedOp catch (e) {
+          final resent = op is EditItem && _resentRenames.remove(op);
+          if (op is EditItem && e.nameTaken && !resent) {
+            if (await _foldRefusedRename(op)) {
+              continue;
+            }
+            return;
+          }
           _drop(op);
+          if (op is MergeItems) {
+            _unannounced.remove(op);
+            if (_foldedRenames.remove(op) case final rename?) {
+              _resend(rename);
+              continue;
+            }
+          }
           _report(switch (op) {
             MergeItems() => MergeRefused(_nameOf(op)),
-            // Job 104: another member's copy reached the server first.
             EditItem() when e.nameTaken => RenameTaken(_nameOf(op)),
             _ => ItemRejected(_nameOf(op)),
           });
@@ -1032,6 +1188,19 @@ class ListCubit(
           heard.answered.remove(key);
         }
       }
+    }
+  }
+
+  void _forget(ItemOp op) {
+    switch (op) {
+      case EditItem():
+        _resentRenames.remove(op);
+      case MergeItems():
+        _foldedRenames.remove(op);
+        if (_unannounced.remove(op) case final merge?) {
+          _renameMerges.add(merge);
+        }
+      default:
     }
   }
 
