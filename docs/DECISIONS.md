@@ -7543,3 +7543,81 @@ so the development-stage invocation is `humm list` in every locale (de-DE, en-US
 en-CA, en-IN). The skill's display name stays "Hummlist". "Humm" alone stays forbidden everywhere
 user-facing, because of the HUMM trademarks; the invocation name `humm list` is the exception.
 Public website guides and support pages still say "Hummlist" (copy review, not this change).
+## Job 104: gap fixes from the daily verification (rename dedupe, offline number words, last-member Premium warning), 2026-11-05
+
+1. **A rename onto an open item merges, as Zusammenführen does.** Renaming Apfelsaft to
+   „Mineralwasser“ while Mineralwasser was open left two open rows, because job 64's
+   `items_skip_duplicate` checks inserts only. `ListCubit.edit` now compares the edited item with
+   the open items the way an add does (`_sameItem`: name, brand and details folded, details in any
+   order). On a match it sends the edit's quantity, brand and details first, then one
+   `MergeItems` into the open item. That item keeps its name, store and category, and
+   `merge_quantities` adds the amounts up. The list shows the existing „Zusammengeführt: …“
+   snackbar with Rückgängig, which brings the renamed item back under its old name. No new
+   string.
+2. **Only the same name merges; a synonym is offered, as for an add (lead, Addendum 3).** The
+   first build also merged a rename into another spelling or a synonym („Semmeln“ into
+   Brötchen) and into an item with a brand („Butter“ into „Butter“ Kerrygold, because
+   `similarItems` ignores a brand only one side has). The lead ruled: merge only when the new
+   name, brand and details match an open item after the normal folding (case, spacing,
+   umlauts), as add's duplicate check does. Everything else stays a second row. Once the
+   server has keyed the new name, the list shows add's duplicate hint („Brötchen steht schon auf
+   der Liste“ with Zusammenführen). The user can merge from there, and nothing merges on its
+   own. Only a changed name offers it, and only when the server keyed the item anew: the key
+   before the rename is stored with the queued edit (`EditItem.keyBefore`), because the new key
+   can arrive first (by realtime, by a resync after a lost answer, or after a restart). An add
+   still queued offline has no key yet, so its rename offers the hint too. Review 0's case, an
+   offline „Semmeln“ given a brand being folded into Brötchen, cannot happen any more: no merge
+   follows an acknowledgement. The undo-rename of review 0 (`nameBefore`, `renamedFrom`) went
+   with the synonym merge.
+3. **When a merge cannot be done, the rename is refused with „… steht schon auf der Liste“.**
+   This covers a merged quantity over 40 characters, and another member's copy that reached the
+   server first. The rejection is `RenameTaken`. It shows the existing `alreadyOnList` text.
+4. **The server refuses a rename onto an open item for every writer.** `items_rename_duplicate`
+   (before update of name, brand, properties) raises 23505 `already_on_list` when another open
+   item has the same `open_item_key`. It takes the household's item lock like the insert check.
+   Its own name in another case, ticked copies, other details, synonyms and unticking pass. MCP,
+   the API, Siri and Alexa have no rename today, so the app is the only caller. Old app builds
+   get a refusal instead of a duplicate. `put_item.test.sql` made its pre-job-64 duplicate by a
+   rename, so it now switches the guard off for that one fixture. `merge_items` now deletes the
+   merged row before the kept row takes its brand or details. Otherwise Zusammenführen of
+   „Butter“ and „Butter Kerrygold“ would give the kept row the other row's key while that row
+   was still open, and the guard refused it (found in review, pgTAP case added).
+5. **Typed number words: one table, both sides.** Offline the add sheet's `parseEntry` read only
+   digits, while `parse_item` online read „zwei Gurken“ as Gurken ×2 (job 89's open item). Both
+   now read the count words of `supabase/tests/number_words.tsv`, German and English (one to
+   twelve). Up front a word can have a unit. The English words also count as ordinary text for
+   `is_ordinary_text()`, so a household no longer learns „seven“ or „ten“ as a brand (harmless). At the end it counts after a known name, under the
+   same conditions as digits 1 to 20. The article forms (ein, eine, einen, einer) never count at
+   the end (job 89: „Trag Milch ein“). This changes typed text online too („Gurken zwei“, „two
+   apples“ now have a quantity in the add sheet and in MCP). It is the brief's "German and
+   English, leading and trailing": matching the old online rule would have left both examples
+   whole on both sides.
+6. **Names that start with a number word keep it.** „Drei Glocken“, „Seven Up“, „Four Roses“ and
+   „Elf Bar“ are in the table as names. Online, „Drei Glocken Spaghetti“ used to become 3 ×
+   „Glocken Spaghetti“, and „Elf Bar“ became 11 × „Bar“. The voice splitters (Siri, Alexa,
+   dictation) don't read this list yet: voice code was out of scope (NEEDS_LEAD „Job 104“).
+7. **Drift fails a test on each side.** `entry_test.dart` compares `number_words.dart` with the
+   TSV. The db gate's `number_words_integration_test.ts` compares `item_number_words()` and
+   `item_number_names()` with it. `quantity_parse.tsv` stays the offline/online parity table: its
+   typed rows run through `parseEntry` and through MCP's `parse_item`. The app also ports
+   `parse_item`'s halves („ein halbes Brot“ 1/2, „anderthalb Liter“ 1,5 Liter) and `1/2`. A
+   multipack („6 x 1,5 l“) still needs the server, because the app's offline entry has no
+   details field. The units live in the table too (`unit` rows, `public.item_units()`). The app
+   had only a subset, so „ein Kopf Salat“ or „zwei Tuben Zahnpasta“ split differently offline
+   (found in review). „Vier Jahreszeiten“ and „Fünf Minuten“ joined the names.
+8. **The last member's Premium warning is no longer behind a flag.** Job 68 (68.3) showed the red
+   card only with `HOUSEHOLD_ARCHIVE` or `premium_offer` on, so a release build deleted a
+   household with a gifted, Lifetime or yearly unlock without a word. The card now follows
+   `leaves_unlocked()` alone, which counts every kind (pgTAP now covers yearly and gifted, and a
+   gift that ended). The flags and their defaults are unchanged. They still gate what waits for
+   the archive UI's Legal Review: the archived households' lines, and the sentence „Archivieren
+   geht hier nicht …“. Without them the card uses `accountDeletePremiumLastMember`, the same
+   text without that sentence. That is the one new string (NEEDS_COPY_REVIEW in the PR),
+   because explaining archiving in a build that has no archiving would confuse. Legal Review
+   (2026-11-05, N-10x) cleared the card for every build (lead, Addendum 4). Peter then approved
+   plain-language copy (Addendum 5, Q73) for it and for the tick box `accountDeletePremiumAck`,
+   an existing job-68 string that the archive build's card shares. `accountDeletePremium`, the
+   archive variant, is unchanged.
+9. **Ordered commits, one squash.** The branch has one commit per fix, and
+   `job/104-gap-fixes-ordered` keeps them for review. `scripts/push-pr.sh` squashes them into the
+   one commit `main` takes, as the brief asks.

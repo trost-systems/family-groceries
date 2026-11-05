@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:family_groceries/list/entry.dart';
+import 'package:family_groceries/list/number_words.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -45,6 +46,26 @@ void main() {
         );
       });
     }
+  });
+
+  test('the number words and units are supabase/tests/number_words.tsv', () {
+    final rows = File('../supabase/tests/number_words.tsv')
+        .readAsLinesSync()
+        .where((l) => l.trim().isNotEmpty && !l.startsWith('#'))
+        .map((l) => l.split('\t'));
+    expect(numberWords, {
+      for (final row in rows)
+        if (row case ['count', final text, final value, ...])
+          text: int.parse(value),
+    });
+    expect(numberNames, [
+      for (final row in rows)
+        if (row case ['name', final text, ...]) text,
+    ]);
+    expect(units, [
+      for (final row in rows)
+        if (row case ['unit', final text, ...]) text,
+    ]);
   });
 
   group('Menge steppers', () {

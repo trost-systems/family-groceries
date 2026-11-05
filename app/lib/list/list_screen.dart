@@ -98,6 +98,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   AddSheetRequest? _addSheetRequest;
   ListLinks? _links;
   StreamSubscription<DedupeHint>? _hints;
+  StreamSubscription<Merge>? _renameMerges;
 
   /// The duplicate hint on screen, until it closes.
   (DedupeHint, ScaffoldFeatureController<SnackBar, SnackBarClosedReason>)?
@@ -122,6 +123,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
     super.initState();
     _notices = context.read<RejectionNotices?>()?..listTab = _rejected;
     _hints = context.read<ListCubit>().hints.listen(_hint);
+    _renameMerges = context.read<ListCubit>().renameMerges.listen(_showMerged);
     _inputFocus.addListener(_focusChanged);
     _addSheetRequest = context.read<AddSheetRequest?>()
       ?..listTab = _openRequested;
@@ -194,6 +196,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
       _notices?.listTab = null;
     }
     unawaited(_hints?.cancel());
+    unawaited(_renameMerges?.cancel());
     _refocus?.cancel();
     _input.dispose();
     _inputFocus.dispose();
@@ -254,7 +257,8 @@ class _ShoppingListState() extends State<_ShoppingList> {
     );
   }
 
-  /// Says what the open item holds after [merge], with Rückgängig. The
+  /// Says what the open item holds after [merge] (Zusammenführen on a hint,
+  /// or a rename onto it), with Rückgängig. The
   /// action closes the hint itself, after this: hiding it here too would,
   /// with animations off (screen readers, the web's semantics), close the
   /// new snackbar instead.

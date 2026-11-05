@@ -81,7 +81,8 @@ abstract interface class ListRepository() {
 final class const RejectedOp(
   final String message, {
 
-  /// A category or store with that name already exists.
+  /// A category, store or (renamed) open item with that name already
+  /// exists.
   final bool nameTaken = false,
 }) implements Exception {
   @override

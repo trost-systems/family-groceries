@@ -1,12 +1,15 @@
 // Feature account-deletion, sub-feature acct-entry (job 80): the Konto page shows the email as
 // plain text with a copy button. Proves the button's accessible name, the clipboard content and
-// the „Kopiert“ snackbar. Export and deletion: e2e/tests/account-*.spec.ts.
+// the „Kopiert“ snackbar. With --dialog it opens „Konto löschen“ instead (sub-feature
+// acct-premium, job 104) and proves the Premium tick box is there (premium) or not (none); it
+// cancels, so nothing is deleted. Export and deletion: e2e/tests/account-*.spec.ts.
 //
-//   node journeys/account-deletion.mjs <evidence dir> [--lang de|en]
+//   node journeys/account-deletion.mjs <evidence dir> [--lang de|en] [--dialog premium|none]
 import { capture, instance, logger, member, openApp, openTab, signIn } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);
 const lang = rest.includes('--lang') ? rest[rest.indexOf('--lang') + 1] : 'de';
+const dialog = rest.includes('--dialog') ? rest[rest.indexOf('--dialog') + 1] : null;
 if (!dir) throw new Error('usage: account-deletion.mjs <evidence dir> [--lang de|en]');
 
 const log = logger(dir);
@@ -19,6 +22,24 @@ try {
   await signIn(page, L, user);
   await openTab(page, L, 'tabMore');
   await page.getByRole('button', { name: new RegExp(`^${L('account')}`) }).first().click();
+  if (dialog) {
+    await page.getByRole('button', { name: L('accountDelete'), exact: true }).click();
+    const box = page.getByRole('checkbox', { name: L('accountDeletePremiumAck') });
+    const field = page.getByRole('textbox', { name: L('accountDeleteConfirmLabel') });
+    // A household with a yearly plan hears first that the billing goes on (H-85).
+    const billing = page.getByRole('button', { name: L('premiumContinueAnyway'), exact: true });
+    await field.or(billing).first().waitFor({ timeout: 15_000 });
+    if (await billing.isVisible()) {
+      log('billing notice shown first; „Trotzdem fortfahren“');
+      await billing.click();
+    }
+    await field.waitFor({ timeout: 15_000 });
+    const shown = await box.isVisible();
+    log(`deletion dialog for ${user.handle}: Premium tick box ${shown ? 'shown' : 'not shown'}`);
+    await capture(page, dir, `01-delete-dialog-${dialog}`);
+    await page.getByRole('button', { name: L('cancel'), exact: true }).click();
+    if (shown !== (dialog === 'premium')) throw new Error(`expected the Premium warning to be ${dialog === 'premium' ? 'shown' : 'absent'}`);
+  } else {
   const copy = page.getByRole('button', { name: L('copyEmail') });
   await copy.waitFor({ timeout: 15_000 });
   await capture(page, dir, '01-account');
@@ -28,6 +49,7 @@ try {
   log(`copied: ${clipboard === user.email ? 'the member\'s email' : JSON.stringify(clipboard)}`);
   if (clipboard !== user.email) throw new Error('the clipboard does not hold the email');
   await capture(page, dir, '02-copied');
+  }
   if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
 } catch (error) {
   failed = error;

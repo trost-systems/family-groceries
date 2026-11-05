@@ -22,9 +22,9 @@ Future<void> deleteAccount(BuildContext context) async {
       !context.mounted) {
     return;
   }
-  // The Premium warning comes with the archive UI's Legal Review or with
-  // the Premium sale, whichever is first (DECISIONS 68.3).
-  final premiumWarning =
+  // The archive texts come with the archive UI's Legal Review or with the
+  // Premium sale, whichever is first (DECISIONS 68.3).
+  final archiveTexts =
       Environment.householdArchive ||
       await context.read<PremiumServer>().offerSwitch() == OfferSwitch.on;
   if (!context.mounted) {
@@ -33,10 +33,8 @@ Future<void> deleteAccount(BuildContext context) async {
   final deleted = await showDialog<AccountDeleted>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => DeleteAccountDialog(
-      repository: repository,
-      premiumWarning: premiumWarning,
-    ),
+    builder: (_) =>
+        DeleteAccountDialog(repository: repository, archiveTexts: archiveTexts),
   );
   if (deleted != null) {
     await session.accountDeleted(
@@ -76,9 +74,10 @@ class const DeleteAccountDialog({
   required final AccountRepository repository,
   super.key,
 
-  /// When the account takes a household's Hummlist Premium with it, say so
-  /// and have the user confirm that it is not refunded (job 68).
-  final bool premiumWarning = false,
+  /// Name the archived households that go with the account, and why the
+  /// last member cannot archive instead (job 68). Without them the last
+  /// member of a household with premium is still warned (job 104).
+  final bool archiveTexts = false,
 }) extends StatefulWidget {
   @override
   State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
@@ -129,6 +128,14 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
     }
   }
 
+  /// Archived households are only named with the archive texts, so only
+  /// then does their premium ask for the tick.
+  bool _endsPremium(AccountFate fate) => switch (fate.household) {
+    _ when widget.archiveTexts => fate.endsPremium,
+    FateDeleted(unlocked: true) => true,
+    _ => false,
+  };
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -169,24 +176,23 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
                 const Center(child: CircularProgressIndicator())
               else if (fate != null) ...[
                 Text(_fateText(l10n, fate.household)),
-                if (widget.premiumWarning) ...[
-                  if (fate.archived.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      key: const ValueKey('account-delete-archived'),
-                      _archivedText(l10n, fate.archived),
-                    ),
-                  ],
-                  if (fate.endsPremium) ...[
-                    const SizedBox(height: 12),
-                    _PremiumWarning(
-                      fate: fate,
-                      acknowledged: _premiumAcknowledged,
-                      onChanged: deleting
-                          ? null
-                          : (ack) => setState(() => _premiumAcknowledged = ack),
-                    ),
-                  ],
+                if (widget.archiveTexts && fate.archived.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    key: const ValueKey('account-delete-archived'),
+                    _archivedText(l10n, fate.archived),
+                  ),
+                ],
+                if (_endsPremium(fate)) ...[
+                  const SizedBox(height: 12),
+                  _PremiumWarning(
+                    fate: fate,
+                    archiveTexts: widget.archiveTexts,
+                    acknowledged: _premiumAcknowledged,
+                    onChanged: deleting
+                        ? null
+                        : (ack) => setState(() => _premiumAcknowledged = ack),
+                  ),
                 ],
                 if (fate.household is! FateNone ||
                     fate.archived.isNotEmpty) ...[
@@ -234,9 +240,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
             onPressed: switch (step) {
               _Confirming(:final fate)
                   when isDeleteConfirmation(_confirmation.text) &&
-                      (_premiumAcknowledged ||
-                          !widget.premiumWarning ||
-                          !fate.endsPremium) =>
+                      (_premiumAcknowledged || !_endsPremium(fate)) =>
                 () => unawaited(_delete(fate)),
               _ => null,
             },
@@ -270,6 +274,7 @@ String _archivedText(AppLocalizations l10n, List<ArchivedFate> archived) {
 /// help and the box the user ticks before Delete works.
 class const _PremiumWarning({
   required final AccountFate fate,
+  required final bool archiveTexts,
   required final bool acknowledged,
   required final ValueChanged<bool>? onChanged,
 }) extends StatelessWidget {
@@ -293,7 +298,9 @@ class const _PremiumWarning({
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
-                  l10n.accountDeletePremium(householdName),
+                  archiveTexts
+                      ? l10n.accountDeletePremium(householdName)
+                      : l10n.accountDeletePremiumLastMember(householdName),
                   style: TextStyle(color: scheme.onErrorContainer),
                 ),
               ),

@@ -96,6 +96,10 @@ const quantityRows = async () =>
     .filter((line) => line.trim() !== '' && !line.startsWith('#'))
     .map((line) => {
       const [text, name, quantity = '', history = '', mode = '', lang = 'de'] = line.split('\t');
+      // A tab too many shifts the mode into lang, and the row would run on the wrong paths.
+      if (!['', 'typed', 'spoken'].includes(mode) || !['de', 'en'].includes(lang)) {
+        throw new Error(`quantity_parse.tsv: mode "${mode}", lang "${lang}" in "${line}"`);
+      }
       return { text, name, quantity: quantity || null, history, mode, lang };
     });
 

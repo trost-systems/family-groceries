@@ -1,6 +1,6 @@
 // launch.sh's ready check: the first seeded member signs in on the web build, the add field has
 // focus, and a seeded active item shows on the list.
-import { addField, apiAs, instance, itemRow, member, openApp, signIn } from './lib.mjs';
+import { addField, apiAs, instance, itemRow, member, openApp, reveal, signIn } from './lib.mjs';
 
 const inst = instance();
 const user = member(inst);
@@ -13,6 +13,8 @@ try {
   const focused = () => addField(page, L).evaluate((el) => el === document.activeElement).catch(() => false);
   for (let i = 0; i < 40 && !(await focused()); i++) await page.waitForTimeout(250);
   if (!(await focused())) throw new Error('reopened, the app did not focus the add field');
+  // A long list (solo-long-list) builds only the rows near the screen.
+  if (data.length) await reveal(page, itemRow(page, data[0].name).first());
   if (data.length) await itemRow(page, data[0].name).first().waitFor({ timeout: 15_000 });
   if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
   console.log(`ready: ${user.email} signed in on ${inst.webUrl}${data.length ? `, "${data[0].name}" on the list` : ''}`);
