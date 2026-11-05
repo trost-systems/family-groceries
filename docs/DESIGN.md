@@ -221,8 +221,8 @@ quarter into its line and struck rows, one wrapped.
   like the site's `.hxp`, honey when checked, navy check, 48 dp; the opt-ins
   (feedback contact). The Material `checkboxTheme` keeps its flat hex and the
   contour checked or not.
-- `PointyHex` (`pointy_hex.dart`): the add bar's plus and the empty list's
-  cart.
+- `PointyHex` (`pointy_hex.dart`): the empty list's cart and More's icon
+  hexes.
 - `HlSticker` (`sticker.dart`): the site's `.sticker`, raised face, 2 px
   contour, the hard `HlShadow` sticker shadow in light, the night shadow in
   dark; for the welcome choices, the Premium card (Zugänge and the Premium
@@ -232,15 +232,22 @@ quarter into its line and struck rows, one wrapped.
   while dragged; the walk-order number a 32 px pointy honey hex.
 - `BrandBlock` (`brand_block.dart`): app icon #5 at 56 dp (exported by
   `design/app-icon/build.mjs` to `app/assets/brand/`) over the wordmark, on
-  login and welcome.
+  login and welcome. The dark icon has the deep `#0b1024` ground, so on the
+  dark surface it shows as the ring and the inner hex without a tile.
+- Sign-in with Google and Apple keep the providers' own buttons: Google's
+  outlined (light) or dark pill with its "G", Apple's black or white button
+  drawn per Apple's rules (DECISIONS job 57 item 15). Only "Weiter mit
+  E-Mail" is a house hex button.
 - The navigation rail's indicator is the honey hex of the bottom bar;
   snackbars float as contoured notes.
 
 ### The list's frame and add bar (job 57)
 
 - The add bar is the page under a 52 px hex compose field (2 px contour,
-  raised fill, 12 px gutters) with a 38 px pointy lemon "+" (`PointyHex`);
-  open, the field's column turns raised to join the sheet. The field itself
+  raised fill, 12 px gutters) with the dictation mic at its end; open, the
+  field's column turns raised to join the sheet. The lemon "+" disc is gone
+  (job 78, DECISIONS item 8): it was not tappable, the whole compose hex is
+  the target. The field itself
   keeps `InputBorder.none` (job 52 item 7); the shape is on its container.
 - Fold-out chips and their options are hex with the contour: the user's pick
   honey, an open chip honey-soft. The edit sheet's stepper uses the outlined
@@ -249,6 +256,9 @@ quarter into its line and struck rows, one wrapped.
 - The explainer is an `HlSticker` with `Icons.touch_app_outlined`.
 - Wide: one frame (`ShoppingListView.frameFor`) for the bar, explainer,
   columns, add field and sheet; field and sheet over the first column.
+- The bar above the list has no title, household name or count (Peter,
+  DECISIONS job 29a): the partner note on the left, the sync state and
+  Anpassen on the right.
 
 ### Peter's addendum 5 (job 57)
 

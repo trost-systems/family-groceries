@@ -1724,3 +1724,12 @@ To ship it:
 2. In the same PR, send `'p_restored': op.restored` from `SupabaseListRepository._add`.
 3. Don't let a store build carry the app change before the migration is deployed. The
    12-argument call fails with PGRST202 on an older database.
+
+## Job 102: hc-ui-app (2026-11-05)
+
+- **Apply attempt 4 or not.** The branch ships no app change: attempt 4 scored 7.0 with the
+  judge inputs unchanged (6.5 + band, not kept). `tool/hillclimb/hc-ui-app/attempts/attempt-4.patch`
+  holds it (regenerate goldens with `flutter test --update-goldens test/design/`). If applied:
+  it makes „Ohne Laden“ a raised pill, reversing Job 78 item 16 (DECISIONS Job 102 item 7), it
+  needs its own `dragHandle` e2e fix (in the patch), and its trash buttons need a 48 px minimum
+  size on web.

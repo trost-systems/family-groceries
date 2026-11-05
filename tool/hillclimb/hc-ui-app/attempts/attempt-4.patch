@@ -1,0 +1,2360 @@
+diff --git b/.cursor/skills/verify-hummlist/features/categories.md a/.cursor/skills/verify-hummlist/features/categories.md
+index 599b6872..7b07a014 100644
+--- b/.cursor/skills/verify-hummlist/features/categories.md
++++ a/.cursor/skills/verify-hummlist/features/categories.md
+@@ -5,7 +5,7 @@ Every household starts with 11 categories (fruit and veg, bread, chilled, …, 
+ ## Sub-features
+ 
+ - `cat-seed` a new household gets these categories, in this order. DE (as stored and shown in German): Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges. EN (shown when the app language is English and the category was not renamed): Fruit & veg, Bread & bakery, Chilled, Meat & fish, Pantry, Sweets & snacks, Drinks, Frozen, Household, 👶 Drugstore, Other. A renamed or self-made category shows exactly what the household typed, in both languages. Each category has an emoji: the one its name starts with, else the seeded one (🥕 🥖 🥛 🥩 🥫 🍫 🧃 🧊 🧽 🧴 🛒; „👶 Drogerie“ shows 👶, a renamed Drogerie without it 🧴), else 🧺 for a self-made one. Item rows show it unless the item has its own emoji (Klopapier 🧻, Zahnbürste 🪥); the category rows in „Anpassen“ show it before each name; the divider text drops a leading emoji.
+-- `cat-open` the list header's „Anpassen“ / "Edit" (top right) opens „Läden“; its last row, „Ohne Laden“ / "No store" (flat, „Kategorien für Artikel ohne Laden“ / "Categories for items without a store"), opens the screen titled „Ohne Laden“ / "No store" (route `/edit/none`) with the hint „In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.“ (EN: "Items without a store, and stores without their own order, follow this order. Tap a category to rename it."). A hold or right click on the „Ohne Laden“ divider or on a category divider under „Ohne Laden“ opens the same screen directly (no menu since job 78). A store's details (`/edit/<id>`, tap the store on „Läden“) show the same rows in that store's order, with the same rename, add and delete. Every row on both screens shows its step number in a hex.
++- `cat-open` the list header's „Anpassen“ / "Edit" (top right) opens „Läden“; its last row, „Ohne Laden“ / "No store" (a raised pill like the stores, „Kategorien für Artikel ohne Laden“ / "Categories for items without a store"), opens the screen titled „Ohne Laden“ / "No store" (route `/edit/none`) with the hint „In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ und bei Läden ohne eigene Reihenfolge. Tippe auf eine Kategorie, um sie umzubenennen.“ (EN: "Items without a store, and stores without their own order, follow this order. Tap a category to rename it."). A hold or right click on the „Ohne Laden“ divider or on a category divider under „Ohne Laden“ opens the same screen directly (no menu since job 78). A store's details (`/edit/<id>`, tap the store on „Läden“) show the same rows in that store's order, with the same rename, add and delete. Every row on both screens shows its step number in a hex.
+ - `cat-add` button „Kategorie hinzufügen“ / "Add category" (bottom right) opens a dialog of the same title with a field „Name“ / "Name" (at most 60 characters, with a counter) and buttons „Abbrechen“ / „Speichern“ ("Cancel" / "Save"). The new category goes after the last category, just before „Sonstiges“ when that is last, in the route and in every store's order (live: „Baby“ landed between „👶 Drogerie“ and „Sonstiges“).
+ - `cat-duplicate` names are unique per household ignoring case and spacing (job 90): „baby“, „ BABY“ and „Baby“ are one name. Adding a name the household has, or renaming onto another category's name, keeps the dialog open with „Eine Kategorie „<Name>“ gibt es schon.“ / "A category named “<name>” already exists." under the field (the existing spelling, as shown: in English an unrenamed seed shows its English label, so "drinks" is taken by „Getränke“ too); typing clears it, „Abbrechen“ closes. A category may change its own case („Kühlregal“ → „KÜHLREGAL“). The server enforces the same (unique index on the name key; `create_category` returns the existing category), so a direct API write cannot make a duplicate either.
+ - `cat-rename` a tap on a category opens „Kategorie umbenennen“ / "Rename category" with the name filled in; „Speichern“ saves. An empty name or an unchanged name does nothing. „Sonstiges“ can be renamed too.
+diff --git b/.cursor/skills/verify-hummlist/features/stores-walk-order.md a/.cursor/skills/verify-hummlist/features/stores-walk-order.md
+index d4057b13..8a94e380 100644
+--- b/.cursor/skills/verify-hummlist/features/stores-walk-order.md
++++ a/.cursor/skills/verify-hummlist/features/stores-walk-order.md
+@@ -15,7 +15,7 @@ The list is one scroll of sections: a divider per store that has open items, in
+ - `sw-category-order` a store's category order is changed in that store's details in Anpassen; for „Ohne Laden“ that is the household's route order. Not on the list.
+ - `sw-divider-hold` a hold (about 300 ms) or a right click on a store divider opens that store's details in Anpassen (path `/edit/<store id>`); on „Ohne Laden“ the details of the section without a store (`/edit/none`), its categories. A category divider opens the details of the store whose section it is in. The divider moves nothing and has no menu and no up/down moves; a screen reader's long-press action on a divider does the same.
+ - `sw-layout-screen` a store's details (job 78, route `/edit/<id>`; from Liste → „Anpassen“ → the store, or a hold or right click on its divider (`sw-divider-hold`)): title = the store's name; on top the store's badge with „Tippen zum Umbenennen“ / "Tap to rename" (`sw-own-stores`); the hint „Ordne die Kategorien so, wie du durch den Laden gehst. Tippe auf eine Kategorie, um sie umzubenennen.“ / "Order the categories the way you walk through the store. Tap a category to rename it."; every category has its step number, a trash (not „Sonstiges“) and a drag handle „<Kategorie> verschieben“ / "Move <category>"; „Kategorie hinzufügen“ bottom right (feature categories). Each change saves at once and shows on the list. A store deleted on another device sends the screen back to „Läden“.
+-- `sw-more-stores` (id kept; job 78 moved it to the List tab) the list header's „Anpassen“ / "Edit" (top right, the button's name is exactly that) opens „Läden“ / "Stores" (route `/edit`, the tabs stay; back returns to the list): hint „Ziehe die Läden in die Reihenfolge, in der sie auf der Liste stehen. Tippe auf einen Laden, um ihn umzubenennen und seine Kategorien zu ordnen.“ (EN: "Drag the stores into the order they have on the list. Tap a store to rename it and order its categories."). One row per store (a button named by the store, its badge), a trash „<Store> löschen“ / "Delete <Store>" and a handle „<Store> verschieben“ / "Move <store>". A tap on a row opens its details (`sw-layout-screen`); a drag on the handle reorders the stores. Last, pinned where its section sits on the list: „Ohne Laden“ / "No store", flat and muted with „Kategorien für Artikel ohne Laden“, no trash, no handle; it opens the route order (feature categories). Bottom right „Laden hinzufügen“ / "Add store" (`sw-own-stores`). Without stores the hint reads „Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.“ / "No stores yet. Add one and the list sorts your items along its walking route." Mehr has no „Läden“ row since job 78.
++- `sw-more-stores` (id kept; job 78 moved it to the List tab) the list header's „Anpassen“ / "Edit" (top right, the button's name is exactly that) opens „Läden“ / "Stores" (route `/edit`, the tabs stay; back returns to the list): hint „Ziehe die Läden in die Reihenfolge, in der sie auf der Liste stehen. Tippe auf einen Laden, um ihn umzubenennen und seine Kategorien zu ordnen.“ (EN: "Drag the stores into the order they have on the list. Tap a store to rename it and order its categories."). One row per store (a button named by the store, the name as the pill's title since job 102), a trash „<Store> löschen“ / "Delete <Store>" and a handle „<Store> verschieben“ / "Move <store>". A tap on a row opens its details (`sw-layout-screen`); a drag on the handle reorders the stores. Last, pinned where its section sits on the list: „Ohne Laden“ / "No store", a pill like the store rows with „Kategorien für Artikel ohne Laden“, no trash, no handle; it opens the route order (feature categories). Bottom right „Laden hinzufügen“ / "Add store" (`sw-own-stores`). Without stores the hint reads „Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.“ / "No stores yet. Add one and the list sorts your items along its walking route." Mehr has no „Läden“ row since job 78.
+ - `sw-fold` a tap on a store divider (including „Ohne Laden“) folds or unfolds its section; folds are remembered on the device and survive a restart. A screen reader hears the hint „Zuklappen“ / "Collapse" (open) or „Aufklappen“ / "Expand" (folded).
+ - `sw-explainer` a card above the list: „Tippen hakt ab · Halten bearbeitet“ / "Tap ticks off · Hold to edit", with the button „Verstanden“ / "Got it". Dismissed for good on that device.
+ - `sw-store-memory` the household remembers an item's store: when an item's store is set in the edit sheet or add sheet chip, or ticked while it has a store, a later add of the same item (also from MCP/Siri/Alexa) lands in that store. Choosing „Ohne Laden“ for an item clears the memory. Ticking an item without a store remembers nothing. The add sheet also guesses dm for drugstore items and a brand's own store.
+diff --git b/app/lib/app/shell.dart a/app/lib/app/shell.dart
+index 8dcc1d8a..19ca86b1 100644
+--- b/app/lib/app/shell.dart
++++ a/app/lib/app/shell.dart
+@@ -3,6 +3,7 @@ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:family_groceries/l10n/app_localizations.dart';
+ import 'package:family_groceries/list/list_repository.dart';
+ import 'package:family_groceries/list/list_scope.dart';
++import 'package:family_groceries/list/list_screen.dart';
+ import 'package:flutter/material.dart';
+ import 'package:go_router/go_router.dart';
+ 
+@@ -97,6 +98,15 @@ class _AppShellState() extends State<AppShell> {
+                       selectedIndex: index,
+                       onDestinationSelected: _select,
+                       labelType: NavigationRailLabelType.all,
++                      // Air around the honey hex indicator.
++                      minWidth: HlSpace.s9,
++                      // The first destination's top is level with the
++                      // list's first card: the header and that card's 8 px
++                      // margin (the rail adds 8 px above and below its
++                      // leading).
++                      leading: const SizedBox(
++                        height: listHeaderHeight - HlSpace.s2,
++                      ),
+                       backgroundColor: Theme.of(context)
+                           .colorScheme
+                           .surfaceContainerLow,
+@@ -161,14 +171,16 @@ class const _Tabs({
+                 duration: hlMotion(context, HlDuration.short),
+                 curve: Interval(open ? 0.4 : 0, 1),
+                 child: Padding(
+-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+-                  child: Text(
+-                    l10n.addSheetHint,
+-                    key: const ValueKey('add-sheet-hint'),
+-                    textAlign: TextAlign.center,
+-                    style: TextStyle(
+-                      fontSize: 13,
+-                      color: scheme.onSurfaceVariant,
++                  padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
++                  child: Align(
++                    child: Text(
++                      l10n.addSheetHint,
++                      key: const ValueKey('add-sheet-hint'),
++                      textAlign: TextAlign.center,
++                      style: TextStyle(
++                        fontSize: 13,
++                        color: scheme.onSurfaceVariant,
++                      ),
+                     ),
+                   ),
+                 ),
+diff --git b/app/lib/design/brand_block.dart a/app/lib/design/brand_block.dart
+index 065f0c8f..3dcab25d 100644
+--- b/app/lib/design/brand_block.dart
++++ a/app/lib/design/brand_block.dart
+@@ -4,23 +4,38 @@ import 'package:flutter/material.dart';
+ 
+ /// The in-app brand: the approved app icon (exported by
+ /// `design/app-icon/build.mjs` into `assets/brand/`, 56 dp at 1x/2x/3x) over
+-/// the wordmark, as the site's header sets it. Login and welcome open on it.
+-class const BrandBlock({super.key}) extends StatelessWidget {
+-  static const double markSize = 56;
+-  static const double wordmarkSize = 28;
++/// the wordmark, as the site's header sets it. Login and welcome open on it;
++/// login, with little else to show, sets it larger ([markSize]).
++class const BrandBlock({
++  /// The icon's side; the wordmark is half as tall.
++  final double markSize = assetSize,
++  super.key,
++}) extends StatelessWidget {
++  /// The mark's side in the 1x asset.
++  static const double assetSize = 56;
+ 
+   @override
+   Widget build(BuildContext context) {
+     final theme = Theme.of(context);
+     final dark = theme.brightness == Brightness.dark;
+     final t = HummlistColors.of(theme.brightness);
++    final wordmarkSize = markSize / 2;
++    final media = MediaQuery.of(context);
+     return Column(
+       children: [
+-        ExcludeSemantics(
+-          child: Image.asset(
+-            'assets/brand/mark-${dark ? 'dark' : 'light'}.png',
+-            width: markSize,
+-            height: markSize,
++        // Drawn larger than the asset, the mark resolves the variant for
++        // its pixel size, not the screen's: 2x for 80 dp on a 1x screen.
++        MediaQuery(
++          data: media.copyWith(
++            devicePixelRatio: media.devicePixelRatio * markSize / assetSize,
++          ),
++          child: ExcludeSemantics(
++            child: Image.asset(
++              'assets/brand/mark-${dark ? 'dark' : 'light'}.png',
++              width: markSize,
++              height: markSize,
++              fit: BoxFit.contain,
++            ),
+           ),
+         ),
+         const SizedBox(height: HlSpace.s3),
+diff --git b/app/lib/design/hex_pill.dart a/app/lib/design/hex_pill.dart
+index 9ee60c5b..adf8f4f0 100644
+--- b/app/lib/design/hex_pill.dart
++++ a/app/lib/design/hex_pill.dart
+@@ -4,27 +4,27 @@ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:flutter/material.dart';
+ 
+ /// A settings row as the site's stores scene draws it: a horizontal hex with
+-/// the 2 px contour on a raised face, resting on its [HlDepth.edge] edge. The
+-/// row being dragged is lifted instead: no edge, the sticker-l shadow
++/// the 2 px contour on a raised face, resting on its [HlDepth.edge] edge (the
++/// surface edge in dark, where the navy edge vanishes into the page). The row
++/// being dragged is lifted instead: no edge, the sticker-l shadow
+ /// ([HexPill.lift] wraps a reorderable list's proxy).
+ class const HexPill({
+   required final Widget child,
+   final VoidCallback? onTap,
+   final FocusNode? focusNode,
+-
+-  /// A row fixed in place (the stores screen's "Ohne Laden"): a sunken
+-  /// face without the edge, so it never reads as one of the pills to drag.
+-  final bool flat = false,
+   super.key,
+ }) extends StatelessWidget {
+   static const height = 56.0;
+ 
+-  /// Space around the pill in a list.
++  /// Space around the pill in a list: one pill's edge stays 16 px off the
++  /// next pill's contour.
+   static const margin = EdgeInsets.symmetric(
+     horizontal: HlSpace.s4,
+-    vertical: HlSpace.s1,
++    vertical: HlSpace.s2,
+   );
+ 
++  static const _inset = HlSpace.s5;
++
+   /// The proxy decorator of a reorderable list of pills.
+   static Widget lift(Widget child, int index, Animation<double> animation) =>
+       _Lifted(child: child);
+@@ -36,7 +36,7 @@ class const HexPill({
+     final lifted =
+         context.dependOnInheritedWidgetOfExactType<_Lifted>() != null;
+     final face = Material(
+-      color: flat ? t.surfaceSunken : t.surfaceRaised,
++      color: t.surfaceRaised,
+       shape: HexBorder(
+         side: BorderSide(color: t.border, width: HlBorder.width),
+       ),
+@@ -50,10 +50,7 @@ class const HexPill({
+           child: ConstrainedBox(
+             constraints: const BoxConstraints(minHeight: height),
+             child: Padding(
+-              padding: const EdgeInsets.only(
+-                left: HlSpace.s5,
+-                right: HlSpace.s4,
+-              ),
++              padding: const EdgeInsets.only(left: _inset, right: HlSpace.s4),
+               child: child,
+             ),
+           ),
+@@ -62,12 +59,7 @@ class const HexPill({
+     );
+     return Padding(
+       padding: margin,
+-      child: flat
+-          ? Padding(
+-              padding: const EdgeInsets.only(bottom: HlDepth.edge),
+-              child: face,
+-            )
+-          : lifted
++      child: lifted
+           ? DecoratedBox(
+               decoration: ShapeDecoration(
+                 shape: const HexBorder(),
+@@ -81,7 +73,9 @@ class const HexPill({
+                   top: HlDepth.edge,
+                   child: DecoratedBox(
+                     decoration: ShapeDecoration(
+-                      color: t.edge,
++                      color: brightness == Brightness.dark
++                          ? t.surfaceEdge
++                          : t.edge,
+                       shape: const HexBorder(),
+                     ),
+                   ),
+@@ -155,8 +149,9 @@ class const PillTitle(final String text, {super.key}) extends StatelessWidget {
+   );
+ }
+ 
+-/// The drag handle of a reorderable pill, a 48 dp target. Its own node:
+-/// merged into the row, its label would rename the row.
++/// The drag handle of a reorderable pill, a 48 dp target, in the text
++/// colour: louder than the muted trash beside it. Its own node: merged into
++/// the row, its label would rename the row.
+ class const PillDragHandle({
+   required final int index,
+   required final String label,
+@@ -172,7 +167,7 @@ class const PillDragHandle({
+         child: Icon(
+           Icons.drag_handle,
+           semanticLabel: label,
+-          color: HummlistColors.of(Theme.of(context).brightness).textMuted,
++          color: HummlistColors.of(Theme.of(context).brightness).text,
+         ),
+       ),
+     ),
+diff --git b/app/lib/design/hex_segmented.dart a/app/lib/design/hex_segmented.dart
+index c6b87298..dfc8f35d 100644
+--- b/app/lib/design/hex_segmented.dart
++++ a/app/lib/design/hex_segmented.dart
+@@ -1,5 +1,3 @@
+-import 'dart:math' as math;
+-
+ import 'package:family_groceries/design/hex_border.dart';
+ import 'package:family_groceries/design/motion.dart';
+ import 'package:family_groceries/design/tokens.g.dart';
+@@ -31,8 +29,10 @@ class const HexSegmented<T>({
+   final String? label,
+   super.key,
+ }) extends StatelessWidget {
+-  /// Between the track's contour and the indicator's: the contour and 2 px.
+-  static const _gap = HlBorder.width + 2;
++  /// Between the track's contour and the indicator's: the contour and 4 px
++  /// of track, so the indicator nests visibly at either tip (2 px read as
++  /// touching in dark, where its contour is as dark as the track).
++  static const _gap = HlBorder.width + HlSpace.s1;
+ 
+   @override
+   Widget build(BuildContext context) {
+@@ -40,8 +40,6 @@ class const HexSegmented<T>({
+     final t = HummlistColors.of(Theme.of(context).brightness);
+     final enabled = onChanged != null;
+     final picked = segments.indexWhere((s) => s.value == value);
+-    // The indicator's slanted sides sit [_gap] from the track's.
+-    final along = _gap / math.sin(math.atan(1 / (2 * HlHex.tip)));
+     final slide = hlMotion(context, HlDuration.medium);
+     return Semantics(
+       container: true,
+@@ -71,55 +69,41 @@ class const HexSegmented<T>({
+                 ),
+               ),
+               Positioned.fill(
+-                child: Padding(
+-                  padding: EdgeInsets.symmetric(
+-                    horizontal: along,
+-                    vertical: _gap,
++                child: AnimatedAlign(
++                  duration: slide,
++                  curve: HlEasing.standard,
++                  alignment: Alignment(
++                    segments.length == 1
++                        ? 0
++                        : -1 + 2 * picked / (segments.length - 1),
++                    0,
+                   ),
+-                  child: AnimatedAlign(
+-                    duration: slide,
+-                    curve: HlEasing.standard,
+-                    alignment: Alignment(
+-                      segments.length == 1
+-                          ? 0
+-                          : -1 + 2 * picked / (segments.length - 1),
+-                      0,
+-                    ),
+-                    child: FractionallySizedBox(
+-                      widthFactor: 1 / segments.length,
+-                      heightFactor: 1,
+-                      child: DecoratedBox(
+-                        decoration: ShapeDecoration(
+-                          color: enabled ? t.honey : t.honeySoft,
+-                          shape: HexBorder(
+-                            side: BorderSide(
+-                              color: enabled ? t.edge : t.divider,
+-                              width: HlBorder.width,
+-                            ),
+-                          ),
+-                        ),
++                  child: FractionallySizedBox(
++                    widthFactor: 1 / segments.length,
++                    heightFactor: 1,
++                    child: CustomPaint(
++                      painter: _Indicator(
++                        face: enabled ? t.honey : t.honeySoft,
++                        contour: enabled ? t.edge : t.divider,
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+               Positioned.fill(
+-                child: Padding(
+-                  padding: EdgeInsets.symmetric(horizontal: along),
+-                  child: Row(
+-                    children: [
+-                      for (final segment in segments)
+-                        Expanded(
+-                          child: _Segment<T>(
+-                            key: segment.key,
+-                            segment: segment,
+-                            picked: segment.value == value,
+-                            enabled: enabled,
+-                            slide: slide,
+-                          ),
++                child: Row(
++                  children: [
++                    for (final segment in segments)
++                      Expanded(
++                        child: _Segment<T>(
++                          key: segment.key,
++                          segment: segment,
++                          picked: segment.value == value,
++                          enabled: enabled,
++                          slide: slide,
+                         ),
+-                    ],
+-                  ),
++                      ),
++                  ],
+                 ),
+               ),
+             ],
+@@ -219,6 +203,37 @@ class _SegmentState<T>() extends State<_Segment<T>> {
+   }
+ }
+ 
++/// The picked segment's honey hex: its slot's hex (as tall as the track)
++/// inset by [HexSegmented._gap] as a parallel curve, so at either end it
++/// follows the track's tip as closely as its flat sides, its corners
++/// rounded by the track's radius less the gap.
++class const _Indicator({
++  required final Color face,
++  required final Color contour,
++}) extends CustomPainter {
++  @override
++  void paint(Canvas canvas, Size size) {
++    const hex = HexBorder();
++    final slot = Offset.zero & size;
++    canvas
++      ..drawPath(
++        hex.pathFor(slot, outset: -HexSegmented._gap),
++        Paint()..color = face,
++      )
++      ..drawPath(
++        hex.pathFor(slot, outset: -HexSegmented._gap - HlBorder.width / 2),
++        Paint()
++          ..style = PaintingStyle.stroke
++          ..strokeWidth = HlBorder.width
++          ..color = contour,
++      );
++  }
++
++  @override
++  bool shouldRepaint(_Indicator oldDelegate) =>
++      oldDelegate.face != face || oldDelegate.contour != contour;
++}
++
+ /// The focus ring: round the indicator's hex, [HlFocus.ringGap] off it, in
+ /// [color].
+ class const _Ring(final Color color) extends CustomPainter {
+@@ -226,13 +241,8 @@ class const _Ring(final Color color) extends CustomPainter {
+   void paint(Canvas canvas, Size size) {
+     canvas.drawPath(
+       const HexBorder().pathFor(
+-        Rect.fromLTRB(
+-          0,
+-          HexSegmented._gap,
+-          size.width,
+-          size.height - HexSegmented._gap,
+-        ),
+-        outset: HlFocus.ringGap + HlFocus.ringWidth / 2,
++        Offset.zero & size,
++        outset: -HexSegmented._gap + HlFocus.ringGap + HlFocus.ringWidth / 2,
+       ),
+       Paint()
+         ..style = PaintingStyle.stroke
+diff --git b/app/lib/design/nav_card.dart a/app/lib/design/nav_card.dart
+new file mode 100644
+index 00000000..62bf81e8
+--- /dev/null
++++ a/app/lib/design/nav_card.dart
+@@ -0,0 +1,85 @@
++import 'package:family_groceries/design/pointy_hex.dart';
++import 'package:family_groceries/design/sticker.dart';
++import 'package:family_groceries/design/tokens.g.dart';
++import 'package:flutter/material.dart';
++
++/// Navigation rows in an inset card: the 2 px contour, the small sticker
++/// shadow, hairlines between the rows. More's sections and Einstellungen's
++/// language.
++class const NavCard({
++  required final List<Widget> children,
++  final double top = HlSpace.s5,
++  super.key,
++}) extends StatelessWidget {
++  @override
++  Widget build(BuildContext context) {
++    final t = HummlistColors.of(Theme.of(context).brightness);
++    return Padding(
++      padding: EdgeInsets.fromLTRB(HlSpace.s4, top, HlSpace.s4, 0),
++      child: HlSticker(
++        depth: StickerDepth.s,
++        child: ClipRRect(
++          borderRadius: BorderRadius.circular(HlRadius.m - HlBorder.width),
++          child: Material(
++            type: MaterialType.transparency,
++            child: Column(
++              children: [
++                for (final (i, child) in children.indexed) ...[
++                  if (i > 0)
++                    Divider(
++                      height: 1,
++                      indent: 60,
++                      endIndent: HlSpace.s3,
++                      color: t.divider,
++                    ),
++                  child,
++                ],
++              ],
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
++
++/// A row of a [NavCard]: its [icon] in a pointy hex, the [title], an
++/// optional [subtitle] and the [trailing] glyph. Every row's hex has the one
++/// cobalt-mist face, so no row looks highlighted.
++class const NavRow({
++  required final IconData icon,
++  required final Widget title,
++  required final VoidCallback onTap,
++  final Widget? subtitle,
++  final Widget? trailing,
++
++  /// The icon's colour; the text colour when null.
++  final Color? iconColor,
++
++  /// The hex's face; the rows' shared [HummlistColors.accentSoft] when null.
++  /// Sign-out passes the sunken surface: it is no page to open.
++  final Color? face,
++  final bool selected = false,
++  super.key,
++}) extends StatelessWidget {
++  @override
++  Widget build(BuildContext context) {
++    final t = HummlistColors.of(Theme.of(context).brightness);
++    return ListTile(
++      minTileHeight: 52,
++      contentPadding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
++      leading: PointyHex(
++        face: face ?? t.accentSoft,
++        // The visible contour in dark too, where the edge melts into the card.
++        contour: t.border,
++        size: 34,
++        child: Icon(icon, size: 18, color: iconColor ?? t.text),
++      ),
++      title: title,
++      subtitle: subtitle,
++      trailing: trailing,
++      selected: selected,
++      onTap: onTap,
++    );
++  }
++}
+diff --git b/app/lib/design/section_label.dart a/app/lib/design/section_label.dart
+index 4da0fcfc..8ecd81d8 100644
+--- b/app/lib/design/section_label.dart
++++ a/app/lib/design/section_label.dart
+@@ -12,6 +12,15 @@ class const HlSectionLabel(
+ }) extends StatelessWidget {
+   static const _size = 11.0;
+ 
++  /// Over a page's inset cards (More, Einstellungen): on the 16 px gutter,
++  /// a card's gap above, the card [HlSpace.s2] below.
++  static const pagePadding = EdgeInsets.fromLTRB(
++    HlSpace.s4,
++    HlSpace.s5,
++    HlSpace.s4,
++    0,
++  );
++
+   @override
+   Widget build(BuildContext context) {
+     final t = HummlistColors.of(Theme.of(context).brightness);
+diff --git b/app/lib/list/add_sheet/add_sheet.dart a/app/lib/list/add_sheet/add_sheet.dart
+index 3b2d17d8..f6c712b2 100644
+--- b/app/lib/list/add_sheet/add_sheet.dart
++++ a/app/lib/list/add_sheet/add_sheet.dart
+@@ -1,8 +1,8 @@
+ import 'dart:async';
+ import 'dart:math' as math;
+ 
+-import 'package:family_groceries/design/hex_border.dart';
+ import 'package:family_groceries/design/motion.dart';
++import 'package:family_groceries/design/tactile.dart';
+ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:family_groceries/l10n/app_localizations.dart';
+ import 'package:family_groceries/list/add_sheet/add_sheet_cubit.dart';
+@@ -172,7 +172,15 @@ class _AddSheetState() extends State<AddSheet> {
+                           opacity: open ? 1 : 0,
+                           duration: hlMotion(context, _sheetDuration),
+                           curve: open ? HlEasing.standard : HlEasing.exit,
+-                          child: const ColoredBox(color: Color(0x66000000)),
++                          // The edit sheet's barrier: showModalBottomSheet's
++                          // own fallback when the theme sets none.
++                          child: ColoredBox(
++                            color:
++                                Theme.of(context)
++                                    .bottomSheetTheme
++                                    .modalBarrierColor ??
++                                Colors.black54,
++                          ),
+                         ),
+                       ),
+                     ),
+@@ -271,7 +279,14 @@ class const _Content({
+             children: [
+               const _GrabHandle(),
+               Padding(
+-                padding: const EdgeInsets.fromLTRB(12, 18, 4, 10),
++                // The close button's own 48 px box ends its icon on the
++                // gutter.
++                padding: const EdgeInsets.fromLTRB(
++                  HlSpace.s4,
++                  18,
++                  HlSpace.s1,
++                  10,
++                ),
+                 child: FoldoutChips(
+                   catalog: catalog,
+                   storeId: storeId,
+@@ -513,7 +528,13 @@ class const _SuggestionRow({
+           onTap: onTap,
+           child: Container(
+             constraints: const BoxConstraints(minHeight: _rowHeight),
+-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
++            // The emoji starts on the gutter, the add field's left edge;
++            // 4 px above and below leave the 48 px key cap inside the
++            // 60 px row.
++            padding: const EdgeInsets.symmetric(
++              horizontal: HlSpace.s4,
++              vertical: HlSpace.s1,
++            ),
+             decoration: BoxDecoration(
+               border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+             ),
+@@ -527,7 +548,6 @@ class const _SuggestionRow({
+                             category == null
+                         ? '🔁'
+                         : nameIcon(entry.name, category),
+-                    textAlign: TextAlign.center,
+                     style: const TextStyle(fontSize: 20),
+                   ),
+                 ),
+@@ -592,18 +612,28 @@ class const _SuggestionRow({
+                 ?(ownStore == null
+                     ? null
+                     : StoreBadge(ownStore!, height: 24, maxWidth: 120)),
++                // Enter's key cap in the primary button's tactile face, 48 px
++                // with its edge: taking the first row is the sheet's main
++                // action. Only a cue; the whole row is what a tap takes.
+                 if (first)
+-                  Container(
+-                    width: 36,
+-                    height: 28,
+-                    alignment: Alignment.center,
+-                    decoration: ShapeDecoration(
+-                      shape: HexBorder(side: BorderSide(color: t.textMuted)),
+-                    ),
+-                    child: Icon(
+-                      Icons.keyboard_return,
+-                      size: 16,
+-                      color: t.textMuted,
++                  SizedBox.square(
++                    dimension: HlSize.target,
++                    child: TactileFace(
++                      states: const {},
++                      colors: TactileColors(
++                        face: t.honey,
++                        contour: t.edge,
++                        edge: t.honeyEdge,
++                        focus: t.accent,
++                      ),
++                      child: Padding(
++                        padding: const EdgeInsets.only(bottom: HlDepth.edge),
++                        child: Icon(
++                          Icons.keyboard_return,
++                          size: 20,
++                          color: t.onHoney,
++                        ),
++                      ),
+                     ),
+                   ),
+               ],
+diff --git b/app/lib/list/edit_item_sheet.dart a/app/lib/list/edit_item_sheet.dart
+index e07a2553..bf6a3437 100644
+--- b/app/lib/list/edit_item_sheet.dart
++++ a/app/lib/list/edit_item_sheet.dart
+@@ -1,6 +1,5 @@
+ import 'dart:math' as math;
+ 
+-import 'package:family_groceries/design/field_border.dart';
+ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:family_groceries/l10n/app_localizations.dart';
+ import 'package:family_groceries/list/entry.dart';
+@@ -151,7 +150,9 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                 ),
+               ),
+               Padding(
+-                padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
++                // Abbrechen's own padding is the gutter: its label ends on
++                // the fields' right edge.
++                padding: const EdgeInsetsDirectional.only(start: HlSpace.s4),
+                 child: LayoutBuilder(
+                   builder: (context, constraints) => Row(
+                     spacing: 4,
+@@ -161,10 +162,8 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                           l10n.editTitle(widget.item.name),
+                           maxLines: 2,
+                           overflow: TextOverflow.ellipsis,
+-                          style: TextStyle(
+-                            fontSize: 15,
+-                            fontWeight: FontWeight.w700,
+-                            color: scheme.onSurfaceVariant,
++                          style: theme.textTheme.titleLarge!.copyWith(
++                            color: scheme.onSurface,
+                           ),
+                         ),
+                       ),
+@@ -181,7 +180,9 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                             // shrinks targets under 44 px.
+                             visualDensity: VisualDensity.standard,
+                             minimumSize: const Size(0, 44),
+-                            padding: const EdgeInsets.symmetric(horizontal: 14),
++                            padding: const EdgeInsets.symmetric(
++                              horizontal: HlSpace.s4,
++                            ),
+                             textStyle: const TextStyle(
+                               fontFamily: HlFont.sans,
+                               fontSize: 15,
+@@ -201,10 +202,16 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                 ),
+               ),
+               Padding(
+-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
++                padding: const EdgeInsets.fromLTRB(
++                  HlSpace.s4,
++                  HlSpace.s2,
++                  HlSpace.s4,
++                  0,
++                ),
++                // A label hugs its field; the groups part by a gutter.
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.stretch,
+-                  spacing: 10,
++                  spacing: HlSpace.s4,
+                   children: [
+                     _Field(
+                       fieldKey: 'edit-name',
+@@ -214,28 +221,24 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                       bold: true,
+                       onSubmitted: _save,
+                     ),
++                    _Field(
++                      fieldKey: 'edit-brand',
++                      label: l10n.fieldBrand,
++                      hint: l10n.brandNone,
++                      controller: _brand,
++                      maxLength: 60,
++                      onSubmitted: _save,
++                    ),
+                     Row(
+                       crossAxisAlignment: CrossAxisAlignment.end,
+-                      spacing: 10,
++                      spacing: HlSpace.s3,
+                       children: [
+                         Expanded(
+-                          child: _Field(
+-                            fieldKey: 'edit-brand',
+-                            label: l10n.fieldBrand,
+-                            hint: l10n.brandNone,
+-                            controller: _brand,
+-                            maxLength: 60,
+-                            onSubmitted: _save,
+-                          ),
+-                        ),
+-                        SizedBox(
+-                          width: 72,
+                           child: _Field(
+                             fieldKey: 'edit-quantity',
+                             label: l10n.itemQuantity,
+                             controller: _quantity,
+                             maxLength: 40,
+-                            centered: true,
+                             onSubmitted: _save,
+                           ),
+                         ),
+@@ -250,7 +253,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                                 stepQuantity(text, up: false) != null;
+                             return Row(
+                               mainAxisSize: MainAxisSize.min,
+-                              spacing: 4,
++                              spacing: HlSpace.s3,
+                               children: [
+                                 _Stepper(
+                                   key: const ValueKey('edit-quantity-minus'),
+@@ -290,7 +293,14 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                   ),
+                 ),
+                 child: Padding(
+-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
++                  // The chips belong to the fields above; the action bar
++                  // starts a new group below the line.
++                  padding: const EdgeInsets.fromLTRB(
++                    HlSpace.s4,
++                    HlSpace.s4,
++                    HlSpace.s4,
++                    HlSpace.s5,
++                  ),
+                   child: FoldoutChips(
+                     catalog: _catalog,
+                     storeId: _storeId,
+@@ -306,29 +316,41 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                 ),
+               ),
+               Padding(
+-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+-                // Large text stacks Fertig over Löschen.
++                // Löschen's own padding is the gutter: its label starts on
++                // the fields' left edge. Large text stacks Fertig over
++                // Löschen.
++                padding: const EdgeInsetsDirectional.fromSTEB(
++                  0,
++                  HlSpace.s3,
++                  HlSpace.s4,
++                  0,
++                ),
+                 child: OverflowBar(
+                   alignment: MainAxisAlignment.spaceBetween,
+                   overflowAlignment: OverflowBarAlignment.end,
+                   overflowDirection: VerticalDirection.up,
+                   children: [
+-                    TextButton(
++                    // Second rank: regular weight under Fertig's bold, and
++                    // the bin says what it does without the colour.
++                    TextButton.icon(
+                       key: const ValueKey('edit-delete'),
+                       style: TextButton.styleFrom(
+                         visualDensity: VisualDensity.standard,
+                         minimumSize: const Size(0, 52),
+-                        padding: const EdgeInsets.symmetric(horizontal: 18),
++                        padding: const EdgeInsets.symmetric(
++                          horizontal: HlSpace.s4,
++                        ),
+                         foregroundColor: scheme.error,
+-                        textStyle: const TextStyle(
+-                          fontFamily: HlFont.sans,
+-                          fontSize: 17,
+-                          fontWeight: FontWeight.w700,
++                        iconColor: scheme.error,
++                        iconSize: 20,
++                        textStyle: theme.textTheme.labelLarge!.copyWith(
++                          fontWeight: FontWeight.w400,
+                         ),
+                       ),
+                       onPressed: () =>
+                           Navigator.of(context).pop(const EditDeleted()),
+-                      child: Text(l10n.delete),
++                      icon: const Icon(Icons.delete_outline),
++                      label: Text(l10n.delete),
+                     ),
+                     ValueListenableBuilder(
+                       valueListenable: _name,
+@@ -353,10 +375,10 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+               ),
+               Padding(
+                 padding: EdgeInsets.fromLTRB(
+-                  20,
+-                  10,
+-                  20,
+-                  16 + math.max(0, media.padding.bottom - keyboard),
++                  HlSpace.s4,
++                  HlSpace.s2,
++                  HlSpace.s4,
++                  HlSpace.s4 + math.max(0, media.padding.bottom - keyboard),
+                 ),
+                 child: ExcludeSemantics(
+                   child: Text(
+@@ -377,8 +399,8 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+   }
+ }
+ 
+-/// A label above a 48 px field; the label names the field for screen
+-/// readers.
++/// A label above a 48 px field, on the field's left edge like the sheet's
++/// title and chips; the label names the field for screen readers.
+ class const _Field({
+   required final String fieldKey,
+   required final String label,
+@@ -387,7 +409,6 @@ class const _Field({
+   required final VoidCallback onSubmitted,
+   final String? hint,
+   final bool bold = false,
+-  final bool centered = false,
+ }) extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+@@ -397,24 +418,19 @@ class const _Field({
+         crossAxisAlignment: CrossAxisAlignment.stretch,
+         spacing: 4,
+         children: [
+-          Padding(
+-            // Over the field's text, not its tip.
+-            padding: const EdgeInsetsDirectional.only(start: hexFieldInset),
+-            child: Text(
+-              label,
+-              maxLines: 1,
+-              overflow: TextOverflow.ellipsis,
+-              style: TextStyle(
+-                fontSize: 13,
+-                fontWeight: FontWeight.w700,
+-                color: scheme.onSurfaceVariant,
+-              ),
++          Text(
++            label,
++            maxLines: 1,
++            overflow: TextOverflow.ellipsis,
++            style: TextStyle(
++              fontSize: 13,
++              fontWeight: FontWeight.w700,
++              color: scheme.onSurfaceVariant,
+             ),
+           ),
+           TextField(
+             key: ValueKey(fieldKey),
+             controller: controller,
+-            textAlign: centered ? TextAlign.center : TextAlign.start,
+             textAlignVertical: TextAlignVertical.center,
+             textInputAction: TextInputAction.done,
+             textCapitalization: TextCapitalization.sentences,
+@@ -430,13 +446,6 @@ class const _Field({
+                 color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+               ),
+               constraints: const BoxConstraints.tightFor(height: HlSize.target),
+-              // Centred text in a narrow field clears the tips with less.
+-              contentPadding: centered
+-                  ? const EdgeInsets.symmetric(
+-                      horizontal: HlSpace.s3,
+-                      vertical: HlSpace.s2,
+-                    )
+-                  : null,
+             ),
+             onSubmitted: (_) => onSubmitted(),
+           ),
+@@ -453,7 +462,8 @@ class const _Stepper({
+   super.key,
+ }) extends StatelessWidget {
+   /// The theme's outlined button: a raised hex with the contour on its
+-  /// edge, sinking when pressed.
++  /// edge, sinking when pressed. A 48 px square, face plus edge like Fertig;
++  /// the surface face, not lemon, keeps it the field's helper.
+   @override
+   Widget build(BuildContext context) => Tooltip(
+     message: tooltip,
+@@ -463,12 +473,11 @@ class const _Stepper({
+       onPressed: onPressed,
+       style: OutlinedButton.styleFrom(
+         visualDensity: VisualDensity.standard,
+-        fixedSize: const Size(56, HlSize.target),
+-        minimumSize: const Size(56, HlSize.target),
++        fixedSize: const Size.square(HlSize.target),
++        minimumSize: const Size.square(HlSize.target),
+         padding: EdgeInsets.zero,
+-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+       ),
+-      child: Icon(icon, size: 22, semanticLabel: tooltip),
++      child: Icon(icon, size: 20, semanticLabel: tooltip),
+     ),
+   );
+ }
+diff --git b/app/lib/list/list_screen.dart a/app/lib/list/list_screen.dart
+index 3e23d20d..cbb8a198 100644
+--- b/app/lib/list/list_screen.dart
++++ a/app/lib/list/list_screen.dart
+@@ -16,6 +16,7 @@ import 'package:family_groceries/list/list_cubit.dart';
+ import 'package:family_groceries/list/list_link.dart';
+ import 'package:family_groceries/list/list_repository.dart';
+ import 'package:family_groceries/list/list_scope.dart';
++import 'package:family_groceries/list/list_view/item_row.dart';
+ import 'package:family_groceries/list/list_view/shopping_list_view.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:family_groceries/session/session_cubit.dart';
+@@ -659,6 +660,9 @@ class const _AddBar({
+         ],
+       ),
+     );
++    final railInset = MediaQuery.sizeOf(context).width >= wideLayout
++        ? listGutter - (addBarHeight - _composeHeight) / 2
++        : 0.0;
+     // In the list's first column, where the sheet opens. Closed, the bar is
+     // the page under the field; open, it carries on the sheet above it.
+     return ColoredBox(
+@@ -681,9 +685,16 @@ class const _AddBar({
+                 color: open ? t.surfaceRaised : t.surface,
+                 child: SafeArea(
+                   top: false,
++                  // Over the tabs the field sits centred; with the rail
++                  // nothing is under it, so it keeps the gutter from the
++                  // window's bottom edge.
+                   child: Container(
+-                    height: addBarHeight,
+-                    padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
++                    height: addBarHeight + railInset,
++                    padding: EdgeInsetsDirectional.only(
++                      start: listGutter,
++                      end: listGutter,
++                      bottom: railInset,
++                    ),
+                     alignment: Alignment.center,
+                     // A tap on the hex around the field counts as one on
+                     // the field. No semantics node of its own: on the web
+@@ -711,14 +722,20 @@ class const _AddBar({
+ /// The compose field's height: the site's `.compose`.
+ const _composeHeight = 52.0;
+ 
++/// The list header's height, below the top safe area; also the sync icon's
++/// square tap target. The wide layout's rail starts under it too.
++const listHeaderHeight = 44.0;
++
++/// Anpassen's padding at every text scale, so its words keep to the gutter.
++const _headerButtonPadding = HlSpace.s3;
++
+ /// The bar above the list: how many partner adds are new, the sync state
+ /// and Anpassen, which opens the stores and categories; no household name
+ /// and no count (Peter, DECISIONS Job 29a). It is [height] tall in every
+ /// state, so the list below never moves when either comes or goes. It sits
+ /// in the list's frame (job 57).
+ class const _Header() extends StatelessWidget {
+-  /// Below the top safe area; also the sync icon's square tap target.
+-  static const height = 44.0;
++  static const height = listHeaderHeight;
+ 
+   @override
+   Widget build(BuildContext context) {
+@@ -741,10 +758,12 @@ class const _Header() extends StatelessWidget {
+             state,
+           ).side;
+           return Padding(
++            // Anpassen's words end on the list's right gutter, inside the
++            // button's own padding.
+             padding: EdgeInsets.only(
+-              left: side + HlSpace.s4 + HlSpace.s1,
++              left: side + listGutter,
+               top: MediaQuery.paddingOf(context).top,
+-              right: side + HlSpace.s2,
++              right: side + listGutter - _headerButtonPadding,
+             ),
+             child: SizedBox(
+               height: height,
+@@ -781,6 +800,11 @@ class const _Header() extends StatelessWidget {
+                     child: TextButton(
+                       key: const ValueKey('list-edit'),
+                       onPressed: () => context.go(editPath),
++                      style: TextButton.styleFrom(
++                        padding: const EdgeInsets.symmetric(
++                          horizontal: _headerButtonPadding,
++                        ),
++                      ),
+                       child: FittedBox(
+                         fit: BoxFit.scaleDown,
+                         child: Text(l10n.listEdit),
+diff --git b/app/lib/list/list_view/balanced_text.dart a/app/lib/list/list_view/balanced_text.dart
+new file mode 100644
+index 00000000..fa3c6be3
+--- /dev/null
++++ a/app/lib/list/list_view/balanced_text.dart
+@@ -0,0 +1,68 @@
++import 'package:flutter/material.dart';
++
++/// [Text] that wraps into lines of even length, like CSS's
++/// `text-wrap: balance`: a short hint that needs two lines sets as two
++/// phrases, not a full line and an orphaned word. Text that fits on one
++/// line is laid out as plain [Text].
++class const BalancedText(
++  final String data, {
++  final TextStyle? style,
++  final TextAlign? textAlign,
++  super.key,
++}) extends StatelessWidget {
++  @override
++  Widget build(BuildContext context) => LayoutBuilder(
++    builder: (context, constraints) {
++      final text = Text(data, style: style, textAlign: textAlign);
++      final width = _balancedWidth(context, constraints.maxWidth);
++      if (width == null) {
++        return text;
++      }
++      return Align(
++        alignment: textAlign == TextAlign.center
++            ? Alignment.topCenter
++            : AlignmentDirectional.topStart,
++        heightFactor: 1,
++        child: SizedBox(width: width, child: text),
++      );
++    },
++  );
++
++  /// The narrowest width that keeps the line count [data] has at [max];
++  /// null when it fits on one line.
++  double? _balancedWidth(BuildContext context, double max) {
++    if (!max.isFinite) {
++      return null;
++    }
++    final painter = TextPainter(
++      text: TextSpan(
++        text: data,
++        style: DefaultTextStyle.of(context).style.merge(style),
++      ),
++      textDirection: Directionality.of(context),
++      textScaler: MediaQuery.textScalerOf(context),
++      locale: Localizations.maybeLocaleOf(context),
++    );
++    int lines(double width) {
++      painter.layout(maxWidth: width);
++      return painter.computeLineMetrics().length;
++    }
++
++    final count = lines(max);
++    double? balanced;
++    if (count > 1) {
++      var (fits, breaks) = (max, 0.0);
++      while (fits - breaks > 1) {
++        final mid = (fits + breaks) / 2;
++        if (lines(mid) == count) {
++          fits = mid;
++        } else {
++          breaks = mid;
++        }
++      }
++      balanced = fits;
++    }
++    painter.dispose();
++    return balanced;
++  }
++}
+diff --git b/app/lib/list/list_view/dividers.dart a/app/lib/list/list_view/dividers.dart
+index c9195c8b..15346a3b 100644
+--- b/app/lib/list/list_view/dividers.dart
++++ a/app/lib/list/list_view/dividers.dart
+@@ -63,7 +63,10 @@ class const _Head({
+   @override
+   Widget build(BuildContext context) => Container(
+     constraints: const BoxConstraints(minHeight: 52),
+-    padding: const EdgeInsets.fromLTRB(18, 8, 14, 8),
++    padding: const EdgeInsets.symmetric(
++      horizontal: listGutter,
++      vertical: HlSpace.s2,
++    ),
+     child: _row(context),
+   );
+ 
+@@ -92,11 +95,16 @@ class const _Head({
+                     maxWidth: (constraints.maxWidth - 22).clamp(0, 1e9),
+                   ),
+                   Expanded(
+-                    child: Container(
+-                      height: 3,
+-                      decoration: BoxDecoration(
+-                        color: tint,
+-                        borderRadius: BorderRadius.circular(HlRadius.full),
++                    // A hairline: the rule carries the store's colour
++                    // without outweighing its badge or the items. It is the
++                    // foot of a box the contour's height; centred on its
++                    // own it fell between two pixel rows at 1x and blurred.
++                    child: SizedBox(
++                      height: HlBorder.width,
++                      child: DecoratedBox(
++                        decoration: BoxDecoration(
++                          border: Border(bottom: BorderSide(color: tint)),
++                        ),
+                       ),
+                     ),
+                   ),
+@@ -156,6 +164,9 @@ class const CategoryDivider({
+   required final CategoryBlock block,
+   required final LeavingRows leaving,
+   required final VoidCallback onEdit,
++
++  /// The first block of its section sits closer to the store's badge.
++  required final bool first,
+   super.key,
+ }) extends StatelessWidget {
+   @override
+@@ -178,7 +189,7 @@ class const CategoryDivider({
+         child: GestureDetector(
+           behavior: HitTestBehavior.opaque,
+           onSecondaryTap: onEdit,
+-          child: _Line(label: label),
++          child: _Line(label: label, first: first),
+         ),
+       ),
+     );
+@@ -226,14 +237,25 @@ class const _ClosesWithRows({
+   );
+ }
+ 
+-class const _Line({required final String label}) extends StatelessWidget {
++/// Above a category label or a store's badge that follows other rows. The
++/// badge's row adds its own padding, so a store parts a clear step more
++/// than a category does.
++const blockGap = HlSpace.s3;
++
++class const _Line({required final String label, required final bool first})
++    extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     final scheme = Theme.of(context).colorScheme;
+     final faded = Color.lerp(scheme.surface, scheme.onSurfaceVariant, 0.75)!;
+-    return Container(
+-      constraints: const BoxConstraints(minHeight: 32),
+-      padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
++    // Room above only: the label belongs to the rows under it, whose own
++    // padding parts them from it.
++    return Padding(
++      padding: EdgeInsetsDirectional.only(
++        start: listGutter,
++        top: first ? HlSpace.s2 : blockGap,
++        end: listGutter,
++      ),
+       child: LayoutBuilder(
+         builder: (context, constraints) => Row(
+           spacing: 10,
+diff --git b/app/lib/list/list_view/explainer.dart a/app/lib/list/list_view/explainer.dart
+index 61ea79c9..864c210c 100644
+--- b/app/lib/list/list_view/explainer.dart
++++ a/app/lib/list/list_view/explainer.dart
+@@ -1,82 +1,137 @@
+ import 'package:family_groceries/design/pointy_hex.dart';
+-import 'package:family_groceries/design/sticker.dart';
+ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:family_groceries/l10n/app_localizations.dart';
++import 'package:family_groceries/list/list_view/balanced_text.dart';
++import 'package:family_groceries/list/list_view/item_row.dart';
+ import 'package:flutter/material.dart';
+ 
+ /// The temporary card at the top that names the gestures, until dismissed.
++/// A hint, so quieter than the stores and items it explains: a tinted face
++/// with the contour only, no sticker shadow.
+ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
+     extends StatelessWidget {
+-  /// The largest text scale at which the button fits beside the hint on a
+-  /// 320 px phone.
+-  static const _rowScale = 1.3;
++  static const _icon = 22.0;
++
++  /// The button's whole text style (styleFrom replaces the theme's), also
++  /// what [_oneLineWidth] measures it with.
++  static const _label = TextStyle(
++    fontFamily: HlFont.sans,
++    fontSize: 14,
++    fontWeight: FontWeight.w700,
++  );
++  static const _buttonPadding = EdgeInsets.symmetric(horizontal: HlSpace.s2);
++  static const _cardPadding = EdgeInsetsDirectional.fromSTEB(
++    HlSpace.s3,
++    HlSpace.s1,
++    HlSpace.s1,
++    HlSpace.s1,
++  );
+ 
+   @override
+   Widget build(BuildContext context) {
+     final l10n = AppLocalizations.of(context);
+     final t = HummlistColors.of(Theme.of(context).brightness);
+-    final icon = Icon(Icons.touch_app_outlined, size: 22, color: t.brand);
+-    final text = Text(
+-      l10n.listHint,
+-      style: TextStyle(fontSize: 13, height: 1.35, color: t.text),
++    // The body's tracking, not Material's loose 0.25.
++    final style = HlType.body.copyWith(
++      fontSize: 13,
++      height: 1.35,
++      color: t.text,
+     );
++    final icon = Icon(Icons.touch_app_outlined, size: _icon, color: t.brand);
+     final dismiss = TextButton(
+       key: const ValueKey('list-hint-dismiss'),
+       onPressed: onDismiss,
+       style: TextButton.styleFrom(
+         minimumSize: const Size(0, 44),
+-        textStyle: const TextStyle(
+-          fontFamily: HlFont.sans,
+-          fontWeight: FontWeight.w700,
+-        ),
++        padding: _buttonPadding,
++        textStyle: _label,
+       ),
+       child: Text(l10n.listHintDismiss),
+     );
+-    // Large text would squeeze the hint beside the button to a word per
+-    // line, or push the button out of the card.
+-    final large = MediaQuery.textScalerOf(context).scale(1) > _rowScale;
+     return Padding(
+       key: const ValueKey('list-hint'),
+       padding: const EdgeInsets.symmetric(
+-        horizontal: HlSpace.s3,
++        horizontal: listGutter,
+         vertical: HlSpace.s2,
+       ),
+-      child: HlSticker(
+-        depth: StickerDepth.s,
+-        child: Padding(
+-          padding: const EdgeInsetsDirectional.fromSTEB(
+-            HlSpace.s3,
+-            HlSpace.s2,
+-            HlSpace.s2,
+-            HlSpace.s2,
+-          ),
+-          child: large
+-              ? Column(
+-                  crossAxisAlignment: CrossAxisAlignment.end,
+-                  children: [
+-                    Row(
+-                      spacing: HlSpace.s3,
+-                      crossAxisAlignment: CrossAxisAlignment.start,
+-                      children: [
+-                        icon,
+-                        Expanded(child: text),
+-                      ],
+-                    ),
+-                    dismiss,
+-                  ],
+-                )
+-              : Row(
+-                  spacing: HlSpace.s3,
++      child: DecoratedBox(
++        decoration: BoxDecoration(
++          color: t.accentSoft,
++          borderRadius: BorderRadius.circular(HlRadius.m),
++          border: Border.all(color: t.divider),
++        ),
++        // The button sits at the card's end: beside the hint while both fit
++        // on one line, under it at narrow widths or large text, so the hint
++        // never breaks beside it.
++        child: LayoutBuilder(
++          builder: (context, constraints) {
++            final oneLine =
++                _oneLineWidth(context, l10n, style) <=
++                constraints.maxWidth - _cardPadding.horizontal;
++            if (oneLine) {
++              return Padding(
++                padding: _cardPadding,
++                child: Row(
+                   children: [
+                     icon,
+-                    Expanded(child: text),
++                    const SizedBox(width: HlSpace.s2),
++                    // The button's own padding parts it from the hint.
++                    Expanded(child: Text(l10n.listHint, style: style)),
+                     dismiss,
+                   ],
+                 ),
++              );
++            }
++            return Padding(
++              // The button's 44 px target already holds its label clear of
++              // the bottom edge; the top matches that air.
++              padding: _cardPadding.copyWith(top: HlSpace.s4, bottom: 0),
++              child: Column(
++                crossAxisAlignment: CrossAxisAlignment.end,
++                children: [
++                  Row(
++                    spacing: HlSpace.s2,
++                    children: [
++                      icon,
++                      Expanded(
++                        child: BalancedText(l10n.listHint, style: style),
++                      ),
++                    ],
++                  ),
++                  dismiss,
++                ],
++              ),
++            );
++          },
+         ),
+       ),
+     );
+   }
++
++  /// The width of icon, hint and button side by side, the hint unbroken.
++  double _oneLineWidth(
++    BuildContext context,
++    AppLocalizations l10n,
++    TextStyle style,
++  ) {
++    double width(String text, TextStyle style) {
++      final painter = TextPainter(
++        text: TextSpan(text: text, style: style),
++        textDirection: Directionality.of(context),
++        textScaler: MediaQuery.textScalerOf(context),
++        locale: Localizations.maybeLocaleOf(context),
++      )..layout();
++      final w = painter.width;
++      painter.dispose();
++      return w;
++    }
++
++    return _icon +
++        HlSpace.s2 +
++        width(l10n.listHint, DefaultTextStyle.of(context).style.merge(style)) +
++        width(l10n.listHintDismiss, _label) +
++        _buttonPadding.horizontal;
++  }
+ }
+ 
+ /// A honey hex with the cart over the empty list's text, like the site's
+@@ -90,9 +145,12 @@ class const EmptyList({super.key}) extends StatelessWidget {
+     final t = HummlistColors.of(Theme.of(context).brightness);
+     return Padding(
+       key: const ValueKey('list-empty'),
+-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 80),
++      padding: const EdgeInsets.symmetric(
++        horizontal: HlSpace.s6,
++        vertical: HlSpace.s6,
++      ),
+       child: Column(
+-        spacing: 12,
++        spacing: HlSpace.s6,
+         children: [
+           ExcludeSemantics(
+             child: PointyHex(
+@@ -106,14 +164,11 @@ class const EmptyList({super.key}) extends StatelessWidget {
+               ),
+             ),
+           ),
+-          Text(
++          BalancedText(
+             AppLocalizations.of(context).emptyList,
+             textAlign: TextAlign.center,
+-            style: TextStyle(
+-              fontSize: 22,
+-              fontWeight: FontWeight.w700,
+-              color: scheme.onSurfaceVariant,
+-            ),
++            style: Theme.of(context).textTheme.titleLarge!
++                .copyWith(color: scheme.onSurface),
+           ),
+         ],
+       ),
+diff --git b/app/lib/list/list_view/item_row.dart a/app/lib/list/list_view/item_row.dart
+index bd8262ab..049e1994 100644
+--- b/app/lib/list/list_view/item_row.dart
++++ a/app/lib/list/list_view/item_row.dart
+@@ -164,6 +164,11 @@ final _draw = Interval(0, _struck, curve: HlEasing.standard);
+ final rowLeaveFade = Interval(_struck, 1, curve: HlEasing.exit);
+ final rowLeaveClose = Interval(_struck, 1, curve: HlEasing.standard);
+ 
++/// The list's one left (and right) edge, the app's page gutter (More and
++/// Einstellungen use it too): store badges, category labels, row icons,
++/// the explainer, the header and the add field all start on it.
++const listGutter = HlSpace.s4;
++
+ // The site's `.item`: Bricolage 17/1.25 names, a 28 px emoji column, a
+ // 10 px gap, 13 px details in medium.
+ const _nameSize = 17.0;
+@@ -247,15 +252,17 @@ class const _Tile({
+             constraints: const BoxConstraints(minHeight: HlSpace.s7),
+             alignment: AlignmentDirectional.centerStart,
+             padding: const EdgeInsets.symmetric(
+-              horizontal: HlSpace.s4,
++              horizontal: listGutter,
+               vertical: _rowPadding,
+             ),
+-            decoration: row.last
++            // Plain rows part on their 48 px rhythm. Tinted ones (new,
++            // ticked) touch, so a rule inset at the gutters parts two of
++            // them; a plain neighbour's surface parts itself.
++            foregroundDecoration: row.last || (!row.fresh && drawn == 0)
+                 ? null
+-                : BoxDecoration(
+-                    border: Border(
+-                      bottom: BorderSide(color: scheme.outlineVariant),
+-                    ),
++                : UnderlineTabIndicator(
++                    borderSide: BorderSide(color: scheme.outlineVariant),
++                    insets: const EdgeInsets.symmetric(horizontal: listGutter),
+                   ),
+             child: Row(
+               crossAxisAlignment: CrossAxisAlignment.start,
+@@ -265,7 +272,6 @@ class const _Tile({
+                   width: _iconColumn,
+                   child: Text(
+                     itemIcon(item, row.category),
+-                    textAlign: TextAlign.center,
+                     style: const TextStyle(
+                       fontSize: _iconSize,
+                       height: _nameLine / _iconSize,
+diff --git b/app/lib/list/list_view/shopping_list_view.dart a/app/lib/list/list_view/shopping_list_view.dart
+index 1c7cb587..d7a31021 100644
+--- b/app/lib/list/list_view/shopping_list_view.dart
++++ a/app/lib/list/list_view/shopping_list_view.dart
+@@ -394,7 +394,28 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+ 
+     // Every store empty: no section shows, the empty list says so.
+     final body = shown.isEmpty
+-        ? const SliverToBoxAdapter(child: EmptyList())
++        ? SliverLayoutBuilder(
++            builder: (context, constraints) => SliverToBoxAdapter(
++              child: ConstrainedBox(
++                // The viewport left under the hint, unless the recently used
++                // items follow and must stay in view.
++                constraints: BoxConstraints(
++                  minHeight: used.isEmpty
++                      ? math.max(
++                          0,
++                          constraints.viewportMainAxisExtent -
++                              constraints.precedingScrollExtent -
++                              widget.bottomInset,
++                        )
++                      : 0,
++                ),
++                // Centred above the add bar's inset: on the phone the bar sits
++                // under the list, so the empty state lands a little above the
++                // visible middle, its optical centre.
++                child: const Align(child: EmptyList()),
++              ),
++            ),
++          )
+         : columnCount == 1
+         ? column(shown)
+         : SliverCrossAxisGroup(
+@@ -428,6 +449,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+           padding: EdgeInsets.symmetric(horizontal: side),
+           sliver: SliverMainAxisGroup(
+             slivers: [
++              // Across every column; its button follows its text.
+               if (!state.prefs.hintDismissed)
+                 SliverToBoxAdapter(
+                   child: ExplainerCard(
+@@ -525,7 +547,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+                 ? 0
+                 : folded(run[i - 1])
+                 ? 2
+-                : 20,
++                : blockGap,
+           ),
+           child: StoreDivider(
+             section: section,
+@@ -539,12 +561,13 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+       if (isFolded) {
+         continue;
+       }
+-      for (final block in section.blocks) {
++      for (final (b, block) in section.blocks.indexed) {
+         final category = block.category;
+         entries.add(
+           CategoryDivider(
+             key: ValueKey('category-${section.key}-${category?.id}'),
+             block: block,
++            first: b == 0,
+             leaving: _leaving,
+             onEdit: () => _editStore(storeId),
+           ),
+diff --git b/app/lib/list/store_badge.dart a/app/lib/list/store_badge.dart
+index 4b40fcb7..af616b94 100644
+--- b/app/lib/list/store_badge.dart
++++ a/app/lib/list/store_badge.dart
+@@ -19,9 +19,9 @@ enum StoreBadgeStyle() {
+ /// retailer logos; then add the entries here and nothing else changes.
+ const _logos = <String, String>{};
+ 
+-/// The one marker of a store: the divider in the list, the Läden screen and
+-/// the add sheet's suggestions all use it, so a store looks the same
+-/// everywhere. Job 58's custom stores need nothing more: an own store has no
++/// The one marker of a store: the divider in the list and the add sheet's
++/// suggestions both use it, so a store looks the same wherever it marks
++/// one. Job 58's custom stores need nothing more: an own store has no
+ /// logo and shows its name.
+ ///
+ /// Token colours only: a raised face, the navy contour and the text colour
+diff --git b/app/lib/list/store_details_screen.dart a/app/lib/list/store_details_screen.dart
+index f3407d03..3cfe2c83 100644
+--- b/app/lib/list/store_details_screen.dart
++++ a/app/lib/list/store_details_screen.dart
+@@ -10,7 +10,6 @@ import 'package:family_groceries/list/list_cubit.dart';
+ import 'package:family_groceries/list/list_view/item_icon.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:family_groceries/list/name_dialog.dart';
+-import 'package:family_groceries/list/store_badge.dart';
+ import 'package:family_groceries/list/stores_screen.dart';
+ import 'package:flutter/material.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+@@ -100,7 +99,13 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
+               children: [
+                 if (store != null) _StoreName(store),
+                 Padding(
+-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
++                  // On the page gutter with the pills.
++                  padding: const EdgeInsets.fromLTRB(
++                    HlSpace.s4,
++                    HlSpace.s4,
++                    HlSpace.s4,
++                    HlSpace.s4,
++                  ),
+                   child: Text(
+                     store == null ? l10n.categoriesHint : l10n.storeLayoutHint,
+                   ),
+@@ -160,18 +165,22 @@ class const _StoreName(final Store store) extends StatelessWidget {
+           child: Row(
+             children: [
+               Expanded(
+-                child: Column(
+-                  mainAxisSize: MainAxisSize.min,
+-                  crossAxisAlignment: CrossAxisAlignment.start,
+-                  spacing: HlSpace.s1,
+-                  children: [
+-                    StoreBadge(store),
+-                    Text(
+-                      l10n.storeRenameHint,
+-                      style: Theme.of(context).textTheme.bodySmall
+-                          ?.copyWith(color: t.textMuted),
+-                    ),
+-                  ],
++                // As the Läden screen's rows show a name and its hint.
++                child: Padding(
++                  padding: const EdgeInsets.symmetric(vertical: HlSpace.s3),
++                  child: Column(
++                    mainAxisSize: MainAxisSize.min,
++                    crossAxisAlignment: CrossAxisAlignment.start,
++                    spacing: HlSpace.s1,
++                    children: [
++                      PillTitle(store.name),
++                      Text(
++                        l10n.storeRenameHint,
++                        style: Theme.of(context).textTheme.bodySmall
++                            ?.copyWith(color: t.textMuted),
++                      ),
++                    ],
++                  ),
+                 ),
+               ),
+               Icon(Icons.edit_outlined, color: t.textMuted),
+@@ -223,7 +232,7 @@ class const _CategoryRow({
+       child: Row(
+         children: [
+           HexStep(index + 1),
+-          const SizedBox(width: HlSpace.s3),
++          const SizedBox(width: HlSpace.s2),
+           ExcludeSemantics(
+             child: Text(
+               categoryIcon(category),
+@@ -234,8 +243,16 @@ class const _CategoryRow({
+           Expanded(child: PillTitle(categoryLabel(category, l10n))),
+           if (category.seedKey != 'other')
+             IconButton(
++              // 48 dp on web and desktop too, as the handle.
++              visualDensity: VisualDensity.standard,
+               tooltip: l10n.deleteCategory(name),
+-              icon: const Icon(Icons.delete_outline),
++              // Smaller and muted: quieter than the handle beside it.
++              icon: Icon(
++                Icons.delete_outline,
++                size: 20,
++                color: HummlistColors.of(Theme.of(context).brightness)
++                    .textMuted,
++              ),
+               onPressed: () async {
+                 final target = await showDialog<String>(
+                   context: context,
+@@ -246,7 +263,10 @@ class const _CategoryRow({
+                   await cubit.deleteCategory(category.id, reassignTo: target);
+                 }
+               },
+-            ),
++            )
++          else
++            // The trash's slot stays: every handle in one column.
++            const SizedBox.square(dimension: HlSize.target),
+           PillDragHandle(index: index, label: l10n.dragCategory(name)),
+         ],
+       ),
+diff --git b/app/lib/list/stores_screen.dart a/app/lib/list/stores_screen.dart
+index c855c745..b637e07c 100644
+--- b/app/lib/list/stores_screen.dart
++++ a/app/lib/list/stores_screen.dart
+@@ -8,7 +8,6 @@ import 'package:family_groceries/l10n/app_localizations.dart';
+ import 'package:family_groceries/list/list_cubit.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:family_groceries/list/name_dialog.dart';
+-import 'package:family_groceries/list/store_badge.dart';
+ import 'package:flutter/material.dart';
+ import 'package:flutter/semantics.dart';
+ import 'package:flutter_bloc/flutter_bloc.dart';
+@@ -92,6 +91,7 @@ class const StoresScreen({super.key}) extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+     final l10n = AppLocalizations.of(context);
++    final t = HummlistColors.of(Theme.of(context).brightness);
+     final cubit = context.read<ListCubit>();
+     final stores = context.select<ListCubit, List<Store>>(
+       (c) => c.state.catalog.stores,
+@@ -113,7 +113,14 @@ class const StoresScreen({super.key}) extends StatelessWidget {
+             buildDefaultDragHandles: false,
+             padding: const EdgeInsets.only(bottom: fabClearance),
+             header: Padding(
+-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
++              // On the page gutter with the pills, further from them than
++              // they are from each other.
++              padding: const EdgeInsets.fromLTRB(
++                HlSpace.s4,
++                HlSpace.s3,
++                HlSpace.s4,
++                HlSpace.s4,
++              ),
+               child: Text(
+                 stores.isEmpty ? l10n.storesEmpty : l10n.storesHint,
+                 key: stores.isEmpty ? const ValueKey('stores-empty') : null,
+@@ -133,16 +140,20 @@ class const StoresScreen({super.key}) extends StatelessWidget {
+                   onTap: () => context.go(storeDetailsPath(store.id)),
+                   child: Row(
+                     children: [
+-                      Expanded(
+-                        child: Align(
+-                          alignment: AlignmentDirectional.centerStart,
+-                          child: StoreBadge(store),
+-                        ),
+-                      ),
++                      // The name as "Ohne Laden" shows its own: a pill
++                      // around the store's badge would double the contour.
++                      Expanded(child: PillTitle(store.name)),
+                       IconButton(
+                         key: ValueKey('store-delete-${store.id}'),
++                        // 48 dp on web and desktop too, as the handle.
++                        visualDensity: VisualDensity.standard,
+                         tooltip: l10n.storeDelete(store.name),
+-                        icon: const Icon(Icons.delete_outline),
++                        // Smaller and muted: quieter than the handle beside it.
++                        icon: Icon(
++                          Icons.delete_outline,
++                          size: 20,
++                          color: t.textMuted,
++                        ),
+                         onPressed: () => unawaited(_delete(context, store)),
+                       ),
+                       PillDragHandle(
+@@ -160,7 +171,8 @@ class const StoresScreen({super.key}) extends StatelessWidget {
+   }
+ }
+ 
+-/// The section without a store, pinned: it cannot move, be renamed or go.
++/// The section without a store, pinned: it cannot move, be renamed or go,
++/// so it has the chevron where the stores have trash and handle.
+ class const _NoStoreRow() extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) {
+@@ -168,33 +180,32 @@ class const _NoStoreRow() extends StatelessWidget {
+     final t = HummlistColors.of(Theme.of(context).brightness);
+     return HexPill(
+       key: const ValueKey('store-row-none'),
+-      flat: true,
+       onTap: () => context.go(storeDetailsPath(null)),
+       child: Row(
+         children: [
+           Expanded(
+-            child: Column(
+-              mainAxisSize: MainAxisSize.min,
+-              crossAxisAlignment: CrossAxisAlignment.start,
+-              spacing: HlSpace.s1,
+-              children: [
+-                Text(
+-                  l10n.noStore,
+-                  style: TextStyle(
+-                    fontSize: 16,
+-                    fontWeight: FontWeight.w700,
+-                    color: t.textMuted,
++            child: Padding(
++              padding: const EdgeInsets.symmetric(vertical: HlSpace.s3),
++              child: Column(
++                mainAxisSize: MainAxisSize.min,
++                crossAxisAlignment: CrossAxisAlignment.start,
++                spacing: HlSpace.s1,
++                children: [
++                  PillTitle(l10n.noStore),
++                  Text(
++                    l10n.noStoreRowHint,
++                    style: Theme.of(context).textTheme.bodySmall
++                        ?.copyWith(color: t.textMuted),
+                   ),
+-                ),
+-                Text(
+-                  l10n.noStoreRowHint,
+-                  style: Theme.of(context).textTheme.bodySmall
+-                      ?.copyWith(color: t.textMuted),
+-                ),
+-              ],
++                ],
++              ),
+             ),
+           ),
+-          Icon(Icons.chevron_right, color: t.textMuted),
++          // In the handles' column.
++          SizedBox.square(
++            dimension: HlSize.target,
++            child: Icon(Icons.chevron_right, color: t.textMuted),
++          ),
+         ],
+       ),
+     );
+diff --git b/app/lib/more/more_screen.dart a/app/lib/more/more_screen.dart
+index a2f5d76c..fd81b357 100644
+--- b/app/lib/more/more_screen.dart
++++ a/app/lib/more/more_screen.dart
+@@ -7,6 +7,7 @@ import 'package:family_groceries/app/legal_links.dart';
+ import 'package:family_groceries/app/router.dart';
+ import 'package:family_groceries/app/shell.dart';
+ import 'package:family_groceries/design/hex_switch.dart';
++import 'package:family_groceries/design/nav_card.dart';
+ import 'package:family_groceries/design/pointy_hex.dart';
+ import 'package:family_groceries/design/section_label.dart';
+ import 'package:family_groceries/design/sticker.dart';
+@@ -177,25 +178,23 @@ class const _Page(final MorePage page, final PaywallEntry paywallEntry)
+   };
+ }
+ 
+-/// A row of More, with its glyph and the hex face behind it: honey for the
+-/// household, cobalt for connections, mint for you and your data, the
+-/// sunken surface for the rest.
+-enum _Item(final IconData icon, final String key, final _Tint tint) {
+-  account(Icons.manage_accounts_outlined, 'menu-account', _Tint.mint),
+-  premium(Icons.favorite_outline, 'more-lifetime', _Tint.honey),
+-  invite(Icons.person_add_outlined, 'more-invite', _Tint.honey),
+-  join(Icons.group_add_outlined, 'more-join', _Tint.honey),
+-  archived(Icons.inventory_2_outlined, 'more-archived', _Tint.honey),
+-  access(Icons.key_outlined, 'more-access', _Tint.cobalt),
+-  settings(Icons.settings_outlined, 'more-settings', _Tint.mint),
+-  usageData(Icons.insights_outlined, 'more-usage-data', _Tint.mint),
+-  feedback(Icons.feedback_outlined, 'more-feedback', _Tint.plain),
+-  help(Icons.help_outline, 'more-help', _Tint.plain),
+-  imprint(Icons.info_outline, 'more-imprint', _Tint.plain),
+-  privacyPolicy(Icons.privacy_tip_outlined, 'more-privacy-policy', _Tint.plain),
+-  terms(Icons.article_outlined, 'more-terms', _Tint.plain),
+-  licenses(Icons.description_outlined, 'more-licenses', _Tint.plain),
+-  signOut(Icons.logout, 'more-sign-out', _Tint.plain);
++/// A row of More with its glyph.
++enum _Item(final IconData icon, final String key) {
++  account(Icons.manage_accounts_outlined, 'menu-account'),
++  premium(Icons.favorite_outline, 'more-lifetime'),
++  invite(Icons.person_add_outlined, 'more-invite'),
++  join(Icons.group_add_outlined, 'more-join'),
++  archived(Icons.inventory_2_outlined, 'more-archived'),
++  access(Icons.key_outlined, 'more-access'),
++  settings(Icons.settings_outlined, 'more-settings'),
++  usageData(Icons.insights_outlined, 'more-usage-data'),
++  feedback(Icons.feedback_outlined, 'more-feedback'),
++  help(Icons.help_outline, 'more-help'),
++  imprint(Icons.info_outline, 'more-imprint'),
++  privacyPolicy(Icons.privacy_tip_outlined, 'more-privacy-policy'),
++  terms(Icons.article_outlined, 'more-terms'),
++  licenses(Icons.description_outlined, 'more-licenses'),
++  signOut(Icons.logout, 'more-sign-out');
+ 
+   /// The groups top to bottom; the legal pages are rows of their own
+   /// titled group, so the imprint is one tap from the tab (DDG §5);
+@@ -211,13 +210,6 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
+   ];
+ }
+ 
+-enum _Tint() {
+-  honey,
+-  cobalt,
+-  mint,
+-  plain,
+-}
+-
+ class const _MoreList({
+   required final bool showHelp,
+   required final bool showArchived,
+@@ -273,9 +265,9 @@ class _MoreListState() extends State<_MoreList> {
+                 if (legal)
+                   HlSectionLabel(
+                     l10n.legal,
+-                    padding: const EdgeInsets.fromLTRB(20, HlSpace.s5, 20, 0),
++                    padding: HlSectionLabel.pagePadding,
+                   ),
+-                _Group(
++                NavCard(
+                   top: legal ? HlSpace.s2 : HlSpace.s5,
+                   children: [
+                     for (final item in items) _row(context, l10n, item),
+@@ -387,38 +379,6 @@ class _MoreListState() extends State<_MoreList> {
+   }
+ }
+ 
+-/// A section's rows in an inset group: the 2 px contour, the small sticker
+-/// shadow, hairlines between the rows.
+-class const _Group({
+-  required final List<Widget> children,
+-  final double top = HlSpace.s5,
+-}) extends StatelessWidget {
+-  @override
+-  Widget build(BuildContext context) {
+-    final t = HummlistColors.of(Theme.of(context).brightness);
+-    return Padding(
+-      padding: EdgeInsets.fromLTRB(HlSpace.s4, top, HlSpace.s4, 0),
+-      child: HlSticker(
+-        depth: StickerDepth.s,
+-        child: ClipRRect(
+-          borderRadius: BorderRadius.circular(HlRadius.m - HlBorder.width),
+-          child: Material(
+-            type: MaterialType.transparency,
+-            child: Column(
+-              children: [
+-                for (final (i, child) in children.indexed) ...[
+-                  if (i > 0) Divider(height: 1, indent: 60, color: t.divider),
+-                  child,
+-                ],
+-              ],
+-            ),
+-          ),
+-        ),
+-      ),
+-    );
+-  }
+-}
+-
+ enum _Trailing() {
+   /// Opens a page in the app.
+   chevron,
+@@ -439,20 +399,11 @@ class const _Row(
+   @override
+   Widget build(BuildContext context) {
+     final t = HummlistColors.of(Theme.of(context).brightness);
+-    return ListTile(
++    return NavRow(
+       key: ValueKey(item.key),
+-      minTileHeight: 52,
+-      contentPadding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
+-      leading: PointyHex(
+-        face: switch (item.tint) {
+-          _Tint.honey => t.honeySoft,
+-          _Tint.cobalt => t.accentSoft,
+-          _Tint.mint => t.mintSoft,
+-          _Tint.plain => t.surfaceSunken,
+-        },
+-        size: 34,
+-        child: Icon(item.icon, size: 18, color: destructive ? t.error : t.text),
+-      ),
++      face: destructive ? t.surfaceSunken : null,
++      icon: item.icon,
++      iconColor: destructive ? t.error : null,
+       title: Text(
+         label,
+         style: destructive
+diff --git b/app/lib/session/login_screen.dart a/app/lib/session/login_screen.dart
+index a8749162..0c72804d 100644
+--- b/app/lib/session/login_screen.dart
++++ a/app/lib/session/login_screen.dart
+@@ -43,7 +43,7 @@ class const LoginScreen({
+         ).toString(),
+         null => invite == null ? '/' : '/join/$invite',
+       },
+-      header: const BrandBlock(),
++      header: const BrandBlock(markSize: 80),
+     );
+     return Scaffold(
+       body: SafeArea(
+@@ -188,126 +188,143 @@ class _SignInPanelState() extends State<SignInPanel> {
+   }
+ 
+   @override
+-  Widget build(BuildContext context) {
++  Widget build(BuildContext context) => ConstrainedBox(
++    constraints: const BoxConstraints(maxWidth: 420),
++    child: Form(
++      key: _form,
++      // The page's full height, scrolling once it is too short: the
++      // methods low in the thumb's reach, the header just above them.
++      child: CustomScrollView(
++        slivers: [
++          SliverFillRemaining(
++            hasScrollBody: false,
++            child: Padding(
++              padding: const EdgeInsets.all(HlSpace.s5),
++              child: Column(
++                crossAxisAlignment: CrossAxisAlignment.stretch,
++                children: _methods(context),
++              ),
++            ),
++          ),
++        ],
++      ),
++    ),
++  );
++
++  List<Widget> _methods(BuildContext context) {
+     final l10n = AppLocalizations.of(context);
+     final flows = context.read<SocialSignIn>().flows;
+-    return ConstrainedBox(
+-      constraints: const BoxConstraints(maxWidth: 420),
+-      child: Form(
+-        key: _form,
+-        child: ListView(
+-          padding: const EdgeInsets.all(24),
+-          shrinkWrap: true,
+-          children: [
+-            if (widget.header case final header?) ...[
+-              header,
+-              const SizedBox(height: HlSpace.s5),
+-            ],
+-            if (flows.containsKey(SocialProvider.google)) ...[
+-              GoogleSignInButton(
+-                key: const ValueKey('sign-in-google'),
+-                label: l10n.signInWithGoogle,
+-                onPressed: _busy
+-                    ? null
+-                    : () => unawaited(_social(SocialProvider.google)),
+-              ),
+-              const SizedBox(height: 12),
+-            ],
+-            if (flows.containsKey(SocialProvider.apple)) ...[
+-              AppleSignInButton(
+-                key: const ValueKey('sign-in-apple'),
+-                label: l10n.signInWithApple,
+-                onPressed: _busy
+-                    ? null
+-                    : () => unawaited(_social(SocialProvider.apple)),
+-              ),
+-              const SizedBox(height: 12),
+-            ],
+-            if (!_emailOpen)
+-              EmailSignInButton(
+-                key: const ValueKey('sign-in-email'),
+-                label: l10n.continueWithEmail,
+-                onPressed: _busy
+-                    ? null
+-                    : () => setState(() => _emailOpen = true),
+-              )
+-            else ...[
+-              if (flows.isNotEmpty) ...[
+-                Row(
+-                  children: [
+-                    const Expanded(child: Divider()),
+-                    Padding(
+-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+-                      child: Text(l10n.orWithEmail),
+-                    ),
+-                    const Expanded(child: Divider()),
+-                  ],
++    return [
++      // The header about a third down, the methods a deliberate gap below
++      // it, a little more of the free space under them than over the
++      // header: the group sits on the optical centre, not the geometric one.
++      if (widget.header case final header?) ...[
++        const Spacer(flex: 4),
++        header,
++        const SizedBox(height: HlSpace.s7),
++      ],
++      if (flows.containsKey(SocialProvider.google)) ...[
++        GoogleSignInButton(
++          key: const ValueKey('sign-in-google'),
++          label: l10n.signInWithGoogle,
++          onPressed: _busy
++              ? null
++              : () => unawaited(_social(SocialProvider.google)),
++        ),
++        const SizedBox(height: 12),
++      ],
++      if (flows.containsKey(SocialProvider.apple)) ...[
++        AppleSignInButton(
++          key: const ValueKey('sign-in-apple'),
++          label: l10n.signInWithApple,
++          onPressed: _busy
++              ? null
++              : () => unawaited(_social(SocialProvider.apple)),
++        ),
++        const SizedBox(height: 12),
++      ],
++      if (!_emailOpen)
++        EmailSignInButton(
++          key: const ValueKey('sign-in-email'),
++          label: l10n.continueWithEmail,
++          onPressed: _busy ? null : () => setState(() => _emailOpen = true),
++        )
++      else ...[
++        if (flows.isNotEmpty) ...[
++          Row(
++            children: [
++              const Expanded(child: Divider()),
++              // Wraps under large text instead of running off the row.
++              Flexible(
++                child: Padding(
++                  padding: const EdgeInsets.symmetric(horizontal: 12),
++                  child: Text(l10n.orWithEmail, textAlign: TextAlign.center),
+                 ),
+-                const SizedBox(height: 12),
+-              ],
+-              TextFormField(
+-                key: const ValueKey('login-email'),
+-                controller: _email,
+-                keyboardType: TextInputType.emailAddress,
+-                autofillHints: const [AutofillHints.email],
+-                decoration: InputDecoration(labelText: l10n.email),
+-                validator: (v) =>
+-                    (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
+-              ),
+-              const SizedBox(height: 12),
+-              TextFormField(
+-                key: const ValueKey('login-password'),
+-                controller: _password,
+-                obscureText: true,
+-                autofillHints: const [AutofillHints.password],
+-                decoration: InputDecoration(labelText: l10n.password),
+-                validator: (v) => !_passwordRequired || (v ?? '').length >= 6
+-                    ? null
+-                    : l10n.passwordTooShort,
+-                onFieldSubmitted: (_) => unawaited(_signIn()),
+-              ),
+-              const SizedBox(height: 24),
+-              FilledButton(
+-                onPressed: _busy ? null : () => unawaited(_signIn()),
+-                child: Text(l10n.signIn),
+-              ),
+-              const SizedBox(height: 8),
+-              OutlinedButton(
+-                onPressed: _busy
+-                    ? null
+-                    : () => unawaited(
+-                        _runWithForm(() async {
+-                          final res = await _auth.signUp(
+-                            email: _email.text.trim(),
+-                            password: _password.text,
+-                            emailRedirectTo: _redirectTo,
+-                          );
+-                          return res.session == null
+-                              ? l10n.signUpCheckEmail
+-                              : null;
+-                        }),
+-                      ),
+-                child: Text(l10n.signUp),
+-              ),
+-              const SizedBox(height: 8),
+-              TextButton(
+-                onPressed: _busy
+-                    ? null
+-                    : () => unawaited(
+-                        _runWithForm(() async {
+-                          await _auth.signInWithOtp(
+-                            email: _email.text.trim(),
+-                            emailRedirectTo: _redirectTo,
+-                          );
+-                          return l10n.magicLinkSent;
+-                        }, needsPassword: false),
+-                      ),
+-                child: Text(l10n.sendMagicLink),
+               ),
++              const Expanded(child: Divider()),
+             ],
+-          ],
++          ),
++          const SizedBox(height: 12),
++        ],
++        TextFormField(
++          key: const ValueKey('login-email'),
++          controller: _email,
++          keyboardType: TextInputType.emailAddress,
++          autofillHints: const [AutofillHints.email],
++          decoration: InputDecoration(labelText: l10n.email),
++          validator: (v) =>
++              (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
+         ),
+-      ),
+-    );
++        const SizedBox(height: 12),
++        TextFormField(
++          key: const ValueKey('login-password'),
++          controller: _password,
++          obscureText: true,
++          autofillHints: const [AutofillHints.password],
++          decoration: InputDecoration(labelText: l10n.password),
++          validator: (v) => !_passwordRequired || (v ?? '').length >= 6
++              ? null
++              : l10n.passwordTooShort,
++          onFieldSubmitted: (_) => unawaited(_signIn()),
++        ),
++        const SizedBox(height: 24),
++        FilledButton(
++          onPressed: _busy ? null : () => unawaited(_signIn()),
++          child: Text(l10n.signIn),
++        ),
++        const SizedBox(height: 8),
++        OutlinedButton(
++          onPressed: _busy
++              ? null
++              : () => unawaited(
++                  _runWithForm(() async {
++                    final res = await _auth.signUp(
++                      email: _email.text.trim(),
++                      password: _password.text,
++                      emailRedirectTo: _redirectTo,
++                    );
++                    return res.session == null ? l10n.signUpCheckEmail : null;
++                  }),
++                ),
++          child: Text(l10n.signUp),
++        ),
++        const SizedBox(height: 8),
++        TextButton(
++          onPressed: _busy
++              ? null
++              : () => unawaited(
++                  _runWithForm(() async {
++                    await _auth.signInWithOtp(
++                      email: _email.text.trim(),
++                      emailRedirectTo: _redirectTo,
++                    );
++                    return l10n.magicLinkSent;
++                  }, needsPassword: false),
++                ),
++          child: Text(l10n.sendMagicLink),
++        ),
++      ],
++      if (widget.header != null) const Spacer(flex: 5),
++    ];
+   }
+ }
+diff --git b/app/lib/settings/settings_screen.dart a/app/lib/settings/settings_screen.dart
+index 8ff39886..cda63c85 100644
+--- b/app/lib/settings/settings_screen.dart
++++ a/app/lib/settings/settings_screen.dart
+@@ -3,6 +3,7 @@ import 'package:family_groceries/app/router.dart';
+ import 'package:family_groceries/app/theme.dart';
+ import 'package:family_groceries/design/hex_radio.dart';
+ import 'package:family_groceries/design/hex_segmented.dart';
++import 'package:family_groceries/design/nav_card.dart';
+ import 'package:family_groceries/design/section_label.dart';
+ import 'package:family_groceries/design/tokens.g.dart';
+ import 'package:family_groceries/l10n/app_localizations.dart';
+@@ -22,11 +23,14 @@ class const SettingsScreen({super.key}) extends StatelessWidget {
+       key: const ValueKey('settings-screen'),
+       padding: const EdgeInsets.only(bottom: 24),
+       children: [
+-        HlSectionLabel(l10n.appearance),
++        HlSectionLabel(l10n.appearance, padding: HlSectionLabel.pagePadding),
+         Padding(
+-          padding: const EdgeInsets.symmetric(
+-            horizontal: HlSpace.s4,
+-            vertical: HlSpace.s2,
++          // As More's cards sit under their label.
++          padding: const EdgeInsets.fromLTRB(
++            HlSpace.s4,
++            HlSpace.s2,
++            HlSpace.s4,
++            0,
+           ),
+           child: HexSegmented<ThemeMode>(
+             key: const ValueKey('theme-mode'),
+@@ -55,20 +59,24 @@ class const SettingsScreen({super.key}) extends StatelessWidget {
+             ],
+           ),
+         ),
+-        HlSectionLabel(l10n.language),
+-        ListTile(
+-          key: const ValueKey('settings-language'),
+-          minTileHeight: 56,
+-          leading: const Icon(Icons.language),
+-          title: Text(l10n.language),
+-          subtitle: Text(switch (context.watch<LanguageCubit>().state) {
+-            final picked? => picked.nativeName,
+-            null => l10n.languageSystemPicked(
+-              deviceLanguage(context).nativeName,
++        HlSectionLabel(l10n.language, padding: HlSectionLabel.pagePadding),
++        NavCard(
++          top: HlSpace.s2,
++          children: [
++            NavRow(
++              key: const ValueKey('settings-language'),
++              icon: Icons.language,
++              title: Text(l10n.language),
++              subtitle: Text(switch (context.watch<LanguageCubit>().state) {
++                final picked? => picked.nativeName,
++                null => l10n.languageSystemPicked(
++                  deviceLanguage(context).nativeName,
++                ),
++              }),
++              trailing: const Icon(Icons.chevron_right),
++              onTap: () => context.go(languagePath),
+             ),
+-          }),
+-          trailing: const Icon(Icons.chevron_right),
+-          onTap: () => context.go(languagePath),
++          ],
+         ),
+       ],
+     );
+diff --git b/app/test/session/login_screen_test.dart a/app/test/session/login_screen_test.dart
+index 131bcd38..71e80288 100644
+--- b/app/test/session/login_screen_test.dart
++++ a/app/test/session/login_screen_test.dart
+@@ -199,7 +199,7 @@ void main() {
+     expect(find.byType(AppBar), findsNothing);
+     expect(find.text('Hummlist'), findsOneWidget);
+     final mark = tester.getSize(find.byType(Image).first);
+-    expect(mark, const Size(56, 56));
++    expect(mark, const Size(80, 80));
+     final applePill = find.descendant(
+       of: apple(),
+       matching: find.byType(FilledButton),
+diff --git b/app/widgetbook/lib/src/app_widgets.dart a/app/widgetbook/lib/src/app_widgets.dart
+index f1345a2d..7f7b264e 100644
+--- b/app/widgetbook/lib/src/app_widgets.dart
++++ a/app/widgetbook/lib/src/app_widgets.dart
+@@ -214,8 +214,13 @@ class _ListExcerptState() extends State<_ListExcerpt> {
+               onEdit: () {},
+             ),
+             if (!_folded.contains(section.key))
+-              for (final block in section.blocks) ...[
+-                CategoryDivider(block: block, leaving: _leaving, onEdit: () {}),
++              for (final (b, block) in section.blocks.indexed) ...[
++                CategoryDivider(
++                  block: block,
++                  first: b == 0,
++                  leaving: _leaving,
++                  onEdit: () {},
++                ),
+                 for (final (i, item) in block.items.indexed)
+                   ItemRow(
+                     key: ValueKey(item.id),
+diff --git b/docs/DESIGN.md a/docs/DESIGN.md
+index 78327185..b8742cec 100644
+--- b/docs/DESIGN.md
++++ a/docs/DESIGN.md
+@@ -231,8 +231,9 @@ quarter into its line and struck rows, one wrapped.
+   categories, Läden) as hex pills on a 4 px edge, lifted with `sticker-l`
+   while dragged; the walk-order number a 32 px pointy honey hex.
+ - `BrandBlock` (`brand_block.dart`): app icon #5 at 56 dp (exported by
+-  `design/app-icon/build.mjs` to `app/assets/brand/`) over the wordmark, on
+-  login and welcome. The dark icon has the deep `#0b1024` ground, so on the
++  `design/app-icon/build.mjs` to `app/assets/brand/`) over the wordmark (half
++  the mark's size), on login and welcome; login, with little else on it,
++  sets the mark at 80 dp. The dark icon has the deep `#0b1024` ground, so on the
+   dark surface it shows as the ring and the inner hex without a tile.
+ - Sign-in with Google and Apple keep the providers' own buttons: Google's
+   outlined (light) or dark pill with its "G", Apple's black or white button
+@@ -253,20 +254,29 @@ quarter into its line and struck rows, one wrapped.
+   honey, an open chip honey-soft. The edit sheet's stepper uses the outlined
+   tactile hex; its fields take the hex input theme.
+ - Suggestion source lines are 13 px medium muted.
+-- The explainer is an `HlSticker` with `Icons.touch_app_outlined`.
++- The explainer is a hint, quieter than the list: an `accent-soft` face with
++  the 1 px `divider` contour and no shadow, `Icons.touch_app_outlined` and
++  the text at the start, its button at the card's end, on the phone and wide
++  alike; where both don't fit on one line the button goes under the text,
++  still at the end, with 16 px above the hint and none under the button's
++  44 px target.
+ - Wide: one frame (`ShoppingListView.frameFor`) for the bar, explainer,
+-  columns, add field and sheet; field and sheet over the first column.
++  columns, add field and sheet; the explainer spans the frame, field and
++  sheet sit over the first column. The rail is 96 px wide.
+ - The bar above the list has no title, household name or count (Peter,
+   DECISIONS job 29a): the partner note on the left, the sync state and
+   Anpassen on the right.
+ 
+ ### Peter's addendum 5 (job 57)
+ 
+-- Empty list: a 72 px pointy honey hex with the cart icon over the copy.
++- Empty list: a 72 px pointy honey hex with the cart icon, 32 px over the
++  copy, centred in the list's free space above the add bar's inset (unless
++  recently used items follow); on the phone that is a little above the
++  visible middle.
+ - `StoreBadge`: the store's full name in a horizontal hex pill (raised
+   face, contour, Bricolage, ellipsis, full name in semantics), the same for
+-  every store; divider rules are cobalt for every store. A logo variant
+-  (`StoreBadgeStyle.logo`) waits for the Legal Review.
++  every store; divider rules are 1 px cobalt hairlines for every store. A
++  logo variant (`StoreBadgeStyle.logo`) waits for the Legal Review.
+ - Text fields: every single-line field is a hex from the input theme
+   (`field_border.dart`; focus: cobalt contour and the 3 px ring); the
+   multi-line feedback message is rounded (`RoundedFields`); the add field
+diff --git b/e2e/tests/catalog.ts a/e2e/tests/catalog.ts
+index 642a7450..30dc7b2c 100644
+--- b/e2e/tests/catalog.ts
++++ a/e2e/tests/catalog.ts
+@@ -27,10 +27,40 @@ export async function expectGroup(page: Page, item: string, group: string): Prom
+   await expect.poll(() => groupOf(page, item), { message: `${item} is under ${group}` }).toBe(group);
+ }
+ 
++type Box = { x: number; y: number; width: number; height: number };
++
++/**
++ * Wheels the page until the dragged handle sits above the floating action button and the bottom
++ * bar, and the target handle below the app bar. A drag that starts on a handle the FAB or the bar
++ * covers presses that instead and moves nothing (the 9th category row at 480x900 since job 102's
++ * taller rows); a pointer near the list's edges also auto-scrolls it under the drag.
++ */
++async function clearOfChrome(page: Page, handleName: string, ontoHandleName: string): Promise<[Box, Box]> {
++  const { width, height } = page.viewportSize()!;
++  const fab = page.getByRole('button', { name: /^(Kategorie|Laden) hinzufügen$/ });
++  const fabBox = (await fab.count()) > 0 ? await fab.first().boundingBox() : null;
++  const bottom = Math.min(height - 80, fabBox ? fabBox.y : height) - 24;
++  const top = 120;
++  await page.mouse.move(width / 2, top + 40);
++  let last: number | undefined;
++  for (let i = 0; i < 20; i++) {
++    const from = (await page.getByText(handleName, { exact: true }).boundingBox())!;
++    const to = (await page.getByText(ontoHandleName, { exact: true }).boundingBox())!;
++    const below = Math.max(from.y + from.height, to.y + to.height) - bottom;
++    const above = top - Math.min(from.y, to.y);
++    if (below <= 0 && above <= 0) return [from, to];
++    if (below > 0 && above > 0) throw new Error(`${handleName} and ${ontoHandleName} do not fit between y ${top} and ${bottom}`);
++    if (last === from.y) throw new Error(`the page stopped scrolling with ${handleName} at y ${from.y} (clear between ${top} and ${bottom})`);
++    last = from.y;
++    await page.mouse.wheel(0, below > 0 ? below + 16 : -(above + 16));
++    await page.waitForTimeout(300);
++  }
++  throw new Error(`could not bring ${handleName} clear of the app bar, FAB and bottom bar`);
++}
++
+ /** Drags a row of a reorderable list by its handle to the position of another row. */
+ export async function dragHandle(page: Page, handleName: string, ontoHandleName: string): Promise<void> {
+-  const from = (await page.getByText(handleName, { exact: true }).boundingBox())!;
+-  const to = (await page.getByText(ontoHandleName, { exact: true }).boundingBox())!;
++  const [from, to] = await clearOfChrome(page, handleName, ontoHandleName);
+   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+   await page.mouse.down();
+   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 5, { steps: 3 });

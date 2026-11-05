@@ -184,6 +184,18 @@ Future<void> _pumpLogin(WidgetTester tester, Brightness brightness) async {
       ),
     ),
   );
+  // Asset images decode outside the fake clock: without this the brand mark
+  // and Google's G stay empty boxes in the golden.
+  final context = tester.element(find.byType(LoginScreen));
+  await tester.runAsync(
+    () => Future.wait([
+      precacheImage(
+        AssetImage('assets/brand/mark-${brightness.name}.png'),
+        context,
+      ),
+      precacheImage(const AssetImage('assets/google_g.png'), context),
+    ]),
+  );
   await tester.pumpAndSettle();
 }
 
