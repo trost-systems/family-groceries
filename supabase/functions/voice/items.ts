@@ -2,12 +2,23 @@ import type { Tx } from '../_shared/db.ts';
 import type { Added } from './handler.ts';
 import type { ParsedItem } from './parse.ts';
 
+type Row = {
+  id: string;
+  name: string;
+  brand: string | null;
+  properties: string | null;
+  quantity: string | null;
+  category: string;
+};
+
 /**
  * Adds the items through `add_item` (the parser, classifier, learned memory, store memory,
  * duplicate check) in one transaction. The splitter already read each amount, so the spoken
  * quantity goes in as the explicit one; brand and properties come from the parser. A new item
  * whose spelling variant or synonym is already open ("Karotten" with "Möhren") is still added
- * and names it in `similarOnList` (`public.similar_items`, job 32b); nothing is merged.
+ * and names it in `similarOnList` (`public.similar_items`, job 32b); nothing is merged. A plain
+ * name said while the same name is open with a brand or properties ("Butter" with "Butter
+ * Weihenstephan") is that open item: nothing is added, it is reported as already on the list.
  */
 export async function addItems(tx: Tx, householdId: string, items: ParsedItem[]): Promise<Added[]> {
   const active = await tx<{ id: string }[]>`
@@ -15,16 +26,16 @@ export async function addItems(tx: Tx, householdId: string, items: ParsedItem[])
   const known = new Set(active.map((row) => row.id));
   const added: (Added & { id: string })[] = [];
   for (const item of items) {
-    const [row] = await tx<
-      {
-        id: string;
-        name: string;
-        brand: string | null;
-        properties: string | null;
-        quantity: string | null;
-        category: string;
-      }[]
-    >`
+    const [open] = await tx<Row[]>`
+      select o.id, o.name, o.brand, o.properties, o.quantity, c.name as category
+      from public.parse_item(${householdId}, ${item.name}) p
+      join public.items o on o.household_id = ${householdId} and o.status = 'active'
+        and o.normalized_name = public.normalize_item_name(p.name)
+      join public.categories c on c.id = o.category_id
+      where p.brand is null and p.properties is null
+      order by o.brand is not null, o.properties is not null, o.created_at
+      limit 1`;
+    const [row] = open ? [open] : await tx<Row[]>`
       select a.id, a.name, a.brand, a.properties, a.quantity, c.name as category
       from public.add_item(${householdId}, ${item.name}, p_quantity => ${item.quantity}) a
       join public.categories c on c.id = a.category_id`;
