@@ -130,6 +130,32 @@ for (
   });
 }
 
+for (
+  const [name, properties, said, reply] of [
+    ['Tomaten', 'Bio', 'Tomate', 'Schon auf der Liste: Tomaten Bio.'],
+    ['Gurke', 'Bio', 'Gurken', 'Schon auf der Liste: Gurke Bio.'],
+  ] as const
+) {
+  Deno.test({
+    name:
+      `voice and Siri add "${said}" with ${name} (${properties}) open: singular or plural is the same name`,
+    ignore: !enabled,
+    sanitizeResources: false,
+    fn: () =>
+      withHousehold(async (userId, householdId) => {
+        await asUser(userId, (tx) =>
+          tx`insert into public.items (household_id, name, properties)
+             values (${householdId}, ${name}, ${properties})`);
+        const added = await asUser(
+          userId,
+          (tx) => voiceAddItems(tx, householdId, [{ name: said, quantity: null }]),
+        );
+        assertEquals(confirmation(added), reply);
+        assertEquals((await openItems(userId, householdId)).map((i) => i.name), [name]);
+      }),
+  });
+}
+
 Deno.test({
   name: 'voice and Siri add Butter Kerrygold with Butter Weihenstephan open: another brand',
   ignore: !enabled,
