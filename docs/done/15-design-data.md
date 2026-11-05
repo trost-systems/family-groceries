@@ -99,5 +99,5 @@ The layout, order, field sizes (48 px), chip sizes (44 px), Fertig (52 px), colo
 
 ## Missing or blocked
 
-- **Job 18's fixtures (#35)** are not on main yet. The columns use the names its `fg seed` feature-detects (`brand`, `properties`, `sort_key`), so `ITEM_EXTENSION_COLUMNS` needs no change. A scenario with brand, properties and walk order waits for #35 to land; job 16's brief already plans it ("h-list-walk"). Posted on BOARD.
+- **Job 18's fixtures (#35)** were not on main yet (merged 2026-10-28, 068f2701). The columns use the names its `fg seed` feature-detects (`brand`, `properties`, `sort_key`), so `ITEM_EXTENSION_COLUMNS` needs no change. A scenario with brand, properties and walk order waits for #35 to land; job 16's brief already plans it ("h-list-walk"). Posted on BOARD.
 - Nothing needs Peter. The brief asked to record a conflict between job 8's "N neu von Lea" and design H in docs/NEEDS_PETER.md if there was one. There is none: the highlight is a row tint and a title subtitle with no glyph on the row, so it sits alongside "no added-by badge", and it keeps working (`partner-news.spec.ts`, `linux-05-partner-new-no-initial.png`).

@@ -1,6 +1,6 @@
 # DONE_SUMMARY: Job 105, hummlist.com/history release timeline (2026-11-05, Mac runner)
 
-PR: https://github.com/trost-systems/family-groceries/pull/235 (ready for review, **not merged**; the lead merges).
+PR: https://github.com/trost-systems/family-groceries/pull/235, merged 2026-11-05 (c220980a).
 
 ## What was built
 

@@ -19,7 +19,7 @@ printed exactly one line per request: docs/screenshots/74/request-log-local.txt.
 The Management API logs query in docs/ALEXA.md ran against jdwqrallbpdbshrdhenk (it returned
 the old "alexa request refused" lines, since the new line is not deployed yet).
 
-**Open.** Merges on lead review + ci-ok (PR only). After merge, supabase-deploy.yml deploys
+**Merged.** PR #199, merged 2026-11-02 (6f0fcdee). After merge, supabase-deploy.yml deploys
 the alexa function to jdwqrallbpdbshrdhenk from main; then the query in docs/ALEXA.md shows the
 new lines. Job 72 (#195) removes the Premium check from this handler: whichever lands second
 drops the `locked` kind / rebases the `kind:` fields.

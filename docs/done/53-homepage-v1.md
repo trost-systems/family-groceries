@@ -1,6 +1,6 @@
 # Job 53: first hummlist.com homepage (landing pages /de and /en)
 
-PR #157, **not merged**: Peter approves first (NEEDS_PETER "Job 53"), because every push to
+PR #157, merged 2026-11-01 (c737b7e1) after Peter approved (NEEDS_PETER "Job 53"), because every push to
 `main` goes live on hummlist.com. Preview (Vercel login):
 https://hummlist-site-git-job-53-homepage-v1-peter-trost.vercel.app/de and `/en`.
 Decisions: [DECISIONS.md](../DECISIONS.md) "Job 53".
@@ -68,7 +68,7 @@ privacy policy).
 
 - Peter's approval and the merge (NEEDS_PETER "Job 53"), and Launch's pass over `COPY_NEEDED.md`.
 - The demo videos are job 54's. Until then the three slots show stills.
-- Job 52 is not merged. On rebase, take 52's token files verbatim. The site's favicons are copies
+- Job 52 (#156) merged 2026-11-01 (c4d4090d). On rebase, take 52's token files verbatim. The site's favicons are copies
   of 52's generated icon #5 web files.
 - Mobile LCP is 3.1 s under Lighthouse's slow-4G throttling (desktop 0.7 s). The hero is a 41 KB
   WebP with `fetchpriority="high"`. What remains is the two fonts and three stylesheets on a cold

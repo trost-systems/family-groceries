@@ -1,6 +1,6 @@
 # Job 67: paywall release readiness (2026-11-02)
 
-PR #187, not merged (review, then the Lead lands it). No switch was flipped, no product created,
+PR #187, merged 2026-11-02 (f9a2fe87). No switch was flipped, no product created,
 no price changed, nothing submitted or bought.
 
 ## What was built

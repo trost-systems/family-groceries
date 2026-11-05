@@ -1,8 +1,8 @@
 # Job 104: gap fixes from the daily verification (2026-11-05)
 
 PR: https://github.com/trost-systems/family-groceries/pull/236, titled "fix: rename dedupe,
-offline number words, last-member Premium warning". It is ready for review and not merged: the
-lead reviews and merges. `job/104-gap-fixes-ordered` keeps one commit per fix. `push-pr.sh`
+offline number words, last-member Premium warning". It was merged 2026-11-05
+(0bf5d45b). `job/104-gap-fixes-ordered` keeps one commit per fix. `push-pr.sh`
 squashed them into the one commit `main` takes.
 
 ## What was built

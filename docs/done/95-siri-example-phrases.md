@@ -1,6 +1,6 @@
 # Job 95: SiriKit example phrases (ITMS-90626)
 
-PR #229. Not merged, as the brief asks.
+PR #229, merged 2026-11-04 (d72f750a).
 
 ## What was built
 

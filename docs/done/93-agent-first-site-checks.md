@@ -1,7 +1,7 @@
 # Job 93: hummlist.com for AI agents, deterministic checks
 
-PR: https://github.com/trost-systems/family-groceries/pull/223 (not merged: the brief asks for
-lead review first, see `docs/NEEDS_LEAD.md` "Job 93"). Guide and how to run everything:
+PR: https://github.com/trost-systems/family-groceries/pull/223 (merged 2026-11-04, 66eb5851,
+after lead review, see `docs/NEEDS_LEAD.md` "Job 93"). Guide and how to run everything:
 [`docs/AGENT_FIRST.md`](../AGENT_FIRST.md). Decisions: `docs/DECISIONS.md` "Job 93".
 
 ## What was built

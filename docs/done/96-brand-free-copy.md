@@ -1,6 +1,6 @@
 # Job 96: brand names and claims in live Hummlist copy (Legal N-80 to N-86)
 
-PR https://github.com/trost-systems/family-groceries/pull/230 (draft, **not merged**: Peter approves the text first).
+PR https://github.com/trost-systems/family-groceries/pull/230, merged 2026-11-04 (c5a580a8) after Peter approved the text.
 Vercel preview (Vercel login):
 - Help: https://hummlist-site-git-job-96-brand-free-copy-peter-trost.vercel.app/support, https://hummlist-site-git-job-96-brand-free-copy-peter-trost.vercel.app/en/support
 - Homepage: https://hummlist-site-git-job-96-brand-free-copy-peter-trost.vercel.app/de, https://hummlist-site-git-job-96-brand-free-copy-peter-trost.vercel.app/en

@@ -1,7 +1,7 @@
 # Job 33c: self-host CanvasKit and fonts, nothing from gstatic.com
 
-Branch `job/33c-legal-canvaskit`, PR #108 (waits for Peter's legal OK, not
-merged). Legal review H-02. Decisions: `docs/DECISIONS.md`, "Job 33c".
+Branch `job/33c-legal-canvaskit`, PR #108, merged 2026-10-30
+(8da35cfc) after Peter's legal OK. Legal review H-02. Decisions: `docs/DECISIONS.md`, "Job 33c".
 
 ## What was built
 

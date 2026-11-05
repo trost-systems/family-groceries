@@ -1,6 +1,6 @@
 # Job 97: Siri fix-now, iOS 17 minimum, App Shortcuts catalog
 
-PR #232. Not merged: the lead reviews and merges. Peter approved the work as Q66 = VF1. The
+PR #232, merged 2026-11-05 (6cbef21a). Peter approved the work as Q66 = VF1. The
 reasons are in `docs/DECISIONS.md`, "Job 97".
 
 ## What was built (one commit per item)

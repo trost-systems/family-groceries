@@ -7927,3 +7927,20 @@ Job 90 (PR #220) left two follow-ups for its neighbours of `merge_duplicate_cate
    the same font slices loaded). On Android and iOS the expectation is the same face or no match,
    then the same system fallback as before. That is inferred from how the engines resolve fonts,
    not tested on a device; Samsung's vendor emoji font is worth a look.
+## Job 115: test and docs hygiene from the daily verification, 2026-11-05
+
+1. **„Neu“ is read last in a row's name.** `item_row.dart` joins name, details, quantity, then
+   „Neu“. `live-sync.spec.ts` allowed „Neu“ before the quantity, so it passed only when the badge
+   had already cleared; `alexa.spec.ts` had the same order for Hafermilch. Both now allow it only
+   at the end, like `dedupe.spec.ts`. It stays optional: the badge clears 3 s after the row is on
+   screen, and the test does not control that timing.
+2. **The Android JVM unit tests run in the existing `android` gate** (`scripts/gates/android.sh`,
+   after the debug APK), not in a new job or the release workflow. The gate fails when Gradle
+   writes no test report, and it prints each suite's counts so the CI log shows they ran.
+3. **Stale merge-status lines in docs/done** („not merged“, „before merge“, „merge waits“,
+   „Open.“, „still open“, „not on main“) now name the merge date and commit (checked with
+   `gh pr view` and `git merge-base --is-ancestor` against origin/main). #153 is still open and
+   keeps its line. Lines that were true at the time they describe ("#20 was still open then") keep
+   the history and add the merge.
+4. **Job 80's „Anpassen“ tip stays unbuilt here**: job 78's button landed, but the tip needs new
+   copy, and this job may not add strings. The job 80 summary says so.

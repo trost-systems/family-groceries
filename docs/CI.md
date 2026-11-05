@@ -25,7 +25,7 @@ the same things.
 | `web-prod` | The production web build, into `app/build/web-prod` | yes |
 | `fastlane` | The Gemfile.lock installs and the Fastfile parses | yes |
 | `e2e` | Playwright against the release web build and the local stack | yes, under `/tmp/fg-e2e.lock` |
-| `android` | Debug APK build (the app's Kotlin) | `--only android` |
+| `android` | Debug APK build (the app's Kotlin) and its JVM unit tests (`WidgetPayloadTest`) | `--only android` |
 | `ios` | Simulator build (the app's Swift); the built app holds the app icon (light, dark, tinted, the Icon Composer stacks) and the launch screen's assets; macOS only | no |
 
 `.github/workflows/widgetbook.yml` is not a gate: on pushes to `main` that touch
