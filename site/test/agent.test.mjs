@@ -71,7 +71,7 @@ test('llms.txt lists the guides, help and legal pages, and the rest under Option
   const llms = read(base.outDir, 'llms.txt');
   assert.match(llms, /^# Hummlist\n\n> /);
   const sections = [...llms.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
-  assert.deepEqual(sections, ['Guides in English', 'Guides in German', 'Help', 'Legal', 'Optional']);
+  assert.deepEqual(sections, ['Guides in English', 'Guides in German', 'Help', 'Comparisons', 'Legal', 'Optional']);
   assert.match(llms, /\n- \[Help and contact\]\(https:\/\/hummlist\.com\/en\/support\.md\): /);
   assert.match(llms, /## Optional\n[\s\S]*\(https:\/\/hummlist\.com\/llms-full\.txt\)/);
   assert.doesNotMatch(llms, /openapi|app\.hummlist\.com/);
@@ -144,7 +144,7 @@ test('jsonld: broken JSON, a missing property, an unknown type and FAQ questions
   const swap = (rel, change) => ({ [rel]: (t) => t.replace(ldOf(t), change(ldOf(t))) });
   assertCatches('jsonld', swap('en/guides/claude.html', (j) => j.slice(1)), /en\/guides\/claude\.html: JSON-LD does not parse/);
   assertCatches('jsonld', swap('en/guides/claude.html', (j) => j.replace(/"dateModified":"[\d-]+",/, '')), /JSON-LD TechArticle needs "dateModified"/);
-  assertCatches('jsonld', swap('en.html', (j) => j.replace('"WebSite"', '"Organization"')), /@type "Organization" is not one of WebSite, TechArticle, FAQPage/);
+  assertCatches('jsonld', swap('en.html', (j) => j.replace('"WebSite"', '"Organization"')), /@type "Organization" is not one of WebSite, TechArticle, Article, BreadcrumbList, MobileApplication, FAQPage/);
   assertCatches('jsonld', swap('support.html', (j) => j.replace('Wie lade ich', 'Wie bitte lade ich')), /support\.html: FAQPage questions .* differ from the FAQ section's h3s/);
   assertCatches('jsonld', { 'en/support.html': (t) => t.replace(/<script type="application\/ld\+json">[^<]*<\/script>/, '') }, /has a FAQ section but no FAQPage JSON-LD/);
 });

@@ -69,6 +69,41 @@ const SCHEMAS = {
     data: (page, url) =>
       page.kind === 'guide' && { headline: page.title, description: page.description, inLanguage: page.locale, dateModified: page.updated, url },
   },
+  // Comparison pages: the article, its breadcrumb, and Hummlist itself, without any rating. The
+  // compared product gets no markup of its own (no Product, Review or AggregateRating).
+  Article: {
+    required: ['headline', 'description', 'inLanguage', 'dateModified', 'url'],
+    data: (page, url) =>
+      page.kind === 'comparison' && {
+        headline: page.title,
+        description: page.description,
+        inLanguage: page.locale,
+        dateModified: page.updated,
+        url,
+        publisher: { '@type': 'Organization', name: SITE_NAME },
+      },
+  },
+  BreadcrumbList: {
+    required: ['itemListElement'],
+    data: (page, url) =>
+      page.kind === 'comparison' && {
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: SITE_NAME, item: url.slice(0, url.length - page.route.length) + `/${page.locale}` },
+          { '@type': 'ListItem', position: 2, name: page.title, item: url },
+        ],
+      },
+  },
+  MobileApplication: {
+    required: ['name', 'operatingSystem', 'applicationCategory'],
+    data: (page, url) =>
+      page.kind === 'comparison' && {
+        name: SITE_NAME,
+        operatingSystem: 'iOS, Android',
+        applicationCategory: 'LifestyleApplication',
+        inLanguage: ['de', 'en'],
+        url: url.slice(0, url.length - page.route.length) + `/${page.locale}`,
+      },
+  },
   FAQPage: {
     required: ['mainEntity'],
     data: (page) => {
@@ -128,10 +163,11 @@ const SECTIONS = [
   { title: 'Guides in English', takes: (p) => ['index', 'guide'].includes(p.kind) && p.locale === 'en' },
   { title: 'Guides in German', takes: (p) => ['index', 'guide'].includes(p.kind) && p.locale === 'de' },
   { title: 'Help', takes: (p) => p.group === 'page:support' },
+  { title: 'Comparisons', takes: (p) => p.kind === 'comparison' },
   { title: 'Legal', takes: (p) => p.kind === 'page' },
   { title: 'Optional', takes: (p) => ['changelog', 'history', 'landing'].includes(p.kind) },
 ];
-const KIND_ORDER = ['landing', 'index', 'guide', 'page', 'changelog', 'history'];
+const KIND_ORDER = ['landing', 'index', 'guide', 'comparison', 'page', 'changelog', 'history'];
 const LOCALE_ORDER = ['en', 'de'];
 const pageOrder = (a, b) =>
   KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || LOCALE_ORDER.indexOf(a.locale) - LOCALE_ORDER.indexOf(b.locale) || a.title.localeCompare(b.title, 'en');
