@@ -583,6 +583,24 @@ void main() {
       expect(names(suggestUsuals(usuals, const [], 'eis')), isEmpty);
     });
 
+    test('a name that folds to nothing matches nothing', () {
+      expect(suggestionMatch('mlch', ''), isNull);
+      expect(
+        names(
+          suggestUsuals(
+            const [
+              Usual(name: '\u00a0', due: false),
+              Usual(name: ' ', due: false),
+              Usual(name: 'Milch', due: false),
+            ],
+            const [],
+            'mlch',
+          ),
+        ),
+        ['Milch'],
+      );
+    });
+
     test('one edit up to 5 letters, two from 6, same first letter', () {
       expect(suggestionMatch('mlc', 'milch'), isNull);
       expect(suggestionMatch('mlch', 'milch'), 4);

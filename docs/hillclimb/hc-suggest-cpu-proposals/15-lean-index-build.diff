@@ -1,0 +1,115 @@
+diff --git a/app/lib/list/model.dart b/app/lib/list/model.dart
+index 02d67e67..c77ce618 100644
+--- a/app/lib/list/model.dart
++++ b/app/lib/list/model.dart
+@@ -1095,26 +1095,44 @@ List<Usual> suggestUsuals(
+ final class _UsualIndex._(
+   final List<Usual> _usuals,
+   final List<String> names,
+-  final List<({String start, int position, bool whole})> _starts,
++
++  /// Each start's name and where in it the start is, sorted by the text
++  /// from there on.
++  final Int32List _positions,
++  final Int32List _offsets,
+ ) {
+   factory of(List<Usual> usuals) {
+     if (_last case final last? when _same(last._usuals, usuals)) {
+       return last;
+     }
+     final names = [for (final usual in usuals) foldName(usual.name)];
+-    final starts = [
+-      for (final (position, name) in names.indexed) ...[
+-        (start: name, position: position, whole: true),
+-        for (var at = 1; at < name.length; at++)
+-          if (_isSeparator(name.codeUnitAt(at - 1)) &&
+-              !_isSeparator(name.codeUnitAt(at)))
+-            (start: name.substring(at), position: position, whole: false),
+-      ],
+-    ]..sort((a, b) => a.start.compareTo(b.start));
++    final (positions, offsets) = (<int>[], <int>[]);
++    for (var position = 0; position < names.length; position++) {
++      final name = names[position];
++      positions.add(position);
++      offsets.add(0);
++      for (var at = 1; at < name.length; at++) {
++        if (_isSeparator(name.codeUnitAt(at - 1)) &&
++            !_isSeparator(name.codeUnitAt(at))) {
++          positions.add(position);
++          offsets.add(at);
++        }
++      }
++    }
++    final order = List.generate(positions.length, (i) => i)
++      ..sort(
++        (a, b) => _compareFrom(
++          names[positions[a]],
++          offsets[a],
++          names[positions[b]],
++          offsets[b],
++        ),
++      );
+     return _last = _UsualIndex._(
+       List.of(usuals, growable: false),
+       names,
+-      starts,
++      Int32List.fromList([for (final i in order) positions[i]]),
++      Int32List.fromList([for (final i in order) offsets[i]]),
+     );
+   }
+ 
+@@ -1133,13 +1151,15 @@ final class _UsualIndex._(
+     // loses at most as many entries as the ones before it hold; and those
+     // hold every position of their rank while they have fewer than [limit].
+     final byRank = [for (var rank = 0; rank < 3; rank++) <int>[]];
+-    for (var at = _firstFrom(typed); at < _starts.length; at++) {
+-      final (:start, :position, :whole) = _starts[at];
+-      if (!start.startsWith(typed)) {
++    for (var at = _firstFrom(typed); at < _positions.length; at++) {
++      final (position, offset) = (_positions[at], _offsets[at]);
++      final name = names[position];
++      if (!name.startsWith(typed, offset)) {
+         break;
+       }
++      final whole = offset == 0;
+       if (whole || words) {
+-        final same = byRank[whole ? (start == typed ? 0 : 1) : 2];
++        final same = byRank[whole ? (name.length == typed.length ? 0 : 1) : 2];
+         if (same.length < limit || (same.isNotEmpty && position < same.last)) {
+           final slot = _slot(same, position);
+           if ((slot == same.length || same[slot] != position) &&
+@@ -1175,12 +1195,12 @@ final class _UsualIndex._(
+     return low;
+   }
+ 
+-  /// The first of [_starts] not sorting before [typed].
++  /// The first start not sorting before [typed].
+   int _firstFrom(String typed) {
+-    var (low, high) = (0, _starts.length);
++    var (low, high) = (0, _positions.length);
+     while (low < high) {
+       final mid = (low + high) ~/ 2;
+-      if (_starts[mid].start.compareTo(typed) < 0) {
++      if (_compareFrom(names[_positions[mid]], _offsets[mid], typed, 0) < 0) {
+         low = mid + 1;
+       } else {
+         high = mid;
+@@ -1188,6 +1208,18 @@ final class _UsualIndex._(
+     }
+     return low;
+   }
++
++  /// `a.substring(from).compareTo(b.substring(at))` without the substrings.
++  static int _compareFrom(String a, int from, String b, int at) {
++    final length = min(a.length - from, b.length - at);
++    for (var i = 0; i < length; i++) {
++      final order = a.codeUnitAt(from + i) - b.codeUnitAt(at + i);
++      if (order != 0) {
++        return order;
++      }
++    }
++    return (a.length - from) - (b.length - at);
++  }
+ }
+ 
+ bool _same(List<Usual> a, List<Usual> b) {

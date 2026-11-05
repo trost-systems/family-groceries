@@ -1,0 +1,115 @@
+diff --git a/app/lib/list/model.dart b/app/lib/list/model.dart
+index 02d67e67..e570c958 100644
+--- a/app/lib/list/model.dart
++++ b/app/lib/list/model.dart
+@@ -1076,8 +1076,13 @@ List<Usual> suggestUsuals(
+   final byRank = [for (var rank = 0; rank < 5; rank++) <Usual>[]];
+   var below = 5;
+   for (var i = 0; i < usuals.length; i++) {
+-    if (suggestionMatch(typed, index.names[i], below: below) case final rank?
+-        when offList(i)) {
++    if (suggestionMatch(
++          typed,
++          index.names[i],
++          below: below,
++          letters: index.letters[i],
++        )
++        case final rank? when offList(i)) {
+       byRank[rank].add(usuals[i]);
+       for (var (r, found) = (0, 0); r < below; r++) {
+         if ((found += byRank[r].length) >= limit) {
+@@ -1096,6 +1101,9 @@ final class _UsualIndex._(
+   final List<Usual> _usuals,
+   final List<String> names,
+   final List<({String start, int position, bool whole})> _starts,
++
++  /// Each name's `_letters`.
++  final Uint32List letters,
+ ) {
+   factory of(List<Usual> usuals) {
+     if (_last case final last? when _same(last._usuals, usuals)) {
+@@ -1115,6 +1123,7 @@ final class _UsualIndex._(
+       List.of(usuals, growable: false),
+       names,
+       starts,
++      Uint32List.fromList([for (final name in names) _letters(name)]),
+     );
+   }
+ 
+@@ -1190,6 +1199,20 @@ final class _UsualIndex._(
+   }
+ }
+ 
++/// One bit per letter of [name], a letter's bit shared with others (32 bits,
++/// as on the web): a bit not set means the letter is not in it.
++int _letters(String name) {
++  var letters = 0;
++  for (var i = 0; i < name.length; i++) {
++    letters |= _bit(name.codeUnitAt(i));
++  }
++  return letters;
++}
++
++int _bit(int unit) => 1 << (unit & 31);
++
++const _anyLetters = 0xFFFFFFFF;
++
+ bool _same(List<Usual> a, List<Usual> b) {
+   if (a.length != b.length) {
+     return false;
+@@ -1207,27 +1230,38 @@ bool _same(List<Usual> a, List<Usual> b) {
+ /// it, 2 a word of it does, 3 it has it inside (from 4 letters), 4 a word of
+ /// it or the whole name is a typo of it (from 3 letters: same first letter,
+ /// one edit up to 5 letters, two from 6). Null: no match, or none better
+-/// than [below].
+-int? suggestionMatch(String typed, String name, {int below = 5}) {
+-  if (below > 0 && name == typed) {
+-    return 0;
+-  }
+-  if (below > 1 && name.startsWith(typed)) {
+-    return 1;
+-  }
+-  if (below > 2 && _startsAWord(typed, name)) {
+-    return 2;
+-  }
+-  if (typed.length < 3) {
+-    return null;
++/// than [below]. With [letters] of [name] (`_letters`), a letter of [typed]
++/// missing there rules out 0 to 3, and needs an edit of its own for 4.
++int? suggestionMatch(
++  String typed,
++  String name, {
++  int below = 5,
++  int letters = _anyLetters,
++}) {
++  var missing = 0;
++  for (var i = 0; i < typed.length; i++) {
++    if (letters & _bit(typed.codeUnitAt(i)) == 0) {
++      missing++;
++    }
+   }
+-  if (below > 3 && typed.length >= 4 && name.contains(typed)) {
+-    return 3;
++  if (missing == 0) {
++    if (below > 0 && name == typed) {
++      return 0;
++    }
++    if (below > 1 && name.startsWith(typed)) {
++      return 1;
++    }
++    if (below > 2 && _startsAWord(typed, name)) {
++      return 2;
++    }
++    if (below > 3 && typed.length >= 4 && name.contains(typed)) {
++      return 3;
++    }
+   }
+-  if (below < 5) {
++  final most = typed.length < 6 ? 1 : 2;
++  if (typed.length < 3 || below < 5 || missing > most) {
+     return null;
+   }
+-  final most = typed.length < 6 ? 1 : 2;
+   if (_isTypo(typed, name, 0, name.length, most)) {
+     return 4;
+   }
