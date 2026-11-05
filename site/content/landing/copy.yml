@@ -144,8 +144,8 @@ voice.siri.badge:
   status: draft
   source: "New: native Siri is not live yet (job 51)."
 voice.siri.body:
-  de: "Bald sagst du Siri direkt, was auf die Liste soll, ganz ohne Kurzbefehl."
-  en: "Soon you can tell Siri directly what goes on the list, no shortcut needed."
+  de: "Später sagst du Siri direkt, was auf die Liste soll, ganz ohne Kurzbefehl."
+  en: "Later you'll be able to tell Siri directly what goes on the list, no shortcut needed."
   status: draft
   source: "New, draft until native Siri ships (job 51)."
 voice.siri.now:
