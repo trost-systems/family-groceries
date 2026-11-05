@@ -1,6 +1,6 @@
 # Household and invites
 
-One household shares one list. Its name appears only in the join screen's warning and on the AI-assistant consent page. A member invites a partner with an 8-character code and a link (valid 7 days, usable by one person), shares or copies them, and can revoke open invites. A person joins by typing the code or opening the link; someone already in a household is warned that joining moves them. There is no screen to rename a household, list its members or leave it without joining another (or deleting the account).
+One household shares one list. Its name appears on the join screen (the preview „Einladung in den Haushalt <Name>“ and the warning), in the account deletion dialog and on the AI-assistant consent page. A member invites a partner with an 8-character code and a link (valid 7 days, usable by one person), shares or copies them, and can revoke open invites. A person joins by typing the code or opening the link; someone already in a household is warned that joining moves them. There is no screen to rename a household, list its members or leave it without joining another (or deleting the account).
 
 ## Sub-features
 
@@ -21,7 +21,7 @@ One household shares one list. Its name appears only in the join screen's warnin
 - Right after creating a household: Step 3 „Partner einladen“ (see onboarding).
 - Later: tab „Mehr“ / "More", row „Partner einladen“ / "Invite your partner" (second group, one line; since job 85 no section heading and no household name), page „Einladungen“.
 - Joining: row „Anderem Haushalt beitreten“ in the same section; or an invite link; or at first run „Einladung annehmen“.
-- Household name: set once when creating; no screen shows or renames it (the join warning names it).
+- Household name: set once when creating; no screen renames it. The join screen shows it (its preview names the household the invite is for, its warning the one being left), and so does the account deletion dialog.
 
 ## Driving it with Playwright
 

@@ -12,7 +12,7 @@ Under Mehr → Einstellungen the user picks how the app looks: like the device, 
 ## How to get to it (user POV)
 
 - „Mehr“ / "More" → „Einstellungen“ / "Settings" → section „Darstellung“ / "Appearance" with one segmented control of three hexagonal segments: „System“ / "System", „Hell“ / "Light", „Dunkel“ / "Dark". One tap selects; a honey hex marks the pick.
-- Deep link `/more/settings`. (The old `/settings` link goes to Zugänge, `/more/access`, not here.)
+- Deep link `/more/settings`. (The old `/settings` link goes to Zugänge, `/more/access`, or with `?section=account` to Konto, `/more/account`; never here.)
 
 ## Driving it with Playwright
 
