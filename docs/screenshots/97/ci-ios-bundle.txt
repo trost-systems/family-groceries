@@ -1,0 +1,194 @@
+# CI run 41908061886, job ios (126848307201), head edd65124 (= commit 4 of this PR), 2026-11-04
+# Built Runner.app (simulator, Xcode on macos-26). Compiled AppShortcuts.strings per language, App Shortcuts metadata, Siri training.
+
+./de.lproj/AppShortcuts.strings
+./en.lproj/AppShortcuts.strings
+./Metadata.appintents
+./Metadata.appintents/version.json
+./Metadata.appintents/root.ssu.yaml
+./Metadata.appintents/extract.actionsdata
+== de.lproj
+AppIntentVocabulary.plist
+AppShortcuts.strings
+InfoPlist.strings
+Localizable.strings
+nlu.appintents
+{
+  "#!SET#!_Add ${item} to ${applicationName}[0]" => "Füge ${item} zu ${applicationName} hinzu"
+  "#!SET#!_Add ${item} to ${applicationName}[1]" => "Füge ${item} zur ${applicationName} hinzu"
+  "#!SET#!_Add ${item} to ${applicationName}[2]" => "Füge ${item} zu meiner ${applicationName} hinzu"
+  "#!SET#!_Add ${item} to ${applicationName}[3]" => "Setz ${item} auf die ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[4]" => "Setz ${item} auf meine ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[5]" => "${applicationName}, füge ${item} hinzu"
+  "#!SET#!_Add something to my shopping list[0]" => "Füge etwas zur Einkaufsliste hinzu"
+  "#!SET#!_Add something to my shopping list[1]" => "Setz etwas auf die Einkaufsliste"
+  "#!SET#!_Add something to my shopping list[2]" => "Füge etwas zu meiner Einkaufsliste hinzu"
+  "#!SET#!_Add to ${applicationName}[0]" => "Füge etwas zu ${applicationName} hinzu"
+  "#!SET#!_Add to ${applicationName}[1]" => "Füge etwas zur ${applicationName} hinzu"
+  "#!SET#!_Add to ${applicationName}[2]" => "Füge etwas zu meiner ${applicationName} hinzu"
+  "#!SET#!_Add to ${applicationName}[3]" => "Etwas auf ${applicationName} setzen"
+  "#!SET#!_Add to ${applicationName}[4]" => "Etwas auf die ${applicationName} setzen"
+  "#!SET#!_Add to ${applicationName}[5]" => "Etwas zur ${applicationName} hinzufügen"
+  "#!SET#!_Add to ${applicationName}[6]" => "${applicationName}, füge etwas hinzu"
+  "#!SET#!_Add to ${applicationName}[7]" => "${applicationName}, setz etwas drauf"
+  "#!SET#!_Add to ${applicationName}[8]" => "Setz etwas auf die ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[9]" => "Setz etwas auf meine ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[10]" => "Schreib etwas auf die ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[11]" => "Mit ${applicationName} einkaufen"
+  "#!SET#!_Remind me to buy something[0]" => "Erinnere mich, etwas zu kaufen"
+  "#!SET#!_Remind me to buy something[1]" => "Füge etwas zu meinen Erinnerungen hinzu"
+  "#!SET#!_Show my ${applicationName}[0]" => "Zeig meine ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[1]" => "Zeig mir meine ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[2]" => "Zeig die ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[3]" => "Öffne meine ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[4]" => "${applicationName} anzeigen"
+  "#!SET#!_What's on my ${applicationName}[0]" => "Was steht auf meiner ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[1]" => "Was steht auf ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[2]" => "Was steht auf der ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[3]" => "Lies meine ${applicationName} vor"
+  "#!SET#!_What's on my ${applicationName}[4]" => "Lies die ${applicationName} vor"
+  "#!SET#!_What's on my ${applicationName}[5]" => "${applicationName}, was steht drauf"
+  "#!SET#!_What's on my ${applicationName}[6]" => "${applicationName}, was brauchen wir"
+  "#!SET#!_What's on my shopping list[0]" => "Was steht auf meiner Einkaufsliste"
+  "#!SET#!_What's on my shopping list[1]" => "Lies meine Einkaufsliste vor"
+}
+== en.lproj
+AppIntentVocabulary.plist
+AppShortcuts.strings
+InfoPlist.strings
+Localizable.strings
+nlu.appintents
+{
+  "#!SET#!_Add ${item} to ${applicationName}[0]" => "Add ${item} to ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[1]" => "Add ${item} to my ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[2]" => "Put ${item} on ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[3]" => "Put ${item} on my ${applicationName}"
+  "#!SET#!_Add ${item} to ${applicationName}[4]" => "${applicationName} add ${item}"
+  "#!SET#!_Add something to my shopping list[0]" => "Add something to my shopping list"
+  "#!SET#!_Add something to my shopping list[1]" => "Add to my shopping list"
+  "#!SET#!_Add something to my shopping list[2]" => "Add to my groceries list"
+  "#!SET#!_Add to ${applicationName}[0]" => "Add to ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[1]" => "Add to my ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[2]" => "Add something to ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[3]" => "Add something to my ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[4]" => "${applicationName} add"
+  "#!SET#!_Add to ${applicationName}[5]" => "${applicationName} add something"
+  "#!SET#!_Add to ${applicationName}[6]" => "Put something on ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[7]" => "Put something on my ${applicationName}"
+  "#!SET#!_Add to ${applicationName}[8]" => "Shop with ${applicationName}"
+  "#!SET#!_Remind me to buy something[0]" => "Remind me to buy something"
+  "#!SET#!_Remind me to buy something[1]" => "Add to my reminders"
+  "#!SET#!_Show my ${applicationName}[0]" => "Show my ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[1]" => "Show ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[2]" => "Show me my ${applicationName}"
+  "#!SET#!_Show my ${applicationName}[3]" => "Open my ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[0]" => "What's on my ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[1]" => "What's on ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[2]" => "What's on the ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[3]" => "Read my ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[4]" => "Read ${applicationName}"
+  "#!SET#!_What's on my ${applicationName}[5]" => "${applicationName} what's on the list"
+  "#!SET#!_What's on my shopping list[0]" => "What's on my shopping list"
+  "#!SET#!_What's on my shopping list[1]" => "Read my shopping list"
+}
+== Base.lproj
+InfoPlist.strings
+LaunchScreen.storyboardc
+Main.storyboardc
+nlu.appintents
+['actions', 'assistantEntities', 'assistantIntentNegativePhrases', 'assistantIntents', 'autoShortcutProviderMangledName', 'autoShortcuts', 'entities', 'enums', 'generator', 'negativePhrases', 'queries', 'shortcutTileColor', 'version']
+{
+ "autoShortcuts": [
+  {
+   "actionIdentifier": "AddItemsIntent",
+   "availabilityAnnotations": {
+    "LNPlatformNameWildcard": {
+     "introducedVersion": "*"
+    }
+   },
+   "phraseTemplates": [
+    {
+     "alternatives": [],
+     "key": "Add to ${applicationName}"
+    },
+    {
+     "alternatives": [],
+     "key": "Add ${item} to ${applicationName}"
+    }
+   ],
+   "shortTitle": {
+    "alternatives": [],
+    "key": "Add to Hummlist"
+   },
+   "systemImageName": "cart.badge.plus"
+  },
+  {
+   "actionIdentifier": "ReadListIntent",
+   "availabilityAnnotations": {
+    "LNPlatformNameWildcard": {
+     "introducedVersion": "*"
+    }
+   },
+   "phraseTemplates": [
+    {
+     "alternatives": [],
+     "key": "What's on my ${applicationName}"
+    }
+   ],
+   "shortTitle": {
+    "alternatives": [],
+    "key": "Read my Hummlist"
+   },
+   "systemImageName": "list.bullet"
+  },
+  {
+   "actionIdentifier": "OpenListIntent",
+   "availabilityAnnotations": {
+    "LNPlatformNameWildcard": {
+     "introducedVersion": "*"
+    }
+   },
+   "phraseTemplates": [
+    {
+     "alternatives": [],
+     "key": "Show my ${applicationName}"
+    }
+   ],
+   "shortTitle": {
+    "alternatives": [],
+    "key": "Open Hummlist"
+   },
+   "systemImageName": "checklist"
+  }
+ ],
+ "negativePhrases": [
+  {
+   "phrase": {
+    "alternatives": [],
+    "key": "Add something to my shopping list"
+   }
+  },
+  {
+   "phrase": {
+    "alternatives": [],
+    "key": "What's on my shopping list"
+   }
+  },
+  {
+   "phrase": {
+    "alternatives": [],
+    "key": "Remind me to buy something"
+   }
+  }
+ ],
+ "assistantIntentNegativePhrases": []
+}
+['AddItemsIntent', 'OpenListIntent', 'ReadListIntent'] ['ItemSuggestion']
+
+# appintentsnltrainingprocessor:
+appintentsnltrainingprocessor[27669:84932] Application name 'HummlistHumm ListHum ListHumlist' for en
+appintentsnltrainingprocessor[27669:84932] Application name 'HummlistHumlistHamlistHomlist' for de
+appintentsnltrainingprocessor[27669:84932] Application name 'HummlistHumm ListHum ListHumlist' for Base
+
+# RunnerTests:
+passed 42, failed 0, skipped 0

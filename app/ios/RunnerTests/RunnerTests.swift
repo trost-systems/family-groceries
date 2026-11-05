@@ -15,7 +15,6 @@ class RunnerTests: XCTestCase {
 
 /// Job 25: Hummlist Lifetime against StoreKit's local test store (app/ios/Hummlist.storekit),
 /// no App Store account or agreement needed. Run by scripts/ios-storekit-test.sh on a Mac.
-@available(iOS 16.0, *)
 final class LifetimeStoreKitTests: XCTestCase {
   let productId = "com.hummlist.app.lifetime"
   var session: SKTestSession!

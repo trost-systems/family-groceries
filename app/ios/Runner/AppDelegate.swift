@@ -12,9 +12,7 @@ import UIKit
   ) -> Bool {
     // After every install or update, not only once a list has loaded and the app pushed its
     // suggestions: Siri trains the App Shortcut phrases with these parameters (job 92).
-    if #available(iOS 17.0, *) {
-      HummlistShortcuts.updateAppShortcutParameters()
-    }
+    HummlistShortcuts.updateAppShortcutParameters()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

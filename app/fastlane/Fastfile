@@ -219,6 +219,8 @@ platform :ios do
     UI.user_error!("no IPA under build/ios/ipa") if ipa.nil?
     # ITMS-90626: the signed app must carry its SiriKit example phrases (scripts/siri-vocabulary.py).
     sh("python3", File.join(APP_DIR, "../scripts/siri-vocabulary.py"), ipa)
+    # The App Shortcuts Siri matches, with their de and en phrases (job 97).
+    sh("python3", File.join(APP_DIR, "../scripts/app-shortcuts-bundle.py"), ipa)
     upload? ? upload_ipa(api_key, ipa) : validate_ipa(ipa)
   end
 

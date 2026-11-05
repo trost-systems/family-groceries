@@ -36,8 +36,8 @@ final class SiriBridge: NSObject, FlutterPlugin {
       Self.refreshShortcuts()
       result(nil)
     case "suggestions":
-      let names = (call.arguments as? [String: Any])?["names"] as? [String] ?? []
-      suggestions.save(names)
+      let items = (call.arguments as? [String: Any])?["items"] as? [Any] ?? []
+      suggestions.save(items.compactMap(ItemSuggestionStore.Entry.init(argument:)))
       Self.refreshShortcuts()
       result(nil)
     default:
@@ -54,8 +54,6 @@ final class SiriBridge: NSObject, FlutterPlugin {
   }
 
   private static func refreshShortcuts() {
-    if #available(iOS 17.0, *) {
-      HummlistShortcuts.updateAppShortcutParameters()
-    }
+    HummlistShortcuts.updateAppShortcutParameters()
   }
 }

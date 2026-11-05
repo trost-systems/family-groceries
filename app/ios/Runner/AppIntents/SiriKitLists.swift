@@ -6,6 +6,11 @@ import Intents
 /// these handlers Siri answered "Hummlist unterstützt das nicht" (job 92). AppDelegate hands them
 /// out in-app (`application(_:handlerFor:)`, no Intents extension). The titles go to `voice` like
 /// AddItemsIntent's dictation; the household has one list, so a named list is ignored.
+///
+/// Every failure, signed out and no household included, answers `.failure`: Siri says its own
+/// localized "couldn't do that" and stays in its sheet. `.failureRequiringAppLaunch` made iOS open
+/// the app instead (job 97). A Lists response carries only a code, `addedTasks` and
+/// `modifiedTaskList`, so the app's own sentences (SiriCopy) reach only the App Shortcuts.
 final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
   let client: VoiceClient
 
@@ -39,9 +44,7 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
       let response = INAddTasksIntentResponse(code: .success, userActivity: nil)
       response.addedTasks = titles.map(task)
       return response
-    case .lockedHousehold, .failed(.notSignedIn), .failed(.signedOut), .failed(.noHousehold):
-      return INAddTasksIntentResponse(code: .failureRequiringAppLaunch, userActivity: nil)
-    case .read, .failed:
+    case .read, .lockedHousehold, .failed:
       return INAddTasksIntentResponse(code: .failure, userActivity: nil)
     }
   }
@@ -80,9 +83,7 @@ final class SearchTasksHandler: NSObject, INSearchForNotebookItemsIntentHandling
           createdDateComponents: nil, modifiedDateComponents: nil, identifier: nil)
       ]
       return response
-    case .lockedHousehold, .failed(.notSignedIn), .failed(.signedOut), .failed(.noHousehold):
-      return INSearchForNotebookItemsIntentResponse(code: .failureRequiringAppLaunch, userActivity: nil)
-    case .added, .nothingAdded, .failed:
+    case .added, .nothingAdded, .lockedHousehold, .failed:
       return INSearchForNotebookItemsIntentResponse(code: .failure, userActivity: nil)
     }
   }

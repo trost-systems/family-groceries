@@ -7417,3 +7417,83 @@ price, store product or legal page changed.
   so the voice function splits it as German (`voice/handler.ts`); the English guide says the same.
 - **Writers inherit the rules.** FEATURES-FOR-WRITERS' global „Never claim“ list gets the brand
   rule and the Alexa naming, so emails and site copy written from it don't bring them back.
+
+## Job 97: Siri fix-now, iOS 17 minimum and App Shortcuts catalog (2026-11-04)
+
+Peter approved (Q66 = VF1) the fix-now items of the voice-integrations audit and raising the iOS
+minimum from 15.0 to 17.0. API facts were checked against developer.apple.com's documentation JSON
+on 2026-11-04 (paths named below).
+
+1. **iOS 17.0 everywhere, kept by a lint.** Runner, RunnerTests and the project-level setting
+   move from 15.0 (HomeWidget was 17.0 already). The app has no Podfile (Flutter's Swift Package
+   Manager integration; `FlutterGeneratedPluginSwiftPackage` is generated and gitignored), no
+   `MinimumOSVersion` in AppFrameworkInfo.plist, no iOS version in pubspec, and CI picks the newest
+   installed simulator, so there is nothing else to pin. `scripts/ios-deployment-target.py` (lint
+   gate, with fixture tests) fails when any of those places disagrees with 17.0, and when Swift
+   still asks `@available`/`#available` for an iOS version the minimum guarantees. The six dead
+   checks went. The website stays unchanged (brief); its "iOS 17 or later" sentences were already
+   true. Users on iOS 15 and 16 keep the last build that supports them and the Shortcut recipe.
+2. **SiriKit Lists failures answer `.failure`, never `.failureRequiringAppLaunch`.** Signed out,
+   no household and the integration lock opened the app. Apple's `INAddTasksIntentResponse` has
+   only `code`, `addedTasks` and `modifiedTaskList` (documentation/intents/inaddtasksintentresponse;
+   the same for `INSearchForNotebookItemsIntentResponse`), so a Lists answer cannot carry the
+   app's own sentence. `.failure` ("You were unable to add the tasks") makes Siri say its own
+   localized failure and stay in its sheet. The app's reason ("Öffne Hummlist und melde dich an")
+   is spoken on the App Shortcuts path, which already returned dialogs. Nothing in the Lists path
+   genuinely needs the app in front, so no case keeps `failureRequiringAppLaunch`.
+3. **Spoken name „Hummlist“; German alternatives without „Liste“.** `CFBundleSpokenName` is
+   „Hummlist“ in Info.plist and every InfoPlist.strings. German drops „Hummliste“, „Humm Liste“
+   and „Ham Liste“: German Siri reads „zur … Liste“ as Reminders' grammar, so those spellings
+   routed to Reminders. Info.plist declares three `INAlternativeAppNames` variables for all
+   languages, and a language without values trains the raw variable (job 71), so German gets three
+   spellings of /hʊmlɪst/ that do not end in „Liste“: Humlist, Hamlist, Homlist, hint „hummlist“.
+   They are guesses at what German Siri writes; the device test plan checks them. English keeps
+   Humm List, Hum List, Humlist. The voice parser still drops the old spellings from dictated
+   items (harmless, and old builds still send them).
+4. **`AppShortcuts.xcstrings` replaces the `.strings` tables.** Xcode refused the catalog below an
+   iOS 17 target (job 51, CI run 41236774729). Each Swift phrase is now the key of a `stringSet`
+   per language (the format Xcode writes, seen in public catalogs such as CotEditor's), so German
+   has 30 phrases and English 24 for four Swift phrases instead of a one-to-one table. The old
+   phrases all survive as variants, plus „Füge etwas zu meiner Hummlist hinzu“, „Hummlist, setz
+   etwas drauf“, „Schreib etwas auf die Hummlist“, „Hummlist, was brauchen wir“ and the item forms.
+   No German phrase contains „Liste“ (lint). The phrase without an item still comes first.
+5. **Open Hummlist.** `OpenListIntent` ("Show my Hummlist", „Zeig meine Hummlist“, „Öffne meine
+   Hummlist“) opens the app on the list through `hummlist-widget://open/?homeWidget`, the link a
+   widget tap uses, so the app goes to the list from any screen with no new Dart route. A bare
+   "Open Hummlist" is Siri's own command and needs no phrase. Foreground via `supportedModes =
+   .foreground` on iOS 26 and `openAppWhenRun` before (documentation/appintents/appintent/
+   openappwhenrun: deprecated in 26 "Please provide 'supportedModes' instead").
+6. **Negative phrases** (`AppShortcutsProvider.negativePhrases`, `NegativeAppShortcutPhrases(phrases:)`,
+   iOS 17+, documentation/appintents/negativeappshortcutphrases): the system shopping list and
+   reminders requests ("Add something to my shopping list", „Füge etwas zur Einkaufsliste hinzu“,
+   „Erinnere mich, etwas zu kaufen“). They never name the app, which would block its own phrases
+   (lint and RunnerTests).
+7. **Item synonyms from data the app already syncs.** The entity's `DisplayRepresentation`
+   carries `synonyms` (iOS 17+, documentation/appintents/displayrepresentation/synonyms): the
+   household's other item names with the same `canonical_key` („Möhren“ for „Karotten“). Usuals
+   (frequent), the open list and the latest bought (recent) as before; one suggestion per
+   canonical key, at most two synonyms each. Nothing new leaves the device: the names already
+   reached Apple as entity values (job 51, NEEDS_LEAD). The Swift store caps 50 names and 100
+   spoken values in all, since Apple counts every parameter value in each phrase that has it
+   against 1,000 phrases per app (job 51's source), and German has six item phrases (lint checks
+   the sum). Whether the three alternative app names multiply that count too is not documented
+   (guess: they don't, and the CI trainer reported no error); `spokenLimit` is the lever if the
+   device test misses item phrases. A synonym resolves to the household's own name, which goes
+   to `voice`.
+   `updateAppShortcutParameters()` runs at launch and after every suggestions push, as before.
+8. **SiriKit Lists stay** for iOS 17 to 26, alongside App Shortcuts, with job 95's
+   IntentExamples and `siri-vocabulary.py`. Apple marks the Lists types deprecated in iOS 27
+   ("adopt the Notes or Reminders AppSchema domain"); migrating is a later job.
+9. **The built app is checked, not only the source.** `scripts/app-shortcuts-bundle.py` reads
+   `Metadata.appintents/extract.actionsdata` (App Shortcuts, phrase templates, negative phrases,
+   the item entity) and the compiled de/en phrase tables, in the ios gate on the simulator build
+   and in the Fastfile on the signed IPA before upload or validation. Xcode compiles each string
+   set to `#!SET#!_<phrase>[<index>]` keys in `<lang>.lproj/AppShortcuts.strings` (CI dump in
+   docs/screenshots/97). The same script checks the spoken name, the German alternative names
+   and the localized negative phrases, so the signed IPA gets every check the ios gate has
+   (review 0). The deployment-target lint reads only git-tracked Swift, so plugin
+   sources a local Mac build links under `Flutter/ephemeral` or `Pods` don't fail it.
+10. **Ordered commits, the lead squashes.** The brief asks for one PR with ordered commits and the
+    lead merges, so the branch keeps them and is pushed fast-forward; the lead's landing runs
+    `scripts/push-pr.sh`, which squashes. `native-siri` hold and `NATIVE_SIRI_LIVE` unchanged; the
+    changelog item carries `hold: native-siri`.

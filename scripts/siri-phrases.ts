@@ -1,9 +1,11 @@
-// The native Siri phrases (app/ios/Runner/AppIntents/HummlistIntents.swift) against the tables
-// Siri matches them with: every phrase has an en and a de translation that keeps the app name and
-// its parameter, no German phrase is left in English or said twice, and each language names the
-// app the way its Siri writes it (INAlternativeAppNames, job 71). German phrases stay out of
-// Reminders' grammar, the add phrases without an item come first, and every spoken name carries a
-// pronunciation hint (job 92). RunnerTests checks the same on macOS; this runs everywhere.
+// The native Siri phrases (app/ios/Runner/AppIntents/HummlistIntents.swift) against the catalog
+// Siri matches them with (Runner/AppShortcuts.xcstrings, job 97): every App Shortcut phrase has a
+// set of en and de phrases that each name the app once and keep the Swift phrase's parameter, no
+// German phrase is left in English or said twice, and each language names the app the way its
+// Siri writes it (INAlternativeAppNames, job 71). German phrases stay out of Reminders' grammar,
+// the add phrase without an item comes first, every spoken name carries a pronunciation hint
+// (job 92), and the negative phrases never name the app. RunnerTests checks the same on macOS;
+// this runs everywhere.
 // Usage: deno run --allow-read scripts/siri-phrases.ts [ios-dir]
 const ios = Deno.args[0] ?? new URL('../app/ios', import.meta.url).pathname;
 const problems: string[] = [];
@@ -32,67 +34,141 @@ function strings(path: string): Map<string, string> {
 
 const placeholders = (phrase: string) =>
   [...phrase.matchAll(/\$\{[A-Za-z]+\}/g)].map((m) => m[0]).sort();
+const parameters = (phrase: string) =>
+  placeholders(phrase).filter((p) => p !== '${applicationName}');
 
 const source = read('Runner/AppIntents/HummlistIntents.swift');
-const phrasesIn = (code: string) =>
-  [...code.matchAll(/"([^"\n]*\\\(\.applicationName\)[^"\n]*)"/g)].map((m) =>
+const literals = (code: string) =>
+  [...code.matchAll(/"((?:[^"\\\n]|\\\(\.applicationName\)|\\\(\\\.\$\w+\))*)"/g)].map((m) =>
     m[1].replaceAll('\\(.applicationName)', '${applicationName}').replace(
       /\\\(\\\.\$(\w+)\)/g,
       '${$1}',
     )
   );
-const phrases = phrasesIn(source);
+const providerCode = source.match(/static var appShortcuts[\s\S]*?\n {2}\}\n/)?.[0] ?? '';
+const negativeCode = source.match(/static var negativePhrases[\s\S]*?\n {2}\}\n/)?.[0] ?? '';
+const phraseLists = [...providerCode.matchAll(/phrases: \[([\s\S]*?)\]/g)].map((m) =>
+  literals(m[1])
+);
+const phrases = phraseLists.flat();
+const negatives = literals(negativeCode);
+const shortcuts = providerCode.split('AppShortcut(\n').length - 1;
+if (phrases.length < 3) {
+  problems.push(`HummlistIntents.swift: only ${phrases.length} phrases found`);
+}
+if (shortcuts === 0 || shortcuts > 10) {
+  problems.push(`HummlistIntents.swift: ${shortcuts} App Shortcuts; Apple allows 1 to 10`);
+}
+for (const phrase of phrases) {
+  if (!phrase.includes('${applicationName}')) {
+    problems.push(`"${phrase}": every App Shortcut phrase names the app`);
+  }
+}
+if (phraseLists.length !== shortcuts) {
+  problems.push('HummlistIntents.swift: an App Shortcut without phrases');
+}
+if (negatives.length === 0) problems.push('HummlistIntents.swift: no negativePhrases');
 // Siri asks for the items after a phrase without one, so that works for any item; an item phrase
 // matches only the names the app suggested.
-const add = phrasesIn(source.match(/intent: AddItemsIntent\(\)([\s\S]*?)shortTitle:/)?.[1] ?? '');
+const add = literals(source.match(/intent: AddItemsIntent\(\)([\s\S]*?)shortTitle:/)?.[1] ?? '');
 const firstWithItem = add.findIndex((p) => p.includes('${item}'));
 if (add.length === 0) problems.push('HummlistIntents.swift: no AddItemsIntent phrases found');
 else if (firstWithItem === 0 || add.slice(firstWithItem).some((p) => !p.includes('${item}'))) {
   problems.push('HummlistIntents.swift: the add phrases without an item must come first');
 }
-if (phrases.length < 10) {
-  problems.push(`HummlistIntents.swift: only ${phrases.length} phrases found`);
-}
 for (const phrase of phrases) {
-  if (placeholders(phrase).filter((p) => p !== '${applicationName}').length > 1) {
-    problems.push(`"${phrase}": more than one parameter`);
+  if (parameters(phrase).length > 1) problems.push(`"${phrase}": more than one parameter`);
+}
+
+type Catalog = {
+  sourceLanguage?: string;
+  strings?: Record<
+    string,
+    { localizations?: Record<string, { stringSet?: { values?: string[] } }> }
+  >;
+};
+const catalogPath = 'Runner/AppShortcuts.xcstrings';
+let catalog: Catalog = {};
+try {
+  catalog = JSON.parse(read(catalogPath) || '{}');
+} catch (error) {
+  problems.push(`${catalogPath}: ${error}`);
+}
+for (const lang of ['en', 'de']) {
+  try {
+    Deno.statSync(`${ios}/Runner/${lang}.lproj/AppShortcuts.strings`);
+    problems.push(`Runner/${lang}.lproj/AppShortcuts.strings: the catalog replaced it; delete it`);
+  } catch {
+    // gone, as it should be
+  }
+}
+const catalogEntries = catalog.strings ?? {};
+const values = (key: string, lang: string) =>
+  catalogEntries[key]?.localizations?.[lang]?.stringSet?.values ?? [];
+for (const key of Object.keys(catalogEntries)) {
+  if (!phrases.includes(key) && !negatives.includes(key)) {
+    problems.push(`${catalogPath}: "${key}" is no phrase in HummlistIntents.swift`);
   }
 }
 
+// Apple expands every parameter value into each phrase that has it, up to 1,000 phrases per app;
+// the app sends at most 100 item names and synonyms (ItemSuggestionStore).
+const spokenItems = 100;
 const prepositions = new Set(['auf', 'zu', 'zur', 'zum', 'in', 'im', 'an', 'mit', 'für']);
+const known: Record<string, Set<string>> = { en: new Set(), de: new Set() };
 for (const lang of ['en', 'de']) {
-  const path = `Runner/${lang}.lproj/AppShortcuts.strings`;
-  const table = strings(path);
+  const said = new Map<string, string>();
+  let expanded = 0;
   for (const phrase of phrases) {
-    const value = table.get(phrase);
-    if (value === undefined) problems.push(`${path}: no translation of "${phrase}"`);
-    else if (placeholders(value).join() !== placeholders(phrase).join()) {
-      problems.push(`${path}: "${value}" must keep ${placeholders(phrase).join(', ')}`);
-    } else if (lang === 'de' && value === phrase) {
-      problems.push(`${path}: "${phrase}" is not translated`);
-    } else if (lang === 'de') {
+    const set = values(phrase, lang);
+    if (set.length === 0) problems.push(`${catalogPath}: no ${lang} phrases for "${phrase}"`);
+    for (const value of set) {
+      const where = `${catalogPath} ${lang} "${value}"`;
+      known[lang].add(value.toLowerCase());
+      expanded += parameters(value).length ? spokenItems : 1;
+      if (value.split('${applicationName}').length !== 2) {
+        problems.push(
+          `${where}: names the app ${value.split('${applicationName}').length - 1} times, not once`,
+        );
+      }
+      if (parameters(value).join() !== parameters(phrase).join()) {
+        problems.push(`${where}: must keep ${parameters(phrase).join(', ') || 'no parameter'}`);
+      }
+      const spoken = value.toLowerCase().replace(/[,?.!]/g, '');
+      if (said.has(spoken)) problems.push(`${where}: also a phrase of "${said.get(spoken)}"`);
+      said.set(spoken, phrase);
+      if (lang !== 'de') continue;
       // German Siri hands "Einkaufsliste" and "Füge X zur <…>liste hinzu" to Reminders; a bare
       // "Auf meine Hummlist" is a fragment of that grammar.
       const first = value.split(' ')[0].toLowerCase();
-      if (/einkaufsliste/i.test(value)) {
-        problems.push(`${path}: "${value}" says Einkaufsliste, which Reminders takes`);
-      } else if (prepositions.has(first) && value.endsWith('${applicationName}')) {
-        problems.push(`${path}: "${value}" is a fragment without a verb`);
+      if (/liste/i.test(value)) problems.push(`${where}: says Liste, which Reminders takes`);
+      else if (prepositions.has(first) && value.endsWith('${applicationName}')) {
+        problems.push(`${where}: is a fragment without a verb`);
+      } else if (values(phrase, 'en').some((en) => en.toLowerCase() === value.toLowerCase())) {
+        problems.push(`${where}: is not translated`);
       }
     }
   }
-  for (const key of table.keys()) {
-    if (!phrases.includes(key)) {
-      problems.push(`${path}: "${key}" is no phrase in HummlistIntents.swift`);
-    }
+  if (expanded > 1000) {
+    problems.push(
+      `${catalogPath}: ${lang} expands to ${expanded} phrases with ${spokenItems} items; Apple allows 1,000`,
+    );
   }
-  const said = new Map<string, string>();
-  for (const [key, value] of table) {
-    const spoken = value.toLowerCase();
-    if (said.has(spoken)) {
-      problems.push(`${path}: "${key}" and "${said.get(spoken)}" both say "${value}"`);
+  for (const negative of negatives) {
+    const set = values(negative, lang);
+    if (set.length === 0) {
+      problems.push(`${catalogPath}: no ${lang} phrases for the negative "${negative}"`);
     }
-    said.set(spoken, key);
+    for (const value of set) {
+      if (value.includes('${applicationName}') || /hummlist/i.test(value)) {
+        problems.push(
+          `${catalogPath} ${lang} negative "${value}" names the app and would block it`,
+        );
+      }
+      if (said.has(value.toLowerCase().replace(/[,?.!]/g, ''))) {
+        problems.push(`${catalogPath} ${lang} negative "${value}" is also an App Shortcut phrase`);
+      }
+    }
   }
 }
 
@@ -102,13 +178,10 @@ for (const lang of ['en', 'de']) {
   const block = dart.match(new RegExp(`\\b${lang}: \\[([\\s\\S]*?)\\]`))?.[1] ?? '';
   const list = [...block.matchAll(/'((?:[^'\\]|\\.)*)'|"([^"]*)"/g)].map((m) => m[1] ?? m[2]);
   if (list.length === 0) problems.push(`siri_phrases.dart: no ${lang} phrases`);
-  const known = new Set(
-    [...strings(`Runner/${lang}.lproj/AppShortcuts.strings`).values()].map((v) => v.toLowerCase()),
-  );
   for (const phrase of list) {
     const asTable = phrase.replace(/[?.!]$/, '').replace(/<[^>]+>/g, '${item}')
       .replaceAll('Hummlist', '${applicationName}').toLowerCase();
-    if (!known.has(asTable)) {
+    if (!known[lang].has(asTable)) {
       problems.push(`siri_phrases.dart shows "${phrase}", which is no ${lang} phrase Siri knows`);
     }
   }
@@ -137,6 +210,9 @@ for (const intent of ['INAddTasksIntent', 'INSearchForNotebookItemsIntent']) {
   }
 }
 if (variables.length === 0) problems.push('Info.plist: no INAlternativeAppNames');
+if (!/<key>CFBundleSpokenName<\/key>\s*<string>Hummlist<\/string>/.test(plist)) {
+  problems.push('Info.plist: CFBundleSpokenName must be "Hummlist"');
+}
 if (variables.length > 3) {
   problems.push('Info.plist: Apple reads at most three INAlternativeAppNames');
 }
@@ -148,6 +224,11 @@ for (const lang of ['en', 'de', 'Base']) {
     if (!name) problems.push(`${path}: no ${variable}`);
     else if (name.toLowerCase() === 'hummlist') {
       problems.push(`${path}: ${variable} repeats the app name`);
+    } else if (name.toLowerCase() === 'humm') {
+      problems.push(`${path}: ${variable} is "Humm"; the brand is never Humm alone`);
+    } else if (lang === 'de' && /liste$/i.test(name)) {
+      // German Siri hands "Füge X zur … Liste hinzu" to Reminders (job 97).
+      problems.push(`${path}: ${variable} "${name}" ends in Liste, Reminders' grammar`);
     }
   }
   for (const hint of hints) {
@@ -156,6 +237,9 @@ for (const lang of ['en', 'de', 'Base']) {
   for (const key of ['CFBundleSpokenName', 'NSSiriUsageDescription']) {
     if (!table.get(key)?.trim()) problems.push(`${path}: no ${key}`);
   }
+  if (table.get('CFBundleSpokenName') !== 'Hummlist') {
+    problems.push(`${path}: CFBundleSpokenName must be "Hummlist"`);
+  }
 }
 
 if (problems.length) {
@@ -163,5 +247,5 @@ if (problems.length) {
   Deno.exit(1);
 }
 console.log(
-  `siri-phrases: ${phrases.length} phrases in en and de, ${variables.length} spoken app names per language`,
+  `siri-phrases: ${phrases.length} App Shortcut phrases with ${known.en.size} en and ${known.de.size} de variants, ${negatives.length} negative phrases, ${variables.length} spoken app names per language`,
 );

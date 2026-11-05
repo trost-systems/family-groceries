@@ -6,11 +6,16 @@ import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The names Siri offers for "Add `<item>` to Hummlist": the household's
+/// The items Siri offers for "Add `<item>` to Hummlist": the household's
 /// usuals first, then what is on the list, then what was bought last; each
-/// name once, at most [maxSiriSuggestions].
-List<String> siriSuggestionNames(ListState state) {
+/// item once (by name, and by `canonical_key` where the server set one), at
+/// most [maxSiriSuggestions].
+List<SiriSuggestion> siriSuggestions(ListState state) {
   final items = state.items.values;
+  final active = [
+    for (final item in items)
+      if (item.status == ItemStatus.active) item,
+  ];
   final bought =
       [
         for (final item in items)
@@ -19,19 +24,50 @@ List<String> siriSuggestionNames(ListState state) {
         (a, b) =>
             (b.boughtAt ?? b.updatedAt).compareTo(a.boughtAt ?? a.updatedAt),
       );
-  final seen = <String>{};
-  return [
-    for (final name in [
-      for (final usual in state.usuals) usual.name,
-      for (final item in items)
-        if (item.status == ItemStatus.active) item.name,
-      for (final item in bought) item.name,
-    ])
-      if (seen.add(foldName(name))) name,
-  ].take(maxSiriSuggestions).toList();
+  final keyOf = <String, String>{};
+  final namesOf = <String, List<String>>{};
+  for (final item in [...active, ...bought]) {
+    final key = item.canonicalKey;
+    if (key == null || key.isEmpty) {
+      continue;
+    }
+    final folded = foldName(item.name);
+    keyOf.putIfAbsent(folded, () => key);
+    final names = namesOf.putIfAbsent(key, () => []);
+    if (!names.any((name) => foldName(name) == folded)) {
+      names.add(item.name);
+    }
+  }
+  final seenNames = <String>{};
+  final seenKeys = <String>{};
+  final suggestions = <SiriSuggestion>[];
+  for (final name in [
+    for (final usual in state.usuals) usual.name,
+    for (final item in active) item.name,
+    for (final item in bought) item.name,
+  ]) {
+    final folded = foldName(name);
+    final key = keyOf[folded];
+    if (!seenNames.add(folded) || (key != null && !seenKeys.add(key))) {
+      continue;
+    }
+    suggestions.add(
+      SiriSuggestion(
+        name,
+        synonyms: [
+          for (final other in namesOf[key] ?? const <String>[])
+            if (foldName(other) != folded) other,
+        ].take(maxSiriSynonyms).toList(),
+      ),
+    );
+    if (suggestions.length == maxSiriSuggestions) {
+      break;
+    }
+  }
+  return suggestions;
 }
 
-/// Sends the list's [siriSuggestionNames] to Siri when they change, at most
+/// Sends the list's [siriSuggestions] to Siri when they change, at most
 /// once per [debounce], and only once the list has loaded.
 class SiriSuggestions(
   final SiriChannel _channel,
@@ -45,7 +81,7 @@ class SiriSuggestions(
 
   late final StreamSubscription<ListState> _states;
   Timer? _timer;
-  List<String>? _sent;
+  List<SiriSuggestion>? _sent;
   ListState? _latest;
 
   void _changed(ListState state) {
@@ -62,15 +98,15 @@ class SiriSuggestions(
     if (latest == null) {
       return;
     }
-    final names = siriSuggestionNames(latest);
-    if (listEquals(names, _sent)) {
+    final suggestions = siriSuggestions(latest);
+    if (listEquals(suggestions, _sent)) {
       return;
     }
-    _sent = names;
+    _sent = suggestions;
     unawaited(
-      _channel.suggestions(names).catchError((Object _) {
+      _channel.suggestions(suggestions).catchError((Object _) {
         // No channel (MissingPluginException) or a failed save: Siri keeps
-        // the names it had.
+        // the items it had.
         _sent = null;
       }),
     );

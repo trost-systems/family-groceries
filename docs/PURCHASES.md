@@ -310,7 +310,8 @@ locked version changes until this section is checked again.
   ([PurchasesOrchestrator.swift#L846-L849](https://github.com/RevenueCat/purchases-ios/blob/5.99.0/Sources/Purchasing/Purchases/PurchasesOrchestrator.swift#L846-L849)).
   Our App User ID is the household UUID, so **Apple receives the household id as the
   transaction's `appAccountToken`**.
-- **Apple, StoreKit 1** (iOS 15, which the app still supports, deployment target 15.0): the SDK
+- **Apple, StoreKit 1** (iOS 15 only; since job 97 the app needs iOS 17, so no purchase takes
+  this path any more; kept for the record): the SDK
   sets `SKMutablePayment.applicationUsername = appUserID` for every purchase, UUID or not
   ([PurchasesOrchestrator.swift#L661](https://github.com/RevenueCat/purchases-ios/blob/5.99.0/Sources/Purchasing/Purchases/PurchasesOrchestrator.swift#L661)).
   Apple receives the household id there too. (Apple's documentation says a UUID
