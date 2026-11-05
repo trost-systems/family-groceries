@@ -10,7 +10,11 @@ class FakeSiriChannel() implements SiriChannel {
   String? voiceUrl;
   final stores = <SiriKeychainEntry>[];
   var clears = 0;
-  final sentNames = <List<String>>[];
+  final sent = <List<SiriSuggestion>>[];
+
+  List<List<String>> get sentNames => [
+    for (final items in sent) [for (final item in items) item.name],
+  ];
 
   /// Behaves like a build without the Swift side.
   var missing = false;
@@ -49,8 +53,8 @@ class FakeSiriChannel() implements SiriChannel {
   }
 
   @override
-  Future<void> suggestions(List<String> names) async {
+  Future<void> suggestions(List<SiriSuggestion> items) async {
     _check('suggestions');
-    sentNames.add(names);
+    sent.add(items);
   }
 }

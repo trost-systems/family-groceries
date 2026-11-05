@@ -232,21 +232,38 @@ final class SiriKitListsTests: XCTestCase {
     XCTAssertEqual(response.code, .success)
   }
 
-  func testFailuresTheAppCanFixOpenTheApp() async {
-    let cases: [(StubProtocol.Reply, INAddTasksIntentResponseCode)] = [
-      (.http(401, ""), .failureRequiringAppLaunch),
-      (.http(403, #"{"outcome":"no_household","error":"no_household","speech":"x"}"#), .failureRequiringAppLaunch),
-      (.http(403, #"{"outcome":"premium_required","error":"premium_required","speech":"x"}"#), .failureRequiringAppLaunch),
-      (.http(500, #"{"outcome":"server","error":"server","speech":"x"}"#), .failure),
-      (.failure(.notConnectedToInternet), .failure),
-    ]
-    for (reply, code) in cases {
+  private let failures: [StubProtocol.Reply] = [
+    .http(401, ""),
+    .http(403, #"{"outcome":"no_household","error":"no_household","speech":"x"}"#),
+    .http(403, #"{"outcome":"premium_required","error":"premium_required","speech":"x"}"#),
+    .http(500, #"{"outcome":"server","error":"server","speech":"x"}"#),
+    .http(200, #"{"outcome":"parsed","speech":"Verstanden: Milch."}"#),
+    .failure(.notConnectedToInternet),
+    .failure(.timedOut),
+  ]
+
+  /// Siri answers a failure in its sheet; only `.failureRequiringAppLaunch` would open the app.
+  func testEveryAddFailureStaysInSiri() async {
+    for reply in failures {
       StubProtocol.reply = reply
       let response = await AddTasksHandler(client: client()).respond(to: addTasks(["Milch"]))
-      XCTAssertEqual(response.code, code, "\(reply)")
+      XCTAssertEqual(response.code, .failure, "\(reply)")
+      XCTAssertNil(response.addedTasks, "\(reply)")
     }
     let signedOut = await AddTasksHandler(client: client(signedIn: false)).respond(to: addTasks(["Milch"]))
-    XCTAssertEqual(signedOut.code, .failureRequiringAppLaunch)
+    XCTAssertEqual(signedOut.code, .failure)
+    XCTAssertEqual(StubProtocol.requests.count, failures.count, "signed out sends nothing")
+  }
+
+  func testEveryReadFailureStaysInSiri() async {
+    for reply in failures {
+      StubProtocol.reply = reply
+      let response = await SearchTasksHandler(client: client()).respond()
+      XCTAssertEqual(response.code, .failure, "\(reply)")
+      XCTAssertNil(response.tasks, "\(reply)")
+    }
+    let signedOut = await SearchTasksHandler(client: client(signedIn: false)).respond()
+    XCTAssertEqual(signedOut.code, .failure)
   }
 
   func testEachSpokenTitleResolvesAndNoneMeansAsk() {
@@ -418,23 +435,88 @@ final class SiriStoreTests: XCTestCase {
     XCTAssertNil(SiriCredential(arguments: nil))
   }
 
+  private func suggestionStore() -> ItemSuggestionStore {
+    ItemSuggestionStore(
+      file: FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString).appendingPathComponent("suggestions.json"))
+  }
+
   func testSuggestionsAreTrimmedDedupedAndCapped() {
-    let file = FileManager.default.temporaryDirectory
-      .appendingPathComponent(UUID().uuidString).appendingPathComponent("suggestions.json")
-    let suggestions = ItemSuggestionStore(file: file)
-    XCTAssertEqual(suggestions.names(), [])
-    suggestions.save([" Milch ", "milch", "", "Eier"] + (1...60).map { "Item \($0)" })
-    let names = suggestions.names()
+    let suggestions = suggestionStore()
+    XCTAssertEqual(suggestions.entries(), [])
+    suggestions.save(
+      [" Milch ", "milch", "", "Eier"].map { ItemSuggestionStore.Entry(name: $0) }
+        + (1...60).map { ItemSuggestionStore.Entry(name: "Item \($0)") })
+    let names = suggestions.entries().map(\.name)
     XCTAssertEqual(Array(names.prefix(2)), ["Milch", "Eier"])
     XCTAssertEqual(names.count, 50)
     suggestions.clear()
-    XCTAssertEqual(suggestions.names(), [])
+    XCTAssertEqual(suggestions.entries(), [])
+  }
+
+  func testSynonymsAreCappedAndNeverRepeatAName() {
+    let suggestions = suggestionStore()
+    suggestions.save([
+      .init(name: "Karotten", synonyms: ["Möhren", " Milch ", "Mohrrüben", "Gelbe Rüben"]),
+      .init(name: "Milch", synonyms: ["möhren"]),
+    ])
+    XCTAssertEqual(suggestions.entries(), [
+      .init(name: "Karotten", synonyms: ["Möhren", "Mohrrüben"]),
+      .init(name: "Milch"),
+    ])
+    suggestions.save((1...50).map { ItemSuggestionStore.Entry(name: "Item \($0)", synonyms: ["A \($0)", "B \($0)"]) })
+    let spoken = suggestions.entries().reduce(0) { $0 + 1 + $1.synonyms.count }
+    XCTAssertEqual(spoken, ItemSuggestionStore.spokenLimit, "Apple's 1,000 phrases with six item phrases")
+  }
+
+  func testAFileFromBeforeSynonymsStillReads() throws {
+    let suggestions = suggestionStore()
+    try FileManager.default.createDirectory(
+      at: suggestions.file.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data(#"["Milch","Eier"]"#.utf8).write(to: suggestions.file)
+    XCTAssertEqual(suggestions.entries(), [.init(name: "Milch"), .init(name: "Eier")])
+  }
+
+  func testTheChannelArgumentsBecomeEntries() {
+    XCTAssertEqual(
+      ItemSuggestionStore.Entry(argument: ["name": "Karotten", "synonyms": ["Möhren"]]),
+      .init(name: "Karotten", synonyms: ["Möhren"]))
+    XCTAssertEqual(ItemSuggestionStore.Entry(argument: ["name": "Brot"]), .init(name: "Brot"))
+    XCTAssertNil(ItemSuggestionStore.Entry(argument: ["synonyms": ["Möhren"]]))
+    XCTAssertNil(ItemSuggestionStore.Entry(argument: "Brot"))
+  }
+
+  func testASynonymFindsItsItem() async throws {
+    let store = suggestionStore()
+    store.save([.init(name: "Karotten", synonyms: ["Möhren"]), .init(name: "Milch")])
+    let query = ItemSuggestionQuery(store: store)
+    let found = try await query.entities(matching: "möhren")
+    XCTAssertEqual(found.map(\.id), ["Karotten"], "the household's own name goes to voice")
+    let byId = try await query.entities(for: ["Karotten"])
+    XCTAssertEqual(byId.first?.synonyms, ["Möhren"])
+    let suggested = try await query.suggestedEntities()
+    XCTAssertEqual(suggested.map(\.id), ["Karotten", "Milch"])
   }
 }
 
-/// The phrases in HummlistShortcuts against the AppShortcuts.strings the app ships (a string
-/// catalog needs deployment target 17): each one is translated to en and de, keeps the app name,
-/// and has at most one parameter.
+final class OpenListIntentTests: XCTestCase {
+  func testItOpensTheListTheWayAWidgetTapDoes() {
+    XCTAssertEqual(OpenListIntent.list.absoluteString, "hummlist-widget://open/?homeWidget")
+    let schemes = (Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? [])
+      .flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] }
+    XCTAssertTrue(schemes.contains("hummlist-widget"), "the app answers its own link")
+  }
+
+  @available(*, deprecated)
+  func testItIsTheOnlyIntentThatBringsTheAppForward() {
+    XCTAssertTrue(OpenListIntent.openAppWhenRun)
+    XCTAssertFalse(AddItemsIntent.openAppWhenRun)
+    XCTAssertFalse(ReadListIntent.openAppWhenRun)
+  }
+}
+
+/// The phrases in HummlistShortcuts against Runner/AppShortcuts.xcstrings (job 97): each one has en
+/// and de variants that name the app once and keep its one parameter.
 final class AppShortcutPhraseTests: XCTestCase {
   private let runner = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Runner")
@@ -463,21 +545,60 @@ final class AppShortcutPhraseTests: XCTestCase {
     return pattern.matches(in: phrase, range: range).map { String(phrase[Range($0.range, in: phrase)!]) }.sorted()
   }
 
-  func testEveryPhraseIsTranslatedToEnglishAndGerman() throws {
+  /// The phrase sets per language of Runner/AppShortcuts.xcstrings, by Swift phrase.
+  private func catalog(_ lang: String) throws -> [String: [String]] {
+    struct Catalog: Decodable {
+      struct Entry: Decodable { let localizations: [String: Localization] }
+      struct Localization: Decodable { let stringSet: StringSet? }
+      struct StringSet: Decodable { let values: [String] }
+      let strings: [String: Entry]
+    }
+    let data = try Data(contentsOf: runner.appendingPathComponent("AppShortcuts.xcstrings"))
+    return try JSONDecoder().decode(Catalog.self, from: data).strings
+      .mapValues { $0.localizations[lang]?.stringSet?.values ?? [] }
+  }
+
+  func testEveryPhraseHasEnglishAndGermanVariantsThatNameTheApp() throws {
     let phrases = try codePhrases()
-    XCTAssertGreaterThanOrEqual(phrases.count, 10)
+    XCTAssertGreaterThanOrEqual(phrases.count, 3)
     for phrase in phrases {
-      XCTAssertTrue(phrase.contains("${applicationName}"), phrase)
       XCTAssertLessThanOrEqual(placeholders(phrase).filter { $0 != "${applicationName}" }.count, 1, phrase)
     }
     for lang in ["en", "de"] {
-      let path = try XCTUnwrap(
-        Bundle.main.path(forResource: "AppShortcuts", ofType: "strings", inDirectory: nil, forLocalization: lang),
-        "the app ships \(lang).lproj/AppShortcuts.strings")
-      let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String], lang)
-      XCTAssertEqual(Set(table.keys), Set(phrases), "\(lang) holds exactly the code's phrases")
-      for (phrase, value) in table {
-        XCTAssertEqual(placeholders(value), placeholders(phrase), "\(lang): \(value)")
+      let sets = try catalog(lang)
+      for phrase in phrases {
+        let values = sets[phrase] ?? []
+        XCTAssertFalse(values.isEmpty, "\(lang) has no phrases for \(phrase)")
+        for value in values {
+          XCTAssertEqual(value.components(separatedBy: "${applicationName}").count, 2, "\(lang): \(value)")
+          XCTAssertEqual(placeholders(value), placeholders(phrase), "\(lang): \(value)")
+        }
+      }
+      let all = phrases.flatMap { sets[$0] ?? [] }.map { $0.lowercased() }
+      XCTAssertEqual(Set(all).count, all.count, "\(lang) says no phrase twice")
+    }
+    XCTAssertFalse(
+      FileManager.default.fileExists(atPath: runner.appendingPathComponent("de.lproj/AppShortcuts.strings").path),
+      "the catalog replaced the .strings tables")
+  }
+
+  func testTheNegativePhrasesNeverNameTheApp() throws {
+    let source = try intentsSource()
+    let start = try XCTUnwrap(source.range(of: "static var negativePhrases"))
+    let end = try XCTUnwrap(source.range(of: "\n  }\n", range: start.upperBound..<source.endIndex))
+    let block = String(source[start.upperBound..<end.lowerBound])
+    let negatives = try NSRegularExpression(pattern: #""([^"\n]+)""#)
+      .matches(in: block, range: NSRange(block.startIndex..., in: block))
+      .map { String(block[Range($0.range(at: 1), in: block)!]) }
+    XCTAssertFalse(negatives.isEmpty)
+    for lang in ["en", "de"] {
+      let sets = try catalog(lang)
+      for negative in negatives {
+        let values = try XCTUnwrap(sets[negative], "\(lang) lacks the negative \(negative)")
+        XCTAssertFalse(values.isEmpty, negative)
+        for value in values {
+          XCTAssertFalse(value.lowercased().contains("hummlist") || value.contains("${applicationName}"), value)
+        }
       }
     }
   }
@@ -496,8 +617,12 @@ final class AppShortcutPhraseTests: XCTestCase {
       let table = try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String], lang)
       names[lang] = try variables.map { try XCTUnwrap(table[$0], "\(lang) lacks \($0)") }
     }
-    XCTAssertTrue(names["de"]!.contains("Hummliste"), "German Siri writes the name as one German word")
-    XCTAssertNotEqual(names["de"], names["en"])
+    for name in names.values.joined() {
+      XCTAssertNotEqual(name.lowercased(), "humm", "the brand is never Humm alone")
+    }
+    for name in names["de"]! {
+      XCTAssertFalse(name.lowercased().hasSuffix("liste"), "\(name): „zur … Liste“ is Reminders' grammar (job 97)")
+    }
   }
 
   private func table(_ name: String, _ lang: String) throws -> [String: String] {
@@ -508,12 +633,13 @@ final class AppShortcutPhraseTests: XCTestCase {
   }
 
   /// German Siri hands "Füge X zur <…>liste hinzu" and "Einkaufsliste" to Reminders, and a bare
-  /// "Auf meine Hummlist" is a fragment of that grammar (job 92).
+  /// "Auf meine Hummlist" is a fragment of that grammar (jobs 92, 97).
   func testGermanPhrasesStayOutOfRemindersGrammar() throws {
     let prepositions: Set<String> = ["auf", "zu", "zur", "zum", "in", "im", "an", "mit", "für"]
-    for phrase in try table("AppShortcuts", "de").values {
+    let sets = try catalog("de")
+    for phrase in try codePhrases().flatMap({ sets[$0] ?? [] }) {
       XCTAssertTrue(phrase.contains("${applicationName}"), phrase)
-      XCTAssertFalse(phrase.lowercased().contains("einkaufsliste"), phrase)
+      XCTAssertFalse(phrase.lowercased().contains("liste"), phrase)
       let first = phrase.split(separator: " ").first.map { $0.lowercased() } ?? ""
       if prepositions.contains(first) {
         XCTAssertFalse(phrase.hasSuffix("${applicationName}"), "\(phrase) is a fragment without a verb")
@@ -537,22 +663,26 @@ final class AppShortcutPhraseTests: XCTestCase {
     let entries = try XCTUnwrap(
       Bundle.main.object(forInfoDictionaryKey: "INAlternativeAppNames") as? [[String: String]])
     XCTAssertLessThanOrEqual(entries.count, 3)
+    XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleSpokenName") as? String, "Hummlist")
     for lang in ["en", "de", "Base"] {
       let strings = try table("InfoPlist", lang)
       for entry in entries {
         let hint = try XCTUnwrap(entry["INAlternativeAppNamePronunciationHint"], "\(entry)")
         XCTAssertFalse((strings[hint] ?? "").isEmpty, "\(lang) lacks \(hint)")
       }
-      XCTAssertEqual(strings["CFBundleSpokenName"], "Humm List", lang)
+      XCTAssertEqual(strings["CFBundleSpokenName"], "Hummlist", lang)
       XCTAssertFalse((strings["NSSiriUsageDescription"] ?? "").isEmpty, "\(lang) lacks NSSiriUsageDescription")
     }
   }
 
-  func testAtMostTenAppShortcuts() throws {
+  func testAddReadAndOpenAreTheAppShortcuts() throws {
     let source = try intentsSource()
     let count = source.components(separatedBy: "AppShortcut(\n").count - 1
-    XCTAssertGreaterThan(count, 0)
-    XCTAssertLessThanOrEqual(count, 10)
+    XCTAssertEqual(count, 3)
+    XCTAssertEqual(HummlistShortcuts.appShortcuts.count, 3, "Apple allows at most ten")
+    for intent in ["AddItemsIntent()", "ReadListIntent()", "OpenListIntent()"] {
+      XCTAssertTrue(source.contains("intent: \(intent)"), intent)
+    }
   }
 
   func testTheAppShipsGermanAndEnglishStrings() {

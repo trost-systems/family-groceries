@@ -26,11 +26,16 @@ base="${1:-origin/main}"
 if ! git rev-parse -q --verify "$base^{commit}" >/dev/null && [[ "$base" == origin/main ]]; then
   git fetch -q --no-tags --depth=1 origin main:refs/remotes/origin/main
 fi
+log "iOS deployment target"
+scripts/ios-deployment-target.py
+python3 scripts/ios-deployment-target-test.py
 log "Siri phrases"
 deno run --allow-read scripts/siri-phrases.ts
 log "SiriKit example phrases"
 scripts/siri-vocabulary.py app/ios
 python3 scripts/siri-vocabulary-test.py
+log "App Shortcuts bundle check"
+python3 scripts/app-shortcuts-bundle-test.py
 
 log "AI brand names"
 deno run --allow-read scripts/brand-names.ts

@@ -49,15 +49,19 @@ void main() {
     expect(await const MethodSiriChannel().read(), isNull);
   });
 
-  test('suggestions sends at most 50 names', () async {
+  test('suggestions sends at most 50 items with their synonyms', () async {
     await const MethodSiriChannel().suggestions([
-      for (var i = 0; i < 60; i++) 'n$i',
+      const SiriSuggestion('Karotten', synonyms: ['Möhren']),
+      for (var i = 0; i < 60; i++) SiriSuggestion('n$i'),
     ]);
-    expect(
-      ((calls.single.arguments as Map<Object?, Object?>)['names']! as List)
-          .length,
-      50,
-    );
+    final items =
+        (calls.single.arguments as Map<Object?, Object?>)['items']! as List;
+    expect(items, hasLength(50));
+    expect(items.first, {
+      'name': 'Karotten',
+      'synonyms': ['Möhren'],
+    });
+    expect(items.last, {'name': 'n48', 'synonyms': <String>[]});
   });
 
   test('clear', () async {

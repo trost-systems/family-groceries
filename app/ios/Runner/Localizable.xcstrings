@@ -65,6 +65,38 @@
         }
       }
     },
+    "Open Hummlist": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hummlist öffnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Hummlist"
+          }
+        }
+      }
+    },
+    "Opens your household's Hummlist.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet die Hummlist deines Haushalts."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your household's Hummlist."
+          }
+        }
+      }
+    },
     "Read my Hummlist": {
       "localizations": {
         "de": {

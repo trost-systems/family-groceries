@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_suggestions.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,14 +16,24 @@ class Lists() extends Cubit<ListState> {
   void set(ListState state) => emit(state);
 }
 
-Item item(String name, ItemStatus status, {int boughtDay = 1}) => Item(
+Item item(
+  String name,
+  ItemStatus status, {
+  int boughtDay = 1,
+  String? canonicalKey,
+}) => Item(
   id: name,
   name: name,
   status: status,
   createdAt: DateTime(2026, 10),
   updatedAt: DateTime(2026, 10),
   boughtAt: status == ItemStatus.bought ? DateTime(2026, 10, boughtDay) : null,
+  canonicalKey: canonicalKey,
 );
+
+List<String> names(ListState state) => [
+  for (final suggestion in siriSuggestions(state)) suggestion.name,
+];
 
 ListState loaded({
   List<String> usuals = const [],
@@ -36,7 +47,7 @@ ListState loaded({
 void main() {
   test('usuals first, then the list, then the latest bought, once each', () {
     expect(
-      siriSuggestionNames(
+      names(
         loaded(
           usuals: ['Milch', 'Eier'],
           items: [
@@ -52,11 +63,35 @@ void main() {
   });
 
   test('at most 50 names', () {
-    final names = siriSuggestionNames(
+    final fifty = names(
       loaded(usuals: [for (var i = 0; i < 80; i++) 'Ding $i']),
     );
-    expect(names, hasLength(50));
-    expect(names.last, 'Ding 49');
+    expect(fifty, hasLength(50));
+    expect(fifty.last, 'Ding 49');
+  });
+
+  test("the household's other names for an item are its synonyms", () {
+    expect(
+      siriSuggestions(
+        loaded(
+          usuals: ['Karotten', 'Milch'],
+          items: [
+            item('Möhren', ItemStatus.active, canonicalKey: 'mohr'),
+            item('Karotten', ItemStatus.bought, canonicalKey: 'mohr'),
+            item('Mohrrüben', ItemStatus.bought, canonicalKey: 'mohr'),
+            item('Gelbe Rüben', ItemStatus.bought, canonicalKey: 'mohr'),
+            item('Milch', ItemStatus.bought, canonicalKey: 'milch'),
+            item('Brot', ItemStatus.active),
+          ],
+        ),
+      ),
+      [
+        const SiriSuggestion('Karotten', synonyms: ['Möhren', 'Mohrrüben']),
+        const SiriSuggestion('Milch'),
+        const SiriSuggestion('Brot'),
+      ],
+      reason: 'one suggestion per canonical key, at most two synonyms',
+    );
   });
 
   test('sends after a quiet moment, and only changes', () {

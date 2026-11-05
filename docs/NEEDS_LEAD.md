@@ -785,7 +785,9 @@ No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAutho
 
 - English "beer" is classified as produce (DECISIONS "Job 51" item 11). The household's category
   memory fixes it after one move.
-- iOS 15 and 16 get no native Siri. The Shortcut recipe stays for them.
+- Since job 97 the app needs iOS 17, so every iPhone that gets updates has native Siri. iPhones
+  on iOS 15 or 16 stay on the last build that supported them; the Shortcut recipe still works
+  there because it needs only Apple's Shortcuts app and an access key.
 
 
 ## Job 49: Hummlist Premium, yearly and Lifetime (2026-11-01)

@@ -1267,3 +1267,19 @@ the existing certificate. On an iPhone with Siri set to Deutsch (Deutschland):
 5. **German retest** on the first TestFlight build that contains #222, by the protocol in
    docs/SIRI_SHORTCUT.md „Gerätetest Deutsch“, before the `native-siri` hold ends. Record build
    number, transcript and outcome per phrase.
+
+## Job 97: Siri fix-now and iOS 17 (2026-11-04)
+
+Everything is built and checked on CI; only an iPhone can show what Siri hears. On the first
+TestFlight build that contains job 97 (it reaches TestFlight through the normal release pipeline
+after the lead merges; nothing was uploaded by this job):
+
+1. **Device test, German and English.** Run the table in docs/SIRI_SHORTCUT.md „Gerätetest (job
+   97)“ with Siri in Deutsch (Deutschland), then in English. Record build number, transcript
+   screenshot and outcome per phrase. Note especially how Siri writes the name: the German
+   alternative names (Humlist, Hamlist, Homlist) are educated guesses, and the lead swaps them
+   for what Siri actually writes, as long as it does not end in „Liste“.
+2. **Kurzbefehle app.** The Hummlist tile should list three actions now: „Zu Hummlist
+   hinzufügen“, „Meine Hummlist vorlesen“, „Hummlist öffnen“.
+3. **iPhones on iOS 15 or 16** no longer get updates. Nothing to do; they keep the last build and
+   the Shortcut recipe.

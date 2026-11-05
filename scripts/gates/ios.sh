@@ -19,14 +19,18 @@ for key in CFBundleShortVersionString CFBundleVersion; do
     { echo "ios: HomeWidget.appex $key is '$widget_value', the app's '$app_value'" >&2; exit 1; }
 done
 # Siri matches the App Shortcut phrases with the training Xcode writes into Metadata.appintents:
-# German must know the app name the way German Siri writes it, and no language may train an
-# unresolved InfoPlist.strings variable as the name (job 71).
+# German knows the app name the way German Siri may write it, but never as "… Liste", Reminders'
+# grammar (job 97), and no language may train an unresolved InfoPlist.strings variable as the
+# name (job 71).
 ssu=build/ios/iphonesimulator/Runner.app/Metadata.appintents/root.ssu.yaml
-grep -q Hummliste "$ssu" || { echo "ios: $ssu does not train the German app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
+grep -q Hamlist "$ssu" || { echo "ios: $ssu does not train the German alternative app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
+if grep -n -i -E "humm ?liste|ham liste" "$ssu"; then echo "ios: $ssu trains a German app name ending in Liste" >&2; exit 1; fi
 if grep -n HUMMLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
 # App Store Connect wants SiriKit example phrases in every language for each declared intent
 # (ITMS-90626): the built app must carry them, not only the source tree.
 "$REPO_ROOT/scripts/siri-vocabulary.py" build/ios/iphonesimulator/Runner.app
+# And the App Shortcuts Siri matches: Metadata.appintents and the de/en phrase sets (job 97).
+"$REPO_ROOT/scripts/app-shortcuts-bundle.py" build/ios/iphonesimulator/Runner.app
 xcrun --sdk iphonesimulator assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car >build/ios/assets.json
 # Each wanted asset needs a rendition whose JSON mentions every listed word (the appearance).
 python3 - build/ios/assets.json <<'PY'

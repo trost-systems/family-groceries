@@ -1,0 +1,200 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add ${item} to ${applicationName}": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Füge ${item} zu ${applicationName} hinzu",
+              "Füge ${item} zur ${applicationName} hinzu",
+              "Füge ${item} zu meiner ${applicationName} hinzu",
+              "Setz ${item} auf die ${applicationName}",
+              "Setz ${item} auf meine ${applicationName}",
+              "${applicationName}, füge ${item} hinzu"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Add ${item} to ${applicationName}",
+              "Add ${item} to my ${applicationName}",
+              "Put ${item} on ${applicationName}",
+              "Put ${item} on my ${applicationName}",
+              "${applicationName} add ${item}"
+            ]
+          }
+        }
+      }
+    },
+    "Add something to my shopping list": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Füge etwas zur Einkaufsliste hinzu",
+              "Setz etwas auf die Einkaufsliste",
+              "Füge etwas zu meiner Einkaufsliste hinzu"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Add something to my shopping list",
+              "Add to my shopping list",
+              "Add to my groceries list"
+            ]
+          }
+        }
+      }
+    },
+    "Add to ${applicationName}": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Füge etwas zu ${applicationName} hinzu",
+              "Füge etwas zur ${applicationName} hinzu",
+              "Füge etwas zu meiner ${applicationName} hinzu",
+              "Etwas auf ${applicationName} setzen",
+              "Etwas auf die ${applicationName} setzen",
+              "Etwas zur ${applicationName} hinzufügen",
+              "${applicationName}, füge etwas hinzu",
+              "${applicationName}, setz etwas drauf",
+              "Setz etwas auf die ${applicationName}",
+              "Setz etwas auf meine ${applicationName}",
+              "Schreib etwas auf die ${applicationName}",
+              "Mit ${applicationName} einkaufen"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Add to ${applicationName}",
+              "Add to my ${applicationName}",
+              "Add something to ${applicationName}",
+              "Add something to my ${applicationName}",
+              "${applicationName} add",
+              "${applicationName} add something",
+              "Put something on ${applicationName}",
+              "Put something on my ${applicationName}",
+              "Shop with ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Remind me to buy something": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Erinnere mich, etwas zu kaufen",
+              "Füge etwas zu meinen Erinnerungen hinzu"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Remind me to buy something",
+              "Add to my reminders"
+            ]
+          }
+        }
+      }
+    },
+    "Show my ${applicationName}": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Zeig meine ${applicationName}",
+              "Zeig mir meine ${applicationName}",
+              "Zeig die ${applicationName}",
+              "Öffne meine ${applicationName}",
+              "${applicationName} anzeigen"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Show my ${applicationName}",
+              "Show ${applicationName}",
+              "Show me my ${applicationName}",
+              "Open my ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "What's on my ${applicationName}": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Was steht auf meiner ${applicationName}",
+              "Was steht auf ${applicationName}",
+              "Was steht auf der ${applicationName}",
+              "Lies meine ${applicationName} vor",
+              "Lies die ${applicationName} vor",
+              "${applicationName}, was steht drauf",
+              "${applicationName}, was brauchen wir"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "What's on my ${applicationName}",
+              "What's on ${applicationName}",
+              "What's on the ${applicationName}",
+              "Read my ${applicationName}",
+              "Read ${applicationName}",
+              "${applicationName} what's on the list"
+            ]
+          }
+        }
+      }
+    },
+    "What's on my shopping list": {
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Was steht auf meiner Einkaufsliste",
+              "Lies meine Einkaufsliste vor"
+            ]
+          }
+        },
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "What's on my shopping list",
+              "Read my shopping list"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

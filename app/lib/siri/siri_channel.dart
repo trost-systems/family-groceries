@@ -39,11 +39,37 @@ abstract interface class SiriChannel() {
 
   Future<void> clear();
 
-  /// At most [maxSiriSuggestions] item names, nothing else.
-  Future<void> suggestions(List<String> names);
+  /// At most [maxSiriSuggestions] items, names and their synonyms only.
+  Future<void> suggestions(List<SiriSuggestion> items);
 }
 
-/// How many item names Siri keeps for its parameter phrase.
+/// One item Siri offers for "Add `<item>` to Hummlist", with the household's
+/// other names for it: names on its items that share the `canonical_key`
+/// ("Möhren" for "Karotten"), at most [maxSiriSynonyms].
+@immutable
+class const SiriSuggestion(
+  final String name, {
+  final List<String> synonyms = const [],
+}) {
+  Map<String, Object> toJson() => {'name': name, 'synonyms': synonyms};
+
+  @override
+  bool operator ==(Object other) =>
+      other is SiriSuggestion &&
+      other.name == name &&
+      listEquals(other.synonyms, synonyms);
+
+  @override
+  int get hashCode => Object.hash(name, Object.hashAll(synonyms));
+
+  @override
+  String toString() => 'SiriSuggestion($name, $synonyms)';
+}
+
+/// How many other names one suggestion carries.
+const maxSiriSynonyms = 2;
+
+/// How many items Siri keeps for its parameter phrase.
 const maxSiriSuggestions = 50;
 
 /// The channel on iOS, null on the web, Android and Linux.
@@ -84,8 +110,10 @@ class const MethodSiriChannel() implements SiriChannel {
   Future<void> clear() => _channel.invokeMethod<void>('clear');
 
   @override
-  Future<void> suggestions(List<String> names) => _channel.invokeMethod<void>(
-    'suggestions',
-    {'names': names.take(maxSiriSuggestions).toList()},
-  );
+  Future<void> suggestions(List<SiriSuggestion> items) =>
+      _channel.invokeMethod<void>('suggestions', {
+        'items': [
+          for (final item in items.take(maxSiriSuggestions)) item.toJson(),
+        ],
+      });
 }

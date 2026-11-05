@@ -1,9 +1,9 @@
 import AppIntents
 import Foundation
+import UIKit
 
 /// Adds what the user says to the household's list through `voice`. Runs in the background:
 /// the answer is Siri's dialog, the app never comes forward.
-@available(iOS 17.0, *)
 struct AddItemsIntent: AppIntent {
   static let title: LocalizedStringResource = "Add to Hummlist"
   static let description = IntentDescription("Adds items to your household's Hummlist.")
@@ -44,7 +44,6 @@ struct AddItemsIntent: AppIntent {
 }
 
 /// Reads the open items of the household's list (the server caps what it says).
-@available(iOS 17.0, *)
 struct ReadListIntent: AppIntent {
   static let title: LocalizedStringResource = "Read my Hummlist"
   static let description = IntentDescription("Reads the open items on your household's Hummlist.")
@@ -59,86 +58,119 @@ struct ReadListIntent: AppIntent {
   }
 }
 
-/// One of the household's usual items, the value of "Add <item> to Hummlist". The app hands
-/// the names over (`hummlist/siri` `suggestions`); its id is the name itself.
-@available(iOS 17.0, *)
+/// Opens the app on the list, for "Show my Hummlist". The one intent that needs the app in front.
+struct OpenListIntent: AppIntent {
+  static let title: LocalizedStringResource = "Open Hummlist"
+  static let description = IntentDescription("Opens your household's Hummlist.")
+
+  @available(iOS 26.0, *)
+  static var supportedModes: IntentModes { .foreground }
+
+  /// The link a widget tap opens (ListSnapshot.swift, lib/home_widget): the app goes to the list
+  /// from wherever it was.
+  static let list = URL(string: "hummlist-widget://open/?homeWidget")!
+
+  @MainActor
+  func perform() async throws -> some IntentResult {
+    _ = await UIApplication.shared.open(Self.list)
+    return .result()
+  }
+}
+
+/// Before iOS 26 `openAppWhenRun` is how an intent brings the app forward.
+@available(*, deprecated)
+extension OpenListIntent {
+  static var openAppWhenRun: Bool { true }
+}
+
+/// One of the household's known items, the value of "Add <item> to Hummlist". The app hands the
+/// names over (`hummlist/siri` `suggestions`); its id is the name itself. Its synonyms are the
+/// household's other names for the same item (the same `canonical_key`), so "Füge Möhren zu
+/// Hummlist hinzu" matches the "Karotten" the household usually buys.
 struct ItemSuggestion: AppEntity {
   static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Item")
   static let defaultQuery = ItemSuggestionQuery()
 
   let id: String
+  var synonyms: [String] = []
 
   var displayRepresentation: DisplayRepresentation {
-    DisplayRepresentation(stringLiteral: id)
+    DisplayRepresentation(
+      title: "\(id)", subtitle: nil, image: nil,
+      synonyms: synonyms.map { "\($0)" as LocalizedStringResource })
   }
 }
 
-@available(iOS 17.0, *)
 struct ItemSuggestionQuery: EntityStringQuery {
+  var store = ItemSuggestionStore()
+
   func entities(for identifiers: [String]) async throws -> [ItemSuggestion] {
-    identifiers.map(ItemSuggestion.init(id:))
+    let known = Dictionary(store.entries().map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+    return identifiers.map { ItemSuggestion(id: $0, synonyms: known[$0]?.synonyms ?? []) }
   }
 
   func entities(matching string: String) async throws -> [ItemSuggestion] {
-    ItemSuggestionStore().names()
-      .filter { $0.localizedCaseInsensitiveContains(string) }
-      .map(ItemSuggestion.init(id:))
+    store.entries()
+      .filter { entry in
+        ([entry.name] + entry.synonyms).contains { $0.localizedCaseInsensitiveContains(string) }
+      }
+      .map { ItemSuggestion($0) }
   }
 
   func suggestedEntities() async throws -> [ItemSuggestion] {
-    ItemSuggestionStore().names().map(ItemSuggestion.init(id:))
+    store.entries().map { ItemSuggestion($0) }
   }
 }
 
-/// The phrases. Each needs the app name, at most one parameter (an entity), and an entry in
-/// en.lproj and de.lproj AppShortcuts.strings (RunnerTests and scripts/siri-phrases.ts check
-/// that). A .strings table maps one phrase to one translation, so the German variants with an
-/// article ("zur Hummlist") come with English phrases of their own.
+extension ItemSuggestion {
+  init(_ entry: ItemSuggestionStore.Entry) {
+    self.init(id: entry.name, synonyms: entry.synonyms)
+  }
+}
+
+/// The phrases. Each Swift phrase is the key of a set of phrases per language in
+/// AppShortcuts.xcstrings (iOS 17 deployment target, job 97), so German says the same thing in as
+/// many ways as it needs. Each one names the app and has at most one parameter (an entity);
+/// RunnerTests and scripts/siri-phrases.ts check the catalog against this file.
 ///
-/// The phrases without an item come first: Siri then asks for the items, which works for any
+/// The phrase without an item comes first: Siri then asks for the items, which works for any
 /// item, while an `item` phrase matches only the names the app suggested. German phrases name the
 /// app first or as the object ("Hummlist, füge etwas hinzu"), never "Einkaufsliste" or a bare
 /// "auf meine Hummlist": those are Reminders' grammar, and Reminders wins (job 92).
-@available(iOS 17.0, *)
 struct HummlistShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: AddItemsIntent(),
       phrases: [
         "Add to \(.applicationName)",
-        "\(.applicationName) add",
-        "Add something to my \(.applicationName)",
-        "Shop with \(.applicationName)",
-        "Add something to \(.applicationName)",
-        "Add to my \(.applicationName)",
-        "Put something on \(.applicationName)",
-        "Put something on my \(.applicationName)",
-        "\(.applicationName) add something",
         "Add \(\.$item) to \(.applicationName)",
-        "Add \(\.$item) to my \(.applicationName)",
-        "Put \(\.$item) on \(.applicationName)",
-        "\(.applicationName) add \(\.$item)",
-        "Put \(\.$item) on my \(.applicationName)",
       ],
       shortTitle: "Add to Hummlist",
       systemImageName: "cart.badge.plus")
     AppShortcut(
       intent: ReadListIntent(),
-      phrases: [
-        "\(.applicationName) what's on the list",
-        "What's on my \(.applicationName)",
-        "What's on \(.applicationName)",
-        "Read my \(.applicationName)",
-        "Read \(.applicationName)",
-        "What's on the \(.applicationName)",
-      ],
+      phrases: ["What's on my \(.applicationName)"],
       shortTitle: "Read my Hummlist",
       systemImageName: "list.bullet")
+    AppShortcut(
+      intent: OpenListIntent(),
+      phrases: ["Show my \(.applicationName)"],
+      shortTitle: "Open Hummlist",
+      systemImageName: "checklist")
+  }
+
+  /// Requests for the system's own lists. Siri never hands these to Hummlist, whatever its fuzzy
+  /// matching makes of them.
+  static var negativePhrases: NegativeAppShortcutPhrases {
+    NegativeAppShortcutPhrases(phrases: [
+      "Add something to my shopping list",
+      "What's on my shopping list",
+      "Remind me to buy something",
+    ])
   }
 }
 
 /// The same sentence as `full` (HomePod) and `supporting` (iPhone): see VoiceResult.answer.
-@available(iOS 17.0, *)
 private func dialog(_ answer: String) -> IntentDialog {
   IntentDialog(full: "\(answer)", supporting: "\(answer)")
 }
