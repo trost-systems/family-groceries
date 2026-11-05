@@ -455,10 +455,7 @@ class const _Stepper({
   /// The theme's outlined button: a raised hex with the contour on its
   /// edge, sinking when pressed.
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
-    // The icon names the button; the tooltip only shows it.
-    excludeFromSemantics: true,
+  Widget build(BuildContext context) => SizedBox(
     child: OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
