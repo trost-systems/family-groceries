@@ -50,7 +50,7 @@ case " $* " in
     FG_E2E_INTEGRATION_LOCK=1 npx playwright test "$@"
     ;;
   *)
-    npx playwright test "$@"
+    "$REPO_ROOT/scripts/e2e-pause-122.sh" --stop "${FG_PAUSE_STOP:-2}" --run "${FG_PAUSE_RUN:-3}" --burn "${FG_PAUSE_BURN:-2}" -- npx playwright test "$@"
     if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
       log "playwright: integration-lock.spec.ts alone"
       FG_E2E_INTEGRATION_LOCK=1 npx playwright test tests/integration-lock.spec.ts
