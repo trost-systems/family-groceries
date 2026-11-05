@@ -33,7 +33,7 @@ That is likely also why job 25's StoreKit tests never ran in CI.
 **Also fixed.** `LifetimeStoreKitTests` expected Lifetime at 9.99; now 29.99.
 
 **PR.** #213 is rebased onto main after #217 merged (84e8da41); one commit, pushed with
-`scripts/push-pr.sh`. Not merged: lead review.
+`scripts/push-pr.sh`. Merged 2026-11-04 (1c3e8185).
 
 **StoreKit retry.** The first retake (run 41790415523) got no StoreKit answer within the page's
 10 s timeout right after the simulator booted, and the guard stopped it. The entrypoint now asks

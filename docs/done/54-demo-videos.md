@@ -4,8 +4,8 @@ Three silent, captioned loops fill job 53's video slots on `/de` and `/en`: `add
 (add two items, tick them off), `household-sync` (three members, live sync) and `mcp-chat` (a
 generic AI chat adds and ticks items through Hummlist's MCP server). Each comes in German and
 English, wide (1920 × 1080) and compact (1080 × 1350), as WebM (VP9) and MP4 (H.264), with a
-poster and WebVTT captions: 24 video files of 0.28 to 0.45 MB, 9 MB together. The PR targets
-job 53's branch and is not merged (Peter approves 53 and 54 together).
+poster and WebVTT captions: 24 video files of 0.28 to 0.45 MB, 9 MB together. PR #163, merged
+2026-11-01 (019de36d) after Peter approved 53 and 54 together.
 
 ## What is real
 

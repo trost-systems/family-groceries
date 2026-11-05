@@ -1,6 +1,6 @@
 # Job 87: PW-P4 „Haushalt“ as the real Hummlist Premium page (2026-11-03)
 
-**Needs Legal Review sign-off before merge** (PR #217, NEEDS_LEAD "Job 87": every paywall string DE and EN,
+PR #217, merged 2026-11-04 (84e8da41). It needed Legal Review sign-off before merge (NEEDS_LEAD "Job 87": every paywall string DE and EN,
 questions Q1, Q3, Q4, Q6, the renewal price in the terms, Restore). The beta texts are Legal's final
 texts (Peter, 2026-11-03 20:32), used verbatim.
 
@@ -94,7 +94,7 @@ texts (Peter, 2026-11-03 20:32), used verbatim.
 
 ## Not done or blocked
 
-- Merge waits for Legal Review sign-off and the lead review. No flags, switches, defines, prices,
+- Merged 2026-11-04 (84e8da41) after Legal Review sign-off and the lead review. No flags, switches, defines, prices,
   store products or legal pages changed.
 - Which free-unlock title shows when (beta vs testers/app review, by `premium_offer`) is my call; NEEDS_LEAD asks the lead to confirm.
 - Real store purchases can't be driven here (no store sandbox). Job 86 (#213) recaptures the iOS

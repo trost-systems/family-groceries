@@ -78,5 +78,5 @@ PR [#207](https://github.com/trost-systems/family-groceries/pull/207). Peter's f
 
 - A signed-out deep link to `/edit/...` lands on the list after sign-in, not on the stores screen
   (`/edit` is not an app link). Not a regression: the old screens had no URL at all.
-- Nothing blocked. Merge waits for the lead's review and green CI (brief); the NEEDS_LEAD items
+- Nothing blocked. PR #207, merged 2026-11-03 (72dfed55); the NEEDS_LEAD items
   are reversible calls, not blockers.

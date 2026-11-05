@@ -97,7 +97,7 @@ column quantity`, and a migration older than main's newest.
   the function, and it does not follow a dialog that a helper opens. Both
   limits are now in the rule comment and DECISIONS 12.4. DECISIONS 12.3 and
   12.7 cover the new shapes.
-- **Job 11.** #20 is still open. It rebased onto f6f03f8 (BOARD 21:02) and
+- **Job 11.** #20 was still open then (merged 2026-10-25, b253ed7f). It rebased onto f6f03f8 (BOARD 21:02) and
   folds the `lint` job into its gate, keeping `lint` in `ci-ok`'s needs
   (BOARD 20:42).
 

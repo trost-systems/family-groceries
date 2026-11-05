@@ -240,7 +240,8 @@ jobs:
           bundler-cache: true
       - run: scripts/gates/fastlane.sh
 
-  # Job 4b: the app's own Kotlin and Swift (the on-device speech check) compile.
+  # Job 4b: the app's own Kotlin and Swift (the on-device speech check) compile; job 115: the
+  # Kotlin's JVM unit tests (the home widget's payload parser) run.
   android:
     needs: changes
     if: needs.changes.outputs.native == 'true'

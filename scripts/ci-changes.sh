@@ -2,7 +2,8 @@
 # Which CI gates a change needs, as key=value lines for $GITHUB_OUTPUT:
 #   heavy     every gate but gitleaks and lint; false only when every file is documentation
 #   native    android and ios; only when the native projects or pubspec or these gates change. They compile the
-#             app's Swift and Kotlin and the plugin registrant from pubspec; the Dart in app/lib
+#             app's Swift and Kotlin and the plugin registrant from pubspec, and android runs
+#             the Kotlin's JVM unit tests; the Dart in app/lib
 #             is compiled by the flutter, web-prod and e2e gates already.
 #   fastlane  only when app/fastlane/ or app/Gemfile* changes
 # Without a range (a push to main, a manual run) and when the CI definition itself changes

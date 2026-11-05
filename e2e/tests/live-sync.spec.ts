@@ -28,7 +28,7 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await openEdit(peter, 'Bananen');
   await typeInto(editField(peter, 'Menge'), '6');
   await saveEdit(peter);
-  // "Neu" stays on a partner's item until it was on screen for 3 s, which this test may not reach.
+  // "Neu" (read last) stays on a partner's item until it was on screen for 3 s, which this test may not reach.
   await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen 6( Neu)?$/, { timeout }));
 
   await openEdit(lea, 'Windeln');

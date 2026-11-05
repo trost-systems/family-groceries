@@ -1,6 +1,6 @@
 # Job 90: category names unique ignoring case and spacing
 
-PR #220, not merged (lead review).
+PR #220, merged 2026-11-05 (29d505fb).
 
 Bug (Peter, 2026-11-03 20:07): a household could have both „baby“ and „Baby“ as categories.
 

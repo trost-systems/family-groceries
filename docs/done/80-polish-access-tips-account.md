@@ -47,4 +47,5 @@ docs/screenshots/80/: `access-connected-app.png`, `access-app-details.png`,
 ## Open
 - Legal Review: the privacy policy may need a line about the device label (NEEDS_LEAD "Job 80").
   Legal texts are unchanged.
-- An "Anpassen" tip waits for job 78's button. Add it to `tips` once that lands.
+- An "Anpassen" tip waits for job 78's button. The button landed (#207, merged 2026-11-03,
+  72dfed55); the tip is not in `tips` yet and needs new copy.

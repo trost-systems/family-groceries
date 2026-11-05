@@ -1,8 +1,8 @@
 # Job 33b: legal fixes in the app
 
-PR #107 (branch `job/33b-legal-app`). **Not merged:** the PR waits,
+PR #107 (branch `job/33b-legal-app`), merged 2026-10-30 (e59fa634). It waited,
 ready to merge, for Peter's legal OK. A merge ships TestFlight and Play
-internal builds, so the Hummlist Lead merges it after that OK, together with
+internal builds, so the Hummlist Lead merged it after that OK, together with
 33a (the privacy pages). Decisions: `docs/DECISIONS.md`, "Job 33b". Peter's
 steps: `docs/NEEDS_PETER.md`, "Job 33b".
 
@@ -54,6 +54,6 @@ steps: `docs/NEEDS_PETER.md`, "Job 33b".
 
 ## Open and follow-ups
 
-- Wording approved by Peter 2026-10-30; the lead merges #107, then 33a (#105).
+- Wording approved by Peter 2026-10-30; the lead merged #107, then 33a (#105).
 - H-21: two switches for usage data and error reports (optional, not built).
 - Peter: H-11 (where backups live), H-14 (Play payments address 7 → 5).

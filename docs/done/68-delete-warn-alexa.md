@@ -1,6 +1,6 @@
 # Job 68: account deletion Premium warning, one read-back sentence per outcome (2026-11-02)
 
-PR #191 (not merged: PR only).
+PR #191, merged 2026-11-02 (5946a665).
 
 ## Built
 

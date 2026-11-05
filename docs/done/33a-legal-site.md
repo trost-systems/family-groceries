@@ -1,7 +1,7 @@
 # Job 33a: privacy policy on hummlist.com, corrected deletion page
 
-PR #105, ready; Peter approved the wording 2026-10-30 07:51, the lead merges (labels `needs-peter-legal-ok`,
-`do-not-merge`). Decisions: DECISIONS "Job 33a". Peter's steps: NEEDS_PETER
+PR #105, merged 2026-10-30 (d1cb76e8) after Peter approved the wording 2026-10-30 07:51.
+Decisions: DECISIONS "Job 33a". Peter's steps: NEEDS_PETER
 "Job 33a".
 
 ## What was built

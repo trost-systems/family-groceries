@@ -1,6 +1,6 @@
 # Job 63: Home Screen widgets (iOS WidgetKit, Android Glance), 2026-11-01
 
-PR #185, merged to main on 2026-11-02 (88e94894). The Apple portal steps under "Not proven / blocked" still apply.
+PR #185, merged 2026-11-02 (88e94894). The Apple portal steps under Blocked still apply.
 
 ## Built
 

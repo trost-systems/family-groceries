@@ -1,7 +1,7 @@
 # Job 72: Alexa link data cleanup (Legal N-24, N-28) and fact answers
 
 Branch `job/72-alexa-data-cleanup`, runner hz (ports 582xx, project `family-groceries-72`).
-PR only: not merged, nothing applied to the hosted project, no flags flipped, site legal texts
+PR #195, merged 2026-11-02 (53d107d5). Nothing applied to the hosted project, no flags flipped, site legal texts
 untouched.
 
 ## What was built
