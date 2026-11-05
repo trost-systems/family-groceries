@@ -33,9 +33,10 @@ class const Category({
 /// table keeps longer names households already had.
 const maxStoreNameLength = 40;
 
-/// The identity of a store name, as `public.store_name_key`: trimmed, inner
-/// whitespace collapsed, case folded. Two stores never share it.
-String storeNameKey(String name) =>
+/// The identity of a store or category name, as `public.store_name_key` and
+/// `public.category_name_key`: trimmed, inner whitespace collapsed, case
+/// folded. Two stores, or two categories, of a household never share it.
+String nameKey(String name) =>
     name.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
 
 // Logos: retailer logos wait for a legal check (docs/DECISIONS.md, "Job 58");
@@ -130,8 +131,8 @@ class const Catalog({
 
   /// The store with [name], in any case or spacing.
   Store? storeNamed(String name) {
-    final key = storeNameKey(name);
-    return stores.where((s) => storeNameKey(s.name) == key).firstOrNull;
+    final key = nameKey(name);
+    return stores.where((s) => nameKey(s.name) == key).firstOrNull;
   }
 
   /// [store] added after the others; its layout follows the route order.
@@ -153,9 +154,7 @@ class const Catalog({
             id: s.id,
             name: name,
             sortOrder: s.sortOrder,
-            seedKey: storeNameKey(name) == storeNameKey(s.name)
-                ? s.seedKey
-                : null,
+            seedKey: nameKey(name) == nameKey(s.name) ? s.seedKey : null,
           )
         else
           s,

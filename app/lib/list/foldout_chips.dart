@@ -334,7 +334,7 @@ class _StoreOptionsState() extends State<_StoreOptions> {
     final w = widget;
     final l10n = AppLocalizations.of(context);
     final searching = w.catalog.stores.length > storeSearchThreshold;
-    final query = storeNameKey(_search.text);
+    final query = nameKey(_search.text);
     final naming = _naming;
     return Padding(
       padding: const EdgeInsets.only(top: 10),
@@ -361,7 +361,7 @@ class _StoreOptionsState() extends State<_StoreOptions> {
                   onTap: () => w.onPick(null),
                 ),
               for (final s in w.catalog.stores)
-                if (storeNameKey(s.name).contains(query))
+                if (nameKey(s.name).contains(query))
                   _Option(
                     key: ValueKey('store-option-${s.id}'),
                     label: s.name,

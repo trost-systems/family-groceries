@@ -151,8 +151,10 @@ select is(
   array['drugstore', 'pantry', 'sweets', 'household', 'drinks', null, 'other', 'produce', 'bakery', 'chilled', 'meat', 'frozen'],
   'before Sonstiges in a store too, since Sonstiges is not last there'
 );
-select throws_ok(
-  $$ select public.create_category((select id from hc), 'Baby') $$, '23505', null, 'category names are unique'
+select is(
+  (public.create_category((select id from hc), 'Baby')).id,
+  (select id from public.categories where household_id = (select id from hc) and name = 'Baby'),
+  'category names are unique: an existing name returns that category'
 );
 select throws_ok(
   $$ select public.reorder_categories((select id from hc), array[(select id from baby)]) $$,

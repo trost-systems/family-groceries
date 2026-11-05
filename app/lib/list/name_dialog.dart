@@ -5,13 +5,16 @@ import 'package:flutter/material.dart';
 
 /// Asks for a name and hands it to [save], trimmed. The dialog stays open
 /// while [save] runs and when it answers false (a name taken, offline), so
-/// the name can be fixed. An empty name closes it without saving.
+/// the name can be fixed. [validate] answers why a name cannot be saved
+/// (taken), shown under the field, or null; a snackbar would sit behind the
+/// dialog's barrier. An empty name closes it without saving.
 Future<void> showNameDialog(
   BuildContext context, {
   required String title,
   required String confirm,
   required String label,
   required Future<bool> Function(String name) save,
+  String? Function(String name)? validate,
   String initial = '',
   int maxLength = 60,
 }) => showDialog<void>(
@@ -21,6 +24,7 @@ Future<void> showNameDialog(
     confirm: confirm,
     label: label,
     save: save,
+    validate: validate,
     initial: initial,
     maxLength: maxLength,
   ),
@@ -31,6 +35,7 @@ class const _NameDialog({
   required final String confirm,
   required final String label,
   required final Future<bool> Function(String name) save,
+  required final String? Function(String name)? validate,
   required final String initial,
   required final int maxLength,
 }) extends StatefulWidget {
@@ -41,6 +46,7 @@ class const _NameDialog({
 class _NameDialogState() extends State<_NameDialog> {
   late final _name = TextEditingController(text: widget.initial);
   var _busy = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -55,6 +61,10 @@ class _NameDialogState() extends State<_NameDialog> {
     final name = _name.text.trim();
     if (name.isEmpty) {
       Navigator.of(context).pop();
+      return;
+    }
+    if (widget.validate?.call(name) case final error?) {
+      setState(() => _error = error);
       return;
     }
     setState(() => _busy = true);
@@ -81,7 +91,16 @@ class _NameDialogState() extends State<_NameDialog> {
         readOnly: _busy,
         maxLength: widget.maxLength,
         textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(labelText: widget.label),
+        decoration: InputDecoration(
+          labelText: widget.label,
+          errorText: _error,
+          errorMaxLines: 3,
+        ),
+        onChanged: (_) {
+          if (_error != null) {
+            setState(() => _error = null);
+          }
+        },
         onSubmitted: (_) => unawaited(_submit()),
       ),
       actions: [

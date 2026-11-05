@@ -7661,3 +7661,75 @@ The attempt log, the conflict rule and the harness are in `docs/hillclimb/hc-syn
 - **`flutter test` runs seeds 1 to 100.** About 5 s; on main before this job it failed on seeds
   9, 15, 18, 40, 41 and more. The scored run, the sweeps and the opt-in models (`FUZZ_MODEL=join-gap`)
   stay behind environment variables.
+## Job 90: category names unique ignoring case and spacing, 2026-11-03
+
+Bug (Peter, 2026-11-03): a household could have both „baby“ and „Baby“. The unique constraint
+was on the exact name, and the app compared exact names.
+
+1. **The key is the app's `nameKey`.** `public.category_name_key(name)` collapses every whitespace
+   run (tabs and newlines too) to one space, then trims, then folds case. `store_name_key` (Job 58)
+   trims first, and `btrim` trims only spaces, so a leading tab would survive there as a space;
+   the category key collapses first so it matches Dart's `trim()` (review addendum 2); a unique index on
+   `(household_id, category_name_key(name))` enforces it for every writer (the app's RPC, the
+   app's direct rename `update`, the public API, a raw insert). The old exact-name constraint stays:
+   it is implied by the new index and dropping it would buy nothing. The app shares one Dart
+   `nameKey` for stores and categories (`storeNameKey` renamed).
+2. **Create returns, rename refuses.** `create_category` with a name the household has, in any case
+   or spacing, returns that category and changes nothing; a new name is stored trimmed with its
+   spaces collapsed. A rename onto another category's name fails with 23505, which the app shows as
+   „Eine Kategorie „Baby“ gibt es schon.“ / "A category named “Baby” already exists." No merge
+   offer on rename: deleting a category with „Artikel verschieben nach“ already merges two
+   categories on purpose, and a rename that silently merged would surprise. A category may change
+   its own case.
+3. **The dialog checks first, and says it in the dialog.** The add and rename dialogs under
+   Liste → Anpassen validate the name against the catalog before they save (`showNameDialog`'s
+   new `validate`): a name another category has, in any case or spacing, as stored or as shown,
+   keeps the dialog open with the message under the field, naming the existing spelling. A
+   snackbar was the old way, but with the dialog open it sits behind the modal barrier: dimmed and
+   out of the accessibility tree, so a refused rename looked like nothing happened (seen in the
+   e2e run). The store rename on the same screen had that problem too and gets the same check
+   („Einen Laden „Lidl“ gibt es schon.“ under the field). Comparing shown names as well closes a
+   gap in English: an unrenamed seed shows as "Drinks", so a rename to "drinks" is refused too. The
+   cubit sends trimmed, collapsed names and keeps no check of its own; the server stays the
+   authority for a race between two devices (a refused rename then shows the snackbar as before,
+   a duplicate create returns the existing category).
+   A category rename that fails for any other reason (offline) closes its dialog, as before this
+   job, so the „Die Änderung konnte nicht gespeichert werden.“ snackbar is not hidden behind it.
+4. **Merge rule for existing duplicates: the fallback, else the oldest.** Per household and name key
+   the keeper is „Sonstiges“ (seed `other`) if it is in the group, since it must never be deleted,
+   else the oldest by `created_at` (ties: `sort_order`, then id). Seeded categories are created with
+   the household, so they win over a later own spelling. Not "the one with most items": item counts
+   change by the minute, so the result would depend on when the migration ran, and the oldest is
+   the one whose place in the route and the stores the household arranged longest ago. The keeper
+   keeps its id, name, route place and store places.
+5. **What moves to the keeper** (`public.merge_duplicate_categories()`, one statement set per
+   merged category, all in the migration's transaction): items, open and ticked (learning off, so
+   the move teaches the classifier nothing); `item_events.category_id` (history, no FK);
+   store layout rows (a store that had only the duplicate gives the keeper that place; where both
+   had a row the keeper keeps its place and is shown if either was shown, so no item disappears
+   from a store); `category_memory` (corrections for the same word added up; the undo fields of a
+   combined row cleared, the 10-minute undo of one add cannot apply to a sum); the duplicate's seed
+   key and absorbed seed keys go to the keeper's `absorbed_seed_keys`, as `delete_category` does,
+   so the classifier's words for that seed still land: only real keys, each once, never the
+   keeper's own seed key (a duplicate without a seed key adds nothing; `array[null]` would add a
+   NULL element, and `= any(...)` over it answers NULL instead of false). Then the duplicate is deleted. Nothing else
+   references a category (`feedback.category`, `classifier_terms.category` and `items.categorized_via`
+   are text about seeds or feedback types, not category ids). The function returns how many it
+   merged; a second run merges none. Only its owner, postgres, runs it (the migration): execute
+   is revoked from public, anon, authenticated and service_role.
+6. **Moved items log an `edited` history event**, as `delete_category` moves do. Suggestions read
+   only added/bought/restored events, so it changes nothing users see; it is a true record that the
+   item's category changed.
+7. **Where categories are created.** Only Liste → Anpassen („Kategorie hinzufügen“) and the
+   `create_category` RPC. The add sheet picks from existing categories; the classifier, Siri,
+   dictation, Alexa, MCP and the public API never create one (they resolve names case-insensitively
+   already, `_shared/list.ts` `resolve`). Seeding uses fixed distinct names.
+8. **Display labels in English** are covered by the dialog check (3), not by the server: the
+   stored names „Getränke“ and "Drinks" differ, and the API may store both. That is fine, since only
+   the app translates seed names.
+9. **Proof on real-shaped data:** the backup drill fixtures (`scripts/backup/fixtures.sql`) on
+   main's schema plus duplicates written through the old `create_category` in both households
+   (Familie Trost: „für die katze“, „GETRÄNKE“; Carl: „sonstiges“, „Obst & gemüse“), then the
+   migration: the same 12 items with the same category name key, the same summed corrections per
+   word and key, no store missing a category row, no duplicate key left; a second run merges 0
+   (script and output in the job's ops dir, `proof/`).

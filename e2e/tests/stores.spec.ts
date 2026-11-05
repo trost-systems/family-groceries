@@ -125,9 +125,12 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByRole('button', { name: 'Baby', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Kategorie hinzufügen' }).click();
-  await typeInto(page.getByRole('textbox', { name: 'Name' }), 'Baby');
+  await typeInto(page.getByRole('textbox', { name: 'Name' }), ' BABY');
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByText('Eine Kategorie „Baby“ gibt es schon.').first()).toBeVisible();
+  await screenshot(page, '10a-category-name-taken');
+  await page.getByRole('button', { name: 'Abbrechen' }).click();
+  await expect(page.getByRole('button', { name: /^baby$/i }), 'no second Baby in another case').toHaveCount(1);
 
   await dragHandle(page, 'Getränke verschieben', 'Obst & Gemüse verschieben');
   await screenshot(page, '10-no-store-details');
@@ -145,6 +148,13 @@ test('categories: add, move an item there, rename, reorder, delete with reassign
   await page.getByRole('button', { name: 'Baby', exact: true }).click();
   await typeInto(page.getByRole('textbox', { name: 'Name' }), 'Babysachen');
   await page.getByRole('button', { name: 'Speichern' }).click();
+  await page.getByRole('button', { name: 'Babysachen', exact: true }).click();
+  await typeInto(page.getByRole('textbox', { name: 'Name' }), 'getränke');
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText('Eine Kategorie „Getränke“ gibt es schon.').first()).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Name' }), 'the dialog stays open to pick another name').toBeVisible();
+  await screenshot(page, '10b-category-rename-taken');
+  await page.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(page.getByRole('button', { name: 'Sonstiges löschen' }), 'the fallback cannot be deleted').toHaveCount(0);
   await page.getByRole('button', { name: 'Babysachen löschen' }).click();
   await page.getByRole('button', { name: /Artikel verschieben nach/ }).click();

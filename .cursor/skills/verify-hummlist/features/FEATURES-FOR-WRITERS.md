@@ -255,7 +255,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Categories
 
-**What it does.** Items on the list sit under categories such as Obst & Gemüse or Getränke. Every household starts with 11 and can add its own, rename any, reorder them, and delete any except „Sonstiges“. A new category goes just before „Sonstiges“. When a category is deleted, its items move to a category the user picks („Sonstiges“ unless changed).
+**What it does.** Items on the list sit under categories such as Obst & Gemüse or Getränke. Every household starts with 11 and can add its own, rename any, reorder them, and delete any except „Sonstiges“. A new category goes just before „Sonstiges“. Names are unique in a household regardless of upper and lower case: adding „baby“ when „Baby“ exists, or renaming another category to it, adds nothing and says „Eine Kategorie „Baby“ gibt es schon.“ in the dialog, so the user can pick another name. When a category is deleted, its items move to a category the user picks („Sonstiges“ unless changed).
 
 **How to get there.**
 1. On the list, tap „Anpassen“ (EN: "Edit") top right.
@@ -269,10 +269,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That categories are per store; stores only have their own order of the same categories.
 - A fixed number of categories or any limit on how many you add (none found).
 - Category names longer than 60 characters; the name field stops at 60.
+- Two categories whose names differ only in case or spacing ("Baby" and "baby"); since job 90 they cannot exist, and households that had them now have one.
 
 **Unverified.** Whether there is a limit on the number of categories: none found in the app.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): „Anpassen“ → „Ohne Laden“, adding a category, the duplicate message. Recipe: [categories.md](./categories.md).
+**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): „Anpassen“ → „Ohne Laden“, adding a category, the duplicate message; job 90, 2026-11-04 (CET): case-insensitive duplicates from widget tests, pgTAP and the e2e spec. Recipe: [categories.md](./categories.md).
 
 ## Stores, walk order and the sections of the list
 

@@ -56,10 +56,10 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   }
 
   void _toggle(String store) {
-    final key = storeNameKey(store);
+    final key = nameKey(store);
     setState(
-      () => _stores = _stores.any((s) => storeNameKey(s) == key)
-          ? [..._stores.where((s) => storeNameKey(s) != key)]
+      () => _stores = _stores.any((s) => nameKey(s) == key)
+          ? [..._stores.where((s) => nameKey(s) != key)]
           : [..._stores, store],
     );
   }
@@ -67,10 +67,10 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   /// A typed name of an offered chain ticks its chip; one already picked
   /// stays picked.
   Future<bool> _addOwn(String name) async {
-    final key = storeNameKey(name);
-    final offered = popularStores.where((p) => storeNameKey(p) == key);
+    final key = nameKey(name);
+    final offered = popularStores.where((p) => nameKey(p) == key);
     setState(() {
-      if (!_stores.any((s) => storeNameKey(s) == key)) {
+      if (!_stores.any((s) => nameKey(s) == key)) {
         _stores = [
           ..._stores,
           offered.firstOrNull ?? name.trim().replaceAll(RegExp(r'\s+'), ' '),

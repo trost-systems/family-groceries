@@ -16,12 +16,17 @@ void main() {
 
   setUpAll(fakeSupabase);
 
-  Future<void> pump(WidgetTester tester, String? storeId) async {
+  Future<void> pump(
+    WidgetTester tester,
+    String? storeId, {
+    List<Locale> device = const [Locale('de', 'DE')],
+  }) async {
     repo = (await pumpMore(
       tester,
       location: storeDetailsPath(storeId),
       size: const Size(358, 800),
       routes: listTabRoutes(),
+      device: device,
     )).repo;
   }
 
@@ -94,6 +99,7 @@ void main() {
       await tester.pumpAndSettle();
       await enterName(tester, 'lidl');
       expect(key('name-dialog-field'), findsOneWidget);
+      expect(find.text('Einen Laden „Lidl“ gibt es schon.'), findsOneWidget);
       expect([for (final s in repo.stores) s.name], ['dm', 'Lidl']);
     });
 
@@ -190,12 +196,71 @@ void main() {
 
       await tester.tap(find.text('Kategorie hinzufügen'));
       await tester.pumpAndSettle();
-      await enterName(tester, 'Sonstiges');
-      expect(names().where((n) => n == 'Sonstiges'), hasLength(1));
+      await enterName(tester, 'sonstiges ');
+      expect(names().where((n) => n.toLowerCase() == 'sonstiges'), [
+        'Sonstiges',
+      ]);
       expect(
         find.text('Eine Kategorie „Sonstiges“ gibt es schon.'),
         findsOneWidget,
       );
+      expect(key('name-dialog-field'), findsOneWidget);
+      await tester.enterText(key('name-dialog-field'), 'Sonstiges 2');
+      await tester.pump();
+      expect(
+        find.text('Eine Kategorie „Sonstiges“ gibt es schon.'),
+        findsNothing,
+        reason: 'typing clears the message',
+      );
+    });
+
+    testWidgets("a rename onto another category's name in another case "
+        'keeps the dialog and says so', (tester) async {
+      await pump(tester, null);
+      await tester.tap(find.text('Kühlregal'));
+      await tester.pumpAndSettle();
+      await enterName(tester, 'obst & GEMÜSE');
+      expect(key('name-dialog-field'), findsOneWidget);
+      expect(names(), ['Obst & Gemüse', 'Kühlregal', 'Sonstiges']);
+      expect(
+        find.text('Eine Kategorie „Obst & Gemüse“ gibt es schon.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('in English a seed is taken under its English name too', (
+      tester,
+    ) async {
+      await pump(tester, null, device: const [Locale('en', 'US')]);
+      await tester.tap(find.text('Kühlregal'));
+      await tester.pumpAndSettle();
+      await enterName(tester, 'other');
+      expect(find.text('A category named “Other” already exists.'), findsOne);
+      expect(names(), ['Obst & Gemüse', 'Kühlregal', 'Sonstiges']);
+    });
+
+    testWidgets('offline, a rename closes the dialog and says it failed', (
+      tester,
+    ) async {
+      await pump(tester, null);
+      repo.online = false;
+      await tester.tap(find.text('Kühlregal'));
+      await tester.pumpAndSettle();
+      await enterName(tester, 'Kühlung');
+      expect(key('name-dialog-field'), findsNothing);
+      expect(
+        find.text('Die Änderung konnte nicht gespeichert werden.'),
+        findsOneWidget,
+      );
+      expect(find.text('Kühlregal'), findsOneWidget);
+    });
+
+    testWidgets('a category may change its own case', (tester) async {
+      await pump(tester, null);
+      await tester.tap(find.text('Kühlregal'));
+      await tester.pumpAndSettle();
+      await enterName(tester, 'KÜHLREGAL');
+      expect(names(), ['Obst & Gemüse', 'KÜHLREGAL', 'Sonstiges']);
     });
   });
 
