@@ -14,16 +14,11 @@ meta.description:
   status: draft
   source: "New: search and share description, built from the hero lead."
 
-header.open-app:
-  de: "Im Browser öffnen"
-  en: "Open in browser"
-  status: draft
-  source: "6b prototype header button; English new. Links app.hummlist.com, which the help page already links."
 footer.tagline:
-  de: "Hummlist ist eine Einkaufsliste für einen Haushalt. Für iPhone, Android und den Browser."
-  en: "Hummlist is a shopping list for one household. For iPhone, Android and the browser."
+  de: "Hummlist ist eine Einkaufsliste für einen Haushalt. Für iPhone und Android."
+  en: "Hummlist is a shopping list for one household. For iPhone and Android."
   status: draft
-  source: "6b prototype footer; English new."
+  source: "Job 82: no browser mention (Addendum 1)."
 
 hero.badge:
   de: "Geschlossener Test für Familie und Freunde"
@@ -40,11 +35,6 @@ hero.lead:
   en: "One of you types “milk”, everyone sees it right away. Sorted by store and by your way through the aisles."
   status: draft
   source: "6b prototype hero; English new."
-hero.test-link:
-  de: "Mehr zum Test"
-  en: "More about the test"
-  status: draft
-  source: "New: replaces the prototype's store badges (no store listing yet); jumps to the test block."
 hero.image:
   de: "Die Hummlist-App mit der Liste von „Unser Haushalt“, dazu Wochenmarkt, Bäckerei, Drogerie und Supermarkt: Zahnpasta bei der Drogerie, im Supermarkt sind die Bananen abgehakt und die Hafermilch ist neu. Darüber die Meldung „Anna hat ‚Hafermilch‘ hinzugefügt“."
   en: "The Hummlist app with the list of “Our household”, with farmers’ market, bakery, drugstore and supermarket: toothpaste at the drugstore, at the supermarket the bananas are ticked off and the oat milk is new. Above it the note “Anna added ‘Oat milk’”."
@@ -63,10 +53,10 @@ features.lead:
   source: "6b prototype; English new."
 
 feature.list.title:
-  de: "Eine Liste für alle"
-  en: "One list for everyone"
+  de: "Schnell eingetragen, schnell abgehakt"
+  en: "Quick to add, quick to tick off"
   status: draft
-  source: "6b prototype; English new."
+  source: "Job 82 Addendum 5 (Peter 2026-11-03): the heading says what the card says (input field, suggestions, one-tap tick, undo); was „Eine Liste für alle“ / \"One list for everyone\"."
 feature.list.body:
   de: "Das Eingabefeld ist sofort bereit, unten am Daumen. Vorschläge kommen aus dem, was ihr schon gekauft habt. Abgehakt ist mit einem Tipp, und wer sich vertippt, nimmt es gleich zurück."
   en: "The input field is ready right away, down by your thumb. Suggestions come from what you have bought before. One tap ticks an item off, and a slip of the finger is undone just as fast."
@@ -83,10 +73,10 @@ feature.household.body:
   status: draft
   source: "6b prototype „Eine Liste für alle“ (Peter and Lea made general); English new."
 feature.household.invite:
-  de: "Mitbewohner, Partner und Kinder lädst du mit einem Link oder Code ein. Jede Einladung gilt sieben Tage."
-  en: "You invite flatmates, partners and kids with a link or a code. Each invitation is valid for seven days."
+  de: "Mitbewohner, Partner und Kinder lädst du mit einem Link oder Code ein."
+  en: "You invite flatmates, partners and kids with a link or a code."
   status: draft
-  source: "6b prototype (one partner) and the help page (an invitation is valid 7 days, for one person each)."
+  source: "6b prototype; job 82 Addendum 5: the 7-day validity belongs only next to the in-app invite."
 feature.stores.title:
   de: "Sortiert, wie du durch den Laden gehst"
   en: "Sorted the way you walk through the store"
@@ -128,31 +118,16 @@ voice.ai.body:
   en: "Connect an AI assistant that supports MCP to your list through the Hummlist MCP server. Then write or tell it what's missing, and it puts it on the list."
   status: draft
   source: "New, from the help page's MCP answer (MCP server under More › Connections)."
-voice.ai.how:
-  de: "Die Adresse des MCP-Servers steht in der App unter **Mehr** › **Zugänge**. Dort widerrufst du jeden Zugang auch wieder."
-  en: "The MCP server's address is in the app under **More** › **Connections**. You can revoke every connection there too."
-  status: draft
-  source: "Help page (/support, /en/support), shortened."
 voice.siri.title:
   de: "Mit Siri"
   en: "With Siri"
   status: draft
   source: "6b prototype; English new."
-voice.siri.badge:
-  de: "Geplant"
-  en: "Planned"
-  status: draft
-  source: "New: native Siri is not live yet (job 51)."
-voice.siri.body:
-  de: "Später sagst du Siri direkt, was auf die Liste soll, ganz ohne Kurzbefehl."
-  en: "Later you'll be able to tell Siri directly what goes on the list, no shortcut needed."
-  status: draft
-  source: "New, draft until native Siri ships (job 51)."
 voice.siri.now:
-  de: "Bis dahin geht es mit einem [Kurzbefehl](/de/anleitungen/siri-kurzbefehl). In der App diktierst du direkt ins Eingabefeld."
-  en: "Until then, use a [shortcut](/en/guides/siri-shortcut). In the app you dictate straight into the input field."
+  de: "Mit einem [Kurzbefehl](/de/anleitungen/siri-kurzbefehl) setzt Siri es auf die Liste. In der App diktierst du direkt ins Eingabefeld."
+  en: "With a [shortcut](/en/guides/siri-shortcut), Siri puts it on the list. In the app you dictate straight into the input field."
   status: draft
-  source: "6b prototype (dictation sentence) and the Siri guide; English new."
+  source: "Job 82 Addendum 7: no „bald“/\"soon\" promise; the Shortcut works today."
 
 privacy.title:
   de: "Eure Liste bleibt eure Sache."
@@ -180,31 +155,21 @@ privacy.export:
   status: draft
   source: "6b prototype, aligned with the help page („als JSON-Datei“); English new."
 privacy.delete:
-  de: "**Löschen geht in der App.** Dein Konto löschst du unter **Mehr** › **Konto**, sofort."
-  en: "**Deleting works in the app.** You delete your account under **More** › **Account**, right away."
+  de: "**Löschen geht in der App.** Dein Konto löschst du dort selbst, sofort."
+  en: "**Deleting works in the app.** You delete your account there yourself, right away."
   status: draft
-  source: "Changed from the prototype's „Konto weg, Daten weg“, which the policy's 90-day backups contradict; help page: deleted immediately."
+  source: "Job 82 Addendum 6: no menu path on the landing page."
 privacy.website:
-  de: "**Diese Website ist leise.** Keine Cookies, nichts von fremden Servern."
-  en: "**This website is quiet.** No cookies, nothing from other servers."
+  de: "**Diese Website ist leise:** keine Cookies, kein Tracking, nichts von fremden Servern. Trägst du dich ein, liegt deine E-Mail-Adresse in unserer Datenbank bei Supabase in Frankfurt. Unser Hoster Vercel und unser Mail-Dienst Resend sind US-Firmen; Resend speichert unsere Mails in den USA. Nur für die Warteliste und die Einladung."
+  en: "**This website is quiet:** no cookies, no tracking, nothing loaded from other servers. If you sign up, your email address is kept in our database at Supabase in Frankfurt. Our host Vercel and our email service Resend are US companies; Resend stores our emails in the USA. Only for the waitlist and the invite."
   status: draft
-  source: "6b prototype; privacy policy section 2 (no cookies, no content from other servers). English new."
+  source: "Legal Review handoff 2026-11-02 21:55 (W5, N-49), word for word."
 privacy.more:
   de: "Alles Weitere steht in der [Datenschutzerklärung](/datenschutz)."
   en: "Everything else is in the [privacy policy](/en/privacy)."
   status: draft
   source: "New: link to the published policy (shown only while privacyPublished is on)."
 
-test.title:
-  de: "Gerade summt Hummlist im kleinen Kreis."
-  en: "Right now Hummlist hums in a small circle."
-  status: draft
-  source: "6b prototype; English new."
-test.body:
-  de: "Familie und Freunde testen die App auf dem iPhone über TestFlight und auf Android im internen Test von Google Play. Im Browser läuft sie unter app.hummlist.com."
-  en: "Family and friends test the app on iPhone through TestFlight and on Android in Google Play's internal test. In the browser it runs at app.hummlist.com."
-  status: draft
-  source: "6b prototype, matches the help page's test answer; English new."
 test.help:
   de: "Fragen zum Test?"
   en: "Questions about the test?"
@@ -236,3 +201,256 @@ demo.mcp-chat:
   en: "Silent video: an AI chat gets “Put honey and jam on the list”. Hummlist reports both under Pantry, and they appear in the app. By voice follows “Bought both, tick them off”, and both disappear again."
   status: draft
   source: "Job 54: text alternative of the mcp-chat video; the results are the real MCP answers of the take."
+
+# The waitlist and the stage CTAs (job 82, docs/WAITLIST.md; the stage is site/config/stage.ts).
+# Texts from the V1 variant and the shared building blocks of Hummlist Launch (job 83 brief,
+# 2026-11-02) and Legal Review's handoffs of 2026-11-02 and 2026-11-04. All drafts until Peter
+# approves them in his own words; the PR is not merged before that.
+
+waitlist.cta:
+  de: "Auf die Warteliste"
+  en: "Join the waitlist"
+  status: draft
+  source: "Launch shared blocks: header button and form button; Legal's consent text quotes it, so a change needs a new consent version."
+beta.cta:
+  de: "Zur Beta anmelden"
+  en: "Join the beta"
+  status: draft
+  source: "Job 82 Addendum 7/8: the CTA of the beta stage."
+launch.cta:
+  de: "App laden"
+  en: "Get the app"
+  status: draft
+  source: "Job 82 Addendum 8: the CTA of the launch stage (store badges, QR code)."
+launch.title:
+  de: "Hol dir Hummlist"
+  en: "Get Hummlist"
+  status: draft
+  source: "Job 82 Addendum 8: heading of the launch stage's download block."
+launch.lead:
+  de: "Für iPhone und Android, ohne Werbung."
+  en: "For iPhone and Android, no ads."
+  status: draft
+  source: "Job 82 Addendum 8: line under the download block's heading."
+launch.qr:
+  de: "Mit dem Handy scannen, dann landest du im passenden Store."
+  en: "Scan it with your phone to open the right store."
+  status: draft
+  source: "Job 82 Addendum 8: caption of the QR code (hummlist.com/get)."
+launch.app-store:
+  de: "Download on the App Store"
+  en: "Download on the App Store"
+  status: draft
+  source: "Alt text = the words on Apple's badge (App Store Marketing Guidelines). Only Apple's English badge was reachable from the build box, so German uses it too until the German badge is downloaded."
+launch.google-play:
+  de: "Jetzt bei Google Play"
+  en: "Get it on Google Play"
+  status: draft
+  source: "Google Play badge text (Google Play badge guidelines), its alt text."
+waitlist.form.title:
+  de: "Sei bei der Beta dabei"
+  en: "Be part of the beta"
+  status: draft
+  source: "Launch V1 form block heading."
+waitlist.form.intro:
+  de: "Trag dich ein. Sobald die Beta startet, bekommst du die Einladung per E-Mail."
+  en: "Sign up, and you'll get an email invite once the beta starts."
+  status: draft
+  source: "Job 82 Addendum 7 (Peter 2026-11-03): no date, invite by email once the beta starts."
+waitlist.form.email:
+  de: "E-Mail-Adresse"
+  en: "Email address"
+  status: draft
+  source: "Launch shared blocks: field label."
+waitlist.form.email-placeholder:
+  de: "name@beispiel.de"
+  en: "name@example.com"
+  status: draft
+  source: "Launch shared blocks: field placeholder."
+waitlist.form.email-hint:
+  de: "Am besten die E-Mail deiner Apple-ID bzw. deines Google-Kontos"
+  en: "Ideally the email of your Apple ID or Google account"
+  status: draft
+  source: "Spec #10 AC2, word for word."
+waitlist.form.platform:
+  de: "Dein Handy"
+  en: "Your phone"
+  status: draft
+  source: "Launch shared blocks: platform choice."
+waitlist.form.ios:
+  de: "iPhone"
+  en: "iPhone"
+  status: draft
+  source: "Launch shared blocks: platform choice."
+waitlist.form.android:
+  de: "Android"
+  en: "Android"
+  status: draft
+  source: "Launch shared blocks: platform choice."
+waitlist.confirm.launch-news:
+  de: "Schreibt mir auch, wenn die App offiziell startet (eine E-Mail, freiwillig)."
+  en: "Also email me when the app officially launches (one email, optional)."
+  status: draft
+  source: "Legal Review N-40 text, unchanged; on the confirmation page, unticked (N-74, 2026-11-04)."
+waitlist.form.honeypot:
+  de: "Bitte leer lassen"
+  en: "Leave this empty"
+  status: draft
+  source: "New: label of the hidden spam trap; screen readers and people never meet it."
+waitlist.form.sending:
+  de: "Einen Moment …"
+  en: "One moment …"
+  status: draft
+  source: "Launch shared blocks (v1 section 3): sending."
+waitlist.error.email-missing:
+  de: "Bitte gib deine E-Mail-Adresse ein."
+  en: "Please enter your email address."
+  status: draft
+  source: "New draft: v1 section 3 names the error (E-Mail fehlt) but its text was not handed over."
+waitlist.error.email-invalid:
+  de: "Diese E-Mail-Adresse sieht nicht richtig aus. Prüf sie bitte noch mal."
+  en: "This email address doesn't look right. Please check it."
+  status: draft
+  source: "New draft for v1 section 3's invalid email error."
+waitlist.error.platform-missing:
+  de: "Bitte wähl iPhone oder Android."
+  en: "Please choose iPhone or Android."
+  status: draft
+  source: "New draft for v1 section 3's missing phone error."
+waitlist.error.invalid-request:
+  de: "Das hat nicht geklappt. Lade die Seite neu und versuch es noch mal."
+  en: "That didn't work. Reload the page and try again."
+  status: draft
+  source: "New draft: the server refused the request (an old page, a broken field)."
+waitlist.error.unavailable:
+  de: "Das hat gerade nicht geklappt. Bitte versuch es gleich noch mal."
+  en: "That didn't work just now. Please try again in a moment."
+  status: draft
+  source: "New draft for v1 section 3's error: the server is unreachable."
+waitlist.error.network:
+  de: "Keine Verbindung. Prüf dein Netz und versuch es noch mal."
+  en: "No connection. Check your network and try again."
+  status: draft
+  source: "New draft for v1 section 3's network error."
+waitlist.thanks.title:
+  de: "Fast geschafft, check dein Postfach"
+  en: "Almost there, check your inbox"
+  status: draft
+  source: "Launch shared blocks, state 1 after sending."
+waitlist.thanks.body:
+  de: "Wir haben dir eine E-Mail geschickt. Tipp darin auf „E-Mail bestätigen“ und stimm auf der Seite dahinter zu. Sobald die Beta startet, bekommst du die Einladung per E-Mail."
+  en: "We sent you an email. Tap \"Confirm email\" in it and agree on the page it opens. Once the beta starts, you'll get your invite by email."
+  status: draft
+  source: "Job 82 Addendum 7 and 10: asks to confirm, no date."
+waitlist.thanks.small:
+  de: "Nichts angekommen? Schau im Spam-Ordner nach oder trag dich mit der richtigen Adresse noch mal ein."
+  en: "Nothing arrived? Check your spam folder, or sign up again with the right address."
+  status: draft
+  source: "Launch shared blocks, state 1, small line."
+waitlist.back:
+  de: "Zurück zu hummlist.com"
+  en: "Back to hummlist.com"
+  status: draft
+  source: "Launch shared blocks, state 2 link."
+
+waitlist.confirm.meta-title:
+  de: "E-Mail bestätigen"
+  en: "Confirm your email"
+  status: draft
+  source: "New draft: title of the page behind the confirmation mail's link."
+waitlist.confirm.description:
+  de: "Bestätige deine E-Mail für die Warteliste der Hummlist-Beta."
+  en: "Confirm your email for the Hummlist beta waitlist."
+  status: draft
+  source: "New draft."
+waitlist.confirm.title:
+  de: "Bestätige deine E-Mail"
+  en: "Confirm your email"
+  status: draft
+  source: "New draft: before the button is pressed."
+waitlist.confirm.body:
+  de: "Diese Adresse wurde für die Warteliste der Hummlist-Beta eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. Auf der Liste stehst du erst, wenn du hier selbst auf „E-Mail bestätigen“ tippst."
+  en: "This address was entered for the Hummlist beta waitlist, by you or, for example, by an AI assistant for you. You're only on the list once you tap \"Confirm email\" here yourself."
+  status: draft
+  source: "Legal Review 2026-11-04, C-1/C-2 intro (N-73), word for word."
+waitlist.confirm.button:
+  de: "E-Mail bestätigen"
+  en: "Confirm email"
+  status: draft
+  source: "Legal handoff 2.5 (the mail's button) and the 82 brief."
+waitlist.confirm.not-you:
+  de: "Das warst nicht du? Dann schließ diese Seite einfach. Ohne Bestätigung löschen wir die Adresse nach 7 Tagen."
+  en: "Wasn't you? Just close this page. Without confirmation we delete the address after 7 days."
+  status: draft
+  source: "Legal Review 2026-11-04, C-1/C-2 line below the button, word for word."
+waitlist.confirm.done-title:
+  de: "Du stehst auf der Warteliste"
+  en: "You're on the waitlist"
+  status: draft
+  source: "Launch shared blocks, state 2."
+waitlist.confirm.done-body:
+  de: "Danke! Sobald die Beta startet, bekommst du die Einladung per E-Mail an diese Adresse."
+  en: "Thank you! Once the beta starts, you'll get your invite by email at this address."
+  status: draft
+  source: "Job 82 Addendum 7: no date."
+waitlist.confirm.done-line:
+  de: "Bis dahin: Schreib schon mal auf, was auf eure erste Liste kommt."
+  en: "Until then: start jotting down what goes on your first list."
+  status: draft
+  source: "Launch V1 thank-you line."
+waitlist.confirm.invalid-title:
+  de: "Schon bestätigt oder abgelaufen"
+  en: "Already confirmed or expired"
+  status: draft
+  source: "Spec #10 AC11: the neutral page."
+waitlist.confirm.invalid-body:
+  de: "Dieser Link ist schon benutzt oder nicht mehr gültig. Hast du schon bestätigt, musst du nichts weiter tun. Sonst trag dich einfach noch mal ein."
+  en: "This link has been used already or is no longer valid. If you've confirmed, there's nothing more to do. If not, just sign up again."
+  status: draft
+  source: "New draft for v1's expired link page, which was not handed over."
+
+waitlist.unsubscribe.meta-title:
+  de: "Eintrag löschen"
+  en: "Delete your sign-up"
+  status: draft
+  source: "New draft: title of the page behind every mail's unsubscribe link."
+waitlist.unsubscribe.description:
+  de: "Lösche deinen Eintrag auf der Warteliste der Hummlist-Beta."
+  en: "Delete your sign-up for the Hummlist beta waitlist."
+  status: draft
+  source: "New draft."
+waitlist.unsubscribe.title:
+  de: "Eintrag löschen"
+  en: "Delete your sign-up"
+  status: draft
+  source: "New draft (Legal: „Eintrag sofort löschen“ in the confirmation mail)."
+waitlist.unsubscribe.body:
+  de: "Tipp auf den Knopf, dann löschen wir deinen Eintrag auf der Warteliste sofort. Danach bekommst du keine E-Mails mehr von uns."
+  en: "Tap the button and we delete your waitlist sign-up right away. After that you won't get any more emails from us."
+  status: draft
+  source: "New draft: the link alone changes nothing."
+waitlist.unsubscribe.button:
+  de: "Eintrag löschen"
+  en: "Delete my sign-up"
+  status: draft
+  source: "82 brief: button „Eintrag löschen“."
+waitlist.unsubscribe.done-title:
+  de: "Dein Eintrag ist gelöscht"
+  en: "Your sign-up is deleted"
+  status: draft
+  source: "New draft."
+waitlist.unsubscribe.done-body:
+  de: "Du bekommst keine E-Mails mehr von uns. Willst du doch dabei sein, trag dich einfach noch mal ein."
+  en: "You won't get any more emails from us. If you change your mind, just sign up again."
+  status: draft
+  source: "New draft."
+waitlist.unsubscribe.invalid-title:
+  de: "Dieser Link passt zu keinem Eintrag"
+  en: "This link doesn't match a sign-up"
+  status: draft
+  source: "New draft."
+waitlist.unsubscribe.invalid-body:
+  de: "Vielleicht ist dein Eintrag schon gelöscht. Bekommst du trotzdem noch Mails, schreib an [support@hummlist.com](mailto:support@hummlist.com)."
+  en: "Your sign-up may be deleted already. If you still get emails, write to [support@hummlist.com](mailto:support@hummlist.com)."
+  status: draft
+  source: "New draft."

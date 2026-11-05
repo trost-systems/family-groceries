@@ -5,8 +5,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
 import MarkdownIt from 'markdown-it';
+import QRCode from 'qrcode';
+import { GET_URL, STORE_URLS, storeUrlSet } from './config/stores.mjs';
+import { signupForm } from './waitlist.mjs';
 
-export const APP_URL = 'https://app.hummlist.com';
 const LOCALES = ['de', 'en'];
 const STATUSES = ['draft', 'reused'];
 const COMPACT = '(max-width: 37.5rem)';
@@ -124,7 +126,9 @@ function picture({ posters }, alt, { className = '', eager = false, hidden = fal
   return `<picture${className ? ` class="${className}"` : ''}${hidden ? ' aria-hidden="true"' : ''}>${sources.join('')}<img src="${wide.light}" alt="${escapeAttr(alt)}" width="${w}" height="${h}" decoding="async"${loading}></picture>`;
 }
 
-export function renderLanding({ locale, copy, config, publicDir }) {
+// The copy of one locale for one page: `text` is the plain string, `md` its inline Markdown as
+// HTML, `el` an element carrying its copy id; `used` collects the ids the page asked for.
+export function copyReader(copy, locale) {
   const used = new Set();
   const text = (id) => {
     const entry = copy.get(id);
@@ -134,6 +138,54 @@ export function renderLanding({ locale, copy, config, publicDir }) {
   };
   const md = (id) => inline.renderInline(text(id));
   const el = (tag, id, attrs = '') => `<${tag} data-copy-id="${id}"${attrs ? ` ${attrs}` : ''}>${md(id)}</${tag}>`;
+  return { text, md, el, used, inline: (markdown) => inline.renderInline(markdown) };
+}
+
+// The calls to action per stage (site/config/stage.ts, docs/WAITLIST.md): `waitlist` and `beta`
+// send people to the sign-up form in the closing block, `launch` to the store badges. No stage
+// links the browser app.
+export const STAGE_CTA = {
+  waitlist: { id: 'waitlist.cta', anchor: { de: 'warteliste', en: 'waitlist' } },
+  beta: { id: 'beta.cta', anchor: { de: 'warteliste', en: 'waitlist' } },
+  launch: { id: 'launch.cta', anchor: { de: 'app', en: 'app' } },
+};
+export const STAGES = Object.keys(STAGE_CTA);
+
+// The QR code of hummlist.com/get as inline SVG, drawn at build time: no script ships.
+export function qrSvg(url, label) {
+  const { modules } = QRCode.create(url, { errorCorrectionLevel: 'M' });
+  const quiet = 4;
+  const size = modules.size + quiet * 2;
+  let path = '';
+  for (let row = 0; row < modules.size; row++) {
+    for (let col = 0; col < modules.size; col++) {
+      if (modules.get(row, col)) path += `M${col + quiet} ${row + quiet}h1v1h-1z`;
+    }
+  }
+  return `<svg class="qr" viewBox="0 0 ${size} ${size}" role="img" aria-label="${escapeAttr(label)}" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${path}" fill="#000"/></svg>`;
+}
+
+// The launch stage's way to the app: the official badges (to the store, or to /get while the
+// listing URL is a TODO) and, on wide screens, a QR code for hummlist.com/get.
+function getApp(locale, { text, el }, { qr }) {
+  const href = (url) => (storeUrlSet(url) ? url : GET_URL);
+  const badges = `<div class="store-badges">
+<a class="store-badge" href="${escapeAttr(href(STORE_URLS.appStore))}" data-copy-id="launch.app-store"><img src="/media/badges/app-store-en.svg" alt="${escapeAttr(text('launch.app-store'))}" width="120" height="40"></a>
+<a class="store-badge store-badge--play" href="${escapeAttr(href(STORE_URLS.googlePlay))}" data-copy-id="launch.google-play"><img src="/media/badges/google-play-${locale}.png" alt="${escapeAttr(text('launch.google-play'))}" width="150" height="58"></a>
+</div>`;
+  if (!qr) return badges;
+  return `${badges}
+<figure class="store-qr">${qrSvg(GET_URL, text('launch.qr'))}${el('figcaption', 'launch.qr')}</figure>`;
+}
+
+// The landing page as it was before the waitlist; only its calls to action follow the stage.
+// `consent` is the form's text under the button, { version, markdown }.
+export function renderLanding({ locale, copy, config, publicDir, stage, consent }) {
+  const reader = copyReader(copy, locale);
+  const { text, md, el, used } = reader;
+  const cta = STAGE_CTA[stage];
+  if (!cta) throw new CopyError(`unknown stage "${stage}"; site/config/stage.ts allows ${STAGES.join(', ')}`);
+  const anchor = cta.anchor[locale];
 
   const demo = (slot) => {
     const media = mediaFor(publicDir, slot, locale, { shape: 'card', video: true });
@@ -163,16 +215,34 @@ export function renderLanding({ locale, copy, config, publicDir }) {
     : (text('test.help'), '');
   const tick = `<span class="tick hxp" aria-hidden="true">${icon('check')}</span>`;
   const privacyItems = ['privacy.frankfurt', 'privacy.consent', 'privacy.export', 'privacy.delete', 'privacy.website'];
+  const launch = stage === 'launch';
+
+  const heroAction = launch
+    ? getApp(locale, reader, { qr: false })
+    : `<a class="hex" href="#${anchor}"><span class="face" data-copy-id="${cta.id}">${md(cta.id)}</span></a>`;
+  const closing = launch
+    ? `<div class="wrap block block--honey cta get-app" id="${anchor}">
+${el('h2', 'launch.title', 'class="headline" id="test-title"')}
+${el('p', 'launch.lead')}
+${getApp(locale, reader, { qr: true })}
+<div class="cta-actions">
+${helpLink}
+</div>
+</div>`
+    : `<div class="wrap block block--honey cta">
+${signupForm({ locale, reader, consent, anchor, ctaId: cta.id })}
+<div class="cta-actions">
+${helpLink}
+</div>
+</div>`;
 
   const html = `<section class="hero" aria-labelledby="hero-title">
 <div class="wrap block block--cobalt hero-block">
 <div class="hero-copy">
-<p class="chip hx"><span class="dot hxp" aria-hidden="true">${icon('check')}</span><span data-copy-id="hero.badge">${md('hero.badge')}</span></p>
-${el('h1', 'hero.title', 'class="display" id="hero-title"')}
+${launch ? '' : `<p class="chip hx"><span class="dot hxp" aria-hidden="true">${icon('check')}</span><span data-copy-id="hero.badge">${md('hero.badge')}</span></p>\n`}${el('h1', 'hero.title', 'class="display" id="hero-title"')}
 ${el('p', 'hero.lead', 'class="lead"')}
 <div class="hero-actions">
-<a class="hex" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${md('header.open-app')}${icon('open')}</span></a>
-<a class="link-strong" href="#test" data-copy-id="hero.test-link">${md('hero.test-link')}</a>
+${heroAction}
 </div>
 </div>
 <div class="hero-visual" data-copy-id="hero.image">${picture(mediaFor(publicDir, 'hero', locale, { shape: 'hero' }), text('hero.image'), { eager: true })}</div>
@@ -220,17 +290,14 @@ ${el('p', 'voice.lead', 'class="lead"')}
 <div class="assistant-copy">
 ${el('h3', 'voice.ai.title', 'class="title" id="voice-ai"')}
 ${el('p', 'voice.ai.body')}
-${el('p', 'voice.ai.how', 'class="muted"')}
 </div>
 ${demo('mcp-chat')}
 </article>
 <article class="assistant assistant--siri" aria-labelledby="voice-siri">
 <div class="assistant-head">
 ${el('h3', 'voice.siri.title', 'class="title" id="voice-siri"')}
-<p class="soon hx hx--honey" data-copy-id="voice.siri.badge">${md('voice.siri.badge')}</p>
 </div>
-${el('p', 'voice.siri.body')}
-${el('p', 'voice.siri.now', 'class="muted"')}
+${el('p', 'voice.siri.now')}
 </article>
 </div>
 </div>
@@ -247,15 +314,8 @@ ${privacyItems.map((id) => `<li>${tick}<span data-copy-id="${id}">${md(id)}</spa
 </ul>
 </div>
 </section>
-<section class="section test-section" id="test" aria-labelledby="test-title">
-<div class="wrap block block--honey cta">
-${el('h2', 'test.title', 'class="headline" id="test-title"')}
-${el('p', 'test.body')}
-<div class="cta-actions">
-<a class="hex hex--tomato" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${md('header.open-app')}${icon('open')}</span></a>
-${helpLink}
-</div>
-</div>
+<section class="section test-section" id="test" aria-labelledby="${launch ? 'test-title' : 'wl-title'}">
+${closing}
 </section>
 `;
   return { html, used };

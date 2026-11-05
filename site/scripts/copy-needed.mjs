@@ -19,8 +19,11 @@ const SECTIONS = {
   feature: 'Landing: feature cards',
   voice: 'Landing: voice block',
   privacy: 'Landing: privacy block',
-  test: 'Landing: test block',
+  test: 'Landing: closing block',
   demo: 'Landing: demo videos',
+  waitlist: 'Waitlist: sign-up form, confirm and unsubscribe pages',
+  beta: 'Stage beta: call to action',
+  launch: 'Stage launch: call to action, store badges, QR code',
 };
 
 const cell = (s) => s.replaceAll('|', '\\|').replaceAll('\n', ' ');
@@ -60,6 +63,10 @@ file. Every string on \`/de\` and \`/en\` carries its id in the page as \`data-c
 **draft**: new or changed for the first homepage (job 53), waiting for Launch. Change the text in
 \`copy.yml\` and set \`status: reused\` once approved, or keep it a draft. Siri copy stays a draft
 until native Siri ships. **reused**: word for word from copy that is already published.
+
+\`waitlist.*\` is the sign-up form and the pages behind the mail links (job 82, docs/WAITLIST.md);
+\`beta.*\` and \`launch.*\` show only in those stages (\`site/config/stage.ts\`). Every text waits for
+Peter's approval in his own words; Legal's consent texts are in \`site/content/legal/consent/\`.
 
 ## Drafts
 

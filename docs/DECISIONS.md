@@ -8010,3 +8010,74 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
    the note carries the add's undo.
 6. **Voice replies unchanged.** Siri's and Alexa's spoken „Hinzugefügt: …“ is the only feedback a
    voice user gets.
+## Job 82: the hummlist.com waitlist (Spec #10), 2026-11-02
+
+1. **Off until Peter turns it on, so it can merge.** Every push to `main` deploys hummlist.com,
+   and the brief allows a merge only if production doesn't change. The site builds a waitlist
+   mode only when `HUMMLIST_WAITLIST=on` or in a non-production build. The Vercel function answers
+   404 without its two env vars, and the edge function answers 404 without its two secrets.
+   `site/scripts/classic-diff.mjs` builds `origin/main` and the branch with production settings
+   and compares `dist/`: 95 files each, identical except one added
+   `<meta name="robots" content="noindex">` on `/de` and `/en`, which replaces the header
+   (point 3).
+2. **The logic lives in a Supabase edge function behind a thin Vercel function.** Legal wants the
+   form to post to hummlist.com and run in fra1. The Vercel function only hashes the IP and
+   forwards, so the database credentials and the Resend key stay in Supabase, and the logic is
+   tested with Deno and pgTAP like the other functions. A shared secret keeps everyone else out of
+   the edge function.
+3. **Noindex per path.** PM override 2: only the landing pages lose noindex, and only once the copy
+   is live. `vercel.json` sends `X-Robots-Tag: noindex` on every path except `/de` and `/en`,
+   and those two carry a robots meta tag in every build except a production waitlist build.
+   That build can only succeed without placeholders (point 4).
+4. **Placeholders block production.** Unapproved texts carry `⟦LAUNCH COPY⟧`, `⟦LEGAL W2⟧` and
+   similar markers. A production build fails on any marker, and the edge function won't mail a
+   marked template unless `WAITLIST_ALLOW_PLACEHOLDERS=1`. That makes AC21 a build rule rather
+   than a reminder.
+5. **Answer before the work (AC6).** The sign-up answers right after validation and the rate
+   counter, and stores and mails in `EdgeRuntime.waitUntil`. A new address, a known one and a
+   dropped bot get the same body at the same time. The local stack's oneshot workers drop
+   `waitUntil` work, so locally the function finishes the work first.
+6. **Tokens in the fragment, actions on a button.** Mail links carry the token in `#…`, so no
+   server log sees it, and the page sends it only when the button is pressed (Legal: no action on
+   GET, mail scanners). Unsubscribe links are signed with an HMAC of the row id, so links in old
+   mails keep working without storing a second token.
+7. **Rate limit in Postgres.** Counters keyed by SHA-256 of a daily HMAC of the IP, per hour,
+   deleted after 2 hours: in-memory counters don't survive Vercel's instances
+   (NEEDS_LEAD "Job 82", point 1).
+8. **Recipients closed by default.** Without `WAITLIST_MAIL_ALLOW=*` only `hello+…@hummlist.com`
+   is stored and mailed, so a preview can't mail a stranger before Peter opens it.
+9. **Invites are a script, never automatic** (Addendum 2): `scripts/waitlist/invite.ts`, dry run by
+   default with counts only, `--confirm <batch>` repeating the batch id.
+10. **Root `/` unchanged.** Live it already redirects to the landing pages by language (307), not
+    to the browser app (PM override 3).
+11. **app.hummlist.com gets noindex.** AC15 says the browser app "still has noindex", but on
+    2026-11-03 it had none (no `X-Robots-Tag`, no robots meta, `robots.txt` 404). The app's
+    `vercel.json` now sends `X-Robots-Tag: noindex` on every path. preview.app.hummlist.com gets
+    it with this merge, and app.hummlist.com with the next store release (`docs/DEPLOY.md`, "Web
+    app").
+
+### Job 82 requeue: Addenda 5 to 10, 2026-11-04
+
+12. **The stage file replaces the env switch.** Addendum 8 wants a one-line PR, not an env var, and
+    a classic mode that links the browser app fits no stage. `HUMMLIST_WAITLIST`, the
+    `::: waitlist` / `::: classic` blocks and `classic-diff.mjs` are gone; `site/config/stage.ts`
+    (job 93's file, same content) decides the calls to action. Merging the PR now publishes the
+    waitlist, so the merge waits for Peter (as the lead asked).
+13. **Main's landing page, only the CTAs swapped.** The form left the hero; it is the closing
+    block's content (`#test`), centred, and every former browser button leads there. The FAQ moved
+    to /support, inside job 93's „Häufige Fragen“ section so its FAQ JSON-LD covers it.
+14. **Every build fails on a `⟦…⟧` marker** (Addendum 10: no placeholders in the build, a CI
+    check). The markers are gone; every text is the draft it would ship with.
+15. **Consent on the confirmation page** (Legal N-73, N-74): new migration
+    `20261105210254_waitlist_confirm_consent.sql` (the first one is deployed, so it stays
+    untouched): `confirm_text_version` on the row and the proof record, a 4-argument
+    `waitlist_confirm`, sign-ups store launch news false. A rate-limited sign-up answers the same
+    202 as any other.
+16. **`/get` as a function behind a rewrite**, independent of the stage: phones go to their store
+    only once `site/config/stores.mjs` has a real URL, everything else to the landing page. The
+    link checks (build and job 93's agent check) accept `vercel.json` rewrites as routes.
+17. **`form-action 'self'` and `method="post" action="/api/waitlist"`.** With `'self'` a submit
+    before the script loads would otherwise GET the page with the address in the query string,
+    and so in request logs; posting the body to the API answers 400 instead.
+18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
+    a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
