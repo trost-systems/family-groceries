@@ -66,7 +66,12 @@ select is((select count(*)::int from public.items where name = 'Windeln' and sta
 insert into public.items (id, household_id, name) select '10000000-0000-4000-8000-000000000006', id, 'Brot' from ha;
 select ok((select id is not null from public.put_item('10000000-0000-4000-8000-000000000007', (select id from ha), 'Brötchen')),
   'Brötchen lands');
+-- Such a duplicate can no longer be made by a rename either (job 104), so the guard is off for it.
+select set_config('role', 'postgres', true);
+alter table public.items disable trigger items_rename_duplicate;
 update public.items set name = 'Brot' where id = '10000000-0000-4000-8000-000000000007';
+alter table public.items enable trigger items_rename_duplicate;
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 select is((select id from public.put_item(
   '10000000-0000-4000-8000-000000000007', (select id from ha), 'Brot'
 )), '10000000-0000-4000-8000-000000000007'::uuid, 'a retry answers with its own row');

@@ -79,6 +79,11 @@ final class const StoreNameTaken(final String name) extends Rejected;
 /// open, or the merged quantity would be too long. Both items stay.
 final class const MergeRefused(final String name) extends Rejected;
 
+/// A rename onto [name], which is open already, could not be merged into it
+/// (the merged quantity would be too long, or the server found the copy
+/// first). The item keeps its old name.
+final class const RenameTaken(final String name) extends Rejected;
+
 /// A category or layout change did not save; the catalog was reloaded.
 final class const CatalogRejected() extends Rejected;
 
@@ -99,6 +104,10 @@ final class const Merge(
   required final Item kept,
   required final Item merged,
   required final Item result,
+
+  /// The merged item's name before a rename that landed before the merge:
+  /// the undo renames it back.
+  final String? renamedFrom,
 });
 
 const _maxResubscribe = Duration(seconds: 30);
@@ -121,6 +130,7 @@ class ListCubit(
   final DateTime Function() _clock = clock ?? DateTime.now;
   final _rejections = StreamController<Rejected>.broadcast();
   final _hints = StreamController<DedupeHint>.broadcast();
+  final _renameMerges = StreamController<Merge>.broadcast();
   Future<void> Function()? _unwatch;
   Timer? _retry;
   Timer? _catalogReload;
@@ -156,6 +166,11 @@ class ListCubit(
   /// add is acknowledged (the server sets the canonical key). Never for a
   /// restore, a retry or a partner's add.
   Stream<DedupeHint> get hints => _hints.stream;
+
+  /// Job 104: an edit renamed an item to another open item (the same name in
+  /// any case, or once acknowledged another spelling or a synonym of it), so
+  /// it was folded into that one. The UI says so, with an undo.
+  Stream<Merge> get renameMerges => _renameMerges.stream;
 
   /// Shows the cached list, if any, then connects. Ops queued before the
   /// cache answers go after the cached ones.
@@ -399,10 +414,61 @@ class ListCubit(
   static const undoWindow = Duration(minutes: 10);
 
   /// Writes only what [changes] holds; nothing when it holds nothing.
+  /// A rename to an item that is open already merges into that item, as the
+  /// duplicate hint's Zusammenführen does: it keeps its name, store and
+  /// category, and the quantities add up.
   void edit(String id, ItemChanges changes) {
-    if (!changes.isEmpty) {
-      _enqueue(EditItem(id, changes));
+    if (changes.isEmpty) {
+      return;
     }
+    final item = state.items[id];
+    if (item != null && item.status == ItemStatus.active && changes.renames) {
+      final edited = changes.apply(item);
+      final key = _sameItem(edited.name, edited.brand, edited.properties);
+      final onList = state.items.values
+          .where(
+            (other) =>
+                other.id != id &&
+                other.status == ItemStatus.active &&
+                _sameItem(other.name, other.brand, other.properties) == key,
+          )
+          .firstOrNull;
+      if (onList != null) {
+        _mergeRename(item, changes, onList);
+        return;
+      }
+    }
+    _enqueue(
+      EditItem(
+        id,
+        changes,
+        keyBefore: changes.name == null ? null : item?.canonicalKey,
+        nameBefore: changes.name == null ? null : item?.name,
+      ),
+    );
+  }
+
+  /// Folds [item], edited by [changes], into [onList]. The amount and
+  /// details typed in the same edit go first, so the merge adds them up.
+  void _mergeRename(Item item, ItemChanges changes, Item onList) {
+    final details = ItemChanges(
+      quantity: changes.quantity,
+      brand: changes.brand,
+      properties: changes.properties,
+    );
+    final edited = details.apply(item);
+    final ({MergeItems op, Merge merge}) fold;
+    try {
+      fold = _fold(onList, edited);
+    } on QuantityTooLong {
+      _report(RenameTaken(onList.name));
+      return;
+    }
+    if (!details.isEmpty) {
+      _enqueue(EditItem(item.id, details));
+    }
+    _enqueue(fold.op);
+    _renameMerges.add(fold.merge);
   }
 
   void delete(String id) => _enqueue(DeleteItem(id));
@@ -428,40 +494,54 @@ class ListCubit(
       _report(MergeRefused(hint.onList.name));
       return null;
     }
-    final String quantity;
+    final ({MergeItems op, Merge merge}) fold;
     try {
-      quantity = mergeQuantities(kept.quantity, other.quantity);
+      fold = _fold(kept, other);
     } on QuantityTooLong {
       _report(MergeRefused(kept.name));
       return null;
     }
+    _enqueue(fold.op);
+    _track('dedupe_hint_merged', _actor());
+    return fold.merge;
+  }
+
+  /// The op that folds [other] into [kept] and the merge the UI can undo.
+  /// Throws [QuantityTooLong] when the merged quantity would not fit.
+  ({MergeItems op, Merge merge}) _fold(Item kept, Item other) {
     final op = MergeItems(
       kept.id,
       mergeId: const Uuid().v4(),
       otherId: other.id,
-      quantity: quantity,
+      quantity: mergeQuantities(kept.quantity, other.quantity),
       brand: kept.brand ?? other.brand,
       properties: kept.properties ?? other.properties,
     );
-    _enqueue(op);
-    _track('dedupe_hint_merged', _actor());
-    return Merge(
-      op.mergeId,
-      kept: kept,
-      merged: other,
-      result: op.apply(kept)!,
+    return (
+      op: op,
+      merge: Merge(
+        op.mergeId,
+        kept: kept,
+        merged: other,
+        result: op.apply(kept)!,
+      ),
     );
   }
 
   /// Puts both items back as they were before [merge].
-  void unmerge(Merge merge) => _enqueue(
-    UnmergeItems(
-      merge.kept.id,
-      mergeId: merge.id,
-      kept: merge.kept,
-      merged: merge.merged,
-    ),
-  );
+  void unmerge(Merge merge) {
+    _enqueue(
+      UnmergeItems(
+        merge.kept.id,
+        mergeId: merge.id,
+        kept: merge.kept,
+        merged: merge.merged,
+      ),
+    );
+    if (merge.renamedFrom case final name?) {
+      _enqueue(EditItem(merge.merged.id, ItemChanges(name: name)));
+    }
+  }
 
   /// Puts a deleted item back, keeping its id, category and place.
   void restore(Item item) => _enqueue(
@@ -765,13 +845,14 @@ class ListCubit(
         final op = state.pending.first;
         try {
           _ack(op, await _repo.send(op));
-        } on RejectedOp {
+        } on RejectedOp catch (e) {
           _drop(op);
-          _report(
-            op is MergeItems
-                ? MergeRefused(_nameOf(op))
-                : ItemRejected(_nameOf(op)),
-          );
+          _report(switch (op) {
+            MergeItems() => MergeRefused(_nameOf(op)),
+            // Job 104: another member's copy reached the server first.
+            EditItem() when e.nameTaken => RenameTaken(_nameOf(op)),
+            _ => ItemRejected(_nameOf(op)),
+          });
           unawaited(resync());
         } on Object {
           _goOffline();
@@ -818,6 +899,48 @@ class ListCubit(
         connection: ConnectionStatus.online,
       ),
     );
+    // Job 104: once the server has keyed a renamed item anew, fold it into
+    // an open item that is another spelling or a synonym of it. Only a new
+    // name gives a new key. When the key before is unknown (the add was
+    // still queued) it is offered, as for an add.
+    if (op case EditItem(
+      changes: ItemChanges(name: _?),
+      :final keyBefore,
+      :final nameBefore,
+    )) {
+      final renamed = state.items[op.itemId];
+      final onList =
+          renamed == null ||
+              renamed.status != ItemStatus.active ||
+              renamed.canonicalKey == keyBefore
+          ? null
+          : similarItems(renamed, state.items.values).firstOrNull;
+      if (renamed != null && onList != null && keyBefore == null) {
+        if (!_hints.isClosed) {
+          _hints.add(DedupeHint(renamed, onList));
+        }
+      } else if (renamed != null && onList != null) {
+        try {
+          final fold = _fold(onList, renamed);
+          _enqueue(fold.op);
+          if (!_renameMerges.isClosed) {
+            _renameMerges.add(
+              Merge(
+                fold.merge.id,
+                kept: fold.merge.kept,
+                merged: fold.merge.merged,
+                result: fold.merge.result,
+                renamedFrom: nameBefore,
+              ),
+            );
+          }
+        } on QuantityTooLong {
+          if (!_hints.isClosed) {
+            _hints.add(DedupeHint(renamed, onList));
+          }
+        }
+      }
+    }
     // Job 32b: once the server has keyed a new add, name an open item that
     // is another spelling of it (the add itself went through).
     if (op case AddItem(restored: false)) {
@@ -919,6 +1042,7 @@ class ListCubit(
     await _unwatch?.call();
     await _rejections.close();
     await _hints.close();
+    await _renameMerges.close();
     await super.close();
   }
 }

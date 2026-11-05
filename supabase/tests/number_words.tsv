@@ -1,0 +1,114 @@
+# The count words a typed line reads as a Menge (job 104): up front ("zwei Gurken", "two apples",
+# "drei Liter Milch") and as a bare count at the end after a known name ("Gurken zwei"). The
+# article forms ein, eine, einen and einer count only up front: "Trag Milch ein" is no Milch x1.
+# A line that starts with a name in the `name` rows keeps its number word ("Drei Glocken
+# Spaghetti", "Seven Up"). The `unit` rows are the units an amount can have („zwei Liter Milch“,
+# „ein Kopf Salat“, „Hack 500 g“), in public.item_units()'s order. public.item_number_words(),
+# public.item_number_names() and public.item_units() on the server and
+# app/lib/list/number_words.dart in the app hold this table; app/test/list/entry_test.dart and
+# supabase/functions/_shared/number_words_integration_test.ts fail when either drifts from it.
+# Tab-separated, lowercase. kind is `count` (text, value, lang), `name` or `unit` (text only).
+# kind	text	value	lang
+count	ein	1	de
+count	eine	1	de
+count	einen	1	de
+count	einer	1	de
+count	eins	1	de
+count	zwei	2	de
+count	drei	3	de
+count	vier	4	de
+count	fünf	5	de
+count	fuenf	5	de
+count	sechs	6	de
+count	sieben	7	de
+count	acht	8	de
+count	neun	9	de
+count	zehn	10	de
+count	elf	11	de
+count	zwölf	12	de
+count	zwoelf	12	de
+count	one	1	en
+count	two	2	en
+count	three	3	en
+count	four	4	en
+count	five	5	en
+count	six	6	en
+count	seven	7	en
+count	eight	8	en
+count	nine	9	en
+count	ten	10	en
+count	eleven	11	en
+count	twelve	12	en
+name	drei glocken
+name	seven up
+name	four roses
+name	elf bar
+name	drei wetter
+name	vier jahreszeiten
+name	fünf minuten
+name	fuenf minuten
+unit	x
+unit	kg
+unit	g
+unit	gr
+unit	l
+unit	ml
+unit	cl
+unit	stk
+unit	stück
+unit	st
+unit	pck
+unit	pkg
+unit	packung
+unit	packungen
+unit	pack
+unit	packs
+unit	päckchen
+unit	paket
+unit	pakete
+unit	dose
+unit	dosen
+unit	büchse
+unit	büchsen
+unit	flasche
+unit	flaschen
+unit	bund
+unit	becher
+unit	glas
+unit	gläser
+unit	tüte
+unit	tüten
+unit	tube
+unit	tuben
+unit	beutel
+unit	sack
+unit	säcke
+unit	netz
+unit	netze
+unit	kiste
+unit	kisten
+unit	kasten
+unit	kästen
+unit	karton
+unit	kartons
+unit	pfund
+unit	liter
+unit	kilo
+unit	gramm
+unit	rolle
+unit	rollen
+unit	tafel
+unit	tafeln
+unit	stange
+unit	stangen
+unit	schale
+unit	schalen
+unit	scheibe
+unit	scheiben
+unit	riegel
+unit	paar
+unit	dutzend
+unit	laib
+unit	laibe
+unit	kopf
+unit	köpfe

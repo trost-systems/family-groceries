@@ -679,6 +679,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String accountDeletePremiumLastMember(String household) {
+    return '“$household” has Hummlist Premium. It belongs to the household and ends with it. To keep the household with Premium, invite someone first and delete your account only after they have joined.';
+  }
+
+  @override
   String accountDeleteArchived(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

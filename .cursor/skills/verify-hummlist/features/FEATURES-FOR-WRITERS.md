@@ -126,7 +126,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Quick add
 
-**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, kinds, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type, in front or behind ("2 l Milch", "6x Eier", "zwei Gurken", "Karotten 2", "Karotten x2"), and a number that belongs to the item is not taken as an amount ("Windeln Größe 4", "Vitamin D3", "7up"); and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
+**What it does.** The bar at the bottom of the list, „Was brauchst du?“ (EN: "What do you need?"), is how items get onto the list. As soon as you type or tap it, a sheet opens with suggestions: what you typed, things you bought before, other packs, kinds, sizes and brands, and words from a built-in catalogue; they also find what you meant despite a small typo ("Hafermlch" offers Hafermilch). Enter takes the first suggestion, a tap takes any. Hummlist reads amounts out of what you type, in front or behind, as digits or words, German or English, also without a connection ("2 l Milch", "6x Eier", "zwei Gurken", "Gurken zwei", "two apples", "Karotten 2", "Karotten x2"), and a number that belongs to the item is not taken as an amount ("Windeln Größe 4", "Vitamin D3", "7up", "Drei Glocken Spaghetti"); and picks the category and, where it knows one, the store. After an add the field is empty and ready for the next item, and „Rückgängig“ (EN: "Undo") takes the last add back.
 
 **How to get there.**
 1. Open Hummlist and stay on the „Liste“ (EN: "List") tab.
@@ -140,7 +140,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That the cursor jumps into the field on phones when the app opens (only on desktop and web).
 - That an item already on the list can be added twice; Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"). Two people adding the same item at the same moment also end up with one.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): quantities, „steht schon auf der Liste“, the three rows on opening, store and category chips (DE and EN). Recipe: [quick-add.md](./quick-add.md).
+**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): number words offline and online give the same amount. Before that main c5a580a8, 2026-11-05: quantities, „steht schon auf der Liste“, the three rows on opening, store and category chips (DE and EN). Recipe: [quick-add.md](./quick-add.md).
 
 ## Due again
 
@@ -208,6 +208,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 2. Press and hold an item, or right-click it on a computer. (A plain tap ticks the item off instead.)
 3. In the sheet „Bearbeiten“ (EN: "Edit") change „Bezeichnung“ (EN: "Name"), „Marke“ (EN: "Brand"), „Menge“ (EN: "Qty") with the buttons „Eins weniger“ / „Eins mehr“ (EN: "One less" / "One more"), or „Eigenschaften“ (EN: "Details"), or pick another store or category with the chips. The store chip also offers „Neuer Laden“ (EN: "New store", the row with a plus) to add a store and pick it. Hummlist remembers the new store or category the next time the item is added.
 4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back. If someone put the same item on the list in the meantime, Undo shows theirs, as they wrote it, instead of a second one.
+5. Renaming an item to something that is already on the list (in any spelling of capitals, or another word for the same thing, like „Semmeln“ for „Brötchen“) does not make a second entry: the two become one. The item already there keeps its name, store and category, the amounts add up, and „Zusammengeführt: <amount> <name>“ (EN: "Merged: …") shows with „Rückgängig“ (EN: "Undo"). If they cannot be combined (the amount would get too long), Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list") and keeps the old name.
 
 **Never claim.**
 - That a swipe deletes or edits an item; a swipe does nothing, a hold opens the edit sheet.
@@ -215,8 +216,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
 - That holding and dragging moves an item on the list; nothing on the list drags. Holding opens this sheet.
+- That changing only the brand or details merges an item into another one; only a new name does.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): brand, quantity, store, delete with „Rückgängig“. Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name, capitals, „Semmeln“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“. Recipe: [edit-item.md](./edit-item.md).
 
 ## Tips on the list
 
@@ -311,7 +313,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Working offline
 
-**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so. Changes to categories made offline are not saved: the app says so and puts them back. If someone else added the same item while you were offline, your add becomes theirs when it syncs (no second row), and what you did to it offline, like ticking it off, goes to theirs.
+**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so. Changes to categories made offline are not saved: the app says so and puts them back. If someone else added the same item while you were offline, your add becomes theirs when it syncs (no second row), and what you did to it offline, like ticking it off, goes to theirs. Amounts typed offline are read the same way as online, also as words („zwei Gurken“, "two apples").
 
 **How to get there.**
 1. Open „Liste“ (EN: "List") and use it as usual with the connection off.
@@ -325,7 +327,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Offline sign-in, and a first start offline before the list was ever synced (not covered by specs or read in detail).
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): add and tick offline, the offline note, adding a store refused, sync when back. Recipe: [offline.md](./offline.md).
+**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): amounts typed offline, number words included, match the ones typed online. Before that main c5a580a8, 2026-11-05: add and tick offline, the offline note, adding a store refused, sync when back. Recipe: [offline.md](./offline.md).
 
 # Settings, help and account
 
@@ -403,7 +405,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Account: data export and deletion
 
-**What it does.** The Konto page shows the signed-in email address with a copy button („Kopiert“, EN "Copied"). Every user can download a copy of their data as a JSON file and delete their account for good. Before deleting, the app says what happens to the shared household: it stays for the others (the user's items remain, without their name) or, for the last member, it is deleted with its list, history, categories and stores. The user confirms by typing a word. Single data can also be removed without deleting the account: an item from the list, an access key or connected app on Zugänge, and usage data by switching it off.
+**What it does.** The Konto page shows the signed-in email address with a copy button („Kopiert“, EN "Copied"). Every user can download a copy of their data as a JSON file and delete their account for good. Before deleting, the app says what happens to the shared household: it stays for the others (the user's items remain, without their name) or, for the last member, it is deleted with its list, history, categories and stores. The last member of a household with Hummlist Premium (bought for life, yearly, or a free unlock for testers) is told first that Premium ends with the household and is not refunded automatically, with a link to ask Apple or Google for a refund, and ticks a box before deleting. The user confirms by typing a word. Single data can also be removed without deleting the account: an item from the list, an access key or connected app on Zugänge, and usage data by switching it off.
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More").
@@ -415,11 +417,11 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - History entries or „Zuletzt verwendet“ entries can be deleted one by one in the app (they cannot; history goes with the household, single entries on request by email to support@hummlist.com).
 - Deletion can be undone, or happens later (it is immediate and final).
 - Backups or logs vanish at once (backups are kept up to 90 days, logs 1 day, per the deletion page).
-- That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium (also a tester's gift), and households the user archived go too. Premium is not refunded automatically. Today's app does not warn about this; the warning is held until the archive UI or the Premium sale.
+- That deleting the account archives the household or keeps Hummlist Premium: the last member's household goes with its Premium (also a tester's gift), and households the user archived go too. Premium is not refunded automatically; the app warns about this. That Premium can be kept by archiving the household: it cannot.
 
 **Unverified.** Apple sign-in revocation on iPhone (no iOS surface to test).
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): the email copy button, the delete dialog for a member of a shared household (nothing deleted). Recipe: [account-deletion.md](./account-deletion.md).
+**Last verified.** job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): the Premium warning for the last member with a free unlock, Lifetime and yearly, none without Premium or in a shared household (nothing deleted). Before that main c5a580a8, 2026-11-05: the email copy button. Recipe: [account-deletion.md](./account-deletion.md).
 
 # Connections and Premium
 

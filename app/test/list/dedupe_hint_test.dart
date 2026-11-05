@@ -5,6 +5,7 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -305,5 +306,66 @@ void main() {
     expect(refused, [
       isA<MergeRefused>().having((r) => r.name, 'name', 'Möhren'),
     ]);
+  });
+
+  group('a rename onto an open item (job 104)', () {
+    Future<void> rename(WidgetTester tester, String from, String to) async {
+      repo.emitItem!(
+        repo.remoteAdd(from, categoryId: 'produce', quantity: '1 kg'),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(row(from), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const ValueKey('edit-name')), to);
+      await tester.tap(find.byKey(const ValueKey('edit-done')));
+      await tester.pumpAndSettle();
+    }
+
+    // The same name merges before anything is sent; a synonym once the
+    // rename landed. Rückgängig brings Rüben back either way.
+    for (final (to, back) in [('möhren', 'Rüben'), ('Karotten', 'Rüben')]) {
+      testWidgets('renaming Rüben to "$to" merges into Möhren and says so; '
+          'Rückgängig brings $back back', (tester) async {
+        await pumpList(tester);
+        await rename(tester, 'Rüben', to);
+        expect(open(), [('Möhren', '1,5 kg')]);
+        expect(row(to), findsNothing);
+        expect(
+          inSnackBar(find.text('Zusammengeführt: 1,5 kg Möhren')),
+          findsOneWidget,
+        );
+        expect(dedupeEvents(), isEmpty, reason: 'no hint was shown');
+
+        await tester.tap(inSnackBar(find.text('Rückgängig')));
+        await tester.pumpAndSettle();
+        expect(open(), [('Möhren', '500 g'), (back, '1 kg')]);
+        expect(row(back), findsOneWidget);
+      });
+    }
+
+    testWidgets('a merge that cannot be done is refused as on the list', (
+      tester,
+    ) async {
+      await pumpList(tester, moehren: 'eine große Packung vom Wochenmarkt');
+      final refused = <Rejected>[];
+      final listening = cubit.rejections.listen(refused.add);
+      addTearDown(listening.cancel);
+      await rename(tester, 'Rüben', 'Möhren');
+      expect(open(), [
+        ('Möhren', 'eine große Packung vom Wochenmarkt'),
+        ('Rüben', '1 kg'),
+      ]);
+      expect(row('Rüben'), findsOneWidget);
+      expect(refused, [
+        isA<RenameTaken>().having((r) => r.name, 'name', 'Möhren'),
+      ]);
+    });
+
+    testWidgets('a rename to another name is just a rename', (tester) async {
+      await pumpList(tester);
+      await rename(tester, 'Rüben', 'Rote Bete');
+      expect(open(), [('Möhren', '500 g'), ('Rote Bete', '1 kg')]);
+      expect(find.byType(SnackBar), findsNothing);
+    });
   });
 }

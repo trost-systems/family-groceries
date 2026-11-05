@@ -1,0 +1,87 @@
+// Feature edit-item, sub-feature ed-rename-open: renaming an item to the name of another open item
+// (any case, or another spelling or synonym of it) folds it into that item. Proves one open row is
+// left, the merged snackbar shows, and Rückgängig brings the renamed item back.
+//
+//   node journeys/edit-item.mjs <evidence dir> [--lang de|en] [--from Apfelsaft] [--to Mineralwasser]
+//     [--onto Brötchen]   the open item --to is a synonym of (--to Semmeln); default: --to itself
+import { addField, apiAs, capture, instance, itemRow, logger, member, openApp, reveal, signIn, typeInto } from '../helpers/lib.mjs';
+
+const [dir, ...rest] = process.argv.slice(2);
+const opt = (name, def) => (rest.includes(`--${name}`) ? rest[rest.indexOf(`--${name}`) + 1] : def);
+const lang = opt('lang', 'de');
+const from = opt('from', 'Apfelsaft');
+const to = opt('to', 'Mineralwasser');
+const onto = opt('onto', to);
+if (!dir) throw new Error('usage: edit-item.mjs <evidence dir> [--lang de|en] [--from name] [--to name]');
+
+const log = logger(dir);
+const inst = instance();
+const user = member(inst);
+const api = await apiAs(inst, user);
+const open = async () => {
+  const { data, error } = await api.from('items').select('id, name, quantity, status')
+    .eq('household_id', user.householdId).eq('status', 'active').order('name');
+  if (error) throw error;
+  return data;
+};
+const folded = (s) => s.toLowerCase();
+const { browser, page, L, errors } = await openApp(inst, { lang, videoDir: dir });
+let failed = null;
+try {
+  const before = await open();
+  const target = before.find((i) => folded(i.name) === folded(onto));
+  if (!before.some((i) => i.name === from) || !target) {
+    throw new Error(`needs "${from}" and "${onto}" open; open: ${before.map((i) => i.name).join(', ')}`);
+  }
+  await signIn(page, L, user);
+  await addField(page, L).waitFor();
+  log(`signed in as ${user.handle} (${lang}); open before: ${before.length} items, "${target.name}" ${target.quantity ?? '-'}`);
+  await capture(page, dir, '01-list-before');
+
+  const sheet = page.getByRole('group', { name: L('editSheet'), exact: true });
+  await reveal(page, itemRow(page, from).first());
+  await itemRow(page, from).first().click({ button: 'right' });
+  await sheet.waitFor({ timeout: 10_000 });
+  await typeInto(sheet.getByRole('textbox', { name: L('fieldName') }), to);
+  await capture(page, dir, '02-renaming');
+  await sheet.getByRole('button', { name: L('done'), exact: true }).click();
+  await sheet.waitFor({ state: 'detached', timeout: 10_000 });
+
+  const merged = page.getByRole('group', { name: new RegExp(`^${L('dedupeMerged', { item: '' }).trim()} `) });
+  const note = await merged.first().waitFor({ timeout: 10_000 }).then(
+    async () => (await merged.first().getAttribute('aria-label')) ?? '',
+    () => null,
+  );
+  log(`snackbar: ${note === null ? 'none' : `"${note}"`}`);
+  await capture(page, dir, '03-after-rename');
+
+  await page.waitForTimeout(1_500);
+  const after = await open();
+  const same = after.filter((i) => [folded(to), folded(onto)].includes(folded(i.name)));
+  log(`database: open "${onto}"/"${to}": ${JSON.stringify(same)}; "${from}" open: ${after.some((i) => i.name === from)}`);
+  if (same.length !== 1) throw new Error(`expected one open "${onto}", found ${same.length}`);
+  if (same[0].id !== target.id) throw new Error(`"${onto}" is not the item that was open before`);
+  if (note === null) throw new Error('no merged snackbar');
+
+  // Rückgängig brings the item back under its old name, also after a synonym merge.
+  const back = from;
+  await merged.first().getByRole('button', { name: L('undo'), exact: true }).click();
+  await itemRow(page, back).first().waitFor({ timeout: 10_000 });
+  await page.waitForTimeout(1_500);
+  const undone = await open();
+  log(`after Rückgängig: "${back}" open: ${undone.some((i) => i.name === back)}, open "${onto}": ${undone.filter((i) => folded(i.name) === folded(onto)).length}`);
+  await capture(page, dir, '04-after-undo');
+  if (!undone.some((i) => i.name === back)) throw new Error(`Rückgängig did not bring "${back}" back`);
+  if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
+} catch (error) {
+  failed = error;
+  await capture(page, dir, '99-failure').catch(() => {});
+} finally {
+  await page.context().close();
+  await browser.close();
+}
+if (failed) {
+  log(`FAIL: ${failed.message}`);
+  process.exit(1);
+}
+log(`PASS edit-item rename onto an open item (evidence: ${dir})`);

@@ -1676,3 +1676,26 @@ are in `docs/screenshots/86/` and `~/groceries-ops/jobs/86-iap-review-screenshot
 3. #213 is rebased onto main (job 87 is in). Merge it after lead review: `scripts/merge-pr.sh
    --wait 213`. It holds the capture entrypoint, the script, `paywall-shot.yml` (by hand) and the
    Lifetime price fixed in `LifetimeStoreKitTests`.
+
+## Job 104: gap fixes (2026-11-05)
+
+PR "fix: rename dedupe, offline number words, last-member Premium warning". PR only: the lead
+reviews and merges. Two new migrations deploy with the next `supabase-deploy.yml` run.
+
+- **Copy review.** One new string, `accountDeletePremiumLastMember` (DE and EN). It is the job-68
+  Premium warning without its archive sentence. It now shows in release builds to the last
+  member of a household with Premium. Its texts waited for the archive UI's Legal Review
+  (DECISIONS 68.3); the brief asks for the warning regardless. Say if Legal should see it first.
+  The reused job-68 lines ship with it: a household with a gifted or tester unlock also reads
+  „Erstattung bei Apple oder Google anfragen“ and „… wird nicht automatisch erstattet“, for
+  Premium nobody paid for. A gift-specific wording would be a new string.
+- **Behaviour change to confirm: typed number words online.** „Gurken zwei“, „two apples“ and
+  „carrots two“ typed in the add sheet or sent through MCP now get a quantity online too, not
+  only offline (DECISIONS 104.5). Before, the typed rule read only German words up front.
+- **Follow-up, voice code (out of scope here).** The Siri, Alexa and dictation splitters
+  (`voice/parse.ts`, `parse_en.ts`) don't read the new number-word names. Spoken „Drei Glocken
+  Spaghetti“ gives 3 × Glocken Spaghetti, and „Seven Up“ gives 7 × Up. Reading
+  `supabase/tests/number_words.tsv`'s `name` rows there would be a small job.
+- **Rename merges a synonym.** Renaming to another word for an open item („Semmeln“ while
+  Brötchen is open) merges straight away, with Rückgängig. An add only offers that merge as a
+  hint. Say if a rename should offer the hint instead.

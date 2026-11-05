@@ -544,10 +544,10 @@ void main() {
   });
 
   group('Hummlist Premium that ends with the account (job 68)', () {
-    /// The dialog alone, with the archive UI's flag as [premiumWarning].
+    /// The dialog alone, with the archive UI's flag as [archiveTexts].
     Future<void> openWith(
       WidgetTester tester, {
-      required bool premiumWarning,
+      required bool archiveTexts,
       Locale locale = const Locale('de'),
     }) async {
       await pump(
@@ -561,7 +561,7 @@ void main() {
                   context: context,
                   builder: (_) => DeleteAccountDialog(
                     repository: account,
-                    premiumWarning: premiumWarning,
+                    archiveTexts: archiveTexts,
                   ),
                 ),
               ),
@@ -580,12 +580,16 @@ void main() {
         'mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, '
         'lade vorher jemanden ein und lösche dein Konto erst, wenn die Person '
         'beigetreten ist.';
+    const releaseText =
+        '„Zuhause“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit '
+        'ihm. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein '
+        'und lösche dein Konto erst, wenn die Person beigetreten ist.';
     final ack = find.byKey(const ValueKey('account-delete-premium-ack'));
 
     testWidgets('the last member of an unlocked household confirms that '
         'Premium is not refunded before Delete works', (tester) async {
       account.fateResult = const FateDeleted('Zuhause', unlocked: true);
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
 
       expect(find.text(premiumText), findsOneWidget);
       expect(
@@ -610,14 +614,14 @@ void main() {
 
     testWidgets('the refund help opens from the warning', (tester) async {
       account.fateResult = const FateDeleted('Zuhause', unlocked: true);
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
       await tapKey(tester, 'account-delete-refund-help');
       expect(find.textContaining('reportaproblem.apple.com'), findsWidgets);
     });
 
     testWidgets('unticking the box disables Delete again', (tester) async {
       account.fateResult = const FateDeleted('Zuhause', unlocked: true);
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
       await confirm(tester);
       await tapKey(tester, 'account-delete-premium-ack');
       await tapKey(tester, 'account-delete-premium-ack');
@@ -628,26 +632,41 @@ void main() {
       tester,
     ) async {
       account.fateResult = const FateDeleted('Zuhause');
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
       expect(find.text(premiumText), findsNothing);
       expect(ack, findsNothing);
       await confirm(tester);
       expect(confirmEnabled(tester), isTrue);
     });
 
-    testWidgets('with the archive UI off the dialog stays as before', (
+    testWidgets('with the archive UI off the last member is still warned, '
+        'without archived households or the archive sentence (job 104)', (
       tester,
     ) async {
       account
         ..fateResult = const FateDeleted('Zuhause', unlocked: true)
         ..archived = [const ArchivedFate('Ferien', unlocked: true)];
-      await openWith(tester, premiumWarning: false);
+      await openWith(tester, archiveTexts: false);
       expect(find.text(premiumText), findsNothing);
-      expect(ack, findsNothing);
+      expect(find.text(releaseText), findsOneWidget);
+      expect(ack, findsOneWidget);
       expect(
         find.byKey(const ValueKey('account-delete-archived')),
         findsNothing,
       );
+      await confirm(tester);
+      expect(confirmEnabled(tester), isFalse);
+      await tapKey(tester, 'account-delete-premium-ack');
+      expect(confirmEnabled(tester), isTrue);
+    });
+
+    testWidgets('with the archive UI off an archived household with premium '
+        'asks nothing', (tester) async {
+      account
+        ..fateResult = const FateKept('Zuhause', ['Lea'])
+        ..archived = [const ArchivedFate('Ferien', unlocked: true)];
+      await openWith(tester, archiveTexts: false);
+      expect(ack, findsNothing);
       await confirm(tester);
       expect(confirmEnabled(tester), isTrue);
     });
@@ -658,7 +677,7 @@ void main() {
       account
         ..fateResult = const FateKept('Zuhause', ['Lea'])
         ..archived = [const ArchivedFate('Ferien', unlocked: true)];
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
       expect(
         find.text(
           'Dein archivierter Haushalt „Ferien“ wird mit deinem Konto '
@@ -678,7 +697,7 @@ void main() {
       account
         ..fateResult = const FateNone()
         ..archived = [const ArchivedFate('Ferien'), const ArchivedFate('Büro')];
-      await openWith(tester, premiumWarning: true);
+      await openWith(tester, archiveTexts: true);
       expect(
         find.text(
           'Deine archivierten Haushalte „Ferien“ und „Büro“ werden mit deinem '
@@ -692,10 +711,12 @@ void main() {
       expect(confirmEnabled(tester), isTrue);
     });
 
-    for (final (offer, shown) in [(true, true), (false, false)]) {
+    for (final (offer, text) in [(true, premiumText), (false, releaseText)]) {
       testWidgets('from the account page with the Premium sale '
           '${offer ? 'open' : 'closed'} and the archive UI off, the warning '
-          'is ${shown ? 'shown' : 'hidden'}', (tester) async {
+          'is shown${offer ? '' : ' without the archive sentence'}', (
+        tester,
+      ) async {
         account.fateResult = const FateDeleted('Zuhause', unlocked: true);
         await pump(
           tester,
@@ -703,15 +724,53 @@ void main() {
           premium: FakePremiumServer(offer: offer),
         );
         await tapKey(tester, 'account-delete');
-        expect(find.text(premiumText), shown ? findsOneWidget : findsNothing);
+        expect(find.text(text), findsOneWidget);
         await confirm(tester);
-        expect(confirmEnabled(tester), !shown);
+        expect(confirmEnabled(tester), isFalse);
+      });
+    }
+
+    // Job 104: release builds (archive UI and Premium sale off) warn whenever
+    // the household has premium now. The dialog only gets leaves_unlocked()'s
+    // answer; that gifted, Lifetime and yearly all count is proven in
+    // supabase/tests/leaves_unlocked.test.sql.
+    for (final (premium, fate, warned) in [
+      (
+        'premium of any kind',
+        const FateDeleted('Zuhause', unlocked: true),
+        true,
+      ),
+      ('no premium', const FateDeleted('Zuhause'), false),
+      ('premium, but Lea stays', const FateKept('Zuhause', ['Lea']), false),
+    ]) {
+      testWidgets('in a release build, deleting with $premium '
+          '${warned ? 'warns' : 'does not warn'}', (tester) async {
+        account.fateResult = fate;
+        await pump(
+          tester,
+          settings(),
+          premium: FakePremiumServer(offer: false),
+        );
+        await tapKey(tester, 'account-delete');
+        expect(find.text(releaseText), warned ? findsOneWidget : findsNothing);
+        expect(ack, warned ? findsOneWidget : findsNothing);
+        expect(
+          find.byKey(const ValueKey('account-delete-refund-help')),
+          warned ? findsOneWidget : findsNothing,
+        );
+        await confirm(tester);
+        expect(confirmEnabled(tester), !warned);
+        if (warned) {
+          await tapKey(tester, 'account-delete-premium-ack');
+          await tapKey(tester, 'account-delete-confirm');
+          expect(account.deleteCalls, 1);
+        }
       });
     }
 
     testWidgets('in English', (tester) async {
       account.fateResult = const FateDeleted('Home', unlocked: true);
-      await openWith(tester, premiumWarning: true, locale: const Locale('en'));
+      await openWith(tester, archiveTexts: true, locale: const Locale('en'));
       expect(
         find.text(
           '“Home” has Hummlist Premium. It belongs to the household and ends '

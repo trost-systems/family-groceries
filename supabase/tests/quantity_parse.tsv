@@ -1,9 +1,12 @@
 # A typed line's name and Menge (job 61): app/lib/list/entry.dart parseEntry and the server's
 # public.parse_item read every row the same (tested by app/test/list/entry_test.dart and the db
-# gate's supabase/functions/_shared/add_paths_integration_test.ts). A bare number at the end is
-# the Menge only when it is 1 to 20, does not follow a size or unit word, and the rest is a word
-# the dictionary knows or the household bought before (history). The server's name here is its
-# name and Eigenschaften joined ("Windeln" + "Größe 4"). Tab-separated; an empty cell is none.
+# gate's supabase/functions/_shared/add_paths_integration_test.ts), offline as online. Up front,
+# an amount or a number word of supabase/tests/number_words.tsv (German or English, job 104) is
+# the Menge, unless the line starts with a name there ("Drei Glocken"). A bare count at the end,
+# digits or a number word but no article form ("Milch ein"), is the Menge only when it is 1 to
+# 20, does not follow a size or unit word, and the rest is a word the dictionary knows or the
+# household bought before (history). The server's name here is its name and Eigenschaften joined
+# ("Windeln" + "Größe 4"). Tab-separated; an empty cell is none.
 # Said is different (job 89): the voice splitter (supabase/functions/voice/parse.ts, parse_en.ts;
 # Siri, Alexa, in-app dictation) reads any count said after the item as the Menge, as a word or
 # digits. A row with mode `typed` is only typed, one with `spoken` only said; no mode is both.
@@ -35,14 +38,41 @@ Büroklammern 100	Büroklammern	100		spoken
 Karotten 21	Karotten	21		spoken
 Plimbel 3	Plimbel	3		spoken
 Gurken 2	Gurken	2
-zwei Gurken	Gurken	2		spoken
-Gurken zwei	Gurken zwei			typed
-Gurken zwei	Gurken	2		spoken
+zwei Gurken	Gurken	2
+Gurken zwei	Gurken	2
 Eier dreißig	Eier	30		spoken
 cucumbers 2	cucumbers	2			en
-cucumbers two	cucumbers two			typed	en
-cucumbers two	cucumbers	2		spoken	en
-two cucumbers	two cucumbers			typed	en
+cucumbers two	cucumbers	2			en
 Hack 500 Gramm	Hack	500 g		spoken
 Milch zwei Liter	Milch	2 l		spoken
-two cucumbers	cucumbers	2		spoken	en
+two cucumbers	cucumbers	2			en
+zwölf Eier	Eier	12
+drei Liter Milch	Milch	3 Liter		typed
+eine Packung Eier	Eier	1 Packung		typed
+1/2 Brot	Brot	1/2		typed
+ein halbes Brot	Brot	1/2		typed
+ein halbes Kilo Hack	Hack	0,5 Kilo		typed
+anderthalb Liter Milch	Milch	1,5 Liter		typed
+three carrots	carrots	3			en
+Eier zwölf	Eier	12
+Gurken eins	Gurken	1
+carrots one	carrots	1			en
+Milch ein	Milch ein
+Gurken eine	Gurken eine
+Eier dreißig	Eier dreißig			typed
+Plimbel drei	Plimbel drei			typed
+Plimbel drei	Plimbel	3	Plimbel	typed
+Windeln Größe vier	Windeln Größe vier
+Einhorn Kondome	Einhorn Kondome
+Elfenbein Seife	Elfenbein Seife
+Drei Glocken Spaghetti	Drei Glocken Spaghetti			typed
+Seven Up	Seven Up			typed
+Four Roses Bourbon	Four Roses Bourbon			typed
+Elf Bar	Elf Bar			typed
+ein Kopf Salat	Salat	1 Kopf		typed
+zwei Tuben Zahnpasta	Zahnpasta	2 Tuben		typed
+ein halbes Dutzend Eier	Eier	0,5 Dutzend		typed
+ein Paar Wiener	Wiener	1 Paar		typed
+Socken 2 Paar	Socken	2 Paar		typed
+Vier Jahreszeiten Pizza	Vier Jahreszeiten Pizza			typed
+fünf Minuten Terrine	fünf Minuten Terrine			typed

@@ -67,7 +67,7 @@ It exits 0 only when every check passes. Run it first, and whenever a drive fail
 ```bash
 .cursor/skills/verify-hummlist/helpers/drive.sh quick-add            # a scripted journey: PASS or FAIL: <reason>
 .cursor/skills/verify-hummlist/helpers/drive.sh quick-add --lang en
-.cursor/skills/verify-hummlist/helpers/drive.sh edit-item            # no journey yet: prints the feature's e2e specs (exit 3)
+.cursor/skills/verify-hummlist/helpers/drive.sh sign-in              # no journey yet: prints the feature's e2e specs (exit 3)
 ```
 
 A journey is `journeys/<feature-id>.mjs`, a plain Node script on `helpers/lib.mjs`. To prove a feature without a journey, write one: copy `journeys/quick-add.mjs` and follow the steps of `features/<id>.md`. Commit it only if it is reusable. Building blocks from `helpers/lib.mjs`:
@@ -136,7 +136,9 @@ It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and ho
 | `journeys/tick-and-undo.mjs` | `drive.sh tick-and-undo [--lang en] [--item Butter]` |
 | `journeys/ai-assistants.mjs` | `drive.sh ai-assistants [--lang en]`: a connected app's row (device, dates), the token hint and the details sheet |
 | `journeys/tips.mjs` | `drive.sh tips [--lang en] [--dark]`: the List tab's tip, dismiss, the next tip after a reload |
-| `journeys/account-deletion.mjs` | `drive.sh account-deletion [--lang en]`: the Konto page's email copy button and the clipboard |
+| `journeys/account-deletion.mjs` | `drive.sh account-deletion [--lang en] [--dialog premium\|none]`: the Konto page's email copy button and the clipboard; with `--dialog`, whether „Konto löschen“ shows the Premium warning (then cancels) |
+| `journeys/edit-item.mjs` | `drive.sh edit-item [--from Apfelsaft] [--to Mineralwasser] [--onto Brötchen]` on `demo-familie`: a rename onto an open item merges, „Zusammengeführt“, Rückgängig |
+| `journeys/offline.mjs` | `drive.sh offline [--lines "zwei Gurken\|two lemons"]`: lines added offline get the same name and Menge as online |
 | `journeys/list-manage.mjs` | `node .cursor/skills/verify-hummlist/journeys/list-manage.mjs <evidence dir> [--lang en] [--dark]` (no feature id of its own, so not through `drive.sh`): screenshots of the list, the add sheet, More, „Läden“, one store's details and „Ohne Laden“ for stores-walk-order and categories; adds and then deletes Wochenmarkt and Bäckerei; checks only that the page logs no errors |
 
 How-to clips (GIF for emails, MP4/WebM for the site) of the same build: [hummlist-howto-clips](../hummlist-howto-clips/SKILL.md).

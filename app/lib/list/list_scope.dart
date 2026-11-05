@@ -99,6 +99,7 @@ class _ScopeState() extends State<_Scope> {
         StoreNameTaken(:final name) => l10n.storeNameTaken(name),
         StoreNeedsConnection() => l10n.storesNeedConnection,
         MergeRefused(:final name) => l10n.mergeRefused(name),
+        RenameTaken(:final name) => l10n.alreadyOnList(name),
       };
       if (!(_notices.listTab?.call(text) ?? false)) {
         ScaffoldMessenger.maybeOf(context)

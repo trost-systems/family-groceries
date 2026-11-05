@@ -226,6 +226,8 @@
   "accountDeleteExportHint": "To keep a copy first, use “Export my data” under Account.",
   "accountDeletePremium": "“{household}” has Hummlist Premium. It belongs to the household and ends with it. Archiving isn't possible here, because an archived household is deleted with your account. To keep the household with Premium, invite someone first and delete your account only after they have joined.",
   "@accountDeletePremium": {"placeholders": {"household": {"type": "String"}}},
+  "accountDeletePremiumLastMember": "“{household}” has Hummlist Premium. It belongs to the household and ends with it. To keep the household with Premium, invite someone first and delete your account only after they have joined.",
+  "@accountDeletePremiumLastMember": {"description": "Account deletion (job 104): the last member's household has Hummlist Premium, in builds without the archive UI", "placeholders": {"household": {"type": "String"}}},
   "accountDeleteArchived": "{count, plural, =1{Your archived household {names} is deleted with your account.} other{Your archived households {names} are deleted with your account.}}",
   "@accountDeleteArchived": {"placeholders": {"count": {"type": "int"}, "names": {"type": "String"}}},
   "accountDeleteArchivedPremium": "{count, plural, =1{Your archived household {names} is deleted with your account, and its Hummlist Premium with it.} other{Your archived households {names} are deleted with your account, and their Hummlist Premium with them.}}",

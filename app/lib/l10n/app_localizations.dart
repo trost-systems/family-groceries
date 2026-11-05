@@ -1172,6 +1172,12 @@ abstract class AppLocalizations {
   /// **'„{household}“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.'**
   String accountDeletePremium(String household);
 
+  /// Account deletion (job 104): the last member's household has Hummlist Premium, in builds without the archive UI; accountDeletePremium without its archive sentence
+  ///
+  /// In de, this message translates to:
+  /// **'„{household}“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.'**
+  String accountDeletePremiumLastMember(String household);
+
   /// names: quoted and joined, like „Ferien“ und „Büro“
   ///
   /// In de, this message translates to:
