@@ -118,6 +118,31 @@ function checkChangelog(c, changelog, path, keys = ['title', 'items', 'store']) 
   return changelog;
 }
 
+// Optional stats of a release (job 105): the commits a bot or AI assistant took part in, and the
+// lines of code at the release commit (scripts/release/loc.mjs, releases/README.md).
+export const STATS_OPTIONAL = ['automated_commits', 'loc'];
+
+function checkLoc(c, loc, path) {
+  c.object(loc, path, ['total', 'languages']);
+  c.count(loc.total, `${path}.total`);
+  let sum = 0;
+  let previous = null;
+  const seen = new Set();
+  c.array(loc.languages, `${path}.languages`).forEach((entry, i) => {
+    const at = `${path}.languages[${i}]`;
+    c.object(entry, at, ['language', 'files', 'lines']);
+    c.matches(typeof entry.language === 'string' && entry.language.trim() !== '', entry.language, `${at}.language`, 'a language name');
+    if (seen.has(entry.language)) c.fail(`${at}.language`, `${entry.language} is listed twice`);
+    seen.add(entry.language);
+    c.count(entry.files, `${at}.files`);
+    sum += c.count(entry.lines, `${at}.lines`);
+    if (previous && entry.lines > previous.lines) c.fail(at, `languages are sorted by lines, most first; ${entry.language} has more than ${previous.language}`);
+    previous = entry;
+  });
+  if (sum !== loc.total) c.fail(`${path}.total`, `is ${loc.total}, but the languages add up to ${sum}`);
+  return loc;
+}
+
 // Parses and checks the record; throws RecordError naming `source` and the bad field.
 export function parseRecord(text, source = 'releases/releases.json') {
   const c = checker(source);
@@ -163,8 +188,14 @@ export function parseRecord(text, source = 'releases/releases.json') {
     c.matches(SHA.test(c.string(release.sha, `${path}.sha`)), release.sha, `${path}.sha`, 'a full commit sha (40 hex)');
     c.object(release.stores, `${path}.stores`, STORES);
     for (const store of STORES) c.boolean(release.stores[store], `${path}.stores.${store}`);
-    const stats = c.object(release.stats, `${path}.stats`, ['commits', 'additions', 'deletions', 'files_changed', 'contributors']);
+    // Job 105: `automated_commits` and `loc` are optional, so releases recorded before them stay valid.
+    const statFields = ['commits', 'additions', 'deletions', 'files_changed', 'contributors'];
+    const stats = c.object(release.stats, `${path}.stats`, [...statFields, ...STATS_OPTIONAL.filter((k) => Object.hasOwn(Object(release.stats), k))]);
     for (const key of ['commits', 'additions', 'deletions', 'files_changed']) c.count(stats[key], `${path}.stats.${key}`);
+    if ('automated_commits' in stats && c.count(stats.automated_commits, `${path}.stats.automated_commits`) > stats.commits) {
+      c.fail(`${path}.stats.automated_commits`, `${stats.automated_commits} is more than the release's ${stats.commits} commits`);
+    }
+    if ('loc' in stats) checkLoc(c, stats.loc, `${path}.stats.loc`);
     c.array(stats.contributors, `${path}.stats.contributors`).forEach((person, j) => {
       const at = `${path}.stats.contributors[${j}]`;
       c.object(person, at, ['name', 'github', 'commits', 'additions', 'deletions', 'bot']);

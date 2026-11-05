@@ -7497,3 +7497,37 @@ on 2026-11-04 (paths named below).
     lead merges, so the branch keeps them and is pushed fast-forward; the lead's landing runs
     `scripts/push-pr.sh`, which squashes. `native-siri` hold and `NATIVE_SIRI_LIVE` unchanged; the
     changelog item carries `hold: native-siri`.
+
+## Job 105: hummlist.com/history release timeline (2026-11-05)
+
+1. **Routes `/history` (German) and `/en/history`.** The brief names hummlist.com/history; the
+   site's fixed-path pages put German at the root and English under `/en` (`/impressum`,
+   `/en/imprint`), so the timeline follows that pair. The footer of every page links the one of
+   its language, after Neuigkeiten / What's new; the header stays as it is.
+2. **Stats at record time, in the record.** `releases.json` already had a required `stats`
+   (commits, net diff, contributors). Job 105 adds two optional fields, so entries without them
+   stay valid: `automated_commits` and `loc`. `record.mjs add` writes them in the same commit as
+   the entry; `record.mjs stats --version X` recomputes an entry (backfill). The site renders only
+   what the record says and never runs git (Vercel clones shallow). The workflow already checked
+   out with `fetch-depth: 0`.
+3. **Day N** is `release.day`, days since `project.day_zero` (2026-10-22, the first commit), as
+   the record already had it; the intro names day 0.
+4. **Lines of code** are non-blank lines of tracked source files of twelve languages at the
+   release commit, read from git objects (deterministic), leaving out docs, l10n output, goldens,
+   the vendored PostHog SDK, lockfiles, minified files, `*.g.dart`-style outputs, binaries and
+   files whose head says "generated … do not edit" (`releases/README.md`, "Lines of code").
+   Blank lines are left out because they are formatting, not code; comments count, since telling
+   them apart needs a parser per language and the rule must stay simple to reproduce.
+5. **Bots are one label, never contributors.** Contributors with `bot: true` (petertrost-bot,
+   AI co-authors, `[bot]` logins) are not counted, named or ranked; the entry says how many of
+   the release's commits they took part in under „Bots und KI-Assistenten“ / "Bots and AI
+   assistants". Nearly every commit is authored by petertrost-bot with Peter and an AI assistant
+   as co-authors, so ranking the bots with people would put three labels for the same commits on
+   top; and brand names stay off the site (Legal N-80). People show as display name plus GitHub
+   login, top three by commits.
+6. **Copy as data.** Every new string is in `HISTORY_COPY` (`site/history.mjs`) with its place
+   on the page; `scripts/copy-needed.mjs` writes them into `COPY_NEEDED.md` as drafts, so the
+   list cannot go stale (the landing test checks the file).
+7. **Not fixed here:** the browser crawl reports two focus-indicator findings on `/en/support`
+   (long links wrapping over two lines at 1440 px). They are on main already and outside this
+   job's scope (no edits to existing pages); the crawl is not part of CI.

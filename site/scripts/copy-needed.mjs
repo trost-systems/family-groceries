@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { HISTORY_COPY } from '../history.mjs';
 import { parseCopy } from '../landing.mjs';
 
 const SITE_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,7 +33,7 @@ export function readVideoCopy() {
   return Object.entries(raw).filter(([id]) => id !== '_');
 }
 
-export function copyNeeded(copy, videoCopy = []) {
+export function copyNeeded(copy, videoCopy = [], historyCopy = Object.entries(HISTORY_COPY)) {
   const rows = (status) =>
     [...copy]
       .filter(([, e]) => e.status === status)
@@ -64,6 +65,15 @@ re-render with \`node marketing/videos/build.mjs\` (marketing/videos/README.md).
 
 ${head}
 ${videoCopy.map(([id, e]) => `| \`${id}\` | Demo video ${id.split('.')[0]} | ${cell(e.de)} | ${cell(e.en)} | ${cell(e.source)} | ${e.status} |`).join('\n')}
+` : ''}${historyCopy.length ? `
+## Release timeline (/history, /en/history)
+
+From \`HISTORY_COPY\` in \`site/history.mjs\` (job 105): every string of the release timeline and
+its footer link, new and waiting for the copy review (NEEDS_COPY_REVIEW). \`{…}\` is filled in at
+build time. Change the text there; this section follows.
+
+${head}
+${historyCopy.map(([id, e]) => `| \`${id}\` | ${cell(e.where)} | ${cell(e.de)} | ${cell(e.en)} | New: release timeline (job 105). | draft |`).join('\n')}
 ` : ''}`;
 }
 

@@ -81,7 +81,7 @@ test('the real record parses', () => {
 test('the first release counts from the root commit', () => {
   const out = run('--version', '1.0.0', '--sha', shas.c4, '--build', '10', '--date', '2026-10-25', '--stores', 'app_store,play', '--notes-de', 'Erste', '--notes-en', 'First');
   assert.equal(out.code, 0, out.stderr);
-  assert.equal(out.stdout.trim(), 'recorded 1.0.0 (day 3, 4 commits, 6 contributors)');
+  assert.equal(out.stdout.trim(), 'recorded 1.0.0 (day 3, 4 commits, 6 contributors, 0 lines of code)');
   const r = release('1.0.0');
   assert.deepEqual(
     { ...r, stats: { ...r.stats, contributors: undefined } },
@@ -94,7 +94,8 @@ test('the first release counts from the root commit', () => {
       sha: shas.c4,
       previous_sha: null,
       stores: { app_store: true, play: true, web: false },
-      stats: { commits: 4, additions: 3, deletions: 0, files_changed: 2, contributors: undefined },
+      // c2, c3 and c4 have a bot as author or co-author; the .txt and .bin files are no code.
+      stats: { commits: 4, additions: 3, deletions: 0, files_changed: 2, contributors: undefined, automated_commits: 3, loc: { total: 0, languages: [] } },
       notes: { de: 'Erste', en: 'First' },
     },
     'totals are the net diff: b.txt came and went, the binary file counts with 0 lines',
@@ -118,7 +119,10 @@ test('the next release counts from the previous one', () => {
   assert.equal(r.day, 5);
   assert.deepEqual(r.stores, { app_store: true, play: true, web: true });
   assert.deepEqual(r.notes, { de: '', en: '' });
-  assert.deepEqual({ ...r.stats, contributors: undefined }, { commits: 2, additions: 2, deletions: 0, files_changed: 2, contributors: undefined });
+  assert.deepEqual(
+    { ...r.stats, contributors: undefined },
+    { commits: 2, additions: 2, deletions: 0, files_changed: 2, contributors: undefined, automated_commits: 1, loc: { total: 0, languages: [] } },
+  );
   assert.deepEqual(r.stats.contributors, [
     { name: 'Peter Trost', github: 'peter-trost', commits: 2, additions: 2, deletions: 0, bot: false },
     { name: 'petertrost-bot', github: 'petertrost-bot', commits: 1, additions: 1, deletions: 0, bot: true },
@@ -251,4 +255,88 @@ test('parseRecord: entries without changelog pass, a malformed changelog fails',
   rejects((c) => (c.items.new[0].pr = '7'), /items\.new\[0\]\.pr: must be a PR number or null/);
   rejects((c) => (c.store.play.de = 'x'.repeat(501)), /store\.play\.de: is 501 Unicode characters, above the store's limit of 500/);
   rejects((c) => (c.store.app_store.de = 'ä'.repeat(2001)), /store\.app_store\.de: is 4002 UTF-8 bytes/);
+});
+
+// Job 105: lines of code at the release commit, and `stats --version X` to recompute an entry.
+const stats = (...args) => {
+  const result = spawnSync('node', [cli, 'stats', '--file', record, ...args], { cwd: repo, encoding: 'utf8' });
+  return { code: result.status, stdout: result.stdout, stderr: result.stderr };
+};
+
+test('a release counts the lines of code of its commit', () => {
+  mkdirSync(join(repo, 'lib'), { recursive: true });
+  mkdirSync(join(repo, 'sql'), { recursive: true });
+  commit('c7', peter, { 'lib/main.dart': 'void main() {\n\n  run();\n}\n', 'sql/1.sql': 'select 1;\n', 'lib/l.g.dart': 'x;\n' }, [`Co-Authored-By: ${claude}`]);
+  const out = run('--version', '1.3.0', '--sha', shas.c7, '--build', '13', '--date', '2026-11-01');
+  assert.equal(out.code, 0, out.stderr);
+  assert.match(out.stdout, /recorded 1\.3\.0 \(day 10, 1 commits, 2 contributors, 4 lines of code\)/);
+  const r = release('1.3.0');
+  assert.equal(r.stats.automated_commits, 1);
+  assert.deepEqual(r.stats.loc, {
+    total: 4,
+    languages: [
+      { language: 'Dart', files: 1, lines: 3 },
+      { language: 'SQL', files: 1, lines: 1 },
+    ],
+  });
+});
+
+test('stats recomputes one entry and changes nothing else', () => {
+  const recorded = readFileSync(record, 'utf8');
+  const data = JSON.parse(recorded);
+  // As recorded before job 105: no automated_commits, no loc, and a contributor list since grown.
+  const old = data.releases.find((r) => r.version === '1.3.0');
+  delete old.stats.automated_commits;
+  delete old.stats.loc;
+  old.stats.contributors = [];
+  writeFileSync(record, serializeRecord(data));
+  assert.doesNotThrow(() => read(), 'an entry without the job 105 fields stays valid');
+
+  const before = readFileSync(record, 'utf8');
+  const dry = stats('--version', '1.3.0', '--dry-run');
+  assert.equal(dry.code, 0, dry.stderr);
+  assert.equal(JSON.parse(dry.stdout.slice(0, dry.stdout.lastIndexOf('}') + 1)).loc.total, 4);
+  assert.match(dry.stdout, /dry run: .* not changed/);
+  assert.equal(readFileSync(record, 'utf8'), before, 'a dry run writes nothing');
+
+  const out = stats('--version', '1.3.0');
+  assert.equal(out.code, 0, out.stderr);
+  assert.equal(out.stdout.trim(), 'updated the stats of 1.3.0 (1 commits, 2 contributors, 4 lines of code)');
+  assert.equal(readFileSync(record, 'utf8'), recorded, 'the same entry as `add` wrote, byte for byte');
+
+  const first = stats('--version', '1.0.0');
+  assert.equal(first.code, 0, first.stderr);
+  assert.equal(readFileSync(record, 'utf8'), recorded, 'the first release recomputes from the root commit');
+});
+
+test('stats refuses an unknown version, a missing --version and an unknown command', () => {
+  const text = readFileSync(record, 'utf8');
+  let out = stats('--version', '9.9.9');
+  assert.equal(out.code, 1);
+  assert.match(out.stderr, /^record: --version 9\.9\.9 is not recorded in .*\(recorded: 1\.0\.0, 1\.1\.0, 1\.2\.0, 1\.3\.0\)/);
+  out = stats();
+  assert.equal(out.code, 1);
+  assert.match(out.stderr, /^record: --version is required/);
+  const unknown = spawnSync('node', [cli, 'backfill'], { cwd: repo, encoding: 'utf8' });
+  assert.equal(unknown.status, 1);
+  assert.match(unknown.stderr, /unknown command backfill; usage: .*record\.mjs stats --version X/);
+  assert.equal(readFileSync(record, 'utf8'), text);
+});
+
+test('parseRecord: malformed job 105 stats fail with the field', () => {
+  const data = JSON.parse(readFileSync(record, 'utf8'));
+  const rejects = (patch, pattern) => {
+    const copy = structuredClone(data);
+    patch(copy.releases.at(-1).stats);
+    assert.throws(() => parseRecord(JSON.stringify(copy)), (e) => e instanceof RecordError && pattern.test(e.message), String(pattern));
+  };
+  rejects((s) => (s.automated_commits = 2), /stats\.automated_commits: 2 is more than the release's 1 commits/);
+  rejects((s) => (s.automated_commits = -1), /stats\.automated_commits: must be a whole number >= 0/);
+  rejects((s) => (s.loc.total = 5), /stats\.loc\.total: is 5, but the languages add up to 4/);
+  rejects((s) => s.loc.languages.reverse(), /stats\.loc\.languages\[1\]: languages are sorted by lines, most first/);
+  rejects((s) => (s.loc.languages[1].language = 'Dart'), /stats\.loc\.languages\[1\]\.language: Dart is listed twice/);
+  rejects((s) => (s.loc.languages[0].bytes = 1), /stats\.loc\.languages\[0\]\.bytes: unknown field/);
+  rejects((s) => delete s.loc.languages, /stats\.loc\.languages: missing/);
+  rejects((s) => (s.loc = 4), /stats\.loc: must be an object/);
+  rejects((s) => (s.lines = 4), /stats\.lines: unknown field/);
 });

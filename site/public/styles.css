@@ -1,6 +1,6 @@
 /* Every page: fonts, base type, the 6b hex controls, header, footer and the prose of guides,
-   legal pages and the changelog. Colours, type, space and motion come from tokens.css (generated
-   from design/tokens, never edited by hand); the landing page adds landing.css. */
+   legal pages, the changelog and the release timeline. Colours, type, space and motion come from
+   tokens.css (generated from design/tokens, never edited by hand); the landing page adds landing.css. */
 
 @font-face {
   font-family: "Bricolage Grotesque";
@@ -602,6 +602,131 @@ a {
 
 .release-title {
   font-weight: var(--hl-font-weight-bold);
+}
+
+/* The release timeline (/history): one card per public release on a rail, newest first. */
+.history {
+  display: grid;
+  gap: var(--hl-space-5);
+  margin: var(--hl-space-6) 0 0;
+  padding: 0 0 0 var(--hl-space-5);
+  border-left: var(--hl-border-width) solid var(--hl-color-divider);
+  list-style: none;
+}
+
+.prose .history-entry {
+  position: relative;
+  margin: 0;
+  padding: var(--hl-space-4) var(--hl-space-5) var(--hl-space-5);
+  border: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-m);
+  background: var(--hl-color-surface-raised);
+  box-shadow: var(--sticker);
+}
+
+/* The entry's mark on the rail. */
+.history-entry::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--hl-space-4) + 0.6rem);
+  left: calc(-1 * var(--hl-space-5) - var(--hl-border-width) / 2 - 7px);
+  width: 14px;
+  height: 14px;
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: 50%;
+  background: var(--hl-color-honey);
+}
+
+.prose .history-entry h2 {
+  margin: 0 0 var(--hl-space-1);
+}
+
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--hl-space-3) var(--hl-space-4);
+  margin: var(--hl-space-4) 0 0;
+}
+
+.history-stats .wide {
+  grid-column: 1 / -1;
+}
+
+.history-stats dt {
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-type-label-size);
+}
+
+.history-stats dd {
+  margin: 0;
+  font-weight: var(--hl-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-stats div:not(.wide) dd {
+  font-family: var(--hl-type-headline-family);
+  font-size: var(--hl-type-title-size);
+  font-weight: var(--hl-font-weight-heavy);
+  letter-spacing: var(--hl-type-title-tracking);
+}
+
+.history-people,
+.history-languages {
+  margin: var(--hl-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose .history-people li {
+  margin: 0;
+}
+
+.history-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hl-space-1) var(--hl-space-2);
+}
+
+.prose .history-languages li {
+  margin: 0;
+  padding: 0 var(--hl-space-2);
+  border-radius: 6px;
+  background: var(--hl-color-surface-sunken);
+  font-weight: var(--hl-font-weight-regular);
+}
+
+.history-languages span {
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.history-link {
+  margin: var(--hl-space-4) 0 0;
+}
+
+/* A standalone link: at least 24 px high (WCAG 2.5.8). */
+.history-link a {
+  display: inline-block;
+  padding-block: var(--hl-space-1);
+}
+
+.history-note {
+  margin-top: var(--hl-space-6);
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-type-label-size);
+}
+
+@media (max-width: 719px) {
+  .history {
+    padding-left: var(--hl-space-4);
+  }
+
+  .history-entry::before {
+    left: calc(-1 * var(--hl-space-4) - var(--hl-border-width) / 2 - 7px);
+  }
+
+  .prose .history-entry {
+    padding-inline: var(--hl-space-4);
+  }
 }
 
 .draft-banner {

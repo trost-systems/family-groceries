@@ -9,12 +9,15 @@
 //     [--date YYYY-MM-DD] [--channel public] [--stores app_store,play,web]
 //     [--notes-de TEXT] [--notes-en TEXT] [--main origin/main] [--file releases/releases.json]
 //     [--changelog releases/changelog/<version>.json]
+//   node scripts/release/record.mjs stats --version 1.0.0 [--dry-run] [--file releases/releases.json]
+//     recomputes the stats of a recorded release from git (a backfill after the stats grew, job 105)
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { NoteError, Refusal, closedInPublic, collect, gateOf, loadGates, loadOverride, loadPending, serializePending, staleMessage, staleStoreTexts } from './changelog.mjs';
+import { linesOfCode } from './loc.mjs';
 import { CATEGORIES, CHANNELS, PENDING_FILE, RecordError, compareVersions, dayNumber, isDate, isVersion, parseDraft, parseRecord, serializeRecord } from '../../site/releases.mjs';
 
 const STORES = ['app_store', 'play', 'web'];
@@ -94,22 +97,26 @@ function rangeStats(base, sha, range, identities) {
   const log = git('log', '-M', '--numstat', '--format=%x1e%H%x00%an%x00%ae%x00%(trailers:key=Co-authored-by,valueonly,separator=%x1f)%x00', ...range);
   const contributors = new Map();
   let commits = 0;
+  let automated = 0;
   for (const chunk of log.split('\x1e').slice(1)) {
     commits += 1;
     const [, authorName, authorEmail, trailers, rest] = chunk.split('\x00');
     const { additions, deletions } = numstat(rest.split('\n').filter(Boolean));
     const people = [[authorName, authorEmail], ...trailers.split('\x1f').map((t) => t.trim()).filter(Boolean).map(parsePerson)];
     const seen = new Set();
+    let bot = false;
     for (const [name, email] of people) {
       const person = resolvePerson(name, email);
       if (seen.has(person.key)) continue;
       seen.add(person.key);
+      bot ||= person.bot;
       const entry = contributors.get(person.key) ?? { name: person.name, github: person.github, commits: 0, additions: 0, deletions: 0, bot: person.bot };
       entry.commits += 1;
       entry.additions += additions;
       entry.deletions += deletions;
       contributors.set(person.key, entry);
     }
+    if (bot) automated += 1;
   }
   const net = numstat(git('diff', '-M', '--numstat', base, sha).split('\n').filter(Boolean));
   return {
@@ -120,7 +127,27 @@ function rangeStats(base, sha, range, identities) {
     contributors: [...contributors.values()].sort(
       (a, b) => b.commits - a.commits || b.additions - a.additions || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
     ),
+    automated_commits: automated,
+    loc: linesOfCode(sha),
   };
+}
+
+// The stats of the release at `sha`, over previousSha..sha, or from the root commit for the first.
+const releaseStats = (previousSha, sha, identities) =>
+  previousSha
+    ? rangeStats(previousSha, sha, [`${previousSha}..${sha}`], identities)
+    : rangeStats(git('hash-object', '-t', 'tree', '/dev/null').trim(), sha, [sha], identities);
+
+function readRecord(file) {
+  const fileLabel = file ?? 'releases/releases.json';
+  const path = file ? resolve(file) : resolve(git('rev-parse', '--show-toplevel').trim(), 'releases/releases.json');
+  let text;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    refuse(`cannot read ${fileLabel}: ${error.message}`);
+  }
+  return { file: path, fileLabel, record: parseRecord(text, fileLabel) };
 }
 
 function add(argv) {
@@ -144,15 +171,7 @@ function add(argv) {
   });
   for (const required of ['version', 'sha', 'build']) if (opts[required] === undefined) refuse(`--${required} is required`);
 
-  const fileLabel = opts.file ?? 'releases/releases.json';
-  const file = opts.file ? resolve(opts.file) : resolve(git('rev-parse', '--show-toplevel').trim(), 'releases/releases.json');
-  let text;
-  try {
-    text = readFileSync(file, 'utf8');
-  } catch (error) {
-    refuse(`cannot read ${fileLabel}: ${error.message}`);
-  }
-  const record = parseRecord(text, fileLabel);
+  const { file, fileLabel, record } = readRecord(opts.file);
 
   const { version, channel } = opts;
   if (!CHANNELS.includes(channel)) refuse(`--channel ${channel} is not one of ${CHANNELS.join(', ')}`);
@@ -182,9 +201,7 @@ function add(argv) {
   const previousSha = previous?.sha ?? null;
   if (previousSha && !isAncestor(previousSha, sha)) refuse(`${previous.version}'s sha ${previousSha} is not an ancestor of ${sha}`);
 
-  const stats = previousSha
-    ? rangeStats(previousSha, sha, [`${previousSha}..${sha}`], record.identities)
-    : rangeStats(git('hash-object', '-t', 'tree', '/dev/null').trim(), sha, [sha], record.identities);
+  const stats = releaseStats(previousSha, sha, record.identities);
   // The draft sits next to the record: releases/changelog/<version>.json.
   const dir = join(dirname(file), 'changelog');
   const draftFile = opts.changelog ? resolve(opts.changelog) : join(dir, `${version}.json`);
@@ -263,7 +280,34 @@ function add(argv) {
     writeFileSync(join(dir, PENDING_FILE), serializePending({ items: pendingAfter }));
     console.log(`${PENDING_FILE}: ${pendingAfter.length} items held back after ${version} (was ${pendingBefore.length})`);
   }
-  console.log(`recorded ${version} (day ${entry.day}, ${stats.commits} commits, ${stats.contributors.length} contributors)`);
+  console.log(`recorded ${version} (day ${entry.day}, ${stats.commits} commits, ${stats.contributors.length} contributors, ${stats.loc.total} lines of code)`);
+}
+
+// Recomputes `stats` of a recorded release from its previous_sha and sha, with today's identities
+// and line counting; nothing else in the entry changes. Needs the full history, like `add`.
+function stats(argv) {
+  const { values: opts } = parseArgs({
+    args: argv,
+    strict: true,
+    options: { version: { type: 'string' }, file: { type: 'string' }, 'dry-run': { type: 'boolean', default: false } },
+  });
+  if (opts.version === undefined) refuse('--version is required');
+  const { file, fileLabel, record } = readRecord(opts.file);
+  const release = record.releases.find((r) => r.version === opts.version);
+  if (!release) refuse(`--version ${opts.version} is not recorded in ${fileLabel} (recorded: ${record.releases.map((r) => r.version).join(', ') || 'none'})`);
+  for (const [field, sha] of [['sha', release.sha], ['previous_sha', release.previous_sha]]) {
+    if (sha !== null) commitOf(sha, `${opts.version}'s ${field}`);
+  }
+  const stats = releaseStats(release.previous_sha, release.sha, record.identities);
+  const after = serializeRecord({ ...record, releases: record.releases.map((r) => (r === release ? { ...r, stats } : r)) });
+  parseRecord(after, `${fileLabel} with new stats for ${opts.version}`);
+  if (opts['dry-run']) {
+    console.log(JSON.stringify(stats, null, 2));
+    console.log(`dry run: ${fileLabel} not changed`);
+    return;
+  }
+  writeFileSync(file, after);
+  console.log(`updated the stats of ${opts.version} (${stats.commits} commits, ${stats.contributors.length} contributors, ${stats.loc.total} lines of code)`);
 }
 
 // pending.json after the release: what the reviewed draft held back, plus the gated items of
@@ -314,8 +358,11 @@ function heldAfter({ draft, draftLabel, pendingBefore, previousSha, sha, gates }
 
 const [command, ...rest] = process.argv.slice(2);
 try {
-  if (command !== 'add') refuse(`unknown command ${command ?? '(none)'}; usage: record.mjs add --version X --sha S --build N [--dry-run]`);
-  add(rest);
+  const commands = { add, stats };
+  if (!Object.hasOwn(commands, command ?? '')) {
+    refuse(`unknown command ${command ?? '(none)'}; usage: record.mjs add --version X --sha S --build N [--dry-run], or record.mjs stats --version X [--dry-run]`);
+  }
+  commands[command](rest);
 } catch (error) {
   if (!(error instanceof Refusal || error instanceof RecordError || error instanceof NoteError || error.code?.startsWith('ERR_PARSE_ARGS'))) throw error;
   console.error(`record: ${error.message}`);
