@@ -7621,3 +7621,20 @@ Public website guides and support pages still say "Hummlist" (copy review, not t
 9. **Ordered commits, one squash.** The branch has one commit per fix, and
    `job/104-gap-fixes-ordered` keeps them for review. `scripts/push-pr.sh` squashes them into the
    one commit `main` takes, as the brief asks.
+
+## Job 112: voice replies for branded open items and a single leftover, 2026-11-05
+
+1. **A plain name with its branded item open is that item, on voice only.** With „Butter“
+   (brand Weihenstephan) open, Siri and Alexa added a second, plain Butter and answered
+   „Hinzugefügt: Butter. Schon auf der Liste: Butter.“ `voice/items.ts` (shared by Siri and Alexa)
+   now looks up an open item of the same folded name before `add_item` when the parsed request
+   has no brand and no properties, and reports it as already on the list. This follows
+   `details_differ` (job 32b): "Milch" and "Milch Weihenstephan" may be one thing; two different
+   brands are not, so „Butter Kerrygold“ is still added. The app and MCP keep adding the plain
+   item and offering the merge (job 32b), because they can show both rows and the merge; a voice
+   reply cannot. `add_item` is unchanged, so no migration.
+2. **Alexa reads an eleventh item instead of counting it, in both languages.** The brief said the
+   German speech already read a single leftover; it said „und eine weitere“. Both voices now read
+   all items when only one would be left over (no new wording: the existing enumeration). Siri's
+   read (`voice/copy.ts`, `listing`) still says „und eine weitere“ / "and 1 more"; left for the
+   voice owner (job 111 works on truncated voice lists) so the two jobs do not collide.
