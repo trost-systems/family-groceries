@@ -134,9 +134,30 @@ class ListCubit(
   Timer? _usualsReload;
   var _flushing = false;
 
-  /// Rows acknowledged during each resync in flight; they beat its snapshot.
-  /// Resyncs overlap (the opening one and the channel's first subscribe).
-  final _resyncAcks = <Map<String, Item?>>{};
+  /// What each resync in flight heard since it started; it beats the
+  /// snapshot, which may have been read before. Resyncs overlap (the opening
+  /// one and the channel's first subscribe).
+  final _resyncsHeard = <_Heard>{};
+
+  /// Resyncs started, and the latest one the list shows: one that started
+  /// earlier and answers after it would put older rows back.
+  var _resyncsStarted = 0;
+  var _resyncShown = 0;
+
+  /// Items heard deleted over realtime: the delete's commit time, or the
+  /// newest row known then when that is later (a payload without a commit
+  /// time reads as 1970). A row no newer than that is from before the
+  /// delete: its `updated_at` is its transaction's start.
+  final _gone = <String, DateTime>{};
+
+  /// Ids heard over realtime while the op being sent is in flight; its
+  /// answer may have read the row before them.
+  Set<String>? _heardInFlight;
+
+  /// The ids of the last snapshot shown while that op was in flight. A row
+  /// its answer brings that the snapshot lacked may be from before a delete
+  /// realtime missed: the row shows, and another resync settles it.
+  Set<String>? _shownInFlight;
 
   /// Whether the realtime channel is subscribed. A resync that answers only
   /// brings the list back online while it is.
@@ -153,8 +174,9 @@ class ListCubit(
   /// ignored.
   var _watchGeneration = 0;
 
-  /// A resync sets the first seen mark only once the stored one was read.
-  var _seenLoaded = false;
+  /// Whether the device cache was read: a resync sets the first seen mark
+  /// only then, and only then may a save before the first load replace it.
+  var _cacheRead = false;
 
   Stream<Rejected> get rejections => _rejections.stream;
 
@@ -195,7 +217,7 @@ class ListCubit(
     if (seen != null) {
       emit(state.copyWith(seen: seen));
     }
-    _seenLoaded = true;
+    _cacheRead = true;
     if (isClosed) {
       return;
     }
@@ -209,6 +231,8 @@ class ListCubit(
     _unwatch = _repo.watch(
       onItem: (row) {
         if (current()) {
+          _noteDuringResyncs({row.id: row}, answered: false);
+          _heardInFlight?.add(row.id);
           _setServer(mergeServerRow(state.server, row));
           // A new member: reload so the title can name them.
           if (row.addedBy != null &&
@@ -217,9 +241,19 @@ class ListCubit(
           }
         }
       },
-      onItemDeleted: (id) {
-        if (current() && state.server.containsKey(id)) {
-          _setServer({...state.server}..remove(id));
+      onItemDeleted: (id, at) {
+        if (current()) {
+          _noteDuringResyncs({id: null}, answered: false);
+          final known = state.server[id];
+          // Another household's deletes come too; only ours can be late.
+          if (known != null || state.pending.any((op) => op.itemId == id)) {
+            _gone[id] = known != null && known.updatedAt.isAfter(at)
+                ? known.updatedAt
+                : at;
+          }
+          if (known != null) {
+            _setServer({...state.server}..remove(id));
+          }
         }
       },
       onCatalogChanged: () {
@@ -761,43 +795,63 @@ class ListCubit(
   }
 
   Future<void> resync() async {
-    final acked = <String, Item?>{};
-    _resyncAcks.add(acked);
+    final number = ++_resyncsStarted;
+    final heard = _Heard();
+    _resyncsHeard.add(heard);
     try {
       final (catalog, rows) = await (
         _repo.fetchCatalog(),
         _repo.fetchItems(),
       ).wait;
-      final snapshot = {for (final row in rows) row.id: row};
-      for (final MapEntry(:key, :value) in acked.entries) {
-        if (value == null) {
-          snapshot.remove(key);
-        } else {
-          snapshot[key] = value;
-        }
+      if (number > _resyncShown) {
+        _resyncShown = number;
+        _showSnapshot(catalog, rows, heard);
       }
-      emit(
-        state.copyWith(
-          catalog: catalog,
-          server: snapshot,
-          loaded: true,
-          connection: _channelUp ? ConnectionStatus.online : null,
-        ),
-      );
-      if (state.seen == null && _seenLoaded) {
-        // A first start: what is on the list already is not news.
-        final created = [for (final row in snapshot.values) row.createdAt]
-          ..sort();
-        _setSeen(SeenMark(until: created.lastOrNull));
-      }
-      _usualsReload?.cancel();
-      unawaited(_refreshUsuals());
     } on Object {
       _goOffline();
     } finally {
-      _resyncAcks.remove(acked);
+      _resyncsHeard.remove(heard);
     }
     unawaited(_flush());
+  }
+
+  void _showSnapshot(Catalog catalog, List<Item> rows, _Heard heard) {
+    final snapshot = {for (final row in rows) row.id: row};
+    // An answered row the snapshot lacks: the snapshot was read before the
+    // write, or after a delete realtime has not told (it may be down). The
+    // row shows until another resync settles it.
+    final unsure = heard.answered.any(
+      (id) => heard.rows[id] != null && !snapshot.containsKey(id),
+    );
+    for (final MapEntry(:key, :value) in heard.rows.entries) {
+      if (value == null) {
+        snapshot.remove(key);
+      } else {
+        snapshot[key] = mergeServerRow(snapshot, value)[key]!;
+      }
+    }
+    emit(
+      state.copyWith(
+        catalog: catalog,
+        server: snapshot,
+        loaded: true,
+        connection: _channelUp ? ConnectionStatus.online : null,
+      ),
+    );
+    if (state.seen == null && _cacheRead) {
+      // A first start: what is on the list already is not news.
+      final created = [for (final row in snapshot.values) row.createdAt]
+        ..sort();
+      _setSeen(SeenMark(until: created.lastOrNull));
+    }
+    if (_heardInFlight != null) {
+      _shownInFlight = {...snapshot.keys};
+    }
+    _usualsReload?.cancel();
+    unawaited(_refreshUsuals());
+    if (unsure) {
+      unawaited(resync());
+    }
   }
 
   /// A failure keeps the usuals there are; it says nothing about the list.
@@ -833,8 +887,10 @@ class ListCubit(
     try {
       while (state.pending.isNotEmpty && !isClosed) {
         final op = state.pending.first;
+        final heard = _heardInFlight = {};
+        _shownInFlight = null;
         try {
-          _ack(op, await _repo.send(op));
+          _ack(op, await _repo.send(op), heard);
         } on RejectedOp catch (e) {
           _drop(op);
           _report(switch (op) {
@@ -851,14 +907,26 @@ class ListCubit(
       }
     } finally {
       _flushing = false;
+      _heardInFlight = null;
+      _shownInFlight = null;
     }
   }
 
-  void _ack(ItemOp op, Map<String, Item?> rows) {
-    for (final acked in _resyncAcks) {
-      acked.addAll(rows);
-    }
-    final row = rows[op.itemId];
+  /// [heard]: ids realtime brought while [op] was in flight. An answer that
+  /// one of them is gone may predate that row (an undone delete), and a
+  /// later delete would come over realtime after it.
+  void _ack(ItemOp op, Map<String, Item?> answer, Set<String> heard) {
+    final rows = {
+      for (final MapEntry(:key, :value) in answer.entries)
+        if (value == null ? !heard.contains(key) : !_deletedSince(value))
+          key: value,
+    };
+    _noteDuringResyncs(rows, answered: true);
+    final shown = _shownInFlight;
+    final unsure =
+        shown != null &&
+        rows.entries.any((e) => e.value != null && !shown.contains(e.key));
+    final row = answer[op.itemId];
     // Job 32a: how the server categorized a new add, once per add (an op is
     // acknowledged once, also after a retry whose first answer was lost).
     if (op case AddItem(restored: false)) {
@@ -876,7 +944,7 @@ class ListCubit(
     // Job 64b: the add was on the list already as another item (an undone
     // delete, a replayed add); what is queued for this copy goes to it.
     final kept = op is AddItem && row == null
-        ? rows.keys.where((id) => id != op.itemId).firstOrNull
+        ? answer.keys.where((id) => id != op.itemId).firstOrNull
         : null;
     emit(
       state.copyWith(
@@ -904,6 +972,9 @@ class ListCubit(
         _hints.add(DedupeHint(renamed, onList));
       }
     }
+    if (unsure) {
+      unawaited(resync());
+    }
     // Job 32b: once the server has keyed a new add, name an open item that
     // is another spelling of it (the add itself went through).
     if (op case AddItem(restored: false)) {
@@ -912,6 +983,30 @@ class ListCubit(
         final similar = similarItems(added, state.items.values);
         if (similar.isNotEmpty && !_hints.isClosed) {
           _hints.add(DedupeHint(added, similar.first));
+        }
+      }
+    }
+  }
+
+  bool _deletedSince(Item row) => switch (_gone[row.id]) {
+    final at? => !row.updatedAt.isAfter(at),
+    null => false,
+  };
+
+  /// Keeps the newer of two rows heard for one id; a gone item stays gone
+  /// until a row comes after it.
+  void _noteDuringResyncs(Map<String, Item?> rows, {required bool answered}) {
+    for (final heard in _resyncsHeard) {
+      for (final MapEntry(:key, :value) in rows.entries) {
+        final known = heard.rows[key];
+        final kept = value == null || known == null
+            ? value
+            : mergeServerRow({key: known}, value)[key];
+        heard.rows[key] = kept;
+        if (answered && kept != null && identical(kept, value)) {
+          heard.answered.add(key);
+        } else {
+          heard.answered.remove(key);
         }
       }
     }
@@ -957,10 +1052,13 @@ class ListCubit(
         () => unawaited(_refreshUsuals()),
       );
     }
-    if (!next.loaded) {
+    final queued = !identical(next.pending, before.pending);
+    // Before the first load only the queue is worth saving: an op made
+    // offline on a first start, with no cached list to lose.
+    if (!next.loaded && !(queued && _cacheRead)) {
       return;
     }
-    if (!identical(next.pending, before.pending)) {
+    if (queued) {
       _save?.cancel();
       _saveNow(next);
     } else if (!identical(next.catalog, before.catalog) ||
@@ -1008,4 +1106,11 @@ class ListCubit(
     await _renameMerges.close();
     await super.close();
   }
+}
+
+/// What one resync heard while in flight: rows by id (null: gone), and the
+/// ids whose row came in the answer to a write rather than over realtime.
+final class _Heard() {
+  final rows = <String, Item?>{};
+  final answered = <String>{};
 }

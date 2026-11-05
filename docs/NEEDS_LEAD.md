@@ -1698,3 +1698,29 @@ reviews and merges. Two new migrations deploy with the next `supabase-deploy.yml
 - **Rename merges only the same name (Addendum 3, done).** A synonym or a name whose open item
   has a brand („Butter“ next to „Butter“ Kerrygold) stays a second row and gets add's duplicate
   hint.
+## Job 99: a delete wins over a replayed add (hc-sync)
+
+Status: proposal, not applied. Changes an RPC, so it is the Lead's call (HC1 rule).
+
+An add whose answer was lost is retried with the same id. If a partner deleted the item in
+between, `put_item` inserts it again and the delete is undone on every phone. The sync fuzz
+measures it with `FUZZ_STRICT=1`: 6 of seeds 1..1000 (seed 44 shrinks to three steps: Peter
+adds Butter and loses the network before the answer, Lea deletes Butter, Peter's phone comes
+back and the Butter is back). All phones still agree, so the scored oracle does not count it.
+No client-side fix is safe: after reconnecting, the phone cannot tell "my add never landed"
+from "it landed and was deleted". `item_events` can.
+
+Proposal: [`docs/hillclimb/hc-sync-proposals/put_item_delete_wins.sql`](hillclimb/hc-sync-proposals/put_item_delete_wins.sql),
+a `put_item` overload with a required `p_restored`. A plain add of a deleted id answers no
+row, which the app already handles as "gone". The undo of a delete (`p_restored = true`)
+inserts as before. Old apps keep the 11-argument function. The harness models it
+(`FUZZ_PROPOSAL=delete-wins`, reading the op's `restored` flag): with `FUZZ_STRICT=1`, seeds
+1..1000 go from 6 failures to 0, and convergence stays at 0.
+
+To ship it:
+1. Copy the file to `supabase/migrations/` with a new timestamp and add a pgTAP case: a plain
+   add of a deleted id returns no row; a restored one returns the row. The SQL has not run
+   against Postgres yet, because there is no Docker on the box.
+2. In the same PR, send `'p_restored': op.restored` from `SupabaseListRepository._add`.
+3. Don't let a store build carry the app change before the migration is deployed. The
+   12-argument call fails with PGRST202 on an older database.

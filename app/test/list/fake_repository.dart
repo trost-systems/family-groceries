@@ -63,6 +63,8 @@ class FakeRepository() implements ListRepository {
   var reject = false;
   var _clock = DateTime.utc(2026, 10, 22, 12);
   void Function(Item item)? emitItem;
+
+  /// A delete, committed now on the fake's clock.
   void Function(String id)? emitDelete;
   void Function(ConnectionStatus status)? emitStatus;
   void Function()? emitCatalogChanged;
@@ -535,13 +537,13 @@ class FakeRepository() implements ListRepository {
   @override
   Future<void> Function() watch({
     required void Function(Item item) onItem,
-    required void Function(String id) onItemDeleted,
+    required void Function(String id, DateTime at) onItemDeleted,
     required void Function() onCatalogChanged,
     required void Function(ConnectionStatus status) onStatus,
   }) {
     watches++;
     emitItem = onItem;
-    emitDelete = onItemDeleted;
+    emitDelete = (id) => onItemDeleted(id, _tick());
     emitStatus = onStatus;
     emitCatalogChanged = onCatalogChanged;
     return () async {};
