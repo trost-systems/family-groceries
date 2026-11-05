@@ -7853,3 +7853,47 @@ Calls made without a human (log and numbers: `docs/hillclimb/hc-ui-app.md`).
 4. **WidgetPayloadTest runs in the android gate**, after the debug build (which writes the
    Gradle wrapper): the cheapest gate that already has Java, Gradle and the Android SDK. A change
    to `scripts/gates/android.sh` or `ios.sh` now also runs those gates (`scripts/ci-changes.sh`).
+## Job 109: delete_category seed keys and store_name_key order (2026-11-05)
+
+Job 90 (PR #220) left two follow-ups for its neighbours of `merge_duplicate_categories` and
+`category_name_key`.
+
+1. **`delete_category` hands over only real seed keys.** `coalesce(array[seed_key], '{}')` is
+   `{NULL}` for a category without a seed key, since `array[NULL]` is not NULL. Every delete of a
+   user-made category appended a NULL to the target's `absorbed_seed_keys`. The classifier reads
+   the array only through `= any(...)` in OR'd conditions, where NULL counts as false, so nobody
+   saw a wrong category. The function now uses Job 90's merge rule: non-NULL keys, each once,
+   sorted, never the target's own seed key. The migration strips the NULLs the old function left,
+   in the rows that have one, and adds `categories_absorbed_seed_keys_not_null` (added NOT VALID,
+   then validated in the same migration) so no writer can add one again. Rows without a NULL keep
+   their order; the repeat removal applies to them only on their next delete.
+2. **`store_name_key` and `store_name` collapse first, then trim.** Both trimmed with `btrim`,
+   which trims spaces only, before collapsing whitespace. `"\tLidl\n"` had the key `" lidl "`,
+   so the unique index let it in next to „Lidl“ on a direct table write, and
+   `add_store("\tRewe\n")` stored „ Rewe “. Both now collapse every whitespace run to one space,
+   then trim: the order of `category_name_key`. The app's `nameKey` and the functions'
+   `resolve` (`_shared/list.ts`, lookup only) trim first, but their `trim()` removes all
+   whitespace, so they were already equivalent. The index is rebuilt in the migration. Stores
+   that share a key under the new rule are renamed, never merged: every one but the first by
+   sort order gets the first free „ (n)“ suffix, Job 58's rule, so no item, layout or memory
+   moves or goes. Merging would have to pick whose layout wins and lose the household's
+   distinction without asking. The base is cut to 54 characters and trimmed, so a renamed name
+   has at most 54 + „ (999)“ = 60 characters, the table's `char_length` limit. Stored names with
+   whitespace at their ends or in runs are rewritten to the cleaned form; that changes no key.
+   A name of only whitespace (`"\t"`; `store_name` refuses one, so only a direct write can
+   store it) keeps its raw name and the key `''`; a second one in the same household becomes
+   „(2)“. It is left as is: no client can create one, and naming it would need a German default
+   name in SQL.
+3. **Parity tests.** The same name table is in `store_name_key_order.test.sql` and
+   `app/test/list/name_key_test.dart`. The pgTAP file also compares `store_name_key` with
+   `category_name_key` on that table, and the Dart test runs it against `nameKey`.
+4. **No-break space.** Postgres `\s` under the local stack's `en_US.UTF-8` matches U+00A0 and
+   U+2003, as Dart's `\s` and `trim()` do. The hosted database's locale was not checked (no
+   hosted access in this job); under `C.UTF-8` those characters would not count as space. Both
+   keys share the expression, so they stay equal to each other either way.
+5. **Commits.** The brief asked for one commit per fix. `push-pr.sh` squashes a PR into the one
+   commit main takes, as for every PR, so the fixes are separate only in the review history.
+6. **Changelog `none`.** A „Name (2)“ rename needs two stores that clash only by a tab or newline
+   at the ends. `add_store` and `rename_store` turned those into spaces already, and no Hummlist
+   client writes `stores` directly, so only rows written straight into the table can clash. The
+   trimmed „ Rewe “ is a leading space users hardly see.
