@@ -1,0 +1,36 @@
+diff --git a/tool/hillclimb/hc-cache-codec/baseline.json b/tool/hillclimb/hc-cache-codec/baseline.json
+index 04ee182e..2ecbaaee 100644
+--- a/tool/hillclimb/hc-cache-codec/baseline.json
++++ b/tool/hillclimb/hc-cache-codec/baseline.json
+@@ -1,12 +1,12 @@
+ {
+   "full": {
+-    "encode_ms": 33.236,
+-    "decode_ms": 50.9975,
++    "encode_ms": 28.406,
++    "decode_ms": 44.081,
+     "bytes": 2333023
+   },
+   "open": {
+-    "encode_ms": 1.995,
+-    "decode_ms": 2.119,
++    "encode_ms": 1.5355,
++    "decode_ms": 1.7455,
+     "bytes": 151962
+   }
+ }
+\ No newline at end of file
+diff --git a/tool/hillclimb/hc-cache-codec/measure.sh b/tool/hillclimb/hc-cache-codec/measure.sh
+index 459e69c7..35c4a7d7 100755
+--- a/tool/hillclimb/hc-cache-codec/measure.sh
++++ b/tool/hillclimb/hc-cache-codec/measure.sh
+@@ -14,6 +14,9 @@ out="$(mktemp)"
+ trap 'rm -f "$report" "$out"' EXIT
+ cd "$root/app"
+ flutter pub get >/dev/null 2>&1
++# A stale incremental test kernel made the same code 15-25 % slower (attempt
++# 9's A/A check), so every run compiles the bench afresh.
++rm -rf build/test_cache
+ if ! flock /tmp/fg-hc-measure.lock env HC_CODEC_REPORT="$report" \
+   flutter test test/hillclimb/cache_codec_bench_test.dart --plain-name 'cache codec bench' >"$out" 2>&1; then
+   cat "$out" >&2

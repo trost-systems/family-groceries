@@ -1,0 +1,12 @@
+{
+  "full": {
+    "encode_ms": 28.406,
+    "decode_ms": 44.081,
+    "bytes": 2333023
+  },
+  "open": {
+    "encode_ms": 1.5355,
+    "decode_ms": 1.7455,
+    "bytes": 151962
+  }
+}

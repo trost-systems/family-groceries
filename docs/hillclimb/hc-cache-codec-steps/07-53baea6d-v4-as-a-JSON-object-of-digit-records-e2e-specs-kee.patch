@@ -1,0 +1,261 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index ebf62359..21ff449f 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -5,58 +5,73 @@ import 'package:family_groceries/list/list_cache.dart';
+ import 'package:family_groceries/list/model.dart';
+ 
+ /// How a [ListSnapshot] is kept on the device: a String, since shared
+-/// preferences store strings. [encodeSnapshot] writes [_prefix], numbers as
+-/// [_digits] (five bits a character, the sixth set while more follow) that
+-/// refer to the snapshot's distinct strings by index, then those strings as
+-/// they are, one after the other. [decodeSnapshot] also reads the JSON
+-/// snapshots apps before it wrote (versions 1 to 3, `{...}`). Throws on
+-/// anything else.
++/// preferences store strings. [encodeSnapshot] writes a JSON object whose
++/// records (the catalog, each server row, op and usual) are strings of
++/// [_digits]: numbers, five bits a character with the sixth set while more
++/// follow, that refer to one table of the snapshot's distinct strings. The
++/// table is the last key, its strings joined into one; `head` has their
++/// lengths. [decodeSnapshot] also reads the JSON snapshots apps before it
++/// wrote (versions 1 to 3). Throws on anything else.
+ String encodeSnapshot(ListSnapshot snapshot) {
+-  final body = _Writer();
++  final body = _Writer()..raw('","catalog":"');
+   body
+     ..catalog(snapshot.catalog)
+-    ..list(snapshot.server, body.item)
+-    ..list(snapshot.pending, body.op)
+-    ..list(snapshot.usuals, body.usual);
++    ..raw('","server":')
++    ..records(snapshot.server, body.item)
++    ..raw(',"pending":')
++    ..records(snapshot.pending, body.op)
++    ..raw(',"usuals":')
++    ..records(snapshot.usuals, body.usual)
++    ..raw(_tableKey);
+   final strings = body.strings;
+   final head = _Writer()
+-    ..uint(_binaryVersion)
++    ..raw(_v4Start)
+     ..uint(strings.length);
+   for (final s in strings) {
+     head.uint(s.length);
+   }
+-  head.uint(body.length);
+-  return (StringBuffer(_prefix)
+-        ..write(head.chars())
++  return (StringBuffer(head.chars())
+         ..write(body.chars())
+-        ..writeAll(strings))
++        ..write(jsonEncode(strings.join()))
++        ..write('}'))
+       .toString();
+ }
+ 
+ ListSnapshot decodeSnapshot(String stored) {
+-  if (stored.startsWith('{')) {
++  if (!stored.startsWith(_v4Start)) {
+     return ListSnapshot.fromJson(jsonDecode(stored) as Map<String, Object?>);
+   }
+-  if (!stored.startsWith(_prefix)) {
++  final tableAt = stored.lastIndexOf(_tableKey);
++  if (tableAt < 0 || !stored.endsWith('}')) {
+     throw const FormatException('list snapshot');
+   }
+-  final r = _Reader(stored, _prefix.length);
+-  final version = r.uint();
+-  if (version != _binaryVersion) {
+-    throw FormatException('snapshot version', version);
++  final table = jsonDecode(
++    stored.substring(tableAt + _tableKey.length, stored.length - 1),
++  );
++  final r = _Reader(stored, _v4Start.length)..readStrings(table as String);
++  final catalog = (r..expect('","catalog":"')).catalog();
++  final server = (r..expect('","server":')).records(r.item);
++  final pending = (r..expect(',"pending":')).records(r.op);
++  final usuals = (r..expect(',"usuals":')).records(r.usual);
++  if (r._pos != tableAt) {
++    throw const FormatException('list snapshot');
+   }
+-  r.readStrings();
+   return ListSnapshot(
+-    catalog: r.catalog(),
+-    server: r.list(r.item),
+-    pending: r.list(r.op),
+-    usuals: r.list(r.usual),
++    catalog: catalog,
++    server: server,
++    pending: pending,
++    usuals: usuals,
+   );
+ }
+ 
+-const _prefix = 'b4:';
++/// [ListSnapshot.version] 3 is the plain JSON layout; 4 is this one.
++const _v4Start = '{"version":4,"head":"';
++
++/// The last key. A quote inside the table is escaped, so the last match is
++/// this key.
++const _tableKey = ',"strings":';
+ 
+-/// The base64 alphabet: nothing Dart's JSON encoder or a plist escapes.
++/// The base64 alphabet: nothing JSON or a plist escapes.
+ const _digits =
+     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+ 
+@@ -71,9 +86,6 @@ final _digitValues = () {
+   return values;
+ }();
+ 
+-/// [ListSnapshot.version] 3 is the JSON layout; 4 is this one.
+-const _binaryVersion = 4;
+-
+ const _timeNull = 0;
+ const _timeUtc = 1;
+ 
+@@ -94,6 +106,9 @@ const _sortKeyDouble = 2;
+ /// Half steps of [_sortKeyHalves] stay exact up to here.
+ const _maxHalves = 1 << 52;
+ 
++const _comma = 0x2c;
++const _closeBracket = 0x5d;
++
+ enum _Op() {
+   add,
+   status,
+@@ -117,7 +132,15 @@ class _Writer() {
+ 
+   final _scratch = ByteData(8);
+ 
+-  int get length => _len;
++  /// Characters that are not digits: JSON punctuation and keys.
++  void raw(String ascii) {
++    if (_len + ascii.length > _buf.length) {
++      _buf = Uint8List(_buf.length * 2 + ascii.length)..setRange(0, _len, _buf);
++    }
++    for (var i = 0; i < ascii.length; i++) {
++      _buf[_len++] = ascii.codeUnitAt(i);
++    }
++  }
+ 
+   String chars() => String.fromCharCodes(_buf, 0, _len);
+ 
+@@ -192,6 +215,17 @@ class _Writer() {
+     xs.forEach(write);
+   }
+ 
++  /// A JSON array of one record per element.
++  void records<T>(List<T> xs, void Function(T) write) {
++    raw('[');
++    for (var i = 0; i < xs.length; i++) {
++      raw(i == 0 ? '"' : ',"');
++      write(xs[i]);
++      raw('"');
++    }
++    raw(']');
++  }
++
+   void catalog(Catalog c) {
+     list(c.categories, (x) {
+       string(x.id);
+@@ -339,18 +373,25 @@ class _Writer() {
+ class _Reader(final String _s, var int _pos) {
+   var _strings = const <String>[];
+ 
+-  /// Before anything that refers to the table: the strings' lengths and the
+-  /// body's, then the strings themselves after the body.
+-  void readStrings() {
+-    final lengths = [for (var n = uint(); n > 0; n--) uint()];
+-    final bodyLength = uint();
+-    var at = _pos + bodyLength;
+-    _strings = [for (final n in lengths) _s.substring(at, at += n)];
+-    if (at != _s.length) {
++  /// Before anything that refers to the table: `head`'s count and
++  /// lengths slice [table].
++  void readStrings(String table) {
++    var at = 0;
++    _strings = [
++      for (var n = uint(); n > 0; n--) table.substring(at, at += uint()),
++    ];
++    if (at != table.length) {
+       throw const FormatException('string table');
+     }
+   }
+ 
++  void expect(String ascii) {
++    if (!_s.startsWith(ascii, _pos)) {
++      throw FormatException('list snapshot', _s, _pos);
++    }
++    _pos += ascii.length;
++  }
++
+   int uint() {
+     var result = 0;
+     var shift = 0;
+@@ -415,6 +456,21 @@ class _Reader(final String _s, var int _pos) {
+     for (var n = uint(); n > 0; n--) read(),
+   ];
+ 
++  List<T> records<T>(T Function() read) {
++    expect('[');
++    final xs = <T>[];
++    if (_s.codeUnitAt(_pos) != _closeBracket) {
++      do {
++        expect('"');
++        xs.add(read());
++        expect('"');
++      } while (_s.codeUnitAt(_pos++) == _comma);
++      _pos--;
++    }
++    expect(']');
++    return xs;
++  }
++
+   Catalog catalog() => Catalog(
+     categories: list(
+       () => Category(
+diff --git a/app/test/list/snapshot_codec_test.dart b/app/test/list/snapshot_codec_test.dart
+index b0a1c29b..75b36719 100644
+--- a/app/test/list/snapshot_codec_test.dart
++++ b/app/test/list/snapshot_codec_test.dart
+@@ -125,6 +125,26 @@ void main() {
+     }
+   });
+ 
++  test('the stored value is JSON with one element per row, op and usual', () {
++    // e2e/tests/offline-start.spec.ts and suggestions.spec.ts count them.
++    final s = generateSnapshot(seed: 4, items: 30, openShare: 0.5);
++    final json = jsonDecode(encodeSnapshot(s)) as Map<String, Object?>;
++    expect(json['version'], 4);
++    expect((json['server']! as List).length, 30);
++    expect((json['pending']! as List).length, s.pending.length);
++    expect((json['usuals']! as List).length, s.usuals.length);
++    final empty = jsonDecode(
++      encodeSnapshot(
++        const ListSnapshot(catalog: Catalog(), server: [], pending: []),
++      ),
++    ) as Map<String, Object?>;
++    expect([
++      empty['server'],
++      empty['pending'],
++      empty['usuals'],
++    ], everyElement(isEmpty));
++  });
++
+   test('the bench snapshots round-trip', () {
+     for (final s in [
+       generateSnapshot(seed: 1, items: 500, openShare: 0.1),
+@@ -143,10 +163,10 @@ void main() {
+       final good = encodeSnapshot(
+         generateSnapshot(seed: 3, items: 5, openShare: 1),
+       );
+-      expect(good.substring(0, 4), 'b4:E', reason: 'version 4 as a digit');
+       for (final stored in [
+         'b4:!!!',
+-        'b4:F${good.substring(4)}',
++        good.replaceFirst('"version":4', '"version":5'),
++        good.replaceFirst('","server":["', '","server":"'),
+         good.substring(0, good.length - 4),
+         '${good}x',
+         'x',

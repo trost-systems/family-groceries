@@ -1,0 +1,474 @@
+diff --git a/app/test/hillclimb/cache_codec_bench_test.dart b/app/test/hillclimb/cache_codec_bench_test.dart
+new file mode 100644
+index 00000000..d84b703e
+--- /dev/null
++++ b/app/test/hillclimb/cache_codec_bench_test.dart
+@@ -0,0 +1,394 @@
++import 'dart:convert';
++import 'dart:io';
++import 'dart:math';
++
++import 'package:family_groceries/app/device_cache.dart';
++import 'package:family_groceries/list/list_cache.dart';
++import 'package:family_groceries/list/model.dart';
++import 'package:family_groceries/session/session_cubit.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:shared_preferences/shared_preferences.dart';
++import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
++import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
++
++/// The hc-cache-codec harness (tool/hillclimb/hc-cache-codec/measure.sh):
++/// saves and loads seeded snapshots through [DeviceCache.list], the path
++/// the list cubit uses, and writes p50 timings, the stored size and the
++/// round-trip check to HC_CODEC_REPORT. Without it, one quick round trip
++/// keeps the generator honest in the normal suite.
++void main() {
++  final report = Platform.environment['HC_CODEC_REPORT'];
++  final iterations =
++      int.tryParse(Platform.environment['HC_CODEC_ITERATIONS'] ?? '') ?? 30;
++  const warmup = 10;
++  const seed = 132;
++  const user = 'peter';
++  const home = Household(
++    id: 'c0f1e5d2-0b7a-4e59-9a35-6d2f0e7c1a11',
++    name: 'Zuhause',
++  );
++
++  late DeviceCache device;
++  late SharedPreferencesAsync prefs;
++
++  setUp(() async {
++    SharedPreferencesAsyncPlatform.instance =
++        InMemorySharedPreferencesAsync.empty();
++    prefs = SharedPreferencesAsync();
++    device = DeviceCache(prefs);
++    await device.remember(user, home);
++  });
++
++  Future<int> storedBytes() async {
++    final keys = await prefs.getKeys();
++    final key = keys.singleWhere((k) => k.startsWith('list.'));
++    return utf8.encode((await prefs.getString(key))!).length;
++  }
++
++  String canonical(ListSnapshot s) => jsonEncode(s.toJson());
++
++  Future<Map<String, Object?>> bench(ListSnapshot snapshot, int n) async {
++    final cache = device.list(user, home.id);
++    final expected = canonical(snapshot);
++    final encodeUs = <int>[];
++    final decodeUs = <int>[];
++    var roundTrip = true;
++    for (var i = 0; i < warmup + n; i++) {
++      final w = Stopwatch()..start();
++      await cache.save(snapshot);
++      w.stop();
++      final r = Stopwatch()..start();
++      final back = await cache.load();
++      r.stop();
++      roundTrip = roundTrip && back != null && canonical(back) == expected;
++      if (i >= warmup) {
++        encodeUs.add(w.elapsedMicroseconds);
++        decodeUs.add(r.elapsedMicroseconds);
++      }
++    }
++    return {
++      'encode_ms': _p50(encodeUs) / 1000,
++      'decode_ms': _p50(decodeUs) / 1000,
++      'bytes': await storedBytes(),
++      'server_items': snapshot.server.length,
++      'pending_ops': snapshot.pending.length,
++      'usuals': snapshot.usuals.length,
++      'round_trip': roundTrip,
++    };
++  }
++
++  test(
++    'cache codec bench',
++    () async {
++      final full = generateSnapshot(seed: seed, items: 5000, openShare: 0.06);
++      final open = generateSnapshot(seed: seed + 1, items: 300, openShare: 1);
++      final results = {
++        'full': await bench(full, iterations),
++        'open': await bench(open, iterations),
++      };
++      File(report!).writeAsStringSync(
++        jsonEncode({'seed': seed, 'iterations': iterations, ...results}),
++      );
++      for (final r in results.values) {
++        expect(r['round_trip'], isTrue);
++      }
++    },
++    skip: report == null,
++    timeout: const Timeout(Duration(minutes: 10)),
++  );
++
++  test('a generated snapshot round-trips through the device cache', () async {
++    final snapshot = generateSnapshot(seed: seed, items: 200, openShare: 0.5);
++    final cache = device.list(user, home.id);
++    await cache.save(snapshot);
++    final back = await cache.load();
++    expect(back, isNotNull);
++    expect(canonical(back!), canonical(snapshot));
++    expect(
++      {for (final op in back.pending) op.runtimeType},
++      hasLength(8),
++      reason: 'every op kind is in the generated queue',
++    );
++  });
++}
++
++double _p50(List<int> us) {
++  final sorted = [...us]..sort();
++  final mid = sorted.length ~/ 2;
++  return sorted.length.isOdd
++      ? sorted[mid].toDouble()
++      : (sorted[mid - 1] + sorted[mid]) / 2;
++}
++
++const _names = [
++  'Milch',
++  'Hafermilch',
++  'Brot',
++  'Vollkornbrot',
++  'Butter',
++  'Käse',
++  'Gouda',
++  'Äpfel',
++  'Bananen',
++  'Möhren',
++  'Karotten',
++  'Gurken',
++  'Tomaten',
++  'Zwiebeln',
++  'Knoblauch',
++  'Kartoffeln',
++  'Nudeln',
++  'Reis',
++  'Mehl',
++  'Zucker',
++  'Salz',
++  'Eier',
++  'Joghurt',
++  'Quark',
++  'Sahne',
++  'Kaffee',
++  'Tee',
++  'Orangensaft',
++  'Mineralwasser',
++  'Bier',
++  'Wein',
++  'Spülmittel',
++  'Klopapier',
++  'Zahnpasta',
++  'Shampoo',
++  'Waschmittel',
++  'Müsli',
++  'Haferflocken',
++  'Honig',
++  'Marmelade',
++  'Hähnchenbrust',
++  'Hackfleisch',
++  'Lachs',
++  'Tofu',
++  'Paprika',
++  'Brokkoli',
++  'Spinat',
++  'Feldsalat',
++  'Zitronen',
++  'Avocado',
++  'Schokolade',
++  'Chips',
++  'Olivenöl',
++  'Essig',
++  'Senf',
++  'Ketchup',
++  'Mayonnaise',
++  'Pesto',
++  'Basilikum',
++  'Petersilie',
++  'Brötchen',
++  'Croissants',
++  'Frischkäse',
++  'Mozzarella',
++];
++const _quantities = [
++  '1',
++  '2',
++  '3',
++  '500 g',
++  '1 kg',
++  '2 l',
++  '6 Stück',
++  '1 Pck.',
++  '250 g',
++  '1 Bund',
++];
++const _brands = [
++  'Alpro',
++  'Weihenstephan',
++  'Barilla',
++  'Tchibo',
++  'Kerrygold',
++  'Ja!',
++  'Bio',
++];
++const _properties = [
++  'bio',
++  'laktosefrei',
++  '1,5 %',
++  'groß, reif',
++  'vegan',
++  'ohne Zucker',
++];
++const _via = ['household', 'exact', 'synonym', 'fuzzy', 'fallback', 'picked'];
++
++/// A household's snapshot of [items] server rows, [openShare] of them still
++/// open, with a full catalog, one queued op of every kind and some usuals.
++/// Ids are uuids and times carry microseconds, as PostgREST sends them.
++ListSnapshot generateSnapshot({
++  required int seed,
++  required int items,
++  required double openShare,
++}) {
++  final rng = Random(seed);
++  String uuid() {
++    final b = [for (var i = 0; i < 16; i++) rng.nextInt(256)];
++    b[6] = (b[6] & 0x0f) | 0x40;
++    b[8] = (b[8] & 0x3f) | 0x80;
++    final h = [for (final x in b) x.toRadixString(16).padLeft(2, '0')].join();
++    return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-'
++        '${h.substring(16, 20)}-${h.substring(20)}';
++  }
++
++  T pick<T>(List<T> xs) => xs[rng.nextInt(xs.length)];
++  String? maybe(double p, String Function() f) =>
++      rng.nextDouble() < p ? f() : null;
++  final epoch = DateTime.utc(2025, 3, 2);
++  DateTime at() => epoch.add(
++    Duration(
++      microseconds:
++          rng.nextInt(600 * 24 * 3600) * 1000000 + rng.nextInt(1000000),
++    ),
++  );
++
++  final members = [
++    Member(id: uuid(), displayName: 'Peter', role: 'owner'),
++    Member(id: uuid(), displayName: 'Lea', role: 'member'),
++  ];
++  const seeds = [
++    'produce',
++    'bakery',
++    'dairy',
++    'meat',
++    'fish',
++    'frozen',
++    'pantry',
++    'drinks',
++    'snacks',
++    'household',
++    'care',
++    'baby',
++    'pets',
++    'other',
++  ];
++  final categories = [
++    for (final (i, key) in seeds.indexed)
++      Category(
++        id: uuid(),
++        name: 'Kategorie $key',
++        sortOrder: i * 10,
++        seedKey: key,
++      ),
++    Category(id: uuid(), name: 'Asiatisch', sortOrder: 145),
++  ];
++  final stores = [
++    for (final (i, name) in [
++      'Rewe',
++      'Edeka',
++      'Aldi Süd',
++      'dm',
++      'Wochenmarkt',
++    ].indexed)
++      Store(
++        id: uuid(),
++        name: name,
++        sortOrder: i,
++        seedKey: i < 4 ? name.toLowerCase() : null,
++      ),
++  ];
++  final layout = [
++    for (final s in stores)
++      for (final (i, c) in categories.indexed)
++        StoreCategory(
++          storeId: s.id,
++          categoryId: c.id,
++          sortOrder: (i * 7) % categories.length,
++          hidden: rng.nextDouble() < 0.15,
++        ),
++  ];
++
++  Item item({required bool open}) {
++    final created = at();
++    final updated = created.add(
++      Duration(microseconds: rng.nextInt(3600000000)),
++    );
++    final name = pick(_names);
++    return Item(
++      id: uuid(),
++      name: name,
++      status: open ? ItemStatus.active : ItemStatus.bought,
++      createdAt: created,
++      updatedAt: updated,
++      quantity: maybe(0.45, () => pick(_quantities)),
++      brand: maybe(0.12, () => pick(_brands)),
++      properties: maybe(0.1, () => pick(_properties)),
++      categoryId: pick(categories).id,
++      storeId: maybe(0.4, () => pick(stores).id),
++      sortKey: rng.nextDouble() < 0.97
++          ? rng.nextInt(4000) * 1024 + (rng.nextBool() ? 0.0 : 512.5)
++          : null,
++      boughtAt: open ? null : updated,
++      addedBy: rng.nextDouble() < 0.98 ? pick(members).id : null,
++      categorizedVia: maybe(0.9, () => pick(_via)),
++      canonicalKey: name.toLowerCase().replaceAll(RegExp('[^a-z]'), ''),
++    );
++  }
++
++  final server = [
++    for (var i = 0; i < items; i++) item(open: rng.nextDouble() < openShare),
++  ];
++  final a = server[0];
++  final b = server[1 % server.length];
++  final pending = <ItemOp>[
++    AddItem(item(open: true)),
++    AddItem(item(open: true), restored: true, noStore: true),
++    AddItem(item(open: true), deviceParsed: true),
++    SetStatus(a.id, ItemStatus.bought, at(), storeId: stores.first.id),
++    SetStatus(b.id, ItemStatus.active, at()),
++    EditItem(
++      a.id,
++      ItemChanges(
++        name: 'Hafermilch',
++        quantity: const SetTo(null),
++        brand: const SetTo('Alpro'),
++        categoryId: categories.first.id,
++      ),
++      keyBefore: 'milch',
++    ),
++    EditItem(b.id, const ItemChanges(storeId: SetTo(null)), deviceParsed: true),
++    MoveItem(a.id, categoryId: categories[2].id, storeId: stores[1].id),
++    PlaceItem(
++      b.id,
++      anchorId: a.id,
++      edge: Edge.after,
++      categoryId: categories[2].id,
++      storeId: null,
++      sortKey: 2048.25,
++    ),
++    DeleteItem(b.id),
++    MergeItems(
++      a.id,
++      mergeId: uuid(),
++      otherId: b.id,
++      quantity: '3',
++      brand: null,
++      properties: 'bio',
++    ),
++    UnmergeItems(a.id, mergeId: uuid(), kept: a, merged: b),
++  ];
++  final usuals = [
++    for (final (i, name) in _names.take(40).indexed)
++      Usual(
++        name: name,
++        due: i.isEven,
++        quantity: maybe(0.3, () => pick(_quantities)),
++        lastUsed: rng.nextDouble() < 0.9 ? at() : null,
++      ),
++  ];
++  return ListSnapshot(
++    catalog: Catalog(
++      categories: categories,
++      stores: stores,
++      layout: layout,
++      members: members,
++    ),
++    server: server,
++    pending: pending,
++    usuals: usuals,
++  );
++}
+diff --git a/tool/hillclimb/hc-cache-codec/baseline.json b/tool/hillclimb/hc-cache-codec/baseline.json
+new file mode 100644
+index 00000000..04ee182e
+--- /dev/null
++++ b/tool/hillclimb/hc-cache-codec/baseline.json
+@@ -0,0 +1,12 @@
++{
++  "full": {
++    "encode_ms": 33.236,
++    "decode_ms": 50.9975,
++    "bytes": 2333023
++  },
++  "open": {
++    "encode_ms": 1.995,
++    "decode_ms": 2.119,
++    "bytes": 151962
++  }
++}
+\ No newline at end of file
+diff --git a/tool/hillclimb/hc-cache-codec/measure.sh b/tool/hillclimb/hc-cache-codec/measure.sh
+new file mode 100755
+index 00000000..459e69c7
+--- /dev/null
++++ b/tool/hillclimb/hc-cache-codec/measure.sh
+@@ -0,0 +1,49 @@
++#!/usr/bin/env bash
++# hc-cache-codec score, lower is better: the list-cache snapshot codec through
++# DeviceCache.list (save/load), on a 5,000-item and a 300-open-item snapshot.
++# score = 0.4 * encode + 0.4 * decode + 0.2 * bytes, each the mean over both
++# snapshots of p50 / baseline p50 (baseline.json, 1.0 = baseline). A snapshot
++# that does not load back equal fails the run. docs/hillclimb/hc-cache-codec.md
++# explains it.
++set -euo pipefail
++here="$(cd "$(dirname "$0")" && pwd)"
++root="$(cd "$here/../../.." && pwd)"
++export PATH="${FLUTTER_DIR:-$HOME/flutter}/bin:$PATH"
++report="$(mktemp)"
++out="$(mktemp)"
++trap 'rm -f "$report" "$out"' EXIT
++cd "$root/app"
++flutter pub get >/dev/null 2>&1
++if ! flock /tmp/fg-hc-measure.lock env HC_CODEC_REPORT="$report" \
++  flutter test test/hillclimb/cache_codec_bench_test.dart --plain-name 'cache codec bench' >"$out" 2>&1; then
++  cat "$out" >&2
++  exit 1
++fi
++python3 - "$report" "$here/baseline.json" "$(git -C "$root" rev-parse --short HEAD)" <<'PY'
++import json, os, sys, datetime
++report, baseline_path, sha = sys.argv[1:]
++r = json.load(open(report))
++cases = ("full", "open")
++if not all(r[c]["round_trip"] for c in cases):
++    sys.exit("round trip failed: " + json.dumps(r))
++base = json.load(open(baseline_path)) if os.path.exists(baseline_path) else {c: r[c] for c in cases}
++def ratio(part):
++    return sum(r[c][part] / base[c][part] for c in cases) / len(cases)
++parts = {"encode": ratio("encode_ms"), "decode": ratio("decode_ms"), "bytes": ratio("bytes")}
++score = 0.4 * parts["encode"] + 0.4 * parts["decode"] + 0.2 * parts["bytes"]
++print(json.dumps({
++    "goal": "hc-cache-codec",
++    "score": round(score, 4),
++    "higher_is_better": False,
++    "parts": {
++        **{f"{k}_ratio": round(v, 4) for k, v in parts.items()},
++        **{f"{c}_{k}": r[c][k] for c in cases for k in
++           ("encode_ms", "decode_ms", "bytes", "server_items", "pending_ops", "usuals", "round_trip")},
++        "seed": r["seed"],
++        "iterations": r["iterations"],
++        "baseline_file": os.path.exists(baseline_path),
++    },
++    "git": sha,
++    "at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
++}))
++PY

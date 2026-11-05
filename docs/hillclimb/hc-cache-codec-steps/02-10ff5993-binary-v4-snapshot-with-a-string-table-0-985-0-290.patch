@@ -1,0 +1,746 @@
+diff --git a/app/lib/app/device_cache.dart b/app/lib/app/device_cache.dart
+index 58c04947..d9a940c4 100644
+--- a/app/lib/app/device_cache.dart
++++ b/app/lib/app/device_cache.dart
+@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
+ import 'package:family_groceries/household/pending_invite.dart';
+ import 'package:family_groceries/list/list_cache.dart';
+ import 'package:family_groceries/list/model.dart';
++import 'package:family_groceries/list/snapshot_codec.dart';
+ import 'package:family_groceries/session/session_cubit.dart';
+ import 'package:family_groceries/tips/tips.dart';
+ import 'package:shared_preferences/shared_preferences.dart';
+@@ -297,37 +298,42 @@ class _PrefsListCache(
+ ) implements ListCache {
+   @override
+   Future<ListSnapshot?> load() =>
+-      _read(DeviceCache._listKey(_userId, _householdId), ListSnapshot.fromJson);
++      _read(DeviceCache._listKey(_userId, _householdId), decodeSnapshot);
+ 
+   @override
+-  Future<void> save(ListSnapshot snapshot) =>
+-      _store(DeviceCache._listKey(_userId, _householdId), snapshot.toJson());
++  Future<void> save(ListSnapshot snapshot) => _store(
++    DeviceCache._listKey(_userId, _householdId),
++    () => encodeSnapshot(snapshot),
++  );
+ 
+   @override
+-  Future<SeenMark?> loadSeen() =>
+-      _read(DeviceCache._seenKey(_userId, _householdId), SeenMark.fromJson);
++  Future<SeenMark?> loadSeen() => _read(
++    DeviceCache._seenKey(_userId, _householdId),
++    (s) => SeenMark.fromJson(jsonDecode(s) as Map<String, Object?>),
++  );
+ 
+   @override
+-  Future<void> saveSeen(SeenMark mark) =>
+-      _store(DeviceCache._seenKey(_userId, _householdId), mark.toJson());
++  Future<void> saveSeen(SeenMark mark) => _store(
++    DeviceCache._seenKey(_userId, _householdId),
++    () => jsonEncode(mark.toJson()),
++  );
+ 
+   @override
+-  Future<ListPrefs?> loadPrefs() =>
+-      _read(DeviceCache._prefsKey(_userId, _householdId), ListPrefs.fromJson);
++  Future<ListPrefs?> loadPrefs() => _read(
++    DeviceCache._prefsKey(_userId, _householdId),
++    (s) => ListPrefs.fromJson(jsonDecode(s) as Map<String, Object?>),
++  );
+ 
+   @override
+-  Future<void> savePrefs(ListPrefs prefs) =>
+-      _store(DeviceCache._prefsKey(_userId, _householdId), prefs.toJson());
++  Future<void> savePrefs(ListPrefs prefs) => _store(
++    DeviceCache._prefsKey(_userId, _householdId),
++    () => jsonEncode(prefs.toJson()),
++  );
+ 
+-  Future<T?> _read<T>(
+-    String key,
+-    T Function(Map<String, Object?>) parse,
+-  ) async {
++  Future<T?> _read<T>(String key, T Function(String) parse) async {
+     try {
+-      final json = await _device._prefs.getString(key);
+-      return json == null
+-          ? null
+-          : parse(jsonDecode(json) as Map<String, Object?>);
++      final stored = await _device._prefs.getString(key);
++      return stored == null ? null : parse(stored);
+     } on Object {
+       return null;
+     }
+@@ -335,10 +341,10 @@ class _PrefsListCache(
+ 
+   /// Skipped once the user signed out or moved to another household, so a
+   /// list closing late cannot write its state back.
+-  Future<void> _store(String key, Map<String, Object?> json) =>
++  Future<void> _store(String key, String Function() encode) =>
+       _device._write(() async {
+         if ((await _device.household(_userId))?.id == _householdId) {
+-          await _device._prefs.setString(key, jsonEncode(json));
++          await _device._prefs.setString(key, encode());
+         }
+       });
+ }
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+new file mode 100644
+index 00000000..1916ac0c
+--- /dev/null
++++ b/app/lib/list/snapshot_codec.dart
+@@ -0,0 +1,500 @@
++import 'dart:convert';
++import 'dart:typed_data';
++
++import 'package:family_groceries/list/list_cache.dart';
++import 'package:family_groceries/list/model.dart';
++
++/// How a [ListSnapshot] is kept on the device: a String, since shared
++/// preferences store strings. [encodeSnapshot] writes [_prefix] and the
++/// base64 of a binary layout with one table of the snapshot's distinct
++/// strings; [decodeSnapshot] also reads the JSON snapshots apps before it
++/// wrote (versions 1 to 3, `{...}`). Throws on anything else.
++String encodeSnapshot(ListSnapshot snapshot) {
++  final body = _Writer();
++  body
++    ..catalog(snapshot.catalog)
++    ..list(snapshot.server, body.item)
++    ..list(snapshot.pending, body.op)
++    ..list(snapshot.usuals, body.usual);
++  final out = _Writer()
++    ..uint(_binaryVersion)
++    ..uint(body.strings.length);
++  body.strings.keys.forEach(out.utf8String);
++  out.bytes(body.takeBytes());
++  return '$_prefix${base64.encode(out.takeBytes())}';
++}
++
++ListSnapshot decodeSnapshot(String stored) {
++  if (stored.startsWith('{')) {
++    return ListSnapshot.fromJson(jsonDecode(stored) as Map<String, Object?>);
++  }
++  if (!stored.startsWith(_prefix)) {
++    throw const FormatException('list snapshot');
++  }
++  final r = _Reader(base64.decode(stored.substring(_prefix.length)));
++  final version = r.uint();
++  if (version != _binaryVersion) {
++    throw FormatException('snapshot version', version);
++  }
++  r.readStrings();
++  return ListSnapshot(
++    catalog: r.catalog(),
++    server: r.list(r.item),
++    pending: r.list(r.op),
++    usuals: r.list(r.usual),
++  );
++}
++
++const _prefix = 'b4:';
++
++/// [ListSnapshot.version] 3 is the JSON layout; 4 is this one.
++const _binaryVersion = 4;
++
++const _timeNull = 0;
++const _timeUtc = 1;
++
++/// A local time keeps its wall-clock text, as JSON snapshots did.
++const _timeLocal = 2;
++
++const _sortKeyNull = 0;
++const _sortKeyHalves = 1;
++const _sortKeyDouble = 2;
++
++/// Half steps of [_sortKeyHalves] stay exact up to here.
++const _maxHalves = 1 << 52;
++
++enum _Op() {
++  add,
++  status,
++  edit,
++  move,
++  place,
++  delete,
++  merge,
++  unmerge,
++}
++
++class _Writer() {
++  var _buf = Uint8List(1 << 16);
++  var _len = 0;
++
++  /// Insertion order is the table order.
++  final strings = <String, int>{};
++
++  final _scratch = ByteData(8);
++
++  void _ensure(int extra) {
++    if (_len + extra > _buf.length) {
++      var size = _buf.length * 2;
++      while (size < _len + extra) {
++        size *= 2;
++      }
++      _buf = Uint8List(size)..setRange(0, _len, _buf);
++    }
++  }
++
++  Uint8List takeBytes() => Uint8List.sublistView(_buf, 0, _len);
++
++  void byte(int b) {
++    _ensure(1);
++    _buf[_len++] = b;
++  }
++
++  void bytes(Uint8List b) {
++    _ensure(b.length);
++    _buf.setRange(_len, _len + b.length, b);
++    _len += b.length;
++  }
++
++  void uint(int v) {
++    _ensure(10);
++    var x = v;
++    while (x >= 0x80) {
++      _buf[_len++] = (x & 0x7f) | 0x80;
++      x >>= 7;
++    }
++    _buf[_len++] = x;
++  }
++
++  void sint(int v) => uint(v >= 0 ? v << 1 : ((-v) << 1) - 1);
++
++  void boolean({required bool value}) => byte(value ? 1 : 0);
++
++  void utf8String(String s) {
++    final b = utf8.encode(s);
++    uint(b.length);
++    bytes(b);
++  }
++
++  void string(String s) => uint(strings.putIfAbsent(s, () => strings.length));
++
++  void optString(String? s) =>
++      uint(s == null ? 0 : strings.putIfAbsent(s, () => strings.length) + 1);
++
++  void time(DateTime? t) {
++    if (t == null) {
++      byte(_timeNull);
++    } else if (t.isUtc) {
++      byte(_timeUtc);
++      sint(t.microsecondsSinceEpoch);
++    } else {
++      byte(_timeLocal);
++      string(t.toIso8601String());
++    }
++  }
++
++  void sortKey(double? k) {
++    if (k == null) {
++      byte(_sortKeyNull);
++      return;
++    }
++    final halves = k * 2;
++    if (halves == halves.truncateToDouble() &&
++        halves.abs() < _maxHalves &&
++        !(k == 0 && k.isNegative)) {
++      byte(_sortKeyHalves);
++      sint(halves.toInt());
++    } else {
++      byte(_sortKeyDouble);
++      _scratch.setFloat64(0, k, Endian.little);
++      bytes(_scratch.buffer.asUint8List());
++    }
++  }
++
++  void list<T>(List<T> xs, void Function(T) write) {
++    uint(xs.length);
++    xs.forEach(write);
++  }
++
++  void catalog(Catalog c) {
++    list(c.categories, (x) {
++      string(x.id);
++      string(x.name);
++      sint(x.sortOrder);
++      optString(x.seedKey);
++    });
++    list(c.stores, (x) {
++      string(x.id);
++      string(x.name);
++      sint(x.sortOrder);
++      optString(x.seedKey);
++    });
++    list(c.layout, (x) {
++      string(x.storeId);
++      string(x.categoryId);
++      sint(x.sortOrder);
++      boolean(value: x.hidden);
++    });
++    list(c.members, (x) {
++      string(x.id);
++      string(x.displayName);
++      optString(x.role);
++    });
++  }
++
++  void item(Item i) {
++    string(i.id);
++    string(i.name);
++    optString(i.quantity);
++    optString(i.brand);
++    optString(i.properties);
++    optString(i.categoryId);
++    optString(i.storeId);
++    sortKey(i.sortKey);
++    byte(i.status.index);
++    time(i.createdAt);
++    time(i.updatedAt);
++    time(i.boughtAt);
++    optString(i.addedBy);
++    optString(i.categorizedVia);
++    optString(i.canonicalKey);
++  }
++
++  void change(SetTo<String?>? c) {
++    boolean(value: c != null);
++    if (c != null) {
++      optString(c.value);
++    }
++  }
++
++  void op(ItemOp op) {
++    switch (op) {
++      case AddItem(
++        item: final added,
++        :final restored,
++        :final noStore,
++        :final deviceParsed,
++      ):
++        byte(_Op.add.index);
++        item(added);
++        byte((restored ? 1 : 0) | (noStore ? 2 : 0) | (deviceParsed ? 4 : 0));
++      case SetStatus(:final itemId, :final status, :final at, :final storeId):
++        byte(_Op.status.index);
++        string(itemId);
++        byte(status.index);
++        time(at);
++        optString(storeId);
++      case EditItem(
++        :final itemId,
++        :final changes,
++        :final keyBefore,
++        :final deviceParsed,
++      ):
++        byte(_Op.edit.index);
++        string(itemId);
++        optString(changes.name);
++        change(changes.quantity);
++        change(changes.brand);
++        change(changes.properties);
++        optString(changes.categoryId);
++        change(changes.storeId);
++        optString(keyBefore);
++        boolean(value: deviceParsed);
++      case MoveItem(:final itemId, :final categoryId, :final storeId):
++        byte(_Op.move.index);
++        string(itemId);
++        string(categoryId);
++        optString(storeId);
++      case PlaceItem(
++        :final itemId,
++        :final anchorId,
++        :final edge,
++        :final categoryId,
++        :final storeId,
++        :final sortKey,
++      ):
++        byte(_Op.place.index);
++        string(itemId);
++        string(anchorId);
++        byte(edge.index);
++        string(categoryId);
++        optString(storeId);
++        this.sortKey(sortKey);
++      case DeleteItem(:final itemId):
++        byte(_Op.delete.index);
++        string(itemId);
++      case MergeItems(
++        :final itemId,
++        :final mergeId,
++        :final otherId,
++        :final quantity,
++        :final brand,
++        :final properties,
++      ):
++        byte(_Op.merge.index);
++        string(itemId);
++        string(mergeId);
++        string(otherId);
++        optString(quantity);
++        optString(brand);
++        optString(properties);
++      case UnmergeItems(
++        :final itemId,
++        :final mergeId,
++        :final kept,
++        :final merged,
++      ):
++        byte(_Op.unmerge.index);
++        string(itemId);
++        string(mergeId);
++        item(kept);
++        item(merged);
++    }
++  }
++
++  void usual(Usual u) {
++    string(u.name);
++    boolean(value: u.due);
++    optString(u.quantity);
++    time(u.lastUsed);
++  }
++}
++
++class _Reader(final Uint8List _b) {
++  var _pos = 0;
++  var _strings = const <String>[];
++
++  /// First: everything after refers to the table.
++  void readStrings() {
++    _strings = [for (var n = uint(); n > 0; n--) _utf8String()];
++  }
++
++  int byte() => _b[_pos++];
++
++  int uint() {
++    var result = 0;
++    var shift = 0;
++    while (true) {
++      final b = _b[_pos++];
++      result |= (b & 0x7f) << shift;
++      if (b < 0x80) {
++        return result;
++      }
++      shift += 7;
++    }
++  }
++
++  int sint() {
++    final v = uint();
++    return v.isEven ? v >> 1 : -((v + 1) >> 1);
++  }
++
++  bool boolean() => switch (byte()) {
++    0 => false,
++    1 => true,
++    final b => throw FormatException('bool', b),
++  };
++
++  String _utf8String() {
++    final n = uint();
++    final s = utf8.decode(Uint8List.sublistView(_b, _pos, _pos + n));
++    _pos += n;
++    return s;
++  }
++
++  String string() => _strings[uint()];
++
++  String? optString() => switch (uint()) {
++    0 => null,
++    final i => _strings[i - 1],
++  };
++
++  DateTime? time() => switch (byte()) {
++    _timeNull => null,
++    _timeUtc => DateTime.fromMicrosecondsSinceEpoch(sint(), isUtc: true),
++    _timeLocal => DateTime.parse(string()),
++    final tag => throw FormatException('time', tag),
++  };
++
++  double? sortKey() => switch (byte()) {
++    _sortKeyNull => null,
++    _sortKeyHalves => sint() / 2,
++    _sortKeyDouble => _float64(),
++    final tag => throw FormatException('sort key', tag),
++  };
++
++  double _float64() {
++    final v = ByteData.sublistView(
++      _b,
++      _pos,
++      _pos + 8,
++    ).getFloat64(0, Endian.little);
++    _pos += 8;
++    return v;
++  }
++
++  List<T> list<T>(T Function() read) => [
++    for (var n = uint(); n > 0; n--) read(),
++  ];
++
++  Catalog catalog() => Catalog(
++    categories: list(
++      () => Category(
++        id: string(),
++        name: string(),
++        sortOrder: sint(),
++        seedKey: optString(),
++      ),
++    ),
++    stores: list(
++      () => Store(
++        id: string(),
++        name: string(),
++        sortOrder: sint(),
++        seedKey: optString(),
++      ),
++    ),
++    layout: list(
++      () => StoreCategory(
++        storeId: string(),
++        categoryId: string(),
++        sortOrder: sint(),
++        hidden: boolean(),
++      ),
++    ),
++    members: list(
++      () => Member(id: string(), displayName: string(), role: optString()),
++    ),
++  );
++
++  Item item() => Item(
++    id: string(),
++    name: string(),
++    quantity: optString(),
++    brand: optString(),
++    properties: optString(),
++    categoryId: optString(),
++    storeId: optString(),
++    sortKey: sortKey(),
++    status: ItemStatus.values[byte()],
++    createdAt: time()!,
++    updatedAt: time()!,
++    boughtAt: time(),
++    addedBy: optString(),
++    categorizedVia: optString(),
++    canonicalKey: optString(),
++  );
++
++  SetTo<String?>? change() => boolean() ? SetTo(optString()) : null;
++
++  ItemOp op() => switch (_Op.values[byte()]) {
++    _Op.add => _add(item(), byte()),
++    _Op.status => SetStatus(
++      string(),
++      ItemStatus.values[byte()],
++      time()!,
++      storeId: optString(),
++    ),
++    _Op.edit => EditItem(
++      string(),
++      ItemChanges(
++        name: optString(),
++        quantity: change(),
++        brand: change(),
++        properties: change(),
++        categoryId: optString(),
++        storeId: change(),
++      ),
++      keyBefore: optString(),
++      deviceParsed: boolean(),
++    ),
++    _Op.move => MoveItem(string(), categoryId: string(), storeId: optString()),
++    _Op.place => PlaceItem(
++      string(),
++      anchorId: string(),
++      edge: Edge.values[byte()],
++      categoryId: string(),
++      storeId: optString(),
++      sortKey: sortKey(),
++    ),
++    _Op.delete => DeleteItem(string()),
++    _Op.merge => MergeItems(
++      string(),
++      mergeId: string(),
++      otherId: string(),
++      quantity: optString(),
++      brand: optString(),
++      properties: optString(),
++    ),
++    _Op.unmerge => UnmergeItems(
++      string(),
++      mergeId: string(),
++      kept: item(),
++      merged: item(),
++    ),
++  };
++
++  static AddItem _add(Item item, int flags) => AddItem(
++    item,
++    restored: flags & 1 != 0,
++    noStore: flags & 2 != 0,
++    deviceParsed: flags & 4 != 0,
++  );
++
++  Usual usual() => Usual(
++    name: string(),
++    due: boolean(),
++    quantity: optString(),
++    lastUsed: time(),
++  );
++}
+diff --git a/app/test/list/fixtures/list_snapshot_v3.json b/app/test/list/fixtures/list_snapshot_v3.json
+new file mode 100644
+index 00000000..8c169c15
+--- /dev/null
++++ b/app/test/list/fixtures/list_snapshot_v3.json
+@@ -0,0 +1 @@
++{"version":3,"catalog":{"categories":[{"id":"8aed40ab-86b4-4226-afae-5a86f85a677b","name":"Kategorie produce","sort_order":0,"seed_key":"produce"},{"id":"75253b40-cf67-4b99-9520-e624aafde33d","name":"Kategorie bakery","sort_order":10,"seed_key":"bakery"},{"id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","name":"Kategorie dairy","sort_order":20,"seed_key":"dairy"},{"id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","name":"Kategorie meat","sort_order":30,"seed_key":"meat"},{"id":"2e15814b-efb9-406f-bd81-dccee61d89a0","name":"Kategorie fish","sort_order":40,"seed_key":"fish"},{"id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","name":"Kategorie frozen","sort_order":50,"seed_key":"frozen"},{"id":"820980bd-6bac-4438-83b3-93540de5abbc","name":"Kategorie pantry","sort_order":60,"seed_key":"pantry"},{"id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","name":"Kategorie drinks","sort_order":70,"seed_key":"drinks"},{"id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","name":"Kategorie snacks","sort_order":80,"seed_key":"snacks"},{"id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","name":"Kategorie household","sort_order":90,"seed_key":"household"},{"id":"9b8640a7-31b7-4d7a-aa47-c14777933350","name":"Kategorie care","sort_order":100,"seed_key":"care"},{"id":"98a5e48c-d144-41be-a4f3-cd9f87783439","name":"Kategorie baby","sort_order":110,"seed_key":"baby"},{"id":"c01859c6-f316-439a-850e-eadeb58ad833","name":"Kategorie pets","sort_order":120,"seed_key":"pets"},{"id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","name":"Kategorie other","sort_order":130,"seed_key":"other"},{"id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","name":"Asiatisch","sort_order":145,"seed_key":null}],"stores":[{"id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","name":"Rewe","sort_order":0,"seed_key":"rewe"},{"id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","name":"Edeka","sort_order":1,"seed_key":"edeka"},{"id":"1420a7f2-39d2-40f0-8281-9bf398797f14","name":"Aldi Süd","sort_order":2,"seed_key":"aldi süd"},{"id":"e7381183-be56-49d3-a8b5-7deec359d080","name":"dm","sort_order":3,"seed_key":"dm"},{"id":"f35586b1-caa2-406e-886b-f7d89ad74722","name":"Wochenmarkt","sort_order":4,"seed_key":null}],"layout":[{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","sort_order":0,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"75253b40-cf67-4b99-9520-e624aafde33d","sort_order":7,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","sort_order":14,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","sort_order":6,"hidden":true},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","sort_order":13,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","sort_order":5,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","sort_order":12,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","sort_order":4,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","sort_order":11,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","sort_order":3,"hidden":true},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","sort_order":10,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","sort_order":2,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"c01859c6-f316-439a-850e-eadeb58ad833","sort_order":9,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","sort_order":1,"hidden":false},{"store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","sort_order":8,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","sort_order":0,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"75253b40-cf67-4b99-9520-e624aafde33d","sort_order":7,"hidden":true},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","sort_order":14,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","sort_order":6,"hidden":true},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","sort_order":13,"hidden":true},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","sort_order":5,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","sort_order":12,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","sort_order":4,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","sort_order":11,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","sort_order":3,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","sort_order":10,"hidden":true},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","sort_order":2,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"c01859c6-f316-439a-850e-eadeb58ad833","sort_order":9,"hidden":true},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","sort_order":1,"hidden":false},{"store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","sort_order":8,"hidden":true},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","sort_order":0,"hidden":true},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"75253b40-cf67-4b99-9520-e624aafde33d","sort_order":7,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","sort_order":14,"hidden":true},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","sort_order":6,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","sort_order":13,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","sort_order":5,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","sort_order":12,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","sort_order":4,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","sort_order":11,"hidden":true},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","sort_order":3,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","sort_order":10,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","sort_order":2,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"c01859c6-f316-439a-850e-eadeb58ad833","sort_order":9,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","sort_order":1,"hidden":false},{"store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","sort_order":8,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","sort_order":0,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"75253b40-cf67-4b99-9520-e624aafde33d","sort_order":7,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","sort_order":14,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","sort_order":6,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","sort_order":13,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","sort_order":5,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","sort_order":12,"hidden":true},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","sort_order":4,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","sort_order":11,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","sort_order":3,"hidden":true},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","sort_order":10,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","sort_order":2,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"c01859c6-f316-439a-850e-eadeb58ad833","sort_order":9,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","sort_order":1,"hidden":false},{"store_id":"e7381183-be56-49d3-a8b5-7deec359d080","category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","sort_order":8,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","sort_order":0,"hidden":true},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"75253b40-cf67-4b99-9520-e624aafde33d","sort_order":7,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","sort_order":14,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","sort_order":6,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","sort_order":13,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","sort_order":5,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","sort_order":12,"hidden":true},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"7310f285-9e04-47dd-87f1-ed8aaae0566d","sort_order":4,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","sort_order":11,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","sort_order":3,"hidden":true},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","sort_order":10,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","sort_order":2,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"c01859c6-f316-439a-850e-eadeb58ad833","sort_order":9,"hidden":false},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","sort_order":1,"hidden":true},{"store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","sort_order":8,"hidden":false}],"members":[{"id":"1c65be15-925e-4a17-bbd4-77b6d81ae550","display_name":"Peter","role":"owner"},{"id":"0548ddf3-3ca4-432d-927c-3455693ea8d2","display_name":"Lea","role":"member"}]},"server":[{"id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","name":"Marmelade","quantity":"1 kg","brand":null,"properties":"laktosefrei","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","store_id":null,"sort_key":2876416.0,"status":"active","created_at":"2025-11-23T10:18:44.131433Z","updated_at":"2025-11-23T10:38:10.467251Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":null,"canonical_key":"marmelade"},{"id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","name":"Äpfel","quantity":"1 Pck.","brand":null,"properties":null,"category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":2155008.5,"status":"bought","created_at":"2026-01-21T03:07:59.100822Z","updated_at":"2026-01-21T03:59:34.917211Z","bought_at":"2026-01-21T03:59:34.917211Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"pfel"},{"id":"1b0428c0-61fc-457f-8f91-79654e9004c8","name":"Kaffee","quantity":"250 g","brand":null,"properties":null,"category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","store_id":null,"sort_key":1066496.5,"status":"bought","created_at":"2025-03-10T23:49:35.589048Z","updated_at":"2025-03-11T00:10:18.336253Z","bought_at":"2025-03-11T00:10:18.336253Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fallback","canonical_key":"kaffee"},{"id":"b12455aa-1008-49bb-a23f-867bff466d81","name":"Reis","quantity":null,"brand":null,"properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","sort_key":3771904.5,"status":"active","created_at":"2025-09-04T18:13:22.018407Z","updated_at":"2025-09-04T18:27:57.685330Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"synonym","canonical_key":"reis"},{"id":"eb1f1b5b-a51b-44af-b8a1-ffaeb7dc52c6","name":"Knoblauch","quantity":null,"brand":null,"properties":null,"category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","store_id":null,"sort_key":1142272.5,"status":"active","created_at":"2026-05-19T11:20:11.897339Z","updated_at":"2026-05-19T11:55:35.288881Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":null,"canonical_key":"knoblauch"},{"id":"3bdcaf00-0210-4276-a2b7-7feedb005fec","name":"Pesto","quantity":null,"brand":null,"properties":null,"category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","sort_key":2316800.5,"status":"bought","created_at":"2025-08-29T18:03:13.108902Z","updated_at":"2025-08-29T18:42:37.851262Z","bought_at":"2025-08-29T18:42:37.851262Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"picked","canonical_key":"pesto"},{"id":"a7d2b802-de26-439a-8fb8-7a8c676e5d7f","name":"Karotten","quantity":null,"brand":null,"properties":null,"category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","sort_key":537088.5,"status":"bought","created_at":"2025-12-24T02:19:10.869640Z","updated_at":"2025-12-24T03:15:57.682941Z","bought_at":"2025-12-24T03:15:57.682941Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"karotten"},{"id":"cc440f98-9d8c-40f9-b84a-b173721b67cf","name":"Klopapier","quantity":null,"brand":null,"properties":null,"category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":null,"sort_key":166400.5,"status":"bought","created_at":"2026-04-25T06:57:45.394809Z","updated_at":"2026-04-25T07:10:07.226789Z","bought_at":"2026-04-25T07:10:07.226789Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":null,"canonical_key":"klopapier"},{"id":"abc4382a-af7e-4a60-b158-68a02b709485","name":"Lachs","quantity":"2","brand":"Ja!","properties":null,"category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":1399296.5,"status":"bought","created_at":"2025-08-21T05:29:52.827251Z","updated_at":"2025-08-21T05:43:39.000241Z","bought_at":"2025-08-21T05:43:39.000241Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":null,"canonical_key":"lachs"},{"id":"7f8c3314-5860-4ba9-b285-bb24724c9710","name":"Tomaten","quantity":"500 g","brand":null,"properties":"bio","category_id":"5eaabb0f-a2e9-49c8-ad6c-df8bda46dab3","store_id":null,"sort_key":522752.5,"status":"bought","created_at":"2025-10-22T07:24:18.550586Z","updated_at":"2025-10-22T07:47:31.457888Z","bought_at":"2025-10-22T07:47:31.457888Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"picked","canonical_key":"tomaten"},{"id":"12a03ad0-402b-4463-8a79-4b2946c09e1b","name":"Klopapier","quantity":"6 Stück","brand":"Weihenstephan","properties":null,"category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","sort_key":44032.0,"status":"bought","created_at":"2026-06-22T23:15:34.773754Z","updated_at":"2026-06-22T23:16:53.245596Z","bought_at":"2026-06-22T23:16:53.245596Z","added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"picked","canonical_key":"klopapier"},{"id":"75eb2d35-d6c0-4e82-9edf-62bfd6cb48e4","name":"Brötchen","quantity":null,"brand":null,"properties":null,"category_id":"c01859c6-f316-439a-850e-eadeb58ad833","store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","sort_key":3030016.0,"status":"active","created_at":"2026-10-06T08:21:16.046917Z","updated_at":"2026-10-06T09:19:22.879177Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"synonym","canonical_key":"brtchen"},{"id":"4512dfee-704f-455d-bdf1-5a7f2f522687","name":"Joghurt","quantity":"500 g","brand":null,"properties":null,"category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","store_id":null,"sort_key":2419200.5,"status":"active","created_at":"2025-06-21T01:54:55.004871Z","updated_at":"2025-06-21T02:02:19.558810Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fuzzy","canonical_key":"joghurt"},{"id":"68d358fa-a06b-48bc-9ff5-66989dcf2b45","name":"Orangensaft","quantity":"250 g","brand":null,"properties":null,"category_id":"c01859c6-f316-439a-850e-eadeb58ad833","store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","sort_key":2950144.0,"status":"bought","created_at":"2025-11-11T14:06:26.028879Z","updated_at":"2025-11-11T14:24:54.103793Z","bought_at":"2025-11-11T14:24:54.103793Z","added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"picked","canonical_key":"orangensaft"},{"id":"406bb4de-96d4-4625-bcf6-8188528e5dcf","name":"Kaffee","quantity":"3","brand":"Alpro","properties":null,"category_id":"2e15814b-efb9-406f-bd81-dccee61d89a0","store_id":null,"sort_key":3371008.0,"status":"bought","created_at":"2025-04-20T11:33:06.265022Z","updated_at":"2025-04-20T12:17:34.354916Z","bought_at":"2025-04-20T12:17:34.354916Z","added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"fallback","canonical_key":"kaffee"},{"id":"6db7d74e-07a2-4fb5-9567-0d2611d6d4cd","name":"Salz","quantity":null,"brand":null,"properties":null,"category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","store_id":null,"sort_key":50688.5,"status":"bought","created_at":"2026-10-16T13:12:01.525291Z","updated_at":"2026-10-16T13:28:33.469620Z","bought_at":"2026-10-16T13:28:33.469620Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"picked","canonical_key":"salz"},{"id":"46fb3302-f290-4cd8-9a4f-b7010f89211d","name":"Avocado","quantity":"250 g","brand":null,"properties":"ohne Zucker","category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","sort_key":3866624.0,"status":"bought","created_at":"2025-04-18T16:10:51.442469Z","updated_at":"2025-04-18T16:40:05.828280Z","bought_at":"2025-04-18T16:40:05.828280Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fuzzy","canonical_key":"avocado"},{"id":"91e95126-b551-4e75-9c46-ff3669d83ed4","name":"Butter","quantity":null,"brand":null,"properties":null,"category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","sort_key":4018176.0,"status":"active","created_at":"2026-04-28T22:22:00.137525Z","updated_at":"2026-04-28T22:33:12.615462Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"exact","canonical_key":"butter"},{"id":"d1da34f6-ce21-48ad-be30-9a1bc2113620","name":"Klopapier","quantity":null,"brand":null,"properties":null,"category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":null,"sort_key":3655168.5,"status":"bought","created_at":"2026-02-06T07:39:21.985233Z","updated_at":"2026-02-06T08:32:25.867877Z","bought_at":"2026-02-06T08:32:25.867877Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"exact","canonical_key":"klopapier"},{"id":"9aa957f8-c0dd-4fb2-ac74-4785369b04a0","name":"Waschmittel","quantity":"250 g","brand":null,"properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f","sort_key":3265536.0,"status":"bought","created_at":"2026-09-12T17:32:43.074041Z","updated_at":"2026-09-12T18:23:18.386598Z","bought_at":"2026-09-12T18:23:18.386598Z","added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"exact","canonical_key":"waschmittel"},{"id":"d6d95f39-64d2-441d-a491-32babceeb50b","name":"Vollkornbrot","quantity":null,"brand":null,"properties":null,"category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","sort_key":3629056.0,"status":"active","created_at":"2026-02-08T14:35:54.735043Z","updated_at":"2026-02-08T15:31:04.970677Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"exact","canonical_key":"vollkornbrot"},{"id":"12aa5968-b1cf-478a-889b-b28bd77a70d3","name":"Pesto","quantity":null,"brand":null,"properties":null,"category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":null,"sort_key":3763712.5,"status":"active","created_at":"2026-07-15T00:13:50.047189Z","updated_at":"2026-07-15T01:12:33.594667Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"picked","canonical_key":"pesto"},{"id":"8549fc4f-29e7-4cb6-8e2c-f095cb40ff98","name":"Müsli","quantity":"1 Pck.","brand":"Kerrygold","properties":null,"category_id":"75253b40-cf67-4b99-9520-e624aafde33d","store_id":"f35586b1-caa2-406e-886b-f7d89ad74722","sort_key":410624.0,"status":"active","created_at":"2025-06-17T05:26:07.870817Z","updated_at":"2025-06-17T05:46:51.768488Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"fallback","canonical_key":"msli"},{"id":"922f5236-e437-4efc-98ba-dcc6fa1a3a29","name":"Knoblauch","quantity":"3","brand":null,"properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":null,"sort_key":3258368.0,"status":"active","created_at":"2026-07-12T08:11:06.651699Z","updated_at":"2026-07-12T08:56:36.628513Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"picked","canonical_key":"knoblauch"},{"id":"1cd0c6ea-53af-4df6-86a3-bed6f7584743","name":"Basilikum","quantity":"1 Bund","brand":null,"properties":null,"category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","store_id":null,"sort_key":2579968.5,"status":"active","created_at":"2026-05-16T06:07:46.088046Z","updated_at":"2026-05-16T06:12:40.613924Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":null,"canonical_key":"basilikum"},{"id":"aab3a531-ff89-4dc1-b1e7-cb8efcbc922b","name":"Zucker","quantity":null,"brand":null,"properties":null,"category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":3181568.0,"status":"bought","created_at":"2026-10-11T02:07:41.092569Z","updated_at":"2026-10-11T02:29:47.520174Z","bought_at":"2026-10-11T02:29:47.520174Z","added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"exact","canonical_key":"zucker"},{"id":"cd2cb5a8-4c90-43ed-9d2a-7a9982a4e5e5","name":"Karotten","quantity":null,"brand":null,"properties":null,"category_id":"75253b40-cf67-4b99-9520-e624aafde33d","store_id":null,"sort_key":98304.0,"status":"bought","created_at":"2026-08-12T13:05:33.391571Z","updated_at":"2026-08-12T13:49:53.269922Z","bought_at":"2026-08-12T13:49:53.269922Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"karotten"},{"id":"8c2cfd27-77e0-48e5-9033-cde54efa6dcc","name":"Wein","quantity":"250 g","brand":"Kerrygold","properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":null,"sort_key":3746304.5,"status":"bought","created_at":"2026-09-26T14:26:18.171562Z","updated_at":"2026-09-26T14:40:50.088443Z","bought_at":"2026-09-26T14:40:50.088443Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"wein"},{"id":"fedf2ddc-89ed-4f53-817e-9a4f6e33b093","name":"Reis","quantity":null,"brand":null,"properties":null,"category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":null,"sort_key":3597312.0,"status":"active","created_at":"2025-04-10T21:18:49.102484Z","updated_at":"2025-04-10T21:51:16.276399Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":null,"canonical_key":"reis"},{"id":"153bf2f9-f80a-4790-83a0-751508953422","name":"Senf","quantity":null,"brand":"Ja!","properties":null,"category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":null,"sort_key":1405440.5,"status":"bought","created_at":"2025-06-28T20:24:41.979586Z","updated_at":"2025-06-28T21:17:56.297436Z","bought_at":"2025-06-28T21:17:56.297436Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"picked","canonical_key":"senf"},{"id":"95766dfa-0b6e-42aa-9a7f-fc81ee1254d0","name":"Zwiebeln","quantity":null,"brand":null,"properties":null,"category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660","sort_key":225280.0,"status":"bought","created_at":"2025-04-28T14:23:38.579015Z","updated_at":"2025-04-28T14:24:38.803254Z","bought_at":"2025-04-28T14:24:38.803254Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"synonym","canonical_key":"zwiebeln"},{"id":"49245c0a-0515-49bd-807c-9dd603a760b9","name":"Bananen","quantity":"2","brand":null,"properties":null,"category_id":"9b8640a7-31b7-4d7a-aa47-c14777933350","store_id":null,"sort_key":647680.5,"status":"active","created_at":"2026-03-29T11:35:56.259932Z","updated_at":"2026-03-29T12:02:18.016120Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"bananen"},{"id":"0b4a1993-138a-40cd-a92a-766af322b4c8","name":"Milch","quantity":"2","brand":null,"properties":null,"category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","sort_key":1189888.0,"status":"bought","created_at":"2026-05-13T22:47:03.898829Z","updated_at":"2026-05-13T23:23:55.321335Z","bought_at":"2026-05-13T23:23:55.321335Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"exact","canonical_key":"milch"},{"id":"4f70be87-023e-4e94-ba48-b05ffdc757a8","name":"Chips","quantity":null,"brand":null,"properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":null,"sort_key":1628160.0,"status":"active","created_at":"2026-04-04T17:39:10.920617Z","updated_at":"2026-04-04T18:06:08.897170Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"household","canonical_key":"chips"},{"id":"1cbefdfc-fbd7-4c2f-8d71-5ec0bd669c97","name":"Zitronen","quantity":null,"brand":null,"properties":null,"category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":null,"sort_key":222720.5,"status":"active","created_at":"2025-12-03T10:45:45.419365Z","updated_at":"2025-12-03T11:29:50.908221Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"fallback","canonical_key":"zitronen"},{"id":"06896537-c7ba-4ac7-8292-54d92e50aa4d","name":"Zitronen","quantity":null,"brand":null,"properties":null,"category_id":"75253b40-cf67-4b99-9520-e624aafde33d","store_id":null,"sort_key":3947520.0,"status":"active","created_at":"2025-10-05T07:13:01.384278Z","updated_at":"2025-10-05T07:46:17.755049Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fuzzy","canonical_key":"zitronen"},{"id":"3f2f4c5c-9477-4c9e-89c1-aa1ddc8a097f","name":"Paprika","quantity":"3","brand":null,"properties":"bio","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b","store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","sort_key":3062784.0,"status":"bought","created_at":"2026-10-15T10:40:01.395774Z","updated_at":"2026-10-15T11:17:54.325433Z","bought_at":"2026-10-15T11:17:54.325433Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"paprika"},{"id":"22656114-e018-45e1-9830-c3692a66f221","name":"Reis","quantity":null,"brand":null,"properties":null,"category_id":"205e50db-9bc9-40eb-9d2d-ffa222bdd974","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":2045440.5,"status":"active","created_at":"2025-06-27T17:20:45.814904Z","updated_at":"2025-06-27T17:42:29.395412Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fuzzy","canonical_key":"reis"},{"id":"4e7a7516-520f-477c-be42-2994ac7996c6","name":"Basilikum","quantity":null,"brand":null,"properties":null,"category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":3160576.5,"status":"active","created_at":"2025-05-30T14:45:32.267972Z","updated_at":"2025-05-30T14:52:18.484071Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"fallback","canonical_key":"basilikum"},{"id":"96571ae3-ab41-4471-9342-4f13d4d2aff4","name":"Nudeln","quantity":null,"brand":null,"properties":null,"category_id":"d96a0f72-6dbc-4415-be19-c6484fc5fb41","store_id":null,"sort_key":2130944.0,"status":"active","created_at":"2026-04-03T21:48:36.134576Z","updated_at":"2026-04-03T22:20:11.437392Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"fallback","canonical_key":"nudeln"}],"pending":[{"item_id":"fc134a5c-b5bf-4a75-bd1c-7c16d5013da5","op":"add","item":{"id":"fc134a5c-b5bf-4a75-bd1c-7c16d5013da5","name":"Schokolade","quantity":null,"brand":null,"properties":null,"category_id":"aa029441-7a71-47fd-9345-9a2ea7f37ced","store_id":null,"sort_key":null,"status":"active","created_at":"2025-08-12T12:39:38.916596Z","updated_at":"2025-08-12T13:15:14.748723Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":"fallback","canonical_key":"schokolade"}},{"item_id":"02f384af-6d0d-4ed4-81b1-706228b9e645","op":"add","item":{"id":"02f384af-6d0d-4ed4-81b1-706228b9e645","name":"Eier","quantity":"2 l","brand":null,"properties":null,"category_id":"98a5e48c-d144-41be-a4f3-cd9f87783439","store_id":null,"sort_key":1970688.5,"status":"active","created_at":"2026-03-20T20:44:51.259469Z","updated_at":"2026-03-20T21:24:20.454875Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":null,"canonical_key":"eier"},"restored":true,"no_store":true},{"item_id":"f2cad503-6f35-4850-b5e6-3bbab54fcd24","op":"add","item":{"id":"f2cad503-6f35-4850-b5e6-3bbab54fcd24","name":"Milch","quantity":null,"brand":null,"properties":null,"category_id":"82905ec6-2b1b-490e-a3b0-0dd2f1fcc253","store_id":"1420a7f2-39d2-40f0-8281-9bf398797f14","sort_key":2271232.0,"status":"active","created_at":"2025-10-27T10:25:17.333630Z","updated_at":"2025-10-27T11:23:38.521371Z","bought_at":null,"added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":null,"canonical_key":"milch"},"device_parsed":true},{"item_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","op":"status","status":"bought","at":"2026-10-06T06:01:03.103676Z","store_id":"7b089ea9-b34d-4c21-ac89-46a253c7682f"},{"item_id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","op":"status","status":"active","at":"2026-01-02T13:45:44.308059Z","store_id":null},{"item_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","op":"edit","changes":{"name":"Hafermilch","quantity":null,"brand":"Alpro","category_id":"8aed40ab-86b4-4226-afae-5a86f85a677b"},"key_before":"milch"},{"item_id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","op":"edit","changes":{"store_id":null},"device_parsed":true},{"item_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","op":"move","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":"c3b6fbfa-74ea-4699-b6a3-a96a738cd660"},{"item_id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","op":"place","anchor_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","edge":"after","category_id":"cb9cf789-e133-4b8b-900d-98d0e77f7d65","store_id":null,"sort_key":2048.25},{"item_id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","op":"delete"},{"item_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","op":"merge","merge_id":"c2dd5855-176c-42e7-87fa-94d4971f0a11","other_id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","quantity":"3","brand":null,"properties":"bio"},{"item_id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","op":"unmerge","merge_id":"4bd85771-30a2-4757-baf2-a097773fd67c","kept":{"id":"1ad42649-98a7-4a7d-b8f6-eefefae09be3","name":"Marmelade","quantity":"1 kg","brand":null,"properties":"laktosefrei","category_id":"820980bd-6bac-4438-83b3-93540de5abbc","store_id":null,"sort_key":2876416.0,"status":"active","created_at":"2025-11-23T10:18:44.131433Z","updated_at":"2025-11-23T10:38:10.467251Z","bought_at":null,"added_by":"1c65be15-925e-4a17-bbd4-77b6d81ae550","categorized_via":null,"canonical_key":"marmelade"},"merged":{"id":"4e66fd08-26c8-456b-b2f4-c99c88c9e6a1","name":"Äpfel","quantity":"1 Pck.","brand":null,"properties":null,"category_id":"5a028a7d-d6dc-446e-98bf-32a16eadeef1","store_id":"e7381183-be56-49d3-a8b5-7deec359d080","sort_key":2155008.5,"status":"bought","created_at":"2026-01-21T03:07:59.100822Z","updated_at":"2026-01-21T03:59:34.917211Z","bought_at":"2026-01-21T03:59:34.917211Z","added_by":"0548ddf3-3ca4-432d-927c-3455693ea8d2","categorized_via":"household","canonical_key":"pfel"}}],"usuals":[{"name":"Milch","quantity":null,"due":true,"last_used":"2025-07-13T03:26:57.621582Z"},{"name":"Hafermilch","quantity":"1","due":false,"last_used":"2025-06-22T18:03:24.926361Z"},{"name":"Brot","quantity":null,"due":true,"last_used":null},{"name":"Vollkornbrot","quantity":"250 g","due":false,"last_used":"2026-02-04T20:58:33.957714Z"},{"name":"Butter","quantity":"1 Pck.","due":true,"last_used":"2026-08-25T00:05:15.945954Z"},{"name":"Käse","quantity":"1 Bund","due":false,"last_used":"2026-10-15T01:13:23.237483Z"},{"name":"Gouda","quantity":null,"due":true,"last_used":"2025-06-10T03:12:37.697701Z"},{"name":"Äpfel","quantity":null,"due":false,"last_used":"2025-11-25T07:39:52.275762Z"},{"name":"Bananen","quantity":"3","due":true,"last_used":"2026-03-25T06:27:20.254059Z"},{"name":"Möhren","quantity":null,"due":false,"last_used":"2026-06-19T15:00:05.645352Z"},{"name":"Karotten","quantity":"500 g","due":true,"last_used":"2025-06-11T19:24:04.580363Z"},{"name":"Gurken","quantity":null,"due":false,"last_used":"2025-12-16T11:12:42.641516Z"},{"name":"Tomaten","quantity":"500 g","due":true,"last_used":"2026-10-10T06:56:26.470799Z"},{"name":"Zwiebeln","quantity":null,"due":false,"last_used":"2026-06-13T08:38:21.897123Z"},{"name":"Knoblauch","quantity":null,"due":true,"last_used":"2025-12-29T19:41:35.477613Z"},{"name":"Kartoffeln","quantity":"1","due":false,"last_used":"2026-10-10T09:35:40.332861Z"},{"name":"Nudeln","quantity":null,"due":true,"last_used":"2026-02-28T22:47:56.810276Z"},{"name":"Reis","quantity":"1 Bund","due":false,"last_used":"2025-11-23T12:56:47.979441Z"},{"name":"Mehl","quantity":null,"due":true,"last_used":"2025-09-19T01:45:58.338194Z"},{"name":"Zucker","quantity":null,"due":false,"last_used":"2026-01-09T03:09:00.961291Z"},{"name":"Salz","quantity":"1 Bund","due":true,"last_used":"2025-10-29T23:02:58.981767Z"},{"name":"Eier","quantity":null,"due":false,"last_used":null},{"name":"Joghurt","quantity":null,"due":true,"last_used":null},{"name":"Quark","quantity":null,"due":false,"last_used":"2026-03-09T00:42:34.917918Z"},{"name":"Sahne","quantity":"1 Bund","due":true,"last_used":"2026-03-22T03:11:56.004669Z"},{"name":"Kaffee","quantity":null,"due":false,"last_used":"2025-12-24T22:02:10.451273Z"},{"name":"Tee","quantity":null,"due":true,"last_used":"2025-10-11T08:03:22.041221Z"},{"name":"Orangensaft","quantity":"1","due":false,"last_used":null},{"name":"Mineralwasser","quantity":"2","due":true,"last_used":"2025-11-23T17:22:12.180039Z"},{"name":"Bier","quantity":null,"due":false,"last_used":"2025-11-17T07:11:53.414736Z"},{"name":"Wein","quantity":null,"due":true,"last_used":"2026-10-13T14:41:06.951162Z"},{"name":"Spülmittel","quantity":"1 kg","due":false,"last_used":"2025-10-30T10:48:35.862035Z"},{"name":"Klopapier","quantity":"250 g","due":true,"last_used":"2026-07-26T02:02:37.162824Z"},{"name":"Zahnpasta","quantity":null,"due":false,"last_used":"2025-10-13T04:27:11.379110Z"},{"name":"Shampoo","quantity":"3","due":true,"last_used":null},{"name":"Waschmittel","quantity":null,"due":false,"last_used":"2026-03-18T19:18:20.581453Z"},{"name":"Müsli","quantity":null,"due":true,"last_used":"2025-10-20T08:47:12.745852Z"},{"name":"Haferflocken","quantity":"500 g","due":false,"last_used":"2026-01-18T17:10:29.833076Z"},{"name":"Honig","quantity":null,"due":true,"last_used":"2026-05-22T19:42:54.351528Z"},{"name":"Marmelade","quantity":"1 Bund","due":false,"last_used":"2026-01-25T01:56:46.692829Z"}]}
+\ No newline at end of file
+diff --git a/app/test/list/snapshot_codec_test.dart b/app/test/list/snapshot_codec_test.dart
+new file mode 100644
+index 00000000..e2b55693
+--- /dev/null
++++ b/app/test/list/snapshot_codec_test.dart
+@@ -0,0 +1,139 @@
++import 'dart:convert';
++import 'dart:io';
++
++import 'package:family_groceries/app/device_cache.dart';
++import 'package:family_groceries/list/list_cache.dart';
++import 'package:family_groceries/list/model.dart';
++import 'package:family_groceries/list/snapshot_codec.dart';
++import 'package:family_groceries/session/session_cubit.dart';
++import 'package:flutter_test/flutter_test.dart';
++import 'package:shared_preferences/shared_preferences.dart';
++import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
++import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
++
++import '../hillclimb/cache_codec_bench_test.dart' show generateSnapshot;
++
++void main() {
++  const home = Household(id: 'home', name: 'Zuhause');
++  late SharedPreferencesAsync prefs;
++  late DeviceCache device;
++
++  setUp(() async {
++    SharedPreferencesAsyncPlatform.instance =
++        InMemorySharedPreferencesAsync.empty();
++    prefs = SharedPreferencesAsync();
++    device = DeviceCache(prefs);
++    await device.remember('peter', home);
++  });
++
++  test(
++    'a snapshot the JSON app wrote still loads, and saves compact',
++    () async {
++      // Written by ListSnapshot.toJson on main before the binary layout.
++      final v3 = File('test/list/fixtures/list_snapshot_v3.json')
++          .readAsStringSync();
++      await prefs.setString('list.peter.home', v3);
++      final cache = device.list('peter', 'home');
++      final loaded = await cache.load();
++      expect(loaded?.toJson(), jsonDecode(v3));
++      expect(loaded!.server, hasLength(40));
++      expect(loaded.pending, hasLength(12));
++
++      await cache.save(loaded);
++      final stored = (await prefs.getString('list.peter.home'))!;
++      expect(stored.length, lessThan(v3.length ~/ 3));
++      expect((await cache.load())?.toJson(), jsonDecode(v3));
++    },
++  );
++
++  test('every field survives, local times and odd sort keys too', () {
++    final local = DateTime(2026, 11, 5, 21, 30, 15, 123, 456);
++    final utc = DateTime.utc(2026, 11, 5, 20, 30, 15, 999, 1);
++    Item item(String id, double? sortKey) => Item(
++      id: id,
++      name: 'Grüner Tee 🍵',
++      status: ItemStatus.bought,
++      createdAt: local,
++      updatedAt: utc,
++      boughtAt: DateTime.utc(1969, 7, 20, 20, 17),
++      quantity: '',
++      sortKey: sortKey,
++    );
++    final snapshot = ListSnapshot(
++      catalog: const Catalog(
++        categories: [Category(id: 'c', name: 'Tee', sortOrder: -3)],
++        members: [Member(id: 'm', displayName: 'Lea')],
++      ),
++      server: [
++        item('a', 0.1),
++        item('b', -1536.5),
++        item('c', 1e300),
++        item('d', double.minPositive),
++        item('e', double.parse('-0')),
++        item('f', null),
++        item('g', 4503599627370497),
++      ],
++      pending: [
++        SetStatus('a', ItemStatus.active, local),
++        const EditItem(
++          'a',
++          ItemChanges(
++            quantity: SetTo(null),
++            properties: SetTo('bio'),
++            storeId: SetTo(null),
++          ),
++        ),
++        const PlaceItem(
++          'b',
++          anchorId: 'a',
++          edge: Edge.before,
++          categoryId: 'c',
++          storeId: null,
++          sortKey: null,
++        ),
++      ],
++      usuals: [Usual(name: 'Tee', due: false, lastUsed: local)],
++    );
++    final back = decodeSnapshot(encodeSnapshot(snapshot));
++    expect(jsonEncode(back.toJson()), jsonEncode(snapshot.toJson()));
++    expect(back.server.first.createdAt.isUtc, isFalse);
++    expect(back.server.first.updatedAt, utc);
++    expect(
++      [for (final i in back.server) i.sortKey],
++      [for (final i in snapshot.server) i.sortKey],
++    );
++    expect(back.server[4].sortKey!.isNegative, isTrue, reason: '-0.0');
++  });
++
++  test('the bench snapshots round-trip', () {
++    for (final s in [
++      generateSnapshot(seed: 1, items: 500, openShare: 0.1),
++      generateSnapshot(seed: 2, items: 50, openShare: 1),
++    ]) {
++      expect(
++        jsonEncode(decodeSnapshot(encodeSnapshot(s)).toJson()),
++        jsonEncode(s.toJson()),
++      );
++    }
++  });
++
++  test(
++    'an unreadable or newer snapshot is refused and loads as none',
++    () async {
++      final good = encodeSnapshot(
++        const ListSnapshot(catalog: Catalog(), server: [], pending: []),
++      );
++      final newer = base64.decode(good.substring(3))..[0] = 5;
++      for (final stored in [
++        'b4:!!!',
++        'b4:${base64.encode(newer)}',
++        good.substring(0, good.length - 4),
++        'x',
++      ]) {
++        expect(() => decodeSnapshot(stored), throwsA(anything), reason: stored);
++        await prefs.setString('list.peter.home', stored);
++        expect(await device.list('peter', 'home').load(), isNull);
++      }
++    },
++  );
++}

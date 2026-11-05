@@ -1,0 +1,152 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index 1eb70424..e9183373 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -69,6 +69,13 @@ const _timeUtc = 1;
+ /// A local time keeps its wall-clock text, as JSON snapshots did.
+ const _timeLocal = 2;
+ 
++/// The same instant as the time before it in the item ([_Writer.time]'s
++/// `after`): the server sets `updated_at` and `bought_at` from one `now()`.
++const _timeSame = 3;
++
++/// Microseconds after the item's time before it, both UTC.
++const _timeUtcAfter = 4;
++
+ const _sortKeyNull = 0;
+ const _sortKeyHalves = 1;
+ const _sortKeyDouble = 2;
+@@ -138,9 +145,14 @@ class _Writer() {
+   void optString(String? s) =>
+       uint(s == null ? 0 : strings.putIfAbsent(s, () => strings.length) + 1);
+ 
+-  void time(DateTime? t) {
++  void time(DateTime? t, [DateTime? after]) {
+     if (t == null) {
+       byte(_timeNull);
++    } else if (t == after) {
++      byte(_timeSame);
++    } else if (t.isUtc && (after?.isUtc ?? false)) {
++      byte(_timeUtcAfter);
++      sint(t.microsecondsSinceEpoch - after!.microsecondsSinceEpoch);
+     } else if (t.isUtc) {
+       byte(_timeUtc);
+       sint(t.microsecondsSinceEpoch);
+@@ -210,8 +222,8 @@ class _Writer() {
+     sortKey(i.sortKey);
+     byte(i.status.index);
+     time(i.createdAt);
+-    time(i.updatedAt);
+-    time(i.boughtAt);
++    time(i.updatedAt, i.createdAt);
++    time(i.boughtAt, i.updatedAt);
+     optString(i.addedBy);
+     optString(i.categorizedVia);
+     optString(i.canonicalKey);
+@@ -366,8 +378,13 @@ class _Reader(final Uint8List _b) {
+     final i => _strings[i - 1],
+   };
+ 
+-  DateTime? time() => switch (byte()) {
++  DateTime? time([DateTime? after]) => switch (byte()) {
+     _timeNull => null,
++    _timeSame => after!,
++    _timeUtcAfter => DateTime.fromMicrosecondsSinceEpoch(
++      after!.microsecondsSinceEpoch + sint(),
++      isUtc: true,
++    ),
+     _timeUtc => DateTime.fromMicrosecondsSinceEpoch(sint(), isUtc: true),
+     _timeLocal => DateTime.parse(string()),
+     final tag => throw FormatException('time', tag),
+@@ -424,23 +441,36 @@ class _Reader(final Uint8List _b) {
+     ),
+   );
+ 
+-  Item item() => Item(
+-    id: string(),
+-    name: string(),
+-    quantity: optString(),
+-    brand: optString(),
+-    properties: optString(),
+-    categoryId: optString(),
+-    storeId: optString(),
+-    sortKey: sortKey(),
+-    status: ItemStatus.values[byte()],
+-    createdAt: time()!,
+-    updatedAt: time()!,
+-    boughtAt: time(),
+-    addedBy: optString(),
+-    categorizedVia: optString(),
+-    canonicalKey: optString(),
+-  );
++  Item item() {
++    final id = string();
++    final name = string();
++    final quantity = optString();
++    final brand = optString();
++    final properties = optString();
++    final categoryId = optString();
++    final storeId = optString();
++    final sortKey = this.sortKey();
++    final status = ItemStatus.values[byte()];
++    final createdAt = time()!;
++    final updatedAt = time(createdAt)!;
++    return Item(
++      id: id,
++      name: name,
++      quantity: quantity,
++      brand: brand,
++      properties: properties,
++      categoryId: categoryId,
++      storeId: storeId,
++      sortKey: sortKey,
++      status: status,
++      createdAt: createdAt,
++      updatedAt: updatedAt,
++      boughtAt: time(updatedAt),
++      addedBy: optString(),
++      categorizedVia: optString(),
++      canonicalKey: optString(),
++    );
++  }
+ 
+   SetTo<String?>? change() => boolean() ? SetTo(optString()) : null;
+ 
+diff --git a/app/test/list/snapshot_codec_test.dart b/app/test/list/snapshot_codec_test.dart
+index 78026e37..25771d9a 100644
+--- a/app/test/list/snapshot_codec_test.dart
++++ b/app/test/list/snapshot_codec_test.dart
+@@ -72,6 +72,22 @@ void main() {
+         item('e', double.parse('-0')),
+         item('f', null),
+         item('g', 4503599627370497),
++        Item(
++          id: 'same-utc',
++          name: 'Brot',
++          status: ItemStatus.bought,
++          createdAt: utc,
++          updatedAt: utc,
++          boughtAt: utc,
++        ),
++        Item(
++          id: 'same-local',
++          name: 'Brot',
++          status: ItemStatus.bought,
++          createdAt: local,
++          updatedAt: local,
++          boughtAt: local,
++        ),
+       ],
+       pending: [
+         SetStatus('a', ItemStatus.active, local),
+@@ -103,6 +119,10 @@ void main() {
+       [for (final i in snapshot.server) i.sortKey],
+     );
+     expect(back.server[4].sortKey!.isNegative, isTrue, reason: '-0.0');
++    for (final i in back.server.skip(7)) {
++      expect([i.createdAt, i.updatedAt, i.boughtAt], everyElement(i.createdAt));
++      expect(i.boughtAt!.isUtc, i.id == 'same-utc');
++    }
+   });
+ 
+   test('the bench snapshots round-trip', () {

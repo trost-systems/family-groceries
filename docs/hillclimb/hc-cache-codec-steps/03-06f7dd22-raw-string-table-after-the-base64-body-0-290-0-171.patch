@@ -1,0 +1,145 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index 1916ac0c..1eb70424 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -5,10 +5,12 @@ import 'package:family_groceries/list/list_cache.dart';
+ import 'package:family_groceries/list/model.dart';
+ 
+ /// How a [ListSnapshot] is kept on the device: a String, since shared
+-/// preferences store strings. [encodeSnapshot] writes [_prefix] and the
+-/// base64 of a binary layout with one table of the snapshot's distinct
+-/// strings; [decodeSnapshot] also reads the JSON snapshots apps before it
+-/// wrote (versions 1 to 3, `{...}`). Throws on anything else.
++/// preferences store strings. [encodeSnapshot] writes [_prefix], the base64
++/// of a binary layout that refers to the snapshot's distinct strings by
++/// index, [_tableStart], then those strings as they are, one after the
++/// other (their lengths are in the binary part). [decodeSnapshot] also
++/// reads the JSON snapshots apps before it wrote (versions 1 to 3, `{...}`).
++/// Throws on anything else.
+ String encodeSnapshot(ListSnapshot snapshot) {
+   final body = _Writer();
+   body
+@@ -16,27 +18,35 @@ String encodeSnapshot(ListSnapshot snapshot) {
+     ..list(snapshot.server, body.item)
+     ..list(snapshot.pending, body.op)
+     ..list(snapshot.usuals, body.usual);
+-  final out = _Writer()
++  final strings = body.strings.keys;
++  final head = _Writer()
+     ..uint(_binaryVersion)
+-    ..uint(body.strings.length);
+-  body.strings.keys.forEach(out.utf8String);
+-  out.bytes(body.takeBytes());
+-  return '$_prefix${base64.encode(out.takeBytes())}';
++    ..uint(strings.length);
++  for (final s in strings) {
++    head.uint(s.length);
++  }
++  head.bytes(body.takeBytes());
++  return (StringBuffer(_prefix)
++        ..write(base64.encode(head.takeBytes()))
++        ..write(_tableStart)
++        ..writeAll(strings))
++      .toString();
+ }
+ 
+ ListSnapshot decodeSnapshot(String stored) {
+   if (stored.startsWith('{')) {
+     return ListSnapshot.fromJson(jsonDecode(stored) as Map<String, Object?>);
+   }
+-  if (!stored.startsWith(_prefix)) {
++  final split = stored.indexOf(_tableStart);
++  if (!stored.startsWith(_prefix) || split < 0) {
+     throw const FormatException('list snapshot');
+   }
+-  final r = _Reader(base64.decode(stored.substring(_prefix.length)));
++  final r = _Reader(base64.decode(stored.substring(_prefix.length, split)));
+   final version = r.uint();
+   if (version != _binaryVersion) {
+     throw FormatException('snapshot version', version);
+   }
+-  r.readStrings();
++  r.readStrings(stored, split + 1);
+   return ListSnapshot(
+     catalog: r.catalog(),
+     server: r.list(r.item),
+@@ -47,6 +57,9 @@ ListSnapshot decodeSnapshot(String stored) {
+ 
+ const _prefix = 'b4:';
+ 
++/// Not in the base64 alphabet.
++const _tableStart = '.';
++
+ /// [ListSnapshot.version] 3 is the JSON layout; 4 is this one.
+ const _binaryVersion = 4;
+ 
+@@ -120,12 +133,6 @@ class _Writer() {
+ 
+   void boolean({required bool value}) => byte(value ? 1 : 0);
+ 
+-  void utf8String(String s) {
+-    final b = utf8.encode(s);
+-    uint(b.length);
+-    bytes(b);
+-  }
+-
+   void string(String s) => uint(strings.putIfAbsent(s, () => strings.length));
+ 
+   void optString(String? s) =>
+@@ -314,9 +321,16 @@ class _Reader(final Uint8List _b) {
+   var _pos = 0;
+   var _strings = const <String>[];
+ 
+-  /// First: everything after refers to the table.
+-  void readStrings() {
+-    _strings = [for (var n = uint(); n > 0; n--) _utf8String()];
++  /// Before anything that refers to the table: the strings' lengths, then
++  /// the strings themselves in [stored] from [start] on.
++  void readStrings(String stored, int start) {
++    var at = start;
++    _strings = [
++      for (var n = uint(); n > 0; n--) stored.substring(at, at += uint()),
++    ];
++    if (at != stored.length) {
++      throw const FormatException('string table');
++    }
+   }
+ 
+   int byte() => _b[_pos++];
+@@ -345,13 +359,6 @@ class _Reader(final Uint8List _b) {
+     final b => throw FormatException('bool', b),
+   };
+ 
+-  String _utf8String() {
+-    final n = uint();
+-    final s = utf8.decode(Uint8List.sublistView(_b, _pos, _pos + n));
+-    _pos += n;
+-    return s;
+-  }
+-
+   String string() => _strings[uint()];
+ 
+   String? optString() => switch (uint()) {
+diff --git a/app/test/list/snapshot_codec_test.dart b/app/test/list/snapshot_codec_test.dart
+index e2b55693..78026e37 100644
+--- a/app/test/list/snapshot_codec_test.dart
++++ b/app/test/list/snapshot_codec_test.dart
+@@ -121,13 +121,15 @@ void main() {
+     'an unreadable or newer snapshot is refused and loads as none',
+     () async {
+       final good = encodeSnapshot(
+-        const ListSnapshot(catalog: Catalog(), server: [], pending: []),
++        generateSnapshot(seed: 3, items: 5, openShare: 1),
+       );
+-      final newer = base64.decode(good.substring(3))..[0] = 5;
++      final split = good.indexOf('.');
++      final newer = base64.decode(good.substring(3, split))..[0] = 5;
+       for (final stored in [
+         'b4:!!!',
+-        'b4:${base64.encode(newer)}',
++        'b4:${base64.encode(newer)}${good.substring(split)}',
+         good.substring(0, good.length - 4),
++        '${good}x',
+         'x',
+       ]) {
+         expect(() => decodeSnapshot(stored), throwsA(anything), reason: stored);
