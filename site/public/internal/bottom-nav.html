@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="alternate" hreflang="de" href="https://hummlist.com/internal/bottom-nav">
+<link rel="alternate" hreflang="x-default" href="https://hummlist.com/internal/bottom-nav">
+<title>Bottom nav prototypes (internal)</title>
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/internal/bottom-nav/nav.css">
+<script src="/internal/bottom-nav/nav.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__title">
+    <h1>Bottom nav prototypes</h1>
+    <span>Internal, not for merge. Tap a tab in any phone to switch it.</span>
+  </div>
+  <div class="bar__controls">
+    <div class="seg" data-control="lang" role="group" aria-label="Language">
+      <button type="button" data-value="de" aria-pressed="true">DE</button>
+      <button type="button" data-value="en" aria-pressed="false">EN</button>
+    </div>
+    <div class="seg" data-control="theme" role="group" aria-label="Theme">
+      <button type="button" data-value="light" aria-pressed="true">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="seg" data-control="field" role="group" aria-label="Add field">
+      <button type="button" data-value="floating" aria-pressed="true">Field floating</button>
+      <button type="button" data-value="docked" aria-pressed="false">Field docked</button>
+    </div>
+    <div class="seg" data-control="size" role="group" aria-label="Size">
+      <button type="button" data-value="fit" aria-pressed="true">Fit</button>
+      <button type="button" data-value="real" aria-pressed="false">1:1</button>
+    </div>
+  </div>
+</header>
+<main class="frames" id="frames"></main>
+<footer class="notes">
+  <p>390 × 844 pt phone (iPhone 13 to 16) with a 34 pt home-indicator inset. "Nav" is the height from the top of the tab bar to the bottom of the screen; "Nav + field" also counts the add field. Same list in every frame.</p>
+  <p>"Field floating" is how the add field looks once job 135 lands (16 pt inset like the rows, list behind it); "Field docked" is today's band.</p>
+</footer>
+</body>
+</html>

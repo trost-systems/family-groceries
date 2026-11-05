@@ -1,0 +1,312 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/bricolage-grotesque-latin-standard-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --c-surface: #f7f7f2;
+  --c-raised: #ffffff;
+  --c-sunken: #eceff6;
+  --c-text: #0f1530;
+  --c-muted: #4b536c;
+  --c-border: #0f1530;
+  --c-divider: #d3d8e6;
+  --c-brand: #1b3fae;
+  --c-honey: #ffe24a;
+  --c-on-honey: #0f1530;
+  --c-island: #0f1530;
+  --c-on-island: #c9d1ec;
+  --c-edge: #0f1530;
+  --c-page: #e3e7f0;
+  --sticker: drop-shadow(0 3px 0 #0f1530);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-surface: #0b1024;
+  --c-raised: #151c3a;
+  --c-sunken: #111735;
+  --c-text: #eff3ff;
+  --c-muted: #b0b9d8;
+  --c-border: #7f8cc4;
+  --c-divider: #2f3a66;
+  --c-brand: #9fb6ff;
+  --c-honey: #ffe24a;
+  --c-on-honey: #0b1024;
+  --c-island: #03050f;
+  --c-on-island: #b0b9d8;
+  --c-edge: #03050f;
+  --c-page: #050816;
+  --sticker: drop-shadow(0 3px 0 #03050f) drop-shadow(0 0 10px #9fb6ff24);
+}
+
+* { box-sizing: border-box; }
+html { --s: 0.5; }
+body {
+  margin: 0;
+  background: var(--c-page);
+  color: var(--c-text);
+  font: 15px/1.4 Inter, system-ui, sans-serif;
+}
+button { font: inherit; color: inherit; }
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--c-raised);
+  border-bottom: 1px solid var(--c-divider);
+}
+.bar__title { display: flex; flex-direction: column; gap: 2px; }
+.bar__title h1 { margin: 0; font-weight: 800; font-family: "Bricolage Grotesque", sans-serif; font-size: 18px; }
+.bar__title span { font-size: 13px; color: var(--c-muted); }
+.bar__controls { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg { display: inline-flex; border: 1.5px solid var(--c-border); border-radius: 999px; overflow: hidden; }
+.seg button {
+  border: 0;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--c-honey); color: var(--c-on-honey); }
+
+.frames {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
+  padding: 20px 24px;
+}
+html[data-size="real"] .frames { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory; }
+html[data-size="real"] .frame { scroll-snap-align: center; flex: none; }
+@media (max-width: 719px) {
+  .frames { gap: 12px; padding: 12px; }
+}
+.frame { margin: 0; display: flex; flex-direction: column; gap: 8px; width: calc(390px * var(--s)); }
+.frame figcaption { display: flex; flex-direction: column; gap: 3px; min-height: 0; }
+.frame figcaption strong { font-family: "Bricolage Grotesque", sans-serif; font-size: 17px; }
+.frame p { margin: 0; }
+.frame__note { font-size: 12px; color: var(--c-muted); line-height: 1.35; }
+.frame__metric { font-size: 12px; font-weight: 650; color: var(--c-brand); font-variant-numeric: tabular-nums; }
+.viewport { width: calc(390px * var(--s)); height: calc(844px * var(--s)); }
+.notes { padding: 0 24px 32px; font-size: 13px; color: var(--c-muted); max-width: 900px; }
+
+/* The phone, 390 x 844 pt, scaled as a whole. */
+.phone {
+  --hint: var(--c-muted);
+  position: relative;
+  width: 390px;
+  height: 844px;
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+  overflow: hidden;
+  border-radius: 48px;
+  background: var(--c-surface);
+  outline: 2px solid var(--c-edge);
+  color: var(--c-text);
+  -webkit-tap-highlight-color: transparent;
+}
+.status {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 3;
+  height: 50px;
+  padding: 16px 32px 0 40px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 650;
+  font-size: 16px;
+  background: var(--c-surface);
+}
+.status__icons { display: flex; gap: 5px; align-items: center; }
+.status__icons i { display: block; width: 17px; height: 11px; border-radius: 3px; background: var(--c-text); }
+.status__icons i:last-child { width: 25px; border-radius: 4px; }
+.home {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 8px;
+  width: 134px;
+  height: 5px;
+  margin-left: -67px;
+  border-radius: 3px;
+  background: var(--c-text);
+}
+
+/* Bottom geometry per variant, in pt from the screen's bottom edge. */
+.phone[data-variant="current"] { --nav-top: 96px; --field-bottom: 108px; }
+.phone[data-variant="compact"] { --nav-top: 60px; --field-bottom: 72px; }
+.phone[data-variant="pill"] { --nav-top: 76px; --field-bottom: 88px; }
+.phone[data-variant="island"] { --nav-top: 68px; --field-bottom: 80px; }
+.phone[data-variant="inline"] { --nav-top: 76px; --field-bottom: 24px; }
+.phone { --chrome-top: calc(var(--field-bottom) + 52px); }
+.phone[data-tab="more"] { --chrome-top: var(--nav-top); }
+
+.content { position: absolute; inset: 50px 0 0; overflow-y: auto; scrollbar-width: none; }
+.page { padding-bottom: calc(var(--chrome-top) + 12px); }
+.phone[data-tab="list"] .page--more,
+.phone[data-tab="more"] .page--list { display: none; }
+
+.appbar { display: flex; justify-content: flex-end; padding: 8px 16px 14px; font-weight: 650; color: var(--c-brand); border-bottom: 1px solid var(--c-divider); }
+.store { display: flex; align-items: center; gap: 12px; padding: 22px 16px 8px; }
+.store__badge {
+  --hx-fill: var(--c-raised);
+  --hx-stroke: var(--c-border);
+  --hx-sw: 2px;
+  position: relative;
+  padding: 0 14px;
+  height: 32px;
+  line-height: 32px;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+}
+.store__line { flex: 1; height: 3px; border-radius: 2px; background: var(--c-brand); }
+.store__count { font-size: 14px; color: var(--c-muted); }
+.store__count b { color: var(--c-text); }
+.section { display: flex; align-items: center; gap: 12px; padding: 12px 20px 4px; font-size: 12px; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); }
+.section::after { content: ""; flex: 1; height: 1px; background: var(--c-divider); }
+.row { display: flex; align-items: center; gap: 14px; height: 50px; padding: 0 16px 0 20px; font-size: 17px; font-weight: 650; }
+.row__emoji { width: 22px; text-align: center; font-size: 19px; }
+.row__name b { color: var(--c-brand); }
+.tail { height: 8px; }
+
+.more-title { padding: 12px 20px 16px; font-family: "Bricolage Grotesque", sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
+.more-card { margin: 0 16px; border: 2px solid var(--c-border); border-radius: 18px; background: var(--c-raised); overflow: hidden; }
+.more-row { display: flex; justify-content: space-between; align-items: center; height: 56px; padding: 0 12px 0 16px; font-weight: 650; border-top: 1px solid var(--c-divider); }
+.more-row:first-child { border-top: 0; }
+
+.ic { width: 24px; height: 24px; fill: currentColor; flex: none; }
+.ic--s { width: 20px; height: 20px; color: var(--c-muted); }
+
+/* Hex shapes: nav.js draws the outline into svg.hexbg behind the content. */
+.hx { position: relative; isolation: isolate; }
+.hx > svg.hexbg { position: absolute; inset: 0; z-index: -1; overflow: visible; }
+.hx > svg.hexbg path { fill: var(--hx-fill, transparent); stroke: var(--hx-stroke, none); stroke-width: var(--hx-sw, 0); transition: d 0s; }
+
+/* Floating chrome: a short fade so rows passing under it don't fight the controls. */
+.fade { position: absolute; z-index: 1; inset: auto 0 0; height: calc(var(--chrome-top) + 20px); background: linear-gradient(color-mix(in srgb, var(--c-surface) 0%, transparent), color-mix(in srgb, var(--c-surface) 92%, transparent) 70%); pointer-events: none; }
+.phone[data-variant="current"] .fade, .phone[data-variant="compact"] .fade { height: calc(var(--chrome-top) + 20px - var(--nav-top)); bottom: var(--nav-top); }
+.phone[data-field="docked"][data-tab="list"] .fade { display: none; }
+
+/* Add field, docked (today: a band on the surface) or floating (job 135). */
+.band { display: none; position: absolute; z-index: 1; inset: auto 0 0; height: calc(var(--field-bottom) + 52px + 10px); background: var(--c-surface); }
+.phone[data-field="docked"][data-tab="list"] .band { display: block; }
+.field {
+  --hx-fill: var(--c-raised);
+  --hx-stroke: var(--c-border);
+  --hx-sw: 2px;
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  right: 16px;
+  bottom: var(--field-bottom);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px 0 26px;
+  font-size: 18px;
+  color: var(--hint);
+}
+.phone[data-field="floating"] .field > svg.hexbg { filter: var(--sticker); }
+.field .ic { color: var(--c-text); }
+.phone[data-variant="inline"] .field { right: 84px; }
+.phone[data-tab="more"] .field { display: none; }
+
+/* Tabs: a hex indicator holding the icon (and, in some variants, the label). */
+.nav { position: absolute; z-index: 4; }
+.nav__body { display: flex; height: 100%; }
+.tab { flex: 1; display: flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; color: var(--c-text); }
+.tab__ind {
+  --hx-fill: transparent;
+  --hx-stroke: transparent;
+  --hx-sw: 1.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tab[aria-pressed="true"] .tab__ind { --hx-fill: var(--c-honey); --hx-stroke: var(--c-border); color: var(--c-on-honey); }
+.tab__label { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.tab__label--in { display: none; }
+
+/* Current: Material NavigationBar, height 62 on a raised band, plus the 34 pt inset. */
+.nav--current { inset: auto 0 0; height: var(--nav-top); padding-bottom: 34px; background: var(--c-raised); }
+.nav--current .tab { flex-direction: column; gap: 4px; padding-top: 2px; }
+.nav--current .tab__ind { width: 64px; height: 32px; }
+
+/* V1 Compact: edge to edge, 40 pt, icon and label side by side, a 20 pt bottom pad. */
+.nav--compact { inset: auto 0 0; height: var(--nav-top); padding: 4px 0 20px; background: var(--c-raised); border-top: 1px solid var(--c-divider); }
+.nav--compact .tab__label--out { display: none; }
+.nav--compact .tab__label--in { display: inline; }
+.nav--compact .tab__ind { height: 30px; padding: 0 16px 0 13px; }
+.nav--compact .ic { width: 20px; height: 20px; }
+
+/* V2 Floating pill: a raised hex capsule, 52 pt tall, 24 pt above the bottom edge. */
+.nav--pill { left: 50%; bottom: 24px; width: 236px; height: 52px; margin-left: -118px; }
+.nav--pill .nav__body { --hx-fill: var(--c-raised); --hx-stroke: var(--c-border); --hx-sw: 2px; padding: 0 14px; }
+.nav--pill .nav__body > svg.hexbg { filter: var(--sticker); }
+.nav--pill .tab__label--out { display: none; }
+.nav--pill .tab__label--in { display: inline; }
+.nav--pill .tab__ind { height: 34px; padding: 0 14px 0 11px; }
+.nav--pill .ic { width: 20px; height: 20px; }
+
+/* V3 Island: a dark capsule, icons only; the active tab's label slides out of it. */
+.nav--island { left: 50%; bottom: 24px; height: 44px; transform: translateX(-50%); }
+.nav--island .nav__body { gap: 2px; padding: 0 5px; border-radius: 22px; background: var(--c-island); box-shadow: 0 6px 18px #0f153033; }
+.nav--island .tab { flex: none; color: var(--c-on-island); }
+.nav--island .tab__label--out { display: none; }
+.nav--island .tab__label--in {
+  display: inline-block;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 260ms cubic-bezier(0.2, 0, 0, 1), opacity 180ms;
+}
+.nav--island .tab[aria-pressed="true"] .tab__label--in { max-width: 80px; opacity: 1; }
+.nav--island .tab__ind { height: 34px; padding: 0 12px; gap: 0; transition: gap 260ms cubic-bezier(0.2, 0, 0, 1); }
+.nav--island .tab[aria-pressed="true"] .tab__ind { gap: 6px; padding: 0 14px 0 11px; --hx-stroke: transparent; }
+.nav--island .ic { width: 22px; height: 22px; }
+
+/* Extra: no tab bar; one hex button next to the add field switches List and More. */
+.nav--inline {
+  --hx-fill: var(--c-honey);
+  --hx-stroke: var(--c-border);
+  --hx-sw: 2px;
+  right: 16px;
+  bottom: 24px;
+  width: 60px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--c-on-honey);
+  cursor: pointer;
+}
+.nav--inline > svg.hexbg { filter: var(--sticker); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav--island .tab__label--in, .nav--island .tab__ind { transition: none; }
+}
+:root[data-theme="dark"] .nav--island .nav__body { box-shadow: inset 0 0 0 1.5px var(--c-divider), 0 6px 18px #00000066; }
