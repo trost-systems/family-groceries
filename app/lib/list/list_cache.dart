@@ -30,7 +30,7 @@ class const ListSnapshot({
       catalog: Catalog.fromJson(current['catalog']! as _Json),
       server: [
         for (final row in current['server']! as List<Object?>)
-          Item.fromJson(row! as _Json),
+          Item.fromRow(row! as List<Object?>),
       ],
       pending: [
         for (final op in current['pending']! as List<Object?>)
@@ -43,10 +43,14 @@ class const ListSnapshot({
     );
   }
 
-  static const version = 3;
+  static const version = 4;
 
   /// Version n to n + 1, for every n below [version].
-  static const _upgrades = <int, _Json Function(_Json)>{1: _v1ToV2, 2: _v2ToV3};
+  static const _upgrades = <int, _Json Function(_Json)>{
+    1: _v1ToV2,
+    2: _v2ToV3,
+    3: _v3ToV4,
+  };
 
   static _Json _v1ToV2(_Json json) => {
     ...json,
@@ -64,6 +68,16 @@ class const ListSnapshot({
     'pending': [
       for (final op in json['pending']! as List<Object?>)
         _v2ToV3Op(op! as _Json),
+    ],
+  };
+
+  /// Server rows are [Item.toRow] lists now, no longer keyed objects.
+  static _Json _v3ToV4(_Json json) => {
+    ...json,
+    'version': 4,
+    'server': [
+      for (final row in json['server']! as List<Object?>)
+        Item.fromJson(row! as _Json).toRow(),
     ],
   };
 
@@ -89,7 +103,7 @@ class const ListSnapshot({
   Map<String, Object?> toJson() => {
     'version': version,
     'catalog': catalog.toJson(),
-    'server': [for (final item in server) item.toJson()],
+    'server': [for (final item in server) item.toRow()],
     'pending': [for (final op in pending) op.toJson()],
     'usuals': [for (final u in usuals) u.toJson()],
   };

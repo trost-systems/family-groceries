@@ -145,7 +145,7 @@ void main() {
       jsonDecode(v1) as Map<String, Object?>,
     );
     expect(loaded.pending.map((op) => op.runtimeType), [AddItem, SetStatus]);
-    expect(loaded.toJson()['version'], 3, reason: 'upgraded through v2');
+    expect(loaded.toJson()['version'], 4, reason: 'upgraded through v2 and v3');
     expect(loaded.server.single.addedBy, isNull);
     expect(loaded.server.single.sortKey, isNull);
     expect(loaded.catalog.members, isEmpty);
@@ -226,6 +226,52 @@ void main() {
     );
     expect(after['milk']!.name, 'Hafermilch');
     expect(after['bread']!.status, ItemStatus.bought);
+  });
+
+  test('server times keep their microseconds and zone', () {
+    final times = [
+      DateTime.utc(2026, 10, 22, 12, 3, 4, 5, 6),
+      DateTime(2026, 10, 22, 14, 5, 6, 7),
+    ];
+    final rows = ListSnapshot(
+      catalog: const Catalog(),
+      server: [
+        for (final (i, at) in times.indexed)
+          Item(
+            id: '$i',
+            name: 'Milch',
+            status: ItemStatus.bought,
+            createdAt: at,
+            updatedAt: at,
+            boughtAt: at,
+          ),
+      ],
+      pending: const [],
+    );
+    final back = roundTrip(rows).server;
+    for (final (i, at) in times.indexed) {
+      for (final read in [back[i].createdAt, back[i].boughtAt!]) {
+        expect(read, at);
+        expect(read.isUtc, at.isUtc);
+      }
+    }
+  });
+
+  test('a version 3 snapshot loads with every column of its rows', () {
+    // As the app wrote it while server rows were keyed objects.
+    final v3 = {
+      ...snapshot.toJson(),
+      'version': 3,
+      'server': [for (final item in snapshot.server) item.toJson()],
+    };
+    final loaded = ListSnapshot.fromJson(
+      jsonDecode(jsonEncode(v3)) as Map<String, Object?>,
+    );
+    expect(
+      [for (final item in loaded.server) item.toJson()],
+      [for (final item in snapshot.server) item.toJson()],
+    );
+    expect(loaded.toJson(), snapshot.toJson());
   });
 
   test('an unknown version or op is refused', () {

@@ -8081,3 +8081,25 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
     and so in request logs; posting the body to the API answers 400 instead.
 18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
     a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
+
+## Job 130: hill-climb hc-list-cpu, the in-memory list model (2026-11-05)
+
+1. **A `flutter test` microbench, not a profile build.** `app/benchmark/list_cpu/` times the
+   model, cubit and cache on a seeded household (3,000 open, 5,000 bought items) on the test
+   isolate. `lib/list` imports `package:flutter/foundation.dart`, so `dart compile exe` (AOT)
+   cannot build it. JIT after warm-up is the proxy. The cache stand-in encodes the snapshot as
+   `_PrefsListCache` does.
+2. **Open-name check from the rows a write changed.** `ListCubit.onChange` decides whether to
+   reload the usuals by whether the set of open names changed. A realtime row, a delete and an
+   op's answer now name their ids, and the cubit keeps per-name counts for the server map it last
+   counted. Any other write (a resync, the cache load) takes the full compare as before.
+3. **Snapshot version 4: server rows as arrays.** The device cache wrote each server row as a
+   15-key object; it now writes `Item.toRow()`, the same values by position. That is 1.7 MB
+   instead of 3.1 MB for the fixture, and about half the time to encode on every tick and to
+   decode on start. A version 3 snapshot upgrades on load (`_v3ToV4`). An older app that finds a
+   version 4 snapshot refuses it and loads from the server, as on any downgrade. Ops still
+   queued in that snapshot are lost then, after a store downgrade or a rollback of the web
+   app, as with the earlier version bumps. #270 (job 132) also tags its own cache format 4;
+   whichever lands second renumbers (docs/hillclimb/hc-list-cpu.md, "Overlaps with open
+   PRs"). Ops queued in the
+   cache keep their keyed item JSON.
