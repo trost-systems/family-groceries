@@ -269,6 +269,24 @@ export const KINDS = {
     route: (fm) => fm.path,
     group: (fm) => `page:${fm.translation_key}`,
   },
+  // Comparison pages (ST5): German only, at /<locale>/<slug>, e.g. /de/einkaufsliste-vergleich-bring.
+  // The title is the page's whole <title>, without the "| Hummlist" suffix.
+  comparison: {
+    fields: ['title', 'description', 'slug', 'locale', 'updated'],
+    ogType: 'article',
+    files: (contentDir) => {
+      const root = join(contentDir, 'comparisons');
+      if (!existsSync(root)) return [];
+      return readdirSync(root).flatMap((folder) =>
+        markdownFiles(join(root, folder)).map((file) => ({
+          file,
+          expect: { locale: folder, slug: file.slice(file.lastIndexOf('/') + 1, -3) },
+        })),
+      );
+    },
+    route: (fm) => `${LOCALES[fm.locale].landing}/${fm.slug}`,
+    group: (fm) => `comparison:${fm.slug}`,
+  },
   index: {
     fields: ['title', 'description', 'locale'],
     ogType: 'website',
@@ -412,7 +430,7 @@ function renderPage(page, { config, groups, guidesByLocale, copy }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${page.notices.length > 0 ? `${comments}<meta name="robots" content="noindex">\n` : ''}<title>${landing ? title : `${title} | ${SITE_NAME}`}</title>
+${page.notices.length > 0 ? `${comments}<meta name="robots" content="noindex">\n` : ''}<title>${landing || page.kind === 'comparison' ? title : `${title} | ${SITE_NAME}`}</title>
 <meta name="description" content="${description}">
 <link rel="canonical" href="${url}">
 ${alternates}

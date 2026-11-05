@@ -60,6 +60,11 @@
       "file": "app/l10n/app_en.arb",
       "key": "tokenNameHint",
       "reason": "Functional help text Legal allowed."
+    },
+    {
+      "file": "site/content/comparisons/de/einkaufsliste-vergleich-bring.md",
+      "contains": "Die Schritt-für-Schritt-Anleitung findest du hier: [Anleitung: Hummlist mit Claude verbinden](https://hummlist.com/de/anleitungen/claude).",
+      "reason": "Link to the Claude guide (Legal N-81, referential use). Peter approved publishing BP1 (lead chat 2026-11-05 18:12 CET)."
     }
   ]
 }
