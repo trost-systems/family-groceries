@@ -915,6 +915,11 @@ Deno.test('ReadListIntent: one item past the limit is read, not counted, in Germ
     await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
     `There are 11 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and Teil10.`,
   );
+  await send(world.deps(), envelope(intent('AddItemIntent', 'Teil11'), { token: 'tok-peter' }));
+  assertEquals(
+    await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `There are 12 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and 2 more.`,
+  );
 });
 
 Deno.test('English replies never mention Premium (Alexa is not Premium)', async () => {
