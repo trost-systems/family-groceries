@@ -41,9 +41,9 @@ for locale in $locales; do
   name="$(jq -r --arg l "$locale" '.manifest.publishingInformation.locales[$l].name' <<<"$manifest")"
   [[ $name == Hummlist ]] || { echo "development manifest $locale: name '$name'" >&2; exit 1; }
   invocation="$(ask smapi get-interaction-model -s "$skill" -g development -l "$locale" | jq -r .interactionModel.languageModel.invocationName)"
-  [[ $invocation == hummlist ]] || { echo "development model $locale: invocation name '$invocation'" >&2; exit 1; }
+  [[ $invocation == 'humm list' ]] || { echo "development model $locale: invocation name '$invocation'" >&2; exit 1; }
 done
-echo "development stage: name Hummlist, invocation hummlist in $(echo "$locales" | xargs)"
+echo "development stage: name Hummlist, invocation humm list in $(echo "$locales" | xargs)"
 locale="$(jq '.manifest.publishingInformation.locales["de-DE"]' <<<"$manifest")"
 
 tmp="$(mktemp -d)"

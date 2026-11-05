@@ -6481,7 +6481,7 @@ Nothing was switched on: `REVENUECAT_PURCHASES`, `premium_offer`, `integration_l
    the regenerate-and-compare check the brief asks for is the one that already guards the app
    icons (it flagged the old basket icons as stale). Opaque RGB, since the cobalt fills the square;
    should Amazon crop to a circle, the art (radius 380 of 512) stays inside.
-2. **Invocation name stays `hummlist`** (ADDENDUM 1, Peter's Q36 = V3); no research, no swap prep.
+2. **Invocation name stays `hummlist`** (ADDENDUM 1, Peter's Q36 = V3); no research, no swap prep. Superseded 2026-11-05: Q75 IN1, invocation name `humm list`.
 3. **One-shot samples**: „setz/setze/pack/packe/schreib {items} drauf“, „ich brauche noch“,
    „füg/füge noch {items} hinzu“. No sample names Hummlist: „setz Milch auf die Hummlist“
    never reaches the skill (Alexa's own lists take it), so the fix for it is the guide.
@@ -7531,3 +7531,15 @@ on 2026-11-04 (paths named below).
 7. **Not fixed here:** the browser crawl reports two focus-indicator findings on `/en/support`
    (long links wrapping over two lines at 1440 px). They are on main already and outside this
    job's scope (no edits to existing pages); the crawl is not part of CI.
+
+## Alexa invocation name `humm list`, 2026-11-05
+
+Q75 IN1 (Peter, 2026-11-05): invocation name humm list.
+
+German Alexa does not select the skill for „Alexa, öffne Hummlist“, because one-word invocation
+names in German must be real compounds. Amazon's rule for foreign compounds is to split them
+(https://developer.amazon.com/en-US/docs/alexa/custom-skills/choose-the-invocation-name-for-a-custom-skill.html),
+so the development-stage invocation is `humm list` in every locale (de-DE, en-US, en-GB, en-AU,
+en-CA, en-IN). The skill's display name stays "Hummlist". "Humm" alone stays forbidden everywhere
+user-facing, because of the HUMM trademarks; the invocation name `humm list` is the exception.
+Public website guides and support pages still say "Hummlist" (copy review, not this change).

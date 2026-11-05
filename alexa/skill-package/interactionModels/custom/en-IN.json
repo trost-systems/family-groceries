@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "hummlist",
+      "invocationName": "humm list",
       "intents": [
         {
           "name": "AddItemIntent",

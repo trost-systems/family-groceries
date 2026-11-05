@@ -54,14 +54,16 @@ const strings = (value: unknown): string[] =>
     ? Object.values(value).flatMap(strings)
     : [];
 
-Deno.test('AC11: skill name "Hummlist", invocation name "hummlist", never "Humm" alone', () => {
+Deno.test('AC11: skill name "Hummlist", invocation name "humm list", never "Humm" alone', () => {
   assertEquals(Object.keys(publishing.locales), Object.keys(models));
   for (const locale of Object.keys(models)) {
     assertEquals(localeInfo(locale).name, 'Hummlist', locale);
-    assertEquals(language(locale).invocationName, 'hummlist', locale);
+    assertEquals(language(locale).invocationName, 'humm list', locale);
   }
   for (const text of [...strings(skill), ...strings(models), ...strings(linking)]) {
-    assertFalse(/\bhumm\b/i.test(text), `"Humm" alone in: ${text}`);
+    // "humm list" is the approved invocation (Q75); "Humm" alone anywhere else is forbidden.
+    const rest = text.replaceAll(/humm list/gi, '');
+    assertFalse(/\bhumm\b/i.test(rest), `"Humm" alone in: ${text}`);
   }
 });
 
@@ -158,10 +160,10 @@ function matchesSample(phrase: string, samples: readonly string[]): boolean {
   });
 }
 
-/** "Alexa, <verb> Hummlist, <rest>" (de) or "Alexa, <verb> Hummlist [to] <rest>" (en). */
+/** "Alexa, <verb> humm list, <rest>" (de) or "Alexa, <verb> humm list [to] <rest>" (en). */
 const examplePattern: Record<'de' | 'en', RegExp> = {
-  de: /^Alexa, (?:sag|frag|öffne|starte) Hummlist(?:, (.+))?$/,
-  en: /^Alexa, (?:ask|tell|open|launch|start) Hummlist(?: (?:to )?(.+))?$/,
+  de: /^Alexa, (?:sag|frag|öffne|starte) humm list(?:, (.+))?$/,
+  en: /^Alexa, (?:ask|tell|open|launch|start) humm list(?: (?:to )?(.+))?$/,
 };
 const lang = (locale: string) => (locale.startsWith('en') ? 'en' : 'de');
 

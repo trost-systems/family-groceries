@@ -1,15 +1,15 @@
 # Alexa skill "Hummlist" (de-DE, en-*)
 
-A household member says "Alexa, sag Hummlist, füg Milch und Eier hinzu", and Milch and Eier land
+A household member says "Alexa, sag humm list, füg Milch und Eier hinzu", and Milch and Eier land
 on the household's Hummlist within seconds, categorized and sorted like items typed in the app.
-"Alexa, frag Hummlist, was auf der Liste steht" reads the open items aloud. Spec #7, job 31.
-On an Echo set to English (en-US, en-GB, en-AU, en-CA, en-IN), "Alexa, ask Hummlist to add milk
+"Alexa, frag humm list, was auf der Liste steht" reads the open items aloud. Spec #7, job 31.
+On an Echo set to English (en-US, en-GB, en-AU, en-CA, en-IN), "Alexa, ask humm list to add milk
 and eggs" does the same in English (job 69). Certification readiness:
 [ALEXA_CERTIFICATION.md](ALEXA_CERTIFICATION.md).
 
 | | |
 | --- | --- |
-| Skill name, invocation name | `Hummlist`, `hummlist` (always in full; a test fails on "Humm" alone) |
+| Skill name, invocation name | `Hummlist`, `humm list` (display name always in full; a test fails on "Humm" alone, except in the invocation name) |
 | Endpoint (and skill events) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa` (`sslCertificateType: Wildcard`) |
 | Function | [`supabase/functions/alexa/`](../supabase/functions/alexa/) |
 | Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json` and the five identical `en-*.json`, icons from `design/app-icon/build.mjs`), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
@@ -44,13 +44,13 @@ the linked user, and the other members see it like any partner's add ("Neu").
 
 ## What Alexa understands and says
 
-Invocation: "Alexa, sag Hummlist, …", "Alexa, frag Hummlist, …", "Alexa, öffne Hummlist".
+Invocation: "Alexa, sag humm list, …", "Alexa, frag humm list, …", "Alexa, öffne humm list".
 
 | Intent | Examples (de-DE.json has them all) | Answer |
 | --- | --- | --- |
 | `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | added: "Ich habe Milch und Eier auf die Hummlist gesetzt." · open already, with other spellings of new items (job 32b, added anyway; job 68): "Schon auf der Hummlist: Milch und Möhren." |
 | `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Hummlist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Hummlist ist leer." |
-| LaunchRequest | "Alexa, öffne Hummlist" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
+| LaunchRequest | "Alexa, öffne humm list" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
 | `AMAZON.HelpIntent` | "Hilfe" | what the skill does, with the two examples; the session stays open |
 | `AMAZON.StopIntent`, `CancelIntent`, `NavigateHomeIntent` | "Stopp", "Abbrechen" | "Bis bald." |
 | `AMAZON.FallbackIntent`, nothing understood | "äh", "bitte" | once: "Das habe ich nicht verstanden. Was soll auf die Liste?" (re-prompt); the second time: "Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt." Never a guess. |
@@ -260,7 +260,7 @@ fault is in how Amazon routes that device's requests.
 
 | What Alexa says or shows | Reached Hummlist? (diagnose.sh) | Likely cause | Fix |
 | --- | --- | --- | --- |
-| Nothing, „Ich weiß nicht“, „Das weiß ich leider nicht“, or Alexa's own shopping list opens | No row at that time | Alexa did not route to the skill. Either she misheard „Hummlist“, or the Echo's account has no enabled skill (see the beta rules below) | Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard. Say „Alexa, öffne Hummlist“ with „Humm-list“ in two syllables. Then check the beta rules |
+| Nothing, „Ich weiß nicht“, „Das weiß ich leider nicht“, or Alexa's own shopping list opens | No row at that time | Alexa did not route to the skill. Either she misheard „Hummlist“, or the Echo's account has no enabled skill (see the beta rules below) | Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard. Say „Alexa, öffne humm list“ with „Humm-list“ in two syllables. Then check the beta rules |
 | „Beim Verbinden mit dem angeforderten Skill ist ein Problem aufgetreten“ or „Bei der Antwort des angeforderten Skills ist ein Problem aufgetreten“ | No row | Amazon did not call the endpoint for this account or device. On 2026-11-02 and 2026-11-03 this was the case for every spoken request: linking worked, and no LaunchRequest ever arrived | Check the beta rules, then run smoke.sh. If smoke.sh passes, the endpoint is fine and the problem is on Amazon's side: the account, the device, Alexa+, or the marketplace |
 | the same | `-> refused <reason>` | The function refused the request. `wrong_skill` means the function's `ALEXA_SKILL_ID` secret is not this skill's id. `stale_timestamp` means a clock more than 150 s off. `cert_*` or `bad_signature` means the request was not signed by Amazon | `wrong_skill`: set the secret ([Deploy](#deploy), step 5). Otherwise check that the console's endpoint is the URL in the table at the top |
 | the same | `-> error`, a 5xx, or a row with no line | Our bug, or the function did not answer in time. Alexa gives up after about 8 s | The exception is in PostHog error tracking. The row's duration shows a timeout |
@@ -281,7 +281,7 @@ fault is in how Amazon routes that device's requests.
 4. The account is on the **amazon.de** marketplace (Alexa app → Einstellungen → Info: host
    `alexa.amazon.de`). The skill's de-DE locale is only offered there.
 
-In the developer console, Test tab, stage „Entwicklung“, typing „öffne hummlist“ in Deutsch
+In the developer console, Test tab, stage „Entwicklung“, typing „öffne humm list“ in Deutsch
 (Deutschland) should log a LaunchRequest in diagnose.sh. The SMAPI simulator (`simulate-skill`,
 `scripts/alexa-simulate.sh`) has answered „did not resolve to any intent“ for every utterance
 since October, and nothing ever reached the function. Treat that as a SMAPI artefact, not as
@@ -294,18 +294,21 @@ trust.
 (and a request without a locale) is German (`speech.ts`, `voice/parse.ts`, German capitals for
 names heard in lowercase); every en-* locale is English (`speech_en.ts`, `voice/parse_en.ts`,
 names stored as heard, like Siri in English). The five English models are one model
-(`skill_package_test.ts` keeps them identical). English one-shots: "Alexa, ask Hummlist to add
-milk", "Alexa, tell Hummlist we need milk", "Alexa, ask Hummlist what's on the list"; "Alexa, add
+(`skill_package_test.ts` keeps them identical). English one-shots: "Alexa, ask humm list to add
+milk", "Alexa, tell humm list we need milk", "Alexa, ask humm list what's on the list"; "Alexa, add
 milk to Hummlist" goes to Alexa's own lists, as in German.
 
-The invocation name stays `hummlist` (Peter, 2026-11-02). On a German Echo Alexa sometimes hears
-it as „Homelist“ or „Hamlist“, or only „Liste“, and then answers „Ich weiß nicht“ or opens her
-own shopping list. Saying the name clearly as two syllables, „Humm-list“, helps; „Alexa, öffne
-Hummlist“ first, then the items, is the fallback. The guide says both.
+The invocation name is `humm list` (Q75 IN1, Peter, 2026-11-05). German Alexa does not select a
+one-word invocation that is not a real German compound; Amazon's rule for foreign compounds is
+to split them, so the development-stage name is `humm list` in every locale. The skill's display
+name stays "Hummlist". "Humm" alone stays forbidden everywhere user-facing; the invocation name
+is the exception. On a German Echo Alexa sometimes hears the old one-word name as „Homelist“ or
+„Hamlist“, or only „Liste“, and then answers „Ich weiß nicht“ or opens her own shopping list.
+„Alexa, öffne humm list“ first, then the items, is the fallback.
 
 Alexa's built-in lists take any sentence without the invocation pattern: „Alexa, setz Milch auf
 die Hummlist“ ends at „Ich konnte keine Liste finden unter Hummlist“. Only „Alexa, sag/frag
-Hummlist, …“ and „Alexa, öffne Hummlist“ reach the skill. The guide lists those phrasings, and
+humm list, …“ and „Alexa, öffne humm list“ reach the skill. The guide lists those phrasings, and
 `site/test/content.test.mjs` checks that each „Alexa, sag/frag Hummlist, …“ in the guides matches
 a sample utterance of the de-DE model; `skill_package_test.ts` keeps the common one-shot forms
 („ich brauche Milch“, „füge Milch hinzu“, „setz Milch drauf“) in the model.
@@ -353,7 +356,7 @@ Changes to the model, manifest or icons later: commit them, then run
 `ALEXA_SKILL_ID=<skill id> scripts/alexa-deploy-dev.sh` where the ASK CLI is signed in (the box,
 job 69). It writes the state file below, runs `ask deploy --target skill-metadata` (development
 stage only), restores `alexa/`, waits for the de-DE model build and checks over SMAPI that the
-development stage serves the name „Hummlist“, the invocation name `hummlist` and both icons. By
+development stage serves the name „Hummlist“, the invocation name `humm list` and both icons. By
 hand: `ask deploy --target skill-metadata` from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
 creates a second skill:
 
@@ -388,17 +391,17 @@ an invitation link. Peter, Lea, Max and Barbie first.
 1. Alexa app → Skills → "Hummlist" (from the beta link) → aktivieren → Konto verknüpfen: the
    Hummlist consent page shows "Amazon Alexa"; sign in, "Erlauben"; the Alexa app says the
    account is linked. In Hummlist, Mehr → Zugänge lists "Amazon Alexa".
-2. "Alexa, sag Hummlist, füg Milch hinzu": Alexa says "Ich habe Milch auf die Hummlist gesetzt.";
+2. "Alexa, sag humm list, füg Milch hinzu": Alexa says "Ich habe Milch auf die Hummlist gesetzt.";
    Milch appears on another member's phone within 5 seconds, in Kühlregal (AC1, AC3).
-3. "Alexa, sag Hummlist, füg Milch und Eier hinzu": "Ich habe Eier … Schon auf der Hummlist:
+3. "Alexa, sag humm list, füg Milch und Eier hinzu": "Ich habe Eier … Schon auf der Hummlist:
    Milch." Then with two new things ("Brot und Äpfel"): "Ich habe Brot und Äpfel auf die Hummlist
    gesetzt." (AC2).
-4. "Alexa, sag Hummlist, füg zwei Liter Hafermilch hinzu": the app shows "Hafermilch" with 2 l.
-5. "Alexa, öffne Hummlist", then mumble something: "Das habe ich nicht verstanden. Was soll auf
+4. "Alexa, sag humm list, füg zwei Liter Hafermilch hinzu": the app shows "Hafermilch" with 2 l.
+5. "Alexa, öffne humm list", then mumble something: "Das habe ich nicht verstanden. Was soll auf
    die Liste?"; mumble again: "… Ich habe nichts auf die Hummlist gesetzt."; nothing added (AC4).
-6. "Alexa, frag Hummlist, was auf der Liste steht": the open items, at most 10 (AC6 of the spec's
+6. "Alexa, frag humm list, was auf der Liste steht": the open items, at most 10 (AC6 of the spec's
    read-back).
-7. Disable the skill in the Alexa app, enable it again without linking: "Alexa, sag Hummlist, füg
+7. Disable the skill in the Alexa app, enable it again without linking: "Alexa, sag humm list, füg
    Brot hinzu" asks to link the account; nothing added; Zugänge no longer lists "Amazon Alexa"
    (AC8).
 8. Link again, then Mehr → Zugänge → "Amazon Alexa trennen": the next request asks to link (AC8).
@@ -408,8 +411,8 @@ Amazon's validation said and what is left (the test account, the submit). The pr
 are in `skill.json` (`/datenschutz`, `/en/privacy`); no terms URL until the terms pages are live.
 The testing instructions are in `skill.json` too, without credentials (the test account goes
 into the console field only).
-Certification usually asks about a one-word invocation name: "Hummlist" is the product's brand
-(the app's name in the stores), which is the documented exception.
+The spoken invocation is the two-word name `humm list` (Q75). The display name "Hummlist" stays
+the product's brand (the app's name in the stores).
 
 **Testing instructions**: `publishingInformation.testingInstructions` in `skill.json`, German and
 English, checked by `skill_package_test.ts` (no credentials).
