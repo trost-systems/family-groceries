@@ -1065,15 +1065,20 @@ List<Usual> suggestUsuals(
   if (typed.isEmpty) {
     return const [];
   }
+  final index = _UsualIndex.of(usuals);
+  final active = _activeNames(visible);
+  bool offList(int i) => !active.contains(usuals[i].name.toLowerCase());
+  if (index.startingWith(typed, offList, limit) case final found?) {
+    return [for (final i in found) usuals[i]];
+  }
   // One list per rank, each in the usuals' order. Once [limit] usuals rank
   // better than `below`, a later one ranking `below` or worse can't make it.
   final byRank = [for (var rank = 0; rank < 5; rank++) <Usual>[]];
   var below = 5;
-  final active = _activeNames(visible);
-  for (final usual in usuals) {
-    if (suggestionMatch(typed, _folded(usual), below: below) case final rank?
-        when !active.contains(usual.name.toLowerCase())) {
-      byRank[rank].add(usual);
+  for (var i = 0; i < usuals.length; i++) {
+    if (suggestionMatch(typed, index.names[i], below: below) case final rank?
+        when offList(i)) {
+      byRank[rank].add(usuals[i]);
       for (var (r, found) = (0, 0); r < below; r++) {
         if ((found += byRank[r].length) >= limit) {
           below = r;
@@ -1084,10 +1089,89 @@ List<Usual> suggestUsuals(
   return byRank.expand((same) => same).take(limit).toList();
 }
 
-/// [Usual.name] folded, once per usual: each keystroke ranks them all again.
-String _folded(Usual usual) => _foldedNames[usual] ??= foldName(usual.name);
+/// One usuals list's folded names by position, and where each name and each
+/// word after its first starts, sorted: what starts with the typed text is
+/// one range. Kept for the same usuals: each keystroke ranks them again.
+final class _UsualIndex._(
+  final List<Usual> _usuals,
+  final List<String> names,
+  final List<({String start, int position, bool whole})> _starts,
+) {
+  factory of(List<Usual> usuals) {
+    if (_last case final last? when _same(last._usuals, usuals)) {
+      return last;
+    }
+    final names = [for (final usual in usuals) foldName(usual.name)];
+    final starts = [
+      for (final (position, name) in names.indexed) ...[
+        (start: name, position: position, whole: true),
+        for (var at = 1; at < name.length; at++)
+          if (_isSeparator(name.codeUnitAt(at - 1)) &&
+              !_isSeparator(name.codeUnitAt(at)))
+            (start: name.substring(at), position: position, whole: false),
+      ],
+    ]..sort((a, b) => a.start.compareTo(b.start));
+    return _last = _UsualIndex._(
+      List.of(usuals, growable: false),
+      names,
+      starts,
+    );
+  }
 
-final _foldedNames = Expando<String>('folded usual name');
+  static _UsualIndex? _last;
+
+  /// The best [limit] positions (rank, then position) of usuals ranking 0 to
+  /// 2 for [typed] (`suggestionMatch`) that are [offList]; null when there
+  /// are fewer: then ranks 3 and 4 count too.
+  List<int>? startingWith(String typed, bool Function(int) offList, int limit) {
+    final words = !typed.contains(' ') && !typed.contains('-');
+    final ranked = <(int, int)>[];
+    for (var at = _firstFrom(typed); at < _starts.length; at++) {
+      final (:start, :position, :whole) = _starts[at];
+      if (!start.startsWith(typed)) {
+        break;
+      }
+      if (whole) {
+        ranked.add((start == typed ? 0 : 1, position));
+      } else if (words) {
+        ranked.add((2, position));
+      }
+    }
+    ranked.sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
+    final seen = <int>{};
+    final best = [
+      for (final (_, position) in ranked)
+        if (seen.add(position) && offList(position)) position,
+    ];
+    return best.length >= limit ? best.take(limit).toList() : null;
+  }
+
+  /// The first of [_starts] not sorting before [typed].
+  int _firstFrom(String typed) {
+    var (low, high) = (0, _starts.length);
+    while (low < high) {
+      final mid = (low + high) ~/ 2;
+      if (_starts[mid].start.compareTo(typed) < 0) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
+  }
+}
+
+bool _same(List<Usual> a, List<Usual> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (var i = 0; i < a.length; i++) {
+    if (!identical(a[i], b[i])) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /// How a folded [name] matches folded [typed] text, best first, as
 /// `public.suggest_match` on the server: 0 the same name, 1 it starts with
