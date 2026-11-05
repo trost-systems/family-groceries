@@ -1,5 +1,19 @@
 import { assert, assertEquals, assertMatch, assertThrows } from '@std/assert';
-import { checkRunId, emailFor, type Manifest, newFixtureRunId, publicView, runOfEmail, runUserIds, splitHouseholds } from './fixtures.ts';
+import type { JsonObject } from './core.ts';
+import { realShell } from './fg.ts';
+import {
+  checkRunId,
+  emailFor,
+  type Manifest,
+  newFixtureRunId,
+  publicView,
+  runOfEmail,
+  runUserIds,
+  splitHouseholds,
+  verifyRun,
+} from './fixtures.ts';
+import { expectedCounts, parseScenario, plan } from './scenario.ts';
+import type { Api } from './target.ts';
 
 Deno.test('run ids are short, valid and land in the test email domain', () => {
   const run = newFixtureRunId(new Date(2026, 9, 25, 14, 32));
@@ -71,4 +85,56 @@ Deno.test('the printed view of a run carries no password', () => {
   const text = JSON.stringify(publicView(m));
   assert(!text.includes('hunter2-secret'));
   assert(text.includes('r1:mia'));
+});
+
+Deno.test('verifyRun counts more rows than PostgREST returns (max_rows 1000)', async () => {
+  const repo = new URL('../../../../', import.meta.url).pathname.replace(/\/$/, '');
+  const scenario = await parseScenario(
+    realShell,
+    repo,
+    'test/fixtures/scenarios/tt.yaml',
+    `name: tt
+summary: One member who bought 20 items on 55 days, 1,100 bought rows.
+users: [{ handle: ann, name: Ann }]
+households:
+  - name: Haus
+    members: [ann]
+    items: [Brot]
+    history:
+      - { at: "-1d 10:00", every: 1d, times: 55, items: [${Array.from({ length: 20 }, (_, i) => `Ding${i}`).join(', ')}] }
+`,
+  );
+  const p = plan(scenario, new Date('2026-11-05T12:00:00Z'));
+  const want = expectedCounts(p).households.home;
+  assertEquals(want.boughtItems, 1100);
+  const hid = 'h1';
+  const many = (n: number, row: JsonObject) => Array.from({ length: n }, () => ({ household_id: hid, ...row }));
+  const tables: Record<string, JsonObject[]> = {
+    household_members: many(want.members, {}),
+    items: [...many(want.activeItems, { status: 'active' }), ...many(want.boughtItems, { status: 'bought' })],
+    stores: many(want.stores, {}),
+    categories: many(want.categories, {}),
+    invites: [],
+    households: [{ id: hid }],
+  };
+  const matches = (row: JsonObject, query: string) =>
+    query.split('&').filter((f) => f.includes('=') && !f.startsWith('select=') && !f.startsWith('limit=')).every((f) => {
+      const [col, cond] = f.split('=');
+      const [op, value] = [cond.slice(0, cond.indexOf('.')), cond.slice(cond.indexOf('.') + 1)];
+      if (op === 'eq') return String(row[col]) === value;
+      if (op === 'neq') return String(row[col]) !== value;
+      return true;
+    });
+  const api = {
+    count: (table: string, filter: string) => Promise.resolve(tables[table].filter((r) => matches(r, filter)).length),
+    rest: (path: string) => {
+      const [table, query] = path.split('?');
+      return Promise.resolve(tables[table].filter((r) => matches(r, query ?? '')).slice(0, 1000));
+    },
+    rpc: () => Promise.resolve([]),
+  } as unknown as Api;
+  const manifest = { households: { home: { id: hid, name: 'Haus', members: ['ann'] } } } as unknown as Manifest;
+  const checks = await verifyRun(api, manifest, p, { ann: 'token' });
+  assertEquals(checks.filter((c) => !c.ok), []);
+  assertEquals(checks.find((c) => c.name === 'home: bought items')?.actual, 1100);
 });
