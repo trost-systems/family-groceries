@@ -69,9 +69,10 @@ abstract interface class ListRepository() {
   Future<List<Entry>> splitSpoken(String text);
 
   /// Live changes for the household; returns a function that unsubscribes.
+  /// [onItemDeleted] gets the delete's commit time.
   Future<void> Function() watch({
     required void Function(Item item) onItem,
-    required void Function(String id) onItemDeleted,
+    required void Function(String id, DateTime at) onItemDeleted,
     required void Function() onCatalogChanged,
     required void Function(ConnectionStatus status) onStatus,
   });
@@ -466,7 +467,7 @@ class SupabaseListRepository(
   @override
   Future<void> Function() watch({
     required void Function(Item item) onItem,
-    required void Function(String id) onItemDeleted,
+    required void Function(String id, DateTime at) onItemDeleted,
     required void Function() onCatalogChanged,
     required void Function(ConnectionStatus status) onStatus,
   }) {
@@ -519,7 +520,7 @@ class SupabaseListRepository(
           schema: 'public',
           table: 'items',
           callback: (p) => switch (p.oldRecord['id']) {
-            final String id => onItemDeleted(id),
+            final String id => onItemDeleted(id, p.commitTimestamp),
             _ => null,
           },
         )

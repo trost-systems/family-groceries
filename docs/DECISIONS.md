@@ -7621,3 +7621,43 @@ Public website guides and support pages still say "Hummlist" (copy review, not t
 9. **Ordered commits, one squash.** The branch has one commit per fix, and
    `job/104-gap-fixes-ordered` keeps them for review. `scripts/push-pr.sh` squashes them into the
    one commit `main` takes, as the brief asks.
+## Job 99: sync fuzz hill-climb (hc-sync), 2026-11-05
+
+The attempt log, the conflict rule and the harness are in `docs/hillclimb/hc-sync.md`.
+
+- **The fuzz drives the real repository over a fake PostgREST.** `app/test/fuzz/` runs
+  `ListCubit` and `SupabaseListRepository` with a real `SupabaseClient` whose `http.Client` is an
+  in-memory Postgres (`fake_backend.dart`). Only `watch()` is replaced, because Realtime is a
+  websocket. A fake `ListRepository` would have skipped `_refusable`, the "no row back" fetch and
+  the P0002 paths, which are part of the sync layer.
+- **Failures are counted per seed, and the noise band is read per part.** The failure count is
+  deterministic (identical in the three baseline runs), so one seed fewer is outside noise; the
+  protocol's 2 % floor applies to the runtime tiebreak only.
+- **Realtime rows heard during a resync beat its snapshot when newer (by `updated_at`).** It is
+  the same overlay the acks already had (2b.4), with realtime rows and deletes added. It also
+  heals `fetchItems`' two queries (open, bought), which are two transactions: an item ticked
+  between them was in neither.
+- **Resyncs are numbered, not serialized.** A resync that answers after a later-started one was
+  shown is dropped. Serializing them would let one hung request (the app sets no HTTP timeout)
+  hold every later resync.
+- **A realtime delete remembers the newest row known of the item.** Realtime delivers in commit
+  order, so a later answer with a row no newer than that is from before the delete. Deletes carry
+  no timestamp in the app's callback; Realtime's `commit_timestamp` would be exact but needs the
+  repository interface to change, and the known row covers every case the harness finds.
+- **An answered row that the snapshot lacks gets one more resync.** The snapshot was read either
+  before the write or after a delete that realtime has not reported, and the app cannot tell
+  which. It keeps showing the row and asks once more instead of guessing.
+- **The queue is saved before the first load once the cache was read.** The `loaded` guard kept
+  a save from replacing the cached list before the cache answered; after that, on a first start
+  with no cache, there is nothing to replace. The add bar shows next to the list's spinner, so
+  an offline first start could take an add that a restart lost.
+- **A "gone" answer does not remove a row realtime brought while the op was in flight.** The
+  answer may have read the table before that row (an undone delete), and a later delete would
+  come over realtime after it.
+- **A delete winning over a replayed add needs the server** (`docs/NEEDS_LEAD.md`, Job 99). The
+  phone cannot tell an add that never landed from one that was deleted since; `item_events`
+  can. The harness measures it (`FUZZ_STRICT=1`) and models the proposal
+  (`FUZZ_PROPOSAL=delete-wins`), and nothing ships without the Lead.
+- **`flutter test` runs seeds 1 to 100.** About 5 s; on main before this job it failed on seeds
+  9, 15, 18, 40, 41 and more. The scored run, the sweeps and the opt-in models (`FUZZ_MODEL=join-gap`)
+  stay behind environment variables.
