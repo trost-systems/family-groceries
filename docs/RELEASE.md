@@ -10,9 +10,9 @@ green `main` commit:
   Beta App Review, no App Store submission.
 - Android to the Play internal testing track.
 
-The web app is not part of these runs: `https://app.hummlist.com` is public,
-so it moves only with a dispatched run (below, [Public releases](#public-releases)).
-`main` itself is on `https://preview.app.hummlist.com`
+The public web app moves with these runs once a store upload succeeds:
+`https://app.hummlist.com` follows the same commit (via the `release` branch).
+`main` itself is also on `https://preview.app.hummlist.com`
 ([`DEPLOY.md`](DEPLOY.md), section "Web app").
 
 Both platforms get the same build number in a run. The one-time store setup
@@ -95,7 +95,7 @@ Three events start a run:
 | --- | --- | --- |
 | `workflow_run` | CI finished on `main` | The newest green `main` commit. Only a green CI run on a push to this repository starts the plan; after a red one (or a fork's PR from a branch named `main`, or a dispatched CI run) every job is skipped and nothing ships. |
 | `schedule` | Mondays 03:00 UTC | The same as `workflow_run`. A catch-up: it ships nothing when the testers have the newest green `main`, but re-ships before TestFlight's 90-day expiry or after Apple expired the builds, and picks up a commit whose `workflow_run` event never came. |
-| `workflow_dispatch` | By hand | The `main` commit it was started on, which must be green ([Run it by hand](#run-it-by-hand)). The only event that moves `app.hummlist.com`. |
+| `workflow_dispatch` | By hand | The `main` commit it was started on, which must be green ([Run it by hand](#run-it-by-hand)). Like the automatic runs, a successful upload also moves `app.hummlist.com`. |
 
 The `plan` job gathers facts (`scripts/release/plan.sh gather`) and decides
 (`plan.sh decide`, a pure function with fixture tests in
@@ -156,7 +156,7 @@ line `Release plan (workflow_run): platform=both upload=true force=false
 main=<sha> trigger=<sha>` (or `(schedule)`, `(workflow_dispatch)`) shows it.
 
 ```bash
-gh workflow run release.yml                       # main's tip, if green and not shipped yet; moves app.hummlist.com
+gh workflow run release.yml                       # main's tip, if green and not shipped yet; upload also moves app.hummlist.com
 gh workflow run release.yml -f force=true         # ship even if the testers already have it
 gh workflow run release.yml -f upload=false       # build, sign and validate only
 gh workflow run release.yml -f platform=android   # one platform
@@ -222,7 +222,7 @@ What to do, by failing job:
 - `android`, upload: Play's error names the cause. "Only releases with status
   draft may be created on draft app" means `PLAY_RELEASE_STATUS` must be
   `draft` until the app leaves draft (`NEEDS_LEAD.md`, L3).
-- `web` (`Web production`, dispatch only), push rejected: `release` holds a commit that is
+- `web` (`Web production`, after `Uploaded`), push rejected: `release` holds a commit that is
   not an ancestor of this one (someone force-pushed it), or a branch rule
   blocks the push (there must be none on `release`). The issue says which
   stores got the build; check what `release` holds, then `git push --force

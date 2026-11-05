@@ -1,10 +1,11 @@
 # Ships every green commit on main to the internal testers: iOS to TestFlight (internal group
 # only), Android to the Play internal track. It starts when CI succeeds on a push to main and
 # ships the newest green main commit; docs/RELEASE.md describes the run, the lanes are in
-# app/fastlane/Fastfile, the decisions in scripts/release/. Only a dispatch moves the web app
-# (app.hummlist.com). There is no public store release here (no production track, no App Store
-# review). A platform whose secrets are missing is skipped with a notice; a failed automatic run
-# opens or comments on the "Internal release failed" issue.
+# app/fastlane/Fastfile, the decisions in scripts/release/. When a run actually uploads to a
+# store, its Web production job also moves app.hummlist.com (the `release` branch). There is no
+# public store release here (no production track, no App Store review). A platform whose secrets
+# are missing is skipped with a notice; a failed automatic run opens or comments on the
+# "Internal release failed" issue.
 name: Release
 
 on:
@@ -381,17 +382,18 @@ jobs:
         run: |
           echo "Build $BUILD_NUMBER of $SHA: TestFlight $IOS, Play internal $ANDROID." | tee -a "$GITHUB_STEP_SUMMARY"
 
-  # The web app ships with a dispatched store release only: app.hummlist.com is public and is
-  # Vercel's production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). The
-  # automatic per-merge runs reach internal testers only, so they leave it alone. Moving `release`
-  # to this run's commit makes Vercel build it and assign app.hummlist.com. A rerun of an older
+  # The web app ships with every real store upload: app.hummlist.com is public and is Vercel's
+  # production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). When `Uploaded`
+  # succeeds (automatic per-merge, schedule, or dispatch), this job moves `release` to this run's
+  # commit so Vercel builds it and assigns app.hummlist.com. That keeps the public web app on the
+  # same commit the internal testers just got, never ahead of TestFlight/Play. A rerun of an older
   # run is a no-op, and the plain push only fast-forwards, so production never moves back from
-  # here. Pushes to `main` build previews only (preview.app.hummlist.com, behind Vercel
+  # here. Pushes to `main` still build previews only (preview.app.hummlist.com, behind Vercel
   # Authentication). No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
     needs: [plan, uploaded]
-    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && needs.uploaded.result == 'success' }}
+    if: ${{ !cancelled() && needs.uploaded.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

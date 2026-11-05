@@ -25,10 +25,10 @@ before it deploys anything.
 The Vercel project `peter-trost/family-groceries` builds the Flutter web app
 (`vercel.json`, `scripts/vercel.sh`) from every push. Since job
 web-release-align (2026-10-29), `app.hummlist.com` moves only with a store
-release, so the web app never runs ahead of TestFlight and Play. Since job 30
-(2026-10-30) every green merge goes to the internal testers by itself, but
-only a dispatched Release run moves `app.hummlist.com`, which is public
-([`RELEASE.md`](RELEASE.md), "Public releases"):
+upload, so the web app never runs ahead of TestFlight and Play. Since job 30
+(2026-10-30) every green merge goes to the internal testers by itself, and
+when that Release run's `Uploaded` job succeeds it also moves
+`app.hummlist.com` (public; [`RELEASE.md`](RELEASE.md)):
 
 | URL | Serves | Who can open it |
 | --- | --- | --- |
@@ -38,16 +38,16 @@ only a dispatched Release run moves `app.hummlist.com`, which is public
 
 How production moves:
 
-1. A dispatched Release run (`gh workflow run release.yml`) ships green
-   `main` to TestFlight and/or Play internal. Its `Uploaded <sha>` job
-   succeeds. The automatic runs after each merge stop here.
-2. Its `Web production` job pushes that commit to the `release` branch with
-   the workflow's own token. If `release` already contains the commit (a rerun
-   of an older Release run), the job changes nothing; otherwise the plain push
-   only fast-forwards, so production never moves back from here. No branch
-   protection or ruleset may cover `release`: one that blocks pushes without
-   a PR, or from `github-actions`, fails this job after a store already got
-   the build. None does; check both kinds with
+1. A Release run (automatic after CI on `main`, the Monday schedule, or a
+   dispatch via `gh workflow run release.yml`) ships green `main` to
+   TestFlight and/or Play internal. Its `Uploaded <sha>` job succeeds.
+2. Its `Web production` job then pushes that commit to the `release` branch
+   with the workflow's own token. If `release` already contains the commit (a
+   rerun of an older Release run), the job changes nothing; otherwise the
+   plain push only fast-forwards, so production never moves back from here.
+   No branch protection or ruleset may cover `release`: one that blocks
+   pushes without a PR, or from `github-actions`, fails this job after a
+   store already got the build. None does; check both kinds with
    `gh api repos/trost-systems/family-groceries/rules/branches/release`
    (rulesets, must print `[]`) and
    `gh api repos/trost-systems/family-groceries/branches/release --jq .protected`
@@ -59,9 +59,10 @@ How production moves:
    `PATCH /v9/projects/{id}/branch`, read back as `link.productionBranch`),
    and auto-assignment of production domains must stay on.
 
-A dry run (`upload=false`), a skipped run or an automatic run leaves
-`release`, and so `app.hummlist.com`, where it is. A failed `Web production`
-job fails the dispatched run (whoever started it watches it; no issue).
+A dry run (`upload=false`) or a skipped run leaves `release`, and so
+`app.hummlist.com`, where it is. A failed `Web production` job fails the
+Release run (the automatic failure issue covers it; a dispatch's starter
+watches it).
 
 Ship the web app by hand (only a commit that is already in a store release):
 
