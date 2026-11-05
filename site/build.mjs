@@ -6,8 +6,9 @@ import MarkdownIt from 'markdown-it';
 import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
 import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseGates, parseRecord, publicReleases } from './releases.mjs';
-import { APP_URL, CopyError, readCopy, renderLanding } from './landing.mjs';
+import { CopyError, STAGES, STAGE_CTA, copyReader, readCopy, renderLanding } from './landing.mjs';
 import { HISTORY_ROUTES, HistoryCopyError, historyBody, t as historyText } from './history.mjs';
+import { ACTION_PAGES, actionPage, readConsent } from './waitlist.mjs';
 import { AgentError, agentHead, checkAgentSite, readPublicApi, readStage, readVercel, writeAgentFiles } from './agent.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
@@ -372,10 +373,12 @@ function mainContent(page, guidesByLocale) {
 }
 
 // The header and footer every page shares: the brand back to the landing page, the guides and
-// the changelog, the language switch, the web app; in the footer also the release timeline and
-// the legal links by their flags.
-function siteHeader(page, { switches, copy, current }) {
+// the changelog, the language switch, the stage's call to action (site/config/stage.ts); in the
+// footer also the release timeline and the legal links by their flags.
+function siteHeader(page, { switches, copy, current, stage }) {
   const locale = LOCALES[page.locale];
+  const cta = STAGE_CTA[stage];
+  const href = `${page.kind === 'landing' ? '' : locale.landing}#${cta.anchor[page.locale]}`;
   const link = (href, label) => `<li><a href="${href}"${current === href ? ' aria-current="page"' : ''}>${label}</a></li>`;
   return `<a class="skip" href="#inhalt">${locale.ui.skip}</a>
 <header class="site-header">
@@ -383,7 +386,7 @@ function siteHeader(page, { switches, copy, current }) {
 <a class="brand" href="${locale.landing}" aria-label="${locale.ui.home}"><span class="mark" aria-hidden="true"></span>${SITE_NAME}</a>
 <nav class="nav" aria-label="${locale.ui.mainNav}"><ul>${link(locale.guidesBase, locale.ui.guides)}${link(locale.footer.changelog.href, locale.footer.changelog.label)}</ul></nav>
 <nav class="lang" aria-label="${locale.ui.languageNav}">${switches}</nav>
-<a class="hex hex--small header-cta" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${escapeHtml(copy.get('header.open-app')[page.locale])}</span></a>
+<a class="hex hex--small header-cta" href="${href}"><span class="face" data-copy-id="${cta.id}">${escapeHtml(copy.get(cta.id)[page.locale])}</span></a>
 </div>
 </header>`;
 }
@@ -403,7 +406,7 @@ function siteFooter(page, { config, copy }) {
 </footer>`;
 }
 
-function renderPage(page, { config, groups, guidesByLocale, copy }) {
+function renderPage(page, { config, groups, guidesByLocale, copy, stage }) {
   const { siteUrl, defaultLocale } = config;
   const locale = LOCALES[page.locale];
   const versions = groups.get(page.group);
@@ -425,12 +428,23 @@ function renderPage(page, { config, groups, guidesByLocale, copy }) {
   const title = escapeHtml(page.title);
   const description = escapeHtml(page.description);
   const comments = page.notices.map((text) => `<!-- ${text} -->\n`).join('');
+  // The pages behind the mail links are never indexed; the sign-up form ships with the landing
+  // page while the stage has one.
+  const waitlistPage = page.kind === 'waitlist';
+  const noindex = page.notices.length > 0 || waitlistPage;
+  const form = waitlistPage || (landing && stage !== 'launch');
+  const assets = [
+    landing && '<link rel="stylesheet" href="/landing.css">',
+    form && '<link rel="stylesheet" href="/waitlist.css">',
+    landing && '<script src="/demo.js" defer></script>',
+    form && '<script src="/waitlist.js" defer></script>',
+  ].filter(Boolean).map((line) => `${line}\n`).join('');
   return `<!doctype html>
 <html lang="${page.locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-${page.notices.length > 0 ? `${comments}<meta name="robots" content="noindex">\n` : ''}<title>${landing || page.kind === 'comparison' ? title : `${title} | ${SITE_NAME}`}</title>
+${comments}${noindex ? '<meta name="robots" content="noindex">\n' : ''}<title>${landing || page.kind === 'comparison' ? title : `${title} | ${SITE_NAME}`}</title>
 <meta name="description" content="${description}">
 <link rel="canonical" href="${url}">
 ${alternates}
@@ -443,9 +457,9 @@ ${agentHead(page, url)}<meta property="og:title" content="${title}">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
-${HEAD_ASSETS}${landing ? '<link rel="stylesheet" href="/landing.css">\n<script src="/demo.js" defer></script>\n' : ''}</head>
+${HEAD_ASSETS}${assets}</head>
 <body${landing ? ' class="landing"' : ''}>
-${page.notices.map(banner).join('')}${siteHeader(page, { switches, copy, current })}
+${page.notices.map(banner).join('')}${siteHeader(page, { switches, copy, current, stage })}
 <main id="inhalt"${landing ? '' : ' class="wrap prose"'}>
 ${mainContent(page, guidesByLocale)}
 </main>
@@ -517,7 +531,8 @@ function htmlFiles(dir) {
 
 const EXTERNAL = /^(https?:)?\/\//i;
 
-export function checkHtml(file, html, outDir, siteUrl) {
+// `rewrites` (vercel.json) are routes a function answers, such as /get.
+export function checkHtml(file, html, outDir, siteUrl, rewrites = []) {
   const name = relative(outDir, file);
   const doc = parse(html);
   const h1s = doc.querySelectorAll('h1').length;
@@ -564,6 +579,7 @@ export function checkHtml(file, html, outDir, siteUrl) {
     const path = decodeURIComponent(local.split(/[#?]/)[0]);
     const exists =
       path === '/' ||
+      rewrites.some((rule) => rule.source === path) ||
       (!path.endsWith('/') && (existsSync(join(outDir, `${path}.html`)) || (existsSync(join(outDir, path)) && statSync(join(outDir, path)).isFile())));
     if (!exists || path.endsWith('.html')) fail(name, `broken internal link ${href}`);
   }
@@ -652,26 +668,52 @@ function historyPages(repoDir) {
   }));
 }
 
-// The landing page per locale. Every copy id in copy.yml must appear on it, so the file holds no
-// strings nobody sees.
-function landingPages(contentDir, publicDir, config) {
+// The landing page per locale and the pages behind the mail links. Every copy id in copy.yml must
+// appear on one of them in some stage, so the file holds no strings nobody sees.
+function landingPages(contentDir, publicDir, config, stage) {
   const copy = readCopy(contentDir);
-  const used = new Set(['meta.title', 'meta.description', 'header.open-app', 'footer.tagline']);
-  const pages = Object.keys(LOCALES).map((locale) => {
-    const landing = renderLanding({ locale, copy, config, publicDir });
-    for (const id of landing.used) used.add(id);
-    return {
-      kind: 'landing',
-      file: `content/landing/copy.yml (${locale})`,
-      route: LOCALES[locale].landing,
-      group: 'landing',
-      ogType: 'website',
-      locale,
-      title: copy.get('meta.title')[locale],
-      description: copy.get('meta.description')[locale],
-      notices: [],
-      body: landing.html,
-    };
+  const consent = readConsent(contentDir);
+  const confirmConsent = readConsent(contentDir, 'waitlist-confirm');
+  const used = new Set(['meta.title', 'meta.description', 'footer.tagline']);
+  const pages = Object.keys(LOCALES).flatMap((locale) => {
+    const render = (s) => renderLanding({ locale, copy, config, publicDir, stage: s, consent: consent[locale] });
+    for (const other of STAGES) for (const id of render(other).used) used.add(id);
+    for (const other of STAGES) used.add(STAGE_CTA[other].id);
+    const landing = render(stage);
+    const actions = Object.entries(ACTION_PAGES).map(([action, routes]) => {
+      const reader = copyReader(copy, locale);
+      const body = actionPage(action, { locale, reader, consent: confirmConsent[locale], cta: STAGE_CTA[stage] });
+      const title = reader.text(`waitlist.${action}.meta-title`);
+      const description = reader.text(`waitlist.${action}.description`);
+      for (const id of reader.used) used.add(id);
+      return {
+        kind: 'waitlist',
+        file: `content/landing/copy.yml (${locale}, ${action} page)`,
+        route: routes[locale],
+        group: `waitlist:${action}`,
+        ogType: 'website',
+        locale,
+        title,
+        description,
+        notices: [],
+        body,
+      };
+    });
+    return [
+      {
+        kind: 'landing',
+        file: `content/landing/copy.yml (${locale})`,
+        route: LOCALES[locale].landing,
+        group: 'landing',
+        ogType: 'website',
+        locale,
+        title: copy.get('meta.title')[locale],
+        description: copy.get('meta.description')[locale],
+        notices: [],
+        body: landing.html,
+      },
+      ...actions,
+    ];
   });
   const unused = [...copy.keys()].filter((id) => !used.has(id));
   if (unused.length > 0) fail('content/landing/copy.yml', `copy ids not used on the landing page: ${unused.join(', ')}`);
@@ -702,6 +744,7 @@ export function build({
   env = {},
   config = readConfig(),
   stage = readStage(),
+  vercel = readVercel(),
 } = {}) {
   const live = liveVersion(repoDir);
   const holds = Object.fromEntries(Object.entries(parseGates(readRepoFile(repoDir, 'releases/flags.json')).holds).map(([key, hold]) => [key, hold.released]));
@@ -710,7 +753,7 @@ export function build({
     .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir, versions)))
     .filter((page) => !(versions.production && page.notices.length > 0))
     .concat(changelogPages(repoDir, versions.production), historyPages(repoDir));
-  const landing = landingPages(contentDir, publicDir, config);
+  const landing = landingPages(contentDir, publicDir, config, stage);
   pages.push(...landing.pages);
 
   const byRoute = new Map([['/', { file: '(root page)' }], ['/404', { file: '(404 page)' }]]);
@@ -734,9 +777,16 @@ export function build({
     ]),
   );
 
-  const rendered = pages.map((page) => ({ page, html: renderPage(page, { config, groups, guidesByLocale, copy: landing.copy }) }));
+  const rendered = pages.map((page) => ({ page, html: renderPage(page, { config, groups, guidesByLocale, copy: landing.copy, stage }) }));
 
   const warnings = [];
+  // A ⟦…⟧ marker stood for copy or legal text not written yet (job 82); none may ship in any build.
+  const shipped = [
+    ...rendered.map(({ page, html }) => ({ file: page.file, text: html })),
+    ...['waitlist.js', 'waitlist.css'].map((f) => ({ file: `public/${f}`, text: readFileSync(join(publicDir, f), 'utf8') })),
+  ];
+  const markers = shipped.flatMap(({ file, text }) => [...new Set(text.match(/⟦[^⟧]*⟧?/g) ?? [])].map((p) => `${file}: ${p}`));
+  if (markers.length > 0) throw new BuildError(`placeholder markers left; replace them with the approved text:\n  ${markers.join('\n  ')}`);
   const placeholders = rendered.flatMap(({ page, html }) =>
     [...new Set(html.match(/\[PETER:[^\]]*\]?/g) ?? [])].map((p) => `${page.file}: ${p}`),
   );
@@ -758,10 +808,10 @@ export function build({
   write('/', rootPage(config));
   write('/404', notFoundPage(config));
   const publicApi = readPublicApi(repoDir);
-  writeAgentFiles({ outDir, rendered, siteUrl: config.siteUrl, contentDir, repoDir, publicApi });
+  writeAgentFiles({ outDir, rendered, siteUrl: config.siteUrl, contentDir, repoDir, publicApi, stage });
 
-  for (const file of htmlFiles(outDir)) checkHtml(file, readFileSync(file, 'utf8'), outDir, config.siteUrl);
-  const { problems } = checkAgentSite({ dist: outDir, siteUrl: config.siteUrl, vercel: readVercel(), stage, publicApi });
+  for (const file of htmlFiles(outDir)) checkHtml(file, readFileSync(file, 'utf8'), outDir, config.siteUrl, vercel.rewrites);
+  const { problems } = checkAgentSite({ dist: outDir, siteUrl: config.siteUrl, vercel, stage, publicApi });
   if (problems.length > 0) throw new BuildError(`agent checks failed:\n  ${problems.map((p) => `${p.check}: ${p.file}: ${p.message}`).join('\n  ')}`);
 
   return { routes: ['/', ...pages.map((p) => p.route)], warnings, live };

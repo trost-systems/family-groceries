@@ -570,3 +570,7 @@ The ios CI job built the app twice and timed out on a slow runner; it builds onc
 ## Job 109: delete_category NULL seed keys, store_name_key normalization order, PR #239, not merged (lead review)
 
 `delete_category` hands over only real seed keys, each once (no more `{NULL}`); a migration strips the NULLs it left and a check stops new ones. `store_name_key` and `store_name` collapse whitespace before trimming, like `category_name_key`; stores that clash under the new key are renamed „Name (n)“ and keep their items. Details: [docs/done/109-fix-category-store-keys.md](docs/done/109-fix-category-store-keys.md).
+
+## Job 82: the hummlist.com waitlist (Spec #10)
+
+hummlist.com gets a waitlist instead of browser-app links: a double opt-in form, confirm and unsubscribe pages, a Vercel function in fra1 in front of a Supabase edge function, locked-down tables with Legal's retention purge, and a manual invite script. Everything is off in production until Peter sets the env vars and approves the texts, and a production build fails while a placeholder is left. PR #210 is open (Peter OKs the copy, Legal reviews). Requeue 2026-11-04 (Addenda 5 to 10): main's landing page with stage CTAs (`site/config/stage.ts`), consent on the confirmation page, Legal's v2 texts, `form-action 'self'`, `/get`; no placeholders can ship. Head `2d303956` (ci-ok green), preview https://hummlist-site-git-job-82-waitlist-peter-trost.vercel.app/de (Vercel login). Details: [docs/done/82-waitlist.md](docs/done/82-waitlist.md).

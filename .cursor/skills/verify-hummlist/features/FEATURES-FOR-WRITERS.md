@@ -29,6 +29,23 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 # Getting started
 
+## hummlist.com waitlist (not live yet)
+
+**What it does.** Once Peter merges it, hummlist.com keeps its landing page but its buttons say „Auf die Warteliste“ (EN: "Join the waitlist") instead of opening the browser version. They lead to a short form: the email (ideally the one of the Apple ID or Google account) and iPhone or Android. Hummlist then sends a confirmation mail; the person is on the list only after tapping „E-Mail bestätigen“ in it and agreeing on the page that opens, where they can also tick that they want one email when the app launches. An AI assistant may fill in the form for someone, but only the person's own click on that page counts. Confirmed people are invited to the beta in weekly groups, by hand. Every mail has a link that deletes the entry at once. Later stages are built but off: „Zur Beta anmelden“ (EN: "Join the beta"), and at launch App Store and Google Play badges with a QR code.
+
+**How to get there.**
+1. hummlist.com (opens /de or /en by browser language).
+2. „Auf die Warteliste“ (EN: "Join the waitlist"), in the header or the hero.
+3. In the mail: „E-Mail bestätigen“ (EN: "Confirm email"), then the button on the page.
+
+**Never claim.**
+- That the waitlist is live before Peter merges it (today hummlist.com still shows the test page).
+- A date for the beta, a place in line, a referral reward, a counter, or a date for a particular person's invite.
+- That the browser version is open to new users, or that an assistant can sign someone up without their confirmation.
+- That launch news can be chosen in the form (only on the confirmation page).
+
+**Last verified.** job 82 branch (job/82-waitlist), 2026-11-04 (CET), driven on a local preview against the local stack (sign-up from the header button, duplicate, an API sign-up with launch news, consent with the box ticked, unsubscribe, rate limit) and by pgTAP, Deno, site tests and job 93's form check. Recipe: [waitlist.md](./waitlist.md).
+
 ## Sign-up and sign-in
 
 **What it does.** A new or returning user signs in with Google or Apple, or with email: email and password, a new account with „Registrieren“ (EN: "Sign up"), or a sign-in link by email opened on the same device. Google and Apple come first; email is one more button below them, „Weiter mit E-Mail“ (EN: "Continue with email"). The keyboard opens only when the user taps a field. Signing out is in the More tab. The login screen links the imprint and the privacy policy. Right after deleting the account, the login screen confirms „Dein Konto wurde gelöscht.“ (EN: "Your account was deleted.").

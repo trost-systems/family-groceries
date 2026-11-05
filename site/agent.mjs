@@ -192,7 +192,7 @@ const escapeXml = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<'
 
 // Writes every agent file into outDir. `rendered` is build's [{ page, html }]; published pages
 // are the ones without a notice (draft or unreleased), which carry noindex.
-export function writeAgentFiles({ outDir, rendered, siteUrl, contentDir, repoDir, publicApi }) {
+export function writeAgentFiles({ outDir, rendered, siteUrl, contentDir, repoDir, publicApi, stage }) {
   const twins = new Map();
   for (const { page, html } of rendered) {
     const file = join(outDir, twinPath(page.route).slice(1));
@@ -201,8 +201,11 @@ export function writeAgentFiles({ outDir, rendered, siteUrl, contentDir, repoDir
     writeFileSync(file, text);
     twins.set(siteUrl + twinPath(page.route), text);
   }
-  const published = rendered.map((r) => r.page).filter((p) => p.notices.length === 0);
-  const head = readFileSync(join(contentDir, 'llms.md'), 'utf8');
+  // The pages behind the waitlist's mail links (job 82) are noindex and no content to list.
+  const published = rendered.map((r) => r.page).filter((p) => p.notices.length === 0 && p.kind !== 'waitlist');
+  // While the waitlist is open, assistants also read how a sign-up works (Legal L-1, job 82).
+  const waitlist = stage === 'waitlist' ? `\n${readFileSync(join(contentDir, 'llms-waitlist.md'), 'utf8')}` : '';
+  const head = `${readFileSync(join(contentDir, 'llms.md'), 'utf8').trimEnd()}\n${waitlist}`;
   const llms = llmsTxt(head, published, siteUrl, publicApi);
   writeFileSync(join(outDir, 'llms.txt'), llms.text);
   writeFileSync(join(outDir, 'llms-full.txt'), `${head.trim()}\n${llms.twins.map((url) => `\n---\n\nURL: ${url}\n\n${twins.get(url)}`).join('')}`);
@@ -246,6 +249,8 @@ export function loadSite({ dist, siteUrl, vercel, stage, publicApi }) {
     if (!local.startsWith('/') || local.startsWith('//')) return null;
     const [rawPath, fragment] = local.split('#');
     const path = decodeURIComponent(rawPath.split('?')[0]);
+    // A vercel.json rewrite (such as /get, job 82) is answered by a function, not a file.
+    if ((vercel.rewrites ?? []).some((rule) => rule.source === path)) return null;
     const rel = path === '/' ? 'index.html' : path.endsWith('/') ? null : [path.slice(1), `${path.slice(1)}.html`].find((f) => isFile(join(dist, f)));
     return { rel: rel ?? null, fragment, page: byFile.get(rel) };
   };
@@ -437,7 +442,8 @@ export const CHECKS = [
       return [
         ...rules.map((rule) => at('site/vercel.json', `stage is launch (site/config/stage.ts), so remove the X-Robots-Tag noindex header of the rule "${rule.source}"`)),
         ...site.content
-          .filter((p) => p.noindex && !p.doc.querySelector('.draft-banner'))
+          // The pages behind the waitlist's mail links (job 82) stay noindex for good.
+          .filter((p) => p.noindex && !p.doc.querySelector('.draft-banner') && !p.doc.querySelector('.wl-page'))
           .map((p) => at(p.file, 'stage is launch (site/config/stage.ts), but this page has <meta name="robots" content="noindex"> without a draft or unreleased banner')),
       ];
     },

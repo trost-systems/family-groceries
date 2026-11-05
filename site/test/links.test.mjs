@@ -56,14 +56,15 @@ test('the site name links to the landing page of its language, in the header and
   }
 });
 
-test('every page links the guides, the changelog and the web app in the header', () => {
+test('every page links the guides, the changelog and the stage\'s call to action in the header', () => {
   const { outDir, page } = buildSite();
   for (const route of htmlRoutes(outDir).filter((r) => r !== '/' && r !== '/404')) {
     const doc = page(route);
     const de = doc.querySelector('html').getAttribute('lang') === 'de';
     const nav = doc.querySelectorAll('header nav.nav a').map((a) => [a.text, a.getAttribute('href')]);
     assert.deepEqual(nav, de ? [['Anleitungen', '/de/anleitungen'], ['Neuigkeiten', '/de/changelog']] : [['Guides', '/en/guides'], ["What's new", '/en/changelog']], route);
-    assert.equal(doc.querySelector('header a.header-cta').getAttribute('href'), 'https://app.hummlist.com', route);
+    const form = de ? 'warteliste' : 'waitlist';
+    assert.equal(doc.querySelector('header a.header-cta').getAttribute('href'), ['/de', '/en'].includes(route) ? `#${form}` : `/${de ? 'de' : 'en'}#${form}`, route);
     assert.equal(doc.querySelector('a.skip').getAttribute('href'), '#inhalt', route);
     assert.ok(doc.querySelector('main#inhalt'), route);
   }

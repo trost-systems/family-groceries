@@ -434,7 +434,7 @@
   --s: 30px;
 }
 
-/* Test: the lemon block, the browser button tomato with the navy contour. */
+/* The closing lemon block: the sign-up form, or at launch the store badges. */
 .cta {
   display: grid;
   gap: var(--hl-space-4);
@@ -458,6 +458,52 @@
   --face: var(--hl-color-tomato);
   --on-face: var(--hl-color-on-tomato);
   --wall: var(--hl-color-tomato-edge);
+}
+
+/* Launch: the official store badges, the same height; the QR code only on screens without a phone
+   in hand. Google's badge carries its own padding, so it is drawn taller and pulled in. */
+.store-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hl-space-3);
+}
+
+.store-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hl-size-target);
+}
+
+.store-badge img {
+  display: block;
+  width: auto;
+  height: 40px;
+}
+
+.store-badge--play img {
+  height: 58px;
+  margin: -9px;
+}
+
+.store-qr {
+  display: none;
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .store-qr {
+    display: grid;
+    gap: var(--hl-space-2);
+    justify-items: start;
+  }
+
+  .store-qr svg {
+    width: 148px;
+    height: 148px;
+    border: var(--hl-border-width) solid var(--hl-color-ink);
+    border-radius: var(--hl-radius-s);
+  }
 }
 
 .landing .site-footer {

@@ -1733,3 +1733,122 @@ To ship it:
   it makes „Ohne Laden“ a raised pill, reversing Job 78 item 16 (DECISIONS Job 102 item 7), it
   needs its own `dragHandle` e2e fix (in the patch), and its trash buttons need a 48 px minimum
   size on web.
+## Job 82: the hummlist.com waitlist (Spec #10), 2026-11-02
+
+Everything is built. Since the requeue of 2026-11-04 (Addenda 5 to 10) the merge of PR #210 is the
+switch: it publishes the waitlist stage on hummlist.com. The secrets decide whether sign-ups work
+(NEEDS_PETER "Job 82"). The design and every route are in [`WAITLIST.md`](WAITLIST.md).
+
+### Not merged: Peter OKs the copy, Legal reviews
+
+Per the lead (2026-11-04) PR #210 stays open: no merge before Peter approves the copy in his own
+words and Legal has reviewed. There are no placeholder markers any more (Addendum 10: none may be
+in the build, every build fails on one). Every text is the draft it would ship with: Legal's
+versioned texts byte for byte, Launch's drafts for the rest, listed in the PR description. Merging
+publishes the waitlist at once (Addendum 8: the stage file replaced the env switch).
+
+Region proof (Addendum 4): the preview is behind Vercel login, so `curl -si -X POST
+<preview>/api/waitlist` answers 401 from the edge (`x-vercel-id: arn1::…`) and never reaches the
+function. `docs/legal/waitlist-region-proof.txt` is not written yet; it needs a logged-in or
+bypass request once the Vercel env vars are set (NEEDS_PETER "Job 82", step 3).
+
+### Data flow for Legal Review
+
+| Step | Where | What is stored or seen | How long |
+| --- | --- | --- | --- |
+| Form | hummlist.com page, `fetch` to the same origin | nothing (no cookie, no storage, no analytics, no third-party resource) | |
+| Vercel function `/api/waitlist*` | Vercel, `regions: ["fra1"]` in `site/vercel.json` | sees the IP and the body; logs only a fixed outcome code; sends on an HMAC of `<UTC date>\|<IP>` (keyed with the proxy secret), never the IP | Vercel's own request logs (path, no body) |
+| Edge function `waitlist` | Supabase, `x-region: eu-central-1` | sees the body; logs only outcome codes | |
+| `public.waitlist` | Supabase Postgres, Frankfurt | email, HMAC of the email, platform, locale, the form text version answered (`waitlist-*-v2`), the consent text version shown at the confirm press (`waitlist-confirm-*-v1`), launch news (set only by that press), sign-up, confirm, invite, launch-mail and last-mail times, the SHA-256 of the confirm token and its expiry; nothing about who or what submitted | unconfirmed 7 days; confirmed 3 months after the invite, with launch news 30 days after the launch mail; everything by 2027-12-31 (Berlin); unsubscribe deletes at once |
+| `public.waitlist_consent_proof` | same | HMAC of the email, both text versions, locale, launch news, the four times, end reason; never the address, never an IP | 3 years after the later of last mail and end |
+| `public.waitlist_rate` | same | SHA-256 of the daily client key, the hour, a count | deleted after 2 hours |
+| Resend | Resend (USA), domain hummlist.com in eu-west-1 | the mail (to, subject, body); no tags, no metadata; single sends with an idempotency key | Resend's 30 days |
+
+Retention hook: `public.purge_waitlist(now)`, pg_cron `purge-waitlist` daily at 03:23 UTC, every
+period tested to the minute in `supabase/tests/waitlist.test.sql`.
+
+### Addendum 10 (Legal N-73 to N-78), how it is built
+
+- Consent is the person's click on the confirmation page: it shows `waitlist-confirm-<l>-v1`
+  (C-1/C-2), the launch-news box unticked and the button; the press stores that version and the
+  box (`confirm_text_version`, `launch_news`, migration `*_waitlist_confirm_consent.sql`).
+- The form shows `waitlist-<l>-v2` (F-1/F-2) and has no launch-news box; a `launch_news` sent with a
+  sign-up is ignored and stored false.
+- Every sign-up answers the same `202 {"status":"ok"}`: new, known, dropped or rate-limited.
+- Nothing logs who submitted (no address, IP, user agent, body, token owner); tests capture the
+  logs.
+- Confirmation mail M-1/M-2 (`doi-mail-*-v2`) word for word, without the launch sentence.
+- `llms.txt` carries L-1 in the waitlist stage; `/api/waitlist` stays undocumented.
+- Privacy §2a gets P-1/P-2 after the confirmation paragraph.
+- No `⟦…⟧` placeholder can ship: every build fails on one, so the `site` CI gate is the check.
+
+### Ambiguous, decided, please confirm
+
+1. **Rate limit storage.** Addendum 3 says "ephemeral keys that are never persisted", the handoff
+   "a short-lived hashed counter (≤ 24 h)". In-memory counters don't hold across Vercel
+   instances, so the counter lives in Postgres: SHA-256 of a daily-rotating HMAC of the IP,
+   per hour, deleted after 2 hours. 10 sign-ups per key per hour (IPv6 clients keyed by their /64), 300 per hour in total.
+2. **No `unsubscribed_at`.** Spec AC8 lists it; the Legal handoff (binding) says unsubscribe
+   deletes the row. The column is not there.
+3. **The 2027-12-31 cap applies to every row**, not only launch-news ones, so a confirmed address
+   that is never invited doesn't stay forever.
+4. **Sender name per language:** "Peter von Hummlist" in German mails, "Peter from Hummlist" in
+   English ones (Legal handoff 2.5).
+5. **Welcome mail** goes out automatically right after confirming (consent text names it). It is
+   not an invite. Its text is a neutral draft (Launch's draft 5b was not in the brief), and with
+   the markers gone it would go out as written once `WAITLIST_MAIL_ALLOW=*`; the same holds for
+   the invite mail. Launch should approve both before.
+6. **Root `/`.** Live today it already redirects by language to `/de` or `/en` (307), the landing
+   pages, not the browser app. Kept as it is (PM override 3).
+7. **Backups.** The backup drill dumps every public table, so encrypted backups hold waitlist
+   addresses for the backup retention. Legal should say whether its periods cover backups.
+8. **Deletion request by mail** (`end_reason = deletion_request`) has no function yet; Peter
+   handles it with the unsubscribe link of the address's mail, or by SQL (NEEDS_PETER).
+9. **app.hummlist.com had no noindex** (AC15 assumed it). The app's `vercel.json` now sends
+   `X-Robots-Tag: noindex`; it reaches app.hummlist.com with the next store release, or sooner if
+   you move the `release` branch.
+10. **Launch mail** is not built (later spec); `launch_mail_sent_at` exists for the purge.
+11. **A policy sentence names the browser app's URL as text.** In `/datenschutz` and
+    `/en/privacy`, section 8 (account deletion) still ends in the plain text
+    `https://app.hummlist.com/konto-loeschen.html`; §1 and the §3 heading name "app.hummlist.com".
+    The link is gone (Addendum 1: link removal only, no legal wording changed), but the sentence
+    points readers to the browser app. Legal should say whether it stays.
+12. **Rate counters are a global lever.** Besides 10 per client key, all sign-ups share 300 per
+    hour, so a botnet could close the form for an hour. Fine for the beta; raise or drop the global
+    cap if it ever trips (`LIMITS` in `supabase/functions/waitlist/handler.ts`).
+13. **The beta stage needs its own texts before it is switched on.** Legal's form text v2 names
+    the button „Auf die Warteliste“ / "Join the waitlist", but the beta stage's button is „Zur
+    Beta anmelden“ / "Join the beta"; the form intro and the thanks say "once the beta starts".
+    Switching to `beta` needs a v3 form text from Legal and Launch's beta copy.
+14. **L-1 sits in llms.txt's head, as a bold lead-in.** Legal wrote it as an `##` section, but
+    llms.txt allows only link lists in `##` sections (job 93's check fails otherwise). The text is
+    word for word; only „## Beta waitlist: signing up your human“ became
+    „**Beta waitlist: signing up your human.**“.
+15. **§2a still says the function runs in Frankfurt.** Legal's §2a „Dienstleister“ paragraph says
+    „die Server-Funktion läuft in Frankfurt am Main“ while Legal's own rule keeps that claim out
+    until the fra1 proof exists (the §2 line uses the variant without it). Legal should give the
+    §2a wording until then, or the region proof lands first.
+16. **Apple's German badge.** Only Apple's English "Download on the App Store" badge was reachable
+    from the build box (tools.applemarketingtools.com does not resolve here); the launch stage
+    uses it on both pages, with that alt text. Swap in the German badge before launch.
+17. **Moved on /support:** the beta questions now open „Häufige Fragen“ / "Common questions"
+    (job 93's FAQ JSON-LD covers only that section), with Legal's answer to „Was passiert mit
+    meiner E-Mail-Adresse?“ first; the 7-day invite validity and the "first on 15 November" date
+    are out (Addenda 5, 7).
+
+### Invites (Addendum 2)
+
+Nothing sends an invite by itself: no cron, trigger or webhook. Confirmed sign-ups fall into a
+batch by the ISO week of `confirmed_at` (Europe/Berlin), for example `2026-W47`.
+`scripts/waitlist/invite.ts --batch 2026-W47` prints counts only (confirmed, invited, to invite,
+per platform and locale). `--batch 2026-W47 --confirm 2026-W47 --export-dir <dir>` sends the
+invite mail to each uninvited row of that batch, sets `invite_sent_at`, and writes `ios.csv`
+(TestFlight import) and `android.csv` (Play email list). It prints counts only. Peter runs it
+himself; no agent runs `--confirm`.
+
+### W4: Android tester limit
+
+Checked 2026-11-02 in the Play Console help ("Set up an open, closed or internal test"): internal
+testing allows up to 100 testers per app; closed testing takes email lists of up to 2,000 users
+each (up to 200 lists, 50 per track). Past 100 Android sign-ups, move the beta to a closed track
+with an email list (`android.csv` fits it).

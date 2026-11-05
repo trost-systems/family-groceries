@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildSite, publicWith, alternates, meta, serve, SITE_DIR, CONTENT_DIR } from './helpers.mjs';
+import { buildSite, publicWith, alternates, meta, serve, stageBuild, SITE_DIR, CONTENT_DIR } from './helpers.mjs';
 import { parseCopy } from '../landing.mjs';
 import { checkHtml } from '../build.mjs';
 import { copyNeeded, readVideoCopy } from '../scripts/copy-needed.mjs';
@@ -51,29 +51,35 @@ test('/de and /en are the landing pages, paired with each other', () => {
   }
 });
 
-test('every copy id is on both landing pages with its text, and every string on them has an id', () => {
-  const { page } = buildSite();
+test('every copy id is on a landing page of some stage or a mail-link page with its text, and every string on them has an id', () => {
+  const builds = ['waitlist', 'beta', 'launch'].map((stage) => stageBuild(stage).page);
+  const routes = { de: ['/de/warteliste/bestaetigen', '/de/warteliste/abmelden'], en: ['/en/waitlist/confirm', '/en/waitlist/unsubscribe'] };
   for (const locale of ['de', 'en']) {
-    const doc = page(`/${locale}`);
-    const seen = new Set(doc.querySelectorAll('[data-copy-id]').map((el) => el.getAttribute('data-copy-id')));
-    // The play and pause labels sit on the button of a slot with a video (tested below).
-    const meta = ['meta.title', 'meta.description', 'demo.play', 'demo.pause'];
-    assert.deepEqual([...COPY.keys()].filter((id) => !seen.has(id) && !meta.includes(id)), [], locale);
-    for (const el of doc.querySelectorAll('main [data-copy-id]')) {
-      const entry = COPY.get(el.getAttribute('data-copy-id'));
-      const plain = entry[locale].replace(/\*\*|\[|\]\([^)]*\)/g, '');
-      const shown = el.querySelector('img')?.getAttribute('alt') ?? el.text;
-      assert.equal(shown.trim(), plain, el.getAttribute('data-copy-id'));
+    const docs = [...builds.map((page) => page(`/${locale}`)), ...routes[locale].map(builds[0])];
+    const seen = new Set(docs.flatMap((doc) => doc.querySelectorAll('[data-copy-id]').map((el) => el.getAttribute('data-copy-id'))));
+    // The play and pause labels sit on the button of a slot with a video (tested below); the
+    // email placeholder is an attribute; titles and descriptions are in the head.
+    const elsewhere = ['meta.title', 'meta.description', 'demo.play', 'demo.pause', 'waitlist.form.email-placeholder', /\.(meta-title|description)$/];
+    const unseen = [...COPY.keys()].filter((id) => !seen.has(id) && !elsewhere.some((e) => (typeof e === 'string' ? e === id : e.test(id))));
+    assert.deepEqual(unseen, [], locale);
+    for (const doc of docs) {
+      for (const el of doc.querySelectorAll('main [data-copy-id]')) {
+        const entry = COPY.get(el.getAttribute('data-copy-id'));
+        const plain = entry[locale].replace(/\*\*|\[|\]\([^)]*\)/g, '');
+        const shown = el.querySelector('img')?.getAttribute('alt') ?? el.text;
+        assert.equal(shown.trim(), plain, el.getAttribute('data-copy-id'));
+      }
+      const text = (el) => el.childNodes.filter((n) => n.nodeType === 3).map((n) => n.text).join('').trim();
+      // Legal's consent texts come from content/legal/consent/ (data-legal names the version).
+      const loose = doc.querySelectorAll('main *').filter((el) => text(el) !== '' && !el.closest('[data-copy-id], [data-legal]'));
+      assert.deepEqual(loose.map((el) => `${el.tagName} ${text(el)}`), [], `${locale}: text without a copy id`);
     }
-    const text = (el) => el.childNodes.filter((n) => n.nodeType === 3).map((n) => n.text).join('').trim();
-    const loose = doc.querySelectorAll('main *').filter((el) => text(el) !== '' && !el.closest('[data-copy-id]'));
-    assert.deepEqual(loose.map((el) => `${el.tagName} ${text(el)}`), [], `${locale}: text without a copy id`);
   }
 });
 
 test('copy.yml must give both languages, a status and a source, and every id must be used', () => {
   const broken = (text, pattern) => assert.throws(() => buildSite({ files: { 'landing/copy.yml': text } }), pattern);
-  broken(COPY_TEXT.replace('  en: "One list for everyone"\n', ''), /feature\.list\.title: "en" must be a non-empty string/);
+  broken(COPY_TEXT.replace('  en: "Quick to add, quick to tick off"\n', ''), /feature\.list\.title: "en" must be a non-empty string/);
   broken(COPY_TEXT.replace(/(hero\.title:\n(?:  .*\n)*?)  status: draft/, '$1  status: final'), /hero\.title: "status" must be draft or reused/);
   broken(`${COPY_TEXT}\nhero.extra:\n  de: "x"\n  en: "x"\n  status: draft\n  source: "x"\n`, /copy ids not used on the landing page: hero\.extra/);
   broken(COPY_TEXT.replace(/hero\.lead:\n(?:  .*\n)*/, ''), /copy id "hero\.lead" is used by the landing page but missing/);
@@ -85,8 +91,7 @@ test('COPY_NEEDED.md is generated from copy.yml and lists every draft', () => {
   for (const [id, entry] of COPY) {
     if (entry.status === 'draft') assert.match(file, new RegExp(`\\| \`${id.replaceAll('.', '\\.')}\` \\|.*\\| draft \\|`), id);
   }
-  assert.equal(COPY.get('voice.siri.badge').status, 'draft');
-  assert.equal(COPY.get('voice.siri.body').status, 'draft');
+  assert.equal(COPY.get('voice.siri.now').status, 'draft');
 });
 
 test('the landing pages promise nothing that is not there: no prices, no Alexa, no Watch, no ChatGPT', () => {
@@ -100,23 +105,40 @@ test('the landing pages promise nothing that is not there: no prices, no Alexa, 
   }
 });
 
-test('Siri is marked as coming soon and links the shortcut guide that works today', () => {
+test('Siri promises no date and links the shortcut guide that works today', () => {
   const { page } = buildSite();
-  for (const [locale, badge, guide] of [['de', 'Geplant', '/de/anleitungen/siri-kurzbefehl'], ['en', 'Planned', '/en/guides/siri-shortcut']]) {
+  for (const [locale, guide] of [['de', '/de/anleitungen/siri-kurzbefehl'], ['en', '/en/guides/siri-shortcut']]) {
     const card = page(`/${locale}`).querySelector('.assistant--siri');
-    assert.equal(card.querySelector('[data-copy-id="voice.siri.badge"]').text, badge);
+    assert.doesNotMatch(card.text, /\bbald\b|\bsoon\b/i, locale);
     assert.ok(card.querySelectorAll('a').some((a) => a.getAttribute('href') === guide), locale);
   }
 });
 
-test('the web app is linked and the privacy and help links follow their flags', () => {
+test('the landing pages hold no date, no app instructions and no invite validity (Peter, 2026-11-03)', () => {
+  for (const stage of ['waitlist', 'beta', 'launch']) {
+    const { page } = stageBuild(stage);
+    for (const locale of ['de', 'en']) {
+      const doc = page(`/${locale}`);
+      const text = `${doc.querySelector('head').toString()} ${doc.querySelector('body').text}`;
+      assert.doesNotMatch(text, /januar|februar|märz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|january|february|march|\bmay\b|june|july|october|december/i, `${stage} ${locale}: a month`);
+      // "as soon as you are back online" describes the offline sync, it promises nothing.
+      assert.doesNotMatch(text, /\bbald\b|(?<!as )\bsoon\b/i, `${stage} ${locale}: a "soon"`);
+      // Legal's consent text names the 7-day deletion of unconfirmed sign-ups; that one stays.
+      assert.doesNotMatch(text, /Einladung gilt[^.]*(sieben|7) Tage|invit\w* (is )?valid for (seven|7) days/i, `${stage} ${locale}: the invite validity`);
+      assert.doesNotMatch(text, /in der App unter|in the app under|›/, `${stage} ${locale}: an app instruction`);
+    }
+  }
+});
+
+test('no call to action links the web app, the hero leads to the form, and the privacy and help links follow their flags', () => {
   const on = buildSite().page('/de');
-  assert.ok(on.querySelectorAll('main a').filter((a) => a.getAttribute('href') === 'https://app.hummlist.com').length >= 2);
+  assert.deepEqual(on.querySelectorAll('a').filter((a) => /app\.hummlist\.com/.test(a.getAttribute('href'))).length, 0);
   assert.ok(on.querySelector('main a[href="/datenschutz"]'));
   assert.ok(on.querySelector('main a[href="/support"]'));
-  assert.ok(on.querySelector('main a[href="#test"]') && on.querySelector('#test'));
+  assert.ok(on.querySelector('.hero-actions a[href="#warteliste"]') && on.querySelector('#test #warteliste form'));
   const off = buildSite({ config: { privacyPublished: false, supportPublished: false } }).page('/de');
-  assert.equal(off.querySelector('main a[href="/datenschutz"]'), null);
+  // The consent text under the button always links the policy; the privacy block follows the flag.
+  assert.equal(off.querySelector('.privacy a[href="/datenschutz"]'), null);
   assert.equal(off.querySelector('main a[href="/support"]'), null);
 });
 

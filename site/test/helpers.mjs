@@ -1,3 +1,4 @@
+import { readVercel } from '../agent.mjs';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -66,8 +67,8 @@ export function record(versions, patch = (data) => data) {
 }
 
 // Builds the real content plus `files` (path relative to content/ -> text, or null to delete),
-// against `repo` (see repoDir).
-export function buildSite({ files = {}, env = {}, config = {}, repo = {}, publicDir, stage } = {}) {
+// against `repo` (see repoDir), in `stage` (site/config/stage.ts when unset).
+export function buildSite({ files = {}, env = {}, config = {}, repo = {}, publicDir, stage, vercel } = {}) {
   const root = tempDir();
   const contentDir = join(root, 'content');
   const outDir = join(root, 'dist');
@@ -80,7 +81,7 @@ export function buildSite({ files = {}, env = {}, config = {}, repo = {}, public
       writeFileSync(file, text);
     }
   }
-  const result = build({ contentDir, outDir, publicDir, repoDir: repoDir(repo), env, config: { ...readConfig(), ...config }, stage });
+  const result = build({ contentDir, outDir, publicDir, repoDir: repoDir(repo), env, config: { ...readConfig(), ...config }, stage, ...(vercel ? { vercel } : {}) });
   return { ...result, outDir, page: (route) => readPage(outDir, route) };
 }
 
@@ -144,4 +145,12 @@ export async function serve(outDir, paths) {
   } finally {
     server.close();
   }
+}
+
+// The site in one of the CTA stages (site/config/stage.ts, job 82). The launch stage needs the
+// noindex header gone (job 93's launch guard), so it builds against vercel.json without it.
+export function stageBuild(stage, options = {}) {
+  const vercel = readVercel();
+  const indexable = { ...vercel, headers: vercel.headers.map((rule) => ({ ...rule, headers: rule.headers.filter((h) => h.key !== 'X-Robots-Tag') })) };
+  return buildSite({ stage, ...(stage === 'launch' ? { vercel: indexable } : {}), ...options });
 }

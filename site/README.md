@@ -2,13 +2,14 @@
 
 The landing pages, guides, changelog and legal pages: static HTML from Markdown and YAML.
 `build.mjs` (markdown-it, gray-matter) writes `dist/`; it is its own Vercel project, separate from
-the app on app.hummlist.com. The only JavaScript is `public/demo.js`, which starts and pauses the
-landing pages' demo videos.
+the app on app.hummlist.com. The JavaScript is `public/demo.js`, which starts and pauses the
+landing pages' demo videos, and `public/waitlist.js`, the sign-up form and the pages behind the
+waitlist mails (below).
 
 ```bash
 npm ci
-npm run build                          # dist/; warns about [PETER: placeholders
-VERCEL_ENV=production npm run build    # fails on them, like the production deploy
+npm run build                          # dist/ in the stage of config/stage.ts
+VERCEL_ENV=production npm run build    # fails on [PETER: placeholders, like the production deploy
 npm test                               # builds real content and fixtures, checks the output
 npm run preview                        # http://127.0.0.1:55990 with vercel.json's redirects and headers
 ```
@@ -204,10 +205,81 @@ its path stays a 404. The help pages `/support` and `/en/support` are drafts unt
 them (job 24). To publish, delete the `draft: true` line and then set the footer flag; a footer
 link to a draft fails the production build.
 
+## Stages and the waitlist
+
+`config/stage.ts` holds the site's stage in one line, `export const stage: Stage = 'waitlist';`
+(the build reads that line as text; job 93's launch guard reads it too). Switching the stage is a
+one-line PR. It decides every call to action; no stage links the browser app (job 82):
+
+| Stage | Header button, hero button | Closing block (`#test`) |
+| --- | --- | --- |
+| `waitlist` (now) | „Auf die Warteliste“ / "Join the waitlist", to `#warteliste` / `#waitlist` | the sign-up form |
+| `beta` | „Zur Beta anmelden“ / "Join the beta", same anchor | the sign-up form |
+| `launch` | „App laden“ / "Get the app", to `#app`; the hero shows the store badges | badges and, from 720 px, a QR code for hummlist.com/get |
+
+On other pages the header button links the landing page's anchor (`/de#warteliste`). The rest of
+the landing page is the same in every stage. The copy ids are `waitlist.cta`, `beta.cta` and
+`launch.*` in `content/landing/copy.yml`; the build renders all three stages to check that every id
+is used. `launch` also needs the `X-Robots-Tag` header gone from `vercel.json` (job 93's guard).
+
+- The form (`waitlist.mjs`) asks for the email (with the Apple ID / Google hint) and iPhone or
+  Android. Under the button stands the newest `content/legal/consent/waitlist-<locale>-v<n>.md`,
+  Legal's form text, which links the privacy policy; its file name is the version the form sends
+  and must equal `CONSENT_VERSIONS` in `../supabase/functions/waitlist/consent.ts` (a test compares
+  them). Change the wording only with a new file.
+- `/de/warteliste/bestaetigen` and `/en/waitlist/confirm` are where the person consents (Legal
+  N-73, N-74): the newest `waitlist-confirm-<locale>-v<n>.md`, the launch-news box unticked and
+  the button „E-Mail bestätigen“. The button sends the token, that version (`CONFIRM_VERSIONS`) and
+  the box. `/de/warteliste/abmelden` and `/en/waitlist/unsubscribe` delete a sign-up. The mails link
+  them with the values in the fragment (`#t=…`, `#id=…&s=…`); nothing is sent before the button.
+  These pages exist in every stage (old mails keep working) and are always noindex.
+- `public/waitlist.js` checks the address with the edge function's rule (a test compares them),
+  shows labelled errors, posts to `/api/waitlist*` with `fetch` and shows the answer. Without the
+  script the form posts its body to `/api/waitlist` (`form-action 'self'` in the CSP), never a
+  query string. It sets no cookie and stores nothing.
+- While the stage is `waitlist`, `llms.txt` also carries Legal's text for assistants
+  (`content/llms-waitlist.md`, L-1): a sign-up is pending until the person confirms.
+
+### Launch: badges, QR code and /get
+
+`config/stores.mjs` holds the App Store and Google Play URLs, TODOs until the listings are public;
+until then the badges link `/get`. `/get` is a function (`api/get.mjs`, rewritten in
+`vercel.json`): an iPhone or iPad goes to the App Store, Android to Google Play once its URL is set,
+everything else to `/de` or `/en` by `Accept-Language`, where the launch stage shows both badges.
+The badges in `public/media/badges/` are the official artwork (Apple's English badge only: the
+German one was not reachable from the build box). The QR code is drawn at build time (`qrcode`) as
+inline SVG.
+
+### The functions under /api
+
+`api/waitlist/index.mjs`, `confirm.mjs` and `unsubscribe.mjs` are Vercel functions (Node, region
+`fra1` from `vercel.json`); `api/_waitlist.mjs` holds their code. They forward to the `waitlist`
+edge function and answer `404` until both variables are set in the Vercel project:
+
+| Variable | |
+| --- | --- |
+| `WAITLIST_UPSTREAM_URL` | `https://<ref>.supabase.co/functions/v1/waitlist` |
+| `WAITLIST_PROXY_SECRET` | the edge function's `WAITLIST_PROXY_SECRET` |
+
+They never log an address, a token, a body or an IP; each request logs one line like
+`waitlist signup 202`. `npm run preview` serves them too, with the variables of its own process, so
+the whole flow runs against a local edge function:
+
+```bash
+WAITLIST_UPSTREAM_URL=http://127.0.0.1:54321/functions/v1/waitlist WAITLIST_PROXY_SECRET=… npm run preview
+```
+
+### Noindex
+
+Every response carries `X-Robots-Tag: noindex` (`vercel.json`) until the launch; the pages behind
+the mail links also say it in the page and keep it after the launch.
+
 ## Placeholders
 
-Write open facts as `[PETER: what is missing]`. Preview builds warn; a production build
-(`VERCEL_ENV=production`) fails while any published page still contains one.
+A `⟦…⟧` marker (job 82's placeholders for copy not written yet) fails every build, preview and
+local too, naming the file. Write open facts as `[PETER: what is missing]` instead; preview builds
+warn, a production build (`VERCEL_ENV=production`) fails while any published page still contains
+one.
 
 ## For AI agents
 
@@ -221,6 +293,12 @@ guides, `FAQPage` from the help pages' „Häufige Fragen“ / "Common questions
 links, robots.txt, hreflang pairs, the sitemap, JSON-LD, guide and FAQ structure, links with
 fragments, the API description, and at `launch` in `config/stage.ts` any noindex left.
 `node agent.mjs [dist]` runs the checks alone.
+
+Text that waits for Peter's approval in his own words starts with a marker: `⟦LAUNCH COPY⟧` and
+`⟦LAUNCH COPY FAQ⟧` (Hummlist Launch's copy), `⟦LEGAL W1⟧` (a retention period), `⟦LEGAL W2⟧` (consent
+and privacy policy) and `⟦LEGAL privacy.website⟧`. Preview builds show each as a lemon tag in the
+text; a production build fails while any page, `waitlist.js` or `waitlist.css` still contains `⟦`.
+Delete the marker when Peter has approved that text.
 
 ## Vercel
 
@@ -236,3 +314,7 @@ Step" on; everything else comes from `vercel.json` (install
 `dist/index.html` (meta refresh) only serves hosts without these redirects. Every response
 carries `X-Robots-Tag: noindex` until the launch; with the stage `launch` in `config/stage.ts`
 the build fails until that header is gone.
+
+`dist/index.html` (meta refresh) only serves hosts without these redirects. Every response but
+`/de` and `/en` carries `X-Robots-Tag: noindex` until the public launch; the landing pages follow
+the waitlist (Noindex, above).
