@@ -115,7 +115,7 @@ final class Net(final Random rng) {
 
 /// The household's Postgres as the list sees it through PostgREST and
 /// Realtime: the items table with its triggers (`items_before_write`,
-/// `items_skip_duplicate`), `put_item`, `merge_items`, `unmerge_items`, and
+/// `items_skip_duplicate`, `items_rename_duplicate`), `put_item`, `merge_items`, `unmerge_items`, and
 /// one channel per client that delivers each commit in commit order.
 final class FakeBackend(
   final DateTime Function() _now,
@@ -234,22 +234,13 @@ final class FakeBackend(
     if (row['status'] != 'active') {
       return null;
     }
-    final key = openItemKey(
-      row['name']! as String,
-      row['brand'] as String?,
-      row['properties'] as String?,
-    );
+    final key = _key(row);
     final open =
         [
           for (final other in rows.values)
             if (other['id'] != row['id'] &&
                 other['status'] == 'active' &&
-                openItemKey(
-                      other['name']! as String,
-                      other['brand'] as String?,
-                      other['properties'] as String?,
-                    ) ==
-                    key)
+                _key(other) == key)
               other,
         ]..sort(
           (a, b) => (a['created_at']! as String).compareTo(
@@ -258,6 +249,12 @@ final class FakeBackend(
         );
     return open.firstOrNull?['id'] as String?;
   }
+
+  static String _key(Map<String, Object?> row) => openItemKey(
+    row['name']! as String,
+    row['brand'] as String?,
+    row['properties'] as String?,
+  );
 
   /// `items_before_write` and `items_skip_duplicate` on insert; null when the
   /// insert is skipped for the open item it already is (its id in [twin]).
@@ -337,6 +334,12 @@ final class FakeBackend(
       next['bought_at'] = now;
     } else if (next['status'] == 'active') {
       next['bought_at'] = null;
+    }
+    if (next['status'] == 'active' &&
+        _key(next) != _key(old) &&
+        _openTwin(next) != null) {
+      // items_rename_duplicate (job 104).
+      throw const _PgError(409, '23505', 'already_on_list');
     }
     rows[id] = next;
     _commit(id, {
@@ -522,12 +525,14 @@ final class FakeBackend(
       throw const _PgError(400, '22001', 'merged_quantity_too_long');
     }
     final before = Map.of(keep);
+    // The other row goes first, as in merge_items: open, it would be the
+    // twin items_rename_duplicate refuses the kept row's new details for.
+    _commitDelete(otherId, op);
     final after = _update(keepId, {
       'quantity': quantity,
       'brand': keep['brand'] ?? other['brand'],
       'properties': keep['properties'] ?? other['properties'],
     }, op)!;
-    _commitDelete(otherId, op);
     merges[mergeId] = {
       'kept_id': keepId,
       'kept_before': before,

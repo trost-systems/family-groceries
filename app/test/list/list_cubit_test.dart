@@ -1189,17 +1189,66 @@ void main() {
       },
     );
 
-    test('a copy only the server has yet refuses the rename', () async {
-      final saft = await add('Apfelsaft');
-      final copy = repo.remoteAdd('Mineralwasser');
-      repo.rows[copy.id] = copy;
+    test('a copy only the server has yet: the rename folds into it', () async {
+      final saft = await add('Apfelsaft', '2');
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
       cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
       await settle();
-      expect(refused.single, isA<RenameTaken>());
-      await cubit.resync();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (copy.id, 'Mineralwasser', '8'),
+      ]);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(merges.single.result.quantity, '8');
+      expect(refused, isEmpty);
+    });
+
+    test('renamed offline after the partner added it: one item on sync, '
+        'with the quantity typed in the same edit', () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit.edit(
+        saft.id,
+        const ItemChanges(name: 'mineralwasser', quantity: SetTo('3')),
+      );
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (copy.id, 'Mineralwasser', '9'),
+      ]);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(refused, isEmpty);
+    });
+
+    test('two phones renaming onto one name: the later rename folds into '
+        'the first, and Rückgängig brings it back', () async {
+      final saft = await add('Apfelsaft', '2');
+      final leas = repo.remoteAdd('Sprudel', quantity: '6');
+      repo.rows[leas.id] = leas.copyWith(name: 'Mineralwasser');
+      cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+      await settle();
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (leas.id, 'Mineralwasser', '8'),
+      ]);
+      cubit.unmerge(merges.single);
       await settle();
       expect(activeNames()..sort(), ['Apfelsaft', 'Mineralwasser']);
-      expect(repo.rows[saft.id]!.name, 'Apfelsaft');
+      expect(repo.rows[leas.id]!.quantity, '6');
+    });
+
+    test('a copy only the server has, too long to merge: "already on the '
+        'list", the old name stays', () async {
+      final papier = await add('Papier', 'Kleinpackung mit vielen Rollen');
+      repo.remoteAdd('Klopapier', quantity: 'Großpackung mit vielen Rollen');
+      cubit.edit(papier.id, const ItemChanges(name: 'Klopapier'));
+      await settle();
+      expect((refused.single as RenameTaken).name, 'Klopapier');
+      expect(activeNames()..sort(), ['Klopapier', 'Papier']);
+      expect(repo.rows[papier.id]!.name, 'Papier');
     });
 
     test('made offline, the merge lands once online', () async {
