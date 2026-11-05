@@ -186,7 +186,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **How to get there.**
 1. Open the list and tap an item to tick it.
 2. Scroll to the bottom and tap „Zuletzt verwendet“ (EN: "Recently used") to unfold it.
-3. Tap the item to put it back; a note says „<Name> steht wieder auf der Liste“ (EN: "<Name> is back on the list").
+3. Tap the item to put it back; it reappears in its old place, without a message.
 4. To delete: hold the item (or right-click it on a computer), tap „Löschen“ (EN: "Delete"), then „Rückgängig“ (EN: "Undo") if it was a slip.
 
 **Never claim.**
@@ -197,7 +197,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Unverified.** Whether ticked items are ever removed from the section by age: no cleanup job was found in the code, but it was not run.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): tick, „Zuletzt verwendet“, put back, delete with „Rückgängig“ (DE and EN). Recipe: [tick-and-undo.md](./tick-and-undo.md).
+**Last verified.** main 610ec94d with PR #257 (job 117), 2026-11-05 (CET), driven on the web build (verify-hummlist): putting back shows no message. Before that main c5a580a8, 2026-11-05, from code and driven on the web build: tick, „Zuletzt verwendet“, put back, delete with „Rückgängig“ (DE and EN). Recipe: [tick-and-undo.md](./tick-and-undo.md).
 
 ## Edit an item
 

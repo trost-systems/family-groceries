@@ -36,11 +36,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String itemReadded(String name) {
-    return '$name steht wieder auf der Liste';
-  }
-
-  @override
   String itemTicked(String name) {
     return '$name abgehakt';
   }
@@ -1096,13 +1091,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get internalInstall => 'Interne Installation';
 
   @override
-  String get internalInstallOn => 'Diese Installation zählt jetzt als intern.';
-
-  @override
-  String get internalInstallOff =>
-      'Diese Installation zählt nicht mehr als intern.';
-
-  @override
   String get sendTestError => 'Testfehler senden';
 
   @override
@@ -1298,10 +1286,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String inviteRevokeLabel(String code) {
     return 'Einladung $code widerrufen';
   }
-
-  @override
-  String get inviteRevoked =>
-      'Einladung widerrufen. Link und Code gelten nicht mehr.';
 
   @override
   String get retry => 'Erneut versuchen';

@@ -7983,3 +7983,30 @@ Job 90 (PR #220) left two follow-ups for its neighbours of `merge_duplicate_cate
    all items when only one would be left over (no new wording: the existing enumeration). Siri's
    read (`voice/copy.ts`, `listing`) still says „und eine weitere“ / "and 1 more"; left for the
    voice owner (job 111 works on truncated voice lists) so the two jobs do not collide.
+## Job 117: no snackbar for what the screen already shows, 2026-11-05
+
+Peter (2026-11-05): a snackbar that only confirms an action whose result the screen already shows
+goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
+
+1. **Removed.** Putting an item back from „Zuletzt verwendet“ („<Name> steht wieder auf der
+   Liste“): the row comes back in its old place. This replaces point 5 of job 29b, which kept it
+   for an item that returns off screen; Peter's rule covers that case too.
+   Revoking an invite („Einladung widerrufen. …“): its card goes. The internal-install long press
+   („Diese Installation zählt jetzt / nicht mehr als intern.“): the „Interne Installation“ line
+   and „Testfehler senden“ appear or go. Their keys are deleted from both ARB files.
+2. **Dictation keeps its summary** („Hinzugefügt: … Schon auf der Liste: …“): dictated items can
+   land off screen, so the confirmation is not redundant (lead decision, review 1).
+3. **Kept: delete's „<Name> gelöscht“ with Rückgängig.** Rückgängig is the only full way back. A
+   deleted item is not in „Zuletzt verwendet“ (bought items only). Its name may come back as a
+   suggestion if it was bought in the last 30 days, but only with name and quantity, not its note,
+   brand or store.
+4. **Kept, not visible otherwise:** rejections and refused writes (`list_scope.dart`), the
+   duplicate hint and „Zusammengeführt“ with Rückgängig (the merged row does not show what was
+   merged in, and Rückgängig is the only way to split it again), copied to the clipboard, link or
+   code copied, feedback sent, export saved, magic link sent, sign-in and access-key errors, and
+   dictation errors.
+5. **Not a snackbar, out of scope:** the add sheet's „✓ Hinzugefügt: <name>“ note with
+   Rückgängig. The sheet covers the list, so the new row is not on screen while it is open, and
+   the note carries the add's undo.
+6. **Voice replies unchanged.** Siri's and Alexa's spoken „Hinzugefügt: …“ is the only feedback a
+   voice user gets.
