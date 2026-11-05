@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_border.dart';
@@ -224,7 +225,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
       cubit.hintShown();
     }
     var merged = false;
-    final shown = ScaffoldMessenger.of(context).showSnackBar(
+    final shown = Notices.of(context).showSnackBar(
       SnackBar(
         key: const ValueKey('dedupe-hint'),
         content: Text(l10n.alreadyOnList(hint.onList.name)),
@@ -269,7 +270,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
     final cubit = context.read<ListCubit>();
     final result = merge.result;
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    Notices.of(context).showSnackBar(
       SnackBar(
         key: const ValueKey('dedupe-merged'),
         content: Text(
@@ -297,7 +298,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
     return true;
   }
 
-  void _snack(String text) => ScaffoldMessenger.of(context)
+  void _snack(String text) => Notices.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text), persist: false));
 

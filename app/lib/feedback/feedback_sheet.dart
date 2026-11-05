@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_checkbox.dart';
 import 'package:family_groceries/design/motion.dart';
@@ -32,7 +33,7 @@ Future<void> showFeedbackSheet(BuildContext context) async {
   );
   // Taken now: the form reports the screen the user came from.
   final screen = context.read<ScreenTracker>().feedbackScreen;
-  final messenger = ScaffoldMessenger.of(context);
+  final messenger = Notices.of(context);
   final l10n = AppLocalizations.of(context);
   final sent = await showModalBottomSheet<bool>(
     context: context,

@@ -1,0 +1,20 @@
+id: snackbars-through-notices
+snapshots:
+  "void f(BuildContext context) =>\n    ScaffoldMessenger.of(context).showSnackBar(snackBar);\n":
+    labels:
+    - source: ScaffoldMessenger.of
+      style: primary
+      start: 36
+      end: 56
+  "void f(BuildContext context) => ScaffoldMessenger.of(context)\n  ..hideCurrentSnackBar()\n  ..showSnackBar(snackBar);\n":
+    labels:
+    - source: ScaffoldMessenger.of
+      style: primary
+      start: 32
+      end: 52
+  "void f(BuildContext context) {\n  final messenger = ScaffoldMessenger.maybeOf(context);\n}\n":
+    labels:
+    - source: ScaffoldMessenger.maybeOf
+      style: primary
+      start: 51
+      end: 76

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/consent_screen.dart';
 import 'package:family_groceries/app/deep_links.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/household/create_household_screen.dart';
 import 'package:family_groceries/household/invite_partner_screen.dart';
@@ -444,9 +445,11 @@ GoRouter buildRouter(
   Analytics analytics,
   PendingInvite pendingInvite,
   ListLinks listLinks,
+  Popups popups,
 ) {
   final memory = RedirectMemory();
   return GoRouter(
+    observers: [popups],
     refreshListenable: Listenable.merge([
       _StreamListenable(session.stream),
       _StreamListenable(analytics.stream),

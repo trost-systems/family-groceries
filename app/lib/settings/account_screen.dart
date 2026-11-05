@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
@@ -39,7 +40,7 @@ class const AccountScreen({
                   icon: const Icon(Icons.copy),
                   onPressed: () {
                     unawaited(Clipboard.setData(ClipboardData(text: email)));
-                    ScaffoldMessenger.of(context)
+                    Notices.of(context)
                         .showSnackBar(SnackBar(content: Text(l10n.copied)));
                   },
                 ),
@@ -70,7 +71,7 @@ class const AccountScreen({
 
 Future<void> _export(BuildContext tile, ExportSaver save) async {
   final l10n = AppLocalizations.of(tile);
-  final messenger = ScaffoldMessenger.of(tile);
+  final messenger = Notices.of(tile);
   final box = tile.findRenderObject() as RenderBox?;
   final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
   final message = await () async {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/home_widget/home_widget_sync.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -102,7 +103,7 @@ class _ScopeState() extends State<_Scope> {
         RenameTaken(:final name) => l10n.alreadyOnList(name),
       };
       if (!(_notices.listTab?.call(text) ?? false)) {
-        ScaffoldMessenger.maybeOf(context)
+        Notices.maybeOf(context)
           ?..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(text), persist: false));
       }

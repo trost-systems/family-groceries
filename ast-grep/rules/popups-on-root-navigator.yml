@@ -1,0 +1,20 @@
+# Notices (app/lib/app/notices.dart) learns that a dialog or sheet is open from an observer on the
+# root navigator. A sheet on a tab's own navigator (showModalBottomSheet's default) or a dialog with
+# useRootNavigator: false goes unseen, and a refusal said while it is open shows under its barrier
+# again (job 116).
+id: popups-on-root-navigator
+language: dart
+severity: error
+files:
+  - app/lib/**
+rule:
+  kind: call_expression
+  any:
+    - all:
+        - regex: '^showModalBottomSheet\s*[<(]'
+        - not:
+            regex: 'useRootNavigator:\s*true'
+    - all:
+        - regex: '^show\w*(?:Dialog|Sheet)\s*[<(]'
+        - regex: 'useRootNavigator:\s*false'
+message: 'Open dialogs and sheets on the root navigator (showModalBottomSheet(useRootNavigator: true, ...), no useRootNavigator: false): Notices only sees popups there, and a snackbar would show under this one''s barrier'

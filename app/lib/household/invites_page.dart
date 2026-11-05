@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invites_cubit.dart';
@@ -99,7 +100,7 @@ class const _InvitesView() extends StatelessWidget {
 
   static Future<void> _revoke(BuildContext page, Invite invite) async {
     final l10n = AppLocalizations.of(page);
-    final messenger = ScaffoldMessenger.of(page);
+    final messenger = Notices.of(page);
     if (await page.read<InvitesCubit>().revoke(invite)) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.inviteRevoked)));
     }

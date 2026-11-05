@@ -5,6 +5,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/consent_version.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -56,6 +57,7 @@ void main() {
       analytics,
       PendingInvite(cache),
       ListLinks(),
+      Popups(),
     );
     addTearDown(router.dispose);
     addTearDown(analytics.close);

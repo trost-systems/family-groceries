@@ -1,0 +1,30 @@
+id: popups-on-root-navigator
+snapshots:
+  "Future<void> f(BuildContext c) =>\n    showModalBottomSheet<void>(context: c, builder: (_) => const Sheet());\n":
+    labels:
+    - source: "showModalBottomSheet<void>(context: c, builder: (_) => const Sheet())"
+      style: primary
+      start: 38
+      end: 107
+  "Future<void> f(BuildContext c) => showDialog<void>(\n  context: c,\n  useRootNavigator: false,\n  builder: (_) => const Dialog(),\n);\n":
+    labels:
+    - source: |-
+        showDialog<void>(
+          context: c,
+          useRootNavigator: false,
+          builder: (_) => const Dialog(),
+        )
+      style: primary
+      start: 34
+      end: 128
+  "Future<void> f(BuildContext c) async {\n  final r = await showModalBottomSheet<int>(\n    context: c,\n    useRootNavigator: false,\n    builder: (_) => const Sheet(),\n  );\n}\n":
+    labels:
+    - source: |-
+        showModalBottomSheet<int>(
+            context: c,
+            useRootNavigator: false,
+            builder: (_) => const Sheet(),
+          )
+      style: primary
+      start: 57
+      end: 167

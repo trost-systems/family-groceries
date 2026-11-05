@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/brand_block.dart';
 import 'package:family_groceries/design/tokens.g.dart';
@@ -133,13 +134,12 @@ class _SignInPanelState() extends State<SignInPanel> {
       AuthException(:final message) => l10n.authFailed(message),
       _ => l10n.authFailed('$error'),
     };
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    Notices.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Runs an auth call; a returned message is shown to the user.
   Future<void> _run(Future<String?> Function() action) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = Notices.of(context);
     setState(() => _busy = true);
     try {
       if (await action() case final message?) {

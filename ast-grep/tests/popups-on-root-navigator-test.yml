@@ -1,0 +1,30 @@
+id: popups-on-root-navigator
+valid:
+  - |
+    Future<void> f(BuildContext c) => showModalBottomSheet<void>(
+      context: c,
+      useRootNavigator: true,
+      builder: (_) => const Sheet(),
+    );
+  # showDialog is on the root navigator by default.
+  - |
+    Future<void> f(BuildContext c) =>
+        showDialog<void>(context: c, builder: (_) => const Dialog());
+invalid:
+  - |
+    Future<void> f(BuildContext c) =>
+        showModalBottomSheet<void>(context: c, builder: (_) => const Sheet());
+  - |
+    Future<void> f(BuildContext c) async {
+      final r = await showModalBottomSheet<int>(
+        context: c,
+        useRootNavigator: false,
+        builder: (_) => const Sheet(),
+      );
+    }
+  - |
+    Future<void> f(BuildContext c) => showDialog<void>(
+      context: c,
+      useRootNavigator: false,
+      builder: (_) => const Dialog(),
+    );

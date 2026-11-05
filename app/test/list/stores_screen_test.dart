@@ -67,6 +67,11 @@ void main() {
     await addStore(tester, 'Rewe');
     expect(key('name-dialog-field'), findsOneWidget);
     expect(names(), ['dm', 'Lidl']);
+    expect(
+      find.text('Die Änderung konnte nicht gespeichert werden.').hitTestable(),
+      findsOneWidget,
+      reason: 'the reason shows above the dialog, not under its barrier',
+    );
   });
 
   testWidgets('a store opens its details; back returns to the stores', (
