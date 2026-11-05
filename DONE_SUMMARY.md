@@ -548,6 +548,7 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 - Job 96 (Legal N-80..N-86 brand-free copy, native-Siri hold gate): [docs/done/96-brand-free-copy.md](docs/done/96-brand-free-copy.md)
 - Job 97 (Siri fix-now: iOS 17 minimum, App Shortcuts catalog, German spoken name, SiriKit failures in Siri): [docs/done/97-siri-app-shortcuts.md](docs/done/97-siri-app-shortcuts.md)
 - Job 100, HC1 hill-climb hc-size-start (harness, 4 attempts, none kept): [docs/done/100-hc-size-start.md](docs/done/100-hc-size-start.md)
+- Job 107, hill-climb hc-memory (Linux profile memory 413.7 → 381.0 with a periodic malloc_trim in the Linux runner; Skia switch removed by the lead, Skia cache cap reverted as noise): [docs/done/107-hc-memory.md](docs/done/107-hc-memory.md)
 
 
 ## Job 99: hc-sync, offline and sync robustness

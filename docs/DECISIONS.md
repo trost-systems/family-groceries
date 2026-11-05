@@ -7733,3 +7733,33 @@ was on the exact name, and the app compared exact names.
    migration: the same 12 items with the same category name key, the same summed corrections per
    word and key, no store missing a category row, no duplicate key left; a second run merges 0
    (script and output in the job's ops dir, `proof/`).
+
+
+## Job 107: app memory hill-climb (hc-memory), 2026-11-05
+
+The harness, the attempt log and the numbers are in `docs/hillclimb/hc-memory.md`.
+
+- **The session runs in a profile build of the Marionette entrypoint, driven over the VM
+  service.** `app/test_driver/main_hc_memory.dart` is `main_marionette.dart` plus one extension
+  that reports the image cache. A Node driver (`tool/hillclimb/hc-memory/session.mjs`) calls
+  Marionette's service extensions directly and samples `/proc/<pid>/status` and
+  `getMemoryUsage` in the same process, so driving and sampling share one clock and no CLI
+  start-up sits between steps. The data is a committed scenario for `fg seed` (300 open items,
+  generated with seed 107), and every run checks the work happened (300 open, 20 bought).
+- **Peak RSS is `VmHWM`, not the highest 250 ms sample.** The kernel's high-water mark catches
+  bursts between samples, so the peak does not depend on sample timing. The sampled peak is in
+  `parts` next to it.
+- **The noise band is 8.3 MB (2 % of the 413.7 baseline).** The three baseline runs spanned 3.9.
+  Several real improvements were smaller than the band and were reverted as the protocol asks.
+- **The Linux runner gives freed native memory back every 5 s** (`malloc_trim(0)` on a GLib
+  timeout). glibc kept tens of MB that the engine and the GL driver had freed. Every second was
+  no better, and arena or mmap-threshold settings did not move the score.
+- **The Linux runner keeps Impeller (lead, addendum 3).** Skia instead of Impeller saved about
+  43 MB in the harness, but no CI job builds `app/linux`, and the only evidence was single harness
+  runs on Xvfb/llvmpipe and three screenshot pairs whose pixels do differ (3.7-8.2 %). The Linux
+  build is the verification surface; the shipped iOS and Android apps render with Impeller, so
+  the surface keeps rendering the way they do. The attempt and its screenshots stay in the log.
+- **No Skia resource cache cap (review 0).** A 4 MB `Skia.setResourceCacheMaxBytes` was first
+  kept, but its gain compared a median of 3 against a single run. A/B pairs on one tree showed
+  0.3 MB difference against an 8.3 MB band, so it was reverted. The value was also tuned to the
+  412×892 harness window; one full-window layer at 1920×1080 is about 8 MB.

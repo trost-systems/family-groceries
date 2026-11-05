@@ -1,6 +1,7 @@
 #include "my_application.h"
 
 #include <flutter_linux/flutter_linux.h>
+#include <malloc.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
@@ -13,6 +14,14 @@ struct _MyApplication {
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
+
+// glibc keeps freed native memory (decoded glyphs, render targets, the GL
+// driver's buffers) in its arenas; giving the unused pages back every few
+// seconds keeps the resident size near what the app actually holds.
+static gboolean trim_native_heap(gpointer) {
+  malloc_trim(0);
+  return G_SOURCE_CONTINUE;
+}
 
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
@@ -76,6 +85,8 @@ static void my_application_activate(GApplication* application) {
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
+
+  g_timeout_add_seconds(5, trim_native_heap, nullptr);
 }
 
 // Implements GApplication::local_command_line.
