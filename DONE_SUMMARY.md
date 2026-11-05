@@ -554,3 +554,7 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 
 A seeded fuzz harness drives the real list sync layer (cubit, cache, Supabase repository over a fake PostgREST and Realtime) with 3 phones, network drops and restarts. Failing seeds of 1..1000 went from 175 to 0 with eight `ListCubit` fixes, each with a seed-named regression test. `flutter test` now runs seeds 1..100. One server-side change goes to the Lead: a delete should win over a replayed add (NEEDS_LEAD "Job 99", not applied). The PR is ready for review and not merged (the Lead merges). Details: [docs/done/99-hc-sync.md](docs/done/99-hc-sync.md).
 
+
+## Job 90: category names unique ignoring case, PR #220, not merged (lead review)
+
+„baby“ and „Baby“ are one category now: a unique index on the name key, create_category returns the existing one, and a migration merges existing duplicates into the fallback or the oldest (items, history, layouts, learned corrections, seed keys). The add and rename dialogs say „Eine Kategorie „Baby“ gibt es schon.“ in the dialog. Details: [docs/done/90-fix-category-case.md](docs/done/90-fix-category-case.md).

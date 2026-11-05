@@ -592,17 +592,27 @@ class ListCubit(
     unawaited(_cache.savePrefs(prefs));
   }
 
-  Future<void> renameCategory(String id, String name) => _changeCatalog(
-    state.catalog.withName(id, name),
-    () => _repo.renameCategory(id, name),
-    taken: NameTaken(name),
-  );
+  /// Whether the server took it: another category's name, in any case or
+  /// spacing, is refused.
+  Future<bool> renameCategory(String id, String name) async {
+    final clean = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+    return await _changeCatalog(
+      state.catalog.withName(id, clean),
+      () => _repo.renameCategory(id, clean),
+      taken: NameTaken(clean),
+    );
+  }
 
-  Future<void> createCategory(String name) => _changeCatalog(
-    null,
-    () => _repo.createCategory(name),
-    taken: NameTaken(name),
-  );
+  /// Whether the server took it. A name the household has already, in any
+  /// case or spacing, creates nothing there.
+  Future<bool> createCategory(String name) async {
+    final clean = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+    return await _changeCatalog(
+      null,
+      () => _repo.createCategory(clean),
+      taken: NameTaken(clean),
+    );
+  }
 
   /// The household's store named [name] (any case or spacing), created after
   /// the others when there is none, so that creating and picking a store is

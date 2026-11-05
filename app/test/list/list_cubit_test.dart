@@ -482,11 +482,23 @@ void main() {
   test('a duplicate category name is reported by name', () async {
     final rejections = <Rejected>[];
     final sub = cubit.rejections.listen(rejections.add);
-    await cubit.renameCategory('chilled', 'Sonstiges');
+    expect(await cubit.renameCategory('chilled', ' sonstiges'), isFalse);
     await settle();
-    expect(rejections.single, isA<NameTaken>());
+    expect(
+      rejections.single,
+      isA<NameTaken>().having((r) => r.name, 'name', 'sonstiges'),
+    );
     expect(cubit.state.catalog.categories[1].name, 'Kühlregal');
     await sub.cancel();
+  });
+
+  test('a category may change its own case; a new name is cleaned', () async {
+    expect(await cubit.renameCategory('chilled', 'KÜHLREGAL'), isTrue);
+    expect(await cubit.createCategory('  Tier   futter '), isTrue);
+    expect(repo.catalogCalls, [
+      'rename(chilled, KÜHLREGAL)',
+      'create(Tier futter)',
+    ]);
   });
 
   test('a deleted category moves its items to the chosen one', () async {

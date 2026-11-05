@@ -117,7 +117,7 @@ class FakeRepository() implements ListRepository {
 
   @override
   Future<void> renameCategory(String id, String name) async {
-    if (categories.any((c) => c.id != id && c.name == name)) {
+    if (categories.any((c) => c.id != id && nameKey(c.name) == nameKey(name))) {
       throw const RejectedOp('duplicate key', nameTaken: true);
     }
     _writeCatalog('rename($id, $name)');
@@ -125,9 +125,11 @@ class FakeRepository() implements ListRepository {
   }
 
   @override
+  /// Like `create_category`: a name the household has in any case or
+  /// spacing returns that category.
   Future<void> createCategory(String name) async {
-    if (categories.any((c) => c.name == name)) {
-      throw const RejectedOp('duplicate key', nameTaken: true);
+    if (categories.any((c) => nameKey(c.name) == nameKey(name))) {
+      return;
     }
     _writeCatalog('create($name)');
     categories = [
@@ -168,9 +170,7 @@ class FakeRepository() implements ListRepository {
 
   @override
   Future<void> renameStore(String id, String name) async {
-    if (stores.any(
-      (s) => s.id != id && storeNameKey(s.name) == storeNameKey(name),
-    )) {
+    if (stores.any((s) => s.id != id && nameKey(s.name) == nameKey(name))) {
       throw const RejectedOp('store_name_taken', nameTaken: true);
     }
     _writeCatalog('renameStore($id, $name)');

@@ -77,6 +77,7 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
             title: l10n.addCategory,
             confirm: l10n.save,
             label: l10n.categoryName,
+            validate: (name) => _categoryTaken(cubit.state.catalog, l10n, name),
             save: (name) async {
               unawaited(cubit.createCategory(name));
               return true;
@@ -136,6 +137,12 @@ class const _StoreName(final Store store) extends StatelessWidget {
         label: l10n.storeNameHint,
         initial: store.name,
         maxLength: maxStoreNameLength,
+        validate: (name) => switch (cubit.state.catalog.storeNamed(name)) {
+          final other? when other.id != store.id => l10n.storeNameTaken(
+            other.name,
+          ),
+          _ => null,
+        },
         save: (name) async =>
             name == store.name || await cubit.renameStore(store.id, name),
       ),
@@ -197,6 +204,14 @@ class const _CategoryRow({
           confirm: l10n.save,
           label: l10n.categoryName,
           initial: name,
+          validate: (next) => _categoryTaken(
+            cubit.state.catalog,
+            l10n,
+            next,
+            except: category.id,
+          ),
+          // A taken name is caught by validate; any other refusal (offline)
+          // closes the dialog so its snackbar is not hidden behind it.
           save: (next) async {
             if (next != name) {
               unawaited(cubit.renameCategory(category.id, next));
@@ -293,4 +308,23 @@ class _DeleteDialogState() extends State<_DeleteDialog> {
       ],
     );
   }
+}
+
+/// Why [name] cannot name a category: another one (not [except]) has it, in
+/// any case or spacing, as stored or as shown (an English UI shows
+/// „Getränke“ as Drinks). Null when it is free.
+String? _categoryTaken(
+  Catalog catalog,
+  AppLocalizations l10n,
+  String name, {
+  String? except,
+}) {
+  final key = nameKey(name);
+  for (final c in catalog.categories) {
+    final shown = categoryName(c, l10n);
+    if (c.id != except && (nameKey(c.name) == key || nameKey(shown) == key)) {
+      return l10n.categoryNameTaken(shown);
+    }
+  }
+  return null;
 }
