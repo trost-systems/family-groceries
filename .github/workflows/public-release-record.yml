@@ -2,7 +2,9 @@
 # change to main. Run it, or call it from the public release step, once the stores have accepted
 # the build. The reviewed changelog draft releases/changelog/<version>.json goes into the entry and
 # the draft file is deleted in the same commit (job 39, docs/CHANGELOG.md). The record is the site's source for the live version, so hummlist.com shows a release
-# only after this run. Dry run by default: it prints the entry and changes nothing.
+# only after this run. Dry run by default: it prints the entry and changes nothing. The entry's stats
+# (commits, contributors, lines of code; hummlist.com/history shows them) come from git over the
+# previous release..this one, so the checkout needs the full history (fetch-depth: 0).
 name: Public release record
 
 on:

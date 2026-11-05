@@ -7,6 +7,7 @@ import container from 'markdown-it-container';
 import { parse } from 'node-html-parser';
 import { CATEGORIES, RecordError, compareVersions, draftFileNames, isVersion, parseDraft, parseGates, parseRecord, publicReleases } from './releases.mjs';
 import { APP_URL, CopyError, readCopy, renderLanding } from './landing.mjs';
+import { HISTORY_ROUTES, HistoryCopyError, historyBody, t as historyText } from './history.mjs';
 import { AgentError, agentHead, checkAgentSite, readPublicApi, readStage, readVercel, writeAgentFiles } from './agent.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,7 @@ export const LOCALES = {
       privacy: { label: 'Datenschutz', href: '/datenschutz' },
       support: { label: 'Hilfe', href: '/support' },
       changelog: { label: 'Neuigkeiten', href: '/de/changelog' },
+      history: { label: historyText('history.footer', 'de'), href: HISTORY_ROUTES.de },
     },
     ui: {
       updated: 'Aktualisiert',
@@ -60,6 +62,7 @@ export const LOCALES = {
       privacy: { label: 'Privacy', href: '/en/privacy' },
       support: { label: 'Support', href: '/en/support' },
       changelog: { label: "What's new", href: '/en/changelog' },
+      history: { label: historyText('history.footer', 'en'), href: HISTORY_ROUTES.en },
     },
     ui: {
       updated: 'Updated',
@@ -351,7 +354,8 @@ function mainContent(page, guidesByLocale) {
 }
 
 // The header and footer every page shares: the brand back to the landing page, the guides and
-// the changelog, the language switch, the web app; in the footer the legal links by their flags.
+// the changelog, the language switch, the web app; in the footer also the release timeline and
+// the legal links by their flags.
 function siteHeader(page, { switches, copy, current }) {
   const locale = LOCALES[page.locale];
   const link = (href, label) => `<li><a href="${href}"${current === href ? ' aria-current="page"' : ''}>${label}</a></li>`;
@@ -374,7 +378,7 @@ function siteFooter(page, { config, copy }) {
   return `<footer class="site-footer">
 <div class="wrap">
 <a class="brand" href="${locale.landing}" aria-label="${locale.ui.home}"><span class="mark" aria-hidden="true"></span>${SITE_NAME}</a>
-<nav class="footer-site" aria-label="${locale.ui.siteNav}"><ul><li><a href="${locale.guidesBase}">${locale.ui.guides}</a></li><li><a href="${locale.footer.changelog.href}">${locale.footer.changelog.label}</a></li></ul></nav>
+<nav class="footer-site" aria-label="${locale.ui.siteNav}"><ul><li><a href="${locale.guidesBase}">${locale.ui.guides}</a></li><li><a href="${locale.footer.changelog.href}">${locale.footer.changelog.label}</a></li><li><a href="${locale.footer.history.href}">${escapeHtml(locale.footer.history.label)}</a></li></ul></nav>
 <nav class="footer-legal" aria-label="${locale.ui.footerNav}"><ul>${legal}</ul></nav>
 <p class="tagline" data-copy-id="footer.tagline">${escapeHtml(copy.get('footer.tagline')[page.locale])}</p>
 </div>
@@ -612,6 +616,24 @@ function changelogBody(entries, locale) {
   return `<h1>${escapeHtml(ui.title)}</h1>\n${sections.length > 0 ? sections.join('') : `<p>${escapeHtml(ui.empty)}</p>\n`}`;
 }
 
+// The release timeline per locale (history.mjs), from the record alone.
+function historyPages(repoDir) {
+  const record = parseRecord(readRepoFile(repoDir, 'releases/releases.json'));
+  const releases = publicReleases(record);
+  return Object.keys(LOCALES).map((locale) => ({
+    kind: 'history',
+    file: `(history ${locale})`,
+    route: HISTORY_ROUTES[locale],
+    group: 'history',
+    ogType: 'website',
+    locale,
+    title: historyText('history.title', locale),
+    description: historyText('history.description', locale),
+    notices: [],
+    body: historyBody(record, releases, locale),
+  }));
+}
+
 // The landing page per locale. Every copy id in copy.yml must appear on it, so the file holds no
 // strings nobody sees.
 function landingPages(contentDir, publicDir, config) {
@@ -669,7 +691,7 @@ export function build({
   const pages = Object.keys(KINDS)
     .flatMap((kind) => KINDS[kind].files(contentDir).map((entry) => loadPage(kind, entry, contentDir, versions)))
     .filter((page) => !(versions.production && page.notices.length > 0))
-    .concat(changelogPages(repoDir, versions.production));
+    .concat(changelogPages(repoDir, versions.production), historyPages(repoDir));
   const landing = landingPages(contentDir, publicDir, config);
   pages.push(...landing.pages);
 
@@ -734,7 +756,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(`live version: ${live.live} (from ${live.source})`);
     console.log(`built ${routes.length} pages into dist/`);
   } catch (error) {
-    if (!(error instanceof BuildError || error instanceof RecordError || error instanceof CopyError || error instanceof AgentError)) throw error;
+    if (!(error instanceof BuildError || error instanceof RecordError || error instanceof CopyError || error instanceof AgentError || error instanceof HistoryCopyError)) throw error;
     console.error(`build failed: ${error.message}`);
     process.exit(1);
   }

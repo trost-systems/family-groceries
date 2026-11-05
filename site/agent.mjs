@@ -129,9 +129,9 @@ const SECTIONS = [
   { title: 'Guides in German', takes: (p) => ['index', 'guide'].includes(p.kind) && p.locale === 'de' },
   { title: 'Help', takes: (p) => p.group === 'page:support' },
   { title: 'Legal', takes: (p) => p.kind === 'page' },
-  { title: 'Optional', takes: (p) => p.kind === 'changelog' || p.kind === 'landing' },
+  { title: 'Optional', takes: (p) => ['changelog', 'history', 'landing'].includes(p.kind) },
 ];
-const KIND_ORDER = ['landing', 'index', 'guide', 'page', 'changelog'];
+const KIND_ORDER = ['landing', 'index', 'guide', 'page', 'changelog', 'history'];
 const LOCALE_ORDER = ['en', 'de'];
 const pageOrder = (a, b) =>
   KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) || LOCALE_ORDER.indexOf(a.locale) - LOCALE_ORDER.indexOf(b.locale) || a.title.localeCompare(b.title, 'en');

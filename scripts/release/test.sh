@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests scripts/release/ offline: when a Release run ships or skips (fixture facts), how it finds
 # the last upload (fake gh), the TestFlight notes (scratch repo), the failure issue (fake gh), the
-# AAB signer check (throwaway keystore), the public release record (record.test.mjs), the
+# AAB signer check (throwaway keystore), the public release record (record.test.mjs, loc.test.mjs), the
 # changelog collector (changelog.test.mjs) and the CI changelog gate (scratch merge commits). Run
 # by the lint gate.
 set -euo pipefail
@@ -438,6 +438,7 @@ fi
 
 # --- record.mjs -----------------------------------------------------------------------------
 node --test "$here/record.test.mjs" >"$tmp/record.log" 2>&1 || fail "record.test.mjs"$'\n'"$(cat "$tmp/record.log")"
+node --test "$here/loc.test.mjs" >"$tmp/loc.log" 2>&1 || fail "loc.test.mjs"$'\n'"$(cat "$tmp/loc.log")"
 
 # --- changelog.mjs and gates/changelog.sh -----------------------------------------------------
 node --test "$here/changelog.test.mjs" >"$tmp/changelog.log" 2>&1 || fail "changelog.test.mjs"$'\n'"$(cat "$tmp/changelog.log")"

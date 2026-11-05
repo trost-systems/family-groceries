@@ -72,9 +72,10 @@ test('every page links the guides, the changelog and the web app in the header',
   assert.equal(page('/de').querySelector('header [aria-current]'), null);
 });
 
+// The footer also links the release timeline (job 105).
 const SITE_LINKS = {
-  de: [['Anleitungen', '/de/anleitungen'], ['Neuigkeiten', '/de/changelog']],
-  en: [['Guides', '/en/guides'], ["What's new", '/en/changelog']],
+  de: [['Anleitungen', '/de/anleitungen'], ['Neuigkeiten', '/de/changelog'], ['Chronik', '/history']],
+  en: [['Guides', '/en/guides'], ["What's new", '/en/changelog'], ['History', '/en/history']],
 };
 const footer = (doc) => doc.querySelectorAll('footer nav a').map((a) => [a.text, a.getAttribute('href')]);
 

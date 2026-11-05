@@ -1,0 +1,358 @@
+{
+  "project": {
+    "name": "Hummlist",
+    "repo": "trost-systems/family-groceries",
+    "day_zero": "2026-10-22"
+  },
+  "identities": [
+    {
+      "name": "Peter Trost",
+      "github": "peter-trost",
+      "bot": false,
+      "emails": [
+        "peter@petertrost.com"
+      ]
+    },
+    {
+      "name": "petertrost-bot",
+      "github": "petertrost-bot",
+      "bot": true,
+      "emails": [
+        "341616691+petertrost-bot@users.noreply.github.com",
+        "bot@petertrost.com"
+      ]
+    },
+    {
+      "name": "Claude",
+      "github": null,
+      "bot": true,
+      "emails": [
+        "noreply@anthropic.com"
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "version": "1.0.0",
+      "channel": "public",
+      "date": "2026-12-01",
+      "day": 40,
+      "build": 1100,
+      "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "previous_sha": null,
+      "stores": {
+        "app_store": true,
+        "play": true,
+        "web": true
+      },
+      "stats": {
+        "commits": 412,
+        "additions": 131204,
+        "deletions": 9876,
+        "files_changed": 2310,
+        "contributors": [
+          {
+            "name": "Peter Trost",
+            "github": "peter-trost",
+            "commits": 412,
+            "additions": 140100,
+            "deletions": 18760,
+            "bot": false
+          },
+          {
+            "name": "petertrost-bot",
+            "github": "petertrost-bot",
+            "commits": 410,
+            "additions": 139900,
+            "deletions": 18700,
+            "bot": true
+          },
+          {
+            "name": "Claude",
+            "github": null,
+            "commits": 405,
+            "additions": 138000,
+            "deletions": 18500,
+            "bot": true
+          }
+        ]
+      },
+      "notes": {
+        "de": "",
+        "en": ""
+      }
+    },
+    {
+      "version": "1.0.1",
+      "channel": "public",
+      "date": "2026-12-09",
+      "day": 48,
+      "build": 1104,
+      "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "previous_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "stores": {
+        "app_store": true,
+        "play": true,
+        "web": true
+      },
+      "stats": {
+        "commits": 18,
+        "additions": 1204,
+        "deletions": 377,
+        "files_changed": 41,
+        "contributors": [
+          {
+            "name": "Peter Trost",
+            "github": "peter-trost",
+            "commits": 16,
+            "additions": 1100,
+            "deletions": 340,
+            "bot": false
+          },
+          {
+            "name": "petertrost-bot",
+            "github": "petertrost-bot",
+            "commits": 16,
+            "additions": 1100,
+            "deletions": 340,
+            "bot": true
+          },
+          {
+            "name": "Claude",
+            "github": null,
+            "commits": 15,
+            "additions": 1050,
+            "deletions": 330,
+            "bot": true
+          },
+          {
+            "name": "Mia Brandt",
+            "github": "mia-brandt",
+            "commits": 2,
+            "additions": 104,
+            "deletions": 37,
+            "bot": false
+          },
+          {
+            "name": "dependabot[bot]",
+            "github": "dependabot[bot]",
+            "commits": 2,
+            "additions": 80,
+            "deletions": 76,
+            "bot": true
+          }
+        ],
+        "automated_commits": 17,
+        "loc": {
+          "total": 126357,
+          "languages": [
+            {
+              "language": "Dart",
+              "files": 271,
+              "lines": 52110
+            },
+            {
+              "language": "TypeScript",
+              "files": 207,
+              "lines": 35980
+            },
+            {
+              "language": "SQL",
+              "files": 88,
+              "lines": 17005
+            },
+            {
+              "language": "JavaScript",
+              "files": 70,
+              "lines": 10420
+            },
+            {
+              "language": "Shell",
+              "files": 74,
+              "lines": 4902
+            },
+            {
+              "language": "Swift",
+              "files": 15,
+              "lines": 1880
+            },
+            {
+              "language": "CSS",
+              "files": 4,
+              "lines": 1850
+            },
+            {
+              "language": "Kotlin",
+              "files": 8,
+              "lines": 750
+            },
+            {
+              "language": "HTML",
+              "files": 8,
+              "lines": 622
+            },
+            {
+              "language": "Python",
+              "files": 6,
+              "lines": 596
+            },
+            {
+              "language": "C/C++",
+              "files": 4,
+              "lines": 143
+            },
+            {
+              "language": "Ruby",
+              "files": 1,
+              "lines": 99
+            }
+          ]
+        }
+      },
+      "notes": {
+        "de": "",
+        "en": ""
+      }
+    },
+    {
+      "version": "1.1.0",
+      "channel": "public",
+      "date": "2027-01-15",
+      "day": 85,
+      "build": 1120,
+      "sha": "cccccccccccccccccccccccccccccccccccccccc",
+      "previous_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "stores": {
+        "app_store": true,
+        "play": true,
+        "web": true
+      },
+      "stats": {
+        "commits": 96,
+        "additions": 8410,
+        "deletions": 2215,
+        "files_changed": 260,
+        "contributors": [
+          {
+            "name": "Peter Trost",
+            "github": "peter-trost",
+            "commits": 90,
+            "additions": 8000,
+            "deletions": 2100,
+            "bot": false
+          },
+          {
+            "name": "petertrost-bot",
+            "github": "petertrost-bot",
+            "commits": 88,
+            "additions": 7900,
+            "deletions": 2080,
+            "bot": true
+          },
+          {
+            "name": "Claude",
+            "github": null,
+            "commits": 85,
+            "additions": 7700,
+            "deletions": 2050,
+            "bot": true
+          },
+          {
+            "name": "Mia Brandt",
+            "github": "mia-brandt",
+            "commits": 9,
+            "additions": 380,
+            "deletions": 95,
+            "bot": false
+          },
+          {
+            "name": "dependabot[bot]",
+            "github": "dependabot[bot]",
+            "commits": 4,
+            "additions": 160,
+            "deletions": 152,
+            "bot": true
+          },
+          {
+            "name": "Noah Brandt",
+            "github": null,
+            "commits": 1,
+            "additions": 30,
+            "deletions": 20,
+            "bot": false
+          }
+        ],
+        "automated_commits": 91,
+        "loc": {
+          "total": 132271,
+          "languages": [
+            {
+              "language": "Dart",
+              "files": 284,
+              "lines": 55020
+            },
+            {
+              "language": "TypeScript",
+              "files": 215,
+              "lines": 37410
+            },
+            {
+              "language": "SQL",
+              "files": 93,
+              "lines": 17890
+            },
+            {
+              "language": "JavaScript",
+              "files": 72,
+              "lines": 10811
+            },
+            {
+              "language": "Shell",
+              "files": 76,
+              "lines": 5010
+            },
+            {
+              "language": "Swift",
+              "files": 16,
+              "lines": 1990
+            },
+            {
+              "language": "CSS",
+              "files": 4,
+              "lines": 1902
+            },
+            {
+              "language": "Kotlin",
+              "files": 8,
+              "lines": 760
+            },
+            {
+              "language": "HTML",
+              "files": 8,
+              "lines": 640
+            },
+            {
+              "language": "Python",
+              "files": 6,
+              "lines": 596
+            },
+            {
+              "language": "C/C++",
+              "files": 4,
+              "lines": 143
+            },
+            {
+              "language": "Ruby",
+              "files": 1,
+              "lines": 99
+            }
+          ]
+        }
+      },
+      "notes": {
+        "de": "",
+        "en": ""
+      }
+    }
+  ]
+}
