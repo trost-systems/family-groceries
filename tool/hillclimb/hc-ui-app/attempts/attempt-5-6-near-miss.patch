@@ -1,0 +1,600 @@
+diff --git a/app/lib/app/legal_links.dart b/app/lib/app/legal_links.dart
+index 2a1ff656..facc587a 100644
+--- a/app/lib/app/legal_links.dart
++++ b/app/lib/app/legal_links.dart
+@@ -36,20 +36,26 @@ class const LegalFooter({super.key}) extends StatelessWidget {
+   Widget build(BuildContext context) {
+     final l10n = AppLocalizations.of(context);
+     final language = Localizations.localeOf(context).languageCode;
+-    final style = Theme.of(context).textTheme.bodySmall;
++    final theme = Theme.of(context);
+     Widget link(String key, String label, Uri url) => LegalLink(
+       key: ValueKey(key),
+       url: url,
+-      builder: (context, open) => TextButton(
+-        onPressed: open,
+-        child: Text(label, style: style),
+-      ),
++      builder: (context, open) =>
++          TextButton(onPressed: open, child: Text(label)),
+     );
+-    return Row(
+-      mainAxisAlignment: MainAxisAlignment.center,
++    return Wrap(
++      alignment: WrapAlignment.center,
++      crossAxisAlignment: WrapCrossAlignment.center,
+       children: [
+         link('legal-imprint', l10n.imprint, imprintUrl(language)),
+-        ExcludeSemantics(child: Text('·', style: style)),
++        ExcludeSemantics(
++          child: Text(
++            '·',
++            style: theme.textTheme.labelLarge!.copyWith(
++              color: theme.colorScheme.onSurfaceVariant,
++            ),
++          ),
++        ),
+         link('legal-privacy', l10n.privacy, privacyPolicyUrl(language)),
+       ],
+     );
+diff --git a/app/lib/app/shell.dart b/app/lib/app/shell.dart
+index 19ca86b1..ad78870e 100644
+--- a/app/lib/app/shell.dart
++++ b/app/lib/app/shell.dart
+@@ -103,26 +103,52 @@ class _AppShellState() extends State<AppShell> {
+                       // The first destination's top is level with the
+                       // list's first card: the header and that card's 8 px
+                       // margin (the rail adds 8 px above and below its
+-                      // leading).
+-                      leading: const SizedBox(
++                      // leading). On the list the header's hairline runs
++                      // on through the rail, so the chrome joins.
++                      leading: SizedBox(
++                        width: HlSpace.s9,
+                         height: listHeaderHeight - HlSpace.s2,
++                        child: index == 0
++                            ? DecoratedBox(
++                                decoration: BoxDecoration(
++                                  border: Border(
++                                    bottom: BorderSide(
++                                      color: Theme.of(context)
++                                          .colorScheme
++                                          .outlineVariant,
++                                    ),
++                                  ),
++                                ),
++                              )
++                            : null,
+                       ),
++                      // The bar's indicator size: the rail's own is fixed
++                      // at 56 px, narrower than the bar's 64.
++                      useIndicator: false,
+                       backgroundColor: Theme.of(context)
+                           .colorScheme
+                           .surfaceContainerLow,
+                       destinations: [
+                         NavigationRailDestination(
+-                          icon: const Icon(
+-                            Icons.shopping_cart_outlined,
+-                            key: ValueKey('tab-list'),
++                          icon: const _RailIcon(
++                            Icon(
++                              Icons.shopping_cart_outlined,
++                              key: ValueKey('tab-list'),
++                            ),
++                          ),
++                          selectedIcon: const _RailIcon(
++                            Icon(Icons.shopping_cart),
++                            selected: true,
+                           ),
+-                          selectedIcon: const Icon(Icons.shopping_cart),
+                           label: Text(l10n.tabList),
+                         ),
+                         NavigationRailDestination(
+-                          icon: const Icon(
+-                            Icons.menu,
+-                            key: ValueKey('tab-more'),
++                          icon: const _RailIcon(
++                            Icon(Icons.menu, key: ValueKey('tab-more')),
++                          ),
++                          selectedIcon: const _RailIcon(
++                            Icon(Icons.menu, key: ValueKey('tab-more')),
++                            selected: true,
+                           ),
+                           label: Text(l10n.tabMore),
+                         ),
+@@ -145,6 +171,27 @@ class _AppShellState() extends State<AppShell> {
+   }
+ }
+ 
++/// A rail destination's icon in a box the size of the bottom bar's
++/// indicator, filled with the rail theme's indicator when [selected].
++class const _RailIcon(final Widget icon, {final bool selected = false})
++    extends StatelessWidget {
++  @override
++  Widget build(BuildContext context) {
++    final rail = NavigationRailTheme.of(context);
++    // Without a rail theme, the rail's own Material 3 defaults.
++    final color =
++        rail.indicatorColor ?? Theme.of(context).colorScheme.secondaryContainer;
++    final shape = rail.indicatorShape ?? const StadiumBorder();
++    return Container(
++      width: HlSpace.s8,
++      height: HlSpace.s6,
++      alignment: Alignment.center,
++      decoration: selected ? ShapeDecoration(color: color, shape: shape) : null,
++      child: icon,
++    );
++  }
++}
++
+ /// "Liste" and "Mehr". While the add sheet is open they slide away and the
+ /// band shows how adding works; the band keeps its height, so the input
+ /// above it stays put.
+diff --git a/app/lib/app/theme.dart b/app/lib/app/theme.dart
+index d10413c7..8386c15b 100644
+--- a/app/lib/app/theme.dart
++++ b/app/lib/app/theme.dart
+@@ -104,6 +104,7 @@ TextTheme _textTheme(TextTheme base, TextTheme geometry) {
+ ThemeData appTheme(Brightness brightness) {
+   final t = HummlistColors.of(brightness);
+   final scheme = hummlistColorScheme(brightness);
++  final light = brightness == Brightness.light;
+   final base = ThemeData(
+     colorScheme: scheme,
+     brightness: brightness,
+@@ -193,7 +194,11 @@ ThemeData appTheme(Brightness brightness) {
+       focusElevation: 0,
+       hoverElevation: 0,
+       highlightElevation: 0,
+-      shape: HexBorder(side: contour),
++      // In dark the navy contour melts into the page; the lemon face's own
++      // edge colour holds the hex.
++      shape: HexBorder(
++        side: light ? contour : contour.copyWith(color: t.honeyEdge),
++      ),
+       extendedTextStyle: label,
+     ),
+     chipTheme: ChipThemeData(
+@@ -241,6 +246,9 @@ ThemeData appTheme(Brightness brightness) {
+         borderRadius: BorderRadius.vertical(top: Radius.circular(HlRadius.l)),
+       ),
+       dragHandleColor: t.textMuted,
++      // A navy dim the list stays legible under. Dark needs more: the ink
++      // is barely darker than the page, so only the text dims.
++      modalBarrierColor: t.ink.withValues(alpha: light ? 0.4 : 0.7),
+     ),
+     snackBarTheme: SnackBarThemeData(
+       behavior: SnackBarBehavior.floating,
+diff --git a/app/lib/design/hex_segmented.dart b/app/lib/design/hex_segmented.dart
+index dfc8f35d..db323114 100644
+--- a/app/lib/design/hex_segmented.dart
++++ b/app/lib/design/hex_segmented.dart
+@@ -37,7 +37,8 @@ class const HexSegmented<T>({
+   @override
+   Widget build(BuildContext context) {
+     assert(segments.isNotEmpty, 'a segmented control needs options');
+-    final t = HummlistColors.of(Theme.of(context).brightness);
++    final theme = Theme.of(context);
++    final t = HummlistColors.of(theme.brightness);
+     final enabled = onChanged != null;
+     final picked = segments.indexWhere((s) => s.value == value);
+     final slide = hlMotion(context, HlDuration.medium);
+@@ -58,7 +59,9 @@ class const HexSegmented<T>({
+               Positioned.fill(
+                 child: DecoratedBox(
+                   decoration: ShapeDecoration(
+-                    color: t.surfaceSunken,
++                    // Sunken in light, raised in dark: a sunken track is
++                    // barely off the dark page.
++                    color: theme.colorScheme.surfaceContainer,
+                     shape: HexBorder(
+                       side: BorderSide(
+                         color: enabled ? t.border : t.divider,
+diff --git a/app/lib/design/section_label.dart b/app/lib/design/section_label.dart
+index 8ecd81d8..35a1ed3c 100644
+--- a/app/lib/design/section_label.dart
++++ b/app/lib/design/section_label.dart
+@@ -12,15 +12,23 @@ class const HlSectionLabel(
+ }) extends StatelessWidget {
+   static const _size = 11.0;
+ 
++  /// The capitals sit about this far inside the 11 px line box, above and
++  /// below; the page spacing measures from the ink.
++  static const _leading = HlSpace.s1;
++
+   /// Over a page's inset cards (More, Einstellungen): on the 16 px gutter,
+-  /// a card's gap above, the card [HlSpace.s2] below.
++  /// the capitals a card's gap ([HlSpace.s5]) under the control above, as
++  /// far as an unlabelled card sits from the one above it.
+   static const pagePadding = EdgeInsets.fromLTRB(
+     HlSpace.s4,
+-    HlSpace.s5,
++    HlSpace.s5 - _leading,
+     HlSpace.s4,
+     0,
+   );
+ 
++  /// From a [pagePadding] label to its card: [HlSpace.s2] under the capitals.
++  static const cardGap = HlSpace.s2 - _leading;
++
+   @override
+   Widget build(BuildContext context) {
+     final t = HummlistColors.of(Theme.of(context).brightness);
+diff --git a/app/lib/design/sticker.dart b/app/lib/design/sticker.dart
+index 578095d6..3a9f6085 100644
+--- a/app/lib/design/sticker.dart
++++ b/app/lib/design/sticker.dart
+@@ -22,17 +22,27 @@ class const HlSticker({
+   final Color? color,
+   super.key,
+ }) extends StatelessWidget {
+-  /// The shadow of [depth] in [brightness].
++  /// The shadow of [depth] in [brightness]. In dark the night shadow's hard
++  /// edge takes the surface edge colour: its near-black vanishes into the
++  /// page, as `HexPill`'s does.
+   static List<BoxShadow> shadow(Brightness brightness, StickerDepth depth) =>
+       switch ((brightness, depth)) {
+         (Brightness.light, StickerDepth.s) => HlShadow.stickerS,
+         (Brightness.light, StickerDepth.m) => HlShadow.sticker,
+         (Brightness.light, StickerDepth.l) => HlShadow.stickerL,
+-        (Brightness.dark, StickerDepth.s) => HlShadow.nightS,
+-        (Brightness.dark, StickerDepth.m) => HlShadow.night,
+-        (Brightness.dark, StickerDepth.l) => HlShadow.nightL,
++        (Brightness.dark, StickerDepth.s) => _visible(HlShadow.nightS),
++        (Brightness.dark, StickerDepth.m) => _visible(HlShadow.night),
++        (Brightness.dark, StickerDepth.l) => _visible(HlShadow.nightL),
+       };
+ 
++  static List<BoxShadow> _visible(List<BoxShadow> night) => [
++    BoxShadow(
++      color: HummlistColors.dark.surfaceEdge,
++      offset: night.first.offset,
++    ),
++    ...night.skip(1),
++  ];
++
+   @override
+   Widget build(BuildContext context) {
+     final theme = Theme.of(context);
+diff --git a/app/lib/list/add_sheet/add_sheet.dart b/app/lib/list/add_sheet/add_sheet.dart
+index f6c712b2..fb4f2814 100644
+--- a/app/lib/list/add_sheet/add_sheet.dart
++++ b/app/lib/list/add_sheet/add_sheet.dart
+@@ -34,6 +34,10 @@ const _firstOpenRows = 3;
+ /// A suggestion row's height (its minimum; a larger text scale grows it).
+ const _rowHeight = 60.0;
+ 
++/// The Enter cap's width: a horizontal hex, not the near-square a 48 px
++/// width makes of it.
++const _capWidth = 56.0;
++
+ const _nameSize = 18.0;
+ const _nameLeading = 1.2;
+ const _detailSize = 13.0;
+@@ -613,11 +617,13 @@ class const _SuggestionRow({
+                     ? null
+                     : StoreBadge(ownStore!, height: 24, maxWidth: 120)),
+                 // Enter's key cap in the primary button's tactile face, 48 px
+-                // with its edge: taking the first row is the sheet's main
+-                // action. Only a cue; the whole row is what a tap takes.
++                // with its edge and wider than tall like the buttons: taking
++                // the first row is the sheet's main action. Only a cue; the
++                // whole row is what a tap takes.
+                 if (first)
+-                  SizedBox.square(
+-                    dimension: HlSize.target,
++                  SizedBox(
++                    width: _capWidth,
++                    height: HlSize.target,
+                     child: TactileFace(
+                       states: const {},
+                       colors: TactileColors(
+diff --git a/app/lib/list/edit_item_sheet.dart b/app/lib/list/edit_item_sheet.dart
+index bf6a3437..57326ac7 100644
+--- a/app/lib/list/edit_item_sheet.dart
++++ b/app/lib/list/edit_item_sheet.dart
+@@ -374,11 +374,13 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
+                 ),
+               ),
+               Padding(
++                // With the line box's leading: 16 px of ink under Fertig,
++                // 24 over the sheet's bottom.
+                 padding: EdgeInsets.fromLTRB(
+                   HlSpace.s4,
+-                  HlSpace.s2,
++                  HlSpace.s3,
+                   HlSpace.s4,
+-                  HlSpace.s4 + math.max(0, media.padding.bottom - keyboard),
++                  HlSpace.s5 + math.max(0, media.padding.bottom - keyboard),
+                 ),
+                 child: ExcludeSemantics(
+                   child: Text(
+@@ -455,6 +457,8 @@ class const _Field({
+   }
+ }
+ 
++const _stepperWidth = 56.0;
++
+ class const _Stepper({
+   required final IconData icon,
+   required final String tooltip,
+@@ -462,7 +466,8 @@ class const _Stepper({
+   super.key,
+ }) extends StatelessWidget {
+   /// The theme's outlined button: a raised hex with the contour on its
+-  /// edge, sinking when pressed. A 48 px square, face plus edge like Fertig;
++  /// edge, sinking when pressed. As tall as the Menge field, face plus edge
++  /// like Fertig, and wider than tall so the hex's tips leave a 48 px face;
+   /// the surface face, not lemon, keeps it the field's helper.
+   @override
+   Widget build(BuildContext context) => Tooltip(
+@@ -473,8 +478,8 @@ class const _Stepper({
+       onPressed: onPressed,
+       style: OutlinedButton.styleFrom(
+         visualDensity: VisualDensity.standard,
+-        fixedSize: const Size.square(HlSize.target),
+-        minimumSize: const Size.square(HlSize.target),
++        fixedSize: const Size(_stepperWidth, HlSize.target),
++        minimumSize: const Size(_stepperWidth, HlSize.target),
+         padding: EdgeInsets.zero,
+       ),
+       child: Icon(icon, size: 20, semanticLabel: tooltip),
+diff --git a/app/lib/list/foldout_chips.dart b/app/lib/list/foldout_chips.dart
+index 61b9c373..1faaf331 100644
+--- a/app/lib/list/foldout_chips.dart
++++ b/app/lib/list/foldout_chips.dart
+@@ -17,7 +17,7 @@ enum _Fold() {
+ }
+ 
+ /// The chips' and options' height: a touch target.
+-const _height = 44.0;
++const _height = HlSize.target;
+ 
+ /// Room from the hex's edge to its content: the tip's depth, so the content
+ /// starts where the flat sides do.
+diff --git a/app/lib/list/list_view/dividers.dart b/app/lib/list/list_view/dividers.dart
+index 15346a3b..0acb8317 100644
+--- a/app/lib/list/list_view/dividers.dart
++++ b/app/lib/list/list_view/dividers.dart
+@@ -55,6 +55,10 @@ class const StoreDivider({
+   }
+ }
+ 
++const _headHeight = 52.0;
++const _caretSize = HlSpace.s5;
++const _caretInset = (HlSize.target - _caretSize) / 2;
++
+ class const _Head({
+   required final StoreSection section,
+   required final String name,
+@@ -62,10 +66,15 @@ class const _Head({
+ }) extends StatelessWidget {
+   @override
+   Widget build(BuildContext context) => Container(
+-    constraints: const BoxConstraints(minHeight: 52),
+-    padding: const EdgeInsets.symmetric(
+-      horizontal: listGutter,
+-      vertical: HlSpace.s2,
++    constraints: const BoxConstraints(minHeight: _headHeight),
++    // The caret's target box overhangs the gutter by its inset, so the
++    // glyph's edge stays on the gutter like the category rules'; its
++    // height sets the row's.
++    padding: const EdgeInsetsDirectional.only(
++      start: listGutter,
++      end: listGutter - _caretInset,
++      top: (_headHeight - HlSize.target) / 2,
++      bottom: (_headHeight - HlSize.target) / 2,
+     ),
+     child: _row(context),
+   );
+@@ -113,43 +122,52 @@ class const _Head({
+             ),
+           ),
+           // At most half the row, so large text wraps the count instead of
+-          // squeezing the store's badge to nothing.
+-          ConstrainedBox(
+-            constraints: BoxConstraints(maxWidth: outer.maxWidth / 2),
+-            child: Text.rich(
+-              maxLines: 2,
+-              overflow: TextOverflow.ellipsis,
+-              TextSpan(
+-                children: [
++          // squeezing the store's badge to nothing. The caret's inset is
++          // its gap to the count.
++          Row(
++            mainAxisSize: MainAxisSize.min,
++            children: [
++              ConstrainedBox(
++                constraints: BoxConstraints(maxWidth: outer.maxWidth / 2),
++                child: Text.rich(
++                  maxLines: 2,
++                  overflow: TextOverflow.ellipsis,
+                   TextSpan(
+-                    text: '${section.count}',
+-                    style: TextStyle(
+-                      fontFamily: HlFont.display,
+-                      fontSize: 15,
+-                      fontWeight: FontWeight.w800,
+-                      color: scheme.onSurface,
+-                      fontFeatures: const [FontFeature.tabularFigures()],
+-                    ),
++                    children: [
++                      TextSpan(
++                        text: '${section.count}',
++                        style: TextStyle(
++                          fontFamily: HlFont.display,
++                          fontSize: 15,
++                          fontWeight: FontWeight.w800,
++                          color: scheme.onSurface,
++                          fontFeatures: const [FontFeature.tabularFigures()],
++                        ),
++                      ),
++                      TextSpan(text: ' ${l10n.itemsWord(section.count)}'),
++                    ],
+                   ),
+-                  TextSpan(text: ' ${l10n.itemsWord(section.count)}'),
+-                ],
++                  style: TextStyle(
++                    fontSize: 13,
++                    fontWeight: FontWeight.w500,
++                    color: scheme.onSurface,
++                  ),
++                ),
+               ),
+-              style: TextStyle(
+-                fontSize: 13,
+-                fontWeight: FontWeight.w500,
+-                color: scheme.onSurfaceVariant,
++              SizedBox.square(
++                dimension: HlSize.target,
++                child: AnimatedRotation(
++                  turns: folded ? -0.25 : 0,
++                  duration: reduce ? Duration.zero : HlDuration.short,
++                  curve: HlEasing.standard,
++                  child: Icon(
++                    Icons.expand_more,
++                    size: _caretSize,
++                    color: scheme.onSurface,
++                  ),
++                ),
+               ),
+-            ),
+-          ),
+-          AnimatedRotation(
+-            turns: folded ? -0.25 : 0,
+-            duration: reduce ? Duration.zero : HlDuration.short,
+-            curve: HlEasing.standard,
+-            child: Icon(
+-              Icons.expand_more,
+-              size: 22,
+-              color: scheme.onSurfaceVariant,
+-            ),
++            ],
+           ),
+         ],
+       ),
+@@ -237,11 +255,14 @@ class const _ClosesWithRows({
+   );
+ }
+ 
+-/// Above a category label or a store's badge that follows other rows. The
+-/// badge's row adds its own padding, so a store parts a clear step more
+-/// than a category does.
++/// Above a category label that follows other rows.
+ const blockGap = HlSpace.s3;
+ 
++/// Above a store's badge that follows other rows, and under the explainer
++/// (less the explainer's own padding): a store parts a clear step more than
++/// a category does.
++const storeGap = HlSpace.s5;
++
+ class const _Line({required final String label, required final bool first})
+     extends StatelessWidget {
+   @override
+@@ -253,7 +274,8 @@ class const _Line({required final String label, required final bool first})
+     return Padding(
+       padding: EdgeInsetsDirectional.only(
+         start: listGutter,
+-        top: first ? HlSpace.s2 : blockGap,
++        // The first label hugs its store's badge, closer than any rows.
++        top: first ? 0 : blockGap,
+         end: listGutter,
+       ),
+       child: LayoutBuilder(
+@@ -279,7 +301,10 @@ class const _Line({required final String label, required final bool first})
+                 ),
+               ),
+             ),
+-            Expanded(child: Container(height: 1, color: scheme.outlineVariant)),
++            // The label's colour: the outline-variant hairline vanished on the
++            // surface in both modes, and this stays quieter than the store's
++            // brand rule.
++            Expanded(child: Container(height: 1, color: faded)),
+           ],
+         ),
+       ),
+diff --git a/app/lib/list/list_view/explainer.dart b/app/lib/list/list_view/explainer.dart
+index 2ae1bc4a..fd12a24f 100644
+--- a/app/lib/list/list_view/explainer.dart
++++ b/app/lib/list/list_view/explainer.dart
+@@ -46,9 +46,13 @@ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
+     );
+     return Padding(
+       key: const ValueKey('list-hint'),
+-      padding: const EdgeInsets.symmetric(
+-        horizontal: listGutter,
+-        vertical: HlSpace.s2,
++      // As far above the first store's badge as one store sits from the
++      // next: the rows' padding under their words adds the difference.
++      padding: const EdgeInsets.fromLTRB(
++        listGutter,
++        HlSpace.s2,
++        listGutter,
++        HlSpace.s6,
+       ),
+       child: DecoratedBox(
+         decoration: BoxDecoration(
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index d7a31021..5189c5f5 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -547,7 +547,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+                 ? 0
+                 : folded(run[i - 1])
+                 ? 2
+-                : blockGap,
++                : storeGap,
+           ),
+           child: StoreDivider(
+             section: section,
+diff --git a/app/lib/list/stores_screen.dart b/app/lib/list/stores_screen.dart
+index b637e07c..d3a64152 100644
+--- a/app/lib/list/stores_screen.dart
++++ b/app/lib/list/stores_screen.dart
+@@ -185,7 +185,9 @@ class const _NoStoreRow() extends StatelessWidget {
+         children: [
+           Expanded(
+             child: Padding(
+-              padding: const EdgeInsets.symmetric(vertical: HlSpace.s3),
++              // s2 keeps the two lines inside the one-line pills' 56 px, so
++              // the stack keeps one rhythm; larger text still grows the pill.
++              padding: const EdgeInsets.symmetric(vertical: HlSpace.s2),
+               child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 crossAxisAlignment: CrossAxisAlignment.start,
+diff --git a/app/lib/more/more_screen.dart b/app/lib/more/more_screen.dart
+index fd81b357..7d43846a 100644
+--- a/app/lib/more/more_screen.dart
++++ b/app/lib/more/more_screen.dart
+@@ -268,7 +268,7 @@ class _MoreListState() extends State<_MoreList> {
+                     padding: HlSectionLabel.pagePadding,
+                   ),
+                 NavCard(
+-                  top: legal ? HlSpace.s2 : HlSpace.s5,
++                  top: legal ? HlSectionLabel.cardGap : HlSpace.s5,
+                   children: [
+                     for (final item in items) _row(context, l10n, item),
+                   ],
+diff --git a/app/lib/settings/settings_screen.dart b/app/lib/settings/settings_screen.dart
+index cda63c85..0a069d97 100644
+--- a/app/lib/settings/settings_screen.dart
++++ b/app/lib/settings/settings_screen.dart
+@@ -28,7 +28,7 @@ class const SettingsScreen({super.key}) extends StatelessWidget {
+           // As More's cards sit under their label.
+           padding: const EdgeInsets.fromLTRB(
+             HlSpace.s4,
+-            HlSpace.s2,
++            HlSectionLabel.cardGap,
+             HlSpace.s4,
+             0,
+           ),
+@@ -61,7 +61,7 @@ class const SettingsScreen({super.key}) extends StatelessWidget {
+         ),
+         HlSectionLabel(l10n.language, padding: HlSectionLabel.pagePadding),
+         NavCard(
+-          top: HlSpace.s2,
++          top: HlSectionLabel.cardGap,
+           children: [
+             NavRow(
+               key: const ValueKey('settings-language'),

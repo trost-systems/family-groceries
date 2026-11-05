@@ -7781,3 +7781,41 @@ A snackbar is painted inside a page's `Scaffold`. Dialogs and sheets are routes 
 6. **The app's own wiring is proved end to end**, not only through test harnesses that copy it: `e2e/tests/stores-add.spec.ts` "REFUSED STORE" refuses `add_store` with `page.route`, finds the message in the ARIA tree with nothing covering it while the dialog is open, then taps Mehr within 1.5 s after Abbrechen. It fails with `buildRouter`'s observer and `App`'s `NoticesHost` removed (message not found) and with the clearing removed (a `flt-semantics` node intercepts the click).
 7. **The top route comes from `didChangeTop`, not from following didPush/didPop** (review 1). The Navigator calls `didPush` for a page the router adds *below* an open dialog (pages API, as go_router's root navigator uses), so hand-written tracking reported no popup while the dialog was still on top, and messages went under its barrier again. `didChangeTop` fires once per history flush with the route really on top. Test: `notices_test.dart` "a page the router adds below an open dialog leaves the message above it" (fails on the old tracking).
 8. **Trade-off over a bottom sheet:** the top layer's snackbar sits at the bottom of the screen, so over the item sheet it covers the bottom ~14 px of the Fertig/Löschen row for its 4 s (the rest of the buttons takes taps; the snackbar swipes away). Lifting it above an arbitrary sheet's action row would need each sheet's geometry; not worth it for a message shown while a refusal is the news.
+## Job 102: hill-climb hc-ui-app, the app's core screens (2026-11-05)
+
+Calls made without a human (log and numbers: `docs/hillclimb/hc-ui-app.md`).
+
+1. **The screenshots come from the golden harness, not a Linux build.** `screens_golden_test.dart`
+   already renders every core screen with the real fonts at DPR 1, deterministically (the same
+   tree gives the same PNG hash on every run), with no stack and no Xvfb. `measure.sh` renders
+   with `--update-goldens`, copies 20 shots out and restores the committed goldens.
+2. **Judges.** 3 fresh `claude -p --model opus` sessions per run via `bin/cc` (the plain
+   `claude` binary is not logged in on hz), `--setting-sources ''`, Read tool only, cwd a
+   per-judge copy of the shots, DESIGN.md and the token file; structured JSON output. Score =
+   min over 7 categories of the median judge.
+3. **Two measurement fixes, each re-baselined with 3 runs.** The login golden showed empty
+   boxes for the brand mark and black bars for the Google and Apple labels (asset images never
+   decoded; the tester ignores font fallbacks), and DESIGN.md, a judge input, still specified
+   the add bar's lemon "+" that job 78 removed and said nothing about the list bar without a
+   title (29a) or the providers' own sign-in buttons (57.15). Neither moved the baseline (6.5).
+4. **Noise band 0.5, fixed before any step.** The first baseline spread 6.0 to 6.5; the
+   re-baselines alone would have allowed 0.13. With half-point scores a kept step therefore
+   needs +1.0. Attempts 1 to 3 each scored a consistent +0.5 and were reverted; attempt 4
+   first scored 7.5 but was reverted on re-measure (item 6). Each attempt restarted from the previous attempt's patch, so a
+   reverted near-miss was carried into the next attempt and measured again as a whole.
+5. **One attempt is one change set across screens, built by 3 delegates in parallel.** The
+   score is a minimum over categories, so a single-screen fix cannot move it past the band.
+6. **No kept step; the branch ships the harness only.** Attempt 4 first scored 7.5, but it had
+   also rewritten DESIGN.md, a judge input, to describe its own look. With DESIGN.md as of
+   4eee03da the same tree scores 7, 7.5, 7, median 7.0, which equals best 6.5 plus the band and
+   so is not kept (protocol: revert completely). The branch keeps `tool/hillclimb/hc-ui-app/`,
+   the login golden render fix and the DESIGN.md correction, with no app change. Attempts 4 and
+   5 + 6 are patches in `tool/hillclimb/hc-ui-app/attempts/` for the lead.
+7. **If attempt-4.patch is applied, it reverses Job 78 item 16 („Ohne Laden“ flat).** The patch
+   makes „Ohne Laden“ a raised pill like the store rows, because every judge read the flat,
+   sunken face as disabled; the chevron, the subtitle and its fixed last place carry the
+   difference. The patch also carries the `dragHandle` e2e fix its taller rows need, and its
+   trash buttons need `IconButton.styleFrom(minimumSize: Size.square(48))` to be 48 px on web.
+8. **Judge inputs change only through a logged re-baseline.** Next judge-panel hill-climb:
+   `measure.sh` refuses to run when DESIGN.md, the tokens or the prompt differ from the
+   baseline commit.
