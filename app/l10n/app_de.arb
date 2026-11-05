@@ -32,6 +32,8 @@
   "@dictationAdded": {"placeholders": {"items": {"type": "String"}}},
   "dictationAlreadyOnList": "Schon auf der Liste: {items}.",
   "@dictationAlreadyOnList": {"placeholders": {"items": {"type": "String"}}},
+  "dictationTooMany": "Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.",
+  "@dictationTooMany": {"description": "After a dictated sentence with more than 30 items: only the first 30 were added (job 111). Same words as Siri's answer (voice/copy.ts tooMany)."},
   "undo": "Rückgängig",
   "editTitle": "Bearbeiten: {name}",
   "@editTitle": {"placeholders": {"name": {"type": "String"}}},

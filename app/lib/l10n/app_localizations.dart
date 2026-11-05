@@ -242,6 +242,12 @@ abstract class AppLocalizations {
   /// **'Schon auf der Liste: {items}.'**
   String dictationAlreadyOnList(String items);
 
+  /// After a dictated sentence with more than 30 items: only the first 30 were added (job 111). Same words as Siri's answer (voice/copy.ts tooMany).
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.'**
+  String get dictationTooMany;
+
   /// No description provided for @undo.
   ///
   /// In de, this message translates to:

@@ -518,7 +518,9 @@ enum Edge() {
   after,
 }
 
-/// What `public.parse_item` makes of one typed entry.
+/// What `public.parse_item` makes of one typed entry. [deviceParsed]: the
+/// device split it alone (offline), into name and quantity only; the
+/// server splits off brand and details when the add syncs.
 @immutable
 class const ParsedEntry({
   required final String name,
@@ -527,6 +529,7 @@ class const ParsedEntry({
   final String? quantity,
   final String? storeId,
   final String? categoryId,
+  final bool deviceParsed = false,
 }) {
   factory fromJson(Map<String, Object?> json) => ParsedEntry(
     name: json['name']! as String,
@@ -535,6 +538,32 @@ class const ParsedEntry({
     quantity: json['quantity'] as String?,
     storeId: json['store_id'] as String?,
     categoryId: json['category_id'] as String?,
+  );
+
+  /// [item], typed offline, with what parse_item read from its name: the
+  /// name, and the brand, details, Menge, store and category the device
+  /// left open ("Windeln Pampers Größe 3" is Windeln, Pampers, Größe 3).
+  /// [noStore]: the user picked „Ohne Laden“, so no store is taken.
+  Item onto(Item item, {required bool noStore}) => item.copyWith(
+    // A line parse_item reads no name from keeps the device's.
+    name: name.trim().isEmpty ? item.name : name,
+    quantity: () => item.quantity ?? quantity,
+    brand: () => item.brand ?? brand,
+    properties: () => item.properties ?? properties,
+    storeId: () => noStore ? null : item.storeId ?? storeId,
+    categoryId: item.categoryId ?? categoryId,
+  );
+
+  /// [changes], a rename of an add typed offline that has not synced yet,
+  /// with what parse_item read from the new name: the name, and the brand
+  /// and details it names (none: none), unless the edit set them too.
+  ItemChanges ontoRename(ItemChanges changes) => ItemChanges(
+    name: name.trim().isEmpty ? changes.name : name,
+    quantity: changes.quantity ?? (quantity == null ? null : SetTo(quantity)),
+    brand: changes.brand ?? SetTo(brand),
+    properties: changes.properties ?? SetTo(properties),
+    categoryId: changes.categoryId,
+    storeId: changes.storeId,
   );
 }
 
@@ -549,6 +578,7 @@ sealed class const ItemOp(final String itemId) {
         Item.fromJson(json['item']! as Map<String, Object?>),
         restored: json['restored'] == true,
         noStore: json['no_store'] == true,
+        deviceParsed: json['device_parsed'] == true,
       ),
       'status' => SetStatus(
         id,
@@ -560,6 +590,7 @@ sealed class const ItemOp(final String itemId) {
         id,
         ItemChanges.fromColumns(json['changes']! as Map<String, Object?>),
         keyBefore: json['key_before'] as String?,
+        deviceParsed: json['device_parsed'] == true,
       ),
       'move' => MoveItem(
         id,
@@ -619,11 +650,13 @@ sealed class const ItemOp(final String itemId) {
         at,
         storeId: storeId,
       ),
-      EditItem(:final changes, :final keyBefore) => EditItem(
-        kept,
-        changes,
-        keyBefore: keyBefore,
-      ),
+      EditItem(:final changes, :final keyBefore, :final deviceParsed) =>
+        EditItem(
+          kept,
+          changes,
+          keyBefore: keyBefore,
+          deviceParsed: deviceParsed,
+        ),
       MoveItem(:final categoryId, :final storeId) => MoveItem(
         kept,
         categoryId: categoryId,
@@ -680,22 +713,30 @@ sealed class const ItemOp(final String itemId) {
   Map<String, Object?> toJson() => {
     'item_id': itemId,
     ...switch (this) {
-      AddItem(:final item, :final restored, :final noStore) => {
-        'op': 'add',
-        'item': item.toJson(),
-        if (restored) 'restored': true,
-        if (noStore) 'no_store': true,
-      },
+      AddItem(
+        :final item,
+        :final restored,
+        :final noStore,
+        :final deviceParsed,
+      ) =>
+        {
+          'op': 'add',
+          'item': item.toJson(),
+          if (restored) 'restored': true,
+          if (noStore) 'no_store': true,
+          if (deviceParsed) 'device_parsed': true,
+        },
       SetStatus(:final status, :final at, :final storeId) => {
         'op': 'status',
         'status': status.name,
         'at': at.toIso8601String(),
         'store_id': storeId,
       },
-      EditItem(:final changes, :final keyBefore) => {
+      EditItem(:final changes, :final keyBefore, :final deviceParsed) => {
         'op': 'edit',
         'changes': changes.toColumns(),
         'key_before': ?keyBefore,
+        if (deviceParsed) 'device_parsed': true,
       },
       MoveItem(:final categoryId, :final storeId) => {
         'op': 'move',
@@ -745,13 +786,15 @@ sealed class const ItemOp(final String itemId) {
 
 /// [restored]: a deleted item put back (the delete's undo), not a new add.
 /// [noStore]: without a store; otherwise a missing store is the remembered
-/// one. The server answers with the open item the add already is when the
-/// list has one (`put_item`), and the app folds this item into it
-/// ([ItemOp.ontoKept]).
+/// one. [deviceParsed]: the name is a line typed offline, which parse_item
+/// splits before the add is sent ([ParsedEntry.onto]). The server answers
+/// with the open item the add already is when the list has one
+/// (`put_item`), and the app folds this item into it ([ItemOp.ontoKept]).
 final class AddItem(
   final Item item, {
   final bool restored = false,
   final bool noStore = false,
+  final bool deviceParsed = false,
 }) extends ItemOp {
   this : super(item.id);
 
@@ -775,7 +818,9 @@ final class const SetStatus(
 }
 
 /// Writes only the [changes]; the server puts an item whose store or
-/// category changed at the end of its new group.
+/// category changed at the end of its new group. [deviceParsed]: a rename
+/// of an add typed offline that had not synced; parse_item splits the new
+/// name as it splits the add's ([ParsedEntry.ontoRename]).
 final class const EditItem(
   super.itemId,
   final ItemChanges changes, {
@@ -785,6 +830,7 @@ final class const EditItem(
   /// also when the new key arrived first (realtime, a resync, a restart).
   /// Null when the server had not keyed it yet (an add still queued).
   final String? keyBefore,
+  final bool deviceParsed = false,
 }) extends ItemOp {
   @override
   Item? apply(Item? current) => current == null ? null : changes.apply(current);

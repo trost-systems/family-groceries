@@ -4,6 +4,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
@@ -405,6 +406,33 @@ void main() {
       expect((item.name, item.quantity), ('Karotten', '2'));
     });
   });
+  testWidgets('an add typed offline gets its brand and details once it '
+      'syncs, as online (job 111)', (tester) async {
+    await pumpList(tester);
+    repo
+      ..parsed['Windeln Pampers Größe 3'] = const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 3',
+      )
+      ..online = false;
+    await open(tester);
+    // The amount as a word: the device reads it (job 104), the server the rest.
+    await type(tester, 'zwei Windeln Pampers Größe 3');
+    await tester.tap(row(0));
+    await tester.pumpAndSettle();
+    expect(repo.rows, isEmpty);
+
+    repo.online = true;
+    repo.emitStatus!(ConnectionStatus.online);
+    await tester.pumpAndSettle();
+    final item = repo.rows.values.single;
+    expect(
+      (item.name, item.brand, item.properties, item.quantity),
+      ('Windeln', 'Pampers', 'Größe 3', '2'),
+    );
+  });
+
   // Job 64: on a 360 px phone the chips wrap, and a half-screen cap left
   // one "Wieder fällig" row, cut by the input.
   for (final size in [const Size(360, 640), screen]) {

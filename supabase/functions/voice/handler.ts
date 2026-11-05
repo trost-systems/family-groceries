@@ -1,7 +1,9 @@
 // POST /functions/v1/voice {"text": "Milch, zwei Gurken und Klopapier"}
 // Splits the sentence, adds the items to the caller's list and answers with a German
 // sentence for Siri to speak. `?format=text` answers with that sentence as plain text.
-// {"text": ..., "mode": "parse"} only splits; the app adds the items itself.
+// {"text": ..., "mode": "parse"} only splits; the app adds the items itself. With "split": true
+// (job 111, the app since then) each item also comes back with the brand, details and store
+// public.parse_item reads, as add_item stores them; without it, the answer stays as it was.
 // Job 51: "lang": "en" answers in English (native Siri), "mode": "read" reads the open items, and
 // a request that names a lang gets `outcome` in every JSON answer, which the native client
 // branches on. Requests without lang (the Shortcut recipe) get the answers they always got.
@@ -20,11 +22,17 @@ export interface Caller {
   via?: Via;
 }
 
-export interface Added extends ParsedItem {
+/** A heard item split like a typed one (public.parse_item): "Windeln", "Pampers", "Größe 3". */
+export interface SplitItem extends ParsedItem {
   /** Marke the server's parser found, e.g. "Pampers". */
   brand: string | null;
   /** Eigenschaften, comma-separated, e.g. "Größe 3, Big Pack". */
   properties: string | null;
+  /** The store add_item would pick (remembered, the brand's, drugstore items to dm), by id. */
+  storeId: string | null;
+}
+
+export interface Added extends Omit<SplitItem, 'storeId'> {
   /** The category the classifier picked, by name. */
   category: string;
   /** True when the item was active already and nothing was added. */
@@ -45,6 +53,8 @@ export interface Deps<C extends Caller = Caller> {
    */
   requirePremium: RequirePremium;
   addItems(caller: C, items: ParsedItem[]): Promise<Added[]>;
+  /** Splits brand, details and store off each item as add_item does, for mode parse. */
+  splitItems(caller: C, items: ParsedItem[]): Promise<SplitItem[]>;
   /** The household's open items in the app's order, for mode read. */
   readItems?(caller: C): Promise<ParsedItem[]>;
   /** Sends a siri_add or siri_read event when the caller's analytics consent allows it. */
@@ -115,6 +125,8 @@ interface Body {
   text: string | null;
   mode: 'add' | 'parse' | 'read';
   lang: Lang;
+  /** Mode parse also splits brand, details and store (job 111); older apps don't ask. */
+  split: boolean;
   /**
    * The request named a lang (the native client always does): its answers carry `outcome`.
    * Without one (the Shortcut recipe) they stay exactly as before job 51.
@@ -130,21 +142,23 @@ const modes = ['add', 'parse', 'read'] as const;
  */
 async function readBody(req: Request): Promise<Body> {
   const raw = await req.text();
-  const plain = { mode: 'add', lang: 'de', tagged: false } as const;
+  const plain = { mode: 'add', lang: 'de', tagged: false, split: false } as const;
   if (!(req.headers.get('content-type') ?? '').includes('json')) return { ...plain, text: raw };
   try {
     const parsed: unknown = JSON.parse(raw);
     if (typeof parsed === 'string') return { ...plain, text: parsed };
-    const { text, mode, lang } = (parsed ?? {}) as {
+    const { text, mode, lang, split } = (parsed ?? {}) as {
       text?: unknown;
       mode?: unknown;
       lang?: unknown;
+      split?: unknown;
     };
     return {
       text: typeof text === 'string' ? text : null,
       mode: modes.find((m) => m === mode) ?? 'add',
       lang: lang === 'en' ? 'en' : 'de',
       tagged: lang !== undefined,
+      split: split === true,
     };
   } catch {
     return { ...plain, text: null };
@@ -237,6 +251,17 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       }
     }
 
+    // A failing split must not fail dictation: the items go back as heard, as older apps get them.
+    const splitOrHeard = async (items: ParsedItem[]) => {
+      try {
+        return await deps.splitItems(caller, items);
+      } catch (e) {
+        console.error('voice: splitting items failed', errorShape(e));
+        deps.report?.(e);
+        return items;
+      }
+    };
+
     const adding = body.mode === 'add';
     const refuse = async (error: FailureCode, count = 0) => {
       if (adding) await track('siri_add', error, count);
@@ -255,7 +280,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       return send(200, {
         outcome: 'parsed',
         speech: say.parsed(items.map(say.spoken)) + cut,
-        items,
+        items: body.split ? await splitOrHeard(items) : items,
         truncated,
       });
     }

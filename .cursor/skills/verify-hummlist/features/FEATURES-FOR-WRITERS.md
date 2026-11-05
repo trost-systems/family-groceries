@@ -161,7 +161,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Dictation
 
-**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. It then shows a short message with what it added.
+**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. Brand and details are read out as when typing: „Windeln Pampers Größe 3“ adds Windeln with the brand Pampers and the detail Größe 3. It then shows a short message with what it added. One sentence takes up to 30 items; with more, the first 30 are added and the message asks to say the rest again.
 
 **How to get there.**
 1. Open the Hummlist app on an iPhone or Android phone, on the „Liste“ (EN: "List") tab.
@@ -177,7 +177,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Unverified.** Behaviour on real devices (permission prompts, recognizer) was read from code, not run.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code; on the web build only the missing microphone and the sentence splitting were driven (verify-hummlist), the microphone needs a phone. Recipe: [dictation.md](./dictation.md).
+**Last verified.** branch job/111-fix-voice-parse-hygiene, 2026-11-05 (CET), from code and widget tests; the brand and details split of the splitter driven over HTTP on the local stack (`e2e/tests/voice.spec.ts`), the microphone needs a phone. Recipe: [dictation.md](./dictation.md).
 
 ## Ticking items, "Zuletzt verwendet" and undo
 
@@ -314,7 +314,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Working offline
 
-**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so, also while the dialog or sheet they were started from is still open. Changes to categories made offline are not saved: the app says so and puts them back. If someone else added the same item while you were offline, your add becomes theirs when it syncs (no second row), and what you did to it offline, like ticking it off, goes to theirs. Amounts typed offline are read the same way as online, also as words („zwei Gurken“, "two apples").
+**What it does.** The shopping list keeps working without a connection: adding, ticking, editing and deleting items all show up immediately and are sent automatically once the phone is back online. The app also opens offline and shows the last list it had. A cloud icon above the list says "Offline" while there is no connection. Suggestions while typing still work offline, from items the household used before, even with a typo or part of a word, and the empty field still shows what is due again. A few settings-type actions (reordering stores or categories, adding, renaming or deleting a store, creating or joining a household, exporting data, deleting the account, sending feedback) need a connection and say so, also while the dialog or sheet they were started from is still open. Changes to categories made offline are not saved: the app says so and puts them back. If someone else added the same item while you were offline, your add becomes theirs when it syncs (no second row), and what you did to it offline, like ticking it off, goes to theirs. Amounts typed offline are read the same way as online, also as words („zwei Gurken“, "two apples"). Brand and details typed offline („Windeln Pampers Größe 3“) are sorted out when the add syncs, as for an online add.
 
 **How to get there.**
 1. Open „Liste“ (EN: "List") and use it as usual with the connection off.
@@ -328,7 +328,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Offline sign-in, and a first start offline before the list was ever synced (not covered by specs or read in detail).
 
-**Last verified.** job 116 branch (job/116-fix-snackbar-barrier), 2026-11-05 (CET), driven on the Linux debug build (verify-family-groceries): a store save the server refuses shows its message above the open dialog; closing the dialog takes the message along, and the tabs work at once. Before that job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): amounts typed offline, number words included, match the ones typed online. Before that main c5a580a8, 2026-11-05: add and tick offline, the offline note, adding a store refused, sync when back. Recipe: [offline.md](./offline.md).
+**Last verified.** branch job/111-fix-voice-parse-hygiene on main 0bf5d45b, 2026-11-05 (CET), driven on the web build (`e2e/tests/offline-start.spec.ts`): an offline „zwei Windeln Pampers Größe 3“ synced as Windeln / Pampers / Größe 3 with 2. Before that job 116 branch (job/116-fix-snackbar-barrier), 2026-11-05 (CET), driven on the Linux debug build (verify-family-groceries): a store save the server refuses shows its message above the open dialog; closing the dialog takes the message along, and the tabs work at once. Before that job 104 branch (job/104-gap-fixes), 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): amounts typed offline, number words included, match the ones typed online. Before that main c5a580a8, 2026-11-05: add and tick offline, the offline note, adding a store refused, sync when back. Recipe: [offline.md](./offline.md).
 
 # Settings, help and account
 

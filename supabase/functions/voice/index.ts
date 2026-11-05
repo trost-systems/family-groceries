@@ -5,7 +5,7 @@ import { requirePremiumWith } from '../_shared/premium.ts';
 import { telemetryFor, withTelemetry } from '../_shared/telemetry.ts';
 import { listItems } from '../_shared/list.ts';
 import { createHandler } from './handler.ts';
-import { addItems } from './items.ts';
+import { addItems, splitItems } from './items.ts';
 
 const telemetry = telemetryFor('voice');
 
@@ -15,6 +15,8 @@ Deno.serve(withTelemetry(
     authenticate: (req) => authenticate(req, undefined, { siri: true }),
     requirePremium: requirePremiumWith(telemetry),
     addItems: (auth, items) => asUser(auth.userId, (tx) => addItems(tx, auth.householdId, items)),
+    splitItems: (auth, items) =>
+      asUser(auth.userId, (tx) => splitItems(tx, auth.householdId, items)),
     readItems: async (auth) =>
       (await asUser(auth.userId, (tx) => listItems(tx, auth.householdId, {}))).items,
     track: async (auth, { event, ...properties }) => {

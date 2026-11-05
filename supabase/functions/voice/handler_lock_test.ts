@@ -23,6 +23,10 @@ function world(access: () => Promise<Access>) {
         ? Promise.resolve({ userId: 'u1', householdId: 'h1', via })
         : Promise.reject(new AuthError('invalid_token', 'test'));
     },
+    splitItems: (_caller, items) =>
+      Promise.resolve(
+        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+      ),
     requirePremium: (caller, integration) => {
       asked.push([caller, integration]);
       return access();

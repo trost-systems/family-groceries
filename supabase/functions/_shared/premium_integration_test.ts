@@ -19,7 +19,7 @@ import type { Envelope } from '../alexa/verify.ts';
 import { buildServer, premiumRequired } from '../mcp/tools.ts';
 import { copy } from '../voice/copy.ts';
 import { createHandler as voiceHandler } from '../voice/handler.ts';
-import { addItems } from '../voice/items.ts';
+import { addItems, splitItems } from '../voice/items.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
 const admin = () => postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
@@ -73,6 +73,8 @@ function voice(m: Member, telemetry: Telemetry) {
       Promise.resolve({ userId: m.userId, householdId: m.householdId, via: 'pat' as const }),
     requirePremium: requirePremiumWith(telemetry),
     addItems: (auth, parsed) => asUser(auth.userId, (tx) => addItems(tx, auth.householdId, parsed)),
+    splitItems: (auth, parsed) =>
+      asUser(auth.userId, (tx) => splitItems(tx, auth.householdId, parsed)),
   });
   return async (text: string) => {
     const res = await handle(

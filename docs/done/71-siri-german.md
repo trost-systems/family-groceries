@@ -1,7 +1,7 @@
 # Job 71: German native Siri only opened the app
 
-PR https://github.com/trost-systems/family-groceries/pull/194, branch `job/71-siri-german`, not
-merged (the brief says PR only).
+PR https://github.com/trost-systems/family-groceries/pull/194, branch `job/71-siri-german`, merged
+to main on 2026-11-02 (940a5ba3).
 
 ## What was broken
 

@@ -7819,3 +7819,37 @@ Calls made without a human (log and numbers: `docs/hillclimb/hc-ui-app.md`).
 8. **Judge inputs change only through a logged re-baseline.** Next judge-panel hill-climb:
    `measure.sh` refuses to run when DESIGN.md, the tokens or the prompt differ from the
    baseline commit.
+## Job 111: dictation brand split, truncated voice lists, offline parse, test hygiene (2026-11-05)
+
+1. **Dictation splits on the server with the typed add's parser.** With `split: true` the voice
+   function's `mode: parse` runs each heard item through `public.parse_item`, the function
+   `add_item` (Siri, MCP) and the add sheet's server rows use, and answers `{ name, brand,
+   properties, quantity, storeId }`. No new heuristic: the splitter still finds the items and the
+   spoken amount; parse_item finds brand, details and the store. The spoken amount wins, as in
+   `add_item`. The split is opt-in because installed apps read only `name` and `quantity`: a
+   split name ("Windeln") would drop "Pampers Größe 3" for them (TestFlight and Play builds lag
+   main). The app reads `brand`, `properties` and `storeId` leniently, so a new app against a
+   voice function deployed before this job still adds the items (without the split). A failing
+   split is reported and answered with the items as heard (200), never a failed dictation.
+2. **More than 30 items: say it, don't add more.** The cap per sentence stays (it bounds one
+   request's database work, and Siri has the same rule). The app now reads `truncated` and ends
+   its summary with the sentence Siri says in this case, as the new string `dictationTooMany`
+   (NEEDS_COPY_REVIEW). Splitting the rest client-side was rejected: the server does not say where
+   it cut the sentence.
+3. **Offline adds are parsed by the server when they sync, not on the device.** Porting
+   parse_item's brand and details rules (brand list, household memory, store words) to Dart would
+   be a second parser to keep in sync. Instead the add sheet's device-made row is marked
+   `deviceParsed`, the queued `AddItem` keeps the flag (`device_parsed` in the op JSON, so it
+   survives restarts), and the repository calls `parse_item` on the name before `put_item`. What
+   the device read (the quantity, with #236's number words) and what the user picked (store,
+   category chips) win over the parse; „Ohne Laden“ keeps the parsed store out. Until it syncs the row shows the whole line as its name.
+   Two requests per such add, only for adds made offline (or when Enter's 3 s wait for the
+   server ran out). A rename of such an add before it syncs is parsed the same way (`EditItem.deviceParsed`):
+   otherwise the add would sync as Windeln / Pampers / Größe 3 and the rename would then set the
+   whole new line as the name next to the old brand and details. Such a rename onto an item
+   already open under the split name is refused by job 104's `items_rename_duplicate` at the
+   sync and shown as „… steht schon auf der Liste“; the item keeps its first name. Folding it as
+   an online rename does would need the split before the sync, which offline has not.
+4. **WidgetPayloadTest runs in the android gate**, after the debug build (which writes the
+   Gradle wrapper): the cheapest gate that already has Java, Gradle and the Android SDK. A change
+   to `scripts/gates/android.sh` or `ios.sh` now also runs those gates (`scripts/ci-changes.sh`).

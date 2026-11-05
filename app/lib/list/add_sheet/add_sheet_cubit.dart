@@ -124,6 +124,7 @@ class AddSheetCubit(
         quantity: entry.quantity,
         storeId: store == null ? entry.storeId : store.value,
         categoryId: state.category ?? entry.categoryId,
+        deviceParsed: entry.deviceParsed,
       ),
       noStore: store != null && store.value == null,
       source: suggestion.source == SuggestionSource.typed
@@ -313,7 +314,11 @@ class AddSheetCubit(
       for (final suggestion in [
         Suggestion(
           SuggestionSource.typed,
-          ParsedEntry(name: typed.name, quantity: typed.quantity),
+          ParsedEntry(
+            name: typed.name,
+            quantity: typed.quantity,
+            deviceParsed: true,
+          ),
         ),
         for (final usual in _list.suggestionsFor(typed.name))
           Suggestion(

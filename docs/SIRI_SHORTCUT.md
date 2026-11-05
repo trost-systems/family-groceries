@@ -200,6 +200,9 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
   Nichts wird hinzugefügt oder vorgelesen; der Token bleibt gültig und
   funktioniert ohne neue Einrichtung, sobald der Haushalt Premium hat. Die
   Spracheingabe in der App selbst (Sitzungstoken, `mode: "parse"`) ist frei.
+  Mit `"split": true` (die App seit Job 111) kommt jeder Eintrag zusätzlich
+  mit Marke, Eigenschaften und Laden zurück, wie `add_item` sie speichert
+  (`brand`, `properties`, `storeId`); ohne bleibt die Antwort wie bisher.
   Der Schalter ist aus.
 
 Der Quellcode liegt in `supabase/functions/voice/`; die Zerlegung des

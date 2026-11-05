@@ -32,6 +32,7 @@
   "@dictationAdded": {"placeholders": {"items": {"type": "String"}}},
   "dictationAlreadyOnList": "Already on the list: {items}.",
   "@dictationAlreadyOnList": {"placeholders": {"items": {"type": "String"}}},
+  "dictationTooMany": "More than thirty at once doesn't work; please say the rest again.",
   "undo": "Undo",
   "editTitle": "Edit: {name}",
   "@editTitle": {"placeholders": {"name": {"type": "String"}}},

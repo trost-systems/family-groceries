@@ -1,6 +1,6 @@
 # Job 63: Home Screen widgets (iOS WidgetKit, Android Glance), 2026-11-01
 
-PR #185 (not merged: it waits for the Apple portal steps, see Blocked).
+PR #185, merged to main on 2026-11-02 (88e94894). The Apple portal steps under "Not proven / blocked" still apply.
 
 ## Built
 
@@ -20,5 +20,5 @@ PR #185 (not merged: it waits for the Apple portal steps, see Blocked).
 ## Not proven / blocked
 
 - No device, simulator or emulator on hz: the widgets' look, sizes, taps and dark mode are unseen. Peter's device test (docs/NEEDS_PETER.md, job 63).
-- Release signing: needs App Group + App ID in the Apple portal and `renew_profile` (NEEDS_PETER job 63); the `release` environment runs on main only, so it could not be proven on the branch. The PR must not merge before.
+- Release signing: needs App Group + App ID in the Apple portal and `renew_profile` (NEEDS_PETER job 63); the `release` environment runs on main only, so it could not be proven on the branch.
 - No ticking from the widget (decided, DECISIONS job 63).

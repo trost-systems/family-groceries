@@ -30,6 +30,10 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     },
     // The lock is off (or the household has premium): everything as before job 50.
     requirePremium: () => Promise.resolve('open'),
+    splitItems: (_caller, items) =>
+      Promise.resolve(
+        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+      ),
     addItems: asAdded(['milk', 'Milch']),
     readItems: () => Promise.resolve([]),
     track: (_caller, event) => {

@@ -4,6 +4,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/dictation.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -103,6 +104,49 @@ void main() {
     expect(fieldText(tester), isEmpty);
     expect(find.byTooltip('Diktieren'), findsOneWidget);
     expect(tester.widget<TextField>(addField()).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('a dictated item gets its brand and details split off, as a '
+      'typed one does (job 111)', (tester) async {
+    final dictation = FakeDictation();
+    await pumpList(tester, dictation);
+    repo.parsed['Windeln Pampers Größe 3'] = const ParsedEntry(
+      name: 'Windeln',
+      brand: 'Pampers',
+      properties: 'Größe 3',
+    );
+    await tester.tap(find.byTooltip('Diktieren'));
+    dictation.finish.complete(Heard('Windeln Pampers Größe 3 und 2 Gurken'));
+    await tester.pumpAndSettle();
+
+    expect(
+      repo.rows.values.map((i) => (i.name, i.brand, i.properties, i.quantity)),
+      [('Windeln', 'Pampers', 'Größe 3', null), ('Gurken', null, null, '2')],
+    );
+    expect(
+      find.text('Hinzugefügt: Windeln Pampers Größe 3, 2 Gurken.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('more than 30 dictated items: the first 30 are added and the '
+      'rest is not dropped silently (job 111)', (tester) async {
+    final dictation = FakeDictation();
+    await pumpList(tester, dictation);
+    await tester.tap(find.byTooltip('Diktieren'));
+    dictation.finish.complete(
+      Heard([for (var i = 1; i <= 32; i++) 'Ding $i'].join(', ')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.rows, hasLength(30));
+    expect(
+      find.textContaining(
+        'Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch '
+        'einmal.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('items already on the list are named, not doubled', (

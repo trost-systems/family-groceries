@@ -269,13 +269,27 @@ class FakeRepository() implements ListRepository {
   final merges = <String, ({Item kept, Item merged, bool undone})>{};
 
   @override
-  Future<Map<String, Item?>> send(ItemOp op) async {
+  Future<Map<String, Item?>> send(ItemOp sentOp) async {
     await gate?.future;
     _ensureOnline();
     if (reject) {
       reject = false;
       throw const RejectedOp('denied');
     }
+    // As the repository: a line typed offline is parsed before it is added.
+    final op = switch (sentOp) {
+      AddItem(deviceParsed: true, :final item, :final noStore) => AddItem(
+        (await parse(item.name)).onto(item, noStore: noStore),
+        noStore: noStore,
+      ),
+      EditItem(deviceParsed: true, :final changes, :final keyBefore) =>
+        EditItem(
+          sentOp.itemId,
+          (await parse(changes.name!)).ontoRename(changes),
+          keyBefore: keyBefore,
+        ),
+      _ => sentOp,
+    };
     sent.add(op);
     final Map<String, Item?> touched;
     switch (op) {
@@ -524,14 +538,26 @@ class FakeRepository() implements ListRepository {
     };
   }
 
-  /// Stands in for the server's splitter: splits on commas and "und".
+  /// Stands in for the server's splitter: splits on commas and "und", then
+  /// reads each part as [parse] does; at most 30, as the server.
   @override
-  Future<List<Entry>> splitSpoken(String text) async {
+  Future<SpokenSplit> splitSpoken(String text) async {
     _ensureOnline();
-    return [
+    final entries = [
       for (final part in text.split(RegExp(r',|\bund\b')))
-        if (part.trim().isNotEmpty) parseEntry(part),
+        if (parseEntry(part) case Entry(:final name, :final quantity)
+            when name.isNotEmpty)
+          switch (parsed[name]) {
+            final split? => ParsedEntry(
+              name: split.name,
+              brand: split.brand,
+              properties: split.properties,
+              quantity: quantity ?? split.quantity,
+            ),
+            null => ParsedEntry(name: name, quantity: quantity),
+          },
     ];
+    return (entries: entries.take(30).toList(), truncated: entries.length > 30);
   }
 
   @override

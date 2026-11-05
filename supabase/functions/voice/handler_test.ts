@@ -17,6 +17,10 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
         : Promise.reject(fail(401)),
     // The lock is off (or the household has premium): everything as before job 50.
     requirePremium: () => Promise.resolve('open'),
+    splitItems: (_caller, items) =>
+      Promise.resolve(
+        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+      ),
     addItems: (_caller, items) => {
       calls.push(items);
       return Promise.resolve(items.map((item) => ({
@@ -32,6 +36,10 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
   };
   return { handle: createHandler(deps), calls };
 }
+
+/** What the splitter heard, without the brand and details the database adds. */
+const heard = (body: { items: ParsedItem[] }) =>
+  body.items.map(({ name, quantity }) => ({ name, quantity }));
 
 const post = (body: unknown, init: { token?: string; query?: string; type?: string } = {}) =>
   new Request(`http://local/voice${init.query ?? ''}`, {
@@ -87,11 +95,61 @@ Deno.test('parse mode splits without adding', async () => {
   const { handle, calls } = fakeDeps();
   const res = await handle(post({ text: 'Milch und 1 kg Mehl', mode: 'parse' }));
   assertEquals(res.status, 200);
-  assertEquals((await res.json()).items, [
+  assertEquals(heard(await res.json()), [
     { name: 'Milch', quantity: null },
     { name: 'Mehl', quantity: '1 kg' },
   ]);
   assertEquals(calls, []);
+});
+
+Deno.test('parse mode with split: brand, details and store as a typed add gets them', async () => {
+  const { handle } = fakeDeps({
+    splitItems: (_caller, items) =>
+      Promise.resolve(
+        items.map((item) =>
+          item.name === 'Windeln Pampers Größe 3'
+            ? { ...item, name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', storeId: 'dm' }
+            : { ...item, brand: null, properties: null, storeId: null }
+        ),
+      ),
+  });
+  const res = await handle(
+    post({ text: 'Windeln Pampers Größe 3 und Milch', mode: 'parse', split: true }),
+  );
+  assertEquals((await res.json()).items, [
+    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: null, storeId: 'dm' },
+    { name: 'Milch', brand: null, properties: null, quantity: null, storeId: null },
+  ]);
+});
+
+Deno.test('parse mode without split answers as before, for installed apps', async () => {
+  let splits = 0;
+  const { handle } = fakeDeps({
+    splitItems: () => {
+      splits++;
+      return Promise.reject(new Error('not asked'));
+    },
+  });
+  const res = await handle(post({ text: 'Windeln Pampers Größe 3', mode: 'parse' }));
+  assertEquals((await res.json()).items, [{ name: 'Windeln Pampers Größe 3', quantity: null }]);
+  assertEquals(splits, 0);
+});
+
+Deno.test('parse mode with split: a failing split answers the items as heard, reported', async () => {
+  const reported: unknown[] = [];
+  const { handle } = fakeDeps({
+    splitItems: () => Promise.reject(new Error('db down')),
+    report: (e) => reported.push(e),
+  });
+  const res = await handle(
+    post({ text: 'Windeln Pampers Größe 3 und Milch', mode: 'parse', split: true }),
+  );
+  assertEquals(res.status, 200);
+  assertEquals((await res.json()).items, [
+    { name: 'Windeln Pampers Größe 3', quantity: null },
+    { name: 'Milch', quantity: null },
+  ]);
+  assertEquals(reported.length, 1);
 });
 
 Deno.test('parse mode, the in-app dictation, reads a count said after the item', async () => {
@@ -109,7 +167,7 @@ Deno.test('parse mode, the in-app dictation, reads a count said after the item',
     ] as const
   ) {
     const res = await handle(post({ text, mode: 'parse', lang }));
-    assertEquals((await res.json()).items, items, text);
+    assertEquals<readonly ParsedItem[]>(heard(await res.json()), items, text);
   }
 });
 

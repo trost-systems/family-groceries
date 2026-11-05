@@ -102,6 +102,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dictationTooMany =>
+      'More than thirty at once doesn\'t work; please say the rest again.';
+
+  @override
   String get undo => 'Undo';
 
   @override

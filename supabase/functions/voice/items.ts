@@ -1,5 +1,5 @@
 import type { Tx } from '../_shared/db.ts';
-import type { Added } from './handler.ts';
+import type { Added, SplitItem } from './handler.ts';
 import type { ParsedItem } from './parse.ts';
 
 /**
@@ -36,4 +36,29 @@ export async function addItems(tx: Tx, householdId: string, items: ParsedItem[])
     added.push({ ...row, alreadyOnList, similarOnList: similar.map((s) => s.name) });
   }
   return added.map(({ id: _, ...rest }) => rest);
+}
+
+/**
+ * Splits brand, details and store off each item through `parse_item`, the parser `add_item` and
+ * the app's typed add use: "Windeln Pampers Größe 3" is Windeln, Pampers, Größe 3, at dm. The
+ * spoken quantity wins, as in `addItems`.
+ */
+export async function splitItems(
+  tx: Tx,
+  householdId: string,
+  items: ParsedItem[],
+): Promise<SplitItem[]> {
+  const split: SplitItem[] = [];
+  for (const item of items) {
+    const [row] = await tx<SplitItem[]>`
+      select name, brand, properties, quantity, store_id as "storeId"
+      from public.parse_item(${householdId}, ${item.name})`;
+    // A line parse_item reads no name from stays as heard, never dropped.
+    split.push(
+      row?.name
+        ? { ...row, quantity: item.quantity ?? row.quantity }
+        : { ...item, brand: null, properties: null, storeId: null },
+    );
+  }
+  return split;
 }
