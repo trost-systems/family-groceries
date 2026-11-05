@@ -59,7 +59,22 @@ first step, then below its own best minus the band.
 Guardrail baseline: `flutter test` 1854 passed, 91 skipped (80 s); `flutter analyze` no
 issues; `scripts/lint.sh` ok.
 
+### Two findings after the baseline (no measure.sh change)
+
+- **`bytes_per_query` is not a real allocation count.** It sums `accumulatedSize` from
+  `getAllocationProfile`, which only sees allocations through the VM's slow path: a base
+  round shows ~411k strings where `foldName` alone makes over 200k plus the replace
+  passes, compiler objects (`Class`, `Instructions`, `ICData`) land in the window, and
+  attempt 1, which provably drops all 200k `foldName` calls, read *higher*
+  (2.5 MB -> 2.9-4.7 MB). `flutter test` passes no VM flags (`--no-inline-alloc`) to
+  the tester. So the score is latency only; bytes are reported and never break a tie.
+- **The band is applied relative.** 4.763 ms is 31.2 % of the baseline median; an
+  absolute 4.763 ms would forbid every step once the score is under ~9.5 ms. A step is
+  kept when its median is below `current best x (1 - 0.312)`. Candidates within reach
+  of the line get alternating candidate/HEAD runs (A/B pairs) to cancel host load.
+
 ## Attempts
 
 | # | time | change | score | kept/reverted | why |
 | --- | --- | --- | --- | --- | --- |
+| 1 | 21:01 | `suggestUsuals`: fold each `Usual.name` once (`Expando` per usual) instead of on every keystroke | 7.969 (7.969, 10.222, 7.427) | kept | -48 %; 5,000 `foldName` calls per query were half the time; cold p50 unchanged (14.6-24.9, load 9-11) |

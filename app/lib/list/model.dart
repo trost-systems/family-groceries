@@ -1066,11 +1066,16 @@ List<Usual> suggestUsuals(
   }
   final ranked = [
     for (final (order, usual) in _offList(usuals, visible).indexed)
-      if (suggestionMatch(typed, foldName(usual.name)) case final rank?)
+      if (suggestionMatch(typed, _folded(usual)) case final rank?)
         (rank, order, usual),
   ]..sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
   return [for (final (_, _, usual) in ranked.take(limit)) usual];
 }
+
+/// [Usual.name] folded, once per usual: each keystroke ranks them all again.
+String _folded(Usual usual) => _foldedNames[usual] ??= foldName(usual.name);
+
+final _foldedNames = Expando<String>('folded usual name');
 
 /// How a folded [name] matches folded [typed] text, best first, as
 /// `public.suggest_match` on the server: 0 the same name, 1 it starts with
