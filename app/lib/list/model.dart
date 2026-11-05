@@ -356,6 +356,28 @@ class const Item({
     canonicalKey: json['canonical_key'] as String?,
   );
 
+  /// Reads what [toRow] wrote.
+  factory fromRow(List<Object?> row) => Item(
+    id: row[0]! as String,
+    name: row[1]! as String,
+    quantity: row[2] as String?,
+    brand: row[3] as String?,
+    properties: row[4] as String?,
+    categoryId: row[5] as String?,
+    storeId: row[6] as String?,
+    sortKey: (row[7] as num?)?.toDouble(),
+    status: ItemStatus.values.byName(row[8]! as String),
+    createdAt: _readTime(row[9]!),
+    updatedAt: _readTime(row[10]!),
+    boughtAt: switch (row[11]) {
+      final Object at => _readTime(at),
+      null => null,
+    },
+    addedBy: row[12] as String?,
+    categorizedVia: row[13] as String?,
+    canonicalKey: row[14] as String?,
+  );
+
   /// The same keys as a server row, so [Item.fromJson] reads it back.
   Map<String, Object?> toJson() => {
     'id': id,
@@ -374,6 +396,28 @@ class const Item({
     'categorized_via': categorizedVia,
     'canonical_key': canonicalKey,
   };
+
+  /// [toJson]'s values in its order, for the device cache: half the JSON of
+  /// keyed rows to encode on each change to the queue and to decode on
+  /// start. UTC times are microseconds since the epoch, which read back
+  /// without parsing. Built once per item and shared, so never change it.
+  List<Object?> toRow() => _itemRows[this] ??= [
+    id,
+    name,
+    quantity,
+    brand,
+    properties,
+    categoryId,
+    storeId,
+    sortKey,
+    status.name,
+    _writeTime(createdAt),
+    _writeTime(updatedAt),
+    if (boughtAt case final at?) _writeTime(at) else null,
+    addedBy,
+    categorizedVia,
+    canonicalKey,
+  ];
 
   Item copyWith({
     String? name,
@@ -406,6 +450,16 @@ class const Item({
   /// Added by another member (not by [userId], and not still unconfirmed).
   bool isFromPartner(String userId) => addedBy != null && addedBy != userId;
 }
+
+final _itemRows = Expando<List<Object?>>();
+
+Object _writeTime(DateTime at) =>
+    at.isUtc ? at.microsecondsSinceEpoch : at.toIso8601String();
+
+DateTime _readTime(Object at) => switch (at) {
+  final int micros => DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true),
+  _ => DateTime.parse(at as String),
+};
 
 /// Walk order inside a group: [Item.sortKey] (null last), then created,
 /// then id, as the server orders it.
@@ -1066,8 +1120,7 @@ List<Usual> suggestUsuals(
   }
   final ranked = [
     for (final (order, usual) in _offList(usuals, visible).indexed)
-      if (suggestionMatch(typed, foldName(usual.name)) case final rank?)
-        (rank, order, usual),
+      if (_matchUsual(typed, usual) case final rank?) (rank, order, usual),
   ]..sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
   return [for (final (_, _, usual) in ranked.take(limit)) usual];
 }
@@ -1077,14 +1130,29 @@ List<Usual> suggestUsuals(
 /// it, 2 a word of it does, 3 it has it inside (from 4 letters), 4 a word of
 /// it or the whole name is a typo of it (from 3 letters: same first letter,
 /// one edit up to 5 letters, two from 6). Null: no match.
-int? suggestionMatch(String typed, String name) {
+int? suggestionMatch(String typed, String name) =>
+    _match(typed, name, name.split(_wordBreaks));
+
+/// A usual's folded name and its words, once per usual: the add sheet
+/// matches every usual on each keystroke.
+final _usualWords = Expando<(String, List<String>)>();
+
+int? _matchUsual(String typed, Usual usual) {
+  final (name, words) = _usualWords[usual] ??= switch (foldName(usual.name)) {
+    final name => (name, name.split(_wordBreaks)),
+  };
+  return _match(typed, name, words);
+}
+
+final _wordBreaks = RegExp('[ -]+');
+
+int? _match(String typed, String name, List<String> words) {
   if (name == typed) {
     return 0;
   }
   if (name.startsWith(typed)) {
     return 1;
   }
-  final words = name.split(RegExp('[ -]+'));
   if (words.any((w) => w.startsWith(typed))) {
     return 2;
   }
