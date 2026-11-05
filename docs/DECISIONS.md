@@ -8081,3 +8081,27 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
     and so in request logs; posting the body to the API answers 400 instead.
 18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
     a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
+
+## Job 129: hill-climb hc-web-lighthouse, Lighthouse on the Flutter web app (2026-11-05)
+
+Attempt log and numbers: `docs/hillclimb/hc-web-lighthouse.md`.
+
+1. **Desktop profile, simulated throttling.** Lighthouse 13.6.0's desktop preset (1350x940, 40 ms
+   RTT, 10 Mbit/s, no CPU slowdown). The web app is used on laptops more than phones (phones
+   have the store apps), and the mobile preset's 4x CPU slowdown on a shared 12-core host would
+   swamp the signal in noise.
+2. **Fake backend, signed in by a stored session.** `fake_supabase.py` (job 100's fixture plus
+   CORS and `/auth/v1/user`) and a gotrue session written to `localStorage` before each run: no
+   Docker stack. The fake answers realtime with 404, so the list runs offline-marked; production
+   lists connect. The harness is frozen with that, and it is why the periodic offline rebuild
+   shows up in its profiles.
+3. **Score = median of 3 runs of the mean of two pages** (the list at `/`, the add sheet at
+   `/add`); a run where a page misses its state fails the measure.
+4. **Quiet-host gate.** After loaded runs scored 8-11 points low, measurements ran through
+   `quiet.sh` (load below 6, later 9 for control and candidate alike when the host stayed above
+   6 for 30 min). A higher gate biases scores down, never up.
+5. **Owned files left alone.** `list_cubit.dart` (#253), `flutter_bootstrap.js` and
+   `design/app-icon/build.mjs` (#237) and, until it merged at 21:16, `shopping_list_view.dart`
+   (#257) belonged to queued fix rounds; the fixes that need them are next steps in the log.
+6. **Stopped by the 5-attempt rule with no kept step**, so the PR carries the harness, the
+   profiling tools and the log, and no app change.

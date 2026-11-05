@@ -1,0 +1,133 @@
+diff --git a/app/lib/list/add_sheet/add_sheet.dart b/app/lib/list/add_sheet/add_sheet.dart
+index 40e034ef..b8f72807 100644
+--- a/app/lib/list/add_sheet/add_sheet.dart
++++ b/app/lib/list/add_sheet/add_sheet.dart
+@@ -137,7 +137,7 @@ class _AddSheetState() extends State<AddSheet> {
+   Widget build(BuildContext context) {
+     final still = MediaQuery.disableAnimationsOf(context);
+     final sheet = context.watch<AddSheetCubit>().state;
+-    final list = context.watch<ListCubit>().state;
++    final DrawnList(state: list) = context.select(DrawnList.of);
+     final open = sheet.open;
+     return BlocListener<AddSheetCubit, AddSheetState>(
+       listenWhen: (a, b) => a.open != b.open,
+diff --git a/app/lib/list/list_screen.dart b/app/lib/list/list_screen.dart
+index f3a61c4e..cc410c90 100644
+--- a/app/lib/list/list_screen.dart
++++ b/app/lib/list/list_screen.dart
+@@ -535,7 +535,7 @@ class const _AddBar({
+     final scheme = Theme.of(context).colorScheme;
+     final cubit = context.read<AddSheetCubit>();
+     final sheet = context.watch<AddSheetCubit>().state;
+-    final list = context.watch<ListCubit>();
++    final list = context.select(DrawnList.of);
+     final open = sheet.open;
+     final t = HummlistColors.of(Theme.of(context).brightness);
+     void show() {
+@@ -725,9 +725,7 @@ class const _Header() extends StatelessWidget {
+   Widget build(BuildContext context) {
+     final l10n = AppLocalizations.of(context);
+     final t = HummlistColors.of(Theme.of(context).brightness);
+-    final cubit = context.watch<ListCubit>();
+-    final state = cubit.state;
+-    final fresh = cubit.fresh;
++    final DrawnList(:state, :fresh) = context.select(DrawnList.of);
+     final by = {for (final id in fresh) state.items[id]?.addedBy};
+     final partner = by.length == 1 ? state.catalog.member(by.single) : null;
+     return DecoratedBox(
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index 43be713f..5891863c 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -14,7 +14,7 @@ import 'package:family_groceries/list/list_view/leaving_rows.dart';
+ import 'package:family_groceries/list/list_view/sections.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:family_groceries/tips/tip_card.dart';
+-import 'package:flutter/foundation.dart' show kIsWeb;
++import 'package:flutter/foundation.dart' show kIsWeb, setEquals;
+ import 'package:flutter/material.dart';
+ import 'package:flutter/rendering.dart' show RenderAbstractViewport;
+ import 'package:flutter/semantics.dart';
+@@ -88,6 +88,37 @@ class const ShoppingListView({
+   State<ShoppingListView> createState() => _ShoppingListViewState();
+ }
+ 
++/// What the list page draws from the [ListCubit]: the rows (server rows
++/// with pending ops on top), the catalog, the folded stores and which rows
++/// are new. Equal when a rebuild would draw the same, so the widgets that
++/// select it skip the usuals and the connection, which change while the
++/// list loads and reconnects; on the web each skipped rebuild is a frame
++/// of the whole list not drawn (job 129).
++@immutable
++class const DrawnList(final ListState state, final Set<String> fresh) {
++  factory of(ListCubit cubit) => DrawnList(cubit.state, cubit.fresh);
++
++  @override
++  bool operator ==(Object other) =>
++      other is DrawnList &&
++      other.state.loaded == state.loaded &&
++      identical(other.state.server, state.server) &&
++      identical(other.state.pending, state.pending) &&
++      identical(other.state.catalog, state.catalog) &&
++      identical(other.state.prefs, state.prefs) &&
++      setEquals(other.fresh, fresh);
++
++  @override
++  int get hashCode => Object.hash(
++    state.loaded,
++    state.server,
++    state.pending,
++    state.catalog,
++    state.prefs,
++    fresh.length,
++  );
++}
++
+ class _ShoppingListViewState() extends State<ShoppingListView> {
+   final _leaving = LeavingRows();
+   final _scroll = ScrollController();
+@@ -351,7 +382,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+   );
+ 
+   Widget _list(BuildContext context) {
+-    final state = context.watch<ListCubit>().state;
++    final DrawnList(:state) = context.select(DrawnList.of);
+     if (!state.loaded) {
+       return const Center(child: CircularProgressIndicator());
+     }
+diff --git a/app/test/list/list_screen_test.dart b/app/test/list/list_screen_test.dart
+index 66c92841..0bdbdf11 100644
+--- a/app/test/list/list_screen_test.dart
++++ b/app/test/list/list_screen_test.dart
+@@ -1322,6 +1322,31 @@ void main() {
+       await tester.pump(const Duration(seconds: 4));
+     });
+ 
++    testWidgets('builds nothing on the list page when the connection is '
++        'told again unchanged', (tester) async {
++      await pumpList(tester, seed: (repo) => repo..remoteAdd('Brot'));
++      repo.online = false;
++      repo.emitStatus!(ConnectionStatus.offline);
++      await frames(tester);
++      expect(syncIcon(Icons.cloud_off), findsOneWidget);
++
++      // A reconnect that fails again says offline again. Nothing on the
++      // page changes, so nothing is built or laid out again (on the web a
++      // relayout of every row, job 129).
++      final rebuilt = <String>[];
++      debugOnRebuildDirtyWidget = (element, _) {
++        if (element.findAncestorWidgetOfExactType<ShoppingList>() != null) {
++          rebuilt.add('${element.widget}');
++        }
++      };
++      addTearDown(() => debugOnRebuildDirtyWidget = null);
++      repo.emitStatus!(ConnectionStatus.offline);
++      await frames(tester);
++      debugOnRebuildDirtyWidget = null;
++      expect(rebuilt, isEmpty);
++      await tester.pump(const Duration(seconds: 4));
++    });
++
+     testWidgets('shows neither the household name nor the item count, '
+         'only Anpassen', (tester) async {
+       await pumpList(

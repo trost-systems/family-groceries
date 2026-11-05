@@ -30,6 +30,7 @@
 - Job 78, stores and categories under Liste → Anpassen, nothing on the list drags, a compact add sheet, back from joining returns to More: [docs/done/78-list-manage-ux.md](docs/done/78-list-manage-ux.md)
 - Job 92, German Siri routing: app-first phrases, spoken names with hints, the SiriKit Lists fallback for any item, and CI profile renewal after the Siri capability: [docs/done/92-siri-german-routing.md](docs/done/92-siri-german-routing.md)
 - Job 106, hill climb hc-backend-perf: load harness over the app, MCP and voice hot paths; `suggest_items` keys each name once (list open about 1.5 s -> 0.6 s p95 on 300 open + 5,000 bought), PR DO NOT MERGE: [docs/done/106-hc-backend-perf.md](docs/done/106-hc-backend-perf.md)
+- Job 129, hill climb hc-web-lighthouse: Lighthouse harness for the Flutter web app (fake backend, desktop preset, list and add sheet), profiling tools, five attempts and no kept step (74.5 -> 74.5), review 0 fixed (the add-sheet ready check), PR DO NOT MERGE: [docs/done/129-hc-web-lighthouse.md](docs/done/129-hc-web-lighthouse.md)
 
 ## Job 1: foundation (2026-10-22)
 
