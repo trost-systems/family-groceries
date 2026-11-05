@@ -43,6 +43,8 @@ class const ListSnapshot({
     );
   }
 
+  /// The last plain JSON layout. The device writes `snapshot_codec.dart`'s
+  /// version 4 since; numbers go on from there.
   static const version = 3;
 
   /// Version n to n + 1, for every n below [version].

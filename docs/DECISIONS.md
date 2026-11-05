@@ -8081,3 +8081,44 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
     and so in request logs; posting the body to the API answers 400 instead.
 18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
     a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
+
+## Job 132: hill-climb hc-cache-codec, the list-cache snapshot codec (2026-11-05)
+
+1. **The device keeps list snapshots in a compact layout, version 4.** `app/lib/list/snapshot_codec.dart`
+   writes a JSON object whose records (the catalog, each server row, op and usual) are strings of
+   base64-alphabet digits (five bits a character, the sixth set while more follow) that refer to one
+   table of the snapshot's distinct strings, stored last as one joined JSON string with the lengths
+   in `head`. It stays JSON with one array element per row because e2e specs
+   (`offline-start.spec.ts`, `suggestions.spec.ts`) read the stored value and count `server`,
+   `pending` and `usuals`. UTC times are microseconds, an item's updated and bought times are relative
+   to the time before (the server sets both from one `now()`, so often the same instant), sort keys
+   are half steps. Local times (ops queued offline use `DateTime.now()`) keep their ISO text, so they
+   load exactly as the JSON snapshots did. A 5,000-item snapshot goes from 2.33 MB to 432 KB; save
+   and load are about 8 to 10 times faster in the test VM (`docs/hillclimb/hc-cache-codec.md`).
+2. **The JSON snapshots stay readable.** `decodeSnapshot` sends anything that does not start with
+   `{"version":4,"head":` to `ListSnapshot.fromJson` (versions 1 to 3 with their upgrades); a fixture written by main's code
+   (`app/test/list/fixtures/list_snapshot_v3.dart`) proves it loads and saves again as v4.
+   `ListSnapshot.toJson` stays the reference field list the round-trip checks compare. An older app
+   that meets a v4 snapshot refuses its version and treats it as missing, as it already does for a newer
+   JSON version (the next sync refills it; queued offline ops of that downgrade are lost, as before).
+   That includes a rollback of `app.hummlist.com` (the `release` branch): every web client that ran
+   v4 would start from an empty cache and lose ops it had queued offline.
+3. **The codec's arithmetic is exact on the JS web build too.** Firefox, Safari and every iOS
+   browser run `main.dart.js`, where `&`, `|`, `<<` and `>>` cut integers to 32 bits; microseconds
+   since 1970 need 51. The varints divide (`%`, `~/`, `*`) and stay below 2^53, the largest exact
+   integer there. `scripts/gates/flutter.sh` runs `test/list/snapshot_codec_test.dart` with
+   `--platform chrome` (dart2js), which failed 3 of 5 on the bit-operator version; the fixture is a
+   Dart constant (`test/list/fixtures/list_snapshot_v3.dart`) because web tests cannot read files.
+   `tool/hillclimb/hc-cache-codec/web.sh` times the release web build: v4 saves 3-8x and loads
+   4-11x faster than main's JSON in Chromium (wasm), Firefox and WebKit (js).
+4. **A field the codec does not know fails a test.** The codec writes each record field by field,
+   apart from `toJson`/`fromJson`, so a new model field would be dropped on the device with every
+   test green. `test/list/snapshot_fields_test.dart` pins the `toJson` keys of full records and the
+   keys every `fromJson` reads (a field written only when set too) to the fields the codec writes;
+   its message says to add the field to the codec as snapshot version 5 with a reader for 4.
+   Versions are one sequence: 1 to 3 are the plain JSON layouts, 4 is the codec's, the next
+   change takes 5. UTC times 2^51 µs or more from 1970, or from the time before, are written as
+   ISO text so every number stays exact on the JS build.
+5. **No compression, no uuid packing.** `dart:io`'s zlib is not on web, and a new dependency was not
+   worth it. Packing uuids into 128 bits would save about 13 % of the size but costs a hex
+   parse and format per id, which the time parts outweigh.

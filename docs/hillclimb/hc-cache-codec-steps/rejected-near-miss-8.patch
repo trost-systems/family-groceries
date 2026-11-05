@@ -1,0 +1,188 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index 93e4d241..4c292716 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -94,6 +94,26 @@ const _sortKeyDouble = 2;
+ /// Half steps of [_sortKeyHalves] stay exact up to here.
+ const _maxHalves = 1 << 52;
+ 
++int _timeTag(DateTime? t, DateTime? after) => switch (t) {
++  null => _timeNull,
++  _ when t == after => _timeSame,
++  DateTime(isUtc: true) when after?.isUtc ?? false => _timeUtcAfter,
++  DateTime(isUtc: true) => _timeUtc,
++  _ => _timeLocal,
++};
++
++int _sortKeyTag(double? k) {
++  if (k == null) {
++    return _sortKeyNull;
++  }
++  final halves = k * 2;
++  return halves == halves.truncateToDouble() &&
++          halves.abs() < _maxHalves &&
++          !(k == 0 && k.isNegative)
++      ? _sortKeyHalves
++      : _sortKeyDouble;
++}
++
+ enum _Op() {
+   add,
+   status,
+@@ -152,38 +172,36 @@ class _Writer() {
+   }
+ 
+   void time(DateTime? t, [DateTime? after]) {
+-    if (t == null) {
+-      uint(_timeNull);
+-    } else if (t == after) {
+-      uint(_timeSame);
+-    } else if (t.isUtc && (after?.isUtc ?? false)) {
+-      uint(_timeUtcAfter);
+-      sint(t.microsecondsSinceEpoch - after!.microsecondsSinceEpoch);
+-    } else if (t.isUtc) {
+-      uint(_timeUtc);
+-      sint(t.microsecondsSinceEpoch);
+-    } else {
+-      uint(_timeLocal);
+-      string(t.toIso8601String());
++    final tag = _timeTag(t, after);
++    uint(tag);
++    timeValue(tag, t, after);
++  }
++
++  void timeValue(int tag, DateTime? t, DateTime? after) {
++    switch (tag) {
++      case _timeUtcAfter:
++        sint(t!.microsecondsSinceEpoch - after!.microsecondsSinceEpoch);
++      case _timeUtc:
++        sint(t!.microsecondsSinceEpoch);
++      case _timeLocal:
++        string(t!.toIso8601String());
+     }
+   }
+ 
+   void sortKey(double? k) {
+-    if (k == null) {
+-      uint(_sortKeyNull);
+-      return;
+-    }
+-    final halves = k * 2;
+-    if (halves == halves.truncateToDouble() &&
+-        halves.abs() < _maxHalves &&
+-        !(k == 0 && k.isNegative)) {
+-      uint(_sortKeyHalves);
+-      sint(halves.toInt());
+-    } else {
+-      uint(_sortKeyDouble);
+-      _scratch.setFloat64(0, k);
+-      uint(_scratch.getUint32(0));
+-      uint(_scratch.getUint32(4));
++    final tag = _sortKeyTag(k);
++    uint(tag);
++    sortKeyValue(tag, k);
++  }
++
++  void sortKeyValue(int tag, double? k) {
++    switch (tag) {
++      case _sortKeyHalves:
++        sint((k! * 2).toInt());
++      case _sortKeyDouble:
++        _scratch.setFloat64(0, k!);
++        uint(_scratch.getUint32(0));
++        uint(_scratch.getUint32(4));
+     }
+   }
+ 
+@@ -218,6 +236,9 @@ class _Writer() {
+     });
+   }
+ 
++  /// The status and the value tags go in one header: status in bits 0-1,
++  /// the sort key's tag in 2-3, then three bits each for created, updated
++  /// and bought, so an open item's takes two digits.
+   void item(Item i) {
+     uniqueString(i.id);
+     string(i.name);
+@@ -226,11 +247,17 @@ class _Writer() {
+     optString(i.properties);
+     optString(i.categoryId);
+     optString(i.storeId);
+-    sortKey(i.sortKey);
+-    uint(i.status.index);
+-    time(i.createdAt);
+-    time(i.updatedAt, i.createdAt);
+-    time(i.boughtAt, i.updatedAt);
++    final sort = _sortKeyTag(i.sortKey);
++    final created = _timeTag(i.createdAt, null);
++    final updated = _timeTag(i.updatedAt, i.createdAt);
++    final bought = _timeTag(i.boughtAt, i.updatedAt);
++    uint(
++      i.status.index | sort << 2 | created << 4 | updated << 7 | bought << 10,
++    );
++    sortKeyValue(sort, i.sortKey);
++    timeValue(created, i.createdAt, null);
++    timeValue(updated, i.updatedAt, i.createdAt);
++    timeValue(bought, i.boughtAt, i.updatedAt);
+     optString(i.addedBy);
+     optString(i.categorizedVia);
+     optString(i.canonicalKey);
+@@ -385,7 +412,9 @@ class _Reader(final String _s, var int _pos) {
+     final i => _strings[i - 1],
+   };
+ 
+-  DateTime? time([DateTime? after]) => switch (uint()) {
++  DateTime? time([DateTime? after]) => timeValue(uint(), after);
++
++  DateTime? timeValue(int tag, DateTime? after) => switch (tag) {
+     _timeNull => null,
+     _timeSame => after!,
+     _timeUtcAfter => DateTime.fromMicrosecondsSinceEpoch(
+@@ -394,14 +423,16 @@ class _Reader(final String _s, var int _pos) {
+     ),
+     _timeUtc => DateTime.fromMicrosecondsSinceEpoch(sint(), isUtc: true),
+     _timeLocal => DateTime.parse(string()),
+-    final tag => throw FormatException('time', tag),
++    _ => throw FormatException('time', tag),
+   };
+ 
+-  double? sortKey() => switch (uint()) {
++  double? sortKey() => sortKeyValue(uint());
++
++  double? sortKeyValue(int tag) => switch (tag) {
+     _sortKeyNull => null,
+     _sortKeyHalves => sint() / 2,
+     _sortKeyDouble => _float64(),
+-    final tag => throw FormatException('sort key', tag),
++    _ => throw FormatException('sort key', tag),
+   };
+ 
+   double _float64() {
+@@ -453,10 +484,10 @@ class _Reader(final String _s, var int _pos) {
+     final properties = optString();
+     final categoryId = optString();
+     final storeId = optString();
+-    final sortKey = this.sortKey();
+-    final status = ItemStatus.values[uint()];
+-    final createdAt = time()!;
+-    final updatedAt = time(createdAt)!;
++    final header = uint();
++    final sortKey = sortKeyValue(header >> 2 & 3);
++    final createdAt = timeValue(header >> 4 & 7, null)!;
++    final updatedAt = timeValue(header >> 7 & 7, createdAt)!;
+     return Item(
+       id: id,
+       name: name,
+@@ -466,10 +497,10 @@ class _Reader(final String _s, var int _pos) {
+       categoryId: categoryId,
+       storeId: storeId,
+       sortKey: sortKey,
+-      status: status,
++      status: ItemStatus.values[header & 3],
+       createdAt: createdAt,
+       updatedAt: updatedAt,
+-      boughtAt: time(updatedAt),
++      boughtAt: timeValue(header >> 10, updatedAt),
+       addedBy: optString(),
+       categorizedVia: optString(),
+       canonicalKey: optString(),

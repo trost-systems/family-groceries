@@ -1,0 +1,58 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index e9183373..fdeeaba9 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -18,7 +18,7 @@ String encodeSnapshot(ListSnapshot snapshot) {
+     ..list(snapshot.server, body.item)
+     ..list(snapshot.pending, body.op)
+     ..list(snapshot.usuals, body.usual);
+-  final strings = body.strings.keys;
++  final strings = body.strings;
+   final head = _Writer()
+     ..uint(_binaryVersion)
+     ..uint(strings.length);
+@@ -98,8 +98,11 @@ class _Writer() {
+   var _buf = Uint8List(1 << 16);
+   var _len = 0;
+ 
+-  /// Insertion order is the table order.
+-  final strings = <String, int>{};
++  /// The table, in order.
++  final strings = <String>[];
++
++  /// Where [strings] has each string it dedupes.
++  final _index = <String, int>{};
+ 
+   final _scratch = ByteData(8);
+ 
+@@ -140,10 +143,18 @@ class _Writer() {
+ 
+   void boolean({required bool value}) => byte(value ? 1 : 0);
+ 
+-  void string(String s) => uint(strings.putIfAbsent(s, () => strings.length));
++  int _intern(String s) => _index[s] ??= (strings..add(s)).length - 1;
++
++  void string(String s) => uint(_intern(s));
+ 
+-  void optString(String? s) =>
+-      uint(s == null ? 0 : strings.putIfAbsent(s, () => strings.length) + 1);
++  void optString(String? s) => uint(s == null ? 0 : _intern(s) + 1);
++
++  /// An item's id: no other row has it, so it skips [_index]. An op naming
++  /// it later adds it again, which costs a few bytes.
++  void uniqueString(String s) {
++    uint(strings.length);
++    strings.add(s);
++  }
+ 
+   void time(DateTime? t, [DateTime? after]) {
+     if (t == null) {
+@@ -212,7 +223,7 @@ class _Writer() {
+   }
+ 
+   void item(Item i) {
+-    string(i.id);
++    uniqueString(i.id);
+     string(i.name);
+     optString(i.quantity);
+     optString(i.brand);

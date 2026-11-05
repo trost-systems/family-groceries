@@ -1,0 +1,415 @@
+diff --git a/app/lib/list/snapshot_codec.dart b/app/lib/list/snapshot_codec.dart
+index e9183373..d8061b65 100644
+--- a/app/lib/list/snapshot_codec.dart
++++ b/app/lib/list/snapshot_codec.dart
+@@ -5,12 +5,12 @@ import 'package:family_groceries/list/list_cache.dart';
+ import 'package:family_groceries/list/model.dart';
+ 
+ /// How a [ListSnapshot] is kept on the device: a String, since shared
+-/// preferences store strings. [encodeSnapshot] writes [_prefix], the base64
+-/// of a binary layout that refers to the snapshot's distinct strings by
+-/// index, [_tableStart], then those strings as they are, one after the
+-/// other (their lengths are in the binary part). [decodeSnapshot] also
+-/// reads the JSON snapshots apps before it wrote (versions 1 to 3, `{...}`).
+-/// Throws on anything else.
++/// preferences store strings. [encodeSnapshot] writes [_prefix], numbers as
++/// [_digits] (five bits a character, the sixth set while more follow) that
++/// refer to the snapshot's distinct strings by index, then those strings as
++/// they are, one after the other. [decodeSnapshot] also reads the JSON
++/// snapshots apps before it wrote (versions 1 to 3, `{...}`). Throws on
++/// anything else.
+ String encodeSnapshot(ListSnapshot snapshot) {
+   final body = _Writer();
+   body
+@@ -25,10 +25,10 @@ String encodeSnapshot(ListSnapshot snapshot) {
+   for (final s in strings) {
+     head.uint(s.length);
+   }
+-  head.bytes(body.takeBytes());
++  head.uint(body.length);
+   return (StringBuffer(_prefix)
+-        ..write(base64.encode(head.takeBytes()))
+-        ..write(_tableStart)
++        ..write(head.chars())
++        ..write(body.chars())
+         ..writeAll(strings))
+       .toString();
+ }
+@@ -37,16 +37,15 @@ ListSnapshot decodeSnapshot(String stored) {
+   if (stored.startsWith('{')) {
+     return ListSnapshot.fromJson(jsonDecode(stored) as Map<String, Object?>);
+   }
+-  final split = stored.indexOf(_tableStart);
+-  if (!stored.startsWith(_prefix) || split < 0) {
++  if (!stored.startsWith(_prefix)) {
+     throw const FormatException('list snapshot');
+   }
+-  final r = _Reader(base64.decode(stored.substring(_prefix.length, split)));
++  final r = _Reader(stored, _prefix.length);
+   final version = r.uint();
+   if (version != _binaryVersion) {
+     throw FormatException('snapshot version', version);
+   }
+-  r.readStrings(stored, split + 1);
++  r.readStrings();
+   return ListSnapshot(
+     catalog: r.catalog(),
+     server: r.list(r.item),
+@@ -57,8 +56,20 @@ ListSnapshot decodeSnapshot(String stored) {
+ 
+ const _prefix = 'b4:';
+ 
+-/// Not in the base64 alphabet.
+-const _tableStart = '.';
++/// The base64 alphabet: nothing JSON or a plist escapes.
++const _digits =
++    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
++
++final _digitCodes = Uint8List.fromList(_digits.codeUnits);
++
++/// -1 for a character that is no digit.
++final _digitValues = () {
++  final values = Int8List(128)..fillRange(0, 128, -1);
++  for (var i = 0; i < _digits.length; i++) {
++    values[_digits.codeUnitAt(i)] = i;
++  }
++  return values;
++}();
+ 
+ /// [ListSnapshot.version] 3 is the JSON layout; 4 is this one.
+ const _binaryVersion = 4;
+@@ -103,42 +114,26 @@ class _Writer() {
+ 
+   final _scratch = ByteData(8);
+ 
+-  void _ensure(int extra) {
+-    if (_len + extra > _buf.length) {
+-      var size = _buf.length * 2;
+-      while (size < _len + extra) {
+-        size *= 2;
+-      }
+-      _buf = Uint8List(size)..setRange(0, _len, _buf);
+-    }
+-  }
++  int get length => _len;
+ 
+-  Uint8List takeBytes() => Uint8List.sublistView(_buf, 0, _len);
+-
+-  void byte(int b) {
+-    _ensure(1);
+-    _buf[_len++] = b;
+-  }
+-
+-  void bytes(Uint8List b) {
+-    _ensure(b.length);
+-    _buf.setRange(_len, _len + b.length, b);
+-    _len += b.length;
+-  }
++  String chars() => String.fromCharCodes(_buf, 0, _len);
+ 
++  /// 64 bits take 13 digits.
+   void uint(int v) {
+-    _ensure(10);
++    if (_len + 13 > _buf.length) {
++      _buf = Uint8List(_buf.length * 2)..setRange(0, _len, _buf);
++    }
+     var x = v;
+-    while (x >= 0x80) {
+-      _buf[_len++] = (x & 0x7f) | 0x80;
+-      x >>= 7;
++    while (x >= 32) {
++      _buf[_len++] = _digitCodes[(x & 31) | 32];
++      x >>= 5;
+     }
+-    _buf[_len++] = x;
++    _buf[_len++] = _digitCodes[x];
+   }
+ 
+   void sint(int v) => uint(v >= 0 ? v << 1 : ((-v) << 1) - 1);
+ 
+-  void boolean({required bool value}) => byte(value ? 1 : 0);
++  void boolean({required bool value}) => uint(value ? 1 : 0);
+ 
+   void string(String s) => uint(strings.putIfAbsent(s, () => strings.length));
+ 
+@@ -147,36 +142,37 @@ class _Writer() {
+ 
+   void time(DateTime? t, [DateTime? after]) {
+     if (t == null) {
+-      byte(_timeNull);
++      uint(_timeNull);
+     } else if (t == after) {
+-      byte(_timeSame);
++      uint(_timeSame);
+     } else if (t.isUtc && (after?.isUtc ?? false)) {
+-      byte(_timeUtcAfter);
++      uint(_timeUtcAfter);
+       sint(t.microsecondsSinceEpoch - after!.microsecondsSinceEpoch);
+     } else if (t.isUtc) {
+-      byte(_timeUtc);
++      uint(_timeUtc);
+       sint(t.microsecondsSinceEpoch);
+     } else {
+-      byte(_timeLocal);
++      uint(_timeLocal);
+       string(t.toIso8601String());
+     }
+   }
+ 
+   void sortKey(double? k) {
+     if (k == null) {
+-      byte(_sortKeyNull);
++      uint(_sortKeyNull);
+       return;
+     }
+     final halves = k * 2;
+     if (halves == halves.truncateToDouble() &&
+         halves.abs() < _maxHalves &&
+         !(k == 0 && k.isNegative)) {
+-      byte(_sortKeyHalves);
++      uint(_sortKeyHalves);
+       sint(halves.toInt());
+     } else {
+-      byte(_sortKeyDouble);
+-      _scratch.setFloat64(0, k, Endian.little);
+-      bytes(_scratch.buffer.asUint8List());
++      uint(_sortKeyDouble);
++      _scratch.setFloat64(0, k);
++      uint(_scratch.getUint32(0));
++      uint(_scratch.getUint32(4));
+     }
+   }
+ 
+@@ -220,7 +216,7 @@ class _Writer() {
+     optString(i.categoryId);
+     optString(i.storeId);
+     sortKey(i.sortKey);
+-    byte(i.status.index);
++    uint(i.status.index);
+     time(i.createdAt);
+     time(i.updatedAt, i.createdAt);
+     time(i.boughtAt, i.updatedAt);
+@@ -244,13 +240,13 @@ class _Writer() {
+         :final noStore,
+         :final deviceParsed,
+       ):
+-        byte(_Op.add.index);
++        uint(_Op.add.index);
+         item(added);
+-        byte((restored ? 1 : 0) | (noStore ? 2 : 0) | (deviceParsed ? 4 : 0));
++        uint((restored ? 1 : 0) | (noStore ? 2 : 0) | (deviceParsed ? 4 : 0));
+       case SetStatus(:final itemId, :final status, :final at, :final storeId):
+-        byte(_Op.status.index);
++        uint(_Op.status.index);
+         string(itemId);
+-        byte(status.index);
++        uint(status.index);
+         time(at);
+         optString(storeId);
+       case EditItem(
+@@ -259,7 +255,7 @@ class _Writer() {
+         :final keyBefore,
+         :final deviceParsed,
+       ):
+-        byte(_Op.edit.index);
++        uint(_Op.edit.index);
+         string(itemId);
+         optString(changes.name);
+         change(changes.quantity);
+@@ -270,7 +266,7 @@ class _Writer() {
+         optString(keyBefore);
+         boolean(value: deviceParsed);
+       case MoveItem(:final itemId, :final categoryId, :final storeId):
+-        byte(_Op.move.index);
++        uint(_Op.move.index);
+         string(itemId);
+         string(categoryId);
+         optString(storeId);
+@@ -282,15 +278,15 @@ class _Writer() {
+         :final storeId,
+         :final sortKey,
+       ):
+-        byte(_Op.place.index);
++        uint(_Op.place.index);
+         string(itemId);
+         string(anchorId);
+-        byte(edge.index);
++        uint(edge.index);
+         string(categoryId);
+         optString(storeId);
+         this.sortKey(sortKey);
+       case DeleteItem(:final itemId):
+-        byte(_Op.delete.index);
++        uint(_Op.delete.index);
+         string(itemId);
+       case MergeItems(
+         :final itemId,
+@@ -300,7 +296,7 @@ class _Writer() {
+         :final brand,
+         :final properties,
+       ):
+-        byte(_Op.merge.index);
++        uint(_Op.merge.index);
+         string(itemId);
+         string(mergeId);
+         string(otherId);
+@@ -313,7 +309,7 @@ class _Writer() {
+         :final kept,
+         :final merged,
+       ):
+-        byte(_Op.unmerge.index);
++        uint(_Op.unmerge.index);
+         string(itemId);
+         string(mergeId);
+         item(kept);
+@@ -329,34 +325,34 @@ class _Writer() {
+   }
+ }
+ 
+-class _Reader(final Uint8List _b) {
+-  var _pos = 0;
++class _Reader(final String _s, var int _pos) {
+   var _strings = const <String>[];
+ 
+-  /// Before anything that refers to the table: the strings' lengths, then
+-  /// the strings themselves in [stored] from [start] on.
+-  void readStrings(String stored, int start) {
+-    var at = start;
+-    _strings = [
+-      for (var n = uint(); n > 0; n--) stored.substring(at, at += uint()),
+-    ];
+-    if (at != stored.length) {
++  /// Before anything that refers to the table: the strings' lengths and the
++  /// body's, then the strings themselves after the body.
++  void readStrings() {
++    final lengths = [for (var n = uint(); n > 0; n--) uint()];
++    final bodyLength = uint();
++    var at = _pos + bodyLength;
++    _strings = [for (final n in lengths) _s.substring(at, at += n)];
++    if (at != _s.length) {
+       throw const FormatException('string table');
+     }
+   }
+ 
+-  int byte() => _b[_pos++];
+-
+   int uint() {
+     var result = 0;
+     var shift = 0;
+     while (true) {
+-      final b = _b[_pos++];
+-      result |= (b & 0x7f) << shift;
+-      if (b < 0x80) {
++      final d = _digitValues[_s.codeUnitAt(_pos++)];
++      if (d < 0) {
++        throw FormatException('digit', _s, _pos - 1);
++      }
++      result |= (d & 31) << shift;
++      if (d < 32) {
+         return result;
+       }
+-      shift += 7;
++      shift += 5;
+     }
+   }
+ 
+@@ -365,10 +361,10 @@ class _Reader(final Uint8List _b) {
+     return v.isEven ? v >> 1 : -((v + 1) >> 1);
+   }
+ 
+-  bool boolean() => switch (byte()) {
++  bool boolean() => switch (uint()) {
+     0 => false,
+     1 => true,
+-    final b => throw FormatException('bool', b),
++    final v => throw FormatException('bool', v),
+   };
+ 
+   String string() => _strings[uint()];
+@@ -378,7 +374,7 @@ class _Reader(final Uint8List _b) {
+     final i => _strings[i - 1],
+   };
+ 
+-  DateTime? time([DateTime? after]) => switch (byte()) {
++  DateTime? time([DateTime? after]) => switch (uint()) {
+     _timeNull => null,
+     _timeSame => after!,
+     _timeUtcAfter => DateTime.fromMicrosecondsSinceEpoch(
+@@ -390,7 +386,7 @@ class _Reader(final Uint8List _b) {
+     final tag => throw FormatException('time', tag),
+   };
+ 
+-  double? sortKey() => switch (byte()) {
++  double? sortKey() => switch (uint()) {
+     _sortKeyNull => null,
+     _sortKeyHalves => sint() / 2,
+     _sortKeyDouble => _float64(),
+@@ -398,13 +394,10 @@ class _Reader(final Uint8List _b) {
+   };
+ 
+   double _float64() {
+-    final v = ByteData.sublistView(
+-      _b,
+-      _pos,
+-      _pos + 8,
+-    ).getFloat64(0, Endian.little);
+-    _pos += 8;
+-    return v;
++    final bits = ByteData(8)
++      ..setUint32(0, uint())
++      ..setUint32(4, uint());
++    return bits.getFloat64(0);
+   }
+ 
+   List<T> list<T>(T Function() read) => [
+@@ -450,7 +443,7 @@ class _Reader(final Uint8List _b) {
+     final categoryId = optString();
+     final storeId = optString();
+     final sortKey = this.sortKey();
+-    final status = ItemStatus.values[byte()];
++    final status = ItemStatus.values[uint()];
+     final createdAt = time()!;
+     final updatedAt = time(createdAt)!;
+     return Item(
+@@ -474,11 +467,11 @@ class _Reader(final Uint8List _b) {
+ 
+   SetTo<String?>? change() => boolean() ? SetTo(optString()) : null;
+ 
+-  ItemOp op() => switch (_Op.values[byte()]) {
+-    _Op.add => _add(item(), byte()),
++  ItemOp op() => switch (_Op.values[uint()]) {
++    _Op.add => _add(item(), uint()),
+     _Op.status => SetStatus(
+       string(),
+-      ItemStatus.values[byte()],
++      ItemStatus.values[uint()],
+       time()!,
+       storeId: optString(),
+     ),
+@@ -499,7 +492,7 @@ class _Reader(final Uint8List _b) {
+     _Op.place => PlaceItem(
+       string(),
+       anchorId: string(),
+-      edge: Edge.values[byte()],
++      edge: Edge.values[uint()],
+       categoryId: string(),
+       storeId: optString(),
+       sortKey: sortKey(),
+diff --git a/app/test/list/snapshot_codec_test.dart b/app/test/list/snapshot_codec_test.dart
+index 25771d9a..b0a1c29b 100644
+--- a/app/test/list/snapshot_codec_test.dart
++++ b/app/test/list/snapshot_codec_test.dart
+@@ -143,11 +143,10 @@ void main() {
+       final good = encodeSnapshot(
+         generateSnapshot(seed: 3, items: 5, openShare: 1),
+       );
+-      final split = good.indexOf('.');
+-      final newer = base64.decode(good.substring(3, split))..[0] = 5;
++      expect(good.substring(0, 4), 'b4:E', reason: 'version 4 as a digit');
+       for (final stored in [
+         'b4:!!!',
+-        'b4:${base64.encode(newer)}${good.substring(split)}',
++        'b4:F${good.substring(4)}',
+         good.substring(0, good.length - 4),
+         '${good}x',
+         'x',

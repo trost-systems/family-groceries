@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/snapshot_codec.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/tips.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -297,37 +298,42 @@ class _PrefsListCache(
 ) implements ListCache {
   @override
   Future<ListSnapshot?> load() =>
-      _read(DeviceCache._listKey(_userId, _householdId), ListSnapshot.fromJson);
+      _read(DeviceCache._listKey(_userId, _householdId), decodeSnapshot);
 
   @override
-  Future<void> save(ListSnapshot snapshot) =>
-      _store(DeviceCache._listKey(_userId, _householdId), snapshot.toJson());
+  Future<void> save(ListSnapshot snapshot) => _store(
+    DeviceCache._listKey(_userId, _householdId),
+    () => encodeSnapshot(snapshot),
+  );
 
   @override
-  Future<SeenMark?> loadSeen() =>
-      _read(DeviceCache._seenKey(_userId, _householdId), SeenMark.fromJson);
+  Future<SeenMark?> loadSeen() => _read(
+    DeviceCache._seenKey(_userId, _householdId),
+    (s) => SeenMark.fromJson(jsonDecode(s) as Map<String, Object?>),
+  );
 
   @override
-  Future<void> saveSeen(SeenMark mark) =>
-      _store(DeviceCache._seenKey(_userId, _householdId), mark.toJson());
+  Future<void> saveSeen(SeenMark mark) => _store(
+    DeviceCache._seenKey(_userId, _householdId),
+    () => jsonEncode(mark.toJson()),
+  );
 
   @override
-  Future<ListPrefs?> loadPrefs() =>
-      _read(DeviceCache._prefsKey(_userId, _householdId), ListPrefs.fromJson);
+  Future<ListPrefs?> loadPrefs() => _read(
+    DeviceCache._prefsKey(_userId, _householdId),
+    (s) => ListPrefs.fromJson(jsonDecode(s) as Map<String, Object?>),
+  );
 
   @override
-  Future<void> savePrefs(ListPrefs prefs) =>
-      _store(DeviceCache._prefsKey(_userId, _householdId), prefs.toJson());
+  Future<void> savePrefs(ListPrefs prefs) => _store(
+    DeviceCache._prefsKey(_userId, _householdId),
+    () => jsonEncode(prefs.toJson()),
+  );
 
-  Future<T?> _read<T>(
-    String key,
-    T Function(Map<String, Object?>) parse,
-  ) async {
+  Future<T?> _read<T>(String key, T Function(String) parse) async {
     try {
-      final json = await _device._prefs.getString(key);
-      return json == null
-          ? null
-          : parse(jsonDecode(json) as Map<String, Object?>);
+      final stored = await _device._prefs.getString(key);
+      return stored == null ? null : parse(stored);
     } on Object {
       return null;
     }
@@ -335,10 +341,10 @@ class _PrefsListCache(
 
   /// Skipped once the user signed out or moved to another household, so a
   /// list closing late cannot write its state back.
-  Future<void> _store(String key, Map<String, Object?> json) =>
+  Future<void> _store(String key, String Function() encode) =>
       _device._write(() async {
         if ((await _device.household(_userId))?.id == _householdId) {
-          await _device._prefs.setString(key, jsonEncode(json));
+          await _device._prefs.setString(key, encode());
         }
       });
 }
