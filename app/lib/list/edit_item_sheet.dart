@@ -456,7 +456,7 @@ class const _Stepper({
   /// edge, sinking when pressed.
   @override
   Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
+    richMessage: WidgetSpan(child: ExcludeSemantics(child: Text(tooltip))),
     // The icon names the button; the tooltip only shows it.
     excludeFromSemantics: true,
     child: OutlinedButton(
