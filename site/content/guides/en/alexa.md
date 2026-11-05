@@ -86,6 +86,7 @@ Ask "Alexa, ask Hummlist what's on the list" and Alexa reads at most 10 open ite
 
 | What happens | Why | What helps |
 | --- | --- | --- |
+| Alexa doesn't know the skill, although you accepted the invitation. | Your Alexa device is set to a language the skill doesn't support. It supports German (Germany) and English (US, UK, Australia, Canada, India). | Set the device language to one of these: Alexa app → **More** → **Settings** → **Device Settings** → your device → gear icon at the top right → under **General**, tap **Language**. |
 | Alexa can't find a list called Hummlist, or puts the item on the Alexa shopping list. | The sentence didn't contain "ask Hummlist", for example "Add milk to Hummlist". It went to the lists in the Alexa app. | Say "Alexa, ask Hummlist to add milk" or first "Alexa, open Hummlist" (see [How Alexa reaches Hummlist](#reach-hummlist)). |
 | Alexa doesn't know the name, or hears another name. | Alexa didn't recognize "Hummlist". | Say the name clearly as two syllables, "Humm-list", or start with "Alexa, open Hummlist". |
 | "Please link your Hummlist account in the Alexa app first." | The skill isn't, or is no longer, linked to your Hummlist account. | On the skill's page in the Alexa app tap **Link account** and continue as in step 2. |
