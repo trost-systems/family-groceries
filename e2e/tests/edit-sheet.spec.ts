@@ -1,7 +1,7 @@
 import { devices, expect, test, type Locator, type Page } from './fixtures';
 import {
   actionSnackBar, addItem, apiAs, editField, editSheet, expectFieldValue, finger, fingerHold, itemRow, newEmail, nextFrames, openEdit,
-  pickInSheet, saveEdit, screenshot, signUpWithHousehold, typeInto,
+  pickInSheet, saveEdit, screenshot, signUpWithHousehold, typeInto, within,
 } from './helpers';
 import { householdWithItems, signIn } from './web-build';
 
@@ -61,6 +61,11 @@ test('edit: right click opens prefilled fields; Fertig writes only what changed'
 
   await typeInto(editField(page, 'Marke'), 'Weihenstephan');
   await editSheet(page).getByRole('button', { name: 'Eins mehr' }).click();
+  // Job 122: a stepper's tooltip moved the sheet's DOM as it closed, and the first click into Menge
+  // lost its focus (expectFieldValue's retry hid it, at 10 s a time).
+  await editField(page, 'Menge').click();
+  await within(2_000, (timeout) =>
+    expect(editField(page, 'Menge'), 'a click into Menge right after a stepper focuses it').toBeFocused({ timeout }));
   await expectFieldValue(editField(page, 'Menge'), '2');
   await editSheet(page).getByRole('button', { name: 'Eins mehr' }).click();
   await editSheet(page).getByRole('button', { name: 'Eins weniger' }).click();
