@@ -1,5 +1,4 @@
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
-import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -65,8 +64,10 @@ abstract interface class ListRepository() {
   );
 
   /// Splits a dictated sentence into entries with the server's German
-  /// splitter (the voice endpoint Siri uses); empty when it found nothing.
-  Future<List<Entry>> splitSpoken(String text);
+  /// splitter (the voice endpoint Siri uses), brand and details split off
+  /// as for a typed add; empty when it found nothing. `truncated`: it heard
+  /// more than the 30 items one sentence takes, and only those came back.
+  Future<SpokenSplit> splitSpoken(String text);
 
   /// Live changes for the household; returns a function that unsubscribes.
   /// [onItemDeleted] gets the delete's commit time.
@@ -77,6 +78,8 @@ abstract interface class ListRepository() {
     required void Function(ConnectionStatus status) onStatus,
   });
 }
+
+typedef SpokenSplit = ({List<ParsedEntry> entries, bool truncated});
 
 /// The server refused a write (constraint, policy); retrying will not help.
 final class const RejectedOp(
@@ -303,7 +306,10 @@ class SupabaseListRepository(
   /// that was already on the list (then this id is gone, answered as null).
   /// No row: the id is taken by a row this user cannot see.
   Future<Map<String, Item?>> _add(AddItem op) => _refusable(() async {
-    final AddItem(:item, :noStore) = op;
+    final AddItem(:noStore, :deviceParsed) = op;
+    final item = deviceParsed
+        ? (await parse(op.item.name)).onto(op.item, noStore: noStore)
+        : op.item;
     final row = _singleRow(
       await _client.rpc<dynamic>(
         'put_item',
@@ -369,9 +375,12 @@ class SupabaseListRepository(
             .update({'status': status.name, 'store_id': ?storeId})
             .eq('id', op.itemId)
             .select(_itemColumns);
-      case EditItem(:final changes):
+      case EditItem(:final changes, :final deviceParsed):
+        final sent = deviceParsed
+            ? (await parse(changes.name!)).ontoRename(changes)
+            : changes;
         rows = await items
-            .update(changes.toColumns())
+            .update(sent.toColumns())
             .eq('id', op.itemId)
             .select(_itemColumns);
       case MoveItem(:final categoryId, :final storeId):
@@ -429,27 +438,41 @@ class SupabaseListRepository(
   };
 
   @override
-  Future<List<Entry>> splitSpoken(String text) async {
+  Future<SpokenSplit> splitSpoken(String text) async {
     try {
       final response = await _client.functions.invoke(
         'voice',
-        body: {'text': text, 'mode': 'parse'},
+        body: {'text': text, 'mode': 'parse', 'split': true},
       );
       final items = switch (response.data) {
         {'items': final List<Object?> items} => items,
         _ => const <Object?>[],
       };
-      return [
+      final entries = [
         for (final item in items)
           if (item case {
             'name': final String name,
             'quantity': final String? quantity,
           })
-            Entry(name, quantity),
+            ParsedEntry(
+              name: name,
+              // A voice function from before job 111 answers without them.
+              brand: item['brand'] as String?,
+              properties: item['properties'] as String?,
+              quantity: quantity,
+              storeId: item['storeId'] as String?,
+            ),
       ];
+      return (
+        entries: entries,
+        truncated: switch (response.data) {
+          {'truncated': true} => true,
+          _ => false,
+        },
+      );
     } on FunctionException catch (e) {
       if (e.status == 422) {
-        return const [];
+        return (entries: const <ParsedEntry>[], truncated: false);
       }
       rethrow;
     }

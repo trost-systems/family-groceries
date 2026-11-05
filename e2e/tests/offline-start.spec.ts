@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  addField, addItem, answerConsent, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick,
+  addField, addItem, answerConsent, editField, openEdit, saveEdit, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick,
   typeInto, within,
   openEmailSignIn,
 } from './helpers';
@@ -50,6 +50,15 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await within(3_000, (timeout) => expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout }));
 
   await addItem(page, 'Käse');
+  // Job 111: the device reads the amount (number words, job 104); the server splits brand and
+  // details once it syncs.
+  await addItem(page, 'zwei Windeln Pampers Größe 3');
+  // A rename before the sync is split the same way.
+  await addItem(page, 'Shampoo Nivea Größe 4');
+  await openEdit(page, 'Shampoo Nivea Größe 4');
+  await typeInto(editField(page, 'Bezeichnung'), 'Shampoo Nivea Größe 5');
+  await saveEdit(page);
+  await expect(itemRow(page, 'Shampoo Nivea Größe 5')).toBeVisible();
   await tick(page, 'Brot');
   await expect(itemRow(page, 'Käse')).toBeVisible();
   await expect(itemRow(page, 'Brot')).toHaveCount(0);
@@ -64,13 +73,17 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await network.restore();
   const api = await apiAs(email);
   await expect.poll(async () => {
-    const { data } = await api.from('items').select('name, status').order('name');
+    const { data } = await api.from('items').select('name, brand, properties, quantity, status').order('name');
     return data;
-  }, { message: 'the queued ops reach the server', timeout: 20_000 }).toEqual([
-    { name: 'Brot', status: 'bought' },
-    { name: 'Käse', status: 'active' },
-    { name: 'Milch', status: 'active' },
+  }, { message: 'the queued ops reach the server, an offline add split as online', timeout: 20_000 }).toEqual([
+    { name: 'Brot', brand: null, properties: null, quantity: null, status: 'bought' },
+    { name: 'Käse', brand: null, properties: null, quantity: null, status: 'active' },
+    { name: 'Milch', brand: null, properties: null, quantity: null, status: 'active' },
+    { name: 'Shampoo', brand: 'Nivea', properties: 'Größe 5', quantity: null, status: 'active' },
+    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: '2', status: 'active' },
   ]);
+  await expect(itemRow(page, 'Windeln'), 'the list shows the split row').toHaveAccessibleName(/^Windeln Pampers · Größe 3 2$/);
+  await screenshot(page, 'offline-02-synced-split');
   await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
 
   const other = await (await browser.newContext()).newPage();

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Which CI gates a change needs, as key=value lines for $GITHUB_OUTPUT:
 #   heavy     every gate but gitleaks and lint; false only when every file is documentation
-#   native    android and ios; only when the native projects or pubspec change. They compile the
+#   native    android and ios; only when the native projects or pubspec or these gates change. They compile the
 #             app's Swift and Kotlin and the plugin registrant from pubspec; the Dart in app/lib
 #             is compiled by the flutter, web-prod and e2e gates already.
 #   fastlane  only when app/fastlane/ or app/Gemfile* changes
@@ -23,6 +23,6 @@ code="$(grep -vE '^docs/' <<<"$files" | grep -vE '^[^.].*\.md$|^\.github/.*\.md$
   | grep -vxE '\.github/workflows/e2e\.yml|scripts/ci-e2e\.sh' || true)"
 heavy=false native=false fastlane=false
 [[ -n $code ]] && heavy=true
-grep -qE '^app/(ios|android)/|^app/pubspec\.(yaml|lock)$' <<<"$files" && native=true
+grep -qE '^app/(ios|android)/|^app/pubspec\.(yaml|lock)$|^scripts/gates/(android|ios)\.sh$' <<<"$files" && native=true
 grep -qE '^app/(fastlane/|Gemfile)' <<<"$files" && fastlane=true
 printf 'heavy=%s\nnative=%s\nfastlane=%s\n' "$heavy" "$native" "$fastlane"

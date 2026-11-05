@@ -67,7 +67,7 @@ class _DictationButtonState() extends State<DictationButton> {
         return;
     }
     try {
-      final results = await cubit.addSpoken(text);
+      final (:results, :truncated) = await cubit.addSpoken(text);
       if (!mounted) {
         return;
       }
@@ -75,7 +75,12 @@ class _DictationButtonState() extends State<DictationButton> {
         widget.onMessage(l10n.dictationNothingUnderstood);
       } else {
         widget.input.clear();
-        widget.onMessage(_summary(l10n, results));
+        widget.onMessage(
+          [
+            _summary(l10n, results),
+            if (truncated) l10n.dictationTooMany,
+          ].join(' '),
+        );
       }
     } on Exception {
       if (mounted) {
@@ -95,7 +100,8 @@ class _DictationButtonState() extends State<DictationButton> {
     final added = [
       for (final result in results)
         if (result case Added(:final item))
-          [?item.quantity, item.name].join(' '),
+          // As Siri reads an add back: "Windeln Pampers Größe 3, Big Pack".
+          [?item.quantity, item.name, ?item.brand, ?item.properties].join(' '),
     ];
     final existing = [
       for (final result in results)

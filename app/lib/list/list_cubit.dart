@@ -347,11 +347,18 @@ class ListCubit(
 
   /// Splits a dictated sentence on the server and adds each entry.
   /// Throws when the server can't be reached; nothing is added then.
-  Future<List<AddResult>> addSpoken(String text) async {
-    final entries = await _repo.splitSpoken(text);
-    return [
-      for (final entry in entries) addEntry(entry, source: AddSource.spoken),
-    ];
+  /// `truncated`: the sentence held more items than the server takes at
+  /// once; only the first ones were added.
+  Future<({List<AddResult> results, bool truncated})> addSpoken(
+    String text,
+  ) async {
+    final (:entries, :truncated) = await _repo.splitSpoken(text);
+    return (
+      results: [
+        for (final entry in entries) addParsed(entry, source: AddSource.spoken),
+      ],
+      truncated: truncated,
+    );
   }
 
   AddResult addEntry(Entry entry, {AddSource source = AddSource.typed}) =>
@@ -394,7 +401,7 @@ class ListCubit(
       createdAt: now,
       updatedAt: now,
     );
-    _enqueue(AddItem(item, noStore: noStore));
+    _enqueue(AddItem(item, noStore: noStore, deviceParsed: entry.deviceParsed));
     _track('item_added', {'source': source.name, ..._actor()});
     return Added(item);
   }
@@ -473,6 +480,12 @@ class ListCubit(
         id,
         changes,
         keyBefore: changes.name == null ? null : item?.canonicalKey,
+        // The add's line is parsed when it syncs; so is its new name.
+        deviceParsed:
+            changes.name != null &&
+            state.pending.any(
+              (op) => op is AddItem && op.itemId == id && op.deviceParsed,
+            ),
       ),
     );
   }

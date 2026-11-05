@@ -66,6 +66,22 @@ test('the JSON answer names each item with its category', async ({ page }) => {
   });
 });
 
+test('in-app dictation (mode parse, split) splits brand and details as a typed add does (job 111)', async ({ page }) => {
+  const email = newEmail('voice-parse');
+  await signUpWithHousehold(page, email);
+  const res = await fetch(`${functionsUrl}/voice`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${await sessionToken(email)}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ text: 'Windeln Pampers Größe 3 Big Pack und zwei Liter Milch', mode: 'parse', split: true }),
+  });
+  expect(res.status).toBe(200);
+  // A new household has no stores yet, so no store comes back (voice/split_integration_test.ts has dm).
+  expect((await res.json()).items).toEqual([
+    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3, Big Pack', quantity: null, storeId: null },
+    { name: 'Milch', brand: null, properties: null, quantity: '2 l', storeId: null },
+  ]);
+});
+
 test('Siri adds Karotten with Möhren open and says Möhren is on the list (job 32b, AC10)', async ({ page }) => {
   const email = newEmail('voice-similar');
   await signUpWithHousehold(page, email);

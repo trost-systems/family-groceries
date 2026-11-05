@@ -38,6 +38,25 @@ void main() {
   List<CategoryBlock> blocksOf(Iterable<Item> items) =>
       sectionsOf(items, const Catalog(categories: categories)).single.blocks;
 
+  test('a parse without a name keeps the typed one (job 111)', () {
+    final typed = item('x').copyWith(name: ',');
+    expect(const ParsedEntry(name: '').onto(typed, noStore: false).name, ',');
+    expect(
+      const ParsedEntry(
+        name: 'Windeln',
+        storeId: 'dm',
+      ).onto(typed.copyWith(storeId: () => null), noStore: true).storeId,
+      isNull,
+      reason: 'Ohne Laden keeps the parsed store out',
+    );
+    expect(
+      const ParsedEntry(name: ' ')
+          .ontoRename(const ItemChanges(name: ','))
+          .name,
+      ',',
+    );
+  });
+
   test('pending ops fold over server rows in order', () {
     final server = {'x': item('x'), 'y': item('y')};
     final view = visibleItems(server, [
@@ -198,6 +217,12 @@ void main() {
         ),
       ),
       const EditItem('x', ItemChanges(storeId: SetTo('dm'))),
+      const EditItem(
+        'x',
+        ItemChanges(name: 'Windeln'),
+        keyBefore: 'windel',
+        deviceParsed: true,
+      ),
       const MoveItem('x', categoryId: 'b', storeId: 'dm'),
       const PlaceItem(
         'x',
@@ -217,6 +242,7 @@ void main() {
         properties: 'Bio',
       ),
       UnmergeItems('x', mergeId: 'm', kept: item('x'), merged: item('y')),
+      AddItem(item('x'), deviceParsed: true),
       AddItem(item('x'), restored: true),
       AddItem(item('x'), noStore: true),
     ];
@@ -231,6 +257,26 @@ void main() {
     );
     expect((ItemOp.fromJson(ops.last.toJson()) as AddItem).noStore, isTrue);
     expect((ItemOp.fromJson(ops.first.toJson()) as AddItem).restored, isFalse);
+    expect(
+      (ItemOp.fromJson(ops[ops.length - 3].toJson()) as AddItem).deviceParsed,
+      isTrue,
+    );
+    expect(
+      (ItemOp.fromJson(ops.last.toJson()) as AddItem).deviceParsed,
+      isFalse,
+    );
+    expect(
+      ops.whereType<EditItem>().map(
+        (op) => (ItemOp.fromJson(op.toJson()) as EditItem).deviceParsed,
+      ),
+      [false, false, true],
+    );
+    final both = ItemOp.fromJson(ops.whereType<EditItem>().last.toJson());
+    expect(
+      both is EditItem && both.keyBefore == 'windel' && both.deviceParsed,
+      isTrue,
+      reason: 'keyBefore (job 104) and deviceParsed (job 111) both survive',
+    );
     expect(
       Item.fromJson({...item('x').toJson(), 'categorized_via': 'synonym'})
           .categorizedVia,

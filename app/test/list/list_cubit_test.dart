@@ -109,6 +109,109 @@ void main() {
     expect(activeNames(), ['Brot']);
   });
 
+  test('an add typed offline and renamed before it syncs is split under its '
+      'new name (job 111)', () async {
+    repo
+      ..parsed['Windeln Pampers Größe 3'] = const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 3',
+      )
+      ..parsed['Windeln Pampers Größe 4'] = const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 4',
+      )
+      ..online = false;
+    final added = cubit.addParsed(
+      const ParsedEntry(name: 'Windeln Pampers Größe 3', deviceParsed: true),
+    );
+    final id = (added as Added).item.id;
+    cubit.edit(id, const ItemChanges(name: 'Windeln Pampers Größe 4'));
+    await settle();
+
+    repo.online = true;
+    repo.emitStatus!(ConnectionStatus.online);
+    await settle();
+    final row = repo.rows[id]!;
+    expect(
+      (row.name, row.brand, row.properties),
+      ('Windeln', 'Pampers', 'Größe 4'),
+    );
+  });
+
+  test('a rename of an add still queued offline keeps keyBefore and is '
+      'marked for the server parse (jobs 104, 111)', () async {
+    repo.online = false;
+    final id = (cubit.addParsed(
+      const ParsedEntry(name: 'Windeln Pampers Größe 3', deviceParsed: true),
+    ) as Added).item.id;
+    // The add's answer was lost but realtime brought the keyed row: the
+    // add is still queued, the item already has its key.
+    repo.emitItem!(
+      Item(
+        id: id,
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 3',
+        status: ItemStatus.active,
+        createdAt: DateTime.utc(2026, 11, 5),
+        updatedAt: DateTime.utc(2026, 11, 5),
+        canonicalKey: 'windel pampers grosse 3',
+      ),
+    );
+    await settle();
+    expect(cubit.state.pending.whereType<AddItem>(), hasLength(1));
+    cubit.edit(id, const ItemChanges(name: 'Windeln Pampers Größe 4'));
+    await settle();
+    final edit = cubit.state.pending.whereType<EditItem>().single;
+    expect(edit.deviceParsed, isTrue);
+    expect(edit.keyBefore, 'windel pampers grosse 3');
+  });
+
+  test('a queued offline add renamed onto an open item is reported, neither '
+      'dropped nor doubled (jobs 104, 111)', () async {
+    final rejections = <Rejected>[];
+    final sub = cubit.rejections.listen(rejections.add);
+    addTearDown(sub.cancel);
+    repo
+      ..parsed['Windeln Pampers Größe 3'] = const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 3',
+      )
+      ..parsed['Windeln Pampers Größe 4'] = const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 4',
+      );
+    cubit.addParsed(
+      const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 4',
+      ),
+    );
+    await settle();
+    repo.online = false;
+    final id = (cubit.addParsed(
+      const ParsedEntry(name: 'Windeln Pampers Größe 3', deviceParsed: true),
+    ) as Added).item.id;
+    cubit.edit(id, const ItemChanges(name: 'Windeln Pampers Größe 4'));
+    await settle();
+
+    repo.online = true;
+    repo.emitStatus!(ConnectionStatus.online);
+    await settle();
+    expect(rejections, [isA<RenameTaken>()]);
+    expect(cubit.state.pending, isEmpty);
+    final windeln = cubit.state.items.values
+        .where((i) => i.status == ItemStatus.active && i.name == 'Windeln')
+        .map((i) => i.properties)
+        .toList();
+    expect(windeln..sort(), ['Größe 3', 'Größe 4']);
+  });
+
   test('offline ops stay visible, queue, and flush on reconnect', () async {
     final id = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
     await settle();
