@@ -11,7 +11,7 @@ const VARIANTS = [
   {
     id: 'compact',
     name: 'V1 Compact',
-    note: { de: 'Gleiche Leiste, randlos, 40 pt. Icon und Label in einer Zeile; nutzt einen Teil des Home-Indicator-Abstands.', en: 'Same edge-to-edge bar at 40 pt. Icon and label on one line; uses part of the home-indicator inset.' },
+    note: { de: 'Gleiche Leiste, randlos, 40 pt. Icon und Label in einer Zeile. Spart Höhe, indem die Tabs 20 pt in den 34-pt-Home-Indicator-Abstand rücken; die Tippflächen sind nur 35 pt hoch (Richtwert 44 pt). Mit vollem Abstand und 44 pt wären es 78 pt statt 60.', en: 'Same edge-to-edge bar at 40 pt. Icon and label on one line. It saves height by moving the tabs 20 pt into the 34 pt home-indicator inset; the tap targets are only 35 pt tall (guideline 44 pt). With the full inset and 44 pt targets it would be 78 pt, not 60.' },
   },
   {
     id: 'pill',
@@ -159,20 +159,24 @@ function layout() {
   document.documentElement.style.setProperty('--s', String(Math.min(1, col / PHONE.w)));
 }
 
+// The numbers describe each phone's list page at the top of the list, whatever it shows now:
+// a phone on More is flipped to its list for the synchronous reads and back before the next paint.
 function measure(t) {
   document.querySelectorAll('.frame').forEach((frame) => {
     const ph = frame.querySelector('.phone');
-    const s = ph.getBoundingClientRect().height / PHONE.h;
-    const bottom = ph.getBoundingClientRect().bottom;
-    const out = frame.querySelector('[data-metric]');
-    const navEl = ph.querySelector('.nav');
-    const fieldEl = ph.querySelector('.field');
-    const navTop = navEl.getBoundingClientRect().top;
-    const chromeTop = Math.min(navTop, fieldEl.getBoundingClientRect().top - (state.field === 'docked' ? 12 * s : 0));
-    const rows = [...ph.querySelectorAll('.page--list .row')].filter((r) => r.getBoundingClientRect().bottom <= chromeTop).length;
+    const shown = ph.dataset.tab;
+    ph.dataset.tab = 'list';
+    const box = ph.getBoundingClientRect();
+    const s = box.height / PHONE.h;
+    const scrolled = ph.querySelector('.content').scrollTop * s;
+    const navTop = ph.querySelector('.nav').getBoundingClientRect().top;
+    const fieldTop = ph.querySelector('.field').getBoundingClientRect().top;
+    const chromeTop = Math.min(navTop, fieldTop - (state.field === 'docked' ? 12 * s : 0));
+    const rows = [...ph.querySelectorAll('.page--list .row')].filter((r) => r.getBoundingClientRect().bottom + scrolled <= chromeTop).length;
+    ph.dataset.tab = shown;
     const pt = (px) => Math.round(px / s);
-    const navPt = ph.dataset.variant === 'inline' ? 0 : pt(bottom - navTop);
-    out.textContent = `${t.nav}: ${navPt} pt · ${t.navField}: ${pt(bottom - chromeTop)} pt · ${rows} ${t.rows}`;
+    const navPt = ph.dataset.variant === 'inline' ? 0 : pt(box.bottom - navTop);
+    frame.querySelector('[data-metric]').textContent = `${t.nav}: ${navPt} pt · ${t.navField}: ${pt(box.bottom - chromeTop)} pt · ${rows} ${t.rows}`;
   });
 }
 
