@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 /// Asks for a name and hands it to [save], trimmed. The dialog stays open
 /// while [save] runs and when it answers false (a name taken, offline), so
 /// the name can be fixed. [validate] answers why a name cannot be saved
-/// (taken), shown under the field, or null; a snackbar would sit behind the
-/// dialog's barrier. An empty name closes it without saving.
+/// (taken), shown under the field, or null. An empty name closes it without
+/// saving.
 Future<void> showNameDialog(
   BuildContext context, {
   required String title,

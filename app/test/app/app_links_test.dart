@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -43,7 +44,13 @@ void main() {
     whenListen(session, sessions.stream, initialState: state);
     links = ListLinks();
     addTearDown(links.dispose);
-    router = buildRouter(session, analytics, PendingInvite(cache), links);
+    router = buildRouter(
+      session,
+      analytics,
+      PendingInvite(cache),
+      links,
+      Popups(),
+    );
     addTearDown(router.dispose);
     final auth = FakeAuth();
     addTearDown(auth.close);

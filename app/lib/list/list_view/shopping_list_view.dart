@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
@@ -244,7 +245,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
 
   void _snack(String text, {VoidCallback? undo}) {
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context)
+    Notices.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(

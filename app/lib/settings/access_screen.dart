@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/section_label.dart';
@@ -235,7 +236,7 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
 
 void _copy(BuildContext context, String text) {
   unawaited(Clipboard.setData(ClipboardData(text: text)));
-  ScaffoldMessenger.of(
+  Notices.of(
     context,
   ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).copied)));
 }
@@ -287,7 +288,7 @@ Future<void> _attempt(
   AccessKind kind = AccessKind.pat,
 }) async {
   final l10n = AppLocalizations.of(context);
-  final messenger = ScaffoldMessenger.of(context);
+  final messenger = Notices.of(context);
   try {
     await action();
   } on Object catch (e) {

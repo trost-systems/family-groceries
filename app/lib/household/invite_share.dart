@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/web_share.dart';
@@ -212,7 +213,7 @@ class const InviteCard({
     InviteChannel channel,
   ) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = Notices.of(context);
     trackInviteSent(context.read<Analytics>(), channel, origin);
     await context.read<InviteSharer>().copy(text);
     messenger.showSnackBar(

@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
@@ -84,11 +85,13 @@ class const App({
 
 class _AppState() extends State<App> {
   final _listLinks = ListLinks();
+  final _popups = Popups();
   late final GoRouter _router = buildRouter(
     widget.session,
     widget.analytics,
     widget.pendingInvite,
     _listLinks,
+    _popups,
   );
   late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
@@ -154,6 +157,7 @@ class _AppState() extends State<App> {
     unawaited(_widgetLaunches?.cancel());
     _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
+    _popups.dispose();
     _listLinks.dispose();
     unawaited(_language.close());
     unawaited(_feedback.close());
@@ -208,12 +212,15 @@ class _AppState() extends State<App> {
           localeListResolutionCallback: (preferred, _) =>
               resolveLocale(preferred, null),
           routerConfig: _router,
-          builder: (context, child) => BlocBuilder<SessionCubit, Session>(
-            builder: (context, session) => session is SessionLoading
-                ? const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  )
-                : child!,
+          builder: (context, child) => NoticesHost(
+            popups: _popups,
+            child: BlocBuilder<SessionCubit, Session>(
+              builder: (context, session) => session is SessionLoading
+                  ? const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    )
+                  : child!,
+            ),
           ),
         ),
       ),

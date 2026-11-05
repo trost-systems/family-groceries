@@ -5,6 +5,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/feedback/feedback_context.dart';
@@ -224,8 +225,10 @@ Future<More> pumpMore(
   final feedbackCubit = FeedbackCubit(feedback, analytics: shownAnalytics);
   addTearDown(feedbackCubit.close);
   final screens = ScreenTracker();
+  final popups = Popups();
   final router = GoRouter(
     initialLocation: location,
+    observers: [popups],
     redirect: app ? (_, state) => authRedirect(session.state, state.uri) : null,
     routes: app
         ? appRoutes(repository: repo)
@@ -299,6 +302,7 @@ Future<More> pumpMore(
             localeListResolutionCallback: (preferred, _) =>
                 resolveLocale(preferred, null),
             routerConfig: router,
+            builder: (_, child) => NoticesHost(popups: popups, child: child!),
           ),
         ),
       ),

@@ -15,7 +15,7 @@ The list keeps working without a connection. Adding, ticking, putting back, edit
 - `offline-needs-connection` things that refuse offline, below.
 - `offline-signout` signing out removes the cached list and household from the device.
 
-Needs a connection, exact texts (DE / EN):
+Needs a connection, exact texts (DE / EN). A snackbar said while a dialog or sheet is open (the store name dialog, the item sheet) shows above its barrier, at the bottom of the screen and above the keyboard, and stays in the ARIA snapshot; it goes when the dialog closes (job 116, `stores-add.spec.ts` "REFUSED STORE"):
 
 - Reordering stores or categories, also moving or hiding categories in a store's own order: „Die Reihenfolge lässt sich nur mit Verbindung ändern.“ / "Reordering needs a connection." (snackbar; nothing changes).
 - Adding, renaming or deleting a store (under Liste → Anpassen or inline in the store picker): „Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.“ / "Adding, renaming or deleting stores needs a connection." (snackbar; nothing changes).

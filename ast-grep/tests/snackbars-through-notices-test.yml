@@ -1,0 +1,23 @@
+id: snackbars-through-notices
+valid:
+  - |
+    void f(BuildContext context) =>
+        Notices.of(context).showSnackBar(const SnackBar(content: Text('x')));
+  # A list's own messenger is a widget, not a lookup.
+  - |
+    Widget build(BuildContext context) => ScaffoldMessenger(child: child);
+  - |
+    /// ScaffoldMessenger.of would show under the dialog.
+    void f() {}
+invalid:
+  - |
+    void f(BuildContext context) =>
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  - |
+    void f(BuildContext context) {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+    }
+  - |
+    void f(BuildContext context) => ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
