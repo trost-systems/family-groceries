@@ -1,0 +1,672 @@
+diff --git a/docs/hillclimb/hc-ui-web.md b/docs/hillclimb/hc-ui-web.md
+index e2130fa4..c96e04ce 100644
+--- a/docs/hillclimb/hc-ui-web.md
++++ b/docs/hillclimb/hc-ui-web.md
+@@ -85,4 +85,8 @@ issue lists, not one CSS declaration.
+ 
+ | # | Time | Change | Score (3 runs) | Kept | Why |
+ | --- | --- | --- | --- | --- | --- |
+-| 1 | 07:16 | Text pages: column on the header's left edge, fluid phone h1 with hyphens, Inter code chips, tight guide-card titles, empty changelog as a card, callout padding | 7, 6.5, 7 → **7.0** | kept | typography 6.5→7.5, layout 6.5→7; judges now call the left column lopsided (next) |
++| 1 | 07:14 | Text pages: column on the header's left edge, fluid phone h1 with hyphens, Inter code chips, tight guide-card titles, empty changelog as a card, callout padding | 7, 6.5, 7 → **7.0** | kept | typography 6.5→7.5, layout 6.5→7; judges now call the left column lopsided (next) |
++| 2 | 07:43 | Wide text pages: title in a left rail beside the 44rem column (CSS only); link-strong without inline padding; header language link on the nav rhythm; feature cards 48 px inner gutter | 7, 6.5, 7 → 7.0 | reverted | ties the best (7.0); layout stays 7/6.5/7, design_system rises to 8/7/7.5 |
++| 3 | 08:05 | Polish pass: text pages narrow header/footer to the 44rem column; closing CTA as raised card with lemon button, 2 columns; 404 choices as hex buttons; cobalt current-page underline; nav focus ring inside the target; phone nav in one row; feature gaps 24 px, 48 px card gutter, section title on the card text edge; framed phone media; hero crop above the input; privacy hexes unclipped; AI card top-aligned | 7, 7, 7 → 7.0 | reverted | ties the best; typography, spacing, design_system 7.5 in all runs, accessibility 7/7.5/7 and layout 7/7/7.5 hold the floor |
++| 4 | 08:35 | Iteration 3 plus: header nav as hex chips (lemon current page), secondary links as outlined hex buttons, phone footer links as 48 px rows, short pages centred vertically, 404 brand mark, features head in two columns, voice hexes inside the block, privacy without decoration and centred | 6, 5.5, 5.5 → 5.5 | reverted | the wider chip nav wraps the header CTA onto a second row in the 44rem text-page frame (layout 5.5); the split section head and the centred changelog read as floating |
++| 5 | 09:10 | Iteration 3 without the narrow frame: text pages on a raised full-grid sheet (column centred); header links underlined at rest, cobalt current page; phone nav as a 48 px segmented bar; outlined hex secondary buttons; phone footer rows; 404 mark; voice hexes inside, privacy undecorated and centred; code chips with a hairline; loose-list rhythm; guide list spacing | 7, 7.5, 7 → 7.0 | reverted | ties the best; accessibility 7.5/8/7.5 and layout 7.5/7.5/7 rise, spacing 7/7.5/7 is now the floor |
+diff --git a/site/build.mjs b/site/build.mjs
+index 8106b426..2ee97b15 100644
+--- a/site/build.mjs
++++ b/site/build.mjs
+@@ -461,7 +461,7 @@ ${body}
+ 
+ function indexLinks() {
+   return Object.entries(LOCALES)
+-    .map(([code, l]) => `<li><a href="${l.landing}" lang="${code}" hreflang="${code}">${l.name}</a></li>`)
++    .map(([code, l]) => `<li><a class="hex" href="${l.landing}" lang="${code}" hreflang="${code}"><span class="face">${l.name}</span></a></li>`)
+     .join('\n');
+ }
+ 
+@@ -471,7 +471,7 @@ function rootPage(config) {
+     lang: config.defaultLocale,
+     title: SITE_NAME,
+     head: `<meta http-equiv="refresh" content="0; url=${target}">\n`,
+-    body: `<h1>${SITE_NAME}</h1>\n<ul class="guide-list">\n${indexLinks()}\n</ul>`,
++    body: `<h1>${SITE_NAME}</h1>\n<ul class="choice-list">\n${indexLinks()}\n</ul>`,
+   });
+ }
+ 
+@@ -479,9 +479,10 @@ function notFoundPage(config) {
+   return standalonePage({
+     lang: config.defaultLocale,
+     title: `Seite nicht gefunden | Page not found | ${SITE_NAME}`,
+-    body: `<h1>Seite nicht gefunden <span lang="en">/ Page not found</span></h1>
++    body: `<span class="mark mark--l" aria-hidden="true"></span>
++<h1>Seite nicht gefunden <span lang="en">/ Page not found</span></h1>
+ <p>Diese Seite gibt es nicht. <span lang="en">This page does not exist.</span></p>
+-<ul class="guide-list">\n${indexLinks()}\n</ul>`,
++<ul class="choice-list">\n${indexLinks()}\n</ul>`,
+   });
+ }
+ 
+diff --git a/site/landing.mjs b/site/landing.mjs
+index aab599f8..42ec3858 100644
+--- a/site/landing.mjs
++++ b/site/landing.mjs
+@@ -159,7 +159,7 @@ export function renderLanding({ locale, copy, config, publicDir }) {
+   // Shown only while their pages are published, but always part of the page's copy.
+   const privacyMore = config.privacyPublished ? el('p', 'privacy.more', 'class="privacy-more"') : (text('privacy.more'), '');
+   const helpLink = config.supportPublished
+-    ? `<a class="link-strong" href="${locale === 'de' ? '/support' : '/en/support'}" data-copy-id="test.help">${md('test.help')}</a>`
++    ? `<a class="hex hex--outlined" href="${locale === 'de' ? '/support' : '/en/support'}" data-copy-id="test.help"><span class="face">${md('test.help')}</span></a>`
+     : (text('test.help'), '');
+   const tick = `<span class="tick hxp" aria-hidden="true">${icon('check')}</span>`;
+   const privacyItems = ['privacy.frankfurt', 'privacy.consent', 'privacy.export', 'privacy.delete', 'privacy.website'];
+@@ -172,7 +172,7 @@ ${el('h1', 'hero.title', 'class="display" id="hero-title"')}
+ ${el('p', 'hero.lead', 'class="lead"')}
+ <div class="hero-actions">
+ <a class="hex" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${md('header.open-app')}${icon('open')}</span></a>
+-<a class="link-strong" href="#test" data-copy-id="hero.test-link">${md('hero.test-link')}</a>
++<a class="hex hex--outlined" href="#test" data-copy-id="hero.test-link"><span class="face">${md('hero.test-link')}</span></a>
+ </div>
+ </div>
+ <div class="hero-visual" data-copy-id="hero.image">${picture(mediaFor(publicDir, 'hero', locale, { shape: 'hero' }), text('hero.image'), { eager: true })}</div>
+@@ -248,14 +248,16 @@ ${privacyItems.map((id) => `<li>${tick}<span data-copy-id="${id}">${md(id)}</spa
+ </div>
+ </section>
+ <section class="section test-section" id="test" aria-labelledby="test-title">
+-<div class="wrap block block--honey cta">
++<div class="wrap block block--card cta">
+ ${el('h2', 'test.title', 'class="headline" id="test-title"')}
++<div class="cta-body">
+ ${el('p', 'test.body')}
+ <div class="cta-actions">
+-<a class="hex hex--tomato" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${md('header.open-app')}${icon('open')}</span></a>
++<a class="hex" href="${APP_URL}"><span class="face" data-copy-id="header.open-app">${md('header.open-app')}${icon('open')}</span></a>
+ ${helpLink}
+ </div>
+ </div>
++</div>
+ </section>
+ `;
+   return { html, used };
+diff --git a/site/public/landing.css b/site/public/landing.css
+index 1e0f8ea8..00358413 100644
+--- a/site/public/landing.css
++++ b/site/public/landing.css
+@@ -4,7 +4,7 @@
+ 
+ .landing main {
+   display: grid;
+-  gap: var(--hl-space-4);
++  gap: var(--hl-space-5);
+ }
+ 
+ .display {
+@@ -93,6 +93,14 @@
+   --ring: var(--hl-color-ink);
+ }
+ 
++.block--card {
++  --blk: var(--hl-color-surface-raised);
++  --on-blk: var(--hl-color-text);
++  --ring: var(--hl-color-accent);
++  border: var(--hl-border-width) solid var(--hl-color-ink);
++  box-shadow: var(--sticker-l);
++}
++
+ .block--tomato {
+   --blk: var(--hl-color-tomato);
+   --on-blk: var(--hl-color-on-tomato);
+@@ -110,7 +118,6 @@
+   display: inline-flex;
+   align-items: center;
+   min-height: var(--hl-size-target);
+-  padding-inline: var(--hl-space-1);
+   text-decoration-color: currentColor;
+   text-decoration-thickness: 2px;
+   text-underline-offset: 0.3em;
+@@ -140,7 +147,7 @@
+   --line: var(--hl-color-ink);
+   --face: var(--hl-color-on-cobalt);
+   min-height: 40px;
+-  padding: var(--hl-space-1) var(--hl-space-4) var(--hl-space-1) var(--hl-space-2);
++  padding: var(--hl-space-2) var(--hl-space-4) var(--hl-space-2) var(--hl-space-2);
+   color: var(--hl-color-ink);
+   font-size: var(--hl-type-label-size);
+   font-weight: var(--hl-font-weight-bold);
+@@ -181,11 +188,12 @@
+ /* Features */
+ .features .wrap {
+   display: grid;
+-  gap: var(--hl-space-4);
++  gap: var(--hl-space-6);
+ }
+ 
+ .features .section-head {
+   margin: var(--hl-space-6) 0 var(--hl-space-2);
++  padding-inline: var(--hl-space-5);
+ }
+ 
+ .features .section-head .lead {
+@@ -210,23 +218,21 @@
+   text-wrap: pretty;
+ }
+ 
+-/* A media frame holds an illustration or a demo video. On phones it runs flush to its card's
+-   sides and bottom; from 600 px it is a framed card with the navy contour. */
++/* A media frame holds an illustration or a demo video: a framed card with the navy contour,
++   portrait on phones, 16:9 from 600 px. */
+ .media-frame {
+   position: relative;
+-  margin: 0 calc(-1 * var(--hl-space-5));
++  margin: 0 0 var(--hl-space-5);
+   overflow: hidden;
+-  border-top: var(--hl-border-width) solid var(--hl-color-ink);
++  border: var(--hl-border-width) solid var(--hl-color-ink);
++  border-radius: var(--hl-radius-l);
+   background: var(--hl-color-surface-raised);
++  box-shadow: var(--sticker);
+   aspect-ratio: 4 / 5;
+ }
+ 
+ @media (min-width: 37.5625rem) {
+   .media-frame {
+-    margin: 0 0 var(--hl-space-5);
+-    border: var(--hl-border-width) solid var(--hl-color-ink);
+-    border-radius: var(--hl-radius-l);
+-    box-shadow: var(--sticker);
+     aspect-ratio: 16 / 9;
+   }
+ 
+@@ -336,9 +342,13 @@
+   padding: var(--hl-space-6) var(--hl-space-5);
+ }
+ 
++.voice .section-head {
++  margin-bottom: var(--hl-space-6);
++}
++
+ .voice-grid {
+   display: grid;
+-  gap: var(--hl-space-4);
++  gap: var(--hl-space-5);
+ }
+ 
+ .assistant {
+@@ -419,7 +429,7 @@
+   grid-template-columns: auto 1fr;
+   gap: var(--hl-space-3);
+   align-items: start;
+-  padding: var(--hl-space-4) var(--hl-space-5);
++  padding: var(--hl-space-4);
+ }
+ 
+ .checklist li + li {
+@@ -434,14 +444,20 @@
+   --s: 30px;
+ }
+ 
+-/* Test: the lemon block, the browser button tomato with the navy contour. */
++/* Test: a raised card with the navy contour and the lemon primary button; from 1000 px the
++   title takes the left column and the text with the actions the right one, as in the privacy block. */
+ .cta {
+   display: grid;
+   gap: var(--hl-space-4);
+-  justify-items: start;
+   padding: var(--hl-space-6) var(--hl-space-5);
+ }
+ 
++.cta-body {
++  display: grid;
++  gap: var(--hl-space-4);
++  justify-items: start;
++}
++
+ .cta p {
+   max-width: 640px;
+ }
+@@ -454,12 +470,6 @@
+   margin-top: var(--hl-space-2);
+ }
+ 
+-.hex--tomato {
+-  --face: var(--hl-color-tomato);
+-  --on-face: var(--hl-color-on-tomato);
+-  --wall: var(--hl-color-tomato-edge);
+-}
+-
+ .landing .site-footer {
+   margin-top: var(--hl-space-7);
+ }
+@@ -471,9 +481,7 @@
+   }
+ 
+   /* The hero has no empty corner (copy and phone fill it), so only the other big blocks get one. */
+-  .voice .block,
+-  .privacy,
+-  .cta {
++  .voice .block {
+     background: url("/hex/block-hex.svg") no-repeat, var(--blk);
+   }
+ 
+@@ -485,8 +493,12 @@
+     margin-inline: 0;
+   }
+ 
++  .features .section-head {
++    padding-inline: var(--hl-space-7);
++  }
++
+   .feature {
+-    padding: var(--hl-space-6) var(--hl-space-6) var(--hl-space-1);
++    padding: var(--hl-space-6) var(--hl-space-7) var(--hl-space-1);
+   }
+ 
+   .voice .block {
+@@ -495,26 +507,24 @@
+     background-size: 240px auto;
+   }
+ 
++  .checklist li {
++    padding-inline: var(--hl-space-5);
++  }
++
+   .privacy {
+     grid-template-columns: 0.8fr 1.2fr;
+-    align-items: start;
++    align-items: center;
+     gap: var(--hl-space-7);
+     padding: var(--hl-space-7);
+-    background-position: left -60px bottom -140px;
+-    background-size: 240px auto;
+   }
+ 
+   .cta {
+     padding: var(--hl-space-7);
+-    background-position: right -40px bottom -90px;
+-    background-size: 210px auto;
+   }
+ }
+ 
+ @media (min-width: 720px) and (prefers-color-scheme: dark) {
+-  .voice .block,
+-  .privacy,
+-  .cta {
++  .voice .block {
+     background-image: url("/hex/block-hex-dark.svg");
+   }
+ }
+@@ -536,10 +546,14 @@
+     letter-spacing: var(--hl-type-display-tracking);
+   }
+ 
++  .hero-visual {
++    margin-bottom: -5.2%;
++  }
++
+   .feature {
+     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+     gap: var(--hl-space-7);
+-    padding: var(--hl-space-6) var(--hl-space-6) var(--hl-space-1);
++    padding: var(--hl-space-6) var(--hl-space-7) var(--hl-space-1);
+   }
+ 
+   .feature--flip {
+@@ -550,9 +564,20 @@
+     order: 2;
+   }
+ 
++  .cta {
++    grid-template-columns: 0.8fr 1.2fr;
++    gap: var(--hl-space-7);
++    align-items: start;
++  }
++
++  .voice .block {
++    background-position: right var(--hl-space-7) top var(--hl-space-7);
++    background-size: 180px auto;
++  }
++
+   .assistant--ai {
+     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+     gap: var(--hl-space-6);
+-    align-items: center;
++    align-items: start;
+   }
+ }
+diff --git a/site/public/styles.css b/site/public/styles.css
+index 56bfda1d..02c6e83e 100644
+--- a/site/public/styles.css
++++ b/site/public/styles.css
+@@ -26,6 +26,7 @@
+ 
+ :root {
+   --page: 1160px;
++  --text: 44rem;
+   --gutter: var(--hl-space-4);
+   --sticker: var(--hl-shadow-sticker);
+   --sticker-l: var(--hl-shadow-sticker-l);
+@@ -83,6 +84,7 @@ main {
+   flex: 1 0 auto;
+ }
+ 
++
+ img,
+ svg {
+   max-width: 100%;
+@@ -317,6 +319,24 @@ a {
+     drop-shadow(0 var(--w) 0 var(--ring)) drop-shadow(0 calc(-1 * var(--w)) 0 var(--ring));
+ }
+ 
++.hex--outlined {
++  --face: var(--hl-color-surface-raised);
++  --on-face: var(--hl-color-text);
++  --wall: var(--hl-color-surface-edge);
++}
++
++@media (prefers-color-scheme: dark) {
++  .hex--outlined {
++    --line: var(--hl-color-border);
++  }
++}
++
++.block--cobalt .hex--outlined {
++  --line: var(--hl-color-ink);
++  --face: var(--hl-color-on-cobalt);
++  --on-face: var(--hl-color-ink);
++}
++
+ .hex--small {
+   --h: 44px;
+ }
+@@ -388,6 +408,20 @@ a {
+   border-radius: var(--hl-radius-s);
+ }
+ 
++/* Text links in the bars: the ring stays inside the 48 px target, clear of the next link. */
++.nav a:focus-visible,
++.lang a:focus-visible,
++.site-footer nav a:focus-visible {
++  outline-offset: calc(-1 * var(--hl-focus-ring-width));
++}
++
++.nav a,
++.lang a {
++  text-decoration: underline;
++  text-decoration-thickness: 1px;
++  text-underline-offset: 0.3em;
++}
++
+ .nav a:hover,
+ .lang a:hover {
+   background: var(--hl-color-accent-soft);
+@@ -395,10 +429,13 @@ a {
+ }
+ 
+ .nav a[aria-current="page"] {
+-  text-decoration: underline;
+-  text-decoration-color: var(--hl-color-honey-edge);
++  color: var(--hl-color-accent);
+   text-decoration-thickness: 3px;
+-  text-underline-offset: 0.35em;
++}
++
++/* The language link keeps the nav's rhythm: the header gap would double its spacing. */
++.site-header .lang {
++  margin-inline-start: calc(-1 * var(--hl-space-4));
+ }
+ 
+ /* Phones: brand and app button on the first row, the links below. */
+@@ -410,7 +447,65 @@ a {
+ 
+   .site-header .lang {
+     order: 4;
+-    margin-inline-start: auto;
++  }
++
++  .site-header .nav,
++  .site-header .lang {
++    display: flex;
++  }
++
++  .site-header .nav {
++    flex: 2;
++    margin-inline-start: 0;
++  }
++
++  .site-header .lang {
++    flex: 1;
++    margin-inline-start: calc(-1 * var(--hl-space-4));
++  }
++
++  .site-header .nav ul {
++    flex: 1;
++    flex-wrap: nowrap;
++  }
++
++  .site-header .nav li {
++    flex: 1;
++  }
++
++  .site-header .nav a,
++  .site-header .lang a {
++    justify-content: center;
++    width: 100%;
++    padding-inline: var(--hl-space-2);
++    border: var(--hl-border-width) solid var(--hl-color-border);
++    border-inline-end-width: 0;
++    background: var(--hl-color-surface-raised);
++    text-decoration: none;
++  }
++
++  .site-header .nav li:first-child a {
++    border-radius: var(--hl-radius-full) 0 0 var(--hl-radius-full);
++  }
++
++  .site-header .nav li:not(:first-child) a {
++    border-radius: 0;
++  }
++
++  .site-header .lang a {
++    border-inline-end-width: var(--hl-border-width);
++    border-radius: 0 var(--hl-radius-full) var(--hl-radius-full) 0;
++  }
++
++  .site-header .nav a:focus-visible,
++  .site-header .lang a:focus-visible {
++    outline-offset: calc(-2 * var(--hl-border-width) - var(--hl-focus-ring-width));
++  }
++
++  .site-header .nav a[aria-current="page"] {
++    color: var(--hl-color-accent);
++    text-decoration: underline;
++    text-decoration-thickness: 3px;
+   }
+ }
+ 
+@@ -418,7 +513,7 @@ a {
+ .site-footer {
+   --ring: var(--hl-color-honey);
+   --ring-gap: var(--foot);
+-  margin-top: var(--hl-space-8);
++  margin-top: var(--hl-space-6);
+   padding-block: var(--hl-space-6) var(--hl-space-7);
+   background: var(--foot);
+   color: var(--on-foot);
+@@ -457,19 +552,82 @@ a {
+   opacity: 0.86;
+ }
+ 
++/* Phones: the footer links as 48 px rows. */
++@media (max-width: 719px) {
++  .site-footer nav {
++    flex-basis: 100%;
++  }
++
++  .site-footer nav ul {
++    flex-direction: column;
++    margin-inline: 0;
++  }
++
++  .site-footer nav li {
++    border-bottom: var(--hl-border-width-thin) solid color-mix(in srgb, var(--on-foot) 24%, transparent);
++  }
++
++  .site-footer nav a {
++    display: flex;
++    padding-inline: 0;
++  }
++
++  .site-footer nav + nav {
++    margin-top: calc(-1 * var(--hl-space-2));
++  }
++}
++
+ @media (prefers-color-scheme: dark) {
+   .site-footer {
+     border-top: var(--hl-border-width-thin) solid var(--hl-color-divider);
+   }
+ }
+ 
+-/* Guides, legal pages, the changelog, 404: the text column starts on the header's left edge. */
++/* Guides, legal pages, the changelog, 404: from 720 px the text sits on a raised sheet that
++   spans the page grid like the landing blocks, the column centred on it. */
+ .prose {
+-  width: min(100% - 2 * var(--gutter), 44rem);
+-  margin-inline: max(var(--gutter), (100% - var(--page)) / 2) auto;
++  width: min(100% - 2 * var(--gutter), var(--text));
++  margin-inline: auto;
+   padding-block: var(--hl-space-5) var(--hl-space-6);
+ }
+ 
++@media (min-width: 720px) {
++  main.prose {
++    flex: none;
++    width: min(100% - 2 * var(--gutter), var(--page));
++    margin-block: var(--hl-space-2) auto;
++    padding: var(--hl-space-6) var(--hl-space-7) var(--hl-space-7);
++    border: var(--hl-border-width) solid var(--hl-color-ink);
++    border-radius: var(--hl-radius-xl);
++    background: var(--hl-color-surface-raised);
++    box-shadow: var(--sticker-l);
++  }
++
++  main.prose > * {
++    max-width: var(--text);
++  }
++
++  /* A short page fills the sheet down to the footer; its empty corner gets the landing blocks'
++     see-through hex cluster. */
++  main.prose:has(> .empty-note) {
++    flex: 1 0 auto;
++    position: relative;
++    isolation: isolate;
++  }
++
++  main.prose:has(> .empty-note)::after {
++    content: "";
++    position: absolute;
++    z-index: -1;
++    right: var(--hl-space-7);
++    bottom: var(--hl-space-7);
++    width: 220px;
++    aspect-ratio: 376.41 / 370;
++    background: var(--hl-color-honey);
++    mask: url("/hex/block-hex.svg") center / contain no-repeat;
++  }
++}
++
+ .prose h1,
+ .prose h2,
+ .prose h3 {
+@@ -504,6 +662,15 @@ a {
+   margin: var(--hl-space-1) 0;
+ }
+ 
++.prose li > p {
++  margin-block: 0;
++}
++
++.prose li > p + p,
++.prose li > pre {
++  margin-block: var(--hl-space-2);
++}
++
+ .prose blockquote > :first-child {
+   margin-top: 0;
+ }
+@@ -523,12 +690,13 @@ a {
+ }
+ 
+ .prose code {
+-  padding: 0.1em 0.35em;
++  padding: 0.1em 0.4em;
++  border: var(--hl-border-width-thin) solid var(--hl-color-divider);
+   border-radius: 6px;
+   background: var(--hl-color-surface-sunken);
+   font-family: var(--hl-type-body-family);
+   font-size: 0.94em;
+-  font-weight: var(--hl-font-weight-bold);
++  font-weight: 600;
+   line-height: 1;
+ }
+ 
+@@ -542,6 +710,7 @@ a {
+ 
+ .prose pre code {
+   padding: 0;
++  border: 0;
+   background: none;
+   overflow-wrap: normal;
+ }
+@@ -570,22 +739,40 @@ a {
+   height: auto;
+ }
+ 
++.choice-list {
++  display: flex;
++  flex-wrap: wrap;
++  gap: var(--hl-space-4);
++  margin: var(--hl-space-5) 0 0;
++  padding: 0;
++  list-style: none;
++}
++
+ .guide-list {
+   display: grid;
+-  gap: var(--hl-space-3);
++  gap: var(--hl-space-5);
++  margin-top: var(--hl-space-5);
+   padding: 0;
+   list-style: none;
+ }
+ 
+ .guide-list li {
+   margin: 0;
+-  padding: var(--hl-space-4) var(--hl-space-5);
++  padding: var(--hl-space-5);
+   border: var(--hl-border-width) solid var(--hl-color-border);
+   border-radius: var(--hl-radius-m);
+   background: var(--hl-color-surface-raised);
+   box-shadow: var(--sticker);
+ }
+ 
++.prose > .mark--l {
++  display: block;
++  width: 56px;
++  height: 56px;
++  margin-top: var(--hl-space-4);
++  border-radius: 12px;
++}
++
+ .guide-list a {
+   display: inline-block;
+   line-height: var(--hl-type-title-line);
+@@ -596,7 +783,7 @@ a {
+ }
+ 
+ .guide-list p {
+-  margin: var(--hl-space-1) 0 0;
++  margin: var(--hl-space-2) 0 0;
+   color: var(--hl-color-text-muted);
+ }
+ 
