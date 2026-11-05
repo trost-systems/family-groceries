@@ -528,7 +528,10 @@ class const _SuggestionRow({
                         ? '🔁'
                         : nameIcon(entry.name, category),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 20),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontFamilyFallback: emojiFontFallback,
+                    ),
                   ),
                 ),
                 Expanded(

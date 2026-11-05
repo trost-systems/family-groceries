@@ -1,0 +1,73 @@
+diff --git a/app/lib/list/list_view/sections.dart b/app/lib/list/list_view/sections.dart
+index 615af5c0..a27940a1 100644
+--- a/app/lib/list/list_view/sections.dart
++++ b/app/lib/list/list_view/sections.dart
+@@ -1,4 +1,5 @@
+ import 'package:family_groceries/list/list_cache.dart';
++import 'package:family_groceries/list/list_cubit.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:flutter/foundation.dart' show immutable;
+ 
+@@ -78,6 +79,16 @@ List<CategoryBlock> _blocks(
+ }
+ 
+ /// The sections the list shows: the ones with active items.
++/// The [shownSections] of [state]'s items, worked out once per state: the
++/// list, its frame and the add sheet ask on every build, the sheet on
++/// every key typed.
++List<StoreSection> shownSectionsIn(ListState state) =>
++    _shownIn[state] ??= List.unmodifiable(
++      shownSections(sectionsOf(state.items.values, state.catalog)),
++    );
++
++final _shownIn = Expando<List<StoreSection>>();
++
+ List<StoreSection> shownSections(List<StoreSection> sections) => [
+   for (final section in sections)
+     if (section.count > 0) section,
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index 1c7cb587..b3c3f488 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -78,10 +78,8 @@ class const ShoppingListView({
+   }
+ 
+   /// [frameOf] for the list as [state] shows it at rest.
+-  static ListFrame frameFor(double width, ListState state) => frameOf(
+-    width,
+-    shownSections(sectionsOf(state.items.values, state.catalog)).length,
+-  );
++  static ListFrame frameFor(double width, ListState state) =>
++      frameOf(width, shownSectionsIn(state).length);
+ 
+   @override
+   State<ShoppingListView> createState() => _ShoppingListViewState();
+@@ -156,7 +154,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+   /// yet: the list jumps toward it and looks again, a few frames at most.
+   Future<void> _reveal(String storeId) async {
+     final state = _cubit.state;
+-    final section = shownSections(sectionsOf(state.items.values, state.catalog))
++    final section = shownSectionsIn(state)
+         .where((s) => s.store?.id == storeId && s.count > 0)
+         .firstOrNull;
+     if (section == null) {
+@@ -213,9 +211,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+       return;
+     }
+     final state = _cubit.state;
+-    final resting = shownSections(
+-      sectionsOf(state.items.values, state.catalog),
+-    );
++    final resting = shownSectionsIn(state);
+     final weight = _weightIn(state);
+     final column = columnsOf(
+       resting,
+@@ -375,7 +371,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     final used = recentlyUsed(state.items.values);
+     // Never more columns than sections: one store with items reads as one
+     // centred column.
+-    final shown = shownSections(sectionsOf(state.items.values, state.catalog));
++    final shown = shownSectionsIn(state);
+     final frame = ShoppingListView.frameOf(width, shown.length);
+     final columnCount = frame.columns;
+     final side = frame.side;

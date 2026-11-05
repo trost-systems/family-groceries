@@ -1,0 +1,87 @@
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index 1c7cb587..79a56efa 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -445,8 +445,22 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+                       key: const ValueKey('recently-used'),
+                       title: Text(l10n.recentlyUsed),
+                       children: [
+-                        for (final (i, item) in used.indexed)
+-                          _usedRow(state, item, last: i == used.length - 1),
++                        // One layer fades all the rows. They never overlap,
++                        // so it looks the same as a layer per row, at one
++                        // offscreen pass instead of one per row.
++                        Opacity(
++                          opacity: 0.55,
++                          child: Column(
++                            children: [
++                              for (final (i, item) in used.indexed)
++                                _usedRow(
++                                  state,
++                                  item,
++                                  last: i == used.length - 1,
++                                ),
++                            ],
++                          ),
++                        ),
+                       ],
+                     ),
+                   ),
+@@ -459,10 +473,10 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     );
+   }
+ 
+-  /// A recently used item as the list's own row, icon included, faded: a
+-  /// tap puts it back on the list. The row's own gestures are off (no
+-  /// tick or hold), and so are its semantics, which would tick and
+-  /// delete.
++  /// A recently used item as the list's own row, icon included (faded with
++  /// the others): a tap puts it back on the list. The row's own gestures
++  /// are off (no tick or hold), and so are its semantics, which would tick
++  /// and delete.
+   Widget _usedRow(ListState state, Item item, {required bool last}) {
+     final l10n = AppLocalizations.of(context);
+     final category = state.catalog.categories
+@@ -487,19 +501,16 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+         behavior: HitTestBehavior.opaque,
+         onTap: () => _readd(item),
+         child: IgnorePointer(
+-          child: Opacity(
+-            opacity: 0.55,
+-            child: ItemRow(
+-              item: item,
+-              category: category,
+-              leaving: _leaving,
+-              fresh: false,
+-              last: last,
+-              onVisible: (_) {},
+-              onTick: _readd,
+-              onEdit: (_) {},
+-              onDelete: (_) {},
+-            ),
++          child: ItemRow(
++            item: item,
++            category: category,
++            leaving: _leaving,
++            fresh: false,
++            last: last,
++            onVisible: (_) {},
++            onTick: _readd,
++            onEdit: (_) {},
++            onDelete: (_) {},
+           ),
+         ),
+       ),
+diff --git a/app/test/list/list_screen_test.dart b/app/test/list/list_screen_test.dart
+index 7d8da5d1..775bfec4 100644
+--- a/app/test/list/list_screen_test.dart
++++ b/app/test/list/list_screen_test.dart
+@@ -408,7 +408,7 @@ void main() {
+       findsOneWidget,
+     );
+     expect(
+-      find.descendant(
++      find.ancestor(
+         of: usedRow('Bananen'),
+         matching: find.byWidgetPredicate((w) => w is Opacity && w.opacity < 1),
+       ),

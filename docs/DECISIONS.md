@@ -7897,3 +7897,33 @@ Job 90 (PR #220) left two follow-ups for its neighbours of `merge_duplicate_cate
    at the ends. `add_store` and `rename_store` turned those into spaces already, and no Hummlist
    client writes `stores` directly, so only rows written straight into the table can clash. The
    trimmed „ Rewe “ is a leading space users hardly see.
+## Job 108: hill-climb hc-ui-perf, UI frame times and jank (2026-11-05)
+
+1. **The box with a fake backend, not Hetzner with local Supabase.** The lead moved the job to
+   the box at 07:59 (`runner=box`, pinned). The box has no Docker and no sudo, so there is no
+   local Supabase. `tool/hillclimb/hc-ui-perf/fake_supabase.py` (job 100's approach) serves the
+   list, add and tick endpoints from the job 18 fixtures (`many-stores.yaml` stores and walk
+   orders, `solo-long-list.yaml` names, 300 open items). Writes change its rows, so acks are
+   real.
+2. **FrameTiming in a custom profile entrypoint, not `flutter drive`.** The probe
+   (`app/test_driver/ui_perf_probe.dart`, like job 100's `startup_probe.dart`) runs the real
+   `bootstrap` with the real binding and drives touches through `GestureBinding`. The brief
+   names `FrameTiming` as one allowed source. `flutter drive` would add the test binding's
+   frame policy and a driver connection to every run.
+3. **llvmpipe's default thread count.** `LP_NUM_THREADS=1` and `=2` were tried before the
+   baseline: slower raster and no steadier.
+4. **A load gate outside measure.sh.** Measurements start below a 1-minute load of 3.5 (the
+   baseline's conditions) and repeat if load ends above 6. Other jobs' tests run outside the
+   shared lock. The harness stayed frozen after the baseline except for trace-mode-only
+   additions to the probe (a trace hook and `_SemanticsChurn`). They run only when
+   `HC108_TRACE_FLOW` is set, which measure runs never set (log, "Notes from review 0").
+5. **Emoji font named (`emojiFontFallback`).** On Linux, `['Noto Color Emoji']` is the face
+   the per-character fallback picked: the settled list's screenshot is byte-identical to main's
+   (measured). The speedup is Linux-only, because fontconfig exists only on Linux desktop, and
+   the repo does not ship or build Linux in CI. The Linux profile is the brief's proxy, so the
+   step is in scope, but no current user is expected to notice it. On the web the name matches
+   nothing: the engine registers its emoji fallback as `Noto Color Emoji 0` … `N`. The change is
+   therefore a no-op there, verified by review 0 (0 px different on the list and the add sheet,
+   the same font slices loaded). On Android and iOS the expectation is the same face or no match,
+   then the same system fallback as before. That is inferred from how the engines resolve fonts,
+   not tested on a device; Samsung's vendor emoji font is worth a look.
