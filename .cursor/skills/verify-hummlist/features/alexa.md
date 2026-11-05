@@ -26,7 +26,7 @@ A household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“ 
   - one item added: „Ich habe Milch auf die Hummlist gesetzt.“
   - several added: „Ich habe Milch und Eier auf die Hummlist gesetzt.“ / „Ich habe Milch, Eier und Brot auf die Hummlist gesetzt.“
   - mix: „Ich habe Eier auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.“
-  - already there only: „Schon auf der Hummlist: Milch.“ A plain name whose item is open with a brand or details is that item: „Butter“ with Butter (Weihenstephan) open gives „Schon auf der Hummlist: Butter Weihenstephan.“ and adds nothing (job 112).
+  - already there only: „Schon auf der Hummlist: Milch.“ A plain name whose item is open with a brand or details is that item, also in singular or plural: „Butter“ with Butter (Weihenstephan) open gives „Schon auf der Hummlist: Butter Weihenstephan.“, „Tomate“ with Tomaten (Bio) open „Schon auf der Hummlist: Tomaten Bio.“; nothing is added (job 112).
   - similar (a spelling variant or synonym is open, the new item is added anyway): it joins the „Schon auf der Hummlist:“ sentence after the exact ones, each name once (job 68): „Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Milch und Möhren.“
   - units are spoken out: 2 l becomes „2 Liter“, kg „Kilo“, g „Gramm“, ml „Milliliter“.
   - more than thirty things: the confirmation is followed by „Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.“
