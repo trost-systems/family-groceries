@@ -9,7 +9,23 @@ const active = (page: Page) => page.evaluate(() => {
 /** Clicks Menge and reports the focus trail, and whether the clicked <input> is still the one in the DOM. */
 async function clickMenge(page: Page, label: string, before?: (page: Page) => Promise<void>): Promise<string> {
   const field = editField(page, 'Menge');
-  await field.evaluate((e) => { (window as unknown as { __menge: Element }).__menge = e; });
+  await field.evaluate((e) => {
+    const w = window as unknown as { __menge: Element; __moves: string[]; __obs?: MutationObserver };
+    w.__menge = e;
+    w.__moves = [];
+    w.__obs?.disconnect();
+    const t0 = performance.now();
+    const name = (n: Node) => n instanceof Element ? `${n.tagName.toLowerCase()}#${n.id}${n.contains(e) ? '[holds Menge]' : ''}` : n.nodeName;
+    w.__obs = new MutationObserver((records) => {
+      for (const r of records) {
+        if (r.type !== 'childList') continue;
+        const moved = [...r.removedNodes, ...r.addedNodes].filter((n) => n instanceof Element && (n.contains(e) || n === e));
+        if (moved.length) w.__moves.push(`${Math.round(performance.now() - t0)}ms ${r.removedNodes.length ? '-' : '+'}${moved.map(name).join(',')} in ${name(r.target)}`);
+      }
+    });
+    w.__obs.observe(document.body, { childList: true, subtree: true });
+    e.addEventListener('blur', () => w.__moves.push(`${Math.round(performance.now() - t0)}ms blur (connected=${e.isConnected})`), { once: true });
+  });
   if (before) await before(page);
   const t0 = Date.now();
   await field.click();
@@ -24,8 +40,9 @@ async function clickMenge(page: Page, label: string, before?: (page: Page) => Pr
     return `old connected=${old.isConnected}, inputs named Menge=${now.length}, same=${now[0] === old}`;
   });
   const ok = await field.evaluate((e) => e === document.activeElement).catch(() => false);
+  const moves = await page.evaluate(() => (window as unknown as { __moves: string[] }).__moves.slice(0, 6).join(' ; '));
   const trail = seen.filter((s, i) => i === 0 || s.split(':')[1] !== seen[i - 1].split(':')[1]);
-  return `${label}: focused=${ok} ${same} trail=${trail.join(' | ')}`;
+  return `${label}: focused=${ok} ${same} trail=${trail.join(' | ')}\n    moves: ${moves || 'none'}`;
 }
 
 test('probe: Menge after a stepper', async ({ page }) => {
