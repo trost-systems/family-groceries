@@ -552,6 +552,7 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 - Job 102 (judge-panel hill-climb of the app's core screens: harness and measurement fixes, no kept step, 6.5 -> 6.5, DO NOT MERGE): [docs/done/102-hc-ui-app.md](docs/done/102-hc-ui-app.md)
 - Job 108, hill-climb hc-ui-perf (frame-time harness; emoji icons name their font, a Linux-only speedup, score 7.479 → 6.598, 1 of 6 attempts kept, early stop at about 5 h): [docs/done/108-hc-ui-perf.md](docs/done/108-hc-ui-perf.md)
 - Job 112 (Siri/Alexa reply for branded open items, Alexa single leftover read): [docs/done/112-fix-speech-replies.md](docs/done/112-fix-speech-replies.md)
+- Job 131, hill-climb hc-suggest-cpu (add-sheet offline suggestion ranking p50 15.283 → 0.032 ms at the brief's 5,000 usuals, ~0.7 → 0.07 ms at the app's 200, ranks identical, 6 of 17 attempts kept, review 0 crash fix for blank names, stop after 5 genuine attempts without a kept step, DO NOT MERGE): [docs/done/131-hc-suggest-cpu.md](docs/done/131-hc-suggest-cpu.md)
 
 
 ## Job 99: hc-sync, offline and sync robustness
