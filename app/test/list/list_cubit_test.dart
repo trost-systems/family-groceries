@@ -1240,6 +1240,61 @@ void main() {
       expect(repo.rows[leas.id]!.quantity, '6');
     });
 
+    test('renamed and ticked offline after the partner added it: the tick '
+        'goes to their item, as for an add', () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit
+        ..edit(saft.id, const ItemChanges(name: 'Mineralwasser'))
+        ..tick(saft.id);
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.quantity, i.status)), [
+        (copy.id, '8', ItemStatus.bought),
+      ]);
+    });
+
+    test("renamed and deleted offline: the partner's item stays", () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit
+        ..edit(saft.id, const ItemChanges(name: 'Mineralwasser'))
+        ..delete(saft.id);
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(repo.rows.keys, [copy.id]);
+      expect(refused, isEmpty);
+    });
+
+    test(
+      'the copy ticked before the list showed it: the rename lands',
+      () async {
+        final saft = await add('Apfelsaft');
+        final copy = repo.remoteAdd('Mineralwasser');
+        final fetch = repo.itemsGate = Completer();
+        cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+        await settle();
+        expect(repo.sent.whereType<EditItem>(), isEmpty, reason: 'refused');
+        repo.rows[copy.id] = copy.copyWith(status: ItemStatus.bought);
+        repo.itemsGate = null;
+        fetch.complete();
+        await settle();
+        expect(cubit.state.pending, isEmpty);
+        expect(repo.rows[saft.id]!.name, 'Mineralwasser');
+        expect(activeNames(), ['Mineralwasser']);
+        expect(refused, isEmpty);
+      },
+    );
+
     test('a copy only the server has, too long to merge: "already on the '
         'list", the old name stays', () async {
       final papier = await add('Papier', 'Kleinpackung mit vielen Rollen');

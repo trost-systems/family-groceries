@@ -7733,3 +7733,32 @@ was on the exact name, and the app compared exact names.
    migration: the same 12 items with the same category name key, the same summed corrections per
    word and key, no store missing a category row, no duplicate key left; a second run merges 0
    (script and output in the job's ops dir, `proof/`).
+
+## Job 114: a rename the server refuses for an open copy merges, 2026-11-05
+
+vmaint-20261105 #12 (renaming Apfelsaft to „Mineralwasser“ while Mineralwasser is open leaves two
+open rows) was found on c5a580a8, before job 104 (#236) landed. On main the online case was fixed:
+`ListCubit.edit` folds the rename into the open copy and `items_rename_duplicate` refuses the rest.
+What was left: when the server refused a rename because another member's copy got there first (a
+rename made offline, or two phones renaming at once), the app put the old name back and said
+„… steht schon auf der Liste“. The sync fuzz showed it once its fake server enforced the trigger:
+7 of seeds 1 to 100 kept a rename apart from its open copy.
+
+1. **A refused rename folds like a shown one.** The flush holds the queue, resyncs, and folds the
+   item into the copy the server now shows, with the same ops, snackbar and Rückgängig as `edit`
+   (`merge_items`, quantities add up, one merge record, so history is the same as job 104's).
+   What was queued after the rename goes to the copy through `ItemOp.ontoKept`, the rule of an
+   offline add that turned out to be an open item (job 64b): a tick ticks the copy, and a delete is
+   dropped because it removed only this copy. If the resync fails, the rename goes back to the front
+   of the queue and the next flush sends it again. If the copy is gone or was ticked by then, the
+   rename is sent again and now passes. Only a merged quantity too long for the column still says
+   „… steht schon auf der Liste“ and keeps the old name.
+2. **Only the quantity goes ahead of the merge.** Brand and details typed in the same edit are
+   the copy's already, since the keys match. Sent alone, a brand edit was the refused rename again,
+   so a brand-only rename onto an open copy hit the server's 23505 before its own merge.
+3. **The fuzz enforces it.** `fake_backend.dart` has `items_rename_duplicate` and the
+   delete-first order of `merge_items`. The oracle fails on two open rows with one key, and a
+   device fails on any `RenameTaken`. A second open row made by an untick is counted in
+   `FakeBackend.reopened`, not failed (strict mode fails it). Job 104 lets an untick through while
+   a copy is open (pgTAP „unticking still passes“), and add-dedupe has no rule for it. This job
+   does not change it; NEEDS_LEAD in the PR asks whether it should.

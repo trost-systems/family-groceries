@@ -452,19 +452,12 @@ class ListCubit(
       return;
     }
     final item = state.items[id];
-    if (item != null && item.status == ItemStatus.active && changes.renames) {
-      final edited = changes.apply(item);
-      final key = _sameItem(edited.name, edited.brand, edited.properties);
-      final onList = state.items.values
-          .where(
-            (other) =>
-                other.id != id &&
-                other.status == ItemStatus.active &&
-                _sameItem(other.name, other.brand, other.properties) == key,
-          )
-          .firstOrNull;
-      if (onList != null) {
-        _mergeRename(item, changes, onList);
+    if (item != null) {
+      if (_openCopy(item, changes, state.items) case final onList?) {
+        if (_renameOnto(item, changes, onList) case final ops?) {
+          emit(state.copyWith(pending: [...state.pending, ...ops]));
+          unawaited(_flush());
+        }
         return;
       }
     }
@@ -477,27 +470,75 @@ class ListCubit(
     );
   }
 
-  /// Folds [item], edited by [changes], into [onList]. The amount and
-  /// details typed in the same edit go first, so the merge adds them up.
-  void _mergeRename(Item item, ItemChanges changes, Item onList) {
-    final details = ItemChanges(
-      quantity: changes.quantity,
-      brand: changes.brand,
-      properties: changes.properties,
-    );
-    final edited = details.apply(item);
+  /// The other open item of [items] that [item] would be once [changes]
+  /// rename it.
+  Item? _openCopy(Item item, ItemChanges changes, Map<String, Item> items) {
+    if (item.status != ItemStatus.active || !changes.renames) {
+      return null;
+    }
+    final edited = changes.apply(item);
+    final key = _sameItem(edited.name, edited.brand, edited.properties);
+    return items.values
+        .where(
+          (other) =>
+              other.id != item.id &&
+              other.status == ItemStatus.active &&
+              _sameItem(other.name, other.brand, other.properties) == key,
+        )
+        .firstOrNull;
+  }
+
+  /// The server refused [op] for an open copy the list did not show yet
+  /// (another phone's rename or add, or a rename made offline). Once a
+  /// resync shows the copy, the item folds into it as [edit] would have, and
+  /// what was queued after the rename goes to the copy, as for an add that
+  /// turned out to be an open item. False, with [op] queued again, when the
+  /// resync failed.
+  Future<bool> _foldRefusedRename(EditItem op) async {
+    if (!await resync()) {
+      emit(state.copyWith(pending: [op, ...state.pending]));
+      return false;
+    }
+    final server = state.server;
+    final item = server[op.itemId];
+    if (item == null) {
+      return true;
+    }
+    final onList = _openCopy(item, op.changes, server);
+    if (onList == null) {
+      // Ticked, or the copy went, since the refusal: the rename fits now.
+      emit(state.copyWith(pending: [op, ...state.pending]));
+      return true;
+    }
+    if (_renameOnto(item, op.changes, onList) case final ops?) {
+      emit(
+        state.copyWith(
+          pending: [
+            ...ops,
+            for (final p in state.pending) ?p.ontoKept(item.id, onList.id),
+          ],
+        ),
+      );
+    }
+    return true;
+  }
+
+  /// The ops that fold [item], edited by [changes], into [onList]. The
+  /// amount typed in the same edit goes first, so the merge adds it up.
+  /// Brand and details are [onList]'s already; sent on their own, they would
+  /// be the refused rename again. Null, with a [RenameTaken], when the
+  /// merged quantity would not fit.
+  List<ItemOp>? _renameOnto(Item item, ItemChanges changes, Item onList) {
+    final details = ItemChanges(quantity: changes.quantity);
     final ({MergeItems op, Merge merge}) fold;
     try {
-      fold = _fold(onList, edited);
+      fold = _fold(onList, details.apply(item));
     } on QuantityTooLong {
       _report(RenameTaken(onList.name));
-      return;
+      return null;
     }
-    if (!details.isEmpty) {
-      _enqueue(EditItem(item.id, details));
-    }
-    _enqueue(fold.op);
     _renameMerges.add(fold.merge);
+    return [if (!details.isEmpty) EditItem(item.id, details), fold.op];
   }
 
   void delete(String id) => _enqueue(DeleteItem(id));
@@ -804,10 +845,12 @@ class ListCubit(
     }
   }
 
-  Future<void> resync() async {
+  /// False when the list could not be fetched.
+  Future<bool> resync() async {
     final number = ++_resyncsStarted;
     final heard = _Heard();
     _resyncsHeard.add(heard);
+    var fetched = true;
     try {
       final (catalog, rows) = await (
         _repo.fetchCatalog(),
@@ -818,11 +861,13 @@ class ListCubit(
         _showSnapshot(catalog, rows, heard);
       }
     } on Object {
+      fetched = false;
       _goOffline();
     } finally {
       _resyncsHeard.remove(heard);
     }
     unawaited(_flush());
+    return fetched;
   }
 
   void _showSnapshot(Catalog catalog, List<Item> rows, _Heard heard) {
@@ -903,10 +948,14 @@ class ListCubit(
           _ack(op, await _repo.send(op), heard);
         } on RejectedOp catch (e) {
           _drop(op);
+          if (op is EditItem && e.nameTaken) {
+            if (await _foldRefusedRename(op)) {
+              continue;
+            }
+            return;
+          }
           _report(switch (op) {
             MergeItems() => MergeRefused(_nameOf(op)),
-            // Job 104: another member's copy reached the server first.
-            EditItem() when e.nameTaken => RenameTaken(_nameOf(op)),
             _ => ItemRejected(_nameOf(op)),
           });
           unawaited(resync());

@@ -83,6 +83,9 @@ class FakeRepository() implements ListRepository {
   /// Holds catalog fetches until completed.
   Completer<void>? catalogGate;
 
+  /// Holds item fetches, after the online check, until completed.
+  Completer<void>? itemsGate;
+
   DateTime _tick() => _clock = _clock.add(const Duration(seconds: 1));
 
   String classify(String name) =>
@@ -250,6 +253,7 @@ class FakeRepository() implements ListRepository {
   @override
   Future<List<Item>> fetchItems() async {
     _ensureOnline();
+    await itemsGate?.future;
     return rows.values.toList();
   }
 

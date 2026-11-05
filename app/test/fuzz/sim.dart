@@ -256,7 +256,8 @@ final class Device(
   }
 
   /// Every op that leaves the queue must have an answer from the server, a
-  /// refusal, or be one `ontoKept` folded away with the add it followed.
+  /// refusal, or be one `ontoKept` folded away with the add or refused
+  /// rename it followed.
   void _onState(ListState state) {
     final next = state.pending;
     if (identical(next, _seen)) {
@@ -271,6 +272,13 @@ final class Device(
         if (rows != null && rows[op.itemId] == null && rows.length > 1) {
           folded.add(op.itemId);
         }
+      }
+    }
+    // A refused rename folds into the open copy, and ontoKept moves what
+    // was queued after it there (job 114).
+    for (final op in rejected) {
+      if (op is EditItem) {
+        folded.add(op.itemId);
       }
     }
     for (final op in _seen) {
@@ -443,6 +451,9 @@ RunResult runScenario(
       if (strict) {
         for (final name in backend.resurrected) {
           failures.add('a replayed add put back $name after its delete');
+        }
+        for (final key in backend.reopened) {
+          failures.add('an untick opened $key a second time');
         }
       }
       for (final device in devices) {
@@ -648,12 +659,8 @@ void _check(FakeBackend backend, List<Device> devices, List<String> failures) {
     if (row['status'] != 'active') {
       continue;
     }
-    final key = openItemKey(
-      row['name']! as String,
-      row['brand'] as String?,
-      row['properties'] as String?,
-    );
-    if (open[key] case final twin?) {
+    final key = FakeBackend.openKey(row);
+    if (open[key] case final twin? when !backend.reopened.contains(key)) {
       failures.add('server has $twin open twice');
     }
     open[key] = row['name']! as String;

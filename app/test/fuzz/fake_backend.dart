@@ -115,8 +115,9 @@ final class Net(final Random rng) {
 
 /// The household's Postgres as the list sees it through PostgREST and
 /// Realtime: the items table with its triggers (`items_before_write`,
-/// `items_skip_duplicate`, `items_rename_duplicate`), `put_item`, `merge_items`, `unmerge_items`, and
-/// one channel per client that delivers each commit in commit order.
+/// `items_skip_duplicate`, `items_rename_duplicate`), `put_item`,
+/// `merge_items`, `unmerge_items`, and one channel per client that delivers
+/// each commit in commit order.
 final class FakeBackend(
   final DateTime Function() _now,
   final List<Net> nets,
@@ -137,6 +138,11 @@ final class FakeBackend(
   /// partner's delete. Counted, not a divergence (docs/hillclimb/hc-sync.md).
   final _deleted = <String>{};
   final resurrected = <String>[];
+
+  /// The open-item keys an untick gave a second open row: the server lets
+  /// that through (job 104) and only renames are folded. Counted, not a
+  /// failure, unless strict.
+  final reopened = <String>{};
   final _names = <String, String>{};
 
   /// The name the item [id] had last, also once it is gone.
@@ -234,13 +240,13 @@ final class FakeBackend(
     if (row['status'] != 'active') {
       return null;
     }
-    final key = _key(row);
+    final key = openKey(row);
     final open =
         [
           for (final other in rows.values)
             if (other['id'] != row['id'] &&
                 other['status'] == 'active' &&
-                _key(other) == key)
+                openKey(other) == key)
               other,
         ]..sort(
           (a, b) => (a['created_at']! as String).compareTo(
@@ -250,7 +256,7 @@ final class FakeBackend(
     return open.firstOrNull?['id'] as String?;
   }
 
-  static String _key(Map<String, Object?> row) => openItemKey(
+  static String openKey(Map<String, Object?> row) => openItemKey(
     row['name']! as String,
     row['brand'] as String?,
     row['properties'] as String?,
@@ -336,10 +342,15 @@ final class FakeBackend(
       next['bought_at'] = null;
     }
     if (next['status'] == 'active' &&
-        _key(next) != _key(old) &&
+        openKey(next) != openKey(old) &&
         _openTwin(next) != null) {
       // items_rename_duplicate (job 104).
       throw const _PgError(409, '23505', 'already_on_list');
+    }
+    if (next['status'] == 'active' &&
+        old['status'] != 'active' &&
+        _openTwin(next) != null) {
+      reopened.add(openKey(next));
     }
     rows[id] = next;
     _commit(id, {
