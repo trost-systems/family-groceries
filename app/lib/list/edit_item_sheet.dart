@@ -255,7 +255,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                                 _Stepper(
                                   key: const ValueKey('edit-quantity-minus'),
                                   icon: Icons.remove,
-                                  tooltip: l10n.quantityMinus,
+                                  label: l10n.quantityMinus,
                                   onPressed: canLower
                                       ? () => _step(up: false)
                                       : null,
@@ -263,7 +263,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                                 _Stepper(
                                   key: const ValueKey('edit-quantity-plus'),
                                   icon: Icons.add,
-                                  tooltip: l10n.quantityPlus,
+                                  label: l10n.quantityPlus,
                                   onPressed: () => _step(up: true),
                                 ),
                               ],
@@ -448,27 +448,25 @@ class const _Field({
 
 class const _Stepper({
   required final IconData icon,
-  required final String tooltip,
+  required final String label,
   required final VoidCallback? onPressed,
   super.key,
 }) extends StatelessWidget {
   /// The theme's outlined button: a raised hex with the contour on its
-  /// edge, sinking when pressed.
+  /// edge, sinking when pressed. No [Tooltip]: while one shows, its overlay
+  /// joins the semantics tree, and on the web that moves the sheet's DOM, so
+  /// a click into Menge right after hovering a stepper lost its focus
+  /// (job 122).
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
-    // The icon names the button; the tooltip only shows it.
-    excludeFromSemantics: true,
-    child: OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        visualDensity: VisualDensity.standard,
-        fixedSize: const Size(56, HlSize.target),
-        minimumSize: const Size(56, HlSize.target),
-        padding: EdgeInsets.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Icon(icon, size: 22, semanticLabel: tooltip),
+  Widget build(BuildContext context) => OutlinedButton(
+    onPressed: onPressed,
+    style: OutlinedButton.styleFrom(
+      visualDensity: VisualDensity.standard,
+      fixedSize: const Size(56, HlSize.target),
+      minimumSize: const Size(56, HlSize.target),
+      padding: EdgeInsets.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     ),
+    child: Icon(icon, size: 22, semanticLabel: label),
   );
 }
