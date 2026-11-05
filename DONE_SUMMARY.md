@@ -557,10 +557,14 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 A seeded fuzz harness drives the real list sync layer (cubit, cache, Supabase repository over a fake PostgREST and Realtime) with 3 phones, network drops and restarts. Failing seeds of 1..1000 went from 175 to 0 with eight `ListCubit` fixes, each with a seed-named regression test. `flutter test` now runs seeds 1..100. One server-side change goes to the Lead: a delete should win over a replayed add (NEEDS_LEAD "Job 99", not applied). The PR is ready for review and not merged (the Lead merges). Details: [docs/done/99-hc-sync.md](docs/done/99-hc-sync.md).
 
 
-## Job 90: category names unique ignoring case, PR #220, not merged (lead review)
+## Job 90: category names unique ignoring case, PR #220, merged
 
 „baby“ and „Baby“ are one category now: a unique index on the name key, create_category returns the existing one, and a migration merges existing duplicates into the fallback or the oldest (items, history, layouts, learned corrections, seed keys). The add and rename dialogs say „Eine Kategorie „Baby“ gibt es schon.“ in the dialog. Details: [docs/done/90-fix-category-case.md](docs/done/90-fix-category-case.md).
 
 ## Job 118: the ios gate builds once (flaky #258), PR #259, not merged (lead review)
 
 The ios CI job built the app twice and timed out on a slow runner; it builds once now: median 20.0 -> 13.4 min, slowest 40.8 -> 21.5. Review 0: the phase script keeps matrix jobs that start in the same second. Details: [docs/done/118-fix-ios-ci-timeout.md](docs/done/118-fix-ios-ci-timeout.md).
+
+## Job 109: delete_category NULL seed keys, store_name_key normalization order, PR #239, not merged (lead review)
+
+`delete_category` hands over only real seed keys, each once (no more `{NULL}`); a migration strips the NULLs it left and a check stops new ones. `store_name_key` and `store_name` collapse whitespace before trimming, like `category_name_key`; stores that clash under the new key are renamed „Name (n)“ and keep their items. Details: [docs/done/109-fix-category-store-keys.md](docs/done/109-fix-category-store-keys.md).
