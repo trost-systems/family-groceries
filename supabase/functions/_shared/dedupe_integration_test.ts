@@ -101,6 +101,53 @@ Deno.test({
     }),
 });
 
+for (
+  const [lang, said, reply] of [
+    ['de', 'Butter', 'Schon auf der Liste: Butter Weihenstephan.'],
+    ['en', 'butter', 'Already on the list: Butter Weihenstephan.'],
+  ] as const
+) {
+  Deno.test({
+    name: `voice and Siri (${lang}) add "${said}" with Butter Weihenstephan open: only on the list`,
+    ignore: !enabled,
+    sanitizeResources: false,
+    fn: () =>
+      withHousehold(async (userId, householdId) => {
+        await asUser(userId, (tx) =>
+          tx`insert into public.items (household_id, name, brand)
+             values (${householdId}, 'Butter', 'Weihenstephan')`);
+        const added = await asUser(
+          userId,
+          (tx) => voiceAddItems(tx, householdId, [{ name: said, quantity: null }]),
+        );
+        assertEquals(
+          added.map((a) => [a.name, a.brand, a.alreadyOnList, a.similarOnList]),
+          [['Butter', 'Weihenstephan', true, []]],
+        );
+        assertEquals(confirmation(added, lang), reply);
+        assertEquals((await openItems(userId, householdId)).map((i) => i.name), ['Butter']);
+      }),
+  });
+}
+
+Deno.test({
+  name: 'voice and Siri add Butter Kerrygold with Butter Weihenstephan open: another brand',
+  ignore: !enabled,
+  sanitizeResources: false,
+  fn: () =>
+    withHousehold(async (userId, householdId) => {
+      await asUser(userId, (tx) =>
+        tx`insert into public.items (household_id, name, brand)
+           values (${householdId}, 'Butter', 'Weihenstephan')`);
+      const added = await asUser(
+        userId,
+        (tx) => voiceAddItems(tx, householdId, [{ name: 'Butter Kerrygold', quantity: null }]),
+      );
+      assertEquals(confirmation(added), 'Hinzugefügt: Butter Kerrygold.');
+      assertEquals((await openItems(userId, householdId)).length, 2);
+    }),
+});
+
 Deno.test({
   name: 'merge_quantities gives what supabase/tests/merge_quantities.tsv says',
   ignore: !enabled,

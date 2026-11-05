@@ -454,7 +454,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Siri
 
-**What it does.** On an iPhone the user can add things to the Hummlist by voice: they say a sentence like „Milch, zwei Gurken und Klopapier“, Hummlist splits it into items, files each under a category and Siri reads back „Hinzugefügt: Milch, 2 Gurken, Klopapier.“ An amount said after the item counts too, as a word or digits: „Möhren zwei“ adds 2 Möhren, „Eier dreißig“ 30 Eier. Today this works with a Shortcut the user sets up once (about five minutes, German only). Siri without any setup (iOS 17 and newer, German and English, also reads the list aloud) is built but its announcement is held until Hummlist Launch.
+**What it does.** On an iPhone the user can add things to the Hummlist by voice: they say a sentence like „Milch, zwei Gurken und Klopapier“, Hummlist splits it into items, files each under a category and Siri reads back „Hinzugefügt: Milch, 2 Gurken, Klopapier.“ What is open already Siri names instead („Schon auf der Liste: Milch.“), also when the open one has a brand and the user said just the name („Butter“ with „Butter Weihenstephan“ open). An amount said after the item counts too, as a word or digits: „Möhren zwei“ adds 2 Möhren, „Eier dreißig“ 30 Eier. Today this works with a Shortcut the user sets up once (about five minutes, German only). Siri without any setup (iOS 17 and newer, German and English, also reads the list aloud) is built but its announcement is held until Hummlist Launch.
 
 **How to get there.**
 1. Open „Mehr“ (EN: "More") → „Zugänge“ (EN: "Access") → „Token erstellen“ (EN: "Create token"), name it Siri, copy the key once.
@@ -470,7 +470,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the device tests on build 1119 (3 Nov 2026) sent „Füge … zur Hummliste hinzu“ to Reminders or answered „Hummlist unterstützt das nicht“. The fix (sentences that name Hummlist first or as the object, like „Etwas auf Hummlist setzen“ and „Hummlist, was steht drauf?“; any item in „Füge Zahnpasta zu Hummlist hinzu“; Siri asks once to be allowed for Hummlist) waits for the next German device test. Never write „Einkaufsliste“ as a Hummlist Siri sentence: Siri gives it to Reminders. Job 97 (not yet on a device): Siri says the name „Hummlist“ and no longer takes „Hummliste“ or „Humm Liste“ for it, more German sentences („Füge etwas zu meiner Hummlist hinzu“, „Zeig meine Hummlist“), the household's own words for an item („Möhren“ for „Karotten“), and on an error Siri answers instead of opening the app. The iPhone app needs iOS 17 or newer since job 97.
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and the Shortcut's requests driven against the web build's local stack (verify-hummlist); the German Siri sentences from code at 9c497005 (the phrase tables, the iPhone hint „Hey Siri, etwas auf Hummlist setzen“). Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
+**Last verified.** main c5a580a8, 2026-11-05 (CET), and job 112 (the branded-item reply, from code and the voice add path against a local stack), from code and the Shortcut's requests driven against the web build's local stack (verify-hummlist); the German Siri sentences from code at 9c497005 (the phrase tables, the iPhone hint „Hey Siri, etwas auf Hummlist setzen“). Siri itself needs an iPhone. Recipe: [siri.md](./siri.md).
 
 ## Home Screen widget (held)
 
@@ -495,7 +495,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Alexa skill (beta)
 
-**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Ich habe Milch und Eier auf die Hummlist gesetzt.“ What is open already it names in one sentence: „Schon auf der Hummlist: Milch.“ An amount said after the item counts too: „Zwiebeln drei“ adds 3 Zwiebeln. „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“). On an Alexa device set to English it understands "Alexa, ask Hummlist to add milk and eggs" and "Alexa, ask Hummlist what's on the list" and answers in English ("I put milk and eggs on Hummlist."). The skill is in beta and not yet certified by Amazon, so it is not for everyone.
+**What it does.** With the Hummlist skill a household member can say „Alexa, sag Hummlist, füg Milch und Eier hinzu“; the items land on the shared list, sorted by category, and Alexa says „Ich habe Milch und Eier auf die Hummlist gesetzt.“ What is open already it names in one sentence: „Schon auf der Hummlist: Milch.“ Saying just „Butter“ while „Butter Weihenstephan“ is open counts as already there. An amount said after the item counts too: „Zwiebeln drei“ adds 3 Zwiebeln. „Alexa, frag Hummlist, was auf der Liste steht“ reads the open items (up to ten, then „und N weitere“; with eleven it reads all eleven). On an Alexa device set to English it understands "Alexa, ask Hummlist to add milk and eggs" and "Alexa, ask Hummlist what's on the list" and answers in English ("I put milk and eggs on Hummlist."). The skill is in beta and not yet certified by Amazon, so it is not for everyone.
 
 **How to get there.**
 1. Ask for a beta invitation (the link comes from Peter, who needs the email address of your Amazon account); accept it.
@@ -513,7 +513,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Real Alexa voice, the Alexa app screens and the beta invitation flow (no device or Amazon account here).
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and the skill's server side on the web build's local stack (linking on the consent page, adding, reading, English, disconnecting); a real Alexa device is needed for the voice. Recipe: [alexa.md](./alexa.md).
+**Last verified.** main c5a580a8, 2026-11-05 (CET), and job 112 (the eleven-item read and the branded-item reply, from code and tests), from code and the skill's server side on the web build's local stack (linking on the consent page, adding, reading, English, disconnecting); a real Alexa device is needed for the voice. Recipe: [alexa.md](./alexa.md).
 
 ## Hummlist Premium (held)
 

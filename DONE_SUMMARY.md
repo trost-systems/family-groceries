@@ -548,6 +548,7 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 - Job 96 (Legal N-80..N-86 brand-free copy, native-Siri hold gate): [docs/done/96-brand-free-copy.md](docs/done/96-brand-free-copy.md)
 - Job 97 (Siri fix-now: iOS 17 minimum, App Shortcuts catalog, German spoken name, SiriKit failures in Siri): [docs/done/97-siri-app-shortcuts.md](docs/done/97-siri-app-shortcuts.md)
 - Job 100, HC1 hill-climb hc-size-start (harness, 4 attempts, none kept): [docs/done/100-hc-size-start.md](docs/done/100-hc-size-start.md)
+- Job 112 (Siri/Alexa reply for branded open items, Alexa single leftover read): [docs/done/112-fix-speech-replies.md](docs/done/112-fix-speech-replies.md)
 
 
 ## Job 99: hc-sync, offline and sync robustness

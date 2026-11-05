@@ -80,7 +80,8 @@ export function confirmationEnglish(results: readonly Added[]): string {
 /** "There are 3 things on your Hummlist: milk, eggs and bread." */
 export function listingEnglish(items: readonly Spoken[], limit: number): string {
   if (items.length === 0) return speechEnglish.emptyList;
-  const read = items.slice(0, limit).map(saidEnglish);
+  // One more than the limit is read: "and 1 more" is no shorter than the item.
+  const read = items.slice(0, items.length > limit + 1 ? limit : undefined).map(saidEnglish);
   const rest = items.length - read.length;
   const head = items.length === 1
     ? 'There is one thing on your Hummlist'

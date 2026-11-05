@@ -80,19 +80,20 @@ export function confirmation(results: readonly Added[]): string {
   return parts.join(' ');
 }
 
-/** At most this many items are read aloud; the rest is a count. */
+/** At most this many items are read aloud (one more if that is all); the rest is a count. */
 export const readLimit = 10;
 
 /** "Auf der Hummlist stehen 3 Sachen: Milch, Eier und Brot." */
 export function listing(items: readonly Spoken[]): string {
   if (items.length === 0) return speech.emptyList;
-  const read = items.slice(0, readLimit).map(said);
+  // One more than the limit is read: "und eine weitere" is no shorter than the item.
+  const read = items.slice(0, items.length > readLimit + 1 ? readLimit : undefined).map(said);
   const rest = items.length - read.length;
   const head = items.length === 1
     ? 'Auf der Hummlist steht eine Sache'
     : `Auf der Hummlist stehen ${items.length} Sachen`;
   if (rest === 0) return `${head}: ${enumerate(read)}.`;
-  return `${head}: ${read.join(', ')} und ${rest === 1 ? 'eine' : rest} weitere.`;
+  return `${head}: ${read.join(', ')} und ${rest} weitere.`;
 }
 
 /** Words that stay lowercase inside an item name ("Milch ohne Laktose"). */

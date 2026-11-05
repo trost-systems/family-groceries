@@ -898,6 +898,25 @@ Deno.test('English: launch, help, stop, read, re-prompt and unlinked answer in E
   assertEquals(unlinked.response.card?.type, 'LinkAccount');
 });
 
+Deno.test('ReadListIntent: one item past the limit is read, not counted, in German and English', async () => {
+  const world = linkedWorld();
+  const eleven = Array.from({ length: readLimit + 1 }, (_, i) => `Teil${i}`);
+  await send(
+    world.deps(),
+    envelope(intent('AddItemIntent', eleven.join(', ')), { token: 'tok-peter' }),
+  );
+  const read = async (request: Record<string, unknown>) =>
+    said((await send(world.deps(), request)).reply);
+  assertEquals(
+    await read(envelope(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `Auf der Hummlist stehen 11 Sachen: ${eleven.slice(0, -1).join(', ')} und Teil10.`,
+  );
+  assertEquals(
+    await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
+    `There are 11 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and Teil10.`,
+  );
+});
+
 Deno.test('English replies never mention Premium (Alexa is not Premium)', async () => {
   const { speechEnglish } = await import('./speech_en.ts');
   for (const text of Object.values(speechEnglish)) {
