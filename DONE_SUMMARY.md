@@ -550,6 +550,7 @@ PW-P4 as merged on main (84e8da41, job 87 with Legal's N-67..N-71), German, ligh
 - Job 97 (Siri fix-now: iOS 17 minimum, App Shortcuts catalog, German spoken name, SiriKit failures in Siri): [docs/done/97-siri-app-shortcuts.md](docs/done/97-siri-app-shortcuts.md)
 - Job 100, HC1 hill-climb hc-size-start (harness, 4 attempts, none kept): [docs/done/100-hc-size-start.md](docs/done/100-hc-size-start.md)
 - Job 102 (judge-panel hill-climb of the app's core screens: harness and measurement fixes, no kept step, 6.5 -> 6.5, DO NOT MERGE): [docs/done/102-hc-ui-app.md](docs/done/102-hc-ui-app.md)
+- Job 108, hill-climb hc-ui-perf (frame-time harness; emoji icons name their font, a Linux-only speedup, score 7.479 → 6.598, 1 of 6 attempts kept, early stop at about 5 h): [docs/done/108-hc-ui-perf.md](docs/done/108-hc-ui-perf.md)
 
 
 ## Job 99: hc-sync, offline and sync robustness

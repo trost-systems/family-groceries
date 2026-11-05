@@ -18,6 +18,14 @@ String nameIcon(String name, Category? category) {
   return categoryIcon(category);
 }
 
+/// The emoji font by name, for the [itemIcon] and [nameIcon] texts: the
+/// same face the per-character fallback finds, but looked up once and
+/// cached, where the fallback asks the system for every new paragraph
+/// (fontconfig on Linux; about 15 % of the UI thread while flinging the
+/// list, job 108). Where no font has this name the fallback works as
+/// before.
+const emojiFontFallback = ['Noto Color Emoji'];
+
 /// A category's emoji: the one its name starts with, else the seeded
 /// category's, else a basket.
 String categoryIcon(Category? category) {

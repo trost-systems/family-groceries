@@ -1,0 +1,86 @@
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index 1c7cb587..3ad74b22 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -382,8 +382,9 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     bool folded(StoreSection s) => state.prefs.folded.contains(s.key);
+     final columns = columnsOf(shown, columnCount, _weightIn(state));
+     final fresh = context.read<ListCubit>().fresh;
++    final rows = <String, ItemRow>{};
+     SliverList column(List<StoreSection> run) {
+-      final entries = _entries(run, state, folded, fresh);
++      final entries = _entries(run, state, folded, fresh, rows);
+       final index = {for (final (i, e) in entries.indexed) e.key: i};
+       return SliverList.builder(
+         itemCount: entries.length,
+@@ -419,6 +420,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+               ],
+             ],
+           );
++    _rows = rows;
+     final l10n = AppLocalizations.of(context);
+     return CustomScrollView(
+       key: _viewport,
+@@ -506,12 +508,19 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     );
+   }
+ 
++  /// The rows of the last build by item id. A row whose item, category and
++  /// flags are unchanged is handed back as the same widget, so a change to
++  /// one item doesn't rebuild every row on screen (nor send their
++  /// semantics again).
++  var _rows = <String, ItemRow>{};
++
+   /// The dividers and rows of [run], top to bottom.
+   List<Widget> _entries(
+     List<StoreSection> run,
+     ListState state,
+     bool Function(StoreSection) folded,
+     Set<String> fresh,
++    Map<String, ItemRow> rows,
+   ) {
+     final entries = <Widget>[];
+     for (final (i, section) in run.indexed) {
+@@ -550,19 +559,30 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+           ),
+         );
+         for (final (j, item) in block.items.indexed) {
++          final isFresh = fresh.contains(item.id);
++          final last = j == block.items.length - 1;
++          final before = _rows[item.id];
+           entries.add(
+-            ItemRow(
+-              key: ValueKey(item.id),
+-              item: item,
+-              category: category,
+-              leaving: _leaving,
+-              fresh: fresh.contains(item.id),
+-              last: j == block.items.length - 1,
+-              onVisible: (visible) => _freshVisible(item.id, visible: visible),
+-              onTick: _tick,
+-              onEdit: (item) => unawaited(_edit(item)),
+-              onDelete: _delete,
+-            ),
++            rows[item.id] =
++                before != null &&
++                    identical(before.item, item) &&
++                    identical(before.category, category) &&
++                    before.fresh == isFresh &&
++                    before.last == last
++                ? before
++                : ItemRow(
++                    key: ValueKey(item.id),
++                    item: item,
++                    category: category,
++                    leaving: _leaving,
++                    fresh: isFresh,
++                    last: last,
++                    onVisible: (visible) =>
++                        _freshVisible(item.id, visible: visible),
++                    onTick: _tick,
++                    onEdit: (item) => unawaited(_edit(item)),
++                    onDelete: _delete,
++                  ),
+           );
+         }
+       }

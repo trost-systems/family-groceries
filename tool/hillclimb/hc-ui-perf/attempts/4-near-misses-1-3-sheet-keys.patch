@@ -1,0 +1,180 @@
+diff --git a/app/lib/list/add_sheet/add_sheet.dart b/app/lib/list/add_sheet/add_sheet.dart
+index 40e034ef..7380a237 100644
+--- a/app/lib/list/add_sheet/add_sheet.dart
++++ b/app/lib/list/add_sheet/add_sheet.dart
+@@ -55,6 +55,10 @@ const _roomy = 200.0;
+ /// The rows the sheet shows: the suggestions for what is typed, or, before
+ /// typing, the usuals that are due, then those used lately. Alternatives
+ /// already on the list are left out; what was typed always stays first.
++/// The open items' [Suggestion.key]s, once per list state: [sheetRows]
++/// asks on every key typed.
++final _onListKeys = Expando<Set<String>>();
++
+ List<Suggestion> sheetRows(AddSheetState sheet, ListCubit list) {
+   if (sheet.text.trim().isEmpty) {
+     return [
+@@ -70,7 +74,7 @@ List<Suggestion> sheetRows(AddSheetState sheet, ListCubit list) {
+         ),
+     ];
+   }
+-  final onList = {
++  final onList = _onListKeys[list.state] ??= {
+     for (final item in list.state.items.values)
+       if (item.status == ItemStatus.active)
+         Suggestion(
+diff --git a/app/lib/list/list_view/sections.dart b/app/lib/list/list_view/sections.dart
+index 615af5c0..a27940a1 100644
+--- a/app/lib/list/list_view/sections.dart
++++ b/app/lib/list/list_view/sections.dart
+@@ -1,4 +1,5 @@
+ import 'package:family_groceries/list/list_cache.dart';
++import 'package:family_groceries/list/list_cubit.dart';
+ import 'package:family_groceries/list/model.dart';
+ import 'package:flutter/foundation.dart' show immutable;
+ 
+@@ -78,6 +79,16 @@ List<CategoryBlock> _blocks(
+ }
+ 
+ /// The sections the list shows: the ones with active items.
++/// The [shownSections] of [state]'s items, worked out once per state: the
++/// list, its frame and the add sheet ask on every build, the sheet on
++/// every key typed.
++List<StoreSection> shownSectionsIn(ListState state) =>
++    _shownIn[state] ??= List.unmodifiable(
++      shownSections(sectionsOf(state.items.values, state.catalog)),
++    );
++
++final _shownIn = Expando<List<StoreSection>>();
++
+ List<StoreSection> shownSections(List<StoreSection> sections) => [
+   for (final section in sections)
+     if (section.count > 0) section,
+diff --git a/app/lib/list/list_view/shopping_list_view.dart b/app/lib/list/list_view/shopping_list_view.dart
+index 1c7cb587..5cae1faf 100644
+--- a/app/lib/list/list_view/shopping_list_view.dart
++++ b/app/lib/list/list_view/shopping_list_view.dart
+@@ -78,10 +78,8 @@ class const ShoppingListView({
+   }
+ 
+   /// [frameOf] for the list as [state] shows it at rest.
+-  static ListFrame frameFor(double width, ListState state) => frameOf(
+-    width,
+-    shownSections(sectionsOf(state.items.values, state.catalog)).length,
+-  );
++  static ListFrame frameFor(double width, ListState state) =>
++      frameOf(width, shownSectionsIn(state).length);
+ 
+   @override
+   State<ShoppingListView> createState() => _ShoppingListViewState();
+@@ -156,7 +154,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+   /// yet: the list jumps toward it and looks again, a few frames at most.
+   Future<void> _reveal(String storeId) async {
+     final state = _cubit.state;
+-    final section = shownSections(sectionsOf(state.items.values, state.catalog))
++    final section = shownSectionsIn(state)
+         .where((s) => s.store?.id == storeId && s.count > 0)
+         .firstOrNull;
+     if (section == null) {
+@@ -213,9 +211,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+       return;
+     }
+     final state = _cubit.state;
+-    final resting = shownSections(
+-      sectionsOf(state.items.values, state.catalog),
+-    );
++    final resting = shownSectionsIn(state);
+     final weight = _weightIn(state);
+     final column = columnsOf(
+       resting,
+@@ -375,7 +371,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     final used = recentlyUsed(state.items.values);
+     // Never more columns than sections: one store with items reads as one
+     // centred column.
+-    final shown = shownSections(sectionsOf(state.items.values, state.catalog));
++    final shown = shownSectionsIn(state);
+     final frame = ShoppingListView.frameOf(width, shown.length);
+     final columnCount = frame.columns;
+     final side = frame.side;
+@@ -445,8 +441,22 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+                       key: const ValueKey('recently-used'),
+                       title: Text(l10n.recentlyUsed),
+                       children: [
+-                        for (final (i, item) in used.indexed)
+-                          _usedRow(state, item, last: i == used.length - 1),
++                        // One layer fades all the rows. They never overlap,
++                        // so it looks the same as a layer per row, at one
++                        // offscreen pass instead of one per row.
++                        Opacity(
++                          opacity: 0.55,
++                          child: Column(
++                            children: [
++                              for (final (i, item) in used.indexed)
++                                _usedRow(
++                                  state,
++                                  item,
++                                  last: i == used.length - 1,
++                                ),
++                            ],
++                          ),
++                        ),
+                       ],
+                     ),
+                   ),
+@@ -459,10 +469,10 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+     );
+   }
+ 
+-  /// A recently used item as the list's own row, icon included, faded: a
+-  /// tap puts it back on the list. The row's own gestures are off (no
+-  /// tick or hold), and so are its semantics, which would tick and
+-  /// delete.
++  /// A recently used item as the list's own row, icon included (faded with
++  /// the others): a tap puts it back on the list. The row's own gestures
++  /// are off (no tick or hold), and so are its semantics, which would tick
++  /// and delete.
+   Widget _usedRow(ListState state, Item item, {required bool last}) {
+     final l10n = AppLocalizations.of(context);
+     final category = state.catalog.categories
+@@ -487,19 +497,16 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
+         behavior: HitTestBehavior.opaque,
+         onTap: () => _readd(item),
+         child: IgnorePointer(
+-          child: Opacity(
+-            opacity: 0.55,
+-            child: ItemRow(
+-              item: item,
+-              category: category,
+-              leaving: _leaving,
+-              fresh: false,
+-              last: last,
+-              onVisible: (_) {},
+-              onTick: _readd,
+-              onEdit: (_) {},
+-              onDelete: (_) {},
+-            ),
++          child: ItemRow(
++            item: item,
++            category: category,
++            leaving: _leaving,
++            fresh: false,
++            last: last,
++            onVisible: (_) {},
++            onTick: _readd,
++            onEdit: (_) {},
++            onDelete: (_) {},
+           ),
+         ),
+       ),
+diff --git a/app/test/list/list_screen_test.dart b/app/test/list/list_screen_test.dart
+index 7d8da5d1..775bfec4 100644
+--- a/app/test/list/list_screen_test.dart
++++ b/app/test/list/list_screen_test.dart
+@@ -408,7 +408,7 @@ void main() {
+       findsOneWidget,
+     );
+     expect(
+-      find.descendant(
++      find.ancestor(
+         of: usedRow('Bananen'),
+         matching: find.byWidgetPredicate((w) => w is Opacity && w.opacity < 1),
+       ),

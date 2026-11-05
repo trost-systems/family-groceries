@@ -269,6 +269,7 @@ class const _Tile({
                     style: const TextStyle(
                       fontSize: _iconSize,
                       height: _nameLine / _iconSize,
+                      fontFamilyFallback: emojiFontFallback,
                     ),
                   ),
                 ),
