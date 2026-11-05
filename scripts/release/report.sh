@@ -42,9 +42,7 @@ outcome() {
       failure | cancelled) stores+=("the Android job stopped, so Play internal may not have this build") ;;
     esac
   fi
-  if [[ ${EVENT:-} != workflow_dispatch ]]; then
-    web="The web app (app.hummlist.com) does not move with internal releases."
-  elif [[ ${UPLOADED:-} != success ]]; then
+  if [[ ${UPLOADED:-} != success ]]; then
     web="The web app (app.hummlist.com) stays on the last store release."
   elif [[ ${WEB:-} == success ]]; then
     web="The web app (app.hummlist.com) moves to this commit."
