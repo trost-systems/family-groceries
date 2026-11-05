@@ -70,7 +70,7 @@ Ja. Auf dem iPhone geht das ab iOS 17 direkt mit der Hummlist-App, ohne eigenen 
 
 ### Kann ich Sachen per Alexa auf die Liste setzen?
 
-Ja, mit dem Hummlist-Skill für Amazon Alexa. Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Hummlist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Hummlist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Alexa: Skill einrichten](/de/anleitungen/alexa).
+Ja, mit dem Hummlist-Skill für Amazon Alexa. Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Hummlist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Der Skill versteht Deutsch und Englisch, je nachdem, auf welche Sprache dein Alexa-Gerät eingestellt ist. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Hummlist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Alexa: Skill einrichten](/de/anleitungen/alexa).
 
 ### Kann ich Hummlist mit einem KI-Assistenten nutzen?
 

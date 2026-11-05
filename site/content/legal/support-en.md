@@ -70,7 +70,7 @@ Yes. On iPhone with iOS 17 or later you can do it directly with the Hummlist app
 
 ### Can I add items with Alexa?
 
-Yes, with the Hummlist skill for Amazon Alexa. Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, „Alexa, sag Hummlist, füg Milch und Eier hinzu“ ("add milk and eggs") or „Alexa, frag Hummlist, was auf der Liste steht“ ("what's on the list"). To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Hummlist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
+Yes, with the Hummlist skill for Amazon Alexa. Enable it in the Alexa app and link it to your Hummlist account. Then say, for example, "Alexa, ask Hummlist to add milk and eggs" or "Alexa, ask Hummlist what's on the list". The skill understands English and German, depending on the language your Alexa device is set to. To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Hummlist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
 
 ### Can I use Hummlist with an AI assistant?
 
