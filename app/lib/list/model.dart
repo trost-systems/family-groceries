@@ -1069,8 +1069,10 @@ List<Usual> suggestUsuals(
   // better than `below`, a later one ranking `below` or worse can't make it.
   final byRank = [for (var rank = 0; rank < 5; rank++) <Usual>[]];
   var below = 5;
-  for (final usual in _offList(usuals, visible)) {
-    if (suggestionMatch(typed, _folded(usual), below: below) case final rank?) {
+  final active = _activeNames(visible);
+  for (final usual in usuals) {
+    if (suggestionMatch(typed, _folded(usual), below: below) case final rank?
+        when !active.contains(usual.name.toLowerCase())) {
       byRank[rank].add(usual);
       for (var (r, found) = (0, 0); r < below; r++) {
         if ((found += byRank[r].length) >= limit) {
@@ -1210,12 +1212,15 @@ List<Usual> recentUsualsOf(
 }
 
 Iterable<Usual> _offList(List<Usual> usuals, Iterable<Item> visible) {
-  final active = {
-    for (final item in visible)
-      if (item.status == ItemStatus.active) item.name.toLowerCase(),
-  };
+  final active = _activeNames(visible);
   return usuals.where((u) => !active.contains(u.name.toLowerCase()));
 }
+
+/// The names on the list in lower case: usuals with one of them are left out.
+Set<String> _activeNames(Iterable<Item> visible) => {
+  for (final item in visible)
+    if (item.status == ItemStatus.active) item.name.toLowerCase(),
+};
 
 /// How far a user has looked at partner adds: everything created up to
 /// [until] (null: from the beginning), plus the items in [ids] after it.
