@@ -17,8 +17,9 @@ type Row = {
  * quantity goes in as the explicit one; brand and properties come from the parser. A new item
  * whose spelling variant or synonym is already open ("Karotten" with "Möhren") is still added
  * and names it in `similarOnList` (`public.similar_items`, job 32b); nothing is merged. A plain
- * name said while the same name is open with a brand or properties ("Butter" with "Butter
- * Weihenstephan") is that open item: nothing is added, it is reported as already on the list.
+ * name said while the same name, singular or plural, is open with a brand or properties
+ * ("Butter" with "Butter Weihenstephan", "Tomate" with "Tomaten Bio") is that open item: nothing
+ * is added, it is reported as already on the list.
  */
 export async function addItems(tx: Tx, householdId: string, items: ParsedItem[]): Promise<Added[]> {
   const active = await tx<{ id: string }[]>`
@@ -30,7 +31,7 @@ export async function addItems(tx: Tx, householdId: string, items: ParsedItem[])
       select o.id, o.name, o.brand, o.properties, o.quantity, c.name as category
       from public.parse_item(${householdId}, ${item.name}) p
       join public.items o on o.household_id = ${householdId} and o.status = 'active'
-        and o.normalized_name = public.normalize_item_name(p.name)
+        and public.item_name_key(o.name) = public.item_name_key(p.name)
       join public.categories c on c.id = o.category_id
       where p.brand is null and p.properties is null
       order by o.brand is not null, o.properties is not null, o.created_at
