@@ -78,3 +78,5 @@ issues; `scripts/lint.sh` ok.
 | # | time | change | score | kept/reverted | why |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 21:01 | `suggestUsuals`: fold each `Usual.name` once (`Expando` per usual) instead of on every keystroke | 7.969 (7.969, 10.222, 7.427) | kept | -48 %; 5,000 `foldName` calls per query were half the time; cold p50 unchanged (14.6-24.9, load 9-11) |
+| 2 | 21:05 | `suggestionMatch`: word-start check by `indexOf` after a space/hyphen instead of `split` + `any` (split kept for typos) | 7.784 (1 run, load 8.7) | reverted | mean 7.4 -> 6.9 but p50 is held by the 27 queries of 3+ letters that still split every name for the typo stage; not past the 31 % band |
+| 3 | 21:06 | attempt 2's word-start scan plus an allocation-free typo stage: walk words by index, `Int32List` edit-distance rows reused across calls, no `split` and no `{name, ...words}` set | 1.766 (1 run, load 5.6) | kept | -78 %; every 3+ letter query split and hashed all 5,000 names; ranks identical (sha256 of all 4,520 matches) |

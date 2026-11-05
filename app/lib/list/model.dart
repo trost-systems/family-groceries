@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show immutable, listEquals, mapEquals;
 
@@ -1089,8 +1090,7 @@ int? suggestionMatch(String typed, String name) {
   if (name.startsWith(typed)) {
     return 1;
   }
-  final words = name.split(RegExp('[ -]+'));
-  if (words.any((w) => w.startsWith(typed))) {
+  if (_startsAWord(typed, name)) {
     return 2;
   }
   if (typed.length < 3) {
@@ -1100,34 +1100,78 @@ int? suggestionMatch(String typed, String name) {
     return 3;
   }
   final most = typed.length < 6 ? 1 : 2;
-  for (final word in {name, ...words}) {
-    if (word.isNotEmpty &&
-        word[0] == typed[0] &&
-        (word.length - typed.length).abs() <= most &&
-        _editDistance(typed, word) <= most) {
+  if (_isTypo(typed, name, 0, name.length, most)) {
+    return 4;
+  }
+  for (var start = 0, end = 0; start < name.length; start = end) {
+    while (start < name.length && _isSeparator(name.codeUnitAt(start))) {
+      start++;
+    }
+    end = start;
+    while (end < name.length && !_isSeparator(name.codeUnitAt(end))) {
+      end++;
+    }
+    if (end > start && _isTypo(typed, name, start, end, most)) {
       return 4;
     }
   }
   return null;
 }
 
-/// Inserts, deletes and replacements that turn [a] into [b].
-int _editDistance(String a, String b) {
-  var previous = [for (var j = 0; j <= b.length; j++) j];
+bool _isSeparator(int unit) => unit == 0x20 || unit == 0x2D;
+
+/// Whether `name.substring(from, to)` is a typo of [typed]: the same first
+/// letter, a length and an edit distance at most [most] apart.
+bool _isTypo(String typed, String name, int from, int to, int most) =>
+    to > from &&
+    name.codeUnitAt(from) == typed.codeUnitAt(0) &&
+    (to - from - typed.length).abs() <= most &&
+    _editDistance(typed, name, from, to) <= most;
+
+/// Whether a word of [name] (split at spaces and hyphens) starts with
+/// [typed], found without splitting: [typed] right after a separator.
+bool _startsAWord(String typed, String name) {
+  if (typed.contains(' ') || typed.contains('-')) {
+    return false;
+  }
+  for (
+    var at = name.indexOf(typed, 1);
+    at > 0;
+    at = name.indexOf(typed, at + 1)
+  ) {
+    if (name[at - 1] case ' ' || '-') {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Inserts, deletes and replacements that turn [a] into
+/// `b.substring(from, to)`, in two rows reused from call to call.
+int _editDistance(String a, String b, int from, int to) {
+  final length = to - from;
+  if (_rows.$1.length <= length) {
+    _rows = (Int32List(length + 1), Int32List(length + 1));
+  }
+  var (previous, current) = _rows;
+  for (var j = 0; j <= length; j++) {
+    previous[j] = j;
+  }
   for (var i = 1; i <= a.length; i++) {
-    final current = [i];
-    for (var j = 1; j <= b.length; j++) {
-      current.add(
-        min(
-          min(previous[j], current[j - 1]) + 1,
-          previous[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1),
-        ),
+    current[0] = i;
+    final unit = a.codeUnitAt(i - 1);
+    for (var j = 1; j <= length; j++) {
+      current[j] = min(
+        min(previous[j], current[j - 1]) + 1,
+        previous[j - 1] + (unit == b.codeUnitAt(from + j - 1) ? 0 : 1),
       );
     }
-    previous = current;
+    (previous, current) = (current, previous);
   }
-  return previous.last;
+  return previous[length];
 }
+
+var _rows = (Int32List(32), Int32List(32));
 
 /// The due [usuals] not on the list, in the server's order.
 List<Usual> dueUsualsOf(
