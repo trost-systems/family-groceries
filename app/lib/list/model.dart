@@ -1125,25 +1125,49 @@ final class _UsualIndex._(
   /// are fewer: then ranks 3 and 4 count too.
   List<int>? startingWith(String typed, bool Function(int) offList, int limit) {
     final words = !typed.contains(' ') && !typed.contains('-');
-    final ranked = <(int, int)>[];
+    // Per rank the [limit] first positions: enough, as a position counts
+    // once, at its best rank.
+    final byRank = [for (var rank = 0; rank < 3; rank++) <int>[]];
     for (var at = _firstFrom(typed); at < _starts.length; at++) {
       final (:start, :position, :whole) = _starts[at];
       if (!start.startsWith(typed)) {
         break;
       }
-      if (whole) {
-        ranked.add((start == typed ? 0 : 1, position));
-      } else if (words) {
-        ranked.add((2, position));
+      if (whole || words) {
+        final same = byRank[whole ? (start == typed ? 0 : 1) : 2];
+        if (same.length < limit || (same.isNotEmpty && position < same.last)) {
+          final slot = _slot(same, position);
+          if ((slot == same.length || same[slot] != position) &&
+              offList(position)) {
+            same.insert(slot, position);
+            if (same.length > limit) {
+              same.removeLast();
+            }
+          }
+        }
       }
     }
-    ranked.sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
     final seen = <int>{};
     final best = [
-      for (final (_, position) in ranked)
-        if (seen.add(position) && offList(position)) position,
+      for (final same in byRank)
+        for (final position in same)
+          if (seen.add(position)) position,
     ];
     return best.length >= limit ? best.take(limit).toList() : null;
+  }
+
+  /// Where [position] goes in the sorted [positions].
+  static int _slot(List<int> positions, int position) {
+    var (low, high) = (0, positions.length);
+    while (low < high) {
+      final mid = (low + high) ~/ 2;
+      if (positions[mid] < position) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
   }
 
   /// The first of [_starts] not sorting before [typed].
