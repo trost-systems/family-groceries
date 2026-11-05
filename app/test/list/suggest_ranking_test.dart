@@ -30,6 +30,17 @@ void main() {
       (count: _allMatches, sha256: _allMatchesSha256),
     );
   });
+
+  test('a smaller limit is the top of the full ranking', () {
+    final fixture = SuggestFixture.load();
+    final all = fixture.ranked(limit: 5000);
+    for (var limit = 1; limit <= 20; limit++) {
+      expect(fixture.ranked(limit: limit), {
+        for (final MapEntry(:key, :value) in all.entries)
+          key: value.take(limit).toList(),
+      }, reason: 'limit $limit');
+    }
+  });
 }
 
 /// Every match of the 40 queries in order (`limit: 5000`), as 698ebeba ranks.

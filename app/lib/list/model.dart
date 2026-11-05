@@ -1065,12 +1065,21 @@ List<Usual> suggestUsuals(
   if (typed.isEmpty) {
     return const [];
   }
-  final ranked = [
-    for (final (order, usual) in _offList(usuals, visible).indexed)
-      if (suggestionMatch(typed, _folded(usual)) case final rank?)
-        (rank, order, usual),
-  ]..sort((a, b) => a.$1 != b.$1 ? a.$1 - b.$1 : a.$2 - b.$2);
-  return [for (final (_, _, usual) in ranked.take(limit)) usual];
+  // One list per rank, each in the usuals' order. Once [limit] usuals rank
+  // better than `below`, a later one ranking `below` or worse can't make it.
+  final byRank = [for (var rank = 0; rank < 5; rank++) <Usual>[]];
+  var below = 5;
+  for (final usual in _offList(usuals, visible)) {
+    if (suggestionMatch(typed, _folded(usual), below: below) case final rank?) {
+      byRank[rank].add(usual);
+      for (var (r, found) = (0, 0); r < below; r++) {
+        if ((found += byRank[r].length) >= limit) {
+          below = r;
+        }
+      }
+    }
+  }
+  return byRank.expand((same) => same).take(limit).toList();
 }
 
 /// [Usual.name] folded, once per usual: each keystroke ranks them all again.
@@ -1082,22 +1091,26 @@ final _foldedNames = Expando<String>('folded usual name');
 /// `public.suggest_match` on the server: 0 the same name, 1 it starts with
 /// it, 2 a word of it does, 3 it has it inside (from 4 letters), 4 a word of
 /// it or the whole name is a typo of it (from 3 letters: same first letter,
-/// one edit up to 5 letters, two from 6). Null: no match.
-int? suggestionMatch(String typed, String name) {
-  if (name == typed) {
+/// one edit up to 5 letters, two from 6). Null: no match, or none better
+/// than [below].
+int? suggestionMatch(String typed, String name, {int below = 5}) {
+  if (below > 0 && name == typed) {
     return 0;
   }
-  if (name.startsWith(typed)) {
+  if (below > 1 && name.startsWith(typed)) {
     return 1;
   }
-  if (_startsAWord(typed, name)) {
+  if (below > 2 && _startsAWord(typed, name)) {
     return 2;
   }
   if (typed.length < 3) {
     return null;
   }
-  if (typed.length >= 4 && name.contains(typed)) {
+  if (below > 3 && typed.length >= 4 && name.contains(typed)) {
     return 3;
+  }
+  if (below < 5) {
+    return null;
   }
   final most = typed.length < 6 ? 1 : 2;
   if (_isTypo(typed, name, 0, name.length, most)) {
