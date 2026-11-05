@@ -169,8 +169,8 @@ void main() {
     expect(edit.keyBefore, 'windel pampers grosse 3');
   });
 
-  test('a queued offline add renamed onto an open item is reported, neither '
-      'dropped nor doubled (jobs 104, 111)', () async {
+  test('a queued offline add renamed onto an open item folds into it once '
+      'parsed, neither dropped nor doubled (jobs 104, 111, 114)', () async {
     final rejections = <Rejected>[];
     final sub = cubit.rejections.listen(rejections.add);
     addTearDown(sub.cancel);
@@ -203,13 +203,55 @@ void main() {
     repo.online = true;
     repo.emitStatus!(ConnectionStatus.online);
     await settle();
-    expect(rejections, [isA<RenameTaken>()]);
+    expect(rejections, isEmpty);
     expect(cubit.state.pending, isEmpty);
-    final windeln = cubit.state.items.values
-        .where((i) => i.status == ItemStatus.active && i.name == 'Windeln')
-        .map((i) => i.properties)
-        .toList();
-    expect(windeln..sort(), ['Größe 3', 'Größe 4']);
+    expect(
+      repo.rows.values.map((i) => (i.name, i.brand, i.properties, i.quantity)),
+      [('Windeln', 'Pampers', 'Größe 4', '2')],
+    );
+  });
+
+  test('a queued offline add renamed onto an open item, then renamed again: '
+      'the later name is parsed too (jobs 111, 114)', () async {
+    final rejections = <Rejected>[];
+    final sub = cubit.rejections.listen(rejections.add);
+    addTearDown(sub.cancel);
+    for (final size in ['3', '4', '5']) {
+      repo.parsed['Windeln Pampers Größe $size'] = ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe $size',
+      );
+    }
+    cubit.addParsed(
+      const ParsedEntry(
+        name: 'Windeln',
+        brand: 'Pampers',
+        properties: 'Größe 4',
+      ),
+    );
+    await settle();
+    repo.online = false;
+    final id = (cubit.addParsed(
+      const ParsedEntry(name: 'Windeln Pampers Größe 3', deviceParsed: true),
+    ) as Added).item.id;
+    cubit
+      ..edit(id, const ItemChanges(name: 'Windeln Pampers Größe 4'))
+      ..edit(id, const ItemChanges(name: 'Windeln Pampers Größe 5'));
+    await settle();
+
+    repo.online = true;
+    repo.emitStatus!(ConnectionStatus.online);
+    await settle();
+    expect(rejections, isEmpty);
+    expect(cubit.state.pending, isEmpty);
+    expect(
+      repo.rows.values.map((i) => (i.name, i.brand, i.properties)),
+      unorderedEquals([
+        ('Windeln', 'Pampers', 'Größe 4'),
+        ('Windeln', 'Pampers', 'Größe 5'),
+      ]),
+    );
   });
 
   test('offline ops stay visible, queue, and flush on reconnect', () async {
@@ -1292,17 +1334,251 @@ void main() {
       },
     );
 
-    test('a copy only the server has yet refuses the rename', () async {
-      final saft = await add('Apfelsaft');
-      final copy = repo.remoteAdd('Mineralwasser');
-      repo.rows[copy.id] = copy;
+    test('a copy only the server has yet: the rename folds into it', () async {
+      final saft = await add('Apfelsaft', '2');
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
       cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
       await settle();
-      expect(refused.single, isA<RenameTaken>());
-      await cubit.resync();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (copy.id, 'Mineralwasser', '8'),
+      ]);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(merges.single.result.quantity, '8');
+      expect(refused, isEmpty);
+    });
+
+    test('renamed offline after the partner added it: one item on sync, '
+        'with the quantity typed in the same edit', () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit.edit(
+        saft.id,
+        const ItemChanges(name: 'mineralwasser', quantity: SetTo('3')),
+      );
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (copy.id, 'Mineralwasser', '9'),
+      ]);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(refused, isEmpty);
+    });
+
+    test('the other phone renamed onto that name first, not shown yet: the '
+        'rename folds into theirs, and Rückgängig brings it back', () async {
+      // One after the other; the fuzz and the e2e race real interleavings.
+      final saft = await add('Apfelsaft', '2');
+      final leas = repo.remoteAdd('Sprudel', quantity: '6');
+      repo.rows[leas.id] = leas.copyWith(name: 'Mineralwasser');
+      cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+      await settle();
+      expect(repo.rows.values.map((i) => (i.id, i.name, i.quantity)), [
+        (leas.id, 'Mineralwasser', '8'),
+      ]);
+      cubit.unmerge(merges.single);
       await settle();
       expect(activeNames()..sort(), ['Apfelsaft', 'Mineralwasser']);
+      expect(repo.rows[leas.id]!.quantity, '6');
+    });
+
+    test('renamed and ticked offline after the partner added it: the tick '
+        'goes to their item, as for an add', () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit
+        ..edit(saft.id, const ItemChanges(name: 'Mineralwasser'))
+        ..tick(saft.id);
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.quantity, i.status)), [
+        (copy.id, '8', ItemStatus.bought),
+      ]);
+    });
+
+    test("renamed and deleted offline: the partner's item stays", () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit
+        ..edit(saft.id, const ItemChanges(name: 'Mineralwasser'))
+        ..delete(saft.id);
+      await settle();
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(repo.rows.keys, [copy.id]);
+      expect(repo.rows[copy.id]!.quantity, '6', reason: 'nothing merged');
+      expect(repo.sent.whereType<MergeItems>(), isEmpty);
+      expect(merges, isEmpty);
+      expect(refused, isEmpty);
+    });
+
+    test(
+      'the copy ticked before the list showed it: the rename lands',
+      () async {
+        final saft = await add('Apfelsaft');
+        final copy = repo.remoteAdd('Mineralwasser');
+        final fetch = repo.itemsGate = Completer();
+        cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+        await settle();
+        expect(repo.sent.whereType<EditItem>(), isEmpty, reason: 'refused');
+        repo.rows[copy.id] = copy.copyWith(status: ItemStatus.bought);
+        repo.itemsGate = null;
+        fetch.complete();
+        await settle();
+        expect(cubit.state.pending, isEmpty);
+        expect(repo.rows[saft.id]!.name, 'Mineralwasser');
+        expect(activeNames(), ['Mineralwasser']);
+        expect(refused, isEmpty);
+      },
+    );
+
+    test('a refusal the list cannot match to a copy is sent once more, '
+        'then "already on the list"', () async {
+      // Postgres lowercases letters Dart leaves alone (U+13A0 Ꭰ to ꭰ).
+      var refusals = 0;
+      repo
+        ..remoteAdd('ꭰ')
+        ..beforeSend = (op) {
+          if (op case EditItem(changes: ItemChanges(name: 'Ꭰ'))) {
+            refusals++;
+            throw const RejectedOp('already_on_list', nameTaken: true);
+          }
+        };
+      final saft = await add('Apfelsaft');
+      final milk = await add('Milch');
+      cubit
+        ..edit(saft.id, const ItemChanges(name: 'Ꭰ'))
+        ..tick(milk.id);
+      await settle();
+      expect(refusals, 2);
+      expect((refused.single as RenameTaken).name, 'Ꭰ');
+      expect(cubit.state.pending, isEmpty);
       expect(repo.rows[saft.id]!.name, 'Apfelsaft');
+      expect(
+        repo.rows[milk.id]!.status,
+        ItemStatus.bought,
+        reason: 'not stuck',
+      );
+    });
+
+    test("renamed offline twice: the second name wins, the partner's item "
+        'stays as it is', () async {
+      final saft = await add('Apfelsaft', '2');
+      repo.online = false;
+      cubit
+        ..edit(
+          saft.id,
+          const ItemChanges(
+            name: 'Mineralwasser',
+            quantity: SetTo('3'),
+            brand: SetTo('Gerolsteiner'),
+            properties: SetTo('still'),
+          ),
+        )
+        ..edit(saft.id, const ItemChanges(name: 'Orangensaft'));
+      await settle();
+      final shown = cubit.state.items[saft.id]!;
+      final copy = repo.remoteAdd(
+        'Mineralwasser',
+        quantity: '6',
+        brand: 'Gerolsteiner',
+        properties: 'still',
+      );
+      // Apfelsaft with that brand is open too: only the combined edit fits.
+      final other = repo.remoteAdd(
+        'Apfelsaft',
+        brand: 'Gerolsteiner',
+        properties: 'still',
+      );
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      String row(Item i) =>
+          '${i.id} ${i.name} ${i.quantity} ${i.brand} ${i.properties}';
+      expect(
+        repo.rows.values.map(row),
+        unorderedEquals([
+          '${copy.id} Mineralwasser 6 Gerolsteiner still',
+          '${other.id} Apfelsaft null Gerolsteiner still',
+          '${saft.id} Orangensaft 3 Gerolsteiner still',
+        ]),
+      );
+      expect(row(cubit.state.items[saft.id]!), row(shown), reason: 'as shown');
+      expect(merges, isEmpty);
+      expect(refused, isEmpty);
+    });
+
+    test('the copy ticked before the merge reached the server: the rename '
+        'lands on its own', () async {
+      final saft = await add('Apfelsaft', '2');
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.beforeSend = (op) {
+        if (op is MergeItems) {
+          repo.rows[copy.id] = repo.rows[copy.id]!.copyWith(
+            status: ItemStatus.bought,
+          );
+        }
+      };
+      cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+      await settle();
+      expect(merges, isEmpty, reason: 'no "merged" for a refused merge');
+      repo.beforeSend = null;
+      await cubit.resync();
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows[saft.id]!.name, 'Mineralwasser');
+      expect(repo.rows[copy.id]!.status, ItemStatus.bought);
+      expect(activeNames(), ['Mineralwasser']);
+      expect(refused, isEmpty);
+    });
+
+    test('the connection lost right after the refusal: the rename stays '
+        'shown and folds once back online', () async {
+      final saft = await add('Apfelsaft', '2');
+      final copy = repo.remoteAdd('Mineralwasser', quantity: '6');
+      repo.beforeSend = (op) {
+        if (op is EditItem) {
+          repo
+            ..online = false
+            ..beforeSend = null;
+          throw const RejectedOp('already_on_list', nameTaken: true);
+        }
+      };
+      cubit.edit(saft.id, const ItemChanges(name: 'Mineralwasser'));
+      await settle();
+      expect(cubit.state.items[saft.id]!.name, 'Mineralwasser');
+      expect(cubit.state.pending, hasLength(1));
+      repo.online = true;
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+      expect(cubit.state.pending, isEmpty);
+      expect(repo.rows.values.map((i) => (i.id, i.quantity)), [(copy.id, '8')]);
+      expect(merges.single.result.quantity, '8');
+      expect(refused, isEmpty);
+    });
+
+    test('a copy only the server has, too long to merge: "already on the '
+        'list", the old name stays', () async {
+      final papier = await add('Papier', 'Kleinpackung mit vielen Rollen');
+      repo.remoteAdd('Klopapier', quantity: 'Großpackung mit vielen Rollen');
+      cubit.edit(papier.id, const ItemChanges(name: 'Klopapier'));
+      await settle();
+      expect((refused.single as RenameTaken).name, 'Klopapier');
+      expect(activeNames()..sort(), ['Klopapier', 'Papier']);
+      expect(repo.rows[papier.id]!.name, 'Papier');
     });
 
     test('made offline, the merge lands once online', () async {

@@ -8207,3 +8207,76 @@ horizontal inset, and the list scrolls on under it.
    whether a local Xcode build counts as "installed for development" on 26.4 and later is
    unchecked. Each test has a 60 s allowance, so a sandbox sheet can't hang
    the job.
+
+
+## Job 114: a rename the server refuses for an open copy merges, 2026-11-05
+
+vmaint-20261105 #12 (renaming Apfelsaft to „Mineralwasser“ while Mineralwasser is open leaves two
+open rows) was found on c5a580a8, before job 104 (#236) landed. On main the online case was fixed:
+`ListCubit.edit` folds the rename into the open copy and `items_rename_duplicate` refuses the rest.
+What was left: when the server refused a rename because another member's copy got there first (a
+rename made offline, or two phones renaming at once), the app put the old name back and said
+„… steht schon auf der Liste“. The sync fuzz showed it once its fake server enforced the trigger:
+7 of seeds 1 to 100 kept a rename apart from its open copy.
+
+1. **A refused rename folds like a shown one.** The flush holds the queue, resyncs, and folds the
+   item into the copy the server now shows, with the same ops, snackbar and Rückgängig as `edit`
+   (`merge_items`, quantities add up, one merge record, so history is the same as job 104's).
+   What was queued after the rename goes to the copy through `ItemOp.ontoKept`, the rule of an
+   offline add that turned out to be an open item (job 64b): a tick ticks the copy. A delete
+   queued after the refused rename does not fold (review 1): the rename is dropped and the delete
+   removes the item, so the partner's copy keeps its quantity and no „Zusammengeführt“ shows for
+   an item the user deleted. Until the resync answers, the rename stays queued and shown; if
+   the resync fails, it stays there and the next flush sends it again (item 8). If the copy is gone or was ticked by then, the rename is
+   sent again and now passes. Only a merged quantity too long for the column still says
+   „… steht schon auf der Liste“ and keeps the old name.
+2. **Only the quantity goes ahead of the merge.** Brand and details typed in the same edit are
+   the copy's already, since the keys match. Sent alone, a brand edit was the refused rename again,
+   so a brand-only rename onto an open copy hit the server's 23505 before its own merge.
+3. **The fuzz enforces it.** `fake_backend.dart` has `items_rename_duplicate` and the
+   delete-first order of `merge_items`. The oracle fails on two open rows with one key, and a
+   device fails on any `RenameTaken`. A second open row made by an untick is counted in
+   `FakeBackend.reopened`, not failed (strict mode fails it). Job 104 lets an untick through while
+   a copy is open (pgTAP „unticking still passes“), and add-dedupe has no rule for it. This job
+   does not change it; NEEDS_LEAD in the PR asks whether it should.
+4. **A refused rename is sent again once at most** (review 0). After a resync that shows no copy,
+   the rename goes out once more. A second refusal is final: „… steht schon auf der Liste“, and
+   the old name stays, as on main. Postgres `lower()` lowercases about 410 letters that Dart's
+   `toLowerCase` leaves alone (U+13A0 Ꭰ to ꭰ), so on iOS and Android the list may not find the
+   copy the server sees. Unbounded, one edit gave 200+ refusals and blocked the queue. Matching
+   `foldName` to Postgres would leave the bound needed for any other 23505, so only the bound
+   ships.
+5. **A later rename wins.** A rename refused while a later rename of the same item is queued (an
+   offline Apfelsaft → Mineralwasser → Orangensaft while the partner added Mineralwasser) does not
+   fold. Its quantity, category and store go through ahead of the later rename. Its brand and
+   details ride with the later rename, unless that sets its own (lead review): sent alone with the
+   old name they could hit an open twin too, which would make a second refusal. So the server ends
+   as the list showed offline. Folding
+   would have sent the later rename to the partner's Mineralwasser through `ontoKept` and
+   renamed their item.
+6. **A fold whose merge is refused sends the rename alone.** If the copy was ticked or deleted
+   before `merge_items` arrived, the rename is sent once more (it fits now) instead of reporting
+   „Zusammenführen ging nicht“ and losing the rename. This also covers job 104's online fold.
+7. **A refused rename's fold is announced only once merged** (review 1). „Zusammengeführt“ with
+   Rückgängig shows on the merge's acknowledgement, not when the ops are queued. A merge refused
+   in between (the rename then goes alone, item 6) shows nothing. Job 104's online fold still
+   announces at once, because the user just pressed Fertig on a list that shows the copy.
+8. **What the fold leaves unsaid** (lead review). „Zusammengeführt: 8 Mineralwasser“ names the
+   merge's own sum. A quantity edit queued after the refused rename goes to the copy through
+   `ontoKept` and lands after it, so the row may read 3 next to a snackbar that says 8, as with job
+   64b's replayed add. The sets that track a fold (`_unannounced`, `_foldedRenames`,
+   `_resentRenames`) live in memory. After a restart between the fold and the merge's
+   acknowledgement, no „Zusammengeführt“ shows, and a refused merge reports „Zusammenführen ging
+   nicht“ instead of sending the rename alone. Nothing is lost, and both cases need a restart in a
+   window of one round trip. The refused rename stays queued and shown until the resync answers,
+   so the old name does not flash in between.
+9. **A name typed offline is compared as the server parsed it** (review 4, with job 111's
+   `deviceParsed`). A rename of an add typed offline („Windeln Pampers Größe 3“ to „… Größe 4“)
+   reaches the server as parse_item reads it (Windeln, Pampers, Größe 4). When the server refuses
+   it, the fold asks `parse` for the same reading and looks for the copy with it, so it folds into
+   the open „Windeln / Pampers / Größe 4“ as an add of that line would have. Before, it compared the
+   raw line, found nothing, and ended in „… steht schon auf der Liste“. If the parse fails, the
+   rename stays queued as for a failed resync. A later rename keeps its own `deviceParsed`. Its
+   parsed brand and details are its own, so the refused rename's do not ride along. `edit`'s
+   local fold keeps the flag on the rename it may send alone (item 6).
+

@@ -1852,3 +1852,22 @@ Checked 2026-11-02 in the Play Console help ("Set up an open, closed or internal
 testing allows up to 100 testers per app; closed testing takes email lists of up to 2,000 users
 each (up to 200 lists, 50 per track). Past 100 Android sign-ups, move the beta to a closed track
 with an email list (`android.csv` fits it).
+
+
+## Job 114: a re-add from „Zuletzt verwendet“ while another phone opened the same item
+
+Status: question, nothing changed. Found by the sync fuzz once it checked for two open rows with
+one name (`FUZZ_STRICT=1`, seeds 1 to 1000: 27 seeds, for example 122 and 500; the other 5 strict failures are job 99's replayed adds).
+
+Phone A, offline, taps Milch under „Zuletzt verwendet“ (an untick), while phone B adds Milch. After
+the sync, two open Milch rows exist. In the app, one phone alone cannot do it, because the section
+hides anything that is on the list. The public API can, with no race at all:
+`POST /v1/items/{id}/untick` (`setItemStatus` in `supabase/functions/_shared/list.ts`) opens a
+bought item while its twin is open (found in review 0). An offline add in the same race is folded into B's item
+(`put_item`), but an untick is not: job 104's `items_rename_duplicate` checks only a changed name,
+brand or details, and lets unticking through on purpose (pgTAP „unticking still passes“).
+
+The question covers the whole untick class (the app's re-add, the API's untick): should an untick
+onto an open copy fold into it, as an add does? If so, the server
+would refuse it with 23505 and `ListCubit` would merge, as job 114 does for a refused rename. That
+is roughly a day of work with tests. The fuzz already counts these cases (`FakeBackend.reopened`).

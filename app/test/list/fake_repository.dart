@@ -71,6 +71,9 @@ class FakeRepository() implements ListRepository {
 
   Completer<void>? gate;
 
+  /// Runs as an op reaches the server; may change rows or throw a refusal.
+  void Function(ItemOp op)? beforeSend;
+
   /// What the items trigger reports as `categorized_via` for a new row.
   String? categorizedVia;
 
@@ -82,6 +85,9 @@ class FakeRepository() implements ListRepository {
 
   /// Holds catalog fetches until completed.
   Completer<void>? catalogGate;
+
+  /// Holds item fetches, after the online check, until completed.
+  Completer<void>? itemsGate;
 
   DateTime _tick() => _clock = _clock.add(const Duration(seconds: 1));
 
@@ -250,6 +256,7 @@ class FakeRepository() implements ListRepository {
   @override
   Future<List<Item>> fetchItems() async {
     _ensureOnline();
+    await itemsGate?.future;
     return rows.values.toList();
   }
 
@@ -272,6 +279,7 @@ class FakeRepository() implements ListRepository {
   Future<Map<String, Item?>> send(ItemOp sentOp) async {
     await gate?.future;
     _ensureOnline();
+    beforeSend?.call(sentOp);
     if (reject) {
       reject = false;
       throw const RejectedOp('denied');
