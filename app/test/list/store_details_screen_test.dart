@@ -1,5 +1,6 @@
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,6 +90,30 @@ void main() {
       await enterName(tester, 'Rossmann');
       expect(repo.catalogCalls, ['renameStore(dm, Rossmann)']);
       expect(find.widgetWithText(AppBar, 'Rossmann'), findsOneWidget);
+    });
+
+    testWidgets('its name pill holds the badge centered, no hint inside', (
+      tester,
+    ) async {
+      await pump(tester, 'dm');
+      final pill = key('store-rename');
+      final face = find.descendant(of: pill, matching: find.byType(InkWell));
+      final badge = find.descendant(
+        of: pill,
+        matching: find.byType(StoreBadge),
+      );
+      expect(
+        tester.getCenter(badge).dy,
+        moreOrLessEquals(tester.getCenter(face).dy, epsilon: 0.5),
+      );
+      expect(
+        find.descendant(of: pill, matching: find.byType(Text)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: pill, matching: find.byIcon(Icons.edit_outlined)),
+        findsOneWidget,
+      );
     });
 
     testWidgets("a rename onto another store's name keeps the dialog", (

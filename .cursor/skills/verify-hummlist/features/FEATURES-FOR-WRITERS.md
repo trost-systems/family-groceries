@@ -311,7 +311,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Note.** The onboarding skip hint says „Du kannst sie später unter Liste → Anpassen anlegen.“ / "You can add them later under List → Edit." (jobs 68, 78).
 
-**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): adding stores in „Anpassen“, the duplicate-name message, moving items to a store, a store's section on the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** main c5a580a8, 2026-11-05 (CET), from code and driven on the web build (verify-hummlist): adding stores in „Anpassen“, the duplicate-name message, moving items to a store, a store's section on the list; job 134, 2026-11-05 (CET): the store's name pill on its details shows the badge and a pencil only, from widget tests and goldens. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 

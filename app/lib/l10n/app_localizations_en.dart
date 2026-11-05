@@ -864,9 +864,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeAdd => 'Add store';
 
   @override
-  String get storeRenameHint => 'Tap to rename';
-
-  @override
   String get deleteCategoryEverywhere => 'It disappears from every store.';
 
   @override

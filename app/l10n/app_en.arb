@@ -303,8 +303,6 @@
   "@noStoreRowHint": {"description": "Stores screen: under the pinned No store row"},
   "storeAdd": "Add store",
   "@storeAdd": {"description": "Stores screen: the add button and its dialog"},
-  "storeRenameHint": "Tap to rename",
-  "@storeRenameHint": {"description": "Store details: under the store name at the top"},
   "deleteCategoryEverywhere": "It disappears from every store.",
   "@deleteCategoryEverywhere": {"description": "Delete category dialog: categories belong to the whole household"},
   "storesHint": "Drag the stores into the order they have on the list. Tap a store to rename it and order its categories.",

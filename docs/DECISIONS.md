@@ -8081,3 +8081,19 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
     and so in request logs; posting the body to the API answers 400 instead.
 18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
     a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
+
+## Job 134: no hint text inside a HexPill, 2026-11-05
+
+Peter (2026-11-05, with a screenshot of the store details): „Tippen zum Umbenennen“ sat inside the
+store's name pill under the badge and pushed the badge off center.
+
+1. **Rule for every screen.** Instructional hint copy never goes inside a `HexPill` or a hex badge.
+   A hint sits above or below the control, as a line of the page body, or the control shows a
+   leading or trailing icon only. Category rows already work this way: the page body says „Tippe
+   auf eine Kategorie, um sie umzubenennen.“
+2. **Store details.** The name pill holds the store's badge, vertically centered, and the pencil.
+   The `storeRenameHint` keys are deleted from both ARB files. The pencil and the semantics label
+   „<Store> umbenennen“ carry the affordance. A widget test checks that the badge is centered in
+   the pill's face and that the pill holds no text but the badge's name.
+3. **No lint.** The rule has one past case, and a lint that tells a hint from a label in a pill's
+   child tree would need to know what the copy says. The widget test and this rule are the check.

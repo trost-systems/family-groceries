@@ -1442,12 +1442,6 @@ abstract class AppLocalizations {
   /// **'Laden hinzufügen'**
   String get storeAdd;
 
-  /// Store details: under the store name at the top
-  ///
-  /// In de, this message translates to:
-  /// **'Tippen zum Umbenennen'**
-  String get storeRenameHint;
-
   /// Delete category dialog: categories belong to the whole household
   ///
   /// In de, this message translates to:
