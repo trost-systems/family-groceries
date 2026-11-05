@@ -14,7 +14,8 @@ Deno.serve(withTelemetry(
   createHandler({
     authenticate: (req) => authenticate(req, undefined, { siri: true }),
     requirePremium: requirePremiumWith(telemetry),
-    addItems: (auth, items) => asUser(auth.userId, (tx) => addItems(tx, auth.householdId, items)),
+    addItems: (auth, items, options) =>
+      asUser(auth.userId, (tx) => addItems(tx, auth.householdId, items, options)),
     splitItems: (auth, items) =>
       asUser(auth.userId, (tx) => splitItems(tx, auth.householdId, items)),
     readItems: async (auth) =>

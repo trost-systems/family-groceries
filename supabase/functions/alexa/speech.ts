@@ -1,4 +1,5 @@
 // What Alexa says, in German. The app is always "Hummlist" in full.
+import { copy } from '../voice/copy.ts';
 import type { Added } from '../voice/handler.ts';
 
 /** An open item as read back; the voice function's Added and the MCP list's Item both fit. */
@@ -80,19 +81,42 @@ export function confirmation(results: readonly Added[]): string {
   return parts.join(' ');
 }
 
-/** At most this many items are read aloud; the rest is a count. */
+/**
+ * Q79 (copy pending Peter): when held items ("Butter" with "Butter Weihenstephan" open) are in
+ * the results, what was done and then "Butter Weihenstephan steht schon auf der Hummlist. Soll
+ * ich Butter trotzdem dazuschreiben?", with the held items' text for the slot on a yes.
+ */
+export function question(
+  results: readonly Added[],
+): { question: string; again: string } | null {
+  const held = results.filter((r) => r.held);
+  if (!held.length) return null;
+  const open = enumerate(held.map(said));
+  const wanted = enumerate(held.map((r) => said({ ...r.held!, brand: null, properties: null })));
+  return {
+    question: [
+      confirmation(results.filter((r) => !r.held)),
+      `${open} ${held.length === 1 ? 'steht' : 'stehen'} schon auf der Hummlist. ` +
+      `Soll ich ${wanted} trotzdem dazuschreiben?`,
+    ].filter(Boolean).join(' '),
+    again: held.map((r) => copy.de.spoken(r.held!)).join(', '),
+  };
+}
+
+/** At most this many items are read aloud (one more if that is all); the rest is a count. */
 export const readLimit = 10;
 
 /** "Auf der Hummlist stehen 3 Sachen: Milch, Eier und Brot." */
 export function listing(items: readonly Spoken[]): string {
   if (items.length === 0) return speech.emptyList;
-  const read = items.slice(0, readLimit).map(said);
+  // One more than the limit is read: "und eine weitere" is no shorter than the item.
+  const read = items.slice(0, items.length > readLimit + 1 ? readLimit : undefined).map(said);
   const rest = items.length - read.length;
   const head = items.length === 1
     ? 'Auf der Hummlist steht eine Sache'
     : `Auf der Hummlist stehen ${items.length} Sachen`;
   if (rest === 0) return `${head}: ${enumerate(read)}.`;
-  return `${head}: ${read.join(', ')} und ${rest === 1 ? 'eine' : rest} weitere.`;
+  return `${head}: ${read.join(', ')} und ${rest} weitere.`;
 }
 
 /** Words that stay lowercase inside an item name ("Milch ohne Laktose"). */

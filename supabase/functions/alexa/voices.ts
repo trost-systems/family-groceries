@@ -3,8 +3,21 @@
 import type { Added } from '../voice/handler.ts';
 import { type ParsedItem, parseSentence } from '../voice/parse.ts';
 import { parseEnglish } from '../voice/parse_en.ts';
-import { confirmation, germanCase, listing, readLimit, speech, type Spoken } from './speech.ts';
-import { confirmationEnglish, listingEnglish, speechEnglish } from './speech_en.ts';
+import {
+  confirmation,
+  germanCase,
+  listing,
+  question,
+  readLimit,
+  speech,
+  type Spoken,
+} from './speech.ts';
+import {
+  confirmationEnglish,
+  listingEnglish,
+  questionEnglish,
+  speechEnglish,
+} from './speech_en.ts';
 
 export interface Voice {
   speech: Record<keyof typeof speech, string>;
@@ -12,16 +25,26 @@ export interface Voice {
   /** The item name as stored, from the name the parser read and the whole phrase heard. */
   name(name: string, heard: string): string;
   confirmation(results: readonly Added[]): string;
+  /** Q79: the yes/no question about held items and their text to add on a yes, or null. */
+  question(results: readonly Added[]): { question: string; again: string } | null;
   listing(items: readonly Spoken[]): string;
 }
 
-const german: Voice = { speech, parse: parseSentence, name: germanCase, confirmation, listing };
+const german: Voice = {
+  speech,
+  parse: parseSentence,
+  name: germanCase,
+  confirmation,
+  question,
+  listing,
+};
 
 const english: Voice = {
   speech: speechEnglish,
   parse: parseEnglish,
   name: (name) => name,
   confirmation: confirmationEnglish,
+  question: questionEnglish,
   listing: (items) => listingEnglish(items, readLimit),
 };
 

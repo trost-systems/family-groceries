@@ -1,0 +1,23 @@
+{
+  "_": "Job 112, Peter Q79: new spoken sentences waiting for Peter's copy review. site/scripts/copy-needed.mjs lists them in site/COPY_NEEDED.md; voice/copy_needed_test.ts checks every example against the functions' real output, so edit the code and this file together.",
+  "siri.ask.one": {
+    "where": "Siri (native, iPhone): yes/no question, one held item. Example: Butter (brand Weihenstephan) open, the user says „Butter“.",
+    "de": "Butter Weihenstephan steht schon drauf. Soll ich Butter trotzdem dazuschreiben?",
+    "en": "Butter Weihenstephan is already on the list. Should I add butter anyway?"
+  },
+  "siri.ask.many": {
+    "where": "Siri (native, iPhone): yes/no question, several held items",
+    "de": "Butter Weihenstephan und Quark Ehrmann stehen schon drauf. Soll ich Butter und Quark trotzdem dazuschreiben?",
+    "en": "Butter Weihenstephan and Quark Ehrmann are already on the list. Should I add butter and quark anyway?"
+  },
+  "alexa.ask.one": {
+    "where": "Alexa skill (beta): yes/no question, one held item",
+    "de": "Butter Weihenstephan steht schon auf der Hummlist. Soll ich Butter trotzdem dazuschreiben?",
+    "en": "Butter Weihenstephan is already on Hummlist. Should I add butter anyway?"
+  },
+  "alexa.ask.many": {
+    "where": "Alexa skill (beta): yes/no question, several held items",
+    "de": "Butter Weihenstephan und Quark Ehrmann stehen schon auf der Hummlist. Soll ich Butter und Quark trotzdem dazuschreiben?",
+    "en": "Butter Weihenstephan and Quark Ehrmann are already on Hummlist. Should I add butter and quark anyway?"
+  }
+}

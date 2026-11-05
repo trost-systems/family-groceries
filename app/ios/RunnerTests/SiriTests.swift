@@ -112,6 +112,37 @@ final class VoiceClientTests: XCTestCase {
     XCTAssertEqual(read, .read(speech: "Milk and eggs.", items: []))
   }
 
+  func testAskAndConfirmedGoInTheRequestOnlyWhenSet() async throws {
+    StubProtocol.reply = .http(200, #"{"outcome":"added","speech":"Added butter."}"#)
+    _ = await client().send(text: "butter", mode: .add, lang: .en, ask: true)
+    let asked = try XCTUnwrap(StubProtocol.requests.last?.body)
+    let askJson = try XCTUnwrap(JSONSerialization.jsonObject(with: asked) as? [String: Any])
+    XCTAssertEqual(askJson["ask"] as? Bool, true)
+    XCTAssertNil(askJson["confirmed"])
+    _ = await client().send(text: "butter", mode: .add, lang: .en, confirmed: true)
+    let yes = try XCTUnwrap(StubProtocol.requests.last?.body)
+    let yesJson = try XCTUnwrap(JSONSerialization.jsonObject(with: yes) as? [String: Any])
+    XCTAssertEqual(yesJson["confirmed"] as? Bool, true)
+    XCTAssertNil(yesJson["ask"])
+  }
+
+  func testConfirmCarriesTheQuestionAndWhatAYesSends() async {
+    let confirm = await send(.http(
+      200,
+      #"{"outcome":"confirm","speech":"Already on the list: Butter Weihenstephan.","question":"Butter Weihenstephan is already on the list. Should I add butter anyway?","again":"butter"}"#))
+    XCTAssertEqual(
+      confirm,
+      .confirm(
+        speech: "Already on the list: Butter Weihenstephan.",
+        question: "Butter Weihenstephan is already on the list. Should I add butter anyway?",
+        again: "butter"))
+    let noQuestion = await send(.http(200, #"{"outcome":"confirm","speech":"Already on the list: Butter Weihenstephan."}"#))
+    XCTAssertEqual(noQuestion, .failed(.noAnswer))
+    let confirmAsRead = await send(
+      .http(200, #"{"outcome":"confirm","speech":"x","question":"y","again":"z"}"#), mode: .read)
+    XCTAssertEqual(confirmAsRead, .failed(.noAnswer))
+  }
+
   func testReadKeepsTheOpenItemsWithTheirQuantity() async {
     let read = await send(
       .http(200, #"{"outcome":"read","speech":"Milch, 2 kg Mehl.","items":[{"name":"Milch","quantity":null},{"name":"Mehl","quantity":"2 kg"}],"total":2}"#),
@@ -335,6 +366,15 @@ final class SiriAnswerTests: XCTestCase {
     XCTAssertEqual(
       VoiceResult.added(speech: "Added milk to Hummlist.").answer(mode: .add, copy: en),
       "Added milk to Hummlist.")
+  }
+
+  func testANoToTheQuestionSaysWhatIsOnTheList() {
+    let confirm = VoiceResult.confirm(
+      speech: "Schon auf der Liste: Butter Weihenstephan.",
+      question: "Butter Weihenstephan steht schon drauf. Soll ich Butter trotzdem dazuschreiben?",
+      again: "Butter")
+    XCTAssertEqual(
+      confirm.answer(mode: .add, copy: SiriCopy(.de)), "Schon auf der Liste: Butter Weihenstephan.")
   }
 
   func testALockedHouseholdHearsTheServerOrThePlaceholder() {

@@ -113,3 +113,17 @@ build time. Change the text there; this section follows.
 | `history.languages` | History: entry stat label | Codezeilen nach Sprache | Lines of code by language | New: release timeline (job 105). | draft |
 | `history.changelog-link` | History: entry link to the changelog | Neuigkeiten in Version {version} | What's new in version {version} | New: release timeline (job 105). | draft |
 | `history.note` | History: note under the entries | Commits zählen ab der vorigen Version. Codezeilen sind die nicht leeren Zeilen des Quelltexts dieser Version, ohne erzeugte Dateien, Lockfiles und Dokumentation. Bots und KI-Assistenten zählen nicht als Mitwirkende. | Commits count from the previous version. Lines of code are the non-blank lines of this version’s source code, without generated files, lockfiles and documentation. Bots and AI assistants do not count as contributors. | New: release timeline (job 105). | draft |
+
+## Voice replies (Siri, Alexa)
+
+From `supabase/functions/voice/copy_needed.json` (job 112, Peter Q79): the yes/no question when
+the user says a plain name and the open item has its own brand or details. Examples with Butter
+(brand Weihenstephan) and Quark (brand Ehrmann) open; the names come from the list. Change the
+sentence in the functions and in that file together (`voice/copy_needed_test.ts` checks them).
+
+| Id | Page / section | DE | EN | Why / source | Status |
+| --- | --- | --- | --- | --- | --- |
+| `siri.ask.one` | Siri (native, iPhone): yes/no question, one held item. Example: Butter (brand Weihenstephan) open, the user says „Butter“. | Butter Weihenstephan steht schon drauf. Soll ich Butter trotzdem dazuschreiben? | Butter Weihenstephan is already on the list. Should I add butter anyway? | New: Peter Q79, job 112. | draft |
+| `siri.ask.many` | Siri (native, iPhone): yes/no question, several held items | Butter Weihenstephan und Quark Ehrmann stehen schon drauf. Soll ich Butter und Quark trotzdem dazuschreiben? | Butter Weihenstephan and Quark Ehrmann are already on the list. Should I add butter and quark anyway? | New: Peter Q79, job 112. | draft |
+| `alexa.ask.one` | Alexa skill (beta): yes/no question, one held item | Butter Weihenstephan steht schon auf der Hummlist. Soll ich Butter trotzdem dazuschreiben? | Butter Weihenstephan is already on Hummlist. Should I add butter anyway? | New: Peter Q79, job 112. | draft |
+| `alexa.ask.many` | Alexa skill (beta): yes/no question, several held items | Butter Weihenstephan und Quark Ehrmann stehen schon auf der Hummlist. Soll ich Butter und Quark trotzdem dazuschreiben? | Butter Weihenstephan and Quark Ehrmann are already on Hummlist. Should I add butter and quark anyway? | New: Peter Q79, job 112. | draft |

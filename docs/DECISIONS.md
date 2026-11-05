@@ -7944,3 +7944,42 @@ Job 90 (PR #220) left two follow-ups for its neighbours of `merge_duplicate_cate
    the history and add the merge.
 4. **Job 80's „Anpassen“ tip stays unbuilt here**: job 78's button landed, but the tip needs new
    copy, and this job may not add strings. The job 80 summary says so.
+
+## Job 112: voice replies for branded open items and a single leftover, 2026-11-05
+
+1. **A plain name with its branded item open is held and asked about (Peter Q79 = VR2).** With
+   „Butter“ (brand Weihenstephan) open, Siri and Alexa added a second, plain Butter and answered
+   „Hinzugefügt: Butter. Schon auf der Liste: Butter.“ `voice/items.ts` (shared by Siri and Alexa)
+   now looks up the open items with the same `item_name_key` (singular and plural alike, the key
+   `add_item` uses for plain duplicates) when the parsed request has no brand and no properties. A
+   plain one is the exact duplicate: nothing is added, no question. One with a brand, or with
+   properties that are all note words, is held: nothing is added and the item is reported under
+   `held`. Native Siri (request `"ask": true`) gets outcome `confirm` with a yes/no question and
+   puts it through `requestConfirmation`; Alexa sends `Dialog.ConfirmIntent` (AddItemIntent is in
+   the dialog model already, so the interaction model is unchanged). Yes resends the held items
+   (`"confirmed": true` / CONFIRMED) and adds them as said; no, a cancel, a timeout and every
+   client that cannot ask (the Shortcut, older app builds, SiriKit lists) add nothing and hear the
+   existing "already on the list" sentence. Voice adds never merge, rename or edit an open item.
+   The app and MCP keep adding the item and offering the merge (job 32b). `add_item` is unchanged,
+   so no migration. The question asks „Soll ich Butter trotzdem dazuschreiben?“ instead of the
+   suggested „noch eine Butter“: the article depends on the item's gender, which the server does
+   not know („einen Quark“, „ein Brot“). Peter waived the copy check-in (Addendum 2); the sentences
+   are listed in `site/COPY_NEEDED.md` and the PR body.
+1a. **Note words are a closed list: only „Bio“ (Addendum 3).** `parse_item` keeps every descriptor
+    of `item_descriptors()` in `properties`, notes and product words alike: „Butter gesalzen“ is
+    stored as Butter with properties gesalzen, like „Bio Tomaten“ is Tomaten with properties Bio.
+    Holding on any property dropped or questioned „Butter“ next to „Butter gesalzen“, which rule 2
+    says must add. So `noteWords` in `voice/items.ts` holds only `bio`: it says how an item is
+    made, not what it is. Everything else (gesalzen, passiert, gerieben, flavours, sizes, and
+    laktosefrei, vegan, glutenfrei, which households buy on purpose and must not be talked out of)
+    makes another product, and the plain name adds. A brand plus such a word („Butter Weihenstephan
+    gesalzen“) adds too. When unsure, add: an extra row costs a tap, a dropped item a trip. The
+    added item's "already on the list" sentence names the open one with its brand and details
+    („Hinzugefügt: Butter. Schon auf der Liste: Butter gesalzen.“); before, `similar_items` gave
+    only the bare name and the reply contradicted itself. Tests create the open items through
+    `add_item`, so they have the parser's shape (`_shared/voice_variants_integration_test.ts`).
+2. **Alexa reads an eleventh item instead of counting it, in both languages.** The brief said the
+   German speech already read a single leftover; it said „und eine weitere“. Both voices now read
+   all items when only one would be left over (no new wording: the existing enumeration). Siri's
+   read (`voice/copy.ts`, `listing`) still says „und eine weitere“ / "and 1 more"; left for the
+   voice owner (job 111 works on truncated voice lists) so the two jobs do not collide.

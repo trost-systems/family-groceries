@@ -38,6 +38,10 @@ enum VoiceFailure: String, CaseIterable {
 enum VoiceResult: Equatable {
   case added(speech: String)
   case nothingAdded(speech: String)
+  /// Q79: an open item has the name with its own brand or details ("Butter Weihenstephan" for
+  /// "Butter"). `question` asks whether to add it anyway, `again` is what a yes sends back with
+  /// `confirmed`, and `speech` is the answer for a no or no answer: nothing more was added.
+  case confirm(speech: String, question: String, again: String)
   /// `items` are the open items as Siri's Lists domain shows them ("2 kg Mehl").
   case read(speech: String, items: [String])
   case lockedHousehold(speech: String?)
@@ -67,14 +71,20 @@ struct VoiceClient {
     }
   }
 
-  func send(text: String?, mode: VoiceMode, lang: VoiceLanguage) async -> VoiceResult {
+  /// `ask`: this caller can put a yes/no question to the user (only AddItemsIntent can).
+  /// `confirmed`: the yes to that question.
+  func send(
+    text: String?, mode: VoiceMode, lang: VoiceLanguage, ask: Bool = false, confirmed: Bool = false
+  ) async -> VoiceResult {
     guard let credential = credential() else { return .failed(.notSignedIn) }
     var request = URLRequest(url: credential.url, timeoutInterval: Self.timeout)
     request.httpMethod = "POST"
     request.setValue("Bearer \(credential.token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    var body = ["mode": mode.rawValue, "lang": lang.rawValue]
+    var body: [String: Any] = ["mode": mode.rawValue, "lang": lang.rawValue]
     if let text { body["text"] = text }
+    if ask { body["ask"] = true }
+    if confirmed { body["confirmed"] = true }
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
     let data: Data
@@ -110,6 +120,8 @@ struct VoiceClient {
     let error: String?
     let speech: String?
     let items: [Item]?
+    let question: String?
+    let again: String?
   }
 
   static func result(status: Int, body: Data, mode: VoiceMode) -> VoiceResult {
@@ -123,6 +135,11 @@ struct VoiceClient {
       switch (mode, code) {
       case (.add, "added"): return .added(speech: speech)
       case (.add, "nothing_added"): return .nothingAdded(speech: speech)
+      case (.add, "confirm"):
+        guard let question = reply?.question, !question.isEmpty, let again = reply?.again,
+          !again.isEmpty
+        else { return .failed(.noAnswer) }
+        return .confirm(speech: speech, question: question, again: again)
       case (.read, "read"):
         let items = (reply?.items ?? []).map { item in
           item.quantity.map { "\($0) \(item.name)" } ?? item.name
