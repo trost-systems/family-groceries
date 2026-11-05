@@ -160,18 +160,9 @@ class const _StoreName(final Store store) extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: HlSpace.s1,
-                  children: [
-                    StoreBadge(store),
-                    Text(
-                      l10n.storeRenameHint,
-                      style: Theme.of(context).textTheme.bodySmall
-                          ?.copyWith(color: t.textMuted),
-                    ),
-                  ],
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: StoreBadge(store),
                 ),
               ),
               Icon(Icons.edit_outlined, color: t.textMuted),

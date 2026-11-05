@@ -308,8 +308,6 @@
   "@noStoreRowHint": {"description": "Stores screen: under the pinned Ohne Laden row"},
   "storeAdd": "Laden hinzufügen",
   "@storeAdd": {"description": "Stores screen: the add button and its dialog"},
-  "storeRenameHint": "Tippen zum Umbenennen",
-  "@storeRenameHint": {"description": "Store details: under the store name at the top"},
   "deleteCategoryEverywhere": "Sie verschwindet aus allen Läden.",
   "@deleteCategoryEverywhere": {"description": "Delete category dialog: categories belong to the whole household"},
   "storesHint": "Ziehe die Läden in die Reihenfolge, in der sie auf der Liste stehen. Tippe auf einen Laden, um ihn umzubenennen und seine Kategorien zu ordnen.",
