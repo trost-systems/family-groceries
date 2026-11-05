@@ -1,0 +1,57 @@
+diff --git a/app/lib/main.dart b/app/lib/main.dart
+index d2f56212..fe7baa81 100644
+--- a/app/lib/main.dart
++++ b/app/lib/main.dart
+@@ -61,14 +61,23 @@ Future<void> _main(WidgetsBinding Function() binding) async {
+     // Semantics hands a field's input to the app a frame late.
+     EarlyKeys();
+   }
+-  await Supabase.initialize(
+-    url: Environment.supabaseUrl,
+-    publishableKey: Environment.supabasePublishableKey,
+-    // The list and session retry on their own (every 3 s, ops until acked);
+-    // postgrest's GET retries (1 + 2 + 4 s) only hid an offline start.
+-    // `client.from` ignores this option, so reads go through `client.rest`.
+-    postgrestOptions: const PostgrestClientOptions(retryEnabled: false),
+-  );
++  final cache = DeviceCache.onDevice();
++  // Independent reads, so the first frame waits for the slowest, not the sum.
++  final (_, analytics, languageCode, themeName, pendingInvite) = await (
++    Supabase.initialize(
++      url: Environment.supabaseUrl,
++      publishableKey: Environment.supabasePublishableKey,
++      // The list and session retry on their own (every 3 s, ops until acked);
++      // postgrest's GET retries (1 + 2 + 4 s) only hid an offline start.
++      // `client.from` ignores this option, so reads go through `client.rest`.
++      postgrestOptions: const PostgrestClientOptions(retryEnabled: false),
++    ),
++    startAnalytics(cache),
++    cache.language(),
++    cache.theme(),
++    PendingInvite.load(cache),
++  ).wait;
++  _analytics = analytics;
+   final client = Supabase.instance.client;
+   final social = SocialSignIn(
+     client.auth,
+@@ -88,8 +97,6 @@ Future<void> _main(WidgetsBinding Function() binding) async {
+           : null,
+     ),
+   );
+-  final cache = DeviceCache.onDevice();
+-  final analytics = _analytics = await startAnalytics(cache);
+   reportUncaughtErrors(analytics);
+   final account = SupabaseAccountRepository(
+     client,
+@@ -99,9 +106,8 @@ Future<void> _main(WidgetsBinding Function() binding) async {
+         ? appleAuthorizationCode
+         : null,
+   );
+-  final language = AppLanguage.byCode(await cache.language());
+-  final theme = themeModeOf(await cache.theme());
+-  final pendingInvite = await PendingInvite.load(cache);
++  final language = AppLanguage.byCode(languageCode);
++  final theme = themeModeOf(themeName);
+   final siri = switch (siriChannelFor(
+     web: kIsWeb,
+     platform: defaultTargetPlatform,
