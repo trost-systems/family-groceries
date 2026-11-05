@@ -146,12 +146,6 @@ abstract class AppLocalizations {
   /// **'{name} gelöscht'**
   String itemDeleted(String name);
 
-  /// No description provided for @itemReadded.
-  ///
-  /// In de, this message translates to:
-  /// **'{name} steht wieder auf der Liste'**
-  String itemReadded(String name);
-
   /// No description provided for @itemTicked.
   ///
   /// In de, this message translates to:
@@ -1808,18 +1802,6 @@ abstract class AppLocalizations {
   /// **'Interne Installation'**
   String get internalInstall;
 
-  /// Snackbar after a long press on the version marks the install internal
-  ///
-  /// In de, this message translates to:
-  /// **'Diese Installation zählt jetzt als intern.'**
-  String get internalInstallOn;
-
-  /// Snackbar after a long press on the version unmarks the install
-  ///
-  /// In de, this message translates to:
-  /// **'Diese Installation zählt nicht mehr als intern.'**
-  String get internalInstallOff;
-
   /// More, internal installs only: raises a test exception for error tracking
   ///
   /// In de, this message translates to:
@@ -2149,12 +2131,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Einladung {code} widerrufen'**
   String inviteRevokeLabel(String code);
-
-  /// No description provided for @inviteRevoked.
-  ///
-  /// In de, this message translates to:
-  /// **'Einladung widerrufen. Link und Code gelten nicht mehr.'**
-  String get inviteRevoked;
 
   /// No description provided for @retry.
   ///

@@ -93,8 +93,10 @@ void main() {
     expect(analytics.state.internalInstall, isTrue);
     expect(find.text('Interne Installation'), findsOneWidget);
     expect(find.byKey(const ValueKey('more-test-error')), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
     await tester.longPress(version);
     await tester.pumpAndSettle();
     expect(analytics.state.internalInstall, isFalse);
+    expect(find.text('Interne Installation'), findsNothing);
   });
 }

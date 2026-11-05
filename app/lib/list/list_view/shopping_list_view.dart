@@ -313,7 +313,6 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   void _readd(Item item) {
     widget.onInteract?.call();
     _cubit.readd(item.id);
-    _snack(AppLocalizations.of(context).itemReadded(item.name));
   }
 
   Future<void> _edit(Item item) async {

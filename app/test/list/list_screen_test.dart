@@ -344,7 +344,7 @@ void main() {
     expect(itemNamed('Bohnen').status, ItemStatus.active);
     expect(rowOrder(tester), ['Erbsen', 'Bohnen', 'Linsen']);
     expect(find.text('Zuletzt verwendet'), findsNothing, reason: 'none left');
-    expect(find.text('Bohnen steht wieder auf der Liste'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing, reason: 'it is back in place');
   });
 
   testWidgets('the last row of a category takes its divider along as it '

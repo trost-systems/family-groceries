@@ -300,7 +300,6 @@ test('AC8: a member revokes an invite under More; its link and code stop at once
   await openMore(page, 'Partner einladen');
   await expect(inviteCodeLabel(page, code)).toBeVisible();
   await page.getByRole('button', { name: `Einladung ${code} widerrufen` }).click();
-  await expect(snack(page, 'Einladung widerrufen. Link und Code gelten nicht mehr.')).toBeVisible();
   await expect(inviteCodeLabel(page, code), 'gone from the list').toHaveCount(0);
   await expect(inviteCodeLabel(page, kept)).toBeVisible();
 

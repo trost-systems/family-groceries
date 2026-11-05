@@ -64,11 +64,10 @@ class InvitesCubit(
     }
   }
 
-  /// Revokes [invite]: its link and code stop working at once. True once
-  /// the server took it.
-  Future<bool> revoke(Invite invite) async {
+  /// Revokes [invite]: its link and code stop working at once.
+  Future<void> revoke(Invite invite) async {
     if (state.busy) {
-      return false;
+      return;
     }
     emit(InvitesState(invites: state.invites, busy: true));
     try {
@@ -83,12 +82,10 @@ class InvitesCubit(
           ),
         );
       }
-      return true;
     } on HouseholdError catch (e) {
       if (!isClosed) {
         emit(InvitesState(invites: state.invites, problem: e.problem));
       }
-      return false;
     }
   }
 }

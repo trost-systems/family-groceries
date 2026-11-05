@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invites_cubit.dart';
@@ -78,7 +77,9 @@ class const _InvitesView() extends StatelessWidget {
                 origin: InviteContext.settings,
                 onRevoke: state.busy
                     ? null
-                    : () => unawaited(_revoke(context, invite)),
+                    : () => unawaited(
+                        context.read<InvitesCubit>().revoke(invite),
+                      ),
               ),
               const SizedBox(height: 12),
             ],
@@ -95,14 +96,6 @@ class const _InvitesView() extends StatelessWidget {
         page.mounted &&
         page.read<InviteSharer>().canShare) {
       await shareInvite(page, invite.code, InviteContext.settings);
-    }
-  }
-
-  static Future<void> _revoke(BuildContext page, Invite invite) async {
-    final l10n = AppLocalizations.of(page);
-    final messenger = Notices.of(page);
-    if (await page.read<InvitesCubit>().revoke(invite)) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.inviteRevoked)));
     }
   }
 }

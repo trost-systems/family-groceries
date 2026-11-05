@@ -856,10 +856,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(o.invites.revoked, [first.id]);
       expect(find.bySemanticsLabel('Code ${first.code}'), findsNothing);
-      expect(
-        find.text('Einladung widerrufen. Link und Code gelten nicht mehr.'),
-        findsOneWidget,
-      );
+      expect(find.byType(SnackBar), findsNothing, reason: 'its card is gone');
     });
 
     testWidgets('a new invite is shared from the settings', (tester) async {
