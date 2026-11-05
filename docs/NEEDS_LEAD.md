@@ -1676,3 +1676,25 @@ are in `docs/screenshots/86/` and `~/groceries-ops/jobs/86-iap-review-screenshot
 3. #213 is rebased onto main (job 87 is in). Merge it after lead review: `scripts/merge-pr.sh
    --wait 213`. It holds the capture entrypoint, the script, `paywall-shot.yml` (by hand) and the
    Lifetime price fixed in `LifetimeStoreKitTests`.
+
+## Job 104: gap fixes (2026-11-05)
+
+PR "fix: rename dedupe, offline number words, last-member Premium warning". PR only: the lead
+reviews and merges. Two new migrations deploy with the next `supabase-deploy.yml` run.
+
+- **Copy.** Peter's plain-language texts (Addendum 5, Q73) replace `accountDeletePremiumLastMember`
+  (new) and `accountDeletePremiumAck` (existing, also the archive build's tick box) in DE and EN.
+  The card shows in every build, as Legal Review cleared (Addendum 4); the Legal re-check of the
+  new copy is pending. The reused refund link „Erstattung bei Apple oder Google anfragen“ also
+  shows for a gifted or tester unlock, where nobody paid; a gift-specific wording would be a new
+  string.
+- **Typed number words online (Addendum 3: fine, kept).** „Gurken zwei“, „two apples“ and
+  „carrots two“ typed in the add sheet or sent through MCP now get a quantity online too, not
+  only offline (DECISIONS 104.5). Before, the typed rule read only German words up front.
+- **Follow-up, voice code (out of scope here).** The Siri, Alexa and dictation splitters
+  (`voice/parse.ts`, `parse_en.ts`) don't read the new number-word names. Spoken „Drei Glocken
+  Spaghetti“ gives 3 × Glocken Spaghetti, and „Seven Up“ gives 7 × Up. Reading
+  `supabase/tests/number_words.tsv`'s `name` rows there would be a small job.
+- **Rename merges only the same name (Addendum 3, done).** A synonym or a name whose open item
+  has a brand („Butter“ next to „Butter“ Kerrygold) stays a second row and gets add's duplicate
+  hint.

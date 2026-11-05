@@ -281,6 +281,10 @@ class FakeRepository() implements ListRepository {
         touched = _merge(op, mergeId, otherId);
       case UnmergeItems(:final mergeId, :final merged):
         touched = _unmerge(op, mergeId, merged.id);
+      case EditItem(:final changes) when _renamesOntoTwin(op.itemId, changes):
+        // items_rename_duplicate (job 104): another open row has that name.
+        sent.removeLast();
+        throw const RejectedOp('already_on_list', nameTaken: true);
       case AddItem(:final item) when _openTwin(item) != null:
         // put_item: the open item the add already is, unchanged.
         final kept = _openTwin(item)!;
@@ -344,9 +348,17 @@ class FakeRepository() implements ListRepository {
     return {op.itemId: rows[op.itemId], otherId: rows[otherId]};
   }
 
+  bool _renamesOntoTwin(String id, ItemChanges changes) {
+    final current = rows[id];
+    return current != null &&
+        current.status == ItemStatus.active &&
+        _openTwin(changes.apply(current), except: id) != null;
+  }
+
   /// As `items_skip_duplicate`: another open row with the same name, brand
-  /// and details (in any order), for a new open item.
-  Item? _openTwin(Item item) {
+  /// and details (in any order), for a new open item; with [except], for
+  /// that row renamed (`items_rename_duplicate`).
+  Item? _openTwin(Item item, {String? except}) {
     String key(Item i) => [
       foldName(i.name),
       foldName(i.brand ?? ''),
@@ -358,11 +370,17 @@ class FakeRepository() implements ListRepository {
             ..sort())
           .join(','),
     ].join('|');
-    if (rows.containsKey(item.id) || item.status != ItemStatus.active) {
+    if ((except == null && rows.containsKey(item.id)) ||
+        item.status != ItemStatus.active) {
       return null;
     }
     return rows.values
-        .where((r) => r.status == ItemStatus.active && key(r) == key(item))
+        .where(
+          (r) =>
+              r.id != except &&
+              r.status == ItemStatus.active &&
+              key(r) == key(item),
+        )
         .firstOrNull;
   }
 

@@ -1,7 +1,7 @@
 -- Job 15: public.parse_item splits an entry into Bezeichnung, Marke, Eigenschaften and Menge and
 -- picks category and store (docs/design/h-satz-final/SPEC.md, section 3).
 begin;
-select plan(151);
+select plan(155);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -175,6 +175,12 @@ insert into cases (entry, name, brand, properties, quantity, store, category) va
   ('ein halbes Kilo Hack', 'Hack', null, null, '0,5 Kilo', null, 'meat'),
   ('anderthalb Liter Milch', 'Milch', null, null, '1,5 Liter', null, 'chilled'),
   ('eineinhalb Liter Milch', 'Milch', null, null, '1,5 Liter', null, 'chilled'),
+  -- Job 104: English count words, a count word at the end, but no article form there and no
+  -- name that starts with a number word.
+  ('three carrots', 'carrots', null, null, '3', null, 'produce'),
+  ('Gurken zwei', 'Gurken', null, null, '2', null, 'produce'),
+  ('Milch ein', 'Milch ein', null, null, null, null, 'chilled'),
+  ('Drei Glocken Spaghetti', 'Drei Glocken Spaghetti', null, null, null, null, 'pantry'),
   ('Tomaten, Gurke', 'Tomaten, Gurke', null, null, null, null, 'produce'),
   ('Tomaten , Gurke', 'Tomaten, Gurke', null, null, null, null, 'produce'),
   ('Milch und Brot', 'Milch und Brot', null, null, null, null, 'chilled'),

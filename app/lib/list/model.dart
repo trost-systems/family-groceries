@@ -467,6 +467,9 @@ class const ItemChanges({
 
   bool get isEmpty => toColumns().isEmpty;
 
+  /// The name, brand or details change: what tells open items apart.
+  bool get renames => name != null || brand != null || properties != null;
+
   /// Only the changed columns, as the server names them: the PATCH body.
   Map<String, Object?> toColumns() => {
     'name': ?name,
@@ -557,6 +560,7 @@ sealed class const ItemOp(final String itemId) {
       'edit' => EditItem(
         id,
         ItemChanges.fromColumns(json['changes']! as Map<String, Object?>),
+        keyBefore: json['key_before'] as String?,
       ),
       'move' => MoveItem(
         id,
@@ -616,7 +620,11 @@ sealed class const ItemOp(final String itemId) {
         at,
         storeId: storeId,
       ),
-      EditItem(:final changes) => EditItem(kept, changes),
+      EditItem(:final changes, :final keyBefore) => EditItem(
+        kept,
+        changes,
+        keyBefore: keyBefore,
+      ),
       MoveItem(:final categoryId, :final storeId) => MoveItem(
         kept,
         categoryId: categoryId,
@@ -685,9 +693,10 @@ sealed class const ItemOp(final String itemId) {
         'at': at.toIso8601String(),
         'store_id': storeId,
       },
-      EditItem(:final changes) => {
+      EditItem(:final changes, :final keyBefore) => {
         'op': 'edit',
         'changes': changes.toColumns(),
+        'key_before': ?keyBefore,
       },
       MoveItem(:final categoryId, :final storeId) => {
         'op': 'move',
@@ -768,8 +777,16 @@ final class const SetStatus(
 
 /// Writes only the [changes]; the server puts an item whose store or
 /// category changed at the end of its new group.
-final class const EditItem(super.itemId, final ItemChanges changes)
-    extends ItemOp {
+final class const EditItem(
+  super.itemId,
+  final ItemChanges changes, {
+
+  /// The item's `canonical_key` when a rename was made: its acknowledgement
+  /// offers a merge with a synonym only when the server keyed the item anew,
+  /// also when the new key arrived first (realtime, a resync, a restart).
+  /// Null when the server had not keyed it yet (an add still queued).
+  final String? keyBefore,
+}) extends ItemOp {
   @override
   Item? apply(Item? current) => current == null ? null : changes.apply(current);
 }

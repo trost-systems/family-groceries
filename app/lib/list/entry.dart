@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:family_groceries/list/lexicon_forms.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/number_words.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -17,16 +18,42 @@ class const Entry(final String name, final String? quantity) {
   String toString() => 'Entry($name, $quantity)';
 }
 
-// Keep in sync with public.parse_entry (supabase/tests/classifier.test.sql).
-const _units =
-    'x|kg|g|gr|l|ml|stk|stück|pck|packung|packungen|dose|dosen|flasche|'
-    'flaschen|bund|becher|glas|gläser|tüte|tüten|beutel|netz|kiste|kisten|'
-    'kasten|kästen|pfund|liter|kilo|gramm|rolle|rollen|tafel|tafeln|stange|'
-    'stangen';
+final _units = units.join('|');
+
+final _words = numberWords.keys.join('|');
+
+// Halves up front, as public.parse_item rewrites them: "ein halbes Brot" is
+// 1/2 Brot, "ein halbes Kilo Hack" 0,5 Kilo Hack, "anderthalb Liter" 1,5.
+final _halves = [
+  (
+    RegExp(
+      r'^(?:(?:ein|eine|einen)\s+)?(?:halbe[snmr]?|halb)\s+'
+      '(?=($_units)'
+      r'(?![\p{L}\d_]))',
+      caseSensitive: false,
+      unicode: true,
+    ),
+    '0,5 ',
+  ),
+  (
+    RegExp(
+      r'^(?:(?:ein|eine|einen)\s+)?(?:halbe[snmr]?|halb)\s+',
+      caseSensitive: false,
+    ),
+    '1/2 ',
+  ),
+  (RegExp(r'^(?:anderthalb|eineinhalb)\s+', caseSensitive: false), '1,5 '),
+];
 
 final _leading = RegExp(
-  '^(\\d+(?:[.,]\\d+)?)(?:\\s*($_units)\\.?)?\\s+(.+)\$',
+  '^(?:(\\d+(?:[.,/]\\d+)?)(?:\\s*($_units)\\.?)?'
+  '|($_words)(?:\\s+($_units)\\.?)?)\\s+(.+)\$',
   caseSensitive: false,
+);
+final _numberName = RegExp(
+  '^(?:${numberNames.join('|')})(?![\\p{L}\\d])',
+  caseSensitive: false,
+  unicode: true,
 );
 final _trailing = RegExp(
   // A unit is required at the end: "Windeln Größe 4" is a name, not 4 Windeln.
@@ -36,30 +63,43 @@ final _trailing = RegExp(
 
 // "Karotten x2" and "Karotten ×2": a count at the end, like "Karotten 2x".
 final _trailingCount = RegExp(r'^(.+?)\s+[x×](\d+)$', caseSensitive: false);
-final _trailingBare = RegExp(r'^(.+)\s([1-9]\d?)$');
+final _endWords = numberWords.keys.where(
+  (w) => !articleNumberWords.contains(w),
+);
+final _trailingBare = RegExp(
+  r'^(.+)\s([1-9]\d?|'
+  '${_endWords.join('|')})\$',
+  caseSensitive: false,
+);
 
 // Words after which a number is a size or a model, not a count ("Windeln
 // Größe 4"). With [_units], the words public.parse_item checks
 // (public.item_units and its size words).
 const _sizeWords = {
   'größe', 'grösse', 'groesse', 'gr', 'stufe', 'nr', 'no', 'size', 'typ', //
-  'type', 'klasse', 'pack', 'pcs', 'mah', 'cl', '%', 'st', 'pkg', 'packs', //
-  'päckchen', 'paket', 'pakete', 'büchse', 'büchsen', 'tube', 'tuben', //
-  'sack', 'säcke', 'netze', 'karton', 'kartons', 'schale', 'schalen', //
-  'scheibe', 'scheiben', 'riegel', 'paar', 'dutzend', 'laib', 'laibe', //
-  'kopf', 'köpfe', //
+  'type', 'klasse', 'pack', 'pcs', 'mah', 'cl', '%', //
 };
 
-/// Splits a typed line like "2 Gurken" or "Hack 500 g" into name and quantity.
-/// A bare number at the end is the quantity only when it is 1 to 20, does
-/// not follow a size or unit word, and the rest is a word the dictionary
-/// knows or a name in [history] ("Karotten 2", not "Windeln Größe 4");
-/// `supabase/tests/quantity_parse.tsv` is the table both sides pass. The
-/// full German sentence splitter is a server concern (voice endpoint).
+/// Splits a typed line like "2 Gurken", "zwei Liter Milch" or "Hack 500 g"
+/// into name and quantity, as public.parse_item does online. Up front, an
+/// amount or a number word of [numberWords] (German or English), optionally
+/// with a unit, is the quantity, unless the line starts with one of
+/// [numberNames] ("Drei Glocken Spaghetti"). A bare count at the end, digits
+/// 1 to 20 or a number word but no article form ("Gurken zwei", not "Trag
+/// Milch ein"), is the quantity only when it does not follow a size or unit
+/// word and the rest is a word the dictionary knows or a name in [history]
+/// ("Karotten 2", not "Windeln Größe 4"); `supabase/tests/quantity_parse.tsv`
+/// is the table both sides pass. The full German sentence splitter is a
+/// server concern (voice endpoint).
 Entry parseEntry(String input, {Iterable<String> history = const []}) {
-  final text = input.trim().replaceAll(RegExp(r'\s+'), ' ');
-  if (_leading.firstMatch(text) case final m?) {
-    return Entry(m[3]!, _quantity(m[1]!, m[2]));
+  final text = _halves.fold(
+    input.trim().replaceAll(RegExp(r'\s+'), ' '),
+    (text, half) => text.replaceFirst(half.$1, half.$2),
+  );
+  if (_leading.firstMatch(text) case final m?
+      when m[3] == null || !_numberName.hasMatch(text)) {
+    final amount = m[1] ?? '${numberWords[m[3]!.toLowerCase()]}';
+    return Entry(m[5]!, _quantity(amount, m[2] ?? m[4]));
   }
   if (_trailing.firstMatch(text) case final m?) {
     return Entry(m[1]!, _quantity(m[2]!, m[3]));
@@ -68,13 +108,16 @@ Entry parseEntry(String input, {Iterable<String> history = const []}) {
     return Entry(m[1]!, m[2]);
   }
   if (_trailingBare.firstMatch(text) case final m?
-      when int.parse(m[2]!) <= 20 &&
+      when _count(m[2]!) <= 20 &&
           _countMayFollow(m[1]!.split(' ').last) &&
           _known(m[1]!, history)) {
-    return Entry(m[1]!, m[2]);
+    return Entry(m[1]!, '${_count(m[2]!)}');
   }
   return Entry(text, null);
 }
+
+int _count(String count) =>
+    int.tryParse(count) ?? numberWords[count.toLowerCase()]!;
 
 bool _countMayFollow(String word) {
   final w = word.toLowerCase().replaceFirst(RegExp(r'\.$'), '');

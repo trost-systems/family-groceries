@@ -686,6 +686,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String accountDeletePremiumLastMember(String household) {
+    return '„$household“ hat Hummlist Premium. Das gehört zum Haushalt. Löschst du dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. Warte, bis die Person beigetreten ist. Lösch dann dein Konto.';
+  }
+
+  @override
   String accountDeleteArchived(int count, String names) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -717,7 +722,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountDeletePremiumAck =>
-      'Ich habe verstanden: Hummlist Premium endet und wird nicht automatisch erstattet.';
+      'Ich weiß: Premium endet. Ich bekomme mein Geld nicht von selbst zurück.';
 
   @override
   String get accountDeleteConfirmLabel => 'Zum Bestätigen LÖSCHEN eingeben';
