@@ -55,6 +55,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
   usePathUrlStrategy();
   binding();
   registerFontLicenses();
+  final fonts = loadAppFonts();
   if (kIsWeb) {
     // Exposes the widget tree to the DOM for screen readers and Playwright.
     SemanticsBinding.instance.ensureSemantics();
@@ -136,6 +137,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       analytics.testerHousehold = unlocks.tester ? householdId : null;
     }
   });
+  await fonts;
   runApp(
     App(
       language: language,
