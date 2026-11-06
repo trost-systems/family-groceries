@@ -78,6 +78,29 @@ test('the token never reaches the output, even when the server echoes it in an e
   assert.ok(!out.includes(token.slice(4, 20)), out);
 });
 
+test('MCP_SMOKE_PAGE=1: the German and the English page pass next to the MCP checks', async () => {
+  const { code, out } = await smoke([], { MCP_SMOKE_PAGE: '1' });
+  assert.equal(code, 0, out);
+  assert.match(out, /^PASS browser page \(de-DE,de;q=0\.9,en;q=0\.8\): 200 text\/html, lang de, noindex$/m);
+  assert.match(out, /^PASS browser page \(en-US,en;q=0\.9,de;q=0\.8\): 200 text\/html, lang en, noindex$/m);
+  assert.match(out, /^PASS initialize: 200/m);
+});
+
+test('MCP_SMOKE_PAGE=1: no page for browsers fails both, a page in one language fails German', async () => {
+  const none = await smoke(['no-page'], { MCP_SMOKE_PAGE: '1' });
+  assert.equal(none.code, 1, none.out);
+  assert.equal(failLines(none.out).filter((l) => l.startsWith('FAIL browser page')).length, 2, none.out);
+  const english = await smoke(['page-language'], { MCP_SMOKE_PAGE: '1' });
+  assert.equal(english.code, 1, english.out);
+  assert.deepEqual(failLines(english.out).map((l) => l.slice(0, 32)), ['FAIL browser page (de-DE,de;q=0.']);
+});
+
+test('without MCP_SMOKE_PAGE the page is not checked', async () => {
+  const { code, out } = await smoke(['no-page']);
+  assert.equal(code, 0, out);
+  assert.doesNotMatch(out, /browser page/);
+});
+
 test('an unknown MCP_PROTOCOL_VERSION is a usage error', async () => {
   const { code, out } = await smoke([], { MCP_PROTOCOL_VERSION: '2024-11-05' });
   assert.equal(code, 2, out);

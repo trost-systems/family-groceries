@@ -41,6 +41,13 @@ export async function startFake(breaks = new Set()) {
     if (path === '/functions/v1/mcp/.well-known/openid-configuration') {
       return breaks.has('no-hintless') ? json(404, { error: 'not found' }) : json(200, asMetadata);
     }
+    const browser = req.method === 'GET' && /text\/html/.test(req.headers.accept ?? '') &&
+      req.headers['content-type'] === undefined && req.headers.authorization === undefined;
+    if (path === '/functions/v1/mcp' && browser && !breaks.has('no-page')) {
+      const lang = /^de/.test(req.headers['accept-language'] ?? '') && !breaks.has('page-language') ? 'de' : 'en';
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      return res.end(`<!doctype html><html lang="${lang}"><meta name="robots" content="noindex, nofollow">`);
+    }
     if (path !== '/functions/v1/mcp' || req.method !== 'POST') return json(404, { error: 'not found' });
 
     const metadata = breaks.has('metadata-host')

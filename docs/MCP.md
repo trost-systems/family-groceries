@@ -24,7 +24,8 @@ function URL `<project>/functions/v1/mcp` in builds for any other project
 `https://mcp.hummlist.com` is the public MCP URL. The Vercel project
 `hummlist-mcp` serves it from [`mcp-proxy/`](../mcp-proxy/README.md): a
 `vercel.json` that rewrites every request to the edge function, with no
-code, build or secrets. The Lead created that project
+build or secrets. A person who opens the URL in a browser gets a static
+page instead, in German or English, that says what the address is for. The Lead created that project
 ([`NEEDS_LEAD.md`](NEEDS_LEAD.md#mcphummlistcom)).
 
 Both URLs reach the same function and stay valid. A client keeps the URL it

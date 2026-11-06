@@ -1,0 +1,937 @@
+/* The page a browser gets at mcp.hummlist.com. Colours, type, space and motion are copied from
+   site/public/tokens.css (generated from design/tokens; copy new values from there, never by eye).
+   The hex controls follow site/public/styles.css. */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/static/fonts/bricolage-grotesque-latin-standard-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/static/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+  --hl-color-brand: #1b3fae;
+  --hl-color-honey: #ffe24a;
+  --hl-color-on-honey: #0f1530;
+  --hl-color-honey-soft: #fff2a8;
+  --hl-color-accent: #1b3fae;
+  --hl-color-surface: #f7f7f2;
+  --hl-color-surface-raised: #ffffff;
+  --hl-color-text: #0f1530;
+  --hl-color-text-muted: #4b536c;
+  --hl-color-border: #0f1530;
+  --hl-color-divider: #d3d8e6;
+  --hl-color-ink: #0f1530;
+  --hl-color-edge: #0f1530;
+  --hl-color-honey-edge: #d4b20f;
+  --hl-color-mint: #7fe3b8;
+  --hl-color-on-mint: #0f1530;
+  --hl-color-mint-soft: #d6f5e7;
+  --hl-color-mint-edge: #3fbf8a;
+  --hl-color-cobalt: #1b3fae;
+  --hl-color-on-cobalt: #ffffff;
+  --hl-color-tomato: #ff5b3a;
+  --hl-color-on-tomato: #0f1530;
+  --hl-font-family-display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --hl-font-family-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --hl-font-weight-medium: 500;
+  --hl-font-weight-bold: 650;
+  --hl-font-weight-heavy: 800;
+  --hl-type-headline-l-line: 0.98;
+  --hl-type-headline-l-tracking: -0.04em;
+  --hl-type-body-l-size: 1.1875rem;
+  --hl-type-body-size: 1.0625rem;
+  --hl-type-body-line: 1.55;
+  --hl-type-label-size: 0.9375rem;
+  --hl-type-label-line: 1.2;
+  --hl-type-caption-size: 0.75rem;
+  --hl-type-caption-tracking: 0.09em;
+  --hl-space-1: 4px;
+  --hl-space-2: 8px;
+  --hl-space-3: 12px;
+  --hl-space-4: 16px;
+  --hl-space-5: 24px;
+  --hl-space-6: 32px;
+  --hl-space-7: 48px;
+  --hl-radius-s: 12px;
+  --hl-radius-m: 18px;
+  --hl-radius-l: 28px;
+  --hl-radius-xl: 40px;
+  --hl-border-width: 2px;
+  --hl-border-width-thin: 1px;
+  --hl-shadow-sticker-s: 0px 2px 0px 0px #0f1530;
+  --hl-shadow-sticker-l: 0px 8px 0px 0px #0f1530;
+  --hl-shadow-night-s: 0px 2px 0px 0px #03050f, 0px 0px 12px 0px #9fb6ff1f;
+  --hl-shadow-night-l: 0px 8px 0px 0px #03050f, 0px 0px 48px 0px #9fb6ff2e;
+  --hl-motion-duration-press: 70ms;
+  --hl-motion-duration-release: 160ms;
+  --hl-motion-easing-press: cubic-bezier(0.3, 0, 0.6, 1);
+  --hl-shape-hex-tip: 0.2887;
+  --hl-shape-hex-corner-radius: 8px;
+  --hl-depth-edge: 4px;
+  --hl-depth-lift: 2px;
+  --hl-focus-ring-width: 3px;
+  --hl-focus-ring-gap: 2px;
+  --hl-size-target: 48px;
+
+  --gutter: var(--hl-space-4);
+  --sticker-s: var(--hl-shadow-sticker-s);
+  --sticker-l: var(--hl-shadow-sticker-l);
+  --hex-img: url("/static/hex/hex-cap-l.svg"), url("/static/hex/hex-cap-r.svg"), linear-gradient(#000 0 0);
+  --sweep-img: url("/static/hex/hex-cap-l.svg"), url("/static/hex/hex-cap-r.svg"), url("/static/hex/hex-cap-l.svg"), url("/static/hex/hex-cap-r.svg"), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  --pointy-img: url("/static/hex/hex-pointy.svg");
+  --ring: var(--hl-color-accent);
+  --ring-gap: var(--hl-color-surface);
+  --card-line: var(--hl-color-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hl-color-brand: #9fb6ff;
+    --hl-color-on-honey: #0b1024;
+    --hl-color-honey-soft: #35310f;
+    --hl-color-accent: #9fb6ff;
+    --hl-color-surface: #0b1024;
+    --hl-color-surface-raised: #151c3a;
+    --hl-color-text: #eff3ff;
+    --hl-color-text-muted: #b0b9d8;
+    --hl-color-border: #7f8cc4;
+    --hl-color-divider: #2f3a66;
+    --hl-color-ink: #03050f;
+    --hl-color-edge: #03050f;
+    --hl-color-honey-edge: #b39b1a;
+    --hl-color-mint: #62c99d;
+    --hl-color-on-mint: #0b1024;
+    --hl-color-mint-soft: #123a31;
+    --hl-color-mint-edge: #3a9e78;
+    --hl-color-cobalt: #2448c0;
+    --hl-color-tomato: #f0603f;
+    --hl-color-on-tomato: #0b1024;
+    --sticker-s: var(--hl-shadow-night-s);
+    --sticker-l: var(--hl-shadow-night-l);
+    --card-line: var(--hl-color-border);
+  }
+}
+
+@media (min-width: 720px) {
+  :root {
+    --gutter: var(--hl-space-6);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--hl-color-surface);
+  color: var(--hl-color-text);
+  font-family: var(--hl-font-family-sans);
+  font-size: var(--hl-type-body-size);
+  line-height: var(--hl-type-body-line);
+  letter-spacing: -0.006em;
+  overflow-wrap: break-word;
+}
+
+p,
+h1,
+ul {
+  margin: 0;
+}
+
+a {
+  color: var(--hl-color-accent);
+  font-weight: var(--hl-font-weight-bold);
+  text-decoration-thickness: var(--hl-border-width);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: var(--hl-focus-ring-width) solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.wrap {
+  width: min(100% - 2 * var(--gutter), 1160px);
+  margin-inline: auto;
+}
+
+/* Header: the app icon and name, the other language. */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hl-space-4);
+  padding-block: var(--hl-space-3);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hl-space-2);
+  min-height: var(--hl-size-target);
+  color: var(--hl-color-text);
+  font-family: var(--hl-font-family-display);
+  font-size: 1.5rem;
+  font-weight: var(--hl-font-weight-heavy);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.brand img {
+  display: block;
+  width: 40px;
+  height: 40px;
+}
+
+.lang {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hl-size-target);
+  margin-inline-end: calc(-1 * var(--hl-space-3));
+  padding-inline: var(--hl-space-3);
+  border-radius: var(--hl-radius-s);
+  color: var(--hl-color-text);
+  font-size: var(--hl-type-label-size);
+  text-decoration: none;
+}
+
+.lang:hover {
+  text-decoration: underline;
+}
+
+main {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+}
+
+/* The cobalt block: copy, then the scene running off its bottom edge. */
+.block {
+  --ring: var(--hl-color-honey);
+  --ring-gap: var(--hl-color-cobalt);
+  display: grid;
+  flex: 1 0 auto;
+  overflow: hidden;
+  padding: var(--hl-space-6) var(--hl-space-5) 0;
+  border-radius: var(--hl-radius-l);
+  background: var(--hl-color-cobalt);
+  color: var(--hl-color-on-cobalt);
+}
+
+.copy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  padding-bottom: var(--hl-space-6);
+}
+
+.block a:not(.hex) {
+  color: var(--hl-color-on-cobalt);
+}
+
+/* Static hexagon: the badge. */
+.badge {
+  --h: 32px;
+  --b: var(--hl-border-width);
+  --line: var(--hl-color-ink);
+  --face: #ffffff;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  height: var(--h);
+  padding-inline: calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-2));
+  filter: drop-shadow(0 2px 0 var(--hl-color-edge));
+  color: #0f1530;
+  font-size: var(--hl-type-label-size);
+  font-weight: var(--hl-font-weight-bold);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badge::before,
+.badge::after {
+  --cw: calc(var(--mh) / 2);
+  content: "";
+  position: absolute;
+  z-index: -1;
+  mask-image: var(--hex-img);
+  mask-size: var(--cw) 100%, var(--cw) 100%, calc(100% - 2 * var(--cw) + 2px) 100%;
+  mask-position: left center, right center, center;
+  mask-repeat: no-repeat;
+}
+
+.badge::before {
+  --mh: var(--h);
+  inset: 0;
+  background: var(--line);
+}
+
+.badge::after {
+  --mh: calc(var(--h) - 2 * var(--b));
+  inset: var(--b) calc(var(--b) * 1.1547);
+  background: var(--face);
+}
+
+h1 {
+  max-width: 13em;
+  margin-top: var(--hl-space-4);
+  font-family: var(--hl-font-family-display);
+  font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.5rem);
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: var(--hl-type-headline-l-line);
+  letter-spacing: var(--hl-type-headline-l-tracking);
+  text-wrap: balance;
+}
+
+.note {
+  max-width: 34em;
+  margin-top: var(--hl-space-5);
+  text-wrap: pretty;
+}
+
+.address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--hl-space-3);
+  margin-top: var(--hl-space-5);
+}
+
+.field {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hl-size-target);
+  padding-inline: var(--hl-space-4);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-s);
+  background: var(--hl-color-surface-raised);
+  color: var(--hl-color-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 1rem;
+  user-select: all;
+  white-space: nowrap;
+}
+
+.status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.guides {
+  margin-top: var(--hl-space-3);
+}
+
+.copy > .hex {
+  margin-top: var(--hl-space-6);
+}
+
+/* Tactile hex control: a face on a side wall that ends in a solid edge. Hover lifts the face,
+   press sinks it. Lemon face with the navy contour, as the contrast rules require. */
+@property --y {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.hex {
+  --h: 48px;
+  --d: var(--hl-depth-edge);
+  --b: var(--hl-border-width);
+  --face: var(--hl-color-honey);
+  --on-face: var(--hl-color-on-honey);
+  --line: var(--hl-color-ink);
+  --wall: var(--hl-color-honey-edge);
+  --edge: var(--hl-color-edge);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex-direction: column;
+  min-width: var(--hl-size-target);
+  margin: 0;
+  padding: 0 0 var(--d);
+  border: 0;
+  background: none;
+  color: var(--on-face);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: --y var(--hl-motion-duration-release) var(--hl-motion-easing-press);
+}
+
+.hex[hidden] {
+  display: none;
+}
+
+.hex::before,
+.hex::after,
+.hex .face::before,
+.hex .face::after {
+  --cw: calc(var(--mh) / 2);
+  content: "";
+  position: absolute;
+  z-index: -1;
+  mask-repeat: no-repeat;
+}
+
+.hex::before,
+.hex::after {
+  --e: calc(var(--hl-shape-hex-corner-radius) * 0.1547);
+  mask-image: var(--sweep-img);
+  mask-size:
+    var(--cw) var(--mh), var(--cw) var(--mh), var(--cw) var(--mh), var(--cw) var(--mh),
+    calc(100% - 2 * var(--cw) + 2px) 100%,
+    calc(100% - 2 * var(--e)) calc(100% - var(--mh));
+  mask-position: left top, right top, left bottom, right bottom, center, center;
+}
+
+.hex::before {
+  --mh: var(--h);
+  inset: var(--y) 0 0;
+  background: var(--edge);
+}
+
+.hex::after {
+  --mh: calc(var(--h) - 2 * var(--b));
+  inset: calc(var(--y) + var(--b)) calc(var(--b) * 1.1547) var(--b);
+  background: var(--wall);
+}
+
+.hex .face::before,
+.hex .face::after {
+  mask-image: var(--hex-img);
+  mask-size: var(--cw) 100%, var(--cw) 100%, calc(100% - 2 * var(--cw) + 2px) 100%;
+  mask-position: left center, right center, center;
+}
+
+.hex .face::before {
+  --mh: var(--h);
+  inset: 0;
+  background: var(--line);
+}
+
+.hex .face::after {
+  --mh: calc(var(--h) - 2 * var(--b));
+  inset: var(--b) calc(var(--b) * 1.1547);
+  background: var(--face);
+}
+
+.hex .face {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--h);
+  padding-inline: calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-3));
+  transform: translateY(var(--y));
+  font-size: var(--hl-type-label-size);
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: var(--hl-type-label-line);
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .hex:hover {
+    --y: calc(-1 * var(--hl-depth-lift));
+  }
+}
+
+.hex:active {
+  --y: var(--d);
+  transition-duration: var(--hl-motion-duration-press);
+}
+
+/* Focus: a hexagonal ring from stacked drop shadows, a gap in the ground's colour, then the ring. */
+.hex:focus-visible {
+  --g: var(--hl-focus-ring-gap);
+  --w: var(--hl-focus-ring-width);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  filter:
+    drop-shadow(var(--g) 0 0 var(--ring-gap)) drop-shadow(calc(-1 * var(--g)) 0 0 var(--ring-gap))
+    drop-shadow(0 var(--g) 0 var(--ring-gap)) drop-shadow(0 calc(-1 * var(--g)) 0 var(--ring-gap))
+    drop-shadow(var(--w) 0 0 var(--ring)) drop-shadow(calc(-1 * var(--w)) 0 0 var(--ring))
+    drop-shadow(0 var(--w) 0 var(--ring)) drop-shadow(0 calc(-1 * var(--w)) 0 var(--ring));
+}
+
+/* The copy button: white until pressed, both labels in one footprint. */
+.hex--white {
+  --face: #ffffff;
+  --on-face: #0f1530;
+  --line: #0f1530;
+  --wall: #c3cae0;
+}
+
+.copy-button .face {
+  padding-inline: calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-2));
+}
+
+.copy-button .label {
+  position: relative;
+}
+
+.copy-button .label::after {
+  content: attr(data-copied);
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+}
+
+.copy-button.is-copied .label {
+  color: transparent;
+}
+
+.copy-button.is-copied .label::after {
+  visibility: visible;
+  color: var(--on-face);
+}
+
+.copy-button .label::after {
+  text-align: center;
+}
+
+/* Footer */
+.foot {
+  padding-block: var(--hl-space-2) var(--hl-space-3);
+}
+
+.foot ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--hl-space-2);
+  margin-inline: calc(-1 * var(--hl-space-2));
+  padding: 0;
+  list-style: none;
+}
+
+.foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--hl-space-2);
+  color: var(--hl-color-text-muted);
+  font-size: 0.875rem;
+  font-weight: var(--hl-font-weight-medium);
+  text-decoration-thickness: 1px;
+}
+
+/* The scene: a request in the user's bubble, the new row arriving on the household's list. The
+   card has a fixed height, so the new row carries the rows below it and the card holds still. */
+.scene {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--hl-space-4);
+  margin-inline: calc(-1 * var(--hl-space-1));
+}
+
+.bubble {
+  max-width: 300px;
+  padding: var(--hl-space-3) var(--hl-space-4);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-m) var(--hl-radius-m) var(--hl-space-1) var(--hl-radius-m);
+  background: var(--hl-color-ink);
+  box-shadow: var(--sticker-s);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: var(--hl-font-weight-bold);
+  line-height: 1.4;
+}
+
+.card {
+  --row-h: 52px;
+  --rows: 5;
+  flex: none;
+  width: 100%;
+  height: calc(var(--rows) * var(--row-h) + var(--hl-border-width));
+  margin-bottom: calc(-0.5 * var(--row-h));
+  overflow: hidden;
+  border: var(--hl-border-width) solid var(--card-line);
+  border-radius: var(--hl-radius-l) var(--hl-radius-l) 0 0;
+  background: var(--hl-color-surface-raised);
+  box-shadow: var(--sticker-l);
+  color: var(--hl-color-text);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--row-h);
+  padding-inline: var(--hl-space-4);
+  border-bottom: var(--hl-border-width-thin) solid var(--hl-color-divider);
+}
+
+.household {
+  color: var(--hl-color-brand);
+  font-size: 0.8125rem;
+  font-weight: var(--hl-font-weight-heavy);
+  letter-spacing: var(--hl-type-caption-tracking);
+  text-transform: uppercase;
+}
+
+.avs {
+  display: flex;
+}
+
+.av {
+  --s: 30px;
+  display: grid;
+  place-items: center;
+  width: calc(var(--s) * 0.866);
+  height: var(--s);
+  background: var(--hl-color-ink);
+  mask: var(--pointy-img) center / 100% 100% no-repeat;
+  position: relative;
+  isolation: isolate;
+  font-family: var(--hl-font-family-display);
+  font-size: 0.8125rem;
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: 1;
+}
+
+.av::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--hl-border-width) * 1.1547) var(--hl-border-width);
+  background: var(--face);
+  mask: var(--pointy-img) center / 100% 100% no-repeat;
+}
+
+.av + .av {
+  margin-left: -3px;
+}
+
+.av--p {
+  --face: var(--hl-color-tomato);
+  color: var(--hl-color-on-tomato);
+}
+
+.av--l {
+  --face: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+}
+
+.card ul {
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  --row: var(--hl-color-surface-raised);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--hl-space-3);
+  height: var(--row-h);
+  overflow: hidden;
+  padding-inline: var(--hl-space-4);
+  border-bottom: var(--hl-border-width-thin) solid var(--hl-color-divider);
+  background: var(--row);
+}
+
+.row--new {
+  --row: var(--hl-color-honey-soft);
+}
+
+.emo {
+  font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+}
+
+.name {
+  font-family: var(--hl-font-family-display);
+  font-size: 1.0625rem;
+  font-weight: var(--hl-font-weight-bold);
+  letter-spacing: -0.01em;
+  text-decoration: line-through 2px transparent;
+  white-space: nowrap;
+}
+
+/* The outlined hex tick: navy outline, the row's colour inside; ticked it fills mint. */
+.tick {
+  --s: 26px;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: calc(var(--s) * 0.866);
+  height: var(--s);
+  background: var(--card-line);
+  color: var(--hl-color-on-mint);
+  mask: var(--pointy-img) center / 100% 100% no-repeat;
+}
+
+.tick::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--hl-border-width) * 1.1547) var(--hl-border-width);
+  background: var(--row);
+  mask: var(--pointy-img) center / 100% 100% no-repeat;
+}
+
+.tick svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  opacity: 0;
+}
+
+/* Filler rows: the rest of the list, quiet, where the block cuts the card. */
+.dot {
+  justify-self: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--hl-color-divider);
+}
+
+.bar {
+  width: 55%;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--hl-color-divider);
+}
+
+.bar--short {
+  width: 38%;
+}
+
+.row--filler .tick {
+  background: var(--hl-color-divider);
+}
+
+/* From 720 px: roomier block. */
+@media (min-width: 720px) {
+  .block {
+    padding: var(--hl-space-7) var(--hl-space-7) 0;
+    border-radius: var(--hl-radius-xl);
+  }
+
+  .copy {
+    padding-bottom: var(--hl-space-7);
+  }
+
+  .scene {
+    width: min(100%, 440px);
+    margin-inline: auto;
+  }
+}
+
+/* From 1000 px: copy and scene side by side; the scene takes the row's height, not its own. */
+@media (min-width: 1000px) {
+  .block {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--hl-space-7);
+  }
+
+  /* A see-through hex cluster fills the empty corner above the scene, as on hummlist.com. */
+  .block {
+    background: url("/static/hex/block-hex.svg") right 48px top -60px / 240px auto no-repeat, var(--hl-color-cobalt);
+  }
+
+  .scene {
+    contain: size;
+    width: auto;
+    margin-inline: 0;
+    padding-top: var(--hl-space-7);
+  }
+
+  .card {
+    --row-h: 54px;
+    --rows: 6;
+  }
+
+  .bubble {
+    font-size: 1rem;
+  }
+
+  .name {
+    font-size: 1.1875rem;
+  }
+
+  .emo {
+    font-size: 22px;
+  }
+}
+
+@media (min-width: 1000px) and (prefers-color-scheme: dark) {
+  .block {
+    background-image: url("/static/hex/block-hex-dark.svg");
+  }
+}
+
+/* Motion: a 10 s loop. The base styles above are the poster (the new row in place), which is all
+   reduced motion shows. Beats: bubble 0.2 s, row opens 1.3 s, ticked 5.4 s, row and bubble
+   leave from 6.1 s. */
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    animation: bubble 10s infinite;
+  }
+
+  .row--new {
+    animation: row-height 10s infinite, row-colour 10s infinite;
+  }
+
+  .row--new > * {
+    animation: row-content 10s infinite;
+  }
+
+  .row--new .name {
+    animation: row-content 10s infinite, strike 10s infinite;
+  }
+
+  .row--new .tick {
+    animation: row-content 10s infinite, tick-line 10s infinite;
+  }
+
+  .row--new .tick::before {
+    animation: tick-face 10s infinite;
+  }
+
+  .row--new .tick svg {
+    animation: check 10s infinite;
+  }
+}
+
+@keyframes bubble {
+  0%, 2% {
+    opacity: 0;
+    transform: translateY(-12px);
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  5.6%, 64% {
+    opacity: 1;
+    transform: none;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  67.6%, 100% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes row-height {
+  0%, 13% {
+    height: 0;
+    border-bottom-width: 0;
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  21%, 64% {
+    height: var(--row-h);
+    border-bottom-width: 1px;
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  71%, 100% {
+    height: 0;
+    border-bottom-width: 0;
+  }
+}
+
+@keyframes row-content {
+  0%, 15% {
+    opacity: 0;
+  }
+
+  19%, 62% {
+    opacity: 1;
+  }
+
+  64%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes row-colour {
+  0%, 54% {
+    background-color: var(--hl-color-honey-soft);
+  }
+
+  56%, 100% {
+    background-color: var(--hl-color-mint-soft);
+  }
+}
+
+@keyframes strike {
+  0%, 54% {
+    text-decoration-color: transparent;
+  }
+
+  56%, 100% {
+    text-decoration-color: currentColor;
+  }
+}
+
+@keyframes tick-line {
+  0%, 54% {
+    background-color: var(--card-line);
+  }
+
+  56%, 100% {
+    background-color: var(--hl-color-mint-edge);
+  }
+}
+
+@keyframes tick-face {
+  0%, 54% {
+    background-color: var(--hl-color-honey-soft);
+  }
+
+  56%, 100% {
+    background-color: var(--hl-color-mint);
+  }
+}
+
+@keyframes check {
+  0%, 54% {
+    opacity: 0;
+    transform: scale(0.4);
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  57.6%, 100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nowrap {
+  white-space: nowrap;
+}

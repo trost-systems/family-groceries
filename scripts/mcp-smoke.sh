@@ -4,8 +4,10 @@
 # tools/list. Works on the function URL and on the mcp.hummlist.com proxy (docs/MCP.md).
 # Discovery needs no credentials. MCP_SMOKE_TOKEN (a personal access token or OAuth access token)
 # enables the handshake and tools/list checks; without it they report SKIP. The token is never
-# printed. MCP_PROTOCOL_VERSION picks the protocol revision (default 2025-11-25).
-# Usage: [MCP_SMOKE_TOKEN=…] [MCP_PROTOCOL_VERSION=…] scripts/mcp-smoke.sh <mcp endpoint URL>
+# printed. MCP_PROTOCOL_VERSION picks the protocol revision (default 2025-11-25). MCP_SMOKE_PAGE=1
+# also checks the page a browser gets in German and English, which only mcp.hummlist.com serves
+# (mcp-proxy/public); opt-in, so the probe of production stays true before that page deploys.
+# Usage: [MCP_SMOKE_TOKEN=…] [MCP_PROTOCOL_VERSION=…] [MCP_SMOKE_PAGE=1] scripts/mcp-smoke.sh <URL>
 #   e.g. https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp or https://mcp.hummlist.com
 # Prints PASS/FAIL/SKIP per check; exits 1 on any FAIL, 2 on a usage error.
 set -uo pipefail
@@ -161,6 +163,22 @@ if [[ $(status asfallback) == 200 ]] && jq -e --arg iss "$issuer" '.issuer == $i
   pass "hint-less discovery: $base/.well-known/openid-configuration names the token endpoint"
 else
   fail "hint-less discovery: want 200 with issuer \"$issuer\" and a refresh_token token endpoint at $base/.well-known/openid-configuration; $(got asfallback)"
+fi
+
+if [[ -n ${MCP_SMOKE_PAGE:-} ]]; then
+  for lang in de en; do
+    if [[ $lang == de ]]; then languages='de-DE,de;q=0.9,en;q=0.8'; else languages='en-US,en;q=0.9,de;q=0.8'; fi
+    request "page-$lang" "$base" -H 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' \
+      -H "accept-language: $languages"
+    type="$(header "page-$lang" content-type)"
+    if [[ $(status "page-$lang") == 200 && $type == text/html* ]] &&
+      grep -q "<html lang=\"$lang\"" "$work/page-$lang.body" &&
+      grep -q '<meta name="robots" content="noindex' "$work/page-$lang.body"; then
+      pass "browser page ($languages): 200 text/html, lang $lang, noindex"
+    else
+      fail "browser page ($languages): want 200 text/html with <html lang=\"$lang\"> and robots noindex; $(got "page-$lang") content-type='$type'"
+    fi
+  done
 fi
 
 if [[ -z ${MCP_SMOKE_TOKEN:-} ]]; then

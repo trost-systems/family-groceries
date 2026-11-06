@@ -40,6 +40,8 @@ python3 scripts/app-shortcuts-bundle-test.py
 log "AI brand names"
 deno run --allow-read scripts/brand-names.ts
 deno test -q --config scripts/deno.json --allow-read --allow-write scripts/brand-names_test.ts
+log "mcp.hummlist.com routes"
+deno test -q --config scripts/deno.json --allow-read scripts/mcp-proxy-routes_test.ts
 
 log "schema check against $base"
 # The check before its unit tests: a bad migration fails the test over the repository's own

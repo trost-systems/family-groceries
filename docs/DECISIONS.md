@@ -9489,3 +9489,44 @@ The three tests fail only when a stall outlasts the budget it lands in. Their bu
    runner time (`within()`) would hide a real server hang behind every pause, and no stress the
    detector misses brings them near their budget. Both issues stay open for the lead with this
    evidence (`NEEDS_LEAD.md`, "Job 123").
+
+## Job 158: a page for people at mcp.hummlist.com, 2026-11-07
+
+1. **The page is static files in the Vercel project, not an answer of the function.** A browser
+   that opens `https://mcp.hummlist.com` got the function's 401 JSON. Supabase documents that
+   an edge function's `text/html` answer to a GET goes out as `text/plain` (not tested here), so
+   the function cannot serve a page, and a Vercel function or Routing Middleware would add code
+   and invocations. `mcp-proxy/public/` holds `de.html`, `en.html` and `static/`, and two
+   conditional rewrites send `/` to one of them. No build, no dependency, nothing billed beyond
+   the CDN requests the proxy already serves. The supabase.co URL keeps its 401 JSON.
+2. **A browser request is recognised by what MCP clients always send.** `has`: `Accept` names
+   `text/html`. `missing`: `text/event-stream` in `Accept`, `Content-Type`, `Authorization`,
+   `Mcp-Session-Id`, `MCP-Protocol-Version`. Vercel's `has` cannot test the method, but every
+   MCP POST has a JSON `Content-Type`, and the stream GET asks for `text/event-stream`. Only the
+   source `/` has the rule; `/.well-known/*`, `/mcp` and other paths go to the function as before.
+3. **German when the first `Accept-Language` tag is German, else English.** q-values are not
+   weighed: browsers list the preferred language first. `/de` and `/en` serve the pages
+   directly (`cleanUrls`), for the language link on each page. `cleanUrls` also redirects
+   `/<x>.html` and `/index` paths, which no MCP client uses.
+4. **Brand-free copy, not "assistants like Claude or ChatGPT".** The brief's example names two
+   products. Legal N-80..N-86 and the standing rule (no marketing strings naming Claude) allow
+   brand names only in setup instructions and the trademark notice, so the page says „KI-Assistenten,
+   die MCP unterstützen“ / "AI assistants that support MCP" and links to the guides. The
+   `brand-names` lint now scans `mcp-proxy/public` too.
+5. **The app icon, no bee.** The repo has no bee or mascot, and the ui-craft skill rules a bee
+   mascot out. The page uses the app icon (a byte copy of `site/public/favicon.svg`, which
+   switches itself for dark mode), the site's tokens and self-hosted fonts, and a small scene
+   (a request becomes a new row on the list) that holds still under reduced motion.
+6. **`noindex` twice.** The pages carry `<meta name="robots" content="noindex, nofollow">`, and
+   every response of the host gets `X-Robots-Tag: noindex`. That adds one header to MCP answers,
+   which clients ignore; nothing on this host belongs in a search index.
+7. **Tests.** `scripts/mcp-proxy-routes_test.ts` (lint gate) replays browser and MCP client
+   requests through `vercel.json`. Vercel does not document whether a `has` value must match
+   the whole header, so every case runs both ways and the rules are written to agree.
+   `scripts/mcp-smoke.sh` checks the DE and EN page with `MCP_SMOKE_PAGE=1`: opt-in, because
+   the `site-agent` gate probes production, which serves the page only after this deploys.
+8. **The real routing is proven after the deploy only.** `hummlist-mcp` preview deployments
+   need a Vercel login, and `vercel dev` does not evaluate `has`. After merge, run
+   `MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.hummlist.com`; if the page breaks MCP,
+   reverting the PR restores the old rewrites. Once it passes, `site-agent` can set
+   `MCP_SMOKE_PAGE=1`.
