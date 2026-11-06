@@ -9440,3 +9440,52 @@ The three tests fail only when a stall outlasts the budget it lands in. Their bu
    would remove it; that is job 126's call. A dropped channel can't lose rows silently either: every
    reconnect runs a full resync of the open list (`ListCubit._onChannelStatus`,
    `list_cubit.dart:288-292`).
+## Job 123: voice.spec.ts flakes #78 and #79, 2026-11-05
+
+1. **Both flakes are host pauses only. Nothing in the test, the fixture or the voice function
+   changes.** Each failure on record fell inside a whole-host pause far longer than the
+   test's budget. #78 ("a token only reaches its own household's list") failed in pauses of
+   177 s (the 20 s predicate is `typeInto`'s retry during sign-up), 510 s and 1332 s. #79 ("a
+   dictated sentence lands in the open list") failed in a 267 s pause. Its other failure, on
+   2026-10-25 17:34 with no stall line, ran 29.6 min inside a 1801 s mem-guard hole
+   (`docs/done/18-test-fixtures-sync.md`, failure table). The stall detector didn't exist yet.
+2. **The voice path is fast and the app does not race.** On the local runtime (hz), a voice
+   call takes 220 to 490 ms warm. The first call after an edge-runtime restart takes 230 ms
+   once the runtime answers, which is about 470 ms after the restart. Minting a PAT takes 6 ms.
+   The list does not expect Realtime before the write: every subscribe, the first one included,
+   runs `resync()` (`ListCubit._onChannelStatus`). So an insert that lands before the channel is
+   up still shows.
+3. **Stressed repro on origin/main (1ba6dc51), release web build, retries off, one worker,
+   under `/tmp/fg-e2e.lock`** (job 18c's method, 18.23). "client a/b" means the runner and
+   Chromium were SIGSTOPped for a s every a+b s. "stack a/b" means `docker pause` of this
+   checkout's whole stack. "cpu" means 8 busy loops on a host already at load 9 to 18.
+
+   | Stress | Passed | Failed (dictated / token) | Stall marks in failing attempts |
+   | --- | --- | --- | --- |
+   | none | 10/10 | 0 / 0 | |
+   | cpu | 10/10 | 0 / 0 | |
+   | client 8/6 | 10/10 | 0 / 0 | |
+   | stack 3/7 | 10/10 | 0 / 0 | |
+   | stack 8/6 | 20/20 | 0 / 0 | |
+   | cpu + stack 3/7 | 20/20 | 0 / 0 | |
+   | cpu + stack 8/6 | 20/20 | 0 / 0 | |
+   | cpu + client 8/6 + stack 3/7 | 18/20 | 2 / 0 | 2 of 2, 7 to 8 s |
+   | cpu + client 9.5/3 + stack 9/4 | 11/20 | 5 / 4 | 9 of 9, 9 s |
+
+   With the runner running (cpu, any stack pause shorter than the 10 s waits), all 90 runs
+   passed. The stall detector sees nothing there, so a failure there would have had no excuse.
+   The 11 failures came only when the runner and Chromium were stopped for most of a 10 s
+   `expect` (8 of every 14 s, or 9.5 of every 12.5 s) on top of a paused stack. They stopped at
+   sign-up (`/analytics-consent`, 5), at household creation (`/welcome/invite`, 4) and at
+   page A's Zahnpasta row (2). Each runner stop (8 s, 9.5 s) is shorter than the 10 s `expect`
+   on its own. A row fails only when a runner stop and a stack pause together take up more
+   than those 10 s. Every failing attempt printed a `[host-stall]` line of 7 to 9 s. That
+   column doesn't tell failures from passes, though: in these two rows every attempt, passing
+   ones included, was stopped at least once.
+   Under 18.23 that earns the one retry, so CI and verify.sh retry exactly these. The
+   unstressed `voice.spec.ts --repeat-each=20` passed 260 of 260.
+4. **No budget changes.** A 10 s `expect` that the runner sat out for 8 to 9.5 s of has 0.5 to
+   2 s left. That is the wall-clock limit 18.23 accepts and retries. Counting these waits in
+   runner time (`within()`) would hide a real server hang behind every pause, and no stress the
+   detector misses brings them near their budget. Both issues stay open for the lead with this
+   evidence (`NEEDS_LEAD.md`, "Job 123").
