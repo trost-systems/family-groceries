@@ -24,6 +24,10 @@ env:
   ACTIONLINT_VERSION: 1.7.12
   AST_GREP_VERSION: 0.51.0
   SQUAWK_VERSION: 2.70.0
+  # npm retries a failed fetch twice by default; npm ci and supabase/setup-cli (an npm install) hit 5xx.
+  NPM_CONFIG_FETCH_RETRIES: 5
+  NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 10000
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 60000
   # Where the CLI pulls the Supabase images. public.ecr.aws (its default) answered runners
   # "toomanyrequests" (job 11), and so did ghcr.io for hours on 2026-10-27, also with a token
   # login; Docker Hub pulled every image (DECISIONS job 15b).
@@ -59,10 +63,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-      - name: Install gitleaks
-        run: |
-          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-            | tar -xz -C /usr/local/bin gitleaks
+      # Job 113: pinned tools come from the cache, else scripts/ci/download.sh with retries.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/fg-ci-tools
+          key: ci-tools-${{ runner.os }}-gitleaks-${{ env.GITLEAKS_VERSION }}
+      - run: scripts/ci/install-tools.sh gitleaks
       - run: scripts/gates/gitleaks.sh
 
   lint:
@@ -75,19 +81,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: e2e/package-lock.json
-      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - uses: ./.github/actions/deno
         with:
           # tool/lint/ts/pack.ts lists every lint rule of exactly this Deno; bump both together.
           deno-version-file: .dvmrc
       # actionlint for the workflows; ast-grep and squawk for scripts/lint.sh (job 12).
-      - name: Install actionlint, ast-grep and squawk
-        run: |
-          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin actionlint
-          curl -fsSL -o /tmp/ast-grep.zip "https://github.com/ast-grep/ast-grep/releases/download/${AST_GREP_VERSION}/app-x86_64-unknown-linux-gnu.zip"
-          sudo unzip -o -q /tmp/ast-grep.zip ast-grep -d /usr/local/bin
-          sudo curl -fsSL -o /usr/local/bin/squawk "https://github.com/sbdchd/squawk/releases/download/v${SQUAWK_VERSION}/squawk-linux-x64"
-          sudo chmod +x /usr/local/bin/squawk
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/fg-ci-tools
+          key: ci-tools-${{ runner.os }}-actionlint-${{ env.ACTIONLINT_VERSION }}-ast-grep-${{ env.AST_GREP_VERSION }}-squawk-${{ env.SQUAWK_VERSION }}
+      - run: scripts/ci/install-tools.sh actionlint ast-grep squawk
       - run: scripts/gates/lint.sh
 
   # Job 39: the PR's `## Changelog` section (docs/CHANGELOG.md), on pull requests only. Dependabot
@@ -122,7 +125,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - uses: ./.github/actions/deno
         with:
           deno-version: v2.x
       - run: scripts/gates/functions.sh
@@ -164,7 +167,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - uses: ./.github/actions/deno
         with:
           deno-version: v2.x
       - run: scripts/gates/fg-cli.sh

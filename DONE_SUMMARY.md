@@ -583,3 +583,7 @@ hummlist.com gets a waitlist instead of browser-app links: a double opt-in form,
 - Job 144, the tabs float as a hex pill: [docs/done/144-bottom-nav-floating-pill.md](docs/done/144-bottom-nav-floating-pill.md)
 - Job 147, item icons for 1,430 items and a neutral fallback: [docs/done/147-item-icon-coverage.md](docs/done/147-item-icon-coverage.md)
 - Job 148, UI consistency pass (floating top bar, hex Anpassen, one 3D depth switch, no category numbers, one hex per store row, centred hex text): [docs/done/148-ui-consistency-pass.md](docs/done/148-ui-consistency-pass.md)
+
+## Job 113: CI tool downloads cached and retried
+
+A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, lint, functions, fg-cli, db or e2e setup. Pinned tools (gitleaks, actionlint, ast-grep, squawk) and the Deno binary come from the Actions cache; their downloads retry with backoff through `scripts/ci/download.sh`, and npm and apt get their own retry settings. Not covered: Docker image pulls, Playwright (its own retries), setup-cli's `bun install`. Workflows with secrets download and checksum-verify Deno instead of using the cache. Pins (lint's `.dvmrc` 2.9.8, `v2.x` elsewhere), `ci-ok` and the gates are unchanged, and a download that still fails after its retries fails the job (proved on the PR with a temporary actionlint pin whose URL answers 404). The PR is ready for review and not merged (the Lead merges). Details: [docs/done/113-ci-download-resilience.md](docs/done/113-ci-download-resilience.md).

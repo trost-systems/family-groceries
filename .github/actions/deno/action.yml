@@ -1,0 +1,67 @@
+# Deno from the Actions cache, else downloaded with retries and checked against the release's
+# .sha256sum (job 113). setup-deno retries its download only 3 times and its
+# dl.deno.land/versions.json fetch for about 8 s; a 504 from it failed the functions job.
+# scripts/ci/deno-toolcache.sh resolves the range the way setup-deno does (same versions.json,
+# retried by download.sh) and puts that release on PATH. When resolve fails (versions.json
+# unreachable after the retries, or a range other than vN.x or an exact version), the step warns and setup-deno runs
+# instead. Without setup-deno, Deno's problem matcher (error annotations) is not registered; the
+# gates' exit codes are the same. Workflows that hold secrets pass `cache: false`: a cache entry
+# can be written by any PR run, so they run only a binary checked against its release checksum.
+# deno-version-file (.dvmrc) works as in setup-deno: a `deno <version>` line, else the whole file.
+# Needs the repo checked out.
+name: Deno
+description: Deno, cached and downloaded with retries; denoland/setup-deno for other ranges
+inputs:
+  deno-version:
+    description: Deno version or range, as setup-deno takes it
+    default: '2.x'
+  deno-version-file:
+    description: File with the Deno version (.dvmrc or .tool-versions); wins over deno-version, as in setup-deno
+    default: ''
+  cache:
+    description: "'false' skips the Actions cache: always download and verify (workflows with secrets)"
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      env:
+        RANGE: ${{ inputs.deno-version }}
+        VERSION_FILE: ${{ inputs.deno-version-file }}
+      run: |
+        if [[ -n $VERSION_FILE ]]; then
+          RANGE="$(sed -nE 's/^deno[[:space:]]+v?([^[:space:]]+)[[:space:]]*$/\1/p' "$VERSION_FILE" | head -n 1)"
+          [[ -n $RANGE ]] || RANGE="$(tr -d '[:space:]' <"$VERSION_FILE")"
+        fi
+        if version="$(scripts/ci/deno-toolcache.sh resolve "$RANGE")"; then
+          echo "version=$version" | tee -a "$GITHUB_OUTPUT"
+        else
+          echo "::warning::Could not resolve Deno $RANGE from dl.deno.land/versions.json; falling back to denoland/setup-deno (no cache, its own short retries)."
+        fi
+    - if: steps.resolve.outputs.version != '' && inputs.cache == 'true'
+      id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.tool_cache }}/deno/${{ steps.resolve.outputs.version }}
+        key: deno-${{ steps.resolve.outputs.version }}-${{ runner.os }}-${{ runner.arch }}
+    - if: steps.resolve.outputs.version != '' && steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        VERSION: ${{ steps.resolve.outputs.version }}
+      run: scripts/ci/deno-toolcache.sh fetch "$VERSION"
+    - if: steps.resolve.outputs.version != ''
+      shell: bash
+      env:
+        VERSION: ${{ steps.resolve.outputs.version }}
+      run: scripts/ci/deno-toolcache.sh path "$VERSION"
+    - if: steps.resolve.outputs.version == ''
+      uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      with:
+        deno-version: ${{ inputs.deno-version }}
+        deno-version-file: ${{ inputs.deno-version-file }}
+    - if: steps.resolve.outputs.version != '' && inputs.cache == 'true' && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.tool_cache }}/deno/${{ steps.resolve.outputs.version }}
+        key: deno-${{ steps.resolve.outputs.version }}-${{ runner.os }}-${{ runner.arch }}

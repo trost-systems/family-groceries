@@ -49,6 +49,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      # Before the rollback checkout: an older commit may not have .github/actions/deno yet.
+      - uses: ./.github/actions/deno
+        with:
+          deno-version: v2.x
+          # This job holds secrets: no Deno from the Actions cache, only a checksum-verified download.
+          cache: false
       - name: Check out the rollback commit
         if: ${{ inputs.ref }}
         run: |
@@ -68,9 +74,6 @@ jobs:
           git checkout --quiet --detach "$sha"
           echo "Rollback of the edge functions to \`$sha\`; migrations skipped." >> "$GITHUB_STEP_SUMMARY"
           echo "::notice::Rollback: redeploying the edge functions of $sha; migrations are skipped."
-      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-        with:
-          deno-version: v2.x
       - name: Migrations
         if: ${{ !inputs.ref }}
         run: deno run --allow-read --allow-env --allow-net --config supabase/deploy/deno.json supabase/deploy/migrate.ts

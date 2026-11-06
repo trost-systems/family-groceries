@@ -11,15 +11,17 @@ pg_major() { pg_dump --version 2>/dev/null | sed -n 's/^pg_dump (PostgreSQL) \([
 
 if [[ "$(pg_major)" != 17 ]] || ! command -v age >/dev/null; then
   if ! apt-cache show postgresql-client-17 >/dev/null 2>&1; then
+    key="$(mktemp)"
+    "$(dirname "$0")/../ci/download.sh" https://www.postgresql.org/media/keys/ACCC4CF8.asc "$key"
     sudo install -d /usr/share/postgresql-common/pgdg
-    sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
-      https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    sudo install -m 644 "$key" /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+    rm -f "$key"
     . /etc/os-release
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
       | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
-    sudo apt-get update -qq
+    sudo apt-get -o Acquire::Retries=5 update -qq
   fi
-  sudo apt-get install -y -qq postgresql-client-17 age >/dev/null
+  sudo apt-get -o Acquire::Retries=5 install -y -qq postgresql-client-17 age >/dev/null
 fi
 
 if [[ "$(pg_major)" != 17 ]]; then

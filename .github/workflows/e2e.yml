@@ -43,6 +43,10 @@ env:
   FLUTTER_VERSION: 3.47.8
   SUPABASE_CLI_VERSION: 2.121.0
   SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+  # npm retries a failed fetch twice by default; npm ci and supabase/setup-cli (an npm install) hit 5xx.
+  NPM_CONFIG_FETCH_RETRIES: 5
+  NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 10000
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 60000
 
 jobs:
   # The shard list and the sync smoke switch from the inputs.
