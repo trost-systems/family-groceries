@@ -9331,3 +9331,112 @@ showcase.
    every store at 16 widths from 320 to 1440 px, in both languages. The same sweep found the
    waitlist form's two phone tiles scrolling the page 7 px sideways at 320 px, on main too; they
    now stack when two do not fit.
+
+## Job 120: live-sync.spec.ts flakes #65, #66, #67 are host pauses, 2026-11-05
+
+The three tests fail only when a stall outlasts the budget it lands in. Their budgets are 2 s
+(the `within` live windows), about 6.7 s (`reveal`'s 40 scroll steps), 10 s (an `expect`), 20 s
+(`typeInto`) and 60 s (the test). No test, app or fixture change.
+
+1. **Every logged failure fell in a host pause, three measured, one inferred.** The stall detector
+   measured three of them: #66 in pauses of 75 s and 505 s, #67 in one of 199 s. #67's other failure
+   (2026-10-26, "Test timeout of 60000ms exceeded") has no `[host-stall]` line. Its 1053 s is the
+   verify loop's own record, `run 1 VOID (mem-guard gap 1053s)`. #65 (2026-10-25) predates the
+   detector (job 18c). Its "60 s while setting up `page`" needs about 50 s with no progress. That
+   fixture is a new context and page, and `closeContexts` already kept the browser lean then (job
+   2b, 494ffcca). In the traces of the 12 s stall arms below, `page` took at most 0.06 s and
+   `context` at most 0.59 s. #65 is a host pause inferred, with no direct record. Setup that takes
+   well under a second can't use up 60 s without a freeze. CI never failed the test on main. And in
+   those days the box's VM was paused for minutes at a time (the issue's context: heartbeat holes of
+   150 to 3000 s; COORDINATION.md describes the microVM's pauses and snapshot restores, seen again
+   on 2026-11-05). Nothing on the box recorded a freeze at 21:51 to 21:52. The BOARD's mem-guard
+   lines at 21:50 and 21:51 show memory pressure, but mem-guard stopped job 15's process tree, not
+   this run, for under a minute, and headroom was back at 9 GB at 21:51.
+2. **The "20 s predicate" is `typeInto`.** In the spec versions those runs used, the only 20 s wait
+   the two join tests reach is `typeInto`'s `toPass`, which types into a field and checks its
+   value: the sign-up email and password, the invite code, and `addItem`. It waits on Flutter's
+   field frame, not on the household switch, the Realtime resubscribe or the list reload. A pause
+   longer than 20 s fails it whatever the app does.
+3. **CI never failed them on main.** From 2026-10-28 to 2026-11-05, 1,459 of 1,627 e2e job logs were
+   readable (the rest expired). `live-sync.spec.ts` ran in 1,215 of them, with no flaky test and no
+   pass on retry. Five jobs failed a live-sync test, all because of their own branch:
+   - job/33c, a CSP that blocked the emoji fonts;
+   - job/22, onboarding's empty name field (52 tests failed);
+   - job/25, the entitlements channel before the spec let it pass;
+   - job/78 twice: the old `/join` route, and an add written to the household just left. That
+     run's screenshots show "Brot" on neither list. Job 78 fixed it before merging (the add sheet
+     keyed on its `ListCubit`, `ObjectKey(list)`).
+4. **Stressed repro, retries off.** Main 1ba6dc51, release web build (`--wasm`), local stack,
+   `--workers=1 --retries=0`, under `/tmp/fg-e2e.lock`. "Runner" is SIGSTOP of the Playwright
+   runner, its worker and Chromium. "Chromium" stops Chromium alone. "Stack" is `docker pause` of
+   Realtime, Kong, GoTrue and PostgREST. CPU pins the runner and Chromium to 2 cores with 4 or 8
+   busy loops on the same cores.
+
+   Each pause arm repeats a cycle: S s paused, then P s running.
+
+   | Arm | Runs | Result |
+   | --- | --- | --- |
+   | No stress, whole spec x3 (x1 before) | 32 | all passed |
+   | 4 burners on Chromium's 2 cores, whole spec x3 | 24 | all passed |
+   | Runner 5 s paused, 7 s running, whole spec x3 | 23 | all passed (the run was cut at its last test) |
+   | 8 burners on Chromium's 2 cores, the three tests x5 | 15 | all passed |
+   | Runner 8 s paused, 6 s running | 15 | all passed |
+   | Chromium 5 s paused, 7 s running | 15 | all passed |
+   | Stack 5 s paused, 10 s running | 15 | all passed |
+   | Stack 9 s paused, 12 s running | 15 | all passed |
+   | Runner 9 s paused, 10 s running | 15 | all passed |
+   | Chromium 9 s paused, 10 s running | 15 | all passed |
+   | Stack 12 s paused, 15 s running | 15 | 8 failed |
+   | Runner 12 s paused, 10 s running | 15 | 4 failed, each named by the stall detector (11 to 12 s) |
+   | Review 0: Chromium 9 s paused, 10 s running, twice | 19 | 2 failed, both the invite test's 2 s live window |
+   | Review 0: Chromium 1 s paused, 2 s running, the two join tests x5 | 10 | all passed |
+   | Review 3: stack 1 s paused, 3 s running, whole spec x3 | 24 | all passed |
+   | Review 3: stack 3 s paused, 6 s running, whole spec x3 | 24 | 2 failed, both in a 2 s live window |
+
+   The tests fail when a stall outlasts the budget it lands in:
+   - **10 s `expect`.** All 12 failures in the builder's 12 s arms are a 10 s `expect` across one
+     stall (review 2's rerun of the stack 12 s arm also had one in a 2 s window, below): sign-up to
+     the consent screen, onboarding's create, the invite list, the join preview, the add sheet, the
+     tab switch, and an insert still queued behind the paused runner's WebSocket route. Review 0
+     lined the 8 stack-arm failures up with the harness's pause notes. Each failing `expect` started
+     0.05 to 1.6 s after a `docker pause` and ended before the unpause, so none failed after the
+     stack came back. None of the 12 page snapshots shows an Offline marker or an error message.
+   - **2 s live window.** In review 0, Chromium alone paused 9 s at a time (10 s running between)
+     failed 2 of 19 runs, both at the invite test's `within(2_000, ... 'and the other way')`. The
+     builder's 15 runs of the same arm passed, so it depends on where a pause lands. `within` counts
+     only the time the runner ran, so a stall of Chromium alone uses up the window, and the runner's
+     stall detector doesn't see it. With Chromium paused 1 s at a time (2 s running between),
+     shorter than the window, all 10 runs passed. So these failures come from the length of the
+     pause, not from a race. A stall of the stack alone does the same. In review 2, the whole spec
+     with the stack 8 s paused, 6 s running (x3) failed 5 of 24 runs, all five in a `within(2_000)`
+     window: 'two members' three times and the invite test (#66) twice. Its rerun of the stack 12 s
+     arm had one more, also the invite test's window. Neither a Chromium nor a stack stall stops the
+     runner, so neither writes a `[host-stall]` line, and neither earns the 18.23 retry.
+
+   Every failure had a stall longer than the budget it landed in. Stalls shorter than the 10 s
+   `expect` pass it: all 184 of the builder's runs with stalls of at most 9 s passed. That number
+   is about the 10 s waits under the builder's cycles, not the 2 s windows. A stall longer than
+   2 s, of the runner, Chromium or the stack, fails a test whenever it lands in a live window. Only
+   a runner stall is seen by the stall detector and earns the retry. The 1 s Chromium arm shows
+   that stalls shorter than the window pass.
+5. **Nothing to fix, and no budget changes.** The brief allows a budget change only where the
+   stressed repro shows the budget itself was wrong. None did: no run failed with its stalls shorter
+   than the budget they landed in, and CI never failed these tests on main. The policy of DECISIONS
+   18.23 stands: a test the runner saw paused for 2 s or more gets one retry. The three issues stay
+   open for the lead (NEEDS_LEAD "Job 120"), referenced as host-pause only. The stress harness is in
+   `docs/done/120-fix-live-sync-flakes.md`. Job 119 (#261) has since added `scripts/e2e-stress.sh`
+   to main, so this job's script stays in the done file as the record of these runs and is not a
+   second tool.
+6. **Job 126's hand-off is a late row, not a lost one.** Job 126 posted for job 120 (BOARD
+   2026-11-06 02:26, NEEDS_LEAD "Job 126") that after 8 s stack pauses a row written through
+   `add_items` sometimes never reached the open list over Realtime: `classifier.spec.ts`, 1 of 12,
+   "could not scroll … Hafermilch into view". Review 2 reproduced it with the stack 8 s paused, 6 s
+   running, x12: 1 failed. Its trace shows the timing. `add_items` returned at 16:30:53.388, the
+   stack paused at 16:30:53.609 and held Realtime for 8 s, `reveal` gave up at 16:31:00.088 after
+   its 40 steps (about 6.7 s), and the stack resumed at 16:31:01.646. The row was still in the
+   paused Realtime when `reveal` ran out of its 40 steps. That is a pause longer than the wait, like
+   the rest. `reveal`'s ~6.7 s is an iteration count, and the spec calls it for a row that may not
+   have arrived yet, so the race is in the test, not the app. Waiting for the row before `reveal`
+   would remove it; that is job 126's call. A dropped channel can't lose rows silently either: every
+   reconnect runs a full resync of the open list (`ListCubit._onChannelStatus`,
+   `list_cubit.dart:288-292`).

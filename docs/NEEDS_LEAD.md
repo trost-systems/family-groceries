@@ -2046,3 +2046,38 @@ Also to decide (app, out of job 119's scope): a store or category reorder is wri
 queued like item ops (`ListCubit._changeOrder`). A user who reloads the web app or closes the app
 before the write answers loses the new order without a message, though it showed at once. Should
 orders become queued ops (an `ItemOp`-like catalog op), or is a lost reorder acceptable?
+
+## Job 120: live-sync.spec.ts flakes #65, #66, #67 are host pauses (2026-11-05)
+
+Status: your call. Close #65, #66 and #67, or keep them open as host-pause records.
+
+Each logged failure fell in a host pause. The stall detector measured 75 s and 505 s (#66) and
+199 s (#67). #67's other failure is the verify loop's 1053 s mem-guard gap, which has no detector
+line. #65's (2026-10-25) predates the detector, so its pause is inferred, with no direct record. It
+needs about 50 s with no progress, while its setup took at most 0.59 s in every traced arm. CI never
+failed it on main, and the box's VM was then being paused for minutes at a time. The BOARD's
+mem-guard lines at 21:50 and 21:51 don't show it: mem-guard stopped job 15, not this run, for under a
+minute.
+
+The tests' budgets are 2 s (the `within` live windows), about 6.7 s (`reveal`'s scroll steps),
+10 s (an `expect`), 20 s (`typeInto`) and 60 s (the test). With retries off, on the release web
+build, they failed only when a stall outlasted the budget it landed in. Stalls of up to 9 s passed
+the 10 s waits in all 184 of the builder's runs, and 12 s stalls failed them. The 2 s windows fail
+whenever a stall longer than 2 s lands in one, whether of the runner, Chromium or the stack. Only
+a runner stall gets the `[host-stall]` line and the retry. In review runs, Chromium alone paused
+9 s failed 2 of 19, the stack alone paused 8 s failed 5 of 24 (all in a 2 s window), and 1 s
+Chromium pauses passed 10 of 10. CI ran `live-sync.spec.ts` in 1,215 readable e2e logs from
+2026-10-28 to 2026-11-05. It had no flaky test, and each of its five failures was caused by its own
+branch. Counts per arm: DECISIONS "Job 120". The harness, the CI scan and rerun commands are in
+`docs/done/120-fix-live-sync-flakes.md`.
+
+Job 126's hand-off (a row from `add_items` that "never reached the open list" after 8 s stack
+pauses) is a late row, not a lost one. In review 2's trace the stack paused 0.2 s after
+`add_items` returned, and `reveal` gave up inside that pause. Every reconnect also resyncs the open
+list. DECISIONS "Job 120" item 6 has the timings.
+
+A possible follow-up, not this job: `within` (e2e `helpers.ts`) counts only the time the test
+runner ran. It can't see a stall of Chromium or the stack alone, such as a starved renderer under
+memory pressure while node keeps running, so such a stall uses up a 2 s live window with no
+`[host-stall]` line and no retry. Polling a clock in the page as well would cover Chromium. It's
+your call whether that is worth a job.
