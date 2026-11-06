@@ -1912,3 +1912,26 @@ Status: left open for the lead to close. Evidence in DECISIONS (Job 122, items 3
   beside the add field (`list_screen.dart`). The clear button was checked: text typed after it
   still lands in the field. The store name field was not checked. The widget test „hovering a
   stepper leaves the semantics tree as it is“ is the pattern to prove another case.
+
+## Job 124: report the edge runtime's dropped answers upstream?
+
+Status: open, the Lead's call (it posts to a public repository, so job 124 did not).
+
+The local edge runtime sometimes throws away a function's finished answer and sends its own
+empty 503 instead (`connection aborted` in its log). The cause is a race in edge-runtime itself
+(DECISIONS, job 124, items 1 and 2). Job 124 cut it down with `policy = "per_worker"`, but a
+retiring worker can still drop an answer (2 in 8000 under a pinned core). Upstream `main` has
+the same code. A report to `supabase/edge-runtime` would need these parts: the mechanism
+(item 2), `e2e/runtime-drop-probe.mjs` with the one-core pin, and the before and after table
+(item 3). Nothing in this repo waits on it.
+
+Two follow-ups outside job 124's scope:
+
+- The e2e report action's "Edge runtime log" step prints only `tail -n 300`. For #265 the
+  `connection aborted` line had scrolled out. Grepping the whole log for `connection
+  aborted|already retired|soft limit` as well would keep the evidence. That is a workflow file,
+  and #249 owns it now.
+- `timedFetch` in `e2e/tests/mcp-helpers.ts` retries every empty 502/503/504/546 once, POSTs
+  included. Job 124 shows an empty 503 can come after the handler ran, so a retried MCP
+  `tools/call` can write twice. Narrow the retry to bodiless calls once job 121's
+  `mcp-helpers.ts` changes have landed.

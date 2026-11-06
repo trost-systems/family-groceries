@@ -231,7 +231,8 @@ Numbered 3.x so parallel jobs don't collide. Details and sources: `docs/MCP.md`.
       "CPU time soft limit reached" in the edge runtime log; it failed one in
       four full e2e runs). `oneshot` starts a worker per request, which
       matches the hosted per-request CPU limit. Three full runs were clean
-      afterwards.
+      afterwards. Replaced by job 124: `oneshot` drops finished answers, so
+      the local stack runs `per_worker` again.
 3.12. **Local DB host alias.** Under `supabase start`, `SUPABASE_DB_URL` names
       the host `supabase_db_<project>`, which Deno's resolvers reject
       (underscore). `_shared/db.ts` maps it to the container alias `db`.
@@ -8590,3 +8591,85 @@ the videos, so nothing waits on it.
    0.9968 to 0.9981, loops 11.0 to 12.5 s (beats at their real length, the longer sync and MCP
    answers included). `hyperframes check` clean (0 errors) on all 12; the warnings are job 54's
    plus two benign ones in mcp-chat (REVIEW.md).
+
+## Job 124: the local edge runtime drops finished answers (empty 503), 2026-11-05
+
+Flaky issue #226: `public-api.spec.ts:118` failed in CI run 41774538338 with `SyntaxError:
+Unexpected end of JSON input` at `res.json()`. PR #253's run 42030551194 failed the same way in
+`household-bound.spec.ts` at the purchases claim (`iap.ts:87`). Issue #265 is the same claim line
+reached through `premium-yearly.spec.ts:113` (run 42095093722). That run's log step keeps only
+the last 300 lines of the runtime log, so its `connection aborted` line had scrolled out, but the
+call, the signature and the runtime are the same.
+
+1. **What the tests got: the runtime's own empty 503 for a function that had run.** In both CI
+   runs the edge runtime log has `connection aborted (uri: "/api/v1/items")` and `(uri:
+   "/purchases/claim")` for the failing request. In edge-runtime v1.77.x that line comes from
+   `WorkerService::call` (`crates/base/src/server.rs`), which then answers 503 with
+   `x-served-by: base/server` and no body. The local repro below gets exactly that answer, and the
+   api function's request log has a line for every request, the dropped ones too: the function
+   answered, and the runtime threw the answer away. No CPU, memory or wall-clock line is in either
+   log, the api function had answered dozens of requests just before (no cold start), and the
+   hostStall fixture saw no host pause.
+2. **Root cause: under `oneshot` a worker's end races its own answer.** The runtime hands the
+   request's connection token to the user worker (`ext/workers/lib.rs`), and the user worker
+   cancels that token when its runtime ends (`ext/runtime/ops/net.rs`: "connection token should
+   only last as long as the worker is alive"). Under `oneshot` the supervisor ends the worker as
+   soon as the main worker has read the response body (`strategy_per_request.rs`, `EarlyDrop`).
+   The outer server checks the token only once the main worker's response head has reached it.
+   When the worker's end comes first, the outer server logs "connection aborted" and sends its own
+   empty 503. Usually the head wins; on a busy core the worker's end can win. So this is not an app
+   race, a test wait, a fixture or a host pause; it is the runtime's, and upstream `main`
+   (2026-11-05) has the same code. A retry would be wrong here: the function has already run (a
+   claim, a throttle count). A longer budget would not help either: the 503 arrives in 40 to 270 ms.
+3. **Repro.** `e2e/runtime-drop-probe.mjs` sends the throttle loop's request (an unknown API key)
+   over and over and counts answers that are not JSON. With the edge runtime pinned to one core
+   (`docker update --cpuset-cpus 11 supabase_edge_runtime_<project_id>`), on hz:
+
+   | Policy | Requests | Empty 503s |
+   | --- | --- | --- |
+   | `oneshot`, not pinned | 300 GET, one at a time | 0 |
+   | `oneshot`, pinned | GET, one at a time, three runs | 23 of 300, 14 of 300, 6 of 200 |
+   | `oneshot`, pinned | 300 POST, one at a time | 13 |
+   | `per_worker`, pinned | 300 GET, one at a time | 0 |
+   | `per_worker`, pinned | 300 POST, one at a time | 0 |
+   | `per_worker`, pinned | 600 GET, one at a time | 0 |
+   | `per_worker`, pinned | 5000 GET, 8 at a time | 0 |
+   | `per_worker`, pinned | 8000 POST, 8 at a time | 2 |
+
+   The spec itself, `public-api.spec.ts --repeat-each=10 --workers=1 --retries=0` on the release
+   web build with the same pin: under `oneshot` 23 of 30 tests failed, and the runtime log had 27
+   `connection aborted` lines. Under `per_worker` all 30 passed with none. Not pinned, under
+   `per_worker`, `--repeat-each=20` passed 60 of 60 (review 1 reran it on the release web build:
+   60 passed). Job 143 (PR #289) stressed the second path, the purchases claim, the same way, with
+   `premium-yearly.spec.ts`. Under pinned `oneshot` 12 of 50 failed, with 12 `connection aborted`
+   lines (claim, RevenueCat webhook, account delete). Under pinned `per_worker` 200 of 200 passed.
+
+4. **Fix: `policy = "per_worker"` in `supabase/config.toml`.** A worker now serves many
+   requests, so the end of a request no longer ends its worker. The race is left only where a
+   worker retires (its 1 s CPU soft limit, half its memory, half its 400 s wall clock). In the
+   8000-request run 8 workers retired, and the 2 empty 503s came from those retirements. Calls are
+   also much cheaper: pinned, 600 requests took 4 s under `per_worker`, while 300 took 76 s under
+   `oneshot`, which boots an isolate for every request.
+   This replaces 3.11. The 13 s 503s it saw at a CPU-soft-limit retirement came from the runtime
+   of that time. Today's per-worker supervisor retires a worker only once all its requests are
+   acknowledged (`strategy_per_worker.rs`, `can_early_drop`). With 8 forced retirements in the
+   runs above, no request failed slowly or with a JSON 503. Three full e2e suites on GitHub
+   Actions passed with `per_worker`, with no test failed or flaky (runs 42061190881, 42061214665
+   and 42064017398). They took as long as `oneshot` runs on main (12 to 13 min per shard). One GET hit a worker that had just
+   retired ("worker has already retired"), and the CLI's main worker retried it on a new worker.
+   It retries only requests without a body. A POST that lands on a retiring worker gets the
+   main worker's JSON 500 instead (`WorkerAlreadyRetired`, seen once in 3000 parallel POSTs in
+   review 0). `functionJson` passes it through as JSON, and the test fails on its status
+   assertion.
+5. **What is left is diagnosable.** The e2e helpers read a function's answer with
+   `functionJson` (`e2e/tests/helpers.ts`) instead of `res.json()`. A dropped answer now fails as
+   `<url> answered 503 (x-served-by: base/server) with an empty body, not JSON`, so the next case
+   names the runtime at once. We have not reported the race upstream (NEEDS_LEAD). Whether hosted
+   Supabase drops answers the same way is unknown; the app retries the shared deletion once
+   (9.12), and nothing else changes in the app.
+   This also refutes part of 9.12's premise. 9.12, and `bootFailure` in `e2e/tests/mcp-helpers.ts`,
+   read an empty 502, 503, 504 or 546 as "no handler ran", so `timedFetch` sends every such call
+   once more, POSTs included. An empty 503 can also come after the handler ran, so a retried MCP
+   `tools/call` can apply a write twice. That is rarer under `per_worker`, but not gone. Narrowing
+   that retry to bodiless calls is a follow-up (NEEDS_LEAD), outside this job because job 121 is
+   changing `mcp-helpers.ts` for the MCP flakes.

@@ -398,9 +398,10 @@ enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
 # `per_worker` (default) — enables hot reload during local development.
 # `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
-# oneshot: a fresh worker per request, like the hosted per-request CPU budget. per_worker reuses
-# one worker until its 1 s CPU budget runs out, and requests in flight then fail with 503.
-policy = "oneshot"
+# per_worker: a worker serves many requests and ends only when its CPU, memory or wall-clock
+# budget retires it. oneshot ended the worker after every answer, and that end raced the answer:
+# the runtime then sent its own empty 503 although the function had run (docs/DECISIONS.md, job 124).
+policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 # The Deno major version to use.

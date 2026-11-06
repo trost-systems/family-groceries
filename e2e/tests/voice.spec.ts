@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures';
 import {
   apiAs,
+  functionJson,
   functionsUrl,
   itemRow,
   newEmail,
@@ -76,7 +77,7 @@ test('in-app dictation (mode parse, split) splits brand and details as a typed a
   });
   expect(res.status).toBe(200);
   // A new household has no stores yet, so no store comes back (voice/split_integration_test.ts has dm).
-  expect((await res.json()).items).toEqual([
+  expect((await functionJson(res)).items).toEqual([
     { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3, Big Pack', quantity: null, storeId: null },
     { name: 'Milch', brand: null, properties: null, quantity: '2 l', storeId: null },
   ]);
@@ -234,7 +235,7 @@ async function ask(token: string, body: Record<string, unknown>) {
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  return { status: res.status, body: await res.json() };
+  return { status: res.status, body: await functionJson(res) };
 }
 
 test('native Siri: the credential the app mints adds in English, reads back, and ends with its session', async ({ page }) => {

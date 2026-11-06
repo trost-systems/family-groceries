@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { apiAs, chainStores, functionsUrl, itemRow, must, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { apiAs, chainStores, functionJson, functionsUrl, itemRow, must, newEmail, screenshot, signUpWithHousehold } from './helpers';
 import { call, connectWithToken } from './mcp-helpers';
 
 type Item = {
@@ -57,7 +57,7 @@ test('voice: "Windeln Pampers Größe 3 und zwei Liter Milch" is split into fiel
     body: JSON.stringify({ text: 'Windeln Pampers Größe 3 und zwei Liter Milch' }),
   });
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = await functionJson(res);
   expect(body.speech).toBe('Hinzugefügt: Windeln Pampers Größe 3, 2 l Milch.');
   expect(body.items.map((i: Item) => [i.name, i.brand, i.properties, i.quantity])).toEqual([
     ['Windeln', 'Pampers', 'Größe 3', null],

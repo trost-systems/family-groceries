@@ -10,6 +10,24 @@ import { fakeOidcPort, localSecretKey, stack } from '../stack';
 export const { url: supabaseUrl, key: publishableKey, mailpit } = stack;
 export const functionsUrl = `${supabaseUrl}/functions/v1`;
 
+/**
+ * An Edge Function's JSON answer. Anything else fails with the status, the runtime's x-served-by
+ * and the body text instead of a bare SyntaxError: the local edge runtime can drop a function's
+ * answer and send its own empty 503 (DECISIONS, job 124).
+ */
+export async function functionJson(res: Response): Promise<ReturnType<typeof JSON.parse>> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const servedBy = res.headers.get('x-served-by');
+    const body = text === '' ? 'an empty body' : JSON.stringify(text.slice(0, 500));
+    throw new Error(
+      `${res.url} answered ${res.status}${servedBy ? ` (x-served-by: ${servedBy})` : ''} with ${body}, not JSON`,
+    );
+  }
+}
+
 export const password = 'test-password-123';
 
 /** [value], or fails the test with [what] when it is null or undefined. */
