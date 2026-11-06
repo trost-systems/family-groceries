@@ -5,7 +5,7 @@ import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' show Response;
+import 'package:http/http.dart' show Request, Response;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -90,5 +90,181 @@ void main() {
       en.joinArchiveOffer('Home'),
       endsWith("If you don't bring it back within 24 months, it is deleted."),
     );
+  });
+
+  group('invites on the wire', () {
+    late List<Request> sent;
+
+    SupabaseInviteRepository server(Object? Function(Request request) answer) {
+      sent = [];
+      final client = SupabaseClient(
+        'http://localhost:54321',
+        'sb_publishable_test',
+        httpClient: MockClient((request) async {
+          sent.add(request);
+          return Response(
+            jsonEncode(answer(request)),
+            200,
+            headers: {'content-type': 'application/json'},
+            request: request,
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      return SupabaseInviteRepository(client);
+    }
+
+    Object? params(Request r) => jsonDecode(r.body);
+
+    test('a new invite comes back with its code and expiry', () async {
+      final repo = server(
+        (_) => {
+          'id': 'i1',
+          'code': 'ABCD2345',
+          'expires_at': '2026-11-12T09:00:00Z',
+        },
+      );
+      final invite = await repo.create('home');
+      expect(sent.single.url.path, '/rest/v1/rpc/create_invite');
+      expect(params(sent.single), {'p_household': 'home'});
+      expect(invite.code, 'ABCD2345');
+      expect(invite.expiresAt, DateTime.utc(2026, 11, 12, 9));
+    });
+
+    test('the open invites are the household’s unused, unrevoked, unexpired '
+        'ones, newest first', () async {
+      final repo = server(
+        (_) => [
+          {
+            'id': 'i2',
+            'code': 'NEWER234',
+            'expires_at': '2026-11-12T09:00:00Z',
+          },
+          {
+            'id': 'i1',
+            'code': 'OLDER234',
+            'expires_at': '2026-11-10T09:00:00Z',
+          },
+        ],
+      );
+      final invites = await repo.open('home');
+      expect([for (final i in invites) i.code], ['NEWER234', 'OLDER234']);
+      final query = sent.single.url.queryParameters;
+      expect(sent.single.url.path, '/rest/v1/invites');
+      expect(query['household_id'], 'eq.home');
+      expect(query['used_at'], 'is.null');
+      expect(query['revoked_at'], 'is.null');
+      expect(query['expires_at'], startsWith('gt.'));
+      expect(query['order'], 'created_at.desc.nullslast');
+    });
+
+    test('revoking names the invite', () async {
+      await server((_) => null).revoke('i1');
+      expect(sent.single.url.path, '/rest/v1/rpc/revoke_invite');
+      expect(params(sent.single), {'p_invite': 'i1'});
+    });
+
+    test('an open code shows the household and what joining keeps', () async {
+      final repo = server(
+        (_) => {
+          'status': 'ok',
+          'name': 'Familie Brandt',
+          'unlocked': true,
+          'leaves_unlocked': false,
+          'recent_purchase': true,
+        },
+      );
+      final preview = await repo.preview('ABCD2345');
+      expect(params(sent.single), {'p_code': 'ABCD2345'});
+      expect(
+        preview,
+        isA<InviteOpen>()
+            .having((p) => p.name, 'name', 'Familie Brandt')
+            .having((p) => p.lifetime.targetUnlocked, 'target', isTrue)
+            .having((p) => p.lifetime.leavesUnlocked, 'leaves', isFalse)
+            .having((p) => p.lifetime.recentPurchase, 'recent', isTrue),
+      );
+    });
+
+    test('an open code without Lifetime facts keeps nothing', () async {
+      final preview = await server((_) => {'status': 'ok', 'name': 'WG'})
+          .preview('ABCD2345');
+      final lifetime = (preview as InviteOpen).lifetime;
+      expect(lifetime.targetUnlocked, isFalse);
+      expect(lifetime.leavesUnlocked, isFalse);
+      expect(lifetime.recentPurchase, isFalse);
+    });
+
+    test('a code of the user’s own household says so', () async {
+      final preview = await server(
+        (_) => {'status': 'member', 'name': 'Zuhause'},
+      ).preview('ABCD2345');
+      expect(
+        preview,
+        isA<InviteMember>().having((p) => p.name, 'name', 'Zuhause'),
+      );
+    });
+
+    test('a refused code is its problem; an odd answer is another', () async {
+      await expectLater(
+        server((_) => {'status': 'invalid_invite'}).preview('XXXX0000'),
+        throwsA(
+          isA<HouseholdError>().having(
+            (e) => e.problem,
+            'problem',
+            HouseholdProblem.invalidInvite,
+          ),
+        ),
+      );
+      await expectLater(
+        server((_) => {'unexpected': true}).preview('XXXX0000'),
+        throwsA(
+          isA<HouseholdError>().having(
+            (e) => e.problem,
+            'problem',
+            HouseholdProblem.other,
+          ),
+        ),
+      );
+    });
+
+    test('the member count counts the household’s members', () async {
+      final repo = server(
+        (_) => [
+          {'user_id': 'peter'},
+          {'user_id': 'lea'},
+        ],
+      );
+      expect(await repo.memberCount('home'), 2);
+      expect(sent.single.url.queryParameters['household_id'], 'eq.home');
+    });
+
+    test('archived households keep their lock and deletion date', () async {
+      final repo = server(
+        (_) => [
+          {
+            'id': 'h1',
+            'name': 'Alte WG',
+            'archived_at': '2026-10-01T08:00:00Z',
+            'unlocked': true,
+            'deletes_at': '2027-10-01T08:00:00Z',
+          },
+          {
+            'id': 'h2',
+            'name': 'Ferienhaus',
+            'archived_at': '2026-09-01T08:00:00Z',
+            'unlocked': null,
+            'deletes_at': null,
+          },
+        ],
+      );
+      final archived = await repo.archived();
+      expect(sent.single.url.path, '/rest/v1/rpc/archived_households');
+      expect(archived.first.unlocked, isTrue);
+      expect(archived.first.deletesAt, DateTime.utc(2027, 10, 1, 8));
+      expect(archived.first.archivedAt, DateTime.utc(2026, 10, 1, 8));
+      expect(archived.last.unlocked, isFalse);
+      expect(archived.last.deletesAt, isNull);
+    });
   });
 }

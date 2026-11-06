@@ -632,4 +632,66 @@ void main() {
       reason: 'a cache from before has no last use',
     );
   });
+
+  test('an edit to the same value is the same edit', () {
+    expect(const SetTo('2 l'), const SetTo('2 l'));
+    expect(const SetTo<String?>(null), const SetTo<String?>(null));
+    expect(const SetTo('2 l'), isNot(const SetTo('3 l')));
+  });
+
+  group('an op once its add turned out to be the open item kept', () {
+    final at = DateTime.utc(2026, 10, 28);
+
+    test('an op on another item stays as it is', () {
+      final op = SetStatus('other', ItemStatus.bought, at);
+      expect(op.ontoKept('copy', 'kept'), same(op));
+    });
+
+    test('a place next to the copy moves next to the kept item', () {
+      const op = PlaceItem(
+        'other',
+        anchorId: 'copy',
+        edge: Edge.before,
+        categoryId: 'c1',
+        storeId: null,
+        sortKey: 2,
+      );
+      final moved = op.ontoKept('copy', 'kept')! as PlaceItem;
+      expect(moved.itemId, 'other');
+      expect(moved.anchorId, 'kept');
+      expect(moved.edge, Edge.before);
+    });
+  });
+
+  test('four typed letters inside a name match it', () {
+    expect(suggestionMatch('ilch', 'vollmilch'), 3);
+    expect(suggestionMatch('lch', 'vollmilch'), isNull);
+  });
+
+  test('categories a store has no row for follow its layout, in route '
+      'order', () {
+    const catalog = Catalog(
+      categories: [
+        Category(id: 'fruit', name: 'Obst', sortOrder: 10),
+        Category(id: 'bread', name: 'Brot', sortOrder: 20),
+        Category(id: 'dairy', name: 'Milch', sortOrder: 30),
+      ],
+      layout: [
+        StoreCategory(storeId: 'lidl', categoryId: 'dairy', sortOrder: 10),
+        StoreCategory(
+          storeId: 'lidl',
+          categoryId: 'fruit',
+          sortOrder: 20,
+          hidden: true,
+        ),
+      ],
+    );
+    expect(
+      [
+        for (final stop in walkingOrder(catalog, 'lidl'))
+          '${stop.category.id}${stop.hidden ? ' (hidden)' : ''}',
+      ],
+      ['dairy', 'fruit (hidden)', 'bread'],
+    );
+  });
 }

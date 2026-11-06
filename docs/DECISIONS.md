@@ -8434,3 +8434,37 @@ draft PR #277, `/internal/bottom-nav`). Built without a further question.
    would only hide a regression the widget tests already catch. #281 (shake to send feedback)
    changes this test's privacy-text and row-field checks, not its adds, the add sheet or the
    list screen.
+## Job 98: test speed and coverage hill-climb (hc-tests), 2026-11-05
+
+- **The suite runs 8 test files at once (`app/dart_test.yaml`, `concurrency: 8`).** Without `-j`,
+  `flutter test` leaves concurrency to package:test, which reads `dart_test.yaml` and otherwise
+  uses half the cores. The files are isolated (each is its own `flutter_tester` process), so going
+  wide is safe; on the 8-core box the full run fell from about 63-70 s to about 46-55 s with the
+  same results. Past the core count it does not help (`-j 12` was slower); `-j 6` measured the same
+  as 8. On CI's smaller runners 8 only oversubscribes a little: the flutter job took 243 s against
+  245 s and 287 s on main, and three CI runs of the PR were green; more processes per core could
+  surface timing-sensitive tests there, so a flaky widget test on CI is the first thing to check
+  against this setting. On the 12-core Hetzner runner the default is already 6, and the gain does
+  not resolve from its load noise (review 5).
+- **Mutants are anchored by line text, not byte offset** (review 1): an offset list broke as soon as
+  main changed the mutated files and silently shrank the denominator. A mutant whose line changed now
+  stops the run; a list that no longer resolves is regenerated (same seed) with a new baseline.
+- **A mutant times out twice before it counts as killed** (review 5): one 180 s timeout counted as a
+  kill, so on a loaded host a slow batch passed for a kill nobody saw (m149, 115 instead of 114 of
+  131). A batch past 180 s now runs once more with 360 s, the JSON lists the `timeouts` by id, and a
+  timed-out run's process group is killed so its hung `flutter_tester`s do not slow later mutants.
+- **What bounds the suite now is compilation, one test file after the other.** At 8 wide, test
+  files finish loading every ~0.37 s, back to back: the frontend server compiles one entrypoint at a
+  time. Fewer test files would be the next lever (`--experimental-faster-testing` compiles them as
+  one, but does not build this suite: top-level names clash). Not done: renaming small test files
+  that docs and feature files cite costs more in findability than it saves.
+- **Mutation testing is a small deterministic mutator, not a package** (`tool/hillclimb/hc-tests/
+  mutate.py`): offline, no new dependency, and the sites (operators, boundaries, booleans,
+  `isEmpty`, unary `!`) are found on code only, so a fixed seed gives the same committed mutant list
+  every run. A mutant dies only by a test failure the unmutated tree does not have, and runs in a
+  copy of the whole repository: the wide goldens fail on the box anyway, and some tests read
+  fixtures beside `app/`. Both mistakes had inflated the first mutation score (0.94 instead of 0.81).
+- **Tests added assert what users or the server see**, chosen from the surviving mutants: the
+  repositories' wire contract (the PostgREST/RPC request and how the answer is read), the list
+  cubit's resubscribe, save and usuals rules, analytics without known members, parser boundaries.
+  No production code changed.

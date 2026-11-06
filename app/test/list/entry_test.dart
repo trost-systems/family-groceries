@@ -22,6 +22,8 @@ void main() {
     '3 Dosen Tomaten': Entry('Tomaten', '3 Dosen'),
     'Hack 500 g': Entry('Hack', '500 g'),
     'Milch 2x': Entry('Milch', '2'),
+    'Karotten X2': Entry('Karotten', '2'),
+    'Karotten 20': Entry('Karotten', '20'),
     'Windeln Größe 4': Entry('Windeln Größe 4', null),
     '7up': Entry('7up', null),
     'Vitamin D3': Entry('Vitamin D3', null),

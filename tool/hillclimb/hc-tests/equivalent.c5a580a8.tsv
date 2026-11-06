@@ -1,0 +1,4 @@
+id	reason
+m029	list_cubit.dart:247 `doubled < _maxResubscribe ? doubled : _maxResubscribe` with < -> <=: at doubled == _maxResubscribe both branches yield the same Duration, so no input tells them apart.
+m028	list_cubit.dart:243 `if (isClosed || _channelUp) return;` with || -> &&: the resubscribe timer is cancelled both by close() and by the channel coming online, and _rewatch checks `!isClosed && !_channelUp` again before it subscribes (line 251). list_cubit_test 'a channel back before the retry is not subscribed again' pins the behaviour; it still passes with the cancel removed and m028 applied together.
+m075	model.dart:245 withStoreLayout numbers the new rows `(i + 1) * 10`; `(i - 1) * 10` is still strictly increasing, the store's old rows are dropped first, and only the relative order within one store is ever read (walkingOrder sorts by it).

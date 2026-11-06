@@ -1,0 +1,4 @@
+# Test files per run in parallel. package:test defaults to half the cores; the suite is
+# load- and CPU-bound per file, and the files are isolated, so 8 files run at a time (job 98,
+# tuned on the 8-core box, where the default was 4).
+concurrency: 8

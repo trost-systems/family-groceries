@@ -83,6 +83,9 @@ class FakeRepository() implements ListRepository {
   /// How many times the list subscribed to realtime.
   var watches = 0;
 
+  /// Each unsubscribe waits for the next of these, if any.
+  final unwatchGates = <Completer<void>>[];
+
   /// Holds catalog fetches until completed.
   Completer<void>? catalogGate;
 
@@ -580,7 +583,11 @@ class FakeRepository() implements ListRepository {
     emitDelete = (id) => onItemDeleted(id, _tick());
     emitStatus = onStatus;
     emitCatalogChanged = onCatalogChanged;
-    return () async {};
+    return () async {
+      if (unwatchGates.isNotEmpty) {
+        await unwatchGates.removeAt(0).future;
+      }
+    };
   }
 
   /// A change made by another household member.

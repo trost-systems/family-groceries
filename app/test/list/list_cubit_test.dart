@@ -364,6 +364,95 @@ void main() {
     await retrying.close();
   });
 
+  test('a channel back before the retry is not subscribed again', () async {
+    final retrying = ListCubit(
+      repo,
+      cache,
+      userId: 'peter',
+      resubscribeAfter: const Duration(milliseconds: 10),
+    )..start();
+    await settle();
+    final before = repo.watches;
+    repo
+      ..emitStatus!(ConnectionStatus.offline)
+      ..emitStatus!(ConnectionStatus.online);
+    await elapse(const Duration(milliseconds: 30));
+    expect(repo.watches, before);
+    expect(retrying.state.connection, ConnectionStatus.online);
+    await retrying.close();
+  });
+
+  test(
+    'a list closed while its old channel closes subscribes no more',
+    () async {
+      final retrying = ListCubit(
+        repo,
+        cache,
+        userId: 'peter',
+        resubscribeAfter: const Duration(milliseconds: 10),
+      )..start();
+      await settle();
+      final before = repo.watches;
+      final closing = Completer<void>();
+      repo.unwatchGates.add(closing);
+      repo.emitStatus!(ConnectionStatus.offline);
+      await elapse(const Duration(milliseconds: 30));
+      await retrying.close();
+      closing.complete();
+      await settle();
+      expect(repo.watches, before);
+    },
+  );
+
+  test('due and recent usuals fill ten rows together', () async {
+    final now = DateTime.utc(2026, 10, 30, 9);
+    repo.usuals = [
+      for (var i = 0; i < 3; i++) Usual(name: 'Fällig $i', due: true),
+      for (var i = 0; i < 9; i++)
+        Usual(
+          name: 'Neulich $i',
+          due: false,
+          lastUsed: now.subtract(Duration(days: i + 1)),
+        ),
+    ];
+    final withUsuals = ListCubit(repo, cache, userId: 'peter', clock: () => now)
+      ..start();
+    await settle();
+    expect(withUsuals.dueUsuals, hasLength(3));
+    expect(
+      [for (final u in withUsuals.recentUsuals) u.name],
+      [for (var i = 0; i < 7; i++) 'Neulich $i'],
+    );
+    await withUsuals.close();
+  });
+
+  test('a renamed store is on the device once the list settles', () {
+    fakeAsync((async) {
+      final memory = MemoryListCache();
+      final renaming = ListCubit(repo, memory, userId: 'peter')..start();
+      async.elapse(const Duration(seconds: 1));
+      unawaited(renaming.renameStore('dm', 'Rossmann'));
+      async.elapse(const Duration(seconds: 1));
+      expect([
+        for (final s in memory.saved!.catalog.stores) s.name,
+      ], contains('Rossmann'));
+      unawaited(renaming.close());
+      async.flushMicrotasks();
+    });
+  });
+
+  test('an op is on the device before the server answers it', () async {
+    final bread = (cubit.addEntry(parseEntry('Brot')) as Added).item.id;
+    await settle();
+    repo.gate = Completer();
+    cubit.tick(bread);
+    await settle();
+    expect(cache.saved!.pending.single, isA<SetStatus>());
+    repo.gate!.complete();
+    await settle();
+    expect(cache.saved!.pending, isEmpty);
+  });
+
   test('a delete can be undone with the same id', () async {
     final item = (cubit.addEntry(parseEntry('Milch')) as Added).item;
     await settle();
@@ -476,6 +565,10 @@ void main() {
       final store = await cubit.addStore('  Rewe   City ');
       expect(store?.name, 'Rewe City');
       expect(storeNames(), ['dm', 'Lidl', 'Rewe City']);
+      expect(
+        store!.sortOrder,
+        greaterThan(cubit.state.catalog.store('lidl')!.sortOrder),
+      );
       await settle();
       expect(repo.catalogCalls, ['addStore(Rewe City)']);
       expect(storeNames(), ['dm', 'Lidl', 'Rewe City']);
