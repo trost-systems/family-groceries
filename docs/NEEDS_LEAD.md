@@ -2081,3 +2081,18 @@ runner ran. It can't see a stall of Chromium or the stack alone, such as a starv
 memory pressure while node keeps running, so such a stall uses up a 2 s live window with no
 `[host-stall]` line and no retry. Polling a clock in the page as well would cover Chromium. It's
 your call whether that is worth a job.
+## Job 123: close #78 and #79 as host-pause only
+
+Status: open, the lead's call. The job closes nothing by hand.
+
+The two voice.spec.ts flakes ("a token only reaches its own household's list", #78; "a
+dictated sentence lands in the open list, split and sorted", #79) did not reproduce under any
+load or pause the stall detector cannot see. 90 of 90 runs passed under CPU load and
+stack-only pauses of up to 8 s every 14 s, with retries off. They failed only while the runner
+and Chromium were stopped for most of a 10 s wait. All 11 such attempts printed `[host-stall]`
+(7 to 9 s), and the 18.23 policy retries those. Every recorded failure fell in a host pause of
+177 to 1801 s. The counts and the method are in `DECISIONS.md` ("Job 123") and
+`docs/done/123-fix-voice-spec-flakes.md`.
+
+To close: close #78 and #79 with a link to the PR. If either one fails again without a
+`[host-stall]` line in the failing attempt, reopen it with the run log.
