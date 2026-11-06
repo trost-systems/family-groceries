@@ -257,7 +257,12 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  padding: const EdgeInsets.fromLTRB(
+                    HlSpace.s4,
+                    HlSpace.s2,
+                    HlSpace.s4,
+                    10,
+                  ),
                   child: FoldoutChips(
                     catalog: _catalog,
                     storeId: _storeId,
@@ -275,10 +280,10 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(
-                  12,
+                  HlSpace.s4,
                   10,
-                  12,
-                  16 + math.max(0, media.padding.bottom - keyboard),
+                  HlSpace.s4,
+                  HlSpace.s4 + math.max(0, media.padding.bottom - keyboard),
                 ),
                 // Large text stacks Fertig over Abbrechen.
                 child: OverflowBar(
