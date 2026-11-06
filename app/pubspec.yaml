@@ -62,21 +62,21 @@ flutter:
     - assets/brand/
     - assets/fonts/OFL-BricolageGrotesque.txt
     - assets/fonts/OFL-Inter.txt
-  # Design job 52: bundled, never downloaded at runtime (OFL texts next to
-  # them, registered with the LicenseRegistry in main.dart).
-  fonts:
-    - family: Bricolage Grotesque
-      fonts:
-        - asset: assets/fonts/BricolageGrotesque-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/BricolageGrotesque-ExtraBold.ttf
-          weight: 800
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
-          weight: 700
+    # Design job 52: the fonts are bundled, never downloaded from a font service (OFL texts
+    # above, registered with the LicenseRegistry in main.dart). Job 133: loadAppFonts registers
+    # them before the first frame, as TrueType on devices and as WOFF2 on the web, where the
+    # item icons' emoji also come along (scripts/app-fonts.sh writes both).
+    - path: assets/fonts/BricolageGrotesque-Bold.ttf
+      platforms: &native [android, ios, linux, macos, windows]
+    - path: assets/fonts/BricolageGrotesque-ExtraBold.ttf
+      platforms: *native
+    - path: assets/fonts/Inter-Regular.ttf
+      platforms: *native
+    - path: assets/fonts/Inter-Medium.ttf
+      platforms: *native
+    - path: assets/fonts/Inter-SemiBold.ttf
+      platforms: *native
+    - path: assets/fonts/Inter-Bold.ttf
+      platforms: *native
+    - path: assets/fonts/web/
+      platforms: [web]

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/app/framework_localizations.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
@@ -203,7 +204,7 @@ class _AppState() extends State<App> {
           theme: _light,
           darkTheme: _dark,
           themeMode: context.watch<ThemeCubit>().state,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: switch (context.watch<LanguageCubit>().state) {
             final picked? => Locale(picked.code),

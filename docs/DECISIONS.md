@@ -8081,3 +8081,48 @@ goes. Every `showSnackBar` in `app/lib` was classified (table in the PR).
     and so in request logs; posting the body to the API answers 400 instead.
 18. **The QR code is drawn at build time** from `qrcode`'s module matrix as inline SVG (no script);
     a test decodes the SVG with `jsQR` back to `https://hummlist.com/get`.
+
+## Job 133: hill-climb hc-web-bundle, web first-load bytes (2026-11-05)
+
+The web app's first load (brotli bytes of every file the boot fetches before the list shows)
+went from 3,936,104 to 3,095,508 (-21.4 %); log in `docs/hillclimb/hc-web-bundle.md`.
+
+1. **The item icons' emoji ship as a web-only font.** `app/assets/fonts/web/NotoColorEmoji-icons.ttf`
+   holds the 60 emoji of `item_icon.dart`, cut from Noto Color Emoji 2.047, the release the
+   engine's v32 fallback chunks were made from, so the glyphs are the same. It is registered as
+   "Noto Color Emoji", the name `emojiFontFallback` already asks for (which matched nothing on
+   web), before `runApp`; otherwise the first layout would still ask for the chunks. iOS and
+   Android keep their system emoji. Licence: the font keeps its name table, with the OFL in name
+   IDs 13/14, and `app/web/fonts/LICENSES.md` + `OFL.txt` already ship the notocoloremoji
+   notice on the same origin. The in-app Licenses page lists only Inter and Bricolage, as before;
+   adding Noto there is licence-page content and left to the lead (it is not new on web: the
+   engine served the same font from /fonts/ before).
+2. **The bundled fonts lose what nothing reads.** Inter and Bricolage Grotesque lose their
+   private-use glyphs, the OpenType features the app never turns on, their glyph names and their
+   TrueType hinting (Flutter draws with slight hinting, which FreeType does with its auto-hinter,
+   and CoreText ignores TrueType hints). Every character stays; goldens unchanged. The fonts have
+   no Reserved Font Name, so the OFL allows the subsets.
+3. **WOFF2 on the web, TrueType on devices, both through `loadAppFonts`.** Android's engine
+   reads WOFF1 only (no brotli in libflutter.so) and a pubspec `fonts:` entry cannot differ per
+   platform, so the fonts are assets scoped with `platforms:` and `loadAppFonts`
+   (`app/lib/design/fonts.dart`) registers them with FontLoader before `runApp` on every platform,
+   the way the goldens and the Widgetbook already loaded them. It caps the wait at 5 s; a file
+   that fails only logs (each read handles its own error: `FontLoader.load` stops at the first
+   failure and left the other reads' errors to error tracking, review 1), and a late font
+   applies when it arrives (review 1 held Inter Regular 9 s: the list showed at 5.8 s and then
+   re-rendered identically). On a zero-latency link the list shows about 50 ms later than
+   before, since the fonts start when `main` runs, not during engine init; a font preload in
+   `web/index.html` would be job 129's call. Residual risk: devices now register
+   the fonts in `main` instead of through the engine's manifest. Same files and glyphs, in
+   parallel with the other awaited start-up work, but not run on a phone here.
+   `scripts/app-fonts.sh` writes the TTF and WOFF2 files (fontTools from its PyPI wheel, wawoff2,
+   both pinned) in place and idempotently; `web_woff2_fonts_test.dart` checks they match.
+4. **Material, Cupertino and Widgets localizations for de and en only**
+   (`app/lib/app/framework_localizations.dart`). The global delegates keep about 80 locales because
+   they choose at runtime. The date data comes from the Flutter SDK through
+   `scripts/framework-l10n.py`; the flutter gate fails when it is stale (after a Flutter upgrade,
+   rerun it). Tests keep the global delegates; a behaviour test checks both give the same strings.
+5. **Not done here, for the lead:** RevenueCat's web SDK (203 KB brotli on every web boot,
+   though the web app never sells) needs a change to how `purchases_flutter` is depended on;
+   Greek and Cyrillic out of the web fonts (-75 KB) would change how those letters look on the
+   web; Roboto (75 KB) could only go with a pubspec family that also changes Android and iOS.

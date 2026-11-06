@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Generated l10n matches the ARB files, format, analyze with infos as errors, unit and widget tests;
+# Generated l10n matches the ARB files and Flutter's date data (scripts/framework-l10n.py), format,
+# analyze with infos as errors, unit and widget tests;
 # the same for the Widgetbook (app/widgetbook/).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
@@ -8,6 +9,8 @@ cd "$REPO_ROOT/app"
 flutter pub get >/dev/null
 flutter gen-l10n
 git diff --exit-code -- lib/l10n
+python3 ../scripts/framework-l10n.py
+git diff --exit-code -- lib/app/framework_date_data.dart
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze --fatal-infos
 flutter test
