@@ -90,6 +90,33 @@ void main() {
     test('no row: the item is gone', () async {
       expect(await answering(200, <Object>[]).send(add), {'item-1': null});
     });
+
+    test(
+      'a guessed category is left to the server, a picked one sent',
+      () async {
+        final sent = <Object?>[];
+        final repo = SupabaseListRepository(
+          SupabaseClient(
+            'http://127.0.0.1:1',
+            'sb_publishable_test',
+            httpClient: MockClient((request) async {
+              sent.add((jsonDecode(request.body) as Map)['p_category']);
+              return http.Response(
+                jsonEncode([row('item-1')]),
+                200,
+                headers: {'content-type': 'application/json'},
+                request: request,
+              );
+            }),
+          ),
+          'household',
+        );
+        final guessed = add.item.copyWith(categoryId: 'bakery');
+        await repo.send(AddItem(guessed, autoCategory: true));
+        await repo.send(AddItem(guessed));
+        expect(sent, [null, 'bakery']);
+      },
+    );
   });
 
   test('a dictated item keeps the brand and details the server split off '

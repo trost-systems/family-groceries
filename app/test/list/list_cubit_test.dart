@@ -696,6 +696,15 @@ void main() {
     expect([for (final s in cubit.state.catalog.stores) s.id], ['lidl', 'dm']);
   });
 
+  test('a dictated add leaves the category to the server', () async {
+    await cubit.addSpoken('Milch und Brot');
+    await settle();
+    expect(
+      [for (final op in repo.sent.cast<AddItem>()) op.autoCategory],
+      [true, true],
+    );
+  });
+
   test('a restored item keeps its place', () async {
     for (final name in ['Äpfel', 'Birnen']) {
       repo.remoteAdd(name, categoryId: 'produce');

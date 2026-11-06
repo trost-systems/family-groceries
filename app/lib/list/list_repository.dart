@@ -306,7 +306,7 @@ class SupabaseListRepository(
   /// that was already on the list (then this id is gone, answered as null).
   /// No row: the id is taken by a row this user cannot see.
   Future<Map<String, Item?>> _add(AddItem op) => _refusable(() async {
-    final AddItem(:noStore, :deviceParsed) = op;
+    final AddItem(:noStore, :deviceParsed, :autoCategory) = op;
     final item = deviceParsed
         ? (await parse(op.item.name)).onto(op.item, noStore: noStore)
         : op.item;
@@ -320,7 +320,8 @@ class SupabaseListRepository(
           'p_quantity': item.quantity,
           'p_brand': item.brand,
           'p_properties': item.properties,
-          'p_category': item.categoryId,
+          // None given: the server classifies the item.
+          'p_category': autoCategory ? null : item.categoryId,
           // None given: the server fills in the remembered store.
           'p_store': item.storeId,
           // A restored item keeps its place.

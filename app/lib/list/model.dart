@@ -579,6 +579,7 @@ sealed class const ItemOp(final String itemId) {
         restored: json['restored'] == true,
         noStore: json['no_store'] == true,
         deviceParsed: json['device_parsed'] == true,
+        autoCategory: json['auto_category'] == true,
       ),
       'status' => SetStatus(
         id,
@@ -718,6 +719,7 @@ sealed class const ItemOp(final String itemId) {
         :final restored,
         :final noStore,
         :final deviceParsed,
+        :final autoCategory,
       ) =>
         {
           'op': 'add',
@@ -725,6 +727,7 @@ sealed class const ItemOp(final String itemId) {
           if (restored) 'restored': true,
           if (noStore) 'no_store': true,
           if (deviceParsed) 'device_parsed': true,
+          if (autoCategory) 'auto_category': true,
         },
       SetStatus(:final status, :final at, :final storeId) => {
         'op': 'status',
@@ -787,14 +790,18 @@ sealed class const ItemOp(final String itemId) {
 /// [restored]: a deleted item put back (the delete's undo), not a new add.
 /// [noStore]: without a store; otherwise a missing store is the remembered
 /// one. [deviceParsed]: the name is a line typed offline, which parse_item
-/// splits before the add is sent ([ParsedEntry.onto]). The server answers
-/// with the open item the add already is when the list has one
-/// (`put_item`), and the app folds this item into it ([ItemOp.ontoKept]).
+/// splits before the add is sent ([ParsedEntry.onto]). [autoCategory]: the
+/// server classifies the item when it inserts it, and [item]'s category only
+/// shows until then, so a category correction queued ahead of this add is
+/// learned first. The server answers with the open item the add already is
+/// when the list has one (`put_item`), and the app folds this item into it
+/// ([ItemOp.ontoKept]).
 final class AddItem(
   final Item item, {
   final bool restored = false,
   final bool noStore = false,
   final bool deviceParsed = false,
+  final bool autoCategory = false,
 }) extends ItemOp {
   this : super(item.id);
 

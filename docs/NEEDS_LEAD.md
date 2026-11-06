@@ -1989,3 +1989,37 @@ P s. It isn't committed; job 119's #261 tool counts its flags differently.
    then.
 
 Run on head a030ac03 (2026-11-06, under the lock): `--stack 11/15` gave 2 failed, 3 passed, both at `answerConsent`'s 10 s `toHaveURL`. `--stack 9/12` gave 5 passed. Logs: `proof/recipe-11-15.log`, `proof/recipe-9-12.log`.
+## Job 126: classifier learning, RLS and due-again suggestions under load (2026-11-05)
+
+PR "test(e2e): classifier learning, RLS and due-again suggestions hold under load". PR only: the
+lead reviews and merges. No migration.
+
+- **#61's `toBeNull` is open evidence.** Its first logged failure was an error from `add_items`, which this PR does not explain (DECISIONS 126.6). If it shows again, the assertion prints the error.
+- **Issues closed by the PR.** #61, #73 and #77 each logged failures during host pauses, and none
+  failed under load or under 3 to 8 s pauses (45 of 45 passed on main). Each test also had a race
+  that fails it under one slow server answer (3 to 10 s, inside the 60 s budget), which is what
+  the issues asked to look for, so the PR closes them (DECISIONS 126). Reopen one if it fails
+  again without a stall line.
+- **Follow-up, store guess (out of scope here).** The add sheet sends the store it guessed while
+  the user typed. If the user moved the item to another store just before and that edit is still
+  queued, the re-add carries the old store. `items_learn_insert` then counts it as a pick, which
+  works against the correction in `item_store_memory`. The category had the same race and is
+  fixed here by sending no category. For the store that is not enough: with no store, the insert
+  trigger fills only `suggest_store` (memory), not `guess_store`'s brand and drugstore fallbacks
+  (Balea → dm, Windeln → dm). The fix: in a migration, `items_before_write` fills
+  `guess_store(household, name, brand, category)` for a missing store, and the app sends no store
+  when the user did not pick one (`AddSheetState.store == null`). Then check that the Siri, Alexa
+  and MCP adds (`add_item`, which already passes its parsed store) give the same stores.
+- **Long specs under a busy runner (your call).** `classifier.spec.ts:5` takes 28.3 s of its 60 s
+  on CI. On hz at loadavg 13 to 41 plus 12 CPU burners it timed out at its end 3 of 24 times on
+  main and 5 of 24 with this PR (DECISIONS 126.4), which is within noise for the same cause. The
+  budget stays (brief: no longer timeouts without a wrong budget). If such runs should count,
+  `test.slow()` on the specs that use about half the budget on CI is the lever.
+- **Two sibling specs, same test-wait shape (review 0, out of scope for #77).**
+  `suggestions.spec.ts:13` and `:45` tick an item and type at once, expecting „Schon mal
+  gekauft“. If the tick has not reached the server when the sheet asks for suggestions, there is
+  no history row yet. The reviewer saw `:45` fail once under 8 s stack pauses (line 49, „6× Eier,
+  Schon mal gekauft“ not found). The fix is the same poll as in `:68` before typing.
+- **For job 120 (live sync).** After 8 s stack pauses, a row written through the API
+  (`add_items`) sometimes never reached the open list over realtime: 1 of 12 on main and 1 of 12
+  with this PR (`classifier.spec.ts:49` since the #237 rebase, „could not scroll … Hafermilch into view“; posted on BOARD for job 120 at 02:26 on 2026-11-06).

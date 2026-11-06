@@ -227,11 +227,13 @@ void main() {
       await pick(tester, 'chip-category', 'category-option-produce');
       await tester.tap(row(1));
       await tester.pumpAndSettle();
-      final item = (repo.sent.single as AddItem).item;
+      final add = repo.sent.single as AddItem;
+      final item = add.item;
       expect(
         (item.name, item.brand, item.properties, item.storeId, item.categoryId),
         ('Milch', 'Weihenstephan', 'laktosefrei, 1,5 %', 'lidl', 'produce'),
       );
+      expect(add.autoCategory, isFalse, reason: 'the pick is sent');
     });
 
     testWidgets('without a pick the row keeps its own store', (tester) async {
@@ -240,7 +242,9 @@ void main() {
       await type(tester, 'milch');
       await tester.tap(row(1));
       await tester.pumpAndSettle();
-      expect((repo.sent.single as AddItem).item.storeId, 'dm');
+      final add = repo.sent.single as AddItem;
+      expect(add.item.storeId, 'dm');
+      expect(add.autoCategory, isTrue, reason: 'the server classifies it');
     });
 
     testWidgets('Ohne Laden adds without the remembered store, in one op', (

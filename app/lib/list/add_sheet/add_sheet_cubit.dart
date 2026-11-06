@@ -127,6 +127,7 @@ class AddSheetCubit(
         deviceParsed: entry.deviceParsed,
       ),
       noStore: store != null && store.value == null,
+      autoCategory: state.category == null,
       source: suggestion.source == SuggestionSource.typed
           ? AddSource.typed
           : AddSource.suggestion,
