@@ -25,4 +25,6 @@ households:
       - { name: Apple juice, by: ida }
       - { name: Ice cream, by: mia }
       - { name: Dish soap, by: noah }
+      - { name: Trash bags, by: mia }
       - { name: Toothpaste, by: ida }
+      - { name: Shower gel, by: noah }

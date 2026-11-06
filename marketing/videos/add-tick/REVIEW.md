@@ -1,7 +1,7 @@
 # Review: add-tick
 
 Mia types two items into the real add sheet, closes it, the rows sit in their category, and she
-ticks both off again. One take per language, one phone, 10.5 to 10.8 s.
+ticks both off again. One take per language, one phone, 11.0 to 11.8 s.
 
 ## Hand-over notes (hummlist-ui-craft)
 
@@ -40,6 +40,19 @@ ticks both off again. One take per language, one phone, 10.5 to 10.8 s.
 - P2 · section labels are about 7 px at the shown size → real app text at 0.84×; item names are
   16 px; kept.
 
+## Re-take (job 146, 2026-11-06)
+
+Filmed again from main 605ad96d after the UI jobs: the add field floats over the list as a hex
+pill above the floating tab pill (#278, #288), the add sheet confirms in its own line
+("Hinzugefügt: Honig · Rückgängig"); no snackbar shows anywhere in the takes.
+
+- The crop moved down 56 to 57 logical px (wide `appTop` 413 → 470, compact 173 → 229) so it ends under
+  the tab pill: the floating field and the pill are in every frame, the new rows still land mid-view.
+- The take closes the List tab's tips off camera (`driver.ts` `login`), as a returning user has; the
+  first take filmed the "Artikel bearbeiten" card above the list.
+- Compact fade starts 6 u lower (`fadeTop` [82, 130]) so the cut "Kühlregal" label above Vollmilch
+  dissolves fully.
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the last caption: it is the first caption again (loop seam), on screen for
@@ -52,23 +65,23 @@ ticks both off again. One take per language, one phone, 10.5 to 10.8 s.
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.83 s | 1441 KB | none |
-| de-wide | add-tick-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.83 s | 434 KB | none |
-| de-wide | add-tick-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.83 s | 387 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.83 s | 1120 KB | none |
-| de-compact | add-tick-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.83 s | 380 KB | none |
-| de-compact | add-tick-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.83 s | 370 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.47 s | 1275 KB | none |
-| en-wide | add-tick-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.47 s | 398 KB | none |
-| en-wide | add-tick-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.47 s | 345 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.47 s | 961 KB | none |
-| en-compact | add-tick-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.47 s | 329 KB | none |
-| en-compact | add-tick-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.47 s | 337 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.80 s | 1445 KB | none |
+| de-wide | add-tick-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.80 s | 510 KB | none |
+| de-wide | add-tick-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.80 s | 420 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.80 s | 1070 KB | none |
+| de-compact | add-tick-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.80 s | 409 KB | none |
+| de-compact | add-tick-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.80 s | 386 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.03 s | 1273 KB | none |
+| en-wide | add-tick-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.03 s | 431 KB | none |
+| en-wide | add-tick-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.03 s | 365 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.03 s | 904 KB | none |
+| en-compact | add-tick-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.03 s | 339 KB | none |
+| en-compact | add-tick-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.03 s | 330 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9976 | add-tick-de-wide.webp, 26 KB | 7.23 s |
-| de-compact | 0.9974 | add-tick-de-compact.webp, 28 KB | 7.23 s |
-| en-wide | 0.9979 | add-tick-en-wide.webp, 23 KB | 6.87 s |
-| en-compact | 0.9974 | add-tick-en-compact.webp, 23 KB | 6.87 s |
+| de-wide | 0.9970 | add-tick-de-wide.webp, 28 KB | 7.67 s |
+| de-compact | 0.9970 | add-tick-de-compact.webp, 29 KB | 7.67 s |
+| en-wide | 0.9970 | add-tick-en-wide.webp, 26 KB | 7.23 s |
+| en-compact | 0.9971 | add-tick-en-compact.webp, 26 KB | 7.23 s |
 <!-- /report -->

@@ -30,11 +30,11 @@ export function plan(take, events, lang) {
   return { a, b, duration, cues, poster, beats: Object.fromEntries(Object.entries(beats).map(([k, v]) => [k, rel(v)])), offset: (take.offsets?.mia ?? 0) / 1000 };
 }
 
-// The app region in view ends with the input bar (logical y 830, the tab bar stays out) and
-// starts at a row edge, so the new items land in view.
+// The app region in view ends under the floating tab pill (logical y 886) with the floating add
+// field above it, and starts high enough that the new rows and the open sheet stay in view.
 const LAYOUT = {
-  wide: { box: { x: 24, y: -40, w: 372, h: 400 }, appTop: 413, caption: 'left:calc(414 * var(--u));top:calc(112 * var(--u));width:calc(150 * var(--u))', align: 'left' },
-  compact: { box: { x: 24, y: -20, w: 310, h: 516 }, fadeTop: [76, 126], appTop: 173, caption: 'left:calc(24 * var(--u));top:calc(22 * var(--u));width:calc(310 * var(--u))', align: 'center' },
+  wide: { box: { x: 24, y: -40, w: 372, h: 400 }, appTop: 470, caption: 'left:calc(414 * var(--u));top:calc(112 * var(--u));width:calc(150 * var(--u))', align: 'left' },
+  compact: { box: { x: 24, y: -20, w: 310, h: 516 }, fadeTop: [82, 130], appTop: 229, caption: 'left:calc(24 * var(--u));top:calc(22 * var(--u));width:calc(310 * var(--u))', align: 'center' },
 };
 
 export function compose({ fmt, lang, events, p }) {

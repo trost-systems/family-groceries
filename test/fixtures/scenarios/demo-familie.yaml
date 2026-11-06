@@ -25,4 +25,6 @@ households:
       - { name: Apfelsaft, by: ida }
       - { name: Erbsen, by: mia }
       - { name: Spülmittel, by: noah }
+      - { name: Müllbeutel, by: mia }
       - { name: Zahnpasta, by: ida }
+      - { name: Duschgel, by: noah }

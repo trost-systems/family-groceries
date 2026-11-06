@@ -32,7 +32,7 @@ export function plan(take, events, lang) {
   return { a, b, duration, cues, poster, offsets, latency: take.measured, beats: Object.fromEntries(Object.entries(beats).map(([k, v]) => [k, rel(v)])) };
 }
 
-// Mia leads: her phone runs off the top edge and holds the add sheet. Noah and Ida are fanned
+// Mia leads: her phone runs off the top edge and holds the add sheet above the floating tab pill. Noah and Ida are fanned
 // behind, their real screen tops in view (header note and the chilled rows), running off the
 // bottom. Wide: Mia on the right, the caption above Noah's and Ida's phones. Compact: a deck,
 // Mia on top (her head dissolves under the caption), then Noah's and Ida's phones as two bands,
@@ -43,7 +43,7 @@ const LAYOUT = {
     phones: {
       ida: { box: { x: 30, y: 150, w: 250.6, h: 220 }, appTop: 0, z: 1 },
       noah: { box: { x: 140, y: 150, w: 250.6, h: 220 }, appTop: 0, z: 2 },
-      mia: { box: { x: 250, y: -60, w: 303, h: 420 }, appTop: 281.1, z: 3 },
+      mia: { box: { x: 250, y: -60, w: 303, h: 420 }, appTop: 337, z: 3 },
     },
     tags: { ida: { x: 40, y: 138 }, noah: { x: 150, y: 138 }, mia: { x: 488, y: 18 } },
   },
