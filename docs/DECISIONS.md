@@ -8872,3 +8872,102 @@ test, app or server change. The evidence is in the PR and `docs/NEEDS_LEAD.md` (
    a pause made on purpose. Counting GoTrue's `request_timeout` 504 as a stall mark in
    `e2e/tests/fixtures.ts` would cover only a database stalled under a live GoTrue. A
    whole-stack stall ends as a plain 10 s `expect` timeout with no 504.
+## Job 126: classifier learning, RLS and due-again suggestions under load (2026-11-05)
+
+Flaky issues #61 (`classifier.spec.ts:5`), #73 (`rls.spec.ts:4`) and #77
+(`suggestions.spec.ts:68`). Method as in 18.23, retries off, `--workers=1` under
+`/tmp/fg-e2e.lock`, release web build, on the Hetzner runner.
+
+1. **Load and pauses alone do not fail them.** On main (1ba6dc51) the three
+   tests ran 3 times in each of five modes: plain, the runner and Chromium
+   stopped for 8 s every 6 s, the local stack's containers paused (`docker
+   pause`) for 8 s every 6 s, 12 CPU burners, and the runner and Chromium
+   stopped for 3 s every 4 s. All 45 runs passed. The logged failures fell in
+   host pauses: #61's two runs were VOID with 763 s and 2116 s mem-guard gaps,
+   #77's second named a 127 s stall, and #73 and #77's first are from
+   2026-10-25, when the box's VM paused for minutes at a time (heartbeat
+   holes of 150 to 3000 s on BOARD.md) and the stall detector did not exist
+   yet.
+2. **One cause per test: an optimistic signal read as a server fact.** Every
+   item write is applied on screen before the server has it (`ItemOp`), and
+   the server's answer can come seconds later after a lost request and a
+   retry. So the trigger was one slow answer, synthesized with
+   `page.route`, well inside the 60 s budget. Each test failed 2 of 2 on main:
+   - #77, a test wait. The tick hides „Brötchen“ at once. The test then moves
+     the tick's `bought` event a week back, but with the tick 3 s late there
+     is no event yet. The server writes it afterwards at `now()`, so nothing
+     is due („the usual week has passed“ fails). Fix: poll until the item is
+     `bought` on the server before rewriting its history, as the classifier
+     test already does before `add_items`.
+   - #73, a test wait. „Geheimzutat“ shows at once. With its add 10 s late,
+     reading the row by name answers null (`TypeError` on
+     `own!.household_id`). Fix: poll until the server has the row.
+   - #61, an app race. The add sheet shows the server's category guess while
+     the user types, and the add sent that guess as `p_category`. When the
+     correction before it (move Hafermilch to Getränke, 3 s late) was still
+     queued, the guess was the old category. The re-add then landed in
+     Kühlregal. Worse, `items_learn_insert` counts an insert whose category
+     differs from the guess at insert time as a pick, so the stale guess was
+     learned and undid the user's correction. Fix: an add whose category the
+     user did not pick (`AddItem.autoCategory`, from the sheet's
+     `state.category == null`) sends no category. The insert trigger
+     classifies it after every op queued ahead of it, since the queue is
+     serial. The item still shows the guess until the answer, so nothing
+     moves on screen in the usual case. A queued op from an older app has no
+     flag and sends its category as before. No server change. Dictated adds
+     (`ListCubit.addSpoken`) carry the category the server's splitter
+     guessed and never a user pick, so they set the flag too (review 0).
+3. **After the fixes.** The three slow-answer probes pass 2 of 2 each (on main
+   26223b44 they still fail 2 of 2). The 20x run of the three files on the
+   release build: `180 passed (30.4m)`. Without the synthesized delay the
+   race also showed up once by itself on main: the stack paused for 8 s
+   every 6 s, the re-added „2 Hafermilch“ stayed outside Getränke
+   (`classifier.spec.ts:20`).
+4. **What heavy load still does, to both builds.** Late at night the box
+   ran at loadavg 13 to 41 before my 12 burners, so the CPU was
+   oversubscribed up to three times. In that state the learning test ran 4
+   rounds A/B, alternating main's build and this one, 3 runs per cell:
+   main 10/12 under the burners and 9/12 under stack pauses, this PR 8/12
+   and 9/12. The failures:
+   - 60 s test timeouts at the end of the test (Lea's sign-up and adds,
+     lines 51 to 55): main 3, this PR 5. On CI the test takes 28.3 s of its
+     60 s, and the same 2.1x headroom fails when the CPU is oversubscribed
+     2.5 to 3 times. This is host capacity, the same for every long spec,
+     so the budget stays. Whether long specs get `test.slow()` is in
+     NEEDS_LEAD.
+   - The row `add_items` writes did not reach Peter's list over realtime
+     after a stack pause (line 49 since the #237 rebase): main 1, this PR 1. That is live-sync
+     recovery (job 120's area), not this race.
+   - The add sheet's „✓ Hinzugefügt“ line did not show within 10 s after
+     Enter (line 52): this PR 1, main 0. The line comes from the add's
+     local result before any request, which this change does not touch.
+     Seen once in 24 runs.
+   - The stressed matrix of the three tests on this PR, while the box was
+     that busy: 42 of 45 passed. The 3 failures were one each of the
+     above, plus one sign-in screen that did not render within 15 s on
+     page load in `rls.spec.ts` (not seen again in the 40 rls runs of the
+     20x).
+5. **Not changed.** The store guess has the same shape: the sheet sends the
+   guessed store, and `items_learn_insert` counts a store other than the
+   guess at insert time. Sending no store is not the same fix, because the
+   insert trigger fills only the remembered store (`suggest_store`), not the
+   brand and drugstore guesses (`guess_store`). That needs a trigger change
+   for every caller. Recorded in NEEDS_LEAD (job 126).
+6. **#61's assertion failure is not explained (review 1).** Its first logged
+   run failed `expect(error).toBeNull()` on the `add_items` RPC (line 43 on
+   2026-10-26, line 46 now), so `add_items` answered an error. That is not
+   the race fixed here, which fails at line 20. The run was VOID with a
+   763 s mem-guard gap, and the received error is only in the box's log
+   (`/tmp/fg15-five/run3.log`), not on hz. Three pause shapes against this
+   job's stack never made `add_items` answer an error
+   (`jobs/126-…/evidence/addpause/`):
+   - db container frozen 10 s while the call ran: 0 errors in 22 tries,
+     including 4 statements of 1 to 2 s frozen 300 ms in.
+   - The whole stack frozen 10 s during the call: 0 errors in 10 tries.
+   - The calling process stopped 75 s and 200 s between two calls, with the
+     stack running (a stale keep-alive socket): 0 errors in 2 tries.
+   So `statement_timeout` (8 s for `authenticated`) does not fire across a
+   container freeze. A whole-VM pause, where the guest clock jumps, could
+   still do it, but that is unproven. The assertion prints the received
+   error, so the next occurrence names it. Until then it counts as a host
+   pause.

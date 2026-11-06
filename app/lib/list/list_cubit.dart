@@ -367,7 +367,8 @@ class ListCubit(
     final (:entries, :truncated) = await _repo.splitSpoken(text);
     return (
       results: [
-        for (final entry in entries) addParsed(entry, source: AddSource.spoken),
+        for (final entry in entries)
+          addParsed(entry, autoCategory: true, source: AddSource.spoken),
       ],
       truncated: truncated,
     );
@@ -383,10 +384,12 @@ class ListCubit(
   /// pick the remembered one, unless [noStore]: the user chose "Ohne
   /// Laden", so the store is cleared after the add. An item with the same
   /// name, brand and details already on the list is not added twice.
-  /// [source] is how the user picked it, for analytics.
+  /// [source] is how the user picked it, for analytics. [autoCategory]: the
+  /// entry's category is the server's guess, not the user's pick.
   AddResult addParsed(
     ParsedEntry entry, {
     bool noStore = false,
+    bool autoCategory = false,
     AddSource source = AddSource.typed,
   }) {
     final name = entry.name.trim();
@@ -413,7 +416,14 @@ class ListCubit(
       createdAt: now,
       updatedAt: now,
     );
-    _enqueue(AddItem(item, noStore: noStore, deviceParsed: entry.deviceParsed));
+    _enqueue(
+      AddItem(
+        item,
+        noStore: noStore,
+        deviceParsed: entry.deviceParsed,
+        autoCategory: autoCategory,
+      ),
+    );
     _track('item_added', {'source': source.name, ..._actor()});
     return Added(item);
   }

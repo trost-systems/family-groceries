@@ -253,7 +253,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Automatic category (the classifier)
 
-**What it does.** When an item is added, Hummlist sorts it into a category on its own, such as Kühlregal for Hafermilch, using a built-in German word list of about 1,200 terms plus common spelling variants, regional words, some English words and small typos. While you type, the add sheet already shows the category it will use. Anything unknown goes to „Sonstiges“. If you move an item to another category, or pick another one before adding, the household remembers it and the same item lands there next time, also under another spelling of the same word (Karotten, Möhren). This works the same for items added in the app, by voice, through the AI-assistant connection, Siri and Alexa.
+**What it does.** When an item is added, Hummlist sorts it into a category on its own, such as Kühlregal for Hafermilch, using a built-in German word list of about 1,200 terms plus common spelling variants, regional words, some English words and small typos. While you type, the add sheet already shows the category it will use. Anything unknown goes to „Sonstiges“. If you move an item to another category, or pick another one before adding, the household remembers it and the same item lands there next time, also under another spelling of the same word (Karotten, Möhren), and also when you add it again right away on a slow connection. This works the same for items added in the app, by voice, through the AI-assistant connection, Siri and Alexa.
 
 **How to get there.**
 1. Type an item in the add bar on the „Liste“ tab and add it; it appears under its category.
@@ -268,7 +268,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Offline.** An item added without a connection shows under „Wird einsortiert …“ (EN: "Sorting …") until the connection is back, then moves under its category. Online, items arrive already sorted.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): the category shown before adding (Zahnbürste: Drogerie), new items under their category (DE and EN). Before that main c5a580a8, 2026-11-05: Sonstiges. Recipe: [classifier.md](./classifier.md).
+**Last verified.** job 126 on main 605ad96d, 2026-11-06 (CET), driven on the web build by `classifier.spec.ts` with the correction's request held 3 s (re-add lands in the corrected category) and 20 times without. Before that main 6da42673, 2026-11-06, from code and driven on the web build (verify-hummlist): the category shown before adding (Zahnbürste: Drogerie), new items under their category (DE and EN); main c5a580a8, 2026-11-05: Sonstiges. Recipe: [classifier.md](./classifier.md).
 
 ## Categories
 

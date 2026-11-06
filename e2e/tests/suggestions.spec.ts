@@ -80,6 +80,10 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
 
   // Two purchases a week apart, the last a week ago: history only the server writes.
   const api = await apiAs(email);
+  await expect.poll(async () => {
+    const { data } = await api.from('items').select('status').eq('name', 'Brötchen');
+    return data?.map((r) => r.status);
+  }, { message: 'the tick reached the server, so its bought event is there to move back' }).toEqual(['bought']);
   const { data: item } = await api.from('items').select('id, household_id').eq('name', 'Brötchen').single();
   if (item === null) throw new Error('no Brötchen item');
   const events = adminClient().from('item_events');

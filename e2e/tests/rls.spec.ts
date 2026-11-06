@@ -13,6 +13,9 @@ test('a user from another household can neither see nor change the list', async 
   await expect(itemRow(eve, 'Geheimzutat'), 'not in the other household\'s UI').toHaveCount(0);
 
   const peterApi = await apiAs(peterEmail);
+  await expect.poll(async () => (await peterApi.from('items').select('id').eq('name', 'Geheimzutat')).data?.length, {
+    message: 'the add reached the server',
+  }).toBe(1);
   const { data: own } = await peterApi.from('items').select('id, household_id').eq('name', 'Geheimzutat').single();
   if (own === null) throw new Error('no Geheimzutat row');
   const householdId = own.household_id as string;

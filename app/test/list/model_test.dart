@@ -242,6 +242,7 @@ void main() {
         properties: 'Bio',
       ),
       UnmergeItems('x', mergeId: 'm', kept: item('x'), merged: item('y')),
+      AddItem(item('x'), autoCategory: true),
       AddItem(item('x'), deviceParsed: true),
       AddItem(item('x'), restored: true),
       AddItem(item('x'), noStore: true),
@@ -256,6 +257,10 @@ void main() {
       isTrue,
     );
     expect((ItemOp.fromJson(ops.last.toJson()) as AddItem).noStore, isTrue);
+    expect(
+      (ItemOp.fromJson(ops[ops.length - 4].toJson()) as AddItem).autoCategory,
+      isTrue,
+    );
     expect((ItemOp.fromJson(ops.first.toJson()) as AddItem).restored, isFalse);
     expect(
       (ItemOp.fromJson(ops[ops.length - 3].toJson()) as AddItem).deviceParsed,
