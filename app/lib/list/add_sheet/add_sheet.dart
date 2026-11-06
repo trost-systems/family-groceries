@@ -146,7 +146,10 @@ class _AddSheetState() extends State<AddSheet> {
         builder: (context, constraints) {
           final media = MediaQuery.of(context);
           final frame = ShoppingListView.frameFor(constraints.maxWidth, list);
-          final max = constraints.maxHeight - media.padding.top - _topGap;
+          // The add bar floats over the list's bottom edge and comes in as
+          // the bottom padding; the sheet stands on it.
+          final bar = media.padding.bottom;
+          final max = constraints.maxHeight - bar - media.padding.top - _topGap;
           final content = _shown || open
               ? _Content(
                   maxHeight: max < 0 ? 0 : max,
@@ -182,7 +185,7 @@ class _AddSheetState() extends State<AddSheet> {
               PositionedDirectional(
                 start: frame.side,
                 width: frame.columnWidth,
-                bottom: 0,
+                bottom: bar,
                 child: _Surface(open: open, still: still, child: content),
               ),
             ],

@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:ui' show SemanticsHitTestBehavior;
 
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
+import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -432,6 +434,8 @@ class _ShoppingListState() extends State<_ShoppingList> {
         child: Scaffold(
           // The shell's scaffold makes room for the keyboard.
           resizeToAvoidBottomInset: false,
+          // The list scrolls on under the floating add field (job 135).
+          extendBody: true,
           body: Stack(
             children: [
               ExcludeFocus(
@@ -443,10 +447,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
                     children: [
                       const _Header(),
                       Expanded(
-                        child: ShoppingListView(
-                          bottomInset: addBarHeight,
-                          onInteract: _leaveField,
-                        ),
+                        child: ShoppingListView(onInteract: _leaveField),
                       ),
                     ],
                   ),
@@ -490,6 +491,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
               onSubmit: () => unawaited(_submit()),
               onClose: _close,
               onLeave: _leaveField,
+              onRefocus: _refocusAfterTap,
               dictation: switch (widget.dictation) {
                 final dictation? => DictationButton(
                   dictation: dictation,
@@ -527,6 +529,10 @@ class const _AddBar({
   required final VoidCallback onSubmit,
   required final VoidCallback onClose,
   required final VoidCallback onLeave,
+
+  /// Focuses the field after a tap beside its input, which on the web blurs
+  /// the input while Flutter keeps the field focused.
+  required final VoidCallback onRefocus,
   required final Widget? dictation,
 }) extends StatelessWidget {
   @override
@@ -561,6 +567,8 @@ class const _AddBar({
         shape: HexBorder(
           side: BorderSide(color: t.border, width: HlBorder.width),
         ),
+        // Lifted off the list that scrolls under it, like a sticker.
+        shadows: HlSticker.shadow(Theme.of(context).brightness, StickerDepth.s),
       ),
       child: Row(
         spacing: HlSpace.s2,
@@ -660,51 +668,73 @@ class const _AddBar({
         ],
       ),
     );
-    // In the list's first column, where the sheet opens. Closed, the bar is
-    // the page under the field; open, it carries on the sheet above it.
-    return ColoredBox(
-      color: t.surface,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final frame = ShoppingListView.frameFor(
-            constraints.maxWidth,
-            list.state,
-          );
-          return Padding(
-            padding: EdgeInsetsDirectional.only(start: frame.side),
-            child: Align(
-              alignment: AlignmentDirectional.topStart,
-              heightFactor: 1,
-              child: AnimatedContainer(
-                width: frame.columnWidth,
-                duration: hlMotion(context, HlDuration.short),
-                curve: HlEasing.standard,
-                color: open ? t.surfaceRaised : t.surface,
-                child: SafeArea(
-                  top: false,
-                  child: Container(
-                    height: addBarHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: HlSpace.s3),
-                    alignment: Alignment.center,
-                    // A tap on the hex around the field counts as one on
-                    // the field. No semantics node of its own: on the web
-                    // one this size would take the field's taps.
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      excludeFromSemantics: true,
-                      onTap: () {
-                        show();
-                        focus.requestFocus();
-                      },
-                      child: compose,
+    // In the list's first column, where the sheet opens. Closed, only the
+    // hex is painted and the list shows around it; open, the bar carries on
+    // the sheet above it.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final frame = ShoppingListView.frameFor(
+          constraints.maxWidth,
+          list.state,
+        );
+        return Padding(
+          padding: EdgeInsetsDirectional.only(start: frame.side),
+          child: Align(
+            alignment: AlignmentDirectional.topStart,
+            heightFactor: 1,
+            child: AnimatedContainer(
+              width: frame.columnWidth,
+              duration: hlMotion(context, HlDuration.short),
+              curve: HlEasing.standard,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AnimatedContainer(
+                      duration: hlMotion(context, HlDuration.short),
+                      curve: HlEasing.standard,
+                      color: open
+                          ? t.surfaceRaised
+                          : t.surfaceRaised.withValues(alpha: 0),
                     ),
                   ),
-                ),
+                  // On the web the rows under the band keep their tappable
+                  // semantics elements, which take a browser click before
+                  // the framework sees it; the opaque node blocks them, its
+                  // children (field, microphone, ✕) still get theirs.
+                  Semantics(
+                    container: true,
+                    hitTestBehavior: SemanticsHitTestBehavior.opaque,
+                    child: SafeArea(
+                      top: false,
+                      // A tap anywhere on the band counts as one on the
+                      // field: a near miss beside the hex must not act on a
+                      // row hidden under it. No semantics node of its own: on
+                      // the web one this size would take the field's taps.
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        excludeFromSemantics: true,
+                        onTap: () {
+                          show();
+                          onRefocus();
+                        },
+                        child: Container(
+                          height: addBarHeight,
+                          // The rows' own inset (item_row.dart).
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: HlSpace.s4,
+                          ),
+                          alignment: Alignment.center,
+                          child: compose,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

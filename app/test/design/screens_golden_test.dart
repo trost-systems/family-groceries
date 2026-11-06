@@ -1,6 +1,8 @@
 // Goldens of key screens in the Hummlist theme (design job 52), light and
 // dark at a phone size, with the real fonts. After a deliberate look change:
 //   flutter test --update-goldens test/design/screens_golden_test.dart
+import 'dart:ui' show SemanticsHitTestBehavior;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
@@ -11,6 +13,7 @@ import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/more/app_update.dart';
 import 'package:family_groceries/more/more_screen.dart';
@@ -62,6 +65,26 @@ Item _item(
   );
 }
 
+/// Enough rows that the list scrolls under the add field.
+const _longList = [
+  'Äpfel',
+  'Birnen',
+  'Gurke',
+  'Tomaten',
+  'Paprika',
+  'Zucchini',
+  'Möhren',
+  'Kartoffeln',
+  'Zwiebeln',
+  'Knoblauch',
+  'Salat',
+  'Spinat',
+  'Brokkoli',
+  'Zitronen',
+  'Avocado',
+  'Ingwer',
+];
+
 /// The shell with List and More as the app builds it, a few items on the
 /// list, in [brightness].
 Future<void> _pumpShell(
@@ -69,6 +92,7 @@ Future<void> _pumpShell(
   Brightness brightness, {
   Size size = _phone,
   bool empty = false,
+  bool long = false,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -96,6 +120,9 @@ Future<void> _pumpShell(
       _item('3', 'Vollmilch', 'lidl', 'chilled', quantity: '2 l'),
       _item('4', 'Butter', 'lidl', 'chilled'),
     ],
+    if (long)
+      for (final (i, name) in _longList.indexed)
+        _item('l$i', name, 'lidl', 'produce'),
   ]) {
     repo.rows[item.id] = item;
   }
@@ -265,6 +292,81 @@ void main() {
     );
   });
 
+  testWidgets('the list scrolls under the floating add field', (tester) async {
+    await _pumpShell(tester, Brightness.light, long: true);
+    final hex = tester.getRect(
+      find.ancestor(
+        of: find.byKey(const ValueKey('add-item-field')),
+        matching: find.byWidgetPredicate(
+          (w) => w is Container && w.decoration is ShapeDecoration,
+        ),
+      ),
+    );
+    // The rows' own 16 px inset on both sides.
+    expect(hex.left, 16);
+    expect(hex.right, _phone.width - 16);
+    // A row runs on under the field. A near miss beside the hex counts as
+    // a tap on the field and leaves that hidden row alone.
+    final under = Offset(8, hex.center.dy);
+    final rows = find.byType(ItemRow);
+    final behind = rows.evaluate().where(
+      (e) => tester.getRect(find.byWidget(e.widget)).contains(under),
+    );
+    expect(behind, hasLength(1));
+    final hidden = (behind.single.widget as ItemRow).item.name;
+    await tester.tapAt(under);
+    await tester.pumpAndSettle();
+    final field = tester.widget<TextField>(
+      find.byKey(const ValueKey('add-item-field')),
+    );
+    expect(field.focusNode!.hasFocus, isTrue);
+    expect(find.byKey(const ValueKey('add-sheet-scrim')), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is ItemRow &&
+            w.item.name == hidden &&
+            w.item.status == ItemStatus.active,
+      ),
+      findsOneWidget,
+      reason: '$hidden is still on the list',
+    );
+    // On the web a row's tappable semantics element would take the browser
+    // click before the framework's hit test: an opaque node over the band
+    // blocks it.
+    final semantics = tester.ensureSemantics();
+    final band = find.byWidgetPredicate(
+      (w) =>
+          w is Semantics &&
+          w.properties.hitTestBehavior == SemanticsHitTestBehavior.opaque &&
+          tester.getRect(find.byWidget(w)).contains(under),
+    );
+    expect(band, findsOneWidget);
+    expect(
+      tester.getSemantics(band).getSemanticsData().hitTestBehavior,
+      SemanticsHitTestBehavior.opaque,
+    );
+    semantics.dispose();
+    await tester.tap(find.byKey(const ValueKey('add-sheet-scrim')));
+    await tester.pumpAndSettle();
+    // Scrolled to the end, the last row stands clear of the field.
+    final scroll = tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    scroll.jumpTo(scroll.maxScrollExtent);
+    await tester.pumpAndSettle();
+    final lastRow = rows
+        .evaluate()
+        .map((e) => tester.getRect(find.byWidget(e.widget)).bottom)
+        .reduce((a, b) => a > b ? a : b);
+    expect(lastRow, lessThan(hex.top));
+  });
+
   for (final brightness in Brightness.values) {
     final mode = brightness.name;
 
@@ -309,6 +411,18 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/list-wide-$mode.png'),
+      );
+    });
+
+    // The add field floats with the rows' inset; the list scrolls on
+    // under it (job 135).
+    testWidgets('list scrolled under the add field, $mode', (tester) async {
+      await _pumpShell(tester, brightness, long: true);
+      await tester.drag(find.text('Zwiebeln'), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/list-long-$mode.png'),
       );
     });
 

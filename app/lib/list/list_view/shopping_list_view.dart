@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -31,10 +32,6 @@ import 'package:go_router/go_router.dart';
 typedef ListFrame = ({int columns, double side, double columnWidth});
 
 class const ShoppingListView({
-  /// Room under the last row for whatever covers the list's bottom edge
-  /// (the add bar, job 17).
-  final double bottomInset = 24,
-
   /// Called when the user acts on the list, so the add field can let go of
   /// the keyboard.
   final VoidCallback? onInteract,
@@ -454,7 +451,13 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
             ],
           ),
         ),
-        SliverToBoxAdapter(child: SizedBox(height: widget.bottomInset)),
+        // The add field floats over the list's bottom edge (job 135) and
+        // comes in as the bottom padding: the last row scrolls clear of it.
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: MediaQuery.paddingOf(context).bottom + HlSpace.s5,
+          ),
+        ),
       ],
     );
   }
