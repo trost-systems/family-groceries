@@ -256,6 +256,22 @@ test('after Schließen, a tap on the field and typing open the sheet again', asy
   await expect(rows(page).first(), 'the app gets the keys, not only the DOM input').toHaveAccessibleName(/^Brot, Wie getippt/);
 });
 
+// A click on the web can reach the field as a semantics focus or tap instead of pointer events,
+// which never calls TextField.onTap; on CI that was the field with a cursor and no sheet (#112).
+test('after a close, a focus or click that skips pointer events opens the sheet', async ({ page }) => {
+  await signUpWithHousehold(page, newEmail('sheet-no-pointer'));
+  await typeInto(addField(page), 'Butter');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await expect(sheet(page)).toHaveCount(0);
+  await addField(page).focus();
+  await expect(sheet(page), 'a DOM focus opens it').toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet(page)).toHaveCount(0);
+  await addField(page).dispatchEvent('click');
+  await expect(sheet(page), 'a click event without pointer events opens it').toBeVisible();
+});
+
 for (const build of ['wasm', 'js'] as const) {
   test(`after Schließen, a key typed before the next frame still reaches the app (${build})`, async ({ page }) => {
     if (build === 'js') await withoutWasmGC(page);
