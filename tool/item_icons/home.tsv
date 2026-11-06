@@ -1,0 +1,399 @@
+# Household, cleaning, pets, DIY, garden, gifts and cards, stationery, electronics, clothing,
+# party, car, newspapers, toys and tobacco. Drugstore (Klopapier, Taschentücher, Feuchttücher,
+# Seife, Creme, Bürsten for the body) is drugstore.tsv. format: forms<TAB>emoji[<TAB>note]
+# Left out on purpose (no emoji reads as the item): Alufolie, Frischhaltefolie, Backpapier,
+# Gefrierbeutel, Spültabs and Somat/Finish, Klebeband and tesa, Kleber, Nägel, Dübel, Lappen,
+# Servietten, Staubsaugerbeutel, Wäscheklammern, Insektenspray, Dünger, Briefmarken, Mütze, Lotto.
+
+# Cleaning and washing
+Spülmittel|Spülmitteln|Spüli|Handspülmittel|dish soap|washing up liquid	🧴
+Pril	🧴	brand: Spülmittel
+Fairy	🧴	brand: Spülmittel
+Waschmittel|Vollwaschmittel|Colorwaschmittel|Feinwaschmittel|laundry detergent|detergent	🧺
+Waschpulver|washing powder	🧺
+Waschgel|Waschgele	🧺	else the drugstore gel head
+Persil	🧺	brand: Waschmittel
+Ariel	🧺	brand: Waschmittel
+Weißer Riese	🧺	brand: Waschmittel
+Sunil	🧺	brand: Waschmittel
+=Spee	🧺	brand: Waschmittel
+=Omo	🧺	brand: Waschmittel
+Wäschekorb|Wäschekörbe|Korb|Körbe|basket|laundry basket	🧺
+Weichspüler|fabric softener	🧴
+Lenor	🧴	brand: Weichspüler
+Vernel	🧴	brand: Weichspüler
+Klarspüler|rinse aid	🧴
+Hygienespüler	🧴
+Reiniger|cleaner|cleaners	🧴	head: Glasreiniger, Badreiniger, WC Reiniger
+Allzweckreiniger|all purpose cleaner	🧴
+Putzmittel|cleaning products	🧴
+Desinfektionsmittel|disinfectant	🧴
+Scheuermilch	🧴	else milch
+Scheuerpulver	🧴
+Bleiche|Bleichmittel|bleach	🧴
+Fleckentferner|stain remover	🧴
+Entkalker	🧴
+Sagrotan	🧴	brand
+Domestos	🧴	brand
+Meister Proper	🧴	brand
+=Ajax	🧴	brand
+Cillit Bang	🧴	brand
+Glorix	🧴	brand
+Viss	🧴	brand
+Schwamm|Schwämme|Spülschwamm|sponge|sponges	🧽	head: Topfschwamm, Putzschwamm
+Schwammtuch|Schwammtücher	🧽	else the drugstore tücher head
+Besen|broom	🧹	head: Kehrbesen, Straßenbesen
+Handfeger|Kehrblech|Kehrschaufel|dustpan	🧹
+Eimer|Putzeimer|bucket	🪣	head: Wischeimer
+Pümpel|Saugglocke|plunger	🪠
+Gummihandschuhe|Gummihandschuh|rubber gloves	🧤
+Spülbürste|Spülbürsten	-	a brush, not the drugstore toothbrush head
+Klobürste|Klobürsten|Toilettenbürste	-
+Flaschenbürste	-
+Topfbürste	-
+Schuhbürste	-
+Schuhcreme	-	not body cream
+Spülmaschinensalz|Regeneriersalz	-	not table salt
+Streusalz|Auftausalz	-	not table salt
+Destilliertes Wasser|Bügelwasser	-	not drinking water
+Scheibenwischwasser|Scheibenklar	-	not drinking water
+Duftstecker	-	not an electric plug
+
+# Bins and bags
+Müllbeutel|Mülltüte|Mülltüten|Müllsack|Müllsäcke|bin bags|bin bag|trash bags|garbage bags	🗑️
+Abfallbeutel|Abfallsäcke|Abfallsack	🗑️
+Kompostbeutel	🗑️
+Gelbe Säcke|Gelber Sack|Gelbe Sack	🗑️
+Handy Bag	🗑️	brand: Müllbeutel, before Handy
+Mülleimer|Abfalleimer|Treteimer|Komposteimer|trash can|=bin	🗑️
+Papierkorb|Papierkörbe	🗑️
+
+# Paper rolls
+Küchenrolle|Küchenrollen|Küchenpapier|Haushaltsrolle|Haushaltsrollen|kitchen roll|paper towels	🧻
+Küchentücher|Küchentuch	🧻	else the drugstore tücher head
+Zewa	🧻	brand: Küchenrolle
+
+# Fire, light, candles
+Kerze|Kerzen|candle|candles	🕯️	head: Duftkerze, Stumpenkerzen, Geburtstagskerzen
+Teelicht|Teelichter|Teelichte|tealights|tea lights	🕯️
+Grablicht|Grablichter	🕯️
+Wunderkerze|Wunderkerzen|sparklers	🎇	else kerze
+Streichhölzer|Streichholz|Zündhölzer|Zündholz	🔥
+Feuerzeug|Feuerzeuge|lighter|lighters	🔥
+Grillanzünder|Kaminanzünder|Anzünder|Anzündwürfel|fire starters	🔥	Anzündwürfel else würfel
+Grillkohle|Holzkohle|Grillbriketts|charcoal	🔥
+Brennholz|Kaminholz|Feuerholz|Anzündholz|Holzscheite|firewood	🪵
+=Holz	🪵	whole: Süßholz is not wood
+Lampenöl	-	not cooking oil
+Feuerlöscher|fire extinguisher	🧯
+Glühbirne|Glühbirnen|Glühlampe|Glühlampen|light bulb|light bulbs	💡	before the pear
+Energiesparlampe|Energiesparlampen|Energiesparbirne	💡
+Leuchtmittel	💡
+=LED|LED Birne|LED Birnen	💡
+Lampe|Lampen|lamp	💡	head: LED Lampe, Schreibtischlampe
+Taschenlampe|Taschenlampen|Stirnlampe|flashlight|torch	🔦
+
+# Electric
+Batterie|Batterien|battery|batteries	🔋	head: AA Batterien, Knopfbatterie
+Knopfzelle|Knopfzellen	🔋
+Akku|Akkus	🔋	head: Handyakku
+Powerbank|Powerbanks	🔋
+Duracell	🔋	brand
+Varta	🔋	brand
+Energizer	🔋	brand
+Kühlakku|Kühlakkus|Kühlelemente|ice pack	🧊	else akku
+Kabel|cable|cables	🔌	head: Ladekabel, USB Kabel
+Stecker|plug	🔌	head: Mehrfachstecker
+Steckdosenleiste|Steckdosenleisten|Mehrfachsteckdose|power strip	🔌
+Verlängerungskabel|Kabeltrommel|extension cord	🔌
+Ladegerät|Ladegeräte|Netzteil|charger	🔌
+Adapter|Reiseadapter	🔌
+Handy|Handys|Smartphone|mobile phone	📱
+Handyhülle|Handyhüllen|Handytasche|phone case	📱
+Kopfhörer|Ohrhörer|headphones|earbuds	🎧
+Fernseher|=TV|television	📺
+Laptop|Laptops	💻
+Computermaus|computer mouse	🖱️
+Tastatur|keyboard	⌨️
+Drucker|printer	🖨️
+Druckerpatrone|Druckerpatronen|Druckertinte|Toner|ink cartridge	🖨️
+Kamera|Fotoapparat|camera	📷
+Radio|Radios	📻
+Mikrofon|microphone	🎤
+=CD|=CDs	💿
+=DVD|=DVDs	📀
+Wecker|alarm clock	⏰	head: Radiowecker
+=Uhr|Armbanduhr|watch	⌚
+
+# DIY and Baumarkt
+Schraube|Schrauben|screws|screw	🔩	head: Holzschrauben
+Schraubenzieher|Schraubendreher|Akkuschrauber|screwdriver	🪛	before schraube
+Schraubenschlüssel|Maulschlüssel|Inbusschlüssel|Gabelschlüssel|wrench|spanner	🔧	before schlüssel
+Hammer|Hämmer	🔨	head: Gummihammer
+Säge|Sägen|=saw	🪚	head: Handsäge, Stichsäge
+=Axt|Beil	🪓
+Werkzeug|tools	🧰	head: Gartenwerkzeug
+Werkzeugkasten|Werkzeugkiste|Werkzeugkoffer|toolbox	🧰	else kasten, koffer
+Schraubzwinge|Schraubzwingen|clamp	🗜️
+Leiter|Trittleiter|Stehleiter|ladder	🪜
+Magnet|Magnete|magnets	🧲
+Haken|Kleiderhaken|Handtuchhaken|hook|hooks	🪝
+Schlüssel|Ersatzschlüssel|=key|keys	🔑
+Schloss|Vorhängeschloss|Fahrradschloss|padlock	🔒
+Ziegel|Ziegelsteine|Backsteine|bricks	🧱
+Seil|Seile|rope	🪢	head: Springseil
+=Pinsel|Malerpinsel|Farbpinsel|Lackpinsel|paintbrush	🖌️	whole: Backpinsel, Rasierpinsel
+Wandfarbe|Wandfarben|Dispersionsfarbe|Abtönfarbe|Fassadenfarbe|wall paint	🎨	not every farbe: Haarfarbe
+Acrylfarbe|Acrylfarben|Wasserfarben|Fingerfarben|Malkasten|Tuschkasten|=paint	🎨
+Zollstock|Maßband|Meterstab|tape measure	📏
+
+# Kitchenware
+Besteck|cutlery	🍴	head: Plastikbesteck, Salatbesteck
+Gabel|Gabeln|fork|forks	🍴	head: Kuchengabel
+Messer|knife|knives	🔪	head: Küchenmesser, Taschenmesser
+Löffel|spoon|spoons	🥄	head: Kochlöffel, Teelöffel
+Essstäbchen|chopsticks	🥢
+Teller|plates	🍽️	head: Pappteller, Suppenteller
+Schüssel|Schüsseln|bowl|bowls	🥣	head: Salatschüssel
+Kloschüssel	🚽	else schüssel
+Pfanne|Pfannen|frying pan	🍳	head: Bratpfanne
+Tasse|Tassen|=mug|mugs	☕	head: Kaffeetasse
+Teekanne|Teekannen|teapot	🫖
+Einmachglas|Einmachgläser|Weckglas|Weckgläser|Schraubglas|Schraubgläser|=jar|jars	🫙
+Pappbecher|Plastikbecher|Partybecher|paper cups	🥤
+
+# Furniture and home
+Stuhl|Stühle|chair|chairs	🪑	head: Klappstuhl
+Sofa|Couch	🛋️
+Spiegel|mirror	🪞	head: Handspiegel
+Bilderrahmen|picture frame	🖼️
+Klobrille|Toilettenbrille|Toilettensitz|WC Brille|WC Sitz|toilet seat	🚽	else brille
+Mausefalle|Mausefallen|Mäusefalle|Rattenfalle|mouse trap	🪤
+
+# Wool and sewing
+Wolle|yarn	🧶	head: Strickwolle, Baumwolle
+Stahlwolle	-	not yarn
+Glaswolle|Steinwolle|Holzwolle	-	not yarn
+Garn|Nähgarn|Faden|Nähfaden|Bindfaden|thread	🧵
+Nähnadel|Nähnadeln|sewing needle	🪡
+
+# Pets
+Katzenfutter|Katzennassfutter|Katzentrockenfutter|cat food	🐈
+Katzenstreu|Klumpstreu|cat litter|kitty litter	🐈
+Katzensnacks|Katzensnack|Katzenleckerli	🐈
+Katzenmilch	🐈	else milch
+Katzenklo	🐈
+Katzenspielzeug	🐈	else spielzeug
+Whiskas	🐈	brand
+Kitekat	🐈	brand
+Sheba	🐈	brand
+Catsan	🐈	brand
+Animonda	🐈	brand
+Bozita	🐈	brand
+Perfect Fit	🐈	brand
+Hundefutter|Hundenassfutter|Hundetrockenfutter|dog food	🐕
+Hundeleckerli|Hundeleckerlis|Hundesnacks|Hundesnack|dog treats	🐕
+Hundekuchen	🐕	else kuchen
+Hundekekse|Hundekeks	🐕	else keks
+Hundespielzeug	🐕	else spielzeug
+Pedigree	🐕	brand
+Frolic	🐕	brand
+Chappi	🐕	brand
+Kauknochen|Hundeknochen	🦴
+Vogelfutter|Vogelsand|Körnerfutter|bird seed	🐦
+Meisenknödel	🐦	else knödel
+Fischfutter|fish food	🐟
+Kaninchenfutter	🐇
+Hamsterfutter	🐹
+
+# Garden and plants
+Blume|Blumen|flowers|flower	💐	head: Schnittblumen, Trockenblumen
+Blumenstrauß|Blumensträuße|bouquet	💐
+Tulpe|Tulpen|tulips	🌷
+Blumenzwiebeln|Blumenzwiebel|Tulpenzwiebeln|flower bulbs	🌷	else zwiebel
+Rosen|roses	🌹
+Sonnenblume|Sonnenblumen|sunflowers	🌻
+Pflanze|Pflanzen|plant|plants|houseplant	🪴	head: Zimmerpflanze, Topfpflanze
+Orchidee|Orchideen	🪴
+Blumentopf|Blumentöpfe|Übertopf|Übertöpfe	🪴
+=Erde|Blumenerde|Pflanzenerde|Gartenerde|Kräutererde|Tomatenerde|Anzuchterde|Balkonerde|Hochbeeterde|potting soil	🪴	whole: Pferde, Beschwerde
+Kakteenerde|Orchideenerde|Graberde	🪴
+Kaktus|Kakteen|cactus	🌵
+Saatgut|Blumensamen|Grassamen|Rasensamen|Gemüsesamen|seeds	🌱	not every samen: Leinsamen
+Weihnachtsbaum|Christbaum|Tannenbaum|christmas tree	🎄
+Gartenschere|Rosenschere	✂️
+
+# Gifts, vouchers, cards
+Geschenk|Geschenke|Mitbringsel	🎁	head: Weihnachtsgeschenk; no bare gift: German Gift is poison
+Geschenkkarte|Geschenkkarten|gift card|gift cards	🎁	karte is no head
+Gutschein|Gutscheine|Gutscheinkarte|Gutscheinkarten|voucher|vouchers	🎁	head: Einkaufsgutschein
+Geschenkpapier|wrapping paper	🎁
+Geschenktüte|Geschenktüten|Geschenkbox|Geschenkkorb|Präsentkorb|gift bag	🎁	Geschenkkorb else korb
+Geschenkband|Schleife|Schleifen|ribbon	🎀
+Guthabenkarte|Prepaidkarte|Aufladekarte	💳
+Geburtstagskarte|Geburtstagskarten|birthday card|birthday cards	💌
+Glückwunschkarte|Glückwunschkarten|Grußkarte|Grußkarten|greeting card|greeting cards	💌
+Weihnachtskarte|Weihnachtskarten|christmas card	💌
+Hochzeitskarte|Hochzeitskarten	💌
+Spielkarten|Kartenspiel|Skatkarten|playing cards|=Uno	🃏
+Kinokarten|Kinokarte|Konzertkarten|Eintrittskarten|Theaterkarten|Ticket|Tickets	🎟️	head: Konzertticket
+Fahrkarte|Fahrkarten|Fahrschein|Fahrscheine|Monatskarte|Parkschein|Busticket	🎫
+Landkarte|Straßenkarte|Wanderkarte|Stadtplan|=map	🗺️
+=Geld|Bargeld|Kleingeld|cash	💶
+=Paket|=Pakete|parcel	📦
+
+# Party
+Luftballon|Luftballons|Ballon|Ballons|balloon|balloons	🎈
+Konfetti|confetti	🎊
+Luftschlangen|Luftschlange|Partydeko	🎉
+Feuerwerk|Silvesterfeuerwerk|fireworks	🎆
+Böller|Knaller|firecrackers	🧨
+Pinata	🪅
+
+# Stationery and school
+Kugelschreiber|Kuli|Kulis|=pen|=pens	🖊️
+Filzstift|Filzstifte|Fineliner|Textmarker|highlighter	🖊️
+Bleistift|Bleistifte|pencil|pencils	✏️
+=Stift|=Stifte	✏️	whole: Lippenstift, Deostift
+Buntstift|Buntstifte|Wachsmalstifte|Wachsmalkreide|crayons	🖍️
+=Füller|Füllfederhalter|Tintenpatronen|Füllerpatronen	🖋️
+Schere|Scheren|scissors	✂️	head: Bastelschere
+Lineal|Lineale|ruler	📏
+Geodreieck	📐
+Briefumschlag|Briefumschläge|Umschlag|Umschläge|Kuvert|Kuverts|envelope|envelopes	✉️
+Heft|Hefte	📓	head: Schulheft, Rätselheft
+Notizblock|Schreibblock|Collegeblock|Zeichenblock|Notizbuch|notepad	📓
+Haftnotizen|Klebezettel|Post Its	📝
+Ordner|Schnellhefter|folder	📂
+Büroklammern|Büroklammer|paperclips	📎
+Reißzwecken|Heftzwecken|Pinnnadeln	📌
+Etiketten|labels	🏷️
+Kalender|calendar	📅	head: Wandkalender
+Schulranzen|Ranzen|Schultasche|Rucksack|Rucksäcke|backpack	🎒
+Druckerpapier|Kopierpapier|=Papier|printer paper	📄	papier is no head: Backpapier, Klopapier
+Buch|Bücher|book|books	📕	head: Kochbuch, Malbuch
+Zeitung|Zeitungen|newspaper	📰	head: Tageszeitung
+Zeitschrift|Zeitschriften|Illustrierte|=Magazin|magazine	📰
+
+# Clothing and shoes
+Socken|Socke|Strumpf|Strümpfe|socks	🧦	head: Kniestrümpfe
+Strumpfhose|Strumpfhosen|tights	🧦	else hose
+Hose|Hosen|trousers|pants	👖	head: Jogginghose, Regenhose
+Jeans	👖
+Badehose|Shorts|Kurze Hose|swim shorts	🩳
+Unterhose|Unterhosen|Slip|underpants	🩲
+Shirt|Shirts|=TShirt|=TShirts	👕	head: Sweatshirt
+Unterhemd|Unterhemden	👕
+Hemd|Hemden|Krawatte|Krawatten	👔
+Kleid|Kleider|dress	👗	head: Sommerkleid
+Jacke|Jacken|Mantel|Mäntel|jacket|coat	🧥	head: Regenjacke, Wintermantel
+Schal|Schals|scarf	🧣
+Handschuhe|Handschuh|Fäustlinge|gloves	🧤	head: Gartenhandschuhe, before schuhe
+=Hut|Hüte|Sonnenhut|Strohhut	👒
+Basecap|Baseballcap|Baseball Cap	🧢
+Schuhe|Schuh|shoes	👟	head: Turnschuhe, Laufschuhe
+Sneaker|Sneakers	👟
+Hausschuhe|Hausschuh|Pantoffeln|Puschen|slippers	🥿
+Schlittschuhe	⛸️	else schuhe
+Rollschuhe|Inliner	🛼	else schuhe
+Stiefel|boots	👢	head: Gummistiefel
+Wanderstiefel|Wanderschuhe|hiking boots	🥾	else stiefel, schuhe
+Sandalen|Sandale	👡
+Flip Flops|Flipflops|Badelatschen|Latschen|Badeschuhe	🩴
+Regenschirm|Regenschirme|=Schirm|umbrella	☂️	whole: Bildschirm, Lampenschirm
+Sonnenschirm|Sonnenschirme	⛱️
+Geldbeutel|Portemonnaie|Geldbörse|wallet	👛
+Handtasche|Handtaschen|handbag	👜
+Sonnenbrille|Sonnenbrillen|sunglasses	🕶️
+Brille|Brillen	👓	head: Lesebrille
+Taucherbrille|Schwimmbrille|Skibrille|goggles	🥽	else brille
+Koffer|suitcase	🧳	head: Reisekoffer
+
+# Car and bike
+=Benzin|=Diesel|=tanken	⛽
+Motoröl	🛢️	else oil
+Autoreifen|Winterreifen|Sommerreifen|Fahrradreifen|tyres	🛞	not bare reifen: reifen Bananen
+Fahrrad|Fahrräder|bike|bicycle	🚲
+Auto|Spielzeugauto	🚗
+=Roller|Tretroller|Scooter	🛴	whole: Deoroller, Farbroller
+
+# Toys and games
+Spielzeug|toys|=toy	🧸	head: Sandspielzeug
+Kuscheltier|Kuscheltiere|Teddy|Teddybär|teddy bear	🧸
+Puzzle|Puzzles|jigsaw	🧩
+Spiel|Spiele|Brettspiel|board game|board games	🎲	head: Gesellschaftsspiel
+=Würfel|Spielwürfel|dice	🎲	whole: Eiswürfel, Brühwürfel
+Videospiel|Videospiele|Konsolenspiel|Spielkonsole|Controller|video game	🎮
+Drachen|kite	🪁
+Jojo|=yoyo	🪀
+Seifenblasen|bubbles	🫧
+=Ball|Bälle	⚽	whole: Energyball
+Fußball|Fußbälle|football	⚽
+Basketball	🏀
+Volleyball|Wasserball	🏐
+Tennisbälle|Tennisball	🎾
+Federball|Federbälle	🏸
+Skateboard	🛹
+Zelt|Zelte|tent	⛺
+
+# Tobacco
+Zigarette|Zigaretten|Kippen|cigarettes	🚬	head: E Zigarette
+Tabak|Drehtabak|tobacco	🚬	head: Pfeifentabak
+Zigarettenpapier|Zigarillos|Zigarre|Zigarren	🚬
+
+# More cleaning
+Rohrfrei	🧴	brand: Abflussreiniger
+Kalklöser	🧴
+Möbelpolitur	🧴
+Spiritus	🧴
+Sidolin	🧴	brand: Glasreiniger
+Dr Beckmann	🧴	brand: Fleckentferner
+Wischpflege|Bodenpflege	🧴
+
+# More pets
+Kratzbaum	🐈
+Katzengras	🐈
+Hundeleine	🐕
+Hundekotbeutel|Kotbeutel|Gassibeutel|poop bags	🐕
+Hundeshampoo	🐕	else shampoo
+Wellensittichfutter|Sittichfutter|Papageienfutter	🦜
+Schildkrötenfutter	🐢
+Pferdeleckerli|Pferdefutter	🐴
+Aquarium	🐠
+Vogelhaus|Futterhaus|Vogelhäuschen	🐦
+
+# More garden
+Blumenkasten|Balkonkasten|Blumenkästen	🪴
+Kräutersamen	🌱
+Tannenzweige|Tannengrün	🌲
+Kies	🪨
+Bretter|Holzbretter	🪵
+
+# More gifts, cards, party
+Geschenkanhänger	🏷️
+Schleifenband	🎀
+Einladungskarten|Einladungskarte|Einladungen	💌
+Ballongas|Heliumgas	🎈
+
+# More electronics
+Lautsprecher|Bluetoothlautsprecher	🔊
+Smartwatch	⌚
+Wanduhr|Küchenuhr	🕰️
+
+# More home and kitchen
+Matratze|Matratzen	🛏️
+Brotdose|Brotdosen|Lunchbox|Brotbox	🍱
+Sektglas|Sektgläser|Champagnergläser	🥂
+Weinglas|Weingläser|wine glasses	🍷
+Bierglas|Biergläser	🍺
+
+# More clothing, car, toys, stationery
+Bikini	👙
+Warnweste|Warnwesten	🦺
+Stofftier|Stofftiere|Plüschtier|Plüschtiere	🧸
+Laufrad	🚲
+Karteikarten|Karteikarte	📇
+WC Ente	🚽	the toilet cleaner, not a duck
+Insekt|Insekten	-	else sekt
+Frottee	-	else tee
+Hornmehl	-	else mehl

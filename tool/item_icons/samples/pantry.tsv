@@ -1,0 +1,112 @@
+# Pantry, sweets, frozen and drinks entries as people type them: name<TAB>expected (emoji or -).
+2x Spaghetti	🍝
+Spaghetti Barilla	🍝
+Vollkornspaghetti	🍝
+Nudeln	🍝
+Penne Rigate	🍝
+Tortellini mit Käse	🍝
+Lasagneplatten	🍝
+Glasnudeln	🍜
+Mie-Nudeln	🍜
+Basmatireis	🍚
+Reis	🍚
+1kg Jasminreis	🍚
+Milchreis	🍚
+Paella-Reis	🍚
+Weizenmehl Type 405	🌾
+Dinkelvollkornmehl	🌾
+Haferflocken zart	🥣
+Knuspermüsli Schoko	🥣
+Cornflakes	🥣
+Meersalz grob	🧂
+Kräutersalz	🧂
+Blütenhonig	🍯
+Erdnussbutter crunchy	🥜
+Olivenöl extra vergine	🫒
+Kokosmilch	🥥
+Apfelmus	🍎
+Tomatenmark	🍅
+Kidneybohnen Dose	🫘
+Gulaschsuppe	🍲
+Tiefkühlpizza	🍕
+TK Pizza Salami	🍕
+Pommes	🍟
+Süßkartoffelpommes	🍟
+Fischstäbchen	🐟
+Vanilleeis	🍨
+ice cream	🍨
+Eis am Stiel	🍨
+Eiswürfel	🧊
+Zartbitterschokolade	🍫
+Ritter Sport Nuss	🍫
+Gummibärchen	🍬
+Lollis	🍭
+Butterkekse	🍪
+Popcorn	🍿
+Salzstangen	🥨
+Mineralwasser	💧
+Kasten Wasser	💧
+Orangensaft	🧃
+Apfelschorle	🧃
+Coca-Cola Zero	🥤
+Fritz Kola	🥤
+Kaffee Bohnen	☕
+Espresso gemahlen	☕
+Pfefferminztee	🍵
+Kasten Bier	🍺
+Hefeweizen alkoholfrei	🍺
+Rotwein trocken	🍷
+Glühwein	🍷
+Prosecco	🍾
+Aperol Spritz	🍹
+Eierlikör	🥃
+Gin	🥃
+Sake	🍶
+# traps: a naive suffix or first-word match would be wrong
+Weinessig	-
+Kokoswasser	🥥
+Kaffeebohnen	☕
+Erdnussbutter	🥜
+Kokosmilch light	🥥
+Vollmilchschokolade	🍫
+Schokoeier	🍫
+Pizzabaguette	🍕
+Pizzabrötchen	🍕
+Popcornmais	🍿
+Reiswaffeln	🍘
+Maiswaffeln	-
+Eiswaffeln	-
+Teebeutel	🍵
+Eistee Pfirsich	🥤
+iced tea	🥤
+Trinkschokolade	☕
+heiße Schokolade	☕
+Bitter Lemon	🥤
+Tonic Water	🥤
+Root Beer	🥤
+Ginger Beer	🥤
+apple juice	🧃
+orange juice	🧃
+Kirschwasser	🥃
+Müsliriegel	-
+Dampfnudeln	-
+Schupfnudeln	-
+Zuckerwatte	-
+Tortilla Chips	-
+Paprika edelsüß	-
+Bourbon Vanille	-
+Pizza Gewürz	-
+Kaffee Filter	-
+Studentenfutter	-
+Trockeneis	🧊
+Weingummi	🍬
+Reispapier	-
+Preis	-
+Kaffeefilter	-
+Pizzaschneider	-
+licorice	-
+Kaffee Entkalker	-
+Flensburger	🍺
+Flensburger Pils	🍺
+Russisch Brot	🍪
+Root Beer	🥤

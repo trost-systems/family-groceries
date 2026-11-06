@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/household/pending_invite.dart';
+import 'package:family_groceries/list/item_icons_remote.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -14,7 +15,12 @@ import 'package:shared_preferences_linux/shared_preferences_linux.dart';
 /// value that cannot be read counts as missing, and a failed write is
 /// dropped.
 class DeviceCache(final SharedPreferencesAsync _prefs)
-    implements SessionCache, AnalyticsStore, PendingInviteStore, TipStore {
+    implements
+        SessionCache,
+        AnalyticsStore,
+        PendingInviteStore,
+        TipStore,
+        ItemIconsStore {
   /// On Linux, supabase_flutter's legacy SharedPreferences and
   /// SharedPreferencesAsync each rewrite the whole file from their own copy,
   /// so sharing shared_preferences.json loses the session. The other
@@ -58,6 +64,11 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// ids. Not under [forget]'s prefixes: ids only, and a user who signs in
   /// again has seen them.
   static const _tipsPrefix = 'tips.';
+
+  /// The remote item icon table's last check (job 147): `{checked_at,
+  /// body, etag}` in one value, so a cut-off write leaves the old check.
+  /// Not under [forget]'s prefixes: it belongs to the device.
+  static const _itemIconsKey = 'itemicons.cache';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -206,6 +217,39 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   @override
   Future<void> saveDismissedTips(String userId, Set<String> ids) => _write(
     () => _prefs.setString('$_tipsPrefix$userId', jsonEncode([...ids])),
+  );
+
+  @override
+  Future<CachedItemIcons?> cachedItemIcons() async {
+    try {
+      return switch (jsonDecode(await _prefs.getString(_itemIconsKey) ?? '')) {
+        {
+          'checked_at': final String checkedAt,
+          'body': final String? body,
+          'etag': final String? etag,
+        } =>
+          CachedItemIcons(
+            checkedAt: DateTime.parse(checkedAt),
+            body: body,
+            etag: etag,
+          ),
+        _ => null,
+      };
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveCachedItemIcons(CachedItemIcons cached) => _write(
+    () => _prefs.setString(
+      _itemIconsKey,
+      jsonEncode({
+        'checked_at': cached.checkedAt.toUtc().toIso8601String(),
+        'body': cached.body,
+        'etag': cached.etag,
+      }),
+    ),
   );
 
   Future<String?> _readString(String key) async {

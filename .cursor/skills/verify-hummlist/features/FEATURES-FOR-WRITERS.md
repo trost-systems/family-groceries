@@ -294,7 +294,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Stores, walk order and the sections of the list
 
-**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. An item moves to another store or category in its edit sheet, and the household remembers which store an item belongs to. The list itself never drags: the order of stores and categories is changed in „Anpassen“. A new household has the stores it picked at the start; you can change their order and add your own stores (Rewe, the market, the bakery), each with its own walking order, rename them or delete them.
+**What it does.** The list is split into one section per store (only stores that have something on the list), then „Ohne Laden“. Inside a store, items are grouped by category in that store's own walking order, so the list follows the way you walk through the shop. An item moves to another store or category in its edit sheet, and the household remembers which store an item belongs to. The list itself never drags: the order of stores and categories is changed in „Anpassen“. A new household has the stores it picked at the start; you can change their order and add your own stores (Rewe, the market, the bakery), each with its own walking order, rename them or delete them. Each item shows a small picture when its name says what it is (about 1,400 everyday items in German and English, from bananas to gift cards and screws); anything else shows a plain hexagon instead of a guess. New item pictures can arrive without an app update; the list's contents are never sent for that.
 
 **How to get there.**
 1. Open the „Liste“ tab (EN: "List"): each store is a section; tap a store's name to fold it.
@@ -307,11 +307,12 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - Store logos, chain colours or official store maps. Store names appear as plain names in a small hexagonal label. The walking orders are researched defaults that can differ from a real shop.
 - That items, stores or categories can be dragged around on the list; moving an item is the edit sheet's store or category choice, and ordering lives in „Anpassen“.
 - That the app knows prices, opening hours or store locations.
+- That every item gets a picture, or that the pictures come from AI or from the household's own lists. They come from a fixed table in the app.
 - That stores can be added, renamed or deleted without a connection; the app asks for one.
 
 **Note.** The onboarding skip hint says „Du kannst sie später unter Liste → Anpassen anlegen.“ / "You can add them later under List → Edit." (jobs 68, 78).
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): stores in „Anpassen“, a store's details with its name pill (badge and pencil only), the rename dialog and its duplicate message, an existing name added again, a refused save showing its message above the open dialog, a link to a store's part of the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** job 147 branch (job/147-item-icon-coverage), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/item-icons.mjs`): item pictures and the plain hexagon on a mixed list, light and dark, the add sheet's rows, a newer picture table from hummlist.com applied. Before that main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): stores in „Anpassen“, a store's details with its name pill (badge and pencil only), the rename dialog and its duplicate message, an existing name added again, a refused save showing its message above the open dialog, a link to a store's part of the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 

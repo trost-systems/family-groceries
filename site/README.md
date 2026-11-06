@@ -36,6 +36,26 @@ production build. The browser checks (axe, contrast, Lighthouse, CSP crawl) live
   controls, header, footer, prose) and `public/landing.css` use its `--hl-*` variables. Fonts
   (Bricolage Grotesque, Inter, OFL texts beside them) are in `public/fonts/`.
 
+## Data for the app
+
+`public/data/item-icons.v1.json` is the item icon table the app fetches (job 147). It is
+generated: edit `tool/item_icons/*.tsv` and run `node tool/item_icons/build.mjs`, which also writes
+the app's bundled copy. Raise `tool/item_icons/REVISION` by hand whenever the entries change: apps
+only take a file whose revision is above their own, and the lint gate's `--check` fails when the
+entries differ from main's without a higher revision, or the JSON differs from the TSVs. Never
+edit the JSON by hand.
+
+The remote file can add and change icons, not remove them: apps lay it over their bundled table,
+so a form deleted from the TSVs keeps its icon in older apps. To take an icon away, keep the form
+and make it a stop (`-`).
+
+The app (`app/lib/list/item_icons_remote.dart`) asks for it at most once a day with a plain GET
+(no names, no cookies; on iOS and Android `If-None-Match` with the cached ETag) and uses it only
+when `schema` is 1 and `revision` is above the bundled table's. A file it cannot read changes
+nothing. `vercel.json` serves `/data/` to any origin (`Access-Control-Allow-Origin: *`, for the
+web app on app.hummlist.com) with a day's cache; Vercel sets the ETag. A new schema gets a new file
+name (`item-icons.v2.json`), so apps in the stores keep reading v1.
+
 ## Adding a guide
 
 Add `content/guides/<locale>/<slug>.md` (`de` or `en`). No code change: the build adds the page

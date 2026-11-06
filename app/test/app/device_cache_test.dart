@@ -1,4 +1,5 @@
 import 'package:family_groceries/app/device_cache.dart';
+import 'package:family_groceries/list/item_icons_remote.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -153,5 +154,36 @@ void main() {
     expect(await cache.dismissedTips('peter'), isEmpty);
     await SharedPreferencesAsync().setString('tips.peter', 'not json');
     expect(await cache.dismissedTips('peter'), isEmpty);
+  });
+
+  test(
+    'the item icon table is kept per device and survives sign-outs',
+    () async {
+      expect(await cache.cachedItemIcons(), isNull);
+      final checkedAt = DateTime.utc(2026, 11, 6, 8, 30);
+      await cache.saveCachedItemIcons(
+        CachedItemIcons(
+          checkedAt: checkedAt,
+          body: '{"schema":1}',
+          etag: '"a"',
+        ),
+      );
+      await cache.remember('peter', null);
+      await cache.forget();
+      final cached = await cache.cachedItemIcons();
+      expect(cached?.checkedAt, checkedAt);
+      expect(cached?.body, '{"schema":1}');
+      expect(cached?.etag, '"a"');
+
+      await cache.saveCachedItemIcons(CachedItemIcons(checkedAt: checkedAt));
+      expect((await cache.cachedItemIcons())?.body, isNull);
+    },
+  );
+
+  test('an unreadable item icon cache counts as none', () async {
+    await SharedPreferencesAsync().setString('itemicons.cache', '{"body": 1}');
+    expect(await cache.cachedItemIcons(), isNull);
+    await SharedPreferencesAsync().setString('itemicons.cache', 'not json');
+    expect(await cache.cachedItemIcons(), isNull);
   });
 }

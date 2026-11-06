@@ -1,0 +1,111 @@
+# Fresh food list entries as people type them: name<TAB>expected (emoji, or - for the fallback).
+6 Bananen	🍌
+Bio Vollmilch 3,5%	🥛
+H-Milch	🥛
+fettarme Milch 1,5%	🥛
+Gouda in Scheiben	🧀
+Rinderhack 500g	🥩
+Feldsalat	🥬
+Kartoffelsalat	-
+Leberkäse	-
+cherry tomatoes	🍅
+Rote Bete	-
+Äpfel Elstar	🍎
+Bioäpfel	🍎
+2 Zitronen	🍋
+Limetten	🍋
+Erdbeeren 500g	🍓
+Blaubeeren	🫐
+Kirschen	🍒
+Weintrauben kernlos	🍇
+Mandarinen	🍊
+Avocados reif	🥑
+Mango	🥭
+Wassermelone	🍉
+Honigmelone	🍈
+Kirschtomaten	🍅
+Salatgurke	🥒
+Zucchini	🥒
+3 Paprika rot	🫑
+Möhren Bund	🥕
+Karotten	🥕
+Kartoffeln festkochend 2kg	🥔
+Süßkartoffeln	🍠
+rote Zwiebeln	🧅
+Frühlingszwiebeln	🧅
+Knoblauch	🧄
+Brokkoli	🥦
+braune Champignons	🍄
+Pfifferlinge	🍄
+Babyspinat	🥬
+Rucola	🥬
+Eisbergsalat	🥬
+Rotkohl	🥬
+Petersilie glatt	🌿
+Basilikum	🌿
+Hokkaido Kürbis	🎃
+Vollkornbrot	🍞
+Toastbrot	🍞
+6 Brötchen	🥖
+Laugenbrezeln	🥨
+Croissants	🥐
+Butter	🧈
+Kräuterbutter	🧈
+10 Eier Größe M	🥚
+Freilandeier	🥚
+Schlagsahne	-
+Mozzarella	🧀
+Feta	🧀
+Hafermilch Barista	🥛
+Hähnchenbrust	🍗
+Putenbrust Aufschnitt	🍗
+Kochschinken	🥓
+Speckwürfel	🥓
+Wiener Würstchen	🌭
+Weißwürste	🌭
+Bratwurst	🌭
+Lachsfilet	🐟
+Räucherlachs	🐟
+Garnelen	🦐
+Ingwer	-
+# traps: a naive suffix or substring match would be wrong
+Nudelsalat	-
+Fleischsalat	-
+Eiersalat	-
+Wurstsalat	-
+Gurkensalat	🥗
+Fleischkäse	-
+Leberwurst	-
+Fleischwurst	-
+Teewurst	-
+Zwiebelmettwurst	-
+Käsekuchen	🍰
+Butterkäse	🧀
+Buttermilch	🥛
+Milchbrötchen	🥖
+Lachsschinken	🥓
+Palatschinken	🥞
+Pfannkuchen	🥞
+Flammkuchen	-
+Zwiebelkuchen	-
+Erdäpfel	🥔
+Grundbirnen	🥔
+Granatapfel	-
+Eierschwammerl	🍄
+Tintenfisch	🦑
+Thunfischsteak	🐟
+Blumenkohl	-
+Rosenkohl	-
+Zitronengras	-
+Wiener Schnitzel	🥩
+pineapple	🍍
+eggplant	🍆
+coconut	🥥
+butternut squash	🎃
+pancakes	🥞
+Hefewürfel	-
+Milchschnitte	-
+Lorbeer	🌿
+Lorbeerblätter	🌿
+Erdbeer Joghurt	🍓
+Himbeer Marmelade	-

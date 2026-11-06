@@ -525,17 +525,18 @@ class const _SuggestionRow({
               children: [
                 SizedBox(
                   width: 24,
-                  child: Text(
-                    suggestion.source == SuggestionSource.due &&
-                            category == null
-                        ? '🔁'
-                        : nameIcon(entry.name, category),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontFamilyFallback: emojiFontFallback,
-                    ),
-                  ),
+                  child:
+                      suggestion.source == SuggestionSource.due &&
+                          category == null
+                      ? const Text(
+                          '🔁',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamilyFallback: emojiFontFallback,
+                          ),
+                        )
+                      : ItemIcon(entry.name, size: 20),
                 ),
                 Expanded(
                   child: Column(

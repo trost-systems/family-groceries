@@ -5,5 +5,6 @@
   "POSTHOG_HOST": "https://posthog.invalid",
   "LEGAL_DRAFTS": "true",
   "HOUSEHOLD_ARCHIVE": "true",
-  "INTEGRATION_LOCK": "true"
+  "INTEGRATION_LOCK": "true",
+  "ITEM_ICONS_URL": ""
 }

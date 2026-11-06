@@ -18,6 +18,7 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_link.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -71,6 +72,10 @@ class const App({
   /// Taps on the Home Screen widgets; null without widgets.
   final WidgetLaunches? widgetLaunches,
 
+  /// The item icon table, which `main` updates from the remote one; the
+  /// bundled table by default.
+  final ItemIconsCubit? itemIcons,
+
   /// The theme picked there; the device's setting by default.
   final ThemeMode theme = ThemeMode.system,
 
@@ -96,6 +101,7 @@ class _AppState() extends State<App> {
   late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
   late final _theme = ThemeCubit(widget.cache, widget.theme);
+  late final _itemIcons = widget.itemIcons ?? ItemIconsCubit();
   late final _integrationLock = IntegrationLockCubit(
     widget.premium,
     enabled: widget.integrationLock,
@@ -163,6 +169,9 @@ class _AppState() extends State<App> {
     unawaited(_feedback.close());
     unawaited(_theme.close());
     unawaited(_integrationLock.close());
+    if (widget.itemIcons == null) {
+      unawaited(_itemIcons.close());
+    }
     super.dispose();
   }
 
@@ -196,6 +205,7 @@ class _AppState() extends State<App> {
         BlocProvider.value(value: _feedback),
         BlocProvider.value(value: _theme),
         BlocProvider.value(value: _integrationLock),
+        BlocProvider.value(value: _itemIcons),
       ],
       child: Builder(
         builder: (context) => MaterialApp.router(

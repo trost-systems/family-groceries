@@ -3,8 +3,9 @@
 # pack (tool/lint/ts), the gate wiring, the landing, e2e gate and release scripts' tests, the
 # structural lints in scripts/lint.sh, and
 # the generated files against their source: the design tokens (design/tokens/build.mjs) and the
-# app icon and splash screens (design/app-icon/build.mjs) and the Android widget's hex shapes
-# (design/widget/build.mjs).
+# app icon and splash screens (design/app-icon/build.mjs), the Android widget's hex shapes
+# (design/widget/build.mjs) and the item icon table with its samples (tool/item_icons/build.mjs, its
+# test build.test.mjs).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"
@@ -22,3 +23,8 @@ scripts/lint.sh
 node design/tokens/build.mjs --check
 node design/app-icon/build.mjs --check
 node design/widget/build.mjs --check
+node --test tool/item_icons/build.test.mjs
+# CI checks out depth 1 without origin/main; the REVISION rule compares the table with main's.
+git rev-parse --verify --quiet 'origin/main^{commit}' >/dev/null ||
+  git fetch --quiet --no-tags --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+node tool/item_icons/build.mjs --check

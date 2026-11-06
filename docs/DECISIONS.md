@@ -8673,3 +8673,68 @@ call, the signature and the runtime are the same.
    `tools/call` can apply a write twice. That is rarer under `per_worker`, but not gone. Narrowing
    that retry to bodiless calls is a follow-up (NEEDS_LEAD), outside this job because job 121 is
    changing `mcp-helpers.ts` for the MCP flakes.
+
+## Job 147: item icons for 1,439 items, one neutral fallback, a remote table, 2026-11-06
+
+Peter's screenshot showed „Geschenkkarte“ with 🧽 and „Ohrenstäbchen“ with 👶: a name without one
+of the 80 known endings took its category's emoji. This replaces item 8 of the list's row decisions
+(„Row icons are emoji from the name, else the category“).
+
+1. **The table is data.** `tool/item_icons/{fresh,pantry,drugstore,home}.tsv` list 1,439 items
+   (3,040 German and English spellings, 299 distinct emoji, 119 stops), drawn from the
+   classifier's dictionary, word list, sweep and brands plus common German shopping lists, no user
+   data. `node tool/item_icons/build.mjs` folds them like `foldName`, fails on bad rows and
+   duplicates, writes `app/lib/list/list_view/item_icons.g.dart` and
+   `site/public/data/item-icons.v1.json` from the same rows, and runs 418 sample names
+   (`tool/item_icons/samples/`) through a JS copy of the matcher; the Dart matcher runs the same
+   samples in `item_icon_samples_test.dart`, so the two cannot drift. The lint gate runs
+   `build.mjs --check` and its tests.
+   `tool/item_icons/classifier-sweep.tsv` records the icon of every name in
+   `supabase/classifier/*.tsv` (2,391 names); `--check` fails when it is stale, so every table
+   change shows what it does to real names in the diff. Review 0 found Lorbeer 🍺 (`beer`), Axe 🪓
+   (the deodorant), Flensburger 🍔 and WC-Ente 🍗 that way; English heads that end German words
+   (`beer`: Himbeer, Erdbeer) are whole-word forms now.
+2. **Emoji up to Unicode 14.0 only** (`tool/item_icons/emoji.tsv`, from emoji-test.txt 14.0, no
+   skin tones or flags). iOS 17 (our minimum) draws 15.0, Android 13 draws 14.0, the web build
+   ships Noto 15.1. So Ingwer gets no 🫚 (15.0) and shows the fallback. An item gets an emoji only
+   when it reads as that item at 18 px; a category hint is worse than the fallback, so Joghurt,
+   Zucker, Chips, Ohrenstäbchen and Wattepads show the fallback now.
+3. **Matching.** The first word, left to right, that has an icon decides („Milch für Kaffee“ 🥛).
+   Phrases of 3 or 2 words come first („rote bete“, „ice cream“), then the word, then its longest
+   head of at least 3 letters after at least 3 („Vollmilch“ → milch, „Basmatireis“ → reis, never
+   „Preis“ → eis). `=form` matches the whole word only, `-` is a stop: „Kartoffelsalat“ would
+   otherwise hit salat 🥬, „Gesichtswasser“ wasser 💧. The constructor splits the table into
+   phrase, word and head maps once; a name costs at most one lookup per letter (job 108's fling
+   budget).
+4. **One fallback, a hex cell.** Unknown items show a pointy-top honeycomb cell (`surfaceEdge`
+   face, `border` 1 px contour) the size of the emoji, in its line, light and dark. Of the three
+   options (`docs/screenshots/147/fallback-options-*.png`): an outline with a dot read as a radio
+   button and echoed the hex check box; a drawn basket echoed 🧺 and is a hand-drawn icon; the
+   filled cell is the brand's cell and stays quiet. The category emoji stays on category dividers
+   only.
+5. **Remote table (Q92 = R1).** The bundled table is the default. The app GETs
+   `https://hummlist.com/data/item-icons.v1.json` at most once a day (plain GET, plus
+   `If-None-Match` on iOS and Android; no names, ids or cookies), caches it in `DeviceCache` and
+   lays it over the bundled table only when `schema` is 1 and its `revision` is above the
+   bundled one, so a stale cached file never undoes a newer app. Anything off (network, status,
+   over 256 KiB, more than 10,000 entries, a bad key or value) keeps what the app has; a network
+   error or timeout retries at the next start; any answer from the server (a 404, a 5xx, a bad
+   200) counts as the day's check (review 0: a 404 was refetched on every start). A new schema goes to
+   `item-icons.v2.json`. `tool/item_icons/REVISION` must rise when the entries change
+   (`build.mjs --check` compares with origin/main; the lint gate fetches main into CI's depth-1
+   checkout, and `--check` fails rather than skips when it cannot read it). The remote file can
+   add and change icons, not remove them (apps lay it over the bundled table): a removed icon
+   stays a form, made a stop. The site serves `/data/` with
+   `Access-Control-Allow-Origin: *` and `Cache-Control: public, max-age=86400,
+   stale-while-revalidate=604800` (Vercel adds the ETag); the app's CSP allows
+   `https://hummlist.com` in `connect-src`. e2e builds set `ITEM_ICONS_URL` empty. On the web the
+   ETag is not exposed cross-origin, so the browser's cache revalidates instead. No note in
+   `docs/PRIVACY_DATA_MAP.md`: it is a plain static GET.
+6. **Web: every table emoji is laid out once at start.** Flutter's web engine picks a fallback
+   font for the characters a frame misses by how many of them it covers. With ⚪ on screen, the
+   monochrome Noto Sans Symbols 2 (it covers ⚪, 🐕 and 🪴) beat the colour emoji slices, and 🐕
+   and 🪴 stayed black for the session (`docs/screenshots/147/remote-table-before-warmup.png`).
+   `warmItemIconFonts` lays every emoji of the table out off screen at start and after a remote
+   table arrives, so the colour slices cover the most and win. Cost: 8 colour slices (about
+   1.2 MB) instead of the 4 this list needed (about 0.57 MB) on a first visit, loaded in the
+   background and cached. The `item-icons` journey fails when Symbols 2 is fetched.

@@ -580,3 +580,4 @@ hummlist.com gets a waitlist instead of browser-app links: a double opt-in form,
 - Job 134, no hint text inside the store name pill: [docs/done/134-store-rename-hint-out.md](docs/done/134-store-rename-hint-out.md)
 - Job 135, the add field floats over the list: [docs/done/135-floating-add-field.md](docs/done/135-floating-add-field.md)
 - Job 144, the tabs float as a hex pill: [docs/done/144-bottom-nav-floating-pill.md](docs/done/144-bottom-nav-floating-pill.md)
+- Job 147, item icons for 1,430 items and a neutral fallback: [docs/done/147-item-icon-coverage.md](docs/done/147-item-icon-coverage.md)
