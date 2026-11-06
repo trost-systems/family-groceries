@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:family_groceries/app/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +10,13 @@ import '../more/more_harness.dart';
 /// shell (job 78).
 void main() {
   Finder key(String k) => find.byKey(ValueKey(k));
-  int tab(WidgetTester tester) =>
-      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex;
+
+  /// The tab a screen reader announces as selected.
+  int tab(WidgetTester tester) => ['tab-list', 'tab-more'].indexWhere(
+    (tab) =>
+        tester.getSemantics(key(tab)).flagsCollection.isSelected ==
+        Tristate.isTrue,
+  );
 
   setUpAll(fakeSupabase);
 

@@ -94,7 +94,10 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
             key: const ValueKey('store-details'),
             buildDefaultDragHandles: false,
             proxyDecorator: HexPill.lift,
-            padding: const EdgeInsets.only(bottom: fabClearance),
+            // Clear of the button and the floating tab pill below it.
+            padding: EdgeInsets.only(
+              bottom: fabClearance + MediaQuery.paddingOf(context).bottom,
+            ),
             header: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

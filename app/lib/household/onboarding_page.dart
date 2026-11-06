@@ -44,7 +44,11 @@ class const OnboardingPage({
         constraints: const BoxConstraints(maxWidth: 420),
         child: ListView(
           key: listKey,
-          padding: const EdgeInsets.all(24),
+          // Clear of the home indicator, and in the More tab of the
+          // floating tab pill.
+          padding: const EdgeInsets.all(
+            24,
+          ).add(EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
           shrinkWrap: true,
           children: children,
         ),

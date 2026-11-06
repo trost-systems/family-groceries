@@ -111,7 +111,10 @@ class const StoresScreen({super.key}) extends StatelessWidget {
           child: ReorderableListView(
             key: const ValueKey('stores-screen'),
             buildDefaultDragHandles: false,
-            padding: const EdgeInsets.only(bottom: fabClearance),
+            // Clear of the button and the floating tab pill below it.
+            padding: EdgeInsets.only(
+              bottom: fabClearance + MediaQuery.paddingOf(context).bottom,
+            ),
             header: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Text(

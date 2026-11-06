@@ -100,7 +100,11 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 640),
         child: ListView(
           key: const ValueKey('access-screen'),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          // Clear of the floating tab pill.
+          padding: EdgeInsets.only(
+            top: 8,
+            bottom: 8 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
             if (access case IntegrationsLocked(:final offer))
               _PremiumCard(offer: offer),

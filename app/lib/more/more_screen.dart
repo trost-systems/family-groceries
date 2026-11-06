@@ -264,7 +264,10 @@ class _MoreListState() extends State<_MoreList> {
         };
         return ListView(
           key: const ValueKey('more-screen'),
-          padding: const EdgeInsets.only(bottom: HlSpace.s5),
+          // Clear of the floating tab pill.
+          padding: EdgeInsets.only(
+            bottom: HlSpace.s5 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
             _UpdateSlot(widget.updates),
             for (final (:legal, items: all) in _Item.groups)
@@ -469,7 +472,10 @@ class const _UsageDataPage() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     key: const ValueKey('more-usage-data-page'),
-    padding: const EdgeInsets.symmetric(vertical: HlSpace.s3),
+    padding: EdgeInsets.only(
+      top: HlSpace.s3,
+      bottom: HlSpace.s3 + MediaQuery.paddingOf(context).bottom,
+    ),
     children: [if (context.read<Analytics>().enabled) const _AnalyticsSwitch()],
   );
 }
