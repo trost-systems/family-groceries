@@ -14,17 +14,28 @@ class RunnerTests: XCTestCase {
 }
 
 /// Job 25: Hummlist Lifetime against StoreKit's local test store (app/ios/Hummlist.storekit),
-/// no App Store account or agreement needed. Run by scripts/ios-storekit-test.sh on a Mac.
+/// no App Store account or agreement needed. The ios gate runs them on an iOS 26.2 simulator,
+/// whose storekitd takes the configuration from CI's ad-hoc build (DECISIONS 127).
 final class LifetimeStoreKitTests: XCTestCase {
   let productId = "com.hummlist.app.lifetime"
   var session: SKTestSession!
 
   override func setUpWithError() throws {
+    executionTimeAllowance = 60
     // The configuration file beside this folder; the simulator reads the host's file system.
     let url = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent().deletingLastPathComponent()
       .appendingPathComponent("Hummlist.storekit")
     session = try SKTestSession(contentsOf: url)
+    // storekitd refuses the configuration of an app it doesn't count as installed for development
+    // (CI's ad-hoc signed build); the session's calls then fail only in the log and StoreKit
+    // answers from the App Store sandbox, whose purchase sheet never returns (DECISIONS 127).
+    // A session storekitd took reports the file's storefront.
+    let config = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+    let storefront = (config["settings"] as! [String: Any])["_storefront"] as! String
+    guard session.storefront == storefront else {
+      throw XCTSkip("storekitd did not take Hummlist.storekit (storefront '\(session.storefront)', want \(storefront)): the app is not installed for development (DECISIONS 127)")
+    }
     session.resetToDefaultState()
     session.disableDialogs = true
     session.clearTransactions()
@@ -76,8 +87,14 @@ final class LifetimeStoreKitTests: XCTestCase {
     XCTAssertEqual(restored, [productId], "restore finds the purchase")
 
     try session.refundTransaction(identifier: UInt(t.id))
-    let afterRefund = await owned()
-    XCTAssertEqual(afterRefund, [], "a refund takes it away")
+    // The refund reaches currentEntitlements a moment later, like the approval below.
+    var afterRefund = await owned()
+    for _ in 0..<20 where !afterRefund.isEmpty {
+      try await Task.sleep(nanoseconds: 250_000_000)
+      afterRefund = await owned()
+    }
+    let revoked = await Transaction.latest(for: productId).flatMap { try? $0.payloadValue.revocationDate }
+    XCTAssertEqual(afterRefund, [], "a refund takes it away (revocation date: \(String(describing: revoked)))")
   }
 
   func testAskToBuyIsPendingUntilApproved() async throws {
