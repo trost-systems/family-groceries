@@ -40,8 +40,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --sticker: var(--hl-shadow-night);
-    --sticker-l: var(--hl-shadow-night-l);
+    --sticker: 0 4px 0 0 var(--hl-color-surface-edge);
+    --sticker-l: 0 8px 0 0 var(--hl-color-surface-edge);
   }
 }
 

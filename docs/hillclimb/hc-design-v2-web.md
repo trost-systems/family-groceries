@@ -1,0 +1,36 @@
+# Hill-climb hc-design-v2-web (job 154)
+
+Design quality of the public site hummlist.com, scored by a council of three fresh Claude Opus judges against a rubric researched and frozen before the baseline (10 aspects: typography, hierarchy, colour and contrast, spacing, layout, design-system consistency, accessibility, motion, iconography, empty and error states; motion is not scorable from stills and is left out). Each judge answers every criterion yes/no/n.a., then scores each aspect 1-10 against anchors. Aspect score = median of the 3 judges; overall = minimum of the aspect medians (the mean is reported too).
+
+The judges, the rubric, the prompts and the screenshot harness live in the job's ops directory, outside this repo; nothing in the repo calls a model. Judges are separate processes with an empty working directory and only the screenshots; they never see scores, steps, diffs or which version is new. The harness refuses to score (score 0) when any frozen input's hash differs.
+
+## Keep rule
+
+A step is kept only if (1) a blind pairwise council prefers it: baseline and candidate shown as "Version P" / "Version Q" in a random order per judge, each judge picks P, Q or tie per aspect, aspect verdict = majority, step verdict = majority of the decided aspects; (2) the absolute minimum does not drop by more than the noise band below the best kept state; (3) every guardrail passes.
+
+## Screenshot set (fixed before the baseline)
+
+40 shots of a local production build of site/ served on 127.0.0.1: /de (1440 light, every tile; 1440 dark, 2 tiles; 390 light, every tile; 390 dark, 2; 390 light at text 150 %, 2; keyboard focus after 3 Tabs), /en, /de/anleitungen, /de/anleitungen/siri-kurzbefehl (also at text 150 %), /de/changelog, /datenschutz (also at text 150 %), /support and the 404 page, at 1440 and 390 px, light and dark. Text 150 % is the browser's default font size raised from 16 to 24 px. Two renders of the same tree are byte-identical.
+
+## Baseline
+
+Main at `5e639d3a`. Three absolute runs: minimum [4, 4, 4], mean [6.556, 6.444, 6.556]. Score (median) **4**, noise band 0.5 (max - min, floor 0.5).
+
+| aspect | typography | hierarchy | color_contrast | spacing | layout | consistency | accessibility | iconography | empty_error_states |
+|---|---|---|---|---|---|---|---|---|---|
+| run 1 | 6 | 8 | 8 | 7 | 7 | 5 | 7 | 7 | 4 |
+| run 2 | 6 | 8 | 7 | 7 | 7 | 5 | 7 | 7 | 4 |
+| run 3 | 6 | 8 | 8 | 7 | 7 | 5 | 7 | 7 | 4 |
+
+A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie, 81 of 81 single judge votes tie; seeds [[4042588824, 1315228522, 1139922973], [2523588036, 157228610, 757001154], [3829715989, 4274223690, 1574030434]].
+
+## Steps
+
+| # | hypothesis | pairwise (cand / base / tie aspects) | min (mean) | verdict | note |
+|---|---|---|---|---|---|
+| w1 | dark-mode cards use the hard 3D offset instead of a blurred glow (C5 one depth style) | cand 1 / base 0 / tie 8 | 4 (mean 6.778) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
+
+Per-step aspect medians and per-aspect pairwise votes:
+
+- **w1** (keep): medians typography 6, hierarchy 8, color_contrast 8, spacing 7, layout 7, consistency 6, accessibility 7, iconography 8, empty_error_states 4; pairwise consistency cand; seeds [27395677, 613857949, 1652060021].
+
