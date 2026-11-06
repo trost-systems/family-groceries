@@ -30,9 +30,11 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 |---|---|---|---|---|---|
 | a1 | field errors and helper text wrap instead of ellipsis (errorMaxLines app-wide) | cand 3 / base 0 / tie 6 | 4 (mean 5.556) | keep | guard-app green: analyze clean, 2038 passed / 90 skipped, widgetbook 334, no golden changed |
 | a2 | edit sheet: Marke/Menge row stacks when it does not fit (no truncated label or clipped brand at 375 px / 150 %) | cand 4 / base 0 / tie 5 | 5 (mean 6.111) | keep | guard-app green: analyze clean, 2041 passed / 90 skipped, widgetbook 334; goldens edit-sheet-light/dark updated (390 px now stacks Marke/Menge); string-literal diff = moved fieldKey lines only |
+| a3 | add sheet: return hex and close button drawn as visible 52x48 hex targets (were 36x28 / bare 24 px) | cand 3 / base 0 / tie 6 | 5 (mean 5.889) | keep | guard-app green: analyze clean, 2041 passed / 90 skipped, widgetbook 334; 8 add-sheet goldens updated (light/dark x normal, compact, wide, new store) |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
 - **a1** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 5, layout 5, consistency 5, accessibility 4, iconography 6, empty_error_states 6; pairwise typography cand, accessibility cand, empty_error_states cand; seeds [1690377694, 3917212416, 158980696].
 - **a2** (keep): medians typography 6, hierarchy 7, color_contrast 7, spacing 6, layout 6, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise typography cand, spacing cand, layout cand, accessibility cand; seeds [1123057871, 1401365860, 3040359756].
+- **a3** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise consistency cand, accessibility cand, iconography cand; seeds [2038420474, 1736877222, 3676789202].
 
