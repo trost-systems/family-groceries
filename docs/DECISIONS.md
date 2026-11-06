@@ -9203,3 +9203,12 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
    guard is the pair of widget tests in `app/test/list/add_sheet_test.dart` "after closing, a
    semantics tap (and focus) on the field opens the sheet again", which fail without the route
    (review 0) and pass on main.
+## Job 143: premium-yearly.spec.ts empty JSON body (issue #265), 2026-11-06
+
+1. **Same cause as job 124, so no second fix.** The edge runtime was pinned to one CPU. On main
+   (`oneshot`), `premium-yearly.spec.ts` failed 12 of 50 runs, and each failure matched a
+   `connection aborted` line in the runtime log. With #260's `per_worker` and `functionJson` the
+   same pin passed 200 of 200 runs with no such line, and 100 of 100 on main after #260 merged. Unpinned CI passed 100 of 100 on #260
+   (run 42154588914) and also on main (run 42185909564), so only the pinned runs separate them.
+   This job changes no code. The proof is in `docs/done/143-fix-premium-yearly-json.md`. #260
+   landed as 5062100c and closed #265.
