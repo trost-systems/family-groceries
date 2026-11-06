@@ -94,7 +94,7 @@ class _NameDialogState() extends State<_NameDialog> {
           readOnly: _busy,
           maxLength: widget.maxLength,
           textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(errorText: _error, errorMaxLines: 3),
+          decoration: InputDecoration(errorText: _error),
           onChanged: (_) {
             if (_error != null) {
               setState(() => _error = null);

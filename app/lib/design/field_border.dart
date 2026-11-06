@@ -152,6 +152,10 @@ InputDecorationThemeData fieldTheme(HummlistColors t, FieldShape shape) {
           : t.surfaceRaised,
     ),
     hoverColor: Colors.transparent,
+    // Without a limit the decorator cuts these to one line with an
+    // ellipsis; German messages at large text sizes need several.
+    errorMaxLines: 8,
+    helperMaxLines: 8,
     contentPadding: switch (shape) {
       FieldShape.hex => const EdgeInsets.symmetric(
         horizontal: hexFieldInset,
