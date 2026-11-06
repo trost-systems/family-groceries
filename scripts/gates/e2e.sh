@@ -40,7 +40,12 @@ flutter build web --release --no-web-resources-cdn --wasm $(flutter_defines) --d
 log "playwright"
 cd "$REPO_ROOT/e2e"
 [[ -d node_modules ]] || npm ci
-npx playwright test "$@"
+if [[ ${1:-} == PAUSE=* ]]; then
+  IFS=: read -r ps pr pb <<<"${1#PAUSE=}"; shift
+  "$REPO_ROOT/scripts/e2e-pause-140.sh" --stop "$ps" --run "$pr" --burn "$pb" -- npx playwright test "$@"
+else
+  npx playwright test "$@"
+fi
 
 # Job 18: a two-client fg sync smoke test on the web build above (one add, one tick, the artifacts
 # and the index), once per full run: on CI's first shard, or locally without a subset. It reuses
