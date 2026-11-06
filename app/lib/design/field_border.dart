@@ -195,6 +195,12 @@ class const LabeledField({
   required final Widget field,
   super.key,
 }) extends StatelessWidget {
+  /// The label's type, without its color.
+  static const labelStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+  );
+
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -207,9 +213,7 @@ class const LabeledField({
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+            style: labelStyle.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
