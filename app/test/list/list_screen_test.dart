@@ -480,6 +480,12 @@ void main() {
   });
 
   Finder editSheet() => find.byKey(const ValueKey('edit-sheet'));
+  Finder editing(String name) => find.byWidgetPredicate(
+    (w) =>
+        w is TextField &&
+        w.key == const ValueKey('edit-name') &&
+        w.controller?.text == name,
+  );
 
   testWidgets('a sideways drag across a row opens nothing, ticks nothing '
       'and moves nothing; an upward one scrolls', (tester) async {
@@ -523,21 +529,24 @@ void main() {
     expect(editSheet(), findsNothing);
   });
 
-  testWidgets('Löschen in the held-open sheet deletes, with undo', (
-    tester,
-  ) async {
+  testWidgets('Abbrechen in the held-open sheet writes nothing and shows '
+      'no message', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
     await tester.longPress(row('Brot'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('edit-delete')));
+    await tester.enterText(find.byKey(const ValueKey('edit-name')), 'Toast');
+    await tester.tap(find.byKey(const ValueKey('chip-category')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('category-option-produce')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('edit-cancel')));
     await tester.pumpAndSettle();
     expect(editSheet(), findsNothing);
-    expect(row('Brot'), findsNothing);
-    expect(repo.rows, isEmpty);
-    expect(find.text('Brot gelöscht'), findsOneWidget);
-    await tester.tap(find.text('Rückgängig'));
-    await tester.pumpAndSettle();
+    expect(repo.sent, isEmpty);
     expect(row('Brot'), findsOneWidget);
+    expect(row('Toast'), findsNothing);
+    expect(itemNamed('Brot').categoryId, isNot('produce'));
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('an item still being sorted opens the sheet on a hold too', (
@@ -554,17 +563,16 @@ void main() {
     expect(tester.widget<ItemRow>(row('Brot')).item.categoryId, isNull);
     await tester.longPress(row('Brot'));
     await tester.pumpAndSettle();
-    expect(find.text('Bearbeiten: Brot'), findsOneWidget);
+    expect(editing('Brot'), findsOneWidget);
     expect(row('Brot'), findsOneWidget);
   });
 
-  testWidgets('no item action needs a hold: tick, edit, delete and move '
-      'all work with taps and a right click', (tester) async {
+  testWidgets('no item action needs a hold: tick, edit and move all work '
+      'with taps and a right click', (tester) async {
     await pumpList(
       tester,
       seed: (repo) => repo
         ..remoteAdd('Milch')
-        ..remoteAdd('Brot')
         ..remoteAdd('Seife'),
     );
     // Tick: a tap.
@@ -591,13 +599,6 @@ void main() {
       (itemNamed('Milch').categoryId, itemNamed('Milch').storeId),
       ('produce', 'lidl'),
     );
-
-    // Delete: that sheet's Löschen.
-    await tester.tap(row('Brot'), buttons: kSecondaryButton);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('edit-delete')));
-    await tester.pumpAndSettle();
-    expect(repo.rows.values.where((i) => i.name == 'Brot'), isEmpty);
   });
 
   testWidgets('a hold opens the edit sheet while the finger is still down, '
@@ -609,7 +610,7 @@ void main() {
     await finger.moveTo(start + const Offset(4, 12));
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pumpAndSettle();
-    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+    expect(editing('Milch'), findsOneWidget);
     await finger.up();
     await tester.pumpAndSettle();
     expect(editSheet(), findsOneWidget, reason: 'the lift does not close it');
@@ -633,7 +634,7 @@ void main() {
       expect(storeDivider('none'), findsNothing, reason: 'no drop targets');
       await gesture.up();
       await tester.pumpAndSettle();
-      expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+      expect(editing('Milch'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('edit-cancel')));
       await tester.pumpAndSettle();
     }
@@ -658,7 +659,7 @@ void main() {
     );
     tester.semantics.customAction(find.semantics.byLabel('Brot'), edit);
     await tester.pumpAndSettle();
-    expect(find.text('Bearbeiten: Brot'), findsOneWidget);
+    expect(editing('Brot'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('edit-cancel')));
     await tester.pumpAndSettle();
 
@@ -753,7 +754,7 @@ void main() {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Milch'));
     await tester.tap(row('Milch'), buttons: kSecondaryButton);
     await tester.pumpAndSettle();
-    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
+    expect(editing('Milch'), findsOneWidget);
   });
 
   testWidgets('the edit sheet tags an item to a store', (tester) async {

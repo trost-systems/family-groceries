@@ -15,7 +15,7 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
   await setCategory(peter, 'Hafermilch', 'Getränke');
   await expectGroup(peter, 'Hafermilch', 'Getränke');
   await screenshot(peter, '01-moved-to-getraenke');
-  await deleteItem(peter, 'Hafermilch');
+  await deleteItem(await apiAs(peterEmail), peter, 'Hafermilch');
   await addItem(peter, '2 Hafermilch');
   await expectGroup(peter, 'Hafermilch', 'Getränke');
 

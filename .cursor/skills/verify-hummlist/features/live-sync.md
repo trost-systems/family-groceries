@@ -29,7 +29,7 @@ Preconditions:
 - **Added while away.** Close B's page, A adds Tomaten, open a new page in B's context: `itemRow(b,'Tomaten')` has "Neu" and the subtitle shows; the add field stays focused (the highlight never takes focus).
 - **Tick.** `tick(a, 'Mineralwasser')`; on B `itemRow(b,'Mineralwasser')` count 0 within 2 s.
 - **Edit.** On A `openEdit(a,'Bananen')`, `typeInto(editField(a,'Menge'),'8')`, `saveEdit(a)`; on B `itemRow(b,'Bananen')` has accessible name `/^Bananen 8( Neu)?$/` ("Neu" comes last).
-- **Delete.** On B `openEdit(b,'Spülmittel')`, click `editSheet(b).getByRole('button',{name:'Löschen'})`; on A `itemRow(a,'Spülmittel')` count 0.
+- **Delete.** The app has no delete button since job 149, so delete as B through the API: `(await apiAs(inst, member(inst, 'mia'))).from('items').delete().eq('name', 'Spülmittel')` (`helpers/lib.mjs`; in a spec `apiAs(email)` from `e2e/tests/helpers.ts`); on A `itemRow(a,'Spülmittel')` count 0.
 - **Offline then back.** `const network = await cutOff(a)` (or A's `context.setOffline(true)`) then `tick(a,'Apfelsaft')` and `addItem(a,'Eier')`: A shows both at once, `a.getByText(/^Offline:/)` count 1, B still shows Apfelsaft. `network.restore()`: within 15 s B loses Apfelsaft and shows Eier.
 - **Sync icon.** `page.getByText(/^\d+ Änderung(en)? w(ird|erden) synchronisiert$/)` for pending (hold item writes with `page.route('**/rest/v1/items**', ...)` until released), `getByText(/^Offline:/)` for offline (`cutOff(page)` then `restore()`).
 - Specs: `scripts/verify.sh --only e2e -- tests/live-sync.spec.ts` (also: Realtime drops, a phone that sleeps through a drop, a change made before the channel is live), `tests/partner-news.spec.ts`, `tests/list-header.spec.ts`.

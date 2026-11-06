@@ -1,6 +1,6 @@
 import { devices, expect, test, type Locator, type Page } from './fixtures';
 import {
-  actionSnackBar, addItem, apiAs, boxOf, editField, editSheet, expectFieldValue, finger, fingerHold, itemRow, must, newEmail, nextFrames, openEdit,
+  addItem, apiAs, boxOf, editField, editSheet, expectFieldValue, finger, fingerHold, itemRow, must, newEmail, nextFrames, openEdit,
   pickInSheet, saveEdit, screenshot, signUpWithHousehold, typeInto, within,
 } from './helpers';
 import { householdWithItems, signIn } from './web-build';
@@ -20,7 +20,7 @@ async function box(locator: Locator) {
 }
 
 /**
- * The sheet hugs its content: its top sits just above the header, its bottom just below the hint under Fertig.
+ * The sheet hugs its content: its top sits just above the Bezeichnung field, its bottom just below Fertig.
  * Measured once the sheet holds still: it slides in and grows as a chip folds out, and boxes read a frame apart
  * during that disagree by up to the distance it moved.
  */
@@ -32,14 +32,15 @@ async function expectHugsContent(page: Page, why: string): Promise<void> {
     return Math.abs(a.top - b.top) + Math.abs(a.height - b.height);
   }, { message: `${why}: the sheet stops moving` }).toBeLessThan(0.5);
   const sheet = await box(editSheet(page));
-  const cancel = await box(editSheet(page).getByRole('button', { name: 'Abbrechen' }));
+  const name = await box(editField(page, 'Bezeichnung'));
   const done = await box(editSheet(page).getByRole('button', { name: 'Fertig' }));
   const viewport = must(page.viewportSize(), 'viewport');
-  expect(cancel.top - sheet.top, `${why}: no dead area above the header`).toBeLessThanOrEqual(24);
-  expect(cancel.top - sheet.top).toBeGreaterThanOrEqual(0);
-  // Below Fertig: 10 px, the one-line hint (13 px) and 16 px.
-  expect(sheet.bottom - done.bottom, `${why}: no dead area below the buttons`).toBeLessThanOrEqual(56);
-  expect(sheet.bottom - done.bottom).toBeGreaterThanOrEqual(20);
+  // Above the field (its box holds its label): the 16 px handle strip and 8 px; 24 px measured.
+  expect(name.top - sheet.top, `${why}: no dead area above the fields`).toBeLessThanOrEqual(32);
+  expect(name.top - sheet.top).toBeGreaterThanOrEqual(16);
+  // Below Fertig: 16 px.
+  expect(sheet.bottom - done.bottom, `${why}: no dead area below the buttons`).toBeLessThanOrEqual(24);
+  expect(sheet.bottom - done.bottom).toBeGreaterThanOrEqual(12);
   expect(Math.abs(sheet.bottom - viewport.height), `${why}: the sheet sits on the bottom edge`).toBeLessThanOrEqual(2);
 }
 
@@ -89,7 +90,7 @@ test('edit: the sheet is as tall as its content, also with a chip folded out', a
   await addItem(page, 'Glutenfreie Dinkel-Vollkorn-Toastbrötchen mit Sonnenblumenkernen');
   await openEdit(page, 'Glutenfreie Dinkel-Vollkorn-Toastbrötchen mit Sonnenblumenkernen');
   await expectHugsContent(page, 'closed chips');
-  for (const name of [/^Laden: /, /^Kategorie: /, /^Abbrechen$/, /^Löschen$/, /^Eins mehr$/]) {
+  for (const name of [/^Laden: /, /^Kategorie: /, /^Abbrechen$/, /^Eins mehr$/]) {
     expect((await box(editSheet(page).getByRole('button', { name }))).height, `${name} is a 44 px target`)
       .toBeGreaterThanOrEqual(44);
   }
@@ -111,11 +112,14 @@ test('edit: the sheet is as tall as its content, also with a chip folded out', a
   await saveEdit(page);
 });
 
-test('edit: a hold that stays put opens the sheet; Löschen deletes with Undo', async ({ page }) => {
-  await signUpWithHousehold(page, newEmail('edit-delete'), { stores: ['Drogerie'] });
+test('edit: a hold that stays put opens the sheet; Abbrechen drops a picked store', async ({ page }) => {
+  const email = newEmail('edit-hold');
+  await signUpWithHousehold(page, email, { stores: ['Drogerie'] });
   await addItem(page, 'Zahnpasta');
   await expect(page.getByText('Wird einsortiert')).toHaveCount(0);
   await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
+  const before = await rowOf(email, 'Zahnpasta');
+  expect(before.store_id, 'a new household routes nothing to a store yet').toBeNull();
   const row = await boxOf(itemRow(page, 'Zahnpasta'));
 
   await page.mouse.move(row.x + 120, row.y + row.height / 2);
@@ -126,13 +130,13 @@ test('edit: a hold that stays put opens the sheet; Löschen deletes with Undo', 
   await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
 
   await pickInSheet(page, 'Laden', 'Drogerie');
-  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
+  await editSheet(page).getByRole('button', { name: 'Abbrechen' }).click();
   await expect(editSheet(page)).toHaveCount(0);
-  await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
-  await actionSnackBar(page, 'Zahnpasta gelöscht').getByRole('button', { name: 'Rückgängig' }).click();
-  await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
-  await page.reload();
-  await expect(itemRow(page, 'Zahnpasta'), 'the undo re-created it on the server').toBeVisible();
+  await expect(itemRow(page, 'Zahnpasta'), 'Abbrechen keeps the item').toBeVisible();
+  await page.waitForTimeout(1_000);
+  expect(await rowOf(email, 'Zahnpasta'), 'nothing was written').toEqual(before);
+  await openEdit(page, 'Zahnpasta');
+  await expect(editSheet(page).getByRole('button', { name: 'Laden: Ohne Laden' }), 'the pick was dropped').toBeVisible();
 });
 
 test('edit: Abbrechen and an unchanged Fertig write nothing', async ({ page }) => {
@@ -159,7 +163,7 @@ test.describe('on a phone browser', () => {
   const { viewport, deviceScaleFactor, userAgent } = devices['Pixel 7'];
   test.use({ viewport, deviceScaleFactor, userAgent, isMobile: true, hasTouch: true });
 
-  test('edit: a finger hold opens the sheet, one that wobbles a little too; move and delete in it, tick with a tap', async ({ page }) => {
+  test('edit: a finger hold opens the sheet, one that wobbles a little too; move in it, tick with a tap', async ({ page }) => {
     const email = newEmail('hold-phone');
     await householdWithItems(email, ['Zahnpasta', 'Milch', 'Brot'], { stores: ['Supermarkt'] });
     await page.goto('/');
@@ -181,7 +185,7 @@ test.describe('on a phone browser', () => {
     await editSheet(page).getByRole('button', { name: 'Abbrechen' }).tap();
     await expect(editSheet(page)).toHaveCount(0);
 
-    // Move: the sheet's chips; delete: its Löschen; tick: a tap.
+    // Move: the sheet's chips; tick: a tap.
     await fingerHold(page, itemRow(page, 'Milch'));
     await editSheet(page).getByRole('button', { name: /^Laden: / }).tap();
     await editSheet(page).getByRole('button', { name: 'Supermarkt', exact: true }).tap();
@@ -189,16 +193,11 @@ test.describe('on a phone browser', () => {
     await expect(editSheet(page)).toHaveCount(0);
     await expect.poll(async () => (await rowOf(email, 'Milch')).store_id, { message: 'moved to Supermarkt' }).not.toBeNull();
 
-    await fingerHold(page, itemRow(page, 'Zahnpasta'));
-    await editSheet(page).getByRole('button', { name: 'Löschen' }).tap();
-    await expect(actionSnackBar(page, 'Zahnpasta gelöscht')).toBeVisible();
-    await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
-
     await itemRow(page, 'Brot').tap();
     await expect(itemRow(page, 'Brot'), 'ticked').toHaveCount(0);
     await page.reload();
     await expect(itemRow(page, 'Milch'), 'the list loaded').toBeVisible({ timeout: 30_000 });
-    await expect(itemRow(page, 'Zahnpasta'), 'deleted on the server').toHaveCount(0);
+    await expect(itemRow(page, 'Zahnpasta'), 'untouched').toBeVisible();
     await expect(itemRow(page, 'Brot'), 'ticked on the server').toHaveCount(0);
   });
 });

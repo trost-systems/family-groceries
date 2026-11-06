@@ -104,11 +104,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get undo => 'Rückgängig';
 
   @override
-  String editTitle(String name) {
-    return 'Bearbeiten: $name';
-  }
-
-  @override
   String get editSheet => 'Bearbeiten';
 
   @override
@@ -150,9 +145,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get categoryAuto => 'Kategorie: automatisch';
-
-  @override
-  String get editHint => 'Gespeichert wird nur, was du änderst';
 
   @override
   String get save => 'Speichern';

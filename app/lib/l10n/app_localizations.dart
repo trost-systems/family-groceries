@@ -248,12 +248,6 @@ abstract class AppLocalizations {
   /// **'Rückgängig'**
   String get undo;
 
-  /// No description provided for @editTitle.
-  ///
-  /// In de, this message translates to:
-  /// **'Bearbeiten: {name}'**
-  String editTitle(String name);
-
   /// No description provided for @editSheet.
   ///
   /// In de, this message translates to:
@@ -331,12 +325,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Kategorie: automatisch'**
   String get categoryAuto;
-
-  /// No description provided for @editHint.
-  ///
-  /// In de, this message translates to:
-  /// **'Gespeichert wird nur, was du änderst'**
-  String get editHint;
 
   /// No description provided for @save.
   ///

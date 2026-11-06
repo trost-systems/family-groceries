@@ -235,7 +235,7 @@ export interface EngineResult {
   compositeVideo: string | null;
 }
 
-const EVENT_FOR: Record<string, string> = { add: 'added', tick: 'bought', edit: 'edited', delete: 'deleted' };
+const EVENT_FOR: Record<string, string> = { add: 'added', tick: 'bought', edit: 'edited' };
 
 /**
  * Adds the item_events row time (server clock) to each action: a second
@@ -260,7 +260,7 @@ async function addEventTimes(api: Api, householdId: string, result: EngineResult
       ? [step.text]
       : step.action === 'edit'
       ? [step.item, step.value]
-      : step.action === 'tick' || step.action === 'delete'
+      : step.action === 'tick'
       ? [step.item]
       : [];
     const fits = (e: JsonObject) =>
@@ -530,7 +530,7 @@ export const syncCommands: Command[] = [{
   description: [
     'Checks the script against the scenario, builds the web app of this checkout against the target (cached by source fingerprint), takes /tmp/fg-e2e.lock (waits up to --lock-wait seconds; code e2e_lock_busy otherwise; a lock held by a parent `flock` is reused), then seeds the scenario as a new run (or reuses --run-id), serves the build on port <prefix>80 and opens one Chromium with one isolated context per client, each signed in as a household member (A, B, C in member order). The script runs step by step:',
     '  A add "Hafermilch 2"                         type into "Was fehlt?" and press Enter',
-    '  B tick "Milch"  /  A delete "Brot"           tick the row\'s checkbox / open it and press Löschen',
+    '  B tick "Milch"                               tick the row\'s checkbox',
     '  C edit "Bananen" quantity "6"  (or name)     open the row, retype the field, Speichern',
     '  A offline  /  A online                       cut the client off (HTTP and the open realtime socket) / reconnect',
     '  A store "Supermarkt"  /  A reload            fold all but Supermarkt and Ohne Laden ("Alle": unfold) / reload',

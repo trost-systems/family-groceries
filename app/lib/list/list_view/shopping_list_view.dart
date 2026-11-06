@@ -315,21 +315,14 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   Future<void> _edit(Item item) async {
     widget.onInteract?.call();
     final cubit = _cubit;
-    final result = await showEditItemSheet(
+    final changes = await showEditItemSheet(
       context,
       item: item,
       catalog: cubit.state.catalog,
       onCreateStore: cubit.addStore,
     );
-    switch (result) {
-      case EditSaved(:final changes):
-        cubit.edit(item.id, changes);
-      case EditDeleted():
-        if (mounted) {
-          _delete(item);
-        }
-      case null:
-        break;
+    if (changes != null) {
+      cubit.edit(item.id, changes);
     }
   }
 

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  actionSnackBar, addField, addSheet, boxOf, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
+  addField, addSheet, boxOf, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
 } from './helpers';
 import { householdWithItems, signIn, watchBuild } from './web-build';
 
@@ -136,8 +136,8 @@ test('after a tapped suggestion one tap on the field brings the keyboard back', 
 
 // Job 29c, Peter: in Safari on the iPhone a hold "always triggers the move action". Since job 78 a
 // hold is the only edit gesture: a swipe across a row does nothing, a hold that wobbles a little
-// edits, and the sheet deletes.
-test('a finger swipe across a row opens nothing and moves nothing; a hold edits; Löschen in it deletes', async ({ page }) => {
+// edits, and the sheet's Abbrechen closes it.
+test('a finger swipe across a row opens nothing and moves nothing; a hold edits; Abbrechen in it closes', async ({ page }) => {
   const email = newEmail('iphone-hold');
   await householdWithItems(email, ['Zahnpasta', 'Brot']);
   await page.goto('/');
@@ -156,8 +156,8 @@ test('a finger swipe across a row opens nothing and moves nothing; a hold edits;
   await finger(page, [mid, { x: mid.x + 7, y: mid.y + 10 }], { hold: 700, steps: 4, pause: 300 });
   await expect(editSheet(page), 'a hold that wobbles 12 px opens edit').toBeVisible();
   await expectFieldValue(editField(page, 'Bezeichnung'), 'Zahnpasta');
-  await editSheet(page).getByRole('button', { name: 'Löschen' }).tap();
-  await expect(actionSnackBar(page, 'Zahnpasta gelöscht')).toBeVisible();
-  await expect(itemRow(page, 'Zahnpasta')).toHaveCount(0);
+  await editSheet(page).getByRole('button', { name: 'Abbrechen' }).tap();
+  await expect(editSheet(page), 'Abbrechen closes the sheet').toHaveCount(0);
+  await expect(itemRow(page, 'Zahnpasta'), 'and keeps the item').toBeVisible();
   await expect(itemRow(page, 'Brot')).toBeVisible();
 });

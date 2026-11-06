@@ -4,7 +4,7 @@
 // other phone renamed first) folds into that copy once the list shows it.
 import { expect, test, type Page } from './fixtures';
 import {
-  addItem, apiAs, cutOff, editField, editSheet, itemRow, newEmail, openEdit, saveEdit, screenshot, signUpWithHousehold,
+  addItem, apiAs, cutOff, editField, itemRow, newEmail, openEdit, saveEdit, screenshot, signUpWithHousehold,
   supabaseUrl, typeInto,
 } from './helpers';
 
@@ -35,7 +35,6 @@ async function otherPhone(email: string) {
       const { error } = await api.from('items').update({ name: to }).eq('name', from).eq('status', 'active');
       if (error) throw error;
     },
-    all: async () => (await api.from('items').select('name, quantity, status').order('name')).data,
     open: async () =>
       (await api.from('items').select('name, quantity').eq('status', 'active').order('name')).data,
   };
@@ -81,26 +80,6 @@ test('RENAME: offline, then the other phone adds Mineralwasser: one Mineralwasse
   await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
   await expect(itemRow(page, 'Mineralwasser')).toHaveCount(1);
   await expect(merged(page)).toBeVisible();
-});
-
-test('RENAME: renamed and deleted offline while the other phone adds Mineralwasser: theirs stays as it was', async ({ page }) => {
-  const email = newEmail('rename-delete');
-  await signUpWithHousehold(page, email);
-  await addItem(page, '2 Apfelsaft');
-  const phone = await otherPhone(email);
-  const connection = await cutOff(page);
-  await rename(page, 'Apfelsaft', 'Mineralwasser');
-  await openEdit(page, 'Mineralwasser');
-  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
-  await expect(itemRow(page, 'Mineralwasser')).toHaveCount(0);
-  await phone.add('Mineralwasser', '6');
-
-  await connection.restore();
-  await expect.poll(() => phone.all(), { message: 'the delete removed Apfelsaft, nothing merged', timeout: 20_000 })
-    .toEqual([{ name: 'Mineralwasser', quantity: '6', status: 'active' }]);
-  await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
-  await expect(itemRow(page, 'Mineralwasser')).toHaveAccessibleName(/^Mineralwasser 6/);
-  await expect(merged(page)).toHaveCount(0);
 });
 
 test('RENAME: two phones renaming onto Mineralwasser end with one, and Rückgängig brings Apfelsaft back', async ({ page }) => {

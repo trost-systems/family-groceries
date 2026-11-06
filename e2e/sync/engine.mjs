@@ -301,9 +301,6 @@ async function act(/** @type {any} */ c, /** @type {any} */ s) {
       await typeInto(field, s.value);
       return await issue(() => sheet.getByRole('button', { name: 'Fertig' }).click());
     }
-    case 'delete':
-      await row(page, s.item).first().click({ button: 'right' });
-      return await issue(() => page.getByRole('group', { name: 'Bearbeiten', exact: true }).getByRole('button', { name: 'Löschen' }).click());
     case 'store':
       return await issue(() => shopAt(page, s.store));
     case 'offline':
