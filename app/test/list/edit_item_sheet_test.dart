@@ -35,14 +35,14 @@ void main() {
 
   /// Opens the sheet for [item], lets [act] work on it, and returns what
   /// the sheet answered once it closed. Without [act] it stays open.
-  Future<EditResult?> run(
+  Future<ItemChanges?> run(
     WidgetTester tester,
     Future<void> Function()? act, {
     Item? item,
     Size size = const Size(400, 900),
     Future<Store?> Function(String name)? onCreateStore,
   }) async {
-    EditResult? result;
+    ItemChanges? result;
     var closed = false;
     tester.view
       ..physicalSize = size
@@ -97,7 +97,6 @@ void main() {
 
   testWidgets('the fields come prefilled', (tester) async {
     await open(tester, milk);
-    expect(find.text('Bearbeiten: Milch'), findsOneWidget);
     expect(text(tester, 'edit-name'), 'Milch');
     expect(text(tester, 'edit-brand'), 'Weihenstephan');
     expect(text(tester, 'edit-quantity'), '2');
@@ -113,7 +112,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Gespeichert wird nur, was du änderst'), findsOneWidget);
   });
 
   testWidgets('only the changed fields are saved', (tester) async {
@@ -124,11 +122,7 @@ void main() {
       expect(text(tester, 'edit-quantity'), '3');
       await tester.tap(key('edit-done'));
     });
-    expect(result, isA<EditSaved>());
-    expect((result! as EditSaved).changes.toColumns(), {
-      'brand': 'Berchtesgadener',
-      'quantity': '3',
-    });
+    expect(result!.toColumns(), {'brand': 'Berchtesgadener', 'quantity': '3'});
   });
 
   testWidgets('emptied fields are saved as null', (tester) async {
@@ -138,7 +132,7 @@ void main() {
       await tester.enterText(key('edit-quantity'), '');
       await tester.testTextInput.receiveAction(TextInputAction.done);
     });
-    expect((result! as EditSaved).changes.toColumns(), {
+    expect(result!.toColumns(), {
       'brand': null,
       'properties': null,
       'quantity': null,
@@ -164,9 +158,69 @@ void main() {
     );
   });
 
-  testWidgets('Löschen answers deleted', (tester) async {
-    final result = await run(tester, () => tester.tap(key('edit-delete')));
-    expect(result, isA<EditDeleted>());
+  testWidgets('Abbrechen throws away every edit', (tester) async {
+    final result = await run(tester, () async {
+      await tester.enterText(key('edit-name'), 'Hafermilch');
+      await tester.enterText(key('edit-brand'), 'Oatly');
+      await tester.tap(key('edit-quantity-plus'));
+      await tester.enterText(key('edit-properties'), 'Barista');
+      await tester.tap(key('chip-store'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('store-option-dm'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('chip-category'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('category-option-other'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('edit-cancel'));
+    });
+    expect(result, isNull, reason: 'no change reaches the list');
+  });
+
+  testWidgets('no title, no hint, no Löschen: Abbrechen sits left of '
+      'Fertig under the chips', (tester) async {
+    await open(tester, milk);
+    expect(find.textContaining('Bearbeiten'), findsNothing);
+    expect(find.text('Löschen'), findsNothing);
+    expect(find.textContaining('Gespeichert'), findsNothing);
+    expect(
+      find.descendant(of: key('edit-cancel'), matching: find.text('Abbrechen')),
+      findsOneWidget,
+    );
+    expect(find.text('Abbrechen'), findsOneWidget, reason: 'one Abbrechen');
+    final cancel = tester.getRect(key('edit-cancel'));
+    final done = tester.getRect(key('edit-done'));
+    expect(cancel.center.dy, done.center.dy);
+    expect(cancel.right, lessThan(done.left));
+    expect(cancel.top, greaterThan(tester.getRect(key('chip-store')).bottom));
+  });
+
+  testWidgets('the chips name store and category without icons; the '
+      'options keep theirs', (tester) async {
+    await open(tester, milk);
+    for (final chip in ['chip-store', 'chip-category']) {
+      expect(
+        find.descendant(of: key(chip), matching: find.byType(Icon)),
+        findsOneWidget,
+        reason: '$chip shows only its fold-out arrow',
+      );
+      expect(
+        find.descendant(
+          of: key(chip),
+          matching: find.byIcon(Icons.arrow_drop_down),
+        ),
+        findsOneWidget,
+      );
+    }
+    await tester.tap(key('chip-store'));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: key('store-option-none'),
+        matching: find.byIcon(Icons.storefront_outlined),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('an empty name disables Fertig, Enter included', (tester) async {
@@ -203,10 +257,7 @@ void main() {
       expect(key('category-option-other'), findsNothing);
       await tester.tap(key('edit-done'));
     });
-    expect((result! as EditSaved).changes.toColumns(), {
-      'store_id': 'dm',
-      'category_id': 'other',
-    });
+    expect(result!.toColumns(), {'store_id': 'dm', 'category_id': 'other'});
   });
 
   testWidgets('a store made in the sheet is picked and saved', (tester) async {
@@ -235,7 +286,7 @@ void main() {
       },
     );
     expect(made, ['Rewe']);
-    expect((result! as EditSaved).changes.toColumns(), {'store_id': 'rewe'});
+    expect(result!.toColumns(), {'store_id': 'rewe'});
   });
 
   testWidgets('Ohne Laden clears the store', (tester) async {
@@ -253,7 +304,7 @@ void main() {
       );
       await tester.tap(key('edit-done'));
     });
-    expect((result! as EditSaved).changes.toColumns(), {'store_id': null});
+    expect(result!.toColumns(), {'store_id': null});
   });
 
   testWidgets('a Menge without a number has no steppers', (tester) async {
@@ -343,7 +394,6 @@ void main() {
         'chip-category',
         'store-option-none',
         'store-option-dm',
-        'edit-delete',
         'edit-done',
       ]) {
         final size = tester.getSize(key(k));

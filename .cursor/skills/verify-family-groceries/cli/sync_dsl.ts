@@ -20,7 +20,6 @@ export type ClientAction =
   | { action: 'add'; text: string }
   | { action: 'tick'; item: string }
   | { action: 'edit'; item: string; field: 'name' | 'quantity'; value: string }
-  | { action: 'delete'; item: string }
   | { action: 'store'; store: string }
   | { action: 'offline' }
   | { action: 'online' }
@@ -125,8 +124,7 @@ export function parseScript(text: string, clients: { label: string; handle: stri
             end(3);
             break;
           case 'tick':
-          case 'delete':
-            steps.push({ ...base, action: verb, item: str(2, 'the item name') });
+            steps.push({ ...base, action: 'tick', item: str(2, 'the item name') });
             end(3);
             break;
           case 'edit': {
@@ -148,7 +146,7 @@ export function parseScript(text: string, clients: { label: string; handle: stri
             end(2);
             break;
           default:
-            throw new Error(`${where}: unknown action "${verb ?? ''}" (add, tick, edit, delete, store, offline, online, reload)`);
+            throw new Error(`${where}: unknown action "${verb ?? ''}" (add, tick, edit, store, offline, online, reload)`);
         }
       }
     } catch (e) {

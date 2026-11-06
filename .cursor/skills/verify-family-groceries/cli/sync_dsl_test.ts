@@ -16,7 +16,6 @@ B tick "Milch"
 expect A,C gone "Milch" within 2s
 C edit "Bananen" quantity "6"
 noah edit "Gurke" name "Salatgurke"
-A delete "Brot"
 A offline
 A online
 B reload
@@ -32,7 +31,6 @@ screenshot "after-edit"
       { kind: 'expect', clients: ['A', 'C'], check: 'gone', text: 'Milch', withinMs: 2000 },
       { kind: 'act', client: 'C', action: 'edit', item: 'Bananen', field: 'quantity', value: '6' },
       { kind: 'act', client: 'B', action: 'edit', item: 'Gurke', field: 'name', value: 'Salatgurke' },
-      { kind: 'act', client: 'A', action: 'delete', item: 'Brot' },
       { kind: 'act', client: 'A', action: 'offline' },
       { kind: 'act', client: 'A', action: 'online' },
       { kind: 'act', client: 'B', action: 'reload' },

@@ -112,7 +112,7 @@ Statt „was auf der Liste steht“ geht auch „Alexa, frag Hummlist, was brauc
 | „Mehr als dreißig auf einmal gehen nicht …“ | Du hast mehr als 30 Sachen in einem Satz gesagt. Die ersten 30 stehen auf der Liste. | Sag den Rest noch einmal. |
 | „Das waren gerade sehr viele Sachen auf einmal …“ | In einer Minute gehen höchstens 30 Sachen auf die Liste. | Warte eine Minute und sag es noch einmal. |
 | „Entschuldigung, das hat gerade nicht geklappt …“ | Hummlist ist gerade nicht erreichbar. | Versuch es gleich noch einmal. |
-| Ein Eintrag steht in der falschen Kategorie. | Hummlist hat das Wort einer anderen Kategorie zugeordnet. | Halte den Eintrag in der App kurz gedrückt. Tippe unter „Bearbeiten: …“ auf die Kategorie, wähle die richtige und tippe auf **Fertig**. Hummlist merkt sich das für euren ganzen Haushalt, auch für Einzahl und Mehrzahl desselben Worts. |
+| Ein Eintrag steht in der falschen Kategorie. | Hummlist hat das Wort einer anderen Kategorie zugeordnet. | Halte den Eintrag in der App kurz gedrückt. Tippe im Fenster, das sich öffnet, auf die Kategorie, wähle die richtige und tippe auf **Fertig**. Hummlist merkt sich das für euren ganzen Haushalt, auch für Einzahl und Mehrzahl desselben Worts. |
 
 ## Alexa wieder abschalten
 

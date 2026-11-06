@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, editSheet, itemRow, joinWithCode, must, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
+  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, itemRow, joinWithCode, must, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -11,7 +11,8 @@ test('two members of one household see each other\'s changes live', async ({ bro
   await addItem(peter, 'Milch');
   const code = await createInviteCode(peter);
 
-  await signUp(lea, newEmail('lea'));
+  const leaEmail = newEmail('lea');
+  await signUp(lea, leaEmail);
   await joinWithCode(lea, code, 'Unser Haushalt');
   await expect(addField(lea)).toBeFocused();
   await expect(itemRow(lea, 'Milch'), 'the joiner sees the existing list').toBeVisible();
@@ -31,8 +32,10 @@ test('two members of one household see each other\'s changes live', async ({ bro
   // "Neu" (read last) stays on a partner's item until it was on screen for 3 s, which this test may not reach.
   await within(2_000, (timeout) => expect(itemRow(lea, 'Bananen'), 'an edit in A updates B').toHaveAccessibleName(/^Bananen 6( Neu)?$/, { timeout }));
 
-  await openEdit(lea, 'Windeln');
-  await editSheet(lea).getByRole('button', { name: 'Löschen' }).click();
+  // The app's only delete is a screen-reader action Playwright cannot trigger (job 149): delete as B through the API.
+  const deleted = await (await apiAs(leaEmail)).from('items').delete().eq('name', 'Windeln').select('id');
+  expect(deleted.error).toBeNull();
+  expect(deleted.data).toHaveLength(1);
   await within(2_000, (timeout) => expect(itemRow(peter, 'Windeln'), 'a delete in B disappears in A').toHaveCount(0, { timeout }));
 
   await screenshot(peter, '05-live-sync-a');

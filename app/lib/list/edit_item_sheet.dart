@@ -9,20 +9,14 @@ import 'package:family_groceries/list/model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-sealed class const EditResult();
-
-/// [changes] is never empty.
-final class const EditSaved(final ItemChanges changes) extends EditResult;
-
-final class const EditDeleted() extends EditResult;
-
-/// Null when the user cancels, dismisses, or saves without a change.
-Future<EditResult?> showEditItemSheet(
+/// What the user changed, never empty; null when they cancel, dismiss, or
+/// save without a change.
+Future<ItemChanges?> showEditItemSheet(
   BuildContext context, {
   required Item item,
   required Catalog catalog,
   required Future<Store?> Function(String name) onCreateStore,
-}) => showModalBottomSheet<EditResult>(
+}) => showModalBottomSheet<ItemChanges>(
   context: context,
   // Over the whole app, tabs included: the sheet stands on the bottom edge.
   useRootNavigator: true,
@@ -107,7 +101,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
       return;
     }
     final changes = _changes();
-    Navigator.of(context).pop(changes.isEmpty ? null : EditSaved(changes));
+    Navigator.of(context).pop(changes.isEmpty ? null : changes);
   }
 
   void _step({required bool up}) {
@@ -151,57 +145,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 8, 0),
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Row(
-                    spacing: 4,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.editTitle(widget.item.name),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      // At most half the row, so large text doesn't squeeze
-                      // the title to a letter per line.
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth / 2,
-                        ),
-                        child: TextButton(
-                          key: const ValueKey('edit-cancel'),
-                          style: TextButton.styleFrom(
-                            // Desktop defaults to compact density, which
-                            // shrinks targets under 44 px.
-                            visualDensity: VisualDensity.standard,
-                            minimumSize: const Size(0, 44),
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            textStyle: const TextStyle(
-                              fontFamily: HlFont.sans,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(
-                            l10n.cancel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: 10,
@@ -297,6 +241,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                     categoryId: _categoryId,
                     storeLabel: l10n.noStore,
                     categoryLabel: l10n.categoryAuto,
+                    chipIcons: false,
                     storeChanged: _storeId != _originalStore,
                     categoryChanged: _categoryId != widget.item.categoryId,
                     onCreateStore: _createStore,
@@ -306,29 +251,34 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                // Large text stacks Fertig over Löschen.
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  10,
+                  12,
+                  16 + math.max(0, media.padding.bottom - keyboard),
+                ),
+                // Large text stacks Fertig over Abbrechen.
                 child: OverflowBar(
                   alignment: MainAxisAlignment.spaceBetween,
                   overflowAlignment: OverflowBarAlignment.end,
                   overflowDirection: VerticalDirection.up,
                   children: [
                     TextButton(
-                      key: const ValueKey('edit-delete'),
+                      key: const ValueKey('edit-cancel'),
                       style: TextButton.styleFrom(
+                        // Desktop defaults to compact density, which
+                        // shrinks targets under 44 px.
                         visualDensity: VisualDensity.standard,
                         minimumSize: const Size(0, 52),
                         padding: const EdgeInsets.symmetric(horizontal: 18),
-                        foregroundColor: scheme.error,
                         textStyle: const TextStyle(
                           fontFamily: HlFont.sans,
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      onPressed: () =>
-                          Navigator.of(context).pop(const EditDeleted()),
-                      child: Text(l10n.delete),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(l10n.cancel),
                     ),
                     ValueListenableBuilder(
                       valueListenable: _name,
@@ -349,24 +299,6 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  10,
-                  20,
-                  16 + math.max(0, media.padding.bottom - keyboard),
-                ),
-                child: ExcludeSemantics(
-                  child: Text(
-                    l10n.editHint,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
                 ),
               ),
             ],

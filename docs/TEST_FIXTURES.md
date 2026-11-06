@@ -259,7 +259,6 @@ their handles.
 | `A add "Hafermilch 2"` | Types into "Was fehlt?" and presses Enter |
 | `B tick "Milch"` | Taps the row's checkbox ("Milch abhaken") |
 | `C edit "Bananen" quantity "6"` / `name "Banane"` | Opens the row, retypes the field, Speichern |
-| `A delete "Brot"` | Opens the row, Löschen |
 | `A store "Supermarkt"` / `A store "Alle"` | Shops at that store: folds every other store section except "Ohne Laden" ("Alle" unfolds all; design H has no store chips) |
 | `A offline` / `A online` | Cuts the client off: offline emulation plus closing its open realtime socket, so the app sees a real disconnect / reconnects |
 | `A reload` | Reloads the page |
@@ -335,7 +334,7 @@ screenshots show the list, not the login form being filled.
 ### Other surfaces
 
 The script is surface-agnostic: `cli/sync_dsl.ts` parses it into steps
-(`add`, `tick`, `edit`, `delete`, `store`, `offline`, `online`, `reload`,
+(`add`, `tick`, `edit`, `store`, `offline`, `online`, `reload`,
 `expect see|gone|text`, `wait`, `screenshot`), and `e2e/sync/engine.mjs`
 is the web driver. A native driver implements the same steps on
 Marionette:

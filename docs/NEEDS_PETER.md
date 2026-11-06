@@ -1346,3 +1346,17 @@ The job now tells its subagents never to run a script against a hosted service.
 - [ ] Follow-up: `tool/hillclimb/hc-backend-perf/bench.ts` (job 106's measurement harness, 32
   findings) is excluded from the pack because the hill-climb protocol freezes it. Fix it when job
   106's goal is next re-baselined.
+
+## Job 149: deleting single items, after the edit sheet lost Löschen (2026-11-06)
+
+The edit sheet has no Löschen any more (your call, t612u). The public deletion page
+`app.hummlist.com/konto-loeschen.html#einzelne-daten` (Legal N-11, approved Nov 1) said „Tippe auf
+Löschen“ in that sheet. It now says: tick an item to take it off the list; with a screen reader
+each item has the action Löschen (with Rückgängig); single items and history entries are deleted
+on request by email. A ticked item stays under „Zuletzt verwendet“, so on the web a sighted user
+can no longer delete one item themselves.
+
+- [ ] Check the new wording of „Einträge und Verlauf“ on that page (and with Legal, if the Play
+  Data safety form says users can delete single data in the app).
+- [ ] If single items should stay deletable for everyone, say where (for example in „Zuletzt
+  verwendet“); this job adds no new delete path, as the brief asked.

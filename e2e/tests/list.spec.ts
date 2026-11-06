@@ -1,7 +1,7 @@
 import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
 import {
-  addedNote, addField, addItem, closeSheet, editField, enterItem, editSheet, itemRow, newEmail, openEdit, pickInSheet, putBack, saveEdit, screenshot,
+  addedNote, addField, addItem, closeSheet, editField, enterItem, itemRow, newEmail, openEdit, pickInSheet, putBack, saveEdit, screenshot,
   signUpWithHousehold, tick, typeInto, usedRow,
 } from './helpers';
 
@@ -62,7 +62,7 @@ test('adding an item that is already on the list does not duplicate it', async (
   await expect(itemRow(page, 'Butter')).toHaveCount(1);
 });
 
-test('edit changes name, quantity and category; delete can be undone', async ({ page }) => {
+test('edit changes name, quantity and category, and they survive a reload', async ({ page }) => {
   await addItem(page, 'Sprudel');
   await openEdit(page, 'Sprudel');
   await typeInto(editField(page, 'Bezeichnung'), 'Mineralwasser');
@@ -76,12 +76,4 @@ test('edit changes name, quantity and category; delete can be undone', async ({ 
   await expect(itemRow(page, 'Mineralwasser')).toBeVisible();
   const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
   expect(headings).toContain('Getränke');
-
-  await openEdit(page, 'Mineralwasser');
-  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
-  await expect(itemRow(page, 'Mineralwasser')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Rückgängig' }).click();
-  await expect(itemRow(page, 'Mineralwasser')).toBeVisible();
-  await page.reload();
-  await expect(itemRow(page, 'Mineralwasser'), 'the undo re-created the row on the server').toBeVisible();
 });

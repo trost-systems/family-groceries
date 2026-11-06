@@ -198,44 +198,46 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Ticking items, "Zuletzt verwendet" and undo
 
-**What it does.** Tapping an item on the list ticks it off: a line strikes through it, the row turns mint and slides away in under half a second, without a message. There is no check box to tap; the whole row is the target. At the bottom of the list, „Zuletzt verwendet“ keeps the last 20 ticked items, each one only once, and leaves out anything that is back on the list; tapping one puts it back where it was. With nothing typed, the add bar also suggests recently used items under the same name, „Zuletzt verwendet“ (EN: "Recently used"). Deleting an item or adding one by mistake can be undone with „Rückgängig“.
+**What it does.** Tapping an item on the list ticks it off: a line strikes through it, the row turns mint and slides away in under half a second, without a message. There is no check box to tap; the whole row is the target. At the bottom of the list, „Zuletzt verwendet“ keeps the last 20 ticked items, each one only once, and leaves out anything that is back on the list; tapping one puts it back where it was. With nothing typed, the add bar also suggests recently used items under the same name, „Zuletzt verwendet“ (EN: "Recently used"). Ticking an item off is how it leaves the list. An item added by mistake can be undone with „Rückgängig“.
 
 **How to get there.**
 1. Open the list and tap an item to tick it.
 2. Scroll to the bottom and tap „Zuletzt verwendet“ (EN: "Recently used") to unfold it.
 3. Tap the item to put it back; it reappears in its old place, without a message.
-4. To delete: hold the item (or right-click it on a computer), tap „Löschen“ (EN: "Delete"), then „Rückgängig“ (EN: "Undo") if it was a slip.
+4. To remove an item, tick it off. Screen reader users also find „Löschen“ (EN: "Delete") among an item's actions, with „Rückgängig“ (EN: "Undo") right after.
 
 **Never claim.**
 - That ticking shows an undo message; it does not. Undo for a tick is the „Zuletzt verwendet“ section.
 - A check box next to each item: there is none.
 - That swiping does anything on a row: it neither deletes nor edits; holding opens editing.
+- That the edit sheet deletes an item; it has no delete button. Tick the item off instead.
 - That ticked items vanish after a fixed time or can be counted past 20 there.
 
 **Unverified.** Whether ticked items are ever removed from the section by age: no cleanup job was found in the code, but it was not run.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): tick, „Zuletzt verwendet“, putting back without a message (DE and EN). Before that main c5a580a8, 2026-11-05: delete with „Rückgängig“. Recipe: [tick-and-undo.md](./tick-and-undo.md).
+**Last verified.** job 149 branch (job/149-item-edit-sheet-cleanup, 252bfb5f), 2026-11-06 (CET), from code and driven on the web build (verify-hummlist, `journeys/tick-and-undo.mjs`): tick, „Zuletzt verwendet“, putting back without a message; the edit sheet has no delete, and the screen-reader „Löschen“ with „Rückgängig“ from code and the widget tests. Before that main 6da42673, 2026-11-06 (CET), from code and driven on the web build: tick and putting back (DE and EN); main c5a580a8, 2026-11-05: delete with „Rückgängig“ in the edit sheet (gone since job 149). Recipe: [tick-and-undo.md](./tick-and-undo.md).
 
 ## Edit an item
 
-**What it does.** Every item can be changed after it is on the list: its name, brand, details (like "Größe 3" or "1,5 %"), quantity, store and category. The list row shows the quantity in bold in front of the name („6× Bananen“) and the brand and details in small text under the name. Items can also be deleted from the same sheet, with an undo.
+**What it does.** Every item can be changed after it is on the list: its name, brand, details (like "Größe 3" or "1,5 %"), quantity, store and category. The list row shows the quantity in bold in front of the name („6× Bananen“) and the brand and details in small text under the name. The sheet does not delete; to remove an item, tick it off.
 
 **How to get there.**
 1. Open the „Liste“ (EN: "List") tab.
 2. Press and hold an item, or right-click it on a computer. (A plain tap ticks the item off instead.)
 3. In the sheet „Bearbeiten“ (EN: "Edit") change „Bezeichnung“ (EN: "Name"), „Marke“ (EN: "Brand"), „Menge“ (EN: "Qty") with the buttons „Eins weniger“ / „Eins mehr“ (EN: "One less" / "One more"), or „Eigenschaften“ (EN: "Details"), or pick another store or category with the chips. The store chip also offers „Neuer Laden“ (EN: "New store", the row with a plus) to add a store and pick it. Hummlist remembers the new store or category the next time the item is added.
-4. Tap „Fertig“ (EN: "Done") to save, „Abbrechen“ (EN: "Cancel") to discard, or „Löschen“ (EN: "Delete") to remove the item; „Rückgängig“ (EN: "Undo") in the message that shows for a few seconds brings it back. If someone put the same item on the list in the meantime, Undo shows theirs, as they wrote it, instead of a second one.
+4. Tap „Fertig“ (EN: "Done") to save, or „Abbrechen“ (EN: "Cancel") next to it to drop every change and close the sheet.
 5. Renaming an item to exactly the name of something already on the list (capital letters, spaces, and ae/oe/ue for ä/ö/ü don't matter) does not make a second entry: the two become one. The item already there keeps its name, store and category, the amounts add up, and „Zusammengeführt: <amount> <name>“ (EN: "Merged: …") shows with „Rückgängig“ (EN: "Undo"). This also holds when the rename was made offline or on two phones at the same moment: once the phone is back online, the two become one. If they cannot be combined (the amount would get too long), Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"), keeps the old name and does not save the change.
 
 **Never claim.**
 - That a swipe deletes or edits an item; a swipe does nothing, a hold opens the edit sheet.
-- That Undo after a delete always brings back your own quantity: when the item is on the list again by then, the one there stays as it is.
+- That the sheet has a delete button; its buttons at the bottom are „Abbrechen“ and „Fertig“. Tick an item off to remove it.
+- That Undo after a screen reader's delete always brings back your own quantity: when the item is on the list again by then, the one there stays as it is.
 - That items in „Zuletzt verwendet“ (EN: "Recently used") can be edited.
 - That the quantity buttons work on free text like "eine Packung"; they only step numbers.
 - That holding and dragging moves an item on the list; nothing on the list drags. Holding opens this sheet.
 - That renaming to another word for the same thing („Semmeln“ while „Brötchen“ is on the list) or to an item with a brand merges them; Hummlist only points it out („Brötchen steht schon auf der Liste“ with „Zusammenführen“), as when adding.
 
-**Last verified.** d55f24cf (PR #263, job 122), 2026-11-06 (CET), from code, the e2e tests and driven on the release web build (verify-hummlist): „Eins mehr“ / „Eins weniger“ without a hover tooltip; a click into „Menge“ right after them keeps the cursor there (6 of 6 rounds, 0 of 6 with the old sheet). Before that main 694114ee, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name; „broetchen“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“; a synonym (Semmeln onto Brötchen) is only pointed out. Job 114 (#253), 2026-11-05, from code and e2e on the web build: a rename made offline, and two phones renaming at once, end as one item with „Zusammengeführt“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“; job 104, 2026-11-05: a synonym is only pointed out. Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** job 149 branch (job/149-item-edit-sheet-cleanup, 252bfb5f), 2026-11-06 (CET), from code, the widget tests and driven on the release web build (verify-hummlist): the sheet without title, hint or Löschen, chips without icons, „Abbrechen“ next to „Fertig“ dropping a rename and a category pick with the server row unchanged and no message (DE light and dark, EN). Before that d55f24cf (PR #263, job 122), 2026-11-06 (CET), from code, the e2e tests and driven on the release web build (verify-hummlist): „Eins mehr“ / „Eins weniger“ without a hover tooltip; a click into „Menge“ right after them keeps the cursor there (6 of 6 rounds, 0 of 6 with the old sheet). Before that main 694114ee, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name; „broetchen“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“; a synonym (Semmeln onto Brötchen) is only pointed out. Job 114 (#253), 2026-11-05, from code and e2e on the web build: a rename made offline, and two phones renaming at once, end as one item with „Zusammengeführt“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“; job 104, 2026-11-05: a synonym is only pointed out. Recipe: [edit-item.md](./edit-item.md).
 
 ## Tips on the list
 

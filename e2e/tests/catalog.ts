@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { boxOf, editSheet, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { boxOf, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
 
 /** The list's group headings, top to bottom. */
 export function groupHeadings(page: Page): Promise<string[]> {
@@ -144,8 +145,10 @@ export async function openStoreDetails(page: Page, store: string | null): Promis
   await expect(page.getByRole('heading', { name: store ?? 'Ohne Laden', exact: true })).toBeVisible();
 }
 
-export async function deleteItem(page: Page, item: string): Promise<void> {
-  await openEdit(page, item);
-  await editSheet(page).getByRole('button', { name: 'Löschen' }).click();
+/** Deletes an open item through the API (the app has no delete button since job 149); the row leaves the page. */
+export async function deleteItem(api: SupabaseClient, page: Page, item: string): Promise<void> {
+  const { data, error } = await api.from('items').delete().eq('name', item).eq('status', 'active').select('id');
+  expect(error).toBeNull();
+  expect(data, `one open ${item} deleted`).toHaveLength(1);
   await expect(itemRow(page, item)).toHaveCount(0);
 }

@@ -57,6 +57,10 @@ class const FoldoutChips({
   /// Shows the store options from the start (Widgetbook stories).
   final bool storesOpen = false,
 
+  /// A store and a category icon before the chips' text. The automatic
+  /// mark shows either way.
+  final bool chipIcons = true,
+
   /// Outlines a chip whose value the user changed.
   final bool storeChanged = false,
   final bool categoryChanged = false,
@@ -120,7 +124,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
                 children: [
                   _Chip(
                     key: const ValueKey('chip-store'),
-                    leading: Icons.storefront_outlined,
+                    leading: w.chipIcons ? Icons.storefront_outlined : null,
                     label: storeText,
                     semanticsLabel: storeSemantics,
                     auto: w.storeAuto,
@@ -130,7 +134,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
                   ),
                   _Chip(
                     key: const ValueKey('chip-category'),
-                    leading: Icons.category_outlined,
+                    leading: w.chipIcons ? Icons.category_outlined : null,
                     label: categoryText,
                     semanticsLabel: categorySemantics,
                     auto: w.categoryAuto,
@@ -175,7 +179,7 @@ class _FoldoutChipsState() extends State<FoldoutChips> {
 }
 
 class const _Chip({
-  required final IconData leading,
+  required final IconData? leading,
   required final String label,
 
   /// Names the chip apart from the option of the same name.
@@ -233,7 +237,7 @@ class const _Chip({
             // icon goes; the user's pick brings the icon back.
             if (auto)
               Icon(autoMark, size: 18, color: t.accent)
-            else
+            else if (leading != null)
               Icon(leading, size: 20),
             Flexible(
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),

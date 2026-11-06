@@ -8971,3 +8971,34 @@ Flaky issues #61 (`classifier.spec.ts:5`), #73 (`rls.spec.ts:4`) and #77
    still do it, but that is unproven. The assertion prints the received
    error, so the next occurrence names it. Until then it counts as a host
    pause.
+
+## Job 149: the item edit sheet without title, hint, chip icons and Löschen, 2026-11-06
+
+Peter (2026-11-06, about „Bearbeiten: Ohrenstäbchen“) asked for a quieter edit sheet.
+
+1. **Abbrechen replaces Löschen at the bottom left; ticking off is how an item leaves the list.**
+   The header („Bearbeiten: <name>“ and its Abbrechen) and the hint „Gespeichert wird nur, was
+   du änderst“ are gone; `editTitle` and `editHint` left both ARB files. The bottom Abbrechen
+   keeps the key `edit-cancel`, so recipes and tests that cancelled still work. It closes
+   without a message, like the old top one. `showEditItemSheet` now answers the changes or
+   null: with no delete the `EditResult` sealed class had one variant left.
+2. **The row's screen-reader action „Löschen“ stays.** It existed before, and the brief
+   keeps existing delete paths besides the sheet. Deletes through the API, MCP and Siri are
+   untouched. Flutter web maps no custom semantics actions to the DOM, so on the web build an
+   item cannot be deleted from the list any more, only ticked.
+3. **The e2e and fg sync cases that deleted through the sheet changed.** Deletes that only
+   set up a state (classifier learning, live sync's realtime delete) now delete through the
+   API. Two scenarios that were about a delete made in the web UI can no longer happen there
+   and were removed: undoing a delete after another phone re-added the item
+   (`already-on-list.spec.ts`; the cubit side stays covered in `list_cubit_test.dart`, job
+   64b) and a rename plus delete made offline (`rename-onto-open.spec.ts`). The fg sync
+   script language lost its `delete` step.
+4. **The chip icons go in the edit sheet only.** `FoldoutChips(chipIcons: false)` drops the
+   store and the category icon before the chips' text there. The add sheet keeps them: its
+   chips swap the automatic mark for the icon when the user picks, and the brief is about
+   the edit sheet. The store options keep their icons (Ohne Laden, Neuer Laden). The category
+   options never had icons, before or after this job: the seeded categories show plain names.
+   Only a category whose own name starts with an emoji (the demo's „👶 Drogerie“) shows one,
+   in the chip and the options as before. If Peter's „keep the category icon“ meant emojis in
+   the category options (the `categoryIcon()` set), that is a new decision for him. The sheet
+   shows no item icon, so there is none to keep.
