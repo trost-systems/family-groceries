@@ -488,6 +488,12 @@ a {
   text-underline-offset: 0.35em;
 }
 
+/* The language link follows the page links at their own spacing: the row gap would add to the
+   links' padding. */
+.site-header .nav + .lang {
+  margin-inline-start: calc(-1 * var(--hl-space-4));
+}
+
 /* Phones: brand and app button on the first row, the links below. */
 @media (max-width: 719px) {
   .site-header .nav {
@@ -497,7 +503,24 @@ a {
 
   .site-header .lang {
     order: 4;
-    margin-inline-start: auto;
+  }
+}
+
+/* Large text or a narrow phone (em follows the browser's font size): the three links no longer
+   fit one row, so the language link moves up beside the brand and the page links keep a row of
+   their own instead of leaving one link alone on a last row. */
+@media (max-width: 22em) {
+  .site-header .lang {
+    order: 1;
+    margin-inline-start: 0;
+  }
+
+  .site-header .header-cta {
+    order: 2;
+  }
+
+  .site-header .nav {
+    flex-basis: 100%;
   }
 }
 
