@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
@@ -249,12 +250,7 @@ class const _Line({required final String label}) extends StatelessWidget {
                 label.toUpperCase().replaceAll('ß', 'SS'),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 11 * 0.12,
-                  color: faded,
-                ),
+                style: HlSectionLabel.overline(faded),
               ),
             ),
             Expanded(child: Container(height: 1, color: scheme.outlineVariant)),

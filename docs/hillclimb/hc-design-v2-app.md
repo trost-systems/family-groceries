@@ -33,6 +33,8 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | a3 | add sheet: return hex and close button drawn as visible 52x48 hex targets (were 36x28 / bare 24 px) | cand 3 / base 0 / tie 6 | 5 (mean 5.889) | keep | guard-app green: analyze clean, 2041 passed / 90 skipped, widgetbook 334; 8 add-sheet goldens updated (light/dark x normal, compact, wide, new store) |
 | a4 | status-bar backing for scrolled list/login | - | not measured | dropped | app already paints a surface strip over the top inset (_Header) and login sits in SafeArea; judges read the cut rows as unbacked because the harness draws no status bar; fidelity gap, not an app defect |
 | a5 | hex labels keep clear of the hex points at large text (settings segments drop icons/shrink, pill titles pad, chip insets scale) | cand 3 / base 0 / tie 6 | 5 (mean 5.889) | keep | guard-app green: analyze clean, 2044 passed / 90 skipped, widgetbook 334; goldens components-light/dark updated (300 px segmented sample drops its icons by the new fit rule) |
+| a6 | add-sheet hint never clipped: the bottom band grows with the wrapped hint (min height, bottom inset padding) | cand 0 / base 1 / tie 8 | 4 (mean 5.667) | revert | pairwise prefers baseline or tie; all 3 judges: the grown bottom band lifts the add field into the empty-state heading (list-empty-small-light-150); reverted |
+| a7 | section overlines (list categories, settings/More labels) raised from 11 to 12 px via one shared style | cand 1 / base 0 / tie 8 | 5 (mean 5.778) | keep | guard-app green: analyze clean, 2044 passed / 90 skipped, widgetbook 334; 32 goldens updated (16 screens x light/dark showing overlines: list, list-long, list-wide, add-sheet x4, more x5, settings x2, shell-pill x2) |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
@@ -40,4 +42,6 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **a2** (keep): medians typography 6, hierarchy 7, color_contrast 7, spacing 6, layout 6, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise typography cand, spacing cand, layout cand, accessibility cand; seeds [1123057871, 1401365860, 3040359756].
 - **a3** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise consistency cand, accessibility cand, iconography cand; seeds [2038420474, 1736877222, 3676789202].
 - **a5** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise spacing cand, layout cand, accessibility cand; seeds [3036915393, 2606075486, 2047378293].
+- **a6** (revert): medians typography 6, hierarchy 6, color_contrast 6, spacing 6, layout 5, consistency 6, accessibility 4, iconography 6, empty_error_states 6; pairwise empty_error_states base; seeds [1951736743, 3218814032, 4143746600].
+- **a7** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 5, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 6; pairwise typography cand; seeds [872893802, 4136359585, 2474242037].
 
