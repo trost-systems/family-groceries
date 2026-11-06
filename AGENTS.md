@@ -66,7 +66,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   server), `gates/<gate>.sh` (one per CI job), `verify.sh` (runs the gates
   locally), `lint.sh` (the lint rules below, run by the lint gate),
   `push-pr.sh` and `merge-pr.sh` (push and land a PR as one commit with the
-  required author and trailers). `docs/CI.md` explains CI.
+  required author and trailers), `e2e-stress.sh` (a stressed e2e repro:
+  pauses the browser, runner or stack S s of every P s, DECISIONS job 119).
+  `docs/CI.md` explains CI.
 
 ## Conventions
 

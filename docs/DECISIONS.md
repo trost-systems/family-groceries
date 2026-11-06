@@ -9212,3 +9212,68 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
    (run 42154588914) and also on main (run 42185909564), so only the pinned runs separate them.
    This job changes no code. The proof is in `docs/done/143-fix-premium-yearly-json.md`. #260
    landed as 5062100c and closed #265.
+
+## Job 119: stores.spec.ts flakes (#74, #75, #76), 2026-11-05
+
+1. **The method: job 18c's, as a script.** `scripts/e2e-stress.sh` runs Playwright while it
+   pauses one part of the system for S s of every P s (`--on S --every P`): the browser alone
+   (SIGSTOP of Chromium), the runner with its browser (a phone that sleeps), or the local stack
+   (`docker pause`, a server that stalls). `--cpus 0` pins the run to one CPU. Every run below is
+   retries off, `--workers=1`, on the release web build on the Hetzner runner, under the e2e lock.
+   The first stack-pause run was thrown away: 9 of 12 failed at load, because `e2e/stack.ts` asks
+   `supabase status` in each worker and that refuses while the db is paused. The script now exports
+   the stack's URL and keys once and waits for a healthy stack. Its exit trap unpauses the stack
+   and resumes stopped processes, so a Ctrl-C cannot hand the next e2e lock holder a frozen stack.
+2. **#76 (STORE ORDERING) was a test race: the reload outran the drop's write.** A drop on the
+   layout screen shows the new order at once and writes it with `set_store_layout` in the
+   background (orders are not queued, `ListCubit._changeOrder`). The test went back to the list,
+   saw the order and reloaded the page. `dragHandle` returned when the mouse was up, so when the
+   write took longer than those few hundred milliseconds the reload cancelled it, and "the EDEKA
+   order was saved" failed. With the stack paused 2 s of every 8 s it failed 5 of 12 on main's
+   test code (2 of 4, then 3 of 8), every time at that step; under every other mode it passed.
+   `dragHandle` now waits, by default, for the server's answer to the drop's write
+   (`reorder_categories`, `reorder_stores` or `set_store_layout`) and checks that it succeeded.
+   STORE ORDERING and the categories test use that. The CI failure noted on #76 (run 41063647821,
+   `dragItemToStore` on the list) had the same shape, but that step is gone since job 78.
+3. **#74's 3 s budget is unchanged.** Its "a store reorder in A reaches B" counts Peter's write
+   and the fan-out to Lea. Waiting for the write first would have started the 3 s clock after the
+   write, so a 3 to 10 s write would pass where it failed on main (review 0). #74 calls
+   `dragHandle(..., { untilSaved: false })`, which returns at the mouse-up as before. A probe (not
+   committed) held Peter's `set_store_layout` 4 s: with `untilSaved: false`, as shipped, the check
+   failed 2 of 2, as it does on main; with the save-wait it passed 2 of 2.
+4. **#74 (live layout sync) and #75 (categories) are host pauses only.** On main's test code
+   neither failed in any mode: runner and browser 3 s of every 8 s, stack 2 s of every 8 s and
+   3 s of every 8 s, browser 5 s of every 10 s, runner 8 s of every 14 s, one CPU. That is 24 of
+   24 runs each. #74's live-sync budgets already count runner time (`within`, 18.23). Stack
+   pauses longer than its 3 s budget were not tried, since a server that is down longer than the
+   budget should fail it. In #75 the delete with reassignment has no window to race:
+   `deleteCategory` awaits `delete_category` and then a resync, the test waits for the deleted
+   category's row to go (nothing optimistic shows that) and for the items under „👶 Drogerie“
+   before it navigates and reloads, and the Windeln move before it is a queued item op that the
+   cache keeps across a reload. Every recorded failure of the two fell in a VM hole of 403 to
+   2613 s (#75) or a mem-guard gap of 763 s (#74), and #75's "while setting up page" is a browser
+   context that a 2613 s hole timed out. Both stay open for the lead (NEEDS_LEAD, job 119).
+5. **Checked, not shipped: catalog reloads are not ordered.** `ListCubit._reloadCatalog` emits
+   whatever fetch answers last, so a fetch that started before a write and answered after a later
+   one would show the older catalog until the next change. No stressed run showed it, and these
+   tests need two catalog fetches to answer in reverse order, so nothing was changed for it.
+6. **One harness failure, explained.** In a run with the runner paused 3 s of every 8 s, one #74
+   attempt failed in `signUp` before any store code ran: the page stayed blank because
+   `flutter_bootstrap.js` failed with `net::ERR_NETWORK_CHANGED`. The request ended at +3013 ms,
+   when the pause that started with the page load ended, and that pause stopped 11 processes where
+   the next stopped 13: Chromium was starting the new context's processes, and the ones born after
+   the script listed them ran on while the rest were stopped. A VM pause stops everything at once,
+   so this is the harness, not the host or the app (inferred from the timing; 1 of 27 runner-mode
+   runs of the three tests).
+7. **The final code, rerun after review 0** (rebased on 698ebeba, new release build): STORE
+   ORDERING with the stack paused 2 s of every 8 s, 8 of 8. #74 and #75: runner 3 s of every 8 s,
+   8 of 8; stack 2 s and 3 s of every 8 s, 8 of 8 each; browser 3 s of every 8 s, 7 of 8. The one
+   failure was #74's "a store reorder in A reaches B": a 3 s browser pause began 0.5 s after the
+   drop, so Lea's page ran about 0.7 s of the 3 s budget while the runner counted all of it (trace
+   and pause log). That is a pause as long as the budget, which should fail it; main's test code
+   passed the same mode only because its pauses fell elsewhere. `--repeat-each=20` without stress:
+   60 of 60. The exit trap, with a stub `npx`: SIGTERM during a pause left 0 of 7 containers
+   paused (stack) and resumed and ended the stopped runner (runner), exit 130.
+8. **Out of scope, for the lead: a reload right after a drop still loses the reorder.** A user who
+   reloads the web app (or kills the app) before the write answers loses it without a message,
+   since orders are not queued like item ops. NEEDS_LEAD job 119 asks whether they should be.
