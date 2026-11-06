@@ -4292,6 +4292,9 @@ change". Overview: docs/PURCHASES.md.
     Xcode (issue #130). Xcode signs those transactions with a local certificate (environment
     Xcode), which the server refuses, as it must; the server's own chain is proven with the test
     CA.
+    *Job 127: the host launches since job 118. From iOS 26.4 on, storekitd refuses the
+    configuration to CI's ad-hoc build ("not installed for development"), so the gate runs these
+    tests on an iOS 26.2 simulator, where they assert (DECISIONS 127).*
 17. **No `appAccountToken`.** *Superseded by job 43 (DECISIONS 43, RevenueCat with the household
     id as App User ID): RevenueCat passes the household id to Apple as `appAccountToken`, never a
     user id; job 47 verified it in the SDK source (docs/PURCHASES.md "What Apple and Google
@@ -8151,3 +8154,56 @@ horizontal inset, and the list scrolls on under it.
    optional and the URL names the brand on a marketing surface (Legal L-1). The voice block already
    explains MCP; the guides stay one click away in the header.
 5. **„— Peter“ keeps Peter's dash**: it is his signature, quoted word for word.
+
+## Job 127: the StoreKit Lifetime tests on CI's runner (issue #130), 2026-11-05
+
+1. **What failed.** Since job 118 the test host launches fine, so 25.16's "host did not launch"
+   is gone. The StoreKit tests still could not pass. A probe on GitHub's `macos-26` runner (Xcode
+   26.6, iOS 26.5 simulator, debug logging for `com.apple.storekit`, result bundles as artifacts;
+   runs 42082984255 to 42115999505) showed where. `SKTestSession(contentsOf:)` returns, and so
+   does every call on it. Each one fails only in the simulator log: storekitd answers
+   `Validating OctaneSaveConfigurationRequest for com.hummlist.app` with
+   `com.hummlist.app is not installed for development`, and the test process logs
+   `Error saving configuration file: SKInternalErrorDomain Code=3`. The session's storefront
+   stays empty. StoreKit then answers from the App Store sandbox (US storefront, `$29.99`), so the
+   product test passed by accident, and `purchase()` waits forever for a sandbox sheet. That
+   matches run 41110616634's 290 s with no assertion: the purchase and Ask to Buy tests hung
+   until xcodebuild gave up.
+2. **Signing doesn't change it on iOS 26.5.** One runner run each, all refused the same way:
+   `get-task-allow` in the code signature, in the simulated entitlements (`__entitlements`,
+   `__ents_der`, relinked with Xcode's own `Ld` line), both, a throwaway self-signed
+   code-signing certificate, and that certificate trusted plus `get-task-allow`. Xcode strips
+   `get-task-allow` from this ad-hoc build, even with `ENTITLEMENTS_DONT_REMOVE_GET_TASK_ALLOW=YES`.
+3. **The runtime does (review 0).** `scripts/ios-storekit-probe.sh` runs the tests on each runtime
+   from one build (run 42126491125). **iOS 26.2's storekitd takes the configuration from the same
+   ad-hoc build. 26.4's and 26.5's refuse it.** The check arrived with iOS 26.4. On 26.2 the tests
+   asserted for real and found a test bug: right after `refundTransaction`, `currentEntitlements`
+   still listed the purchase. The refund arrives a moment later, so the test now waits up to 5 s,
+   as the Ask to Buy test already did for the approval. The scheme's Test-action StoreKit configuration
+   changes nothing on 26.5 (refused, run 42132430828). Not settled: iOS 18.6, which downloads
+   fine but started no test within 6 min of its first boot (same run). A hostless test bundle was
+   not tried: the session's checks name the host app's bundle id, and without a host there is no
+   app storekitd could count as installed.
+4. **The gate.** The main RunnerTests run is the same as before: newest runtime, StoreKit tests
+   skipped, same flags and pass criteria. A second phase runs `LifetimeStoreKitTests` on an
+   iOS 26.2 iPhone simulator with test timeouts on. The image ships 26.2. If it ever doesn't, the gate
+   fails and says so, instead of downloading several GB inside the job's 40 minutes (that path
+   was never needed). `scripts/ios-storekit-probe.sh` then finds a runtime to use. Every case must
+   pass, and a skip fails the gate. The 26.2 simulator is created and booted after the main tests. Booting it
+   during them made their xcodebuild lose its own simulator ("Unable to find a device matching
+   the provided destination specifier", run 42139126824).
+5. **What it costs.** In run 42141171368 the ios job took 25.1 and 24.7 min (two attempts),
+   against a median of 13.4 before. Creating and booting the 26.2 simulator took 2.9 min each
+   time. The StoreKit test phase took 6.1 and 10.0 min, but the tests themselves only 6 to 19 s.
+   In attempt 2, 6 min passed between xcodebuild picking the destination and the app's first log
+   line: the first install and launch on a runtime nobody has used on that runner (inferred;
+   likely also why 18.6 started no test within 6 min). Not tried: warming the runtime with
+   `simctl runtime dyld_shared_cache update` or an early `simctl install` and launch. On the
+   slowest runner job 118 saw (21.5 min), this would come to about 35 (estimate).
+6. **The guard stays.** `LifetimeStoreKitTests` throws `XCTSkip` when the session's storefront
+   isn't the one in `Hummlist.storekit` (read from the file): storekitd refused it. On CI that
+   fails the gate with the reason in the log. On a Mac, `scripts/ios-storekit-test.sh` fails on it
+   too. It uses iOS 26.2 by default, like the gate (`--ios <version>` for another), since
+   whether a local Xcode build counts as "installed for development" on 26.4 and later is
+   unchecked. Each test has a 60 s allowance, so a sandbox sheet can't hang
+   the job.
