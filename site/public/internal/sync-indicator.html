@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="alternate" hreflang="de" href="https://hummlist.com/internal/sync-indicator">
+<link rel="alternate" hreflang="x-default" href="https://hummlist.com/internal/sync-indicator">
+<title>Sync indicator prototypes (internal)</title>
+<link rel="stylesheet" href="/internal/sync-indicator/sync.css">
+<script src="/internal/sync-indicator/sync.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__title">
+    <h1>Offline and sync indicator prototypes</h1>
+    <span>Internal, not for merge. Switch the state to watch every phone react.</span>
+  </div>
+  <div class="bar__controls">
+    <div class="seg seg--state" data-control="sync" role="group" aria-label="Sync state">
+      <button type="button" data-value="online" aria-pressed="true">Online</button>
+      <button type="button" data-value="offline" aria-pressed="false">Offline</button>
+      <button type="button" data-value="failing" aria-pressed="false">Sync failing</button>
+    </div>
+    <div class="seg" data-control="lang" role="group" aria-label="Language">
+      <button type="button" data-value="de" aria-pressed="true">DE</button>
+      <button type="button" data-value="en" aria-pressed="false">EN</button>
+    </div>
+    <div class="seg" data-control="theme" role="group" aria-label="Theme">
+      <button type="button" data-value="light" aria-pressed="true">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="seg" data-control="motion" role="group" aria-label="Motion">
+      <button type="button" data-value="full" aria-pressed="true">Motion</button>
+      <button type="button" data-value="reduced" aria-pressed="false">Reduced</button>
+    </div>
+    <div class="seg" data-control="size" role="group" aria-label="Size">
+      <button type="button" data-value="fit" aria-pressed="true">Fit</button>
+      <button type="button" data-value="real" aria-pressed="false">1:1</button>
+    </div>
+  </div>
+</header>
+<main class="frames" id="frames"></main>
+<footer class="notes">
+  <p>390 × 844 pt phone with the Dynamic Island and a 34 pt home-indicator inset, the list screen as it is after the floating top bar, the floating add field and the tab pill. Same list in every frame.</p>
+  <p>Online shows nothing in S1 to S5. Going from offline or failing back to online flashes "Wieder online" for 1.6 s, then the indicator leaves; drop the flash if online must stay silent. Failing means: online, but the queued changes keep failing (server or gateway errors for a while, or a session that won't refresh). For an expired session the action would read "Neu anmelden" instead of "Erneut versuchen" (copy only, no frame shows it).</p>
+  <p>Long copy never sits inside a hex pill: the pills carry an icon and a one-word state, the sentence sits beside or below them. Reduced motion: no slide, grow or width change; the indicator fades in and out in 120 ms.</p>
+</footer>
+</body>
+</html>
