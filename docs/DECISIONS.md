@@ -9114,3 +9114,35 @@ category rows, no inner hexagon on the store rows, and text centred in every hex
 7. **Shared with job 149 (edit sheet cleanup).** This job changes the edit sheet only through
    `_Field` (now a `LabeledField`, no `centered`, `narrow` for Menge) and the chips' style.
    Whichever lands second rebases.
+
+## Job 113: CI tool downloads cached and retried, 2026-11-05
+
+Transient 504s from third-party downloads failed CI jobs: the actionlint `curl` in lint (issue
+#246) and setup-deno's binary download in functions, which setup-deno retries only 3 times.
+Pinned tools now come from the Actions cache; their downloads, Deno's and the PGDG key's go through
+`scripts/ci/download.sh` with retries; npm and apt use their own retry settings (docs/CI.md,
+"Tool downloads", which also lists what is not covered).
+
+1. **Deno pins stay as they are.** The lint job reads the exact version from `.dvmrc` (2.9.8, job
+   101's lint pack); the other jobs keep `v2.x`. `.github/actions/deno` takes `deno-version` and
+   `deno-version-file` like setup-deno. An exact version needs no network to resolve. It resolves
+   `v2.x` the way setup-deno does
+   (the newest stable `v2.*.*` in `dl.deno.land/versions.json`, fetched with `download.sh`'s
+   retries) and puts that release on PATH itself. setup-deno would fetch `versions.json` again
+   with about 8 s of retries, so a short dl.deno.land outage would still fail every Deno job
+   (review 0). The cost is setup-deno's problem matcher; the gates fail the same way without it.
+   When resolve fails, the action warns (`::warning::`) and falls back to setup-deno.
+2. **A stalled download is retried.** `--retry-max-time` only stops new attempts; an attempt
+   that is connected but gets no bytes ran until the job's timeout (review 0). `download.sh`
+   ends an attempt below 1 KB/s for 30 s, and `--retry-all-errors` retries it.
+3. **No cached Deno where secrets are.** An Actions cache entry can be written by any PR's run,
+   so `supabase-deploy.yml` and `price-drift.yml` pass `cache: false` and run only a binary
+   downloaded in that job and checked against the release's `.sha256sum` (lead, addendum 1).
+4. **No continue-on-error retry of the action.** Running the step twice, the second with
+   `if: steps.x.outcome == 'failure'`, doubles every step that needs it and hides a real failure
+   behind a yellow first attempt. Retries live in one script instead, and a failure after them
+   fails the job.
+5. **`scripts/bootstrap.sh` is left alone.** It sets up a local machine and CI never runs it.
+6. **Playwright browsers are not cached.** `playwright install` already retries 5 times across 3
+   CDN mirrors, and the repository's Actions cache already sits at the 10 GB limit, so caching
+   three browsers per shard would evict entries that save more.

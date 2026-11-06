@@ -239,6 +239,52 @@ PR branch goes up as several commits. Every worktree runs it, because
 `core.hooksPath=.githooks` is in the shared repository config and resolves
 against each worktree's root.
 
+## Tool downloads
+
+A CDN answering 504 once used to fail a job: the actionlint download in lint
+(issue #246) and setup-deno's binary in functions. Job 113 caches the pinned
+tools and retries what is still downloaded.
+
+- `scripts/ci/download.sh <url> <file>` is the one place for retry flags:
+  curl with 7 retries on any error and exponential backoff, up to 5 minutes.
+  An attempt that stalls (under 1 KB/s for 30 s) ends and is retried. It
+  writes to a file, never a pipe, because a retried transfer into a pipe
+  repeats bytes. `scripts/ci/download-test.sh` (lint gate) proves the
+  retries against a local server that answers 404, 504 or stalls, and the
+  Deno resolve and checksum checks.
+- gitleaks, actionlint, ast-grep and squawk: `scripts/ci/install-tools.sh`
+  installs the versions pinned in `ci.yml`'s env into
+  `~/.cache/fg-ci-tools/bin`, which `actions/cache` keeps per tool version.
+  A tool that already reports its pinned version is not downloaded again.
+- Deno: every workflow uses `.github/actions/deno` instead of
+  `denoland/setup-deno`. `scripts/ci/deno-toolcache.sh` picks the version
+  setup-deno would pick: the exact version in `.dvmrc` for lint, without the
+  network, and for `v2.x` elsewhere the newest 2.x (its `versions.json` fetch
+  retried by `download.sh`), restores it from the Actions cache (or downloads it with
+  retries and checks it against the release's `.sha256sum`) and puts it on
+  PATH. Deno's problem matcher (error annotations) is not registered;
+  failures still fail the job.
+  - When resolve fails (`versions.json` unreachable after the retries, or a
+    range other than `vN.x`), the step prints a `::warning::` and falls back
+    to `denoland/setup-deno`, which retries its download only 3 times and
+    `versions.json` for about 8 s.
+  - `supabase-deploy.yml` and `price-drift.yml` hold secrets and pass
+    `cache: false`: any PR run can write a cache entry, so those jobs run
+    only a freshly downloaded, checksum-verified binary.
+- npm: `ci.yml` and `e2e.yml` set `NPM_CONFIG_FETCH_RETRIES` and its
+  timeouts, which cover `npm ci` and the Supabase CLI package install in
+  `supabase/setup-cli`. The action's own `bun install` is not covered.
+- apt: `scripts/backup/install-tools.sh` and the ffmpeg step pass
+  `-o Acquire::Retries=5`.
+- Playwright browsers are not cached: `playwright install` already retries 5
+  times across 3 CDN mirrors, and the repository's Actions cache already sits
+  at its 10 GB limit, so three browsers would evict other entries.
+- Flutter comes from `subosito/flutter-action`'s own cache (`cache: true`).
+- Not covered: the Supabase CLI's Docker images, the biggest download left,
+  which `supabase start` pulls in db and e2e without a retry of ours. They
+  come from Docker Hub (`SUPABASE_INTERNAL_IMAGE_REGISTRY`, DECISIONS job
+  15b).
+
 ## Dependencies
 
 `.github/dependabot.yml` opens grouped weekly PRs for GitHub Actions, pub

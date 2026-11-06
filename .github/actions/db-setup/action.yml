@@ -23,6 +23,6 @@ runs:
       shell: bash
       run: scripts/backup/install-tools.sh
     # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
-    - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+    - uses: ./.github/actions/deno
       with:
         deno-version: v2.x
