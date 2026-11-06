@@ -8341,3 +8341,44 @@ sibling for the rest of the repo.
 11. **Every `deno-lint-ignore` carries ` -- <reason>`,** like `ast-grep-ignore` and `squawk-ignore`.
 12. **camelcase and wire names.** A snake_case JSON, PostHog, OAuth or column name is written as a
     quoted key (the form the rule accepts) or renamed on destructuring, never renamed on the wire.
+
+## Job 144: the tabs float as a hex pill (Q89 = N2), 2026-11-06
+
+Peter picked V2 "Floating pill" of job 136's bottom-nav prototypes (Q89 = N2, 2026-11-06 07:38 CET;
+draft PR #277, `/internal/bottom-nav`). Built without a further question.
+
+1. **The pill, as the prototype draws it.** A raised hex capsule (`HexBorder`, `surfaceRaised`, the
+   2 px contour, the small sticker shadow the add field has), 52 px tall like the add field,
+   centred, at least 236 px wide and wider when large text needs it. Each tab is icon and label on
+   one line; the selected one sits on a 34 px honey hex with a 1.5 px contour. Theme tokens only.
+   Hover and press tint the tab's hex (`surfaceSunken`), not its whole share of the pill: a
+   rectangle behind a hex looked unfinished on the web.
+2. **Above the home indicator, not the whole safe area.** The gap under the pill is
+   `max(12, bottom view padding - 8)`: 26 px on an iPhone (the prototype had 24; the 8 px token
+   step is the nearest), 16 px over Android's gesture bar, 12 px with no inset. It reads the view
+   padding, which stays put while the keyboard comes up, so the band never changes height.
+3. **Every page runs on behind the pill.** The shell's Scaffold has `extendBody`, and the band's
+   height reaches each page as its bottom padding. The list already ends with that padding plus
+   24 px (job 135), so field and pill stack with no overlap and the last row scrolls clear of
+   both. Pages whose lists set their own padding (More, Lifetime, Zugänge, Nutzungsdaten, the
+   stores screens, Join) add the padding. `test/app/shell_pages_test.dart` walks every route
+   under the shell, upright and on its side, and fails when a page's end sits under the pill.
+   The shell also lifts the body's view padding to the band, since Scaffold places a floating
+   button by the view padding (Stores' „Laden hinzufügen“ sat under the pill otherwise).
+4. **The whole band takes taps**, gutters beside the pill included, as job 135's add-field band
+   does (its item 5): a near miss beside a tab must not tick a row under it. On the web the band
+   is an opaque semantics node for the same reason.
+5. **Sheet and keyboard.** While the add sheet is open the pill slides away and the band, now the
+   sheet's raised surface, shows how adding works, as before; it keeps its height, so the field
+   never moves. Once the keyboard rises past the band, the band goes, so the field sits on the
+   keyboard and no page gets an inset for a band hidden under it. Going on any keyboard inset
+   (> 0) would drop the field 44 px and lift it again while the keyboard animates.
+6. **Semantics as Material's NavigationBar.** A tab bar with two tabs, the selected one marked,
+   „Tab 1 von 2“ after the label on mobile (the web's tab role says it). The keys `tab-list` and
+   `tab-more` stay on the tappable tabs; each takes the pill's full 52 px height. Tabs take
+   keyboard focus with a hex focus ring. Label text scales up to 1.5×, then stops, so it stays
+   inside the 34 px hex; the pill fits at 320 px with text at 2× in German and English.
+7. **Wide layouts keep the rail** (from 840 px, unchanged). A phone on its side under 840 px
+   keeps the pill. The unused NavigationBar theme, sample and Widgetbook story went.
+8. **Snackbars** still float above the add field (widget probe: snackbar 636-708, field from
+   720, pill from 780 at 390×844).

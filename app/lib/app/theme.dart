@@ -251,27 +251,6 @@ ThemeData appTheme(Brightness brightness) {
       insetPadding: const EdgeInsets.all(HlSpace.s3),
       shape: rounded(HlRadius.m, contour),
     ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: scheme.surfaceContainer,
-      surfaceTintColor: Colors.transparent,
-      indicatorColor: t.honey,
-      indicatorShape: HexBorder(side: contour),
-      iconTheme: WidgetStateProperty.resolveWith(
-        (states) => IconThemeData(
-          color: states.contains(WidgetState.selected)
-              ? t.onHoney
-              : t.textMuted,
-        ),
-      ),
-      labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => text.labelMedium!.copyWith(
-          color: states.contains(WidgetState.selected) ? t.text : t.textMuted,
-          fontWeight: states.contains(WidgetState.selected)
-              ? FontWeight.w700
-              : FontWeight.w600,
-        ),
-      ),
-    ),
     navigationRailTheme: NavigationRailThemeData(
       backgroundColor: scheme.surfaceContainer,
       indicatorColor: t.honey,

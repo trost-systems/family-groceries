@@ -93,10 +93,15 @@ Future<void> _pumpShell(
   Size size = _phone,
   bool empty = false,
   bool long = false,
+
+  /// The home indicator's or gesture bar's height.
+  double inset = 0,
 }) async {
   tester.view
     ..devicePixelRatio = 1
-    ..physicalSize = size;
+    ..physicalSize = size
+    ..padding = FakeViewPadding(bottom: inset)
+    ..viewPadding = FakeViewPadding(bottom: inset);
   addTearDown(tester.view.reset);
   SharedPreferencesAsyncPlatform.instance =
       InMemorySharedPreferencesAsync.empty();
@@ -425,6 +430,28 @@ void main() {
         matchesGoldenFile('goldens/list-long-$mode.png'),
       );
     });
+
+    // Job 144: the tabs float as a hex pill above the home indicator
+    // (iPhone, 34 px) or the gesture bar (Android, 24 px); the list runs on
+    // behind it.
+    for (final (phone, size, inset) in const [
+      ('iphone', _phone, 34.0),
+      ('android', Size(412, 915), 24.0),
+    ]) {
+      testWidgets('tab pill on $phone, $mode', (tester) async {
+        await _pumpShell(
+          tester,
+          brightness,
+          size: size,
+          inset: inset,
+          long: true,
+        );
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/shell-pill-$phone-$mode.png'),
+        );
+      });
+    }
 
     testWidgets('add sheet wide, $mode', (tester) async {
       await _pumpShell(tester, brightness, size: _desktop);

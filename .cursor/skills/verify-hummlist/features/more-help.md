@@ -1,6 +1,6 @@
 # More tab, help, guides, legal pages
 
-The app has two tabs, „Liste“ and „Mehr“ (EN "List", "More"): a bottom bar on phones, a left rail from 840 px width. Since job 85 (design "M-P2") „Mehr“ is a list of inset groups (cards with a 2 px contour): each row is a hexagon icon and one line of text, with no hint below it. Only one group has a heading: „Rechtliches“ / "Legal", whose rows (Impressum, Datenschutzerklärung, Nutzungsbedingungen, Lizenzen) sit directly on More, so the imprint is two taps from the list (Mehr, Impressum). Sign-out stands alone, in the same plain style as the other rows (not red); the version line ends the list. Entries either open a page inside the app (on wide screens beside the list, on phones as a full page with a back button) or open a page on the web in a new browser tab (those rows end in an external-link icon instead of a chevron). „Nutzungsdaten“ / "Usage data" is a page of its own with the usage-data switch.
+The app has two tabs, „Liste“ and „Mehr“ (EN "List", "More"): on phones a raised hex pill floating centred above the bottom edge (the selected tab on a honey hex; pages scroll on behind it), a left rail from 840 px width. Since job 85 (design "M-P2") „Mehr“ is a list of inset groups (cards with a 2 px contour): each row is a hexagon icon and one line of text, with no hint below it. Only one group has a heading: „Rechtliches“ / "Legal", whose rows (Impressum, Datenschutzerklärung, Nutzungsbedingungen, Lizenzen) sit directly on More, so the imprint is two taps from the list (Mehr, Impressum). Sign-out stands alone, in the same plain style as the other rows (not red); the version line ends the list. Entries either open a page inside the app (on wide screens beside the list, on phones as a full page with a back button) or open a page on the web in a new browser tab (those rows end in an external-link icon instead of a chevron). „Nutzungsdaten“ / "Usage data" is a page of its own with the usage-data switch.
 
 ## Sub-features
 
@@ -48,7 +48,7 @@ Preconditions:
 
 - Seeded household „Familie Brandt“, signed in, consent declined, on the list (phone 390x844, or 1366x1024 for the wide layout).
 - For the external pages stub the site so the test never hits the live site: `page.context().route('https://hummlist.com/**', r => r.fulfill({contentType:'text/html', body:'<title>stub</title>'}))`.
-- More is a lazy list taller than the window: wheel to a row before clicking it (`wheelTo` in `e2e/tests/helpers.ts`: `page.mouse.wheel(0, 250)` over the list until the row is above the tab bar; `openMore` does it for you).
+- More is a lazy list taller than the window: wheel to a row before clicking it (`wheelTo` in `e2e/tests/helpers.ts`: `page.mouse.wheel(0, 250)` over the list until the row is above the tab pill; `openMore` does it for you).
 
 - **Open More.** Click the tab. `openTab(page, 'Mehr')` (phone: `getByRole('tab', {name:'Mehr', exact:true})`; rail: `getByRole('button', {name:'Mehr Tab '})`). URL `/more`, heading „Mehr“.
 - **Open an entry.** `openMore(page, 'Einstellungen')` (taps Mehr, makes sure the list is shown, clicks `getByRole('button', {name: /^Einstellungen( |$)/})`). Rows are buttons named by their label alone (job 85: no hints), so match exactly, e.g. `getByRole('button', {name: 'Konto', exact: true})`; `openMore` matches the label followed by a space or the end.
@@ -58,7 +58,7 @@ Preconditions:
 - **Licenses.** On More click `getByRole('button',{name:'Lizenzen', exact:true})`. Observable: `page.locator('body').ariaSnapshot()` matches `/Hummlist[\s\S]*Flutter[\s\S]*bloc/`; „Zurück“ returns to More.
 - **Version.** `page.getByText(/^Version \d+\.\d+\.\d+/)` visible at the end of the list.
 - **Sign out.** Click `getByRole('button',{name:/^Abmelden/})`. Observable: `getByRole('textbox',{name:'E-Mail'})` visible, URL contains `/login`.
-- **Wide layout.** `page.setViewportSize({width:1366,height:1024})`, click `getByRole('button',{name:/^Mehr Tab/})`. Observable: the entries and `getByText('MCP-Server',{exact:true})` side by side; „Zurück“ buttons absent; clicking the button „Konto“ (exact) shows Konto alone (URL `/more/account`). At 820 px the bottom tabs return.
+- **Wide layout.** `page.setViewportSize({width:1366,height:1024})`, click `getByRole('button',{name:/^Mehr Tab/})`. Observable: the entries and `getByText('MCP-Server',{exact:true})` side by side; „Zurück“ buttons absent; clicking the button „Konto“ (exact) shows Konto alone (URL `/more/account`). At 820 px the tab pill returns.
 - Specs to run: `scripts/verify.sh --only e2e -- tests/shell-more.spec.ts`, `tests/help.spec.ts`, `tests/legal.spec.ts`.
 
 ## Gotchas

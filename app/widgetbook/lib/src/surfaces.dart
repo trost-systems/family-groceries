@@ -6,9 +6,6 @@ const _path = 'Material/Flächen';
 
 /// Navigation, feedback and containers as the app's theme draws them.
 final surfaceComponents = [
-  component(_path, 'NavigationBar', [
-    plain('Liste und Mehr', (context) => const _Navigation()),
-  ]),
   component(_path, 'SnackBar', [
     plain('Mit Rückgängig', (context) => const _SnackBarDemo()),
   ]),
@@ -52,32 +49,6 @@ final surfaceComponents = [
     ),
   ]),
 ];
-
-class const _Navigation() extends StatefulWidget {
-  @override
-  State<_Navigation> createState() => _NavigationState();
-}
-
-class _NavigationState() extends State<_Navigation> {
-  var _index = 0;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 390,
-    child: NavigationBar(
-      selectedIndex: _index,
-      onDestinationSelected: (index) => setState(() => _index = index),
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.shopping_cart_outlined),
-          selectedIcon: Icon(Icons.shopping_cart),
-          label: 'Liste',
-        ),
-        NavigationDestination(icon: Icon(Icons.menu), label: 'Mehr'),
-      ],
-    ),
-  );
-}
 
 /// A snackbar with an action shows until it is acted on or replaced.
 class const _SnackBarDemo() extends StatefulWidget {

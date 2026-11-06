@@ -5,7 +5,7 @@ The add bar at the bottom of the list ("Was brauchst du?") opens the add sheet (
 ## Sub-features
 
 - `qa-autofocus` puts the cursor in the add field (key `add-item-field`, hint "Was brauchst du?") when the app opens on the list, on desktop and web only.
-- `qa-sheet` opens the add sheet (semantics group "Hinzufügen", key `add-sheet`) on the first keystroke or a tap on the field. The tabs give way to the hint "Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag" (key `add-sheet-hint`).
+- `qa-sheet` opens the add sheet (semantics group "Hinzufügen", key `add-sheet`) on the first keystroke or a tap on the field. The tab pill slides away and the band shows the hint "Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag" (key `add-sheet-hint`).
 - `qa-rows` lists rows `suggestion-0`, `suggestion-1`, … Each is one button labelled "<qty> <name>, <source>, <brand>, <properties…>, <store>" (parts that are empty are left out). Sources: Wie getippt, Schon mal gekauft, Andere Packung, Andere Sorte, Andere Größe, Andere Marke, Aus dem Katalog, Wieder fällig, Zuletzt verwendet. The typed row is always first; alternatives already on the list are left out.
 - `qa-enter` adds `suggestion-0` on Enter (the typed line, parsed), clears the field and keeps focus in it, so the next item needs no tap. The sheet stays open.
 - `qa-quantity` splits a leading number into the quantity: "2 Äpfel" is stored as Äpfel with "2", and the list row reads "2× Äpfel" (the add sheet's row "Äpfel · 2"); "2 l Milch" reads "2 l Milch".
@@ -27,7 +27,7 @@ The add bar at the bottom of the list ("Was brauchst du?") opens the add sheet (
 
 ## How to get to it (user POV)
 
-- Open the app while signed in to a household. The list tab ("Liste") is the home screen; the add bar sits above the tabs.
+- Open the app while signed in to a household. The list tab ("Liste") is the home screen; the add bar sits right above the floating tab pill.
 - Type into the bar, or tap it, and press Enter or tap a row.
 - Tap the store chip ("Laden: automatisch" or the store's name) or the category chip ("Kategorie: automatisch" or the category's name) in the sheet before taking a row.
 - Tap "Rückgängig" in the note after an add.

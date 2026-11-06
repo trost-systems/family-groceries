@@ -29,6 +29,8 @@ export async function expectGroup(page: Page, item: string, group: string): Prom
 
 /** Drags a row of a reorderable list by its handle to the position of another row. */
 export async function dragHandle(page: Page, handleName: string, ontoHandleName: string): Promise<void> {
+  await clearOfBottom(page, page.getByText(handleName, { exact: true }));
+  await clearOfBottom(page, page.getByText(ontoHandleName, { exact: true }));
   const from = await boxOf(page.getByText(handleName, { exact: true }));
   const to = await boxOf(page.getByText(ontoHandleName, { exact: true }));
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -39,7 +41,29 @@ export async function dragHandle(page: Page, handleName: string, ontoHandleName:
   await page.mouse.up();
 }
 
-export type Section = { store: string; headings: string[]; items: string[] };
+/**
+ * Wheels the page until [target] sits above the floating add button and the tab pill. The page runs
+ * on behind both, and a press on a handle under them lands on them instead (job 144).
+ */
+async function clearOfBottom(page: Page, target: Locator): Promise<void> {
+  const size = page.viewportSize();
+  if (!size) return;
+  await target.waitFor();
+  // The button scales in with the page; a short look misses it on a slow runner.
+  const fab = await page.getByRole('button', { name: /^(Kategorie|Laden) hinzufügen$/ }).first()
+    .boundingBox({ timeout: 3_000 }).catch(() => null);
+  const tabs = await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 1_000 }).catch(() => null);
+  const bottom = Math.min(fab?.y ?? size.height, tabs?.y ?? size.height) - 8;
+  await page.mouse.move(size.width / 2, size.height / 3);
+  for (let i = 0; i < 10; i++) {
+    const box = await boxOf(target);
+    if (box.y + box.height <= bottom) return;
+    await page.mouse.wheel(0, Math.min(250, box.y + box.height - bottom + 16));
+    await page.waitForTimeout(200);
+  }
+}
+
+export type Section ={ store: string; headings: string[]; items: string[] };
 
 /**
  * The list as a screen reader reads it: each store section (and 'Ohne Laden') in order, with its

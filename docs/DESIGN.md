@@ -154,7 +154,7 @@ because a button's text style replaces the theme's instead of merging.
 | `ChoiceChip`, `Checkbox` | Hex; selected is lemon with navy |
 | `HexSwitch`, `HexSwitchTile` (`lib/design/`) | Horizontal hex track with the 2 px contour and a nested hex thumb; off sunken with a raised thumb, on lemon with a navy thumb |
 | `HexRadio`, `HexRadioTile` (`lib/design/`) | Hex outline like the checkbox; picked is lemon with a navy hex dot |
-| `NavigationBar` | Lemon hex indicator with the contour |
+| `NavigationRail` (from 840 px) | Lemon hex indicator with the contour |
 | `Card`, dialogs, bottom sheets | Radius m (18), l (28); dialogs keep the 2 px contour |
 
 `app/lib/design/`:
@@ -238,8 +238,10 @@ quarter into its line and struck rows, one wrapped.
   outlined (light) or dark pill with its "G", Apple's black or white button
   drawn per Apple's rules (DECISIONS job 57 item 15). Only "Weiter mit
   E-Mail" is a house hex button.
-- The navigation rail's indicator is the honey hex of the bottom bar;
-  snackbars float as contoured notes.
+- On phones the tabs float as a raised hex pill above the home indicator
+  (`app/lib/app/shell.dart`, job 144), the selected tab on a honey hex; the
+  navigation rail's indicator is the same honey hex. Snackbars float as
+  contoured notes.
 
 ### The list's frame and add bar (job 57)
 
@@ -289,10 +291,11 @@ category label (11 px w800 caps, 0.12 em, muted) with a hairline rule.
 
 `app/test/design/components_golden_test.dart` renders every button kind in
 rest, hover, focus, pressed and disabled, plus loading, chips, checkboxes,
-the hex switch (off, on, focus, disabled off and on), the navigation bar,
-store badges and a card, light and dark.
+the hex switch (off, on, focus, disabled off and on), store badges and a
+card, light and dark.
 `app/test/design/screens_golden_test.dart` renders the list, the add sheet,
-More and the settings at 390 × 844, light and dark, and the settings
+More and the settings at 390 × 844, light and dark, the tab pill over the
+list on an iPhone (34 px inset) and an Android phone (412 × 915, 24 px), and the settings
 following a light and a dark device (`settings-system-*.png`, Dunkel
 disabled). Both load the real fonts
 (`app/test/design/fonts.dart`). After a deliberate change:
@@ -369,7 +372,7 @@ path dependency on the app, showing the app's real widgets in `appTheme`.
   control can be busy). States come from real mouse, finger and keyboard
   input. The "Spielwiese" stories have knobs for label, enabled and loading,
   and a press really sinks and bounces.
-- Surfaces: navigation bar, snackbar with undo, dialog, bottom sheet, card.
+- Surfaces: snackbar with undo, dialog, bottom sheet, card.
 - Hummlist/Auswahl: `HexSwitch` in every state, a switch that flips by
   itself every 1.2 s so the travel shows (still, on, with reduced motion), a
   playground, the Darstellung rows (`HexSwitchTile`) and `HexRadio` with the

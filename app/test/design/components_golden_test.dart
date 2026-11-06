@@ -299,19 +299,6 @@ Widget _grid(Brightness brightness) {
                   ],
                 ),
                 const SizedBox(height: HlSpace.s4),
-                NavigationBar(
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.shopping_cart),
-                      label: 'Liste',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.menu),
-                      label: 'Mehr',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: HlSpace.s4),
                 Card(
                   child: ListTile(
                     title: const Text('Karte'),

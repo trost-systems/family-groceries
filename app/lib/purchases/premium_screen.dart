@@ -108,7 +108,11 @@ class const _PremiumView() extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 640),
         child: ListView(
           key: const ValueKey('lifetime-screen'),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          // Clear of the floating tab pill.
+          padding: EdgeInsets.only(
+            top: 8,
+            bottom: 8 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
             // Each block is its own semantics node: one line for a screen
             // reader (and the web's DOM) instead of the page run together.
