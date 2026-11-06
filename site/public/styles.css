@@ -770,7 +770,22 @@ a {
   justify-content: center;
   height: calc(var(--h) + var(--d));
   padding: 0 calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-2)) var(--d);
+  color: var(--hl-color-text);
+  font-family: var(--hl-type-label-family);
+  font-size: var(--hl-type-label-size);
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: var(--hl-type-label-line);
+  letter-spacing: normal;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+/* Hover takes the honey face of the site's hex buttons. */
+@media (hover: hover) {
+  .prose:only-child:has(> h1:first-child + p + .guide-list:last-child) > .guide-list a:hover {
+    --face: var(--hl-color-honey);
+    color: var(--hl-color-on-honey);
+  }
 }
 
 .updated,
