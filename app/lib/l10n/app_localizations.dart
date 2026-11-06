@@ -992,6 +992,12 @@ abstract class AppLocalizations {
   /// **'{name} verschieben'**
   String dragCategory(String name);
 
+  /// No description provided for @categoryPosition.
+  ///
+  /// In de, this message translates to:
+  /// **'{position} von {count}'**
+  String categoryPosition(int position, int count);
+
   /// No description provided for @categoryNameTaken.
   ///
   /// In de, this message translates to:

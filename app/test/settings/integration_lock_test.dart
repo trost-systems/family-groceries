@@ -1,5 +1,6 @@
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/list/list_screen.dart';
+import 'package:family_groceries/list/stores_screen.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/revenuecat_repository.dart';
@@ -400,7 +401,7 @@ void main() {
         premium: FakePremiumServer(lock: true),
         routes: listTabRoutes(),
       );
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      expect(find.byType(AddButton), findsOneWidget);
       expectNoPremium(title);
     });
   }

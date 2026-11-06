@@ -15,8 +15,12 @@ enum FieldShape() {
 /// [HlFocus.ringGap] outside it. Every state uses the same shape and width,
 /// so focus changes only colours and never the field's padding.
 ///
-/// [isOutline] is false, so a floating label stays inside the face instead
-/// of cutting a gap into the contour.
+/// A hex is an outline ([isOutline]): Flutter then centres a single line of
+/// text in it exactly, where a non-outline border centres it twice over and
+/// it sits low (job 148). An outline's label would float onto the contour,
+/// so a hex field takes its label above it ([LabeledField]), never inside.
+/// The rounded multi-line fields are no outline, so their floating label
+/// stays inside the face instead of cutting a gap into the contour.
 class const ContourInputBorder({
   final FieldShape shape = FieldShape.hex,
   super.borderSide,
@@ -37,7 +41,7 @@ class const ContourInputBorder({
   };
 
   @override
-  bool get isOutline => false;
+  bool get isOutline => shape == FieldShape.hex;
 
   @override
   ContourInputBorder copyWith({BorderSide? borderSide, BorderSide? ring}) =>
@@ -120,7 +124,7 @@ class const ContourInputBorder({
 
 /// Text starts this far in from a hex field's edge: past the tip of a
 /// 48 dp field plus a little air, which also clears the slant beside the
-/// text and the floating label of a taller, labelled field.
+/// text. A [LabeledField]'s label starts here too.
 const hexFieldInset = HlHex.tip * HlSize.target + HlSpace.s1;
 
 /// Text field decoration in [shape], from the tokens: a raised face, the
@@ -175,5 +179,39 @@ class const RoundedFields({required final Widget child, super.key})
       FieldShape.rounded,
     ),
     child: child,
+  );
+}
+
+/// A hex field with its [label] above it, over the field's text rather
+/// than its tip. The label names the field for screen readers too. It is
+/// the field's own label, not a merge: merged, the web would read the
+/// field's error and counter into its name too.
+class const LabeledField({
+  required final String label,
+  required final Widget field,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: HlSpace.s1,
+    children: [
+      Padding(
+        padding: const EdgeInsetsDirectional.only(start: hexFieldInset),
+        child: ExcludeSemantics(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+      Semantics(label: label, child: field),
+    ],
   );
 }

@@ -185,6 +185,8 @@
   "moveItemsTo": "Artikel verschieben nach",
   "dragCategory": "{name} verschieben",
   "@dragCategory": {"placeholders": {"name": {"type": "String"}}},
+  "categoryPosition": "{position} von {count}",
+  "@categoryPosition": {"placeholders": {"position": {"type": "int"}, "count": {"type": "int"}}},
   "categoryNameTaken": "Eine Kategorie „{name}“ gibt es schon.",
   "@categoryNameTaken": {"placeholders": {"name": {"type": "String"}}},
   "catalogSaveFailed": "Die Änderung konnte nicht gespeichert werden.",

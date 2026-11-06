@@ -547,6 +547,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String categoryPosition(int position, int count) {
+    return '$position of $count';
+  }
+
+  @override
   String categoryNameTaken(String name) {
     return 'A category named “$name” already exists.';
   }

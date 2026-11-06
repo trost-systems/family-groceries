@@ -5,6 +5,7 @@ import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/design/tokens.g.dart';
@@ -818,15 +819,15 @@ class _NameDialogState() extends State<_NameDialog> {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(l10n.createToken),
-      content: TextField(
-        controller: _name,
-        autofocus: true,
-        maxLength: 60,
-        decoration: InputDecoration(
-          labelText: l10n.tokenName,
-          hintText: l10n.tokenNameHint,
+      content: LabeledField(
+        label: l10n.tokenName,
+        field: TextField(
+          controller: _name,
+          autofocus: true,
+          maxLength: 60,
+          decoration: InputDecoration(hintText: l10n.tokenNameHint),
+          onSubmitted: (_) => _submit(),
         ),
-        onSubmitted: (_) => _submit(),
       ),
       actions: [
         TextButton(
@@ -868,15 +869,15 @@ class _ApiKeyDialogState() extends State<_ApiKeyDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
-            controller: _name,
-            autofocus: true,
-            maxLength: 60,
-            decoration: InputDecoration(
-              labelText: l10n.tokenName,
-              hintText: l10n.apiKeyNameHint,
+          LabeledField(
+            label: l10n.tokenName,
+            field: TextField(
+              controller: _name,
+              autofocus: true,
+              maxLength: 60,
+              decoration: InputDecoration(hintText: l10n.apiKeyNameHint),
+              onSubmitted: (_) => _submit(),
             ),
-            onSubmitted: (_) => _submit(),
           ),
           RadioGroup<ApiScopes>(
             groupValue: _scopes,

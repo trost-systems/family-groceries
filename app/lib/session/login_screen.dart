@@ -5,6 +5,7 @@ import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/brand_block.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
@@ -245,26 +246,30 @@ class _SignInPanelState() extends State<SignInPanel> {
                 ),
                 const SizedBox(height: 12),
               ],
-              TextFormField(
-                key: const ValueKey('login-email'),
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email],
-                decoration: InputDecoration(labelText: l10n.email),
-                validator: (v) =>
-                    (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
+              LabeledField(
+                label: l10n.email,
+                field: TextFormField(
+                  key: const ValueKey('login-email'),
+                  controller: _email,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  validator: (v) =>
+                      (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
+                ),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                key: const ValueKey('login-password'),
-                controller: _password,
-                obscureText: true,
-                autofillHints: const [AutofillHints.password],
-                decoration: InputDecoration(labelText: l10n.password),
-                validator: (v) => !_passwordRequired || (v ?? '').length >= 6
-                    ? null
-                    : l10n.passwordTooShort,
-                onFieldSubmitted: (_) => unawaited(_signIn()),
+              LabeledField(
+                label: l10n.password,
+                field: TextFormField(
+                  key: const ValueKey('login-password'),
+                  controller: _password,
+                  obscureText: true,
+                  autofillHints: const [AutofillHints.password],
+                  validator: (v) => !_passwordRequired || (v ?? '').length >= 6
+                      ? null
+                      : l10n.passwordTooShort,
+                  onFieldSubmitted: (_) => unawaited(_signIn()),
+                ),
               ),
               const SizedBox(height: 24),
               FilledButton(

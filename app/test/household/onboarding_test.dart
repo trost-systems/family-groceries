@@ -222,6 +222,8 @@ void main() {
     testWidgets('a double tap creates once', (tester) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       o.session.hold = Completer();
+      await tester.ensureVisible(key('create-household'));
+      await tester.pumpAndSettle();
       await tester.tap(key('create-household'));
       await tester.pump();
       await tester.tap(key('create-household'), warnIfMissed: false);

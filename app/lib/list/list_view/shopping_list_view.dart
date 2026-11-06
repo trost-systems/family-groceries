@@ -35,6 +35,12 @@ class const ShoppingListView({
   /// Called when the user acts on the list, so the add field can let go of
   /// the keyboard.
   final VoidCallback? onInteract,
+
+  /// The bar pinned over the list's top (job 148), [PreferredSizeWidget.
+  /// preferredSize] tall below the top safe area. The rows scroll on under
+  /// it, and a row brought into view (focus, a screen reader) stops below
+  /// it: the viewport counts a pinned sliver as covering the rows.
+  final PreferredSizeWidget? header,
   super.key,
 }) extends StatefulWidget {
   /// From this width the sections go in two columns, and in three from
@@ -343,7 +349,14 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   Widget _list(BuildContext context) {
     final state = context.watch<ListCubit>().state;
     if (!state.loaded) {
-      return const Center(child: CircularProgressIndicator());
+      // The bar stays while the list loads: its sync icon says offline.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ?widget.header,
+          const Expanded(child: Center(child: CircularProgressIndicator())),
+        ],
+      );
     }
     final list = LayoutBuilder(
       builder: (context, constraints) =>
@@ -414,6 +427,14 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
       key: _viewport,
       controller: _scroll,
       slivers: [
+        if (widget.header case final header?)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _PinnedHeader(
+              header,
+              MediaQuery.paddingOf(context).top + header.preferredSize.height,
+            ),
+          ),
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: side),
           sliver: SliverMainAxisGroup(
@@ -565,4 +586,21 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
     }
     return entries;
   }
+}
+
+class _PinnedHeader(final Widget child, final double extent)
+    extends SliverPersistentHeaderDelegate {
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlaps) =>
+      child;
+
+  @override
+  bool shouldRebuild(_PinnedHeader oldDelegate) =>
+      oldDelegate.child != child || oldDelegate.extent != extent;
 }

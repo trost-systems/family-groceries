@@ -35,9 +35,10 @@ async function expectHugsContent(page: Page, why: string): Promise<void> {
   const name = await box(editField(page, 'Bezeichnung'));
   const done = await box(editSheet(page).getByRole('button', { name: 'Fertig' }));
   const viewport = must(page.viewportSize(), 'viewport');
-  // Above the field (its box holds its label): the 16 px handle strip and 8 px; 24 px measured.
-  expect(name.top - sheet.top, `${why}: no dead area above the fields`).toBeLessThanOrEqual(32);
-  expect(name.top - sheet.top).toBeGreaterThanOrEqual(16);
+  // Above the field's hex: the 16 px handle strip and 8 px, then its label (job 148: above the hex, named into
+  // the field, so outside its box); 47 px measured.
+  expect(name.top - sheet.top, `${why}: no dead area above the fields`).toBeLessThanOrEqual(56);
+  expect(name.top - sheet.top).toBeGreaterThanOrEqual(40);
   // Below Fertig: 16 px.
   expect(sheet.bottom - done.bottom, `${why}: no dead area below the buttons`).toBeLessThanOrEqual(24);
   expect(sheet.bottom - done.bottom).toBeGreaterThanOrEqual(12);

@@ -1,5 +1,6 @@
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/sticker.dart';
+import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 
@@ -12,9 +13,10 @@ class const HexPill({
   final VoidCallback? onTap,
   final FocusNode? focusNode,
 
-  /// A row fixed in place (the stores screen's "Ohne Laden"): a sunken
-  /// face without the edge, so it never reads as one of the pills to drag.
-  final bool flat = false,
+  /// A row fixed in place (the stores screen's "Ohne Laden"): a sunken,
+  /// muted face, so it never reads as one of the pills to drag. It rests on
+  /// its edge like every pressable hex (one depth style, job 148).
+  final bool pinned = false,
   super.key,
 }) extends StatelessWidget {
   static const height = 56.0;
@@ -36,7 +38,7 @@ class const HexPill({
     final lifted =
         context.dependOnInheritedWidgetOfExactType<_Lifted>() != null;
     final face = Material(
-      color: flat ? t.surfaceSunken : t.surfaceRaised,
+      color: pinned ? t.surfaceSunken : t.surfaceRaised,
       shape: HexBorder(
         side: BorderSide(color: t.border, width: HlBorder.width),
       ),
@@ -62,36 +64,36 @@ class const HexPill({
     );
     return Padding(
       padding: margin,
-      child: flat
-          ? Padding(
+      child: switch (lifted) {
+        true => DecoratedBox(
+          decoration: ShapeDecoration(
+            shape: const HexBorder(),
+            shadows: HlSticker.shadow(brightness, StickerDepth.l),
+          ),
+          child: face,
+        ),
+        false when raisedFaces => Stack(
+          children: [
+            Positioned.fill(
+              top: HlDepth.edge,
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: t.edge,
+                  shape: const HexBorder(),
+                ),
+              ),
+            ),
+            Padding(
               padding: const EdgeInsets.only(bottom: HlDepth.edge),
               child: face,
-            )
-          : lifted
-          ? DecoratedBox(
-              decoration: ShapeDecoration(
-                shape: const HexBorder(),
-                shadows: HlSticker.shadow(brightness, StickerDepth.l),
-              ),
-              child: face,
-            )
-          : Stack(
-              children: [
-                Positioned.fill(
-                  top: HlDepth.edge,
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: t.edge,
-                      shape: const HexBorder(),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: HlDepth.edge),
-                  child: face,
-                ),
-              ],
             ),
+          ],
+        ),
+        _ => Padding(
+          padding: const EdgeInsets.only(bottom: HlDepth.edge),
+          child: face,
+        ),
+      },
     );
   }
 }
@@ -99,43 +101,6 @@ class const HexPill({
 class const _Lifted({required super.child}) extends InheritedWidget {
   @override
   bool updateShouldNotify(_Lifted oldWidget) => false;
-}
-
-/// The 32 px pointy yellow hex that holds a step's number.
-class const HexStep(final int number, {super.key}) extends StatelessWidget {
-  static const size = Size(32, 37);
-
-  @override
-  Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
-    return ExcludeSemantics(
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: t.honey,
-          shape: HexBorder(
-            orientation: HexOrientation.pointyTop,
-            side: BorderSide(color: t.border, width: HlBorder.width),
-          ),
-        ),
-        child: SizedBox.fromSize(
-          size: size,
-          child: Center(
-            child: Text(
-              '$number',
-              textScaler: TextScaler.noScaling,
-              style: TextStyle(
-                fontFamily: HlFont.display,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                height: 1,
-                color: t.onHoney,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// A pill's name, in the display face the site's stores scene sets it in.

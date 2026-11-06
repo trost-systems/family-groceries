@@ -1,6 +1,7 @@
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -39,6 +40,22 @@ void main() {
     await tester.tap(key('name-dialog-confirm'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('a store row is one hex: its name, no badge inside', (
+    tester,
+  ) async {
+    await pump(tester);
+    final row = key('store-row-lidl');
+    expect(
+      find.descendant(of: row, matching: find.text('Lidl')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: row, matching: find.byType(StoreBadge)),
+      findsNothing,
+      reason: 'job 148: the inner hexagon went',
+    );
+  });
 
   testWidgets('the button adds a store below the others', (tester) async {
     await pump(tester);

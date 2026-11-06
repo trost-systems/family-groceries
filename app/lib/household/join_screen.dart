@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/join_cubit.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
@@ -194,17 +195,19 @@ class _JoinViewState() extends State<_JoinView> {
               ),
               const SizedBox(height: 24),
             ],
-            TextField(
-              key: const ValueKey('invite-code'),
-              controller: _code,
-              enabled: !state.busy,
-              autofocus: widget.link == null,
-              textCapitalization: TextCapitalization.characters,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: InputDecoration(labelText: l10n.inviteCode),
-              onChanged: cubit.edited,
-              onSubmitted: (_) => join?.call(),
+            LabeledField(
+              label: l10n.inviteCode,
+              field: TextField(
+                key: const ValueKey('invite-code'),
+                controller: _code,
+                enabled: !state.busy,
+                autofocus: widget.link == null,
+                textCapitalization: TextCapitalization.characters,
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: cubit.edited,
+                onSubmitted: (_) => join?.call(),
+              ),
             ),
             if (previewed && state.household != null) ...[
               const SizedBox(height: 16),

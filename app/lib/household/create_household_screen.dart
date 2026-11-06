@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
@@ -126,18 +127,20 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
       listKey: const ValueKey('create-household-screen'),
       onBack: _busy ? null : () => leaveStep(context),
       children: [
-        TextField(
-          key: const ValueKey('household-name'),
-          controller: _name,
-          focusNode: _nameFocus,
-          enabled: !_busy,
-          maxLength: maxHouseholdName,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            labelText: l10n.householdName,
-            errorText: _invalidName ? l10n.householdNameInvalid : null,
+        LabeledField(
+          label: l10n.householdName,
+          field: TextField(
+            key: const ValueKey('household-name'),
+            controller: _name,
+            focusNode: _nameFocus,
+            enabled: !_busy,
+            maxLength: maxHouseholdName,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              errorText: _invalidName ? l10n.householdNameInvalid : null,
+            ),
+            onSubmitted: (_) => unawaited(_create()),
           ),
-          onSubmitted: (_) => unawaited(_create()),
         ),
         const SizedBox(height: 16),
         Text(l10n.storesChoice, style: theme.textTheme.titleSmall),

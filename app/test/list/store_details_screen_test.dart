@@ -92,23 +92,50 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Rossmann'), findsOneWidget);
     });
 
-    testWidgets('its name pill holds the badge centered, no hint inside', (
+    testWidgets('shows no numbers; a screen reader hears each place', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pump(tester, 'lidl');
+      // The order shows as the order (job 148): no step numbers.
+      for (final n in ['1', '2', '3']) {
+        expect(find.text(n), findsNothing);
+      }
+      for (final (place, name) in [
+        (1, 'Sonstiges'),
+        (2, 'Kühlregal'),
+        (3, 'Obst & Gemüse'),
+      ]) {
+        expect(
+          find.semantics.byPredicate(
+            (node) => node.label == name && node.hint == '$place von 3',
+          ),
+          findsOne,
+          reason: name,
+        );
+      }
+      semantics.dispose();
+    });
+
+    testWidgets('its name pill holds the name centered, no badge, no hint', (
       tester,
     ) async {
       await pump(tester, 'dm');
       final pill = key('store-rename');
       final face = find.descendant(of: pill, matching: find.byType(InkWell));
-      final badge = find.descendant(
-        of: pill,
-        matching: find.byType(StoreBadge),
-      );
+      final name = find.descendant(of: pill, matching: find.text('dm'));
       expect(
-        tester.getCenter(badge).dy,
+        tester.getCenter(name).dy,
         moreOrLessEquals(tester.getCenter(face).dy, epsilon: 0.5),
       );
       expect(
         find.descendant(of: pill, matching: find.byType(Text)),
         findsOneWidget,
+      );
+      expect(
+        find.descendant(of: pill, matching: find.byType(StoreBadge)),
+        findsNothing,
+        reason: 'one hex: the pill, no badge inside (job 148)',
       );
       expect(
         find.descendant(of: pill, matching: find.byIcon(Icons.edit_outlined)),

@@ -100,10 +100,11 @@ export async function putBack(page: Page, name: string): Promise<void> {
 export const actionSnackBar = (page: Page, text: string): Locator => page.getByRole('group', { name: text, exact: true });
 
 /**
- * The height of the bar above the list (`_Header.height` in app/lib/list/list_screen.dart): the
- * same in every sync state, and the web has no top inset.
+ * Where the list's first row starts, below the floating bar (`_Header.extent` in
+ * app/lib/list/list_screen.dart): the same in every sync state, and the web has no top inset. Rows
+ * scroll on under the bar; one above this line may be hidden behind it.
  */
-export const listBarHeight = 44;
+export const listBarHeight = 68;
 
 /** The list's visible band: from the bar above it to the top of the add bar, 12 px above its field. */
 export async function listArea(page: Page): Promise<{ top: number; bottom: number }> {

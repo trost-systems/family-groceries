@@ -16,6 +16,11 @@ import 'memory_cache.dart';
 /// Job 66: `/add` and `/stores/<id>` links, as the router hands them to
 /// the list.
 void main() {
+  /// The top of the list's visible band: below the floating bar, which the
+  /// rows scroll on under (job 148).
+  double barBottom(WidgetTester tester) =>
+      tester.getRect(find.byKey(const ValueKey('list-header'))).bottom;
+
   late FakeRepository repo;
   late MemoryListCache cache;
   late ListLinks links;
@@ -117,9 +122,8 @@ void main() {
       links.pending = const StoreLink('s6');
       await tester.pumpAndSettle();
       expect(row('Ding 6-0'), findsOneWidget);
-      final list = tester.getRect(find.byType(CustomScrollView).first);
       final divider = tester.getRect(storeDivider('s6'));
-      expect(divider.top, moreOrLessEquals(list.top, epsilon: 1));
+      expect(divider.top, moreOrLessEquals(barBottom(tester), epsilon: 1));
       expect(cache.prefs!.folded, isEmpty);
     });
   }
@@ -133,10 +137,7 @@ void main() {
     expect(row('Ding 6-0'), findsOneWidget);
     expect(
       tester.getRect(storeDivider('s6')).top,
-      moreOrLessEquals(
-        tester.getRect(find.byType(CustomScrollView).first).top,
-        epsilon: 1,
-      ),
+      moreOrLessEquals(barBottom(tester), epsilon: 1),
     );
   });
 

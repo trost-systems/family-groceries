@@ -10,6 +10,7 @@ import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
+import 'package:family_groceries/list/stores_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -186,28 +187,31 @@ Widget _grid(Brightness brightness) {
                       ),
                     ),
                     for (final field in [
-                      const TextField(
-                        decoration: InputDecoration(labelText: 'E-Mail'),
-                      ),
+                      const LabeledField(label: 'E-Mail', field: TextField()),
                       // The switch and box below hold the one real focus.
-                      InputDecorator(
-                        isFocused: true,
-                        decoration: const InputDecoration(labelText: 'Laden'),
-                        child: Text(
-                          'Lidl',
-                          style: Theme.of(context).textTheme.bodyLarge,
+                      LabeledField(
+                        label: 'Laden',
+                        field: InputDecorator(
+                          isFocused: true,
+                          decoration: const InputDecoration(),
+                          child: Text(
+                            'Lidl',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       ),
-                      TextField(
-                        controller: TextEditingController(text: 'peter'),
-                        decoration: const InputDecoration(
-                          labelText: 'E-Mail',
-                          errorText: 'Keine E-Mail',
+                      LabeledField(
+                        label: 'E-Mail',
+                        field: TextField(
+                          controller: TextEditingController(text: 'peter'),
+                          decoration: const InputDecoration(
+                            errorText: 'Keine E-Mail',
+                          ),
                         ),
                       ),
-                      const TextField(
-                        enabled: false,
-                        decoration: InputDecoration(labelText: 'Code'),
+                      const LabeledField(
+                        label: 'Code',
+                        field: TextField(enabled: false),
                       ),
                       const RoundedFields(
                         child: TextField(
@@ -222,7 +226,7 @@ Widget _grid(Brightness brightness) {
                     ])
                       Container(
                         width: 150,
-                        height: 104,
+                        height: 110,
                         padding: const EdgeInsets.symmetric(
                           horizontal: HlSpace.s3,
                           vertical: HlSpace.s2,
@@ -280,11 +284,7 @@ Widget _grid(Brightness brightness) {
                         child: CircularProgressIndicator(strokeWidth: 2.5),
                       ),
                     ),
-                    FloatingActionButton.extended(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add),
-                      label: const Text('Kategorie'),
-                    ),
+                    AddButton(onPressed: () {}, label: 'Kategorie'),
                     for (final store in const [
                       Store(id: 'dm', name: 'dm', sortOrder: 0, seedKey: 'dm'),
                       Store(

@@ -9033,3 +9033,84 @@ Peter (2026-11-06, about „Bearbeiten: Ohrenstäbchen“) asked for a quieter e
    in the chip and the options as before. If Peter's „keep the category icon“ meant emojis in
    the category options (the `categoryIcon()` set), that is a new decision for him. The sheet
    shows no item icon, so there is none to keep.
+
+
+## Job 148: one look for the hex controls (floating top bar, raised buttons, centred text), 2026-11-06
+
+Peter (2026-11-06) asked for a consistency pass after the floating tab pill (#288) and the floating
+add field (#278): a floating top bar, Anpassen as a hex button, one depth style, no numbers on the
+category rows, no inner hexagon on the store rows, and text centred in every hex.
+
+1. **The top bar is the list's pinned header, a capsule at the top right.** It is a hex capsule
+   with the tab pill's height (52), contour and sticker shadow, 16 px from the frame's edge and
+   8 px below the top inset. It holds the new-items line, the sync icon and Anpassen, and is as
+   wide as they need. Two layouts were rendered as goldens. A full-width capsule with only
+   Anpassen in it read as a second, empty text field above the list. The hugging capsule mirrors
+   the tab pill at the bottom. The bar is a `SliverPersistentHeader(pinned: true)` in the list's
+   `CustomScrollView`, not a `Stack` over it. The rows still scroll on under it, and the viewport
+   counts a pinned sliver as covering them, so a row brought into view by focus, a screen reader
+   or a `/stores/<id>` link stops below the bar. The first try was a `Stack` with the bar's
+   height as top padding. That put rows brought into view under the bar
+   (`large_text_test`: the explainer's "Verstanden" sat behind it and could not be tapped). Only
+   the capsule takes taps. The rows beside it show in full and stay tappable.
+2. **Anpassen is the theme's secondary tactile button** (`OutlinedButton`), with a 30 px face on a
+   4 px edge inside the capsule, like the tab pill's 34 px indicator. Its tap target is padded to
+   48 px.
+3. **One depth switch: `raisedFaces` in `app/lib/design/tactile.dart`, true (3D).** The tactile
+   painter and `HexPill` read it, so false lays every pressable hex flat again. The default is
+   Peter's lead choice, 3D everywhere. What changed:
+   - The add buttons on „Läden“ and a store's page (`FloatingActionButton.extended`, flat
+     honey) are now `AddButton`, the theme's primary tactile button. The FAB theme is gone.
+   - The store and category chips of the add and edit sheets (`FoldoutChips._Chip`) are tactile
+     faces on their edge (surface, honey or soft honey).
+   - „Konto löschen“ in the account deletion dialog is a tactile red face on the navy edge
+     (`dangerButtonStyle`).
+   - Anpassen (item 2).
+   - The pinned „Ohne Laden“ row on „Läden“ (`HexPill(pinned: true)`, was `flat`): it keeps its
+     sunken, muted face, which says "can't move", and now rests on the edge like the store rows
+     (review 0).
+   - The new-store ✓ button next to the store name field (`StoreNameField`, an
+     `IconButton.filled`): the theme's primary tactile style (review 0).
+   - `AddButton` and the ✓ keep standard density, so desktop web doesn't shrink them under 48 px.
+   - `_ownsBackground` now treats a button whose own style is tactile as tactile. A widget-level
+     tactile style sets the background transparent, which used to read as a custom colour.
+   - Unchanged on purpose: controls that hold a value (fields, checkbox, switch, radio, the
+     segmented control, filter and choice chips, the chip menus' options). Their state shows in
+     colour, and an edge would read as a button. Text buttons have no face. The Apple and
+     Google sign-in buttons keep their makers' look. If Peter wants these raised too, the switch
+     is the place to start.
+4. **No numbers on the category rows.** `HexStep` is deleted. A screen reader hears the place
+   after the name, „2 von 11“ (`categoryPosition`, DE and EN). It is the row's semantics hint, not
+   its value: the web joins a value into the accessible name („Kühlregal 2 von 11“), which would
+   break voice control's "tap Kühlregal" and the e2e lookups by exact name. On the web the hint
+   is the row's `aria-description`. The bar also stays while the list first loads (a spinner
+   under it), as it did on main.
+5. **One hex per store row.** The rows on „Läden“ and the name pill on a store's page show the
+   plain name (`PillTitle`), with no `StoreBadge` inside. The pinned „Ohne Laden“ row had its
+   hint inside the hex. The hint now sits below the row (Peter's 2026-11-05 rule: no hints inside
+   a hex).
+6. **Text sits in the middle of every hex. The cause was Flutter's, and the fix is at the field
+   border.** The edit sheet's fields set `TextAlignVertical.center`. For a border that is not an
+   outline, `InputDecorator` first centres a short field up to 48 px and then adds the alignment
+   offset again (`interactiveAdjustment` plus `maxVerticalOffset`). The text sat 2.3 px low there
+   and 4 px low in the store search field. `ContourInputBorder` is an outline now
+   (`isOutline` for the hex shape), and Flutter centres an outline exactly. An outline's floating
+   label would sit on the contour, so hex fields take their label above them in `LabeledField`
+   (login, join code, household name, name dialog, access token and API key names, the delete
+   dialogs). The labels inside had also pushed the text down, against the rule above. The label
+   above names the field through `Semantics(label:)` on the field, not `MergeSemantics`. Merged,
+   the web read the field's error and counter into its name, and the error was no longer text of
+   its own: the first CI run failed `stores.spec.ts:130` on „Eine Kategorie „Baby“ gibt es
+   schon.“. The new lint `no-label-in-hex-field` keeps them out. It found 9 labels on main and finds 0 now. The
+   multi-line `RoundedFields` keep their floating label. Every text style in the theme also
+   splits its leading evenly (`TextLeadingDistribution.even`). With Material's proportional
+   split, a 1.5 body line carries Inter's capitals low. This reaches all text in the app, not only the
+   hexes: multi-line text moves by a pixel or so per line; the goldens show the main screens. `hex_text_centring_test.dart` measures
+   the ink of a line of capitals at 3x in a field (typed, hint, with and without the explicit
+   alignment), the search field, a pill and a button. Before the fix: 19.7/15.0 px and
+   14/22 px above/below. After: equal at the test's 1/3 px resolution, except a pill's
+   Bricolage capitals, which sit 0.67 px high from the font's own metrics (unchanged from main).
+   „Menge“ is left-aligned like every field, 12 px from its tip.
+7. **Shared with job 149 (edit sheet cleanup).** This job changes the edit sheet only through
+   `_Field` (now a `LabeledField`, no `centered`, `narrow` for Menge) and the chips' style.
+   Whichever lands second rebases.

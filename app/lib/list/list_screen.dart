@@ -442,14 +442,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
                 excluding: open,
                 child: ExcludeSemantics(
                   excluding: open,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const _Header(),
-                      Expanded(
-                        child: ShoppingListView(onInteract: _leaveField),
-                      ),
-                    ],
+                  child: ShoppingListView(
+                    onInteract: _leaveField,
+                    header: const _Header(),
                   ),
                 ),
               ),
@@ -744,89 +739,157 @@ const _composeHeight = 52.0;
 
 /// The bar above the list: how many partner adds are new, the sync state
 /// and Anpassen, which opens the stores and categories; no household name
-/// and no count (Peter, DECISIONS Job 29a). It is [height] tall in every
-/// state, so the list below never moves when either comes or goes. It sits
-/// in the list's frame (job 57).
-class const _Header() extends StatelessWidget {
-  /// Below the top safe area; also the sync icon's square tap target.
-  static const height = 44.0;
+/// and no count (Peter, DECISIONS Job 29a). It floats over the list like
+/// the tab pill below (job 148): a raised hex capsule with the sticker
+/// shadow, [height] tall in every state and as wide as it needs, at the
+/// frame's end; the rows scroll on under it.
+class const _Header() extends StatelessWidget implements PreferredSizeWidget {
+  /// The capsule's height: the tab pill's.
+  static const height = 52.0;
+
+  /// Room above the capsule, below the top safe area.
+  static const _gap = HlSpace.s2;
+
+  /// How far below the top safe area the list's first row starts: the
+  /// capsule, its shadow and a gap.
+  static const extent = _gap + height + HlSpace.s2;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(extent);
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final brightness = Theme.of(context).brightness;
+    final t = HummlistColors.of(brightness);
     final cubit = context.watch<ListCubit>();
     final state = cubit.state;
     final fresh = cubit.fresh;
     final by = {for (final id in fresh) state.items[id]?.addedBy};
     final partner = by.length == 1 ? state.catalog.member(by.single) : null;
-    return DecoratedBox(
-      key: const ValueKey('list-header'),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.divider)),
+    final top = MediaQuery.paddingOf(context).top;
+    final capsule = DecoratedBox(
+      decoration: ShapeDecoration(
+        shape: const HexBorder(),
+        shadows: HlSticker.shadow(brightness, StickerDepth.s),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final side = ShoppingListView.frameFor(
-            constraints.maxWidth,
-            state,
-          ).side;
-          return Padding(
-            padding: EdgeInsets.only(
-              left: side + HlSpace.s4 + HlSpace.s1,
-              top: MediaQuery.paddingOf(context).top,
-              right: side + HlSpace.s2,
+      child: Material(
+        color: t.surfaceRaised,
+        shape: HexBorder(
+          side: BorderSide(color: t.border, width: HlBorder.width),
+        ),
+        child: SizedBox(
+          height: height,
+          child: Padding(
+            // The tab pill's inset: the button's tip runs along the bar's.
+            padding: const EdgeInsets.symmetric(
+              horizontal: HlSpace.s3 + HlBorder.width,
             ),
-            child: SizedBox(
-              height: height,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: fresh.isEmpty
-                        ? const SizedBox.shrink()
-                        : Text(
-                            partner == null
-                                ? l10n.newItems(fresh.length)
-                                : l10n.newItemsFrom(
-                                    fresh.length,
-                                    partner.displayName,
-                                  ),
-                            key: const ValueKey('new-items-subtitle'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: t.success,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                  ),
-                  const SizedBox.square(
-                    dimension: height,
-                    child: _SyncIndicator(),
-                  ),
-                  // Large text shrinks the label rather than the bar: the
-                  // bar keeps its height and the new-items line its room.
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 128),
-                    child: TextButton(
-                      key: const ValueKey('list-edit'),
-                      onPressed: () => context.go(editPath),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(l10n.listEdit),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (fresh.isNotEmpty)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        start: HlSpace.s2,
+                        end: HlSpace.s1,
+                      ),
+                      child: Text(
+                        partner == null
+                            ? l10n.newItems(fresh.length)
+                            : l10n.newItemsFrom(
+                                fresh.length,
+                                partner.displayName,
+                              ),
+                        key: const ValueKey('new-items-subtitle'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: t.success,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                const _SyncIndicator(),
+                // Large text shrinks the label rather than the bar.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 144),
+                  child: OutlinedButton(
+                    key: const ValueKey('list-edit'),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.standard,
+                      // The face and its edge fit the capsule; the tap
+                      // target stays 48 high.
+                      minimumSize: const Size(0, _buttonHeight),
+                      tapTargetSize: MaterialTapTargetSize.padded,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: HlHex.tip * _buttonHeight + HlSpace.s2,
+                      ),
+                    ),
+                    onPressed: () => context.go(editPath),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(l10n.listEdit),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
+    );
+    return Column(
+      key: const ValueKey('list-header'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // The status bar keeps the page behind it, not passing rows.
+        ColoredBox(
+          color: t.surface,
+          child: SizedBox(height: top),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final side = ShoppingListView.frameFor(
+              constraints.maxWidth,
+              state,
+            ).side;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                side + HlSpace.s4,
+                _gap,
+                side + HlSpace.s4,
+                extent - _gap - height,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: MediaQuery.withClampedTextScaling(
+                  // Large text still fits the 52 high capsule.
+                  maxScaleFactor: 1.5,
+                  // On the web the rows under the capsule keep their
+                  // tappable semantics elements, which take a browser click
+                  // before the framework sees it; the opaque node blocks
+                  // them. Rows beside it stay tappable: they show in full.
+                  child: Semantics(
+                    container: true,
+                    hitTestBehavior: SemanticsHitTestBehavior.opaque,
+                    child: capsule,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
+
+/// Anpassen's face and edge, inside the capsule.
+const _buttonHeight = 34.0;
 
 class const _SyncIndicator() extends StatelessWidget {
   @override

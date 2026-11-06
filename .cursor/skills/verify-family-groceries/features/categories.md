@@ -4,7 +4,7 @@ Liste → "Anpassen" → "Ohne Laden" (job 78; before, Mehr → "Kategorien verw
 
 ## Sub-features
 
-- `cat-open` lists the household's categories in route order under the title "Ohne Laden" and the hint "In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ …". It opens from the list header's "Anpassen" (`list-edit`) → the pinned "Ohne Laden" row (`store-row-none`), and from a hold or right click on the "Ohne Laden" divider or a category divider under "Ohne Laden". Each row shows its step number, the category's emoji and its name.
+- `cat-open` lists the household's categories in route order under the title "Ohne Laden" and the hint "In dieser Reihenfolge stehen die Kategorien unter „Ohne Laden“ …". It opens from the list header's "Anpassen" (`list-edit`) → the pinned "Ohne Laden" row (`store-row-none`), and from a hold or right click on the "Ohne Laden" divider or a category divider under "Ohne Laden". Each row shows the category's emoji and its name, no step number (job 148); its semantics hint is its place, "2 von 11" ("2 of 11"); the label stays the name.
 - `cat-add` adds a category ("Kategorie hinzufügen", the button `category-add` bottom right on any store's details too; field "Name", `name-dialog-field`, at most 60 characters) just before "Sonstiges" and into every store's order.
 - `cat-duplicate` names are unique per household ignoring case and spacing (job 90). Adding one the household has, or renaming onto another category's name, keeps the dialog open with "Eine Kategorie „<existing name>“ gibt es schon." under the field; typing clears it. A category may change its own case.
 - `cat-rename` renames a category ("Kategorie umbenennen").

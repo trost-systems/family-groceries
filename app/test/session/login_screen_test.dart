@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -98,7 +99,7 @@ void main() {
     }
   }
 
-  Finder emailField() => find.widgetWithText(TextFormField, 'E-Mail');
+  Finder emailField() => find.widgetWithText(LabeledField, 'E-Mail');
   Finder continueWithEmail() => find.text('Weiter mit E-Mail');
   bool fieldFocused() => find
       .byType(EditableText)
@@ -129,7 +130,7 @@ void main() {
     expect(continueWithEmail(), findsNothing);
     expect(find.text('oder mit E-Mail'), findsOneWidget);
     expect(emailField(), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Passwort'), findsOneWidget);
+    expect(find.widgetWithText(LabeledField, 'Passwort'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Anmelden'), findsOneWidget);
     expect(find.text('Registrieren'), findsOneWidget);
     expect(find.text('Anmeldelink per E-Mail senden'), findsOneWidget);

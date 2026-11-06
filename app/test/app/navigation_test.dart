@@ -44,7 +44,7 @@ void main() {
   testWidgets('List, Anpassen, a store, back, back: the list, its tab '
       'selected', (tester) async {
     final more = await pumpMore(tester, location: listPath, app: true);
-    await tester.tap(find.widgetWithText(TextButton, 'Anpassen'));
+    await tester.tap(key('list-edit'));
     await tester.pumpAndSettle();
     expect(key('stores-screen'), findsOneWidget);
     expect(tab(tester), 0, reason: 'the tabs stay');

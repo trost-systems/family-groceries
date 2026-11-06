@@ -1,4 +1,5 @@
 import 'package:family_groceries/analytics/flags.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/access_screen.dart';
@@ -136,7 +137,7 @@ void main() {
   testWidgets('a new token is shown once, then only its hint', (tester) async {
     await pumpAccess(tester);
     await tapText(tester, 'Token erstellen');
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Claude');
+    await tester.enterText(find.widgetWithText(LabeledField, 'Name'), 'Claude');
     await tapText(tester, 'Erstellen');
 
     expect(find.text(secret), findsOneWidget);
@@ -159,7 +160,7 @@ void main() {
   testWidgets('the token limit is explained', (tester) async {
     await pumpAccess(tester, seed: (r) => r.limitReached = true);
     await tapText(tester, 'Token erstellen');
-    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Siri');
+    await tester.enterText(find.widgetWithText(LabeledField, 'Name'), 'Siri');
     await tapText(tester, 'Erstellen');
     expect(find.text('Höchstens 20 aktive Tokens.'), findsOneWidget);
     expect(find.textContaining('fgp_'), findsNothing);
@@ -334,7 +335,7 @@ void main() {
       String? scope,
     }) async {
       await openCreate(tester);
-      await tester.enterText(find.widgetWithText(TextField, 'Name'), name);
+      await tester.enterText(find.widgetWithText(LabeledField, 'Name'), name);
       if (scope != null) {
         await tester.tap(key(scope));
         await tester.pumpAndSettle();
@@ -450,7 +451,7 @@ void main() {
       await openCreate(tester);
       expect(find.text('Read only'), findsOneWidget);
       await tester.enterText(
-        find.widgetWithText(TextField, 'Name'),
+        find.widgetWithText(LabeledField, 'Name'),
         'Home Assistant',
       );
       await tester.tap(key('api-scope-write'));
@@ -487,7 +488,7 @@ void main() {
         seed: (r) => r.apiRefusal = 'session_required',
       );
       await openCreate(tester);
-      await tester.enterText(find.widgetWithText(TextField, 'Name'), 'x');
+      await tester.enterText(find.widgetWithText(LabeledField, 'Name'), 'x');
       await tapText(tester, 'Create');
       expect(
         find.text(
