@@ -114,18 +114,41 @@ test('Siri promises no date and links the shortcut guide that works today', () =
   }
 });
 
-test('the landing pages hold no date, no app instructions and no invite validity (Peter, 2026-11-03)', () => {
+test('the landing pages hold no date but the badge\'s beta month, no app instructions and no invite validity (Peter, 2026-11-03 and 2026-11-05)', () => {
   for (const stage of ['waitlist', 'beta', 'launch']) {
     const { page } = stageBuild(stage);
     for (const locale of ['de', 'en']) {
       const doc = page(`/${locale}`);
-      const text = `${doc.querySelector('head').toString()} ${doc.querySelector('body').text}`;
+      const badge = doc.querySelector('[data-copy-id="hero.badge"]');
+      if (stage === 'launch') assert.equal(badge, null);
+      else assert.equal(badge.text, { de: 'Beta im November', en: 'Beta in November' }[locale]);
+      const text = `${doc.querySelector('head').toString()} ${doc.querySelector('body').text.replace(badge?.text ?? '', '')}`;
       assert.doesNotMatch(text, /januar|februar|märz|april|\bmai\b|juni|juli|august|september|oktober|november|dezember|january|february|march|\bmay\b|june|july|october|december/i, `${stage} ${locale}: a month`);
       // "as soon as you are back online" describes the offline sync, it promises nothing.
       assert.doesNotMatch(text, /\bbald\b|(?<!as )\bsoon\b/i, `${stage} ${locale}: a "soon"`);
       // Legal's consent text names the 7-day deletion of unconfirmed sign-ups; that one stays.
       assert.doesNotMatch(text, /Einladung gilt[^.]*(sieben|7) Tage|invit\w* (is )?valid for (seven|7) days/i, `${stage} ${locale}: the invite validity`);
       assert.doesNotMatch(text, /in der App unter|in the app under|›/, `${stage} ${locale}: an app instruction`);
+    }
+  }
+});
+
+test('the founder note sits between the privacy block and the sign-up form, brand-free, and leaves with the beta at launch', () => {
+  for (const stage of ['waitlist', 'beta', 'launch']) {
+    const { page } = stageBuild(stage);
+    for (const locale of ['de', 'en']) {
+      const doc = page(`/${locale}`);
+      const sections = doc.querySelectorAll('main > section').map((s) => s.getAttribute('class'));
+      const note = doc.querySelector('.founder-section');
+      if (stage === 'launch') {
+        assert.equal(note, null, `${stage} ${locale}`);
+        continue;
+      }
+      assert.deepEqual(sections.slice(-3), ['section privacy-section', 'section founder-section', 'section test-section'], `${stage} ${locale}`);
+      assert.equal(note.querySelector('h2').text, { de: 'Von Peter', en: 'From Peter' }[locale]);
+      assert.match(note.querySelector('p').text, /MCP.*Beta|MCP.*beta/s);
+      assert.match(note.querySelector('p').text, /— Peter$/);
+      assert.doesNotMatch(note.text, /Claude|Anthropic|ChatGPT|OpenAI/);
     }
   }
 });

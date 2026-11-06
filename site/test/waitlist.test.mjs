@@ -62,10 +62,10 @@ test('every call to action follows the stage: waitlist and beta lead to the form
   }
 });
 
-test('the landing page is the one from before the waitlist: same sections, only the calls to action changed', () => {
+test('the landing page is the one from before the waitlist: same sections plus the founder note, only the calls to action changed', () => {
   for (const locale of ['de', 'en']) {
     const doc = waitlist.page(`/${locale}`);
-    assert.deepEqual(doc.querySelectorAll('main > section').map((s) => s.getAttribute('class')), ['hero', 'section features', 'section voice', 'section privacy-section', 'section test-section']);
+    assert.deepEqual(doc.querySelectorAll('main > section').map((s) => s.getAttribute('class')), ['hero', 'section features', 'section voice', 'section privacy-section', 'section founder-section', 'section test-section']);
     assert.equal(doc.querySelector('.hero form'), null, 'the hero keeps its button, the form is in the closing block');
     assert.ok(doc.querySelector('[data-copy-id="feature.stores.more"]'), 'the own-stores claim stays');
     assert.match(doc.querySelector('[data-copy-id="privacy.website"]').text, /Supabase in Frankfurt/);

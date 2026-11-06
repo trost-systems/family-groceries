@@ -31,7 +31,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## hummlist.com waitlist (not live yet)
 
-**What it does.** Once Peter merges it, hummlist.com keeps its landing page but its buttons say „Auf die Warteliste“ (EN: "Join the waitlist") instead of opening the browser version. They lead to a short form: the email (ideally the one of the Apple ID or Google account) and iPhone or Android. Hummlist then sends a confirmation mail; the person is on the list only after tapping „E-Mail bestätigen“ in it and agreeing on the page that opens, where they can also tick that they want one email when the app launches. An AI assistant may fill in the form for someone, but only the person's own click on that page counts. Confirmed people are invited to the beta in weekly groups, by hand. Every mail has a link that deletes the entry at once. Later stages are built but off: „Zur Beta anmelden“ (EN: "Join the beta"), and at launch App Store and Google Play badges with a QR code.
+**What it does.** Once Peter merges it, hummlist.com keeps its landing page but its buttons say „Auf die Warteliste“ (EN: "Join the waitlist") instead of opening the browser version. They lead to a short form: the email (ideally the one of the Apple ID or Google account) and iPhone or Android. Hummlist then sends a confirmation mail; the person is on the list only after tapping „E-Mail bestätigen“ in it and agreeing on the page that opens, where they can also tick that they want one email when the app launches. An AI assistant may fill in the form for someone, but only the person's own click on that page counts. Confirmed people are invited to the beta in weekly groups, by hand. Every mail has a link that deletes the entry at once. The hero badge says „Beta im November“ (EN: "Beta in November"), and above the form a short note „Von Peter“ (EN: "From Peter") says why he builds Hummlist: one list he shares with his wife, which AI assistants can add to, tick off and read through MCP; in the beta people test it with them and say what's missing. Later stages are built but off: „Zur Beta anmelden“ (EN: "Join the beta"), and at launch App Store and Google Play badges with a QR code; the badge and the note leave at launch.
 
 **How to get there.**
 1. hummlist.com (opens /de or /en by browser language).
@@ -40,11 +40,11 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Never claim.**
 - That the waitlist is live before Peter merges it (today hummlist.com still shows the test page).
-- A date for the beta, a place in line, a referral reward, a counter, or a date for a particular person's invite.
+- A beta date more exact than the badge's month („Beta im November“), a place in line, a referral reward, a counter, or a date for a particular person's invite.
 - That the browser version is open to new users, or that an assistant can sign someone up without their confirmation.
 - That launch news can be chosen in the form (only on the confirmation page).
 
-**Last verified.** job 82 branch (job/82-waitlist), 2026-11-04 (CET), driven on a local preview against the local stack (sign-up from the header button, duplicate, an API sign-up with launch news, consent with the box ticked, unsubscribe, rate limit) and by pgTAP, Deno, site tests and job 93's form check. Recipe: [waitlist.md](./waitlist.md).
+**Last verified.** Badge and founder note: job 139 branch (job/139-waitlist-accuracy), 2026-11-06 (CET), on the built site in Chromium at 1280 and 358 px plus site tests. The rest: job 82 branch (job/82-waitlist), 2026-11-04 (CET), driven on a local preview against the local stack (sign-up from the header button, duplicate, an API sign-up with launch news, consent with the box ticked, unsubscribe, rate limit) and by pgTAP, Deno, site tests and job 93's form check. Recipe: [waitlist.md](./waitlist.md).
 
 ## Sign-up and sign-in
 

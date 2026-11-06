@@ -19,6 +19,7 @@ const SECTIONS = {
   feature: 'Landing: feature cards',
   voice: 'Landing: voice block',
   privacy: 'Landing: privacy block',
+  founder: 'Landing: founder note (waitlist and beta stages)',
   test: 'Landing: closing block',
   demo: 'Landing: demo videos',
   waitlist: 'Waitlist: sign-up form, confirm and unsubscribe pages',
