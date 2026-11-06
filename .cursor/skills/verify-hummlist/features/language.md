@@ -23,14 +23,14 @@ Preconditions:
 - **Open the list.** `openMore(page, 'Einstellungen')`, then click `getByRole('button',{name:/^Sprache Wie Gerät \(Deutsch\)/})`. Observable: URL `/more/settings/language`, `getByRole('radio',{name:/^Wie Gerät/})` checked.
 - **Switch to English.** Click `getByRole('radio',{name:'English', exact:true})`. Observable, live: `getByRole('heading',{name:'Language'})`, `getByRole('tab',{name:'List'})` visible.
 - **Persist.** `page.reload()`: heading still "Language". Back (`getByRole('button',{name:'Back'})`): `getByRole('button',{name:/^Language English/})`. List: `getByRole('textbox',{name:'What do you need?'})`, and the default category shows its English name (`getByText('Chilled')`).
-- **Back to German.** `getByRole('radio',{name:'Deutsch', exact:true})`: heading „Sprache“.
+- **Back to German.** Tab `More` (it returns to the More page you left); on Settings click `button /^Language/`; then `getByRole('radio',{name:'Deutsch', exact:true})`: heading „Sprache“.
 - **English browser.** With `test.use({locale:'en-US'})` the app starts in English without any pick, and no German UI text shows (see the second describe in the spec).
 - Spec: `scripts/verify.sh --only e2e -- tests/shell-more.spec.ts`.
 
 ## Gotchas
 
 - Only de and en exist. The first of them in the device's preferred languages wins (fr, en gives English); German only when neither is listed.
-- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill answers in English on an English Alexa device and in German otherwise, the AI-assistant (MCP) tools answer in German (only the held Premium-lock message follows the client's Accept-Language), the Hummlist API's error messages (held) are English, the sign-in and confirmation emails are Supabase's English defaults, and add-sheet catalogue rows („Aus dem Katalog“) are German words in both UI languages (driven 2026-11-01).
+- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill answers in English on an English Alexa device and in German otherwise, the AI-assistant (MCP) tools answer in German (only the held Premium-lock message follows the client's Accept-Language), the Hummlist API's error messages (held) are English, the sign-in and confirmation emails are Supabase's English defaults, and add-sheet catalogue rows (section „Aus dem Katalog“ / "From the catalogue") are German words in both UI languages (driven 2026-11-01).
 - The setting is per device: a fresh browser context starts on „Wie Gerät“.
 - Einstellungen has a section heading „Sprache“ / "Language" too, so `heading 'Language'` is true on both pages: pair it with the URL check.
 - Back-button names flip with the language („Zurück“ / "Back").

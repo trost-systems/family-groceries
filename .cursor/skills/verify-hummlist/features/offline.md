@@ -57,6 +57,6 @@ Preconditions:
 - An item added offline has no category yet, so it shows under the heading „Wird einsortiert …“ until the connection returns; do not assert its category while offline.
 - Offline matching: `getByText(/^Offline:/)` also matches the tooltip/semantic label; expect count 1.
 - Sign-in, sign-up, accepting an invite and password reset need the server: offline behaviour of the login screen is unverified (not read in detail).
-- An offline start before the first ever sync shows nothing cached: unverified (not exercised in specs).
+- An offline start before the first ever sync shows nothing cached: unverified live (not exercised in specs). An add made then is kept across a restart (job 99, sync fuzz harness).
 - Moving an item to another category or store in the edit sheet is an item edit (queued); reordering the stores or categories themselves needs a connection.
 - Queued changes are tied to the device: a second device only sees them after sync.

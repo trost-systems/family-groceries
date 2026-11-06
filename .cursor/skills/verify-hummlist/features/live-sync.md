@@ -11,7 +11,7 @@ Members of one household see each other's changes without reloading: an item one
 - `news-clear` an item stops being new after 3 s more than half on screen while the app is showing; stays cleared after reload. A ticked item is not counted while it is ticked; put back before it was seen, it is new again. Own adds are never new. On first start nothing old is new. Items added while the app was closed are new on the next open.
 - `sync-status-icon` pending „1 Änderung wird synchronisiert“ / „{n} Änderungen werden synchronisiert“ (EN "Syncing 1 change" / "Syncing {n} changes"); offline „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN "Offline: changes will sync once the connection is back"). Offline wins over pending.
 - `sync-reconnect` changes made offline go out when the connection returns; the other side's changes come in (resync); also on app resume and after Realtime drops (retry about 3 s, backing off to 30 s). A Realtime error, timeout or close, or a failed resync, shows the offline icon until the channel is live again or a write is acknowledged.
-- `sync-rejected` a write the server refuses shows a snackbar „Änderung abgelehnt: {name}“ (EN "Change refused: {name}") and the item reverts. A lapsed token is retried, not refused.
+- `sync-rejected` a write the server refuses shows a snackbar „Änderung abgelehnt: {name}“ (EN "Change refused: {name}") and the item reverts; the snackbar shows above an open sheet or dialog (job 116). A lapsed token is retried, not refused.
 
 ## How to get to it (user POV)
 

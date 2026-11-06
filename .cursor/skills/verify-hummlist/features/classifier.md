@@ -5,7 +5,7 @@ Every new item gets a category without the user choosing one: the server looks a
 ## Sub-features
 
 - `cl-auto` an item without a category lands under the matching divider, e.g. Hafermilch → „Kühlregal“, Apfelsaft → „Getränke“, Zahnbürste → „👶 Drogerie“, Vollkornbrot → „Brot & Backwaren“, Spülmaschinentabs → „Haushalt“, Fischstäbchen → „Tiefkühl“, Gummibärchen → „Süßes & Snacks“, Kichererbsen → „Vorrat & Konserven“, Rinderhack → „Fleisch/Wurst/Fisch“, „Aepfel 2 kg“ → „Obst & Gemüse“ (name „Aepfel“, quantity „2 kg“). The word list is German; English words work only where they are synonyms ("toilet paper" → „Haushalt“).
-- `cl-fallback` an unknown word lands under „Sonstiges“ / "Other" (the household's fallback category), shown last.
+- `cl-fallback` an unknown word lands under „Sonstiges“ / "Other" (the household's fallback category), shown last unless the household reordered its categories.
 - `cl-preview` while typing, the add sheet's category chip shows the guess, muted with an "A" mark (accessible name „Kategorie: automatisch, 👶 Drogerie“ for „Zahnbürste“), and the store chip the store guess („Laden: automatisch, dm“); with nothing guessed the chip shows „Kategorie“, named „Kategorie: automatisch“ / "Category: automatic".
 - `cl-sorting` an item added without a category (offline, or Enter before the sheet had an answer) shows at the top of its section under a divider „Wird einsortiert …“ / "Sorting …", then moves under its category. Online adds arrive categorized and skip it.
 - `cl-learn-edit` the user moves an item to another category in the edit sheet (chip „Kategorie: …“, pick, „Fertig“); the list itself has no drag since job 78. The household learns it: the next add of that item (and its plural, e.g. „Zahnbürste“ → „Zahnbürsten“) lands there.
@@ -19,7 +19,7 @@ Every new item gets a category without the user choosing one: the server looks a
 
 ## How to get to it (user POV)
 
-- Type an item in the add bar at the bottom of the list and add it: it appears under its category divider (in the guessed store's section, see `cl-store`, otherwise under „Ohne Laden“).
+- Type an item in the floating add field at the bottom (the list scrolls on under it) and add it: it appears under its category divider (in the guessed store's section, see `cl-store`, otherwise under „Ohne Laden“).
 - To correct: hold the item (or right click it) to open „Bearbeiten“, tap the chip „Kategorie: …“, pick a category, tap „Fertig“.
 - To choose before adding: tap the category chip in the add sheet.
 
@@ -51,5 +51,5 @@ Preconditions:
 - Shown category names follow the app language only for seeded, unrenamed categories; the harness runs German.
 - A brand that stands for a product becomes that product: „Pampers“ is the item Windeln with the brand Pampers, so it lands in „👶 Drogerie“. Own brands of dm, Lidl and Edeka also guess that store.
 - Renaming an item in the edit sheet keeps its category; the classifier runs on adds only.
-- Typed, a bare number at the end („Karotten 2“) becomes the quantity only when the word is known to the word list or the household; see quick-add. Said (dictation, Siri, Alexa), a count after the item is always the quantity unless a size word comes before it („Gurken zwei“, job 89).
+- Typed (online or offline, job 104), a number or count word at the end („Karotten 2“, „Karotten drei“) becomes the quantity only when the name is known to the word list or the household; a count word up front („zwei Gurken“, „two lemons“) always does, except in names such as „Drei Glocken Spaghetti“; see quick-add. Said (dictation, Siri, Alexa), a count after the item is always the quantity unless a size word comes before it („Gurken zwei“, job 89).
 - Offline (add with no network, `cutOff` from the e2e helpers): the item shows under „Wird einsortiert …“ until the connection is back, then under its category (driven 2026-11-02: Linsen → „Vorrat & Konserven“; no spec).

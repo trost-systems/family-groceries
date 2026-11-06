@@ -57,7 +57,7 @@ Getting started
 
 The website
 
-- [waitlist](./waitlist.md): hummlist.com's waitlist form, confirmation and unsubscribe pages, the FAQ and support page (off in production until enabled).
+- [waitlist](./waitlist.md): hummlist.com's waitlist form, confirmation and unsubscribe pages, the FAQ and support page (on hummlist.com since 5 Nov; sign-ups need production settings).
 
 The list
 
