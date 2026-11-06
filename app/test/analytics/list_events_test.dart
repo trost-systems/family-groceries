@@ -94,6 +94,28 @@ void main() {
       expect(jsonEncode(events), isNot(contains('Hafermilch')));
     });
 
+    test('before the members are known a tick still counts, without role '
+        'or size', () async {
+      await cubit.close();
+      repo.members = const [];
+      cubit = ListCubit(
+        repo,
+        MemoryListCache(),
+        userId: 'peter',
+        analytics: analytics,
+        clock: () => now,
+      )..start();
+      await settle();
+      final id = await addedId('Brot');
+      await reset();
+      cubit.tick(id);
+      await settle();
+      final events = await sent();
+      expect(events.map((e) => e['event']), ['item_ticked']);
+      expect(props(events.single), isNot(contains('household_size')));
+      expect(props(events.single), isNot(contains('actor_role')));
+    });
+
     test('a tick made offline and sent on reconnect is one event', () async {
       final id = await addedId('Brot');
       await reset();

@@ -245,4 +245,13 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('prefs saved before the explainer card existed keep it showing', () {
+    final prefs = ListPrefs.fromJson(const {
+      'folded': ['dm'],
+    });
+    expect(prefs.folded, {'dm'});
+    expect(prefs.hintDismissed, isFalse);
+    expect(ListPrefs.fromJson(const {}).folded, isEmpty);
+  });
 }

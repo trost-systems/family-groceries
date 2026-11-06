@@ -33,4 +33,10 @@ void main() {
       }
     });
   }
+
+  test('a thousand grams or millilitres is a kilo or a litre', () {
+    expect(mergeQuantities('500 g', '500 g'), '1 kg');
+    expect(mergeQuantities('500 ml', '500 ml'), '1 l');
+    expect(mergeQuantities('400 g', '500 g'), '900 g');
+  });
 }

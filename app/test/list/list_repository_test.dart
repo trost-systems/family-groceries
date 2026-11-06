@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -333,6 +334,631 @@ void main() {
       'name': 'Windeln',
       'brand': 'Pampers',
       'properties': 'Größe 4',
+    });
+  });
+
+  group('what each call asks the server and how it reads the answer', () {
+    late List<http.Request> sent;
+
+    /// A repository whose server answers each request with [answer]'s
+    /// (status, body); the requests land in [sent].
+    SupabaseListRepository server(
+      (int, Object?) Function(http.Request request) answer,
+    ) {
+      sent = [];
+      return SupabaseListRepository(
+        SupabaseClient(
+          'http://127.0.0.1:1',
+          'sb_publishable_test',
+          httpClient: MockClient((request) async {
+            sent.add(request);
+            final (status, body) = answer(request);
+            return http.Response(
+              jsonEncode(body),
+              status,
+              headers: {'content-type': 'application/json'},
+              request: request,
+            );
+          }),
+        ),
+        'household',
+      );
+    }
+
+    String route(http.Request r) => '${r.method} ${r.url.path}';
+    Object? params(http.Request r) => jsonDecode(r.body);
+
+    Map<String, Object?> row(String id, {String status = 'active'}) => {
+      'id': id,
+      'name': 'Brot',
+      'status': status,
+      'created_at': '2026-10-28T00:00:00Z',
+      'updated_at': '2026-10-28T00:00:00Z',
+    };
+
+    test(
+      'the catalog is the household’s, members only with their role',
+      () async {
+        final repo = server(
+          (r) => switch (r.url.pathSegments.last) {
+            'categories' => (
+              200,
+              [
+                {
+                  'id': 'c1',
+                  'name': 'Obst',
+                  'sort_order': 1,
+                  'seed_key': 'fruit',
+                },
+              ],
+            ),
+            'stores' => (
+              200,
+              [
+                {'id': 's1', 'name': 'Lidl', 'sort_order': 1, 'seed_key': null},
+              ],
+            ),
+            'store_category_order' => (
+              200,
+              [
+                {
+                  'store_id': 's1',
+                  'category_id': 'c1',
+                  'sort_order': 3,
+                  'hidden': true,
+                },
+              ],
+            ),
+            'household_members' => (
+              200,
+              [
+                {'user_id': 'peter', 'role': 'owner'},
+                {'user_id': 'lea', 'role': 'member'},
+              ],
+            ),
+            'profiles' => (
+              200,
+              [
+                {'id': 'peter', 'display_name': 'Peter'},
+                {'id': 'lea', 'display_name': 'Lea'},
+                {'id': 'other', 'display_name': 'Someone else'},
+              ],
+            ),
+            _ => (404, null),
+          },
+        );
+        final catalog = await repo.fetchCatalog();
+        expect(catalog.categories.single.seedKey, 'fruit');
+        expect(catalog.stores.single.name, 'Lidl');
+        expect(catalog.layout.single.hidden, isTrue);
+        expect(
+          [for (final m in catalog.members) '${m.displayName}:${m.role}'],
+          ['Peter:owner', 'Lea:member'],
+        );
+        for (final table in [
+          'categories',
+          'stores',
+          'store_category_order',
+          'household_members',
+        ]) {
+          final request = sent.singleWhere(
+            (r) => r.url.pathSegments.last == table,
+          );
+          expect(
+            request.url.queryParameters['household_id'],
+            'eq.household',
+            reason: table,
+          );
+        }
+        for (final table in ['categories', 'stores']) {
+          expect(
+            sent
+                .singleWhere((r) => r.url.pathSegments.last == table)
+                .url
+                .queryParameters['order'],
+            'sort_order.asc.nullslast',
+            reason: table,
+          );
+        }
+      },
+    );
+
+    test(
+      'the list is the active items, then the 50 newest bought ones',
+      () async {
+        final repo = server(
+          (r) => r.url.queryParameters['status'] == 'eq.active'
+              ? (200, [row('a')])
+              : (200, [row('b', status: 'bought')]),
+        );
+        final items = await repo.fetchItems();
+        expect([for (final i in items) i.id], ['a', 'b']);
+        final bought = sent.singleWhere(
+          (r) => r.url.queryParameters['status'] == 'eq.bought',
+        );
+        expect(bought.url.queryParameters['household_id'], 'eq.household');
+        expect(bought.url.queryParameters['order'], 'bought_at.desc.nullslast');
+        expect(bought.url.queryParameters['limit'], '50');
+      },
+    );
+
+    test(
+      'the usuals are every suggestion, with when they were last used',
+      () async {
+        final repo = server(
+          (_) => (
+            200,
+            [
+              {
+                'name': 'Milch',
+                'quantity': '2 l',
+                'due': true,
+                'last_used': '2026-10-01T08:00:00Z',
+              },
+              {
+                'name': 'Salz',
+                'quantity': null,
+                'due': false,
+                'last_used': null,
+              },
+            ],
+          ),
+        );
+        final usuals = await repo.fetchUsuals();
+        expect(route(sent.single), 'POST /rest/v1/rpc/suggest_items');
+        expect(params(sent.single), {
+          'p_household': 'household',
+          'p_prefix': '',
+          'p_limit': 200,
+        });
+        expect(usuals.first.due, isTrue);
+        expect(usuals.first.lastUsed, DateTime.utc(2026, 10, 1, 8));
+        expect(usuals.last.lastUsed, isNull);
+      },
+    );
+
+    test('catalog edits call their function with the household', () async {
+      final repo = server((_) => (200, null));
+      final calls = <(Future<void> Function(), String, Object?)>[
+        (
+          () => repo.createCategory('Tiefkühl'),
+          'create_category',
+          {'p_household': 'household', 'p_name': 'Tiefkühl'},
+        ),
+        (
+          () => repo.reorderCategories(['c2', 'c1']),
+          'reorder_categories',
+          {
+            'p_household': 'household',
+            'p_ids': ['c2', 'c1'],
+          },
+        ),
+        (
+          () => repo.reorderStores(['s2', 's1']),
+          'reorder_stores',
+          {
+            'p_household': 'household',
+            'p_ids': ['s2', 's1'],
+          },
+        ),
+        (
+          () => repo.renameStore('s1', 'Aldi'),
+          'rename_store',
+          {'p_store': 's1', 'p_name': 'Aldi'},
+        ),
+        (() => repo.deleteStore('s1'), 'delete_store', {'p_store': 's1'}),
+        (
+          () => repo.deleteCategory('c1'),
+          'delete_category',
+          {'p_category': 'c1', 'p_reassign_to': null},
+        ),
+        (
+          () => repo.deleteCategory('c1', reassignTo: 'c2'),
+          'delete_category',
+          {'p_category': 'c1', 'p_reassign_to': 'c2'},
+        ),
+        (
+          () => repo.setStoreLayout('s1', ['c2', 'c1'], {'c2'}),
+          'set_store_layout',
+          {
+            'p_store': 's1',
+            'p_categories': ['c2', 'c1'],
+            'p_hidden': ['c2'],
+          },
+        ),
+      ];
+      for (final (call, function, expected) in calls) {
+        await call();
+        expect(route(sent.last), 'POST /rest/v1/rpc/$function');
+        expect(params(sent.last), expected, reason: function);
+      }
+    });
+
+    test('renaming a category writes its name', () async {
+      final repo = server((_) => (204, null));
+      await repo.renameCategory('c1', 'Backwaren');
+      expect(route(sent.single), 'PATCH /rest/v1/categories');
+      expect(sent.single.url.queryParameters['id'], 'eq.c1');
+      expect(params(sent.single), {'name': 'Backwaren'});
+    });
+
+    test('a store name the household has is refused as taken', () async {
+      final repo = server(
+        (_) => (409, {'code': '23505', 'message': 'duplicate key'}),
+      );
+      await expectLater(
+        repo.renameStore('s1', 'Lidl'),
+        throwsA(
+          isA<RejectedOp>().having((e) => e.nameTaken, 'nameTaken', true),
+        ),
+      );
+      await expectLater(
+        repo.createCategory('Obst'),
+        throwsA(
+          isA<RejectedOp>().having((e) => e.nameTaken, 'nameTaken', true),
+        ),
+      );
+    });
+
+    test('a refusal other than a taken name is no name clash', () async {
+      final repo = server(
+        (_) => (403, {'code': '42501', 'message': 'row-level security'}),
+      );
+      await expectLater(
+        repo.reorderStores(['s1']),
+        throwsA(
+          isA<RejectedOp>()
+              .having((e) => e.nameTaken, 'nameTaken', false)
+              .having((e) => e.message, 'message', 'row-level security'),
+        ),
+      );
+    });
+
+    test('adding a store answers with its id', () async {
+      final repo = server((_) => (200, 'store-9'));
+      expect(await repo.addStore('Edeka'), 'store-9');
+      expect(params(sent.single), {
+        'p_household': 'household',
+        'p_name': 'Edeka',
+      });
+    });
+
+    test('the parser’s row reads the same as one object or a set', () async {
+      final parsed = {
+        'name': 'Milch',
+        'quantity': '2 l',
+        'brand': 'Weihenstephan',
+        'store_id': 's1',
+        'category_id': 'c1',
+      };
+      for (final answer in <Object>[
+        parsed,
+        [parsed],
+      ]) {
+        final entry = await server((_) => (200, answer)).parse('2 l Milch');
+        expect(entry.name, 'Milch');
+        expect(entry.quantity, '2 l');
+        expect(entry.brand, 'Weihenstephan');
+        expect(entry.storeId, 's1');
+        expect(entry.categoryId, 'c1');
+        expect(params(sent.single), {
+          'p_household': 'household',
+          'p_text': '2 l Milch',
+        });
+      }
+    });
+
+    test('suggestions keep the server’s order and source', () async {
+      final repo = server(
+        (_) => (
+          200,
+          [
+            {'source': 'typed', 'name': 'Milch'},
+            {'source': 'history', 'name': 'Milch', 'brand': 'Weihenstephan'},
+          ],
+        ),
+      );
+      final rows = await repo.suggest('Milch');
+      expect(route(sent.single), 'POST /rest/v1/rpc/suggest_entries');
+      expect(rows.map((s) => s.source), [
+        SuggestionSource.typed,
+        SuggestionSource.history,
+      ]);
+      expect(rows.last.entry.brand, 'Weihenstephan');
+    });
+
+    group('item ops', () {
+      final at = DateTime.utc(2026, 10, 28, 9);
+
+      test('ticking off at a store writes the status and the store', () async {
+        final repo = server((_) => (200, [row('i1', status: 'bought')]));
+        final rows = await repo.send(
+          SetStatus('i1', ItemStatus.bought, at, storeId: 's1'),
+        );
+        expect(route(sent.single), 'PATCH /rest/v1/items');
+        expect(sent.single.url.queryParameters['id'], 'eq.i1');
+        expect(params(sent.single), {'status': 'bought', 'store_id': 's1'});
+        expect(rows['i1']!.status, ItemStatus.bought);
+      });
+
+      test('ticking off without a store leaves the store alone', () async {
+        final repo = server((_) => (200, [row('i1', status: 'bought')]));
+        await repo.send(SetStatus('i1', ItemStatus.bought, at));
+        expect(params(sent.single), {'status': 'bought'});
+      });
+
+      test(
+        'an update that hits no row asks for the item: still there',
+        () async {
+          final repo = server(
+            (r) => r.method == 'PATCH' ? (200, <Object>[]) : (200, [row('i1')]),
+          );
+          final rows = await repo.send(
+            const EditItem('i1', ItemChanges(name: 'Vollkornbrot')),
+          );
+          expect(params(sent.first), {'name': 'Vollkornbrot'});
+          expect(route(sent.last), 'GET /rest/v1/items');
+          expect(sent.last.url.queryParameters['id'], 'eq.i1');
+          expect(rows, {'i1': isNotNull});
+        },
+      );
+
+      test('an update that hits no row asks for the item: gone', () async {
+        final repo = server((r) => (200, <Object>[]));
+        expect(await repo.send(SetStatus('i1', ItemStatus.active, at)), {
+          'i1': null,
+        });
+        expect(sent.map(route), ['PATCH /rest/v1/items', 'GET /rest/v1/items']);
+      });
+
+      test('a delete answers that the item is gone', () async {
+        final repo = server(
+          (_) => (
+            200,
+            [
+              {'id': 'i1'},
+            ],
+          ),
+        );
+        expect(await repo.send(const DeleteItem('i1')), {'i1': null});
+        expect(route(sent.single), 'DELETE /rest/v1/items');
+        expect(sent.single.url.queryParameters['id'], 'eq.i1');
+      });
+
+      test('a move goes to the end of its new group', () async {
+        final repo = server((_) => (200, row('i1')));
+        final rows = await repo.send(
+          const MoveItem('i1', categoryId: 'c2', storeId: null),
+        );
+        expect(route(sent.single), 'POST /rest/v1/rpc/move_item');
+        expect(params(sent.single), {
+          'p_item': 'i1',
+          'p_store': null,
+          'p_category': 'c2',
+        });
+        expect(rows['i1']!.id, 'i1');
+      });
+
+      test('a place names its anchor and side', () async {
+        final repo = server((_) => (200, [row('i1')]));
+        await repo.send(
+          const PlaceItem(
+            'i1',
+            anchorId: 'i2',
+            edge: Edge.after,
+            categoryId: 'c1',
+            storeId: 's1',
+            sortKey: 2.5,
+          ),
+        );
+        expect(route(sent.single), 'POST /rest/v1/rpc/place_item');
+        expect(params(sent.single), {
+          'p_item': 'i1',
+          'p_anchor': 'i2',
+          'p_edge': 'after',
+        });
+      });
+
+      test(
+        'a move whose item is gone (P0002) answers its current row',
+        () async {
+          final repo = server(
+            (r) => r.method == 'POST'
+                ? (404, {'code': 'P0002', 'message': 'item not found'})
+                : (200, <Object>[]),
+          );
+          expect(
+            await repo.send(
+              const MoveItem('i1', categoryId: 'c1', storeId: 's1'),
+            ),
+            {'i1': null},
+          );
+          expect(route(sent.last), 'GET /rest/v1/items');
+        },
+      );
+
+      test('a move without a row back asks for the item', () async {
+        final repo = server(
+          (r) => r.method == 'POST' ? (200, null) : (200, [row('i1')]),
+        );
+        final rows = await repo.send(
+          const MoveItem('i1', categoryId: 'c1', storeId: 's1'),
+        );
+        expect(rows['i1']!.id, 'i1');
+        expect(route(sent.last), 'GET /rest/v1/items');
+      });
+
+      test('a move the database refuses otherwise is a rejection', () async {
+        final repo = server(
+          (_) => (400, {'code': '23503', 'message': 'no such category'}),
+        );
+        await expectLater(
+          repo.send(const MoveItem('i1', categoryId: 'x', storeId: null)),
+          throwsA(isA<RejectedOp>()),
+        );
+        expect(sent, hasLength(1));
+      });
+
+      const merge = MergeItems(
+        'keep',
+        mergeId: 'merge-1',
+        otherId: 'other',
+        quantity: '2',
+        brand: null,
+        properties: null,
+      );
+
+      test('a merge answers both rows', () async {
+        final repo = server(
+          (_) => (200, {'kept': row('keep'), 'merged': null}),
+        );
+        final rows = await repo.send(merge);
+        expect(route(sent.single), 'POST /rest/v1/rpc/merge_items');
+        expect(params(sent.single), {
+          'p_merge': 'merge-1',
+          'p_keep': 'keep',
+          'p_other': 'other',
+        });
+        expect(rows.keys, unorderedEquals(['keep', 'other']));
+        expect(rows['keep']!.id, 'keep');
+        expect(rows['other'], isNull);
+      });
+
+      test(
+        'a merge with an item gone (P0002) answers both current rows',
+        () async {
+          final repo = server(
+            (r) => r.method == 'POST'
+                ? (404, {'code': 'P0002', 'message': 'gone'})
+                : r.url.queryParameters['id'] == 'eq.keep'
+                ? (200, [row('keep')])
+                : (200, <Object>[]),
+          );
+          final rows = await repo.send(merge);
+          expect(rows['keep']!.id, 'keep');
+          expect(rows['other'], isNull);
+          expect(rows.keys, unorderedEquals(['keep', 'other']));
+        },
+      );
+
+      test('a merge answer of another shape is a rejection', () async {
+        final repo = server((_) => (200, {'unexpected': true}));
+        await expectLater(
+          repo.send(merge),
+          throwsA(
+            isA<RejectedOp>().having((e) => e.nameTaken, 'nameTaken', false),
+          ),
+        );
+      });
+
+      test('a merge the database refuses otherwise is a rejection', () async {
+        final repo = server(
+          (_) => (400, {'code': '22023', 'message': 'not open'}),
+        );
+        await expectLater(repo.send(merge), throwsA(isA<RejectedOp>()));
+        expect(sent, hasLength(1));
+      });
+
+      test('an undone merge brings both rows back', () async {
+        final kept = Item.fromJson(row('keep'));
+        final merged = Item.fromJson(row('other'));
+        final repo = server(
+          (_) => (200, {'kept': row('keep'), 'merged': row('other')}),
+        );
+        final rows = await repo.send(
+          UnmergeItems('keep', mergeId: 'merge-1', kept: kept, merged: merged),
+        );
+        expect(route(sent.single), 'POST /rest/v1/rpc/unmerge_items');
+        expect(params(sent.single), {'p_merge': 'merge-1'});
+        expect(rows.keys, unorderedEquals(['keep', 'other']));
+        expect(rows['other']!.id, 'other');
+      });
+
+      test('an add sends every field of the item', () async {
+        final repo = server((_) => (200, [row('i1')]));
+        await repo.send(
+          AddItem(
+            Item(
+              id: 'i1',
+              name: 'Brot',
+              quantity: '1',
+              brand: 'Harry',
+              properties: 'Vollkorn',
+              categoryId: 'c1',
+              storeId: 's1',
+              sortKey: 1.5,
+              status: ItemStatus.active,
+              createdAt: at,
+              updatedAt: at,
+            ),
+            noStore: true,
+          ),
+        );
+        expect(route(sent.single), 'POST /rest/v1/rpc/put_item');
+        expect(params(sent.single), {
+          'p_id': 'i1',
+          'p_household': 'household',
+          'p_name': 'Brot',
+          'p_quantity': '1',
+          'p_brand': 'Harry',
+          'p_properties': 'Vollkorn',
+          'p_category': 'c1',
+          'p_store': 's1',
+          'p_sort_key': 1.5,
+          'p_status': 'active',
+          'p_no_store': true,
+        });
+      });
+    });
+
+    group('a dictated sentence', () {
+      test('splits into the entries the voice endpoint found', () async {
+        final repo = server(
+          (_) => (
+            200,
+            {
+              'items': [
+                {'name': 'Milch', 'quantity': '2 l'},
+                {'name': 'Brot', 'quantity': null},
+                {'quantity': '3'},
+              ],
+            },
+          ),
+        );
+        final (:entries, :truncated) = await repo.splitSpoken(
+          'zwei Liter Milch und Brot',
+        );
+        expect(route(sent.single), 'POST /functions/v1/voice');
+        expect(params(sent.single), {
+          'text': 'zwei Liter Milch und Brot',
+          'mode': 'parse',
+          'split': true,
+        });
+        expect(
+          [for (final e in entries) (e.name, e.quantity)],
+          [('Milch', '2 l'), ('Brot', null)],
+        );
+        expect(truncated, isFalse);
+      });
+
+      test('with nothing to add is empty', () async {
+        for (final (status, body) in <(int, Object)>[
+          (200, {'items': null}),
+          (422, {'error': 'nothing'}),
+        ]) {
+          final (:entries, :truncated) = await server((_) => (status, body))
+              .splitSpoken('ähm');
+          expect(entries, isEmpty, reason: '$status');
+          expect(truncated, isFalse, reason: '$status');
+        }
+      });
+
+      test('fails when the endpoint does', () async {
+        await expectLater(
+          server((_) => (500, {'error': 'boom'})).splitSpoken('Milch'),
+          throwsA(isA<FunctionException>()),
+        );
+      });
     });
   });
 }
