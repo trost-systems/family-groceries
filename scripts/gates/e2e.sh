@@ -50,7 +50,13 @@ case " $* " in
     FG_E2E_INTEGRATION_LOCK=1 npx playwright test "$@"
     ;;
   *)
-    npx playwright test "$@"
+    # probe/140: a leading PAUSE=<stop>:<run>:<burn> wraps the run in SIGSTOP pauses.
+    if [[ ${1:-} == PAUSE=* ]]; then
+      IFS=: read -r ps pr pb <<<"${1#PAUSE=}"; shift
+      "$REPO_ROOT/scripts/e2e-pause-140.sh" --stop "$ps" --run "$pr" --burn "$pb" -- npx playwright test "$@"
+    else
+      npx playwright test "$@"
+    fi
     if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
       log "playwright: integration-lock.spec.ts alone"
       FG_E2E_INTEGRATION_LOCK=1 npx playwright test tests/integration-lock.spec.ts
