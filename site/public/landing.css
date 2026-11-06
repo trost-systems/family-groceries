@@ -197,7 +197,7 @@
   gap: var(--hl-space-5);
   align-items: center;
   overflow: hidden;
-  padding: var(--hl-space-5) var(--hl-space-5) 0;
+  padding: var(--hl-space-6) var(--hl-space-5) 0;
 }
 
 .feature-copy {
@@ -723,8 +723,9 @@
     margin-inline: 0;
   }
 
+  /* The media frame's own bottom margin tops the bottom up to the other blocks' space-7. */
   .feature {
-    padding: var(--hl-space-6) var(--hl-space-6) var(--hl-space-1);
+    padding: var(--hl-space-7) var(--hl-space-7) var(--hl-space-5);
   }
 
   .voice .block {
@@ -781,7 +782,6 @@
   .feature {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: var(--hl-space-7);
-    padding: var(--hl-space-6) var(--hl-space-6) var(--hl-space-1);
   }
 
   .feature--flip {
