@@ -15,6 +15,7 @@ flock /tmp/fg-e2e.lock node contrast.mjs ../dist     # text and non-text contras
 flock /tmp/fg-e2e.lock node lighthouse.mjs ../dist   # Lighthouse scores, JSON and summary in --out
 flock /tmp/fg-e2e.lock node selftest.mjs ../dist     # proves crawl.mjs reports each breakage
 flock /tmp/fg-e2e.lock node waitlist.mjs ../dist     # the waitlist form and mail-link pages (waitlist build)
+flock /tmp/fg-e2e.lock node stores.mjs ../dist       # the landing page's stores card
 ```
 
 Every script takes `--port` (127.0.0.1 only) and `--pages /de,/en` to narrow it. On a shared host
@@ -67,6 +68,22 @@ id `good` with sig `sig` deletes) and drives the form at 390 px:
 
 `--shots <dir>` also writes the PR screenshots (landing at 390 and 1440 px, form errors, success,
 confirm and unsubscribe before and after).
+
+`stores.mjs` drives the stores card on `/de` and `/en`:
+
+- without JavaScript, the supermarket's route shows, its button is the pressed one of three and
+  names the list;
+- at 390 and 1440 px, light and dark, a click on each store shows that store's five categories in
+  its order, presses only that button and names the list after it; with reduced motion nothing
+  animates;
+- by keyboard, Enter and Space on a focused store button switch the route;
+- in forced colours, the pressed button's face differs from the other two;
+- with motion allowed, all five rows animate and settle on the new route;
+- at 16 widths from 320 to 1440 px, for every store, each row and button stays inside the card's
+  content box (and within the card's height) and the page never scrolls sideways;
+- no console error.
+
+`--shots <dir>` writes each state's screenshot.
 
 `selftest.mjs` copies the build, breaks `/de` in one known way per check (a small button, an
 autoplaying video, an external image, a wide paragraph, faint text, no focus ring, no press depth,

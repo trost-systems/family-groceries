@@ -258,6 +258,187 @@
   opacity: 1;
 }
 
+/* The stores card (landing.mjs, stores.js): store buttons over the chosen store's route. The
+   buttons are tactile hexes, white until pressed, lemon when chosen. The step numbers are a CSS
+   counter, so they follow the rows when stores.js reorders them. The layout follows the card's
+   own width (container queries), not the viewport's: the frame is full width on phones, half a
+   card from 1000 px. */
+.stores-demo {
+  --ring: var(--hl-color-accent);
+  --ring-gap: var(--hl-color-surface-raised);
+  container: stores / inline-size;
+  display: grid;
+  color: var(--hl-color-text);
+  aspect-ratio: auto;
+}
+
+/* The frame's shape (4:5, from 601 px 16:9) is a minimum here: a clipping frame cannot grow by
+   its aspect ratio, and stacked buttons and route can be taller than the shape. */
+.stores-layout {
+  display: grid;
+  gap: var(--hl-space-5);
+  align-content: center;
+  min-height: calc(100cqi * 5 / 4);
+  padding: var(--hl-space-5) var(--hl-space-4);
+}
+
+@media (min-width: 37.5625rem) {
+  .stores-layout {
+    min-height: calc(100cqi * 9 / 16);
+  }
+}
+
+.store-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hl-space-2) var(--hl-space-3);
+}
+
+.store-pick p {
+  flex-basis: 100%;
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-type-label-size);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+/* The hint invites a tap, which needs stores.js. */
+.stores-demo:not(.is-live) .store-pick p {
+  display: none;
+}
+
+.store-chip[aria-pressed="false"] {
+  --face: var(--hl-color-surface-raised);
+  --on-face: var(--hl-color-text);
+  --wall: var(--hl-color-ink);
+}
+
+.store-chip[aria-pressed="true"] {
+  cursor: default;
+}
+
+.store-chip .face {
+  font-family: var(--hl-font-family-display);
+}
+
+/* On the dark card the navy contour vanishes; a white button keeps a 3:1 border. */
+@media (prefers-color-scheme: dark) {
+  .store-chip[aria-pressed="false"] {
+    --line: var(--hl-color-border);
+    --wall: var(--hl-color-surface-edge);
+  }
+}
+
+/* Forced colours paint every hex face Canvas; the pressed store keeps a Highlight face. */
+@media (forced-colors: active) {
+  .store-chip[aria-pressed="true"] .face::after {
+    background: Highlight;
+  }
+
+  .store-chip[aria-pressed="true"] .face {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+}
+
+/* The route steps right by up to 18 px a row, less when the list is narrow: the widest row
+   („Fleisch/Wurst/Fisch“) is 265 px, so the four steps share what is left of the list's width
+   beyond 17rem and vanish below it. */
+.store-route {
+  container-type: inline-size;
+  display: grid;
+  gap: var(--hl-space-2);
+  justify-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.store-route li {
+  --h: 44px;
+  --i: 0;
+  gap: var(--hl-space-2);
+  margin-left: calc(var(--i) * clamp(0px, (100cqi - 17rem) / 4, 18px));
+  padding-left: calc(var(--h) * var(--hl-shape-hex-tip) - 2px);
+  padding-right: calc(var(--h) * var(--hl-shape-hex-tip) + var(--hl-space-3));
+  font-weight: var(--hl-font-weight-bold);
+  counter-increment: step;
+  filter: drop-shadow(0 2px 0 var(--hl-color-edge));
+}
+
+.store-route li[hidden] {
+  display: none;
+}
+
+.store-route li:nth-child(2) { --i: 1; }
+.store-route li:nth-child(3) { --i: 2; }
+.store-route li:nth-child(4) { --i: 3; }
+.store-route li:nth-child(5) { --i: 4; }
+
+.store-route .step {
+  --s: 30px;
+  --face: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+  font-family: var(--hl-font-family-display);
+  font-size: 14px;
+  font-weight: var(--hl-font-weight-heavy);
+  line-height: 1;
+}
+
+.store-route .step::after {
+  content: counter(step);
+}
+
+.store-route .emo::before {
+  content: attr(data-emoji);
+}
+
+/* On the narrowest cards (phones of 320 to 360 px) the rows get smaller, so the widest still
+   fits beside the card's padding. */
+@container stores (max-width: 22rem) {
+  .stores-layout {
+    padding-inline: var(--hl-space-3);
+  }
+
+  .store-route li {
+    --h: 40px;
+    gap: 6px;
+    font-size: 15px;
+  }
+
+  .store-route .step {
+    --s: 26px;
+    font-size: 13px;
+  }
+}
+
+/* Buttons beside the route once the card holds both: the button column (about 11rem with its
+   gap) and the widest row (17rem) in what the 8 % padding leaves. */
+@container stores (min-width: 36rem) {
+  .stores-layout {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--hl-space-6);
+    padding: var(--hl-space-5) max(var(--hl-space-5), 8%);
+  }
+
+  .store-pick {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .store-pick p {
+    flex-basis: auto;
+  }
+}
+
+@container stores (min-width: 24rem) and (max-width: 35.99rem) {
+  .stores-layout {
+    padding-inline: var(--hl-space-5);
+  }
+}
+
 .demo-toggle {
   --s: 52px;
   position: absolute;

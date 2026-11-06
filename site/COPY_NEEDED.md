@@ -32,7 +32,10 @@ Peter's approval in his own words; Legal's consent texts are in `site/content/le
 | `feature.stores.title` | Landing: feature cards | Sortiert, wie du durch den Laden gehst | Sorted the way you walk through the store | 6b prototype; English new. | draft |
 | `feature.stores.body` | Landing: feature cards | Jeder Artikel landet von selbst in seiner Kategorie, von Obst & Gemüse bis Drogerie. Lege deine Läden an, vom Supermarkt bis zum Wochenmarkt, jeder mit eigenem Laufweg. Hummlist merkt sich, wo du was meistens kaufst. | Every item lands in its category by itself, from fruit & vegetables to toiletries. Add your stores, from the supermarket to the farmers’ market, each with its own route. Hummlist remembers where you usually buy what. | 6b prototype; English new. Generic store types only, no retailer names (N-23). | draft |
 | `feature.stores.more` | Landing: feature cards | Eigene Läden legst du dazu, die Reihenfolge der Kategorien stellst du um. | Add your own stores and change the order of the categories. | 6b prototype; English new. | draft |
-| `feature.stores.image` | Landing: feature cards | Die Läden Drogerie, Bäckerei und Supermarkt zur Auswahl, der Supermarkt ist gewählt. Die Kategorien stehen in der Reihenfolge des Laufwegs: Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Tiefkühl. | The stores drugstore, bakery and supermarket to choose from, the supermarket selected. The categories follow the route through the store: fruit & veg, bread & bakery, chilled, pantry, frozen. | New: text alternative of the stores illustration; must match site/public/media/stores-*. | draft |
+| `feature.stores.pick` | Landing: feature cards | Tippe auf einen Laden: | Tap a store: | Job 145: the hint above the store buttons and their group label; hints sit outside the controls (Peter 2026-11-05). | draft |
+| `feature.stores.store.drugstore` | Landing: feature cards | Drogerie | Drugstore | Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D). | draft |
+| `feature.stores.store.drinks-market` | Landing: feature cards | Getränkemarkt | Drinks store | Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D). Replaces Bäckerei (Peter 2026-11-06): its route clearly differs from the supermarket's. | draft |
+| `feature.stores.store.supermarket` | Landing: feature cards | Supermarkt | Supermarket | Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D). | draft |
 | `voice.title` | Landing: voice block | Sag es einfach. Hummlist hört zu. | Just say it. Hummlist is listening. | 6b prototype; English new. | draft |
 | `voice.lead` | Landing: voice block | Hände voller Taschen oder Teig an den Fingern? Dann sprich, und es steht auf der Liste. | Hands full of bags or dough on your fingers? Just speak, and it's on the list. | 6b prototype; English new. | draft |
 | `voice.ai.title` | Landing: voice block | Mit KI-Assistenten | With AI assistants | New: replaces the prototype's one-line MCP mention. | draft |
@@ -108,6 +111,16 @@ Peter's approval in his own words; Legal's consent texts are in `site/content/le
 
 | Id | Page / section | DE | EN | Why / source | Status |
 | --- | --- | --- | --- | --- | --- |
+| `feature.stores.category.produce` | Landing: feature cards | Obst & Gemüse | Fruit & veg | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.bakery` | Landing: feature cards | Brot & Backwaren | Bread & bakery | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.chilled` | Landing: feature cards | Kühlregal | Chilled | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.meat` | Landing: feature cards | Fleisch/Wurst/Fisch | Meat & fish | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.pantry` | Landing: feature cards | Vorrat & Konserven | Pantry | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.sweets` | Landing: feature cards | Süßes & Snacks | Sweets & snacks | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.drinks` | Landing: feature cards | Getränke | Drinks | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.frozen` | Landing: feature cards | Tiefkühl | Frozen | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.household` | Landing: feature cards | Haushalt | Household | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
+| `feature.stores.category.drugstore` | Landing: feature cards | Drogerie | Drugstore | Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal. | reused |
 | `privacy.lead` | Landing: privacy block | Hummlist zeigt keine Werbung und verkauft keine Daten. | Hummlist shows no ads and sells no data. | Privacy policy (/datenschutz, /en/privacy), word for word. | reused |
 
 ## Demo videos: words on screen

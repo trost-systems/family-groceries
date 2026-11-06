@@ -8,7 +8,7 @@ size or a half-finished set fails the build and names the file.
 
 `<name>-<locale>-<width>[-dark].<ext>`, with
 
-- `name`: `hero`, `stores` (stills), or a demo slot: `add-tick`, `household-sync`, `mcp-chat`;
+- `name`: `hero` (a still), or a demo slot: `add-tick`, `household-sync`, `mcp-chat`;
 - `locale`: `de` or `en` (each language has its own on-screen words);
 - `width`: `wide` (shown from 601 px viewport width) or `compact` (up to 600 px);
 - `-dark`: optional, the poster for `prefers-color-scheme: dark`. Without it dark mode shows the
@@ -20,8 +20,8 @@ size or a half-finished set fails the build and names the file.
 | --- | --- | --- | --- |
 | `hero-<locale>-wide[-dark].webp` | free | 1000 × 1080 | Sits on the cobalt hero block, runs off its bottom edge |
 | `hero-<locale>-compact[-dark].webp` | free | 716 × 800 | Phone column, full block width |
-| `<slot or stores>-<locale>-wide[-dark].webp` | 16:9 (checked) | 1152 × 648 | Inside a framed card (radius 28 px, 2 px navy contour) |
-| `<slot or stores>-<locale>-compact[-dark].webp` | 4:5 (checked) | 716 × 896 | Flush to the card's sides and bottom |
+| `<slot>-<locale>-wide[-dark].webp` | 16:9 (checked) | 1152 × 648 | Inside a framed card (radius 28 px, 2 px navy contour) |
+| `<slot>-<locale>-compact[-dark].webp` | 4:5 (checked) | 716 × 896 | Flush to the card's sides and bottom |
 
 WebP only, at twice the shown size, under 120 KB each. The posters here now are stills of the
 HTML scenes in `site/scenes/` (`node site/scenes/film-all.mjs` re-films them). A demo slot's

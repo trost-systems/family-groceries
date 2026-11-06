@@ -92,11 +92,76 @@ feature.stores.more:
   en: "Add your own stores and change the order of the categories."
   status: draft
   source: "6b prototype; English new."
-feature.stores.image:
-  de: "Die Läden Drogerie, Bäckerei und Supermarkt zur Auswahl, der Supermarkt ist gewählt. Die Kategorien stehen in der Reihenfolge des Laufwegs: Obst & Gemüse, Brot & Backwaren, Kühlregal, Vorrat & Konserven, Tiefkühl."
-  en: "The stores drugstore, bakery and supermarket to choose from, the supermarket selected. The categories follow the route through the store: fruit & veg, bread & bakery, chilled, pantry, frozen."
+feature.stores.pick:
+  de: "Tippe auf einen Laden:"
+  en: "Tap a store:"
   status: draft
-  source: "New: text alternative of the stores illustration; must match site/public/media/stores-*."
+  source: "Job 145: the hint above the store buttons and their group label; hints sit outside the controls (Peter 2026-11-05)."
+feature.stores.store.drugstore:
+  de: "Drogerie"
+  en: "Drugstore"
+  status: draft
+  source: "Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D)."
+feature.stores.store.drinks-market:
+  de: "Getränkemarkt"
+  en: "Drinks store"
+  status: draft
+  source: "Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D). Replaces Bäckerei (Peter 2026-11-06): its route clearly differs from the supermarket's."
+feature.stores.store.supermarket:
+  de: "Supermarkt"
+  en: "Supermarket"
+  status: draft
+  source: "Job 145: the stores card is live; generic store types only, no retailer names (Legal Addendum D)."
+feature.stores.category.produce:
+  de: "Obst & Gemüse"
+  en: "Fruit & veg"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.bakery:
+  de: "Brot & Backwaren"
+  en: "Bread & bakery"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.chilled:
+  de: "Kühlregal"
+  en: "Chilled"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.meat:
+  de: "Fleisch/Wurst/Fisch"
+  en: "Meat & fish"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.pantry:
+  de: "Vorrat & Konserven"
+  en: "Pantry"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.sweets:
+  de: "Süßes & Snacks"
+  en: "Sweets & snacks"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.drinks:
+  de: "Getränke"
+  en: "Drinks"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.frozen:
+  de: "Tiefkühl"
+  en: "Frozen"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.household:
+  de: "Haushalt"
+  en: "Household"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
+feature.stores.category.drugstore:
+  de: "Drogerie"
+  en: "Drugstore"
+  status: reused
+  source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
 
 voice.title:
   de: "Sag es einfach. Hummlist hört zu."

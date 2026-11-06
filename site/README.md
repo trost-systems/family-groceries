@@ -3,7 +3,8 @@
 The landing pages, guides, changelog and legal pages: static HTML from Markdown and YAML.
 `build.mjs` (markdown-it, gray-matter) writes `dist/`; it is its own Vercel project, separate from
 the app on app.hummlist.com. The JavaScript is `public/demo.js`, which starts and pauses the
-landing pages' demo videos, and `public/waitlist.js`, the sign-up form and the pages behind the
+landing pages' demo videos, `public/stores.js`, which switches the stores card's route when a
+store button is pressed, and `public/waitlist.js`, the sign-up form and the pages behind the
 waitlist mails (below).
 
 ```bash
