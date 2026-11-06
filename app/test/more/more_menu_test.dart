@@ -154,7 +154,7 @@ void main() {
     }
   });
 
-  testWidgets('sign-out is last, in the error colour, without a chevron', (
+  testWidgets('sign-out is last, plain like Licenses, without a chevron', (
     tester,
   ) async {
     await pumpMore(tester, size: tall);
@@ -172,10 +172,24 @@ void main() {
       expect(icon(row, Icons.open_in_new), findsOneWidget, reason: row);
     }
     expect(icon('more-licenses', Icons.chevron_right), findsOneWidget);
+    TextStyle? label(String row) => tester
+        .widget<RichText>(
+          find.descendant(of: key(row), matching: find.byType(RichText)).first,
+        )
+        .text
+        .style;
+    Color? glyph(String row) => tester
+        .widget<Icon>(
+          find.descendant(of: key(row), matching: find.byType(Icon)).first,
+        )
+        .color;
+    expect(label('more-sign-out')?.color, label('more-licenses')?.color);
     expect(
-      tester.widget<Text>(find.text('Abmelden')).style?.color,
-      HummlistColors.light.error,
+      label('more-sign-out')?.fontWeight,
+      label('more-licenses')?.fontWeight,
     );
+    expect(glyph('more-sign-out'), glyph('more-licenses'));
+    expect(glyph('more-sign-out'), isNot(HummlistColors.light.error));
   });
 
   testWidgets('the version sits below every row', (tester) async {

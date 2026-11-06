@@ -380,7 +380,6 @@ class _MoreListState() extends State<_MoreList> {
         item,
         label: l10n.signOut,
         trailing: _Trailing.none,
-        destructive: true,
         onTap: () => unawaited(context.read<SessionCubit>().signOut()),
       ),
     };
@@ -434,7 +433,6 @@ class const _Row(
   required final VoidCallback onTap,
   final bool selected = false,
   final _Trailing trailing = _Trailing.chevron,
-  final bool destructive = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -451,14 +449,9 @@ class const _Row(
           _Tint.plain => t.surfaceSunken,
         },
         size: 34,
-        child: Icon(item.icon, size: 18, color: destructive ? t.error : t.text),
+        child: Icon(item.icon, size: 18, color: t.text),
       ),
-      title: Text(
-        label,
-        style: destructive
-            ? TextStyle(color: t.error, fontWeight: FontWeight.w600)
-            : null,
-      ),
+      title: Text(label),
       trailing: switch (trailing) {
         _Trailing.chevron => const Icon(Icons.chevron_right),
         _Trailing.external => const Icon(Icons.open_in_new, size: 18),

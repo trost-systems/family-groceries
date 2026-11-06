@@ -1,6 +1,6 @@
 # More tab, help, guides, legal pages
 
-The app has two tabs, „Liste“ and „Mehr“ (EN "List", "More"): a bottom bar on phones, a left rail from 840 px width. Since job 85 (design "M-P2") „Mehr“ is a list of inset groups (cards with a 2 px contour): each row is a hexagon icon and one line of text, with no hint below it. Only one group has a heading: „Rechtliches“ / "Legal", whose rows (Impressum, Datenschutzerklärung, Nutzungsbedingungen, Lizenzen) sit directly on More, so the imprint is two taps from the list (Mehr, Impressum). Sign-out stands alone in red; the version line ends the list. Entries either open a page inside the app (on wide screens beside the list, on phones as a full page with a back button) or open a page on the web in a new browser tab (those rows end in an external-link icon instead of a chevron). „Nutzungsdaten“ / "Usage data" is a page of its own with the usage-data switch.
+The app has two tabs, „Liste“ and „Mehr“ (EN "List", "More"): a bottom bar on phones, a left rail from 840 px width. Since job 85 (design "M-P2") „Mehr“ is a list of inset groups (cards with a 2 px contour): each row is a hexagon icon and one line of text, with no hint below it. Only one group has a heading: „Rechtliches“ / "Legal", whose rows (Impressum, Datenschutzerklärung, Nutzungsbedingungen, Lizenzen) sit directly on More, so the imprint is two taps from the list (Mehr, Impressum). Sign-out stands alone, in the same plain style as the other rows (not red); the version line ends the list. Entries either open a page inside the app (on wide screens beside the list, on phones as a full page with a back button) or open a page on the web in a new browser tab (those rows end in an external-link icon instead of a chevron). „Nutzungsdaten“ / "Usage data" is a page of its own with the usage-data switch.
 
 ## Sub-features
 
@@ -27,7 +27,7 @@ More entries in order (groups top to bottom; rows: DE label, EN label; no hints;
 4. „Einstellungen“ / "Settings"; „Nutzungsdaten“ / "Usage data" (only where the build can send analytics).
 5. „Feedback senden“ / "Send feedback"; „Hilfe & Kontakt“ / "Help & contact" (external-link icon).
 6. Heading „Rechtliches“ / "Legal", then „Impressum“ / "Imprint", „Datenschutzerklärung“ / "Privacy policy", „Nutzungsbedingungen (EULA)“ / "Terms of Use (EULA)" (these three with the external-link icon), „Lizenzen“ / "Licenses".
-7. „Abmelden“ / "Sign out", red, alone.
+7. „Abmelden“ / "Sign out", alone, plain like the other rows (job 137: not red).
 8. Version line „Version {version}“ (same in EN), version plus build number in brackets when there is a build number.
 
 The Nutzungsdaten page: only the switch „Nutzungsdaten und Fehlerberichte senden“ / "Send usage data and error reports" (its line below: „Pseudonym an PostHog (Server in der EU), ohne Listeninhalte. Gilt für dieses Gerät. Ausschalten löscht die Kennung auf diesem Gerät.“).
