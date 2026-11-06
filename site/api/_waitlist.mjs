@@ -1,5 +1,6 @@
 // The browser's side of the waitlist (docs/WAITLIST.md, "Browser to Vercel"): forwards to the
 // edge function, which owns all logic. Nothing here logs an address, a token, a body or an IP.
+import { Buffer } from 'node:buffer';
 import { createHmac } from 'node:crypto';
 
 const BODY_LIMIT = 2048;

@@ -37,7 +37,7 @@ const LAYOUT = {
   compact: { box: { x: 24, y: -20, w: 310, h: 516 }, fadeTop: [76, 126], appTop: 173, caption: 'left:calc(24 * var(--u));top:calc(22 * var(--u));width:calc(310 * var(--u))', align: 'center' },
 };
 
-export function compose({ fmt, lang, take, events, p }) {
+export function compose({ fmt, lang, events, p }) {
   const L = LAYOUT[fmt];
   const ph = phone({ id: 'mia', box: L.box, appTop: L.appTop, fadeTop: L.fadeTop, src: 'assets/mia.mp4', start: 0, duration: p.duration, mediaStart: p.a + p.offset });
   const toTime = (ms) => ms / 1000 - p.a;

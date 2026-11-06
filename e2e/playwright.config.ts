@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import process from 'node:process';
 import { fakeOidcPort, webPort as port, stack } from './stack';
 
 // Job 28: the timings in tests/perf.spec.ts take 4-5 minutes, so they run only when named:
@@ -12,7 +13,7 @@ const posthogHost = JSON.parse(readFileSync(new URL('../app/config/e2e.json', im
 
 export default defineConfig({
   testDir: './tests',
-  grepInvert: timingsAsked ? undefined : /@perf/,
+  ...(timingsAsked ? {} : { grepInvert: /@perf/ }),
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,

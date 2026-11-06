@@ -93,10 +93,20 @@ gem list -i bundler -v "$bundler_version" >/dev/null || gem install --user-insta
 "$(ruby -e 'print Gem.user_dir')/bin/bundle" config set --global path "$HOME/.cache/fg-bundle" >/dev/null
 
 log "deno"
-if ! command -v deno >/dev/null && [[ ! -x "$HOME/.deno/bin/deno" ]]; then
-  curl -fsSL https://deno.land/install.sh | sh -s -- -y --no-modify-path >/dev/null
+# Pinned in .dvmrc, like CI's lint job: tool/lint/ts/pack.ts lists every lint rule of that Deno.
+# Only this user's ~/.deno/bin/deno is installed or replaced, never a Homebrew or distro deno; the
+# PATH line printed at the end puts ~/.deno/bin first. On a host whose agents share ~/.deno (hz), a .dvmrc bump
+# moves every lane's Deno on the next bootstrap run.
+deno_version="$(tr -d '[:space:]' < "$REPO_ROOT/.dvmrc")"
+deno_bin="$HOME/.deno/bin/deno"
+if [[ ! -x "$deno_bin" || "$("$deno_bin" --version | awk 'NR==1 {print $2}')" != "$deno_version" ]]; then
+  curl -fsSL https://deno.land/install.sh | DENO_INSTALL="$HOME/.deno" sh -s -- -y --no-modify-path "v$deno_version" >/dev/null
 fi
-"$HOME/.deno/bin/deno" --version | head -1 2>/dev/null || deno --version | head -1
+on_path="$(command -v deno || true)"
+if [[ -n "$on_path" && "$on_path" != "$deno_bin" ]]; then
+  echo "bootstrap: PATH finds deno at $on_path; the repo's gates need $deno_bin ($deno_version), which the PATH line below puts first" >&2
+fi
+"$deno_bin" --version | head -1
 
 log "flutter (stable)"
 if [[ ! -x "$FLUTTER_DIR/bin/flutter" ]]; then

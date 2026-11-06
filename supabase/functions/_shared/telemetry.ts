@@ -32,7 +32,7 @@ const uuid = matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const intIn = (min: number, max: number): Rule => (v) =>
   typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max;
 
-const revenue: Record<string, Rule> = {
+const revenue = {
   product_id: matches(/^[a-z0-9_.]{1,64}$/),
   price: amount,
   currency: matches(/^[A-Z]{3}$/),
@@ -42,26 +42,26 @@ const revenue: Record<string, Rule> = {
   transaction_ref: matches(/^[0-9a-f]{32}$/),
   // Job 49: which Hummlist Premium product the event is about. Promotional grants send no events.
   premium_source: oneOf('yearly', 'lifetime'),
-};
+} satisfies Record<string, Rule>;
 
 /**
  * The events a function may send (docs/ANALYTICS.md, "Purchases"). Adding one: list it here,
  * with a rule per property, and add a case to telemetry_test.ts.
  */
 export const serverEventCatalog: Record<string, Record<string, Rule>> = {
-  purchase_completed: revenue,
-  purchase_refunded: revenue,
-  purchase_restored: { product_id: revenue.product_id, app_store: revenue.app_store },
+  'purchase_completed': revenue,
+  'purchase_refunded': revenue,
+  'purchase_restored': { product_id: revenue.product_id, app_store: revenue.app_store },
   // Job 31: an item added over Alexa, the app's item_added with source alexa; once per added
   // item, never for one already on the list. Never the name.
-  item_added: {
+  'item_added': {
     source: oneOf('alexa'),
     actor_role: oneOf('owner', 'member'),
     household_size: intIn(1, 100),
   },
   // Job 51: one per Siri add or read through the voice function, native (the app's Siri
   // credential) or the Shortcut (a PAT). count is how many items, never which.
-  siri_add: {
+  'siri_add': {
     result: oneOf('success', 'fail'),
     reason: oneOf(
       'added',
@@ -77,7 +77,7 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
     source: oneOf('native', 'shortcut'),
     count: intIn(0, 30),
   },
-  siri_read: {
+  'siri_read': {
     result: oneOf('success', 'fail'),
     reason: oneOf('read', 'server', 'no_household', 'premium_required'),
     language: oneOf('en', 'de'),
@@ -87,20 +87,20 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
   // Job 50: a household without Hummlist Premium used an integration while the lock is on (at
   // most once an hour per household and integration, _shared/premium.ts). Never what was said.
   // Alexa stays free (job 72), so it is never blocked; the API (job 73) is.
-  integration_blocked: { integration: oneOf('siri', 'mcp', 'api') },
+  'integration_blocked': { integration: oneOf('siri', 'mcp', 'api') },
 };
 
 /** Properties every server event carries besides its own. */
 const contextRules: Record<string, Rule> = {
-  distinct_id: uuid,
-  install_id: uuid,
-  household_id: (v) => v === null || uuid(v),
-  event_id: uuid,
+  'distinct_id': uuid,
+  'install_id': uuid,
+  'household_id': (v) => v === null || uuid(v),
+  'event_id': uuid,
   platform: oneOf('server'),
-  app_version: oneOf('server'),
-  is_internal: (v) => typeof v === 'boolean',
-  $geoip_disable: (v) => v === true,
-  $process_person_profile: (v) => v === false,
+  'app_version': oneOf('server'),
+  'is_internal': (v) => typeof v === 'boolean',
+  '$geoip_disable': (v) => v === true,
+  '$process_person_profile': (v) => v === false,
   $lib: oneOf('hummlist-edge'),
 };
 
@@ -177,15 +177,15 @@ export class Telemetry {
     const id = crypto.randomUUID();
     const all = {
       ...properties,
-      distinct_id: subject.installId,
-      install_id: subject.installId,
-      household_id: subject.householdId,
-      event_id: id,
+      'distinct_id': subject.installId,
+      'install_id': subject.installId,
+      'household_id': subject.householdId,
+      'event_id': id,
       platform: 'server',
-      app_version: 'server',
-      is_internal: this.config.internal || subject.internal === true,
-      $geoip_disable: true,
-      $process_person_profile: false,
+      'app_version': 'server',
+      'is_internal': this.config.internal || subject.internal === true,
+      '$geoip_disable': true,
+      '$process_person_profile': false,
       $lib: 'hummlist-edge',
     };
     try {
@@ -218,7 +218,7 @@ export class Telemetry {
 }
 
 /** PostHog's project key shape; a personal key (phx_) is never accepted. */
-export const projectKeyLike = (key: string) => /^phc_[A-Za-z0-9_-]{8,64}$/.test(key);
+export const projectKeyLike = (key: string): boolean => /^phc_[A-Za-z0-9_-]{8,64}$/.test(key);
 
 /** Telemetry for function [fn] from the environment; disabled without a valid key and host. */
 export function telemetryFor(fn: string, env: Env = Deno.env, fetchImpl: Fetch = fetch): Telemetry {
@@ -269,7 +269,7 @@ const runtimeErrors = [TypeError, RangeError, ReferenceError, SyntaxError, EvalE
 /** A runtime error's first line reduced to its shape; a code for anything else. */
 export function scrubMessage(error: unknown): string {
   if (runtimeErrors.some((t) => error instanceof t)) {
-    const first = String((error as Error).message ?? '').split('\n')[0];
+    const [first = ''] = String((error as Error).message ?? '').split('\n');
     return shape(scrub(first)).slice(0, 120);
   }
   const code = (error as { code?: unknown } | null)?.code ??
@@ -335,7 +335,7 @@ export function framesOf(stack: string): Record<string, unknown>[] {
   for (const line of stack.split('\n').slice(1, 81)) {
     const m = v8Frame.exec(line);
     if (!m) continue;
-    const [, fn, file, lineno, colno] = m;
+    const [, fn, file = '', lineno, colno] = m;
     const path = file.replace(/^file:\/\//, '').replace(/[?#].*$/, '');
     const inFunctions = path.match(/\/functions\/(.+)$/)?.[1];
     const filename = inFunctions ?? path.split('/').pop() ?? '';

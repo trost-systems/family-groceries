@@ -5,6 +5,7 @@
 // button), the header button bringing the form into view, and on every page no cookie, no request
 // off this origin and no console error. The dist must be a build in the waitlist or beta stage. --shots writes
 // the PR screenshots. README.md lists what each step proves.
+import process from 'node:process';
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';

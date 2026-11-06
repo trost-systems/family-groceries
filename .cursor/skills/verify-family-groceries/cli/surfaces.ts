@@ -128,7 +128,7 @@ export async function startLinux(ctx: Ctx, inst: Instance, state: State, name: C
 }
 
 /** Starts the app binary on a running display; keepSession reuses the client's stored login. */
-async function launchLinuxApp(ctx: Ctx, inst: Instance, name: ClientName, display: number, keepSession: boolean) {
+async function launchLinuxApp(ctx: Ctx, inst: Instance, name: ClientName, display: number | undefined, keepSession: boolean) {
   const dir = `${inst.stateDir}/clients/${name}`;
   const log = `${dir}/app.log`;
   if (!keepSession) {
@@ -164,16 +164,15 @@ export async function restartClient(ctx: Ctx, inst: Instance, name: ClientName, 
   }
   return await ctx.act(`quit and reopen the ${name} app (pid ${client.pid}), keeping its session`, async () => {
     await terminate(ctx.sh, client.pid, client.marker);
-    const app = await launchLinuxApp(ctx, inst, name, client.display!, true);
+    const app = await launchLinuxApp(ctx, inst, name, client.display, true);
     return { ...client, ...app, startedAt: new Date().toISOString() } satisfies ClientState;
   });
 }
 
 async function vmService(sh: Shell, read: () => Promise<string>, log: string): Promise<{ ws: string; port: number }> {
-  let found: RegExpMatchArray | null = null;
-  await waitFor(
+  const found = await waitForValue(
     sh,
-    async () => (found = (await read()).match(VM_SERVICE_LINE)) !== null,
+    async () => (await read()).match(VM_SERVICE_LINE) ?? undefined,
     90_000,
     () =>
       new FgError(
@@ -182,7 +181,7 @@ async function vmService(sh: Shell, read: () => Promise<string>, log: string): P
         `Read ${log}; a debug build is required (the CLI builds one with \`fg up --rebuild\`).`,
       ),
   );
-  const [, http, port] = found!;
+  const [, http = '', port] = found;
   return { ws: `${http.replace('http://', 'ws://').replace(/\/?$/, '/')}ws`, port: Number(port) };
 }
 
@@ -322,9 +321,20 @@ export async function clientAlive(sh: Shell, inst: Instance, client: ClientState
 }
 
 export async function waitFor(sh: Shell, check: () => Promise<boolean>, timeoutMs: number, onTimeout: () => FgError): Promise<void> {
+  await waitForValue(sh, async () => ((await check()) ? true : undefined), timeoutMs, onTimeout);
+}
+
+/** Polls every 500 ms until `probe` returns a value, and returns it. */
+export async function waitForValue<T>(
+  sh: Shell,
+  probe: () => Promise<T | undefined>,
+  timeoutMs: number,
+  onTimeout: () => FgError,
+): Promise<T> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (await check()) return;
+    const value = await probe();
+    if (value !== undefined) return value;
     await sh.sleep(500);
   }
   throw onTimeout();

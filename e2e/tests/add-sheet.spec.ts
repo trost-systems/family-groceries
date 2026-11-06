@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import {
-  addField, adminClient, apiAs, chainStores, holdFrames, itemRow, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
+  addField, adminClient, apiAs, boxOf, chainStores, holdFrames, itemRow, must, newEmail, nextFrames, screenshot, signUpWithHousehold, typeInto,
 } from './helpers';
 import { watchBuild, withoutWasmGC } from './web-build';
 
@@ -17,6 +17,7 @@ type Box = { x: number; y: number; width: number; height: number };
 async function seedHistory(email: string): Promise<string> {
   const api = await apiAs(email);
   const { data: household } = await api.from('households').select('id').single();
+  if (household === null) throw new Error('no household');
   for (const row of [
     { name: 'Windeln', brand: 'Pampers', properties: 'Größe 4, Big Pack' },
     { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3, sensitiv' },
@@ -24,10 +25,10 @@ async function seedHistory(email: string): Promise<string> {
     { name: 'Windeln', brand: 'Babylove', properties: 'Größe 5' },
     { name: 'Butter', brand: null, properties: 'gesalzen' },
   ]) {
-    const { error } = await api.from('items').insert({ household_id: household!.id, status: 'bought', ...row });
+    const { error } = await api.from('items').insert({ household_id: household.id, status: 'bought', ...row });
     if (error) throw error;
   }
-  return household!.id as string;
+  return household.id as string;
 }
 
 /** The sheet's rect once it has held still for a few frames (Flutter animates on its canvas). */
@@ -42,8 +43,6 @@ async function settled(page: Page): Promise<Box> {
   }
   throw new Error('the sheet kept moving');
 }
-
-const bottom = (box: Box) => box.y + box.height;
 
 async function lastRowBottom(list: Locator): Promise<number> {
   const boxes = await list.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().bottom));
@@ -66,14 +65,14 @@ test('the sheet hugs its suggestions, grows with them up to the top and keeps th
   await page.reload();
   await expect(addField(page)).toBeFocused();
   await expect(listTab(page)).toBeVisible();
-  const closed = (await addField(page).boundingBox())!;
+  const closed = await boxOf(addField(page));
   await screenshot(page, 'add-01-closed');
 
   for (const [query, count] of [['Spülmittel Pril', 2], ['Mi', 4], ['Butter', 6]] as const) {
     await typeInto(addField(page), query);
     await expect(rows(page)).toHaveCount(count);
     const box = await settled(page);
-    const input = (await addField(page).boundingBox())!;
+    const input = await boxOf(addField(page));
     expect(Math.abs(input.y - closed.y), `${query}: the input stays put`).toBeLessThanOrEqual(2);
     const band = input.y - (await lastRowBottom(rows(page)));
     expect(band, `${query}: no dead band between the last row and the input`).toBeLessThanOrEqual(24);
@@ -89,7 +88,7 @@ test('the sheet hugs its suggestions, grows with them up to the top and keeps th
   await expect(rows(page)).toHaveCount(8);
   await expect(rows(page).first()).toHaveAccessibleName('Windeln, Wie getippt, Pampers, Größe 3, dm');
   const eight = await settled(page);
-  expect(Math.abs((await addField(page).boundingBox())!.y - closed.y), 'eight rows: the input stays put').toBeLessThanOrEqual(2);
+  expect(Math.abs((await boxOf(addField(page))).y - closed.y), 'eight rows: the input stays put').toBeLessThanOrEqual(2);
   expect(closed.y - (await lastRowBottom(rows(page))), 'eight rows: no dead band').toBeLessThanOrEqual(24);
   await screenshot(page, 'add-8-Windeln-Pampers-Groesse-3');
 
@@ -102,7 +101,7 @@ test('the sheet hugs its suggestions, grows with them up to the top and keeps th
   await screenshot(page, 'add-8-full-667');
   // Without the title row (job 78) the eight overflow by less than a row, so the first stays
   // partly in view, its box clipped at the top: the last row is the one that visibly moves up.
-  const lastBefore = (await rows(page).last().boundingBox())!;
+  const lastBefore = await boxOf(rows(page).last());
   await page.mouse.move(195, full.y + full.height - 80);
   await page.mouse.wheel(0, 400);
   await expect.poll(async () => (await rows(page).last().boundingBox())?.y ?? 10_000, { message: 'only now the rows scroll' })
@@ -114,7 +113,7 @@ test('the sheet hugs its suggestions, grows with them up to the top and keeps th
   await expect(sheet(page)).toHaveCount(0);
   await expect(listTab(page), 'the tabs come back after closing').toBeVisible();
   await expect(addField(page), 'closing clears what was typed: the field shows its hint again').toBeVisible();
-  expect(Math.abs((await addField(page).boundingBox())!.y - closed.y), 'closed again: the input is where it was').toBeLessThanOrEqual(2);
+  expect(Math.abs((await boxOf(addField(page))).y - closed.y), 'closed again: the input is where it was').toBeLessThanOrEqual(2);
 });
 
 test('with reduced motion the sheet changes size without animating', async ({ page }) => {
@@ -123,14 +122,14 @@ test('with reduced motion the sheet changes size without animating', async ({ pa
   await signUpWithHousehold(page, newEmail('sheet-still'));
   await typeInto(addField(page), 'Butter');
   await settled(page);
-  const before = (await sheet(page).boundingBox())!;
+  const before = await boxOf(sheet(page));
   // From the settled rows to two: the frame that shows the two rows already has the new size.
   await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.insertText('Spülmittel Pril');
   await expect(rows(page)).toHaveCount(2);
-  const a = (await sheet(page).boundingBox())!;
+  const a = await boxOf(sheet(page));
   await nextFrames(page);
-  const b = (await sheet(page).boundingBox())!;
+  const b = await boxOf(sheet(page));
   expect(a.height, 'it did change size').not.toBe(before.height);
   expect(b, 'two frames later it is where it was: no animation').toEqual(a);
   await page.keyboard.press('Escape');
@@ -168,7 +167,8 @@ test('a tap adds the row with every field; a chip pick applies to the tapped row
   await screenshot(page, 'add-chip-picked');
   await alternative.click();
   await expect.poll(async () => (await dbItem(email, 'Windeln')).length, { message: 'a second Windeln row' }).toBe(2);
-  const added = (await dbItem(email, 'Windeln')).find((r) => r.brand !== 'Pampers' || r.properties !== 'Größe 3')!;
+  const added = (await dbItem(email, 'Windeln')).find((r) => r.brand !== 'Pampers' || r.properties !== 'Größe 3');
+  if (added === undefined) throw new Error('no new Windeln row');
   expect(added.store, `the store pick applies to the tapped row (${label})`).toEqual({ name: 'Supermarkt' });
 
   await typeInto(addField(page), 'Butter');
@@ -283,13 +283,14 @@ test('with nothing typed, the open sheet offers what is due', async ({ page }) =
   const household = await seedHistory(email);
   const api = await apiAs(email);
   const { data: item } = await api.from('items').select('id').eq('name', 'Butter').single();
+  if (item === null) throw new Error('no Butter item');
   const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
   const events = adminClient().from('item_events');
   expect((await events.insert([
-    { household_id: household, item_id: item!.id, action: 'added', item_name: 'Butter', created_at: daysAgo(15) },
-    { household_id: household, item_id: item!.id, action: 'bought', item_name: 'Butter', created_at: daysAgo(14) },
-    { household_id: household, item_id: item!.id, action: 'added', item_name: 'Butter', created_at: daysAgo(8) },
-    { household_id: household, item_id: item!.id, action: 'bought', item_name: 'Butter', created_at: daysAgo(7) },
+    { household_id: household, item_id: item.id, action: 'added', item_name: 'Butter', created_at: daysAgo(15) },
+    { household_id: household, item_id: item.id, action: 'bought', item_name: 'Butter', created_at: daysAgo(14) },
+    { household_id: household, item_id: item.id, action: 'added', item_name: 'Butter', created_at: daysAgo(8) },
+    { household_id: household, item_id: item.id, action: 'bought', item_name: 'Butter', created_at: daysAgo(7) },
   ])).error).toBeNull();
   await page.reload();
   await addField(page).click();
@@ -309,13 +310,13 @@ test('a tap beside the floating field opens it and leaves the row under it alone
   const { data: household } = await api.from('households').select('id').single();
   const names = ['Äpfel', 'Birnen', 'Gurke', 'Tomaten', 'Paprika', 'Zucchini', 'Möhren', 'Kartoffeln', 'Zwiebeln',
     'Knoblauch', 'Salat', 'Spinat', 'Brokkoli', 'Zitronen', 'Avocado', 'Ingwer', 'Butter', 'Joghurt'];
-  const { error } = await api.from('items').insert(names.map((name) => ({ household_id: household!.id, name })));
+  const { error } = await api.from('items').insert(names.map((name) => ({ household_id: must(household, 'household').id, name })));
   if (error) throw error;
   await page.reload();
   await expect(itemRow(page, 'Äpfel')).toHaveCount(1);
   await expect(sheet(page)).toHaveCount(0);
 
-  const field = (await addField(page).boundingBox())!;
+  const field = await boxOf(addField(page));
   const gutter = { x: 6, y: field.y + field.height / 2 };
   const under = await page.getByRole('checkbox').evaluateAll((els, p) => els
     .filter((e) => { const r = e.getBoundingClientRect(); return r.top <= p.y && r.bottom >= p.y && r.left <= p.x && r.right >= p.x; })
@@ -328,6 +329,6 @@ test('a tap beside the floating field opens it and leaves the row under it alone
   await expect(addField(page)).toBeFocused();
   await page.keyboard.type('Brot', { delay: 120 });
   await expect(rows(page).first(), 'typing goes on in the field').toHaveAccessibleName(/^Brot, Wie getippt/);
-  const { data: active } = await api.from('items').select('name').eq('household_id', household!.id).eq('status', 'active');
-  expect(active!.map((i) => i.name).sort(), 'no row was ticked').toEqual([...names].sort());
+  const { data: active } = await api.from('items').select('name').eq('household_id', must(household, 'household').id).eq('status', 'active');
+  expect(must(active, 'active items').map((i) => i.name).sort(), 'no row was ticked').toEqual([...names].sort());
 });

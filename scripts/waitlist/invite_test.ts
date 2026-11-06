@@ -1,9 +1,9 @@
-import { assert, assertEquals } from 'jsr:@std/assert@^1';
+import { assert, assertEquals, assertExists } from '@std/assert';
 import type { Mail } from '../../supabase/functions/waitlist/mail.ts';
 import { type Args, type Counts, type Deps, type InviteRow, parseArgs, run } from './invite.ts';
 
 const BATCH = '2026-W47';
-const ROWS: InviteRow[] = [
+const ROWS: [InviteRow, InviteRow, InviteRow] = [
   {
     id: '00000000-0000-4000-8000-000000000001',
     email: 'hello+ios@hummlist.com',
@@ -162,16 +162,19 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
     ['hello+ios@hummlist.com', `invite/${BATCH}/${ROWS[0].id}`],
     ['hello+android@hummlist.com', `invite/${BATCH}/${ROWS[1].id}`],
   ]);
+  const [ios, android] = sent;
+  assertExists(ios);
+  assertExists(android);
   assert(
-    sent[0].mail.text.includes('TestFlight') && sent[0].mail.from.includes('Peter von Hummlist'),
+    ios.mail.text.includes('TestFlight') && ios.mail.from.includes('Peter von Hummlist'),
   );
   assert(
-    sent[1].mail.text.includes('play.google.com') &&
-      sent[1].mail.from.includes('Peter from Hummlist'),
+    android.mail.text.includes('play.google.com') &&
+      android.mail.from.includes('Peter from Hummlist'),
   );
-  assertEquals(sent[1].mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+  assertEquals(android.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assert(
-    sent[0].mail.headers['List-Unsubscribe'].startsWith(
+    ios.mail.headers['List-Unsubscribe']?.startsWith(
       `<https://hummlist.com/api/waitlist/unsubscribe?id=${ROWS[0].id}&s=`,
     ),
   );

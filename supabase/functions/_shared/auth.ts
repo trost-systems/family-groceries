@@ -13,6 +13,13 @@
 import { createRemoteJWKSet, type JWTPayload, jwtVerify } from 'jose';
 import { householdOf, resolveAccessToken, sessionActive, userExists } from './db.ts';
 
+/** The project's internal URL; the runtime always sets it. */
+export function supabaseUrl(): string {
+  const url = Deno.env.get('SUPABASE_URL');
+  if (url === undefined) throw new Error('SUPABASE_URL is not set');
+  return url;
+}
+
 export type Auth =
   & { userId: string; householdId: string }
   & (
@@ -63,15 +70,22 @@ export type AuthOptions = { siri?: boolean };
 
 export const PAT_PREFIX = 'fgp_';
 
+const bearer = /^Bearer\s+(?<token>\S+)\s*$/i;
+
+function bearerToken(req: Request): string {
+  const token = bearer.exec(req.headers.get('authorization') ?? '')?.groups?.token;
+  if (token === undefined) {
+    throw new AuthError('missing_token', 'Authorization: Bearer <token> fehlt.');
+  }
+  return token;
+}
+
 export async function authenticate(
   req: Request,
   deps: AuthDeps = defaultDeps,
   options: AuthOptions = {},
 ): Promise<Auth> {
-  const header = req.headers.get('authorization') ?? '';
-  const match = /^Bearer\s+(\S+)\s*$/i.exec(header);
-  if (!match) throw new AuthError('missing_token', 'Authorization: Bearer <token> fehlt.');
-  const token = match[1];
+  const token = bearerToken(req);
 
   if (token.startsWith(PAT_PREFIX)) {
     const owner = await deps.resolvePat(await sha256Hex(token));
@@ -103,10 +117,7 @@ export async function authenticateSession(
   req: Request,
   deps: SessionDeps = defaultSessionDeps,
 ): Promise<{ userId: string }> {
-  const header = req.headers.get('authorization') ?? '';
-  const match = /^Bearer\s+(\S+)\s*$/i.exec(header);
-  if (!match) throw new AuthError('missing_token', 'Authorization: Bearer <token> fehlt.');
-  const token = match[1];
+  const token = bearerToken(req);
   const required = () =>
     new AuthError('session_required', 'Nur in der App angemeldet möglich, nicht mit einem Zugang.');
 
@@ -157,7 +168,7 @@ export async function sha256Hex(text: string): Promise<string> {
 let issuerCache: Promise<Issuer> | undefined;
 export function discoverIssuer(): Promise<Issuer> {
   issuerCache ??= (async () => {
-    const internal = Deno.env.get('SUPABASE_URL')!;
+    const internal = supabaseUrl();
     const res = await fetch(`${internal}/auth/v1/.well-known/openid-configuration`);
     if (!res.ok) throw new Error(`auth discovery failed: ${res.status}`);
     const { issuer } = await res.json() as { issuer: string };

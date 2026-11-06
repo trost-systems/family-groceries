@@ -1,9 +1,9 @@
 // Job 62: list_items reports the whole list's counts next to the items, whatever the filter, and
 // only the caller's household. Runs _shared/list.ts as a signed-in user against the local stack
 // (FG_DB_TEST=1, see add_paths_integration_test.ts).
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from './db.ts';
+import { asUser, databaseUrl } from './db.ts';
 import { addItems, listItems, tickItems } from './list.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
@@ -13,8 +13,9 @@ Deno.test({
   ignore: !enabled,
   sanitizeResources: false,
   fn: async () => {
-    const admin = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
-    const users = [crypto.randomUUID(), crypto.randomUUID()];
+    const admin = postgres(databaseUrl(), { max: 1, prepare: false });
+    const [me, them] = [crypto.randomUUID(), crypto.randomUUID()];
+    const users = [me, them];
     try {
       const households: string[] = [];
       for (const user of users) {
@@ -22,17 +23,20 @@ Deno.test({
         households.push(
           await asUser(user, async (tx) => {
             const [row] = await tx<{ id: string }[]>`select id from public.create_household('62')`;
+            assertExists(row);
             return row.id;
           }),
         );
       }
       const [mine, theirs] = households;
+      assertExists(mine);
+      assertExists(theirs);
       // Job 64: new households start without stores, so this list names its own.
       await admin`insert into public.stores (household_id, name, sort_order)
                   values (${mine}, 'Lidl', 0), (${mine}, 'dm', 1)`;
-      await asUser(users[1], (tx) => addItems(tx, theirs, [{ name: 'Brot' }, { name: 'Käse' }]));
+      await asUser(them, (tx) => addItems(tx, theirs, [{ name: 'Brot' }, { name: 'Käse' }]));
 
-      await asUser(users[0], async (tx) => {
+      await asUser(me, async (tx) => {
         const empty = await listItems(tx, mine, {});
         assertEquals(empty.counts, { open: 0, checkedLast24h: 0 });
 
@@ -49,7 +53,7 @@ Deno.test({
       await admin`update public.items set bought_at = now() - interval '2 days'
                   where household_id = ${mine} and name = 'Salz'`;
 
-      await asUser(users[0], async (tx) => {
+      await asUser(me, async (tx) => {
         const all = await listItems(tx, mine, {});
         assertEquals(all.items.length, 3);
         assertEquals(all.counts, { open: 3, checkedLast24h: 1 }, 'Salz was ticked two days ago');
@@ -63,7 +67,7 @@ Deno.test({
         assertEquals(fruit.counts.open, 3);
       });
 
-      await asUser(users[1], async (tx) => {
+      await asUser(them, async (tx) => {
         assertEquals((await listItems(tx, theirs, {})).counts, { open: 2, checkedLast24h: 0 });
         assertEquals(
           (await listItems(tx, mine, {})).counts,

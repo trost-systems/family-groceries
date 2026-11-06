@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertFalse, assertThrows } from '@std/assert';
+import { assert, assertEquals, assertExists, assertFalse, assertThrows } from '@std/assert';
 import {
   checkServerEvent,
   type Env,
@@ -63,9 +63,12 @@ Deno.test('an unhandled exception is reported with the function name, before the
   );
   assertEquals(response.status, 500);
   assertEquals(sent.length, 1);
-  assertEquals(sent[0].url, `${EU}/batch/`);
-  assertEquals(sent[0].body.api_key, KEY);
-  const [event] = sent[0].body.batch;
+  const [post] = sent;
+  assertExists(post);
+  assertEquals(post.url, `${EU}/batch/`);
+  assertEquals(post.body.api_key, KEY);
+  const [event] = post.body.batch;
+  assertExists(event);
   const properties = event.properties as Record<string, unknown>;
   assertEquals(event.event, '$exception');
   assertEquals(event.uuid, properties.event_id);
@@ -73,12 +76,13 @@ Deno.test('an unhandled exception is reported with the function name, before the
   assertEquals(properties.is_internal, true);
   assertEquals(properties.$geoip_disable, true);
   const [exception] = properties.$exception_list as Record<string, unknown>[];
+  assertExists(exception);
   assertEquals(exception.type, 'TypeError');
   assertEquals(exception.value, 'cannot <w> <redacted> <w> <email>');
   assertEquals((exception.mechanism as Record<string, unknown>).handled, false);
   const frames = (exception.stacktrace as { frames: Record<string, unknown>[] }).frames;
   assert(frames.length > 0);
-  assertEquals(frames.at(-1)!.filename, '_shared/telemetry_test.ts');
+  assertEquals(frames.at(-1)?.filename, '_shared/telemetry_test.ts');
   const text = JSON.stringify(sent);
   for (const secret of ['Hafermilch', 'Milch', 'fgp_secret-token', 'peter@', 'authorization']) {
     assertFalse(text.includes(secret), secret);
@@ -118,10 +122,14 @@ Deno.test('an error report carries no personal data from the request or the mess
     }),
   );
   assertEquals(response.status, 500);
-  const [event] = sent[0].body.batch;
+  const [post] = sent;
+  assertExists(post);
+  const [event] = post.body.batch;
+  assertExists(event);
   const properties = event.properties as Record<string, unknown>;
   assertEquals(properties.distinct_id, 'edge-function-voice');
   const [exception] = properties.$exception_list as Record<string, unknown>[];
+  assertExists(exception);
   assertEquals(exception.type, 'TypeError');
   assertEquals(exception.value, 'cannot <w> <n> <w> <email> in <uuid> <w> <uuid>');
   const text = JSON.stringify(sent);
@@ -211,8 +219,8 @@ Deno.test('frames: functions-relative paths, crash site last', () => {
       '    at ext:core/01_core.js:3:1',
   );
   assertEquals(frames.map((f) => f.filename), ['01_core.js', 'voice/handler.ts', 'voice/items.ts']);
-  assertEquals(frames.at(-1)!.in_app, true);
-  assertEquals(frames[0].in_app, false);
+  assertEquals(frames.at(-1)?.in_app, true);
+  assertEquals(frames[0]?.in_app, false);
 });
 
 Deno.test('server events pass the catalog only', async () => {
@@ -226,8 +234,12 @@ Deno.test('server events pass the catalog only', async () => {
   assertFalse(t.event('item_ticked', subject, {}));
   assertFalse(t.event('purchase_completed', subject, { email: 'peter@example.com' }));
   await t.flush();
-  assertEquals(sent[0].body.batch.length, 1);
-  const p = sent[0].body.batch[0].properties as Record<string, unknown>;
+  const [post] = sent;
+  assertExists(post);
+  assertEquals(post.body.batch.length, 1);
+  const [event] = post.body.batch;
+  assertExists(event);
+  const p = event.properties as Record<string, unknown>;
   assertEquals(p.distinct_id, INSTALL);
   assertEquals(p.$geoip_disable, true);
   assertFalse('$ip' in p);
@@ -265,7 +277,7 @@ Deno.test('item_added (job 31): source alexa, role and household size only', asy
   );
   const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
   const subject = { installId: INSTALL, householdId: household, internal: true };
-  const ok = { source: 'alexa', actor_role: 'member', household_size: 2 };
+  const ok = { source: 'alexa', 'actor_role': 'member', 'household_size': 2 };
   assert(t.event('item_added', subject, ok));
   assertFalse(t.event('item_added', subject, { ...ok, source: 'typed' }));
   assertFalse(t.event('item_added', subject, { ...ok, household_size: 1.5 }));
@@ -273,8 +285,12 @@ Deno.test('item_added (job 31): source alexa, role and household size only', asy
   assertFalse(t.event('item_added', subject, { ...ok, name: 'Milch' }));
   assertFalse(t.event('item_added', subject, { ...ok, actor_role: 'Peter' }));
   await t.flush();
-  assertEquals(sent[0].body.batch.length, 1);
-  const p = sent[0].body.batch[0].properties as Record<string, unknown>;
+  const [post] = sent;
+  assertExists(post);
+  assertEquals(post.body.batch.length, 1);
+  const [event] = post.body.batch;
+  assertExists(event);
+  const p = event.properties as Record<string, unknown>;
   assertEquals(p.source, 'alexa');
   assertEquals(p.household_id, household);
   assertEquals(p.is_internal, true, 'an internal install says so');
@@ -306,9 +322,13 @@ Deno.test('siri_add and siri_read (job 51): result, reason, language, source and
   assertFalse(t.event('siri_read', subject, { ...read, reason: 'added' }));
   assertFalse(t.event('siri_read', subject, { ...read, names: 'Milch' }));
   await t.flush();
-  const batch = sent[0].body.batch;
+  const [post] = sent;
+  assertExists(post);
+  const batch = post.body.batch;
   assertEquals(batch.map((e) => e.event), ['siri_add', 'siri_add', 'siri_read']);
-  assertEquals((batch[0].properties as Record<string, unknown>).household_id, household);
+  const [first] = batch;
+  assertExists(first);
+  assertEquals((first.properties as Record<string, unknown>).household_id, household);
 });
 
 Deno.test('integration_blocked (jobs 50, 73): the integration only, never what was said', async () => {
@@ -328,7 +348,9 @@ Deno.test('integration_blocked (jobs 50, 73): the integration only, never what w
   assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', tool: 'add_items' }));
   assertFalse(t.event('integration_blocked', subject, { integration: 'api', route: '/v1/items' }));
   await t.flush();
-  const batch = sent[0].body.batch as { properties: Record<string, unknown> }[];
+  const [post] = sent;
+  assertExists(post);
+  const batch = post.body.batch as { properties: Record<string, unknown> }[];
   assertEquals(batch.map((e) => e.properties.integration), ['siri', 'mcp', 'api']);
-  assertEquals(batch[0].properties.household_id, household);
+  assertEquals(batch[0]?.properties.household_id, household);
 });

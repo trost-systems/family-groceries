@@ -40,7 +40,7 @@ function* walk(dir: string): Generator<string> {
 }
 
 function brandsIn(text: string): string[] {
-  return [...text.matchAll(BRAND)].map((m) => m[1]);
+  return [...text.matchAll(BRAND)].flatMap(([, brand]) => brand === undefined ? [] : [brand]);
 }
 
 function textHits(file: string, text: string): Hit[] {

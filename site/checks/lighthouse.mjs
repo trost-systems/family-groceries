@@ -4,13 +4,14 @@
 // headers, so the intended X-Robots-Tag: noindex fails is-crawlable). Chrome runs with
 // --blink-settings=preferredColorScheme=<0 dark | 1 light> for the colour scheme; every run proves
 // it took effect by sampling the page background in Lighthouse's own final screenshot.
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launch } from 'chrome-launcher';
 import lighthouse from 'lighthouse';
 import desktopConfig from 'lighthouse/core/config/desktop-config.js';
 import { chromium } from 'playwright';
-import { PNG } from 'pngjs';
 import { contrast, parseArgs, serve, table } from './lib.mjs';
 
 const { dist, port, out, pages: only } = parseArgs({ port: 57622, out: '/tmp/s53/lighthouse' });

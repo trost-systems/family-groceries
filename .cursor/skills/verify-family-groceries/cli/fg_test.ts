@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
+import { assert, assertEquals, assertExists, assertMatch, assertStringIncludes } from '@std/assert';
 import type { RunOptions, Shell } from './core.ts';
 import { COMMANDS, main } from './fg.ts';
 import { loadInstance } from './instance.ts';
@@ -182,16 +182,21 @@ Deno.test('db query runs read-only unless --write, and --as applies the user thr
     if (cmd[0] === 'docker') return { code: 0, stdout: '[{"id":"u1"}]\n' };
     return { code: 1, stdout: '' };
   });
+  const lastStdin = () => {
+    const stdin = sh.stdins.at(-1);
+    assertExists(stdin, 'psql got a script on stdin');
+    return stdin;
+  };
   const read = await fg(['db', 'query', 'select 1 as x'], sh);
   assertEquals(read.code, 0);
-  assertStringIncludes(sh.stdins.at(-1)!, 'default_transaction_read_only = on');
+  assertStringIncludes(lastStdin(), 'default_transaction_read_only = on');
 
   await fg(['db', 'query', "update items set name = 'x'", '--write'], sh);
-  assert(!sh.stdins.at(-1)!.includes('read_only'), '--write lifts read-only');
+  assert(!lastStdin().includes('read_only'), '--write lifts read-only');
 
   await fg(['db', 'query', 'select count(*) from items', '--as', 'lea'], sh);
-  assertStringIncludes(sh.stdins.at(-1)!, 'set local role authenticated');
-  assertStringIncludes(sh.stdins.at(-1)!, '"sub":"u1"');
+  assertStringIncludes(lastStdin(), 'set local role authenticated');
+  assertStringIncludes(lastStdin(), '"sub":"u1"');
 });
 
 Deno.test('a write without --write fails as read_only before reaching the database', async () => {
@@ -220,9 +225,11 @@ Deno.test('doctor speaks the common contract: ok:false, code unhealthy, every ch
   assertEquals(json?.ok, false);
   assertEquals(error(json).code, 'unhealthy');
   const checks = (json?.error as { checks: { name: string; ok: boolean; fix?: string }[] }).checks;
-  const docker = checks.find((c) => c.name === 'docker')!;
+  const docker = checks.find((c) => c.name === 'docker');
+  assertExists(docker);
   assertEquals(docker.ok, false);
-  assertStringIncludes(docker.fix!, 'dockerd');
+  assertExists(docker.fix);
+  assertStringIncludes(docker.fix, 'dockerd');
   assert(!('healthy' in (json ?? {})), 'one success signal: ok');
 });
 
@@ -261,7 +268,7 @@ Deno.test('record stop signals only the Dart recorder, never ffmpeg or the sh wr
   const { code, json } = await fg(['record', 'stop'], sh);
   assertEquals(code, 0, JSON.stringify(json));
   assertEquals(sh.killed, [[101, 'SIGINT']]);
-  assertEquals((json?.stopped as { durationSec: number }[])[0].durationSec, 6.4);
+  assertEquals((json?.stopped as { durationSec: number }[])[0]?.durationSec, 6.4);
 });
 
 Deno.test('instance settings derive from FG_PORT_PREFIX; a KVM marker makes linux the default', async () => {
@@ -319,9 +326,9 @@ Deno.test('element parsing keeps keys, labels, tooltips, bounds and text with co
   const els = parseElements(LIST_SCREEN);
   assertEquals(els.length, 9);
   assertEquals(els[0], { type: 'TextField', key: 'add-item-field', label: 'Was fehlt?', bounds: { x: 16, y: 64, width: 380, height: 48 } });
-  assertEquals(els[6].text, 'Brot, hell');
-  assertEquals(els[7].tooltip, 'Menü');
-  assertEquals(els[8].enabled, true);
+  assertEquals(els[6]?.text, 'Brot, hell');
+  assertEquals(els[7]?.tooltip, 'Menü');
+  assertEquals(els[8]?.enabled, true);
 });
 
 Deno.test('a value spanning lines (a fresh partner item) stays one element', () => {
@@ -332,9 +339,9 @@ Neu", bounds: {"x":68,"y":302,"width":284,"height":24}
 Type: IconButton, tooltip: "Menü", bounds: {"x":372,"y":8,"width":40,"height":40}
 `);
   assertEquals(els.length, 2);
-  assertEquals(els[0].text, 'Milch');
-  assertEquals(els[0].bounds, { x: 68, y: 302, width: 284, height: 24 });
-  assertEquals(els[1].tooltip, 'Menü');
+  assertEquals(els[0]?.text, 'Milch');
+  assertEquals(els[0]?.bounds, { x: 68, y: 302, width: 284, height: 24 });
+  assertEquals(els[1]?.tooltip, 'Menü');
 });
 
 Deno.test('a row is the smallest keyed element around the text', () => {
@@ -419,9 +426,10 @@ Deno.test('drag lifts first, then finds the target: an empty store shows only du
   assertEquals(json?.to, [120, 120]);
   const xdotool = sh.calls.filter((c) => c[0] === 'xdotool');
   assertEquals(xdotool.length, 2, 'the lift, then the move to the target and the release');
-  assert(xdotool[0].includes('mousedown') && !xdotool[0].includes('mouseup'));
-  assertEquals(xdotool[1].at(-1), '1');
-  assertEquals(xdotool[1].at(-2), 'mouseup');
+  const [lift, release] = xdotool;
+  assert(lift?.includes('mousedown') && !lift.includes('mouseup'));
+  assertEquals(release?.at(-1), '1');
+  assertEquals(release?.at(-2), 'mouseup');
 
   // A target that never shows: the button is released, and the error says so.
   lifted = false;

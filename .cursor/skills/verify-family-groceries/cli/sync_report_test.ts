@@ -82,8 +82,8 @@ const result: EngineResult = {
 
 Deno.test('latency: live propagation per observer; own view, held-already and catch-up are left out of it', () => {
   const s = latencySummary(result);
-  assertEquals(s.perClient.A.fromAckMs, null, 'A only observed its own add');
-  assertEquals(s.perClient.B.fromAckMs, { n: 2, p50: 100, max: 300, min: 100 });
+  assertEquals(s.perClient.A?.fromAckMs, null, 'A only observed its own add');
+  assertEquals(s.perClient.B?.fromAckMs, { n: 2, p50: 100, max: 300, min: 100 });
   assertEquals(s.all.fromInputMs?.max, 350);
   assertEquals(s.catchUp.fromAckMs, { n: 1, p50: 4000, max: 4000, min: 4000 }, "A's own view of its action is not catch-up");
   assertEquals(s.catchUp.fromInputMs?.max, 4050);

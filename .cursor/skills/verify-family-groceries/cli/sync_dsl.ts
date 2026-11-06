@@ -45,9 +45,9 @@ export function tokenize(line: string): { tokens: string[]; quoted: boolean[] } 
   const tokens: string[] = [];
   const quoted: boolean[] = [];
   const re = /"((?:[^"\\]|\\.)*)"|(\S+)/g;
-  for (const m of line.matchAll(re)) {
-    tokens.push(m[1] !== undefined ? m[1].replace(/\\(.)/g, '$1') : m[2]);
-    quoted.push(m[1] !== undefined);
+  for (const [, inQuotes, word = ''] of line.matchAll(re)) {
+    tokens.push(inQuotes !== undefined ? inQuotes.replace(/\\(.)/g, '$1') : word);
+    quoted.push(inQuotes !== undefined);
   }
   return { tokens, quoted };
 }
@@ -58,7 +58,7 @@ function stripComment(line: string): string {
   for (let i = 0; i < line.length; i++) {
     if (line[i] === '\\' && quoted) i++;
     else if (line[i] === '"') quoted = !quoted;
-    else if (line[i] === '#' && !quoted && (i === 0 || /\s/.test(line[i - 1]))) return line.slice(0, i);
+    else if (line[i] === '#' && !quoted && (i === 0 || /\s/.test(line.charAt(i - 1)))) return line.slice(0, i);
   }
   return line;
 }
@@ -74,7 +74,7 @@ function duration(raw: string, where: string): number {
  * they map to; a step may use either. Every error names its line.
  */
 export function parseScript(text: string, clients: { label: string; handle: string }[]): Step[] {
-  const label = (raw: string, where: string) => {
+  const label = (raw: string | undefined, where: string) => {
     const c = clients.find((x) => x.label === raw || x.handle === raw);
     if (!c) throw new Error(`${where}: no client "${raw}" (this run has ${clients.map((x) => `${x.label}=${x.handle}`).join(', ')})`);
     return c.label;

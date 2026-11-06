@@ -156,4 +156,4 @@ export async function writeState(sh: Shell, inst: Instance, state: State): Promi
   await sh.writeText(`${inst.stateDir}/state.json`, JSON.stringify(state, null, 2));
 }
 
-export const runDir = (inst: Instance, state: State) => `${inst.evidenceRoot}/${state.run}`;
+export const runDir = (inst: Instance, state: State): string => `${inst.evidenceRoot}/${state.run}`;

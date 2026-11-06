@@ -4,13 +4,14 @@
 // links accounts with the same code it runs for Google and Apple.
 import { expect, test } from './fixtures';
 import { createHash, randomUUID } from 'node:crypto';
-import { anonClient, apiAs, fakeIdToken, latestLinkFor, newEmail, password } from './helpers';
+import { Buffer } from 'node:buffer';
+import { anonClient, apiAs, fakeIdToken, latestLinkFor, must, newEmail, password } from './helpers';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 async function signInWithIdToken(token: string, nonce?: string) {
   const client = anonClient();
-  const { data, error } = await client.auth.signInWithIdToken({ provider: 'keycloak', token, nonce });
+  const { data, error } = await client.auth.signInWithIdToken({ provider: 'keycloak', token, ...(nonce === undefined ? {} : { nonce }) });
   return { client, user: data.user, error };
 }
 
@@ -60,9 +61,11 @@ test('an account created by a provider signs in again by magic link', async () =
   const { error } = await anonClient().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
   expect(error).toBeNull();
   const res = await fetch(await latestLinkFor(email), { redirect: 'manual' });
-  const fragment = new URLSearchParams(new URL(res.headers.get('location')!).hash.slice(1));
-  const claims = JSON.parse(Buffer.from(fragment.get('access_token')!.split('.')[1], 'base64url').toString());
-  expect(claims.sub).toBe(user!.id);
+  const fragment = new URLSearchParams(new URL(must(res.headers.get('location'), 'redirect location')).hash.slice(1));
+  const [, payload] = must(fragment.get('access_token'), 'access token').split('.');
+  if (payload === undefined) throw new Error('the access token is no JWT');
+  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  expect(claims.sub).toBe(must(user, 'user').id);
 });
 
 test('Apple and Google again with the same email reuse the one account', async () => {

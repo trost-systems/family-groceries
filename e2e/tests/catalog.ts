@@ -1,8 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { editSheet, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
+import { boxOf, editSheet, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
 
 /** The list's group headings, top to bottom. */
-export async function groupHeadings(page: Page): Promise<string[]> {
+export function groupHeadings(page: Page): Promise<string[]> {
   return page.getByRole('heading', { level: 2 }).allTextContents();
 }
 
@@ -29,8 +29,8 @@ export async function expectGroup(page: Page, item: string, group: string): Prom
 
 /** Drags a row of a reorderable list by its handle to the position of another row. */
 export async function dragHandle(page: Page, handleName: string, ontoHandleName: string): Promise<void> {
-  const from = (await page.getByText(handleName, { exact: true }).boundingBox())!;
-  const to = (await page.getByText(ontoHandleName, { exact: true }).boundingBox())!;
+  const from = await boxOf(page.getByText(handleName, { exact: true }));
+  const to = await boxOf(page.getByText(ontoHandleName, { exact: true }));
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 5, { steps: 3 });
@@ -50,12 +50,11 @@ export async function outline(page: Page): Promise<Section[]> {
   const sections: Section[] = [];
   let current: Section | undefined;
   for (const line of (await page.locator('body').ariaSnapshot()).split('\n')) {
-    const match = /- (button|checkbox|heading) "(.*)"/.exec(line);
-    if (!match) continue;
-    const [, role, name] = match;
-    const store = /^(.+), \d+ Artikel$/.exec(name);
-    if (role === 'button' && store) {
-      current = { store: store[1], headings: [], items: [] };
+    const [, role, name] = /- (button|checkbox|heading) "(.*)"/.exec(line) ?? [];
+    if (role === undefined || name === undefined) continue;
+    const store = /^(.+), \d+ Artikel$/.exec(name)?.[1];
+    if (role === 'button' && store !== undefined) {
+      current = { store, headings: [], items: [] };
       sections.push(current);
     } else if (role === 'button' && name === 'Zuletzt verwendet') {
       current = undefined;

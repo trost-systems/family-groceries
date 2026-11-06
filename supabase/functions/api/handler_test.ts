@@ -1,5 +1,5 @@
 import { sha256Hex } from '../_shared/auth.ts';
-import { assert, assertEquals, assertFalse } from '@std/assert';
+import { assert, assertEquals, assertExists, assertFalse } from '@std/assert';
 import { ToolError } from '../_shared/list.ts';
 import {
   type Begin,
@@ -112,7 +112,9 @@ Deno.test('a bad or foreign credential is 401 invalid_token; only fgp_ tokens ar
     assertEquals(res.status, 401);
     assertEquals((await errorOf(res)).code, 'invalid_token');
     assertRateHeaders(res, '20', '17');
-    const [{ tokenHash, ipHash }] = deps.begun;
+    const [begun] = deps.begun;
+    assertExists(begun);
+    const { tokenHash, ipHash } = begun;
     assertEquals(tokenHash === null, !token.startsWith('fgp_'));
     assert(/^[0-9a-f]{64}$/.test(ipHash), 'the address goes in only as its hash');
   }
@@ -129,7 +131,7 @@ Deno.test("the address is the gateway's X-Real-IP; a forged X-Forwarded-For chan
       }),
       deps,
     );
-    hashes.push(deps.begun[0].ipHash);
+    hashes.push(deps.begun[0]?.ipHash);
   }
   assertEquals(hashes, [await sha256Hex('203.0.113.7'), await sha256Hex('203.0.113.7')]);
 });
@@ -207,8 +209,8 @@ Deno.test('an unlocked household runs the operation and gets its answer', async 
   assertEquals(res.status, 201);
   assertEquals(await res.json(), { data: { added: [] } });
   assertEquals(deps.executed.length, 1);
-  assertEquals(deps.executed[0].key, writer);
-  assertEquals(deps.executed[0].idempotency, null, 'no Idempotency-Key, no claim');
+  assertEquals(deps.executed[0]?.key, writer);
+  assertEquals(deps.executed[0]?.idempotency, null, 'no Idempotency-Key, no claim');
   assertRateHeaders(res, '20', '19');
 });
 
@@ -241,12 +243,12 @@ Deno.test('unknown fields and query parameters are 400 validation_failed, values
     400,
     'validation_failed',
   );
-  const issues = unknownField.details!.issues as { path: string; message: string }[];
+  const issues = unknownField.details?.issues as { path: string; message: string }[];
   assertEquals(issues.map((i) => i.path), ['body.items.0']);
   assertFalse(JSON.stringify(issues).includes('Rotkohl-geheim'));
 
   const unknownParam = await rejected(call('/items?sort=name'), 400, 'validation_failed');
-  assertEquals((unknownParam.details!.issues as { path: string }[])[0].path, 'query');
+  assertEquals((unknownParam.details?.issues as { path: string }[])[0]?.path, 'query');
   await rejected(call('/items?store=dm&store=Lidl'), 400, 'validation_failed');
   await rejected(call('/items?limit=0'), 400, 'validation_failed');
   await rejected(call('/items?limit=101'), 400, 'validation_failed');
@@ -259,7 +261,7 @@ Deno.test('field limits: name 1 to 120, quantity non-empty, batch 1 to 50', asyn
     400,
     'validation_failed',
   );
-  assertEquals((name.details!.issues as { path: string }[])[0].path, 'body.items.0.name');
+  assertEquals((name.details?.issues as { path: string }[])[0]?.path, 'body.items.0.name');
   await rejected(post(JSON.stringify({ items: [{ name: '   ' }] })), 400, 'validation_failed');
   await rejected(
     post(JSON.stringify({ items: [{ name: 'Milch', quantity: ' ' }] })),
@@ -372,14 +374,18 @@ Deno.test('Idempotency-Key: printable ASCII, 1 to 255; the same request hashes t
     call(`/items/${ID}/tick`, { method: 'POST', headers: { 'idempotency-key': 'k-1' } }),
     deps,
   );
-  const [a, b, c, d] = deps.executed.map((e) => e.idempotency!);
+  const [a, b, c, d] = deps.executed.map((e) => e.idempotency);
+  assertExists(a);
+  assertExists(b);
+  assertExists(c);
+  assertExists(d);
   assertEquals(a.key, 'k-1');
   assertEquals(a.requestHash, b.requestHash, 'key order and spacing do not matter');
   assert(a.requestHash !== c.requestHash, 'another body is another request');
   assert(a.requestHash !== d.requestHash, 'another path is another request');
 
   await handle(call('/items', { headers: { 'idempotency-key': 'k-1' } }), deps);
-  assertEquals(deps.executed[4].idempotency, null, 'a GET takes no key');
+  assertEquals(deps.executed[4]?.idempotency, null, 'a GET takes no key');
 });
 
 Deno.test('list errors map to their codes; a unique violation is 409; the rest 500', async () => {
@@ -417,6 +423,8 @@ Deno.test('one log line per request: template, status, key id; never the id or a
   await handle(call(`/items/${ID}`), deps);
   assertEquals(deps.logs.length, 2);
   const [first, second] = deps.logs;
+  assertExists(first);
+  assertExists(second);
   assertEquals(first.route, '/v1/items/{id}');
   assertEquals(first.status, 400, 'an unknown query parameter');
   assertEquals(second.fn, 'api');
@@ -476,8 +484,8 @@ Deno.test('OPTIONS answers CORS for the API headers without touching the key', a
   const deps = fake();
   const res = await handle(new Request(`${BASE}/items`, { method: 'OPTIONS' }), deps);
   assertEquals(res.status, 204);
-  assert(res.headers.get('access-control-allow-headers')!.includes('idempotency-key'));
-  assert(res.headers.get('access-control-expose-headers')!.includes('x-ratelimit-remaining'));
+  assert(res.headers.get('access-control-allow-headers')?.includes('idempotency-key'));
+  assert(res.headers.get('access-control-expose-headers')?.includes('x-ratelimit-remaining'));
   assertEquals(deps.begun, []);
 });
 

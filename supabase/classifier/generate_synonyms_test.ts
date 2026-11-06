@@ -14,7 +14,10 @@ Deno.test("the newest synonyms migration is generated from synonyms.tsv", async 
   for await (const entry of Deno.readDir(migrationsUrl)) {
     if (entry.name.includes("_classifier_synonyms")) names.push(entry.name);
   }
-  const newest = names.sort().at(-1)!;
+  const newest = names.sort().at(-1);
+  if (newest === undefined) {
+    throw new Error("no _classifier_synonyms migration");
+  }
   const migration = await Deno.readTextFile(new URL(newest, migrationsUrl));
   const expected = toMigration(
     parseSynonyms(await Deno.readTextFile(synonymsUrl), await terms()),
@@ -47,7 +50,7 @@ Deno.test("the spec's regional pairs and English words are in", async () => {
       ["karfiol", "blumenkohl"],
       ["carrots", "möhre"],
       ["milk", "milch"],
-    ]
+    ] as const
   ) {
     assertEquals(canonical.get(variant), target, variant);
   }

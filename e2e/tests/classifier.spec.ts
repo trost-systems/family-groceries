@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import { deleteItem, expectGroup, setCategory } from './catalog';
-import { addItem, apiAs, itemRow, newEmail, openEdit, pickInSheet, reveal, saveEdit, screenshot, signUpWithHousehold, tick } from './helpers';
+import { addItem, apiAs, itemRow, must, newEmail, openEdit, pickInSheet, reveal, saveEdit, screenshot, signUpWithHousehold, tick } from './helpers';
 
 test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household only', async ({ browser }) => {
   const peterEmail = newEmail('learn');
@@ -32,6 +32,7 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
 
   const api = await apiAs(peterEmail);
   const { data: household } = await api.from('households').select('id').single();
+  if (household === null) throw new Error('no household');
   await tick(peter, 'Hafermilch');
   await expect(itemRow(peter, 'Hafermilch')).toHaveCount(0);
   await expect.poll(async () => {
@@ -39,7 +40,7 @@ test('CLASSIFIER-LEARNING: add -> X, move -> Y, re-add -> Y, in this household o
     return data?.map((r) => r.status);
   }, { message: 'the tick reached the server, so add_items adds anew' }).toEqual(['bought']);
   const { data: added, error } = await api.rpc('add_items', {
-    p_household: household!.id,
+    p_household: household.id,
     p_names: ['Hafermilch', '1 Packung Kaffee'],
   });
   expect(error).toBeNull();
@@ -101,7 +102,7 @@ test('SPELLING VARIANTS (job 32a): typos, regional and English words land with t
   // The text stays as typed; the server noted how it found each category (analytics only).
   const api = await apiAs(email);
   const { data: rows } = await api.from('items').select('name, categorized_via').in('name', Object.keys(expected));
-  expect(Object.fromEntries(rows!.map((r) => [r.name, r.categorized_via])))
+  expect(Object.fromEntries(must(rows, 'item rows').map((r) => [r.name, r.categorized_via])))
     .toEqual(Object.fromEntries(Object.entries(expected).map(([item, [, via]]) => [item, via])));
 
   // A correction of the typo holds for the word's synonyms and spellings, in this household only.

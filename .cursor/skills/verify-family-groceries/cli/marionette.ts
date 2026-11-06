@@ -10,7 +10,8 @@ export interface Bounds {
 }
 
 export interface Element {
-  type: string;
+  /** Undefined when the line's Type value does not parse. */
+  type: string | undefined;
   key?: string;
   text?: string;
   label?: string;
@@ -30,7 +31,9 @@ export type Matcher =
 
 export function matcherArgs(m: Matcher): string[] {
   if ('x' in m) return ['--x', String(m.x), '--y', String(m.y)];
-  const [name, value] = Object.entries(m)[0];
+  const [first] = Object.entries(m);
+  if (first === undefined) throw new TypeError('A matcher needs one field.');
+  const [name, value] = first;
   return [`--${name}`, String(value)];
 }
 
@@ -53,9 +56,8 @@ export function parseElements(output: string): Element[] {
     if (!line.startsWith('Type: ')) continue;
     const fields: Record<string, string> = {};
     const pair = /(\w+): ("(?:[^"\\]|\\.)*"|\{[^}]*\}|[^,]+)(?:, |$)/g;
-    for (const m of line.matchAll(pair)) {
-      const raw = m[2];
-      fields[m[1]] = raw.startsWith('"') ? JSON.parse(raw) : raw.trim();
+    for (const [, name = '', raw = ''] of line.matchAll(pair)) {
+      fields[name] = raw.startsWith('"') ? JSON.parse(raw) : raw.trim();
     }
     const el: Element = { type: fields.Type };
     if (fields.Key !== undefined) el.key = fields.Key;
@@ -88,17 +90,20 @@ export function rowKeyFor(elements: Element[], text: string): string {
       'Run `fg find` to list what is on screen; text must match exactly (case, umlauts).',
     );
   }
-  const rows = elements
-    .filter((e) => e.key !== undefined && e.bounds && contains(e.bounds, label.bounds!))
-    .sort((a, b) => a.bounds!.width * a.bounds!.height - b.bounds!.width * b.bounds!.height);
-  if (rows.length === 0) {
+  const within = label.bounds;
+  const rows = elements.flatMap(({ key, bounds }) =>
+    key !== undefined && bounds && contains(bounds, within) ? [{ key, area: bounds.width * bounds.height }] : []
+  )
+    .sort((a, b) => a.area - b.area);
+  const key = rows[0]?.key;
+  if (key === undefined) {
     throw new FgError(
       'not_found',
       `"${text}" is not inside a keyed row.`,
       'Match it directly with --text, or tap by coordinates from `fg find`.',
     );
   }
-  return rows[0].key!;
+  return key;
 }
 
 /** Which top-level screen shows, told apart by the key of its main field. */
@@ -150,7 +155,7 @@ export class Marionette {
 
 /** Marionette nests the app-side exception as JSON on a later line; that is the useful part. */
 export function firstLine(message: string): string {
-  const nested = message.match(/"exception":"((?:[^"\\]|\\.)*)"/);
-  if (nested) return nested[1].replace(/^Exception: /, '').slice(0, 400);
-  return message.split('\n')[0].slice(0, 400);
+  const nested = message.match(/"exception":"((?:[^"\\]|\\.)*)"/)?.[1];
+  if (nested !== undefined) return nested.replace(/^Exception: /, '').slice(0, 400);
+  return (message.split('\n')[0] ?? '').slice(0, 400);
 }

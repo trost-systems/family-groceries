@@ -1,5 +1,6 @@
 // node --test agent-forms.test.mjs (after `npm run build` in site/): the waitlist form check on
 // the built site, and on fixture pages broken one way per check, so each check is proven to fail.
+import process from 'node:process';
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -40,7 +41,10 @@ root.querySelector('form').addEventListener('submit', async (e) => {
 const GOOD_CONSENT = 'Mit „Auf die Warteliste“ willigst du ein. Mehr in der Datenschutzerklärung &amp; ab 16.';
 
 describe('waitlist form check on fixtures', () => {
-  let browser, server, origin, consent;
+  let browser;
+  let server;
+  let origin;
+  let consent;
   const pages = new Map();
   before(async () => {
     const content = mkdtempSync(join(tmpdir(), 'agent-forms-'));
@@ -63,7 +67,7 @@ describe('waitlist form check on fixtures', () => {
     server?.close();
   });
 
-  const run = async (name, options) => {
+  const run = (name, options) => {
     pages.set(`/${name}`, PAGE({ consent: GOOD_CONSENT, ...options }));
     return checkSignupForm(browser, { origin, path: `/${name}`, locale: 'de', consent });
   };
@@ -95,7 +99,9 @@ describe('waitlist form check on fixtures', () => {
 // On until the waitlist (job 82) is on main: the form and Legal's consent texts come with it.
 const consent = readConsent(join(SITE, 'content'));
 describe('waitlist form on the built site', { skip: consent ? false : 'waits for job 82: no Legal consent text in site/content/legal/consent/ yet, so no waitlist form' }, () => {
-  let browser, upstream, site;
+  let browser;
+  let upstream;
+  let site;
   before(async () => {
     upstream = createServer((req, res) => res.writeHead(req.url === '/signup' ? 202 : 404, { 'content-type': 'application/json' }).end('{"status":"ok"}'));
     await new Promise((r) => upstream.listen(0, '127.0.0.1', r));

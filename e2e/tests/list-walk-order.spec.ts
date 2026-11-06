@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { expect, type Page, test } from './fixtures';
 import { outline, sectionHeadings, sectionItems, setStore, storeOf } from './catalog';
 import {
-  apiAs, chainStores, createInviteCode, editSheet, itemRow, joinWithCode, newEmail, reveal, screenshot, signUp,
+  apiAs, boxOf, chainStores, createInviteCode, editSheet, firstOf, itemRow, joinWithCode, must, newEmail, reveal, screenshot, signUp,
   signUpWithHousehold, storeDivider, putBack, tick,
 } from './helpers';
 
@@ -13,9 +13,9 @@ async function seed(page: Page, email: string, items: Seed[]): Promise<SupabaseC
   const api = await apiAs(email);
   const { data: stores } = await api.from('stores').select('id, name, household_id');
   const { data: categories } = await api.from('categories').select('id, name');
-  const id = (rows: { id: string; name: string }[] | null, name: string) => rows!.find((r) => r.name === name)!.id;
+  const id = (rows: { id: string; name: string }[] | null, name: string) => must(rows?.find((r) => r.name === name), name).id;
   const { error } = await api.from('items').insert(items.map((i) => ({
-    household_id: stores![0].household_id,
+    household_id: firstOf(stores, 'store').household_id,
     name: i.name,
     store_id: i.store ? id(stores, i.store) : null,
     category_id: id(categories, i.category),
@@ -26,7 +26,7 @@ async function seed(page: Page, email: string, items: Seed[]): Promise<SupabaseC
   })));
   if (error) throw error;
   await page.reload();
-  await expect(itemRow(page, items.at(-1)!.name)).toBeVisible();
+  await expect(itemRow(page, must(items.at(-1), 'seeded item').name)).toBeVisible();
   return api;
 }
 
@@ -44,7 +44,7 @@ const lidl: Seed[] = [
 
 async function householdOf(api: SupabaseClient): Promise<string> {
   const { data } = await api.from('stores').select('household_id').limit(1).single();
-  return data!.household_id as string;
+  return must(data, 'store').household_id as string;
 }
 
 test('stores and categories are dividers that scroll away, stores fold for good, the explainer goes for good', async ({ page }) => {
@@ -65,13 +65,13 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   const store = storeDivider(page, 'Lidl');
   const heading = page.getByRole('heading', { name: 'Kühlregal', exact: true });
   const row = itemRow(page, 'Joghurt');
-  const y = async () => [(await store.boundingBox())!.y, (await heading.boundingBox())!.y, (await row.boundingBox())!.y];
+  const y = async () => [(await boxOf(store)).y, (await boxOf(heading)).y, (await boxOf(row)).y] as const;
   const before = await y();
   await page.mouse.move(240, 600);
   await page.mouse.wheel(0, 80);
   await page.waitForTimeout(300);
   const after = await y();
-  const moved = after.map((v, i) => Math.round(before[i] - v));
+  const moved = ([0, 1, 2] as const).map((i) => Math.round(before[i] - after[i]));
   expect(moved[0], 'the list scrolled').toBeGreaterThan(20);
   expect(moved, 'store divider, category divider and row move by the same delta: nothing sticks').toEqual([moved[0], moved[0], moved[0]]);
   await page.mouse.wheel(0, -80);
@@ -119,7 +119,7 @@ test('nothing on the list drags: a hold on a row edits, a hold on a divider open
   await seed(page, email, lidl);
   const before = await outline(page);
 
-  const g = (await itemRow(page, 'Gurke').boundingBox())!;
+  const g = await boxOf(itemRow(page, 'Gurke'));
   await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(700);
@@ -131,7 +131,7 @@ test('nothing on the list drags: a hold on a row edits, a hold on a divider open
   expect(await outline(page), 'a hold that moves on moves nothing').toEqual(before);
 
   for (const divider of [storeDivider(page, 'Lidl'), page.getByRole('heading', { name: 'Kühlregal', exact: true })]) {
-    const box = (await divider.boundingBox())!;
+    const box = await boxOf(divider);
     await page.mouse.move(box.x + 40, box.y + box.height / 2);
     await page.mouse.down();
     await page.waitForTimeout(700);
@@ -161,7 +161,7 @@ test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold o
   await expect(editSheet(peter), 'a right click edits').toBeVisible();
   await editSheet(peter).getByRole('button', { name: 'Abbrechen' }).click();
   await expect(editSheet(peter)).toHaveCount(0);
-  const g = (await itemRow(peter, 'Gurke').boundingBox())!;
+  const g = await boxOf(itemRow(peter, 'Gurke'));
   await peter.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
   await peter.mouse.down();
   await peter.waitForTimeout(700);
@@ -169,8 +169,8 @@ test('a tap ticks, a tap under Zuletzt verwendet puts it back in place, a hold o
   await expect(editSheet(peter), 'a hold that stays put edits').toBeVisible();
   await editSheet(peter).getByRole('button', { name: 'Abbrechen' }).click();
 
-  const longRow = (await itemRow(peter, long).boundingBox())!;
-  const short = (await itemRow(peter, 'Gurke').boundingBox())!;
+  const longRow = await boxOf(itemRow(peter, long));
+  const short = await boxOf(itemRow(peter, 'Gurke'));
   // A one-line row is the 48 px minimum (job 57); two 21 px lines and the padding make it taller.
   expect(longRow.height, 'a long name wraps: the row grows').toBeGreaterThan(short.height + 4);
   await expect(itemRow(peter, long)).toHaveAccessibleName(new RegExp(`^${long}`));
@@ -205,7 +205,7 @@ test('wide screens put the stores in columns, and an item moves across them', as
   const columns = async (names: string[]) =>
     new Set(await Promise.all(names.map(async (n) => (await storeDivider(page, n).boundingBox())?.x ?? NaN))).size;
   await expect.poll(() => columns(['dm', 'Lidl', 'EDEKA', 'Ohne Laden']), { message: 'three columns at 1366 px' }).toBe(3);
-  expect((await itemRow(page, 'Gurke').boundingBox())!.width, 'a readable row width').toBeLessThanOrEqual(560);
+  expect((await boxOf(itemRow(page, 'Gurke'))).width, 'a readable row width').toBeLessThanOrEqual(560);
   await screenshot(page, 'walk-05-wide-1366');
 
   expect(await stores(page), 'a screen reader reads column by column').toEqual(['dm', 'Lidl', 'EDEKA', 'Ohne Laden']);
@@ -214,7 +214,7 @@ test('wide screens put the stores in columns, and an item moves across them', as
 
   await page.setViewportSize({ width: 820, height: 1180 });
   await expect.poll(() => columns(['dm', 'Lidl']), { message: 'one column at 820 px' }).toBe(1);
-  const row = (await itemRow(page, 'Gurke').boundingBox())!;
+  const row = await boxOf(itemRow(page, 'Gurke'));
   expect(row.width, 'centred at its max width').toBe(640);
   expect(row.x).toBeCloseTo((820 - 640) / 2, 0);
   await screenshot(page, 'walk-06-wide-820');

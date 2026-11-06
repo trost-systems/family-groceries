@@ -5,6 +5,7 @@
 //
 //   node site/scenes/film-all.mjs [scene...]   film all scenes, or the named ones
 //   node site/scenes/film-all.mjs --serve      only serve site/ on 127.0.0.1:57610
+import process from 'node:process';
 import { createServer } from 'node:http';
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, realpathSync, statSync } from 'node:fs';

@@ -21,17 +21,20 @@ export async function hmacHex(key: string, data: string): Promise<string> {
 
 /** Constant-time comparison: hashed first, so neither content nor length leaks. */
 export async function sameSecret(a: string, b: string): Promise<boolean> {
-  const [x, y] = await Promise.all([a, b].map(async (s) => encode(await sha256Hex(s))));
+  const digest = async (s: string) => encode(await sha256Hex(s));
+  const [x, y] = await Promise.all([digest(a), digest(b)]);
   let diff = 0;
-  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  for (const [i, byte] of x.entries()) diff |= byte ^ (y[i] ?? 0);
   return diff === 0;
 }
 
 /** The proof record's value for an address: no one can read the address back from it. */
-export const emailHmac = (secret: string, email: string) => hmacHex(secret, email.toLowerCase());
+export const emailHmac = (secret: string, email: string): Promise<string> =>
+  hmacHex(secret, email.toLowerCase());
 
 /** The signature in every unsubscribe link; it never expires, so old mails keep working. */
-export const unsubscribeSig = (secret: string, id: string) => hmacHex(secret, `unsubscribe:${id}`);
+export const unsubscribeSig = (secret: string, id: string): Promise<string> =>
+  hmacHex(secret, `unsubscribe:${id}`);
 
 /** 32 random bytes, base64url without padding: 43 characters. */
 export function confirmToken(random: Uint8Array): string {

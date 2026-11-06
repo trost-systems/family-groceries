@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { test, mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
@@ -10,16 +11,16 @@ const ENV = { WAITLIST_UPSTREAM_URL: 'https://ref.supabase.co/functions/v1/waitl
 const NOW = new Date('2026-11-02T23:59:59Z');
 const IP = '203.0.113.7';
 const EMAIL = 'hello+waitlisttest@hummlist.com';
-const SIGNUP = { email: EMAIL, platform: 'ios', locale: 'de', launch_news: false, consent_version: 'waitlist-de-v1', website: '', elapsed_ms: 5000 };
+const SIGNUP = { email: EMAIL, platform: 'ios', locale: 'de', 'launch_news': false, 'consent_version': 'waitlist-de-v1', website: '', 'elapsed_ms': 5000 };
 
 const log = mock.method(console, 'log', () => {});
 beforeEach(() => log.mock.resetCalls());
 
 function upstream(status = 202, text = '{"status":"ok"}') {
   const calls = [];
-  const fetch = async (url, init) => {
+  const fetch = (url, init) => {
     calls.push({ url, method: init.method, headers: Object.fromEntries(new Headers(init.headers)), body: JSON.parse(init.body) });
-    return new Response(text, { status, headers: { 'content-type': 'application/json' } });
+    return Promise.resolve(new Response(text, { status, headers: { 'content-type': 'application/json' } }));
   };
   return { calls, fetch };
 }
@@ -139,20 +140,18 @@ test('upstream statuses and JSON bodies pass through unchanged', async () => {
 
 test('an unreachable, hanging or non-JSON upstream answers 503 unavailable', async () => {
   const fetches = {
-    throws: async () => {
-      throw new TypeError('fetch failed');
-    },
+    throws: () => Promise.reject(new TypeError('fetch failed')),
     // AbortSignal.timeout's timer doesn't hold the event loop open (Node 22), a real socket would.
-    hangs: (url, init) =>
-      new Promise((resolve, reject) => {
+    hangs: (_url, init) =>
+      new Promise((_resolve, reject) => {
         const socket = setTimeout(() => {}, 60_000);
         init.signal.addEventListener('abort', () => {
           clearTimeout(socket);
           reject(init.signal.reason);
         });
       }),
-    html: async () => new Response('<html>Bad gateway</html>', { status: 502 }),
-    empty: async () => new Response(null, { status: 204 }),
+    html: () => Promise.resolve(new Response('<html>Bad gateway</html>', { status: 502 })),
+    empty: () => Promise.resolve(new Response(null, { status: 204 })),
   };
   for (const [name, fetch] of Object.entries(fetches)) {
     const res = await read(await call('signup', {}, { fetch, timeoutMs: 20 }));
@@ -280,9 +279,7 @@ test('each request logs one line with the route and status only', async () => {
     () => call('confirm', { body: { token: 'secret-token' } }, { fetch: upstream(200, '{"status":"confirmed"}').fetch }),
     () => call('unsubscribe', { method: 'GET', query: '?id=row-1&s=sig-1' }, { fetch: upstream().fetch }),
     () => call('signup', {}, {
-      fetch: async () => {
-        throw new Error(`connect failed for ${EMAIL} from ${IP}`);
-      },
+      fetch: () => Promise.reject(new Error(`connect failed for ${EMAIL} from ${IP}`)),
     }),
   ];
   for (const run of runs) await run();

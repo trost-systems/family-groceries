@@ -1,6 +1,6 @@
 /** Evidence: screenshots, screen recordings and logs, saved outside the repo so cleanup never eats them. */
 
-import { type Command, type Ctx, FgError, int, type JsonObject, str } from './core.ts';
+import { type Command, type Ctx, entry, FgError, int, type JsonObject, type NonEmpty, str } from './core.ts';
 import { clientName, type RecordingState, runDir } from './instance.ts';
 import { client, clientFlag } from './drive.ts';
 import { mustRun } from './stack.ts';
@@ -31,7 +31,9 @@ async function processGroup(ctx: Ctx, pgid: number): Promise<{ pid: number; args
   const res = await ctx.sh.run(['ps', '-eo', 'pid=,pgid=,args=']);
   return res.stdout.split('\n').flatMap((line) => {
     const m = line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/);
-    return m && Number(m[2]) === pgid ? [{ pid: Number(m[1]), args: m[3] }] : [];
+    if (!m) return [];
+    const [, pid = '', group = '', args = ''] = m;
+    return Number(group) === pgid ? [{ pid: Number(pid), args }] : [];
   });
 }
 
@@ -121,7 +123,9 @@ export const evidenceCommands: Command[] = [
       const kind = !native ? 'marionette' : state.surface === 'linux' ? 'x11grab' : 'screenrecord';
       const path = await evidencePath(ctx, id, id, kind === 'marionette' ? '.webm' : '.mp4');
       const log = `${ctx.inst.stateDir}/record-${id}.log`;
-      const cmd = kind === 'marionette' ? ['marionette', '--uri', state.vmUri, 'record-video', '--output', path] : kind === 'x11grab'
+      const cmd: NonEmpty<string> = kind === 'marionette'
+        ? ['marionette', '--uri', state.vmUri, 'record-video', '--output', path]
+        : kind === 'x11grab'
         ? [
           'ffmpeg',
           '-loglevel',
@@ -178,7 +182,7 @@ export const evidenceCommands: Command[] = [
       }
       const stopped: JsonObject[] = [];
       for (const id of ids) {
-        const rec = ctx.state.recordings[id];
+        const rec = entry(ctx.state.recordings, id, 'recording');
         const result = await ctx.act(`stop recording "${id}" (pid ${rec.pid})`, () => stopRecording(ctx, id, rec));
         if (result) stopped.push(result);
       }

@@ -2,7 +2,7 @@
 
 import { parse as parseYaml } from '@std/yaml';
 import { Ajv2020 } from 'ajv/dist/2020.js';
-import { FgError, type Shell } from './core.ts';
+import { FgError, type NonEmpty, type Shell } from './core.ts';
 
 export const SCENARIO_DIR = 'test/fixtures/scenarios';
 export const SCHEMA_PATH = 'test/fixtures/scenario.schema.json';
@@ -40,11 +40,11 @@ interface RawScenario {
   name: string;
   summary: string;
   goodFor?: string[];
-  users: { handle: string; name: string; locale?: 'de' | 'en' }[];
+  users: NonEmpty<{ handle: string; name: string; locale?: 'de' | 'en' }>;
   households?: {
     handle?: string;
     name: string;
-    members: string[];
+    members: NonEmpty<string>;
     categories?: { add?: string[]; order?: string[] };
     stores?: { name: string; layout?: string[]; hidden?: string[] }[];
     items?: RawItem[];
@@ -79,7 +79,7 @@ export interface PlannedTrip {
 export interface PlannedHousehold {
   handle: string;
   name: string;
-  members: string[];
+  members: NonEmpty<string>;
   addCategories: string[];
   categoryOrder: string[];
   stores: { name: string; layout: string[]; hidden: string[] }[];
@@ -167,7 +167,7 @@ export async function parseScenario(sh: Shell, repo: string, file: string, text:
   if (!validate(data)) throw bad(file, describeSchemaErrors(validate.errors ?? []));
   const raw = data as RawScenario;
   const problems = semanticProblems(raw);
-  const base = file.split('/').pop()!.replace(/\.ya?ml$/, '');
+  const base = file.slice(file.lastIndexOf('/') + 1).replace(/\.ya?ml$/, '');
   if (raw.name !== base) problems.unshift(`name: "${raw.name}" must match the file name "${base}"`);
   if (problems.length) throw bad(file, problems.slice(0, 5));
   return { ...raw, file };
@@ -253,7 +253,8 @@ export function semanticProblems(s: RawScenario): string[] {
   for (const [user, view] of Object.entries(s.views ?? {})) {
     if (!handles.has(user)) problems.push(`views.${user}: no user "${user}"`);
     else if (view.store !== undefined) {
-      const h = homeOf.has(user) ? s.households![homeOf.get(user)!] : undefined;
+      const hi = homeOf.get(user);
+      const h = hi === undefined ? undefined : s.households?.[hi];
       if (!h) problems.push(`views.${user}.store: "${user}" is in no household`);
       else if (!(h.stores ?? []).some((x) => x.name === view.store)) {
         problems.push(`views.${user}.store: no store "${view.store}" in ${h.name}`);
@@ -262,12 +263,12 @@ export function semanticProblems(s: RawScenario): string[] {
   }
   for (const kind of ['usuals', 'due', 'notDue'] as const) {
     for (const [handle, names] of Object.entries(s.expect?.[kind] ?? {})) {
-      const hi = (s.households ?? []).findIndex((h, i) => (h.handle ?? householdHandle(i)) === handle);
-      if (hi < 0) {
+      const household = (s.households ?? []).find((h, i) => (h.handle ?? householdHandle(i)) === handle);
+      if (!household) {
         problems.push(`expect.${kind}.${handle}: no household "${handle}"`);
         continue;
       }
-      const bought = new Set((s.households![hi].history ?? []).flatMap((t) => t.items.map(itemName)));
+      const bought = new Set((household.history ?? []).flatMap((t) => t.items.map(itemName)));
       names.forEach((n, ni) => {
         if (!bought.has(n)) problems.push(`expect.${kind}.${handle}[${ni}]: "${n}" is never bought in this household's history`);
       });
@@ -314,15 +315,18 @@ const TZ = 'Europe/Berlin';
 
 /** Minutes east of UTC that Berlin is at this instant (60 or 120). */
 function berlinOffsetMinutes(at: Date): number {
-  const name = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(at)
-    .find((p) => p.type === 'timeZoneName')!.value; // "GMT+02:00"
+  const part = new Intl.DateTimeFormat('en-US', { timeZone: TZ, timeZoneName: 'longOffset' }).formatToParts(at)
+    .find((p) => p.type === 'timeZoneName');
+  if (!part) throw new Error(`Intl gave no time zone name for ${TZ}`);
+  const name = part.value; // "GMT+02:00"
   const m = /GMT([+-])(\d\d):(\d\d)/.exec(name);
   return m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0;
 }
 
 /** The Berlin calendar day of an instant. */
 function berlinDay(at: Date): { y: number; m: number; d: number } {
-  const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at)
+  const [y = NaN, m = NaN, d = NaN] = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(at)
     .split('-').map(Number);
   return { y, m, d };
 }
@@ -364,11 +368,12 @@ export function plan(s: Scenario, now: Date): Plan {
     const trips: PlannedTrip[] = [];
     for (const t of h.history ?? []) {
       const newest = resolveTime(t.at, now);
-      const step = t.every ? Number(t.every.slice(0, -1)) * UNIT_MS[t.every.slice(-1) as 'h' | 'd'] : 0;
+      const { every } = t;
+      const step = every ? Number(every.slice(0, -1)) * UNIT_MS[every.slice(-1) as 'h' | 'd'] : 0;
       for (let k = 0; k < (t.times ?? 1); k++) {
         // Calendar days, not 24 h steps, so "-3d 18:10" every 7d stays at 18:10 across a DST change.
-        const at = t.every?.endsWith('d') && /\d\d:\d\d$/.test(t.at)
-          ? resolveTime(t.at.replace(/^-(\d+)d/, (_, n) => `-${Number(n) + k * Number(t.every!.slice(0, -1))}d`), now)
+        const at = every?.endsWith('d') && /\d\d:\d\d$/.test(t.at)
+          ? resolveTime(t.at.replace(/^-(\d+)d/, (_, n) => `-${Number(n) + k * Number(every.slice(0, -1))}d`), now)
           : new Date(newest.getTime() - k * step);
         const by = t.by ?? owner;
         trips.push({
@@ -436,7 +441,16 @@ function toItem(raw: RawItem, defaultBy: string, defaultAt: Date, now: Date): Pl
 }
 
 /** Row counts a seeded plan must produce; seeding checks them against the database. */
-export function expectedCounts(p: Plan) {
+export interface ExpectedCounts {
+  users: number;
+  households: Record<
+    string,
+    { members: number; activeItems: number; boughtItems: number; stores: number; categories: number; openInvites: number }
+  >;
+  withoutHousehold: number;
+}
+
+export function expectedCounts(p: Plan): ExpectedCounts {
   return {
     users: p.users.length,
     households: Object.fromEntries(p.households.map((h) => [h.handle, {

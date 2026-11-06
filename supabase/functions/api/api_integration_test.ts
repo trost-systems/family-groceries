@@ -1,10 +1,10 @@
 // Job 73: the api function through handle() with its production wiring against the local stack
 // (FG_DB_TEST=1, see _shared/add_paths_integration_test.ts): keys, limits, idempotency,
 // pagination, households, the integration lock and the public_api switch (job 75).
-import { assert, assertEquals, assertFalse, assertRejects } from '@std/assert';
+import { assert, assertEquals, assertExists, assertFalse, assertRejects } from '@std/assert';
 import postgres from 'postgres';
 import { sha256Hex } from '../_shared/auth.ts';
-import { asUser } from '../_shared/db.ts';
+import { asUser, databaseUrl } from '../_shared/db.ts';
 import { handle } from './handler.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
@@ -19,7 +19,7 @@ type Item = {
 };
 
 function admin() {
-  return postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 2, prepare: false });
+  return postgres(databaseUrl(), { max: 2, prepare: false });
 }
 
 /** An API key minted the way the app does: the member's own session, no OAuth client. */
@@ -52,30 +52,33 @@ function api(
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         ...headers,
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? null : JSON.stringify(body),
     }),
   );
 }
 
-async function withMembers(work: (sql: postgres.Sql, members: Member[]) => Promise<void>) {
+async function withMembers(
+  work: (sql: postgres.Sql, members: [Member, Member]) => Promise<void>,
+) {
   const sql = admin();
-  const users = [crypto.randomUUID(), crypto.randomUUID()];
+  const users = [crypto.randomUUID(), crypto.randomUUID()] as const;
   const switches = await sql<{ key: string; enabled: boolean }[]>`
     select key, enabled from public.app_switches where key in ('integration_lock', 'public_api')`;
   const log = console.log;
   console.log = () => {};
   try {
-    const members: Member[] = [];
-    for (const userId of users) {
+    const join = async (userId: string): Promise<Member> => {
       await sql`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
       const householdId = await asUser(userId, async (tx) => {
         const [row] = await tx<
           { id: string }[]
         >`select id from public.create_household(p_name => '73', p_default_stores => true)`;
+        assertExists(row);
         return row.id;
       });
-      members.push({ userId, householdId });
-    }
+      return { userId, householdId };
+    };
+    const members: [Member, Member] = [await join(users[0]), await join(users[1])];
     await sql`update public.app_switches set enabled = false where key = 'integration_lock'`;
     await setPublicApi(sql, true);
     await work(sql, members);
@@ -117,8 +120,9 @@ test('add, read, tick, untick and move through the API, one household only', () 
       ['Gurken', '2', 'open'],
       ['Zahnpasta', null, 'open'],
     ]);
-    assertEquals(added[1].store, 'dm');
+    assertEquals(added[1]?.store, 'dm');
     const [gurken] = added;
+    assertExists(gurken);
     assert(
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?\+00:00$/.test(
         (gurken as unknown as { addedAt: string }).addedAt,
@@ -138,9 +142,9 @@ test('add, read, tick, untick and move through the API, one household only', () 
     const unknownError = (await unknownStore.json()).error;
     assertEquals(unknownError.code, 'store_not_found');
     assert(unknownError.details.candidates.includes('dm'));
-    const [{ count }] = await sql<{ count: number }[]>`
+    const [brot] = await sql<{ count: number }[]>`
       select count(*)::int from public.items where household_id = ${mine.householdId} and name = 'Brot'`;
-    assertEquals(count, 0, 'the batch failed as a whole');
+    assertEquals(brot?.count, 0, 'the batch failed as a whole');
 
     const one = await api(key.token, 'GET', `/items/${gurken.id}`);
     assertEquals((await one.json()).data.name, 'Gurken');
@@ -194,9 +198,9 @@ test('add, read, tick, untick and move through the API, one household only', () 
     const theirList = await (await api(other.token, 'GET', '/items')).json();
     assertEquals(theirList.data, []);
     assertEquals(theirList.counts, { open: 0, checkedLast24h: 0 });
-    const [{ status }] = await sql<{ status: string }[]>`
+    const [item] = await sql<{ status: string }[]>`
       select status from public.items where id = ${gurken.id}`;
-    assertEquals(status, 'active', 'the other household could not tick it');
+    assertEquals(item?.status, 'active', 'the other household could not tick it');
   }));
 
 test('pages follow the aisle order with stable cursors that belong to their filter', () =>
@@ -324,10 +328,11 @@ test('limits: the burst runs out into 429, unknown keys from one address into au
       await res.body?.cancel();
       statuses.push(res);
     }
-    assertEquals(statuses[0].headers.get('x-ratelimit-limit'), '20');
-    assertEquals(statuses[0].headers.get('x-ratelimit-remaining'), '19');
+    assertEquals(statuses[0]?.headers.get('x-ratelimit-limit'), '20');
+    assertEquals(statuses[0]?.headers.get('x-ratelimit-remaining'), '19');
     assert(statuses.slice(0, 20).every((r) => r.status === 200), 'the burst is 20');
-    const limited = statuses.find((r) => r.status === 429)!;
+    const limited = statuses.find((r) => r.status === 429);
+    assertExists(limited);
     assert(statuses.indexOf(limited) <= 22, 'refilled at one a second, the burst runs out');
     assertEquals(limited.headers.get('x-ratelimit-remaining'), '0');
     assertEquals(limited.headers.get('x-ratelimit-limit'), '20');
@@ -414,12 +419,13 @@ test('switched off, no key can be made and a key from before gets 404 until it i
     await setPublicApi(sql, false);
     const error = await assertRejects(() => mint(sql, mine, ['read'])) as postgres.PostgresError;
     assertEquals([error.code, error.message], ['42501', 'api_disabled']);
-    const [{ keys }] = await sql<{ keys: number }[]>`
+    const [tokens] = await sql<{ keys: number }[]>`
       select count(*)::int as keys from public.personal_access_tokens where user_id = ${mine.userId}`;
-    assertEquals(keys, 1, 'only the key from before');
+    assertEquals(tokens?.keys, 1, 'only the key from before');
 
     const [before] = await sql<{ last_used_at: Date }[]>`
       select last_used_at from public.personal_access_tokens where id = ${key.id}`;
+    assertExists(before);
     for (const [method, body] of [['GET', undefined], ['POST', { items: [{ name: 'Kaffee' }] }]]) {
       const off = await api(key.token, method as string, '/items', { body });
       assertEquals(off.status, 404, `${method} while off`);
@@ -430,6 +436,7 @@ test('switched off, no key can be made and a key from before gets 404 until it i
     }
     const [after] = await sql<{ last_used_at: Date }[]>`
       select last_used_at from public.personal_access_tokens where id = ${key.id}`;
+    assertExists(after);
     assertEquals(after.last_used_at, before.last_used_at, 'a request while off is not a use');
     const names = await sql<{ name: string }[]>`
       select name from public.items where household_id = ${mine.householdId}`;

@@ -12,19 +12,21 @@
 // Writes the consent and More screenshots and what went to PostHog (key redacted) to <out-dir>.
 import { chromium } from '@playwright/test';
 import fs from 'node:fs';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 
 const [app, out] = process.argv.slice(2);
 const SB = 'https://fake-supabase.invalid';
-const user = { id: '5f0c2a9e-0000-4000-8000-00000000a011', email: 'proof-ac11@fg.test', aud: 'authenticated', role: 'authenticated', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-10-29T19:00:00Z' };
+const user = { id: '5f0c2a9e-0000-4000-8000-00000000a011', email: 'proof-ac11@fg.test', aud: 'authenticated', role: 'authenticated', 'app_metadata': { provider: 'email' }, 'user_metadata': {}, 'created_at': '2026-10-29T19:00:00Z' };
 const household = { id: '5f0c2a9e-0000-4000-8000-00000000b011', name: 'Proof' };
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const now = Math.floor(Date.now() / 1000);
 const jwt = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: user.id, exp: now + 3600, iat: now, role: 'authenticated', aud: 'authenticated', email: user.email, session_id: 's1' })}.c2ln`;
-const session = { access_token: jwt, token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, refresh_token: 'refresh', user };
+const session = { 'access_token': jwt, 'token_type': 'bearer', 'expires_in': 3600, 'expires_at': now + 3600, 'refresh_token': 'refresh', user };
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 480, height: 900 }, locale: 'de-DE', timezoneId: 'Europe/Berlin' });
 const sent = [];
-await context.route(`${SB}/**`, async (route) => {
+await context.route(`${SB}/**`, (route) => {
   const req = route.request();
   const url = new URL(req.url());
   const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*', 'content-type': 'application/json' };

@@ -4,7 +4,7 @@ import { type Args, type Command, type Ctx, FgError, type FlagSpec, int, type Js
 import { type ClientName, clientName, type ClientState } from './instance.ts';
 import { resolveMember } from './members.ts';
 import { type Element, Marionette, type Matcher, matcherArgs, rowKeyFor, SCREEN_KEYS, screenOf } from './marionette.ts';
-import { waitFor } from './surfaces.ts';
+import { waitFor, waitForValue } from './surfaces.ts';
 
 export const clientFlag: FlagSpec = {
   name: 'client',
@@ -27,7 +27,8 @@ export function client(ctx: Ctx, args: Args): { name: ClientName; state: ClientS
   const asked = clientName(str(args, 'client'));
   // A bare handle finds the app started as <run>:<handle>.
   const matches = Object.keys(ctx.state.clients).filter((k) => k === asked || k.endsWith(`:${asked}`));
-  const name = matches.includes(asked) ? asked : matches.length === 1 ? matches[0] : asked;
+  const [only, ...more] = matches;
+  const name = matches.includes(asked) || only === undefined || more.length > 0 ? asked : only;
   const state = ctx.state.clients[name];
   if (!state) {
     throw new FgError(
@@ -46,17 +47,22 @@ export function client(ctx: Ctx, args: Args): { name: ClientName; state: ClientS
 type Resolved = { matcher: Matcher; ancestors: string[] };
 
 /** Turns matcher flags into a Marionette matcher; tooltip/label become coordinates from the element list. */
+async function resolve(m: Marionette, args: Args): Promise<Resolved>;
+async function resolve(m: Marionette, args: Args, required: false): Promise<Resolved | null>;
 async function resolve(m: Marionette, args: Args, required = true): Promise<Resolved | null> {
   const ancestors: string[] = [];
   const row = str(args, 'row');
   let elements: Element[] | null = null;
   const all = async () => (elements ??= await m.elements());
   if (row !== undefined) ancestors.push(rowKeyFor(await all(), row));
-  const given = ['key', 'text', 'type', 'identifier', 'tooltip', 'label'].filter((f) => str(args, f) !== undefined);
+  const given = ['key', 'text', 'type', 'identifier', 'tooltip', 'label'].flatMap((f) => {
+    const value = str(args, f);
+    return value === undefined ? [] : [[f, value] as const];
+  });
   const hasXY = str(args, 'x') !== undefined || str(args, 'y') !== undefined;
   if (given.length + (hasXY ? 1 : 0) > 1) {
     throw usage(
-      `Give one matcher, got ${[...given, ...(hasXY ? ['x/y'] : [])].join(', ')}.`,
+      `Give one matcher, got ${[...given.map(([f]) => f), ...(hasXY ? ['x/y'] : [])].join(', ')}.`,
       'Combine a matcher only with --row, e.g. --row Milch --type IconButton.',
     );
   }
@@ -64,15 +70,15 @@ async function resolve(m: Marionette, args: Args, required = true): Promise<Reso
     if (str(args, 'x') === undefined || str(args, 'y') === undefined) throw usage('--x and --y go together.', 'e.g. --x 200 --y 88');
     return { matcher: { x: int(args, 'x', 0), y: int(args, 'y', 0) }, ancestors };
   }
-  const flag = given[0];
-  if (flag === undefined) {
+  const [first] = given;
+  if (first === undefined) {
     if (!required) return null;
     throw usage(
       'No matcher given.',
       'Pass one of --key, --text, --type, --identifier, --tooltip, --label or --x/--y. `fg find` lists candidates.',
     );
   }
-  const value = str(args, flag)!;
+  const [flag, value] = first;
   if (flag === 'tooltip' || flag === 'label') {
     const el = (await all()).find((e) => e[flag] === value && e.bounds);
     if (!el?.bounds) {
@@ -103,13 +109,11 @@ export function filterElements(elements: Element[], args: Args): Element[] {
 
 /** Waits until one of the keys is on screen; returns which. */
 async function waitForAnyKey(ctx: Ctx, m: Marionette, keys: string[], timeoutMs: number): Promise<string> {
-  let seen: string | undefined;
-  await waitFor(
+  return await waitForValue(
     ctx.sh,
     async () => {
       const elements = await m.elements().catch(() => []);
-      seen = keys.find((k) => elements.some((e) => e.key === k));
-      return seen !== undefined;
+      return keys.find((k) => elements.some((e) => e.key === k));
     },
     timeoutMs,
     () =>
@@ -119,7 +123,6 @@ async function waitForAnyKey(ctx: Ctx, m: Marionette, keys: string[], timeoutMs:
         'Take `fg screenshot` to see the screen; `fg logs` shows app errors.',
       ),
   );
-  return seen!;
 }
 
 export const driveCommands: Command[] = [
@@ -152,7 +155,7 @@ export const driveCommands: Command[] = [
     examples: ['fg tap --text "Haushalt erstellen"', 'fg tap --text Milch', 'fg tap --key tab-more', 'fg tap --tooltip Kopieren'],
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
-      const r = (await resolve(m, args))!;
+      const r = await resolve(m, args);
       await m.call(['tap', ...withAncestors(r)]);
       return { client: name, tapped: r as unknown as JsonObject };
     },
@@ -241,7 +244,7 @@ export const driveCommands: Command[] = [
       const row = str(args, 'row');
       const target = row !== undefined && !['key', 'text', 'type'].some((f) => str(args, f))
         ? ['--key', rowKeyFor(await m.elements(), row)]
-        : withAncestors((await resolve(m, args))!);
+        : withAncestors(await resolve(m, args));
       await m.call(['swipe', ...target, '--direction', direction, '--distance', String(int(args, 'distance', 300))]);
       return { client: name, swiped: direction, target: target.join(' ') };
     },
@@ -270,9 +273,9 @@ export const driveCommands: Command[] = [
       const find = (elements: Awaited<ReturnType<typeof m.elements>>, side: 'from' | 'to') => {
         const key = str(args, `${side}-key`);
         const text = str(args, `${side}-text`);
-        if ((key === undefined) === (text === undefined)) throw usage(`Give --${side}-key or --${side}-text.`, 'e.g. --from-text Gurke');
         // A text stands for the row or divider around it: the smallest keyed widget that holds it.
-        const k = key ?? rowKeyFor(elements, text!);
+        const k = text === undefined ? key : key === undefined ? rowKeyFor(elements, text) : undefined;
+        if (k === undefined) throw usage(`Give --${side}-key or --${side}-text.`, 'e.g. --from-text Gurke');
         const el = elements.find((e) => e.bounds && e.key === k);
         if (!el?.bounds) {
           throw new FgError(

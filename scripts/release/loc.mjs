@@ -1,6 +1,7 @@
 // Lines of code of one commit, for the release record's `stats.loc` (releases/README.md, "Lines of
 // code"). Read from git objects only, never the working tree, so the same commit always gives the
 // same numbers. Plain node, no packages.
+import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 
 // The languages counted, by file extension. Everything else (Markdown, JSON, YAML, XML, images,

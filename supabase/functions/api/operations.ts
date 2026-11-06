@@ -167,12 +167,11 @@ export const operations: Record<Operation, Parse> = {
         { after: cursor?.after ?? null, limit: limit + 1 },
       );
       const page = rows.slice(0, limit);
+      const last = rows.length > limit ? page.at(-1) : undefined;
       return ok({
         data: page.map(item),
         counts: await counts(tx, household),
-        nextCursor: rows.length > limit
-          ? encodeCursor({ filter, after: page[page.length - 1].position })
-          : null,
+        nextCursor: last ? encodeCursor({ filter, after: last.position }) : null,
       });
     };
   },
@@ -201,7 +200,7 @@ export const operations: Record<Operation, Parse> = {
         ...existing,
         ...similar.flatMap((s) => s.onList),
       ]);
-      const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id)!);
+      const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id));
       return {
         status: added.length > 0 ? 201 : 200,
         body: {

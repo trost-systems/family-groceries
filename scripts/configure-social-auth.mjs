@@ -12,6 +12,8 @@
 //           GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID (optional)
 //   Apple:  APPLE_SERVICES_ID, APPLE_TEAM_ID, APPLE_KEY_ID,
 //           APPLE_PRIVATE_KEY_FILE (path to the AuthKey_XXXX.p8)
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { createPrivateKey, sign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
@@ -53,7 +55,7 @@ if (current.message) {
 
 const allowList = new Set((current.uri_allow_list || '').split(',').map((s) => s.trim()).filter(Boolean));
 mobileCallbacks.forEach((c) => allowList.add(c));
-const patch = { uri_allow_list: [...allowList].join(',') };
+const patch = { 'uri_allow_list': [...allowList].join(',') };
 const notes = [];
 
 if (env.GOOGLE_WEB_CLIENT_ID && env.GOOGLE_WEB_CLIENT_SECRET) {

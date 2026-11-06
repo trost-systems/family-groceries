@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, editSheet, itemRow, joinWithCode, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
+  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, editSheet, itemRow, joinWithCode, must, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
 } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
@@ -136,7 +136,8 @@ test('a change made before the channel is live still shows up', async ({ page })
     });
     release = () => {
       live = true;
-      ws.send(ready!);
+      if (ready === undefined) throw new Error('released before the list channel was live');
+      ws.send(ready);
     };
   });
   const email = newEmail('gap');
@@ -145,7 +146,7 @@ test('a change made before the channel is live still shows up', async ({ page })
 
   const api = await apiAs(email);
   const { data } = await api.from('household_members').select('household_id').single();
-  await api.from('items').insert({ household_id: data!.household_id, name: 'Zwischendurch' });
+  await api.from('items').insert({ household_id: must(data, 'membership').household_id, name: 'Zwischendurch' });
   await page.waitForTimeout(1_000);
   await expect(itemRow(page, 'Zwischendurch'), 'not delivered while the listener starts').toHaveCount(0);
 
@@ -183,7 +184,10 @@ async function interceptRealtime(page: import('@playwright/test').Page) {
       await server.close({ code: 1001, reason: 'gone' });
       await ws.close({ code: 1001, reason: 'connection lost' });
     };
-    state.closeChannel = () => ws.send(JSON.stringify([state.joined![0], null, state.joined![2], 'phx_close', {}]));
+    state.closeChannel = () => {
+      const joined = must(state.joined, 'phx_join of the list channel');
+      ws.send(JSON.stringify([joined[0], null, joined[2], 'phx_close', {}]));
+    };
   });
   return state;
 }
@@ -204,7 +208,7 @@ for (const drop of ['closes the list channel', 'drops the socket'] as const) {
     await expect.poll(() => realtime.live, { message: 'live again', timeout: 20_000 }).toBe(true);
     const api = await apiAs(email);
     const { data } = await api.from('household_members').select('household_id').single();
-    await api.from('items').insert({ household_id: data!.household_id, name: 'Nach dem Abbruch' });
+    await api.from('items').insert({ household_id: must(data, 'membership').household_id, name: 'Nach dem Abbruch' });
     await expect(itemRow(page, 'Nach dem Abbruch'), 'live updates flow again').toBeVisible();
   });
 }
@@ -217,7 +221,7 @@ test('a phone that sleeps through a dropped connection and a partner\'s add catc
   realtime.live = false;
   const api = await apiAs(email);
   const { data } = await api.from('household_members').select('household_id').single();
-  const household = data!.household_id;
+  const household = must(data, 'membership').household_id;
 
   // Frozen like a suspended app: no script, no timers. Its connection dies meanwhile, and the
   // close event reaches the app only when it wakes, together with every overdue timer.

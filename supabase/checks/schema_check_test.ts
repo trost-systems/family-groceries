@@ -26,6 +26,13 @@ const repoTests = await readDir('tests', '.test.sql');
 const messages = (findings: { file: string; message: string }[]) =>
   findings.map((f) => `${f.file}: ${f.message}`);
 
+/** Message `i` of `found`; a test fails here, naming what was found, when there is none. */
+function nth(found: readonly string[], i: number): string {
+  const message = found[i];
+  if (message === undefined) throw new Error(`no message ${i} in ${JSON.stringify(found)}`);
+  return message;
+}
+
 Deno.test('history: an unchanged tree and a newer migration pass', () => {
   const base = new Map([['20261022150000_foundation.sql', 'create table a ();']]);
   const tree = new Map([...base, ['20261024190000_next.sql', 'select 1;']]);
@@ -40,8 +47,8 @@ Deno.test('history: a migration on main that is edited or deleted fails', () => 
   const tree = new Map([['20261022150000_foundation.sql', 'create table a ();\n-- edit']]);
   const found = messages(checkHistory(base, tree));
   assertEquals(found.length, 2);
-  assertMatch(found[0], /^20261022150000_foundation\.sql: is on main and was modified/);
-  assertMatch(found[1], /^20261022190000_more\.sql: is on main and was deleted/);
+  assertMatch(nth(found, 0), /^20261022150000_foundation\.sql: is on main and was modified/);
+  assertMatch(nth(found, 1), /^20261022190000_more\.sql: is on main and was deleted/);
 });
 
 Deno.test('history: a new migration older than main newest, a bad name or a twin fails', () => {
@@ -55,9 +62,12 @@ Deno.test('history: a new migration older than main newest, a bad name or a twin
   ]);
   const found = messages(checkHistory(base, tree));
   assertEquals(found.length, 3);
-  assertMatch(found[0], /^20261022000000_a\.sql: sorts before 20261023000000_b\.sql/);
-  assertMatch(found[1], /^20261024000000_d\.sql: has the same version as 20261024000000_c\.sql/);
-  assertMatch(found[2], /^probe\.sql: is not named/);
+  assertMatch(nth(found, 0), /^20261022000000_a\.sql: sorts before 20261023000000_b\.sql/);
+  assertMatch(
+    nth(found, 1),
+    /^20261024000000_d\.sql: has the same version as 20261024000000_c\.sql/,
+  );
+  assertMatch(nth(found, 2), /^probe\.sql: is not named/);
 });
 
 Deno.test("tables: the repository's own migrations and tests pass", () => {
@@ -78,9 +88,9 @@ Deno.test('tables: a household table needs RLS, a member policy and a cross-hous
     repoTests,
   ));
   assertEquals(found.length, 3);
-  assertMatch(found[0], /public\.foo does not enable row level security/);
-  assertMatch(found[1], /public\.foo has household_id but no policy using/);
-  assertMatch(found[2], /add a cross-household case for public\.foo/);
+  assertMatch(nth(found, 0), /public\.foo does not enable row level security/);
+  assertMatch(nth(found, 1), /public\.foo has household_id but no policy using/);
+  assertMatch(nth(found, 2), /add a cross-household case for public\.foo/);
 });
 
 const complete = `
@@ -105,7 +115,7 @@ Deno.test('tables: a test with only one household does not count as cross-househ
     checkTables(withMigration(complete), new Map([...repoTests, ...oneHousehold])),
   );
   assertEquals(found.length, 1);
-  assertMatch(found[0], /no pgTAP test with two households touches it/);
+  assertMatch(nth(found, 0), /no pgTAP test with two households touches it/);
 });
 
 Deno.test('tables: policies in comments, strings or function bodies do not count', () => {
@@ -123,7 +133,7 @@ create policy foo_any on public.foo for select using (true);`),
     new Map([...repoTests, ...crossHouseholdTest]),
   ));
   assertEquals(found.length, 1);
-  assertMatch(found[0], /no policy using/);
+  assertMatch(nth(found, 0), /no policy using/);
 });
 
 Deno.test('tables: later migrations that drop the policy or disable RLS fail', () => {
@@ -136,8 +146,8 @@ Deno.test('tables: later migrations that drop the policy or disable RLS fail', (
   ]);
   const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
   assertEquals(found.length, 2);
-  assertMatch(found[0], /does not enable row level security/);
-  assertMatch(found[1], /no policy using/);
+  assertMatch(nth(found, 0), /does not enable row level security/);
+  assertMatch(nth(found, 1), /no policy using/);
 });
 
 Deno.test('tables: household_id added later, renames and drops are followed', () => {
@@ -154,7 +164,10 @@ Deno.test('tables: household_id added later, renames and drops are followed', ()
   ]);
   const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
   assertEquals(found.length, 1);
-  assertMatch(found[0], /^20261024220000_rename\.sql: public\.foo has household_id but no policy/);
+  assertMatch(
+    nth(found, 0),
+    /^20261024220000_rename\.sql: public\.foo has household_id but no policy/,
+  );
 });
 
 Deno.test('tables: a finding names the migration that last changed the table', () => {
@@ -222,8 +235,8 @@ alter table "public"."x" enable row level security;
 alter table "public"."x" add column "household_id" uuid;`);
   const found = messages(checkTables(tree, new Map([...repoTests, ...crossHouseholdTest])));
   assertEquals(found.length, 2);
-  assertMatch(found[0], /^20261024190000_foo\.sql: public\.x has household_id but no policy/);
-  assertMatch(found[1], /add a cross-household case for public\.x /);
+  assertMatch(nth(found, 0), /^20261024190000_foo\.sql: public\.x has household_id but no policy/);
+  assertMatch(nth(found, 1), /add a cross-household case for public\.x /);
 });
 
 Deno.test('statements: strings with quotes and semicolons stay inside one statement', () => {
@@ -249,9 +262,9 @@ alter table items drop column quantity;
 alter table public.items rename column name to title;
 alter table public.items add column note text not null;`);
   assertEquals(found.length, 3);
-  assertMatch(found[0], /_probe\.sql:2: ban-drop-column: /);
-  assertMatch(found[1], /_probe\.sql:3: renaming-column: /);
-  assertMatch(found[2], /_probe\.sql:4: adding-required-field: /);
+  assertMatch(nth(found, 0), /_probe\.sql:2: ban-drop-column: /);
+  assertMatch(nth(found, 1), /_probe\.sql:3: renaming-column: /);
+  assertMatch(nth(found, 2), /_probe\.sql:4: adding-required-field: /);
 });
 
 Deno.test('squawk: lock, timeout and style rules are off', async () => {
@@ -284,7 +297,7 @@ Deno.test('ignores: a squawk-ignore needs its reason after the rule', () => {
     ]]),
   ));
   assertEquals(found.length, 1);
-  assertMatch(found[0], /^20261024190000_probe\.sql:1: a squawk-ignore without its reason/);
+  assertMatch(nth(found, 0), /^20261024190000_probe\.sql:1: a squawk-ignore without its reason/);
   assertEquals(checkIgnores(repoMigrations), []);
 });
 
@@ -294,9 +307,9 @@ Deno.test('tables: a copy made with like inherits household_id, but not RLS or p
     new Map([...repoTests, ...crossHouseholdTest]),
   ));
   assertEquals(found.length, 3);
-  assertMatch(found[0], /public\.items_archive does not enable row level security/);
-  assertMatch(found[1], /public\.items_archive has household_id but no policy using/);
-  assertMatch(found[2], /add a cross-household case for public\.items_archive/);
+  assertMatch(nth(found, 0), /public\.items_archive does not enable row level security/);
+  assertMatch(nth(found, 1), /public\.items_archive has household_id but no policy using/);
+  assertMatch(nth(found, 2), /add a cross-household case for public\.items_archive/);
 });
 
 Deno.test('statements: E strings, nested comments and dollar quotes do not hide DDL', () => {
@@ -320,7 +333,7 @@ Deno.test('tables: alter policy, column renames and set schema are followed', ()
     ['20261024200000_loosen.sql', 'alter policy foo_member on public.foo using (true);'],
   ]);
   assertMatch(
-    messages(checkTables(loosened, tests))[0],
+    nth(messages(checkTables(loosened, tests)), 0),
     /^20261024200000_loosen\.sql: .*no policy/,
   );
   const renamedPolicy = new Map([
@@ -337,7 +350,7 @@ Deno.test('tables: alter policy, column renames and set schema are followed', ()
       'alter table public.bar rename column hh to household_id;',
     ],
   ]);
-  assertMatch(messages(checkTables(renamedColumn, tests))[0], /public\.bar has household_id/);
+  assertMatch(nth(messages(checkTables(renamedColumn, tests)), 0), /public\.bar has household_id/);
   const moved = new Map([
     ...repoMigrations,
     ['20261024190000_bar.sql', 'create table public.bar (household_id uuid);'],
@@ -357,5 +370,5 @@ Deno.test('tables: a commented-out mention in a test does not count', () => {
     checkTables(withMigration(complete), new Map([...repoTests, ...commented])),
   );
   assertEquals(found.length, 1);
-  assertMatch(found[0], /no pgTAP test with two households touches it/);
+  assertMatch(nth(found, 0), /no pgTAP test with two households touches it/);
 });

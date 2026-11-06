@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertMatch, assertRejects } from '@std/assert';
+import { assert, assertEquals, assertExists, assertMatch, assertRejects } from '@std/assert';
 import { FgError } from './core.ts';
 import { realShell } from './fg.ts';
 import { expectedCounts, listScenarios, loadScenario, parseScenario, plan, resolveTime } from './scenario.ts';
@@ -34,18 +34,22 @@ Deno.test('shipped scenarios have the shape their summary promises', async () =>
   const now = new Date('2026-10-25T10:00:00Z');
   const counts = async (n: string) => expectedCounts(plan(await loadScenario(realShell, repo, n), now));
   assertEquals((await counts('empty-new-user')).withoutHousehold, 1);
-  assert((await counts('solo-long-list')).households.home.activeItems >= 60);
-  const mid = await counts('household-3-mid-shop');
-  assertEquals(mid.households.home.members, 3);
-  assert(mid.households.home.boughtItems > 0 && mid.households.home.activeItems > 0, 'partly ticked');
-  assert((await counts('many-stores')).households.home.stores >= 8);
-  const walk = await counts('h-list-walk');
-  assertEquals([walk.households.home.stores, walk.households.home.activeItems], [3, 14]);
-  const invite = await counts('pending-invite');
-  assertEquals(invite.households.home.openInvites, 1);
-  assertEquals(invite.withoutHousehold, 1);
+  const home = async (n: string) => {
+    const h = (await counts(n)).households.home;
+    assertExists(h, `${n} has a household "home"`);
+    return h;
+  };
+  assert((await home('solo-long-list')).activeItems >= 60);
+  const mid = await home('household-3-mid-shop');
+  assertEquals(mid.members, 3);
+  assert(mid.boughtItems > 0 && mid.activeItems > 0, 'partly ticked');
+  assert((await home('many-stores')).stores >= 8);
+  const walk = await home('h-list-walk');
+  assertEquals([walk.stores, walk.activeItems], [3, 14]);
+  assertEquals((await home('pending-invite')).openInvites, 1);
+  assertEquals((await counts('pending-invite')).withoutHousehold, 1);
   const edge = plan(await loadScenario(realShell, repo, 'edge-cases'), now);
-  assert(edge.households[0].items.some((i) => [...i.name].length === 120), 'a 120-character name');
+  assert(edge.households[0]?.items.some((i) => [...i.name].length === 120), 'a 120-character name');
   assertEquals(new Set(edge.users.map((u) => u.locale)), new Set(['de', 'en']));
 });
 
@@ -131,9 +135,14 @@ Deno.test('relative times: offsets, Berlin wall clock across DST, always in the 
 
 Deno.test('repeated trips keep their wall-clock time and come out oldest first', async () => {
   const s = await loadScenario(realShell, repo, 'heavy-history');
-  const trips = plan(s, new Date('2026-11-10T12:00:00Z')).households[0].trips;
+  const [household] = plan(s, new Date('2026-11-10T12:00:00Z')).households;
+  assertExists(household);
+  const { trips } = household;
   assertEquals(trips.length, 8 + 8 + 4 + 1);
-  for (let i = 1; i < trips.length; i++) assert(trips[i - 1].at <= trips[i].at, 'oldest first');
+  trips.forEach((t, i) => {
+    const before = trips[i - 1];
+    if (before) assert(before.at <= t.at, 'oldest first');
+  });
   const weekly = trips.filter((t) => t.store === 'Supermarkt');
   const berlin = (d: Date) => new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' }).format(d);
   assertEquals(new Set(weekly.map((t) => berlin(t.at))), new Set(['17:30']), 'same wall clock before and after the DST change');
@@ -144,9 +153,12 @@ Deno.test('heavy-history due margins hold at any time of day', async () => {
   const s = await loadScenario(realShell, repo, 'heavy-history');
   for (let hour = 0; hour < 24; hour++) {
     const now = new Date(Date.UTC(2026, 10, 10, hour, 30));
-    const trips = plan(s, now).households[0].trips;
+    const [household] = plan(s, now).households;
+    assertExists(household);
+    const { trips } = household;
     for (const [store, gap, due] of [['Supermarkt', 7, true], ['Wochenmarkt', 7, false], ['Drogerie', 14, true]] as const) {
-      const last = trips.filter((t) => t.store === store).at(-1)!;
+      const last = trips.filter((t) => t.store === store).at(-1);
+      assertExists(last, `${store} has a trip`);
       const days = (now.getTime() - last.at.getTime()) / 86_400_000;
       assertEquals(days >= gap && days <= 4 * gap, due, `${store} at ${hour}:30 UTC: ${days.toFixed(2)} days`);
     }

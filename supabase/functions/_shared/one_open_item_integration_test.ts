@@ -2,11 +2,12 @@
 // writes on its own connection, as two phones do through PostgREST: the first insert stays
 // uncommitted while the second one is sent. Runs like add_paths_integration_test.ts: the db gate
 // sets FG_DB_TEST=1 and SUPABASE_DB_URL; skipped without them.
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import postgres from 'postgres';
+import { databaseUrl } from './db.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
-const url = () => Deno.env.get('SUPABASE_DB_URL')!;
+const url = () => databaseUrl();
 
 type Sql = postgres.Sql;
 type Member = { id: string; sql: Sql };
@@ -21,6 +22,7 @@ async function withCouple(work: (anna: Member, ben: Member, householdId: string)
     }
     const householdId = await as(anna, async (tx) => {
       const [row] = await tx<{ id: string }[]>`select id from public.create_household('64')`;
+      assertExists(row);
       return row.id;
     });
     await admin`insert into public.household_members (household_id, user_id, role)

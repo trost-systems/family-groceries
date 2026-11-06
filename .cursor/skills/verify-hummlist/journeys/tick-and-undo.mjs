@@ -3,6 +3,7 @@
 // a checkbox, strikes and leaves without a snackbar, is stored as bought, and comes back.
 //
 //   node journeys/tick-and-undo.mjs <evidence dir> [--lang de|en] [--item Butter]
+import process from 'node:process';
 import { apiAs, capture, instance, itemRow, logger, member, openApp, reveal, signIn } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

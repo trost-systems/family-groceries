@@ -79,14 +79,14 @@ type Name = { schema: string; name: string; rest: string };
 /** The possibly schema-qualified name at the start of `text`, each part unquoted; an unqualified
  * name is in public (the migrations' search_path). */
 export function qualifiedName(text: string): Name | undefined {
-  const m = QUALIFIED.exec(text);
-  if (!m) return undefined;
-  const first = unquote(m[1]);
-  const second = m[2] === undefined ? undefined : unquote(m[2]);
+  const [whole, firstPart, secondPart] = QUALIFIED.exec(text) ?? [];
+  if (whole === undefined || firstPart === undefined) return undefined;
+  const first = unquote(firstPart);
+  const second = secondPart === undefined ? undefined : unquote(secondPart);
   return {
     schema: second === undefined ? 'public' : first,
     name: second ?? first,
-    rest: text.slice(m[0].length).trim(),
+    rest: text.slice(whole.length).trim(),
   };
 }
 
@@ -115,8 +115,8 @@ const LIKE = /[(,]\s*like\s+/g;
  * cross-household case in a pgTAP test (CLAUDE.md). */
 export function checkTables(tree: Migrations, tests: ReadonlyMap<string, string>): Finding[] {
   const tables = new Map<string, Table>();
-  for (const file of [...tree.keys()].sort()) {
-    for (const statement of statements(tree.get(file)!)) {
+  for (const [file, migration] of [...tree].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    for (const statement of statements(migration)) {
       apply(tables, file, statement);
     }
   }
@@ -169,8 +169,8 @@ function mentions(test: string, name: string): boolean {
 }
 
 /** The public table a statement's remainder starts with, and the text after its name. */
-function publicTable(text: string): { name: string; rest: string } | undefined {
-  const found = qualifiedName(text);
+function publicTable(text: string | undefined): { name: string; rest: string } | undefined {
+  const found = text === undefined ? undefined : qualifiedName(text);
   return found?.schema === 'public' ? found : undefined;
 }
 
@@ -195,14 +195,16 @@ function apply(tables: Map<string, Table>, file: string, statement: string) {
     if (altered === undefined || table === undefined) return;
     const action = altered.rest;
     table.file = file;
-    const renamed = /^rename\s+to\s+([\s\S]*)$/.exec(action);
-    const to = renamed && qualifiedName(renamed[1]);
+    const [, newName] = /^rename\s+to\s+([\s\S]*)$/.exec(action) ?? [];
+    const to = newName === undefined ? undefined : qualifiedName(newName);
     if (to) {
       tables.delete(altered.name);
       tables.set(to.name, table);
     }
-    const moved = /^set\s+schema\s+([\s\S]*)$/.exec(action);
-    if (moved && qualifiedName(moved[1])?.name !== 'public') tables.delete(altered.name);
+    const [, schema] = /^set\s+schema\s+([\s\S]*)$/.exec(action) ?? [];
+    if (schema !== undefined && qualifiedName(schema)?.name !== 'public') {
+      tables.delete(altered.name);
+    }
     if (/\brename\s+(?:column\s+)?"?household_id"?\s+to\s/.test(action)) table.household = false;
     if (/\brename\s+(?:column\s+)?\S+\s+to\s+"?household_id"?$/.test(action)) {
       table.household = true;
@@ -216,31 +218,36 @@ function apply(tables: Map<string, Table>, file: string, statement: string) {
       table.household = false;
     }
   } else if ((m = DROP_TABLE.exec(statement))) {
-    let rest = m[1];
+    let [, rest] = m;
+    if (rest === undefined) return;
     for (let dropped = qualifiedName(rest); dropped; dropped = qualifiedName(rest)) {
       if (dropped.schema === 'public') tables.delete(dropped.name);
       if (!dropped.rest.startsWith(',')) break;
       rest = dropped.rest.slice(1).trim();
     }
   } else if ((m = CREATE_POLICY.exec(statement)) || (m = DROP_POLICY.exec(statement))) {
-    const on = publicTable(m[2]);
+    const [, policy, target] = m;
+    const on = publicTable(target);
     const table = on && tables.get(on.name);
-    if (table === undefined) return;
+    if (policy === undefined || table === undefined) return;
     table.file = file;
     if (statement.startsWith('create')) {
-      table.policies.set(unquote(m[1]), MEMBER_CHECK.test(statement));
+      table.policies.set(unquote(policy), MEMBER_CHECK.test(statement));
     } else {
-      table.policies.delete(unquote(m[1]));
+      table.policies.delete(unquote(policy));
     }
   } else if ((m = ALTER_POLICY.exec(statement))) {
-    const on = publicTable(m[2]);
+    const [, policy, target] = m;
+    const on = publicTable(target);
     const table = on && tables.get(on.name);
-    const name = unquote(m[1]);
-    if (on === undefined || table === undefined || !table.policies.has(name)) return;
+    if (policy === undefined || on === undefined || table === undefined) return;
+    const name = unquote(policy);
+    const member = table.policies.get(name);
+    if (member === undefined) return;
     table.file = file;
-    const renamed = /^rename\s+to\s+(\S+)$/.exec(on.rest);
-    if (renamed) {
-      table.policies.set(unquote(renamed[1]), table.policies.get(name)!);
+    const [, newName] = /^rename\s+to\s+(\S+)$/.exec(on.rest) ?? [];
+    if (newName !== undefined) {
+      table.policies.set(unquote(newName), member);
       table.policies.delete(name);
     } else if (/\b(?:using|with\s+check)\s*\(/.test(on.rest)) {
       table.policies.set(name, MEMBER_CHECK.test(on.rest));
@@ -300,11 +307,11 @@ export function statements(sql: string, { keepStrings = false } = {}): string[] 
     } else if (sql[i] === ';') {
       end();
       i++;
-    } else if (/\s/.test(sql[i])) {
+    } else if (/\s/.test(sql.charAt(i))) {
       if (!current.endsWith(' ')) current += ' ';
       i++;
     } else {
-      current += sql[i].toLowerCase();
+      current += sql.charAt(i).toLowerCase();
       i++;
     }
   }
@@ -334,7 +341,7 @@ type SquawkViolation = {
   line: number;
   level: string;
   message: string;
-  rule_name: string;
+  'rule_name': string;
 };
 
 /** squawk's JSON report reduced to the compatibility rules, plus anything it could not parse,

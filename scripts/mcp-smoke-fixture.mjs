@@ -25,9 +25,9 @@ export async function startFake(breaks = new Set()) {
     };
     const asMetadata = {
       issuer,
-      authorization_endpoint: `${issuer}/oauth/authorize`,
-      token_endpoint: `${issuer}/oauth/token`,
-      grant_types_supported: ['authorization_code', 'refresh_token'],
+      'authorization_endpoint': `${issuer}/oauth/authorize`,
+      'token_endpoint': `${issuer}/oauth/token`,
+      'grant_types_supported': ['authorization_code', 'refresh_token'],
       ...(breaks.has('no-registration') ? {} : { registration_endpoint: `${issuer}/oauth/clients/register` }),
     };
 

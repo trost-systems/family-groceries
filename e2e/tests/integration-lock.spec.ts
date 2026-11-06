@@ -12,9 +12,11 @@ import { type Browser, expect, type Page, test } from './fixtures';
 import {
   adminClient,
   apiAs,
+  firstOf,
   functionsUrl,
   itemRow,
   joinWithCode,
+  must,
   newEmail,
   openMore,
   screenshot,
@@ -60,7 +62,7 @@ async function siri(token: string, text: string) {
 
 async function toolText(client: Client, name: string, args: Record<string, unknown> = {}) {
   const result = await client.callTool({ name, arguments: args });
-  return { isError: result.isError === true, text: (result.content as { text: string }[])[0].text };
+  return { isError: result.isError === true, text: firstOf(result.content as { text: string }[], 'tool result text').text };
 }
 
 async function openNames(email: string): Promise<string[]> {
@@ -108,7 +110,7 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
 
   // Peter connects all three while locked: linking is allowed, so unlocking needs no relinking.
   const shortcut = await pat(peterEmail, 'Kurzbefehl');
-  const alexa = await linkAccount(peter, await registerAlexaClient(), baseURL!);
+  const alexa = await linkAccount(peter, await registerAlexaClient(), must(baseURL, 'baseURL'));
   await peter.goto('/');
   const mcp = await connectWithToken(shortcut);
 

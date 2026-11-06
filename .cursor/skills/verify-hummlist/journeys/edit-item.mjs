@@ -5,6 +5,7 @@
 //
 //   node journeys/edit-item.mjs <evidence dir> [--lang de|en] [--from Apfelsaft] [--to Mineralwasser]
 //     [--onto Brötchen]
+import process from 'node:process';
 import { addField, apiAs, capture, instance, itemRow, logger, member, openApp, reveal, signIn, typeInto } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

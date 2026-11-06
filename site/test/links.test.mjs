@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSite, guide, legal, hrefs, alternates, htmlRoutes } from './helpers.mjs';
+import { buildSite, guide, legal, alternates, htmlRoutes } from './helpers.mjs';
 
 const SITE = 'https://hummlist.com';
 const switchLink = (doc) => {

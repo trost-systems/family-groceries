@@ -5,6 +5,8 @@ import {
   apiAs,
   type Collector,
   fakeCollector,
+  firstOf,
+  must,
   newEmail,
   openTab,
   screenshot,
@@ -43,7 +45,7 @@ async function rowsOf(userId: string): Promise<Row[]> {
 }
 
 /** Opens More from wherever the user is and taps "Feedback senden" (the row's label may vary). */
-async function openFeedback(page: Page, row = 'Feedback senden', more = 'Mehr', shot?: string) {
+async function openFeedback(page: Page, row = 'Feedback senden', more = 'Mehr', shot: string | undefined = undefined) {
   await openTab(page, more as 'Mehr');
   await expect(page).toHaveURL(/\/more$/);
   const entry = page.getByRole('button', { name: new RegExp(`^${row}( |$)`) });
@@ -81,12 +83,12 @@ test('a note from More after the list: one row, screen list, the context, no lis
   const userId = await userIdOf(email);
   await expect.poll(async () => (await rowsOf(userId)).length, { timeout: 60_000 }).toBe(1);
   expect(Date.now() - sentAt).toBeLessThan(60_000);
-  const [row] = await rowsOf(userId);
+  const row = firstOf(await rowsOf(userId), 'feedback row');
   const { data: member } = await adminClient().from('household_members').select('household_id').eq('user_id', userId)
     .single();
   expect(row).toMatchObject({
     user_id: userId,
-    household_id: member!.household_id,
+    household_id: must(member, 'membership').household_id,
     message: 'Beim Abhaken springt die Liste nach oben.',
     category: null,
     contact_ok: false,
@@ -137,7 +139,7 @@ test('with analytics consent: one feedback_submitted, without the text (AC8)', a
   // A later flush sends nothing more for it.
   await page.waitForTimeout(7_000);
   expect(submitted()).toHaveLength(1);
-  const [event] = submitted();
+  const event = firstOf(submitted(), 'feedback_submitted event');
   expect(event.properties).toMatchObject({
     category: 'idea',
     entry_point: 'settings',
@@ -259,7 +261,7 @@ test('length limits in the app and in the database (AC4)', async ({ browser }) =
     locale: 'de',
     screen: 'more',
   });
-  for (const [message, why] of [['', 'empty'], ['     ', 'spaces'], ['a'.repeat(2001), '2001 characters']]) {
+  for (const [message, why] of [['', 'empty'], ['     ', 'spaces'], ['a'.repeat(2001), '2001 characters']] as const) {
     const { error } = await api.from('feedback').insert(note(message));
     expect(error?.code, why).toBe('23514');
   }
@@ -328,6 +330,6 @@ test('wide: feedback beside an open More page names that page (1366x1024)', asyn
   await expect(thanks(page)).toBeVisible();
   const userId = await userIdOf(email);
   await expect.poll(async () => (await rowsOf(userId)).length).toBe(1);
-  expect((await rowsOf(userId))[0].screen).toBe('account');
+  expect(firstOf(await rowsOf(userId), 'feedback row').screen).toBe('account');
   await context.close();
 });

@@ -28,11 +28,10 @@ export function parseDictionary(tsv: string): Term[] {
     const line = raw.trimEnd();
     const at = `dictionary.tsv:${index + 1}`;
     if (line === "" || line.startsWith("#")) return;
-    const fields = line.split("\t");
-    if (fields.length !== 2) {
+    const [term, category, ...extra] = line.split("\t");
+    if (term === undefined || category === undefined || extra.length > 0) {
       throw new Error(`${at}: expected "term<TAB>category"`);
     }
-    const [term, category] = fields;
     if (!termPattern.test(term)) {
       throw new Error(`${at}: invalid term "${term}"`);
     }

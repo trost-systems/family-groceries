@@ -4,7 +4,7 @@
 // navigation holds Playwright's locators until it ends (mcp.spec.ts follows the real one).
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
 import { expect, test } from './fixtures';
-import { newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { must, newEmail, screenshot, signUpWithHousehold } from './helpers';
 import { callbackUrl, mcpUrl, openAuthorization, TestOAuthProvider } from './mcp-helpers';
 
 type Opened = { url: string; target: string; at: number };
@@ -20,12 +20,12 @@ test('while the client finishes connecting, the consent page says the user is do
 
   const consent = await context.newPage();
   await consent.addInitScript(() => {
-    window.open = (url, target) => {
+    globalThis.open = (url, target) => {
       (window as unknown as { opened: Opened }).opened = { url: String(url), target: String(target), at: Date.now() };
       return null;
     };
   });
-  await openAuthorization(consent, provider.authorizationUrl!, baseURL!);
+  await openAuthorization(consent, must(provider.authorizationUrl, 'authorization URL'), must(baseURL, 'baseURL'));
   await consent.getByRole('button', { name: 'Erlauben' }).click();
   const tapped = Date.now();
 
@@ -34,8 +34,9 @@ test('while the client finishes connecting, the consent page says the user is do
   await expect(consent.getByRole('button', { name: 'Erlauben' }), 'nothing left to tap').toHaveCount(0);
   const opened = await consent.evaluate(() => (window as unknown as { opened?: Opened }).opened);
   expect(opened?.target, 'the client opens in this window').toBe('_self');
-  expect(new URL(opened!.url).origin + new URL(opened!.url).pathname).toBe(callbackUrl);
-  expect(new URL(opened!.url).searchParams.get('code'), 'with the authorization code').toBeTruthy();
-  expect(opened!.at - tapped, 'no wait of ours between the tap and the callback').toBeLessThan(2_000);
+  if (opened === undefined) throw new Error('the client was not opened');
+  expect(new URL(opened.url).origin + new URL(opened.url).pathname).toBe(callbackUrl);
+  expect(new URL(opened.url).searchParams.get('code'), 'with the authorization code').toBeTruthy();
+  expect(opened.at - tapped, 'no wait of ours between the tap and the callback').toBeLessThan(2_000);
   await screenshot(consent, 'mcp-08-consent-done-while-client-connects');
 });

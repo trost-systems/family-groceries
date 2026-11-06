@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,7 +160,7 @@ const BLOCKS = ['since', 'once', 'until'];
 for (const name of BLOCKS) {
   md.use(container, name, {
     validate: (params) => new RegExp(`^${name}\\b`).test(params.trim()),
-    render: (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options),
+    render: (tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options),
   });
 }
 

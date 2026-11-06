@@ -5,7 +5,13 @@ import {
   localhostAllowedOrigins,
   originValidationResponse,
 } from '@modelcontextprotocol/server';
-import { type Auth, authenticate, AuthError, discoverIssuer } from '../_shared/auth.ts';
+import {
+  type Auth,
+  authenticate,
+  AuthError,
+  discoverIssuer,
+  supabaseUrl,
+} from '../_shared/auth.ts';
 import { requirePremiumWith } from '../_shared/premium.ts';
 import { telemetry } from './telemetry.ts';
 import { buildServer, langOf } from './tools.ts';
@@ -113,7 +119,7 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
 }
 
 /** The query parameter mcp-proxy/vercel.json adds to every request it forwards. */
-const PROXY_MARKER = ['via', 'mcp-hummlist'];
+const PROXY_MARKER = ['via', 'mcp-hummlist'] as const;
 
 /**
  * Whether the request came through the proxy: its marker, or the public host as the forwarded
@@ -122,8 +128,8 @@ const PROXY_MARKER = ['via', 'mcp-hummlist'];
  */
 function viaProxy(req: Request, publicOrigin: string): boolean {
   if (new URL(req.url).searchParams.get(PROXY_MARKER[0]) === PROXY_MARKER[1]) return true;
-  const forwarded = req.headers.get('x-forwarded-host')?.split(',')[0].trim().toLowerCase();
-  return forwarded?.replace(/:\d+$/, '') === new URL(publicOrigin).hostname;
+  const [forwarded] = req.headers.get('x-forwarded-host')?.split(',') ?? [];
+  return forwarded?.trim().toLowerCase().replace(/:\d+$/, '') === new URL(publicOrigin).hostname;
 }
 
 /** The proxy serves the function at its root and the metadata at the RFC 9728 root path. */
@@ -164,7 +170,7 @@ const UMLAUTS: Record<string, string> = {
 
 /** RFC 6750 error_description charset; the hosted gateway drops a header with other bytes. */
 function headerSafe(text: string): string {
-  return text.replace(/[äöüÄÖÜß"]/g, (c) => UMLAUTS[c]).replace(
+  return text.replace(/[äöüÄÖÜß"]/g, (c) => UMLAUTS[c] ?? c).replace(
     /[^\x20-\x21\x23-\x5b\x5d-\x7e]/g,
     '',
   );
@@ -196,7 +202,7 @@ let asMetadataCache: Promise<Record<string, unknown>> | undefined;
 /** Supabase Auth's own metadata document, fetched once per isolate (retried after a failure). */
 function supabaseAuthServerMetadata(): Promise<Record<string, unknown>> {
   asMetadataCache ??= (async () => {
-    const internal = Deno.env.get('SUPABASE_URL')!;
+    const internal = supabaseUrl();
     const res = await fetch(`${internal}/auth/v1/.well-known/oauth-authorization-server`);
     if (!res.ok) throw new Error(`auth server metadata: ${res.status}`);
     const body = await res.json() as Record<string, unknown>;

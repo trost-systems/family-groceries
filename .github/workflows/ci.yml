@@ -77,7 +77,8 @@ jobs:
           cache-dependency-path: e2e/package-lock.json
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
-          deno-version: v2.x
+          # tool/lint/ts/pack.ts lists every lint rule of exactly this Deno; bump both together.
+          deno-version-file: .dvmrc
       # actionlint for the workflows; ast-grep and squawk for scripts/lint.sh (job 12).
       - name: Install actionlint, ast-grep and squawk
         run: |

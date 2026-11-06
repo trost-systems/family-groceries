@@ -1,6 +1,6 @@
 import { expect, type Page, test } from './fixtures';
 import {
-  addField, addSheet, answerConsent, apiAs, chainStores, itemRow, newEmail, password, screenshot, signUp, signUpWithHousehold,
+  addField, addSheet, answerConsent, apiAs, chainStores, firstOf, itemRow, must, newEmail, password, screenshot, signUp, signUpWithHousehold,
   storeDivider, typeInto,
   openEmailSignIn,
 } from './helpers';
@@ -62,8 +62,8 @@ test('/stores/<id> opens the list at that store, unfolded', async ({ page }) => 
   const api = await apiAs(email);
   const { data: stores } = await api.from('stores').select('id, name, household_id');
   const { data: categories } = await api.from('categories').select('id, name');
-  const store = (name: string) => stores!.find((s) => s.name === name)!;
-  const category = categories!.find((c) => c.name === 'Vorrat & Konserven')!.id;
+  const store = (name: string) => must(stores?.find((s) => s.name === name), `store ${name}`);
+  const category = must(categories?.find((c) => c.name === 'Vorrat & Konserven'), 'Vorrat & Konserven').id;
   // Enough rows above EDEKA that its section starts below the window.
   const rows = [
     ...Array.from({ length: 14 }, (_, i) => ({ name: `Dose ${i + 1}`, store: 'dm' })),
@@ -71,7 +71,7 @@ test('/stores/<id> opens the list at that store, unfolded', async ({ page }) => 
     { name: 'Nudeln', store: 'EDEKA' },
   ];
   const { error } = await api.from('items').insert(rows.map((r, i) => ({
-    household_id: stores![0].household_id, name: r.name, store_id: store(r.store).id, category_id: category, sort_key: i,
+    household_id: firstOf(stores, 'store').household_id, name: r.name, store_id: store(r.store).id, category_id: category, sort_key: i,
   })));
   if (error) throw error;
   await page.reload();

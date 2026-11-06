@@ -1,7 +1,7 @@
 import { expect, test, type Page } from './fixtures';
 import { openStores, storeRow } from './catalog';
 import {
-  apiAs, closeSheet, editSheet, enterItem, itemRow, newEmail, openEdit, openMore, openTab, screenshot,
+  apiAs, closeSheet, editSheet, enterItem, firstOf, itemRow, must, newEmail, openEdit, openMore, openTab, screenshot,
   signUpWithHousehold, storeDivider, inviteCodeLabel,
 } from './helpers';
 
@@ -15,15 +15,17 @@ import {
  */
 async function luminanceAt(page: Page, x: number, y: number): Promise<number> {
   const png = (await page.screenshot()).toString('base64');
-  const probe = await page.context().browser()!.newPage();
+  const probe = await must(page.context().browser(), 'browser').newPage();
   try {
     return await probe.evaluate(async ({ png, x, y }) => {
       const bytes = Uint8Array.from(atob(png), (c) => c.charCodeAt(0));
       const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
       const canvas = new OffscreenCanvas(image.width, image.height);
-      const context = canvas.getContext('2d')!;
+      const context = canvas.getContext('2d');
+      if (context === null) throw new Error('no 2d context');
       context.drawImage(image, 0, 0);
       const [r, g, b] = context.getImageData(x, y, 1, 1).data;
+      if (r === undefined || g === undefined || b === undefined) throw new Error(`no pixel at ${x}, ${y}`);
       const linear = (c: number) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
       return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
     }, { png, x, y });
@@ -34,7 +36,7 @@ async function luminanceAt(page: Page, x: number, y: number): Promise<number> {
 
 /** The app's surface, at the left edge halfway down: nearly black on dark, nearly white on light. */
 async function expectTheme(page: Page, theme: 'light' | 'dark', why: string): Promise<void> {
-  const y = Math.round(page.viewportSize()!.height / 2);
+  const y = Math.round(must(page.viewportSize(), 'viewport').height / 2);
   const shown = expect.poll(() => luminanceAt(page, 2, y), { message: `${why}: ${theme}` });
   await (theme === 'dark' ? shown.toBeLessThan(0.05) : shown.toBeGreaterThan(0.7));
 }
@@ -60,13 +62,13 @@ async function seedStores(page: Page, email: string): Promise<void> {
   const api = await apiAs(email);
   const { data: stores, error } = await api.from('stores').select('id, name, household_id');
   if (error) throw error;
-  const store = (name: string) => stores!.find((s) => s.name === name)!;
+  const store = (name: string) => must(stores.find((s) => s.name === name), `store ${name}`);
   const rows = [
     ['Vollmilch', 'Supermarkt'], ['Bananen', 'Supermarkt'], ['Brot', 'Bäckerei'], ['Butter', 'Supermarkt'], ['Zahnpasta', 'Drogerie'],
     ['Kerzen', null],
   ] as const;
   const { error: inserted } = await api.from('items').insert(rows.map(([name, at]) => ({
-    household_id: stores![0].household_id,
+    household_id: firstOf(stores, 'store').household_id,
     name,
     store_id: at ? store(at).id : null,
   })));

@@ -3,9 +3,10 @@
 // The acceptance criteria on the web; the mobile parts are unit-tested (app/test/household,
 // app/test/app/router_test.dart, deep_links_config_test.dart) and on Peter's device checklist.
 import { expect, test, type Browser, type Page } from './fixtures';
+import process from 'node:process';
 import {
   addField, addItem, adminClient, answerConsent, apiAs, type Collector, confirmJoin, createHousehold, createInviteCode,
-  cutOff, eventNames, fakeCollector, inviteCodeLabel, itemRow, joinWithCode, latestLinkFor, newEmail, openMore, password,
+  cutOff, eventNames, fakeCollector, firstOf, inviteCodeLabel, itemRow, joinWithCode, latestLinkFor, must, newEmail, openMore, password,
   screenshot, shownInviteCodes, signUp, signUpWithHousehold, skipInvite, typeInto, viaFakeProvider, within,
   openEmailSignIn,
 } from './helpers';
@@ -50,7 +51,7 @@ async function membersOf(household: string): Promise<string[]> {
 async function userIdOf(email: string): Promise<string> {
   const { data, error } = await adminClient().auth.admin.listUsers({ perPage: 1000 });
   if (error) throw error;
-  return data.users.find((u) => u.email === email)!.id;
+  return must(data.users.find((u) => u.email === email), `user ${email}`).id;
 }
 
 async function householdsCreatedBy(email: string) {
@@ -79,11 +80,11 @@ test('AC1-3: sign-in, consent, Step 1, create with picked stores, invite with a 
   await expect(page.getByRole('button', { name: /^Einladung annehmen/ })).toBeVisible();
 
   await createHousehold(page, { stores: ['dm', 'Lidl', 'Wochenmarkt'] });
-  const [household] = await householdsCreatedBy(email);
+  const household = firstOf(await householdsCreatedBy(email), 'household');
   expect(household.name).toBe('Unser Haushalt');
   expect(await membersOf(household.id), 'the user is its only member').toEqual([await userIdOf(email)]);
   const { data: role } = await adminClient().from('household_members').select('role').eq('household_id', household.id).single();
-  expect(role!.role).toBe('owner');
+  expect(must(role, 'membership').role).toBe('owner');
   const { data: stores } = await adminClient().from('stores').select('name').eq('household_id', household.id).order('sort_order');
   expect((stores as { name: string }[]).map((s) => s.name), 'two from the offer and an own one, in the order picked')
     .toEqual(['dm', 'Lidl', 'Wochenmarkt']);
@@ -115,7 +116,7 @@ test('AC2: Skip creates a household without stores; categories and the fallback 
   const email = newEmail('skip');
   await signUp(page, email);
   await createHousehold(page, { name: 'WG Sonnenallee', stores: [] });
-  const [household] = await householdsCreatedBy(email);
+  const household = firstOf(await householdsCreatedBy(email), 'household');
   expect(household.name).toBe('WG Sonnenallee');
   const admin = adminClient();
   const { count: stores } = await admin.from('stores').select('*', { count: 'exact', head: true }).eq('household_id', household.id);
@@ -161,12 +162,12 @@ test('AC5 and AC12: a typed code joins; events once, without names, emails, code
   await createHousehold(owner, { name: 'Familie Geheim', stores: ['Supermarkt', 'Drogerie', 'Wochenmarkt'] });
   await owner.getByRole('button', { name: 'Partner einladen', exact: true }).click();
   await expect(inviteCodeLabel(owner).first()).toBeVisible();
-  const [code] = await shownInviteCodes(owner);
+  const code = firstOf(await shownInviteCodes(owner), 'invite code');
   await owner.getByRole('button', { name: 'Code kopieren' }).click();
   await owner.getByRole('button', { name: 'Link kopieren' }).click();
   await skipInvite(owner);
   await received(ownerEvents, ['first_open', 'household_created', 'invite_sent', 'invite_sent']);
-  const created = ownerEvents.events.find((e) => e.event === 'household_created')!;
+  const created = must(ownerEvents.events.find((e) => e.event === 'household_created'), 'household_created event');
   expect(created.properties.store_count).toBe(3);
   expect(ownerEvents.events.filter((e) => e.event === 'invite_sent').map((e) => [e.properties.channel, e.properties.context]))
     .toEqual([['copy_code', 'onboarding'], ['copy_link', 'onboarding']]);
@@ -178,7 +179,7 @@ test('AC5 and AC12: a typed code joins; events once, without names, emails, code
   await signUp(member, memberEmail, '/', { consent: 'accept' });
   await joinWithCode(member, code.toLowerCase(), 'Familie Geheim');
   await received(memberEvents, ['first_open', 'invite_accepted']);
-  expect(memberEvents.events.find((e) => e.event === 'invite_accepted')!.properties.method).toBe('code');
+  expect(must(memberEvents.events.find((e) => e.event === 'invite_accepted'), 'invite_accepted event').properties.method).toBe('code');
   // A realtime echo or a reload sends nothing more.
   await addItem(owner, 'Kaffee');
   await expect(itemRow(member, 'Kaffee')).toBeVisible();
@@ -320,7 +321,7 @@ test('AC9: someone in a household who opens an invite is asked, and stays withou
   const email = newEmail('ac9');
   await signUpWithHousehold(page, email);
   await addItem(page, 'Tee');
-  const [mine] = await householdsCreatedBy(email);
+  const mine = firstOf(await householdsCreatedBy(email), 'household');
   const { code, household } = await householdWithInvite('ac9-other');
   await page.goto(`/join/${code}`);
   await expect(page.getByText('Du bist schon in einem Haushalt')).toBeVisible();
@@ -344,7 +345,7 @@ test('a link opened twice, or by a member, lands on the list without a second me
   await page.goto(`/join/${code}`);
   await expect(addField(page)).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
-  const [household] = await householdsCreatedBy(email);
+  const household = firstOf(await householdsCreatedBy(email), 'household');
 
   const lea = await newPage(browser);
   await signUp(lea, newEmail('twice-lea'), `/join/${code}`);

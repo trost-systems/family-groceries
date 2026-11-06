@@ -1,7 +1,7 @@
 // The shopping-list operations behind the MCP tools and the API. Every function runs as the
 // signed-in user (asUser), so RLS confines it to the caller's household; household_id filters
 // only narrow the query plan.
-import type { Tx } from './db.ts';
+import { oneRow, type Tx } from './db.ts';
 
 export type ToolErrorReason = 'not_found' | 'ambiguous' | 'invalid';
 
@@ -19,7 +19,7 @@ export class ToolError extends Error {
     readonly subject: Subject | null,
     /** The names to choose from: every option when not found, the matches when ambiguous. */
     readonly candidates: string[] = [],
-    readonly query?: string,
+    readonly query: string | undefined = undefined,
   ) {
     super(message);
   }
@@ -60,6 +60,9 @@ export function fold(text: string): string {
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const sole = <T>(options: readonly T[]): T | undefined =>
+  options.length === 1 ? options[0] : undefined;
+
 /**
  * Finds one entry by id, its name in any case, or a unique folded or partial name: "kuehlregal",
  * "Kühlregal" and "kühl" all find "Kühlregal", and "aldi süd" finds "Aldi Süd" next to "Aldi Sued".
@@ -74,12 +77,15 @@ export function resolve<T extends Named>(
   if (byId) return byId;
   const key = query.trim().replace(/\s+/g, ' ').toLowerCase();
   const named = options.filter((o) => o.name.trim().replace(/\s+/g, ' ').toLowerCase() === key);
-  if (named.length === 1) return named[0];
+  const byName = sole(named);
+  if (byName) return byName;
   const q = fold(query);
   const exact = options.filter((o) => fold(o.name) === q);
-  if (exact.length === 1) return exact[0];
+  const byFolded = sole(exact);
+  if (byFolded) return byFolded;
   const partial = q === '' ? [] : options.filter((o) => fold(o.name).includes(q));
-  if (exact.length === 0 && partial.length === 1) return partial[0];
+  const byPart = exact.length === 0 ? sole(partial) : undefined;
+  if (byPart) return byPart;
   const matches = (exact.length > 1 ? exact : partial).map((c) => c.name);
   if (matches.length > 1) {
     throw new ToolError(
@@ -179,15 +185,15 @@ export async function itemById(tx: Tx, household: string, id: string): Promise<A
 export type Counts = { open: number; checkedLast24h: number };
 
 export async function counts(tx: Tx, household: string): Promise<Counts> {
-  const [row] = await tx<Counts[]>`
+  const rows = await tx<Counts[]>`
     select count(*) filter (where status = 'active')::int as "open",
            count(*) filter (where status = 'bought' and bought_at > now() - interval '24 hours')::int
              as "checkedLast24h"
     from public.items where household_id = ${household}`;
-  return row;
+  return oneRow(rows, 'counts');
 }
 
-export type Filter = { store?: string; category?: string };
+export type Filter = { store?: string | undefined; category?: string | undefined };
 
 /** The store and category a filter names, each null when not given. */
 export async function resolveFilter(
@@ -281,11 +287,11 @@ export async function listItems(
 
 export type NewItem = {
   name: string;
-  brand?: string;
-  properties?: string;
-  quantity?: string;
-  category?: string;
-  store?: string;
+  brand?: string | undefined;
+  properties?: string | undefined;
+  quantity?: string | undefined;
+  category?: string | undefined;
+  store?: string | undefined;
 };
 
 /** A blank optional field is not given: the parsed value stays. */
@@ -353,17 +359,22 @@ export async function addItems(
   household: string,
   wanted: readonly NewItem[],
 ): Promise<{
-  added: Item[];
-  alreadyOnList: Item[];
-  similarOnList: { added: string; onList: Item[] }[];
+  added: (Item | undefined)[];
+  alreadyOnList: (Item | undefined)[];
+  similarOnList: { added: string; onList: (Item | undefined)[] }[];
 }> {
   const { added, existing, similar } = await addItemIds(tx, household, wanted);
   const rows = await itemsById(tx, [...added, ...existing, ...similar.flatMap((s) => s.onList)]);
-  const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id)!);
+  const pick = (ids: string[]) => ids.map((id) => rows.find((r) => r.id === id));
+  const nameOf = (id: string) => {
+    const row = rows.find((r) => r.id === id);
+    if (!row) throw new Error(`added item ${id} not read back`);
+    return row.name;
+  };
   return {
     added: pick(added),
     alreadyOnList: pick(existing),
-    similarOnList: similar.map((s) => ({ added: pick([s.added])[0].name, onList: pick(s.onList) })),
+    similarOnList: similar.map((s) => ({ added: nameOf(s.added), onList: pick(s.onList) })),
   };
 }
 
@@ -404,7 +415,7 @@ export async function setItemStatus(
   return await itemById(tx, household, id);
 }
 
-export type Move = { category?: string; store?: string | null };
+export type Move = { category?: string | undefined; store?: string | null | undefined };
 
 const nothingToMove = () =>
   new ToolError('Gib eine Kategorie oder einen Laden an.', 'invalid', null);
@@ -439,8 +450,7 @@ export async function moveItem(
   if (move.category === undefined && move.store === undefined) throw nothingToMove();
   const item = resolve(await activeItems(tx, household), move.item, 'item');
   await moveOpen(tx, household, item, move);
-  const [moved] = await itemsById(tx, [item.id]);
-  return moved;
+  return oneRow(await itemsById(tx, [item.id]), 'moved item');
 }
 
 /** Moves an open item by id (the API); a ticked or unknown one is not found. */

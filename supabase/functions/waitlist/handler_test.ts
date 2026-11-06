@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertMatch, assertNotEquals } from '@std/assert';
+import { assert, assertEquals, assertExists, assertMatch, assertNotEquals } from '@std/assert';
 import { CONFIRM_VERSIONS, CONSENT_VERSIONS } from './consent.ts';
 import {
   configFrom,
@@ -74,7 +74,7 @@ class FakeStore implements Store {
   confirm(tokenHash: string, now: Date, press: ConfirmPress) {
     this.calls++;
     const row = [...this.rows.values()].find((r) =>
-      !r.confirmedAt && r.tokenHash === tokenHash && r.expiresAt! > now
+      !r.confirmedAt && r.tokenHash === tokenHash && r.expiresAt !== null && r.expiresAt > now
     );
     if (!row) return Promise.resolve(null);
     Object.assign(row, {
@@ -157,7 +157,7 @@ function setup(env: Record<string, string> = {}) {
     );
   /** Runs what the function does after its answer, as EdgeRuntime.waitUntil would. */
   const flush = async () => {
-    while (deferred.length) await deferred.shift()!();
+    for (let work = deferred.shift(); work; work = deferred.shift()) await work();
   };
   return { store, sent, deferred, clock, call, flush };
 }
@@ -180,24 +180,48 @@ const press = (token: unknown, extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-const tokenOf = (mail: Mail) => mail.text.match(/#t=([A-Za-z0-9_-]{43})/)![1];
-const oneClick = (mail: Mail) => {
-  const url = new URL(mail.headers['List-Unsubscribe'].slice(1, -1));
-  return { id: url.searchParams.get('id')!, sig: url.searchParams.get('s')! };
-};
+/** The [i]th of [items]; fails the test when there is none. */
+function nth<T>(items: readonly T[], i: number): T {
+  const item = items[i];
+  assertExists(item, `no item ${i}`);
+  return item;
+}
+
+function rowOf(store: FakeStore, email: string): Row {
+  const row = store.rows.get(email);
+  assertExists(row, `no row for ${email}`);
+  return row;
+}
+
+function tokenOf(mail: Mail): string {
+  const token = mail.text.match(/#t=(?<token>[A-Za-z0-9_-]{43})/)?.groups?.token;
+  assertExists(token, 'a confirm link in the mail');
+  return token;
+}
+
+function oneClick(mail: Mail): { id: string; sig: string } {
+  const header = mail.headers['List-Unsubscribe'];
+  assertExists(header, 'a List-Unsubscribe header');
+  const url = new URL(header.slice(1, -1));
+  const id = url.searchParams.get('id');
+  const sig = url.searchParams.get('s');
+  assertExists(id, 'an id in the one-click link');
+  assertExists(sig, 'a signature in the one-click link');
+  return { id, sig };
+}
 
 /** Everything the function writes to the console during [work]. */
 async function logsOf(work: () => Promise<void>): Promise<string[]> {
   const lines: string[] = [];
   const methods = ['log', 'info', 'warn', 'error', 'debug'] as const;
-  const saved = methods.map((m) => console[m]);
+  const saved = methods.map((m) => ({ m, write: console[m] }));
   for (const m of methods) {
     console[m] = (...args: unknown[]) => lines.push(args.map(String).join(' '));
   }
   try {
     await work();
   } finally {
-    methods.forEach((m, i) => console[m] = saved[i]);
+    for (const { m, write } of saved) console[m] = write;
   }
   return lines;
 }
@@ -214,7 +238,7 @@ Deno.test('off without both secrets, and 404 to anyone without the proxy secret'
     new Request(`http://localhost/waitlist/${path}`, {
       method,
       headers,
-      body: method === 'POST' ? JSON.stringify(form('hello+off@hummlist.com')) : undefined,
+      body: method === 'POST' ? JSON.stringify(form('hello+off@hummlist.com')) : null,
     });
   for (const env of [{}, { WAITLIST_PROXY_SECRET: PROXY }, { WAITLIST_HMAC_SECRET: HMAC }]) {
     const store = new FakeStore();
@@ -305,7 +329,7 @@ Deno.test('AC6: new, known, confirmed, bot, non-test and rate-limited sign-ups g
   await call('signup', form('hello+known@hummlist.com'));
   await call('signup', form('hello+confirmed@hummlist.com'), { 'x-waitlist-client': 'client-b' });
   await flush();
-  await call('confirm', press(tokenOf(sent[1].mail)));
+  await call('confirm', press(tokenOf(nth(sent, 1).mail)));
   for (let i = 0; i < LIMITS.perKey; i++) {
     await call('signup', form(`hello+fill${i}@hummlist.com`, { website: 'x' }), {
       'x-waitlist-client': 'client-limited',
@@ -357,7 +381,7 @@ Deno.test('AC6: new, known, confirmed, bot, non-test and rate-limited sign-ups g
   assertEquals(sent.map((s) => s.to), ['hello+new@hummlist.com'], 'only the new address is mailed');
   assertEquals(store.rows.size, 3, 'no second row for the known address, none for the dropped');
   assertEquals(
-    store.rows.get('hello+known@hummlist.com')!.platform,
+    rowOf(store, 'hello+known@hummlist.com').platform,
     'ios',
     'nothing changed in 24 h',
   );
@@ -410,8 +434,8 @@ Deno.test('AC10: one confirmation mail from Peter, with the confirm and delete l
   });
   await flush();
   assertEquals(sent.length, 1);
-  const [{ to, mail, key }] = sent;
-  const row = store.rows.get('hello+ac10@hummlist.com')!;
+  const { to, mail, key } = nth(sent, 0);
+  const row = rowOf(store, 'hello+ac10@hummlist.com');
   assertEquals(to, 'hello+ac10@hummlist.com');
   assertEquals(mail.from, '"Peter von Hummlist" <hello@hummlist.com>');
   assertEquals(mail.replyTo, 'hello@hummlist.com');
@@ -449,7 +473,7 @@ Deno.test('links in mails go only to known sites', async () => {
     );
     await flush();
     assert(
-      sent[0].mail.text.includes('Confirm email <https://hummlist.com/en/waitlist/confirm#t='),
+      nth(sent, 0).mail.text.includes('Confirm email <https://hummlist.com/en/waitlist/confirm#t='),
       origin,
     );
   }
@@ -490,12 +514,12 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
   assertEquals(sent.length, 2, 'the welcome mail waits for the answer');
   await flush();
   assertEquals(sent.length, 3);
-  const welcome = sent[2];
+  const welcome = nth(sent, 2);
   assertEquals(welcome.to, 'hello+ac11@hummlist.com');
-  assertEquals(welcome.key, `welcome/${store.rows.get('hello+ac11@hummlist.com')!.id}`);
+  assertEquals(welcome.key, `welcome/${rowOf(store, 'hello+ac11@hummlist.com').id}`);
   assertEquals(welcome.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assertMatch(
-    welcome.mail.headers['List-Unsubscribe'],
+    welcome.mail.headers['List-Unsubscribe'] ?? '',
     /^<https:\/\/hummlist\.com\/api\/waitlist\/unsubscribe\?id=[0-9a-f-]{36}&s=[0-9a-f]{64}&l=de>$/,
   );
   assertEquals(await (await call('confirm', press(token))).json(), { status: 'invalid' }, 'used');
@@ -508,18 +532,18 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
     { status: 'invalid' },
     'expired',
   );
-  assertEquals(store.rows.get('hello+late@hummlist.com')!.confirmedAt, null);
+  assertEquals(rowOf(store, 'hello+late@hummlist.com').confirmedAt, null);
 });
 
 Deno.test('AC12: the one-click link deletes the row, again and again; a forged one does nothing', async () => {
   const { call, flush, sent, store } = setup();
   await call('signup', form('hello+ac12@hummlist.com'));
   await flush();
-  await call('confirm', press(tokenOf(sent[0].mail)));
+  await call('confirm', press(tokenOf(nth(sent, 0).mail)));
   await flush();
-  const { id, sig } = oneClick(sent[1].mail);
-  const page = sent[1].mail.text.match(/abmelden#id=([0-9a-f-]+)&s=([0-9a-f]+)/)!;
-  assertEquals([page[1], page[2]], [id, sig], 'the page link and the header carry the same values');
+  const { id, sig } = oneClick(nth(sent, 1).mail);
+  const page = nth(sent, 1).mail.text.match(/abmelden#id=([0-9a-f-]+)&s=([0-9a-f]+)/);
+  assertEquals(page?.slice(1), [id, sig], 'the page link and the header carry the same values');
 
   const otherId = crypto.randomUUID();
   for (
@@ -538,7 +562,7 @@ Deno.test('AC12: the one-click link deletes the row, again and again; a forged o
   assertEquals([res.status, await res.json()], [200, { status: 'deleted' }]);
   assertEquals(store.rows.size, 0, 'deleted at once: no further mail can find it');
   assertEquals(await (await call('unsubscribe', { id, sig })).json(), { status: 'deleted' });
-  assertEquals(await (await call('confirm', press(tokenOf(sent[0].mail)))).json(), {
+  assertEquals(await (await call('confirm', press(tokenOf(nth(sent, 0).mail)))).json(), {
     status: 'invalid',
   });
 });
@@ -560,7 +584,7 @@ Deno.test('the approved texts go out with the placeholder guard on (WAITLIST_ALL
   const logs = await logsOf(async () => {
     await call('signup', form('hello+approved@hummlist.com'));
     await flush();
-    await call('confirm', press(tokenOf(sent[0].mail)));
+    await call('confirm', press(tokenOf(nth(sent, 0).mail)));
     await flush();
   });
   assertEquals(store.rows.size, 1);
@@ -581,13 +605,13 @@ Deno.test('N-74: launch_news sent at sign-up is ignored, on the first sign-up an
     const res = await call('signup', form(email, { launch_news: value }));
     assertEquals([res.status, await res.text()], [202, '{"status":"ok"}'], JSON.stringify(value));
     await flush();
-    assertEquals(store.rows.get(email)!.launchNews, false, JSON.stringify(value));
+    assertEquals(rowOf(store, email).launchNews, false, JSON.stringify(value));
   }
   clock.now = new Date(T0.getTime() + 24 * HOUR);
   await call('signup', form('hello+news0@hummlist.com', { launch_news: true }));
   await flush();
   assertEquals(sent.length, 6, 'the re-send went out');
-  assertEquals(store.rows.get('hello+news0@hummlist.com')!.launchNews, false, 'still false');
+  assertEquals(rowOf(store, 'hello+news0@hummlist.com').launchNews, false, 'still false');
   for (const { mail } of sent) assert(!mail.text.includes('offiziell startet'));
 });
 
@@ -595,7 +619,7 @@ Deno.test('N-73: the confirm press names the current confirmation text, else 400
   const { call, flush, sent, store } = setup();
   await call('signup', form('hello+press@hummlist.com'));
   await flush();
-  const token = tokenOf(sent[0].mail);
+  const token = tokenOf(nth(sent, 0).mail);
   for (
     const extra of [
       { confirm_version: undefined },
@@ -615,7 +639,7 @@ Deno.test('N-73: the confirm press names the current confirmation text, else 400
       JSON.stringify(extra),
     );
   }
-  const unconfirmed = store.rows.get('hello+press@hummlist.com')!;
+  const unconfirmed = rowOf(store, 'hello+press@hummlist.com');
   assertEquals([unconfirmed.confirmedAt, unconfirmed.confirmVersion], [null, null]);
   assertEquals(
     await (await call('confirm', press('short', { confirm_version: 'x' }))).json(),
@@ -624,7 +648,7 @@ Deno.test('N-73: the confirm press names the current confirmation text, else 400
   );
   const res = await call('confirm', press(token, { launch_news: undefined }));
   assertEquals([res.status, await res.json()], [200, { status: 'confirmed' }]);
-  const row = store.rows.get('hello+press@hummlist.com')!;
+  const row = rowOf(store, 'hello+press@hummlist.com');
   assertEquals(
     [row.confirmVersion, row.launchNews],
     ['waitlist-confirm-de-v1', false],
@@ -653,13 +677,13 @@ Deno.test('N-73/N-74: the press stores its text version and the launch-news box,
     await flush();
     const res = await call(
       'confirm',
-      press(tokenOf(sent[0].mail), { confirm_version: c.version, launch_news: c.news }),
+      press(tokenOf(nth(sent, 0).mail), { confirm_version: c.version, launch_news: c.news }),
     );
     assertEquals(await res.json(), { status: 'confirmed' });
     await flush();
-    const row = store.rows.get(c.email)!;
+    const row = rowOf(store, c.email);
     assertEquals([row.confirmVersion, row.launchNews], [c.version, c.news], c.email);
-    const welcome = sent[1].mail.text;
+    const welcome = nth(sent, 1).mail.text;
     const sentence = c.locale === 'de'
       ? 'Sonst schreiben wir dir nur noch einmal'
       : "Otherwise we'll only email you once more";
@@ -679,12 +703,12 @@ Deno.test('logs are outcome codes only: no address, token or database message', 
     await call('signup', form('hello+logbot@hummlist.com', { website: 'x' }));
     await call('signup', form('someone@example.com'));
     await flush();
-    const token = tokenOf(sent[0].mail);
+    const token = tokenOf(nth(sent, 0).mail);
     await call('confirm', press(token, { confirm_version: 'waitlist-confirm-fr-v1' }));
     await call('confirm', press(token, { launch_news: true }));
     await call('confirm', press(token));
     await flush();
-    const { id, sig } = oneClick(sent[1].mail);
+    const { id, sig } = oneClick(nth(sent, 1).mail);
     await call('unsubscribe', { id, sig });
     await call('unsubscribe', { id, sig: '0'.repeat(64) });
     for (let i = 0; i <= LIMITS.perKey; i++) {
@@ -713,7 +737,7 @@ Deno.test('logs are outcome codes only: no address, token or database message', 
     ...Array(LIMITS.perKey).fill('waitlist: signup_dropped_honeypot'),
     'waitlist: signup_failed 23505',
   ]);
-  assertNoPersonalData(logs, tokenOf(sent[0].mail), HMAC, PROXY);
+  assertNoPersonalData(logs, tokenOf(nth(sent, 0).mail), HMAC, PROXY);
 });
 
 Deno.test('a database failure after the answer is logged by its code only', async () => {

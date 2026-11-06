@@ -14,7 +14,7 @@ import { shots } from './shots.ts';
 
 const [video, lang] = Deno.args;
 const keep = Deno.args.includes('--keep');
-const shot = shots[video];
+const shot = video === undefined ? undefined : shots[video];
 if (!shot || (lang !== 'de' && lang !== 'en')) {
   console.error(`usage: take.ts <${Object.keys(shots).join('|')}> <de|en> [--keep]`);
   Deno.exit(64);

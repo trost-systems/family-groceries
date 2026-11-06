@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import {
-  addItem, adminClient, apiAs, createInviteCode, cutOff, functionsUrl, itemRow, joinWithCode, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
+  addItem, adminClient, apiAs, createInviteCode, cutOff, firstOf, functionsUrl, itemRow, joinWithCode, must, newEmail, openMore, password, screenshot, signUp, signUpWithHousehold, typeInto,
   openEmailSignIn,
 } from './helpers';
 
@@ -26,7 +26,7 @@ async function confirmDeletion(page: Page): Promise<void> {
 }
 
 async function userId(email: string): Promise<string> {
-  return (await (await apiAs(email)).auth.getUser()).data.user!.id;
+  return must((await (await apiAs(email)).auth.getUser()).data.user, 'signed-in user').id;
 }
 
 /** A feedback note as the app sends it (job 21), through the user's own API client. */
@@ -47,13 +47,13 @@ async function feedbackOf(userId: string): Promise<{ message: string; household_
 async function userExists(id: string): Promise<boolean> {
   const { data, error } = await adminClient().auth.admin.getUserById(id);
   if (error && error.status !== 404) throw error;
-  return data.user != null;
+  return data.user !== null;
 }
 
 async function personalAccessToken(email: string): Promise<string> {
   const { data, error } = await (await apiAs(email)).rpc('create_personal_access_token', { p_name: 'Siri' });
   expect(error).toBeNull();
-  return (data as { token: string }[])[0].token;
+  return firstOf(data as { token: string }[], 'token').token;
 }
 
 async function voiceStatus(token: string): Promise<number> {
@@ -78,7 +78,7 @@ async function householdRowCounts(householdId: string): Promise<Record<string, n
     const column = table === 'households' ? 'id' : 'household_id';
     const { count, error } = await admin.from(table).select('*', { count: 'exact', head: true }).eq(column, householdId);
     if (error) throw error;
-    counts[table] = count!;
+    counts[table] = must(count, `${table} count`);
   }
   return counts;
 }
@@ -147,7 +147,7 @@ test('a member deletes their account; the household and their items stay for the
   expect(await feedbackOf(idB), 'B\'s feedback is gone').toEqual([]);
   const kept = await feedbackOf(idA);
   expect(kept.map((f) => f.message), 'A\'s feedback stays').toEqual(['Von A']);
-  expect(kept[0].household_id, 'with the household it was sent from').not.toBeNull();
+  expect(firstOf(kept, 'feedback of A').household_id, 'with the household it was sent from').not.toBeNull();
   expect(await voiceStatus(tokenB), 'B\'s token is dead').toBe(401);
 });
 
@@ -162,7 +162,7 @@ test('the last member deletes their account; the household goes with every row i
   await sendFeedback(email, 'Bevor ich gehe');
 
   const api = await apiAs(email);
-  const id = (await api.auth.getUser()).data.user!.id;
+  const id = must((await api.auth.getUser()).data.user, 'signed-in user').id;
   // Job 22: a mistyped code is a row of the rate limit's log (invite_attempts), the user's own.
   expect((await api.rpc('accept_invite', { p_code: 'FALSCH22' })).data).toEqual({ status: 'invalid_invite', household_id: null });
   const attempts = async () =>
@@ -175,9 +175,9 @@ test('the last member deletes their account; the household goes with every row i
   await expect.poll(async () => (await api.from('items').select('category_id').eq('name', 'Milch').single()).data)
     .not.toBeNull();
   const milk = (await api.from('items').select('category_id').eq('name', 'Milch').single()).data as { category_id: string };
-  const other = (categories as { id: string }[]).find((c) => c.id !== milk.category_id)!;
+  const other = must((categories as { id: string }[]).find((c) => c.id !== milk.category_id), 'other category');
   const moved = await api.from('items')
-    .update({ category_id: other.id, store_id: (stores as { id: string }[])[0].id }).eq('name', 'Milch');
+    .update({ category_id: other.id, store_id: firstOf(stores as { id: string }[], 'store').id }).eq('name', 'Milch');
   expect(moved.error).toBeNull();
 
   const before = await householdRowCounts(householdId);
@@ -234,7 +234,7 @@ test('Meine Daten exportieren downloads the user\'s own data as JSON, without to
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin' }).format(new Date());
   expect(download.suggestedFilename()).toBe(`einkauf-daten-${today}.json`);
 
-  const text = readFileSync((await download.path())!, 'utf8');
+  const text = readFileSync(must(await download.path(), 'downloaded file'), 'utf8');
   const data = JSON.parse(text) as {
     format: string; account: { email: string }; items_added: { name: string }[]; access_tokens: { name: string }[];
     feedback: { message: string; screen: string }[];
@@ -262,7 +262,7 @@ test('a user without a household deletes their account from the welcome screen',
 
 test('the public deletion page is served', async ({ page }) => {
   const response = await page.goto('/konto-loeschen.html');
-  expect(response!.status()).toBe(200);
+  expect(must(response, 'response').status()).toBe(200);
   await expect(page).toHaveTitle('Hummlist: Konto und Daten löschen');
   await expect(page.getByText('ENTWURF')).toHaveCount(0);
   await expect(page.locator('meta[name="robots"]')).toHaveCount(0);

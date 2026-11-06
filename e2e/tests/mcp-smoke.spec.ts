@@ -1,7 +1,8 @@
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 import { expect, test } from './fixtures';
-import { anonClient, apiAs, newEmail, password } from './helpers';
+import { anonClient, apiAs, firstOf, newEmail, password } from './helpers';
 import { mcpUrl } from './mcp-helpers';
 
 const script = fileURLToPath(new URL('../../scripts/mcp-smoke.sh', import.meta.url));
@@ -16,7 +17,7 @@ async function throwawayToken(): Promise<string> {
   expect(created).toBeNull();
   const { data, error: issued } = await api.rpc('create_personal_access_token', { p_name: 'mcp-smoke' });
   expect(issued).toBeNull();
-  return (data as { token: string }[])[0].token;
+  return firstOf(data as { token: string }[], 'token').token;
 }
 
 function smoke(token: string, version: string): Promise<{ code: number; out: string }> {
@@ -27,7 +28,7 @@ function smoke(token: string, version: string): Promise<{ code: number; out: str
   });
 }
 
-for (const [version, handshake] of [['2025-11-25', 'initialize'], ['2026-07-28', 'server/discover']]) {
+for (const [version, handshake] of [['2025-11-25', 'initialize'], ['2026-07-28', 'server/discover']] as const) {
   test(`scripts/mcp-smoke.sh passes against the local server in protocol ${version}`, async () => {
     const token = await throwawayToken();
     const { code, out } = await smoke(token, version);

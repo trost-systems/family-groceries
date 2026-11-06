@@ -30,11 +30,18 @@ const caught = withTelemetry(
   'voice',
   createHandler({
     authenticate: () => Promise.resolve({ userId: 'u', householdId: 'h' }),
+    // Open, so the failure is the add itself.
+    requirePremium: () => Promise.resolve('open'),
     addItems: () =>
       Promise.reject(
         Object.assign(new Error('duplicate key (name)=(Hafermilch) for peter@example.com'), {
           code: '23505',
         }),
+      ),
+    // Only mode parse splits, so this add never calls it; it would split nothing off.
+    splitItems: (_caller, items) =>
+      Promise.resolve(
+        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
       ),
     report: (e) => telemetry.exception(e),
   }),

@@ -11,9 +11,11 @@ export type Migration = { version: string; name: string; sql: string };
 const fileName = /^(\d{14})_(.+)\.sql$/;
 
 export function parseMigration(file: string, sql: string): Migration {
-  const m = fileName.exec(file);
-  if (!m) throw new Error(`${file}: migration files are named <14-digit version>_<name>.sql`);
-  return { version: m[1], name: m[2], sql };
+  const [, version, name] = fileName.exec(file) ?? [];
+  if (version === undefined || name === undefined) {
+    throw new Error(`${file}: migration files are named <14-digit version>_<name>.sql`);
+  }
+  return { version, name, sql };
 }
 
 /** The local migrations still to apply, in order. Throws when the histories disagree. */

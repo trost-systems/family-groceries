@@ -8,20 +8,27 @@ import type { Event } from './metrics.ts';
 const id = (n: number) => `10000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const household = (n: number) => `20000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
-export const I1 = id(1), I2 = id(2), I3 = id(3), I4 = id(4), I5 = id(5), I6 = id(6), I7 = id(7);
-export const I8 = id(8), H8 = household(8);
-export const H1 = household(1),
-  H2 = household(2),
-  H4 = household(4),
-  H5 = household(5),
-  H6 = household(6),
-  HP = household(99);
-export const H10 = household(10),
-  H11 = household(11),
-  H12 = household(12),
-  H13 = household(13),
-  H14 = household(14),
-  H15 = household(15);
+export const I1 = id(1);
+export const I2 = id(2);
+export const I3 = id(3);
+export const I4 = id(4);
+export const I5 = id(5);
+export const I6 = id(6);
+export const I7 = id(7);
+export const I8 = id(8);
+export const H8 = household(8);
+export const H1 = household(1);
+export const H2 = household(2);
+export const H4 = household(4);
+export const H5 = household(5);
+export const H6 = household(6);
+export const HP = household(99);
+export const H10 = household(10);
+export const H11 = household(11);
+export const H12 = household(12);
+export const H13 = household(13);
+export const H14 = household(14);
+export const H15 = household(15);
 
 function ev(
   event: string,
@@ -176,14 +183,14 @@ export const payingEvents: Event[] = [
 // weeks from Monday 1 March 2027 and, a year on, the weeks of 13 and 20 March 2028. A Yearly
 // purchase on 2 or 3 March 2027 counts through the week that contains it + 379 days (15 or 16
 // March 2028): paying in the week of 13 March 2028, no longer in the week of 20 March.
-export const H20 = household(20),
-  H21 = household(21),
-  H22 = household(22),
-  H23 = household(23),
-  H24 = household(24),
-  H25 = household(25),
-  H26 = household(26),
-  H27 = household(27);
+export const H20 = household(20);
+export const H21 = household(21);
+export const H22 = household(22);
+export const H23 = household(23);
+export const H24 = household(24);
+export const H25 = household(25);
+export const H26 = household(26);
+export const H27 = household(27);
 
 const premium = (source: 'yearly' | 'lifetime', ref: string) => ({
   ...lifetime(ref),
@@ -247,11 +254,11 @@ export const premiumEvents: Event[] = [
 
 // Job 50: integration_blocked from the edge functions (at most once an hour per household and
 // integration), around the weeks of 5 and 12 April 2027.
-export const H30 = household(30),
-  H31 = household(31),
-  H32 = household(32),
-  H33 = household(33),
-  H34 = household(34);
+export const H30 = household(30);
+export const H31 = household(31);
+export const H32 = household(32);
+export const H33 = household(33);
+export const H34 = household(34);
 
 const blocked = (at: string, n: number, h: string, integration: string, internal = false) =>
   ev('integration_blocked', at, id(n), h, { integration }, internal);

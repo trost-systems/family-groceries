@@ -5,6 +5,7 @@
 // cancels, so nothing is deleted. Export and deletion: e2e/tests/account-*.spec.ts.
 //
 //   node journeys/account-deletion.mjs <evidence dir> [--lang de|en] [--dialog premium|none]
+import process from 'node:process';
 import { capture, instance, logger, member, openApp, openTab, signIn } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

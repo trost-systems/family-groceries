@@ -15,7 +15,8 @@ Deno.test("the newest brands migration is generated from brands.tsv", async () =
   for await (const entry of Deno.readDir(migrationsUrl)) {
     if (entry.name.includes("_classifier_brands")) names.push(entry.name);
   }
-  const newest = names.sort().at(-1)!;
+  const newest = names.sort().at(-1);
+  if (newest === undefined) throw new Error("no _classifier_brands migration");
   const migration = await Deno.readTextFile(new URL(newest, migrationsUrl));
   assertEquals(
     migration,

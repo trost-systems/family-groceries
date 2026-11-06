@@ -56,7 +56,7 @@ async function readBody(req: Request): Promise<{ appleCode: string | null } | nu
   }
 }
 
-export function createHandler(deps: Deps) {
+export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {
     const early = preflight(req);
     if (early) return early;

@@ -14,7 +14,7 @@ the same things.
 | Gate | What it checks | Runs locally |
 | --- | --- | --- |
 | `gitleaks` | No secret in the history or in what the working tree could commit (ignored output such as Playwright traces is skipped) | yes |
-| `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, `scripts/check-gates.sh`, `scripts/lint.sh`, the generated design tokens and app icon against their source (`design/tokens/build.mjs --check`, `design/app-icon/build.mjs --check`) | yes |
+| `lint` | actionlint, shellcheck, `tsc --noEmit` for `e2e/`, the TypeScript pack's enforced rules (`tool/lint/ts/strict.ts`, Deno pinned in `.dvmrc`, the version `pack.ts` lists), `scripts/check-gates.sh`, `scripts/lint.sh`, the generated design tokens and app icon against their source (`design/tokens/build.mjs --check`, `design/app-icon/build.mjs --check`) | yes |
 | `changelog` | The PR's `## Changelog` section, structure only (pull requests only, not Dependabot), and the changelog drafts in `releases/changelog/`, its `pending.json` and overrides, and `releases/flags.json`; the note's `flag:` / `hold:` keys must be in that file ([`CHANGELOG.md`](CHANGELOG.md)) | the drafts, and HEAD's message if it has a section |
 | `site` | The guides site in `site/`: build checks (with the agent checks: llms.txt, `.md` twins, robots, sitemap, hreflang, JSON-LD, links, launch guard), tests, a production build; no real access token in the repo | yes |
 | `site-agent` | hummlist.com for AI agents ([`AGENT_FIRST.md`](AGENT_FIRST.md)): the MCP probe's fixture tests and `scripts/mcp-smoke.sh https://mcp.hummlist.com` without credentials, the built site served like Vercel serves it (llms.txt, twins, sitemap, OpenAPI when `public-api` is on) and the waitlist form in Chromium | yes |

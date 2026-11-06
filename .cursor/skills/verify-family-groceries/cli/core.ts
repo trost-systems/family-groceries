@@ -4,6 +4,15 @@ import type { Instance, State } from './instance.ts';
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type JsonObject = { [key: string]: Json };
+/** An array the schema or a check guarantees has an element. */
+export type NonEmpty<T> = [T, ...T[]];
+
+/** `record[key]` for a key that must be there; throws naming it (a plain access would throw a TypeError on the next property). */
+export function entry<T>(record: Readonly<Record<string, T>>, key: string, what: string): T {
+  const value = record[key];
+  if (value === undefined) throw new Error(`no ${what} "${key}"`);
+  return value;
+}
 /** What a command returns; serialized as the JSON document on stdout. */
 export type Result = Record<string, unknown>;
 
@@ -24,10 +33,10 @@ export class FgError extends Error {
   }
 }
 
-export const usage = (message: string, hint: string) => new FgError('usage', message, hint, EXIT_USAGE);
+export const usage = (message: string, hint: string): FgError => new FgError('usage', message, hint, EXIT_USAGE);
 
 /** What a cancelled step throws: a signal (Ctrl-C, SIGTERM, SIGHUP) aborted the work. */
-export const interrupted = (what: string) =>
+export const interrupted = (what: string): FgError =>
   new FgError('interrupted', `${what} was interrupted.`, 'A run this command seeded is torn down next; `fg runs` shows leftovers.', 130);
 
 /** Throws interrupted when signal has been aborted. */
@@ -47,7 +56,7 @@ export interface RunOptions {
   stdin?: string;
   timeoutMs?: number;
   /** Aborting kills the process; run then fails with code interrupted. */
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 }
 
 export interface SpawnOptions {

@@ -2,6 +2,8 @@
 // checked locally: headers, redirects with `has` header conditions, rewrites to functions, cleanUrls,
 // trailingSlash false.
 // The site/api waitlist functions answer under /api/waitlist* with the env of this process.
+import process from 'node:process';
+import { Buffer } from 'node:buffer';
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, extname, join, normalize } from 'node:path';
@@ -35,7 +37,7 @@ const TYPES = {
 export const matchesSource = (source, path) => new RegExp(`^${source}$`).test(path);
 
 // Like Vercel, a `has` value is a regex that must match the whole header value; no value means present.
-function matchesHas(has = [], req) {
+function matchesHas(req, has = []) {
   return has.every((cond) => {
     const value = req.headers[cond.key.toLowerCase()];
     if (value === undefined) return false;
@@ -77,7 +79,7 @@ export function startPreview({ dir = join(SITE_DIR, 'dist'), port = 55990, host 
     const url = new URL(req.url, 'http://preview');
     const path = decodeURIComponent(url.pathname);
     for (const rule of config.headers ?? []) {
-      if (matchesSource(rule.source, path) && matchesHas(rule.has, req)) {
+      if (matchesSource(rule.source, path) && matchesHas(req, rule.has)) {
         for (const { key, value } of rule.headers) res.setHeader(key, value);
       }
     }
@@ -87,7 +89,7 @@ export function startPreview({ dir = join(SITE_DIR, 'dist'), port = 55990, host 
     if (config.trailingSlash === false && path !== '/' && path.endsWith('/')) return redirect(308, path.replace(/\/+$/, '') || '/');
     if (config.cleanUrls && path.endsWith('.html')) return redirect(308, path.replace(/(\/index)?\.html$/, '') || '/');
     for (const rule of config.redirects ?? []) {
-      if (matchesSource(rule.source, path) && matchesHas(rule.has, req)) {
+      if (matchesSource(rule.source, path) && matchesHas(req, rule.has)) {
         return redirect(rule.statusCode ?? (rule.permanent === false ? 307 : 308), rule.destination);
       }
     }

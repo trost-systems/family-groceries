@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 import {
-  addField, addItem, createInviteCode, itemRow, joinWithCode, newEmail, screenshot, signUp, signUpWithHousehold, typeInto,
+  addField, addItem, createInviteCode, itemRow, joinWithCode, newEmail, screenshot, signUp, signUpWithHousehold,
 } from './helpers';
 
 test('items the partner added carry no initial but are new until seen', async ({ browser }) => {

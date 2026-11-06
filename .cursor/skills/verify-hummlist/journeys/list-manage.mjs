@@ -3,6 +3,7 @@
 // generic stores (Wochenmarkt, Bäckerei) to the household first; no retailer names (Legal N-23).
 //
 //   node journeys/list-manage.mjs <evidence dir> [--lang de|en] [--dark]
+import process from 'node:process';
 import { addField, addSheet, apiAs, capture, instance, logger, member, openApp, openTab, signIn, typeInto } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

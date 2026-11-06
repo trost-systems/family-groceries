@@ -18,7 +18,7 @@ const MESSAGES = {
   'email-missing': 'waitlist.error.email-missing',
   'email-invalid': 'waitlist.error.email-invalid',
   'platform-missing': 'waitlist.error.platform-missing',
-  invalid_request: 'waitlist.error.invalid-request',
+  'invalid_request': 'waitlist.error.invalid-request',
   unavailable: 'waitlist.error.unavailable',
   network: 'waitlist.error.network',
 };

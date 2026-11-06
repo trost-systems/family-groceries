@@ -1,4 +1,4 @@
-import { assert, assertEquals } from '@std/assert';
+import { assert, assertEquals, assertExists } from '@std/assert';
 import { exportPKCS8, generateKeyPair, jwtVerify, SignJWT } from 'jose';
 import { appleBundleIds, type AppleConfig, appleConfig, revokeAppleGrant } from './apple.ts';
 
@@ -47,6 +47,8 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
     'https://apple.test/auth/revoke',
   ]);
   const [token, revoke] = seen;
+  assertExists(token);
+  assertExists(revoke);
   assertEquals({ ...token.form, client_secret: '-' }, {
     client_id: 'com.hummlist.app',
     client_secret: '-',
@@ -62,6 +64,7 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
 
   // Each request signs its own secret, so the two differ once the calls straddle a second.
   for (const { form } of seen) {
+    assertExists(form.client_secret);
     const { payload, protectedHeader } = await jwtVerify(form.client_secret, publicKey, {
       issuer: 'TEAM123456',
       audience: 'https://appleid.apple.com',
@@ -69,7 +72,9 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
       algorithms: ['ES256'],
     });
     assertEquals(protectedHeader.kid, 'KEY1234567');
-    assert(payload.exp! - payload.iat! <= 300, 'the client secret is short-lived');
+    assertExists(payload.exp);
+    assertExists(payload.iat);
+    assert(payload.exp - payload.iat <= 300, 'the client secret is short-lived');
   }
 });
 
@@ -77,7 +82,7 @@ Deno.test('a code from a build before the rename is exchanged and revoked as tha
   for (const refusal of ['invalid_grant', 'invalid_client']) {
     const { fetchFn, seen } = fakeApple({
       '/auth/token': async () =>
-        seen.at(-1)!.form.client_id === 'com.hummlist.app'
+        seen.at(-1)?.form.client_id === 'com.hummlist.app'
           ? Response.json({ error: refusal }, { status: 400 })
           : Response.json({ refresh_token: 'rt-secret', id_token: await idToken('apple-sub') }),
     });
@@ -88,7 +93,9 @@ Deno.test('a code from a build before the rename is exchanged and revoked as tha
       ['/auth/token', 'com.petertrost.familygroceries'],
       ['/auth/revoke', 'com.petertrost.familygroceries'],
     ]);
-    const { payload } = await jwtVerify(seen[2].form.client_secret, publicKey);
+    const revoke = seen[2];
+    assertExists(revoke?.form.client_secret);
+    const { payload } = await jwtVerify(revoke.form.client_secret, publicKey);
     assertEquals(payload.sub, 'com.petertrost.familygroceries');
   }
 });

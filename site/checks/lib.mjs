@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -71,7 +72,7 @@ export function pageKit() {
     }
     return { color: 'rgb(255, 255, 255)', sel: 'canvas' };
   };
-  window.__kit = { sel, label, bgBehind };
+  globalThis.__kit = { sel, label, bgBehind };
 }
 
 // Group problems that repeat across runs: one line per page, check, selector and message.

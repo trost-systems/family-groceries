@@ -1,6 +1,6 @@
 /** Secondary surfaces: Postgres state, Edge Functions over HTTP, a REST/realtime peer client, and Mailpit. */
 
-import { type Command, type Ctx, FgError, int, type JsonObject, str, usage } from './core.ts';
+import { type Command, type Ctx, FgError, int, type Json, type JsonObject, str, usage } from './core.ts';
 import { resolveMember } from './members.ts';
 import { householdOf, restAs, signIn, sql, sqlRows, stackEnv } from './stack.ts';
 
@@ -90,7 +90,7 @@ export const backendCommands: Command[] = [
       if (body) headers['content-type'] = 'application/json';
       const res = await ctx.act(
         `${method} ${url} as ${str(args, 'bearer') ? 'bearer token' : as}`,
-        () => ctx.sh.fetch(url, { method, headers, body }),
+        () => ctx.sh.fetch(url, { method, headers, ...(body === undefined ? {} : { body }) }),
       );
       if (!res) return { method, url };
       const text = await res.text();
@@ -224,7 +224,13 @@ export const backendCommands: Command[] = [
         0,
         int(args, 'limit', 5),
       );
-      const messages: JsonObject[] = [];
+      const messages: {
+        id: Json | undefined;
+        to: (Json | undefined)[];
+        subject: Json | undefined;
+        created: Json | undefined;
+        links: string[];
+      }[] = [];
       for (const m of mine) {
         const full = await (await ctx.sh.fetch(`${ctx.inst.mailUrl}/api/v1/message/${m.ID}`)).json();
         const links = [...new Set(String(full.Text ?? full.HTML ?? '').match(/https?:\/\/[^\s"'<>)]+/g) ?? [])].filter((l) =>

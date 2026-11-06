@@ -34,11 +34,13 @@ function fakeDeps(overrides: Partial<Deps> = {}, fate: HouseholdFate = 'kept') {
   return { handle: createHandler(deps), deleted, revoked };
 }
 
-const call = (init: { token?: string; method?: string; body?: string; path?: string } = {}) =>
+const call = (
+  init: { token?: string | undefined; method?: string; body?: string; path?: string } = {},
+) =>
   new Request(`http://local${init.path ?? '/account/delete'}`, {
     method: init.method ?? 'POST',
     headers: init.token === undefined ? {} : { authorization: `Bearer ${init.token}` },
-    body: init.body,
+    body: init.body ?? null,
   });
 
 Deno.test('a session deletes the account and reports the household fate', async () => {

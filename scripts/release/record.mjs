@@ -12,6 +12,7 @@
 //   node scripts/release/record.mjs stats --version 1.0.0 [--dry-run] [--file releases/releases.json]
 //     recomputes the stats of a recorded release from git (a backfill after the stats grew, job 105)
 
+import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -252,7 +253,7 @@ function add(argv) {
     day: dayNumber(record.project.day_zero, date),
     build,
     sha,
-    previous_sha: previousSha,
+    'previous_sha': previousSha,
     stores,
     stats,
     notes: { de: opts['notes-de'], en: opts['notes-en'] },

@@ -6,6 +6,8 @@
 //   node design/app-icon/build.mjs --check     writes nothing, exits 1 when a file differs
 //   node design/app-icon/build.mjs --previews  writes docs/screenshots/52/icon/ and prints the
 //                                              contrast and safe-zone numbers
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,7 +70,8 @@ const MASKS = {
 function superellipse(n) {
   return [Array.from({ length: 512 }, (_, i) => {
     const t = (i / 512) * 2 * Math.PI;
-    const c = Math.cos(t), s = Math.sin(t);
+    const c = Math.cos(t);
+    const s = Math.sin(t);
     return [C + C * Math.sign(c) * Math.abs(c) ** (2 / n), C + C * Math.sign(s) * Math.abs(s) ** (2 / n)];
   })];
 }
@@ -327,7 +330,8 @@ function previews() {
   const SMALL = [['apple-16', 16, 'apple'], ['apple-29', 29, 'apple'], ['apple-87', 87, 'apple'], ['android-48', 48, 'circle'], ['android-144', 144, 'circle']];
   for (const [name, size, mask] of SMALL) for (const mode of MODES) add(`small/${name}-${mode}.png`, icon(mode, size, { mask }));
   // The small sizes side by side, every pixel drawn as a ZOOM x ZOOM block on grey.
-  const ZOOM = 6, GAP = 24;
+  const ZOOM = 6;
+  const GAP = 24;
   const W = SMALL.reduce((w, [, size]) => w + size * ZOOM + GAP, GAP);
   const H = GAP + MODES.length * (Math.max(...SMALL.map(([, size]) => size)) * ZOOM + GAP);
   const sheet = Buffer.alloc(W * H * 4);
@@ -338,7 +342,9 @@ function previews() {
     for (const [, size, mask] of SMALL) {
       const px = rgba(size, paintIcon(mode), { mask });
       for (let y = 0; y < size * ZOOM; y++) for (let x = 0; x < size * ZOOM; x++) {
-        const s4 = (Math.floor(y / ZOOM) * size + Math.floor(x / ZOOM)) * 4, d4 = ((y0 + y) * W + x0 + x) * 4, a = px[s4 + 3] / 255;
+        const s4 = (Math.floor(y / ZOOM) * size + Math.floor(x / ZOOM)) * 4;
+        const d4 = ((y0 + y) * W + x0 + x) * 4;
+        const a = px[s4 + 3] / 255;
         for (let c = 0; c < 3; c++) sheet[d4 + c] = Math.round(px[s4 + c] * a + 136 * (1 - a));
       }
       x0 += size * ZOOM + GAP;

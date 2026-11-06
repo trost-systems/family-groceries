@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, request } from 'node:http';

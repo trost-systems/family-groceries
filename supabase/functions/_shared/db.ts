@@ -6,11 +6,24 @@ import postgres from 'postgres';
 export type Sql = postgres.Sql;
 export type Tx = postgres.TransactionSql;
 
+/** The row of a query that always returns exactly one, such as `select f() as x`. */
+export function oneRow<T>(rows: readonly T[], query: string): T {
+  const [row] = rows;
+  if (row === undefined) throw new Error(`${query} returned no row`);
+  return row;
+}
+
 let pool: Sql | undefined;
+
+export function databaseUrl(): string {
+  const configured = Deno.env.get('SUPABASE_DB_URL');
+  if (configured === undefined) throw new Error('SUPABASE_DB_URL is not set');
+  return configured;
+}
 
 function db(): Sql {
   pool ??= (() => {
-    const url = new URL(Deno.env.get('SUPABASE_DB_URL')!);
+    const url = new URL(databaseUrl());
     // The local stack names the database container supabase_db_<project>; Deno's resolvers
     // refuse underscores in hostnames. The container's network alias "db" points at the same
     // host. Hosted database URLs have no underscores.
@@ -68,14 +81,14 @@ export async function sessionActive(
   session: { id: string; userId: string; clientId: string | null },
 ): Promise<boolean> {
   const sql = db();
-  const [row] = await sql<{ active: boolean }[]>`
+  const rows = await sql<{ active: boolean }[]>`
     select exists (
       select from auth.sessions s
       where s.id = ${session.id}::uuid and s.user_id = ${session.userId}::uuid
         and s.oauth_client_id::text is not distinct from ${session.clientId}
         and (s.not_after is null or s.not_after > now())
     ) as active`;
-  return row.active;
+  return oneRow(rows, 'sessionActive').active;
 }
 
 /** A PAT or Siri credential by its hash; nothing when unknown, revoked or no longer valid. */
@@ -89,9 +102,9 @@ export async function resolveAccessToken(
 }
 
 export async function userExists(userId: string): Promise<boolean> {
-  const [row] = await db()<{ exists: boolean }[]>`
+  const rows = await db()<{ exists: boolean }[]>`
     select exists (select from auth.users where id = ${userId}::uuid) as exists`;
-  return row.exists;
+  return oneRow(rows, 'userExists').exists;
 }
 
 /** The user's Sign in with Apple subject (identities.provider_id), if they linked Apple. */
@@ -105,14 +118,14 @@ export type HouseholdFate = 'kept' | 'deleted' | 'none';
 
 /** Deletes the user for good; see public.delete_account. */
 export async function deleteAccount(userId: string): Promise<HouseholdFate> {
-  const [row] = await db()<{ fate: HouseholdFate }[]>`
+  const rows = await db()<{ fate: HouseholdFate }[]>`
     select public.delete_account(${userId}::uuid) as fate`;
-  return row.fate;
+  return oneRow(rows, 'delete_account').fate;
 }
 
 /** One read of the shared seed dictionary: real Postgres activity that touches no user data. */
 export async function databaseAnswers(): Promise<boolean> {
-  const [row] = await db()<{ ok: boolean }[]>`
+  const rows = await db()<{ ok: boolean }[]>`
     select exists (select from public.classifier_terms) as ok`;
-  return row.ok;
+  return oneRow(rows, 'databaseAnswers').ok;
 }

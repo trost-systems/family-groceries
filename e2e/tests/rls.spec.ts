@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { addItem, adminClient, anonClient, apiAs, itemRow, newEmail, password, signUpWithHousehold } from './helpers';
+import { addItem, adminClient, anonClient, apiAs, itemRow, must, newEmail, password, signUpWithHousehold } from './helpers';
 
 test('a user from another household can neither see nor change the list', async ({ browser }) => {
   const peterEmail = newEmail('peter');
@@ -14,7 +14,8 @@ test('a user from another household can neither see nor change the list', async 
 
   const peterApi = await apiAs(peterEmail);
   const { data: own } = await peterApi.from('items').select('id, household_id').eq('name', 'Geheimzutat').single();
-  const householdId = own!.household_id as string;
+  if (own === null) throw new Error('no Geheimzutat row');
+  const householdId = own.household_id as string;
 
   const eveApi = await apiAs(eveEmail);
   const read = await eveApi.from('items').select('*').eq('household_id', householdId);
@@ -25,9 +26,9 @@ test('a user from another household can neither see nor change the list', async 
   const insert = await eveApi.from('items').insert({ household_id: householdId, name: 'Eingeschleust' });
   expect(insert.error?.code, 'insert is denied by RLS').toBe('42501');
 
-  const update = await eveApi.from('items').update({ name: 'Gehackt' }).eq('id', own!.id).select();
+  const update = await eveApi.from('items').update({ name: 'Gehackt' }).eq('id', own.id).select();
   expect(update.data).toEqual([]);
-  const del = await eveApi.from('items').delete().eq('id', own!.id).select();
+  const del = await eveApi.from('items').delete().eq('id', own.id).select();
   expect(del.data).toEqual([]);
   const invite = await eveApi.rpc('create_invite', { p_household: householdId });
   expect(invite.error?.message).toBe('not_a_member');
@@ -35,8 +36,8 @@ test('a user from another household can neither see nor change the list', async 
   expect(classify.data, 'classify does not reveal another household\'s category ids').toBeNull();
   expect(classify.error?.message).toBe('not_a_member');
 
-  const { data: after } = await peterApi.from('items').select('name').eq('id', own!.id).single();
-  expect(after!.name, 'the row is untouched').toBe('Geheimzutat');
+  const { data: after } = await peterApi.from('items').select('name').eq('id', own.id).single();
+  expect(must(after, 'Geheimzutat row').name, 'the row is untouched').toBe('Geheimzutat');
 
   // Realtime: Eve listening on Peter's household receives nothing.
   const received: unknown[] = [];
@@ -62,8 +63,8 @@ test('feedback is insert-only: own note yes, another user_id no, no read, change
   }
   const anna = await apiAs(annaEmail);
   const ben = await apiAs(benEmail);
-  const annaId = (await anna.auth.getUser()).data.user!.id;
-  const benId = (await ben.auth.getUser()).data.user!.id;
+  const annaId = must((await anna.auth.getUser()).data.user, 'Anna').id;
+  const benId = must((await ben.auth.getUser()).data.user, 'Ben').id;
   const note = (extra: Record<string, unknown> = {}) => ({
     id: crypto.randomUUID(), message: 'Notiz', app_version: '0.1.0', build: '1', platform: 'web',
     os_version: 'Chrome on Linux', locale: 'de', screen: 'list', ...extra,

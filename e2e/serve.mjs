@@ -6,6 +6,7 @@
 import { createReadStream, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import process from 'node:process';
 
 const [root, port = '3000', flag, supabaseUrl, posthogHost] = process.argv.slice(2);
 const types = {
@@ -49,7 +50,9 @@ function resolve(urlPath) {
   if (!path.startsWith(normalize(root))) return null;
   try {
     if (statSync(path).isFile()) return path;
-  } catch {}
+  } catch {
+    return null;
+  }
   return null;
 }
 

@@ -3,9 +3,9 @@
 // functions' real add code (_shared/list.ts, voice/items.ts) as a signed-in user against a database
 // with the repo's migrations: the db gate sets FG_DB_TEST=1 and SUPABASE_DB_URL to the local stack.
 // Without FG_DB_TEST the tests are skipped (the functions gate has no database).
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import postgres from 'postgres';
-import { asUser, type Tx } from './db.ts';
+import { asUser, databaseUrl, type Tx } from './db.ts';
 import { addItems as mcpAddItems } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { parseSentence } from '../voice/parse.ts';
@@ -15,12 +15,13 @@ const enabled = Deno.env.get('FG_DB_TEST') === '1';
 
 /** A user with a fresh household for one test, removed afterwards. */
 async function withHousehold(work: (userId: string, householdId: string) => Promise<void>) {
-  const admin = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
+  const admin = postgres(databaseUrl(), { max: 1, prepare: false });
   const userId = crypto.randomUUID();
   try {
     await admin`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
     const householdId = await asUser(userId, async (tx) => {
       const [row] = await tx<{ id: string }[]>`select id from public.create_household('32a')`;
+      assertExists(row);
       return row.id;
     });
     await work(userId, householdId);
@@ -50,7 +51,7 @@ Deno.test({
         userId,
         (tx) => mcpAddItems(tx, householdId, variants.map(([name]) => ({ name }))),
       );
-      assertEquals(added.map((i) => [i.name, i.category]), variants.map((v) => [...v]));
+      assertEquals(added.map((i) => [i?.name, i?.category]), variants.map((v) => [...v]));
     }),
 });
 
@@ -85,7 +86,7 @@ Deno.test({
         userId,
         (tx) => mcpAddItems(tx, householdId, [{ name: 'Karotten' }]),
       );
-      assertEquals(added.map((i) => [i.name, i.category]), [['Karotten', 'Getränke']]);
+      assertEquals(added.map((i) => [i?.name, i?.category]), [['Karotten', 'Getränke']]);
     }),
 });
 
@@ -100,6 +101,7 @@ const quantityRows = async () =>
       if (!['', 'typed', 'spoken'].includes(mode) || !['de', 'en'].includes(lang)) {
         throw new Error(`quantity_parse.tsv: mode "${mode}", lang "${lang}" in "${line}"`);
       }
+      if (text === undefined || name === undefined) throw new Error(`no text and name: ${line}`);
       return { text, name, quantity: quantity || null, history, mode, lang };
     });
 
@@ -116,7 +118,11 @@ const addPaths: [
   [
     'MCP add_items',
     'typed',
-    async (tx, householdId, text) => (await mcpAddItems(tx, householdId, [{ name: text }])).added,
+    async (tx, householdId, text) =>
+      (await mcpAddItems(tx, householdId, [{ name: text }])).added.map((i) => {
+        assertExists(i);
+        return i;
+      }),
     (name, quantity) => [name, quantity],
   ],
   [
@@ -126,7 +132,7 @@ const addPaths: [
       voiceAddItems(tx, householdId, (lang === 'en' ? parseEnglish : parseSentence)(text)),
     (name, quantity, lang) =>
       lang === 'en' ? [name, quantity] : [
-        (name[0].toUpperCase() + name.slice(1)).replaceAll('.', ''),
+        (name.charAt(0).toUpperCase() + name.slice(1)).replaceAll('.', ''),
         quantity?.toLowerCase() ?? null,
       ],
   ],

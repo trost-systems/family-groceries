@@ -3,11 +3,14 @@ import {
   addField,
   addItem,
   answerConsent,
+  boxOf,
   type Collector,
   createInviteCode,
   eventNames,
   fakeCollector,
+  firstOf,
   itemRow,
+  must,
   newEmail,
   openMore,
   openTab,
@@ -100,7 +103,7 @@ function expectAllowedKeys(collector: Collector) {
 }
 
 /** Whether posthog-js was fetched or runs in [page]: never before the yes. */
-async function posthogJsLoaded(page: Page): Promise<boolean> {
+function posthogJsLoaded(page: Page): Promise<boolean> {
   return page.evaluate(() => 'posthog' in window ||
     performance.getEntriesByType('resource').some((r) => r.name.includes('posthog/array.js')));
 }
@@ -218,12 +221,12 @@ test('accepting sends first_open once, then one event per action, no list text; 
   ]);
 
   const byName = (name: string) => collector.events.filter((e) => e.event === name);
-  const [ticked] = byName('item_ticked');
+  const ticked = firstOf(byName('item_ticked'), 'item_ticked event');
   const household = ticked.properties.household_id as string;
   expect(household).toMatch(/^[0-9a-f-]{36}$/);
   expect(byName('first_open')).toHaveLength(1);
-  expect(byName('first_open')[0].properties.household_id).toBeUndefined();
-  expect(byName('household_created')[0].properties.household_id).toBe(household);
+  expect(firstOf(byName('first_open'), 'first_open event').properties.household_id).toBeUndefined();
+  expect(firstOf(byName('household_created'), 'household_created event').properties.household_id).toBe(household);
   expect(byName('item_added').map((e) => e.properties.source)).toEqual(['typed', 'typed']);
   expect(ticked.properties.actor_role).toBe('owner');
   expect(ticked.properties.household_size).toBe(1);
@@ -348,7 +351,7 @@ test('an invite link survives sign-in and consent, ends on joining, and counts a
   await confirmJoin(page, 'Unser Haushalt');
   await expect(addField(page)).toBeFocused();
   await received(collector, ['first_open', 'invite_accepted']);
-  const joined = collector.events.find((e) => e.event === 'invite_accepted')!;
+  const joined = must(collector.events.find((e) => e.event === 'invite_accepted'), 'invite_accepted event');
   expect(joined.properties.method).toBe('link');
   expect(joined.properties.household_id).toMatch(/^[0-9a-f-]{36}$/);
   expect(JSON.stringify(collector.events) + collector.bodies.join(''), 'no invite code, not even in a URL').not.toContain(code);
@@ -404,7 +407,7 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
   }).toPass();
   // Let the scroll settle before measuring where to press.
   await page.waitForTimeout(500);
-  const box = (await version.boundingBox())!;
+  const box = await boxOf(version);
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(1_000);
@@ -419,10 +422,10 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
   await testError.click();
 
   await expect.poll(() => eventNames(collector).includes('$exception'), { timeout: 15_000 }).toBe(true);
-  const error = collector.events.find((e) => e.event === '$exception')!;
-  const [exception] = error.properties.$exception_list as {
+  const error = must(collector.events.find((e) => e.event === '$exception'), '$exception event');
+  const exception = firstOf(error.properties.$exception_list as {
     type: string; value: string; mechanism: { handled: boolean }; stacktrace?: { frames: unknown[] };
-  }[];
+  }[], 'exception in $exception_list');
   expect(exception.type).toBe('StateError');
   expect(exception.value).toBe('Bad state: <w> error (<w>, <w>)');
   expect(exception.mechanism.handled).toBe(false);
@@ -437,10 +440,11 @@ test('an internal device sends a test error, scrubbed, to error tracking', async
  * The raw localStorage key of `analytics.consent_text_version`, and its value, or null. The app
  * stores it with every decision (Legal Review 2026-11-01, addendum 12:35).
  */
-async function storedTextVersion(page: Page): Promise<{ key: string; raw: string } | null> {
+function storedTextVersion(page: Page): Promise<{ key: string; raw: string } | null> {
   return page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /(^|\.)analytics\.consent_text_version$/.test(k));
-    return key === undefined ? null : { key, raw: localStorage.getItem(key)! };
+    const raw = key === undefined ? null : localStorage.getItem(key);
+    return key === undefined || raw === null ? null : { key, raw };
   });
 }
 
@@ -460,16 +464,17 @@ for (const [label, outdate] of [
     await expect.poll(() => storedInstallId(page)).toMatch(/^[0-9a-f-]{36}$/);
     const stored = await storedTextVersion(page);
     expect(stored?.raw, 'the yes is stored with the current version').toContain('2026-11-01');
+    if (stored === null) throw new Error('no stored consent text version');
     await received(collector, ['first_open']);
     expect(collector.requests.some((r) => r.startsWith('POST /flags')), 'a current yes asks for flags')
       .toBe(true);
 
     // What an older build (or the older text) left: the yes stays, the version goes or ages.
-    const outdated = outdate(stored!.raw);
+    const outdated = outdate(stored.raw);
     await page.evaluate(({ key, raw }) => {
       if (raw === null) localStorage.removeItem(key);
       else localStorage.setItem(key, raw);
-    }, { key: stored!.key, raw: outdated });
+    }, { key: stored.key, raw: outdated });
     collector.requests.length = 0;
     collector.events.length = 0;
     await page.reload();

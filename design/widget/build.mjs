@@ -6,6 +6,8 @@
 // resources, so it follows night mode by itself. Node only, no packages and no network.
 //   node design/widget/build.mjs           writes the files
 //   node design/widget/build.mjs --check   writes nothing, exits 1 when a file differs
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -78,7 +80,6 @@ function ninePatch(height, stroke, padX, face, contour) {
 const PILL = { height: 20, stroke: (BORDER * 20) / 28, padX: 1 };
 const BUTTON = { height: 32, stroke: BORDER, padX: 2 };
 
-const f = (n) => Number(n.toFixed(2));
 
 // The empty list's badge: a pointy-top lemon hex with the contour and the app icon's check.
 function doneHex() {

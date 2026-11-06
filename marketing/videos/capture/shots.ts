@@ -8,6 +8,13 @@ import { type Client, find, gone, type Session, sleep } from './driver.ts';
 type Lang = 'de' | 'en';
 type Clients = Record<string, Client>;
 
+/** The client of [name]; take.ts signs in every one of a shot's `members` before filming. */
+function member(c: Clients, name: string): Client {
+  const client = c[name];
+  if (client === undefined) throw new Error(`no client ${name}: list it in the shot's members`);
+  return client;
+}
+
 export interface Shot {
   scenario: Record<Lang, string>;
   members: string[];
@@ -19,7 +26,14 @@ const items = {
   addTick: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
   sync: { de: 'Eier', en: 'Eggs' },
   mcp: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
-};
+} as const;
+
+/** A value take.ts sets from the local stack before any shot runs. */
+function takeEnv(name: string): string {
+  const value = Deno.env.get(name);
+  if (value === undefined) throw new Error(`${name} is not set; run shots through take.ts`);
+  return value;
+}
 
 /**
  * Sam's MCP client for the take: signs in over the auth API and creates a personal access token
@@ -27,8 +41,8 @@ const items = {
  * fixture teardown deletes it with the user. Calls go to the local stack's mcp function.
  */
 async function mcpClient(c: Client) {
-  const api = Deno.env.get('CAPTURE_API_URL')!;
-  const key = Deno.env.get('CAPTURE_PUBLISHABLE_KEY')!;
+  const api = takeEnv('CAPTURE_API_URL');
+  const key = takeEnv('CAPTURE_PUBLISHABLE_KEY');
   const auth = await (await fetch(`${api}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { apikey: key, 'content-type': 'application/json' },
@@ -72,7 +86,8 @@ export const shots: Record<string, Shot> = {
   'add-tick': {
     scenario: { de: 'demo-familie', en: 'demo-family-en' },
     members: ['mia'],
-    async film(s, { mia }, lang) {
+    async film(s, c, lang) {
+      const mia = member(c, 'mia');
       const [first, second] = items.addTick[lang];
       await sleep(1500);
       s.mark('mia', 'open');
@@ -102,11 +117,16 @@ export const shots: Record<string, Shot> = {
   'household-sync': {
     scenario: { de: 'demo-familie', en: 'demo-family-en' },
     members: ['mia', 'noah', 'ida'],
-    async prepare(s, { noah, ida }, lang) {
+    async prepare(s, c) {
+      const noah = member(c, 'noah');
+      const ida = member(c, 'ida');
       // Noah and Ida look at the chilled section, where the new item lands under Butter.
       for (const c of [noah, ida]) await s.scrollUntil(c, { text: 'Butter' }, 52);
     },
-    async film(s, { mia, noah, ida }, lang) {
+    async film(s, c, lang) {
+      const mia = member(c, 'mia');
+      const noah = member(c, 'noah');
+      const ida = member(c, 'ida');
       const item = items.sync[lang];
       await sleep(1500);
       await s.tap(mia, { key: 'add-item-field' }, { dx: 262 });
@@ -133,11 +153,13 @@ export const shots: Record<string, Shot> = {
   'mcp-chat': {
     scenario: { de: 'solo-long-list', en: 'solo-long-list' },
     members: ['sam'],
-    async prepare(s, { sam }) {
+    async prepare(s, c) {
+      const sam = member(c, 'sam');
       // Sam looks at the pantry rows without a store, where new pantry items land.
       await s.scrollUntil(sam, { text: 'Ketchup' }, 300);
     },
-    async film(s, { sam }, lang) {
+    async film(s, c, lang) {
+      const sam = member(c, 'sam');
       const call = await mcpClient(sam);
       const names = items.mcp[lang];
       await sleep(3200);

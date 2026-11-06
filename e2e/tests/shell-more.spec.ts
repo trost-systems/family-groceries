@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Locator, test, type Page } from './fixtures';
 import { openStores, storeRow } from './catalog';
 import {
-  addField, addItem, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
+  addField, addItem, boxOf, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
   openEmailSignIn,
 } from './helpers';
 
@@ -99,7 +99,7 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
   const signOut = page.getByRole('button', { name: /^Abmelden/ });
   await wheelTo(page, signOut);
   await screenshot(page, 'more-07-legal');
-  const top = async (target: Locator) => (await target.boundingBox())!.y;
+  const top = async (target: Locator) => (await boxOf(target)).y;
   const order = [
     page.getByRole('button', { name: 'Hilfe & Kontakt', exact: true }),
     page.getByRole('heading', { name: 'Rechtliches', exact: true }),
@@ -327,15 +327,15 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await signUpWithHousehold(page, newEmail('wide'));
   const railList = page.getByRole('button', { name: /^Liste Tab/ });
   await expect(railList, 'the rail has the tabs').toBeVisible();
-  const rail = (await railList.boundingBox())!;
+  const rail = await boxOf(railList);
   expect(rail.x, 'the rail is on the left').toBeLessThan(120);
 
   await typeInto(addField(page), 'Butter');
   const sheet = page.getByRole('group', { name: 'Hinzufügen', exact: true });
   await expect(sheet).toBeVisible();
-  const box = (await sheet.boundingBox())!;
+  const box = await boxOf(sheet);
   expect(box.width, 'the sheet keeps to the list column').toBeLessThanOrEqual(641);
-  const field = (await addField(page).boundingBox())!;
+  const field = await boxOf(addField(page));
   expect(Math.abs(box.x + box.width / 2 - (field.x + field.width / 2)), 'the input sits under the sheet').toBeLessThan(80);
   await screenshot(page, 'wide-01-sheet-1366');
   await page.keyboard.press('Escape');
@@ -343,8 +343,8 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await page.getByRole('button', { name: /^Mehr Tab/ }).click();
   await expect(page.getByRole('button', { name: 'Konto', exact: true }), 'the sections on the left').toBeVisible();
   await expect(page.getByText('MCP-Server', { exact: true }), 'and a page beside them').toBeVisible();
-  const list = (await page.getByRole('button', { name: 'Konto', exact: true }).boundingBox())!;
-  const detail = (await page.getByText('MCP-Server', { exact: true }).boundingBox())!;
+  const list = await boxOf(page.getByRole('button', { name: 'Konto', exact: true }));
+  const detail = await boxOf(page.getByText('MCP-Server', { exact: true }));
   expect(detail.x, 'two panes side by side').toBeGreaterThan(list.x + list.width - 1);
   await page.getByRole('button', { name: 'Konto', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/account$/);

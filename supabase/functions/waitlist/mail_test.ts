@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertRejects } from '@std/assert';
+import { assert, assertEquals, assertExists, assertRejects } from '@std/assert';
 import {
   confirmationMail,
   confirmUrl,
@@ -24,9 +24,10 @@ const assertNoImagesOrTracking = (mail: Mail) => {
   const glued = mail.text.match(/https?:\/\/[^\s<>]*[.,:;)](?=\s|$)/);
   assert(!glued, `plain text: punctuation glued to a URL: ${glued?.[0]}`);
   assert(!/<img|<script|<link|url\(/i.test(mail.html), 'no images, scripts or remote styles');
-  const hrefs = [...mail.html.matchAll(/href="([^"]+)"/g)].map((m) =>
-    m[1].replaceAll('&amp;', '&')
-  );
+  const hrefs = [...mail.html.matchAll(/href="([^"]+)"/g)].map(([, href]) => {
+    assertExists(href);
+    return href.replaceAll('&amp;', '&');
+  });
   for (const href of hrefs) {
     assert(
       href.startsWith('https://hummlist.com/') ||
@@ -258,6 +259,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
   await mailer.send('hello+resend@hummlist.com', mail, `welcome/${ID}`);
   assertEquals(requests.length, 1);
   const [req] = requests;
+  assertExists(req, 'the request');
   assertEquals([req.method, req.url], ['POST', 'https://resend.test/emails']);
   assertEquals(req.headers.get('authorization'), 'Bearer re_test_key');
   assertEquals(req.headers.get('idempotency-key'), `welcome/${ID}`);
@@ -276,7 +278,9 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
     unsubscribe,
   });
   await mailer.send('hello+resend@hummlist.com', confirmation, 'confirm/x');
-  assertEquals(Object.keys(await requests[1].json()).sort(), [
+  const second = requests[1];
+  assertExists(second, 'the second request');
+  assertEquals(Object.keys(await second.json()).sort(), [
     'from',
     'html',
     'reply_to',

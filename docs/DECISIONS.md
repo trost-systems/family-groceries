@@ -8295,3 +8295,49 @@ Peter (2026-11-05): signing out is not dangerous, so „Abmelden“ must not loo
    reddest pixel (r - max(g, b)) equals Lizenzen's (0 light, -12 dark; main's golden: 156) and a
    tap on it shows the login. The web build was not driven: the box-wide e2e lock that
    verify-hummlist's launch takes was held by flake stress runs (jobs 119 to 126) for hours.
+
+## Job 101: a strict lint pack for the TypeScript and JavaScript (2026-11-05)
+
+The Dart side already includes flutter_agent_lints' experimental set (1.1.0, the newest; upstream
+`main` changed no rule since) with every rule an error, and had no findings. The job built the
+sibling for the rest of the repo.
+
+1. **Deno lint, not ESLint.** Most TypeScript here is Deno (edge functions, CLI, tooling) with
+   `npm:`/`jsr:` import maps, which typescript-eslint cannot resolve without a second dependency
+   tree. `deno lint` runs over Node and browser JavaScript too, needs no install, and is already
+   in every CI job that needs it. The type-aware half comes from the compiler options instead.
+   Not covered: type-aware rules such as no-floating-promises.
+2. **The same contract as flutter_agent_lints.** `tool/lint/ts/pack.ts` lists every rule of the
+   pinned Deno and every strictness option once, on or off, with the reason; the runner fails on
+   a rule the pack does not list. The lint job pins Deno 2.9.8 so a Deno release cannot fail CI.
+3. **Off on purpose:** no-await-in-loop (sequential awaits are mostly meant, and Promise.all would
+   change behaviour), no-boolean-literal-for-arguments (fires on APIs the repo does not own),
+   prefer-ascii (German copy), prefer-primordials, no-console, no-top-level-await, no-undef,
+   no-external-import, explicit-function-return-type (inferred locals; exports need types), and
+   noPropertyAccessFromIndexSignature / noUnusedLocals / noUnusedParameters (noise or duplicates).
+4. **Scope.** Alexa, Siri and IAP code (and their e2e specs) are frozen for hill-climbs and
+   excluded, as are the vendored posthog-js and the archived design prototypes in `docs/design/`.
+   Plain JavaScript is linted, not type-checked.
+5. **Compiler options are enforced through the runner,** merged into each project's deno.json in
+   a temporary file, not written into the deno.json files: supabase/functions also holds the
+   excluded Alexa and voice code, which would then fail `deno test`.
+6. **Playwright fixtures keep `({}, use, testInfo)`.** Playwright reads a fixture's dependencies
+   from that pattern; the two lines carry a `deno-lint-ignore no-empty-pattern` with the reason
+   instead of turning the rule off.
+7. **The runner fails closed.** A type checker that exits non-zero without a type diagnostic
+   (lockfile, resolution or config failure) fails the gate with its output, instead of passing
+   as "clean" (review 0).
+8. **Deno is pinned in `.dvmrc`.** CI's lint job and `scripts/bootstrap.sh` both read it, so a
+   Deno release with new lint rules cannot turn `scripts/verify.sh` red on an unrelated change.
+   Moving the pin means classifying the new rules in `pack.ts` in the same PR.
+9. **Error class on unreachable paths.** `oneRow` and `databaseUrl()` in `_shared/db.ts`, and
+   `moveItem` and `nameOf` in `_shared/list.ts`, throw a plain `Error` where the old code would
+   have raised a `TypeError` on the next property access. The paths cannot happen (aggregates
+   always return a row; the env var is always set), and the response stays a 500; only the
+   exception class telemetry would record differs.
+10. **No TypeScript file escapes the type check.** A file belongs to the nearest project in
+    `pack.ts`, and the runner fails when an in-scope `.ts` file is in none (review 1: six files
+    in `marketing/videos/capture`, `scripts` and `site/config` were linted but not type-checked).
+11. **Every `deno-lint-ignore` carries ` -- <reason>`,** like `ast-grep-ignore` and `squawk-ignore`.
+12. **camelcase and wire names.** A snake_case JSON, PostHog, OAuth or column name is written as a
+    quoted key (the form the rule accepts) or renamed on destructuring, never renamed on the wire.
