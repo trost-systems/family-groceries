@@ -8382,3 +8382,55 @@ draft PR #277, `/internal/bottom-nav`). Built without a further question.
    keeps the pill. The unused NavigationBar theme, sample and Widgetbook story went.
 8. **Snackbars** still float above the add field (widget probe: snackbar 636-708, field from
    720, pill from 780 at 390×844).
+## Job 141: feedback.spec.ts "a note from More": the add sheet that did not open (issue #137), 2026-11-06
+
+1. **The cause was the app, and job 52 already fixed it.** The failure in #137 (run 41177681618,
+   head b1c1aa8, 2026-10-31) is the third `addItem` of the test. Escape closed the sheet, the
+   group "Hinzufügen" was gone 33 ms later, and the click on the field 64 ms after Escape gave
+   the field a cursor (CI trace frames, `docs/screenshots/141/ci-137-frames.png`) but no sheet.
+   That build opened the sheet only from `TextField.onTap`, and `_close` unfocused the field. On
+   the web with semantics on, a click on the field sometimes reaches the app as a semantics tap
+   or focus action, which focuses the field and never calls `onTap`. Job 52 (#156, c4d4090d,
+   2026-11-01) found the same thing (item 15) and made the field's next focus after a close open
+   the sheet. Job 76 (#205) made that flag wait until the engine's late focus reports are
+   through. Which of the two routes a given click takes was not traced (job 52 neither): the app
+   no longer depends on it. Not the test: a user's click on the field must open the sheet, so
+   `enterItem` and its assertion stay as they are.
+2. **CI history agrees.** All 1,291 `e2e-results` artifacts of the CI runs from 2026-10-28 to
+   2026-11-06 (`e2e/tests` JSON reports), split by whether the run's head contains c4d4090d:
+   - Without the fix (196 runs before the merge): feedback.spec.ts:55 failed 16 of 160 results,
+     and the add sheet did not open 48 times across classifier:5/59/85, feedback:55, list:12 and
+     list-header:8.
+   - With the fix (428 runs): feedback.spec.ts:55 failed 0 of 118, and the sheet did not open
+     once, in job 135's own new gutter test on its branch (fixed there before #278 merged).
+     At the old rate of 1 in 10, 118 passes in a row would happen about 4 times in a million.
+   - 12 runs after the merge whose heads were older branches (job 54's) failed the old way 3
+     times.
+   #111, #131 and #159 (classifier.spec.ts) are the same step and fall before c4d4090d too.
+3. **Proof.** The regression tests job 52 added (`add_sheet_test.dart`, "after closing, a
+   semantics tap/focus on the field opens the sheet again") fail when the open-on-focus branch
+   in `_focusChanged` is removed and pass with it. Locally, with retries off, under CPU burners
+   and SIGSTOP pauses of the runner and browser (DECISIONS 18.23), the test ran 10 times per
+   condition, before (8e72815f, main just before c4d4090d, its own tests and build) and after
+   (main ec0a49e7):
+
+   | Condition | Before | After |
+   | --- | --- | --- |
+   | none (host load 12 to 15) | 2 of 10 failed | 10 passed |
+   | 12 CPU burners | 10 passed | 10 passed |
+   | 1 s pause every 2 s | 1 of 10 failed | 10 passed |
+   | 4 s pause every 6 s | 2 of 10 failed | 10 passed |
+   | 1 s pause every 2 s, 12 burners | 10 passed | 10 passed |
+
+   All 5 failures before are #137's: `enterItem` (helpers.ts:526) waiting for „Hinzufügen“, on
+   the third `addItem`, the field with a cursor and no sheet
+   (`docs/screenshots/141/before-c4d4090d-local-failed.png`). Stress is not needed to see it (2 of
+   10 with none), and in these small samples it did not raise the rate. After the
+   fix, `npx playwright test tests/feedback.spec.ts --repeat-each=20 --workers=1 --retries=0`
+   under `flock /tmp/fg-e2e.lock` passed 160 of 160 (28.3 min, load 22).
+   On GitHub Actions, main 6da4267: `tests/feedback.spec.ts --repeat-each=20 --workers=1
+   --retries=0` passed 160 of 160 (run 42155516483).
+4. **No app or test change.** Nothing is left to fix at the cause; a wait or retry in `enterItem`
+   would only hide a regression the widget tests already catch. #281 (shake to send feedback)
+   changes this test's privacy-text and row-field checks, not its adds, the add sheet or the
+   list screen.
