@@ -1,0 +1,411 @@
+# Pantry, sweets, frozen food and drinks (job 147). forms<TAB>emoji[<TAB>note]; "-" = stop.
+# Left out on purpose (no emoji reads as the item): Zucker, Öl (but Olivenöl), Essig, Senf, Ketchup,
+# Mayonnaise, Marmelade, Nutella, Pfeffer and most spices, Hefe, Backpulver, Chips, Nüsse other than
+# Erdnüsse, Kaugummi, Lakritz, Couscous, Linsen, Kichererbsen, Soßen, Brühe.
+
+# Nudeln
+Nudeln|Nudel|Pasta|noodles	🍝
+Spaghetti|Spaghettis|Spagetti|Spagettis|Spaghettini	🍝
+Penne	🍝
+Fusilli	🍝
+Farfalle	🍝
+Rigatoni	🍝
+Tagliatelle	🍝
+Pappardelle	🍝
+Linguine	🍝
+Makkaroni|Maccaroni|Maccheroni|macaroni	🍝
+Spirelli	🍝
+Conchiglie	🍝
+Orecchiette	🍝
+Tortellini	🍝
+Ravioli	🍝
+Cannelloni	🍝
+Lasagneplatten|Lasagneblätter|lasagna sheets	🍝
+Bandnudeln	🍝
+Vollkornnudeln	🍝
+Eiernudeln	🍝	ends in nudeln, not eier
+Hörnchennudeln	🍝
+Suppennudeln	🍝
+Barilla	🍝
+Glasnudeln	🍜
+Reisnudeln|rice noodles	🍜
+Mie Nudeln|Mienudeln	🍜
+Instantnudeln|instant noodles	🍜
+Ramen	🍜
+=Udon	🍜
+=Soba	🍜
+Yum Yum	🍜
+Dampfnudeln|Dampfnudel	-	a yeast dumpling, not pasta
+Schupfnudeln|Schupfnudel	-	potato dough, not pasta
+
+# Reis und Getreide
+Reis|=rice	🍚
+Basmatireis|Basmati|basmati rice	🍚
+Jasminreis|jasmine rice	🍚
+Langkornreis	🍚
+Risottoreis|Arborio	🍚
+Milchreis	🍚
+Wildreis	🍚
+Vollkornreis|brown rice	🍚
+Sushireis|sushi rice	🍚
+Parboiled	🍚
+Reiswaffeln|Reiswaffel|rice cakes	🍘	not a waffle
+Reiscracker|Reiskräcker|rice crackers	🍘
+Maiswaffeln|Maiswaffel	-	not a waffle
+Reispapier	-	not paper
+Mehl|flour	🌾
+Weizenmehl	🌾
+Dinkelmehl	🌾
+Roggenmehl	🌾
+Vollkornmehl	🌾
+Pizzamehl	🌾
+
+# Frühstück
+Müsli|Müslis	🥣
+Knuspermüsli	🥣
+Schokomüsli	🥣
+Früchtemüsli	🥣
+Cornflakes|corn flakes	🥣
+Haferflocken|=oats|oatmeal	🥣
+Granola	🥣
+Porridge|Haferbrei	🥣
+Cerealien|cereal|cereals|Frühstücksflocken	🥣
+Frosties	🥣
+Choco Krispies	🥣
+Smacks	🥣
+Müsliriegel|Müsliriegeln	-	a cereal bar, not chocolate (riegel)
+Proteinriegel	-
+Fruchtriegel	-
+Haferriegel	-
+
+# Würzen, Backen, Aufstrich
+Salz|salt	🧂
+Meersalz|sea salt	🧂
+Jodsalz	🧂
+Kräutersalz	🧂
+Steinsalz	🧂
+Fleur de Sel	🧂
+Paprika edelsüß	-	the spice, not the vegetable
+Paprika rosenscharf	-
+Paprika scharf	-
+Bourbon Vanille	-	vanilla, not bourbon
+Pizza Gewürz	-	a spice, not a pizza
+Honig|honey	🍯
+Blütenhonig	🍯
+Akazienhonig	🍯
+Waldhonig	🍯
+Rapshonig	🍯
+Manukahonig	🍯
+Erdnussbutter|peanut butter	🥜	not butter
+Erdnusscreme	🥜
+Erdnüsse|Erdnuss|Erdnusskerne|peanuts|peanut	🥜
+Olivenöl|olive oil	🫒
+Kokosmilch|Kokosnussmilch|coconut milk	🥥	not milk
+Kokosöl|coconut oil	🥥
+Kokosraspeln|Kokosflocken	🥥
+Kokoswasser|coconut water	🥥	not water
+Apfelmus|apple sauce|applesauce	🍎
+Zitronensaft|lemon juice	🍋
+Tomatenmark|tomato paste	🍅
+Passata	🍅
+Dosentomaten	🍅
+Kidneybohnen|kidney beans	🫘
+Baked Beans	🫘
+Schwarze Bohnen|black beans	🫘
+Weiße Bohnen	🫘
+Cannellini	🫘
+Borlotti	🫘
+Schokotropfen	🍫
+Kuvertüre|Zartbitterkuvertüre	🍫
+Backschokolade	🍫
+Zuckerwatte|cotton candy	-	not cotton wool, not candy
+Pizza Teig	-	dough, not a pizza
+
+# Suppen und Fertiges
+Suppe|Suppen|soup	🍲
+Eintopf|Eintöpfe	🍲
+Tütensuppe	🍲
+Gulaschsuppe	🍲
+Erbsensuppe	🍲
+Linsensuppe	🍲
+Kartoffelsuppe	🍲
+Hühnersuppe|chicken soup	🍲
+Tomatensuppe	🍲
+Nudelsuppe	🍲
+Ravioli Dose	🍝
+Dumplings	🥟
+Gyoza	🥟
+Wan Tan|Wantan	🥟
+Pierogi|Piroggen	🥟
+Taco|Tacos|Taco Shells	🌮
+Burrito|Burritos	🌯
+
+# Tiefkühl
+Pizza|Pizzen|Pizzas	🍕
+Tiefkühlpizza|frozen pizza	🍕
+Steinofenpizza	🍕
+Pizzabaguette|Pizzabaguettes	🍕	not a baguette
+Pizzabrötchen	🍕	not a roll
+Pizzaschnecken	🍕
+Pommes|Fritten|=fries|french fries	🍟
+Pommes Frites	🍟
+Ofenpommes	🍟
+Süßkartoffelpommes	🍟	not a sweet potato
+Fischstäbchen	🐟
+Eis|ice cream|Eiscreme|Speiseeis	🍨
+Vanilleeis	🍨
+Schokoeis	🍨
+Erdbeereis	🍨
+Joghurteis	🍨
+Zitroneneis	🍨
+Stieleis|Eis am Stiel	🍨
+Wassereis	🍨
+Eistorte	🍨
+Eisbecher	🍨	not a cup
+Gelato	🍨
+Magnum	🍨
+Langnese	🍨
+Softeis|soft serve	🍦
+Cornetto	🍦
+Frozen Yogurt|Frozen Joghurt	🍦	not yogurt
+Sorbet	🍧
+Eiswaffeln|Eiswaffel	-	the cone, no ice cream
+Eiswürfel|ice cubes|ice cube	🧊
+Crushed Ice	🧊
+Trockeneis|dry ice	🧊	not ice cream
+
+# Süßes
+Schokolade|Schoki|chocolate|Schokoladen|Schokolde|Schockolade	🍫
+Vollmilchschokolade	🍫	not milk
+Zartbitterschokolade	🍫
+Kinderschokolade	🍫
+Schokoriegel	🍫
+Riegel	🍫
+Pralinen|Praline	🍫
+Milka	🍫
+Ritter Sport	🍫
+Lindt	🍫
+Toblerone	🍫
+Kitkat|Kit Kat	🍫
+Snickers	🍫
+Twix	🍫
+=Mars	🍫
+Bounty	🍫
+Duplo	🍫
+Hanuta	🍫
+Kinder Bueno	🍫
+Kinder Riegel	🍫
+Merci	🍫
+Ferrero Rocher	🍫
+Milky Way	🍫
+Schogetten	🍫
+Yogurette	🍫	not yogurt
+Balisto	🍫
+Schokohase|Schokoladenhase|Osterhase aus Schokolade	🍫
+Schokoweihnachtsmann	🍫
+Schokoeier|Schokoladeneier	🍫	not eggs
+Überraschungsei|Überraschungseier	🍫	not eggs
+Bonbons|Bonbon|=candy|Süßigkeiten	🍬
+Karamellbonbons	🍬
+Gummibärchen|Gummibären|gummy bears	🍬
+Fruchtgummi|Fruchtgummis	🍬
+Weingummi|Weingummis	🍬	not wine
+Haribo	🍬
+Katjes	🍬
+Trolli	🍬
+Maoam	🍬
+Mentos	🍬
+Tic Tac	🍬
+Skittles	🍬
+Smarties	🍬
+Toffee|Toffees	🍬
+Jelly Beans	🍬	not beans
+Lutscher|Lolli|Lollis|lollipop|lollipops|Dauerlutscher	🍭
+Chupa Chups	🍭
+Kekse|Keks|cookies|cookie|biscuits	🍪
+Butterkekse|Butterkeks	🍪	not butter
+Plätzchen	🍪
+Spekulatius	🍪
+Lebkuchen	🍪
+Zimtsterne	🍪
+Vanillekipferl	🍪
+Oreo|Oreos	🍪
+Leibniz	🍪
+Prinzenrolle	🍪
+Doppelkekse	🍪
+Schokokekse	🍪
+Haferkekse	🍪
+Waffeln|Waffel|waffles	🧇
+Popcorn	🍿
+Popcornmais	🍿	not corn on the cob
+Mikrowellenpopcorn	🍿
+Salzstangen|Salzstangerl|pretzel sticks	🥨
+Tortilla Chips|Tortillachips	-	not a tortilla
+Paprika Chips	-	not the vegetable
+Studentenfutter	-	not pet food
+
+# Wasser und Saft
+Wasser|water	💧
+Mineralwasser|mineral water	💧
+Sprudel|Sprudelwasser	💧
+Selters	💧
+Tafelwasser	💧
+Gerolsteiner	💧
+Volvic	💧
+Vittel	💧
+Saft|Säfte|juice	🧃
+Apfelsaft|apple juice	🧃	not an apple
+Orangensaft|orange juice	🧃	not an orange
+Multivitaminsaft	🧃
+Traubensaft|grape juice	🧃
+Fruchtsaft	🧃
+Nektar	🧃
+Capri Sonne|Caprisonne	🧃
+Schorle|Schorlen	🧃
+Apfelschorle|Apfelsaftschorle	🧃
+Rhabarberschorle	🧃
+
+# Limo und Softdrinks
+Cola|Kola|coke	🥤
+Coca Cola	🥤
+Pepsi	🥤
+Fanta	🥤
+Sprite	🥤
+Spezi	🥤
+Mezzo Mix	🥤
+Limonade|Limo|Limos|lemonade	🥤
+Bionade	🥤
+Fassbrause|=Brause	🥤
+Almdudler	🥤
+Schweppes	🥤
+Bitter Lemon	🥤	not a lemon
+=Tonic|Tonic Water	🥤	not water
+Ginger Ale	🥤
+Ginger Beer	🥤	not beer
+Root Beer|Rootbeer	🥤	not beer
+Dr Pepper	🥤	not pepper
+Club Mate|Clubmate	🥤
+Eistee|Eisstee|ice tea|iced tea|Icetea	🥤	not hot tea
+Energydrink|energy drink|Energydrinks	🥤
+Red Bull	🥤
+=Soda	🥤
+Smoothie|Smoothies	🥤
+
+# Kaffee, Tee, Kakao
+Kaffee|coffee|Kafee|Kaffe	☕
+Kaffeebohnen|coffee beans	☕	not beans
+Espressobohnen	☕	not beans
+Kaffeepulver|ground coffee	☕
+Espresso	☕
+Cappuccino	☕
+Latte Macchiato	☕
+Filterkaffee	☕
+Instantkaffee	☕
+Kaffeepads	☕
+Kaffeekapseln	☕
+Nespresso	☕
+Senseo	☕
+Tassimo	☕
+Dolce Gusto	☕
+Kaffee Filter	-	a filter, not coffee
+Kaffee Entkalker	-	descaler, not coffee
+Kakao|cocoa|Kakaopulver	☕
+Trinkschokolade|Heiße Schokolade|hot chocolate	☕	a drink, not a bar
+Kaba	☕
+Nesquik	☕
+Ovomaltine	☕
+Tee|=tea	🍵
+Teebeutel	🍵	not a bag
+Schwarztee|black tea	🍵
+Grüntee|green tea	🍵
+Kräutertee	🍵
+Früchtetee	🍵
+Kamillentee	🍵
+Pfefferminztee	🍵
+Ingwertee	🍵
+Fencheltee	🍵
+Rooibos|Rooibostee	🍵
+=Chai	🍵
+Matcha	🍵
+Earl Grey	🍵
+
+# Bier
+Bier|Biere|=beer	🍺	beer whole word: Himbeer, Erdbeer, Lorbeer
+Pils|Pilsener|Pilsner	🍺
+Weißbier|Weizenbier|Hefeweizen	🍺
+Radler	🍺
+Alster	🍺
+Kölsch	🍺
+Altbier	🍺
+Malzbier	🍺
+=Ipa	🍺
+Krombacher	🍺
+Becks	🍺
+Bitburger	🍺
+Flensburger|Flens	🍺	not burger
+Warsteiner	🍺
+Veltins	🍺
+Jever	🍺
+Paulaner	🍺
+Erdinger	🍺
+Augustiner	🍺
+Radeberger	🍺
+Heineken	🍺
+Oettinger	🍺
+
+# Wein, Sekt, Cocktails, Spirituosen
+Wein|Weine|wine	🍷
+Rotwein|red wine	🍷
+Weißwein|white wine	🍷
+Glühwein	🍷
+Weinschorle	🍷
+Federweißer	🍷
+Riesling	🍷
+Merlot	🍷
+Chardonnay	🍷
+Primitivo	🍷
+Dornfelder	🍷
+Lambrusco	🍷
+Chianti	🍷
+Burgunder|Grauburgunder|Spätburgunder	🍷
+Sekt	🍾
+Champagner|champagne	🍾
+Prosecco|Proseco	🍾
+Cremant	🍾
+=Cava	🍾
+Frizzante	🍾
+Aperol|Aperol Spritz	🍹
+Hugo	🍹
+Spritz	🍹
+Mojito	🍹
+Caipirinha	🍹
+Pina Colada	🍹
+Sangria	🍹
+Cocktail|Cocktails	🍸
+Martini	🍸
+Gin Tonic	🍸
+Schnaps	🥃
+Whisky|Whiskey	🥃
+Wodka|Vodka	🥃
+=Rum	🥃
+=Gin	🥃
+Likör|liqueur	🥃
+Eierlikör	🥃	not eggs
+Jägermeister	🥃
+Cognac	🥃
+Brandy|Weinbrand	🥃
+Tequila	🥃
+Ouzo	🥃
+Grappa	🥃
+Obstler	🥃
+Kirschwasser	🥃	not water
+Zwetschgenwasser	🥃	not water
+Himbeergeist	🥃
+Amaretto	🥃
+Baileys	🥃
+Sambuca	🥃
+Bourbon	🥃
+Metaxa	🥃
+Ramazzotti	🥃
+=Sake	🍶
+Russisch Brot	🍪	a biscuit, not bread

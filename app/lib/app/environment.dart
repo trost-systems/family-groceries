@@ -139,6 +139,13 @@ abstract final class Environment() {
   /// Vercel build can ship a forced flag.
   static const flagsOn = String.fromEnvironment('FLAGS_ON');
 
+  /// The remote item icon table (job 147), fetched at most once a day;
+  /// empty turns the fetch off (e2e: `config/e2e.json`).
+  static const itemIconsUrl = String.fromEnvironment(
+    'ITEM_ICONS_URL',
+    defaultValue: 'https://hummlist.com/data/item-icons.v1.json',
+  );
+
   /// Where native Siri's intents send what was said (job 51).
   static const voiceUrl = '$supabaseUrl/functions/v1/voice';
 }

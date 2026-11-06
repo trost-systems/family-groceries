@@ -1,0 +1,341 @@
+# Drugstore, pharmacy and baby (job 147). <forms><TAB><emoji>[<TAB><note>], format and matching in
+# jobs/147 design.md. No comb, dummy, tampon, cotton pad or perfume emoji exists in Unicode 14.0:
+# those items stay out, or get "-" where a shorter head (wasser, milch, oel, salz, saft, linsen...)
+# would show the wrong icon.
+
+# Oral care
+Zahnpasta|Zahnpaste|Zahncreme|Zahnpastatube|toothpaste	🪥
+Kinderzahnpasta|Kinderzahncreme|kids toothpaste	🪥
+Zahnbürste|Zahnbürsten|toothbrush|toothbrushes	🪥
+Kinderzahnbürste|Kinderzahnbürsten	🪥
+Elektrische Zahnbürste|electric toothbrush	🪥
+Aufsteckbürste|Aufsteckbürsten|Zahnbürstenkopf|Zahnbürstenköpfe|Ersatzbürsten	🪥
+Interdentalbürste|Interdentalbürsten|Zahnzwischenraumbürste|Zahnzwischenraumbürsten	🪥
+elmex	🪥	brand, toothpaste
+aronal	🪥	brand, toothpaste
+meridol	🪥	brand, toothpaste
+blend a med|blendamed	🪥	brand, toothpaste
+Colgate	🪥	brand, toothpaste
+Sensodyne	🪥	brand, toothpaste
+parodontax	🪥	brand, toothpaste
+Dentagard	🪥	brand, toothpaste
+=Signal	🪥	brand, toothpaste
+oral b|oralb	🪥	brand, toothbrushes
+Mundwasser	-	not water
+Haftcreme|Kukident|Corega	-	denture adhesive
+
+# Soap, shower, bath
+Seife|Seifen|soap|soaps|bar soap	🧼
+Flüssigseife|liquid soap	🧼
+Handseife|hand soap	🧼
+Kernseife	🧼
+Babyseife	🧼
+Seifenstück|Seifenstücke	🧼
+Duschgel|Duschgele|shower gel|body wash	🧴
+Duschbad	🧴
+Duschcreme	🧴
+Duschöl	🧴	not cooking oil
+Duschdas	🧴	brand, shower gel
+Badezusatz|Badeschaum|Schaumbad|bubble bath	🧴
+Badeöl	🧴	not cooking oil
+Badesalz|bath salt|bath salts	-	not table salt
+Emser Salz	-	nasal rinse, not table salt
+Badekugel|Badekugeln|bath bomb|bath bombs	-	no icon; kugel head
+
+# Hair care
+Shampoo|Shampoos|Haarshampoo	🧴
+Trockenshampoo|dry shampoo	🧴
+Babyshampoo|baby shampoo	🧴
+Antischuppenshampoo	🧴
+=Spülung|Haarspülung|Conditioner|hair conditioner	🧴
+Spülbalsam|Haarbalsam	🧴
+Haarkur|Haarkuren|Haarmaske|hair mask	🧴	not the medical mask
+Haaröl	🧴	not cooking oil
+Haarspray|hairspray|hair spray	🧴
+=Taft	🧴	brand, hairspray
+Haargel|hair gel	🧴
+Haarschaum|Schaumfestiger|Haarfestiger|=Festiger	🧴
+Haarwasser	🧴	not water
+Schauma	🧴	brand, shampoo
+head and shoulders|head shoulders	🧴	brand, shampoo
+Pantene	🧴	brand, shampoo
+Syoss	🧴	brand, hair care
+Gliss Kur|Glisskur	🧴	brand, hair care
+Haarfarbe|Haarfarben|Haarfärbemittel|Haartönung|hair dye	-	not paint
+Haarbürste|Haarbürsten|hairbrush	-	no comb emoji
+=Kamm|Kämme|=comb	-	no comb emoji
+Haargummi|Haargummis|hair ties	-	not sweets
+Haarnadel|Haarnadeln|bobby pins	-	not sewing needles
+
+# Skin care, creams and lotions
+Lotion|Lotionen	🧴
+Bodylotion|body lotion|Körperlotion	🧴
+Körpermilch|Bodymilk|body milk	🧴	not milk
+Körperöl|body oil	🧴	not cooking oil
+Körpercreme|body cream	🧴
+Handcreme|hand cream	🧴
+Gesichtscreme|face cream	🧴
+Tagescreme|day cream	🧴
+Nachtcreme|night cream	🧴
+Feuchtigkeitscreme|moisturizer|moisturiser	🧴
+Augencreme|eye cream	🧴
+Fußcreme|foot cream	🧴
+Hautcreme|skin cream	🧴
+Hautöl	🧴	not cooking oil
+Gesichtsöl	🧴	not cooking oil
+Massageöl|massage oil	🧴	not cooking oil
+Teebaumöl|tea tree oil	-	not cooking oil, not tea
+Sheabutter|shea butter	🧴	not butter
+Melkfett	🧴
+Vaseline	🧴
+Nivea|Nivea Creme	🧴	brand, cream
+Penaten|Penaten Creme	🧴	brand, baby cream
+Wundschutzcreme|Popocreme|nappy cream|diaper cream	🧴
+Babycreme	🧴
+Babyöl|baby oil	🧴	not cooking oil
+Babylotion	🧴
+Babybad	🧴
+Kamill	🧴	brand, hand cream
+Gesichtswasser	🧴	not water
+Mizellenwasser|micellar water	🧴	not water
+Gesichtsreiniger|Reinigungsgel|face wash	🧴
+Reinigungsmilch|cleansing milk	🧴	not milk
+Peeling|Körperpeeling|Gesichtspeeling|scrub	🧴
+Gesichtsmaske|Tuchmaske|Tuchmasken|sheet mask|Feuchtigkeitsmaske	-	not the medical mask
+Aftershave|after shave|Rasierwasser	🧴	not water
+Rasierbalsam|aftershave balm	🧴
+
+# Sun care
+Sonnencreme|sun cream|suncream|sunscreen	🧴
+Sonnenmilch|Sonnenlotion|sun lotion	🧴	not milk
+Sonnenspray|sun spray	🧴
+Sonnenschutz|Sonnenschutzcreme	🧴
+Sonnenöl|sun oil	🧴	not cooking oil
+After Sun|Aftersun|After Sun Lotion	🧴
+Kindersonnencreme	🧴
+Selbstbräuner|self tanner	🧴
+
+# Deodorant
+=Deo|Deos|Deodorant|Deodorants|deodorant spray	🧴
+Deospray|Deosprays	🧴
+Deoroller|roll on	🧴
+Deostick|deo stick	🧴
+Antitranspirant|antiperspirant	🧴
+Herrendeo|Damendeo	🧴
+Rexona	🧴	brand, deodorant
+=Bac	🧴	brand, deodorant
+Old Spice	🧴	brand, deodorant
+
+# Shaving
+Rasierer|razor|razors	🪒
+Einwegrasierer|disposable razors	🪒
+Nassrasierer	🪒
+Rasierklinge|Rasierklingen|razor blades	🪒
+Rasierschaum|shaving foam	🪒
+Rasiergel|shaving gel	🪒
+Rasiercreme|shaving cream	🪒
+Rasierpinsel	🪒
+Gillette	🪒	brand, razors
+Wilkinson	🪒	brand, razors
+Enthaarungscreme|Veet	-	no icon; creme head
+
+# Make-up and nails
+Lippenstift|Lippenstifte|lipstick	💄
+Lipgloss|lip gloss	💄
+Labello	💄	brand, lip balm
+Lippenpflege|Lippenpflegestift|Lippenbalsam|lip balm	💄
+Make up|Makeup|Schminke	💄
+Nagellack|nail polish|nail varnish	💅
+Unterlack|Überlack|top coat	💅
+Nagellackentferner|nail polish remover|Nagellack Entferner	-	not nail polish
+Nagelfeile|Nagelfeilen|nail file	-	not a tool file
+Nagelschere|nail scissors	✂️
+Kajalstift|Augenbrauenstift|Abdeckstift	-	no icon; stift head
+Wimperntusche	-	no mascara emoji
+Abschminktücher|makeup wipes	🧻	wet wipes
+Kosmetikspiegel|Schminkspiegel	🪞
+
+# Toilet paper, tissues, wipes
+Toilettenpapier|toilet paper|toilet roll|toilet rolls|loo roll	🧻
+Klopapier	🧻
+Klorolle|Klorollen	🧻
+WC Papier	🧻
+Hakle	🧻	brand, toilet paper
+Cottonelle	🧻	brand, toilet paper
+Charmin	🧻	brand, toilet paper
+Feuchtes Toilettenpapier	🧻
+Feuchttücher|Feuchttuch|feuchte Tücher|wet wipes|=wipes	🧻
+Babytücher|Babyfeuchttücher|baby wipes	🧻
+Taschentücher|Taschentuch|tissues|=tissue	🤧
+Papiertaschentücher	🤧
+Taschentuchbox|Taschentücherbox|tissue box	🤧
+Kosmetiktücher	🤧
+=Tempo|Tempos	🤧	brand, tissues
+Kleenex	🤧	brand, tissues
+Brillenputztücher|Brillenputztuch	-	not tissues
+Spucktücher|Spucktuch|burp cloths	-	no icon; tuecher head
+
+# Cotton, swabs, ear care
+Wattestäbchen|Ohrenstäbchen|Ohrstäbchen|q tips|qtips|cotton buds|cotton swabs	-	Peter's bug: not baby, not chopsticks
+Ohrstöpsel|Ohropax|earplugs	-	no icon; stoepsel head
+
+# Feminine hygiene and intimate
+Menstruationstasse|Periodentasse|menstrual cup	-	not a cup
+Inkontinenzeinlagen|Erwachsenenwindeln|Inkontinenzwindeln	-	not baby
+
+# Plasters and first aid
+Pflaster|plasters|=plaster|band aid|band aids|bandaids	🩹
+Hansaplast	🩹	brand, plasters
+Blasenpflaster	🩹
+Wundpflaster	🩹
+Kinderpflaster	🩹
+Verbandszeug|Verband|Verbände|bandage|bandages	🩹
+Mullbinde|Mullbinden|elastische Binde	🩹
+Sicherheitsnadeln|Sicherheitsnadel|safety pins	🧷
+Wärmflasche|hot water bottle	-	not a bottle
+Wärmepflaster	-	heat patch, not a plaster
+Fieberthermometer|Thermometer	🌡️
+Ohrthermometer|Stirnthermometer	🌡️
+Insulinspritzen|Einwegspritzen|syringes	💉
+
+# Medicines
+Medikamente|Medikament|Medizin|Arznei|medicine|medication	💊
+=Tabletten|=Tablette|tablets	💊
+=Pillen|=Pille|pills	💊
+Antibabypille|Pille danach	💊	not baby
+=Kapseln|capsules	💊
+Schmerzmittel|Schmerztabletten|painkillers|pain killers	💊
+Kopfschmerztabletten	💊
+Halsschmerztabletten|Halstabletten|Lutschtabletten	💊
+Magentabletten	💊
+Kohletabletten	💊
+Schlaftabletten	💊
+Allergietabletten|antihistamines	💊
+Brausetabletten	💊
+Ibuprofen|=Ibu	💊
+Paracetamol	💊
+Aspirin|Aspirin Complex	💊
+Thomapyrin	💊
+Antibiotika|Antibiotikum|antibiotics	💊
+Hustensaft|cough syrup	-	not juice
+Fiebersaft	-	not juice
+Nasenspray|nasal spray	-	no icon; spray head
+Augentropfen|eye drops	-	no icon
+Nasentropfen	-	no icon
+Mückenspray|Mückenschutz|Autan|insect repellent	-	no icon
+Zeckenspray	-	no icon
+Hustenbonbons|Hustenbonbon|Halsbonbons|cough drops	🍬
+Em eukal	🍬	brand, cough drops
+Ricola	🍬	brand, cough drops
+Wybert	🍬	brand, throat pastilles
+FFP Masken|=Maske|=Masken|Mundschutz|Schutzmaske|Schutzmasken|Atemschutzmaske|OP Masken|face masks	😷
+
+# Vitamins and supplements
+Vitamine|=Vitamin|vitamins	💊
+Vitamintabletten	💊
+Multivitamin|Multivitamintabletten	💊
+Vitamin C	💊
+Vitamin D|Vitamin D Tabletten	💊
+Magnesium|Magnesiumtabletten	💊
+=Zink|Zinktabletten	💊
+Eisentabletten	💊	not the iron
+Calcium|Kalzium|Calciumtabletten	💊
+Folsäure|folic acid	💊
+Fischölkapseln|Omega Kapseln|fish oil	💊	not cooking oil
+Doppelherz	💊	brand, supplements
+Centrum	💊	brand, multivitamins
+Orthomol	💊	brand, supplements
+Lactase|Laktase|Laktasetabletten	💊
+
+# Glasses and contact lenses
+Kontaktlinsen|contact lenses	-	not lentils
+Tageslinsen	-	not lentils
+Monatslinsen	-	not lentils
+Lesebrille|Lesebrillen|reading glasses	👓
+
+# Baby
+Windeln|Windel|nappies|nappy|diapers|diaper	👶
+Pampers	👶	brand, nappies
+Huggies	👶	brand, nappies
+Schwimmwindeln|swim nappies	👶
+Windelbeutel|nappy bags	-	not bin bags
+Babyflasche|Babyflaschen|Fläschchen|baby bottle|baby bottles	🍼
+Babynahrung|baby food	🍼
+Babymilch|baby milk|baby formula	🍼	not milk
+Pre Milch|Premilch|Anfangsmilch	🍼	not milk
+Folgemilch|follow on milk	🍼	not milk
+Säuglingsmilch|Milchpulver|formula milk	🍼	not milk
+Kindermilch	🍼	not milk
+Aptamil	🍼	brand, baby formula
+Babybrei|baby cereal	🥣
+=Gläschen|Babygläschen	🫙
+
+# More oral care
+Babyzahnbürste|Babyzahnbürsten	🪥
+Babyzahnpasta|Babyzahncreme	🪥
+Zahnbürstenhalter|toothbrush holder	-	not a toothbrush
+odol med	🪥	brand, toothpaste
+Ajona	🪥	brand, toothpaste
+Perlweiss	🪥	brand, whitening toothpaste
+Sonicare	🪥	brand, electric toothbrush
+Mundpflegekaugummi	-	not sweets
+
+# More body, skin and hair care
+Kindershampoo	🧴
+Kinderduschgel	🧴
+Intimwaschlotion|Intimwaschgel	🧴
+Haarserum|Gesichtsserum|=Serum|face serum	🧴
+Haarlack	🧴	not paint lacquer
+Haarwachs|Haarpomade|hair wax	-	not candle wax
+Kurspülung	🧴
+Bartöl|beard oil	🧴	not cooking oil
+Hornhautcreme	🧴
+Handdesinfektion|Desinfektionsgel|Handdesinfektionsmittel|hand sanitizer|hand sanitiser	🧴
+Fußpilz|Fußpilzcreme|Fußpilzspray	-	not mushrooms
+Thermalwasser|Thermalwasserspray	-	not water
+Kölnisch Wasser	-	not water
+Eau de Toilette|Eau de Parfum|Eau de Cologne	-	no perfume emoji; toilette head
+Nagelöl|cuticle oil	-	not nail polish, not cooking oil
+Bübchen	🧴	brand, baby care
+Sebamed	🧴	brand, skin care
+Eucerin	🧴	brand, skin care
+Neutrogena	🧴	brand, skin care
+Florena	🧴	brand, skin care
+Bepanthol	🧴	brand, skin care
+Guhl	🧴	brand, shampoo
+Herbal Essences	🧴	brand, shampoo
+Fructis	🧴	brand, shampoo
+Elvital	🧴	brand, hair care
+Ladival	🧴	brand, sun care
+Sundance	🧴	brand, sun care
+Rasierapparat	🪒
+Make up Entferner|Makeup Entferner|makeup remover|Abschminkgel	-	not make up
+
+# More medicines and supplements
+Dolormin	💊	brand, painkiller
+Nurofen	💊	brand, painkiller
+Buscopan	💊	brand, cramp tablets
+Imodium|Loperamid	💊	diarrhoea tablets
+Sinupret	💊	brand, sinus tablets
+GeloMyrtol	💊	brand, capsules
+Grippostad	💊	brand, cold capsules
+Abtei	💊	brand, supplements
+Baldriantabletten|Baldrian Dragees	💊
+Melatonin	💊
+Biotin	💊
+=Selen	💊
+Probiotika	💊
+Vitamin B|Vitamin E	💊
+Halspastillen	🍬	cough pastilles
+Kurkumakapseln	💊	not the spice
+
+# More baby
+Lillydoo	👶	brand, nappies
+Moltex	👶	brand, nappies
+Babylove Windeln	👶	brand, nappies
+Stoffwindeln|cloth nappies	👶
+Pants Windeln|Windelhöschen|nappy pants	👶
+Babyfläschchen	🍼
+Milchpumpe|breast pump	-	not milk
+=Axe	🧴	the deodorant brand
+Rosenwasser	-	else wasser

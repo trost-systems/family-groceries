@@ -14,6 +14,8 @@ import 'package:family_groceries/home_widget/home_widget_sync.dart';
 import 'package:family_groceries/home_widget/widget_launch.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
+import 'package:family_groceries/list/item_icons_remote.dart';
+import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
@@ -30,6 +32,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Set once analytics is loaded; errors before that are not reported.
@@ -136,8 +139,14 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       analytics.testerHousehold = unlocks.tester ? householdId : null;
     }
   });
+  final itemIcons = ItemIconsCubit();
+  if (kIsWeb) {
+    warmItemIconFonts(itemIcons.state);
+    itemIcons.stream.listen(warmItemIconFonts);
+  }
   runApp(
     App(
+      itemIcons: itemIcons,
       language: language,
       theme: theme,
       session: session,
@@ -164,5 +173,18 @@ Future<void> _main(WidgetsBinding Function() binding) async {
         platform: defaultTargetPlatform,
       ),
     ),
+  );
+  // Started after runApp, so the first frame waits for no cache read; the
+  // bundled table shows until then.
+  final iconClient = http.Client();
+  unawaited(
+    ItemIconsLoader(
+      store: cache,
+      cubit: itemIcons,
+      client: iconClient,
+      url: Environment.itemIconsUrl.isEmpty
+          ? null
+          : Uri.parse(Environment.itemIconsUrl),
+    ).start().whenComplete(iconClient.close),
   );
 }

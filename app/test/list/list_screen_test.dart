@@ -391,7 +391,7 @@ void main() {
         ..remoteAdd('Brot', categoryId: 'bakery'),
     );
     final listed = tester.widget<ItemRow>(row('Bananen'));
-    final icon = itemIcon(listed.item, listed.category);
+    final icon = ItemIcons.bundled.emojiFor(listed.item.name)!;
     for (final name in ['Bananen', 'Brot']) {
       await tester.tap(row(name));
       await tester.pump(const Duration(milliseconds: 300));

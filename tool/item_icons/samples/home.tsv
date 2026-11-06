@@ -1,0 +1,141 @@
+# Household, pets, DIY, garden, gifts and cards, stationery, electronics, clothing, party, car, toys.
+# name<TAB>expected (emoji, or - for the fallback glyph). Traps are marked "# trap" above them.
+Geschenkkarte	🎁
+Gutschein	🎁
+Gutscheine für Oma	🎁
+Kinogutschein	🎁
+Geburtstagskarte	💌
+Glückwunschkarte Hochzeit	💌
+Weihnachtsgeschenk Papa	🎁
+Geschenkpapier	🎁
+Spülmittel	🧴
+Pril	🧴
+Waschmittel	🧺
+Persil Color	🧺
+Weichspüler	🧴
+Glasreiniger	🧴
+WC Reiniger	🧴
+Spülschwämme	🧽
+Schwämme	🧽
+Müllbeutel 35 l	🗑️
+Mülltüten	🗑️
+Gelbe Säcke	🗑️
+Küchenrolle	🧻
+Küchenrollen	🧻
+Zewa	🧻
+Kerzen	🕯️
+Teelichter	🕯️
+Duftkerze Vanille	🕯️
+Batterien AA	🔋
+AA Batterien	🔋
+Glühbirne E27	💡
+LED Lampe	💡
+Ladekabel	🔌
+Katzenfutter	🐈
+Katzenstreu	🐈
+Whiskas	🐈
+Hundefutter	🐕
+Kauknochen	🦴
+Vogelfutter	🐦
+Blumenerde	🪴
+Schnittblumen	💐
+Tulpen	🌷
+Holzschrauben	🔩
+Akkuschrauber	🪛
+Werkzeugkasten	🧰
+Wandfarbe weiß	🎨
+Kugelschreiber	🖊️
+Bleistifte	✏️
+Buntstifte	🖍️
+Schulheft	📓
+Tageszeitung	📰
+Socken	🧦
+Turnschuhe	👟
+Regenschirm	☂️
+Luftballons	🎈
+Wunderkerzen	🎇
+Spielkarten	🃏
+Brettspiel	🎲
+Zigaretten	🚬
+Feuerzeug	🔥
+Grillkohle	🔥
+Kühlakku	🧊
+Fahrradschloss	🔒
+Pappteller	🍽️
+# trap: a karte head is no icon, unlisted card compounds fall back
+Speisekarte	-
+Kreditkarte	-
+# trap: German Gift is poison, not a gift
+Rattengift	-
+# trap: tail milch would be milk
+Scheuermilch	🧴
+Katzenmilch	🐈
+# trap: tail salz would be table salt
+Spülmaschinensalz	-
+Streusalz	-
+# trap: tail wasser would be drinking water
+Destilliertes Wasser	-
+Scheibenwischwasser	-
+# trap: tail kuchen, keks, knödel would be food
+Hundekuchen	🐕
+Hundekekse	🐕
+Meisenknödel	🐦
+# trap: tail zwiebel would be an onion
+Blumenzwiebeln	🌷
+Tulpenzwiebeln	🌷
+# trap: tail birne would be a pear
+Glühbirnen	💡
+Energiesparbirne	💡
+# trap: tail akku would be a battery
+Kühlakkus	🧊
+# trap: tail wolle would be yarn
+Stahlwolle	-
+Glaswolle	-
+# trap: tail stecker would be an electric plug
+Duftstecker	-
+# trap: tail kerze would be a candle
+Wunderkerze	🎇
+# trap: tail schuhe would be shoes
+Gummihandschuhe	🧤
+Schlittschuhe	⛸️
+Hausschuhe	🥿
+# trap: tail hose would be trousers
+Strumpfhose	🧦
+Badehose	🩳
+# trap: tail brille would be glasses
+Klobrille	🚽
+Taucherbrille	🥽
+# trap: tail schlüssel would be a key
+Schraubenschlüssel	🔧
+# trap: tail koffer, kasten would be a suitcase, nothing
+Werkzeugkoffer	🧰
+# trap: tail korb would be a basket
+Papierkorb	🗑️
+# trap: tail eimer would be a bucket
+Mülleimer	🗑️
+# trap: whole-word only forms stay out of compounds
+Süßholz	-
+Lippenstift	💄
+Bildschirm	-
+Backpinsel	-
+Pferde	-
+Eiswürfel	🧊
+# trap: tail spielzeug would be a teddy
+Katzenspielzeug	🐈
+# trap: a phrase beats its first word
+Handy Bag	🗑️
+# trap: tail öl would be cooking oil
+Lampenöl	-
+Motoröl	🛢️
+# trap: tail bürste would be a toothbrush
+Spülbürste	-
+Klobürste	-
+# trap: tail schüssel would be a bowl
+Kloschüssel	🚽
+# trap: no bare reifen, the adjective
+reifen Avocados	🥑
+WC-Ente	🚽
+WC Ente	🚽
+Insektenspray	-
+Frottee Waschlappen	-
+Hornmehl	-

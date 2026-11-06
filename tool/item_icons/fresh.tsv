@@ -1,0 +1,439 @@
+# Fresh food: fruit, vegetables, herbs, salads, mushrooms, chestnuts; bakery; dairy and chilled;
+# meat, sausages, deli, fish and seafood. One item per row: forms<TAB>emoji, `-` = stop (fallback
+# glyph where a shorter head would mislead).
+# Left out on purpose, no emoji reads as the item: Ingwer, Lauch/Porree, Spargel, Radieschen,
+# Rettich, Rote Bete, Kohlrabi, Fenchel, Sellerie, Pastinake, Himbeere, Brombeere, Johannisbeere,
+# Stachelbeere, Pflaume/Zwetschge, Feige, Grapefruit, Rhabarber, Erbsen, grüne Bohnen, Joghurt,
+# Quark, Skyr, Sahne, Schmand, Tofu, Salami, Mortadella, Muscheln, Kaninchen, Wild.
+
+# --- Fruit
+Apfel|Äpfel|apple|apples	🍎
+Bioapfel|Bioäpfel	🍎
+Tafelapfel|Tafeläpfel	🍎
+Bratapfel|Bratäpfel|baked apple|baked apples	🍎
+Granatapfel|Granatäpfel|pomegranate|pomegranates	-
+Banane|Bananen|banana|bananas	🍌
+Kochbanane|Kochbananen|plantain|plantains	🍌
+Birne|Birnen|pear|pears	🍐
+Zitrone|Zitronen|lemon|lemons	🍋
+Limette|Limetten|lime|limes	🍋
+Limone|Limonen	🍋
+Orange|Orangen|oranges	🍊
+Apfelsine|Apfelsinen	🍊
+Blutorange|Blutorangen|blood orange|blood oranges	🍊
+Saftorange|Saftorangen	🍊
+Mandarine|Mandarinen|tangerine|tangerines|mandarin|mandarins	🍊
+Clementine|Clementinen|clementines	🍊
+Klementine|Klementinen	🍊
+Satsuma|Satsumas	🍊
+Weintraube|Weintrauben|grape|grapes	🍇
+Traube|Trauben	🍇
+Erdbeere|Erdbeeren|Erdbeer|strawberry|strawberries	🍓
+Heidelbeere|Heidelbeeren|blueberry|blueberries	🫐
+Blaubeere|Blaubeeren	🫐
+Kirsche|Kirschen|cherry|cherries	🍒
+Sauerkirsche|Sauerkirschen|sour cherries	🍒
+Pfirsich|Pfirsiche|peach|peaches	🍑
+Plattpfirsich|Plattpfirsiche|flat peaches	🍑
+Nektarine|Nektarinen|nectarine|nectarines	🍑
+Aprikose|Aprikosen|apricot|apricots	🍑
+Marille|Marillen	🍑
+Melone|Melonen|melon|melons	🍈
+Honigmelone|Honigmelonen|honeydew|honeydew melon	🍈
+Cantaloupe|Cantaloupemelone|cantaloupe melon	🍈
+Galiamelone|Galiamelonen	🍈
+Wassermelone|Wassermelonen|watermelon|watermelons	🍉
+Ananas|pineapple|pineapples	🍍
+Mango|Mangos|mangoes	🥭
+Kiwi|Kiwis|kiwi fruit	🥝
+Avocado|Avocados|avocadoes	🥑
+Kokosnuss|Kokosnüsse|coconut|coconuts	🥥
+Marone|Maronen|Maroni|chestnut|chestnuts	🌰
+Esskastanie|Esskastanien|Kastanie|Kastanien	🌰
+
+# --- Vegetables
+Tomate|Tomaten|tomato|tomatoes	🍅
+Paradeiser|Paradeisa	🍅
+Cherrytomate|Cherrytomaten|cherry tomato|cherry tomatoes	🍅
+Kirschtomate|Kirschtomaten	🍅
+Cocktailtomate|Cocktailtomaten	🍅
+Rispentomate|Rispentomaten|vine tomatoes	🍅
+Datteltomate|Datteltomaten	🍅
+Fleischtomate|Fleischtomaten|beefsteak tomato|beefsteak tomatoes	🍅
+Strauchtomate|Strauchtomaten	🍅
+Gurke|Gurken|cucumber|cucumbers	🥒
+Salatgurke|Salatgurken	🥒
+Schlangengurke|Schlangengurken	🥒
+Minigurke|Minigurken|Snackgurken	🥒
+Zucchini|Zucchinis|Zucchino|courgette|courgettes	🥒
+Zucchetti	🥒
+Paprika|Paprikas|bell pepper|bell peppers	🫑
+Paprikaschote|Paprikaschoten	🫑
+Spitzpaprika	🫑
+Chili|Chilis|chilli|chillies|chilies|chili pepper|chili peppers	🌶️
+Chilischote|Chilischoten	🌶️
+Peperoni|Peperoncini	🌶️
+Pfefferoni	🌶️
+Jalapeno|Jalapenos	🌶️
+Aubergine|Auberginen|eggplant|eggplants|aubergines	🍆
+Melanzani|Melanzane	🍆
+Kartoffel|Kartoffeln|potato|potatoes	🥔
+Erdapfel|Erdäpfel	🥔
+Grumbeere|Grumbeeren|Grumbiere|Grumbieren	🥔
+Grundbirne|Grundbirnen	🥔
+Frühkartoffel|Frühkartoffeln|new potatoes	🥔
+Speisekartoffel|Speisekartoffeln	🥔
+Süßkartoffel|Süßkartoffeln|sweet potato|sweet potatoes	🍠
+Batate|Bataten|=yam|yams	🍠
+Karotte|Karotten|carrot|carrots	🥕
+Möhre|Möhren	🥕
+Mohrrübe|Mohrrüben	🥕
+gelbe Rübe|gelbe Rüben	🥕
+Rüebli	🥕
+Bundmöhren|Bundkarotten	🥕
+Zwiebel|Zwiebeln|onion|onions	🧅
+rote Zwiebel|rote Zwiebeln|red onion|red onions	🧅
+Gemüsezwiebel|Gemüsezwiebeln	🧅
+Frühlingszwiebel|Frühlingszwiebeln|spring onion|spring onions	🧅
+Lauchzwiebel|Lauchzwiebeln|scallion|scallions	🧅
+Schalotte|Schalotten|shallot|shallots	🧅
+Knoblauch|garlic	🧄
+Knoblauchzehe|Knoblauchzehen|garlic clove|garlic cloves	🧄
+Knofi	🧄
+Brokkoli|Broccoli|Brokoli|Brocoli	🥦
+Pilz|Pilze|mushroom|mushrooms	🍄
+Champignon|Champignons	🍄
+Pfifferling|Pfifferlinge|chanterelles	🍄
+Eierschwammerl|Eierschwammerln	🍄
+Schwammerl|Schwammerln	🍄
+Steinpilz|Steinpilze|porcini	🍄
+Shiitake|Shiitakepilze	🍄
+Kräuterseitling|Kräuterseitlinge	🍄
+Austernpilz|Austernpilze	🍄
+Maiskolben|corn cob|corn cobs	🌽
+Kürbis|Kürbisse|pumpkin|pumpkins	🎃
+Hokkaido|Hokkaidokürbis|Hokkaidokürbisse	🎃
+Butternut|Butternutkürbis|butternut squash	🎃
+Blumenkohl|cauliflower	-
+Karfiol	-
+Rosenkohl|brussels sprouts	-
+Kohlsprossen	-
+
+# --- Salads, cabbage and leaves
+Salat|Salate|lettuce	🥬
+Salatkopf|Salatköpfe	🥬
+Salatherz|Salatherzen	🥬
+Salatmischung|Salatmischungen|mixed leaves	🥬
+Pflücksalat	🥬
+Feldsalat|lambs lettuce	🥬
+Rapunzel	🥬
+Nüsslisalat	🥬
+Vogerlsalat	🥬
+Eisbergsalat|iceberg lettuce	🥬
+Kopfsalat	🥬
+Römersalat|romaine	🥬
+Eichblattsalat	🥬
+Lollo Rosso|Lollo Bianco	🥬
+Batavia	🥬
+Rucola|Ruccola|arugula|rocket salad	🥬
+Rauke	🥬
+Spinat|spinach	🥬
+Blattspinat	🥬
+Babyspinat|baby spinach	🥬
+Mangold|chard|swiss chard	🥬
+Endivie|Endivien|endive	🥬
+Chicoree	🥬
+Kohl|cabbage	🥬
+Weißkohl|Weißkohlkopf|white cabbage	🥬
+Rotkohl|red cabbage	🥬
+Spitzkohl|pointed cabbage	🥬
+Chinakohl|napa cabbage	🥬
+Grünkohl|kale	🥬
+Rotkraut	🥬
+Weißkraut	🥬
+Blaukraut	🥬
+Spitzkraut	🥬
+Wirsing|Wirsingkohl|savoy cabbage	🥬
+Pak Choi|Pak Choy|Bok Choy	🥬
+Krautsalat|coleslaw	🥗
+Gurkensalat|cucumber salad	🥗
+Tomatensalat|tomato salad	🥗
+gemischter Salat|green salad	🥗
+griechischer Salat|greek salad	🥗
+Kartoffelsalat|potato salad	-
+Nudelsalat|pasta salad	-
+Fleischsalat	-
+Wurstsalat	-
+Geflügelsalat|Hähnchensalat|chicken salad	-
+Eiersalat|egg salad	-
+Thunfischsalat|tuna salad	-
+Heringssalat	-
+Matjessalat	-
+Krabbensalat|Shrimpssalat	-
+Reissalat	-
+Bohnensalat	-
+Linsensalat	-
+Couscoussalat	-
+Obstsalat|fruit salad	-
+
+# --- Herbs
+Kräuter|herbs	🌿
+Küchenkräuter|Gartenkräuter|fresh herbs	🌿
+Petersilie|parsley	🌿
+Basilikum|basil	🌿
+Schnittlauch|chives	🌿
+Dill	🌿
+Koriander|coriander|cilantro	🌿
+Minze|mint	🌿
+Pfefferminze|peppermint	🌿
+Rosmarin|rosemary	🌿
+Thymian|thyme	🌿
+Salbei|=sage	🌿
+Kresse|cress	🌿
+Gartenkresse	🌿
+Brunnenkresse|watercress	🌿
+Melisse|Zitronenmelisse|lemon balm	🌿
+Bärlauch|wild garlic	🌿
+Estragon|tarragon	🌿
+Kerbel	🌿
+Liebstöckel	🌿
+
+# --- Bakery
+Brot|Brote|bread	🍞
+Toast|Toastbrot|toast bread	🍞
+Vollkornbrot|wholemeal bread	🍞
+Mischbrot	🍞
+Roggenbrot|rye bread	🍞
+Dinkelbrot	🍞
+Bauernbrot	🍞
+Sauerteigbrot|sourdough|sourdough bread	🍞
+Weißbrot	🍞
+Knäckebrot|crispbread	🍞
+Pumpernickel	🍞
+Brioche	🍞
+Ciabatta	🍞
+Hefezopf	🍞
+Brötchen|bread roll|bread rolls	🥖
+Semmel|Semmeln	🥖
+Schrippe|Schrippen	🥖
+Wecken|Weckle|Weckerl|=weck	🥖
+Rundstück|Rundstücke	🥖
+Weggli	🥖
+Aufbackbrötchen	🥖
+Kaiserbrötchen|Kaisersemmel|Kaisersemmeln	🥖
+Vollkornbrötchen	🥖
+Laugenbrötchen	🥖
+Baguette|Baguettes	🥖
+Stangenbrot	🥖
+Croissant|Croissants	🥐
+Hörnchen|Buttercroissant|Buttercroissants	🥐
+Gipfeli|Kipferl	🥐
+Brezel|Brezeln|pretzel|pretzels	🥨
+Breze|Brezen|Brezn	🥨
+Laugenbrezel|Laugenbrezeln	🥨
+Laugenstange|Laugenstangen	🥨
+Bagel|Bagels	🥯
+Fladenbrot|flatbread	🫓
+Pita|Pitas|Pitabrot|pita bread	🫓
+Naan|Naanbrot	🫓
+Focaccia	🫓
+Tortilla|Tortillas	🫓
+Wraps	🫓
+Burgerbrötchen|Burger Buns|burger bun	🍔
+Burger|Burgers|hamburger|hamburgers	🍔
+Cheeseburger|cheeseburgers	🍔
+Sandwich|Sandwiches	🥪
+Fischbrötchen	🥪
+Donut|Donuts|Doughnut|Doughnuts	🍩
+Berliner	🍩
+Krapfen	🍩
+Kreppel	🍩
+Muffin|Muffins	🧁
+Cupcake|Cupcakes	🧁
+Kuchen|cake|cakes	🍰
+Torte|Torten	🍰
+Käsekuchen|cheesecake	🍰
+Obstkuchen	🍰
+Geburtstagskuchen|Geburtstagstorte|birthday cake	🎂
+Pfannkuchen|Pancake|Pancakes	🥞
+Eierkuchen	🥞
+Palatschinken|Palatschinke	🥞
+Quiche|Quiches	🥧
+=pie|pies	🥧
+Flammkuchen	-
+Zwiebelkuchen	-
+Reibekuchen	-
+
+# --- Dairy and chilled
+Milch|milk	🥛
+Vollmilch|whole milk	🥛
+Frischmilch	🥛
+Buttermilch|buttermilk	🥛
+Kefir	🥛
+Ayran	🥛
+Trinkjoghurt|Joghurtdrink|Joghurtdrinks	🥛
+Hafermilch|Haferdrink|oat milk	🥛
+Sojamilch|Sojadrink|soy milk	🥛
+Mandelmilch|Mandeldrink|almond milk	🥛
+Käse|cheese|cheeses	🧀
+Gouda	🧀
+Edamer	🧀
+Emmentaler	🧀
+Leerdammer	🧀
+Tilsiter	🧀
+Appenzeller	🧀
+Maasdamer	🧀
+Bergkäse	🧀
+Cheddar	🧀
+Mozzarella|Mozzarellakugeln	🧀
+Burrata	🧀
+Parmesan|Parmigiano	🧀
+Pecorino	🧀
+Grana Padano	🧀
+Feta	🧀
+Schafskäse|Hirtenkäse	🧀
+Ziegenkäse|goat cheese	🧀
+Halloumi|Grillkäse	🧀
+Camembert	🧀
+Brie	🧀
+Gorgonzola	🧀
+Mascarpone	🧀
+Ricotta	🧀
+Raclette|Raclettekäse	🧀
+Harzer	🧀
+Frischkäse|cream cheese	🧀
+Käseaufschnitt	🧀
+Käsescheiben|Scheibenkäse|cheese slices	🧀
+Reibekäse|Streukäse|grated cheese	🧀
+Butter	🧈
+Butterschmalz	🧈
+Kräuterbutter|herb butter	🧈
+Margarine	🧈
+=ei|Eier|=egg|eggs	🥚
+Freilandeier|free range eggs	🥚
+Pudding|Puddings|custard	🍮
+Falafel	🧆
+Leberkäse|Leberkäs	-
+Fleischkäse	-
+
+# --- Meat and poultry
+Fleisch|meat	🥩
+Rind|Rindfleisch|beef	🥩
+Schwein|Schweinefleisch|pork	🥩
+Hack|Hackfleisch|mince|minced meat	🥩
+Rinderhack|ground beef	🥩
+Gehacktes	🥩
+Faschiertes	🥩
+Hackepeter	🥩
+Mett	🥩
+Steak|Steaks	🥩
+Rumpsteak|Rumpsteaks	🥩
+Entrecote	🥩
+Roastbeef	🥩
+Roulade|Rouladen	🥩
+Gulasch|goulash	🥩
+Geschnetzeltes	🥩
+Schnitzel	🥩
+Wiener Schnitzel	🥩
+Lende	🥩
+Rinderfilet|beef fillet	🥩
+Schweinefilet|pork fillet	🥩
+Braten|Schweinebraten|Rinderbraten	🍖
+Kotelett|Koteletts|pork chop|pork chops	🍖
+Haxe|Haxen|Schweinshaxe	🍖
+Eisbein	🍖
+Spareribs|Rippchen|spare ribs	🍖
+Lamm|lamb	🍖
+Lammkeule|leg of lamb	🍖
+Lammkotelett|Lammkoteletts|lamb chops	🍖
+Hähnchen|chicken	🍗
+Hühnchen	🍗
+Hendl	🍗
+Huhn|Suppenhuhn	🍗
+Poulet	🍗
+Broiler	🍗
+Hähnchenbrust|chicken breast	🍗
+Hühnerbrust	🍗
+Putenbrust|turkey breast	🍗
+Entenbrust|duck breast	🍗
+Brustfilet	🍗
+Hähnchenfilet|chicken fillet	🍗
+Putenfilet	🍗
+Keule|Keulen|drumsticks	🍗
+Schenkel|chicken thighs	🍗
+Flügel|chicken wings	🍗
+Pute|Puten|turkey	🍗
+Truthahn	🍗
+=ente|=enten|duck	🍗
+Gans|Weihnachtsgans|goose	🍗
+Speck|Bacon	🥓
+Speckwürfel|diced bacon	🥓
+Schinken|=ham	🥓
+Kochschinken	🥓
+Prosciutto|Parmaschinken	🥓
+Serrano|Serranoschinken	🥓
+Wurst|Würste|sausage|sausages	🌭
+Würstchen	🌭
+Wiener|Wienerle|Wienerli	🌭
+Frankfurter	🌭
+hot dog|hot dogs	🌭
+Bockwurst	🌭
+Bratwurst	🌭
+Weißwurst	🌭
+Currywurst	🌭
+Nürnberger	🌭
+Krakauer	🌭
+Käsekrainer	🌭
+Debreziner	🌭
+Cabanossi|Kabanos	🌭
+Landjäger	🌭
+Leberwurst	-
+Teewurst	-
+Mettwurst	-
+Fleischwurst	-
+Blutwurst	-
+Bierwurst	-
+Jagdwurst	-
+Gelbwurst	-
+Streichwurst	-
+Döner|kebab|kebap	🥙
+
+# --- Fish and seafood
+Fisch|fish	🐟
+Lachs|salmon	🐟
+Lachsfilet|salmon fillet	🐟
+Lachssteak	🐟
+Räucherlachs|smoked salmon	🐟
+Fischfilet|fish fillet	🐟
+Thunfischsteak|tuna steak	🐟
+=tuna	🐟
+Forelle|Forellen|trout	🐟
+Kabeljau|=cod	🐟
+Dorsch	🐟
+Dorade|Doraden|sea bream	🐟
+Zander	🐟
+Scholle|Schollen	🐟
+Hering|Heringe|herring	🐟
+Matjes	🐟
+Makrele|Makrelen|mackerel	🐟
+Pangasius	🐟
+Barsch|Rotbarsch	🐟
+Heilbutt|halibut	🐟
+Karpfen	🐟
+Wels	🐟
+Tilapia	🐟
+Sardine|Sardinen|sardines	🐟
+Sardelle|Sardellen|anchovies	🐟
+Garnele|Garnelen|prawn|prawns	🦐
+Shrimp|Shrimps	🦐
+Scampi	🦐
+Krabbe|Krabben|Nordseekrabben	🦐
+Hummer|lobster	🦞
+crab|crabs	🦀
+Taschenkrebs	🦀
+Auster|Austern|oyster|oysters	🦪
+Tintenfisch|squid	🦑
+Calamari|Kalmar	🦑
+Oktopus|Pulpo|Krake|octopus	🐙
+Sushi	🍣
+Lorbeer|Lorbeeren|Lorbeerblätter|bay leaves	🌿

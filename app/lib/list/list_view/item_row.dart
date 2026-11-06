@@ -263,14 +263,10 @@ class const _Tile({
               children: [
                 SizedBox(
                   width: _iconColumn,
-                  child: Text(
-                    itemIcon(item, row.category),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: _iconSize,
-                      height: _nameLine / _iconSize,
-                      fontFamilyFallback: emojiFontFallback,
-                    ),
+                  child: ItemIcon(
+                    item.name,
+                    size: _iconSize,
+                    height: _nameLine,
                   ),
                 ),
                 Expanded(

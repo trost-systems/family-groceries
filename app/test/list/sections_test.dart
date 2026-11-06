@@ -174,7 +174,7 @@ void main() {
       },
     );
 
-    test('icons come from the name, else the category', () {
+    test('a category shows its leading emoji and its name without it', () {
       const chilled = Category(
         id: 'c',
         name: 'Kühlregal',
@@ -187,12 +187,9 @@ void main() {
         sortOrder: 2,
         seedKey: 'drugstore',
       );
-      Item named(String name) => item('x').copyWith(name: name);
-      expect(itemIcon(named('Bananen'), chilled), '🍌');
-      expect(itemIcon(named('Vollmilch'), chilled), '🥛');
-      expect(itemIcon(named('Reis'), null), '🍚');
-      expect(itemIcon(named('Quark'), chilled), '🥛');
-      expect(itemIcon(named('Creme'), baby), '👶');
+      expect(categoryIcon(baby), '👶');
+      expect(categoryIcon(chilled), '🥛', reason: 'the seeded one');
+      expect(categoryIcon(null), '🧺');
       final de = lookupAppLocalizations(const Locale('de'));
       final en = lookupAppLocalizations(const Locale('en'));
       expect(categoryLabel(baby, de), 'Drogerie');
