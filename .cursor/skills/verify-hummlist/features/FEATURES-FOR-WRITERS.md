@@ -382,15 +382,17 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Feedback
 
-**What it does.** Users can send Peter a short note from inside the app: a bug, an idea or anything else, up to 2000 characters. They can optionally say Peter may contact them. The app attaches its version, device type, language and the screen the user came from, but never anything from the shopping list. If there is no connection the note stays in the form and can be sent again.
+**What it does.** Users can send Peter a short note from inside the app: a bug, an idea or anything else, up to 2000 characters. They can optionally say Peter may contact them. The app attaches its version, device and model, language, the screen, light or dark mode, orientation, text size, whether it was connected and whether the household has Premium, but never anything from the shopping list. On iPhone and Android, shaking the phone opens the form right on the screen where something went wrong, so the note says which screen it was; the form explains this. If there is no connection the note stays in the form and can be sent again.
 
 **How to get there.**
 1. „Mehr“ (EN: "More") → „Feedback senden“ (EN: "Send feedback").
 2. Write in „Deine Nachricht“ (EN: "Your message"), optionally pick „Bug“, „Idee“ or „Sonstiges“ (EN: "Bug", "Idea", "Other") and tick „Peter darf mich dazu kontaktieren“ (EN: "Peter may contact me about this").
 3. Tap „Senden“ (EN: "Send"); the app answers „Danke!“ (EN: "Thanks!").
+4. Or, on iPhone and Android: go to the screen where the bug happened, make it happen again and shake the phone. The same form opens.
 
 **Never claim.**
-- Shake-to-report, feedback from the list screen, or screenshots/attachments.
+- Shake on the web or a computer, a feedback button on the list screen, or screenshots/attachments.
+- That shaking works during sign-in or setup, or while another window of the app is open.
 - A reply is guaranteed; contact only happens if the box is ticked and Peter chooses to.
 - That list contents are sent.
 - That users can read their sent notes back in the app (they come back only in their own data export, Konto → „Meine Daten exportieren“, EN "Export my data").

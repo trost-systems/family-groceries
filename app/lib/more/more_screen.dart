@@ -11,6 +11,7 @@ import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
 import 'package:family_groceries/household/archived_households.dart';
 import 'package:family_groceries/household/invites_page.dart';
@@ -345,7 +346,9 @@ class _MoreListState() extends State<_MoreList> {
       _Item.feedback => _Row(
         item,
         label: l10n.feedbackRow,
-        onTap: () => unawaited(showFeedbackSheet(context)),
+        onTap: () => unawaited(
+          showFeedbackSheet(context, entry: FeedbackEntryPoint.more),
+        ),
       ),
       _Item.help => _Row(
         item,

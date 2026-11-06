@@ -1,10 +1,12 @@
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/feedback/shake.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 /// From this width the tabs become a rail and More shows two panes.
 const wideLayout = 840.0;
@@ -56,6 +58,9 @@ class const AppShell({
 
   /// Overrides the Supabase list repository, for tests.
   final ListRepository? repository,
+
+  /// Overrides the accelerometer, for tests.
+  final Stream<AccelerometerEvent>? shakeSamples,
 }) extends StatefulWidget {
   @override
   State<AppShell> createState() => _AppShellState();
@@ -85,50 +90,53 @@ class _AppShellState() extends State<AppShell> {
     final index = widget.shell.currentIndex;
     return ListScope(
       repository: widget.repository,
-      child: SheetOpen(
-        notifier: _sheetOpen,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth >= wideLayout) {
+      child: ShakeToFeedback(
+        samples: widget.shakeSamples,
+        child: SheetOpen(
+          notifier: _sheetOpen,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= wideLayout) {
+                return Scaffold(
+                  body: Row(
+                    children: [
+                      NavigationRail(
+                        selectedIndex: index,
+                        onDestinationSelected: _select,
+                        labelType: NavigationRailLabelType.all,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerLow,
+                        destinations: [
+                          NavigationRailDestination(
+                            icon: const Icon(
+                              Icons.shopping_cart_outlined,
+                              key: ValueKey('tab-list'),
+                            ),
+                            selectedIcon: const Icon(Icons.shopping_cart),
+                            label: Text(l10n.tabList),
+                          ),
+                          NavigationRailDestination(
+                            icon: const Icon(
+                              Icons.menu,
+                              key: ValueKey('tab-more'),
+                            ),
+                            label: Text(l10n.tabMore),
+                          ),
+                        ],
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(child: widget.shell),
+                    ],
+                  ),
+                );
+              }
               return Scaffold(
-                body: Row(
-                  children: [
-                    NavigationRail(
-                      selectedIndex: index,
-                      onDestinationSelected: _select,
-                      labelType: NavigationRailLabelType.all,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerLow,
-                      destinations: [
-                        NavigationRailDestination(
-                          icon: const Icon(
-                            Icons.shopping_cart_outlined,
-                            key: ValueKey('tab-list'),
-                          ),
-                          selectedIcon: const Icon(Icons.shopping_cart),
-                          label: Text(l10n.tabList),
-                        ),
-                        NavigationRailDestination(
-                          icon: const Icon(
-                            Icons.menu,
-                            key: ValueKey('tab-more'),
-                          ),
-                          label: Text(l10n.tabMore),
-                        ),
-                      ],
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(child: widget.shell),
-                  ],
-                ),
+                body: widget.shell,
+                bottomNavigationBar: _Tabs(index: index, onSelect: _select),
               );
-            }
-            return Scaffold(
-              body: widget.shell,
-              bottomNavigationBar: _Tabs(index: index, onSelect: _select),
-            );
-          },
+            },
+          ),
         ),
       ),
     );

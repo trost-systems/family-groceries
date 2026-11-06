@@ -118,9 +118,11 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'entry_point': OneOf({'more', 'integrations'}),
   },
   // Job 21: after the server took a note, once per note. Never its text.
+  // Job 138: opened from More's row or a shake (builds before it sent
+  // `settings` for More).
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),
-    'entry_point': const OneOf({'settings'}),
+    'entry_point': const OneOf({'more', 'shake'}),
     'screen': const OneOf(screenNames),
     'contact_ok': const IsBool(),
   },

@@ -8,3 +8,5 @@
 /* How Siri says the app name. */
 "CFBundleSpokenName" = "Hummlist";
 "NSSiriUsageDescription" = "Siri adds items to your Hummlist and reads it to you.";
+/* Job 138: sensors_plus links CoreMotion; reading the accelerometer for the shake shows no prompt. */
+"NSMotionUsageDescription" = "Shake your phone to send feedback about the screen you are on.";

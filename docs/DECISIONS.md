@@ -8151,3 +8151,49 @@ horizontal inset, and the list scrolls on under it.
    optional and the URL names the brand on a marketing surface (Legal L-1). The voice block already
    explains MCP; the guides stay one click away in the header.
 5. **„— Peter“ keeps Peter's dash**: it is his signature, quoted word for word.
+
+## Job 138: shake to send feedback, teach copy, more context (2026-11-06)
+
+Peter's calls (Q84 = FB3, Q85 = CX1-CX6 + TC1, 2026-11-05) replace Job 21's D2: More →
+„Feedback senden“ stays, and shaking the phone opens the same form on the screen where the bug
+happened. Overview: [FEEDBACK.md](FEEDBACK.md).
+
+1. **Which screen a note names depends on how the form opened.** Shake: the screen on display
+   (`ScreenTracker.current`), since the user is looking at the bug. More: the last screen before
+   the More tab, as since Job 21 (21.6), since from More it is usually an idea about the list.
+2. **Shake listens only in the signed-in shell, only on iOS and Android.** The listener sits
+   inside `ListScope` in `AppShell`, so login, welcome, onboarding, analytics consent and OAuth
+   consent (all outside the shell) never open the form, and every shake has a household and a
+   signed-in sender, which the insert needs. Web and desktop do not subscribe to the sensor:
+   the form is reached through More only there.
+3. **What counts as a shake:** the accelerometer's g-force above 2.7 g three times within
+   800 ms, then 1.5 s in which nothing fires. One bump or walking with the phone does not count
+   (unit tests over synthetic samples). A shake while the feedback form or any other dialog or
+   sheet is open does nothing: one guard, `Popups.openAbove` (the root navigator's top route is a
+   popup), covers both. No haptic. The sensor is released while the app is in the
+   background. iOS gets an `NSMotionUsageDescription` purpose string, though the accelerometer
+   shows no prompt: sensors_plus links CoreMotion and its README requires the key (review 0).
+4. **The teach line shows only where shaking works** (iOS, Android). On the web it would tell
+   the user to do something that does nothing in that window. The factual „Wird mitgeschickt:“
+   line shows everywhere and lists every field.
+5. **The new context is read when the form opens, not at Send**: entry point, screen, theme,
+   orientation, text size, connection and Premium status describe the moment of the bug. The
+   device facts (version, build, OS, model) are read once per app run as before.
+6. **`entitlement` has five values, not two.** The brief said `lifetime | free`, but a household
+   can also have a yearly plan or a promotional grant (testers); filing those as `free` would
+   mislead a bug report about Premium. Values: `free`, `lifetime`, `yearly`, `promotional`,
+   `unknown` (rows not read yet). No RevenueCat or store ids.
+7. **`online` is the list's own view of the connection** (`ListCubit`'s realtime and fetch
+   state) when the form opens: `yes`, `no`, or `unknown` while it is still connecting. A
+   reading at send time would always say `yes`, since a note only arrives online; the
+   connectivity plugin reports a network interface, not whether the server answers.
+8. **`device_model` is the marketing name where the OS gives one**: iOS `modelName` ("iPhone 15
+   Pro"), Android manufacturer and model ("Google Pixel 8"), `web` on the web, at most 48
+   characters. Never a serial, IMEI, device name or id.
+9. **`text_scale` is one of eight buckets** (`0.8-`, `0.9` … `1.4`, `1.5+`), never the raw
+   factor.
+10. **`entry_point` is `more` or `shake`** in the table and in the analytics event. Builds
+    before this job sent `settings` for More (no insight reads the property yet; one that does
+    counts `settings` as `more`).
+11. **All new columns are nullable**, with checks: store builds older than this job insert
+    without them and keep working (squawk compat rules).

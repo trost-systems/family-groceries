@@ -50,7 +50,7 @@ void main() {
       'feedback_submitted',
       {
         'category': 'bug',
-        'entry_point': 'settings',
+        'entry_point': 'more',
         'screen': 'list',
         'contact_ok': true,
       },
@@ -59,7 +59,7 @@ void main() {
       'feedback_submitted',
       {
         'category': 'none',
-        'entry_point': 'settings',
+        'entry_point': 'shake',
         'screen': 'account',
         'contact_ok': false,
       },
@@ -111,7 +111,7 @@ void main() {
     ('first_open', {'email': 'peter@example.com'}, 'an e-mail'),
     ('feedback_submitted', {'message': 'Der Haken hängt'}, 'the note'),
     ('feedback_submitted', {'category': 'Bug'}, 'a label as category'),
-    ('feedback_submitted', {'entry_point': 'shake'}, 'an entry not built'),
+    ('feedback_submitted', {'entry_point': 'settings'}, 'the old name'),
     ('feedback_submitted', {'screen': '/join/ABCD2345'}, 'a path as screen'),
     ('feedback_submitted', {'screen': 'Milch'}, 'an item as screen'),
     ('feedback_submitted', {'contact_ok': 'yes'}, 'contact as text'),

@@ -1,7 +1,12 @@
 # In-app feedback
 
 Job 21 (Spec #2, Peter's decisions of 2026-10-27 in DECISIONS.md "Job 21"). Testers and
-customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. The
+customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. Since
+job 138 (DECISIONS "Job 138") **shaking the phone** opens the same form on iOS and Android, about
+the screen on display: the form teaches it („Einen Fehler gefunden? Geh zurück zu dem
+Bildschirm, stell ihn nach und schüttle das Handy …“). Shaking works only in the signed-in app
+(not on sign-in or onboarding), never while a dialog or sheet is open, and at most once per
+1.5 s. The web has no shake: More only. The
 note goes into one table, `public.feedback`, which Peter and the Hummlist PM read with the
 service role (Supabase dashboard or the Supabase connector). Nothing notifies anyone: the PM
 reads the table every Monday with the SQL below.
@@ -24,12 +29,24 @@ One row per note (`supabase/migrations/20261030070000_feedback.sql`; every colum
 | `platform` | `ios`, `android`, `web`, `linux`, `macos`, `windows`. |
 | `os_version` | `Android 14 (SDK 34)`, `iOS 18.1`; on the web only the browser family and OS (`Safari on iOS`), never the user agent. |
 | `locale` | The app's language when sending (`de`, `en`). |
-| `screen` | The screen the note is about, a fixed name: the last screen before the More tab (`list` almost always), or the More page the form was opened beside on wide screens (`access`, `account`, `privacy`). Never a path, an invite code or an item. The names are `screenNames` in `app/lib/app/router.dart`. |
+| `screen` | The screen the note is about, a fixed name. After a shake: the screen on display. From More: the last screen before the More tab (`list` almost always), or the More page the form was opened beside on wide screens (`access`, `account`). Never a path, an invite code or an item. The names are `screenNames` in `app/lib/app/router.dart`. |
+| `entry_point` | `more` (More's row) or `shake`. Empty from builds before job 138 (More only then). |
+| `device_model` | The marketing name where the OS gives one: `iPhone 15 Pro`, `Google Pixel 8`; `web` in a browser; `unknown` otherwise. At most 48 characters; never a serial, IMEI, device name or id. |
+| `theme` | `light` or `dark`, the app's theme when the form opened. |
+| `orientation` | `portrait` or `landscape` when the form opened. |
+| `text_scale` | The system text size as a bucket: `0.8-`, `0.9`, `1.0` … `1.4`, `1.5+`. |
+| `online` | Whether the list was connected to the server when the form opened: `yes`, `no`, `unknown` (still connecting). |
+| `entitlement` | The household's Premium when the form opened: `free`, `lifetime`, `yearly`, `promotional` (testers), `unknown` (not read yet). No store or RevenueCat ids. |
 | `is_internal` | Peter's household (the `ANALYTICS_INTERNAL_HOUSEHOLDS` define), a debug, profile or preview build, an install marked internal under More, or a test account. The database forces it for test accounts (`.test`, `.invalid`, `.example`, `.localhost`, `example.com/.net/.org`), whatever the app says. |
 
+Everything from `entry_point` to `entitlement` describes the moment the form opened, not the
+moment of Send (job 138). Fields an older build doesn't know stay empty.
+
 Nothing from the list is attached: no item, category or store names, no household name. The
-form says so ("App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.").
-No screenshots, no device model, no e-mail.
+form says so („Wird mitgeschickt: App-Version, Gerät und Modell, Sprache, Bildschirm,
+Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, Premium-Status und wie du das
+Formular geöffnet hast. Keine Listeneinträge.“). No screenshots, no e-mail, no full user agent,
+no location, contacts or clipboard.
 
 ## Who can read it
 
@@ -80,14 +97,22 @@ select case when f.is_internal then 'internal' else 'external' end as audience,
        f.locale,
        f.household_id,
        f.user_id,
-       f.contact_ok
+       f.contact_ok,
+       coalesce(f.entry_point, 'more') as entry_point,
+       f.device_model,
+       f.theme,
+       f.orientation,
+       f.text_scale,
+       f.online,
+       f.entitlement
 from public.feedback f, week
 where f.created_at >= week.starts and f.created_at < week.ends
 order by f.is_internal, f.created_at, f.id;
 ```
 <!-- /monday-sql -->
 
-How many, per category and per platform:
+How many, per category, per platform and per way in (More or a shake; builds before job 138
+leave `entry_point` empty and could only open the form from More):
 
 <!-- monday-sql:counts -->
 ```sql
@@ -106,6 +131,10 @@ from last_week group by is_internal, category
 union all
 select case when is_internal then 'internal' else 'external' end, 'platform', platform, count(*)
 from last_week group by is_internal, platform
+union all
+select case when is_internal then 'internal' else 'external' end, 'entry_point',
+       coalesce(entry_point, 'more'), count(*)
+from last_week group by is_internal, coalesce(entry_point, 'more')
 order by audience, by, notes desc, value;
 ```
 <!-- /monday-sql -->

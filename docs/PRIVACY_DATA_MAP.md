@@ -58,7 +58,7 @@ interest.
 
 | Data | Where | Purpose | Basis | Kept | Processor / region | Deletion | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Message (max 2000), category, contact OK, app version, build, platform, OS version, locale, screen name, user id, household id, internal flag | `public.feedback` | Bug reports and ideas | (b)/(f) | 12 months (`purge-old-feedback`, daily 03:17) | Supabase EU | Daily purge; cascades with the account | `20261030070000_feedback.sql` |
+| Message (max 2000), category, contact OK, app version, build, platform, OS version, locale, screen name, user id, household id, internal flag; since job 138 how the form was opened (More or shake), device model (marketing name, `web`), theme, orientation, text-size bucket, list connected yes/no, household Premium status (free/lifetime/yearly/promotional) | `public.feedback` | Bug reports and ideas | (b)/(f) | 12 months (`purge-old-feedback`, daily 03:17) | Supabase EU | Daily purge; cascades with the account | `20261030070000_feedback.sql`, `20261106004500_feedback_context.sql` |
 | Support email (support@hummlist.com) | Google Workspace mailbox | Answering requests | (b)/(f) | 6 months after the request is closed (policy §10) | Google Cloud EMEA Limited (policy §10) | Manual | `site/content/legal/impressum.md` |
 
 ## Analytics and error tracking (job 19, consent)
