@@ -1733,6 +1733,33 @@ To ship it:
   it makes „Ohne Laden“ a raised pill, reversing Job 78 item 16 (DECISIONS Job 102 item 7), it
   needs its own `dragHandle` e2e fix (in the patch), and its trash buttons need a 48 px minimum
   size on web.
+
+## Job 125: account and auth flakes (#57 #58 #59 #60), 2026-11-05
+
+- **Close #57, #58 and #59 as host-pause only, or keep them open.** The PR changes no code.
+  With retries off, on main 1ba6dc51 the four tests passed 220 of 220 runs under one-CPU
+  starvation and under runner, browser and stack pauses of 3, 8 and 9 s. On main 4a103f67 the
+  same 8 s conditions went 59 of 60, and the one failure was #60's test (next bullet); #57, #58
+  and #59 passed every run there too (DECISIONS Job 125). Failures start at 12 s
+  pauses, and each one is a single 10 s `expect`, or from 25 s `typeInto`'s 20 s predicate (the
+  issues' own signature), whose budget the pause used up. The page shows the step before, never
+  an error. The issues' failures fell in named runner pauses of 189 to 2385 s and passed on the
+  stall-only retry, which is the policy of DECISIONS 18.23. The brief leaves closing them to you.
+- **#60 is not host-pause only: decide it knowing its second failure mode.** Its issue's own
+  failure was a 316 s runner pause, like the others. But on main 4a103f67, auth.spec.ts:8 failed
+  once (1 of 5) under an 8 s `docker pause` of the stack, which is under the failing wait's 10 s
+  budget. `create_household` answered 500 (`57014`): the frozen database held the statement past
+  the `authenticated` role's 8 s statement timeout. The budget that ran out is that server
+  setting, which production uses too, not the test's wait. A real database stall of 8 s or more
+  fails the request in production as well, and the app shows its error („Etwas ist
+  schiefgelaufen: other“), which is correct for a server error, though the text says nothing
+  useful. On the test side the condition, a stack frozen while the runner keeps running, comes
+  only from the harness. Such a stall has no stall-detector line, so 18.23's retry would never
+  cover it. Inferred, not measured: any test whose step calls PostgREST shares it, and #60's
+  test met it first. A clearer message or a retry for a statement timeout would be new copy or
+  app behaviour, outside this job (DECISIONS Job 125 item 5). The reviewer's 20 runs at the same
+  condition did not hit it again, which fits a rare event.
+
 ## Job 82: the hummlist.com waitlist (Spec #10), 2026-11-02
 
 Everything is built. Since the requeue of 2026-11-04 (Addenda 5 to 10) the merge of PR #210 is the

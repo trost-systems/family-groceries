@@ -8738,3 +8738,80 @@ of the 80 known endings took its category's emoji. This replaces item 8 of the l
    table arrives, so the colour slices cover the most and win. Cost: 8 colour slices (about
    1.2 MB) instead of the 4 this list needed (about 0.57 MB) on a first visit, loaded in the
    background and cached. The `item-icons` journey fails when Symbols 2 is fetched.
+## Job 125: account and auth spec flakes (#57 #58 #59 #60), 2026-11-05
+
+1. **#57, #58 and #59 are host-pause only; #60 has one more, server-side failure mode (item 5).
+   Nothing in the app or the specs changes.** The tests are
+   account.spec.ts:154 (last member deletes, #57), :200 (offline deletion, #58), :220 (export,
+   #59) and auth.spec.ts:8 (sign out and back in, #60). Each issue's one failure fell inside a
+   runner pause of 189 to 2385 s that the stall detector named, and each passed on the
+   stall-only retry (18.23). #58, #59 and #60 failed in `typeInto`'s 20 s `toPass` ("Timeout
+   20000ms exceeded while waiting on the predicate"), #57 in a 10 s `toBeVisible`.
+2. **Method (18.23, with job 119's `scripts/e2e-stress.sh`, #261 at 72aafe88; the runs used an
+   earlier copy named `scripts/e2e-pause.sh`, hence `[e2e-pause]` in the logs. It differs only in
+   its names and in not waiting for a healthy stack, which the job's driver did itself).** The four tests, retries
+   off, `--workers=1`, under `/tmp/fg-e2e.lock`, on the release web build against the job's own
+   stack, while the harness stopped the Playwright runner and Chromium together (`runner`, as a
+   VM pause or a sleeping phone does), Chromium alone (`browser`), or this stack's containers
+   (`stack`, `docker pause`, a stalled server) for N s every N+M s. CPU starvation: the run
+   pinned to one CPU (`taskset -c 0`) while the host ran other jobs (load 6 to 13). Results on
+   origin/main 1ba6dc51 (failed/runs per test):
+
+   | condition | #57 | #58 | #59 | #60 |
+   |---|---|---|---|---|
+   | one CPU | 0/5 | 0/5 | 0/5 | 0/5 |
+   | runner, browser, stack 3 s of every 8 s | 0/15 | 0/15 | 0/15 | 0/15 |
+   | runner, browser, stack 8 s of every 14 s | 0/15 | 0/15 | 0/15 | 0/15 |
+   | runner 9 s of every 14 s (load 12 to 13) | 0/10 | 0/10 | 0/10 | 0/10 |
+   | browser, stack 9 s of every 14 s | 0/10 | 0/10 | 0/10 | 0/10 |
+   | browser 12 s of every 20 s | 1/5 | 1/5 | 1/5 | 1/5 |
+   | runner 15 s of every 25 s | 1/5 | 0/5 | 1/5 | 0/5 |
+   | stack 15 s of every 25 s | 5/7 | 2/7 | 2/7 | 3/7 |
+   | runner 25 s of every 40 s | 1/3 | 0/3 | 0/3 | 1/3 |
+
+   Up to 9 s pauses, 220 of 220 runs passed. From 12 s, failures start. Rerun on main 4a103f67
+   (after #256 and #257 changed the login and account screens), host load 5 to 26:
+
+   | condition | #57 | #58 | #59 | #60 |
+   |---|---|---|---|---|
+   | one CPU | 0/5 | 0/5 | 0/5 | 0/5 |
+   | runner, browser, stack 8 s of every 14 s | 0/15 | 0/15 | 0/15 | 1/15 |
+   | runner 9 s of every 14 s | 0/5 | 0/5 | 0/5 | 0/5 |
+   | stack 15 s of every 25 s | 2/5 | 3/5 | 0/5 | 2/5 |
+   | runner 25 s of every 40 s | 2/5 | 0/5 | 1/5 | 0/5 |
+3. **Every failure is one wait whose own budget is shorter than the pause.** All 20 failures
+   were a 10 s `expect` (the confirm field, the deleted notice, the consent or invite URL, the
+   invites list, the email field) or, from 25 s, `typeInto`'s 20 s predicate. That is the
+   issues' exact signature, reproduced in `confirmDeletion` by a 25 s runner pause the detector
+   named. The page snapshots at the stack failures show the app mid-request: the sign-in
+   buttons disabled while the sign-up is in flight, the invites list still loading. One was the
+   spec's own `apiAs` sign-in timing out against the frozen server
+   (`AuthRetryableFetchError`). Every failing wait found the step before still on screen (the
+   URL before the step, the element not yet built), never an error or a wrong state. For
+   deletion, review 3 checked the recovery directly: with all stack containers paused 12 s right
+   after the tap, on a cold `account` worker, the account was deleted 0.7 s after the thaw. For
+   export and sign-in after a pause over 10 s, recovery is inferred, not shown.
+4. **So no race and no wrong client budget.** In the four flows (delete, refused offline delete,
+   export, sign-out and sign-in), no pause shorter than a test wait's budget ran that wait out,
+   under load or pauses of each of the three parts. The one sub-budget failure is the server's
+   8 s statement timeout under a stack-only stall (item 5), which no detector line covers. A
+   10 s or 20 s step wait that a longer pause breaks is 18.23's case: a VM pause stops the
+   runner too, the detector names it, the one retry runs.
+   Stretching these waits, or counting them in runner time as `within` does for 2 to 3 s
+   latency budgets, would only hide a real hang for longer. A stack-only stall has no detector
+   line. In a VM pause the runner stops with the stack, so the issues' pauses were all named.
+5. **A stack stall of 8 s or more can turn a slow request into a failed one.** The one failure
+   at 8 s (auth.spec.ts:8, current main) was `create_household` answering 500 with `57014
+   canceling statement due to statement timeout` after 8080 ms. The `authenticated` role runs
+   with Supabase's `statement_timeout=8s`, and `docker pause` froze the database with the
+   statement in flight, so its timer ran out the moment the container woke. The app did what it
+   should with a server error: it stayed on the form, showed „Etwas ist schiefgelaufen: other“
+   and kept the button for another try. The issues' own failures were client-side waits in
+   runner pauses, not this. The budget the pause used up was Postgres's 8 s statement timeout,
+   the production setting, not the test's 10 s wait. A real database stall of 8 s or more
+   fails the request in production too, and the app shows its error. The stack config stays as
+   it is. The test-side condition, a stack frozen while the runner keeps running, comes only
+   from the harness.
+6. **The issues stay open for the lead** (`Refs #n (host-pause only)` for #57 to #59 and a
+   qualified `Refs #60` in the PR, NEEDS_LEAD
+   "Job 125"). The brief closes only fixed issues.
