@@ -118,6 +118,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
     final theme = Theme.of(context);
     final t = HummlistColors.of(theme.brightness);
     final problem = _problem;
+    final nameError = _invalidName ? l10n.householdNameInvalid : null;
     final own = [
       for (final s in _stores)
         if (!popularStores.contains(s)) s,
@@ -129,17 +130,20 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
       children: [
         LabeledField(
           label: l10n.householdName,
-          field: TextField(
-            key: const ValueKey('household-name'),
-            controller: _name,
-            focusNode: _nameFocus,
-            enabled: !_busy,
-            maxLength: maxHouseholdName,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              errorText: _invalidName ? l10n.householdNameInvalid : null,
+          field: Semantics(
+            hint: nameError,
+            child: TextField(
+              key: const ValueKey('household-name'),
+              controller: _name,
+              focusNode: _nameFocus,
+              enabled: !_busy,
+              maxLength: maxHouseholdName,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                error: nameError == null ? null : FieldError(nameError),
+              ),
+              onSubmitted: (_) => unawaited(_create()),
             ),
-            onSubmitted: (_) => unawaited(_create()),
           ),
         ),
         const SizedBox(height: 16),

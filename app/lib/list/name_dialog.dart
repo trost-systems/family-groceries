@@ -87,20 +87,28 @@ class _NameDialogState() extends State<_NameDialog> {
       title: Text(widget.title),
       content: LabeledField(
         label: widget.label,
-        field: TextField(
-          key: const ValueKey('name-dialog-field'),
-          controller: _name,
-          autofocus: true,
-          readOnly: _busy,
-          maxLength: widget.maxLength,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(errorText: _error),
-          onChanged: (_) {
-            if (_error != null) {
-              setState(() => _error = null);
-            }
-          },
-          onSubmitted: (_) => unawaited(_submit()),
+        field: Semantics(
+          hint: _error,
+          child: TextField(
+            key: const ValueKey('name-dialog-field'),
+            controller: _name,
+            autofocus: true,
+            readOnly: _busy,
+            maxLength: widget.maxLength,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              error: switch (_error) {
+                final e? => FieldError(e),
+                null => null,
+              },
+            ),
+            onChanged: (_) {
+              if (_error != null) {
+                setState(() => _error = null);
+              }
+            },
+            onSubmitted: (_) => unawaited(_submit()),
+          ),
         ),
       ),
       actions: [

@@ -172,6 +172,42 @@ InputDecorationThemeData fieldTheme(HummlistColors t, FieldShape shape) {
   );
 }
 
+/// A field's error [message] after an error icon, so the error does not
+/// rest on the red alone (WCAG 1.4.1). Pass it as [InputDecoration.error],
+/// or from a [FormField]'s `errorBuilder`. The decorator
+/// gives it the error style; screen readers get the message only.
+///
+/// Unlike `errorText`, an error widget does not become the field's
+/// semantics hint, so a screen reader on the field would not hear it: wrap
+/// the field in `Semantics(hint: message)` as well.
+class const FieldError(final String message, {super.key})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final style = DefaultTextStyle.of(context).style;
+    final fontSize = MediaQuery.textScalerOf(context)
+        .scale(style.fontSize ?? 14);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: HlSpace.s1,
+      children: [
+        // Centred on the first line, however many lines follow.
+        SizedBox(
+          height: fontSize * (style.height ?? 1.2),
+          child: ExcludeSemantics(
+            child: Icon(
+              Icons.error_outline,
+              size: 16,
+              color: style.color ?? Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+        Expanded(child: Text(message)),
+      ],
+    );
+  }
+}
+
 /// Gives the multi-line fields in [child] the rounded contour instead of the
 /// theme's hex.
 class const RoundedFields({required final Widget child, super.key})
