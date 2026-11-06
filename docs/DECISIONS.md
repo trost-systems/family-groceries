@@ -9212,3 +9212,13 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
    (run 42154588914) and also on main (run 42185909564), so only the pinned runs separate them.
    This job changes no code. The proof is in `docs/done/143-fix-premium-yearly-json.md`. #260
    landed as 5062100c and closed #265.
+
+## Job 153: offline and sync indicator prototypes, 2026-11-06
+
+1. Five variants plus Current on one internal page (`/internal/sync-indicator`), same pattern as job 136. No Flutter change until Peter picks.
+2. "Sync failing" is its own state: online, but queued writes keep failing transiently (gateway or server errors, a session that won't refresh). Today such a write stays pending and shows as syncing; a write the database refuses (`RejectedOp`) is already dropped with the "Änderung abgelehnt" snackbar and is not this state. The action is "Erneut versuchen"; for an expired session it would read "Neu anmelden" (copy only, no frame shows it).
+3. Returning online flashes "Wieder online" for 1.6 s so the indicator has a reason to leave. Easy to drop if online must stay silent.
+4. Hex pills carry an icon and one word only; the sentence sits in a card, bar, bubble or caption (Peter's 2026-11-05 rule).
+5. S3 can't use the real Dynamic Island (only Live Activities can); it is an app-drawn capsule over the status bar area.
+6. Recommendation S1, runner-up S4 (reasons in docs/done/153.md).
+7. S3's chin (y 11 to 75) reaches below the top bar's top edge (58), so in S3 the bar and the list move down 20 pt while it shows; the port pays the same.
