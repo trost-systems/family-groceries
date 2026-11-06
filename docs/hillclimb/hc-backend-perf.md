@@ -45,7 +45,8 @@ paths.
 
 Edge functions run with `policy = "oneshot"` (config.toml): every MCP and voice request boots a
 fresh worker. That is about 210 ms of each such request: about 100 ms of routing and isolate
-creation and about 110 ms of module graph, measured later (see "Stop").
+creation and about 110 ms of module graph, measured later (see "Stop"). Job 124 switched the local
+stack to `per_worker` (DECISIONS, job 124), so these numbers describe the setup of that time.
 
 Harness fixes before the baseline: the first attempt measured each path as one block (runs gave
 161.5 and 109.6, because host load hit single paths) and a reset was not waited out (a 503

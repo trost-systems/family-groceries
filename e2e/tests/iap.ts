@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect } from './fixtures';
-import { adminClient, apiAs, functionsUrl } from './helpers';
+import { adminClient, apiAs, functionJson, functionsUrl } from './helpers';
 
 // RevenueCat's side of a purchase against the local stack (docs/PURCHASES.md, "Testing locally"):
 // events go to the real webhook with the local stand-in secret (scripts/iap-local-env.sh), and the
@@ -71,7 +71,7 @@ export async function rcEvent(
       },
     }),
   });
-  return { status: res.status, body: await res.json() };
+  return { status: res.status, body: await functionJson(res) };
 }
 
 /** What the app sends right after RevenueCat's purchase sheet, as [email], for their household. */
@@ -84,7 +84,7 @@ export async function claim(email: string, transactionId: string) {
     headers: { authorization: `Bearer ${data.session!.access_token}`, 'content-type': 'application/json' },
     body: JSON.stringify({ store: 'apple', householdId, transactionId }),
   });
-  return { status: res.status, body: await res.json() };
+  return { status: res.status, body: await functionJson(res) };
 }
 
 /** [email] buys Hummlist Lifetime for their household: the claim, then RevenueCat's webhook. */

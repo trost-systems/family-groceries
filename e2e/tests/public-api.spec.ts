@@ -2,7 +2,7 @@
 // the app's session adds, lists, ticks and moves items that the open list shows, a read key
 // cannot write, every answer carries the rate-limit headers, and a burst ends in 429.
 import { expect, test } from './fixtures';
-import { adminClient, apiAs, firstOf, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { adminClient, apiAs, firstOf, functionJson, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 
 const api = `${functionsUrl}/api/v1`;
 
@@ -37,7 +37,7 @@ async function call(
     },
     ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
   });
-  return { status: res.status, headers: res.headers, body: await res.json() };
+  return { status: res.status, headers: res.headers, body: await functionJson(res) };
 }
 
 test('an API key adds, lists, ticks and moves items the open list shows', async ({ page }) => {
