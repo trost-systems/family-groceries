@@ -9146,3 +9146,60 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
 6. **Playwright browsers are not cached.** `playwright install` already retries 5 times across 3
    CDN mirrors, and the repository's Actions cache already sits at the 10 GB limit, so caching
    three browsers per shard would evict entries that save more.
+## Job 142: classifier.spec.ts seed dictionary and add-sheet flakes (issues #111, #159), 2026-11-06
+
+1. **One flake, not two.** Every run reported in #111 (five) and #159 (two) failed at the same
+   step: `enterItem` clicks the add field and the add sheet (`group 'Hinzufügen'`) is not there
+   within 10 s (`helpers.ts:486`, later `:526`). No run reached a seed category assertion. The
+   seed dictionary assertions are unchanged and stay as strict as they were.
+2. **The cause is the app, already fixed on main by job 52 (#156, c4d4090d).** On the web with
+   semantics on, the click can reach the field as a semantics tap or focus, which never calls
+   `TextField.onTap`, and only `onTap` opened the sheet. Since #156 a close arms
+   `_openOnFocus` and the field's next focus by any route opens the sheet (DECISIONS 52.15).
+   Job 76 (#205) closed the Escape race that arming opened. Every issue run is older than
+   c4d4090d. The only two later CI failures of this kind (classifier.spec.ts:59 and :85, runs
+   41285621711 and 41286757744) are on `job/54-demo-videos` commits based before it. Job 141
+   reached the same cause for `feedback.spec.ts` (#137) independently, and its scan of CI's e2e
+   result artifacts found the same: no `enterItem` sheet-open failure on heads with c4d4090d.
+3. **CI since the fix.** From 2026-11-01 06:15Z to 2026-11-06 02:46Z, 615 `ci.yml` runs; 438 ran
+   e2e, 426 of them on commits that contain c4d4090d. In those, no failed e2e job has an
+   `enterItem` add-sheet failure in any spec (logs of all 44 failed e2e jobs fetched and read).
+   The other `group 'Hinzufügen'` failures since are the Escape close (`toHaveCount(0)`, fixed by
+   #205) and job 135's floating-field near miss, neither in this spec.
+4. **Stressed repro, before and after** (job 18c's method, DECISIONS 18.23, with job 119's
+   `e2e-stress.sh`; `--workers=1 --retries=0`, the seed test 5 times per mode). Before is
+   8e72815f (#154, the commit #159 failed on, its own tests and build), after is main a94d46c5
+   (the runs used this PR's tree b30de01c on it; logs `/tmp/j142/mode-*.log` on hz).
+   Same stack (642xx) and lock hold, 2026-11-06 09:05 to 09:43:
+
+   | Mode | Before 8e72815f | After (main a94d46c5) |
+   | --- | --- | --- |
+   | no pauses | 0/5 | 5/5 |
+   | 1 CPU (`--cpus 0`) | 5/5 | 5/5 |
+   | browser SIGSTOP 3 s of 8 | 0/5 | 5/5 |
+   | runner SIGSTOP 3 s of 8 | 0/5 | 5/5 |
+   | stack `docker pause` 3 s of 8 | not run | 5/5 |
+   | browser SIGSTOP 9 s of 14 | not run | 3/3 |
+
+   All 15 before failures are #159's signature: `helpers.ts:526`, `group 'Hinzufügen'` not found,
+   from `classifier.spec.ts:75`. Each came on the third to fifth add, after earlier adds had
+   closed and reopened the sheet, never on the first. That is the reopen path #156 changed. Before
+   passed on one CPU, so slowness alone does not trigger it (inferred: the event order on one
+   CPU happens to avoid the semantics-focus route). Then the whole spec on main,
+   `--repeat-each=20 --workers=1 --retries=0`: 60 passed (17.2 min). On GitHub Actions the same
+   20x (`scripts/ci-e2e.sh`, run 42159601563, main 6da42673): 60 passed, 0 flaky, and again 60/60
+   on this PR's later heads (runs 42190369390, 42204782964, 42226320986, 42244189033).
+5. **The focus route alone makes the difference (review 0's isolation).** Before and after above
+   are five days of commits apart. Review 0 ran the seed test (`--workers=1 --retries=0`, no
+   pauses) on #156 itself and on #156 with the one line that arms `_openOnFocus` in `_close` set
+   to false: c4d4090d 5/5, c4d4090d without the focus route 0/5 (#159's signature, after
+   Vollkornbrot and Schlagsahne). So `_openOnFocus`, not the rest of that design PR or later
+   commits, fixed it.
+6. **No code change.** The brief's fix at cause is #156. No retry in `enterItem` (click again
+   when the sheet stays shut): it would hide this bug coming back wherever a click does arrive as
+   a semantics focus. This spec is not what guards it on today's main: with the focus route
+   removed (`_settleClose` arming set to false), review 0 saw the seed test still pass, 5/5
+   unstressed and 3/3 on one CPU, because Playwright's click now arrives as a real tap. The
+   guard is the pair of widget tests in `app/test/list/add_sheet_test.dart` "after closing, a
+   semantics tap (and focus) on the field opens the sheet again", which fail without the route
+   (review 0) and pass on main.
