@@ -6,8 +6,9 @@
 // both texts; a sign-up over the per-client limit in an hour answers the same 202 and stores
 // nothing. Test addresses only. The db gate sets FG_DB_TEST=1 and SUPABASE_DB_URL; without them
 // this is skipped.
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import postgres from 'postgres';
+import { databaseUrl } from '../_shared/db.ts';
 import { CONFIRM_VERSIONS, CONSENT_VERSIONS } from './consent.ts';
 import { hmacHex, sha256Hex } from './crypto.ts';
 import { configFrom, createHandler, LIMITS } from './handler.ts';
@@ -50,7 +51,7 @@ function harness(sql: postgres.Sql) {
       }),
     );
   const flush = async () => {
-    while (deferred.length) await deferred.shift()!();
+    for (let work = deferred.shift(); work; work = deferred.shift()) await work();
   };
   return { sent, call, flush };
 }
@@ -69,7 +70,7 @@ Deno.test({
   name: 'sign-up, confirm and one-click unsubscribe through the real database',
   ignore: !enabled,
   async fn() {
-    const sql = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 2, prepare: false });
+    const sql = postgres(databaseUrl(), { max: 2, prepare: false });
     const email = `hello+it-${crypto.randomUUID()}@hummlist.com`;
     const proofKey = await hmacHex(HMAC, email.toLowerCase());
     const client = crypto.randomUUID();
@@ -84,13 +85,16 @@ Deno.test({
         select id, email, confirm_token_hash, launch_news
         from public.waitlist where lower(email) = ${email}`;
       assertEquals(rows.length, 1, 'one row in any letter case');
-      assertEquals(rows[0].email, email);
-      assertEquals(rows[0].launch_news, false, 'launch_news from the form is not stored');
+      const [stored] = rows;
+      assertExists(stored);
+      assertEquals(stored.email, email);
+      assertEquals(stored.launch_news, false, 'launch_news from the form is not stored');
       assertEquals(sent.map((s) => s.to), [email], 'one confirmation mail');
-      const token = sent[0].mail.text.match(/#t=([A-Za-z0-9_-]{43})/)![1];
-      assertEquals(rows[0].confirm_token_hash, await sha256Hex(token), 'only the hash is stored');
+      const token = sent[0]?.mail.text.match(/#t=(?<token>[A-Za-z0-9_-]{43})/)?.groups?.token;
+      assertExists(token, 'a confirm link in the mail');
+      assertEquals(stored.confirm_token_hash, await sha256Hex(token), 'only the hash is stored');
 
-      const pressed = { token, confirm_version: CONFIRM_VERSIONS.en, launch_news: true };
+      const pressed = { token, 'confirm_version': CONFIRM_VERSIONS.en, 'launch_news': true };
       assertEquals(
         (await call('confirm', { ...pressed, confirm_version: 'waitlist-en-v2' })).status,
         400,
@@ -109,7 +113,7 @@ Deno.test({
       >`
         select confirmed_at is not null as confirmed, last_mail_at >= confirmed_at as mailed,
                confirm_text_version, launch_news
-        from public.waitlist where id = ${rows[0].id}`;
+        from public.waitlist where id = ${stored.id}`;
       assertEquals(row, {
         confirmed: true,
         mailed: true,
@@ -117,10 +121,14 @@ Deno.test({
         launch_news: true,
       });
 
-      const url = new URL(sent[1].mail.headers['List-Unsubscribe'].slice(1, -1));
-      const id = url.searchParams.get('id')!;
-      assertEquals(id, rows[0].id);
-      const sig = url.searchParams.get('s')!;
+      const header = sent[1]?.mail.headers['List-Unsubscribe'];
+      assertExists(header, 'a List-Unsubscribe header on the welcome mail');
+      const url = new URL(header.slice(1, -1));
+      const id = url.searchParams.get('id');
+      assertExists(id);
+      assertEquals(id, stored.id);
+      const sig = url.searchParams.get('s');
+      assertExists(sig);
       assertEquals(await (await call('unsubscribe', { id, sig })).json(), { status: 'deleted' });
       const [left] = await sql<{ rows: number; proofs: number }[]>`
         select (select count(*)::int from public.waitlist where lower(email) = ${email}) as rows,
@@ -143,7 +151,7 @@ Deno.test({
   name: 'one sign-up over the per-client limit in an hour gets the same 202 and stores nothing',
   ignore: !enabled,
   async fn() {
-    const sql = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 2, prepare: false });
+    const sql = postgres(databaseUrl(), { max: 2, prepare: false });
     const client = crypto.randomUUID();
     const over = `hello+it-rate-${crypto.randomUUID()}@hummlist.com`;
     try {

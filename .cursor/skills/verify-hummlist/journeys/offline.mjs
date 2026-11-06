@@ -3,6 +3,7 @@
 // online, and proves both stored the same name and Menge (supabase/tests/quantity_parse.tsv).
 //
 //   node journeys/offline.mjs <evidence dir> [--lang de|en] [--lines "zwei Gurken|Karotten drei"]
+import process from 'node:process';
 import { addField, addSheet, apiAs, capture, instance, logger, member, openApp, signIn, typeInto } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

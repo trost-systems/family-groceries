@@ -1,6 +1,7 @@
 // Usage: node selftest.mjs [distDir] [--port 57623]
 // Proves crawl.mjs catches what it claims to: copies the dist to a temp dir, breaks /de in one
 // known way per check, runs crawl.mjs on /de alone and fails unless every breakage is reported.
+import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

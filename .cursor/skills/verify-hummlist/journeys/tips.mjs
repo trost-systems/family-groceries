@@ -3,6 +3,7 @@
 // shows the next tip in the queue.
 //
 //   node journeys/tips.mjs <evidence dir> [--lang de|en] [--dark]
+import process from 'node:process';
 import { capture, instance, logger, member, openApp, signIn } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

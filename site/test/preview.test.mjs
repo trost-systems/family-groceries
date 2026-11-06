@@ -23,7 +23,7 @@ const get = (path, headers = {}) =>
     request(base + path, { headers }, (res) => {
       let body = '';
       res.setEncoding('utf8').on('data', (c) => (body += c)).on('end', () =>
-        resolve({ status: res.statusCode, headers: { get: (k) => res.headers[k] ?? null }, text: async () => body }),
+        resolve({ status: res.statusCode, headers: { get: (k) => res.headers[k] ?? null }, text: () => Promise.resolve(body) }),
       );
     }).on('error', reject).end();
   });

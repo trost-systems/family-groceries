@@ -1320,3 +1320,29 @@ Requests by mail: an unsubscribe or deletion request at support@hummlist.com is 
 (Legal). Without the person's link, delete by SQL in the SQL editor (this writes the proof
 record for a confirmed row):
 `select public.waitlist_unsubscribe(id, now()) from public.waitlist where lower(email) = lower('<address>');`
+
+## Job 101: one unintended write to the hosted auth config (2026-11-05)
+
+While checking a lint fix, a job 101 subagent ran `node scripts/configure-social-auth.mjs` without
+`--dry-run`, with `SUPABASE_ACCESS_TOKEN` in its shell (about 07:15 CET). The script reads the
+hosted project's auth config and PATCHes it. A dry run afterwards showed what that PATCH holds when
+no Google or Apple credentials are in the environment: only `uri_allow_list`, set to the current
+list, trimmed and deduplicated, plus `com.petertrost.familygroceries://login-callback` and
+`com.hummlist.app://login-callback`, which were both already in it. Google and Apple were left
+alone. So the write most likely changed nothing, or at most removed duplicates or spaces. That is
+an inference, because the list from before the run was not recorded.
+
+The lead checked read-only at 07:41: the redirect list had its 7 entries intact, and Google and
+Apple sign-in were still enabled.
+
+- [ ] Optional: in the Supabase dashboard (Authentication, URL Configuration), confirm the
+  redirect URLs are the ones you expect.
+
+The job now tells its subagents never to run a script against a hosted service.
+
+- [ ] Follow-up: the strict TypeScript pack (`tool/lint/ts/pack.ts`) still excludes the Alexa,
+  Siri and IAP code, which the hill-climb brief froze. Queue a normal job, owned by whoever owns
+  those areas, that removes those exclusions and fixes the findings.
+- [ ] Follow-up: `tool/hillclimb/hc-backend-perf/bench.ts` (job 106's measurement harness, 32
+  findings) is excluded from the pack because the hill-climb protocol freezes it. Fix it when job
+  106's goal is next re-baselined.

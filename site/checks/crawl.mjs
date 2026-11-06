@@ -3,6 +3,7 @@
 // page reachable from /de and /en, plus / and a missing path, in Chromium at 390 and 1440 px,
 // light and dark, under prefers-reduced-motion: reduce. One more run per page at 1440 light with
 // motion allowed checks what demo.js loads once videos play. README.md lists what each run proves.
+import process from 'node:process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -31,8 +32,8 @@ async function newPage(run) {
   });
   await ctx.addInitScript(pageKit);
   await ctx.addInitScript(() => {
-    window.__csp = [];
-    document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(`${e.violatedDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || ''}:${e.lineNumber || ''})`));
+    globalThis.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) => globalThis.__csp.push(`${e.violatedDirective} blocked ${e.blockedURI || 'inline'} (${e.sourceFile || ''}:${e.lineNumber || ''})`));
   });
   await ctx.addInitScript({ path: AXE_PATH });
   const page = await ctx.newPage();
@@ -111,23 +112,23 @@ async function check(path, run) {
     await page.waitForTimeout(600);
     const inView = await demo.evaluate((el) => {
       const v = el.matches('video') ? el : el.querySelector('video');
-      return v ? { selector: window.__kit.sel(v), playing: !v.paused } : null;
+      return v ? { selector: globalThis.__kit.sel(v), playing: !v.paused } : null;
     });
     if (!inView) continue;
     stats.videos++;
     if (run.motion && !inView.playing) r('motion', inView.selector, 'demo video does not play in view with motion allowed');
     if (!run.motion && inView.playing) r('motion', inView.selector, 'video plays in view under reduced motion');
     if (run.motion) {
-      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.evaluate(() => globalThis.scrollTo(0, 0));
       await page.waitForTimeout(600);
       if (await demo.evaluate((el) => !(el.matches('video') ? el : el.querySelector('video')).paused)) {
         r('motion', inView.selector, 'demo video keeps playing out of view');
       }
     }
   }
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => globalThis.scrollTo(0, 0));
   await page.waitForLoadState('networkidle');
-  for (const v of await page.evaluate(() => window.__csp)) r('csp', 'document', v);
+  for (const v of await page.evaluate(() => globalThis.__csp)) r('csp', 'document', v);
   for (const [kind, msg] of errors) r(kind === 'request' ? 'request' : 'console', 'document', msg);
 
   if (!run.motion) {
@@ -155,7 +156,7 @@ async function check(path, run) {
             for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) if (getComputedStyle(a).overflowX !== 'visible') return true;
             return false;
           })();
-          if (!clipped && !e.closest('.skip')) out.push({ selector: window.__kit.sel(e), message: `text box spans ${Math.round(b.left)}..${Math.round(b.right)}px, viewport ${innerWidth}px` });
+          if (!clipped && !e.closest('.skip')) out.push({ selector: globalThis.__kit.sel(e), message: `text box spans ${Math.round(b.left)}..${Math.round(b.right)}px, viewport ${innerWidth}px` });
         }
       }
       return out;
@@ -163,7 +164,7 @@ async function check(path, run) {
     for (const o of over) r('overflow', o.selector, o.message);
 
     const axe = await page.evaluate(async (tags) => {
-      const res = await window.axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] });
+      const res = await globalThis.axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] });
       return res.violations.flatMap((v) => v.nodes.map((n) => ({ id: v.id, selector: n.target.join(' '), message: `${v.id}: ${(n.failureSummary ?? v.help).replace(/\s+/g, ' ').slice(0, 220)}` })));
     }, AXE_TAGS);
     for (const v of axe) r('axe', v.selector, v.message);
@@ -181,7 +182,7 @@ async function check(path, run) {
         const control = e.matches('button, input, select, textarea, summary, [role="button"], .hex, .link-strong') || e.closest('nav, header, footer');
         const min = control ? 48 : 24;
         if (b.width < min - 0.5 || b.height < min - 0.5) {
-          out.push({ selector: window.__kit.sel(e), message: `target ${b.width.toFixed(0)}x${b.height.toFixed(0)} < ${min}px (${control ? 'button or nav, 48 px rule' : 'standalone link, WCAG 2.5.8'}) "${window.__kit.label(e)}"` });
+          out.push({ selector: globalThis.__kit.sel(e), message: `target ${b.width.toFixed(0)}x${b.height.toFixed(0)} < ${min}px (${control ? 'button or nav, 48 px rule' : 'standalone link, WCAG 2.5.8'}) "${globalThis.__kit.label(e)}"` });
         }
       }
       return { out, n };
@@ -191,8 +192,8 @@ async function check(path, run) {
 
     const motion = await page.evaluate(() => [
       ...document.getAnimations().filter((a) => a.playState === 'running' && Number(a.effect?.getComputedTiming().duration) > 1)
-        .map((a) => ({ selector: a.effect.target ? window.__kit.sel(a.effect.target) : '?', message: `${a.constructor.name} ${a.animationName ?? a.transitionProperty ?? ''} running under reduced motion` })),
-      ...[...document.querySelectorAll('video')].filter((v) => !v.paused).map((v) => ({ selector: window.__kit.sel(v), message: 'video plays under reduced motion' })),
+        .map((a) => ({ selector: a.effect.target ? globalThis.__kit.sel(a.effect.target) : '?', message: `${a.constructor.name} ${a.animationName ?? a.transitionProperty ?? ''} running under reduced motion` })),
+      ...[...document.querySelectorAll('video')].filter((v) => !v.paused).map((v) => ({ selector: globalThis.__kit.sel(v), message: 'video plays under reduced motion' })),
     ]);
     for (const m of motion) r('motion', m.selector, m.message);
 
@@ -210,7 +211,7 @@ const shot = async (page, box) => PNG.sync.read(await page.screenshot({ clip: bo
 async function focusProblems(page) {
   const out = [];
   await page.mouse.move(0, 0);
-  await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); });
+  await page.evaluate(() => { document.activeElement?.blur(); globalThis.scrollTo(0, 0); });
   const seen = new Set();
   for (let i = 0; i < 150; i++) {
     await page.keyboard.press('Tab');
@@ -218,7 +219,7 @@ async function focusProblems(page) {
       const e = document.activeElement;
       if (!e || e === document.body) return null;
       e.scrollIntoView({ block: 'center', behavior: 'instant' });
-      return { selector: window.__kit.sel(e), label: window.__kit.label(e), visible: e.matches(':focus-visible') };
+      return { selector: globalThis.__kit.sel(e), label: globalThis.__kit.label(e), visible: e.matches(':focus-visible') };
     });
     if (!info || seen.has(info.selector)) break;
     seen.add(info.selector);
@@ -258,7 +259,7 @@ async function pressProblems(page) {
   const hexes = await page.locator('.hex:has(> .face)').all();
   for (const el of hexes) {
     if (!(await el.isVisible())) continue;
-    const selector = await el.evaluate((e) => window.__kit.sel(e));
+    const selector = await el.evaluate((e) => globalThis.__kit.sel(e));
     await el.scrollIntoViewIfNeeded();
     await page.mouse.move(0, 0);
     const face = el.locator('> .face');

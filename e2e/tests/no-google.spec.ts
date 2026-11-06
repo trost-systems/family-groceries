@@ -5,6 +5,7 @@ import {
   answerConsent,
   fakeCollector,
   itemRow,
+  must,
   newEmail,
   password,
   screenshot,
@@ -64,7 +65,7 @@ test('no request leaves for Google: login, sign-in, a list in many scripts, the 
   await expect(addSheet(page).getByRole('button', { name: /, Wie getippt(,|$)/ })).toBeVisible();
   await screenshot(page, `33c-${browserName}-add-sheet`);
 
-  const own = new URL(baseURL!).host;
+  const own = new URL(must(baseURL, 'baseURL')).host;
   const allowed = new Set([own, new URL(supabaseUrl).host, posthog]);
   const hosts = [...new Set(requests.map((url) => url.host))].sort();
   console.log(`HOSTS ${browserName} ${hosts.map((h) => `${h}=${requests.filter((url) => url.host === h).length}`).join(' ')}`);

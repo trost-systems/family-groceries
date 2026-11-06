@@ -10,6 +10,7 @@
 //
 // Nothing here touches the network: GSAP, tokens and fonts are copied into each project.
 
+import process from 'node:process';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -169,7 +170,7 @@ for (const video of videos.length ? videos : VIDEOS) {
         const report = JSON.parse(out || '{}');
         writeFileSync(join(dir, 'check.json'), JSON.stringify(report, null, 1));
         const errors = [];
-        JSON.stringify(report, (k, v) => (v && v.severity === 'error' && errors.push(v), v));
+        JSON.stringify(report, (_k, v) => (v && v.severity === 'error' && errors.push(v), v));
         if (report.ok === false || errors.length) {
           console.error(JSON.stringify(errors.length ? errors : report, null, 1));
           throw new Error(`${name}: hyperframes check failed`);

@@ -1,6 +1,6 @@
 /** The local Supabase stack: generated workdir, status, SQL, auth and the seed. */
 
-import { type Ctx, FgError, type JsonObject, type Shell } from './core.ts';
+import { type Ctx, FgError, type JsonObject, type Result, type RunResult, type Shell } from './core.ts';
 import { HOUSEHOLD, type Instance, USERS } from './instance.ts';
 
 /** The repo's config.toml with this instance's port block and project id; URLs (e.g. the test OIDC issuer) stay as they are. */
@@ -64,8 +64,8 @@ export async function stackSignature(sh: Shell, inst: Instance): Promise<string>
 export async function mustRun(
   sh: Shell,
   cmd: string[],
-  opts: { cwd?: string; stdin?: string; timeoutMs?: number; signal?: AbortSignal } = {},
-) {
+  opts: { cwd?: string; stdin?: string; timeoutMs?: number; signal?: AbortSignal | undefined } = {},
+): Promise<RunResult> {
   const res = await sh.run(cmd, opts);
   if (res.code !== 0) {
     throw new FgError(
@@ -104,7 +104,12 @@ export async function stackEnv(sh: Shell, inst: Instance): Promise<StackEnv> {
 }
 
 /** Runs SQL in the stack's database container; read-only unless write is set. */
-export async function sql(sh: Shell, inst: Instance, text: string, opts: { write?: boolean; asUser?: string } = {}): Promise<string> {
+export async function sql(
+  sh: Shell,
+  inst: Instance,
+  text: string,
+  opts: { write?: boolean; asUser?: string | undefined } = {},
+): Promise<string> {
   const prelude: string[] = [];
   if (!opts.write) prelude.push('set default_transaction_read_only = on;');
   let body = text.trim().replace(/;\s*$/, '');
@@ -189,7 +194,7 @@ export async function restAs(sh: Shell, env: StackEnv, session: Session, path: s
 }
 
 /** Recreates the database from migrations, then the two users in one household through the real RPCs. */
-export async function seed(ctx: Ctx, inst: Instance): Promise<JsonObject> {
+export async function seed(ctx: Ctx, inst: Instance): Promise<Result> {
   await ctx.act(
     `supabase db reset --workdir ${inst.workdir} (drops all data in ${inst.projectId})`,
     () => mustRun(ctx.sh, ['supabase', 'db', 'reset', '--workdir', inst.workdir], { timeoutMs: 300_000 }),

@@ -4,6 +4,7 @@
 // and succeed. Uses e2e/'s Playwright.
 //
 //   node scripts/widgetbook-shots.mjs [origin, default http://127.0.0.1:57590]
+import process from 'node:process';
 import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';

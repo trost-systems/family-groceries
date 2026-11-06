@@ -2,7 +2,7 @@
 // the Premium gate, strict input, then the operation as the key's member, idempotent for POSTs.
 // Every answer carries X-Request-Id and, once the limits are known, X-RateLimit-*.
 import { PAT_PREFIX, sha256Hex } from '../_shared/auth.ts';
-import { asUser, asUserWithin, serviceDb } from '../_shared/db.ts';
+import { asUser, asUserWithin, oneRow, serviceDb } from '../_shared/db.ts';
 import { ToolError } from '../_shared/list.ts';
 import { type Access, requirePremiumWith } from '../_shared/premium.ts';
 import { ApiError, internalError, noSuchEndpoint, unavailable } from './errors.ts';
@@ -205,9 +205,10 @@ function match(method: string, path: string): { route: Route; id: string | null 
   const candidates = compiled.flatMap(({ route, segments: template }) => {
     if (template.length !== segments.length) return [];
     let id: string | null = null;
-    for (const [i, part] of template.entries()) {
-      if (part === '{id}' && segments[i] !== '') id = segments[i];
-      else if (part !== segments[i]) return [];
+    for (const [i, given] of segments.entries()) {
+      const part = template[i];
+      if (part === '{id}' && given !== '') id = given;
+      else if (part !== given) return [];
     }
     return [{ route, id }];
   });
@@ -267,8 +268,8 @@ async function bodyOf(req: Request): Promise<unknown> {
     chunks.push(value);
   }
   if (size === 0) return undefined;
-  const type = (req.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
-  if (type !== 'application/json') {
+  const [type = ''] = (req.headers.get('content-type') ?? '').split(';');
+  if (type.trim().toLowerCase() !== 'application/json') {
     throw new ApiError(415, 'unsupported_media_type', 'Send the body as application/json.');
   }
   const bytes = new Uint8Array(size);
@@ -376,17 +377,25 @@ function asApiError(e: unknown, deps: Deps): ApiError {
 
 // Production wiring ---------------------------------------------------------------------------
 
-type BeginRow = {
-  outcome: Begin['outcome'];
-  token_id: string | null;
-  user_id: string | null;
-  household_id: string | null;
-  scopes: Scope[] | null;
-  rate_limit: number;
-  rate_remaining: number;
-  rate_reset: number;
-  retry_after: number | null;
-};
+/** api_begin's row; the key's ids and scopes are set exactly when the outcome is limited or ok. */
+type BeginRow =
+  & { rate_limit: number; rate_remaining: number; rate_reset: number; retry_after: number | null }
+  & (
+    | {
+      outcome: 'disabled' | 'blocked' | 'invalid';
+      token_id: string | null;
+      user_id: string | null;
+      household_id: string | null;
+      scopes: Scope[] | null;
+    }
+    | {
+      outcome: 'limited' | 'ok';
+      token_id: string;
+      user_id: string;
+      household_id: string;
+      scopes: Scope[];
+    }
+  );
 
 export function beginOf(row: BeginRow): Begin {
   const rate = { limit: row.rate_limit, remaining: row.rate_remaining, reset: row.rate_reset };
@@ -400,10 +409,10 @@ export function beginOf(row: BeginRow): Begin {
     case 'limited':
     case 'ok': {
       const key = {
-        tokenId: row.token_id!,
-        userId: row.user_id!,
-        householdId: row.household_id!,
-        scopes: row.scopes!,
+        tokenId: row.token_id,
+        userId: row.user_id,
+        householdId: row.household_id,
+        scopes: row.scopes,
       };
       return row.outcome === 'ok'
         ? { outcome: 'ok', rate, key }
@@ -457,10 +466,10 @@ const requirePremium = requirePremiumWith(telemetry);
 
 const defaultDeps: Deps = {
   begin: async (tokenHash, ipHash) => {
-    const [row] = await serviceDb()<BeginRow[]>`
+    const rows = await serviceDb()<BeginRow[]>`
       select * from public.api_begin(${tokenHash}::text, ${ipHash}::text, ${BURST}, ${PER_MINUTE},
         ${PER_DAY}, ${AUTH_FAILURES}, ${AUTH_FAILURE_WINDOW_SECONDS})`;
-    return beginOf(row);
+    return beginOf(oneRow(rows, 'api_begin'));
   },
   premium: (key) => requirePremium({ userId: key.userId, householdId: key.householdId }, 'api'),
   execute: async (execution) => {

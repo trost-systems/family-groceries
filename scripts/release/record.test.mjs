@@ -1,4 +1,6 @@
 // record.mjs against a scratch git repository: stats, contributors, refusals. Run by scripts/release/test.sh.
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';

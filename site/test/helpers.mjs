@@ -55,7 +55,7 @@ export function record(versions, patch = (data) => data) {
       day: dayNumber(data.project.day_zero, date),
       build: i + 1,
       sha,
-      previous_sha: previous,
+      'previous_sha': previous,
       stores: { app_store: true, play: true, web: true },
       stats: { commits: 1, additions: 1, deletions: 0, files_changed: 1, contributors: [] },
       notes: { de: `Version ${version}`, en: `Version ${version}` },
@@ -113,7 +113,7 @@ export function publicWith(files) {
 
 // `since` goes in unquoted, so `since: 1.4` is the number YAML makes of it.
 export function guide({ locale, slug, title = `Title ${slug}`, description = `Description ${slug}`, key = slug, body = `# ${title}\n\nText.\n`, omit = [], since }) {
-  const fields = { title, description, slug, locale, translation_key: key, updated: '2026-10-01' };
+  const fields = { title, description, slug, locale, 'translation_key': key, updated: '2026-10-01' };
   const lines = Object.entries(fields).filter(([k]) => !omit.includes(k)).map(([k, v]) => `${k}: "${v}"`);
   if (since !== undefined) lines.push(`since: ${since}`);
   return `---\n${lines.join('\n')}\n---\n\n${body}`;

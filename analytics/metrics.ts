@@ -131,7 +131,11 @@ export interface RetentionCohort {
  * active in period k when it added or ticked in [start + k·len, start + (k+1)·len), with len
  * 7 or 30 days.
  */
-export function retention(events: Event[], days: 7 | 30, periods: number) {
+export function retention(
+  events: Event[],
+  days: 7 | 30,
+  periods: number,
+): Map<string, RetentionCohort> {
   const kept = external(events);
   const starts = new Map<string, number>();
   for (const e of kept) {
@@ -144,7 +148,9 @@ export function retention(events: Event[], days: 7 | 30, periods: number) {
   for (const e of kept) {
     const household = str(e.properties.household_id);
     if (!household || !active(e)) continue;
-    const k = Math.floor((Date.parse(e.timestamp) - starts.get(household)!) / (days * DAY));
+    const start = starts.get(household);
+    if (start === undefined) continue;
+    const k = Math.floor((Date.parse(e.timestamp) - start) / (days * DAY));
     seen.set(household, (seen.get(household) ?? new Set()).add(k));
   }
   const cohorts = new Map<string, RetentionCohort>();
@@ -304,12 +310,15 @@ export function revenueByMonth(events: Event[]): Map<string, RevenueMonth> {
   return new Map([...months].sort());
 }
 
+export interface Reorders {
+  defaultOrder: number;
+  storeLayout: number;
+  stores: number;
+}
+
 /** queries/reorders.sql: manual reorders per household, by kind. */
-export function reordersByHousehold(events: Event[]) {
-  const households = new Map<
-    string,
-    { defaultOrder: number; storeLayout: number; stores: number }
-  >();
+export function reordersByHousehold(events: Event[]): Map<string, Reorders> {
+  const households = new Map<string, Reorders>();
   for (const e of external(events)) {
     const household = str(e.properties.household_id);
     if (!household) continue;

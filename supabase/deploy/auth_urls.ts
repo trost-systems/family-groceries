@@ -13,10 +13,10 @@ const mobileCallbacks = [
 ];
 
 export type AuthUrls = {
-  site_url: string;
-  uri_allow_list: string;
-  oauth_server_enabled: boolean;
-  oauth_server_authorization_path: string;
+  'site_url': string;
+  'uri_allow_list': string;
+  'oauth_server_enabled': boolean;
+  'oauth_server_authorization_path': string;
 };
 
 export function origin(url: string): string {

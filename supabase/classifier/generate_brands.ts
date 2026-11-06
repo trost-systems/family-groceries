@@ -36,7 +36,10 @@ export function parseBrands(tsv: string): Brand[] {
       throw new Error(`${at}: expected "brand<TAB>product<TAB>store"`);
     }
     const [brand, product = "", store = ""] = fields;
-    if (brand !== brand.trim() || brand.length < 1 || brand.length > 60) {
+    if (
+      brand === undefined || brand !== brand.trim() || brand.length < 1 ||
+      brand.length > 60
+    ) {
       throw new Error(`${at}: invalid brand "${brand}"`);
     }
     // The parser reads a leading number as the Menge ("3 Glocken" would be 3 x "Glocken").

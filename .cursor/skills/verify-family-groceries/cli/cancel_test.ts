@@ -15,7 +15,10 @@ function hooks() {
   const record = { teardowns: 0, removed: false };
   return {
     record,
-    send: (sig: StopSignal) => deliver!(sig),
+    send: (sig: StopSignal) => {
+      if (!deliver) throw new Error('send() before the work listens');
+      deliver(sig);
+    },
     hooks: {
       listen: (on: (sig: StopSignal) => void) => {
         deliver = on;

@@ -4,7 +4,7 @@
 // exactly, also for the partner who synced the merge.
 import { expect, test } from './fixtures';
 import {
-  actionSnackBar, addItem, addSheet, apiAs, closeSheet, createInviteCode, enterItem, itemRow, joinWithCode, newEmail,
+  actionSnackBar, addItem, addSheet, apiAs, closeSheet, createInviteCode, enterItem, itemRow, joinWithCode, must, newEmail,
   screenshot, signUp, signUpWithHousehold,
 } from './helpers';
 
@@ -15,7 +15,7 @@ async function openItems(email: string): Promise<[string, string | null][]> {
   const { data, error } = await api.from('items').select('name, quantity, created_at').eq('status', 'active')
     .order('created_at');
   if (error) throw error;
-  return data!.map((r) => [r.name, r.quantity]);
+  return must(data, 'active items').map((r) => [r.name, r.quantity]);
 }
 
 test('DEDUPE HINT: Karotten with Möhren open is added; ignoring the hint keeps both', async ({ browser }) => {

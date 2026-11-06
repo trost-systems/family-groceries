@@ -49,9 +49,9 @@ export class ApiError extends Error {
   }
 }
 
-export const noSuchEndpoint = () => new ApiError(404, 'not_found', 'No such endpoint.');
+export const noSuchEndpoint = (): ApiError => new ApiError(404, 'not_found', 'No such endpoint.');
 
-export const unavailable = () =>
+export const unavailable = (): ApiError =>
   new ApiError(
     503,
     'unavailable',
@@ -60,5 +60,5 @@ export const unavailable = () =>
     { 'retry-after': '5' },
   );
 
-export const internalError = () =>
+export const internalError = (): ApiError =>
   new ApiError(500, 'internal_error', 'Something went wrong on our side. Retry later.');

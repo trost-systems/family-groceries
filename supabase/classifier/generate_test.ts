@@ -11,7 +11,10 @@ Deno.test("the newest dictionary migration is generated from dictionary.tsv", as
   for await (const entry of Deno.readDir(migrationsUrl)) {
     if (entry.name.includes("_classifier_dictionary")) names.push(entry.name);
   }
-  const newest = names.sort().at(-1)!;
+  const newest = names.sort().at(-1);
+  if (newest === undefined) {
+    throw new Error("no _classifier_dictionary migration");
+  }
   const migration = await Deno.readTextFile(new URL(newest, migrationsUrl));
   const expected = toMigration(
     parseDictionary(await Deno.readTextFile(dictionaryUrl)),
@@ -21,11 +24,11 @@ Deno.test("the newest dictionary migration is generated from dictionary.tsv", as
 
 Deno.test("the dictionary covers every category with several hundred terms", async () => {
   const terms = parseDictionary(await Deno.readTextFile(dictionaryUrl));
-  const perCategory = Object.groupBy(terms, (t) => t.category);
-  assertEquals(Object.keys(perCategory).length, 10);
-  for (const [category, list] of Object.entries(perCategory)) {
-    if (list!.length < 30) {
-      throw new Error(`${category} has only ${list!.length} terms`);
+  const perCategory = Map.groupBy(terms, (t) => t.category);
+  assertEquals(perCategory.size, 10);
+  for (const [category, list] of perCategory) {
+    if (list.length < 30) {
+      throw new Error(`${category} has only ${list.length} terms`);
     }
   }
   if (terms.length < 600) throw new Error(`only ${terms.length} terms`);

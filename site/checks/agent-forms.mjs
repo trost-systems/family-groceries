@@ -34,7 +34,7 @@ export function readConsent(contentDir) {
 
 const axeSerious = (page) =>
   page.evaluate(async () => {
-    const res = await window.axe.run(document, { resultTypes: ['violations'] });
+    const res = await globalThis.axe.run(document, { resultTypes: ['violations'] });
     return res.violations
       .filter((v) => ['serious', 'critical'].includes(v.impact))
       .flatMap((v) => v.nodes.map((n) => `${v.id} (${v.impact}) at ${n.target.join(' ')}: ${v.help}`));

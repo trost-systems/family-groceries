@@ -137,7 +137,7 @@ export class Api {
     return { ...auth, 'content-type': 'application/json', ...extra };
   }
 
-  async call(path: string, init: RequestInit & { token?: string; prefer?: string } = {}): Promise<unknown> {
+  async call(path: string, init: RequestInit & { token?: string | undefined; prefer?: string } = {}): Promise<unknown> {
     const { token, prefer, ...rest } = init;
     const res = await this.send(`${rest.method ?? 'GET'} ${path.split('?')[0]}`, `${this.target.apiUrl}${path}`, {
       ...rest,
@@ -156,11 +156,11 @@ export class Api {
     return text ? JSON.parse(text) : null;
   }
 
-  rest(path: string, init: RequestInit & { token?: string } = {}) {
+  rest(path: string, init: RequestInit & { token?: string | undefined } = {}): Promise<unknown> {
     return this.call(`/rest/v1/${path}`, { prefer: 'return=representation', ...init });
   }
 
-  rpc(fn: string, body: JsonObject, token?: string) {
+  rpc(fn: string, body: JsonObject, token?: string): Promise<unknown> {
     return this.call(`/rest/v1/rpc/${fn}`, { method: 'POST', body: JSON.stringify(body), token });
   }
 

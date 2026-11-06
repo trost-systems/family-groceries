@@ -26,12 +26,11 @@ export function parseSynonyms(tsv: string, terms: Term[]): Synonym[] {
     const line = raw.trimEnd();
     const at = `synonyms.tsv:${index + 1}`;
     if (line === "" || line.startsWith("#")) return;
-    const fields = line.split("\t");
-    if (fields.length !== 2) {
+    const [variant, canonical, ...extra] = line.split("\t");
+    if (variant === undefined || canonical === undefined || extra.length > 0) {
       throw new Error(`${at}: expected "variant<TAB>canonical"`);
     }
-    const [variant, canonical] = fields;
-    for (const term of fields) {
+    for (const term of [variant, canonical]) {
       if (!termPattern.test(term)) {
         throw new Error(`${at}: invalid term "${term}"`);
       }

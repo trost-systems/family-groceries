@@ -1,7 +1,8 @@
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
+import { Buffer } from 'node:buffer';
 import { expect, type Page, test } from './fixtures';
 import {
-  addItem, apiAs, itemRow, newEmail, openMore, openTab, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto, within,
+  addItem, apiAs, firstOf, itemRow, must, newEmail, openMore, openTab, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto, within,
   openEmailSignIn,
 } from './helpers';
 import {
@@ -53,14 +54,14 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await expect(new Client({ name: 'family-groceries-e2e', version: '1.0.0' }).connect(transport))
     .rejects.toThrow(UnauthorizedError);
   expect(provider.client?.client_id, 'registered dynamically').toBeTruthy();
-  const authorizationUrl = provider.authorizationUrl!;
+  const authorizationUrl = must(provider.authorizationUrl, 'authorization URL');
   expect(authorizationUrl.origin + authorizationUrl.pathname).toBe(`${issuer}/oauth/authorize`);
   expect(authorizationUrl.searchParams.get('code_challenge_method')).toBe('S256');
   expect(authorizationUrl.searchParams.get('resource')).toBe(mcpUrl.toString());
 
   // The user approves on the app's consent page, signed in in the same browser.
   const consent = await context.newPage();
-  await openAuthorization(consent, authorizationUrl, baseURL!);
+  await openAuthorization(consent, authorizationUrl, must(baseURL, 'baseURL'));
   await expect(consent.getByText('Claude (E2E)').first()).toBeVisible();
   await expect(consent.getByText(email).first()).toBeVisible();
   await screenshot(consent, 'mcp-01-consent');
@@ -68,10 +69,12 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   const params = await callbackParams(consent);
   expect(params.get('state')).toBe(authorizationUrl.searchParams.get('state'));
 
-  await transport.finishAuth(params.get('code')!);
-  const accessToken = provider.saved!.access_token;
-  const claims = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
-  expect(claims.client_id, 'the access token belongs to the registered client').toBe(provider.client!.client_id);
+  await transport.finishAuth(must(params.get('code'), 'authorization code'));
+  const accessToken = must(provider.saved, 'saved tokens').access_token;
+  const [, payload] = accessToken.split('.');
+  if (payload === undefined) throw new Error('the access token is no JWT');
+  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  expect(claims.client_id, 'the access token belongs to the registered client').toBe(must(provider.client, 'registered client').client_id);
 
   const client = new Client({ name: 'family-groceries-e2e', version: '1.0.0' });
   await client.connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: timedFetch }));
@@ -118,7 +121,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   ).toBeVisible();
   // Job 80: where it was approved and when it was last active, not its scopes.
   await expect.poll(async () => (await db.rpc('connected_app_details')).data)
-    .toEqual([expect.objectContaining({ client_id: provider.client!.client_id, device: 'Chrome · Linux' })]);
+    .toEqual([expect.objectContaining({ client_id: must(provider.client, 'registered client').client_id, device: 'Chrome · Linux' })]);
   const appRow = app.getByRole('button', { name: /^Claude \(E2E\) Chrome · Linux · Verbunden am \S+ · Zuletzt aktiv \S+$/ });
   await expect(appRow).toBeVisible();
   await expect(app.getByText('Deine Anmeldung bestätigen')).toHaveCount(0);
@@ -147,8 +150,8 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: provider.saved!.refresh_token!,
-      client_id: provider.client!.client_id,
+      refresh_token: must(must(provider.saved, 'saved tokens').refresh_token, 'refresh token'),
+      client_id: must(provider.client, 'registered client').client_id,
     }),
   });
   expect(refreshed.ok, 'the refresh token is revoked as well').toBe(false);
@@ -179,7 +182,7 @@ test('a category or store corrected over MCP is learned and used on the next MCP
   expect(named.added.map((i) => [i.category, i.quantity])).toEqual([['Getränke', '3']]);
   await call(client, 'tick_items', { items: ['Zahnpasta'] });
   const remembered = await call<{ added: Item[] }>(client, 'add_items', { items: [{ name: 'Zahnpasta' }] });
-  expect(remembered.added[0].category, 'an explicit category is remembered like a correction').toBe('Getränke');
+  expect(firstOf(remembered.added, 'added item').category, 'an explicit category is remembered like a correction').toBe('Getränke');
 });
 
 test('denying consent sends access_denied back to the client', async ({ browser, baseURL }) => {
@@ -190,7 +193,7 @@ test('denying consent sends access_denied back to the client', async ({ browser,
   await expect(new Client({ name: 'e2e', version: '1' })
     .connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: timedFetch })))
     .rejects.toThrow(UnauthorizedError);
-  await openAuthorization(page, provider.authorizationUrl!, baseURL!);
+  await openAuthorization(page, must(provider.authorizationUrl, 'authorization URL'), must(baseURL, 'baseURL'));
   await page.getByRole('button', { name: 'Ablehnen' }).click();
   const params = await callbackParams(page);
   expect(params.get('error')).toBe('access_denied');
@@ -208,7 +211,7 @@ test('a signed-out user signs in on the way to the consent page and lands back o
   await expect(new Client({ name: 'e2e', version: '1' })
     .connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: timedFetch })))
     .rejects.toThrow(UnauthorizedError);
-  await openAuthorization(page, provider.authorizationUrl!, baseURL!);
+  await openAuthorization(page, must(provider.authorizationUrl, 'authorization URL'), must(baseURL, 'baseURL'));
   await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
@@ -225,7 +228,7 @@ async function createTokenInSettings(page: Page, name: string): Promise<string> 
   await page.getByRole('button', { name: 'Erstellen' }).click();
   const shown = page.getByText(/^fgp_[A-Za-z0-9_-]{43}$/);
   await expect(shown).toBeVisible();
-  return (await shown.textContent())!;
+  return must(await shown.textContent(), 'token text');
 }
 
 test('personal access token: create in settings, use over MCP in both protocol eras, revoke -> 401', async ({ browser }) => {
@@ -244,7 +247,7 @@ test('personal access token: create in settings, use over MCP in both protocol e
   const stores = await call<{ name: string }[]>(modern, 'list_stores');
   expect(stores.map((s) => s.name)).toEqual(['Supermarkt', 'Drogerie']);
   const categories = await call<{ name: string }[]>(modern, 'list_categories');
-  expect(categories[0].name).toBe('Obst & Gemüse');
+  expect(firstOf(categories, 'category').name).toBe('Obst & Gemüse');
 
   await openTab(page, 'Liste');
   await expect(itemRow(page, 'Klopapier')).toBeVisible();
@@ -267,7 +270,7 @@ test('a store the household added, renamed or deleted is what MCP knows by name'
   await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   const db = await apiAs(email);
   const { data: household } = await db.from('household_members').select('household_id').single();
-  const { data: rewe, error } = await db.rpc('add_store', { p_household: household!.household_id, p_name: 'Rewe' });
+  const { data: rewe, error } = await db.rpc('add_store', { p_household: must(household, 'membership').household_id, p_name: 'Rewe' });
   expect(error).toBeNull();
   const client = await connectWithToken(await createTokenInSettings(page, 'Läden'));
 
@@ -296,20 +299,21 @@ test('another household\'s credentials can neither see nor change this household
   await addItem(peter, 'Milch');
   const peterDb = await apiAs(peterEmail);
   const { data: milk } = await peterDb.from('items').select('id').eq('name', 'Milch').single();
+  if (milk === null) throw new Error('no Milch item');
 
   const mallory = await (await browser.newContext()).newPage();
   await signUpWithHousehold(mallory, newEmail('mallory'));
   const client = await connectWithToken(await createTokenInSettings(mallory, 'Fremd'));
 
   expect((await call<{ items: Item[] }>(client, 'list_items', {})).items).toEqual([]);
-  const tick = await call<{ ticked: Item[]; notFound: unknown[] }>(client, 'tick_items', { items: [milk!.id] });
+  const tick = await call<{ ticked: Item[]; notFound: unknown[] }>(client, 'tick_items', { items: [milk.id] });
   expect(tick.ticked).toEqual([]);
   expect(tick.notFound).toHaveLength(1);
-  expect(await callExpectingError(client, 'move_item', { item: milk!.id, category: 'Getränke' }))
+  expect(await callExpectingError(client, 'move_item', { item: milk.id, category: 'Getränke' }))
     .toContain('nicht gefunden');
 
   await expect(itemRow(peter, 'Milch'), 'the other household\'s item is untouched').toBeVisible();
-  const { data } = await peterDb.from('items').select('status, categories(name)').eq('id', milk!.id).single();
+  const { data } = await peterDb.from('items').select('status, categories(name)').eq('id', milk.id).single();
   expect(data).toEqual({ status: 'active', categories: { name: 'Kühlregal' } });
 });
 

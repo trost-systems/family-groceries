@@ -1,6 +1,7 @@
 // scripts/mcp-smoke.sh against a fake MCP server (mcp-smoke-fixture.mjs): all checks pass on a
 // server that behaves like ours, and each check fails on the one breakage it exists to catch.
 // Run: npx -y -p node@22 node --test scripts/mcp-smoke.test.mjs
+import process from 'node:process';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { test } from 'node:test';

@@ -2,7 +2,7 @@
 // the app's session adds, lists, ticks and moves items that the open list shows, a read key
 // cannot write, every answer carries the rate-limit headers, and a burst ends in 429.
 import { expect, test } from './fixtures';
-import { adminClient, apiAs, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { adminClient, apiAs, firstOf, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 
 const api = `${functionsUrl}/api/v1`;
 
@@ -18,7 +18,7 @@ async function apiKey(email: string, scopes: string[]): Promise<string> {
   const client = await apiAs(email);
   const { data, error } = await client.rpc('create_api_token', { p_name: 'e2e', p_scopes: scopes });
   if (error) throw new Error(error.message);
-  return (data as { token: string }[])[0].token;
+  return firstOf(data as { token: string }[], 'token').token;
 }
 
 /** One request through the gateway, which sets X-Real-IP to this machine's address. */
@@ -35,7 +35,7 @@ async function call(
       ...(init.body === undefined ? {} : { 'content-type': 'application/json' }),
       ...init.headers,
     },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
   });
   return { status: res.status, headers: res.headers, body: await res.json() };
 }
@@ -141,8 +141,9 @@ test('unknown keys from one address end in 429; forged addresses, revoked and va
     else expect(answer.status).toBe(401);
   }
   expect(blocked, 'forged X-Forwarded-For and X-Real-IP headers do not dodge the throttle').not.toBeNull();
-  expect(blocked!.body.error.code).toBe('auth_throttled');
-  expect(Number(blocked!.headers.get('retry-after'))).toBeGreaterThan(0);
+  if (blocked === null) throw new Error('never throttled');
+  expect(blocked.body.error.code).toBe('auth_throttled');
+  expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0);
 
   expect((await call(key, 'GET', '/items')).status, 'a valid key from the blocked address works').toBe(200);
   expect((await call(revoked, 'GET', '/items')).body.error.code).toBe('invalid_token');

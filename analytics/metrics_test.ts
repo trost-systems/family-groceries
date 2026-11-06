@@ -217,7 +217,7 @@ Deno.test('every gate query filters internal installs and households (AC10)', as
     'NOT IN (SELECT id FROM internal_installs)',
     'NOT IN (SELECT id FROM internal_households)',
     "toStartOfWeek(toTimeZone(timestamp, 'Europe/Berlin'), 1)",
-  ];
+  ] as const;
   const internal = await Deno.readTextFile(new URL('queries/internal.sql', import.meta.url));
   const definition = internal.slice(
     internal.indexOf('\nWITH') + 1,

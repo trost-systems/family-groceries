@@ -9,7 +9,11 @@ import { buildServer, type Gate, langOf, premiumRequired } from './tools.ts';
 
 const auth: Auth = { userId: 'u', householdId: 'h', via: 'pat' };
 
-const rpc = (method: string, params: Record<string, unknown> = {}, lang?: string) =>
+const rpc = (
+  method: string,
+  params: Record<string, unknown> = {},
+  lang: string | undefined = undefined,
+) =>
   new Request('http://edge/mcp', {
     method: 'POST',
     headers: {
@@ -98,7 +102,7 @@ Deno.test('locked: English for a client that prefers it', async () => {
   const res = await s.handle(
     rpc('tools/call', { name: 'list_items', arguments: {} }, 'en-US,en;q=0.9,de;q=0.5'),
   );
-  assertEquals((await message(res)).result.content[0].text, premiumRequired.en);
+  assertEquals((await message(res)).result.content[0]?.text, premiumRequired.en);
   assert(premiumRequired.en.includes('Hummlist Premium'));
   assert(premiumRequired.de.includes('Hummlist Premium'));
 });

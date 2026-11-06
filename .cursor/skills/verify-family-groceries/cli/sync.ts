@@ -5,7 +5,7 @@
  * report latencies and write index.md / index.html next to the artifacts.
  */
 
-import { type Command, type Ctx, FgError, int, type JsonObject, stopIf, str, usage } from './core.ts';
+import { type Command, type Ctx, entry, FgError, int, type Json, type JsonObject, stopIf, str, usage } from './core.ts';
 import { checkRunId, type Manifest, newFixtureRunId, readManifest, seedScenario, teardownRun } from './fixtures.ts';
 import { withTeardownOnFailure } from './fixture_commands.ts';
 import { loadScenario, type Scenario } from './scenario.ts';
@@ -50,7 +50,7 @@ export async function heldByAncestor(path: string): Promise<boolean> {
 }
 
 /** The box-wide Playwright lock; FG_E2E_LOCK overrides it, as for the e2e gate. */
-export const e2eLockPath = () => Deno.env.get('FG_E2E_LOCK') ?? E2E_LOCK;
+export const e2eLockPath = (): string => Deno.env.get('FG_E2E_LOCK') ?? E2E_LOCK;
 
 /**
  * Takes the box-wide Playwright lock (one browser run at a time); returns its
@@ -76,7 +76,7 @@ export async function takeE2eLock(
     stdin: 'piped',
     stdout: 'piped',
     stderr: 'null',
-    signal,
+    ...(signal === undefined ? {} : { signal }),
   }).spawn();
   const reader = child.stdout.getReader();
   const first = await reader.read().catch(() => ({ done: true, value: undefined }));
@@ -210,7 +210,7 @@ export interface StepResult {
     kind?: string;
     issuedAt: number;
     ack: { at: number; method: string; path: string; status: number } | null;
-    event?: JsonObject | null;
+    event?: { action: Json | undefined; item: Json | undefined; at: number } | null;
   };
   observations?: Observation[];
 }
@@ -252,8 +252,9 @@ async function addEventTimes(api: Api, householdId: string, result: EngineResult
   const used = new Set<unknown>();
   const at = (e: JsonObject) => new Date(e.created_at as string).getTime();
   for (const s of result.steps) {
-    if (!s.action) continue;
-    const step = steps.find((x) => x.line === s.action!.line);
+    const { action } = s;
+    if (!action) continue;
+    const step = steps.find((x) => x.line === action.line);
     if (step?.kind !== 'act' || !EVENT_FOR[step.action]) continue;
     const names = step.action === 'add'
       ? [step.text]
@@ -263,11 +264,11 @@ async function addEventTimes(api: Api, householdId: string, result: EngineResult
       ? [step.item]
       : [];
     const fits = (e: JsonObject) =>
-      !used.has(e.id) && e.action === EVENT_FOR[step.action] && at(e) >= s.action!.issuedAt - 1000 &&
+      !used.has(e.id) && e.action === EVENT_FOR[step.action] && at(e) >= action.issuedAt - 1000 &&
       names.some((n) => n === e.item_name || n.includes(String(e.item_name)));
     const ev = events.find(fits);
     if (ev) used.add(ev.id);
-    s.action.event = ev ? { action: ev.action, item: ev.item_name, at: at(ev) } : null;
+    action.event = ev ? { action: ev.action, item: ev.item_name, at: at(ev) } : null;
     for (const o of s.observations ?? []) {
       o.fromEventMs = ev && o.visibleAt !== null && !o.alreadyHeld ? o.visibleAt - at(ev) : null;
     }
@@ -280,22 +281,31 @@ function stats(values: (number | null | undefined)[]) {
   return { n: xs.length, p50: xs[Math.floor((xs.length - 1) / 2)], max: xs[xs.length - 1], min: xs[0] };
 }
 
+type Latency = Record<'fromAckMs' | 'fromInputMs' | 'fromEventMs', ReturnType<typeof stats>>;
+export interface LatencySummary {
+  perClient: Record<string, Latency>;
+  all: Latency;
+  catchUp: Latency;
+}
+
 /** The latency table: each observing client, all of them together, then catch-up after a reconnect. */
-const latencyRows = (summary: ReturnType<typeof latencySummary>) =>
+const latencyRows = (summary: LatencySummary) =>
   [...Object.entries(summary.perClient), ['all clients (live)', summary.all], ['catch-up after reconnect', summary.catchUp]] as [
     string,
-    ReturnType<typeof latencySummary>['all'],
+    Latency,
   ][];
 
 /** Live propagation per observing client (the acting client's own view and catch-up after a reconnect left out), and catch-up apart (every client, the reconnecting one too). */
-export function latencySummary(result: EngineResult) {
+export function latencySummary(result: EngineResult): LatencySummary {
   // The acting client's own view is optimistic, not propagation; after `online` it is that client catching up.
-  const counts = (s: StepResult, o: Observation) => o.client !== s.action!.client || (isCatchUp(s, o) && s.action!.kind === 'online');
+  const counts = (action: NonNullable<StepResult['action']>, s: StepResult, o: Observation) =>
+    o.client !== action.client || (isCatchUp(s, o) && action.kind === 'online');
   const isCatchUp = (s: StepResult, o: Observation) => Boolean(o.catchUp ?? s.catchUp);
   const observed = (catchUp: boolean) =>
-    result.steps.flatMap((s) =>
-      (s.action ? s.observations ?? [] : []).filter((o) => isCatchUp(s, o) === catchUp && counts(s, o) && !o.alreadyHeld)
-    );
+    result.steps.flatMap((s) => {
+      const { action } = s;
+      return action ? (s.observations ?? []).filter((o) => isCatchUp(s, o) === catchUp && counts(action, s, o) && !o.alreadyHeld) : [];
+    });
   const of = (obs: Observation[]) => ({
     fromAckMs: stats(obs.map((o) => o.fromAckMs)),
     fromInputMs: stats(obs.map((o) => o.fromInputMs)),
@@ -312,10 +322,11 @@ export function latencySummary(result: EngineResult) {
 export const RESOLUTION =
   'Visible = the first rendered frame whose Flutter semantics DOM satisfies the expectation (a MutationObserver in each page, so one frame, ~16 ms, plus the callback). Ack = the acting client\'s first successful REST write after the input, seen by Playwright (a few ms after the response). Event = the item_events row time (local stack only: same clock). All clients run in one Chromium on one machine, so their clocks agree. The summary leaves out the acting client\'s own (optimistic) view and expectations that held before the action ("held already"); delivery after a reconnect is reported apart as catch-up.';
 
-const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+const ENTITIES: Readonly<Record<string, string>> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (c) => ENTITIES[c] ?? c);
 const ms = (v: number | null | undefined) => (typeof v === 'number' ? `${v} ms` : '–');
 
-export function indexMarkdown(meta: JsonObject, result: EngineResult, summary: ReturnType<typeof latencySummary>): string {
+export function indexMarkdown(meta: JsonObject, result: EngineResult, summary: LatencySummary): string {
   const lines = [
     `# fg sync: ${meta.scenario} (${result.ok ? 'PASS' : 'FAIL'})`,
     '',
@@ -368,7 +379,7 @@ export function indexMarkdown(meta: JsonObject, result: EngineResult, summary: R
   return lines.join('\n');
 }
 
-export function indexHtml(meta: JsonObject, result: EngineResult, summary: ReturnType<typeof latencySummary>): string {
+export function indexHtml(meta: JsonObject, result: EngineResult, summary: LatencySummary): string {
   const failed = result.steps.find((s) => !s.ok);
   const around = failed ? result.frames.filter((f) => f.step !== null && f.step >= failed.index - 1) : [];
   const card = (f: EngineResult['frames'][number]) =>
@@ -458,9 +469,17 @@ export function scenarioShape(scenario: Scenario): Manifest {
   (scenario.households ?? []).forEach((h, i) => {
     const key = h.handle ?? (i === 0 ? 'home' : `home${i + 1}`);
     shape.households[key] = { id: '', name: h.name, members: h.members };
-    for (const member of h.members) shape.users[member].household = key;
+    for (const member of h.members) entry(shape.users, member, 'user').household = key;
   });
   return shape as unknown as Manifest;
+}
+
+/** Pairs the picked members with A, B, C; pickClients never picks more members than letters. */
+function lettered(members: readonly string[]): { label: string; handle: string }[] {
+  return members.flatMap((handle, i) => {
+    const label = LETTERS[i];
+    return label === undefined ? [] : [{ label, handle }];
+  });
 }
 
 /**
@@ -469,7 +488,7 @@ export function scenarioShape(scenario: Scenario): Manifest {
  */
 export function pickClients(m: Manifest, raw: string): { household: string | null; members: string[] } {
   const households = Object.entries(m.households);
-  const homeless = Object.keys(m.users).filter((h) => !m.users[h].household);
+  const homeless = Object.entries(m.users).filter(([, u]) => !u.household).map(([h]) => h);
   if (/^\d+$/.test(raw)) {
     const n = Number(raw);
     if (n < 1 || n > LETTERS.length) {
@@ -484,14 +503,18 @@ export function pickClients(m: Manifest, raw: string): { household: string | nul
     );
   }
   const members = raw.split(',').map((x) => x.trim()).filter(Boolean);
-  if (!members.length || members.length > LETTERS.length) {
+  const [first] = members;
+  if (first === undefined || members.length > LETTERS.length) {
     throw usage(`--clients takes 1-${LETTERS.length} handles.`, 'e.g. --clients mia,noah');
   }
-  for (const h of members) {
-    if (!m.users[h]) throw usage(`No member "${h}" in ${m.scenario}.`, `Members: ${Object.keys(m.users).join(', ')}.`);
-  }
-  const home = m.users[members[0]].household;
-  if (members.some((h) => m.users[h].household !== home)) {
+  const homeOf = (h: string) => {
+    const user = m.users[h];
+    if (!user) throw usage(`No member "${h}" in ${m.scenario}.`, `Members: ${Object.keys(m.users).join(', ')}.`);
+    return user.household;
+  };
+  const homes = members.map(homeOf);
+  const home = homeOf(first);
+  if (homes.some((h) => h !== home)) {
     throw usage(
       'Sync clients must share one household (or all have none).',
       `Households: ${households.map(([k, h]) => `${k}: ${h.members.join(',')}`).join('; ')}.`,
@@ -561,13 +584,13 @@ export const syncCommands: Command[] = [{
     // Clients and script are checked against the scenario before anything is seeded or built.
     const shape = scenarioShape(scenario);
     const preview = pickClients(shape, clientsRaw);
-    parseScript(scriptText, preview.members.map((h, i) => ({ label: LETTERS[i], handle: h })));
+    parseScript(scriptText, lettered(preview.members));
     const given = str(args, 'web-build');
     if (given && !(await ctx.sh.exists(`${given}/main.dart.js`))) {
       throw usage(`--web-build ${given} has no main.dart.js.`, 'Build it first, or leave the flag out.');
     }
     if (ctx.dryRun) {
-      const steps = parseScript(scriptText, preview.members.map((h, i) => ({ label: LETTERS[i], handle: h })));
+      const steps = parseScript(scriptText, lettered(preview.members));
       ctx.actions.push(
         given ? `serve ${given}` : `build the web app for ${kind} if stale`,
         `take ${e2eLockPath()} (wait up to ${int(args, 'lock-wait', 1200)} s)`,
@@ -605,6 +628,7 @@ export const syncCommands: Command[] = [{
       let server: Awaited<ReturnType<typeof serve>> | null = null;
       let engine: { code: number; stdout: string; stderr: string };
       let out = '';
+      let manifest: Manifest;
       let picked: ReturnType<typeof pickClients>;
       let labels: { label: string; handle: string }[];
       let steps: Step[];
@@ -623,8 +647,9 @@ export const syncCommands: Command[] = [{
           }
           m = seeded.manifest;
         }
-        picked = pickClients(m, clientsRaw);
-        labels = picked.members.map((h, i) => ({ label: LETTERS[i], handle: h }));
+        manifest = m;
+        picked = pickClients(manifest, clientsRaw);
+        labels = lettered(picked.members);
         steps = parseScript(scriptText, labels);
         out = `${ctx.inst.evidenceRoot}/${run}/sync`;
         for (let n = 2; await ctx.sh.exists(out); n++) out = `${ctx.inst.evidenceRoot}/${run}/sync-${n}`;
@@ -640,7 +665,7 @@ export const syncCommands: Command[] = [{
             supabaseUrl: t.apiUrl,
             fontFile: (await ctx.sh.exists(FONT)) ? FONT : null,
             clients: labels.map(({ label, handle }) => {
-              const u = m!.users[handle];
+              const u = entry(manifest.users, handle, 'user');
               return {
                 label,
                 ref: `${run}:${handle}`,
@@ -648,7 +673,7 @@ export const syncCommands: Command[] = [{
                 email: u.email,
                 password: u.password,
                 locale: u.locale,
-                store: m!.views[handle]?.store ?? null,
+                store: manifest.views[handle]?.store ?? null,
               };
             }),
             steps,
@@ -678,14 +703,18 @@ export const syncCommands: Command[] = [{
       }
       const result = JSON.parse(await ctx.sh.readText(`${out}/result.json`)) as EngineResult;
       const api = new Api(ctx.sh, t);
-      if (t.kind === 'local' && picked.household) await addEventTimes(api, m.households[picked.household].id, result, steps);
+      if (t.kind === 'local' && picked.household) {
+        await addEventTimes(api, entry(manifest.households, picked.household, 'household').id, result, steps);
+      }
       const summary = latencySummary(result);
       const meta = { scenario: scenario.name, run, target: kind, script: scriptPath };
       await ctx.sh.writeText(`${out}/result.json`, JSON.stringify(result, null, 2));
       await ctx.sh.writeText(`${out}/index.md`, indexMarkdown(meta, result, summary));
       await ctx.sh.writeText(`${out}/index.html`, indexHtml(meta, result, summary));
       // The artifacts get copied into PRs: none may carry a seeded password or the service key.
-      const secrets = [t.secretKey, ...labels.map(({ handle }) => m!.users[handle].password)].filter((x) => x.length >= 8);
+      const secrets = [t.secretKey, ...labels.map(({ handle }) => entry(manifest.users, handle, 'user').password)].filter((x) =>
+        x.length >= 8
+      );
       for (const file of ['result.json', 'index.md', 'index.html']) {
         const text = await ctx.sh.readText(`${out}/${file}`);
         if (secrets.some((x) => text.includes(x))) {

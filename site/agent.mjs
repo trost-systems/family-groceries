@@ -1,6 +1,7 @@
 // The site as AI agents read it (job 93): a Markdown twin of every page, llms.txt, llms-full.txt,
 // sitemap.xml, robots.txt, JSON-LD and, with the public API on, openapi.yaml. The checks below read
 // only the built dist/, the way an agent sees the site, so they catch what the generators miss.
+import process from 'node:process';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -174,7 +175,7 @@ const pageOrder = (a, b) =>
 
 function llmsTxt(head, published, siteUrl, publicApi) {
   const item = (name, url, notes) => `- [${name}](${url}): ${notes}`;
-  const sections = SECTIONS.map(({ title, takes }) => ({
+  const sections = SECTIONS.map(({ title }) => ({
     title,
     items: published
       .filter((p) => SECTIONS.find((s) => s.takes(p)).title === title)

@@ -2,9 +2,9 @@
 // reads or adds items copes: MCP (list_stores, add/list/move with and without a store; the AI
 // assistants use these), voice and Siri, and Alexa's read-back. Runs the functions' real code as a
 // signed-in user against the local stack (FG_DB_TEST=1, see add_paths_integration_test.ts).
-import { assertEquals, assertRejects } from '@std/assert';
+import { assertEquals, assertExists, assertRejects } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from './db.ts';
+import { asUser, databaseUrl } from './db.ts';
 import { addItems as mcpAddItems, listItems, moveItem, stores, ToolError } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { openItems } from '../alexa/store.ts';
@@ -14,13 +14,14 @@ const enabled = Deno.env.get('FG_DB_TEST') === '1';
 async function withStorelessHousehold(
   work: (userId: string, householdId: string) => Promise<void>,
 ) {
-  const admin = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
+  const admin = postgres(databaseUrl(), { max: 1, prepare: false });
   const userId = crypto.randomUUID();
   try {
     await admin`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
     const householdId = await asUser(userId, async (tx) => {
       const [row] = await tx<{ id: string }[]>`
         select id from public.create_household(p_name => '58', p_default_stores => false)`;
+      assertExists(row);
       return row.id;
     });
     await work(userId, householdId);
@@ -45,7 +46,7 @@ Deno.test({
         const { added } = await mcpAddItems(tx, householdId, [{ name: 'Zahnpasta' }, {
           name: 'Balea Duschgel',
         }]);
-        assertEquals(added.map((i) => i.store), [null, null]);
+        assertEquals(added.map((i) => i?.store), [null, null]);
         const listed = await listItems(tx, householdId, {});
         assertEquals(listed.items.map((i) => i.name).sort(), ['Duschgel', 'Zahnpasta']);
         const moved = await moveItem(tx, householdId, { item: 'Zahnpasta', store: null });

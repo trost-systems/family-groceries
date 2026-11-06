@@ -1,6 +1,6 @@
 /** Bring-up, teardown, health: setup, up, down, doctor, env, seed. */
 
-import { type Command, type Ctx, FgError, type JsonObject, str, usage } from './core.ts';
+import { type Command, type Ctx, FgError, type JsonObject, type Result, str, usage } from './core.ts';
 import {
   ANDROID_ABI,
   type ClientName,
@@ -77,7 +77,7 @@ function parseClients(raw: string | undefined): ClientName[] {
   return names.map(clientName);
 }
 
-type Check = { name: string; ok: boolean; detail: string; fix?: string };
+type Check = { name: string; ok: boolean; detail: string; fix?: string | undefined };
 
 async function httpOk(ctx: Ctx, url: string, headers: Record<string, string> = {}): Promise<{ ok: boolean; detail: string }> {
   try {
@@ -150,7 +150,7 @@ async function doctorChecks(ctx: Ctx): Promise<Check[]> {
     add('mailpit', mail.ok, mail.ok ? inst.mailUrl : mail.detail, '`fg logs --service inbucket`');
 
     const files = (await sh.run(['ls', `${inst.repo}/supabase/migrations`])).stdout.split('\n').filter((f) => f.endsWith('.sql')).map((f) =>
-      f.split('_')[0]
+      f.split('_')[0] ?? ''
     );
     const applied = await sqlRows(sh, inst, 'select version from supabase_migrations.schema_migrations').then(
       (r) => r.map((x) => String(x.version)),
@@ -236,7 +236,7 @@ export const lifecycleCommands: Command[] = [
         const [bin, pkg] of [['Xvfb', 'xvfb'], ['ffmpeg', 'ffmpeg'], ['clang++', 'clang'], ['cmake', 'cmake'], ['ninja', 'ninja-build'], [
           'pkg-config',
           'pkg-config',
-        ]]
+        ]] as const
       ) {
         if (!(await has(bin))) apt.push(pkg);
       }
@@ -341,7 +341,7 @@ export const lifecycleCommands: Command[] = [
         if (!ctx.dryRun) env = await stackEnv(ctx.sh, inst);
         state.stack = signature;
       }
-      let seeded: JsonObject | null = null;
+      let seeded: Result | null = null;
       if (args.flags.fresh || !env || !(await usersReady(ctx, env))) {
         seeded = await seed(ctx, inst);
         state.seededAt = new Date().toISOString();
@@ -363,7 +363,10 @@ export const lifecycleCommands: Command[] = [
         );
       }
       if (!ctx.dryRun) env = await stackEnv(ctx.sh, inst);
-      const anyAlive = (await Promise.all(Object.values(state.clients).map((c) => clientAlive(ctx.sh, inst, c!)))).some(Boolean);
+      const anyAlive =
+        (await Promise.all(Object.values(state.clients).filter((c) => c !== undefined).map((c) => clientAlive(ctx.sh, inst, c)))).some(
+          Boolean,
+        );
       const run = str(args, 'run');
       if (run || !anyAlive) state.run = run ?? newRunId();
       const clients: JsonObject = {};

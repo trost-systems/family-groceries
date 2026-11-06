@@ -2,6 +2,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import WebSocket from 'ws';
 import { fakeOidcPort, localSecretKey, stack } from '../stack';
 
@@ -9,6 +11,19 @@ export const { url: supabaseUrl, key: publishableKey, mailpit } = stack;
 export const functionsUrl = `${supabaseUrl}/functions/v1`;
 
 export const password = 'test-password-123';
+
+/** [value], or fails the test with [what] when it is null or undefined. */
+export function must<T>(value: T | null | undefined, what: string): T {
+  if (value === null || value === undefined) throw new Error(`no ${what}`);
+  return value;
+}
+
+/** The first of [rows]; fails the test with [what] when there is none. */
+export function firstOf<T>(rows: readonly T[] | null, what: string): T {
+  const row = rows?.[0];
+  if (row === undefined) throw new Error(`no ${what}`);
+  return row;
+}
 
 export function newEmail(tag: string): string {
   return `${tag}-${randomUUID().slice(0, 8)}@example.test`;
@@ -26,7 +41,7 @@ export async function apiAs(email: string): Promise<SupabaseClient> {
   return client;
 }
 
-export const addField = (page: Page) => page.getByRole('textbox', { name: 'Was brauchst du?' });
+export const addField = (page: Page): Locator => page.getByRole('textbox', { name: 'Was brauchst du?' });
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
@@ -34,7 +49,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * the item name, a space, then the quantity. A row under "Zuletzt verwendet" is a button ending in
  * "Wieder auf die Liste" and is not one (`usedRow`).
  */
-export const itemRow = (page: Page, name: string) =>
+export const itemRow = (page: Page, name: string): Locator =>
   page.getByRole('checkbox', { name: new RegExp(`^(?!.* ${usedAction}$)${escape(name)}( |$)`) });
 
 const usedAction = 'Wieder auf die Liste';
@@ -43,7 +58,7 @@ const usedAction = 'Wieder auf die Liste';
  * A ticked item's row under "Zuletzt verwendet" (job 29b): the list's own row, faded, named like
  * it plus "Wieder auf die Liste". A tap puts the item back on the list.
  */
-export const usedRow = (page: Page, name: string) =>
+export const usedRow = (page: Page, name: string): Locator =>
   page.getByRole('button', { name: new RegExp(`^${escape(name)}( .*)? ${usedAction}$`) });
 
 /**
@@ -64,7 +79,7 @@ export async function putBack(page: Page, name: string): Promise<void> {
  * getByText finds only the screen-reader announcement, an off-screen copy the engine clears
  * after a few hundred milliseconds.
  */
-export const actionSnackBar = (page: Page, text: string) => page.getByRole('group', { name: text, exact: true });
+export const actionSnackBar = (page: Page, text: string): Locator => page.getByRole('group', { name: text, exact: true });
 
 /**
  * The height of the bar above the list (`_Header.height` in app/lib/list/list_screen.dart): the
@@ -74,7 +89,7 @@ export const listBarHeight = 44;
 
 /** The list's visible band: from the bar above it to the top of the add bar, 12 px above its field. */
 export async function listArea(page: Page): Promise<{ top: number; bottom: number }> {
-  const field = (await addField(page).boundingBox())!;
+  const field = await boxOf(addField(page));
   return { top: listBarHeight, bottom: field.y - 12 };
 }
 
@@ -98,7 +113,7 @@ export async function boxIfBuilt(target: Locator): Promise<{ x: number; y: numbe
  */
 export async function reveal(page: Page, target: Locator, margin = 0): Promise<void> {
   const { top, bottom } = await listArea(page);
-  await page.mouse.move(page.viewportSize()!.width / 2, (top + bottom) / 2);
+  await page.mouse.move(must(page.viewportSize(), 'viewport').width / 2, (top + bottom) / 2);
   let lastY: number | undefined;
   for (let i = 0; i < 40; i++) {
     const box = await boxIfBuilt(target);
@@ -127,14 +142,14 @@ export async function tick(page: Page, name: string): Promise<void> {
 }
 
 /** A store's divider by its name; its accessible name is "<store>, <n> Artikel". */
-export const storeDivider = (page: Page, store: string) =>
+export const storeDivider = (page: Page, store: string): Locator =>
   page.getByRole('button', { name: new RegExp(`^${escape(store)}, \\d+ Artikel`) });
 
 /** The edit sheet (job 15): a group whose rect is exactly the sheet's content. */
-export const editSheet = (page: Page) => page.getByRole('group', { name: 'Bearbeiten', exact: true });
+export const editSheet = (page: Page): Locator => page.getByRole('group', { name: 'Bearbeiten', exact: true });
 
 /** A field of the edit sheet by its label: Bezeichnung, Marke, Menge, Eigenschaften. */
-export const editField = (page: Page, label: string) => editSheet(page).getByRole('textbox', { name: label });
+export const editField = (page: Page, label: string): Locator => editSheet(page).getByRole('textbox', { name: label });
 
 /**
  * Flutter web fills a text field's <input> only while it is being edited, so a prefilled value is
@@ -189,6 +204,12 @@ export async function saveEdit(page: Page): Promise<void> {
 }
 
 type Point = { x: number; y: number };
+type Box = Point & { width: number; height: number };
+
+/** [target]'s bounding box; fails the test when it is not on the page. */
+export async function boxOf(target: Locator): Promise<Box> {
+  return must(await target.boundingBox(), `bounding box of ${target}`);
+}
 
 /**
  * One finger on a phone's browser (job 29c): it lands on the first point, waits [hold] ms, slides
@@ -203,17 +224,20 @@ export async function finger(
   points: Point[],
   { hold = 0, steps = 10, pause = 50, onMove }: { hold?: number; steps?: number; pause?: number; onMove?: () => Promise<void> } = {},
 ): Promise<void> {
-  const path: Point[] = [points[0]];
-  for (let i = 1; i < points.length; i++) {
-    const [a, b] = [points[i - 1], points[i]];
-    for (let s = 1; s <= steps; s++) path.push({ x: a.x + ((b.x - a.x) * s) / steps, y: a.y + ((b.y - a.y) * s) / steps });
+  const [start, ...rest] = points;
+  if (start === undefined) throw new Error('finger needs a point to land on');
+  const path: Point[] = [start];
+  let from = start;
+  for (const to of rest) {
+    for (let s = 1; s <= steps; s++) path.push({ x: from.x + ((to.x - from.x) * s) / steps, y: from.y + ((to.y - from.y) * s) / steps });
+    from = to;
   }
-  const last = path[path.length - 1];
+  const last = path.at(-1) ?? start;
   if (page.context().browser()?.browserType().name() === 'chromium') {
     const cdp = await page.context().newCDPSession(page);
     const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', at?: Point) =>
       cdp.send('Input.dispatchTouchEvent', { type, touchPoints: at ? [{ x: at.x, y: at.y, id: 1 }] : [] });
-    await touch('touchStart', path[0]);
+    await touch('touchStart', start);
     await page.waitForTimeout(hold);
     for (const at of path.slice(1)) {
       await touch('touchMove', at);
@@ -229,14 +253,15 @@ export async function finger(
     const w = window as unknown as { fingerTarget?: Element };
     // A finger's events go to the element it landed on. Once that element leaves the page (the
     // engine rebuilds a row's semantics node when the item lifts), the browser hit-tests again.
-    if (type === 'pointerdown' || !w.fingerTarget?.isConnected) w.fingerTarget = document.elementFromPoint(x, y) ?? document.body;
-    w.fingerTarget!.dispatchEvent(new PointerEvent(type, {
+    const target = type === 'pointerdown' || !w.fingerTarget?.isConnected ? document.elementFromPoint(x, y) ?? document.body : w.fingerTarget;
+    w.fingerTarget = target;
+    target.dispatchEvent(new PointerEvent(type, {
       pointerId: 29, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true, composed: true,
       clientX: x, clientY: y, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1,
       width: 20, height: 20, pressure: type === 'pointerup' ? 0 : 0.5,
     }));
   }, [type, at.x, at.y] as const);
-  await send('pointerdown', path[0]);
+  await send('pointerdown', start);
   await page.waitForTimeout(hold);
   for (const at of path.slice(1)) {
     await send('pointermove', at);
@@ -249,13 +274,13 @@ export async function finger(
 
 /** A finger held still on the middle of [target] for 700 ms, then lifted. */
 export async function fingerHold(page: Page, target: Locator): Promise<void> {
-  const b = (await target.boundingBox())!;
+  const b = await boxOf(target);
   await finger(page, [{ x: b.x + b.width / 2, y: b.y + b.height / 2 }], { hold: 700 });
 }
 
 /** A finger swipe to the left across most of [target]'s width, along its middle. */
 export async function swipeLeft(page: Page, target: Locator, options: { pause?: number; onMove?: () => Promise<void> } = {}): Promise<void> {
-  const b = (await target.boundingBox())!;
+  const b = await boxOf(target);
   const y = b.y + b.height / 2;
   await finger(page, [{ x: b.x + b.width - 30, y }, { x: b.x + 30, y }], options);
 }
@@ -272,11 +297,11 @@ export async function nextFrames(page: Page): Promise<void> {
 export async function holdFrames(page: Page): Promise<() => Promise<number>> {
   await page.evaluate(() => {
     const w = window as unknown as { __release: () => number };
-    const raf = window.requestAnimationFrame.bind(window);
+    const raf = globalThis.requestAnimationFrame.bind(globalThis);
     const held: FrameRequestCallback[] = [];
-    window.requestAnimationFrame = (callback) => (held.push(callback), 0);
+    globalThis.requestAnimationFrame = (callback) => (held.push(callback), 0);
     w.__release = () => {
-      window.requestAnimationFrame = raf;
+      globalThis.requestAnimationFrame = raf;
       return held.splice(0).map((callback) => raf(callback)).length;
     };
   });
@@ -358,7 +383,7 @@ export async function touchSwipeUp(page: Page): Promise<void> {
 export type ConsentChoice = 'accept' | 'decline';
 
 /** The analytics consent screen (job 19), asked once per install right after sign-in. */
-export const consentScreen = (page: Page) => page.getByRole('button', { name: 'Erlauben', exact: true });
+export const consentScreen = (page: Page): Locator => page.getByRole('button', { name: 'Erlauben', exact: true });
 
 /**
  * Answers the analytics consent, which a fresh browser context sees after its first sign-in, and
@@ -475,7 +500,7 @@ function decodeEvents(raw: string): Captured[] {
 export type Collector = { requests: string[]; events: Captured[]; leaks: string[]; bodies: string[] };
 
 /** The names of what [collector] received, in order. */
-export const eventNames = (collector: Collector) => collector.events.map((e) => e.event);
+export const eventNames = (collector: Collector): string[] => collector.events.map((e) => e.event);
 
 /** Signs up, creates a household with [stores] (none by default, see [createHousehold]) and goes on to the list. */
 export async function signUpWithHousehold(page: Page, email: string, { stores }: { stores?: string[] } = {}): Promise<void> {
@@ -502,7 +527,7 @@ export const chainStores = ['dm', 'Lidl', 'EDEKA'];
  */
 export async function createHousehold(
   page: Page,
-  { name, stores = [] }: { name?: string; stores?: string[] } = {},
+  { name, stores = [] }: { name?: string; stores?: string[] | undefined } = {},
 ): Promise<void> {
   await expect(page).toHaveURL(/\/welcome(\?|$)/);
   await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
@@ -538,7 +563,7 @@ export async function skipInvite(page: Page): Promise<void> {
  * The household name the join screen shows for a good code. Its card is one text node on the web:
  * "Einladung in den Haushalt Familie Trost".
  */
-export const invitePreview = (page: Page, household: string) =>
+export const invitePreview = (page: Page, household: string): Locator =>
   page.getByText(new RegExp(`Einladung in den Haushalt\\s*${escape(household)}$`));
 
 /**
@@ -566,13 +591,13 @@ export async function confirmJoin(page: Page, household?: string): Promise<void>
 }
 
 /** The add sheet (job 17): a group whose rect is the sheet's content, open while adding. */
-export const addSheet = (page: Page) => page.getByRole('group', { name: 'Hinzufügen', exact: true });
+export const addSheet = (page: Page): Locator => page.getByRole('group', { name: 'Hinzufügen', exact: true });
 
 /**
  * The sheet's line about the last add, as shown: "✓ Hinzugefügt: Milch → Lidl" (with Rückgängig)
  * or "Butter steht schon auf der Liste". Any such line by default.
  */
-export const addedNote = (page: Page, line: string | RegExp = /^✓ Hinzugefügt: | steht schon auf der Liste$/) =>
+export const addedNote = (page: Page, line: string | RegExp = /^✓ Hinzugefügt: | steht schon auf der Liste$/): Locator =>
   addSheet(page).getByText(line, { exact: true });
 
 /**
@@ -621,7 +646,7 @@ export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> 
  * can wait forever.
  */
 export async function wheelTo(page: Page, target: Locator): Promise<void> {
-  const size = page.viewportSize()!;
+  const size = must(page.viewportSize(), 'viewport');
   // From 840 px there is no tab bar (a rail): don't wait for one.
   const tabs = await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 200 }).catch(() => null);
   const bottom = tabs ? tabs.y : size.height;
@@ -663,7 +688,7 @@ export async function openPremium(page: Page): Promise<void> {
 const inviteCode = /^Code [A-HJ-NP-Z2-9]{8}$/;
 
 /** Invite cards' code labels ("Code ABCD2345"), or the one for [code]. */
-export const inviteCodeLabel = (page: Page, code?: string) => {
+export const inviteCodeLabel = (page: Page, code?: string): Locator => {
   const name = code === undefined ? inviteCode : `Code ${code}`;
   return page.getByRole('group', { name }).or(page.getByText(name, { exact: true }));
 };
@@ -693,7 +718,7 @@ export async function createInviteCode(page: Page): Promise<string> {
   await expect.poll(async () => (created = (await shownInviteCodes(page)).find((c) => !before.includes(c))))
     .toBeTruthy();
   await openTab(page, 'Liste');
-  return created!;
+  return must(created, 'new invite code');
 }
 
 export async function screenshot(page: Page, name: string): Promise<void> {
@@ -718,8 +743,9 @@ export async function latestLinkFor(email: string): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt++) {
     const res = await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`);
     const { messages } = await res.json() as { messages: { ID: string }[] };
-    if (messages.length > 0) {
-      const message = await (await fetch(`${mailpit}/api/v1/message/${messages[0].ID}`)).json() as { Text: string };
+    const [newest] = messages;
+    if (newest !== undefined) {
+      const message = await (await fetch(`${mailpit}/api/v1/message/${newest.ID}`)).json() as { Text: string };
       const link = message.Text.match(/https?:\/\/\S+\/auth\/v1\/verify\S+/)?.[0];
       if (link) return link;
     }

@@ -13,9 +13,10 @@
 //
 // Frames are seeked: every CSS/Web Animation is paused and set to the time, or the page's own
 // window.scene.seek(ms) is called when it exists. Needs `npm ci` in e2e/ once.
+import process from 'node:process';
 import { createRequire } from 'node:module';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname, resolve, basename } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -25,10 +26,11 @@ const { chromium } = createRequire(resolve(root, 'e2e/package.json'))('@playwrig
 const BOOL = new Set(['still', 'dark', 'reduced']);
 const opts = {};
 const positional = [];
-for (let a = process.argv.slice(2), i = 0; i < a.length; i++) {
-  if (!a[i].startsWith('--')) positional.push(a[i]);
-  else if (BOOL.has(a[i].slice(2))) opts[a[i].slice(2)] = true;
-  else opts[a[i].slice(2)] = a[++i];
+const argv = process.argv.slice(2);
+for (let i = 0; i < argv.length; i++) {
+  if (!argv[i].startsWith('--')) positional.push(argv[i]);
+  else if (BOOL.has(argv[i].slice(2))) opts[argv[i].slice(2)] = true;
+  else opts[argv[i].slice(2)] = argv[++i];
 }
 const flag = (name, def) => opts[name] ?? def;
 const num = (name, def) => (opts[name] === undefined ? def : Number(opts[name]));
@@ -72,7 +74,7 @@ async function film(target) {
   const select = flag('select');
   const shot = async (ms) => {
     await page.evaluate(async (t) => {
-      if (window.scene?.seek) return void (await window.scene.seek(t));
+      if (globalThis.scene?.seek) return void (await globalThis.scene.seek(t));
       for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; }
     }, ms);
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -86,7 +88,9 @@ async function film(target) {
     console.log(`still: ${out}.png${hasFfmpeg ? ` ${out}.webp` : ''}`);
   }
   if (flag('every')) {
-    const every = num('every', 500), count = num('count', 24), from = num('from', 0);
+    const every = num('every', 500);
+    const count = num('count', 24);
+    const from = num('from', 0);
     const dir = `${out}-frames`;
     mkdirSync(dir, { recursive: true });
     const frames = [];
@@ -99,14 +103,16 @@ async function film(target) {
     await sheet(frames, `${out}-sheet.png`, num('cols', width > 500 ? 3 : 5), width);
   }
   if (flag('seam')) {
-    const a = await shot(0), b = await shot(num('seam', 0));
+    const a = await shot(0);
+    const b = await shot(num('seam', 0));
     const pct = await diff(a, b);
     console.log(`seam: ${pct.toFixed(2)} % of pixels differ between 0 ms and ${flag('seam')} ms`);
     if (pct > 0.5) process.exitCode = 1;
   }
   if (flag('video')) {
     if (!hasFfmpeg) throw new Error('--video needs ffmpeg on PATH');
-    const fps = num('fps', 30), seconds = num('video', 12);
+    const fps = num('fps', 30);
+    const seconds = num('video', 12);
     const dir = `${out}-video-frames`;
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });

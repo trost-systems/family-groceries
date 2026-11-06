@@ -1,6 +1,12 @@
-import { assertEquals, assertMatch, assertStringIncludes } from '@std/assert';
+import { assertEquals, assertExists, assertMatch, assertStringIncludes } from '@std/assert';
 import { type Auth, AuthError } from '../_shared/auth.ts';
 import { type Deps, handle, publicOriginFromEnv } from './handler.ts';
+
+function headerOf(res: Response, name: string): string {
+  const value = res.headers.get(name);
+  assertExists(value, `no ${name} header`);
+  return value;
+}
 
 const RESOURCE = 'https://ref.supabase.co/functions/v1/mcp';
 const METADATA = `${RESOURCE}/.well-known/oauth-protected-resource`;
@@ -10,10 +16,10 @@ const PUBLIC_METADATA = `${PUBLIC}/.well-known/oauth-protected-resource`;
 const USER = { userId: 'u', householdId: 'h' };
 const AS_METADATA = {
   issuer: ISSUER,
-  authorization_endpoint: `${ISSUER}/oauth/authorize`,
-  token_endpoint: `${ISSUER}/oauth/token`,
-  registration_endpoint: `${ISSUER}/oauth/clients/register`,
-  grant_types_supported: ['authorization_code', 'refresh_token'],
+  'authorization_endpoint': `${ISSUER}/oauth/authorize`,
+  'token_endpoint': `${ISSUER}/oauth/token`,
+  'registration_endpoint': `${ISSUER}/oauth/clients/register`,
+  'grant_types_supported': ['authorization_code', 'refresh_token'],
 };
 
 function deps(auth: Auth | AuthError): Deps {
@@ -52,13 +58,11 @@ const PROXIED: Via[] = [
 /** The resource and metadata URL a client is told to use: from the PRM and from a 401. */
 async function advertised(via: Via, d = deps(new AuthError('missing_token', 'fehlt'))) {
   const body = await (await handle(prm(via), d)).json();
-  const challenge = (await handle(post(via.headers, via.query), d)).headers.get(
-    'www-authenticate',
-  )!;
+  const challenge = headerOf(await handle(post(via.headers, via.query), d), 'www-authenticate');
   return {
     resource: body.resource,
     authorizationServers: body.authorization_servers,
-    metadata: challenge.match(/resource_metadata="([^"]*)"/)![1],
+    metadata: challenge.match(/resource_metadata="([^"]*)"/)?.[1],
   };
 }
 
@@ -91,7 +95,7 @@ Deno.test('a request without a token gets 401 pointing at the metadata', async (
 Deno.test('an invalid token gets 401 with error="invalid_token"', async () => {
   const res = await handle(post(), deps(new AuthError('invalid_token', 'abgelaufen')));
   assertEquals(res.status, 401);
-  assertMatch(res.headers.get('www-authenticate')!, /error="invalid_token"/);
+  assertMatch(headerOf(res, 'www-authenticate'), /error="invalid_token"/);
 });
 
 Deno.test('the challenge stays RFC 6750 ASCII when the message is German', async () => {
@@ -100,7 +104,7 @@ Deno.test('the challenge stays RFC 6750 ASCII when the message is German', async
     post(),
     deps(new AuthError('invalid_token', 'Token ungültig: "kaputt" \\ Größe')),
   );
-  const header = res.headers.get('www-authenticate')!;
+  const header = headerOf(res, 'www-authenticate');
   assertMatch(header, /^[\x20-\x7e]+$/);
   assertStringIncludes(header, `error_description="Token ungueltig: 'kaputt'  Groesse"`);
 });
@@ -113,7 +117,7 @@ Deno.test('a user without a household gets 403', async () => {
 Deno.test('app session tokens are not accepted as MCP credentials', async () => {
   const res = await handle(post(), deps({ ...USER, via: 'session' }));
   assertEquals(res.status, 401);
-  assertMatch(res.headers.get('www-authenticate')!, /error="invalid_token"/);
+  assertMatch(headerOf(res, 'www-authenticate'), /error="invalid_token"/);
 });
 
 Deno.test('OAuth and PAT credentials reach the MCP server', async () => {
@@ -171,7 +175,7 @@ Deno.test('a rejected token through the proxy also points at the public metadata
       const res = await handle(post(headers, query), deps(auth));
       assertEquals(res.status, 401);
       assertStringIncludes(
-        res.headers.get('www-authenticate')!,
+        headerOf(res, 'www-authenticate'),
         `resource_metadata="${PUBLIC_METADATA}"`,
       );
     }
@@ -180,7 +184,7 @@ Deno.test('a rejected token through the proxy also points at the public metadata
       deps(new AuthError('no_household', 'kein Haushalt')),
     );
     assertEquals(forbidden.status, 403);
-    assertStringIncludes(forbidden.headers.get('www-authenticate')!, PUBLIC_METADATA);
+    assertStringIncludes(headerOf(forbidden, 'www-authenticate'), PUBLIC_METADATA);
   }
 });
 
@@ -240,7 +244,7 @@ Deno.test('CORS preflight answers without auth', async () => {
     deps(new AuthError('missing_token', 'x')),
   );
   assertEquals(res.status, 204);
-  assertMatch(res.headers.get('access-control-allow-headers')!, /mcp-protocol-version/);
+  assertMatch(headerOf(res, 'access-control-allow-headers'), /mcp-protocol-version/);
 });
 
 // 2026-10-31: a connector on the supabase.co URL refreshes without the 401's resource_metadata hint.

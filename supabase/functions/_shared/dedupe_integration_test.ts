@@ -3,9 +3,9 @@
 // public.merge_quantities against the case table the app's mirror is tested with
 // (supabase/tests/merge_quantities.tsv). Runs like add_paths_integration_test.ts: the db gate
 // sets FG_DB_TEST=1 and SUPABASE_DB_URL; skipped without them.
-import { assertEquals } from '@std/assert';
+import { assertEquals, assertExists } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from './db.ts';
+import { asUser, databaseUrl } from './db.ts';
 import { addItems as mcpAddItems } from './list.ts';
 import { addItems as voiceAddItems } from '../voice/items.ts';
 import { confirmation } from '../voice/handler.ts';
@@ -13,12 +13,13 @@ import { confirmation } from '../voice/handler.ts';
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
 
 async function withHousehold(work: (userId: string, householdId: string) => Promise<void>) {
-  const admin = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
+  const admin = postgres(databaseUrl(), { max: 1, prepare: false });
   const userId = crypto.randomUUID();
   try {
     await admin`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
     const householdId = await asUser(userId, async (tx) => {
       const [row] = await tx<{ id: string }[]>`select id from public.create_household('32b')`;
+      assertExists(row);
       return row.id;
     });
     await work(userId, householdId);
@@ -51,13 +52,13 @@ Deno.test({
       );
       assertEquals(
         result.added.map((i) =>
-          i.name
+          i?.name
         ),
         ['Karotten', 'Milch'],
       );
       assertEquals(result.alreadyOnList, []);
       assertEquals(
-        result.similarOnList.map((s) => [s.added, s.onList.map((i) => [i.name, i.quantity])]),
+        result.similarOnList.map((s) => [s.added, s.onList.map((i) => [i?.name, i?.quantity])]),
         [['Karotten', [['Möhren', '500 g']]]],
       );
       assertEquals([...await openItems(userId, householdId)], [
@@ -237,13 +238,14 @@ Deno.test({
     const rows = table.split('\n').filter((l) => l.trim() && !l.startsWith('#')).map((l) =>
       l.split('\t')
     );
-    const db = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
+    const db = postgres(databaseUrl(), { max: 1, prepare: false });
     try {
       for (const [open, other, merged] of rows) {
         let got: string;
         try {
           const [row] = await db<{ q: string }[]>`
             select public.merge_quantities(${open || null}, ${other || null}) as q`;
+          assertExists(row);
           got = row.q;
         } catch (e) {
           got = String(e).includes('merged_quantity_too_long') ? '!too_long' : String(e);

@@ -52,7 +52,8 @@ export function overview(): string {
   for (const [group, names] of GROUPS) {
     lines.push(`${group}:`);
     for (const name of names) {
-      const c = COMMANDS.find((x) => x.name === name)!;
+      const c = find(name);
+      if (!c) throw new Error(`GROUPS lists "${name}", which is not in COMMANDS`);
       lines.push(`  ${name.padEnd(15)}${c.summary}${c.destructive ? ' [--dry-run]' : ''}`);
     }
     lines.push('');
@@ -88,7 +89,9 @@ export function commandHelp(c: Command): string {
 const BOOLEAN = (c: Command, name: string) => GLOBAL_FLAGS.includes(name) || c.flags?.some((f) => f.name === name && f.type === 'boolean');
 
 /** Splits argv into the command (one or two words) and its args; validates flags against the command's spec. */
-export function parse(argv: string[]): { command: Command | null; args: Args; help: boolean } {
+export function parse(
+  argv: string[],
+): { command: Command | null; args: Args; help: true } | { command: Command; args: Args; help: boolean } {
   const dash = argv.indexOf('--');
   const head = dash < 0 ? argv : argv.slice(0, dash);
   const rest = dash < 0 ? [] : argv.slice(dash + 1);
@@ -105,14 +108,15 @@ export function parse(argv: string[]): { command: Command | null; args: Args; he
   const nameWords = command.name.split(' ').length;
   const args: Args = { positional: [], flags: {}, rest };
   let consumed = 0;
-  for (let i = 0; i < head.length; i++) {
-    const a = head[i];
+  // One iterator, so a flag's value (the next word) is consumed as the loop's next item.
+  const tokens = head.values();
+  for (const a of tokens) {
     if (!a.startsWith('--')) {
       if (consumed < nameWords) consumed++;
       else args.positional.push(a);
       continue;
     }
-    const [rawName, inline] = a.slice(2).split(/=(.*)/s, 2);
+    const [rawName = '', inline] = a.slice(2).split(/=(.*)/s, 2);
     const known = GLOBAL_FLAGS.includes(rawName) || command.flags?.some((f) => f.name === rawName);
     if (!known) {
       throw usage(
@@ -129,7 +133,7 @@ export function parse(argv: string[]): { command: Command | null; args: Args; he
       args.flags[rawName] = inline === undefined ? true : inline !== 'false';
       continue;
     }
-    const value = inline ?? head[++i];
+    const value = inline ?? tokens.next().value;
     if (value === undefined) throw usage(`--${rawName} needs a value.`, `See \`fg help ${command.name}\`.`);
     const spec = command.flags?.find((f) => f.name === rawName);
     if (spec?.choices && !spec.choices.includes(value)) {
@@ -144,8 +148,10 @@ function find(name: string): Command | null {
   return COMMANDS.find((c) => c.name === name) ?? null;
 }
 
+const firstWord = (s: string) => s.split(' ')[0] ?? '';
+
 function unknown(name: string): FgError {
-  const close = COMMANDS.filter((c) => c.name.startsWith(name.split(' ')[0]) || name.startsWith(c.name.split(' ')[0])).map((c) => c.name);
+  const close = COMMANDS.filter((c) => c.name.startsWith(firstWord(name)) || name.startsWith(firstWord(c.name))).map((c) => c.name);
   return usage(
     `Unknown command "${name}".`,
     close.length ? `Did you mean: ${close.join(', ')}? Run \`fg help\` for all commands.` : 'Run `fg help` for all commands.',
@@ -183,15 +189,17 @@ export const realShell: Shell = {
     const stop = opts.timeoutMs || opts.signal
       ? AbortSignal.any([...(opts.timeoutMs ? [AbortSignal.timeout(opts.timeoutMs)] : []), ...(opts.signal ? [opts.signal] : [])])
       : undefined;
+    const [bin, ...argv] = cmd;
     try {
-      const child = new Deno.Command(cmd[0], {
-        args: cmd.slice(1),
-        cwd: opts.cwd,
-        env: opts.env,
+      if (bin === undefined) throw new TypeError('run needs a command');
+      const child = new Deno.Command(bin, {
+        args: argv,
+        ...(opts.cwd === undefined ? {} : { cwd: opts.cwd }),
+        ...(opts.env === undefined ? {} : { env: opts.env }),
         stdin: opts.stdin === undefined ? 'null' : 'piped',
         stdout: 'piped',
         stderr: 'piped',
-        signal: stop,
+        ...(stop === undefined ? {} : { signal: stop }),
       }).spawn();
       if (opts.stdin !== undefined) {
         const w = child.stdin.getWriter();
@@ -204,12 +212,12 @@ export const realShell: Shell = {
       // A killed process's own children (a browser) may hold its pipes open: once stopped, don't wait for them.
       if (stop?.aborted) {
         await Promise.all([out.cancel(), err.cancel()]);
-        if (opts.signal?.aborted) throw interrupted(`\`${cmd[0]}\``);
+        if (opts.signal?.aborted) throw interrupted(`\`${bin}\``);
       }
       return { code: status.code, stdout: await out.text(), stderr: await err.text() };
     } catch (e) {
       if (e instanceof Deno.errors.NotFound) {
-        throw new FgError('missing_tool', `\`${cmd[0]}\` is not installed or not on PATH.`, 'Run `fg setup` (see --dry-run first).');
+        throw new FgError('missing_tool', `\`${bin}\` is not installed or not on PATH.`, 'Run `fg setup` (see --dry-run first).');
       }
       throw e;
     }
@@ -218,7 +226,7 @@ export const realShell: Shell = {
     // setsid detaches the process from the CLI's session; it outlives this command.
     const child = new Deno.Command('setsid', {
       args: ['sh', '-c', 'exec "$@" >>"$FG_LOG" 2>&1 </dev/null', 'sh', ...cmd],
-      cwd: opts.cwd,
+      ...(opts.cwd === undefined ? {} : { cwd: opts.cwd }),
       env: { ...opts.env, FG_LOG: opts.log },
       stdin: 'null',
       stdout: 'null',
@@ -272,7 +280,7 @@ export async function main(argv: string[], sh: Shell, env: Record<string, string
       io.out(command ? commandHelp(command) : overview());
       return 0;
     }
-    name = command!.name;
+    name = command.name;
     const inst = await loadInstance(sh, env, repo);
     const state = await readState(sh, inst);
     const dryRun = Boolean(args.flags['dry-run']);
@@ -291,7 +299,7 @@ export async function main(argv: string[], sh: Shell, env: Record<string, string
       },
       save: () => (dryRun ? Promise.resolve() : writeState(sh, inst, state)),
     };
-    const result = await command!.run(ctx, args);
+    const result = await command.run(ctx, args);
     const doc: Record<string, unknown> = { ok: true, command: name, ...(dryRun ? { dryRun: true } : {}), ...result };
     if (ctx.actions.length) doc[dryRun ? 'wouldDo' : 'did'] = ctx.actions;
     io.out(JSON.stringify(doc, null, 2));

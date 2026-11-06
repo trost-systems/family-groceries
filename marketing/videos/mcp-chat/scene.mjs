@@ -5,7 +5,7 @@
 // loop starts and ends on an empty chat and the same list.
 
 import { readFileSync } from 'node:fs';
-import { captions, esc, frames, ICONS, page, phone, t, touches } from '../lib.mjs';
+import { captions, esc, frames, ICONS, page, phone, t } from '../lib.mjs';
 
 const arb = (lang) => JSON.parse(readFileSync(new URL(`../../../app/l10n/app_${lang}.arb`, import.meta.url), 'utf8'));
 
@@ -63,7 +63,7 @@ const LAYOUT = {
 
 const mi = (name) => `<i class="mi">&#x${ICONS[name]};</i>`;
 
-export function compose({ fmt, lang, events, p }) {
+export function compose({ fmt, lang, p }) {
   const L = LAYOUT[fmt];
   const T = p.t;
   const tw = [];

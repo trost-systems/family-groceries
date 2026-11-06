@@ -4,7 +4,7 @@ import {
   StreamableHTTPClientTransport,
 } from '@modelcontextprotocol/client';
 import { expect, type Page } from '@playwright/test';
-import { supabaseUrl } from './helpers';
+import { firstOf, supabaseUrl } from './helpers';
 
 export const mcpUrl = new URL('/functions/v1/mcp', supabaseUrl);
 
@@ -22,7 +22,7 @@ const bootFailure = async (res: Response) =>
   [502, 503, 504, 546].includes(res.status) && (await res.clone().text()) === '';
 
 /** fetch for SDK transports that reports slow round trips, to tell server stalls from client ones. */
-export const timedFetch: typeof fetch = async (input, init) => {
+export const timedFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const started = Date.now();
   let res = await fetch(input, init);
   if (await bootFailure(res)) {
@@ -58,6 +58,7 @@ export async function call<T = unknown>(
   const result = await client.callTool({ name, arguments: args });
   const [first] = result.content as { type: string; text: string }[];
   expect(result.isError, `${name} failed: ${first?.text}`).toBeFalsy();
+  if (first === undefined) throw new Error(`${name} returned no content`);
   return JSON.parse(first.text) as T;
 }
 
@@ -68,7 +69,7 @@ export async function callExpectingError(
 ): Promise<string> {
   const result = await client.callTool({ name, arguments: args });
   expect(result.isError, `${name} should fail`).toBe(true);
-  return (result.content as { text: string }[])[0].text;
+  return firstOf(result.content as { text: string }[], 'tool result text').text;
 }
 
 /**
@@ -85,11 +86,11 @@ export class TestOAuthProvider implements OAuthClientProvider {
 
   constructor(readonly clientName: string) {}
 
-  get redirectUrl() {
+  get redirectUrl(): string {
     return callbackUrl;
   }
 
-  get clientMetadata() {
+  get clientMetadata(): OAuthClientProvider['clientMetadata'] {
     return {
       client_name: this.clientName,
       redirect_uris: [callbackUrl],
@@ -99,39 +100,39 @@ export class TestOAuthProvider implements OAuthClientProvider {
     };
   }
 
-  clientInformation() {
+  clientInformation(): TestOAuthProvider['client'] {
     return this.client;
   }
 
-  saveClientInformation(info: NonNullable<TestOAuthProvider['client']>) {
+  saveClientInformation(info: NonNullable<TestOAuthProvider['client']>): void {
     this.client = info;
   }
 
-  tokens() {
+  tokens(): TestOAuthProvider['saved'] {
     return this.saved;
   }
 
-  saveTokens(tokens: NonNullable<TestOAuthProvider['saved']>) {
+  saveTokens(tokens: NonNullable<TestOAuthProvider['saved']>): void {
     this.saved = tokens;
   }
 
-  redirectToAuthorization(url: URL) {
+  redirectToAuthorization(url: URL): void {
     this.authorizationUrl = url;
   }
 
-  saveCodeVerifier(verifier: string) {
+  saveCodeVerifier(verifier: string): void {
     this.verifier = verifier;
   }
 
-  codeVerifier() {
+  codeVerifier(): string {
     return this.verifier;
   }
 
-  saveDiscoveryState(state: NonNullable<TestOAuthProvider['discovery']>) {
+  saveDiscoveryState(state: NonNullable<TestOAuthProvider['discovery']>): void {
     this.discovery = state;
   }
 
-  discoveryState() {
+  discoveryState(): TestOAuthProvider['discovery'] {
     return this.discovery;
   }
 }

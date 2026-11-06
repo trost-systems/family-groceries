@@ -1,6 +1,7 @@
 // Shared by the verify-hummlist journeys and the hummlist-howto-clips scripts: the running
 // instance (launch.sh's instance.json), its seeded members, UI labels from the ARB files, a
 // browser on the web build signed in through the real login screen, and a second view of the data.
+import process from 'node:process';
 import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

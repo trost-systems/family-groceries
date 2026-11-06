@@ -4,9 +4,9 @@
 // note (Bio) asks; product words the parser also keeps in properties (gesalzen, passiert,
 // laktosefrei) are another product and add. Runs like add_paths_integration_test.ts: the db gate
 // sets FG_DB_TEST=1 and SUPABASE_DB_URL; skipped without them.
-import { assert, assertEquals, assertFalse } from '@std/assert';
+import { assert, assertEquals, assertExists, assertFalse } from '@std/assert';
 import postgres from 'postgres';
-import { asUser } from './db.ts';
+import { asUser, databaseUrl, oneRow } from './db.ts';
 import { addItems, splitItems } from '../voice/items.ts';
 import { type Caller, createHandler as voiceHandler } from '../voice/handler.ts';
 import { createHandler as alexaHandler, type Linked } from '../alexa/handler.ts';
@@ -17,14 +17,17 @@ const enabled = Deno.env.get('FG_DB_TEST') === '1';
 type Household = { userId: string; householdId: string };
 
 async function withHousehold(open: string, work: (h: Household) => Promise<void>) {
-  const admin = postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
+  const admin = postgres(databaseUrl(), { max: 1, prepare: false });
   const userId = crypto.randomUUID();
   try {
     await admin`insert into auth.users (id, email) values (${userId}, ${`${userId}@fg-test.invalid`})`;
     const householdId = await asUser(userId, async (tx) => {
-      const [row] = await tx<{ id: string }[]>`select id from public.create_household('112')`;
-      await tx`select 1 from public.add_item(${row.id}, ${open})`;
-      return row.id;
+      const { id } = oneRow(
+        await tx<{ id: string }[]>`select id from public.create_household('112')`,
+        'create_household',
+      );
+      await tx`select 1 from public.add_item(${id}, ${open})`;
+      return id;
     });
     await work({ userId, householdId });
   } finally {
@@ -70,8 +73,22 @@ async function siri(h: Household, body: Record<string, unknown>) {
   return await res.json();
 }
 
+type AlexaReply = { speech: string; asks: boolean; again: string };
+
 /** POST /alexa with AddItemIntent (or the session's end), confirmationStatus as given. */
-async function alexa(h: Household, locale: string, text: string | null, status = 'NONE') {
+async function alexa(
+  h: Household,
+  locale: string,
+  text: string,
+  status?: string,
+): Promise<AlexaReply>;
+async function alexa(h: Household, locale: string, text: null): Promise<null>;
+async function alexa(
+  h: Household,
+  locale: string,
+  text: string | null,
+  status = 'NONE',
+): Promise<AlexaReply | null> {
   const linked: Linked = { userId: h.userId, householdId: h.householdId, sessionId: 's' };
   const handle = alexaHandler({
     verify: (_headers, raw) =>
@@ -156,8 +173,8 @@ for (
       },
       Alexa: async (h: Household) => {
         const fromAlexa = await alexa(h, locale, said);
-        assertFalse(fromAlexa!.asks, fromAlexa!.speech);
-        assert(fromAlexa!.speech.endsWith(` ${shown}.`), fromAlexa!.speech);
+        assertFalse(fromAlexa.asks, fromAlexa.speech);
+        assert(fromAlexa.speech.endsWith(` ${shown}.`), fromAlexa.speech);
       },
     };
     for (const [path, send] of Object.entries(paths)) {
@@ -168,6 +185,7 @@ for (
         fn: () =>
           withHousehold(open, async (h) => {
             const [before] = await openItems(h);
+            assertExists(before, 'the open item');
             assert(before.properties, `the parser kept a property: ${JSON.stringify(before)}`);
             await send(h);
             const after = await openItems(h);
@@ -202,11 +220,11 @@ for (
           assertEquals(native.speech, `${already}: ${shown}.`, 'what a no says');
           assert(native.question.startsWith(shown), native.question);
           const asked = await alexa(h, locale, said);
-          assert(asked!.asks, asked!.speech);
-          assert(asked!.speech.startsWith(shown), asked!.speech);
-          const no = await alexa(h, locale, asked!.again, 'DENIED');
-          assertFalse(no!.asks);
-          assert(no!.speech.endsWith(`${shown}.`), no!.speech);
+          assert(asked.asks, asked.speech);
+          assert(asked.speech.startsWith(shown), asked.speech);
+          const no = await alexa(h, locale, asked.again, 'DENIED');
+          assertFalse(no.asks);
+          assert(no.speech.endsWith(`${shown}.`), no.speech);
           await alexa(h, locale, null);
           assertEquals(await openItems(h), before, 'Shortcut, no and no answer add nothing');
 
@@ -226,8 +244,8 @@ Deno.test({
   fn: () =>
     withHousehold('Butter Weihenstephan', async (h) => {
       const asked = await alexa(h, 'de-DE', 'Butter');
-      const yes = await alexa(h, 'de-DE', asked!.again, 'CONFIRMED');
-      assertEquals(yes!.speech, 'Ich habe Butter auf die Hummlist gesetzt.');
+      const yes = await alexa(h, 'de-DE', asked.again, 'CONFIRMED');
+      assertEquals(yes.speech, 'Ich habe Butter auf die Hummlist gesetzt.');
       assertEquals((await openItems(h)).map((i) => [i.name, i.brand]), [
         ['Butter', 'Weihenstephan'],
         ['Butter', null],

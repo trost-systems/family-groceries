@@ -63,10 +63,11 @@ const BATCH = /^[0-9]{4}-W[0-9]{2}$/;
 export function parseArgs(argv: string[]): Args | string {
   const values = new Map<string, string>();
   let allowPlaceholders = false;
-  for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--allow-placeholders') allowPlaceholders = true;
-    else if (['--batch', '--confirm', '--export-dir'].includes(argv[i])) {
-      values.set(argv[i], argv[++i] ?? '');
+  const args = argv.values();
+  for (const arg of args) {
+    if (arg === '--allow-placeholders') allowPlaceholders = true;
+    else if (['--batch', '--confirm', '--export-dir'].includes(arg)) {
+      values.set(arg, args.next().value ?? '');
     } else return 'unknown argument';
   }
   const batch = values.get('--batch');
@@ -201,7 +202,7 @@ if (import.meta.main) {
     console.error(`invite: ${args}`);
     Deno.exit(2);
   }
-  const { default: postgres } = await import('npm:postgres@3.4.9');
+  const { default: postgres } = await import('postgres');
   const url = Deno.env.get('SUPABASE_DB_URL');
   if (!url) {
     console.error('invite: SUPABASE_DB_URL is not set');

@@ -3,6 +3,7 @@
 // its category heading in the list and as an active row in the household's items.
 //
 //   node journeys/quick-add.mjs <evidence dir> [--lang de|en] [--prefix Joghu]
+import process from 'node:process';
 import { accessibleName, addField, addSheet, apiAs, capture, headingAbove, instance, itemRow, logger, member, openApp, reveal, signIn, typeInto } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);

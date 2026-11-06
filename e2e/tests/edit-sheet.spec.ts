@@ -1,6 +1,6 @@
 import { devices, expect, test, type Locator, type Page } from './fixtures';
 import {
-  actionSnackBar, addItem, apiAs, editField, editSheet, expectFieldValue, finger, fingerHold, itemRow, newEmail, nextFrames, openEdit,
+  actionSnackBar, addItem, apiAs, boxOf, editField, editSheet, expectFieldValue, finger, fingerHold, itemRow, must, newEmail, nextFrames, openEdit,
   pickInSheet, saveEdit, screenshot, signUpWithHousehold, typeInto,
 } from './helpers';
 import { householdWithItems, signIn } from './web-build';
@@ -34,7 +34,7 @@ async function expectHugsContent(page: Page, why: string): Promise<void> {
   const sheet = await box(editSheet(page));
   const cancel = await box(editSheet(page).getByRole('button', { name: 'Abbrechen' }));
   const done = await box(editSheet(page).getByRole('button', { name: 'Fertig' }));
-  const viewport = page.viewportSize()!;
+  const viewport = must(page.viewportSize(), 'viewport');
   expect(cancel.top - sheet.top, `${why}: no dead area above the header`).toBeLessThanOrEqual(24);
   expect(cancel.top - sheet.top).toBeGreaterThanOrEqual(0);
   // Below Fertig: 10 px, the one-line hint (13 px) and 16 px.
@@ -90,7 +90,7 @@ test('edit: the sheet is as tall as its content, also with a chip folded out', a
   }
   expect((await box(editSheet(page).getByRole('button', { name: 'Fertig' }))).height).toBeGreaterThanOrEqual(52);
   const closed = await box(editSheet(page));
-  expect(closed.height, 'well under the screen: no fixed fraction').toBeLessThan(page.viewportSize()!.height * 0.7);
+  expect(closed.height, 'well under the screen: no fixed fraction').toBeLessThan(must(page.viewportSize(), 'viewport').height * 0.7);
 
   await editSheet(page).getByRole('button', { name: /^Kategorie: / }).click();
   const option = editSheet(page).getByRole('button', { name: 'Getränke', exact: true });
@@ -111,7 +111,7 @@ test('edit: a hold that stays put opens the sheet; Löschen deletes with Undo', 
   await addItem(page, 'Zahnpasta');
   await expect(page.getByText('Wird einsortiert')).toHaveCount(0);
   await expect(itemRow(page, 'Zahnpasta')).toBeVisible();
-  const row = (await itemRow(page, 'Zahnpasta').boundingBox())!;
+  const row = await boxOf(itemRow(page, 'Zahnpasta'));
 
   await page.mouse.move(row.x + 120, row.y + row.height / 2);
   await page.mouse.down();
@@ -160,7 +160,7 @@ test.describe('on a phone browser', () => {
     await page.goto('/');
     await signIn(page, email);
     const row = itemRow(page, 'Zahnpasta');
-    const before = (await row.boundingBox())!;
+    const before = await boxOf(row);
 
     await fingerHold(page, row);
     await expect(editSheet(page), 'a finger hold opens edit').toBeVisible();

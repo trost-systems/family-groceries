@@ -108,6 +108,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - Lints follow emotely: `flutter_agent_lints` (experimental set), every rule
   an error. Fix the code, not the rule; `dart fix --apply` handles most
   primary-constructor and style findings.
+- The TypeScript and JavaScript follow a sibling pack, `tool/lint/ts/pack.ts`:
+  every `deno lint` rule and strictness compiler option on or off with a
+  reason, `error` rules enforced by `tool/lint/ts/strict.ts` in the lint gate
+  (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, no `!`, return
+  types on exports). Narrow instead of asserting; `docs/hillclimb/hc-strictness.md`.
 - Build-time defines are read only in `app/lib/app/environment.dart`.
 - Auth gating happens only in `authRedirect` (`app/lib/app/router.dart`).
 - Every household-owned table carries `household_id` and the RLS policy

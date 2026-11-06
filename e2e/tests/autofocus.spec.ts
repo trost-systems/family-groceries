@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { addedNote, addField, addItem, closeSheet, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { addedNote, addField, addItem, boxOf, closeSheet, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
 
 test('on open the add field is focused and the list is visible above it', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('focus'));
@@ -11,8 +11,8 @@ test('on open the add field is focused and the list is visible above it', async 
   await expect(addField(page)).toBeFocused();
   await expect(page.getByText('Obst & Gemüse')).toBeVisible();
   await expect(itemRow(page, 'Bananen')).toBeVisible();
-  const field = (await addField(page).boundingBox())!;
-  const item = (await itemRow(page, 'Bananen').boundingBox())!;
+  const field = await boxOf(addField(page));
+  const item = await boxOf(itemRow(page, 'Bananen'));
   expect(item.y + item.height, 'the list sits above the add field (design H: the field is at the bottom), on the same screen')
     .toBeLessThanOrEqual(field.y);
 

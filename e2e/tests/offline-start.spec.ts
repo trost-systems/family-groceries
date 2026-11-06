@@ -10,7 +10,9 @@ function cachedList(page: Page): Promise<{ server: unknown[]; pending: unknown[]
   return page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /\blist\./.test(k));
     if (!key) return null;
-    let value = JSON.parse(localStorage.getItem(key)!);
+    const raw = localStorage.getItem(key);
+    if (raw === null) return null;
+    let value = JSON.parse(raw);
     if (typeof value === 'string') value = JSON.parse(value);
     return value;
   });
@@ -21,7 +23,9 @@ async function expireStoredSession(page: Page): Promise<void> {
   const expired = await page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
     if (!key) return false;
-    const session = JSON.parse(localStorage.getItem(key)!);
+    const raw = localStorage.getItem(key);
+    if (raw === null) throw new Error(`no ${key}`);
+    const session = JSON.parse(raw);
     session.expires_at = Math.floor(Date.now() / 1000) - 60;
     localStorage.setItem(key, JSON.stringify(session));
     return true;

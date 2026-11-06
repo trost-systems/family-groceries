@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import { addItem, cutOff, itemRow, listBarHeight, newEmail, screenshot, signUpWithHousehold, tick } from './helpers';
+import { addItem, boxOf, cutOff, itemRow, listBarHeight, newEmail, screenshot, signUpWithHousehold, tick } from './helpers';
 
 /** The sync icon's accessible names: "1 Änderung wird synchronisiert" and "Offline: …". */
 const pending = (page: Page) => page.getByText(/^\d+ Änderung(en)? w(ird|erden) synchronisiert$/);
@@ -19,7 +19,7 @@ test('the bar above the list keeps its height in every sync state and names no h
   // The explainer card is the list's first entry, right under the bar, and stays while items are ticked
   // (a store divider would move when its last item goes). It must not move while the sync icon comes and goes.
   const card = page.getByRole('button', { name: 'Verstanden', exact: true });
-  const top = async () => (await card.boundingBox())!.y;
+  const top = async () => (await boxOf(card)).y;
   const synced = await top();
   expect(synced, 'the list starts under the bar').toBeGreaterThan(listBarHeight);
   expect(synced, 'right under it').toBeLessThan(listBarHeight + 48);

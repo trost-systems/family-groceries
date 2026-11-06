@@ -8,6 +8,7 @@
 //                                 the colours for the Home Screen widgets (job 63)
 // Node only, no packages and no network. `--check` writes nothing and fails when an output
 // differs from what the source makes.
+import process from 'node:process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -100,7 +101,7 @@ const dartType = groups(tokens.type).map(([k, n]) => {
     letterSpacing: ${num(tracking)},
   );`;
 }).join('\n');
-const dims = (cls, node, prefix = '') => groups(node).map(([k, n]) => `${doc(n)}  static const double ${camel(prefix + k)} = ${num(px(value(n)))};`).join('\n');
+const dims = (_cls, node, prefix = '') => groups(node).map(([k, n]) => `${doc(n)}  static const double ${camel(prefix + k)} = ${num(px(value(n)))};`).join('\n');
 const dartDurations = groups(tokens.motion.duration).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = Duration(milliseconds: ${value(n).value});`).join('\n');
 const dartCurves = groups(tokens.motion.easing).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = Cubic(${value(n).map(num).join(', ')});`).join('\n');
 // One shadow per line, as dart format lays them out.

@@ -7,7 +7,7 @@
  * households only they belong to, and nothing else.
  */
 
-import { type Ctx, FgError, type JsonObject, stopIf } from './core.ts';
+import { type Ctx, entry, FgError, type JsonObject, stopIf } from './core.ts';
 import { expectedCounts, type Plan, plan, type PlannedHousehold, type PlannedItem, type Scenario, SEEDED_CATEGORIES } from './scenario.ts';
 import { Api, type Target } from './target.ts';
 
@@ -45,10 +45,10 @@ export interface Manifest {
   nonTestCounts?: Record<string, number>;
 }
 
-export const emailFor = (handle: string, run: string) => `${handle}.${run}@${TEST_DOMAIN}`;
+export const emailFor = (handle: string, run: string): string => `${handle}.${run}@${TEST_DOMAIN}`;
 const isTestEmail = (email: string) => email.endsWith(`@${TEST_DOMAIN}`);
 /** The run an email belongs to, or null for a non-test address. */
-export const runOfEmail = (email: string) => (isTestEmail(email) ? (/^[a-z0-9]+\.(.+)@/.exec(email)?.[1] ?? null) : null);
+export const runOfEmail = (email: string): string | null => (isTestEmail(email) ? (/^[a-z0-9]+\.(.+)@/.exec(email)?.[1] ?? null) : null);
 
 const RUN_ID = /^[a-z0-9][a-z0-9-]{2,40}$/;
 
@@ -105,12 +105,23 @@ export async function listManifests(ctx: Ctx, t: Target): Promise<Manifest[]> {
 }
 
 /** The run that a bare handle (`--as mia`) refers to: the last one seeded on this target. */
-export const currentRunPath = (t: Target) => `${t.runsDir}/current`;
+export const currentRunPath = (t: Target): string => `${t.runsDir}/current`;
 
 // Seeding --------------------------------------------------------------------
 
 /** What the seed prints: no passwords, no tokens. */
-export function publicView(m: Manifest) {
+export interface PublicView {
+  run: string;
+  scenario: string;
+  target: Manifest['target'];
+  createdAt: string;
+  members: Record<string, { ref: string; email: string; name: string; locale: Member['locale']; household: string | null }>;
+  households: Record<string, { id: string; name: string; members: string[] }>;
+  invites: Manifest['invites'];
+  views: Manifest['views'];
+}
+
+export function publicView(m: Manifest): PublicView {
   return {
     run: m.run,
     scenario: m.scenario,
@@ -162,7 +173,7 @@ export async function seedScenario(
   t: Target,
   s: Scenario,
   run: string,
-  now = new Date(),
+  now: Date,
   signal?: AbortSignal,
 ): Promise<SeedResult> {
   // Seeding requests end at once on a stop; teardown (its own Api, without the signal) still runs after.
@@ -227,7 +238,8 @@ async function seedInto(api: Api, m: Manifest, p: Plan, save: () => Promise<void
     await save();
   }
   await Promise.all(p.users.map(async (u) => {
-    tokens[u.handle] = (await api.signIn(m.users[u.handle].email, m.users[u.handle].password)).token;
+    const user = entry(m.users, u.handle, 'user');
+    tokens[u.handle] = (await api.signIn(user.email, user.password)).token;
   }));
 
   for (const h of p.households) {
@@ -259,7 +271,9 @@ async function seedHousehold(
   if (h.members.length > 1) {
     await api.rest('household_members', {
       method: 'POST',
-      body: JSON.stringify(h.members.slice(1).map((handle) => ({ household_id: hid, user_id: m.users[handle].id, role: 'member' }))),
+      body: JSON.stringify(
+        h.members.slice(1).map((handle) => ({ household_id: hid, user_id: entry(m.users, handle, 'user').id, role: 'member' })),
+      ),
     });
   }
 
@@ -289,7 +303,7 @@ async function seedHousehold(
   const route = (await loadCategories()).map((r) => r.name as string);
   if (h.categoryOrder.length) {
     const order = [...h.categoryOrder, ...route.filter((c) => !h.categoryOrder.includes(c))];
-    await api.rpc('reorder_categories', { p_household: hid, p_ids: order.map((c) => categories.get(c)!) }, ownerToken);
+    await api.rpc('reorder_categories', { p_household: hid, p_ids: order.map((c) => categories.get(c) ?? null) }, ownerToken);
     route.splice(0, route.length, ...order);
   }
 
@@ -303,8 +317,8 @@ async function seedHousehold(
     const order = [...st.layout, ...route.filter((c) => !st.layout.includes(c))];
     await api.rpc('set_store_layout', {
       p_store: id,
-      p_categories: order.map((c) => categories.get(c)!),
-      p_hidden: st.hidden.map((c) => categories.get(c)!),
+      p_categories: order.map((c) => categories.get(c) ?? null),
+      p_hidden: st.hidden.map((c) => categories.get(c) ?? null),
     }, ownerToken);
   }
   await save();
@@ -312,15 +326,15 @@ async function seedHousehold(
   const row = (i: PlannedItem, store: string | null) => {
     const r: JsonObject = {
       id: crypto.randomUUID(),
-      household_id: hid,
+      'household_id': hid,
       name: i.name,
       quantity: i.quantity,
-      created_at: i.at.toISOString(),
+      'created_at': i.at.toISOString(),
     };
     const s = store ?? i.store;
     // Null lets the insert trigger classify and apply item→store memory, as for the app.
-    r.store_id = s ? stores.get(s)! : null;
-    r.category_id = i.category ? categories.get(i.category)! : null;
+    r.store_id = s ? stores.get(s) ?? null : null;
+    r.category_id = i.category ? categories.get(i.category) ?? null : null;
     for (const [field, value] of Object.entries(i.extra)) r[ITEM_EXTENSION_COLUMNS[field as keyof typeof ITEM_EXTENSION_COLUMNS]] = value;
     return r;
   };
@@ -422,9 +436,9 @@ export async function verifyRun(api: Api, m: Manifest, p: Plan, tokens: Record<s
     checks.push({ name, ok, expected, actual });
   const counts = expectedCounts(p);
   for (const h of p.households) {
-    const hid = m.households[h.handle].id;
+    const hid = entry(m.households, h.handle, 'household').id;
     const token = tokens[h.members[0]];
-    const want = counts.households[h.handle];
+    const want = entry(counts.households, h.handle, 'household');
     // A count, not the rows: PostgREST returns at most max_rows (1000) of them.
     const n = (table: string, filter: string) => api.count(table, `household_id=eq.${hid}${filter}`, token);
     check(`${h.handle}: members`, want.members, await n('household_members', ''));
@@ -518,7 +532,7 @@ export async function findRuns(ctx: Ctx, api: Api | null, t: Target, staleHours 
 
 // Teardown -------------------------------------------------------------------
 
-type AuthUser = { id: string; email: string; app_metadata: JsonObject };
+type AuthUser = { id: string; email: string; 'app_metadata': JsonObject };
 
 /** The run's users: test-domain accounts tagged with the run, addressed to it, or listed in its manifest. */
 export function runUserIds(run: string, m: Manifest | null, users: AuthUser[]): string[] {
@@ -646,7 +660,7 @@ export async function leftoverCounts(api: Api, run: string, householdIds: string
     'item_store_memory',
   ];
   for (const spec of byHousehold) {
-    const [table, column = 'household_id'] = spec.split(':');
+    const [table = '', column = 'household_id'] = spec.split(':');
     out[table] = householdIds.length ? await api.count(table, `${column}=${inList(householdIds)}`) : 0;
   }
   const byUser: [string, string][] = [['profiles', 'id'], ['household_members', 'user_id'], ['personal_access_tokens', 'user_id'], [
@@ -686,7 +700,7 @@ export async function nonTestCounts(api: Api): Promise<Record<string, number>> {
     const members = rows(await api.rest(`household_members?select=user_id&household_id=eq.${hid}`)).map((r) => r.user_id as string);
     if (members.every((id) => testIds.has(id))) pureTest.push(hid);
   }
-  const out: Record<string, number> = { auth_users: users.length - testIds.size };
+  const out: Record<string, number> = { 'auth_users': users.length - testIds.size };
   for (const table of COUNTED) {
     const column = table === 'households' ? 'id' : 'household_id';
     out[table] = await api.count(table, pureTest.length ? `${column}=not.${inList(pureTest)}` : '');

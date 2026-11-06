@@ -4,6 +4,7 @@
 // Usage: node e2e/web-smoke.mjs <base-url> [screenshot-dir]
 // SMOKE_BROWSER_ONLY=1 skips the HTTP checks (for e2e/serve.mjs, which has no Vercel rules).
 import { mkdirSync } from 'node:fs';
+import process from 'node:process';
 import { chromium } from '@playwright/test';
 
 const [url, shots = '/tmp/fg-web-smoke'] = process.argv.slice(2);

@@ -42,7 +42,9 @@ export interface CaptureEvent {
 const XDOTOOL = Deno.env.get('XDOTOOL') ?? `${Deno.env.get('HOME')}/tools/xdo/xdotool`;
 
 async function run(cmd: string[], env: Record<string, string> = {}): Promise<string> {
-  const out = await new Deno.Command(cmd[0], { args: cmd.slice(1), env, stdout: 'piped', stderr: 'piped' }).output();
+  const [bin, ...args] = cmd;
+  if (bin === undefined) throw new Error('run needs a command');
+  const out = await new Deno.Command(bin, { args, env, stdout: 'piped', stderr: 'piped' }).output();
   const text = new TextDecoder().decode(out.stdout);
   if (!out.success) throw new Error(`${cmd.join(' ')} failed: ${new TextDecoder().decode(out.stderr)}${text}`);
   return text;
@@ -50,10 +52,10 @@ async function run(cmd: string[], env: Record<string, string> = {}): Promise<str
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function until<T>(what: string, probe: () => Promise<T | undefined>, timeoutMs = 30_000): Promise<T> {
+async function until<T>(what: string, probe: () => T | undefined | Promise<T | undefined>, timeoutMs = 30_000): Promise<T> {
   const end = Date.now() + timeoutMs;
   while (Date.now() < end) {
-    const v = await probe().catch(() => undefined);
+    const v = await Promise.resolve().then(probe).catch(() => undefined);
     if (v !== undefined) return v;
     await sleep(150);
   }
@@ -111,9 +113,10 @@ export async function launch(spec: ClientSpec, bundle: string, root: string): Pr
   };
   pump(app.stdout);
   pump(app.stderr);
-  const vm = await until('the Dart VM service', async () => {
+  const vm = await until('the Dart VM service', () => {
     const m = logText.match(/The Dart VM service is listening on http:\/\/(127\.0\.0\.1:\d+\/[^\s]*)/);
-    return m ? `ws://${m[1].replace(/\/?$/, '/')}ws` : undefined;
+    const address = m?.[1];
+    return address === undefined ? undefined : `ws://${address.replace(/\/?$/, '/')}ws`;
   }, 90_000);
   const client: Client = { ...spec, dir, xvfb, app, vmUri: vm };
   await until('Marionette', () => elements(client).then((e) => (e.length ? true : undefined)), 60_000);
@@ -162,12 +165,12 @@ export class Session {
     return this.t0 ? Math.round(performance.timeOrigin + performance.now() - this.t0) : -1;
   }
 
-  mark(client: string, text: string) {
+  mark(client: string, text: string): void {
     this.events.push({ t: this.now(), client, kind: 'mark', text });
   }
 
   /** A finger tap at a point inside the target: press, hold like a thumb, release. */
-  async tap(c: Client, t: Target, opts: { dx?: number; dy?: number; holdMs?: number } = {}) {
+  async tap(c: Client, t: Target, opts: { dx?: number; dy?: number; holdMs?: number } = {}): Promise<void> {
     const b = await find(c, t);
     const x = Math.round(b.x + (opts.dx ?? b.width / 2));
     const y = Math.round(b.y + (opts.dy ?? b.height / 2));
@@ -181,17 +184,17 @@ export class Session {
   }
 
   /** Types like a person: one real key stroke per character. */
-  async type(c: Client, text: string, delayMs = 85) {
+  async type(c: Client, text: string, delayMs = 85): Promise<void> {
     this.events.push({ t: this.now(), client: c.name, kind: 'type', text });
     await xdo(c, ['type', '--delay', String(delayMs), text]);
   }
 
   /** Mouse-wheel scrolls (off the record, before filming) until `t` exists with its top at or above `top`. */
-  async scrollUntil(c: Client, t: Target, top: number) {
+  async scrollUntil(c: Client, t: Target, top: number): Promise<void> {
     await xdo(c, ['mousemove', String(PHYSICAL.width / 2), String(PHYSICAL.height / 2)]);
     for (let i = 0; i < 80; i++) {
       const hit = (await elements(c)).find((e) => matches(e, t) && e.bounds);
-      if (hit && hit.bounds!.y <= top) break;
+      if (hit?.bounds && hit.bounds.y <= top) break;
       await xdo(c, ['click', '5']);
       await sleep(250);
     }
@@ -199,14 +202,14 @@ export class Session {
     await xdo(c, ['mousemove', String(PHYSICAL.width / 2), '20']);
   }
 
-  async key(c: Client, key: string) {
+  async key(c: Client, key: string): Promise<void> {
     this.events.push({ t: this.now(), client: c.name, kind: 'key', text: key });
     await xdo(c, ['key', key]);
   }
 }
 
 /** Signs in through the real login screen; not filmed, so the fields are filled by Marionette. */
-export async function login(c: Client) {
+export async function login(c: Client): Promise<void> {
   await find(c, { key: 'login-email' }, 60_000);
   await run(['marionette', '--uri', c.vmUri, 'enter-text', '--key', 'login-email', '--input', c.email]);
   await run(['marionette', '--uri', c.vmUri, 'enter-text', '--key', 'login-password', '--input', c.password]);
@@ -251,11 +254,17 @@ export async function record(s: Session, outDir: string): Promise<Recording> {
       }
     }
   })();
-  const startsAt = await until('ffmpeg x11grab start times', async () =>
-    starts.size >= s.clients.length ? s.clients.map((_, i) => starts.get(i)!) : undefined, 15_000);
+  const startsAt = await until('ffmpeg x11grab start times', () => {
+    const all = s.clients.map((_, i) => starts.get(i));
+    return all.every((t): t is number => t !== undefined) ? all : undefined;
+  }, 15_000);
   // Every output starts at its input's first frame; the latest input start is the common zero.
   s.t0 = Math.max(...startsAt);
-  const offsets = Object.fromEntries(s.clients.map((c, i) => [c.name, Math.round(s.t0 - startsAt[i])]));
+  const offsets = Object.fromEntries(s.clients.map((c, i) => {
+    const start = startsAt[i];
+    if (start === undefined) throw new Error(`no ffmpeg start time for ${c.name}`);
+    return [c.name, Math.round(s.t0 - start)];
+  }));
   await Deno.writeTextFile(`${outDir}/offsets.json`, JSON.stringify(offsets));
   return {
     async stop() {
@@ -267,7 +276,7 @@ export async function record(s: Session, outDir: string): Promise<Recording> {
   };
 }
 
-export async function shutdown(clients: Client[]) {
+export async function shutdown(clients: Client[]): Promise<void> {
   for (const c of clients) {
     try { c.app.kill('SIGTERM'); } catch { /* already gone */ }
     try { c.xvfb.kill('SIGTERM'); } catch { /* already gone */ }

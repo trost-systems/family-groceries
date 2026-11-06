@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertMatch, assertThrows } from '@std/assert';
+import { assert, assertEquals, assertExists, assertMatch, assertThrows } from '@std/assert';
 import type { JsonObject } from './core.ts';
 import { realShell } from './fg.ts';
 import {
@@ -105,12 +105,13 @@ households:
 `,
   );
   const p = plan(scenario, new Date('2026-11-05T12:00:00Z'));
-  const want = expectedCounts(p).households.home;
+  const want = expectedCounts(p).households['home'];
+  assertExists(want);
   assertEquals(want.boughtItems, 1100);
   const hid = 'h1';
   const many = (n: number, row: JsonObject) => Array.from({ length: n }, () => ({ household_id: hid, ...row }));
   const tables: Record<string, JsonObject[]> = {
-    household_members: many(want.members, {}),
+    'household_members': many(want.members, {}),
     items: [...many(want.activeItems, { status: 'active' }), ...many(want.boughtItems, { status: 'bought' })],
     stores: many(want.stores, {}),
     categories: many(want.categories, {}),
@@ -119,17 +120,22 @@ households:
   };
   const matches = (row: JsonObject, query: string) =>
     query.split('&').filter((f) => f.includes('=') && !f.startsWith('select=') && !f.startsWith('limit=')).every((f) => {
-      const [col, cond] = f.split('=');
+      const [col = '', cond = ''] = f.split('=');
       const [op, value] = [cond.slice(0, cond.indexOf('.')), cond.slice(cond.indexOf('.') + 1)];
       if (op === 'eq') return String(row[col]) === value;
       if (op === 'neq') return String(row[col]) !== value;
       return true;
     });
+  const tableOf = (name: string | undefined): JsonObject[] => {
+    const rows = name === undefined ? undefined : tables[name];
+    if (rows === undefined) throw new Error(`no table ${name}`);
+    return rows;
+  };
   const api = {
-    count: (table: string, filter: string) => Promise.resolve(tables[table].filter((r) => matches(r, filter)).length),
+    count: (table: string, filter: string) => Promise.resolve(tableOf(table).filter((r) => matches(r, filter)).length),
     rest: (path: string) => {
       const [table, query] = path.split('?');
-      return Promise.resolve(tables[table].filter((r) => matches(r, query ?? '')).slice(0, 1000));
+      return Promise.resolve(tableOf(table).filter((r) => matches(r, query ?? '')).slice(0, 1000));
     },
     rpc: () => Promise.resolve([]),
   } as unknown as Api;

@@ -1,6 +1,7 @@
 // A small polygon rasterizer and PNG encoder, so the icon PNGs need nothing but Node.
 // Coverage: 16 sub-scanlines per pixel row, each crossing span added with its exact horizontal
 // extent, so edges get 16 vertical and continuous horizontal anti-aliasing levels.
+import { Buffer } from 'node:buffer';
 import { deflateSync, constants } from 'node:zlib';
 
 const SUB = 16;
@@ -14,9 +15,11 @@ export function coverage(width, height, rings, [s, tx, ty], rule = 'nonzero') {
     for (let i = 0; i < ring.length; i++) {
       const a = ring[i];
       const b = ring[(i + 1) % ring.length];
-      const y0 = a[1] * s + ty, y1 = b[1] * s + ty;
+      const y0 = a[1] * s + ty;
+      const y1 = b[1] * s + ty;
       if (y0 === y1) continue;
-      const x0 = a[0] * s + tx, x1 = b[0] * s + tx;
+      const x0 = a[0] * s + tx;
+      const x1 = b[0] * s + tx;
       edges.push(y0 < y1 ? { top: y0, bottom: y1, x: x0, dx: (x1 - x0) / (y1 - y0), dir: 1 } : { top: y1, bottom: y0, x: x1, dx: (x0 - x1) / (y0 - y1), dir: -1 });
     }
   }
@@ -44,9 +47,11 @@ export function coverage(width, height, rings, [s, tx, ty], rule = 'nonzero') {
 }
 
 function span(acc, xa, xb, width) {
-  const a = Math.max(0, xa), b = Math.min(width, xb);
+  const a = Math.max(0, xa);
+  const b = Math.min(width, xb);
   if (b <= a) return;
-  const ia = Math.floor(a), ib = Math.floor(b);
+  const ia = Math.floor(a);
+  const ib = Math.floor(b);
   if (ia === ib) { acc[ia] += (b - a) / SUB; return; }
   acc[ia] += (ia + 1 - a) / SUB;
   for (let i = ia + 1; i < ib; i++) acc[i] += 1 / SUB;
@@ -67,7 +72,8 @@ export class Canvas {
     for (let i = 0; i < cov.length; i++) {
       const a = Math.min(1, cov[i]) * opacity;
       if (a <= 0) continue;
-      const o = i * 4, k = 1 - a;
+      const o = i * 4;
+      const k = 1 - a;
       this.px[o] = r * a + this.px[o] * k;
       this.px[o + 1] = g * a + this.px[o + 1] * k;
       this.px[o + 2] = b * a + this.px[o + 2] * k;

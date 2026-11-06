@@ -50,7 +50,7 @@ test('suggestions come from the device cache when Supabase is unreachable', asyn
   await expect(suggestion(page, '6× Eier', 'Schon mal gekauft')).toBeVisible();
   await expect.poll(() => page.evaluate(() => {
     const key = Object.keys(localStorage).find((k) => /\blist\./.test(k));
-    let value = key && JSON.parse(localStorage.getItem(key)!);
+    let value = key && JSON.parse(localStorage.getItem(key) ?? 'null');
     if (typeof value === 'string') value = JSON.parse(value);
     return value?.usuals?.length ?? 0;
   }), { message: 'the usuals are in the list snapshot' }).toBe(1);
@@ -81,12 +81,13 @@ test('with the field empty, what is due again is offered; a tap adds it and typi
   // Two purchases a week apart, the last a week ago: history only the server writes.
   const api = await apiAs(email);
   const { data: item } = await api.from('items').select('id, household_id').eq('name', 'Brötchen').single();
+  if (item === null) throw new Error('no Brötchen item');
   const events = adminClient().from('item_events');
-  expect((await events.update({ created_at: daysAgo(7) }).eq('item_id', item!.id).eq('action', 'bought')).error).toBeNull();
-  expect((await events.update({ created_at: daysAgo(7, 1) }).eq('item_id', item!.id).eq('action', 'added')).error).toBeNull();
+  expect((await events.update({ created_at: daysAgo(7) }).eq('item_id', item.id).eq('action', 'bought')).error).toBeNull();
+  expect((await events.update({ created_at: daysAgo(7, 1) }).eq('item_id', item.id).eq('action', 'added')).error).toBeNull();
   expect((await events.insert([
-    { household_id: item!.household_id, item_id: item!.id, action: 'added', item_name: 'Brötchen', created_at: daysAgo(14, 1) },
-    { household_id: item!.household_id, item_id: item!.id, action: 'bought', item_name: 'Brötchen', created_at: daysAgo(14) },
+    { household_id: item.household_id, item_id: item.id, action: 'added', item_name: 'Brötchen', created_at: daysAgo(14, 1) },
+    { household_id: item.household_id, item_id: item.id, action: 'bought', item_name: 'Brötchen', created_at: daysAgo(14) },
   ])).error).toBeNull();
 
   await page.reload();

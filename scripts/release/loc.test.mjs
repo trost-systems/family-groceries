@@ -5,6 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { after, before, test } from 'node:test';
 import { codeLines, languageOf, linesOfCode } from './loc.mjs';
 

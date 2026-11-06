@@ -26,6 +26,7 @@ const stallMark = (testInfo: TestInfo) => join(testInfo.project.outputDir, '.hos
  */
 export const test = base.extend<{ stallRetry: void; hostStall: void; closeContexts: void }>({
   stallRetry: [
+    // deno-lint-ignore no-empty-pattern -- Playwright reads fixture dependencies from this pattern; {} means none
     async ({}, use, testInfo) => {
       const mark = stallMark(testInfo);
       // A pause in an attempt that passed leaves its mark; only this test's failed attempt may use one.
@@ -40,6 +41,7 @@ export const test = base.extend<{ stallRetry: void; hostStall: void; closeContex
     { auto: true },
   ],
   hostStall: [
+    // deno-lint-ignore no-empty-pattern -- Playwright reads fixture dependencies from this pattern; {} means none
     async ({}, use, testInfo) => {
       let last = Date.now();
       let worst = 0;

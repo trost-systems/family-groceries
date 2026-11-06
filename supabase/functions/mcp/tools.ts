@@ -40,9 +40,10 @@ export type Lang = 'de' | 'en';
 /** English when the client prefers it to German (Accept-Language), else German like the tools. */
 export function langOf(acceptLanguage: string | null): Lang {
   const ranked = (acceptLanguage ?? '').split(',').map((part, i) => {
-    const [tag, ...params] = part.trim().toLowerCase().split(';');
+    const [tag = '', ...params] = part.trim().toLowerCase().split(';');
+    const [lang] = tag.split('-');
     const q = Number(params.find((p) => p.trim().startsWith('q='))?.trim().slice(2) ?? 1);
-    return { lang: tag.split('-')[0], q: Number.isFinite(q) ? q : 0, i };
+    return { lang, q: Number.isFinite(q) ? q : 0, i };
   }).filter((r) => (r.lang === 'de' || r.lang === 'en') && r.q > 0)
     .sort((a, b) => b.q - a.q || a.i - b.i);
   return ranked[0]?.lang === 'en' ? 'en' : 'de';

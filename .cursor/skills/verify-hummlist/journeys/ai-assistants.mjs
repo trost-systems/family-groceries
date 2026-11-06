@@ -5,6 +5,7 @@
 // and the last activity, the token hint, and the details sheet in plain words.
 //
 //   node journeys/ai-assistants.mjs <evidence dir> [--lang de|en]
+import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';

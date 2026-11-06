@@ -56,7 +56,7 @@ export class HistoryCopyError extends Error {}
 export function t(id, locale, vars = {}) {
   const text = HISTORY_COPY[id]?.[locale];
   if (text === undefined) throw new HistoryCopyError(`history copy ${id} has no ${locale} text`);
-  return text.replace(/\{(\w+)\}/g, (match, key) => {
+  return text.replace(/\{(\w+)\}/g, (_match, key) => {
     if (!(key in vars)) throw new HistoryCopyError(`history copy ${id} needs {${key}}`);
     return String(vars[key]);
   });

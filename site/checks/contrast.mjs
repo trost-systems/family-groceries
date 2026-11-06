@@ -4,6 +4,7 @@
 // (the blocks' hex clusters, paper textures), and the pixels for nodes axe cannot decide. Non-text:
 // each hex control's contour and edge against the block around it, and every focus indicator's
 // ring colour against what surrounds it, both read from computed styles. README.md has the rules.
+import process from 'node:process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -50,7 +51,7 @@ for (const path of PAGES) {
     const name = `${path} ${runName(run)}`;
 
     const axe = await p.evaluate(async () => {
-      const res = await window.axe.run(document, { runOnly: { type: 'rule', values: ['color-contrast'] } });
+      const res = await globalThis.axe.run(document, { runOnly: { type: 'rule', values: ['color-contrast'] } });
       const msg = (n) => `${n.target.join(' ')}: ${(n.any[0]?.message ?? '').slice(0, 140)}`;
       const textual = (n) => !/non-text|too short|pseudo|no text/i.test(n.any[0]?.message ?? '');
       return {
@@ -112,13 +113,13 @@ for (const path of PAGES) {
     // focusable element's ring, focused with focus-visible, against the ground outside the ring.
     const ui = await p.evaluate(() => {
       const out = [];
-      const bgOf = (e) => window.__kit.bgBehind(e);
+      const bgOf = (e) => globalThis.__kit.bgBehind(e);
       for (const el of document.querySelectorAll('.hex:has(> .face)')) {
         if (!el.getClientRects().length) continue;
         const ground = bgOf(el.parentElement);
         const face = el.querySelector(':scope > .face');
-        out.push({ kind: 'hex contour', sel: window.__kit.sel(el), fg: getComputedStyle(face, '::before').backgroundColor, bg: ground.color, ground: ground.sel });
-        out.push({ kind: 'hex face', sel: window.__kit.sel(el), fg: getComputedStyle(face, '::after').backgroundColor, bg: ground.color, ground: ground.sel });
+        out.push({ kind: 'hex contour', sel: globalThis.__kit.sel(el), fg: getComputedStyle(face, '::before').backgroundColor, bg: ground.color, ground: ground.sel });
+        out.push({ kind: 'hex face', sel: globalThis.__kit.sel(el), fg: getComputedStyle(face, '::after').backgroundColor, bg: ground.color, ground: ground.sel });
       }
       for (const el of document.querySelectorAll('a[href], button, summary, input, select, textarea, [tabindex]:not([tabindex="-1"])')) {
         if (!el.getClientRects().length || el.closest('[hidden]')) continue;
@@ -130,13 +131,13 @@ for (const path of PAGES) {
         const visible = (c) => c && !/^rgba\([^)]*,\s*0\)$/.test(c) && c !== 'transparent';
         if (shadows.length) {
           // .hex: four drop shadows in the gap colour, then four in the ring colour.
-          out.push({ kind: 'focus ring (hex)', sel: window.__kit.sel(el), fg: shadows.at(-1), bg: ground.color, ground: ground.sel, gap: shadows[0] });
+          out.push({ kind: 'focus ring (hex)', sel: globalThis.__kit.sel(el), fg: shadows.at(-1), bg: ground.color, ground: ground.sel, gap: shadows[0] });
         } else if (s.outlineStyle !== 'none' && visible(s.outlineColor) && parseFloat(s.outlineWidth) > 0) {
           const box = [...s.boxShadow.matchAll(/rgba?\([^)]+\)/g)].map((m) => m[0]).filter(visible);
           // A box-shadow outside the outline (the demo toggle) is the ground the ring sits on.
-          out.push({ kind: 'focus outline', sel: window.__kit.sel(el), fg: s.outlineColor, bg: box[0] ?? ground.color, ground: box[0] ? 'its box-shadow' : ground.sel });
+          out.push({ kind: 'focus outline', sel: globalThis.__kit.sel(el), fg: s.outlineColor, bg: box[0] ?? ground.color, ground: box[0] ? 'its box-shadow' : ground.sel });
         } else {
-          out.push({ kind: 'focus (none found)', sel: window.__kit.sel(el), fg: null, bg: ground.color, ground: ground.sel });
+          out.push({ kind: 'focus (none found)', sel: globalThis.__kit.sel(el), fg: null, bg: ground.color, ground: ground.sel });
         }
         el.blur();
       }
@@ -173,7 +174,7 @@ const rows = (map, cols) => [...map.values()].sort((a, b) => a.ratio - b.ratio).
 console.log('\nText colour pairs axe measured (lowest ratio per pair, every page and run)\n');
 console.log(table(['fg', 'bg', 'ratio', 'needs', 'nodes', 'schemes', 'lowest at'], rows(textPairs, (r) => [r.fg, r.bg, fmt(r.ratio), r.min, r.n, [...r.runs].join('+'), `${r.page} ${r.sample}`.slice(0, 90)])));
 console.log('\nNon-text: hex contour and face vs the block (one of them needs 3:1), focus ring vs the ground outside it (needs 3:1)\n');
-console.log(table(['kind', 'fg', 'bg', 'ratio', 'ring vs gap', 'ground', 'n', 'schemes', 'sample'], rows(nonText, (r) => [r.kind, r.fg, r.bg, fmt(r.ratio), r.gap == null ? '-' : fmt(r.gap), r.ground.slice(0, 40), r.n, [...r.runs].join('+'), `${r.page} ${r.sample}`.slice(0, 80)])));
+console.log(table(['kind', 'fg', 'bg', 'ratio', 'ring vs gap', 'ground', 'n', 'schemes', 'sample'], rows(nonText, (r) => [r.kind, r.fg, r.bg, fmt(r.ratio), r.gap === null || r.gap === undefined ? '-' : fmt(r.gap), r.ground.slice(0, 40), r.n, [...r.runs].join('+'), `${r.page} ${r.sample}`.slice(0, 80)])));
 if (fails.length) {
   console.log(`\n${fails.length} failure(s):\n- ${fails.join('\n- ')}`);
   process.exit(1);

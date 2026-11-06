@@ -8,6 +8,8 @@
 // Writes <out>/<feature-id>/<lang>.gif|.mp4|.webm|.png and <out>/<feature-id>/meta.json.
 // Needs helpers/launch.sh of verify-hummlist to have run (stack, build, web server); each language
 // seeds its own demo household (scripts/<feature-id>.mjs names the scenario) and tears it down.
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -91,7 +93,8 @@ function teardown(run) {
 // A finger on a phone: a dot where the tap lands (motion.md), drawn over the canvas, then the tap.
 async function tap(page, locator) {
   const box = await locator.boundingBox();
-  const x = box.x + Math.min(box.width * 0.75, box.width - 24), y = box.y + box.height / 2;
+  const x = box.x + Math.min(box.width * 0.75, box.width - 24);
+  const y = box.y + box.height / 2;
   await page.evaluate(([x, y]) => {
     const dot = document.createElement('div');
     dot.style.cssText = `position:fixed;left:${x - 22}px;top:${y - 22}px;width:44px;height:44px;border-radius:50%;

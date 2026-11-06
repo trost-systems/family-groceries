@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  actionSnackBar, addField, addSheet, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
+  actionSnackBar, addField, addSheet, boxOf, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
 } from './helpers';
 import { householdWithItems, signIn, watchBuild } from './web-build';
 
@@ -9,7 +9,7 @@ import { householdWithItems, signIn, watchBuild } from './web-build';
 // the tap is being handled, and closes it on blur. So one tap must focus the field's DOM input
 // either natively or from inside the tap's own events, and nothing may blur or refocus it later.
 
-type FocusEntry = { at: number; what: string; target: string; during: string; already?: boolean };
+type FocusEntry = { at: number; what: string; target: string; during: string; already?: boolean | undefined };
 
 /** Logs every focus change of the page from now on, and every focus()/blur() call, with the event being handled. */
 async function logFocus(page: Page): Promise<void> {
@@ -19,8 +19,8 @@ async function logFocus(page: Page): Promise<void> {
     const name = (el: EventTarget | null) => el instanceof HTMLElement
       ? `${el.tagName.toLowerCase()}${el.dataset.semanticsRole ? `[${el.dataset.semanticsRole}]` : ''}`
       : String(el);
-    const add = (what: string, target: EventTarget | null, during = window.event?.type ?? 'none', already?: boolean) =>
-      log.push({ at: Math.round(performance.now()), what, target: name(target), during, already });
+    const add = (what: string, target: EventTarget | null, during: string | undefined, already?: boolean) =>
+      log.push({ at: Math.round(performance.now()), what, target: name(target), during: during ?? globalThis.event?.type ?? 'none', already });
     for (const type of ['touchstart', 'touchend', 'click', 'focusin', 'focusout']) {
       document.addEventListener(type, (event) => add(type, event.target, type), true);
     }
@@ -143,7 +143,7 @@ test('a finger swipe across a row opens nothing and moves nothing; a hold edits;
   await page.goto('/');
   await signIn(page, email);
   const row = itemRow(page, 'Zahnpasta');
-  const before = (await row.boundingBox())!;
+  const before = await boxOf(row);
 
   // Lifted after the engine's 200 ms click window, so it is a drag, not a tap that ticks.
   await swipeLeft(page, row, { pause: 300, onMove: () => screenshot(page, '78-iphone-swipe-mid') });

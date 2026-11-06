@@ -1,5 +1,6 @@
 // Writes site/COPY_NEEDED.md, the landing copy for Hummlist Launch, from content/landing/copy.yml.
 // `--check` writes nothing and fails when the file is stale (the site tests run it).
+import process from 'node:process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

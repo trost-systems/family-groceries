@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -80,9 +81,9 @@ test('every copy id is on a landing page of some stage or a mail-link page with 
 test('copy.yml must give both languages, a status and a source, and every id must be used', () => {
   const broken = (text, pattern) => assert.throws(() => buildSite({ files: { 'landing/copy.yml': text } }), pattern);
   broken(COPY_TEXT.replace('  en: "Quick to add, quick to tick off"\n', ''), /feature\.list\.title: "en" must be a non-empty string/);
-  broken(COPY_TEXT.replace(/(hero\.title:\n(?:  .*\n)*?)  status: draft/, '$1  status: final'), /hero\.title: "status" must be draft or reused/);
+  broken(COPY_TEXT.replace(/(hero\.title:\n(?: {2}.*\n)*?) {2}status: draft/, '$1  status: final'), /hero\.title: "status" must be draft or reused/);
   broken(`${COPY_TEXT}\nhero.extra:\n  de: "x"\n  en: "x"\n  status: draft\n  source: "x"\n`, /copy ids not used on the landing page: hero\.extra/);
-  broken(COPY_TEXT.replace(/hero\.lead:\n(?:  .*\n)*/, ''), /copy id "hero\.lead" is used by the landing page but missing/);
+  broken(COPY_TEXT.replace(/hero\.lead:\n(?: {2}.*\n)*/, ''), /copy id "hero\.lead" is used by the landing page but missing/);
 });
 
 test('COPY_NEEDED.md is generated from copy.yml and lists every draft', () => {

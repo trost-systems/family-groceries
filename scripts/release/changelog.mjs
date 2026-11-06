@@ -21,6 +21,7 @@
 // releases/changelog/pending.json, and a later draft takes it once the gate is open. An override
 // releases/changelog/<version>.override.md replaces the draft's title and store texts.
 
+import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -236,7 +237,7 @@ export function plan(collected, pending, gates) {
       if (fromPending) released.push({ category, de, en, flag, hold, pr, sha });
     } else {
       held.push({ category, de, en, flag, hold, pr, sha });
-      if (gate.matched && item.hold == null) matched.push({ item: held.at(-1), word: gate.matched.word });
+      if (gate.matched && (item.hold === null || item.hold === undefined)) matched.push({ item: held.at(-1), word: gate.matched.word });
     }
   }
   return { items, held, released, matched };
@@ -289,7 +290,7 @@ export function parseOverride(text, source) {
   }
   const block = (lines) => sanitize(lines.map((l) => l.trimEnd()).join('\n')).replace(/\n{3,}/g, '\n\n');
   const title = {};
-  const store = { app_store: {}, play: {} };
+  const store = { 'app_store': {}, play: {} };
   const where = {};
   for (const lang of ['de', 'en']) {
     const body = sections[lang] ?? fail(`no "## ${lang}" section; both languages are required`);
@@ -528,7 +529,7 @@ function draftCommand(argv) {
   const draft = {
     version: opts.version,
     status: DRAFT_STATUS,
-    generated_from: { previous_sha: previous, sha },
+    'generated_from': { previous_sha: previous, sha },
     ...changelog,
     held,
     store: override?.store ?? storeTexts(changelog, opts.version),

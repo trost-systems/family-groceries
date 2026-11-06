@@ -371,7 +371,7 @@ describe('gated items, pending.json and the override', () => {
     }
     assert.match(r.stderr, /WARNING: "Alexa understands you better\." \([0-9a-f]{7}\) mentions "alexa" but has no "hold: alexa-certification" line; held anyway/);
     assert.match(r.stdout, /--- held, not public \(3\): record\.mjs keeps them in releases\/changelog\/pending\.json/);
-    assert.match(r.stdout, /  new \[flag: smart-lists\] Lists sort themselves\. \(#2 [0-9a-f]{7}\)/);
+    assert.match(r.stdout, / {2}new \[flag: smart-lists\] Lists sort themselves\. \(#2 [0-9a-f]{7}\)/);
     assert.ok(!existsSync(path('1.0.0.json')), 'a dry run writes nothing');
     assert.deepEqual(pending(), [], 'the draft command never writes pending.json');
   });
@@ -488,7 +488,7 @@ describe('gated items, pending.json and the override', () => {
       assert.equal(run('store', '--version', '1.3.0').code, 0);
       let r = run('drafts');
       assert.equal(r.code, 1, 'a flag set back to partial after the draft');
-      assert.match(r.stderr, /would publish what is held back; redraft with --force[^]*\n  "Lists sort themselves\." is public, but flag: smart-lists is not open/);
+      assert.match(r.stderr, /would publish what is held back; redraft with --force[^]*\n {2}"Lists sort themselves\." is public, but flag: smart-lists is not open/);
       r = record('--version', '1.3.0', '--sha', 'main', '--build', '4', '--date', '2026-11-04', '--dry-run');
       assert.equal(r.code, 1);
       assert.match(r.stderr, /would publish what is held back/);
@@ -506,7 +506,7 @@ describe('gated items, pending.json and the override', () => {
       writeFileSync(path('1.3.0.override.md'), '## de\ntitle: Neu\n\nJetzt mit Alexa.\n\n## en\ntitle: New\n\nNow with Alexa.\n');
       r = run('drafts');
       assert.equal(r.code, 1, 'an override that names Alexa');
-      assert.match(r.stderr, /1\.3\.0\.override\.md would publish what is held back:\n  app_store\.de mentions "alexa", held by alexa-certification/);
+      assert.match(r.stderr, /1\.3\.0\.override\.md would publish what is held back:\n {2}app_store\.de mentions "alexa", held by alexa-certification/);
       rmSync(path('1.3.0.override.md'));
 
       commit('After the draft (#11)', note(item('fixed', 'Danach.', 'After.')));

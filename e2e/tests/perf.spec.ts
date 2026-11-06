@@ -28,7 +28,7 @@ type Frames = { frames: number; meanMs: number; p50Ms: number; p95Ms: number; ma
 function stats(intervals: number[]): Frames {
   const sorted = [...intervals].sort((a, b) => a - b);
   const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
-  const round = (n: number) => Math.round(n * 10) / 10;
+  const round = (n: number | undefined) => (n === undefined ? NaN : Math.round(n * 10) / 10);
   return {
     frames: sorted.length,
     meanMs: round(sorted.reduce((a, b) => a + b, 0) / sorted.length),
@@ -104,7 +104,7 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
   // (127.0.0.1:<web>) may not reach the local stack (127.0.0.1:54321). The hosted app talks to
   // a public Supabase host, so the check is off in this browser of its own.
   const own = isolated ? await chromium.launch({ args: ['--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessRespectPreflightResults'] }) : null;
-  const context = await (own ?? browser).newContext({ baseURL, viewport: { width: 393, height: 852 }, locale: 'de-DE', timezoneId: 'Europe/Berlin' });
+  const context = await (own ?? browser).newContext({ ...(baseURL === undefined ? {} : { baseURL }), viewport: { width: 393, height: 852 }, locale: 'de-DE', timezoneId: 'Europe/Berlin' });
   const page = await context.newPage();
   if (allow) await wasmAllowList(page, allow);
   if (isolated) await isolate(page);
@@ -118,7 +118,7 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
       loads.push(await timeToList(page));
     }
     expect([...new Set(loaded())], `every load ran the ${build} build`).toEqual([build]);
-    expect(await page.evaluate(() => window.crossOriginIsolated), 'cross-origin isolated').toBe(!!isolated);
+    expect(await page.evaluate(() => globalThis.crossOriginIsolated), 'cross-origin isolated').toBe(!!isolated);
     const list = await storeDivider(page, 'Ohne Laden').boundingBox();
     await page.mouse.move(196, (list?.y ?? 100) + 300);
     const first = await scrollPass(page);

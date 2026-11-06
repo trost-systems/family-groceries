@@ -41,8 +41,9 @@ Deno.test('openapi.yaml lists exactly the routes the api function serves', async
 Deno.test('each documented route has its operationId, scope and Idempotency-Key', async () => {
   const { paths } = await spec();
   for (const route of routes) {
-    const op = paths[route.path][route.method.toLowerCase()];
     const name = `${route.method} ${route.path}`;
+    const op = paths[route.path]?.[route.method.toLowerCase()];
+    if (op === undefined) throw new Error(`${name}: not in openapi.yaml`);
     assertEquals(op.operationId, route.operation, `${name}: operationId`);
     assert(
       op.description?.includes(`Requires the ${route.scope} scope.`),

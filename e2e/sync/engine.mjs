@@ -9,6 +9,7 @@
 import { chromium } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
 
 const config = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 const { baseURL, outDir, viewport, supabaseUrl } = config;
@@ -40,8 +41,7 @@ function observer() {
     const digest = labels.join('\u0001');
     if (digest === last) return;
     last = digest;
-    // @ts-ignore exposed by the driver
-    window.__fgSnapshot?.({ at: Date.now(), labels });
+    globalThis.__fgSnapshot?.({ at: Date.now(), labels });
   };
   new MutationObserver(() => {
     if (queued) return;
@@ -484,10 +484,10 @@ function compositeVideo() {
   return 'videos/composite.webm';
 }
 
-let composite_video = null;
+let compositePath = null;
 if (Object.keys(videos).length === clients.length) {
   try {
-    composite_video = compositeVideo();
+    compositePath = compositeVideo();
   } catch (e) {
     log(`composite video failed: ${/** @type {Error} */ (e).message.split('\n')[0]}`);
   }
@@ -503,7 +503,7 @@ const result = {
   frames,
   changeFrames,
   changeFramesCapped: changeFrames >= MAX_CHANGE_FRAMES,
-  compositeVideo: composite_video,
+  compositeVideo: compositePath,
 };
 writeFileSync(`${outDir}/result.json`, JSON.stringify(result, null, 2));
 log(`${ok ? 'passed' : 'FAILED'}: ${steps.length} steps, ${frames.length} frames in ${result.durationMs} ms`);

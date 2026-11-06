@@ -1,5 +1,6 @@
 // The public release record, releases/releases.json (releases/README.md): its format, checked here
 // for the site build, the site tests and scripts/release/record.mjs, which writes it.
+import { Buffer } from 'node:buffer';
 
 export const CHANNELS = ['public'];
 const STORES = ['app_store', 'play', 'web'];
@@ -19,7 +20,7 @@ export const PENDING_FILE = 'pending.json';
 // version information); fastlane's pilot enforces it as 4000 UTF-8 bytes, the strictest reading, so
 // that is what counts here.
 export const STORE_LIMITS = {
-  app_store: { limit: 4000, unit: 'UTF-8 bytes', length: (text) => Buffer.byteLength(text.normalize('NFC'), 'utf8') },
+  'app_store': { limit: 4000, unit: 'UTF-8 bytes', length: (text) => Buffer.byteLength(text.normalize('NFC'), 'utf8') },
   play: { limit: 500, unit: 'Unicode characters', length: (text) => [...text.normalize('NFC')].length },
 };
 

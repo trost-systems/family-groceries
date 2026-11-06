@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { apiAs, chainStores, functionsUrl, itemRow, newEmail, screenshot, signUpWithHousehold } from './helpers';
+import { apiAs, chainStores, functionsUrl, itemRow, must, newEmail, screenshot, signUpWithHousehold } from './helpers';
 import { call, connectWithToken } from './mcp-helpers';
 
 type Item = {
@@ -50,7 +50,7 @@ test('MCP add_items: an old payload still classifies; brand and properties are s
 test('voice: "Windeln Pampers Größe 3 und zwei Liter Milch" is split into fields', async ({ page }) => {
   const email = newEmail('details-voice');
   await signUpWithHousehold(page, email, { stores: chainStores });
-  const token = (await (await apiAs(email)).auth.getSession()).data.session!.access_token;
+  const token = must((await (await apiAs(email)).auth.getSession()).data.session, 'session').access_token;
   const res = await fetch(`${functionsUrl}/voice`, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
@@ -68,7 +68,7 @@ test('voice: "Windeln Pampers Größe 3 und zwei Liter Milch" is split into fiel
   const { data } = await api.from('items').select('name, brand, properties, quantity, store_id').order('name');
   expect(data, 'Laden dm from the drugstore hint').toEqual([
     { name: 'Milch', brand: null, properties: null, quantity: '2 l', store_id: null },
-    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: null, store_id: dm!.id },
+    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: null, store_id: must(dm, 'store dm').id },
   ]);
   await expect(itemRow(page, 'Windeln')).toHaveAccessibleName('Windeln Pampers · Größe 3');
   await expect(itemRow(page, 'Milch')).toHaveAccessibleName('Milch 2 l');

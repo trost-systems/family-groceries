@@ -10,6 +10,8 @@
 // Usage: node fake-oidc.mjs [port]   (default 54399)
 import { createECDH, createHash, createPrivateKey, sign } from 'node:crypto';
 import { createServer } from 'node:http';
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
 
 const port = Number(process.argv[2] ?? process.env.FAKE_OIDC_PORT ?? 54399);
 const issuer = `http://host.docker.internal:${port}/realms/test`;
@@ -29,7 +31,7 @@ const kid = 'fake-1';
 function idToken({ email, name, nonce, aud = clientId, emailVerified = true }) {
   const now = Math.floor(Date.now() / 1000);
   const claims = {
-    iss: issuer, aud, sub: b64url(sha256(email)).slice(0, 22), email, email_verified: emailVerified,
+    iss: issuer, aud, sub: b64url(sha256(email)).slice(0, 22), email, 'email_verified': emailVerified,
     iat: now, exp: now + 600, ...(name ? { name } : {}), ...(nonce ? { nonce } : {}),
   };
   const head = b64url(JSON.stringify({ alg: 'ES256', typ: 'JWT', kid }));
