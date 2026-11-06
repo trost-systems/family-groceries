@@ -275,6 +275,42 @@ void main() {
     expect(activeNames(), ['Käse']);
   });
 
+  // Job 122, review 1: a send that is slow to answer must not be overtaken.
+  // Writes are last-write-wins, so a tick that lands after a later untick
+  // would leave the item ticked although the user unticked last.
+  test('a later op waits for a slow send, so the last change wins', () {
+    fakeAsync((async) {
+      final ordered = ListCubit(repo, MemoryListCache(), userId: 'peter')
+        ..start();
+      async.elapse(Duration.zero);
+      final brot = (ordered.addEntry(parseEntry('Brot')) as Added).item.id;
+      async.elapse(const Duration(seconds: 1));
+      expect(repo.rows[brot]!.status, ItemStatus.active);
+      final slow = repo.gate = Completer<void>();
+      ordered.tick(brot);
+      async.elapse(const Duration(seconds: 16));
+      repo.gate = null;
+      async.elapse(const Duration(seconds: 30));
+      ordered.untick(brot);
+      async.elapse(const Duration(seconds: 30));
+      expect(
+        repo.rows[brot]!.status,
+        ItemStatus.active,
+        reason: 'still waiting',
+      );
+      slow.complete();
+      async.elapse(const Duration(seconds: 30));
+      expect(ordered.state.pending, isEmpty);
+      expect(
+        repo.rows[brot]!.status,
+        ItemStatus.active,
+        reason: 'the user unticked last',
+      );
+      unawaited(ordered.close());
+      async.flushMicrotasks();
+    });
+  });
+
   test('a rejected op is dropped, reported, and the view resyncs', () async {
     final rejections = <Rejected>[];
     final sub = cubit.rejections.listen(rejections.add);

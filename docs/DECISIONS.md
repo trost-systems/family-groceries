@@ -8468,3 +8468,86 @@ draft PR #277, `/internal/bottom-nav`). Built without a further question.
   repositories' wire contract (the PostgREST/RPC request and how the answer is read), the list
   cubit's resubscribe, save and usuals rules, analytics without known members, parser boundaries.
   No production code changed.
+
+## Job 122: offline-start, list and edit-sheet flakes (#62, #63, #64, #71, #72), 2026-11-05
+
+Method: job 18c's (18.23). Each test ran with retries off on main's release web build while a
+small script sent SIGSTOP to the Playwright runner and Chromium on a duty cycle, with CPU burners
+on top. The stack and the web server kept running. On hz it ran locally. On GitHub Actions it
+wrapped the e2e gate's `npx playwright test` on the scratch branches `probe/122-stress*`, because
+the hz e2e lock was 7 deep for hours. Job 119's `scripts/e2e-stress.sh` (#261) does the same with
+more targets, so this job commits no second harness. A Playwright trace of a passing run lists the
+steps that took long: `node e2e/trace-slow-steps.mjs <dir>` (a run's `--output` dir, or an HTML
+report's `data/`).
+
+1. **#63 is an app bug: a stepper's tooltip moved the edit sheet's DOM on the web.** The trace of
+   a passing run showed it first. In "Fertig writes only what changed", both `expectFieldValue`
+   checks of Menge after a stepper spent 10 s in a `toBeFocused` that failed, and `toPass` passed
+   on its second click. The test took 29 s, 20 s of it waiting, in every run (3 of 3 here, 3 of 3
+   on CI). Two lost clicks in one `toPass` exhaust its 20 s, which is #63's
+   "Timeout 20000ms exceeded while waiting on the predicate". A probe found the mechanism. Hovering
+   „Eins mehr“ or „Eins weniger“, without a click, is enough. Then the next click into Menge
+   focuses the `<input>` for about 100 ms, and focus falls to `<body>`. While a Material
+   `Tooltip` shows, `OverlayPortal` grafts its overlay into the semantics tree (a full-screen
+   node with `traversalChildIdentifier`, plus the message text; `excludeFromSemantics` only drops
+   the tooltip string from the button). The web engine re-parents the `<flt-semantics>` subtree
+   that holds the sheet into the graft's container when the tooltip shows. It moves the subtree
+   back when the tooltip hides. A MutationObserver saw the move 2 ms after the `blur` of the
+   focused input, and the element stayed the same and connected. Hovering Menge until the tooltip
+   is gone, then clicking, kept the focus. The fix drops the tooltip from the two steppers. Their
+   icons keep the semantic labels „Eins mehr“ and „Eins weniger“, so screen readers and the e2e
+   locators read the same. Mouse users lose the hover hint over the + and −. Wrapping the
+   tooltip's text in `ExcludeSemantics` was tried: the graft node stays and focus is still lost.
+   A widget test proves the cause on the VM: hovering a stepper must leave the sheet's semantics
+   tree as it is (it fails on main). The VM keeps the focus either way, because only the web
+   engine moves DOM. The e2e test checks the symptom: a click into Menge right after a stepper
+   must focus it within 2 s of runner time (`within`). It fails on main's app (2 of 2 on CI) and
+   passes with the fix. The test now takes 11 s instead of 33 s on CI. Under 8 s pauses every
+   6 s on CI (8 runs each), main's test took 31.6 to 59.4 s, 4 of 8 within 2.6 s of its 60 s
+   timeout; with the fix 33.5 to 43.0 s.
+2. **The add sheet's clear button was checked for the same effect.** After a click on it, the
+   DOM focus is not on the add field's `<input>`, but text typed next lands in the field, and the
+   field has focus again after the typing. No change there.
+3. **#62, #64, #71 and #72 are host pauses only.** Nothing failed on main with retries off:
+   - hz, 4 s pauses every 6 s and 4 burners: the five tests 5 times each, 25 of 25.
+   - CI, 2 s pauses every 3 s and 2 burners: a copy of the offline test with a request log 15
+     times, and "signing out drops the cached list" 15 times, 30 of 30.
+   - CI, 8 s pauses every 6 s and 2 burners (18c's harshest): "Abbrechen and an unchanged Fertig
+     write nothing", "edit changes name, quantity and category", the offline cold start and the
+     sign-out, 8 times each, 32 of 32. The cold start took 44 to 46 s of its 60 s there.
+   - Traces of passing runs on CI show no hidden wait in the four tests. The only steps over
+     1.5 s are the sign-up in `beforeEach` (3 to 4 s) and the poll for the queued ops after
+     `network.restore()` (2.9 s). The tests take 6 to 18 s against their 60 s budgets.
+
+   The failures in the issues fit the VM pauses of 2026-10-25 to 10-28 (18.23): #62's two came
+   with 262 s and 570 s host stalls. #64, #71 and #72 failed on 2026-10-25, before the stall
+   detector existed. In 18c's 30 stressed runs of five specs, list:53 and offline-start:30 and :84
+   among them, the 3 failures all fell inside VM holes. The issues stay open for the lead (`docs/NEEDS_LEAD.md`).
+4. **The queued ops after `network.restore()`: what can and cannot stall them.** In the 15
+   logged runs the ops reached the server 0.04 to 5.9 s after the restore, and no Supabase
+   request was left open when the poll ended. From the code (gotrue 2.27.3, supabase 2.16.5):
+   an expired session joins one refresh, which retries for at most about 6 s after it started,
+   and a failed resync retries every 3 s, so a restore waits at most a few seconds for the next
+   attempt. The flush does not wait for realtime. Two paths could still hold or lose the queue,
+   and neither showed up in any run:
+   - A request that never settles. The app sets no HTTP timeout, so `_flushing` stays true and
+     no later op is sent until the list closes. Not fixed, on purpose. Review 0 had it time
+     out after 15 s and retry. Review 1 showed that this reorders writes: a timeout stops the
+     wait, not the request, item writes are last-write-wins on the server, and the late request
+     then overwrites ops sent after it. A tick that lands after the user unticked leaves the
+     item ticked, a late delete beats its undo, and a late rename beats the second one. A stall
+     keeps the order, and the order is the guarantee. The cubit test "a later op waits for a
+     slow send, so the last change wins" fails with a timeout put back. Aborting the fetch
+     would not be enough either: the request may already be at the server. A safe fix needs the
+     server to ignore stale writes (a per-item op sequence or time guard, a migration), which
+     is the lead's call (`docs/NEEDS_LEAD.md`). Resyncs need no timeout: they are numbered, not
+     serialized (Job 99), so a hung one does not block the next.
+   - A refresh the server refuses for good (the refresh token revoked, the account deleted).
+     gotrue signs out, and sign-out drops the device's list with its queue. That is intended:
+     without a session the writes cannot be sent, the next sign-in may be another user, and
+     #72's test asserts that nothing of the list stays after a sign-out. It is listed for the
+     lead in `docs/NEEDS_LEAD.md`.
+   - Context teardown past 60 s (#71): closing a context waits on nothing the app holds; it
+     needs the test body to have used nearly all of the 60 s budget first.
+   - Sign-out (#72) waits on nothing that can hang: the analytics flush is cut at 2 s, gotrue
+     reports `signedOut` before its `/logout` request, and the cache is dropped from the click.

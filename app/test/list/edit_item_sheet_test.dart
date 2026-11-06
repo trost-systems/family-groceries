@@ -1,6 +1,7 @@
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -367,6 +368,30 @@ void main() {
       reason: 'the group covers the sheet',
     );
     expect(find.bySemanticsLabel('Marke'), findsOneWidget);
+    handle.dispose();
+  });
+
+  // Job 122: a tooltip's overlay joins the semantics tree while it shows, and
+  // on the web that moves the sheet's DOM: a click into Menge right after
+  // hovering a stepper lost its focus.
+  testWidgets('hovering a stepper leaves the semantics tree as it is', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await open(tester, milk);
+    String tree() => tester
+        .getSemantics(find.bySemanticsLabel('Bearbeiten'))
+        .toStringDeep()
+        .replaceAll(RegExp(r'SemanticsNode#\d+'), 'SemanticsNode');
+    final before = tree();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    for (final stepper in ['edit-quantity-plus', 'edit-quantity-minus']) {
+      await mouse.moveTo(tester.getCenter(key(stepper)));
+      await tester.pumpAndSettle();
+      expect(tree(), before, reason: 'hovering $stepper');
+    }
     handle.dispose();
   });
 }
