@@ -228,6 +228,8 @@ What Hummlist does today, in plain words, with the exact button and screen label
 4. Tap „Fertig“ (EN: "Done") to save, or „Abbrechen“ (EN: "Cancel") next to it to drop every change and close the sheet.
 5. Renaming an item to exactly the name of something already on the list (capital letters, spaces, and ae/oe/ue for ä/ö/ü don't matter) does not make a second entry: the two become one. The item already there keeps its name, store and category, the amounts add up, and „Zusammengeführt: <amount> <name>“ (EN: "Merged: …") shows with „Rückgängig“ (EN: "Undo"). This also holds when the rename was made offline or on two phones at the same moment: once the phone is back online, the two become one. If they cannot be combined (the amount would get too long), Hummlist says „<name> steht schon auf der Liste“ (EN: "<name> is already on the list"), keeps the old name and does not save the change.
 
+Each field's name sits above its field; what is typed sits in the middle of the field, left-aligned.
+
 **Never claim.**
 - That a swipe deletes or edits an item; a swipe does nothing, a hold opens the edit sheet.
 - That the sheet has a delete button; its buttons at the bottom are „Abbrechen“ and „Fertig“. Tick an item off to remove it.
@@ -237,7 +239,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - That holding and dragging moves an item on the list; nothing on the list drags. Holding opens this sheet.
 - That renaming to another word for the same thing („Semmeln“ while „Brötchen“ is on the list) or to an item with a brand merges them; Hummlist only points it out („Brötchen steht schon auf der Liste“ with „Zusammenführen“), as when adding.
 
-**Last verified.** job 149 branch (job/149-item-edit-sheet-cleanup, 252bfb5f), 2026-11-06 (CET), from code, the widget tests and driven on the release web build (verify-hummlist): the sheet without title, hint or Löschen, chips without icons, „Abbrechen“ next to „Fertig“ dropping a rename and a category pick with the server row unchanged and no message (DE light and dark, EN). Before that d55f24cf (PR #263, job 122), 2026-11-06 (CET), from code, the e2e tests and driven on the release web build (verify-hummlist): „Eins mehr“ / „Eins weniger“ without a hover tooltip; a click into „Menge“ right after them keeps the cursor there (6 of 6 rounds, 0 of 6 with the old sheet). Before that main 694114ee, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name; „broetchen“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“; a synonym (Semmeln onto Brötchen) is only pointed out. Job 114 (#253), 2026-11-05, from code and e2e on the web build: a rename made offline, and two phones renaming at once, end as one item with „Zusammengeführt“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“; job 104, 2026-11-05: a synonym is only pointed out. Recipe: [edit-item.md](./edit-item.md).
+**Last verified.** job 148 branch (job/148-ui-consistency-pass), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/hex-surfaces.mjs`, DE light and dark): the field names above the fields, text and placeholders centred in the hex fields, „Menge“ left-aligned. Earlier: job 149 branch (job/149-item-edit-sheet-cleanup, 252bfb5f), 2026-11-06 (CET), from code, the widget tests and driven on the release web build (verify-hummlist): the sheet without title, hint or Löschen, chips without icons, „Abbrechen“ next to „Fertig“ dropping a rename and a category pick with the server row unchanged and no message (DE light and dark, EN). Before that d55f24cf (PR #263, job 122), 2026-11-06 (CET), from code, the e2e tests and driven on the release web build (verify-hummlist): „Eins mehr“ / „Eins weniger“ without a hover tooltip; a click into „Menge“ right after them keeps the cursor there (6 of 6 rounds, 0 of 6 with the old sheet). Before that main 694114ee, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): renaming onto an item already on the list (same name; „broetchen“ onto „Brötchen“) with „Zusammengeführt“ and „Rückgängig“; a synonym (Semmeln onto Brötchen) is only pointed out. Job 114 (#253), 2026-11-05, from code and e2e on the web build: a rename made offline, and two phones renaming at once, end as one item with „Zusammengeführt“. Before that main c5a580a8, 2026-11-05: brand, quantity, store, delete with „Rückgängig“; job 104, 2026-11-05: a synonym is only pointed out. Recipe: [edit-item.md](./edit-item.md).
 
 ## Tips on the list
 
@@ -279,11 +281,12 @@ What Hummlist does today, in plain words, with the exact button and screen label
 **How to get there.**
 1. On the list, tap „Anpassen“ (EN: "Edit") top right.
 2. Tap „Ohne Laden“ (EN: "No store"), the last row, for the household's own order; or tap a store for that store's order of the same categories.
-3. Tap a category to rename it, the trash icon to delete it (it disappears from every store), the handle to drag it; „Kategorie hinzufügen“ (EN: "Add category") adds one.
+3. Tap a category to rename it, the trash icon to delete it (it disappears from every store), the handle to drag it; „Kategorie hinzufügen“ (EN: "Add category") adds one. The rows carry no numbers: their order on screen is the order.
 
 The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges (EN: Fruit & veg, Bread & bakery, Chilled, Meat & fish, Pantry, Sweets & snacks, Drinks, Frozen, Household, 👶 Drugstore, Other).
 
 **Never claim.**
+- Numbered categories or steps; the rows show no numbers (a screen reader still hears „2 von 11“).
 - That "Sonstiges" can be deleted; it is the fallback for anything unrecognised.
 - That categories are per store; stores only have their own order of the same categories.
 - A fixed number of categories or any limit on how many you add (none found).
@@ -292,7 +295,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Unverified.** Whether there is a limit on the number of categories: none found in the app.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): „Anpassen“ → „Ohne Laden“, adding a category, the duplicate message for another spelling of a name (adding and renaming); the server refuses such a duplicate too. Recipe: [categories.md](./categories.md).
+**Last verified.** job 148 branch (job/148-ui-consistency-pass), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/hex-surfaces.mjs`, DE light and dark): the category rows without numbers, „Kategorie hinzufügen“ as a raised yellow hex, each row's place read out after its name („2 von 11“, widget test). Earlier: main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): „Anpassen“ → „Ohne Laden“, adding a category, the duplicate message for another spelling of a name (adding and renaming); the server refuses such a duplicate too. Recipe: [categories.md](./categories.md).
 
 ## Stores, walk order and the sections of the list
 
@@ -314,7 +317,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Note.** The onboarding skip hint says „Du kannst sie später unter Liste → Anpassen anlegen.“ / "You can add them later under List → Edit." (jobs 68, 78).
 
-**Last verified.** job 147 branch (job/147-item-icon-coverage), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/item-icons.mjs`): item pictures and the plain hexagon on a mixed list, light and dark, the add sheet's rows, a newer picture table from hummlist.com applied. Before that main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): stores in „Anpassen“, a store's details with its name pill (badge and pencil only), the rename dialog and its duplicate message, an existing name added again, a refused save showing its message above the open dialog, a link to a store's part of the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
+**Last verified.** job 148 branch (job/148-ui-consistency-pass), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/hex-surfaces.mjs`, DE light and dark): „Anpassen“ in the floating bar at the top of the list, „Läden“ with one hex per store (the plain name, no label inside the row), „Ohne Laden“ with its note below the row. Earlier: job 147 branch (job/147-item-icon-coverage), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/item-icons.mjs`): item pictures and the plain hexagon on a mixed list, light and dark, the add sheet's rows, a newer picture table from hummlist.com applied. Before that main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): stores in „Anpassen“, a store's details with its name pill (badge and pencil only), the rename dialog and its duplicate message, an existing name added again, a refused save showing its message above the open dialog, a link to a store's part of the list. Recipe: [stores-walk-order.md](./stores-walk-order.md).
 
 ## Live sync between household members
 
@@ -323,14 +326,14 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **How to get there.**
 1. Both people join the same household: one uses „Mehr“ (EN: "More") → „Partner einladen“ (EN: "Invite your partner"), the other opens the link or enters the code.
 2. Open „Liste“ (EN: "List"). Changes appear on its own.
-3. Strip above the list: „1 neu von Noah Brandt“ (EN: "1 new from Noah Brandt"). A small cloud icon next to „Anpassen“ (EN: "Edit") appears while changes are being sent or the phone is offline.
+3. In the floating bar at the top of the list: „1 neu von Noah Brandt“ (EN: "1 new from Noah Brandt"). A small cloud icon next to „Anpassen“ (EN: "Edit") appears while changes are being sent or the phone is offline.
 
 **Never claim.**
 - Sync with people outside the household, or with a read-only guest view.
 - Push notifications for a partner's changes.
 - That the list updates with the app fully closed in the background.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist) with two members side by side: a partner's add marked new and cleared once seen, a partner's tick. Recipe: [live-sync.md](./live-sync.md).
+**Last verified.** job 148 branch (job/148-ui-consistency-pass), 2026-11-06 (CET), driven on the web build (verify-hummlist, `journeys/hex-surfaces.mjs`, DE light and dark): the bar at the top floats over the list as a hex capsule with „Anpassen“; the rows scroll on under it. Earlier: main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist) with two members side by side: a partner's add marked new and cleared once seen, a partner's tick. Recipe: [live-sync.md](./live-sync.md).
 
 ## Working offline
 

@@ -8,18 +8,31 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/name_dialog.dart';
-import 'package:family_groceries/list/store_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-/// The extended floating action button's height.
-const fabHeight = 48.0;
+/// The bottom padding of a list under the [AddButton]: its height (edge
+/// included) and a gap, so it never covers the last row's handle.
+const fabClearance = HlSize.target + HlSpace.s4;
 
-/// The bottom padding of a list under the extended floating action button:
-/// its height, its edge and a gap, so it never covers the last row's handle.
-const fabClearance = fabHeight + HlDepth.edge + HlSpace.s4;
+/// A page's add button, in the floating action button's slot: the theme's
+/// main tactile button with a plus, on its edge like the rows it adds to.
+class const AddButton({
+  required final String label,
+  required final VoidCallback onPressed,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => FilledButton.icon(
+    // Desktop's compact density would shrink it under 48 px.
+    style: FilledButton.styleFrom(visualDensity: VisualDensity.standard),
+    onPressed: onPressed,
+    icon: const Icon(Icons.add),
+    label: Text(label),
+  );
+}
 
 /// The List tab's Anpassen: the household's stores in list order, the same
 /// order the store dividers show, and "Ohne Laden" where the section without
@@ -98,11 +111,10 @@ class const StoresScreen({super.key}) extends StatelessWidget {
     );
     return Scaffold(
       appBar: AppBar(title: Text(l10n.storesTitle)),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: AddButton(
         key: const ValueKey('store-add'),
         onPressed: () => unawaited(_add(context)),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.storeAdd),
+        label: l10n.storeAdd,
       ),
       body: Align(
         alignment: Alignment.topCenter,
@@ -136,12 +148,7 @@ class const StoresScreen({super.key}) extends StatelessWidget {
                   onTap: () => context.go(storeDetailsPath(store.id)),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: StoreBadge(store),
-                        ),
-                      ),
+                      Expanded(child: PillTitle(store.name)),
                       IconButton(
                         key: ValueKey('store-delete-${store.id}'),
                         tooltip: l10n.storeDelete(store.name),
@@ -164,24 +171,23 @@ class const StoresScreen({super.key}) extends StatelessWidget {
 }
 
 /// The section without a store, pinned: it cannot move, be renamed or go.
+/// What it holds is said below it: no hint inside a hex (Peter, 2026-11-05).
 class const _NoStoreRow() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final t = HummlistColors.of(Theme.of(context).brightness);
-    return HexPill(
-      key: const ValueKey('store-row-none'),
-      flat: true,
-      onTap: () => context.go(storeDetailsPath(null)),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: HlSpace.s1,
-              children: [
-                Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        HexPill(
+          key: const ValueKey('store-row-none'),
+          pinned: true,
+          onTap: () => context.go(storeDetailsPath(null)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
                   l10n.noStore,
                   style: TextStyle(
                     fontSize: 16,
@@ -189,17 +195,23 @@ class const _NoStoreRow() extends StatelessWidget {
                     color: t.textMuted,
                   ),
                 ),
-                Text(
-                  l10n.noStoreRowHint,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: t.textMuted),
-                ),
-              ],
-            ),
+              ),
+              Icon(Icons.chevron_right, color: t.textMuted),
+            ],
           ),
-          Icon(Icons.chevron_right, color: t.textMuted),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: HlSpace.s4 + HlSpace.s5,
+            end: HlSpace.s4,
+          ),
+          child: Text(
+            l10n.noStoreRowHint,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: t.textMuted),
+          ),
+        ),
+      ],
     );
   }
 }

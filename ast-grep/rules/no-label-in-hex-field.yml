@@ -1,0 +1,39 @@
+# A hex field is an outline (ContourInputBorder, job 148): Flutter centres its one line of text
+# exactly, and a floating label would sit on the contour. Labels inside the hex also pushed the text
+# off its middle. Put the label above the field with LabeledField (app/lib/design/field_border.dart).
+# A multi-line field inside RoundedFields is no outline and keeps its floating label.
+id: no-label-in-hex-field
+language: dart
+severity: error
+files:
+  - app/lib/**
+rule:
+  kind: named_argument
+  has:
+    kind: label
+    regex: '^(?:labelText|label)\s*:$'
+  inside:
+    kind: arguments
+    inside:
+      any:
+        - kind: call_expression
+          has:
+            field: function
+            regex: '(?:^|[^\w.])InputDecoration$'
+        - kind: const_object_expression
+          has:
+            field: type
+            regex: '^InputDecoration$'
+  not:
+    inside:
+      stopBy: end
+      any:
+        - kind: call_expression
+          has:
+            field: function
+            regex: '(?:^|[^\w.])RoundedFields$'
+        - kind: const_object_expression
+          has:
+            field: type
+            regex: '^RoundedFields$'
+message: 'No label inside a hex field: wrap the field in LabeledField(label: ..., field: ...) so the label sits above it and the text stays centred (job 148)'

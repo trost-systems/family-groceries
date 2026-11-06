@@ -1,7 +1,15 @@
 import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/design/hex_pill.dart' show HexPill;
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
+
+/// The one depth switch: true rests every pressable hex face on its edge
+/// (the theme's buttons, the pages' add buttons, the store and category
+/// chips, [HexPill] rows), false lays them all flat (Peter, job 148: one
+/// depth style, 3D by default). The brand sign-in buttons keep their makers'
+/// look either way.
+const raisedFaces = true;
 
 /// Colours of one tactile hex in one state.
 @immutable
@@ -127,7 +135,7 @@ class _TactilePainter({
 
   @override
   void paint(Canvas canvas, Size size) {
-    final edge = colors.edge;
+    final edge = raisedFaces ? colors.edge : null;
     final depth = edge == null ? 0.0 : HlDepth.edge;
     final rest = Rect.fromLTWH(0, 0, size.width, size.height - depth);
     final contour = Paint()
@@ -219,11 +227,13 @@ class const _RoomForFocus({super.side}) extends OutlinedBorder {
   _RoomForFocus scale(double t) => this;
 }
 
-/// Whether the button being built picked its own background colour (a
-/// destructive action, a brand button, a chip): then it stays a plain
-/// Material button in its own colours instead of a tactile face.
+/// Whether the button being built picked its own background colour without
+/// a face of its own (the brand sign-in buttons): then it stays a plain
+/// Material button in its own colours instead of a tactile face. A button
+/// whose own style is a [tactileButtonStyle] keeps its face.
 bool _ownsBackground(BuildContext context) => switch (context.widget) {
-  ButtonStyleButton(:final style?) => style.backgroundColor != null,
+  ButtonStyleButton(:final style?) =>
+    style.backgroundColor != null && style.backgroundBuilder == null,
   _ => false,
 };
 
@@ -258,7 +268,8 @@ ButtonStyle tactileButtonStyle({
       ? child ?? const SizedBox.shrink()
       : TactileFace(states: states, colors: colors(states), child: child),
   foregroundBuilder: (context, states, child) => _TactileLabel(
-    hasEdge: !_ownsBackground(context) && colors(states).edge != null,
+    hasEdge:
+        raisedFaces && !_ownsBackground(context) && colors(states).edge != null,
     child: child,
   ),
 );

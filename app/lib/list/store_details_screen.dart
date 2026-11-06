@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_pill.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -10,7 +11,6 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/name_dialog.dart';
-import 'package:family_groceries/list/store_badge.dart';
 import 'package:family_groceries/list/stores_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -69,7 +69,7 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
 
     return Scaffold(
       appBar: AppBar(title: Text(store?.name ?? l10n.noStore)),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: AddButton(
         key: const ValueKey('category-add'),
         onPressed: () => unawaited(
           showNameDialog(
@@ -84,8 +84,7 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
             },
           ),
         ),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.addCategory),
+        label: l10n.addCategory,
       ),
       body: Center(
         child: ConstrainedBox(
@@ -116,6 +115,7 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
               key: ValueKey(stops[index].category.id),
               category: stops[index].category,
               index: index,
+              count: stops.length,
               catalog: catalog,
             ),
           ),
@@ -162,12 +162,7 @@ class const _StoreName(final Store store) extends StatelessWidget {
           onTap: rename,
           child: Row(
             children: [
-              Expanded(
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: StoreBadge(store),
-                ),
-              ),
+              Expanded(child: PillTitle(store.name)),
               Icon(Icons.edit_outlined, color: t.textMuted),
             ],
           ),
@@ -177,11 +172,14 @@ class const _StoreName(final Store store) extends StatelessWidget {
   }
 }
 
-/// A category at its step: a tap renames it, the trash deletes it from the
-/// household (not the fallback, which takes the items of deleted ones).
+/// A category in its place: a tap renames it, the trash deletes it from the
+/// household (not the fallback, which takes the items of deleted ones). The
+/// order shows as the order; a screen reader hears the place („2 von 9“)
+/// after the name.
 class const _CategoryRow({
   required final Category category,
   required final int index,
+  required final int count,
   required final Catalog catalog,
   super.key,
 }) extends StatelessWidget {
@@ -216,8 +214,6 @@ class const _CategoryRow({
       ),
       child: Row(
         children: [
-          HexStep(index + 1),
-          const SizedBox(width: HlSpace.s3),
           ExcludeSemantics(
             child: Text(
               categoryIcon(category),
@@ -225,7 +221,14 @@ class const _CategoryRow({
             ),
           ),
           const SizedBox(width: HlSpace.s2),
-          Expanded(child: PillTitle(categoryLabel(category, l10n))),
+          Expanded(
+            // The place as a hint, read after the name: in the name it
+            // would break "tap Kühlregal" for voice control.
+            child: Semantics(
+              hint: l10n.categoryPosition(index + 1, count),
+              child: PillTitle(categoryLabel(category, l10n)),
+            ),
+          ),
           if (category.seedKey != 'other')
             IconButton(
               tooltip: l10n.deleteCategory(name),
@@ -272,19 +275,22 @@ class _DeleteDialogState() extends State<_DeleteDialog> {
         spacing: HlSpace.s4,
         children: [
           Text(l10n.deleteCategoryEverywhere),
-          DropdownButtonFormField<String>(
-            initialValue: target,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: l10n.moveItemsTo),
-            items: [
-              for (final c in widget.catalog.categories)
-                if (c.id != widget.category.id)
-                  DropdownMenuItem(
-                    value: c.id,
-                    child: Text(categoryName(c, l10n)),
-                  ),
-            ],
-            onChanged: (id) => setState(() => _target = id),
+          LabeledField(
+            label: l10n.moveItemsTo,
+            field: DropdownButtonFormField<String>(
+              initialValue: target,
+              isExpanded: true,
+              decoration: const InputDecoration(),
+              items: [
+                for (final c in widget.catalog.categories)
+                  if (c.id != widget.category.id)
+                    DropdownMenuItem(
+                      value: c.id,
+                      child: Text(categoryName(c, l10n)),
+                    ),
+              ],
+              onChanged: (id) => setState(() => _target = id),
+            ),
           ),
         ],
       ),

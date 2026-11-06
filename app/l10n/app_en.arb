@@ -182,6 +182,8 @@
   "moveItemsTo": "Move items to",
   "dragCategory": "Move {name}",
   "@dragCategory": {"placeholders": {"name": {"type": "String"}}},
+  "categoryPosition": "{position} of {count}",
+  "@categoryPosition": {"placeholders": {"position": {"type": "int"}, "count": {"type": "int"}}},
   "categoryNameTaken": "A category named “{name}” already exists.",
   "@categoryNameTaken": {"placeholders": {"name": {"type": "String"}}},
   "catalogSaveFailed": "The change could not be saved.",

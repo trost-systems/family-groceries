@@ -37,7 +37,7 @@ void main() {
   ) async {
     await pumpField(
       tester,
-      const TextField(decoration: InputDecoration(labelText: 'E-Mail')),
+      const TextField(decoration: InputDecoration(hintText: 'E-Mail')),
     );
     expect(
       decorator(),
@@ -61,7 +61,7 @@ void main() {
       tester,
       const TextField(
         autofocus: true,
-        decoration: InputDecoration(labelText: 'E-Mail'),
+        decoration: InputDecoration(hintText: 'E-Mail'),
       ),
     );
     await tester.pumpAndSettle();
@@ -86,7 +86,7 @@ void main() {
     await pumpField(
       tester,
       const TextField(
-        decoration: InputDecoration(labelText: 'E-Mail', errorText: 'Nein'),
+        decoration: InputDecoration(hintText: 'E-Mail', errorText: 'Nein'),
       ),
     );
     expect(
@@ -129,7 +129,7 @@ void main() {
 
   for (final (name, field) in [
     ('hint only', const TextField(decoration: InputDecoration(hintText: 'x'))),
-    ('labelled', const TextField(decoration: InputDecoration(labelText: 'x'))),
+    ('labelled', const LabeledField(label: 'x', field: TextField())),
     (
       'multi-line',
       const RoundedFields(child: TextField(minLines: 2, maxLines: 4)),

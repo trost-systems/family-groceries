@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
+import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
@@ -197,10 +198,14 @@ class const _Chip({
     final t = HummlistColors.of(Theme.of(context).brightness);
     // A value the user picked is their choice, honey like a selected chip;
     // an open chip is lit softly while its options show.
-    final (face, onFace) = switch ((changed, open)) {
-      (true, _) => (t.honey, t.onHoney),
-      (false, true) => (t.honeySoft, t.text),
-      (false, false) => (t.surfaceRaised, auto ? t.textMuted : t.text),
+    final (face, edge, onFace) = switch ((changed, open)) {
+      (true, _) => (t.honey, t.honeyEdge, t.onHoney),
+      (false, true) => (t.honeySoft, t.honeyEdge, t.text),
+      (false, false) => (
+        t.surfaceRaised,
+        t.surfaceEdge,
+        auto ? t.textMuted : t.text,
+      ),
     };
     // The button's own web semantics node would take the add field's text
     // input with it on a tap; this node only taps.
@@ -212,23 +217,28 @@ class const _Chip({
       excludeSemantics: true,
       child: OutlinedButton(
         onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          // Desktop defaults to compact density, which shrinks targets
-          // under 44 px.
-          visualDensity: VisualDensity.standard,
-          minimumSize: const Size(0, _height),
-          padding: _hexPadding,
-          shape: const HexBorder(),
-          side: BorderSide(color: t.border, width: HlBorder.width),
-          backgroundColor: face,
-          foregroundColor: onFace,
-          iconColor: onFace,
-          textStyle: const TextStyle(
-            fontFamily: HlFont.sans,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        // A tactile face on its edge, like every button (job 148).
+        style:
+            tactileButtonStyle(
+              colors: (_) => TactileColors(
+                face: face,
+                contour: t.border,
+                edge: edge,
+                focus: t.accent,
+              ),
+              foreground: WidgetStatePropertyAll(onFace),
+              textStyle: const TextStyle(
+                fontFamily: HlFont.sans,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ).copyWith(
+              // Desktop defaults to compact density, which shrinks targets
+              // under 44 px.
+              visualDensity: VisualDensity.standard,
+              minimumSize: const WidgetStatePropertyAll(Size(0, _height)),
+              padding: const WidgetStatePropertyAll(_hexPadding),
+            ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: HlSpace.s1,
@@ -424,7 +434,6 @@ class const _SearchField({
         controller: controller,
         maxLength: maxStoreNameLength,
         textInputAction: TextInputAction.search,
-        textAlignVertical: TextAlignVertical.center,
         style: TextStyle(fontSize: 16, color: scheme.onSurface),
         onChanged: onChanged,
         onEditingComplete: () {},

@@ -39,6 +39,7 @@ void main() {
     WidgetTester tester, {
     void Function(FakeRepository repo)? seed,
     bool keepCache = false,
+    bool settle = true,
   }) async {
     if (!keepCache) {
       repo = FakeRepository();
@@ -73,7 +74,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   Finder addField() => find.byKey(const ValueKey('add-item-field'));
@@ -1268,15 +1274,20 @@ void main() {
           ..remoteAdd('Milch'),
       );
       final cubit = BlocProvider.of<ListCubit>(tester.element(header()));
-      final list = find.byType(ShoppingListView);
+      final edit = find.byKey(const ValueKey('list-edit'));
       final height = tester.getSize(header()).height;
-      final listTop = tester.getTopLeft(list).dy;
-      expect(height, 47 + 44);
-      expect(listTop, height);
+      final editRect = tester.getRect(edit);
+      // The list's first entry, the explainer card, stays while items go.
+      final card = find.byKey(const ValueKey('list-hint-dismiss'));
+      final rowTop = tester.getTopLeft(card).dy;
+      // The capsule, its gaps and the shadow below the notch (job 148).
+      expect(height, 47 + 68);
+      expect(rowTop, greaterThanOrEqualTo(height), reason: 'starts below it');
 
       void same(String state) {
         expect(tester.getSize(header()).height, height, reason: state);
-        expect(tester.getTopLeft(list).dy, listTop, reason: state);
+        expect(tester.getRect(edit), editRect, reason: state);
+        expect(tester.getTopLeft(card).dy, rowTop, reason: state);
       }
 
       same('synced');
@@ -1321,6 +1332,68 @@ void main() {
       expect(syncIcon(Icons.cloud_off), findsOneWidget);
       same('a partner add, offline');
       await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('stays while the list loads', (tester) async {
+      phone(tester);
+      final held = Completer<void>();
+      await pumpList(
+        tester,
+        seed: (repo) => repo.itemsGate = held,
+        settle: false,
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byKey(const ValueKey('list-edit')), findsOneWidget);
+      held.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byKey(const ValueKey('list-edit')), findsOneWidget);
+    });
+
+    testWidgets('floats: rows scroll on under it, and a row brought into '
+        'view stops below it', (tester) async {
+      phone(tester);
+      await pumpList(
+        tester,
+        seed: (repo) {
+          for (var i = 0; i < 30; i++) {
+            repo.remoteAdd('Artikel $i');
+          }
+        },
+      );
+      final edit = find.byKey(const ValueKey('list-edit'));
+      final bottom = tester.getRect(header()).bottom;
+      final at = tester.getRect(edit);
+      Rect row(int i) => tester.getRect(find.text('Artikel $i'));
+      final first = row(0);
+      expect(first.top, greaterThanOrEqualTo(bottom));
+
+      await tester.drag(
+        find.byType(ShoppingListView),
+        Offset(0, -(first.top - bottom / 2)),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getRect(edit), at, reason: 'the bar stays put');
+      expect(
+        row(0).top,
+        lessThan(bottom),
+        reason: 'the first row has scrolled under the bar',
+      );
+      expect(row(0).bottom, greaterThan(0), reason: 'still painted behind it');
+
+      await tester.ensureVisible(find.text('Artikel 0'));
+      await tester.pumpAndSettle();
+      expect(
+        row(0).top,
+        greaterThanOrEqualTo(bottom - 1),
+        reason: 'brought into view, it is not hidden under the bar',
+      );
+      final hit = tester.hitTestOnBinding(tester.getCenter(edit));
+      expect(
+        hit.path.any((entry) => entry.target == tester.renderObject(edit)),
+        isTrue,
+        reason: 'Anpassen still takes the tap over the rows',
+      );
     });
 
     testWidgets('shows neither the household name nor the item count, '

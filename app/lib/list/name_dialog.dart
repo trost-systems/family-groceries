@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
@@ -84,24 +85,23 @@ class _NameDialogState() extends State<_NameDialog> {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(widget.title),
-      content: TextField(
-        key: const ValueKey('name-dialog-field'),
-        controller: _name,
-        autofocus: true,
-        readOnly: _busy,
-        maxLength: widget.maxLength,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          errorText: _error,
-          errorMaxLines: 3,
+      content: LabeledField(
+        label: widget.label,
+        field: TextField(
+          key: const ValueKey('name-dialog-field'),
+          controller: _name,
+          autofocus: true,
+          readOnly: _busy,
+          maxLength: widget.maxLength,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(errorText: _error, errorMaxLines: 3),
+          onChanged: (_) {
+            if (_error != null) {
+              setState(() => _error = null);
+            }
+          },
+          onSubmitted: (_) => unawaited(_submit()),
         ),
-        onChanged: (_) {
-          if (_error != null) {
-            setState(() => _error = null);
-          }
-        },
-        onSubmitted: (_) => unawaited(_submit()),
       ),
       actions: [
         TextButton(

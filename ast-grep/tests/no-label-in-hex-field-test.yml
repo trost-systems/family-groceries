@@ -1,0 +1,22 @@
+id: no-label-in-hex-field
+valid:
+  - |
+    Widget f(String l) => LabeledField(
+      label: l,
+      field: const TextField(decoration: InputDecoration(hintText: 'x')),
+    );
+  - |
+    Widget f() => const TextField(decoration: InputDecoration(counterText: ''));
+  - |
+    Widget f(String l) => RoundedFields(
+      child: TextField(maxLines: 4, decoration: InputDecoration(labelText: l)),
+    );
+invalid:
+  - |
+    Widget f(String l) => TextField(decoration: InputDecoration(labelText: l));
+  - |
+    Widget f(String l) => TextField(
+      decoration: InputDecoration(label: Text(l), errorText: null),
+    );
+  - |
+    Widget f() => const TextField(decoration: const InputDecoration(labelText: 'x'));

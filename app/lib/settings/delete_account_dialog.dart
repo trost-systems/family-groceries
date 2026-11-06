@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:family_groceries/app/environment.dart';
-import 'package:family_groceries/design/hex_border.dart';
+import 'package:family_groceries/app/theme.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
@@ -200,17 +201,17 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
                   Text(l10n.accountDeleteExportHint),
                 ],
                 const SizedBox(height: 16),
-                TextField(
-                  key: const ValueKey('account-delete-confirm-field'),
-                  controller: _confirmation,
-                  enabled: !deleting,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: l10n.accountDeleteConfirmLabel,
+                LabeledField(
+                  label: l10n.accountDeleteConfirmLabel,
+                  field: TextField(
+                    key: const ValueKey('account-delete-confirm-field'),
+                    controller: _confirmation,
+                    enabled: !deleting,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: (_) => setState(() {}),
                   ),
-                  onChanged: (_) => setState(() {}),
                 ),
               ],
               if (error != null) ...[
@@ -232,11 +233,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
           ),
           FilledButton(
             key: const ValueKey('account-delete-confirm'),
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-              foregroundColor: theme.colorScheme.onError,
-              shape: const HexBorder(),
-            ),
+            style: dangerButtonStyle(context),
             onPressed: switch (step) {
               _Confirming(:final fate)
                   when isDeleteConfirmation(_confirmation.text) &&

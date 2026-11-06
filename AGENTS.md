@@ -180,6 +180,7 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | `no-wall-time-wait-in-tests` | `Future.delayed` in `app/test` | It races the timers it waits for: after a stall the test resumes mid-reload (DECISIONS 18.17). Use `elapse()` or `fakeAsync` |
 | `snackbars-through-notices` | `ScaffoldMessenger.of`/`maybeOf` in `app/lib` outside `app/lib/app/notices.dart` | A page's messenger shows under an open dialog's or sheet's barrier (job 116). Use `Notices.of(context)` |
 | `popups-on-root-navigator` | `showModalBottomSheet` without `useRootNavigator: true`, a dialog with `useRootNavigator: false` | `Notices` sees open popups on the root navigator only |
+| `no-label-in-hex-field` | `labelText:` or `label:` in an `InputDecoration` in `app/lib`, outside `RoundedFields` | A hex field is an outline: a floating label would sit on its contour and pushed the text off centre (job 148). Use `LabeledField` |
 | schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |
 | schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |

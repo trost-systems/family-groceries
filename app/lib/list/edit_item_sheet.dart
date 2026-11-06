@@ -179,7 +179,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
                             label: l10n.itemQuantity,
                             controller: _quantity,
                             maxLength: 40,
-                            centered: true,
+                            narrow: true,
                             onSubmitted: _save,
                           ),
                         ),
@@ -309,8 +309,7 @@ class _EditItemSheetState() extends State<_EditItemSheet> {
   }
 }
 
-/// A label above a 48 px field; the label names the field for screen
-/// readers.
+/// A 48 px field with its label above it.
 class const _Field({
   required final String fieldKey,
   required final String label,
@@ -319,60 +318,41 @@ class const _Field({
   required final VoidCallback onSubmitted,
   final String? hint,
   final bool bold = false,
-  final bool centered = false,
+
+  /// Menge, 72 px wide: its text starts nearer the tip, which the slant
+  /// beside a line of text still clears.
+  final bool narrow = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return MergeSemantics(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 4,
-        children: [
-          Padding(
-            // Over the field's text, not its tip.
-            padding: const EdgeInsetsDirectional.only(start: hexFieldInset),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
+    return LabeledField(
+      label: label,
+      field: TextField(
+        key: ValueKey(fieldKey),
+        controller: controller,
+        textInputAction: TextInputAction.done,
+        textCapitalization: TextCapitalization.sentences,
+        inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+          color: scheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
           ),
-          TextField(
-            key: ValueKey(fieldKey),
-            controller: controller,
-            textAlign: centered ? TextAlign.center : TextAlign.start,
-            textAlignVertical: TextAlignVertical.center,
-            textInputAction: TextInputAction.done,
-            textCapitalization: TextCapitalization.sentences,
-            inputFormatters: [LengthLimitingTextInputFormatter(maxLength)],
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
-              color: scheme.onSurface,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
-              ),
-              constraints: const BoxConstraints.tightFor(height: HlSize.target),
-              // Centred text in a narrow field clears the tips with less.
-              contentPadding: centered
-                  ? const EdgeInsets.symmetric(
-                      horizontal: HlSpace.s3,
-                      vertical: HlSpace.s2,
-                    )
-                  : null,
-            ),
-            onSubmitted: (_) => onSubmitted(),
-          ),
-        ],
+          constraints: const BoxConstraints.tightFor(height: HlSize.target),
+          contentPadding: narrow
+              ? const EdgeInsets.symmetric(
+                  horizontal: HlSpace.s3,
+                  vertical: HlSpace.s2,
+                )
+              : null,
+        ),
+        onSubmitted: (_) => onSubmitted(),
       ),
     );
   }

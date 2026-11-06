@@ -1,0 +1,68 @@
+id: no-label-in-hex-field
+snapshots:
+  "Widget f() => const TextField(decoration: const InputDecoration(labelText: 'x'));\n":
+    labels:
+    - source: "labelText: 'x'"
+      style: primary
+      start: 64
+      end: 78
+    - source: InputDecoration
+      style: secondary
+      start: 48
+      end: 63
+    - source: "const InputDecoration(labelText: 'x')"
+      style: secondary
+      start: 42
+      end: 79
+    - source: "(labelText: 'x')"
+      style: secondary
+      start: 63
+      end: 79
+    - source: "labelText:"
+      style: secondary
+      start: 64
+      end: 74
+  "Widget f(String l) => TextField(\n  decoration: InputDecoration(label: Text(l), errorText: null),\n);\n":
+    labels:
+    - source: "label: Text(l)"
+      style: primary
+      start: 63
+      end: 77
+    - source: InputDecoration
+      style: secondary
+      start: 47
+      end: 62
+    - source: "InputDecoration(label: Text(l), errorText: null)"
+      style: secondary
+      start: 47
+      end: 95
+    - source: "(label: Text(l), errorText: null)"
+      style: secondary
+      start: 62
+      end: 95
+    - source: "label:"
+      style: secondary
+      start: 63
+      end: 69
+  "Widget f(String l) => TextField(decoration: InputDecoration(labelText: l));\n":
+    labels:
+    - source: "labelText: l"
+      style: primary
+      start: 60
+      end: 72
+    - source: InputDecoration
+      style: secondary
+      start: 44
+      end: 59
+    - source: "InputDecoration(labelText: l)"
+      style: secondary
+      start: 44
+      end: 73
+    - source: "(labelText: l)"
+      style: secondary
+      start: 59
+      end: 73
+    - source: "labelText:"
+      style: secondary
+      start: 60
+      end: 70

@@ -66,6 +66,10 @@ ColorScheme hummlistColorScheme(Brightness brightness) {
 /// display, headline and title, Inter for everything else. The sizes stay
 /// Material's ([geometry]: ThemeData only applies them in `Theme.of`), so
 /// layouts and text scaling behave as before.
+///
+/// Every style splits its leading evenly above and below the glyphs: with
+/// Material's proportional split, a line taller than the font (1.5 for
+/// body text) carries its caps low, off the middle of a hex (job 148).
 TextTheme _textTheme(TextTheme base, TextTheme geometry) {
   TextStyle display(
     TextStyle? Function(TextTheme) role,
@@ -75,9 +79,14 @@ TextTheme _textTheme(TextTheme base, TextTheme geometry) {
     fontFamily: HlFont.display,
     fontWeight: weight,
     letterSpacing: tracking * role(geometry)!.fontSize!,
+    leadingDistribution: TextLeadingDistribution.even,
   );
   TextStyle sans(TextStyle? Function(TextTheme) role, [FontWeight? weight]) =>
-      role(base)!.copyWith(fontFamily: HlFont.sans, fontWeight: weight);
+      role(base)!.copyWith(
+        fontFamily: HlFont.sans,
+        fontWeight: weight,
+        leadingDistribution: TextLeadingDistribution.even,
+      );
   return base.copyWith(
     displayLarge: display((t) => t.displayLarge, FontWeight.w800, -0.04),
     displayMedium: display((t) => t.displayMedium, FontWeight.w800, -0.04),
@@ -116,12 +125,7 @@ ThemeData appTheme(Brightness brightness) {
   );
   final label = text.labelLarge!.copyWith(fontWeight: FontWeight.w700);
   final contour = BorderSide(color: t.edge, width: HlBorder.width);
-  final muted = TactileColors(
-    face: t.surfaceSunken,
-    contour: t.textMuted,
-    edge: t.textMuted,
-    focus: t.accent,
-  );
+  final muted = _muted(t);
 
   // The one main action: lemon face, navy contour, darker lemon edge.
   final primary = tactileButtonStyle(
@@ -185,16 +189,6 @@ ThemeData appTheme(Brightness brightness) {
           horizontal: HlHex.tip * HlSize.target,
         ),
       ),
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: t.honey,
-      foregroundColor: t.onHoney,
-      elevation: 0,
-      focusElevation: 0,
-      hoverElevation: 0,
-      highlightElevation: 0,
-      shape: HexBorder(side: contour),
-      extendedTextStyle: label,
     ),
     chipTheme: ChipThemeData(
       shape: HexBorder(side: BorderSide(color: t.border)),
@@ -266,6 +260,38 @@ ThemeData appTheme(Brightness brightness) {
     progressIndicatorTheme: ProgressIndicatorThemeData(color: t.brand),
     listTileTheme: ListTileThemeData(iconColor: t.textMuted),
     inputDecorationTheme: fieldTheme(t, FieldShape.hex),
+  );
+}
+
+/// A disabled tactile button: flush on its edge, in muted colours.
+TactileColors _muted(HummlistColors t) => TactileColors(
+  face: t.surfaceSunken,
+  contour: t.textMuted,
+  edge: t.textMuted,
+  focus: t.accent,
+);
+
+/// The destructive main action (Konto löschen): an error-red face on the
+/// navy edge, tactile like every other button.
+ButtonStyle dangerButtonStyle(BuildContext context) {
+  final theme = Theme.of(context);
+  final t = HummlistColors.of(theme.brightness);
+  return tactileButtonStyle(
+    colors: (states) => states.contains(WidgetState.disabled)
+        ? _muted(t)
+        : TactileColors(
+            face: t.error,
+            contour: t.edge,
+            edge: t.edge,
+            focus: t.accent,
+          ),
+    foreground: WidgetStateProperty.resolveWith(
+      (states) =>
+          states.contains(WidgetState.disabled) ? t.textMuted : t.onError,
+    ),
+    textStyle: theme.textTheme.labelLarge!.copyWith(
+      fontWeight: FontWeight.w700,
+    ),
   );
 }
 
