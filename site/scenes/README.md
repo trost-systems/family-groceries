@@ -8,8 +8,8 @@ the WebP stills that `film-all.mjs` writes to `site/public/media/`.
 ## Re-film
 
 ```sh
-node site/scenes/film-all.mjs            # all 40 stills, then one contact sheet per scene
-node site/scenes/film-all.mjs stores     # one scene
+node site/scenes/film-all.mjs            # all 32 stills, then one contact sheet per scene
+node site/scenes/film-all.mjs hero       # one scene
 node site/scenes/film-all.mjs --serve    # only serve, to look at http://127.0.0.1:57610/scenes/hero.html?lang=en
 ```
 
@@ -30,7 +30,7 @@ Files:
 The compact design switches at `max-width: 400px` inside each scene. Dark comes from
 `prefers-color-scheme: dark` through `site/public/tokens.css`.
 
-All five are stills. `hero` stays a still on the page. The three video slots (`add-tick`,
+All four are stills. `hero` stays a still on the page. The three video slots (`add-tick`,
 `household-sync`, `mcp-chat`) get job 54's real app footage; these are their placeholder
 posters, so nothing here loops.
 
@@ -68,12 +68,9 @@ picks; store names are text in Hummlist colours only.
 - Payoff: the card listing the three added items with their categories and mint ticks.
 - Left out: any vendor name, logo, avatar, model picker, sparkle; the composer.
 
-### stores (wide 576 x 324, compact 358 x 448)
-- Where: the still for "sorted the way you walk through the store".
-- Focal object: the Supermarkt's walk order, five numbered category rows.
-- Action: Supermarkt is the selected store chip among Drogerie, Bäckerei and Supermarkt (Drogerie dropped at compact).
-- Payoff: the numbers 1 to 5 down the route, the order read at a glance.
-- Left out: items, drag handles, the app bar, store colours or logos.
+### stores (no longer a scene)
+Job 145 replaced the stores still with live HTML: `site/landing.mjs` renders the store buttons and
+the route, `site/public/stores.js` switches it, `site/checks/stores.mjs` drives it.
 
 ## Hand-over notes
 
@@ -112,14 +109,6 @@ Beats: poster only.
 Captured: 576 and 358, light and dark, de and en.
 Review: grey bubble above the request → removed. Carrot for Spinat (the app's produce fallback) → the request now names Äpfel, which has its own emoji in the app. Ground differed from the other posters → all posters on `--hl-color-surface-raised`. Nothing says "AI assistant" → stands: an assistant avatar or label is exactly the vendor look the brief rules out; the page caption says "any AI assistant with MCP".
 Not checked: whether real MCP tool results classify Äpfel as Obst & Gemüse and Eier as Kühlregal on the demo household (assumed from the seeded categories).
-
-### stores
-Plan: the Supermarkt's walk order, five numbered category rows; Supermarkt selected among Drogerie, Bäckerei, Supermarkt; no items, drag handles, store colours or logos.
-Layout: wide puts the chips in a column, vertically centred, gutter 32, and the route as a staircase stepping 20 px right per stop; compact puts the chips in a row on top, 24 px sides, 38 px top and bottom, steps of 12 px.
-Beats: still.
-Captured: 576 and 358, light and dark, de and en.
-Review: compact bottom row near the edge → measured 26 px, now 38 px to match the top. Zigzag looked arbitrary → a steady staircase. No connector line or list beside it → stands: a drawn path is decoration the skill cuts, and the numbers carry the order. Carrot on Obst & Gemüse → stands, it is the app's category emoji.
-Not checked: the stores still in the real page card.
 
 Not watched by anyone: the WebPs in the built page at 390 and 1440 wide, and the page's frame
 (28 px radius, 2 px navy contour) clipping them.

@@ -102,10 +102,11 @@
   display: none;
 }
 
-/* iPhone or Android: two equal tiles; the chosen one turns lemon. */
+/* iPhone or Android: two equal tiles, one above the other when two would not fit (320 px
+   phones scrolled sideways by 7 px); the chosen one turns lemon. */
 .wl-options {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
   gap: var(--hl-space-3);
 }
 

@@ -438,6 +438,7 @@ function renderPage(page, { config, groups, guidesByLocale, copy, stage }) {
     landing && '<link rel="stylesheet" href="/landing.css">',
     form && '<link rel="stylesheet" href="/waitlist.css">',
     landing && '<script src="/demo.js" defer></script>',
+    landing && '<script type="module" src="/stores.js"></script>',
     form && '<script src="/waitlist.js" defer></script>',
   ].filter(Boolean).map((line) => `${line}\n`).join('');
   return `<!doctype html>

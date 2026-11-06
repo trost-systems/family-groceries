@@ -9277,3 +9277,57 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
 8. **Out of scope, for the lead: a reload right after a drop still loses the reorder.** A user who
    reloads the web app (or kills the app) before the write answers loses it without a message,
    since orders are not queued like item ops. NEEDS_LEAD job 119 asks whether they should be.
+
+
+## Job 145: the stores card on hummlist.com is interactive, 2026-11-06
+
+Peter (2026-11-06): the „Läden“ card must react to a tap on a store, and „Bäckerei“ is a poor
+showcase.
+
+1. **Getränkemarkt, not Baumarkt.** Peter preferred Baumarkt if both were fine; Baumarkt is not.
+   The app's categories are the 11 seeded grocery ones (`seed_household`); there is no Werkzeug,
+   Garten or Farbe. A household could add such categories, but categories are shared by every
+   store, so the card would show categories the app does not have out of the box. A
+   Getränkemarkt's route uses only seeded categories (Getränke, Süßes & Snacks, Kühlregal,
+   Tiefkühl, Haushalt) and starts somewhere the supermarket's does not.
+2. **Three stores: Drogerie, Getränkemarkt, Supermarkt.** Drogerie's route is the researched
+   dm layout the app shipped (`apply_default_store_layouts`): Drogerie, Vorrat & Konserven,
+   Süßes & Snacks, Haushalt, Getränke. Supermarkt shows the order a new store starts with (the
+   household's category order: Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch,
+   Vorrat & Konserven), not the still's, which skipped Fleisch/Wurst/Fisch. Each card route is a
+   store's first five stops. Getränkemarkt is not a preset: a household that adds one gets its
+   category order and arranges the route itself („…die Reihenfolge der Kategorien stellst du
+   um“), so the card shows an arranged example, while Drogerie is the shipped preset. The emoji are `item_icon.dart`'s; the drugstore's is 👶, the
+   emoji its seeded name „👶 Drogerie“ starts with, which the app shows as its icon. A site test
+   keeps the category names equal to the app's ARB strings.
+3. **Live HTML, not a still.** `landing.mjs` renders the buttons and the supermarket's route
+   (the state without JavaScript); `public/stores.js` (a module, so its names stay out of
+   `demo.js`'s global scope) reorders the rows. The rows are the same list items in a new order,
+   so each one that stays slides to its new place (FLIP, 360 ms, the standard easing) and new
+   ones fade in from the left; with reduced motion the route just changes. Step numbers are a
+   CSS counter, so they follow the order with no script. The stores still, its eight WebPs and
+   its scene are deleted.
+4. **The buttons are the site's tactile hex, unchanged.** White while not pressed (a light
+   border on the dark card, where the navy contour has no contrast), lemon when pressed
+   (`aria-pressed`), a Highlight face in forced colours; the hex focus ring of `.hex` in the
+   accent colour, as on the other white cards. A pressed button still sinks on press like every
+   hex (`crawl.mjs` checks it). The hint „Tippe auf einen Laden:“ / "Tap a store:" sits above
+   them and labels the group (hints outside controls, 2026-11-05). The list is labelled by the
+   pressed store's name. Without JavaScript the buttons do nothing and the supermarket stays
+   shown, as the brief asks; the hint then stays hidden, since it would invite a tap.
+5. **Proof.** `site/checks/stores.mjs` drives the card in Chromium (no JavaScript; click per
+   store at 390 and 1440 px, light and dark; keyboard; reduced motion and motion). Like the
+   other site browser checks it runs by hand, not in CI; the site tests check the
+   server-rendered state.
+6. **The card lays out by its own width (review 0).** The fixed staircase (up to 72 px) clipped
+   „Fleisch/Wurst/Fisch“ and „Vorrat & Konserven“ at 1024, 1100 and 320 px, widths the checks
+   did not cover. Now the frame is a size container: the buttons sit beside the route only when
+   the card is at least 34rem wide, and each row steps `clamp(0px, (100cqi - 16rem) / 4, 18px)`
+   of the list's width, so the staircase flattens before a row can leave the card. On cards of
+   22rem or less the rows are 40 px tall at 15 px. The frame's 16:9 / 4:5 shape became a minimum
+   height: a frame with `overflow: hidden` cannot grow by its aspect ratio, and at 1024 px the
+   stacked buttons and route were cut off at the top and bottom. `stores.mjs`
+   checks every row and button inside the card (sideways its content box, and its height) for
+   every store at 16 widths from 320 to 1440 px, in both languages. The same sweep found the
+   waitlist form's two phone tiles scrolling the page 7 px sideways at 320 px, on main too; they
+   now stack when two do not fit.

@@ -126,6 +126,42 @@ function picture({ posters }, alt, { className = '', eager = false, hidden = fal
   return `<picture${className ? ` class="${className}"` : ''}${hidden ? ' aria-hidden="true"' : ''}>${sources.join('')}<img src="${wide.light}" alt="${escapeAttr(alt)}" width="${w}" height="${h}" decoding="async"${loading}></picture>`;
 }
 
+// The stores card: each store's first stops, from the app's seeded categories (seed_household)
+// and their emoji (item_icon.dart; the drugstore's is the 👶 its seeded name starts with). The
+// Drogerie route is the researched dm layout the app shipped; Supermarkt is the order a new store
+// starts with. Supermarkt renders as the page loads; stores.js switches the route.
+const CATEGORY_EMOJI = {
+  produce: '🥕', bakery: '🥖', chilled: '🥛', meat: '🥩', pantry: '🥫', sweets: '🍫',
+  drinks: '🧃', frozen: '🧊', household: '🧽', drugstore: '👶',
+};
+export const STORE_ROUTES = {
+  drugstore: ['drugstore', 'pantry', 'sweets', 'household', 'drinks'],
+  'drinks-market': ['drinks', 'sweets', 'chilled', 'frozen', 'household'],
+  supermarket: ['produce', 'bakery', 'chilled', 'meat', 'pantry'],
+};
+const SELECTED_STORE = 'supermarket';
+
+function storeRoutes({ el }) {
+  const route = STORE_ROUTES[SELECTED_STORE];
+  const rest = Object.keys(CATEGORY_EMOJI).filter((c) => !route.includes(c));
+  const chips = Object.entries(STORE_ROUTES).map(([store, stops]) => {
+    const pressed = store === SELECTED_STORE;
+    return `<button type="button" class="hex hex--small store-chip" aria-pressed="${pressed}" data-route="${stops.join(' ')}"><span class="face">${el('span', `feature.stores.store.${store}`, `id="store-${store}"`)}</span></button>`;
+  });
+  const rows = [...route, ...rest].map((c) => `<li class="hx"${route.includes(c) ? '' : ' hidden'} data-category="${c}"><span class="hxp step" aria-hidden="true"></span><span class="emo" data-emoji="${CATEGORY_EMOJI[c]}" aria-hidden="true"></span>${el('span', `feature.stores.category.${c}`)}</li>`);
+  return `<div class="media-frame stores-demo" data-stores>
+<div class="stores-layout">
+<div class="store-pick" role="group" aria-labelledby="store-pick">
+${el('p', 'feature.stores.pick', 'id="store-pick"')}
+${chips.join('\n')}
+</div>
+<ol class="store-route" aria-labelledby="store-${SELECTED_STORE}">
+${rows.join('\n')}
+</ol>
+</div>
+</div>`;
+}
+
 // The copy of one locale for one page: `text` is the plain string, `md` its inline Markdown as
 // HTML, `el` an element carrying its copy id; `used` collects the ids the page asked for.
 export function copyReader(copy, locale) {
@@ -206,7 +242,6 @@ export function renderLanding({ locale, copy, config, publicDir, stage, consent 
     return `<figure class="media-frame demo" data-demo data-copy-id="demo.${slot}">${picture(media, alt, { hidden: true })}<video muted loop playsinline preload="none" controls aria-label="${escapeAttr(alt)}">${sources}<track kind="captions" srclang="${locale}" label="${label}" src="${media.video.captions}"></video><button type="button" class="demo-toggle" hidden data-play="${play}" data-pause="${pause}" aria-label="${play}"><span class="demo-toggle-face">${icon('play', 'icon-play')}${icon('pause', 'icon-pause')}</span></button></figure>`;
   };
 
-  const still = (name, altId) => `<figure class="media-frame" data-copy-id="${altId}">${picture(mediaFor(publicDir, name, locale, { shape: 'card' }), text(altId))}</figure>`;
 
   // Shown only while their pages are published, but always part of the page's copy.
   const privacyMore = config.privacyPublished ? el('p', 'privacy.more', 'class="privacy-more"') : (text('privacy.more'), '');
@@ -275,7 +310,7 @@ ${el('h3', 'feature.stores.title', 'class="title-l" id="feature-stores"')}
 ${el('p', 'feature.stores.body')}
 ${el('p', 'feature.stores.more')}
 </div>
-${still('stores', 'feature.stores.image')}
+${storeRoutes(reader)}
 </article>
 </div>
 </section>

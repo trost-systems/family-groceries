@@ -181,7 +181,7 @@ test('the illustrations are responsive pictures with their size, light and dark,
       ['(max-width: 37.5rem)', `/media/hero-${locale}-compact.webp`],
       ['(prefers-color-scheme: dark)', `/media/hero-${locale}-wide-dark.webp`],
     ]);
-    for (const name of [...SLOTS, 'stores']) {
+    for (const name of SLOTS) {
       const card = doc.querySelector(`img[src="/media/${name}-${locale}-wide.webp"]`);
       assert.ok(card, name);
       assert.deepEqual([card.getAttribute('width'), card.getAttribute('height'), card.getAttribute('loading')], ['1152', '648', 'lazy'], name);
@@ -249,17 +249,64 @@ test('half a video set, a missing poster or a poster of the wrong shape fails th
   fails({ 'media/mcp-chat-en-wide.webm': null }, /mcp-chat-en has .*mcp-chat-en-wide\.mp4.* but not mcp-chat-en-wide\.webm/);
   fails({ 'media/mcp-chat-en.vtt': null }, /but not mcp-chat-en\.vtt/);
   fails({ 'media/mcp-chat-en.vtt': 'WEBVTT\n' }, /mcp-chat-en\.vtt has no cues; a demo video ships with its captions/);
-  fails({ 'media/stores-en-compact.webp': null }, /public\/media\/stores-en-compact\.webp is missing/);
+  fails({ 'media/hero-en-compact.webp': null }, /public\/media\/hero-en-compact\.webp is missing/);
   fails({ 'media/add-tick-de-wide.webp': webp(1000, 1000) }, /add-tick-de-wide\.webp is 1000x1000; a wide poster must be 16:9/);
   fails({ 'media/add-tick-de-compact-dark.webp': webp(716, 800) }, /compact-dark\.webp is 716x800; a compact poster must be 4:5/);
-  fails({ 'media/stores-de-wide.webp': 'not an image' }, /stores-de-wide\.webp is not a WebP image/);
+  fails({ 'media/add-tick-de-wide.webp': 'not an image' }, /add-tick-de-wide\.webp is not a WebP image/);
 });
 
-test('a demo poster without a dark variant shows the light one in dark mode', () => {
-  const { page } = buildSite({ publicDir: publicWith({ 'media/stores-de-wide-dark.webp': null }) });
-  const sources = page('/de').querySelectorAll('figure[data-copy-id="feature.stores.image"] source').map((s) => s.getAttribute('srcset'));
-  assert.ok(!sources.includes('/media/stores-de-wide-dark.webp'));
-  assert.ok(sources.includes('/media/stores-de-compact-dark.webp'));
+test('a poster without a dark variant shows the light one in dark mode', () => {
+  const { page } = buildSite({ publicDir: publicWith({ 'media/hero-de-wide-dark.webp': null }) });
+  const sources = page('/de').querySelectorAll('.hero-visual source').map((s) => s.getAttribute('srcset'));
+  assert.ok(!sources.includes('/media/hero-de-wide-dark.webp'));
+  assert.ok(sources.includes('/media/hero-de-compact-dark.webp'));
+});
+
+test('the stores card renders the supermarket route with a pressed button, ready for stores.js', () => {
+  const { page } = buildSite();
+  const routes = {
+    drugstore: ['drugstore', 'pantry', 'sweets', 'household', 'drinks'],
+    'drinks-market': ['drinks', 'sweets', 'chilled', 'frozen', 'household'],
+    supermarket: ['produce', 'bakery', 'chilled', 'meat', 'pantry'],
+  };
+  for (const locale of ['de', 'en']) {
+    const doc = page(`/${locale}`);
+    const card = doc.querySelector('.feature [data-stores]');
+    assert.equal(card.querySelector('[role="group"]').getAttribute('aria-labelledby'), 'store-pick');
+    const buttons = card.querySelectorAll('button');
+    assert.deepEqual(buttons.map((b) => b.querySelector('[data-copy-id]').getAttribute('data-copy-id').split('.').at(-1)), Object.keys(routes), locale);
+    assert.deepEqual(buttons.map((b) => [b.getAttribute('type'), b.getAttribute('aria-pressed')]), [['button', 'false'], ['button', 'false'], ['button', 'true']], locale);
+    for (const b of buttons) {
+      const store = b.querySelector('[data-copy-id]').getAttribute('data-copy-id').split('.').at(-1);
+      assert.equal(b.getAttribute('data-route'), routes[store].join(' '), store);
+    }
+    const list = card.querySelector('ol.store-route');
+    assert.equal(list.getAttribute('aria-labelledby'), 'store-supermarket');
+    assert.equal(card.querySelector('#store-supermarket').text, COPY.get('feature.stores.store.supermarket')[locale]);
+    const shown = list.querySelectorAll('li').filter((li) => !li.hasAttribute('hidden'));
+    assert.deepEqual(shown.map((li) => li.getAttribute('data-category')), routes.supermarket, 'without JS the supermarket route shows, in order');
+    const every = new Set(Object.values(routes).flat());
+    assert.deepEqual(new Set(list.querySelectorAll('li').map((li) => li.getAttribute('data-category'))), every, 'every row a store needs is in the page');
+    for (const li of list.querySelectorAll('li')) {
+      assert.equal(li.querySelector('[data-copy-id]').getAttribute('data-copy-id'), `feature.stores.category.${li.getAttribute('data-category')}`);
+      assert.equal(li.querySelector('.emo').getAttribute('aria-hidden'), 'true');
+    }
+    assert.ok(doc.querySelector('script[type="module"][src="/stores.js"]'), 'stores.js ships with the landing page');
+  }
+});
+
+test('the stores card names the app\'s own categories', () => {
+  const arb = (locale) => JSON.parse(readFileSync(join(SITE_DIR, `../app/l10n/app_${locale}.arb`), 'utf8'));
+  for (const locale of ['de', 'en']) {
+    const strings = arb(locale);
+    for (const [id, entry] of COPY) {
+      const key = id.match(/^feature\.stores\.category\.(.+)$/)?.[1];
+      if (!key) continue;
+      const app = strings[`category${key[0].toUpperCase()}${key.slice(1)}`];
+      // The drugstore's seeded name starts with its emoji (👶), which the card shows as the icon.
+      assert.equal(entry[locale], app.replace(/^\p{Extended_Pictographic}\s*/u, ''), `${id} ${locale}`);
+    }
+  }
 });
 
 test('the HTML check allows only script files of this site and resources that exist', () => {

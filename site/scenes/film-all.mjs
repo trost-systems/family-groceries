@@ -17,7 +17,6 @@ const SCENES = {
   'add-tick': { wide: [576, 324], compact: [358, 448] },
   'household-sync': { wide: [576, 324], compact: [358, 448] },
   'mcp-chat': { wide: [576, 324], compact: [358, 448] },
-  stores: { wide: [576, 324], compact: [358, 448] },
 };
 const LOCALES = ['de', 'en'];
 const THEMES = ['light', 'dark'];
