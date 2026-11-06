@@ -30,9 +30,11 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 |---|---|---|---|---|---|
 | w1 | dark-mode cards use the hard 3D offset instead of a blurred glow (C5 one depth style) | cand 1 / base 0 / tie 8 | 4 (mean 6.778) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
 | w2 | empty changelog and 404 get a hex empty-state mark and a centred focal composition (CSS only) | cand 4 / base 0 / tie 5 | 6 (mean 7.111) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
+| w3 | headings hyphenate long German compounds on narrow screens (hyphens:auto, limit 12 5 5) | cand 3 / base 0 / tie 6 | 6 (mean 7.333) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl (2nd run; 1st timed out on /en/privacy networkidle at load 20) + contrast pass |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
 - **w1** (keep): medians typography 6, hierarchy 8, color_contrast 8, spacing 7, layout 7, consistency 6, accessibility 7, iconography 8, empty_error_states 4; pairwise consistency cand; seeds [27395677, 613857949, 1652060021].
 - **w2** (keep): medians typography 6, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 6, accessibility 7, iconography 8, empty_error_states 6; pairwise hierarchy cand, layout cand, iconography cand, empty_error_states cand; seeds [2867220145, 1525753868, 3429092604].
+- **w3** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 6, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand, layout cand, accessibility cand; seeds [535183923, 2360257594, 1439814247].
 

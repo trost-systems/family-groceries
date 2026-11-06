@@ -79,6 +79,23 @@ body {
   min-height: 100vh;
 }
 
+/* German compounds ("Datenschutzerklärung") outgrow a phone line: hyphenate them by the page's
+   lang instead of the bare overflow-wrap break. Only words of 12+ letters split, only on phones. */
+@media (max-width: 719px) {
+  h1,
+  h2,
+  h3,
+  .headline,
+  .title-l,
+  .title {
+    -webkit-hyphens: auto;
+    hyphens: auto;
+    -webkit-hyphenate-limit-before: 5;
+    -webkit-hyphenate-limit-after: 5;
+    hyphenate-limit-chars: 12 5 5;
+  }
+}
+
 main {
   flex: 1 0 auto;
 }
