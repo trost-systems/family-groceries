@@ -3,13 +3,90 @@
   "framework": null,
   "installCommand": "",
   "buildCommand": "",
-  "outputDirectory": "",
+  "outputDirectory": "public",
+  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/.well-known/oauth-protected-resource",
       "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/.well-known/oauth-protected-resource?via=mcp-hummlist"
     },
-    { "source": "/", "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp?via=mcp-hummlist" },
+    {
+      "source": "/",
+      "destination": "/de",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/html.*"
+        },
+        {
+          "type": "header",
+          "key": "accept-language",
+          "value": "^[dD][eE](?:[-;,].*)?$"
+        }
+      ],
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/event-stream.*"
+        },
+        {
+          "type": "header",
+          "key": "content-type"
+        },
+        {
+          "type": "header",
+          "key": "authorization"
+        },
+        {
+          "type": "header",
+          "key": "mcp-session-id"
+        },
+        {
+          "type": "header",
+          "key": "mcp-protocol-version"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "destination": "/en",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/html.*"
+        }
+      ],
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/event-stream.*"
+        },
+        {
+          "type": "header",
+          "key": "content-type"
+        },
+        {
+          "type": "header",
+          "key": "authorization"
+        },
+        {
+          "type": "header",
+          "key": "mcp-session-id"
+        },
+        {
+          "type": "header",
+          "key": "mcp-protocol-version"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp?via=mcp-hummlist"
+    },
     {
       "source": "/:path*",
       "destination": "https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp/:path*?via=mcp-hummlist"
@@ -18,7 +95,16 @@
   "headers": [
     {
       "source": "/(.*)",
-      "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }]
+      "headers": [
+        {
+          "key": "x-vercel-enable-rewrite-caching",
+          "value": "0"
+        },
+        {
+          "key": "x-robots-tag",
+          "value": "noindex"
+        }
+      ]
     }
   ]
 }

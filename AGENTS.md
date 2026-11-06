@@ -52,8 +52,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   rate limits, idempotency), sharing `_shared/list.ts` with the `mcp` function. Guide
   `docs/API.md`, contract `docs/api/openapi.yaml` (checked by the lint gate against
   `api/routes.ts`). Its key UI sits behind the PostHog flag `public-api`.
-- `mcp-proxy/`: the Vercel project `hummlist-mcp`, rewrites only, serving the
-  `mcp` function at `https://mcp.hummlist.com`. `scripts/mcp-smoke.sh <url>`
+- `mcp-proxy/`: the Vercel project `hummlist-mcp`, serving the `mcp` function
+  at `https://mcp.hummlist.com` by rewrites, and a static page for browsers
+  (`public/`, routes tested by `scripts/mcp-proxy-routes_test.ts`). `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).
 - `supabase/functions/voice/`: the Siri and in-app dictation endpoint; the
   German sentence splitter is `parse.ts`, its table of sentences
@@ -186,5 +187,5 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | schema check: history | Editing or deleting a migration on `main`; a new one sorting before main's newest | Production already ran it; deploys refuse older migrations |
 | schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |
-| `brand-names` | ChatGPT, OpenAI, Claude or Anthropic in site/content, site/public or an ARB value, outside `scripts/brand-names.allow.json` (or a stale entry there) | Legal N-80..N-86: brand names only in functional help and the trademark notice |
+| `brand-names` | ChatGPT, OpenAI, Claude or Anthropic in site/content, site/public, mcp-proxy/public or an ARB value, outside `scripts/brand-names.allow.json` (or a stale entry there) | Legal N-80..N-86: brand names only in functional help and the trademark notice |
 | `ignore-needs-reason`, schema check: ignores | An `ast-grep-ignore` or `squawk-ignore` without ` -- <reason>` | An exception a reviewer cannot judge gets copied |

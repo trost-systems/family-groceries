@@ -2,14 +2,38 @@
 
 The Vercel project `hummlist-mcp` serves this directory at
 `https://mcp.hummlist.com`, the public URL of the Hummlist MCP server. It
-has no code, no build and no secrets. `vercel.json` rewrites every request
-to the `mcp` edge function:
+has no build and no secrets. `vercel.json` rewrites every request to the
+`mcp` edge function, except a person opening the URL in a browser, who gets
+a static page from `public/`:
 
-| Request on mcp.hummlist.com | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co`) |
+| Request on mcp.hummlist.com | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co` unless a file) |
 | --- | --- |
+| `/de`, `/en`, `/static/...` | the files in `public/` (`de.html`, `en.html`, CSS, JS, logo, fonts) |
 | `/.well-known/oauth-protected-resource` | `/functions/v1/mcp/.well-known/oauth-protected-resource` |
+| `/` from a browser, German first in `Accept-Language` | `public/de.html` |
+| `/` from a browser, any other language | `public/en.html` |
 | `/` | `/functions/v1/mcp` |
 | `/<path>` | `/functions/v1/mcp/<path>` |
+
+## The page for people
+
+A browser request is one whose `Accept` names `text/html` and that has no
+`text/event-stream` in `Accept`, no `Content-Type`, no `Authorization`, no
+`Mcp-Session-Id` and no `MCP-Protocol-Version`. Every MCP POST carries a JSON
+`Content-Type`, and the GET for the event stream asks for
+`text/event-stream`, so MCP clients never get the page. Only `/` serves it;
+`/.well-known/...`, `/mcp` and every other path still go to the function.
+`scripts/mcp-proxy-routes_test.ts` (lint gate) replays browser and MCP
+client requests through these rules.
+
+The page says what the address is for, shows it with a copy button, and
+links to hummlist.com and its guides. It names no AI product
+(`scripts/brand-names.ts` scans `public/`), loads nothing from another
+origin, sets no cookie, has no analytics and is `noindex` (meta tag, and an
+`X-Robots-Tag` header on every response of the host). The two HTML files
+share their markup and differ only in the strings: change both.
+`cleanUrls` serves `de.html` at `/de`; it also redirects `/<x>.html` and
+`/index` paths, which no MCP client uses.
 
 Each destination carries the query marker `via=mcp-hummlist`, which tells
 the function to advertise `https://mcp.hummlist.com` as the resource and
@@ -30,6 +54,7 @@ authorization server stays Supabase Auth on supabase.co.
 ```bash
 scripts/mcp-smoke.sh https://mcp.hummlist.com
 MCP_SMOKE_TOKEN=fgp_… scripts/mcp-smoke.sh https://mcp.hummlist.com   # also initialize + tools/list
+MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.hummlist.com         # also the page, DE and EN
 ```
 
 `npx vercel build` in a copy of this directory, with a hand-written
