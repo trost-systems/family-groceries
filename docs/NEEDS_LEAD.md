@@ -1871,3 +1871,44 @@ The question covers the whole untick class (the app's re-add, the API's untick):
 onto an open copy fold into it, as an add does? If so, the server
 would refuse it with 23505 and `ListCubit` would merge, as job 114 does for a refused rename. That
 is roughly a day of work with tests. The fuzz already counts these cases (`FakeBackend.reopened`).
+
+## Job 122: four flaky issues are host pauses only (#62, #64, #71, #72)
+
+Status: left open for the lead to close. Evidence in DECISIONS (Job 122, items 3 and 4).
+
+- **#62** edit-sheet "Abbrechen and an unchanged Fertig write nothing", **#64** list "edit
+  changes name, quantity and category; delete can be undone", **#71** offline-start "a cold
+  start without Supabase …", **#72** offline-start "signing out drops the cached list".
+- On main with retries off, under SIGSTOP pauses of the runner and Chromium shorter than each
+  test's budget, nothing failed. That is 25 of 25 on hz (4 s every 6 s), 30 of 30 on CI (2 s every
+  3 s; the offline and sign-out tests) and 32 of 32 on CI (8 s every 6 s, all four tests).
+  Traces of passing runs show no hidden wait.
+- #62 failed with 262 s and 570 s host stalls. #64, #71 and #72 failed on 2026-10-25, before the
+  stall detector, in the VM-pause days (DECISIONS 18.23).
+- Closing them is the lead's call. If one fails again without a `[host-stall]` line, reopen it
+  with the trace: `node e2e/trace-slow-steps.mjs <report>/data` lists its slow steps.
+- #63 (edit-sheet "Fertig writes only what changed") was a real app bug and is fixed in this PR.
+- **Your call: queued writes after a refused refresh.** If the server refuses the refresh token
+  for good (revoked, account deleted), gotrue signs out and the device drops its list, queued
+  offline changes included. This PR keeps that: without a session the writes cannot be sent,
+  the next sign-in may be another user, and sign-out drops the list by design (#72). Keeping
+  the queue for the same user's next sign-in would be a new feature.
+- **Your call: a send that never answers stalls the offline queue.** `ListCubit` sends one op
+  at a time and the app sets no HTTP timeout, so one hung request holds every later write until
+  the list closes (an app restart clears it, and the ops are kept in the device cache). Not seen
+  in any stressed run. A client timeout is not a safe fix: it stops the wait, not the request,
+  and item writes are last-write-wins, so the late request overwrites ops sent after it (review
+  1 proved a tick landing after the user's untick; the cubit test "a later op waits for a slow
+  send, so the last change wins" fails with a timeout). Proposal: the server ignores a write
+  older than the item's last applied op (a per-item op sequence or a client time guard in
+  `put_item` and the item update path, one migration, old apps keep working). Then the app can
+  time out and retry safely. Nothing of it is in this PR.
+- **Your call: no hover hint on + and −.** The edit sheet's steppers lost their tooltips
+  („Eins mehr“ / „Eins weniger“ on mouse hover). No string changed, and screen readers still
+  get the names, but mouse users see no hint.
+- **Follow-up: the same tooltip effect elsewhere.** Any Material `Tooltip` showing next to a
+  focused text field on the web moves the DOM the same way. Candidates are the confirm and
+  cancel buttons beside the store name field (`store_name_field.dart`) and the clear button
+  beside the add field (`list_screen.dart`). The clear button was checked: text typed after it
+  still lands in the field. The store name field was not checked. The widget test „hovering a
+  stepper leaves the semantics tree as it is“ is the pattern to prove another case.
