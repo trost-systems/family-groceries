@@ -11,7 +11,7 @@ Mehr → „Feedback senden“ opens a sheet for a free-text note to Peter. The 
 - `fb-attached` fixed line „Wird mitgeschickt: App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.“
 - `fb-limit` at 1800 characters a counter „{count} / 2000“ shows; above 2000 the field shows „Höchstens 2000 Zeichen“ and Send is disabled.
 - `fb-send` „Senden“ (disabled while empty, too long or sending; spinner labelled „Wird gesendet …“), then sheet closes, snackbar „Danke!“.
-- `fb-fail` „Nicht gesendet. Prüfe die Verbindung und versuch es noch einmal.“ with the note kept and „Erneut senden“; a retry of an unchanged note stores one row, an edited note counts as a new one.
+- `fb-fail` „Nicht gesendet. Prüfe die Verbindung und versuch es noch einmal.“ with the note kept and „Erneut senden“; a retry of an unchanged note stores one row, an edited note counts as a new one (editing clears the error and the button reads „Senden“ again).
 - `fb-draft` an unsent note survives closing the sheet; a sent note, or another account signing in, starts blank.
 
 EN labels: "Send feedback", "Close", "Your message", "What did you notice?", "Kind (optional)", "Bug", "Idea", "Other", "Peter may contact me about this", "Sent along: App version, device, language and current screen. No list items.", "{count} / 2000", "{max} characters at most" ("2000 characters at most"), "Send", "Sending …", "Thanks!", "Not sent. Check your connection and try again.", "Retry".
@@ -41,7 +41,7 @@ Preconditions:
 
 - Kind chips are checkboxes in the accessibility tree, not buttons or radios.
 - The message is trimmed; length is counted in characters as trimmed, 1 to 2000.
-- A feedback row is stored with or without analytics consent; the analytics event `feedback_submitted` (category, screen, contact_ok, no text) goes out only with consent. Accounts on test domains are marked internal (`.test`, `.invalid`, `.example`, `.localhost`, example.com/net/org), so the baseline's `fg-test.invalid` members store `is_internal: true` (driven 2026-11-04).
+- A feedback row is stored with or without analytics consent; the analytics event `feedback_submitted` (category bug/idea/other/none, entry_point settings, screen, contact_ok; no text) goes out only with consent. Accounts on test domains are marked internal (`.test`, `.invalid`, `.example`, `.localhost`, example.com/net/org), so the baseline's `fg-test.invalid` members store `is_internal: true` (driven 2026-11-04).
 - The e2e build and this skill's build both point analytics at a fake collector (posthog.invalid); feedback itself goes to Supabase.
 - Rows older than 12 months are deleted by the server (migration); that is not visible in the app.
 - The sender cannot read notes back in the app, but Konto → „Meine Daten exportieren“ (EN "Export my data") includes their own notes (section `feedback` of the export).

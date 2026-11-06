@@ -12,7 +12,7 @@ A signed-out user sees one login screen. It has no title bar and opens on the Hu
 - `google` / `apple` provider buttons (production builds only). Same email as an existing account links to that account and its household.
 - `form-checks` „Bitte eine gültige E-Mail-Adresse eingeben“ / "Please enter a valid email address" (email without "@"); „Mindestens 6 Zeichen“ / "At least 6 characters" (password under 6, for sign-in and sign-up, not for the magic link).
 - `legal-footer` Impressum and Datenschutz links under the form (see Gotchas).
-- `errors` failed sign-in snackbar „Anmeldung fehlgeschlagen: {message}“ / "Sign-in failed: {message}"; canceled provider sign-in „Anmeldung abgebrochen“ / "Sign-in canceled".
+- `errors` failed sign-in snackbar „Anmeldung fehlgeschlagen: {message}“ / "Sign-in failed: {message}" (also as soon as the login screen opens after a failed Google or Apple redirect); a canceled or declined provider sign-in „Anmeldung abgebrochen“ / "Sign-in canceled".
 - `deleted-notice` right after an account deletion, a card above the sign-in methods: „Dein Konto wurde gelöscht.“ / "Your account was deleted."; when an Apple grant could not be revoked, also „Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.“ / "If you signed in with Apple, remove “Hummlist” on your iPhone under Settings › [your name] › Sign-In & Security › Sign in with Apple." (`e2e/tests/account.spec.ts`).
 - `sign-out` More tab, „Abmelden“ / "Sign out"; also the logout icon (tooltip „Abmelden“) in the app bar of the first-run screens (analytics question, „Willkommen bei Hummlist“).
 

@@ -1,12 +1,12 @@
 # AI assistants (MCP) and access keys
 
-An AI assistant that supports MCP can read and change the household's shopping list through Hummlist's MCP server. The user connects it in one of two ways: signing in (OAuth) when the assistant asks, which opens a consent page „Zugriff erlauben?“; or with a personal access key that the user creates in the app (shown once). Everything is managed in Mehr → Zugänge: the server address with a copy button, the access keys, and the connected apps, each of which can be revoked or disconnected at once. Nothing needs Premium today.
+An AI assistant that supports MCP can read and change the household's shopping list through Hummlist's MCP server. The user connects it in one of two ways: signing in (OAuth) when the assistant asks, which opens a consent page „Zugriff erlauben?“; or with a personal access token („Zugriffstoken“) that the user creates in the app (shown once). Everything is managed in Mehr → Zugänge: the server address with a copy button, the access tokens, and the connected apps, each of which can be revoked or disconnected at once. Nothing needs Premium today.
 
 ## Sub-features
 
 - `ai-url` the server address on Zugänge under „MCP-Server“ with a copy button „Kopieren“ / "Copy" (a tap shows the snackbar „Kopiert“ / "Copied"): `https://mcp.hummlist.com` in production builds.
 - `ai-consent` the page an assistant opens to connect: „Zugriff erlauben?“ with „Angemeldet als <email>“, „Haushalt: <name>“, „<App> möchte:“ and what that includes; buttons „Erlauben“ and „Ablehnen“. A signed-out user signs in on the way and lands back on it. After a decision the page turns into „Verbunden“ with „Fertig, du kannst zu <App> zurückkehren.“ (EN "Connected", "Done, you can return to <App>.") or „Nicht verbunden“ with „Abgelehnt, du kannst zu <App> zurückkehren.“, and stays until the assistant's own page loads (Claude takes up to about 10 s). A client approved before skips the question: „Verbunden“ with „Fertig, du kannst zu deiner App zurückkehren.“ (EN "Done, you can return to your app."). An unknown or expired request shows the title „Verbindung abgelaufen“ (EN "Connection expired") and the button „Zurück zur Liste“ (EN "Back to the list").
-- `ai-key-create` „Token erstellen“: name it, the key (`fgp_…`) is shown once, „Fertig“ closes it.
+- `ai-key-create` „Token erstellen“: name it, the token (`fgp_…`) is shown once with „Kopieren“ („Kopiert“ shows above the dialog), „Fertig“ closes it.
 - `ai-key-list` keys list as „<Name>“ with „…<letzte 4> · Erstellt am <Datum> · Noch nie benutzt“ (or „Zuletzt benutzt <Datum>“).
 - `ai-key-revoke` revoke a key: „<Name> widerrufen“ then „Widerrufen“; the next request with it is refused.
 - `ai-key-limit` at most 20 active keys: „Höchstens 20 aktive Tokens.“

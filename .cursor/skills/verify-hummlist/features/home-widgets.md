@@ -22,7 +22,7 @@ Preconditions:
 
 - Not on the web: the web build has no widgets and ignores the widget links. Nothing here is drivable with Playwright.
 
-- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens; 22 tests pass on 2026-11-02). Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
+- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens; 22 tests pass on 2026-11-06). **Android parser.** The CI job `android` (`scripts/gates/android.sh`) runs `WidgetPayloadTest` (6 JVM tests) and logs `android unit tests: name="com.hummlist.app.widget.WidgetPayloadTest" tests="6" …`. Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
 - **Guides.** On a local or preview site build both guides show with the draft banner; production leaves them out.
 
 ## Gotchas

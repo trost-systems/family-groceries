@@ -21,7 +21,7 @@ Preconditions: a seeded household with items (launch.sh's demo household); `sign
 
 - **Card.** `page.getByRole('button', { name: 'Tipp ausblenden' })` visible; the ARIA snapshot (`page.locator('body').ariaSnapshot()`) contains „Artikel bearbeiten Halte einen Artikel gedrückt …“ (title and text are one merged node, which `getByText` does not reach on the web build).
 - **Dismiss.** Click „Tipp ausblenden“: the card goes; after `page.reload()` (still signed in) the next tip („Menge gleich mittippen“) shows and the first does not come back.
-- **Scripted.** `helpers/drive.sh tips [--lang en] [--dark]` (`journeys/tips.mjs`): first tip, X, reload, next tip; PASS or FAIL (driven 2026-11-04, DE and EN).
+- **Scripted.** `helpers/drive.sh tips [--lang en] [--dark]` (`journeys/tips.mjs`): first tip, X, reload, next tip; PASS or FAIL (driven 2026-11-06, DE and EN; the tip sits at the top of the list, above the first store divider).
 - Widget tests: `app/test/tips/tip_card_test.dart`, `app/test/tips/tips_test.dart`; goldens `app/test/design/tip_card_golden_test.dart`.
 
 ## Gotchas
