@@ -585,6 +585,80 @@ a {
   color: var(--hl-color-text-muted);
 }
 
+/* Empty states: the changelog before the first public release (h1, p) and the 404 page (h1, p,
+   the language list). A honeycomb of three sticker hexagons sits above the centred text: the
+   ink silhouette, stretched down by the edge depth, under the faces. Both layers are masked with
+   hex-pointy.svg at the same three spots; --w is a pointy hexagon's width at height --s. */
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child)) {
+  --s: 64px;
+  --w: calc(var(--s) * 0.866);
+  --g: 8px;
+  --d: var(--hl-depth-edge-l);
+  --b: var(--hl-border-width);
+  --x2: calc(var(--w) + var(--g));
+  --x3: calc(var(--x2) / 2);
+  --y3: calc(var(--s) * 0.75 + var(--g) * 0.866);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  padding-block: var(--hl-space-7) var(--hl-space-8);
+}
+
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child))::before,
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child))::after {
+  content: "";
+  grid-area: 1 / 1;
+  width: calc(2 * var(--w) + var(--g));
+  height: calc(var(--y3) + var(--s) + var(--d));
+  mask-image: var(--pointy-img), var(--pointy-img), var(--pointy-img), var(--pointy-img), var(--pointy-img), var(--pointy-img);
+  mask-repeat: no-repeat;
+}
+
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child))::before {
+  background: var(--hl-color-edge);
+  mask-size: var(--w) var(--s);
+  mask-position:
+    0 0, 0 var(--d),
+    var(--x2) 0, var(--x2) var(--d),
+    var(--x3) var(--y3), var(--x3) calc(var(--y3) + var(--d));
+}
+
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child))::after {
+  --fw: calc(var(--w) - 2 * var(--b));
+  --fh: calc(var(--s) - 2.3094 * var(--b));
+  --fy: calc(var(--b) * 1.1547);
+  background:
+    linear-gradient(var(--hl-color-honey) 0 0) var(--b) var(--fy) / var(--fw) var(--fh),
+    linear-gradient(var(--hl-color-mint) 0 0) calc(var(--x2) + var(--b)) var(--fy) / var(--fw) var(--fh),
+    linear-gradient(var(--hl-color-accent-soft) 0 0) calc(var(--x3) + var(--b)) calc(var(--y3) + var(--fy)) / var(--fw) var(--fh);
+  background-repeat: no-repeat;
+  mask-size: var(--fw) var(--fh);
+  mask-position:
+    var(--b) var(--fy), var(--b) var(--fy),
+    calc(var(--x2) + var(--b)) var(--fy), calc(var(--x2) + var(--b)) var(--fy),
+    calc(var(--x3) + var(--b)) calc(var(--y3) + var(--fy)), calc(var(--x3) + var(--b)) calc(var(--y3) + var(--fy));
+}
+
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child)) > h1 {
+  margin: var(--hl-space-6) 0 var(--hl-space-3);
+}
+
+:is(.prose:has(> h1:first-child + p:not([class]):last-child), .prose:only-child:has(> h1:first-child + p + .guide-list:last-child)) > p {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--hl-color-text-muted);
+  font-size: var(--hl-type-body-l-size);
+  line-height: var(--hl-type-body-l-line);
+  text-wrap: pretty;
+}
+
+.prose:only-child:has(> h1:first-child + p + .guide-list:last-child) > .guide-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 26rem);
+  margin: var(--hl-space-6) 0 0;
+}
+
 .updated,
 .since-note,
 .release-date {
