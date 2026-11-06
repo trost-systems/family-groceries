@@ -8972,6 +8972,37 @@ Flaky issues #61 (`classifier.spec.ts:5`), #73 (`rls.spec.ts:4`) and #77
    error, so the next occurrence names it. Until then it counts as a host
    pause.
 
+## Job 140: list.spec.ts "adds are grouped by category" (issue #112), 2026-11-06
+
+1. **The cause is the app, and job 52 fixed it.** The test failed at a click on the add field: a
+   cursor, no sheet (`Hinzufügen` not found after 10 s). On the web with semantics on, a click can
+   reach the field as a semantics focus or tap instead of pointer events. `TextField` answers both
+   without calling `onTap`, and `onTap` was the only thing that opened the sheet. Job 52 (#156,
+   c4d4090d, 2026-11-01, its item 15) found this and made the field's next focus after a close open
+   the sheet. #112 stayed open because no one had shown that this was its cause.
+2. **The evidence.** CI history, 1,766 e2e job logs from 2026-10-22 to 2026-11-06: the test failed 4
+   times, all on 2026-10-30. Three were this signature, and one was a mass failure in onboarding.
+   The other "no sheet after a click" failures (51, in the classifier, feedback, list-header and
+   list specs) all ran commits without c4d4090d. After the merge, 458 jobs ran the test and none
+   failed. On main 6da42673, retries off, the test never failed: 15 of 15 plain, 15 of 15 under 4 s
+   and 15 of 15 under 8 s SIGSTOP pauses of the runner and Chromium every 6 s, 10 of 10 traced, and
+   68 of 68 for list, add-sheet and classifier at two workers (CI runs on `probe/140-stress`). The
+   same stress did not fail the test on 8e72815f, the commit before job 52, either (15 of 15 under 4
+   s pauses, 60 of 60 at two workers). Pointer timing does not make the trigger. Something in the
+   browser does, rarely: 3 in about 470 runs before the fix. On hz (release build of this job's
+   head) the test also passed 10 of 10 each under 8 CPU burners, the stack's containers paused 4 s
+   every 6 s, and 1 s SIGSTOP pauses every 1 s, and `list.spec.ts --repeat-each=20` passed 80 of 80.
+3. **A guard that forces the trigger.** `add-sheet.spec.ts` "after a close, a focus or click that
+   skips pointer events opens the sheet" closes the sheet, then calls `focus()` on the field's input
+   and later sends it a bare `click` event. Neither sends pointer events, so the click reaches the
+   app the way #112's did. Before job 52 (8e72815f) it fails 10 of 10 on CI and 5 of 5 on hz, each
+   at "a DOM focus opens it". On main it passes 10 of 10 and 5 of 5. The widget test from job 52
+   performs the semantics actions in the VM. This one checks the web engine's path from DOM focus to
+   the app. The grouping test stays as it is, because it was right.
+4. **Not this issue.** `add-sheet.spec.ts:304` (a tap beside the floating field) failed once with
+   the same locator, on #278's branch before that PR's own fix. That path is a pointer tap on the
+   bar's gutter, not a click that skips `onTap`.
+
 ## Job 149: the item edit sheet without title, hint, chip icons and Löschen, 2026-11-06
 
 Peter (2026-11-06, about „Bearbeiten: Ohrenstäbchen“) asked for a quieter edit sheet.
