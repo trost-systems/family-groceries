@@ -99,7 +99,8 @@ test('category and store layout changes sync live to the other member', async ({
   await expect.poll(() => sectionHeadings(lea, 'Supermarkt')).toEqual(['Brot & Backwaren', 'Haushalt']);
 
   await openStoreDetails(peter, 'Supermarkt');
-  await dragHandle(peter, 'Haushalt verschieben', 'Brot & Backwaren verschieben');
+  // The 3 s below count Peter's write as well as the fan-out to Lea, as on main (job 119).
+  await dragHandle(peter, 'Haushalt verschieben', 'Brot & Backwaren verschieben', { untilSaved: false });
   await within(3_000, (timeout) => expect.poll(() => sectionHeadings(lea, 'Supermarkt'), { message: 'a store reorder in A reaches B', timeout })
     .toEqual(['Haushalt', 'Brot & Backwaren']));
   await peter.getByRole('button', { name: 'Zurück' }).click();

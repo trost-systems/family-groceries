@@ -28,8 +28,15 @@ export async function expectGroup(page: Page, item: string, group: string): Prom
   await expect.poll(() => groupOf(page, item), { message: `${item} is under ${group}` }).toBe(group);
 }
 
-/** Drags a row of a reorderable list by its handle to the position of another row. */
-export async function dragHandle(page: Page, handleName: string, ontoHandleName: string): Promise<void> {
+/**
+ * Drags a row of a reorderable list by its handle to the position of another row. The new order
+ * shows at once and is written in the background, so by default this returns once the server has
+ * answered that write: a reload before the answer cancels it (job 119, #76). untilSaved: false
+ * returns at the mouse-up, for a test whose budget counts the write too.
+ */
+export async function dragHandle(
+  page: Page, handleName: string, ontoHandleName: string, { untilSaved = true }: { untilSaved?: boolean } = {},
+): Promise<void> {
   await clearOfBottom(page, page.getByText(handleName, { exact: true }));
   await clearOfBottom(page, page.getByText(ontoHandleName, { exact: true }));
   const from = await boxOf(page.getByText(handleName, { exact: true }));
@@ -39,7 +46,15 @@ export async function dragHandle(page: Page, handleName: string, ontoHandleName:
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 5, { steps: 3 });
   await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 - 4, { steps: 20 });
   await page.waitForTimeout(300);
+  if (!untilSaved) {
+    await page.mouse.up();
+    return;
+  }
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST'
+    && /\/rest\/v1\/rpc\/(reorder_categories|reorder_stores|set_store_layout)$/.test(new URL(r.url()).pathname), { timeout: 10_000 })
+    .catch(() => { throw new Error('the drop wrote no new order within 10 s (offline, or the drag missed)'); });
   await page.mouse.up();
+  expect((await saved).ok(), 'the server took the new order').toBe(true);
 }
 
 /**

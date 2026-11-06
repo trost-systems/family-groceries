@@ -2023,3 +2023,26 @@ lead reviews and merges. No migration.
 - **For job 120 (live sync).** After 8 s stack pauses, a row written through the API
   (`add_items`) sometimes never reached the open list over realtime: 1 of 12 on main and 1 of 12
   with this PR (`classifier.spec.ts:49` since the #237 rebase, „could not scroll … Hafermilch into view“; posted on BOARD for job 120 at 02:26 on 2026-11-06).
+
+## Job 119: #74 and #75 are host pauses only (2026-11-05)
+
+Status: open, for the lead to close or keep. Job 119 fixed #76 (STORE ORDERING: the reload outran
+the drop's write) and could not make the other two stores.spec.ts tests fail without a host pause:
+
+- #74 ("category and store layout changes sync live to the other member") and #75 ("categories:
+  add, move an item there, rename, reorder, delete with reassignment") passed 24 of 24 runs each
+  with retries off under `scripts/e2e-stress.sh`: runner, browser and stack pauses of 2 to 8 s,
+  and the run pinned to one CPU (DECISIONS, job 119).
+- Every failure recorded on the issues fell in a VM hole or mem-guard gap of 403 to 2613 s, far
+  above both tests' budgets; #75's "while setting up page" is a browser context that such a hole
+  timed out.
+
+To decide: close both as host-pause only, or keep them open to collect a failure that has no
+`[host-stall]` line. To rerun the evidence (stack paused 3 s of every 8 s), with the job's stack
+and web build up: `flock /tmp/fg-e2e.lock scripts/e2e-stress.sh --target stack --on 3 --every 8
+-- tests/stores.spec.ts -g 'sync live|categories:' --workers=1 --retries=0 --repeat-each=4`.
+
+Also to decide (app, out of job 119's scope): a store or category reorder is written once, not
+queued like item ops (`ListCubit._changeOrder`). A user who reloads the web app or closes the app
+before the write answers loses the new order without a message, though it showed at once. Should
+orders become queued ops (an `ItemOp`-like catalog op), or is a lost reorder acceptable?
