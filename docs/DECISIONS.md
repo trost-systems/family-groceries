@@ -8280,3 +8280,18 @@ rename made offline, or two phones renaming at once), the app put the old name b
    parsed brand and details are its own, so the refused rename's do not ride along. `edit`'s
    local fold keeps the flag on the rename it may send alone (item 6).
 
+## Job 137: sign out looks like a normal More row, 2026-11-06
+
+Peter (2026-11-05): signing out is not dangerous, so „Abmelden“ must not look destructive.
+
+1. **The `destructive` flag of More's `_Row` is gone.** Sign-out was its only user; the row now
+   draws its label and glyph like Lizenzen (theme text colour, normal weight, the plain sunken hex
+   face). Account deletion keeps its red button on Konto: that one is destructive.
+2. **Still no trailing icon.** A chevron says „opens a page“ and the external icon „opens the
+   web“; sign-out does neither, so it stays without one, alone in its last group.
+3. **Proof:** the widget test compares the sign-out row's rendered label style and icon colour
+   with Lizenzen's (red on main, green here); the four „more scrolled to the end“ goldens are
+   regenerated. On the Linux desktop debug app (`scripts/fg`, light and dark) the sign-out row's
+   reddest pixel (r - max(g, b)) equals Lizenzen's (0 light, -12 dark; main's golden: 156) and a
+   tap on it shows the login. The web build was not driven: the box-wide e2e lock that
+   verify-hummlist's launch takes was held by flake stress runs (jobs 119 to 126) for hours.

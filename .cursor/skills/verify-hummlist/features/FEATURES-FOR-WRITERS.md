@@ -401,7 +401,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, for a household that has Premium (a free unlock in the beta or for testers) or once Premium is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, and the app version at the bottom. Categories and stores are under the list's „Anpassen“. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
+**What it does.** The app has two tabs, List and More. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, for a household that has Premium (a free unlock in the beta or for testers) or once Premium is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, looking like any other row, and the app version at the bottom. Categories and stores are under the list's „Anpassen“. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the bottom bar (on wide screens: the rail on the left).
@@ -414,13 +414,14 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - A guides section inside the app, a help chat or an in-app browser.
 - That the Siri guide exists in English beyond the German-only notice.
 - A sign-out from anywhere but More.
+- That signing out is marked as a warning or a dangerous step: it looks like any other row.
 - An update notice in More: the app does not check for updates yet.
 - That More shows the household's name: it no longer does.
 - That archived households can be seen or reopened under More: the app does not show that row.
 - That „Rechtliches“ is a page of its own: its entries are rows on More.
 - Terms of use of Hummlist's own: the terms row shows Apple's standard terms on iPhone and the help page elsewhere.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): every row in order, „Hilfe & Kontakt“ opening the help page, the version; the help page's questions from the site build. Before that main c5a580a8, 2026-11-05: imprint, privacy policy, terms, licenses, Nutzungsdaten. Recipe: [more-help.md](./more-help.md).
+**Last verified.** job 137 branch (job/137-sign-out-neutral), 2026-11-06 (CET): „Abmelden“ in the plain row style and signing out, on the Linux desktop app (verify-family-groceries) and in widget tests and goldens. Before that main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): every row in order, „Hilfe & Kontakt“ opening the help page, the version; the help page's questions from the site build. Before that main c5a580a8, 2026-11-05: imprint, privacy policy, terms, licenses, Nutzungsdaten. Recipe: [more-help.md](./more-help.md).
 
 ## Account: data export and deletion
 
