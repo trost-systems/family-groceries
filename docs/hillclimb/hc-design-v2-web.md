@@ -32,6 +32,7 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | w2 | empty changelog and 404 get a hex empty-state mark and a centred focal composition (CSS only) | cand 4 / base 0 / tie 5 | 6 (mean 7.111) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
 | w3 | headings hyphenate long German compounds on narrow screens (hyphens:auto, limit 12 5 5) | cand 3 / base 0 / tie 6 | 6 (mean 7.333) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl (2nd run; 1st timed out on /en/privacy networkidle at load 20) + contrast pass |
 | w4 | waitlist email field, iPhone/Android radios and 404 language links drawn as hexes like every other control | cand 2 / base 0 / tie 7 | 7 (mean 7.556) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass (focus rings, dark hex contours) |
+| w5 | waitlist fine print and field helper at 1.5 line height with a clear gap under the button | cand 1 / base 0 / tie 8 | 7 (mean 7.333) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
@@ -39,4 +40,5 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **w2** (keep): medians typography 6, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 6, accessibility 7, iconography 8, empty_error_states 6; pairwise hierarchy cand, layout cand, iconography cand, empty_error_states cand; seeds [2867220145, 1525753868, 3429092604].
 - **w3** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 6, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand, layout cand, accessibility cand; seeds [535183923, 2360257594, 1439814247].
 - **w4** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 8, accessibility 8, iconography 7, empty_error_states 7; pairwise consistency cand, empty_error_states cand; seeds [2697320612, 2684769579, 27664825].
+- **w5** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 7, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand; seeds [2377647206, 4047388693, 2406975861].
 

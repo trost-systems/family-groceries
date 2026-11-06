@@ -106,12 +106,18 @@
   --b: calc(var(--hl-border-width) + 1px);
 }
 
+/* Fine print reads as small body text: label size, body leading, muted colour. */
 .wl-hint,
 .wl-small,
 .wl-consent {
   color: var(--hl-color-text-muted);
   font-size: var(--hl-type-label-size);
-  line-height: var(--hl-type-label-line);
+  line-height: var(--hl-type-body-l-line);
+}
+
+/* Under the button the fine print keeps a clear step away from it (form gap plus space-2). */
+.wl-form > .wl-consent {
+  margin-top: var(--hl-space-2);
 }
 
 .wl-error,
