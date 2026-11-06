@@ -117,11 +117,12 @@ export const shots: Record<string, Shot> = {
   'household-sync': {
     scenario: { de: 'demo-familie', en: 'demo-family-en' },
     members: ['mia', 'noah', 'ida'],
-    async prepare(s, c) {
+    async prepare(s, c, lang) {
       const noah = member(c, 'noah');
       const ida = member(c, 'ida');
-      // Noah and Ida look at the chilled section, where the new item lands under Butter.
-      for (const c of [noah, ida]) await s.scrollUntil(c, { text: 'Butter' }, 52);
+      // Noah and Ida look at the chilled section, where the new item lands under Butter, with the
+      // pantry header right below so the new row sits high on their screens.
+      for (const c of [noah, ida]) await s.scrollUntil(c, { text: lang === 'de' ? 'Nudeln' : 'Pasta' }, 112);
     },
     async film(s, c, lang) {
       const mia = member(c, 'mia');

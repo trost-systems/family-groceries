@@ -3,7 +3,7 @@
 A generic AI chat in Hummlist's own style asks Hummlist's MCP server to add two items, then, by
 voice, to tick them off. The chat shows the real tool results of the take at the times they came
 back; Sam's real app ("Sams Wohnung", fixture solo-long-list) shows the rows arrive and leave.
-10.7 to 10.9 s.
+11.3 to 12.0 s (job 146).
 
 ## Hand-over notes (hummlist-ui-craft)
 
@@ -39,39 +39,51 @@ back; Sam's real app ("Sams Wohnung", fixture solo-long-list) shows the rows arr
 - P2 · the working line is on screen 0.3 s, too short to read → it lasts exactly as long as the
   real call; kept on purpose (the speed is the point).
 
+## Re-take (job 146, 2026-11-06)
+
+Filmed again from main 605ad96d. The wide phone's crop moved down 139 logical px (`appTop` 150 →
+289) so the floating add field and tab pill show under the new rows (y 421 to 517). Compact keeps
+the row crop: its phone strip is 313 logical px tall, not enough for the rows and the pill. The
+chat surface is unchanged. This take's MCP answers: add 764 ms (DE), rows in the app 1.6 s after
+the call; tick 471 ms.
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the two working lines: their real duration (above).
 - `container_overflow` on the thread: it scrolls inside the chat card by design.
 - `nested_structure_needs_subcomposition`, `duplicate_media_discovery_risk`: Studio hints.
+- `gsap_repeated_fromto_without_baseline` (DE only): the working dots pulse twice because the add
+  answer took 764 ms; each pulse starts from the same values, so a seek shows the right frame.
+- `escaped_container` on the mint marker: its glyph is centred on a zero-size anchor at the
+  phone's edge on purpose.
 
 ## Files
 
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.73 s | 1144 KB | none |
-| de-wide | mcp-chat-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.73 s | 395 KB | none |
-| de-wide | mcp-chat-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.73 s | 395 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.73 s | 903 KB | none |
-| de-compact | mcp-chat-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.73 s | 313 KB | none |
-| de-compact | mcp-chat-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.73 s | 332 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.90 s | 901 KB | none |
-| en-wide | mcp-chat-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.90 s | 334 KB | none |
-| en-wide | mcp-chat-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.90 s | 348 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.90 s | 717 KB | none |
-| en-compact | mcp-chat-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.90 s | 274 KB | none |
-| en-compact | mcp-chat-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.90 s | 294 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 12.00 s | 1216 KB | none |
+| de-wide | mcp-chat-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 12.00 s | 431 KB | none |
+| de-wide | mcp-chat-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 12.00 s | 420 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 12.00 s | 963 KB | none |
+| de-compact | mcp-chat-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 12.00 s | 330 KB | none |
+| de-compact | mcp-chat-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 12.00 s | 342 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.33 s | 939 KB | none |
+| en-wide | mcp-chat-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.33 s | 352 KB | none |
+| en-wide | mcp-chat-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.33 s | 363 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.33 s | 728 KB | none |
+| en-compact | mcp-chat-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.33 s | 279 KB | none |
+| en-compact | mcp-chat-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.33 s | 287 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9981 | mcp-chat-de-wide.webp, 47 KB | 4.23 s |
-| de-compact | 0.9980 | mcp-chat-de-compact.webp, 41 KB | 4.23 s |
-| en-wide | 0.9982 | mcp-chat-en-wide.webp, 41 KB | 4.30 s |
-| en-compact | 0.9982 | mcp-chat-en-compact.webp, 35 KB | 4.30 s |
+| de-wide | 0.9980 | mcp-chat-de-wide.webp, 49 KB | 4.67 s |
+| de-compact | 0.9979 | mcp-chat-de-compact.webp, 41 KB | 4.67 s |
+| en-wide | 0.9979 | mcp-chat-en-wide.webp, 43 KB | 4.27 s |
+| en-compact | 0.9981 | mcp-chat-en-compact.webp, 35 KB | 4.27 s |
 
 Measured in the takes (Marionette polls, so an upper bound for the app side):
 
-- DE: addAnswerMs 359 ms, tickAnswerMs 286 ms, addToAppMs 685 ms, tickToAppMs 1071 ms
-- EN: addAnswerMs 404 ms, tickAnswerMs 321 ms, addToAppMs 764 ms, tickToAppMs 1090 ms
+- DE: addAnswerMs 764 ms, tickAnswerMs 471 ms, addToAppMs 1621 ms, tickToAppMs 1363 ms
+- EN: addAnswerMs 369 ms, tickAnswerMs 304 ms, addToAppMs 1212 ms, tickToAppMs 641 ms
 <!-- /report -->

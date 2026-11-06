@@ -2,8 +2,8 @@
 
 Mia, Noah and Ida (the fictional Brandt family) on three real app instances filmed on one clock.
 Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency, with the app's own
-"1 neu von Mia Brandt" note and mint row; Noah ticks it off and it leaves all three lists.
-10.6 to 10.9 s.
+"1 neu von Mia Brandt" note and highlighted row; Noah ticks it off and it leaves all three lists.
+11.9 to 12.5 s (job 146).
 
 ## Hand-over notes (hummlist-ui-craft)
 
@@ -48,6 +48,22 @@ Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency,
   phones break the one-lead rule (hummlist-ui-craft), and at 576 px three equal phones would put
   the app text under 10 px.
 
+## Re-take (job 146, 2026-11-06)
+
+Filmed again from main 605ad96d: floating add field and tab pill (#278, #288); an arriving row
+is now highlighted yellow, not mint.
+
+- Mia's wide crop moved down 56 logical px (`appTop` 281 → 337) so her add sheet, field and the
+  tab pill are in view. Compact keeps Mia's whole screen; Noah's band covers her pill.
+- The list no longer scrolls as far (the floating field took the old bottom bar's space), so
+  Butter stopped at y 108 and the new row fell behind Ida's band in compact. Two tail rows in the
+  fixtures (Müllbeutel / Trash bags in Haushalt, Duschgel / Shower gel in Drogerie; off screen in
+  every cut) give the room back, and the satellites now scroll until the pantry row is at y ≤ 112:
+  the new row sits at y 65 to 113, under the header note on both bands.
+- `scrollUntil` backs up one wheel notch when its target leaves view (a notch is about 50 px).
+- Measured sync: add 0.58 to 0.80 s, tick 1.48 to 1.64 s (tables below); the text alternatives say
+  "keine Sekunde später" / "less than a second later" instead of "half a second".
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the last caption and on an avatar initial: the loop's first caption again, and
@@ -59,28 +75,28 @@ Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency,
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.87 s | 1003 KB | none |
-| de-wide | household-sync-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.87 s | 433 KB | none |
-| de-wide | household-sync-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.87 s | 430 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.87 s | 687 KB | none |
-| de-compact | household-sync-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.87 s | 315 KB | none |
-| de-compact | household-sync-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.87 s | 338 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 10.57 s | 915 KB | none |
-| en-wide | household-sync-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 10.57 s | 409 KB | none |
-| en-wide | household-sync-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 10.57 s | 404 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 10.57 s | 632 KB | none |
-| en-compact | household-sync-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 10.57 s | 295 KB | none |
-| en-compact | household-sync-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 10.57 s | 330 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 12.53 s | 1070 KB | none |
+| de-wide | household-sync-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 12.53 s | 492 KB | none |
+| de-wide | household-sync-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 12.53 s | 446 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 12.53 s | 693 KB | none |
+| de-compact | household-sync-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 12.53 s | 332 KB | none |
+| de-compact | household-sync-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 12.53 s | 335 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.87 s | 1004 KB | none |
+| en-wide | household-sync-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.87 s | 460 KB | none |
+| en-wide | household-sync-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.87 s | 440 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.87 s | 632 KB | none |
+| en-compact | household-sync-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.87 s | 306 KB | none |
+| en-compact | household-sync-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.87 s | 326 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9969 | household-sync-de-wide.webp, 46 KB | 6.00 s |
-| de-compact | 0.9978 | household-sync-de-compact.webp, 34 KB | 6.00 s |
-| en-wide | 0.9972 | household-sync-en-wide.webp, 43 KB | 5.83 s |
-| en-compact | 0.9977 | household-sync-en-compact.webp, 33 KB | 5.83 s |
+| de-wide | 0.9968 | household-sync-de-wide.webp, 49 KB | 6.57 s |
+| de-compact | 0.9972 | household-sync-de-compact.webp, 37 KB | 6.57 s |
+| en-wide | 0.9970 | household-sync-en-wide.webp, 46 KB | 6.17 s |
+| en-compact | 0.9975 | household-sync-en-compact.webp, 35 KB | 6.17 s |
 
 Measured in the takes (Marionette polls, so an upper bound for the app side):
 
-- DE: addToNoahMs 575 ms, addToIdaMs 573 ms, tickToMiaMs 973 ms, tickToIdaMs 988 ms
-- EN: addToNoahMs 460 ms, addToIdaMs 451 ms, tickToMiaMs 897 ms, tickToIdaMs 879 ms
+- DE: addToNoahMs 798 ms, addToIdaMs 777 ms, tickToMiaMs 1503 ms, tickToIdaMs 1639 ms
+- EN: addToNoahMs 624 ms, addToIdaMs 584 ms, tickToMiaMs 1485 ms, tickToIdaMs 1476 ms
 <!-- /report -->

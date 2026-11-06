@@ -8551,3 +8551,42 @@ report's `data/`).
      needs the test body to have used nearly all of the 60 s budget first.
    - Sign-out (#72) waits on nothing that can hang: the analytics flush is cut at 2 s, gotrue
      reports `signedOut` before its `/logout` request, and the cache is dropped from the click.
+
+## Job 146: the demo videos re-filmed after the UI changes, 2026-11-06
+
+Job 54's three loops (`add-tick`, `household-sync`, `mcp-chat`; DE and EN, wide and compact)
+filmed again with its pipeline (`marketing/videos/`) from main 605ad96d, which has the floating
+tab pill (#288, Q89 = N2), the floating add field (#278), the store name pill without hint
+(#275), the neutral sign-out row (#279) and no confirmation snackbars. Same rules as job 54:
+silent, real Linux app footage against a local stack (646xx), fictional fixtures only, the same
+24 file names, posters and WebVTT. #281 (shake feedback) was not merged at the start; it is not in
+the videos, so nothing waits on it.
+
+1. **Tips closed off camera.** Today's List tab shows tip cards ("Artikel bearbeiten", then
+   "Menge gleich mittippen") once the first-run hint is gone. `driver.ts` closes them after sign-in like it
+   closes the hint: a returning user has. Filming them would push the list down and teach a
+   different feature.
+2. **Crops end under the tab pill.** The old crops ended at the bottom add bar (logical y 830) and
+   left the tab bar out. The add field now floats over the list above the floating pill, and both
+   are the change these videos have to show, so every crop that has the room ends at y 886:
+   add-tick wide and compact, household-sync wide (Mia), mcp-chat wide. Two keep their old
+   framing: household-sync compact (Noah's band covers Mia's pill; the deck needs the bands) and
+   mcp-chat compact (its 313-px phone strip cannot hold the new rows and the pill).
+3. **Two tail rows in the demo fixtures.** With the bottom bar gone the list scrolls less, so the
+   satellites' new row landed at y 180 and hid behind Ida's band in compact. `demo-familie` and
+   `demo-family-en` get Müllbeutel / Trash bags (Haushalt) and Duschgel / Shower gel (Drogerie),
+   checked against `classify_item` on the local stack; they sit at the list's end, off screen in
+   every cut. The satellites scroll until the pantry row is at y ≤ 112 (new row at 65 to 113), and
+   `scrollUntil` backs up a wheel notch when its target leaves view. Re-taking add-tick on the new
+   fixture keeps footage and committed fixture in step.
+4. **Copy follows the measurement.** Today's takes measured 0.58 to 0.80 s from Mia's Enter to the
+   row on Noah's and Ida's screens (job 54: about 0.5 s), so `demo.household-sync` says "keine
+   Sekunde später" / "less than a second later" (copy.yml and COPY_NEEDED, still drafts). The
+   captions in `copy.json` did not change.
+5. **The voice section still matches.** The mcp-chat slot shows the MCP chat; the Siri card's
+   text (Shortcut, dictation in the input field) is still true: the add bar's microphone
+   (`dictation_button.dart`) and the Shortcut guide are on main. Nothing to change there.
+6. **Sizes and seams.** 24 web files of 279 to 510 KiB (8.9 MiB together; job 54: 9 MB), seams SSIM
+   0.9968 to 0.9981, loops 11.0 to 12.5 s (beats at their real length, the longer sync and MCP
+   answers included). `hyperframes check` clean (0 errors) on all 12; the warnings are job 54's
+   plus two benign ones in mcp-chat (REVIEW.md).

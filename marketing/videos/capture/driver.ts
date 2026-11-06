@@ -192,9 +192,17 @@ export class Session {
   /** Mouse-wheel scrolls (off the record, before filming) until `t` exists with its top at or above `top`. */
   async scrollUntil(c: Client, t: Target, top: number): Promise<void> {
     await xdo(c, ['mousemove', String(PHYSICAL.width / 2), String(PHYSICAL.height / 2)]);
+    let seen = false;
     for (let i = 0; i < 80; i++) {
       const hit = (await elements(c)).find((e) => matches(e, t) && e.bounds);
       if (hit?.bounds && hit.bounds.y <= top) break;
+      if (seen && !hit) {
+        // One wheel notch carried it out of view: back up one.
+        await xdo(c, ['click', '4']);
+        await sleep(250);
+        break;
+      }
+      seen ||= hit !== undefined;
       await xdo(c, ['click', '5']);
       await sleep(250);
     }
@@ -220,6 +228,13 @@ export async function login(c: Client): Promise<void> {
     await run(['marionette', '--uri', c.vmUri, 'tap', '--key', 'list-hint-dismiss']);
     await gone(c, { key: 'list-hint-dismiss' });
   }
+  // The List tab's tips show one after another once the hint is gone; a returning user has closed them.
+  for (let i = 0; i < 10; i++) {
+    await sleep(600);
+    if (!(await elements(c)).some((e) => e.key === 'tip-dismiss')) break;
+    await run(['marionette', '--uri', c.vmUri, 'tap', '--key', 'tip-dismiss']);
+  }
+  await until('tips closed', async () => ((await elements(c)).some((e) => e.key === 'tip-dismiss') ? undefined : true));
   await xdo(c, ['mousemove', String(PHYSICAL.width / 2), '20']);
 }
 

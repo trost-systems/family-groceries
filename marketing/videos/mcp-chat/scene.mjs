@@ -51,7 +51,7 @@ const LAYOUT = {
     caption: 'left:calc(24 * var(--u));top:calc(18 * var(--u));width:calc(300 * var(--u))',
     align: 'row',
     chat: { x: 24, y: 62, w: 300, h: 246 },
-    phone: { box: { x: 340, y: -30, w: 260, h: 400 }, appTop: 150 },
+    phone: { box: { x: 340, y: -30, w: 260, h: 400 }, appTop: 289 },
   },
   compact: {
     caption: 'left:calc(16 * var(--u));top:calc(14 * var(--u));width:calc(326 * var(--u))',
