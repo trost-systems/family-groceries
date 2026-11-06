@@ -298,3 +298,36 @@ test('with nothing typed, the open sheet offers what is due', async ({ page }) =
   await sheet(page).getByRole('button', { name: /^Butter, Wieder fällig/ }).click();
   await expect.poll(async () => (await dbItem(email, 'Butter')).length).toBe(1);
 });
+
+// Job 135: the field floats over the list, which scrolls on under it. A near miss beside the hex
+// opens the field; it never ticks the row hidden under the field.
+test('a tap beside the floating field opens it and leaves the row under it alone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const email = newEmail('sheet-gutter');
+  await signUpWithHousehold(page, email);
+  const api = await apiAs(email);
+  const { data: household } = await api.from('households').select('id').single();
+  const names = ['Äpfel', 'Birnen', 'Gurke', 'Tomaten', 'Paprika', 'Zucchini', 'Möhren', 'Kartoffeln', 'Zwiebeln',
+    'Knoblauch', 'Salat', 'Spinat', 'Brokkoli', 'Zitronen', 'Avocado', 'Ingwer', 'Butter', 'Joghurt'];
+  const { error } = await api.from('items').insert(names.map((name) => ({ household_id: household!.id, name })));
+  if (error) throw error;
+  await page.reload();
+  await expect(itemRow(page, 'Äpfel')).toHaveCount(1);
+  await expect(sheet(page)).toHaveCount(0);
+
+  const field = (await addField(page).boundingBox())!;
+  const gutter = { x: 6, y: field.y + field.height / 2 };
+  const under = await page.getByRole('checkbox').evaluateAll((els, p) => els
+    .filter((e) => { const r = e.getBoundingClientRect(); return r.top <= p.y && r.bottom >= p.y && r.left <= p.x && r.right >= p.x; })
+    .map((e) => e.getAttribute('aria-label')), gutter);
+  expect(under, 'a row runs on under the field').toHaveLength(1);
+  await screenshot(page, 'add-gutter-before');
+
+  await page.mouse.click(gutter.x, gutter.y);
+  await expect(sheet(page), 'the near miss opens the field').toBeVisible();
+  await expect(addField(page)).toBeFocused();
+  await page.keyboard.type('Brot', { delay: 120 });
+  await expect(rows(page).first(), 'typing goes on in the field').toHaveAccessibleName(/^Brot, Wie getippt/);
+  const { data: active } = await api.from('items').select('name').eq('household_id', household!.id).eq('status', 'active');
+  expect(active!.map((i) => i.name).sort(), 'no row was ticked').toEqual([...names].sort());
+});

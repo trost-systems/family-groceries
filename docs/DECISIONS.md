@@ -8097,3 +8097,42 @@ store's name pill under the badge and pushed the badge off center.
    the pill's face and that the pill holds no text but the badge's name.
 3. **No lint.** The rule has one past case, and a lint that tells a hint from a label in a pill's
    child tree would need to know what the copy says. The widget test and this rule are the check.
+
+## Job 135: the add field floats over the list, 2026-11-06
+
+Peter (2026-11-05, with a screenshot of the solid bar): the add field floats with the rows'
+horizontal inset, and the list scrolls on under it.
+
+1. **`extendBody` on the list's scaffold, the bar stays its `bottomNavigationBar`.** The body
+   reaches the screen's bottom and gets the bar's height as its bottom padding. The list ends with
+   that padding plus 24 px (`HlSpace.s5`), so its last row stops above the field;
+   `ShoppingListView.bottomInset` went, since its one caller passed the bar height. The add sheet
+   stands on the same padding, and its scrim now dims behind the bar too.
+2. **16 px each side (`HlSpace.s4`), the rows' own inset** (`item_row.dart`), not the 12 px the
+   bar had. Closed, the bar paints nothing but the hex; open, its column turns raised as before,
+   so the sheet still runs down into the field.
+3. **The hex has the small sticker shadow** (`HlSticker.shadow(..., StickerDepth.s)`, as
+   `HexPill` uses the large one): a token, no new color, and it lifts the field off rows passing
+   under it.
+4. **The tab bar is untouched** (job 136 prototypes it). Verified by goldens (new `list-long-*`
+   scrolled under the field) and a widget test (16 px insets, a row under the field, a tap
+   beside the hex opening the field and leaving that row alone, the last row above the field at
+   the list's end). Review 0 drove the web release build: the insets match the rows at 390, 358
+   and 1280 px, and quick-add passes.
+5. **The whole band is the field's tap target** (review 0). The first cut let taps in the 16 px
+   gutters through to the list. On the web build a near miss beside the hex put a hidden
+   „Zuletzt verwendet“ row back on the list without any feedback, and it would tick an open row
+   the same way. The field sits in the thumb zone, where near misses are common, so the band
+   around the hex, gutters included, opens and focuses the field like the hex does. Drags
+   starting there no longer scroll the list. Rows still show in the gutters. On the web that was
+   not enough: CI's run of the new spec ticked the hidden row anyway. A tappable semantics
+   element (the row's checkbox) has `pointer-events: all`, and the engine's click debouncer turns
+   the click into a semantics tap on that row before the framework's hit test runs. The band is
+   now wrapped in `Semantics(container: true, hitTestBehavior: SemanticsHitTestBehavior.opaque)`,
+   as Material's bottom sheet and dialog are: it blocks the elements behind it, and its children
+   (field, microphone, ✕) keep theirs. The band's tap then focuses the field through
+   `_refocusAfterTap`, as a tap on a sheet row does: the browser blurs the input on the click
+   while Flutter keeps the field focused, so a plain `requestFocus` left typing dead on the web
+   (this already held for a tap on the hex's rim before job 135). The e2e spec
+   `add-sheet.spec.ts` "a tap beside the floating field opens it and leaves the row under it
+   alone" covers it on the web build.
