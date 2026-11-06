@@ -1859,8 +1859,14 @@ abstract class AppLocalizations {
   /// Feedback form: what is sent along with the note
   ///
   /// In de, this message translates to:
-  /// **'App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.'**
+  /// **'App-Version, Gerät und Modell, Sprache, Bildschirm, Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, Premium-Status und wie du das Formular geöffnet hast. Keine Listeneinträge.'**
   String get feedbackAttached;
+
+  /// Feedback form, iOS and Android only: how to report a bug from its screen by shaking the phone
+  ///
+  /// In de, this message translates to:
+  /// **'Einen Fehler gefunden? Geh zurück zu dem Bildschirm, stell ihn nach und schüttle das Handy — der Bericht enthält diesen Bildschirm plus App- und Gerätedaten. Keine Listeneinträge.'**
+  String get feedbackShakeHint;
 
   /// Feedback form: before the attached line
   ///

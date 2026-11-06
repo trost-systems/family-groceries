@@ -66,9 +66,16 @@ void main() {
       'build': '45',
       'platform': 'android',
       'os_version': 'Android 14 (SDK 34)',
+      'device_model': 'Google Pixel 8',
       'locale': 'de',
       'screen': 'list',
       'is_internal': false,
+      'entry_point': 'more',
+      'theme': 'light',
+      'orientation': 'portrait',
+      'text_scale': '1.0',
+      'online': 'yes',
+      'entitlement': 'free',
     });
   });
 

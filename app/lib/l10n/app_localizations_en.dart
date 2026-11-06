@@ -1109,7 +1109,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackAttached =>
-      'App version, device, language and current screen. No list items.';
+      'App version, device and model, language, screen, display (light/dark, orientation, text size), connection, Premium status and how you opened this form. No list items.';
+
+  @override
+  String get feedbackShakeHint =>
+      'Found a bug? Go back to that screen, reproduce it, then shake your phone — the report includes that screen plus app and device details. No list items.';
 
   @override
   String get feedbackAttachedTitle => 'Sent along:';

@@ -1320,3 +1320,40 @@ Requests by mail: an unsubscribe or deletion request at support@hummlist.com is 
 (Legal). Without the person's link, delete by SQL in the SQL editor (this writes the proof
 record for a confirmed row):
 `select public.waitlist_unsubscribe(id, now()) from public.waitlist where lower(email) = lower('<address>');`
+
+## Job 138: shake to send feedback, more context
+
+Ships with the next app release; nothing to switch on. Details in [FEEDBACK.md](FEEDBACK.md).
+
+1. **Privacy policy (Legal, through the PM) before this PR merges.** Merge gate (review 0): a
+   merge to main goes to TestFlight and Play internal on its own, so family and friends would
+   send these fields from the next build on. PR #281 waits until the PM's policy update has
+   landed, or until you say in your own words that testers may get the build first. A note now also stores
+   seven fields the policy doesn't list. Job 21's entry above promised "no device model", and that
+   no longer holds. `site/content/legal/datenschutz.md` and `privacy.md`, the feedback paragraph,
+   need them added. Suggested EN, after "the screen you wrote from": "how you opened the form
+   (from More or by shaking the phone), your device's model name (for example "iPhone 15 Pro"; in
+   the browser just "web"), whether the app was in light or dark mode, portrait or landscape, your
+   text size (rounded), whether the app was connected and whether your household has Premium".
+   DE: „wie du das Formular geöffnet hast (über Mehr oder durch Schütteln), den Modellnamen deines
+   Geräts (z. B. „iPhone 15 Pro“; im Browser nur „web“), ob die App hell oder dunkel, hoch oder
+   quer war, deine Textgröße (gerundet), ob die App verbunden war und ob dein Haushalt Premium
+   hat“. Still no list items, screenshots, e-mail, user agent, location, contacts or clipboard.
+   The support pages' sentence („Mitgeschickt werden App-Version, Gerät, Sprache und der
+   Bildschirm …“) stays true and can name the shake at the same time: „Auf dem Handy geht es
+   auch direkt: Schüttle es auf dem Bildschirm, auf dem der Fehler passiert.“
+2. **Try a shake on a phone build** (TestFlight or Play internal, once this is in one). This
+   host has no phone or emulator, so the shake is proven by widget tests that feed accelerometer
+   samples into the real app shell. On the phone: open the list's „Anpassen“, shake firmly two
+   or three times. The form opens with the hint „Einen Fehler gefunden? …“, and the stored note
+   has `entry_point = 'shake'`, `screen = 'stores'`. If a shake feels too hard or too easy to
+   trigger, say so: the threshold (2.7 g, three swings in 0.8 s) is one constant in
+   `app/lib/feedback/shake.dart`.
+3. **App Store privacy label / Play data safety** are answered from `docs/PRIVACY_DATA_MAP.md`
+   (its feedback row now lists the new fields). They are diagnostics ("Diagnostics" at Apple,
+   "App info and performance" at Google), linked to the account, not used for tracking: check the
+   answers cover that when you next fill them in. No permission prompt: reading the accelerometer
+   asks nothing on iOS or Android. iOS still gets an `NSMotionUsageDescription` purpose string
+   („Schüttle das Handy, um Feedback zu dem Bildschirm zu senden, auf dem du gerade bist.“, EN in
+   `en.lproj/InfoPlist.strings`). sensors_plus links CoreMotion, and its README says the key is
+   required; without it App Store Connect's purpose-string scan (ITMS-90683) can flag the upload.

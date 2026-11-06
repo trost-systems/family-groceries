@@ -71,6 +71,10 @@ update public.feedback f
 set created_at = ((date_trunc('week', now() at time zone 'Europe/Berlin') - interval '1 week') + s.at)
   at time zone 'Europe/Berlin'
 from seed s where s.id = f.id;
+-- Job 138: a shake from a current app; the others are from builds that sent no entry point.
+update public.feedback set entry_point = 'shake', device_model = 'Google Pixel 8', theme = 'dark',
+  orientation = 'portrait', text_scale = '1.3', online = 'no', entitlement = 'free'
+where id = '00000000-0000-4000-8000-0000000fb002';
 SQL
 
 run() { # name, extra psql args...
@@ -93,8 +97,10 @@ grep -q 'Vorletzte Woche\|Schon diese Woche' <<<"$notes" && fail "a note outside
 order="$(run notes -At -F '|' | cut -d'|' -f4 | head -3 | tr '\n' '|')"
 [[ $order == "Beim Abhaken springt die Liste nach oben.|Die App stürzt ab, wenn ich offline etwas lösche.|Could the list remember my usual Saturday shop?|" ]] \
   || fail "external notes are not in created_at order: $order"
+shake="$(run notes -At -F '|' | grep 'stürzt ab' | cut -d'|' -f13-)"
+[[ $shake == "shake|Google Pixel 8|dark|portrait|1.3|no|free" ]] || fail "the shake note's context: $shake"
 got_counts="$(run counts -At -F ' ' | tr '\n' ';')"
-want_counts="external category bug 1;external category idea 1;external category none 1;external platform android 2;external platform web 1;internal category other 1;internal platform ios 1;"
+want_counts="external category bug 1;external category idea 1;external category none 1;external entry_point more 2;external entry_point shake 1;external platform android 2;external platform web 1;internal category other 1;internal entry_point more 1;internal platform ios 1;"
 [[ $got_counts == "$want_counts" ]] || fail "counts: got $got_counts, want $want_counts"
 contact="$(block contact | sql -At -v feedback_id=00000000-0000-4000-8000-0000000fb002 -f -)"
 [[ $contact == "max.beta@hummlist-tester.de" ]] || fail "the contact lookup answered '$contact'"

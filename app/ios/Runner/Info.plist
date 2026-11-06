@@ -91,6 +91,8 @@
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Hummlist braucht das Mikrofon, damit du Einträge diktieren kannst.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Schüttle das Handy, um Feedback zu dem Bildschirm zu senden, auf dem du gerade bist.</string>
 	<key>NSSiriUsageDescription</key>
 	<string>Mit Siri setzt du Einträge auf deine Hummlist und lässt sie dir vorlesen.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

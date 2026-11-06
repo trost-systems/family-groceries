@@ -129,7 +129,11 @@ Future<void> _pumpShell(
   final router = GoRouter(
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (_, _, shell) => AppShell(shell: shell, repository: repo),
+        builder: (_, _, shell) => AppShell(
+          shell: shell,
+          repository: repo,
+          shakeSamples: const Stream.empty(),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [

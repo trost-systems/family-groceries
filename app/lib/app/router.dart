@@ -22,6 +22,7 @@ import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 const listPath = '/';
 
@@ -394,10 +395,17 @@ List<RouteBase> moreTabRoutes() => [
 ];
 
 /// Every route of the app; [repository] overrides the Supabase list
-/// repository, for tests.
-List<RouteBase> appRoutes({ListRepository? repository}) => [
+/// repository and [shakeSamples] the accelerometer, for tests.
+List<RouteBase> appRoutes({
+  ListRepository? repository,
+  Stream<AccelerometerEvent>? shakeSamples,
+}) => [
   StatefulShellRoute.indexedStack(
-    builder: (_, _, shell) => AppShell(shell: shell, repository: repository),
+    builder: (_, _, shell) => AppShell(
+      shell: shell,
+      repository: repository,
+      shakeSamples: shakeSamples,
+    ),
     branches: [
       StatefulShellBranch(routes: listTabRoutes()),
       StatefulShellBranch(routes: moreTabRoutes()),

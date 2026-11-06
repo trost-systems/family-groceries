@@ -13,6 +13,11 @@ class Popups() extends NavigatorObserver with ChangeNotifier {
   /// A dialog or sheet is on top, and its barrier covers every page.
   bool get open => _top is PopupRoute;
 
+  /// Whether a dialog or sheet covers [context]'s page; false outside a
+  /// [NoticesHost].
+  static bool openAbove(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_Host>()?.popups.open ?? false;
+
   void _setTop(Route<dynamic>? route) {
     final was = open;
     _top = route;
