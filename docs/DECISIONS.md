@@ -8815,3 +8815,60 @@ of the 80 known endings took its category's emoji. This replaces item 8 of the l
 6. **The issues stay open for the lead** (`Refs #n (host-pause only)` for #57 to #59 and a
    qualified `Refs #60` in the PR, NEEDS_LEAD
    "Job 125"). The brief closes only fixed issues.
+## Job 121: mcp.spec.ts flakes (#68, #69, #70), 2026-11-05
+
+The three tests failed only inside host pauses that were far longer than any wait in them. No
+test, app or server change. The evidence is in the PR and `docs/NEEDS_LEAD.md` (Job 121).
+
+1. **Root cause: a host pause, for all three.** Every logged failure fell in a VM hole that the
+   runner saw: #68 in 417 s, #69 in 485 s, #70 in 667 s and 2754 s. The fourth #70 failure
+   (2026-10-25) predates the stall detector and its box log is gone. In 1,629 CI e2e logs from
+   2026-10-28 to 2026-11-05, `mcp.spec.ts` ran in 679 and no test of it failed or passed on a
+   retry. The one red job was a shard broken by its own onboarding branch.
+2. **Repro, retries off, on main 1ba6dc51's release web build.** The job's own harness ran
+   the three tests 5 times per arm (15 runs). It is in the job's ops dir, `proof/`, with every
+   arm's log: `stress.sh` for the first five arms, `e2e-stress-121.sh` for the rest. In both, a
+   pause `S/P` means stop for S s, then run for P s, so the period is S + P. Job 119's
+   `scripts/e2e-stress.sh` (#261, not on main) counts `--on S --every P` as S s paused within
+   a P s period, so its numbers don't carry over. "Runner" stops Playwright's runner, worker
+   and Chromium with SIGSTOP. "Stack" runs `docker pause` on auth, Kong, PostgREST, the edge
+   runtime and the database. Realtime and Mailpit keep running. Six arms had every stall under
+   10 s, and they passed 90 of 90:
+   - 12 CPU burners.
+   - 8 burners, with the runner stopped 1.5 s, then running 3 s.
+   - The runner stopped 8 s, then running 6 s.
+   - The stack stopped 8 s, then running 6 s.
+   - The stack stopped 9 s, then running 12 s.
+   - 8 burners, runner 1.5/3 and stack 5/7 at once.
+
+   Without stress, the whole spec passed 3 times over (24 runs, 9 of them these three tests).
+3. **The edge is the test's 10 s `expect`.** With the stack stopped
+   11 s, then running 15 s, 4 of 15 failed, spread over all three tests. Stopped 20 s, then
+   running 20 s, it failed 3 of 15 (#70). The runner stopped 15 s, then running 20 s, failed 1
+   of 15 (#70), and the stall detector named it (14 s). Every failure is a 10 s `expect`
+   across one server round trip: sign-up to the analytics consent, onboarding's create, the
+   token page, sign-in back to the OAuth consent. A longer wait passes those stalls: with
+   `expect.timeout` at 30 s, the 11/15 arm passed 15 of 15 where 10 s failed 4 of 15 (review
+   1's run). The budgets stay anyway. A failure needs one round trip stalled past 10 s, and
+   neither CI (679 runs) nor any arm under 10 s showed one. A longer `expect` would only hide
+   stalls that the stall retry is there to see.
+   GoTrue's own 10 s limit doesn't cap these waits; it explains #70's error. GoTrue answers
+   `504 request_timeout` "Processing this request timed out, please retry after a moment." at
+   10.0 s only when the database stalls under a running GoTrue: with the db alone paused, 12 s
+   and 20 s gave the 504 and 9 s gave 200. With auth, Kong, PostgREST, the edge runtime and the
+   db paused together, a sign-in answered 200 after 11.6 s and 19.6 s. A VM pause that begins
+   while a request is in flight can leave GoTrue's timer to fire on wake. That is #70's
+   `AuthRetryableFetchError`, logged in a 2754 s hole.
+4. **The brief's other suspects, checked.** Learning is not a read before a write: `move_item`
+   and the explicit category run inside the tool's transaction and the triggers learn there, so
+   the answer comes after the commit. #68 and #70 use a personal access token, not OAuth; only
+   #69 runs the OAuth flow, and it has no wait that a redirect could race (it passed every arm
+   under 10 s). Local GoTrue does not enforce `sign_in_sign_ups = 30`: 45 password sign-ins in
+   a row all answered 200.
+5. **Left to the Lead: #68, #69, #70 stay open** (`Refs #n (host-pause only)`). 18.23's policy
+   already covers them: a runner pause of 2 s or more earns the one retry. What it does not
+   see is a stall of the stack alone, which fails a test with no retry. That needs a host
+   stall or a server stall of 10 s or more, and neither CI nor this repro showed one outside
+   a pause made on purpose. Counting GoTrue's `request_timeout` 504 as a stall mark in
+   `e2e/tests/fixtures.ts` would cover only a database stalled under a live GoTrue. A
+   whole-stack stall ends as a plain 10 s `expect` timeout with no 504.

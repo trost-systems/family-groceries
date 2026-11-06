@@ -1962,3 +1962,30 @@ Two follow-ups outside job 124's scope:
   included. Job 124 shows an empty 503 can come after the handler ran, so a retried MCP
   `tools/call` can write twice. Narrow the retry to bodiless calls once job 121's
   `mcp-helpers.ts` changes have landed.
+
+## Job 121: mcp.spec.ts flakes #68, #69, #70 are host pauses (2026-11-05)
+
+Status: your call. Close #68, #69 and #70, or keep them open as host-pause records.
+
+All three timed out only inside VM holes (417 to 2754 s) and passed on the stall retry. With
+retries off, on main's release web build, the three tests passed 90 of 90 stressed runs under
+CPU load and runner or stack stalls up to 9 s. They fail only when one server round trip stalls
+past 10 s, the `expect` budget. A 30 s budget passes those stalls, but it would only hide stalls
+the stall retry is meant to see, so the budgets stay. #70's `AuthRetryableFetchError` is GoTrue's
+504 "Processing this request timed out" at 10.0 s. It comes when the database stalls under a
+running GoTrue, or when a host pause catches a request in flight. A whole-stack stall gives no
+504. CI ran `mcp.spec.ts` 679 times from 2026-10-28 to 2026-11-05
+without a flaky or failed test. Counts per arm are in DECISIONS "Job 121".
+
+To rerun the edge, use the job's harness, where `--stack S/P` means stopped S s, then running
+P s. It isn't committed; job 119's #261 tool counts its flags differently.
+1. Run `scripts/verify.sh --only e2e -- tests/mcp.spec.ts` once. That starts the stack and
+   builds the release web app.
+2. Copy `~/groceries-ops/jobs/121-fix-mcp-spec-flakes/proof/e2e-stress-121.sh` to `scripts/`.
+3. Run `flock /tmp/fg-e2e.lock scripts/e2e-stress-121.sh --stack 11/15 -- tests/mcp.spec.ts -g
+   "another household" --workers=1 --retries=0 --repeat-each=5`. Then run it again with
+   `--stack 9/12`. Between runs, wait until `docker ps` shows the db container healthy again.
+   After several pauses it stays "unhealthy" for a while, and `supabase status` refuses until
+   then.
+
+Run on head a030ac03 (2026-11-06, under the lock): `--stack 11/15` gave 2 failed, 3 passed, both at `answerConsent`'s 10 s `toHaveURL`. `--stack 9/12` gave 5 passed. Logs: `proof/recipe-11-15.log`, `proof/recipe-9-12.log`.
