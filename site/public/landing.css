@@ -391,6 +391,17 @@
   color: var(--hl-color-text-muted);
 }
 
+/* Founder note: a quiet mist card, set like a letter. */
+.founder {
+  display: grid;
+  gap: var(--hl-space-4);
+  padding: var(--hl-space-6) var(--hl-space-5);
+}
+
+.founder .lead {
+  max-width: 640px;
+}
+
 /* Privacy: the second cobalt block, a white list with mint hex ticks. */
 .privacy {
   display: grid;
@@ -548,6 +559,10 @@
     padding: var(--hl-space-7);
     background-position: left -60px bottom -140px;
     background-size: 240px auto;
+  }
+
+  .founder {
+    padding: var(--hl-space-7);
   }
 
   .cta {

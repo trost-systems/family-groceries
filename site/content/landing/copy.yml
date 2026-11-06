@@ -21,10 +21,10 @@ footer.tagline:
   source: "Job 82: no browser mention (Addendum 1)."
 
 hero.badge:
-  de: "Geschlossener Test für Familie und Freunde"
-  en: "Closed test for family and friends"
-  status: reused
-  source: "Help page (/support, /en/support): „noch in einem geschlossenen Test für Familie und Freunde“."
+  de: "Beta im November"
+  en: "Beta in November"
+  status: draft
+  source: "Peter 2026-11-05 (Q88=B1, job 139): the waitlist page invites to the beta, not to the closed family test."
 hero.title:
   de: "Gemeinsam einkaufen, ohne Werbung"
   en: "Shop together, no ads"
@@ -169,6 +169,17 @@ privacy.more:
   en: "Everything else is in the [privacy policy](/en/privacy)."
   status: draft
   source: "New: link to the published policy (shown only while privacyPublished is on)."
+
+founder.title:
+  de: "Von Peter"
+  en: "From Peter"
+  status: draft
+  source: "Peter 2026-11-05 (job 139): founder note between the privacy block and the sign-up form."
+founder.body:
+  de: "Ich wollte eine App, die ich mit meiner Frau teilen und KI für mich verwalten kann. Darum baue ich Hummlist: Wir schreiben beide auf dieselbe Liste, und über MCP können KI-Assistenten Sachen hinzufügen, abhaken und die Liste lesen. In der Beta testest du Hummlist mit uns und sagst uns, was dir noch fehlt. — Peter"
+  en: "I wanted an app I can share with my wife and that AI can manage. So I'm building Hummlist: we both use the same list, and via MCP, AI assistants can add items, check them off and read the list. In the beta you test Hummlist with us and tell us what's still missing. — Peter"
+  status: draft
+  source: "Peter 2026-11-05 (job 139), word for word; brand-free AI line (Legal L-1). Waitlist and beta stages only."
 
 test.help:
   de: "Fragen zum Test?"

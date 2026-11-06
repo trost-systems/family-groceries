@@ -8136,3 +8136,18 @@ horizontal inset, and the list scrolls on under it.
    (this already held for a tap on the hex's rim before job 135). The e2e spec
    `add-sheet.spec.ts` "a tap beside the floating field opens it and leaves the row under it
    alone" covers it on the web build.
+
+## Job 139: waitlist badge and founder note, 2026-11-06
+
+1. **Badge „Beta im November“ / "Beta in November"** (Peter, Q88=B1). The landing test that bans
+   month names now skips only the badge and pins its exact text, so any other date still fails.
+   The writers' "never claim a beta date" line now allows the badge's month, nothing finer.
+2. **Offline sentence and Siri wording stay** (Peter, Q87 and Q86=S2), overriding the soft-Siri and
+   drop-offline parts of the 2026-11-05 accuracy patch.
+3. **Founder note in its own section between privacy and the form**, a mist card (quiet next to
+   the cobalt privacy block and the honey form), in `waitlist` and `beta` only: the text speaks of
+   the beta, so `launch` drops it.
+4. **No guide link in the note.** `/de/anleitungen/claude` exists, but the brief makes the link
+   optional and the URL names the brand on a marketing surface (Legal L-1). The voice block already
+   explains MCP; the guides stay one click away in the header.
+5. **„— Peter“ keeps Peter's dash**: it is his signature, quoted word for word.

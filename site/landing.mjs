@@ -314,7 +314,13 @@ ${privacyItems.map((id) => `<li>${tick}<span data-copy-id="${id}">${md(id)}</spa
 </ul>
 </div>
 </section>
-<section class="section test-section" id="test" aria-labelledby="${launch ? 'test-title' : 'wl-title'}">
+${launch ? '' : `<section class="section founder-section" aria-labelledby="founder-title">
+<div class="wrap block block--mist founder">
+${el('h2', 'founder.title', 'class="title-l" id="founder-title"')}
+${el('p', 'founder.body', 'class="lead"')}
+</div>
+</section>
+`}<section class="section test-section" id="test" aria-labelledby="${launch ? 'test-title' : 'wl-title'}">
 ${closing}
 </section>
 `;
