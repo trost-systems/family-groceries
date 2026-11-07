@@ -30,17 +30,20 @@ class const PlatformNetworkWatch() implements NetworkWatch {
   Stream<Network> watch() {
     final connectivity = Connectivity();
     StreamSubscription<List<ConnectivityResult>>? changes;
+    // The check may answer after a change and would undo it with what it
+    // read before.
+    var changed = false;
     late final StreamController<Network> out;
     // An error says nothing; the list's own requests still tell.
     out = StreamController(
       onListen: () {
-        changes = connectivity.onConnectivityChanged.listen(
-          (results) => out.add(networkOf(results)),
-          onError: (Object _) {},
-        );
+        changes = connectivity.onConnectivityChanged.listen((results) {
+          changed = true;
+          out.add(networkOf(results));
+        }, onError: (Object _) {});
         unawaited(
           connectivity.checkConnectivity().then((results) {
-            if (!out.isClosed) {
+            if (!out.isClosed && !changed) {
               out.add(networkOf(results));
             }
           }, onError: (Object _) {}),

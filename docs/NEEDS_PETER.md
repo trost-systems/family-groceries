@@ -640,6 +640,11 @@ steps are the Lead's, with you only signing in
    number. Apple expired all of the team's builds at once on 2026-10-26 and
    has acknowledged the same problem for other teams; nothing in the account
    settings or the repo fixes it.
+5. **Flight mode, once per platform (jobs 166, 166b).** On the next
+   TestFlight build and the next Play internal build, open the list and
+   turn flight mode on: „Offline“ shows without a tap. Turn it off: it
+   goes within about 3 s, also without a tap. The runner has no phone, so
+   only the web build proves this today.
 
 
 ## Job 24a: guides on hummlist.com

@@ -10098,3 +10098,46 @@ the main RunnerTests had passed (main runs 42334852466 and 42339585329, PR #298 
    indicator through the real `ShoppingList`. `app/test/app/network_test.dart` drives the
    plugin's channels. The e2e `e2e/tests/connectivity.spec.ts` uses Playwright's offline mode,
    which fires the browser events, and touches nothing while it switches.
+
+## Job 166b: the network watch's two edge cases, 2026-11-07
+
+Job 166's review (review.0, nice to have 1 and 2) named two edge cases; Peter wants none left open.
+
+1. **A stale first check.** `PlatformNetworkWatch` asks the plugin for the current state and
+   listens for changes at the same time. The check could answer after a change and undo it: a
+   real `down`, then the check's older `up`, cleared the offline state, and `distinct()` then
+   dropped the real `up`, so recovery fell back to the 3 s retry. The check's answer is now dropped
+   once any change has arrived (`network_test.dart`, "a change before the first check answers
+   beats that answer", with the check held on the plugin's method channel).
+2. **A socket that died with the network.** The brief said: force a rewatch of the channel after a
+   real down. Measured first on the web build (verify-hummlist, port block 624xx) with
+   Playwright's `routeWebSocket` swallowing every frame of the sockets opened before the drop and
+   never closing them, as a phone's dead TCP connection does:
+   - job 166 as merged: back online, „Offline“ went after 1.8 s, but a partner's add reached the
+     screen only 39.5 s after it was made, once the heartbeat (25 s interval, closes on the
+     second miss) replaced the socket.
+   - the brief's rewatch: the leave and the new join went over the same dead socket and were
+     lost; the list waited for a channel that could not join and showed „Offline“ for 43 s.
+     Rejected.
+   - renewing the socket (shipped): `ListRepository.renewRealtime` closes the realtime socket
+     the way a missed heartbeat does (`conn.sink.close`, the client's own path). The client
+     opens a new one after its 1 s backoff and every channel joins again on it, the list's and
+     the entitlements channel (which re-reads on its join). Five runs of the final code: the
+     add on screen in 0.16 to 0.81 s; „Offline“ gone 2.9 s after the network returns, in both
+     the dead-socket and the live-socket case.
+   The rule in `ListCubit`: when the OS says down, a channel that said up becomes suspect
+   (`_channelSuspect`) and no longer counts as up, so from then on a resync that answers does not
+   clear „Offline“. A later status from the channel ends the suspicion. Once the network has
+   been back for `networkSettle`, a suspect channel gets a new socket, and a channel that is
+   down is subscribed again as in job 166. The suspicion starts at the down, not at the
+   reconnect. In the e2e's 2 s drop, the 3 s retry answered while the network settled and
+   cleared „Offline“ before the renewal; the renewal's channel error would then show it again
+   for about a second. The cubit test "a retry that gets through before the network settled
+   does not trust the channel either" failed on that and holds the rule. The cost is about 1.1 s more „Offline“ after every real reconnect,
+   also when the socket was fine, and one more resync (the join's). Probing the socket first
+   (a heartbeat and a timeout) would avoid that, but the client keeps its heartbeat
+   `@internal`. The cubit test "after a real down, a channel that still says up is not trusted"
+   holds the fake channel up; the e2e "a realtime socket that died with the network is
+   replaced" fails on job 166's code (the add waits for the heartbeat).
+3. **Real phones.** NEEDS_PETER, "Job 23: weekly releases", item 5: flight mode on and off once
+   on a TestFlight and a Play internal build. Nothing else needs Peter.

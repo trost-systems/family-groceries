@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:family_groceries/app/network.dart';
 import 'package:flutter/services.dart';
@@ -83,6 +85,23 @@ void main() {
       await pumpEventQueue();
       expect(seen, [Network.down]);
       await sub.cancel();
+    });
+
+    test('a change before the first check answers beats that answer', () async {
+      final answer = Completer<Object?>();
+      check = () => answer.future;
+      final seen = <Network>[];
+      final sub = const PlatformNetworkWatch().watch().listen(seen.add);
+      addTearDown(sub.cancel);
+      await pumpEventQueue();
+      sink.success(['none']);
+      await pumpEventQueue();
+      answer.complete(['wifi']);
+      await pumpEventQueue();
+      expect(seen, [Network.down], reason: 'the check read the network before');
+      sink.success(['wifi']);
+      await pumpEventQueue();
+      expect(seen, [Network.down, Network.up], reason: 'the real up is told');
     });
 
     test('a failing plugin says nothing and keeps the stream open', () async {
