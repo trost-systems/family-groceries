@@ -130,6 +130,19 @@ jobs:
           deno-version: v2.x
       - run: scripts/gates/functions.sh
 
+  # The ops dashboard (nexus/, job 156): snapshot pipeline and page tests, the browser bundle.
+  nexus:
+    needs: changes
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/deno
+        with:
+          deno-version: v2.x
+      - run: scripts/gates/nexus.sh
+
   # The guides site (site/, job 24a). Always runs: guide content is Markdown, which
   # ci-changes.sh counts as documentation.
   site:
@@ -312,7 +325,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, changelog, db, functions, site, site-agent, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, changelog, db, functions, nexus, site, site-agent, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

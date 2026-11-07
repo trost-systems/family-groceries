@@ -2106,3 +2106,43 @@ To close: close #78 and #79 with a link to the PR. If either one fails again wit
   then a re-take with an English sentence.
 - **Copy.** New strings are drafts in `site/COPY_NEEDED.md` (voice.app.*, demo.voice-add,
   voice-add.*) for Hummlist Launch; voice.siri.now lost its in-app sentence to the new card.
+
+
+## Job 156: nexus.hummlist.com (ops dashboard), 2026-11-07
+
+Status: done (2026-11-07, job 156 fix 4). The lead created the token. Job 156 ran steps 2 and 3:
+project `hummlist-nexus` (not git-connected, Vercel Authentication on all deployments, no password
+protection), domain `nexus.hummlist.com`, first production deploy. A logged-out request to the page
+or to `/data/snapshot.json` gets a 302 to the Vercel login. The hz cron deploys every 10 minutes
+once `nexus/` is on main. The steps stay below as the record.
+
+Nothing here costs money (cost table in [`nexus/README.md`](../nexus/README.md#cost)). Vercel
+Authentication with the scope **All Deployments** is "Included" on Hobby and Pro since
+2026-09-09
+([changelog](https://vercel.com/changelog/protect-production-deployments-for-free-on-every-plan),
+[pricing table](https://vercel.com/docs/deployment-protection/usage-and-pricing)). It now covers the
+production custom domain too, so the `nexus-live` preview-branch workaround from Addendum 1 is
+not needed. Do NOT turn on Password Protection: that one is $20 per project per month on Pro.
+
+1. **Create a token** (Vercel dashboard, Account Settings, Tokens): name `hummlist-nexus-publisher`,
+   scope the Hummlist team, expiry 90 days (see the note below). Put it on hz in `~/.config/agents/nexus.env` (mode 600):
+   `VERCEL_TOKEN=...` and `VERCEL_ORG_ID=<team id>` (a token scoped to the team; never into the repo).
+2. **Set the project up** on hz: `set -a; . ~/.config/agents/nexus.env; set +a;
+   ~/nexus-publisher/nexus/scripts/setup-vercel.sh` (idempotent). It creates the project
+   `hummlist-nexus` (not git-connected), adds `nexus.hummlist.com`, sets Vercel Authentication to
+   All Deployments and prints `VERCEL_PROJECT_ID`: add that line to `nexus.env`. With nothing
+   deployed yet it says "no deployment yet" and exits 0. Then run
+   `~/nexus-publisher/nexus/scripts/cron.sh` once (the first deploy) and rerun `setup-vercel.sh`:
+   this time it ends with a logged-out `curl` of `https://nexus.hummlist.com` that must show 401 or a
+   redirect to the Vercel login. DNS needs no change: hummlist.com is on Vercel's nameservers with
+   a wildcard (`nexus.hummlist.com` answers Vercel's 404 today).
+3. From then on the hz cron entry (installed by job 156, the line is in `nexus/README.md`) deploys
+   every 10 minutes; its log is `~/nexus-publisher.log`.
+
+Mind the token's reach (review 2). A Vercel token cannot be limited to one project: a team-scoped
+token can also deploy to or delete `hummlist-site`, the app project and `hummlist-mcp`, and the hz
+cron runs whatever `main` holds with it in its environment. Keep the expiry short (90 days, renew
+in the dashboard), keep `nexus.env` mode 600 and outside every checkout, and revoke the token if
+hz is ever shared beyond these jobs. A separate free Hobby team just for nexus would contain it
+fully but is not needed at €0 either way; the lead's call.
+   Send Peter `https://nexus.hummlist.com`; he signs in with his Vercel account.

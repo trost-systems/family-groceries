@@ -585,6 +585,7 @@ hummlist.com gets a waitlist instead of browser-app links: a double opt-in form,
 - Job 147, item icons for 1,430 items and a neutral fallback: [docs/done/147-item-icon-coverage.md](docs/done/147-item-icon-coverage.md)
 - Job 148, UI consistency pass (floating top bar, hex Anpassen, one 3D depth switch, no category numbers, one hex per store row, centred hex text): [docs/done/148-ui-consistency-pass.md](docs/done/148-ui-consistency-pass.md)
 - Job 145, interactive store chips on the landing page (PR #290, not merged, lead review): [docs/done/145-landing-store-chips.md](docs/done/145-landing-store-chips.md)
+- Job 156, nexus.hummlist.com ops dashboard (not merged, lead review; live after one Vercel token, NEEDS_LEAD): [docs/done/156-nexus-dashboard.md](docs/done/156-nexus-dashboard.md)
 
 ## Job 113: CI tool downloads cached and retried
 
