@@ -20,6 +20,7 @@ the same things.
 | `site-agent` | hummlist.com for AI agents ([`AGENT_FIRST.md`](AGENT_FIRST.md)): the MCP probe's fixture tests and `scripts/mcp-smoke.sh https://mcp.hummlist.com` without credentials, the built site served like Vercel serves it (llms.txt, twins, sitemap, OpenAPI when `public-api` is on) and the waitlist form in Chromium | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
+| `nexus` | The ops dashboard in `nexus/` ([`nexus/README.md`](../nexus/README.md)): Deno fmt, lint, type check, tests of the snapshot pipeline (fixture ops dir, privacy, hill-climb docs on main) and the page, one browser bundle | yes |
 | `fg-cli` | Deno fmt, lint and tests for the verify skill's CLI | yes |
 | `flutter` | Generated l10n, format, `flutter analyze --fatal-infos`, tests; the same for the Widgetbook (`app/widgetbook/`) | yes |
 | `web-prod` | The production web build, into `app/build/web-prod` | yes |

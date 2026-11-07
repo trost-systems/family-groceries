@@ -10,7 +10,7 @@ set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"
 actionlint
-shellcheck scripts/*.sh scripts/gates/*.sh scripts/backup/*.sh scripts/ci/*.sh scripts/release/*.sh scripts/fg .githooks/*
+shellcheck scripts/*.sh scripts/gates/*.sh scripts/backup/*.sh scripts/ci/*.sh scripts/release/*.sh nexus/scripts/*.sh scripts/fg .githooks/*
 (cd e2e && { [[ -d node_modules ]] || npm ci; } && npx tsc --noEmit -p .)
 # The TypeScript pack (tool/lint/ts/pack.ts, job 101): its own fmt and lint, then every `error` rule.
 (cd tool/lint/ts && deno fmt --check && deno lint)

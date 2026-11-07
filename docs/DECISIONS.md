@@ -9908,3 +9908,81 @@ Baumarkt off the landing page because the app had no hardware categories.
 13. **Two lints keep `requestReview` off buttons:** `in_app_review` may be imported only in
    `app/lib/review/store_review.dart`, and `.requestReview(` may be called only in `app/lib/review/`.
    The brief's "never wire a button to `requestReview()`" is then a lint error, not a note.
+
+## Job 156: nexus.hummlist.com, the ops control room, 2026-11-07
+
+1. **Vercel Authentication on All Deployments, not a preview-branch domain.** Addendum 1 assumed
+   that protecting a production custom domain needs the paid Advanced Deployment Protection
+   add-on, and proposed attaching `nexus.hummlist.com` to a non-production branch instead. Vercel
+   changed that on 2026-09-09
+   ([changelog](https://vercel.com/changelog/protect-production-deployments-for-free-on-every-plan)):
+   the pricing table ([docs](https://vercel.com/docs/deployment-protection/usage-and-pricing), read
+   2026-11-07) lists Vercel Authentication, Standard Protection and All Deployments as "Included"
+   on Hobby and Pro. Only Password Protection costs money ($20 per project per month on Pro), and
+   it stays off. So the domain is the project's production domain, with `ssoProtection:
+   {deploymentType: "all"}`.
+2. **The data never goes through git.** The repo is public, so a data branch (the brief's second
+   option) would publish the snapshot no matter how the page is protected. A git-connected
+   project would also rebuild on every push, and the app, site and MCP projects would build every
+   data push too: none of their `vercel.json` files has an ignore step. The project
+   `hummlist-nexus` is therefore not connected to git. The publisher builds Build Output API v3
+   files locally and runs `vercel deploy --prebuilt --prod`: no remote build, about 144 deploys a
+   day against Pro's 6000.
+3. **The publisher runs on hz, not the box.** hz is always awake (the box sleeps most of every
+   hour), has the full jobs mirror, `gh` and Deno, and runs a user crontab already. A shallow
+   clone `~/nexus-publisher` follows `origin/main`, so the page updates when a PR merges. Before
+   `nexus/` is on main, the cron line only pulls.
+4. **What the snapshot may hold.** Only facts that are already repo-level or harmless: job ids,
+   PR numbers, titles and CI results, step names and times, review verdict counts, hill-climb
+   numbers, hz load, memory and disk, lane counts, the weekly Claude utilisation fraction. No
+   BOARD, brief, review or log text, and no names: titles come from the PR (public) or the slug.
+   The builder refuses to write a snapshot with an email address in it, and a test feeds a
+   fixture with a name and an email in the brief and BOARD and checks that neither arrives.
+   Two merged PR titles say "Peter approved"; they are public on GitHub already and stay.
+5. **Hand-rolled SVG charts.** Phase 0 (`~/groceries-ops/reading/nexus-research.md`) compared
+   visx, Recharts, uPlot, ECharts, Observable Plot and Chart.js. The page needs sparklines, a
+   bar chart and small line charts, about 200 lines of SVG code, with no build step and every
+   chart in a `<figure>` with a data table. For the Flutter app later the note recommends
+   fl_chart (MIT, small dependencies, maintained). Syncfusion's community licence has revenue,
+   headcount and funding limits that Hummlist could outgrow.
+6. **A parked state for open PRs that are not for merge.** Hill-climb and prototype PRs stay
+   open on purpose ("DO NOT MERGE", "not for merge", drafts). Counting them as "awaiting merge"
+   put 23 items in the Needs-lead tile. They now show as `parked`, in their own quiet group.
+7. **A gate of its own.** `scripts/gates/nexus.sh` (format, lint, type check, tests, bundle)
+   runs as the CI job `nexus`, in `ci-ok`, and in `verify.sh`, as `check-gates.sh` requires.
+   The TypeScript pack covers `nexus/` like the other Deno code.
+8. **Review 0 fixes.** The hz cron line now fetches main at depth 1 and hard-resets to it; a
+   `pull --ff-only` on the shallow clone had stopped fast-forwarding as soon as main moved, so
+   `cron.sh` would never have appeared. PRs are read as two lists, all open PRs plus the merged and
+   closed ones of the last 15 days, because one capped `--state all` list would have dropped the
+   oldest open PRs (#170 today) off the lead's list within about two weeks. "Merged 7d" is a
+   rolling 7 x 24 h window like the median; the bar chart keeps calendar days.
+9. **Live, and the deploy refuses an unprotected project (review 4).** With the lead's token, job
+   156 ran `setup-vercel.sh`, which set the protection before the first deploy. `publish.sh` now
+   reads the project's `ssoProtection` before each deploy and refuses anything but `all`, so
+   switching protection off in the dashboard stops publishing instead of exposing the page. It
+   loads `nexus.env` in a subshell around the deploy only; the rest of the pipeline (gh, the ops
+   dir) never has the token. The project's automatic `hummlist-nexus.vercel.app` alias is covered
+   by "all" (a logged-out request gets the same 302). No protection bypass secret was created.
+10. **Queue time and requeued reviews (review 5).** A job's queue time is the earlier of its
+    brief's mtime and its first log line: the lead appends addenda to running briefs, which had
+    put 33 jobs' "queued" after their first step and the brief-to-merge median at 5.7 h instead
+    of 7.6 h. A `review.<N>.pass.md` now counts as round N's PASS, marked `requeued` (the lead
+    overrode it for a rebase or an addendum); its existence is the verdict, since the watcher
+    writes some as a one-line marker without a VERDICT line. The review-rounds chart no longer
+    counts rebase requeues as fix rounds. Hill-climb values under 0.01 read "< 0.01", with the
+    exact numbers in the row's title.
+11. **Deploying is opt-in (review 6).** Once `nexus.env` existed on hz, the documented local build
+    (`publish.sh` with no token in the environment) read the file and deployed to production;
+    the reviewer's check put a build of the PR worktree live that way. `publish.sh` now deploys
+    only with `--deploy` and never reads the secrets without it. `cron.sh` passes the flag for
+    main under its lock; a by-hand `--deploy` takes `/tmp/nexus-publish.lock` itself, so it never
+    overlaps the cron. Changes near -100 % keep a decimal (1030 -> 2 reads -99.8 %), so a partial
+    drop never reads as total.
+12. **Strict arguments, lock kept to the scripts (review 7).** `publish.sh` read only `$1`, so
+    `publish.sh --deploy extra` deployed (a reviewer's check did). It now accepts no argument or
+    exactly `--deploy` and exits 64 on anything else before it builds; a Deno test runs the script
+    with four bad argument lists. Children (deno, curl, npx/vercel, git, publish.sh under the
+    cron) run with the lock's fd 9 closed, so a child that outlived its run could not keep
+    `/tmp/nexus-publish.lock`; checked on a live run: the script held the lock, its deno child no
+    fd on it.

@@ -1,0 +1,7 @@
+{
+  "fmt": { "lineWidth": 110, "singleQuote": true },
+  "lint": { "rules": { "tags": ["recommended"] } },
+  "compilerOptions": { "lib": ["deno.ns", "dom", "dom.iterable", "esnext"] },
+  "imports": { "@std/assert": "jsr:@std/assert@^1" },
+  "exclude": [".vercel/", "out/"]
+}
