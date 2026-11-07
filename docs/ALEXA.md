@@ -199,11 +199,24 @@ The function writes exactly one line per request to its log (`requestLine` in
 Hummlist:
 
 ```
-alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind>
-alexa: IntentRequest AddItemIntent de-DE linked=true -> added
-alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty
-alexa: - - - linked=false -> refused bad_signature
+alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind> [reason] rid=<id end> slot=<words|-> confirm=<status|-> ended=<reason|-> error=<type|-> ms=<n>
+alexa: IntentRequest AddItemIntent de-DE linked=true -> added rid=3f2a9c1d0b7e slot=3 confirm=NONE ended=- error=- ms=812
+alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty rid=8d0e11aa42c1 slot=- confirm=- ended=- error=- ms=640
+alexa: SessionEndedRequest - de-DE linked=true -> empty rid=0b7e3f2a9c1d slot=- confirm=- ended=ERROR error=INVALID_RESPONSE ms=3
+alexa: - - - linked=false -> refused bad_signature rid=- slot=- confirm=- ended=- error=- ms=41
 ```
+
+Job 170 added the fields after the reply kind, for following a device test live
+(`scripts/voice/tail.sh`, `docs/voice/TEST-SESSION-2026-11-08.md`):
+
+- `rid`: the last 12 characters of Alexa's request id, to match the console's device log.
+- `slot`: how many words Alexa heard for the items (`-` when the intent has no items slot). The
+  words themselves never.
+- `confirm`: the intent's confirmation status (`NONE`, `CONFIRMED`, `DENIED`), the Q79 yes or no.
+- `ended` and `error`: a `SessionEndedRequest`'s reason and Alexa's error type. `ended=ERROR
+  error=INVALID_RESPONSE` is Alexa refusing the previous answer ("Problem mit der Antwort des
+  Skills"); `ENDPOINT_TIMEOUT` is an answer later than 8 s.
+- `ms`: how long the function took, verification included.
 
 - `linked` says whether Alexa sent an access token (for `SkillAccountLinked`, the one in the event
   body). `linked=true -> link` means the token was revoked, expired or not ours.
@@ -212,8 +225,8 @@ alexa: - - - linked=false -> refused bad_signature
   events, which want no speech), `error` (the apology or a 500; the exception is in PostHog error
   tracking) and `refused` (verification failed, with its reason, or not a POST; nothing from the
   body is trusted, so type, intent and locale are `-`).
-- Never in the line: tokens, Alexa, user, household or session ids, item names, utterances, IP
-  addresses. Each field is cut to one word of `[A-Za-z0-9_.:-]`. `handler_test.ts` ("job 74")
+- Never in the line: tokens, Alexa, user, household or session ids, item names, utterances,
+  Alexa's error message, IP addresses. Each field is cut to one word of `[A-Za-z0-9_.:-]`. `handler_test.ts` ("job 74")
   feeds tokens, ids and item names through every kind and checks none appears.
 
 Read it in the dashboard (Edge Functions → alexa → Logs) or through the Management API, about the

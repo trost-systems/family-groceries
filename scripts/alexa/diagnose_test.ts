@@ -1,4 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from '@std/assert';
+import { formatLine, parseRequestLine } from './diagnose.ts';
 
 const here = new URL('.', import.meta.url).pathname;
 const fixture = `${here}fixtures/diagnose`;
@@ -141,4 +142,19 @@ Deno.test('without an access token the network path stops before calling anythin
   const r = await diagnose('--last', '1h');
   assertEquals(r.code, 2);
   assertStringIncludes(r.stderr, 'SUPABASE_ACCESS_TOKEN is not set');
+});
+
+Deno.test('job 170: a line with details parses and prints them; a value with text does not', () => {
+  const line =
+    'alexa: IntentRequest AddItemIntent de-DE linked=true -> added rid=123456789abc slot=4 confirm=NONE ended=- error=- ms=812';
+  const parsed = parseRequestLine(line);
+  assert(parsed);
+  assertEquals(formatLine(parsed), line);
+  assertEquals(
+    parseRequestLine('alexa: - - - linked=false -> refused bad_signature rid=- slot=- ms=3')
+      ?.reason,
+    'bad_signature',
+  );
+  assertEquals(parseRequestLine(`${line} words=Milch`), null);
+  assertEquals(parseRequestLine(line.replace('slot=4', 'slot=Milch und Brot')), null);
 });

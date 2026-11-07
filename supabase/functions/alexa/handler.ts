@@ -133,16 +133,41 @@ const alexaUserOf = (envelope: Envelope) =>
 const word = (value: string | undefined) =>
   value ? value.replace(/[^\w.:-]/g, '_').slice(0, 64) : '-';
 
+/** Facts about how the request went that Alexa's own logs don't show (job 170). */
+export interface RequestFacts {
+  ms?: number;
+  /** Why the verifier refused it (VerificationError.reason). */
+  reason?: string;
+}
+
 /**
- * `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>`, the only line a request logs
- * (docs/ALEXA.md, "Request log"). Ids, tokens, slot values and addresses never go in.
+ * `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind> [reason] rid=… slot=… confirm=… ended=…
+ * error=… ms=…`, the only line a request logs (docs/ALEXA.md, "Request log"). `rid` is the end of
+ * Alexa's request id, to find the request in the console's device log; `slot` counts the words
+ * heard for the items, never the words. Tokens, user ids, slot values and addresses never go in.
  */
-export function requestLine(envelope: Envelope | undefined, kind: ReplyKind): string {
+export function requestLine(
+  envelope: Envelope | undefined,
+  kind: ReplyKind,
+  facts: RequestFacts = {},
+): string {
   const request = envelope?.request;
   const linked = Boolean(envelope && (accessTokenOf(envelope) ?? request?.body?.accessToken));
+  const slot = request?.intent?.slots?.items;
+  const words = slot?.value?.trim() ? slot.value.trim().split(/\s+/).length : 0;
+  const details = [
+    `rid=${word(request?.requestId?.split('.').at(-1)?.slice(-12))}`,
+    `slot=${slot ? words : '-'}`,
+    `confirm=${word(request?.intent?.confirmationStatus)}`,
+    `ended=${word(request?.reason)}`,
+    `error=${word(request?.error?.type)}`,
+    `ms=${facts.ms ?? '-'}`,
+  ];
   return `alexa: ${word(request?.type)} ${word(request?.intent?.name)} ${
     word(request?.locale)
-  } linked=${linked} -> ${kind}`;
+  } linked=${linked} -> ${kind}${facts.reason ? ` ${word(facts.reason)}` : ''} ${
+    details.join(' ')
+  }`;
 }
 
 export function createHandler(deps: Deps) {
@@ -327,8 +352,10 @@ export function createHandler(deps: Deps) {
   }
 
   return async (req: Request): Promise<Response> => {
+    const started = performance.now();
+    const ms = () => Math.round(performance.now() - started);
     if (req.method !== 'POST') {
-      deps.log(requestLine(undefined, 'refused'));
+      deps.log(requestLine(undefined, 'refused', { ms: ms() }));
       return json({ error: 'method' }, { status: 405 });
     }
     const body = new Uint8Array(await req.arrayBuffer());
@@ -337,10 +364,10 @@ export function createHandler(deps: Deps) {
       envelope = await deps.verify(req.headers, body);
     } catch (e) {
       if (!(e instanceof VerificationError)) {
-        deps.log(requestLine(undefined, 'error'));
+        deps.log(requestLine(undefined, 'error', { ms: ms() }));
         throw e;
       }
-      deps.log(`${requestLine(undefined, 'refused')} ${e.reason}`);
+      deps.log(requestLine(undefined, 'refused', { ms: ms(), reason: e.reason }));
       return json({ error: e.reason }, { status: 400 });
     }
     let kind: ReplyKind = 'error';
@@ -349,7 +376,7 @@ export function createHandler(deps: Deps) {
       kind = answered;
       return response;
     } finally {
-      deps.log(requestLine(envelope, kind));
+      deps.log(requestLine(envelope, kind, { ms: ms() }));
     }
   };
 }

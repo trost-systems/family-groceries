@@ -87,9 +87,10 @@ def strings(path: Path) -> dict:
 
 
 def localized(app: Path, keys: list[str], negatives: list[str]) -> list[str]:
-    """Each language's compiled AppShortcuts.strings holds a phrase set for every template and
-    negative phrase: Xcode writes the catalog's string sets as "#!SET#!_<phrase>[<index>]" keys.
-    A negative phrase never names the app."""
+    """Each language's compiled AppShortcuts.strings holds a phrase set for every template and a
+    translation for every negative phrase: Xcode writes the catalog's string sets as
+    "#!SET#!_<phrase>[<index>]" keys and a plain translation under the phrase itself. A negative
+    phrase never names the app."""
     found = []
     for lang in LANGUAGES:
         table = app / f"{lang}.lproj/AppShortcuts.strings"
@@ -108,9 +109,12 @@ def localized(app: Path, keys: list[str], negatives: list[str]) -> list[str]:
                 if parameters(v) != parameters(key)
             ]
         for negative in negatives:
-            values = [v for k, v in phrases.items() if k.startswith(f"#!SET#!_{negative}[")]
+            # One plain translation per negative (job 170); a string set is still read.
+            values = [v for k, v in phrases.items() if k == negative or k.startswith(f"#!SET#!_{negative}[")]
             if not values:
                 found.append(f'{lang}.lproj AppShortcuts: no phrases for the negative "{negative}"')
+            if lang == "de" and negative in values:
+                found.append(f'de.lproj AppShortcuts: the negative "{negative}" is not translated')
             found += [
                 f'{lang}.lproj AppShortcuts: negative "{v}" names the app'
                 for v in values

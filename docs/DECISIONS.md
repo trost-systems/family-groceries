@@ -10177,3 +10177,46 @@ Peter (t652u): nexus.hummlist.com showed up in the "what changed" notes for app 
    skip line is looked for outside HTML comments and code fences, like the section itself, so the
    PR template can mention it. An invalid section makes `notes` fall back to the title, while
    `draft` refuses: the notes are a courtesy and must never stop an upload.
+
+## Job 170: voice test prep for Peter's Siri and Alexa session, 2026-11-07
+
+Peter tests Siri and Alexa on Sunday 2026-11-08 at 16:00 for at most two hours. Since 11-02 no
+German Siri request and no spoken Alexa request has reached the server from a real device. The
+history and the research are in `~/groceries-ops/jobs/170-voice-test-prep/` (history) and
+`/workspace/hummlist/research/170/voice-research-2026-11-07.md`.
+
+1. **A request line for `voice`, not a new PostHog event.** The brief asked for app-side logs or
+   PostHog events for intent invocation, parameters, auth and result. PostHog events from the
+   server need the household's analytics yes, and the Swift intents can't reach the Dart
+   allow-list, so a test session could see nothing. `voice` now logs one line per request (via,
+   mode, language, client, outcome, status, item count, time) like `alexa` since job 74, and the
+   iPhone sends `x-hummlist-client: ios-<build>.<intent path>`. That shows which Siri path ran
+   (App Shortcut, known item, SiriKit Lists) without a phone attached. The intents also log to
+   Console.app (`com.hummlist.app`, `siri`) for a session with a Mac. The existing `siri_add` and
+   `siri_read` events stay as they are. Item text never goes into a line: the header must be one
+   token or it logs as `other`.
+2. **Alexa's line gets `rid`, `slot`, `confirm`, `ended`, `error`, `ms`.** The brief asked for
+   slot values. They are what the user said, so the line counts the words and leaves them out, as
+   job 74 decided. Alexa's `SessionEndedRequest` error type is new: until now, Alexa's "problem
+   with the skill's response" left no trace of why. `scripts/alexa/diagnose.ts` reads both line
+   shapes.
+3. **German negative phrases, one translation each.** The ios job's training log for build 1204
+   listed the negative phrases' English keys for `de`, which looked like Xcode ignoring the German
+   string sets. The PR's own ios run disproved the reading: the log lists the English keys for
+   `de` with plain translations too, so the log can't tell. The compiled `de.lproj` table holds the
+   German text either way. The change stays because it costs nothing: each negative is now its
+   own English key with one German `stringUnit` (the same seven German sentences as before), the
+   plainest localization form. `siri-phrases.ts`, RunnerTests and `app-shortcuts-bundle.py` now
+   reject a negative that is left in English in German. Whether Siri honours German negatives at
+   all only a device shows (runbook V8).
+4. **No phrase or invocation-name change before the session.** Every German Siri name and the
+   Alexa invocation `humm list` are untested guesses; changing them again without a device
+   transcript would be another guess. The runbook collects the transcripts (Siri) and the voice
+   history (Alexa) and has a live fix for each (trained alternative names; the console's
+   invocation name).
+5. **Alexa development stage.** The last recorded deploy (11-02) had the invocation `hummlist`;
+   #244 changed it to `humm list` on 11-05 without a deploy record. The deploy needs the box's
+   ASK login; BOARD asks the box to run `scripts/alexa-deploy-dev.sh` from main and
+   `scripts/voice/health.sh --amazon`.
+6. **Health check and tail are bash on the Management API** (`scripts/voice/`), not Deno, so the
+   lead can run them on hz and the box without a deno.json. Both are read-only.

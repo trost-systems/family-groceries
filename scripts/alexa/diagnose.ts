@@ -26,6 +26,8 @@ export interface RequestLine {
   linked: boolean;
   kind: ReplyKind;
   reason?: string;
+  /** Job 170's `rid=… slot=… confirm=… ended=… error=… ms=…`, as logged; absent on older lines. */
+  details?: string;
 }
 
 /** What the function logged for one call: its request line, a line we refuse to echo, or none. */
@@ -77,8 +79,10 @@ const word = '[\\w.:-]+';
 const requestGrammar = new RegExp(
   `^alexa: (${word}) (${word}) (${word}) linked=(true|false) -> (${
     replyKinds.join('|')
-  })(?: (${word}))?$`,
+  })(?: (${word}))?((?: [a-z]+=${word})*)$`,
 );
+// Job 170's details: the keys it logs, each value a short enum, count or id end.
+const detail = /^(rid|slot|confirm|ended|error|ms)=(-|[A-Za-z0-9_]{1,32})$/;
 // Tighter than the grammar: a field that could hold a token or an address never gets printed.
 const fieldShapes = {
   type: /^(-|[A-Za-z.]{1,64})$/,
@@ -90,19 +94,29 @@ const fieldShapes = {
 export function parseRequestLine(message: string): RequestLine | null {
   const m = requestGrammar.exec(message.trimEnd());
   if (!m) return null;
-  const [, type, intent, locale, linked, kind, reason] = m;
+  const [, type, intent, locale, linked, kind, reason, trailer] = m;
+  const details = trailer?.trim();
   if (
     !fieldShapes.type.test(type) || !fieldShapes.intent.test(intent) ||
     !fieldShapes.locale.test(locale) ||
-    (reason !== undefined && (kind !== 'refused' || !fieldShapes.reason.test(reason)))
+    (reason !== undefined && (kind !== 'refused' || !fieldShapes.reason.test(reason))) ||
+    (details && !details.split(' ').every((d) => detail.test(d)))
   ) return null;
-  return { type, intent, locale, linked: linked === 'true', kind: kind as ReplyKind, reason };
+  return {
+    type,
+    intent,
+    locale,
+    linked: linked === 'true',
+    kind: kind as ReplyKind,
+    reason,
+    ...(details && { details }),
+  };
 }
 
 export const formatLine = (l: RequestLine) =>
   `alexa: ${l.type} ${l.intent} ${l.locale} linked=${l.linked} -> ${l.kind}${
     l.reason ? ` ${l.reason}` : ''
-  }`;
+  }${l.details ? ` ${l.details}` : ''}`;
 
 const spokenTypes = new Set(['LaunchRequest', 'IntentRequest', 'SessionEndedRequest']);
 

@@ -245,6 +245,31 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   Real Siri voice only on a device (NEEDS_LEAD, "Job 51").
 
 
+## Request log (job 170)
+
+`voice` writes one line per request (`requestLine` in `supabase/functions/voice/handler.ts`), so
+a Siri test can be followed live with `scripts/voice/tail.sh`:
+
+```
+voice: <via> <mode> <lang> client=<client> -> <outcome> status=<n> count=<n> ms=<n>
+voice: siri add de client=ios-1210.AddItems -> added status=200 count=2 ms=640
+voice: siri add de client=ios-1210.Lists.add -> added status=200 count=1 ms=702
+voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 ms=95
+```
+
+- `via`: `siri` (the app's Siri credential), `pat` (the Shortcut recipe), `session` (in-app
+  dictation), `none` (no valid sign-in).
+- `client`: the iPhone's `x-hummlist-client` header, `ios-<build>.<path>`. The path is
+  `AddItems` (a phrase without an item), `AddItems.item` (a known item in the phrase), `ReadList`,
+  or `Lists.add` / `Lists.read` (SiriKit's list grammar). `-` without the header (the Shortcut,
+  older builds), `other` for a value that isn't one token.
+- `count`: the items understood (add, parse) or open (read).
+- Never in the line: the text, item names, tokens, user or household ids.
+
+On the iPhone the intents log to Console.app (subsystem `com.hummlist.app`, category `siri`):
+which intent ran, whether a credential was there, and the HTTP status. A request the server
+never logs and the phone never logs never reached Hummlist: Siri sent it elsewhere.
+
 ## Routing auf Deutsch (Job 92)
 
 Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 92".

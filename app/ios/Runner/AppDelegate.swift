@@ -19,8 +19,8 @@ import UIKit
   /// SiriKit's Lists domain in-app (SiriKitLists.swift): what no App Shortcut phrase matches.
   override func application(_ application: UIApplication, handlerFor intent: INIntent) -> Any? {
     switch intent {
-    case is INAddTasksIntent: return AddTasksHandler(client: .live())
-    case is INSearchForNotebookItemsIntent: return SearchTasksHandler(client: .live())
+    case is INAddTasksIntent: return AddTasksHandler(client: .live(caller: "Lists.add"))
+    case is INSearchForNotebookItemsIntent: return SearchTasksHandler(client: .live(caller: "Lists.read"))
     default: return nil
     }
   }

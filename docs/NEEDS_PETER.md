@@ -1377,3 +1377,15 @@ can no longer delete one item themselves.
   Data safety form says users can delete single data in the app).
 - [ ] If single items should stay deletable for everyone, say where (for example in „Zuletzt
   verwendet“); this job adds no new delete path, as the brief asked.
+
+## Job 170: Siri and Alexa test session (2026-11-08, 16:00)
+
+Everything that needs your iPhone or Echo is in `docs/voice/TEST-SESSION-2026-11-08.md`, in
+order, with the expected answer and a fix for each failure. It replaces the open device steps of
+„Job 69“, „Job 91“, „Job 92“ and „Job 97“ above.
+
+- [ ] Run the session; send the lead the failed rows with their times, the transcript
+  screenshots, the iOS version, Alexa+ yes or no, and the account Alexa names („Alexa, welches
+  Konto ist das?“).
+- [ ] If the Echo's account isn't the Alexa developer account: accept the skill's beta
+  invitation on that account first (the lead sends the link from the console's Beta-Test page).
