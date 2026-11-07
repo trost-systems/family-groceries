@@ -57,3 +57,23 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **w11** (keep): medians typography 7, hierarchy 8, color_contrast 7, spacing 8, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand; seeds [499622399, 152733097, 2715562490].
 - **w12** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 8, accessibility 8, iconography 7, empty_error_states 7; pairwise consistency cand, accessibility cand; seeds [2583501821, 2024323798, 3066085814].
 
+## Final
+
+Branch head `73a31169`, three absolute runs like the baseline: minimum [7, 7, 7], mean [7.667, 7.667, 7.444]. Score (median) **7** (baseline 4, band 0.5); mean of aspect medians 7.667 (baseline 6.556).
+
+| aspect | baseline (median of 3 runs) | final (median of 3 runs) |
+|---|---|---|
+| typography | 6 | 7 |
+| hierarchy | 8 | 8 |
+| color_contrast | 8 | 8 |
+| spacing | 7 | 8 |
+| layout | 7 | 8 |
+| consistency | 5 | 8 |
+| accessibility | 7 | 8 |
+| iconography | 7 | 7 |
+| empty_error_states | 4 | 7 |
+
+## Stop
+
+Step budget reached: 12 steps (w1-w12), all kept, about 4 h 20 min of the 6 h, weekly usage 36 %. A blind pairwise of the baseline shots against the final shots (seeds [1773405988, 1415361597, 2236588500]) prefers the final state on 7 aspects, ties 2, none for the baseline. Floors left at 7: typography (more than five type sizes on the landing), iconography (colour emoji next to line icons in the app mock-ups), empty and error states (the empty changelog offers no next step; adding one needs words, which this job may not change).
+
