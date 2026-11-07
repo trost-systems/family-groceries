@@ -9986,3 +9986,21 @@ Baumarkt off the landing page because the app had no hardware categories.
     cron) run with the lock's fd 9 closed, so a child that outlived its run could not keep
     `/tmp/nexus-publish.lock`; checked on a live run: the script held the lock, its deno child no
     fd on it.
+
+## Job 128: domain behaviour-test hill-climb (hc-domain-tests), 2026-11-05
+
+- **Measured on top of job 98's PR #245.** It was open when this job started, and the brief asks
+  for tests covering what job 98's do not; measuring on main alone would have credited this job
+  with mutants #245 already kills. The branch was stacked on #245, and the new tests went into new
+  files (`app/test/list/domain_*_test.dart`) so the two PRs never touched the same file. #245
+  landed as 45a40cbe, and this branch was rebased onto main.
+- **A mutant's tests follow imports transitively, but only into `test/list/`.** A cubit is tested
+  through its screen (`add_sheet_cubit.dart` had two direct importers, `category_names.dart`
+  none), yet every file reaches every other through the router, so the full closure would run
+  about 80 files per mutant. Direct importers plus the list feature's own tests is the middle.
+- **A timed-out mutant run is retried with 900 s before it counts as a kill.** Under mem-guard
+  pauses and a second job's measurement, slow runs passed 180 s and counted as killed; a real
+  hang (m078) still times out at 900 s.
+- **A holdout sample (seed 1280) checks the fit.** The scored sample ends up fit to the tests
+  written against it; 100 mutants from the sites it does not hold, generated before any test was
+  written, are measured on the baseline and the final tree (`holdout.sh`, informational).
