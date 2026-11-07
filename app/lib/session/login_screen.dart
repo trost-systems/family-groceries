@@ -101,6 +101,20 @@ class _SignInPanelState() extends State<SignInPanel> {
   final _password = TextEditingController();
   var _busy = false;
   var _passwordRequired = true;
+
+  /// The errors the last submit showed, kept as the fields' semantics hints:
+  /// an error widget, unlike `errorText`, does not set them.
+  String? _emailError;
+  String? _passwordError;
+
+  String? _emailProblem(String? v) => (v ?? '').trim().contains('@')
+      ? null
+      : AppLocalizations.of(context).invalidEmail;
+
+  String? _passwordProblem(String? v) =>
+      !_passwordRequired || (v ?? '').length >= 6
+      ? null
+      : AppLocalizations.of(context).passwordTooShort;
   late var _emailOpen = context.read<SocialSignIn>().flows.isEmpty;
 
   @override
@@ -162,7 +176,12 @@ class _SignInPanelState() extends State<SignInPanel> {
     bool needsPassword = true,
   }) async {
     _passwordRequired = needsPassword;
-    if (_form.currentState!.validate()) {
+    final valid = _form.currentState!.validate();
+    setState(() {
+      _emailError = _emailProblem(_email.text);
+      _passwordError = _passwordProblem(_password.text);
+    });
+    if (valid) {
       await _run(action);
     }
   }
@@ -248,27 +267,32 @@ class _SignInPanelState() extends State<SignInPanel> {
               ],
               LabeledField(
                 label: l10n.email,
-                field: TextFormField(
-                  key: const ValueKey('login-email'),
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  validator: (v) =>
-                      (v ?? '').trim().contains('@') ? null : l10n.invalidEmail,
+                field: Semantics(
+                  hint: _emailError ?? '',
+                  child: TextFormField(
+                    key: const ValueKey('login-email'),
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    errorBuilder: (_, error) => FieldError(error),
+                    validator: _emailProblem,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               LabeledField(
                 label: l10n.password,
-                field: TextFormField(
-                  key: const ValueKey('login-password'),
-                  controller: _password,
-                  obscureText: true,
-                  autofillHints: const [AutofillHints.password],
-                  validator: (v) => !_passwordRequired || (v ?? '').length >= 6
-                      ? null
-                      : l10n.passwordTooShort,
-                  onFieldSubmitted: (_) => unawaited(_signIn()),
+                field: Semantics(
+                  hint: _passwordError ?? '',
+                  child: TextFormField(
+                    key: const ValueKey('login-password'),
+                    controller: _password,
+                    obscureText: true,
+                    autofillHints: const [AutofillHints.password],
+                    errorBuilder: (_, error) => FieldError(error),
+                    validator: _passwordProblem,
+                    onFieldSubmitted: (_) => unawaited(_signIn()),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
