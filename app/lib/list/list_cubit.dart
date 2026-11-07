@@ -29,8 +29,8 @@ class const ListState({
   final bool resynced = false,
   final ConnectionStatus connection = ConnectionStatus.connecting,
 
-  /// The server answers, but the last send or fetch failed with a
-  /// [ServerTrouble].
+  /// The server answers, but a send or fetch failed with a [ServerTrouble]
+  /// and so did one started after the 3 s retry.
   final bool failing = false,
 
   /// What the household buys again and again, best first.
@@ -187,6 +187,17 @@ class ListCubit(
   final _unannounced = Map<MergeItems, Merge>.identity();
   Future<void> Function()? _unwatch;
   Timer? _retry;
+
+  /// Retry rounds: one per firing of [_retry] and per [retry]. Job 165
+  /// (Z104): one transient [ServerTrouble] (a 503, a token refreshed mid
+  /// request) is no failing server; failing shows only once a request
+  /// started after the retry fails too. Requests of one round fail together
+  /// (a resync's two fetches, a write sent before the retry), so a counter
+  /// of failures would escalate on one outage.
+  var _round = 0;
+
+  /// The round of the first [ServerTrouble] not shown yet.
+  int? _troubleRound;
   Timer? _catalogReload;
   Timer? _save;
   Timer? _usualsReload;
@@ -333,6 +344,9 @@ class ListCubit(
 
   void _onChannelStatus(ConnectionStatus status) {
     _channelUp = status == ConnectionStatus.online;
+    if (status == ConnectionStatus.offline) {
+      _troubleRound = null;
+    }
     // Offline says nothing of the server: back online, the next send or
     // fetch tells again, so the failing card never flashes up in between.
     emit(
@@ -622,6 +636,7 @@ class ListCubit(
     }
     final EditItem op;
     if (refused.deviceParsed) {
+      final round = _round;
       try {
         final parsed = await _repo.parse(refused.changes.name!);
         op = EditItem(
@@ -630,7 +645,7 @@ class ListCubit(
           keyBefore: refused.keyBefore,
         );
       } on ServerTrouble {
-        _goFailing();
+        _goFailing(round);
         return false;
       } on Object {
         _goOffline();
@@ -1058,6 +1073,7 @@ class ListCubit(
     final heard = _Heard();
     _resyncsHeard.add(heard);
     var fetched = true;
+    final round = _round;
     try {
       final catalog = _repo.fetchCatalog();
       final rows = _repo.fetchItems();
@@ -1070,12 +1086,12 @@ class ListCubit(
       }
       // With ops queued the next send decides: a server that fails every
       // write would otherwise flicker between failing and not.
-      if (state.failing && state.pending.isEmpty) {
-        emit(state.copyWith(failing: false));
+      if (state.pending.isEmpty) {
+        _clearTrouble();
       }
     } on ServerTrouble {
       fetched = false;
-      _goFailing();
+      _goFailing(round);
     } on Object {
       fetched = false;
       _goOffline();
@@ -1139,12 +1155,13 @@ class ListCubit(
   }
 
   Future<void> _reloadCatalog() async {
+    final round = _round;
     try {
       // Await first: `state` read before the await would be stale by now.
       final catalog = await _repo.fetchCatalog();
       emit(state.copyWith(catalog: catalog));
     } on ServerTrouble {
-      _goFailing();
+      _goFailing(round);
     } on Object {
       _goOffline();
     }
@@ -1160,6 +1177,7 @@ class ListCubit(
   Future<bool> retry() async {
     _retry?.cancel();
     _retry = null;
+    _round++;
     await resync();
     await _flush();
     return state.trouble == null;
@@ -1172,15 +1190,18 @@ class ListCubit(
     }
     final done = Completer<void>();
     _flushRun = done.future;
+    var answered = false;
     try {
       while (state.pending.isNotEmpty && !isClosed) {
         final op = state.pending.first;
         final heard = _heardInFlight = {};
         _shownInFlight = null;
+        final round = _round;
         try {
           _ack(op, await _repo.send(op), heard);
           _forget(op);
         } on RejectedOp catch (e) {
+          answered = true;
           final resent = op is EditItem && _resentRenames.remove(op);
           if (op is EditItem && e.nameTaken && !resent) {
             if (await _foldRefusedRename(op)) {
@@ -1203,12 +1224,17 @@ class ListCubit(
           });
           unawaited(resync());
         } on ServerTrouble {
-          _goFailing();
+          _goFailing(round);
           return;
         } on Object {
           _goOffline();
           return;
         }
+      }
+      // A refusal can empty the queue with no write acknowledged (a rename
+      // folded into "already on the list").
+      if (answered && state.pending.isEmpty) {
+        _clearTrouble();
       }
     } finally {
       _flushRun = null;
@@ -1264,6 +1290,7 @@ class ListCubit(
         failing: false,
       ),
     );
+    _troubleRound = null;
     // Job 104: a rename to another spelling or a synonym of an open item
     // (known once the server keyed the new name) is offered, as for an add,
     // never merged on its own. Only a new name gives a new key.
@@ -1346,18 +1373,31 @@ class ListCubit(
       emit(state.copyWith(server: server));
 
   void _goOffline() {
+    _troubleRound = null;
     emit(state.copyWith(connection: ConnectionStatus.offline, failing: false));
     _retryLater();
   }
 
-  void _goFailing() {
-    emit(state.copyWith(failing: true));
+  /// The server answered and nothing waits on it.
+  void _clearTrouble() {
+    _troubleRound = null;
+    if (state.failing) {
+      emit(state.copyWith(failing: false));
+    }
+  }
+
+  void _goFailing(int round) {
+    final first = _troubleRound ??= round;
+    if (round > first) {
+      emit(state.copyWith(failing: true));
+    }
     _retryLater();
   }
 
   void _retryLater() {
     _retry ??= Timer(const Duration(seconds: 3), () {
       _retry = null;
+      _round++;
       if (!isClosed) {
         unawaited(resync());
       }
