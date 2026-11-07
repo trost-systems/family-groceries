@@ -5,7 +5,7 @@ In the iOS and Android apps a microphone button sits at the right end of the add
 ## Sub-features
 
 - `di-button` the microphone (icon button, tooltip „Diktieren“ / "Dictate") appears only on iOS and Android builds, never on web or desktop. While listening it turns into a red stop button with the tooltip „Diktat beenden“ / "Stop dictation".
-- `di-listening` while listening the field's hint reads „Ich höre zu …“ / "Listening …" and the recognised words fill the field live.
+- `di-listening` while listening the field's hint reads „Ich höre zu …“ / "Listening …" and the recognised words fill the field live; a sentence longer than the field scrolls along, so the latest words stay in view (job 150).
 - `di-language` always German (de_DE), on the device only, whatever language the app is set to; listening stops after a 3 s pause or 30 s.
 - `di-split` after the sentence the server splits it into items (the splitter Siri uses, in its split-only mode; commas, "und", an amount said before or after the item such as „zwei Gurken“, „Gurken zwei“ or „zwei Liter Milch“; size words keep their number, „Windeln Größe 4“; at most 30 items per sentence). Each item then goes through the parser a typed add uses, so brand, details and the store are split off („Windeln Pampers Größe 3“ is Windeln, brand Pampers, details Größe 3, at dm when the household has that store; job 111), and the app adds each with name, brand, details, quantity and store. If that second step fails, the items come back whole and are added as said. The field empties when at least one item came back; otherwise the text stays in the field, focused.
 - `di-summary` a snackbar says „Hinzugefügt: <items>.“ / "Added: <items>." and, for items already open, „Schon auf der Liste: <items>.“ / "Already on the list: <items>." (both, joined by a space, when both apply). Added items are named with their quantity, brand and details, for example „Hinzugefügt: Milch, 2 Gurken, Windeln Pampers Größe 3, Big Pack.“ (details keep their comma; Siri reads them without it); items already open are named without them.
@@ -30,7 +30,7 @@ Preconditions:
 
 ## Gotchas
 
-- Do not look for the microphone in a browser, not even a mobile browser or iPhone emulation: the choice is by platform (iOS or Android app only, `kIsWeb` false), so Chromium and WebKit never show it. Unverified: a native Android or iOS run (no such surface is part of this map's harness).
+- Do not look for the microphone in a browser, not even a mobile browser or iPhone emulation: the choice is by platform (iOS or Android app only, `kIsWeb` false), so Chromium and WebKit never show it. Unverified: a native Android or iOS run (no such surface is part of this map's harness). The Linux desktop build can be driven with a scripted recognizer instead (verify-family-groceries, `features/voice.md`, "Microphone on linux").
 - Dictated text is always split by the German splitter even when the app language is English (the app sends no language to the splitter for dictation). Unverified on a device.
 - A split failure (offline) leaves the recognised text in the field so the user can add it with Enter or a tap.
 - No flag or Premium gate: the voice function never asks Premium for the app's own session, also with the integration lock on.

@@ -64,6 +64,12 @@ is now highlighted yellow, not mint.
 - Measured sync: add 0.58 to 0.80 s, tick 1.48 to 1.64 s (tables below); the text alternatives say
   "keine Sekunde später" / "less than a second later" instead of "half a second".
 
+## Re-take (job 150, 2026-11-06)
+
+Filmed again from main 02cc9da8 (job 148's floating top bar and hex Anpassen) with the
+microphone in the add field: the Linux capture build now starts with `FG_DICTATION`
+(`test_driver/main_marionette.dart`), so the field looks as on a phone. Same shots and timing.
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the last caption and on an avatar initial: the loop's first caption again, and
@@ -75,28 +81,28 @@ is now highlighted yellow, not mint.
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 12.53 s | 1070 KB | none |
-| de-wide | household-sync-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 12.53 s | 492 KB | none |
-| de-wide | household-sync-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 12.53 s | 446 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 12.53 s | 693 KB | none |
-| de-compact | household-sync-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 12.53 s | 332 KB | none |
-| de-compact | household-sync-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 12.53 s | 335 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.87 s | 1004 KB | none |
-| en-wide | household-sync-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.87 s | 460 KB | none |
-| en-wide | household-sync-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.87 s | 440 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.87 s | 632 KB | none |
-| en-compact | household-sync-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.87 s | 306 KB | none |
-| en-compact | household-sync-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.87 s | 326 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.90 s | 1064 KB | none |
+| de-wide | household-sync-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.90 s | 493 KB | none |
+| de-wide | household-sync-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.90 s | 458 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.90 s | 699 KB | none |
+| de-compact | household-sync-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.90 s | 345 KB | none |
+| de-compact | household-sync-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.90 s | 372 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.53 s | 995 KB | none |
+| en-wide | household-sync-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.53 s | 450 KB | none |
+| en-wide | household-sync-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.53 s | 426 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.53 s | 646 KB | none |
+| en-compact | household-sync-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.53 s | 316 KB | none |
+| en-compact | household-sync-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.53 s | 337 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9968 | household-sync-de-wide.webp, 49 KB | 6.57 s |
-| de-compact | 0.9972 | household-sync-de-compact.webp, 37 KB | 6.57 s |
-| en-wide | 0.9970 | household-sync-en-wide.webp, 46 KB | 6.17 s |
-| en-compact | 0.9975 | household-sync-en-compact.webp, 35 KB | 6.17 s |
+| de-wide | 0.9966 | household-sync-de-wide.webp, 49 KB | 6.27 s |
+| de-compact | 0.9971 | household-sync-de-compact.webp, 41 KB | 6.27 s |
+| en-wide | 0.9965 | household-sync-en-wide.webp, 46 KB | 6.17 s |
+| en-compact | 0.9972 | household-sync-en-compact.webp, 39 KB | 6.17 s |
 
 Measured in the takes (Marionette polls, so an upper bound for the app side):
 
-- DE: addToNoahMs 798 ms, addToIdaMs 777 ms, tickToMiaMs 1503 ms, tickToIdaMs 1639 ms
-- EN: addToNoahMs 624 ms, addToIdaMs 584 ms, tickToMiaMs 1485 ms, tickToIdaMs 1476 ms
+- DE: addToNoahMs 667 ms, addToIdaMs 661 ms, tickToMiaMs 1489 ms, tickToIdaMs 1481 ms
+- EN: addToNoahMs 694 ms, addToIdaMs 691 ms, tickToMiaMs 1310 ms, tickToIdaMs 1290 ms
 <!-- /report -->

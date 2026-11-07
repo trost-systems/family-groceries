@@ -20,6 +20,8 @@ export interface ClientSpec {
   password: string;
   lang: 'de' | 'en';
   display: number;
+  /** What the app's microphone hears, one sentence per session split by `|` (test_driver/scripted_speech.dart). */
+  dictation: string;
 }
 
 export interface Client extends ClientSpec {
@@ -99,6 +101,8 @@ export async function launch(spec: ClientSpec, bundle: string, root: string): Pr
       XDG_CONFIG_HOME: `${dir}/config`,
       XDG_CACHE_HOME: `${dir}/cache`,
       NO_AT_BRIDGE: '1',
+      // Gives the Linux build the phone's microphone, so the add field looks as on a phone.
+      FG_DICTATION: spec.dictation,
       ...engineEnv(),
     },
     stdout: 'piped',
@@ -127,12 +131,16 @@ export async function elements(c: Client): Promise<Element[]> {
   return parseElements(await run(['marionette', '--uri', c.vmUri, 'get-interactive-elements']));
 }
 
-export type Target = { text: string } | { key: string } | { type: string } | { x: number; y: number };
+export type Target = { text: string } | { contains: string } | { key: string } | { type: string } | { x: number; y: number };
 
 function matches(e: Element, t: Target): boolean {
   if ('text' in t) {
     const want = t.text.normalize('NFC');
     return e.text?.normalize('NFC') === want || e.label?.normalize('NFC') === want;
+  }
+  if ('contains' in t) {
+    const want = t.contains.normalize('NFC');
+    return [e.text, e.label].some((s) => s?.normalize('NFC').includes(want));
   }
   if ('key' in t) return e.key === t.key;
   if ('type' in t) return e.type === t.type;

@@ -32,7 +32,10 @@ import 'package:go_router/go_router.dart';
 /// bottom, which opens the add sheet. Needs the list scope
 /// (`ListScope`) above it.
 class const ListScreen({super.key}) extends StatelessWidget {
-  static final Dictation? _dictation = dictationFor(
+  /// The add bar's recognizer, null for none. The Linux capture entrypoint
+  /// (`test_driver/main_marionette.dart`) sets a scripted one first.
+  @visibleForTesting
+  static Dictation? dictation = dictationFor(
     defaultTargetPlatform,
     web: kIsWeb,
   );
@@ -55,7 +58,7 @@ class const ListScreen({super.key}) extends StatelessWidget {
     if (session is! InHousehold) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return ShoppingList(dictation: _dictation);
+    return ShoppingList(dictation: dictation);
   }
 }
 
@@ -89,6 +92,10 @@ class const _ShoppingList({required final Dictation? dictation})
 class _ShoppingListState() extends State<_ShoppingList> {
   final _input = TextEditingController();
   final _inputFocus = FocusNode();
+
+  /// The field's own scrolling, which follows dictated words: unfocused it
+  /// would keep showing the sentence's start.
+  final _inputScroll = ScrollController();
 
   /// The add bar around the input: it holds focus between a tap in the
   /// sheet and the input's refocus, and after a close, and takes Escape
@@ -128,6 +135,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
     _hints = context.read<ListCubit>().hints.listen(_hint);
     _renameMerges = context.read<ListCubit>().renameMerges.listen(_showMerged);
     _inputFocus.addListener(_focusChanged);
+    _input.addListener(_followWords);
     _addSheetRequest = context.read<AddSheetRequest?>()
       ?..listTab = _openRequested;
     // A widget's Add that started the app came before this tab.
@@ -157,6 +165,18 @@ class _ShoppingListState() extends State<_ShoppingList> {
       }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  /// Keeps the latest dictated words in view while the user speaks.
+  void _followWords() {
+    if (!_listening) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_inputScroll.hasClients) {
+        _inputScroll.jumpTo(_inputScroll.position.maxScrollExtent);
+      }
+    });
   }
 
   void _focusChanged() {
@@ -202,6 +222,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
     unawaited(_renameMerges?.cancel());
     _refocus?.cancel();
     _input.dispose();
+    _inputScroll.dispose();
     _inputFocus.dispose();
     _barFocus.dispose();
     super.dispose();
@@ -479,6 +500,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
           bottomNavigationBar: TextFieldTapRegion(
             child: _AddBar(
               input: _input,
+              inputScroll: _inputScroll,
               focus: _inputFocus,
               barFocus: _barFocus,
               autofocus: _autofocus,
@@ -515,6 +537,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
 /// job 78). It never moves while the sheet opens, grows or closes.
 class const _AddBar({
   required final TextEditingController input,
+  required final ScrollController inputScroll,
   required final FocusNode focus,
 
   /// The bar's own node around the field, which takes Enter and Escape.
@@ -604,6 +627,7 @@ class const _AddBar({
                   child: TextField(
                     key: const ValueKey('add-item-field'),
                     controller: input,
+                    scrollController: inputScroll,
                     focusNode: focus,
                     autofocus: autofocus,
                     // Focus comes back after every tap in the

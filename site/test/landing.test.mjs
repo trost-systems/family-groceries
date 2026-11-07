@@ -12,7 +12,7 @@ const SITE = 'https://hummlist.com';
 const COPY_TEXT = readFileSync(join(CONTENT_DIR, 'landing/copy.yml'), 'utf8');
 const COPY = parseCopy(COPY_TEXT, 'copy.yml');
 const PROD = { VERCEL_ENV: 'production' };
-const SLOTS = ['add-tick', 'household-sync', 'mcp-chat'];
+const SLOTS = ['add-tick', 'household-sync', 'mcp-chat', 'voice-add'];
 
 // The smallest WebP header the build reads sizes from (VP8X: canvas width and height).
 function webp(width, height) {
@@ -232,7 +232,16 @@ test('with its video files a demo slot is a muted, looped, captioned video that 
   }
 });
 
-test('the shipped demo videos fill all three slots in both languages', () => {
+test('every demo slot names where its play button sits, wide and compact, off the add field (job 150)', () => {
+  const doc = buildSite().page('/de');
+  for (const slot of SLOTS) {
+    const figure = doc.querySelector(`figure[data-copy-id="demo.${slot}"]`);
+    assert.match(figure.getAttribute('data-toggle-wide') ?? '', /^(br|bl|tr)$/, `${slot} wide`);
+    assert.match(figure.getAttribute('data-toggle-compact') ?? '', /^(br|bl|ur|mr)$/, `${slot} compact`);
+  }
+});
+
+test('the shipped demo videos fill all four slots in both languages', () => {
   const { page } = buildSite();
   for (const locale of ['de', 'en']) {
     const doc = page(`/${locale}`);

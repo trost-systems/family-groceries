@@ -47,6 +47,15 @@ the row crop: its phone strip is 313 logical px tall, not enough for the rows an
 chat surface is unchanged. This take's MCP answers: add 764 ms (DE), rows in the app 1.6 s after
 the call; tick 471 ms.
 
+## Re-take (job 150, 2026-11-06)
+
+Filmed again from main 02cc9da8 (job 148's floating top bar and hex Anpassen) with the
+microphone in the add field: the Linux capture build now starts with `FG_DICTATION`
+(`test_driver/main_marionette.dart`), so the field looks as on a phone. Same shots and timing.
+- Sam's list scrolls only until Ketchup is at y 520 (was 300), so the MCP rows land just above the
+  add field (logical 657 to 753) and the compact crop moved down to hold the rows and the field
+  with its microphone (`appTop` 357 → 511). The old compact strip ended above the field.
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the two working lines: their real duration (above).
@@ -62,28 +71,28 @@ the call; tick 471 ms.
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 12.00 s | 1216 KB | none |
-| de-wide | mcp-chat-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 12.00 s | 431 KB | none |
-| de-wide | mcp-chat-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 12.00 s | 420 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 12.00 s | 963 KB | none |
-| de-compact | mcp-chat-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 12.00 s | 330 KB | none |
-| de-compact | mcp-chat-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 12.00 s | 342 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.33 s | 939 KB | none |
-| en-wide | mcp-chat-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.33 s | 352 KB | none |
-| en-wide | mcp-chat-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.33 s | 363 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.33 s | 728 KB | none |
-| en-compact | mcp-chat-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.33 s | 279 KB | none |
-| en-compact | mcp-chat-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.33 s | 287 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.27 s | 1121 KB | none |
+| de-wide | mcp-chat-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.27 s | 390 KB | none |
+| de-wide | mcp-chat-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.27 s | 388 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.27 s | 878 KB | none |
+| de-compact | mcp-chat-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.27 s | 291 KB | none |
+| de-compact | mcp-chat-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.27 s | 311 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.00 s | 864 KB | none |
+| en-wide | mcp-chat-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.00 s | 318 KB | none |
+| en-wide | mcp-chat-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.00 s | 328 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.00 s | 659 KB | none |
+| en-compact | mcp-chat-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.00 s | 251 KB | none |
+| en-compact | mcp-chat-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.00 s | 262 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9980 | mcp-chat-de-wide.webp, 49 KB | 4.67 s |
-| de-compact | 0.9979 | mcp-chat-de-compact.webp, 41 KB | 4.67 s |
-| en-wide | 0.9979 | mcp-chat-en-wide.webp, 43 KB | 4.27 s |
-| en-compact | 0.9981 | mcp-chat-en-compact.webp, 35 KB | 4.27 s |
+| de-wide | 0.9977 | mcp-chat-de-wide.webp, 50 KB | 4.27 s |
+| de-compact | 0.9980 | mcp-chat-de-compact.webp, 41 KB | 4.27 s |
+| en-wide | 0.9978 | mcp-chat-en-wide.webp, 44 KB | 4.07 s |
+| en-compact | 0.9978 | mcp-chat-en-compact.webp, 35 KB | 4.07 s |
 
 Measured in the takes (Marionette polls, so an upper bound for the app side):
 
-- DE: addAnswerMs 764 ms, tickAnswerMs 471 ms, addToAppMs 1621 ms, tickToAppMs 1363 ms
-- EN: addAnswerMs 369 ms, tickAnswerMs 304 ms, addToAppMs 1212 ms, tickToAppMs 641 ms
+- DE: addAnswerMs 386 ms, tickAnswerMs 58 ms, addToAppMs 1336 ms, tickToAppMs 997 ms
+- EN: addAnswerMs 146 ms, tickAnswerMs 33 ms, addToAppMs 1037 ms, tickToAppMs 459 ms
 <!-- /report -->

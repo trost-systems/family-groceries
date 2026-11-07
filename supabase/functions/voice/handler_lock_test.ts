@@ -25,7 +25,13 @@ function world(access: () => Promise<Access>) {
     },
     splitItems: (_caller, items) =>
       Promise.resolve(
-        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+        items.map((item) => ({
+          ...item,
+          brand: null,
+          properties: null,
+          storeId: null,
+          categoryId: null,
+        })),
       ),
     requirePremium: (caller, integration) => {
       asked.push([caller, integration]);

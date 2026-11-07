@@ -19,7 +19,13 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     requirePremium: () => Promise.resolve('open'),
     splitItems: (_caller, items) =>
       Promise.resolve(
-        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+        items.map((item) => ({
+          ...item,
+          brand: null,
+          properties: null,
+          storeId: null,
+          categoryId: null,
+        })),
       ),
     addItems: (_caller, items) => {
       calls.push(items);
@@ -102,14 +108,21 @@ Deno.test('parse mode splits without adding', async () => {
   assertEquals(calls, []);
 });
 
-Deno.test('parse mode with split: brand, details and store as a typed add gets them', async () => {
+Deno.test('parse mode with split: brand, details, store and category as a typed add gets them', async () => {
   const { handle } = fakeDeps({
     splitItems: (_caller, items) =>
       Promise.resolve(
         items.map((item) =>
           item.name === 'Windeln Pampers Größe 3'
-            ? { ...item, name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', storeId: 'dm' }
-            : { ...item, brand: null, properties: null, storeId: null }
+            ? {
+              ...item,
+              name: 'Windeln',
+              brand: 'Pampers',
+              properties: 'Größe 3',
+              storeId: 'dm',
+              categoryId: 'drogerie',
+            }
+            : { ...item, brand: null, properties: null, storeId: null, categoryId: 'kuehlregal' }
         ),
       ),
   });
@@ -117,8 +130,22 @@ Deno.test('parse mode with split: brand, details and store as a typed add gets t
     post({ text: 'Windeln Pampers Größe 3 und Milch', mode: 'parse', split: true }),
   );
   assertEquals((await res.json()).items, [
-    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: null, storeId: 'dm' },
-    { name: 'Milch', brand: null, properties: null, quantity: null, storeId: null },
+    {
+      name: 'Windeln',
+      brand: 'Pampers',
+      properties: 'Größe 3',
+      quantity: null,
+      storeId: 'dm',
+      categoryId: 'drogerie',
+    },
+    {
+      name: 'Milch',
+      brand: null,
+      properties: null,
+      quantity: null,
+      storeId: null,
+      categoryId: 'kuehlregal',
+    },
   ]);
 });
 

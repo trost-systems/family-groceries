@@ -20,7 +20,7 @@ import { vtt } from './lib.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '../..');
 const media = join(repo, 'site/public/media');
-const VIDEOS = ['add-tick', 'household-sync', 'mcp-chat'];
+const VIDEOS = ['add-tick', 'household-sync', 'mcp-chat', 'voice-add'];
 
 const args = process.argv.slice(2);
 const opt = (name, all) => {
@@ -182,6 +182,6 @@ for (const video of videos.length ? videos : VIDEOS) {
       if (steps.includes('encode')) encode(video, lang, fmt, dir, p);
       if (steps.includes('review')) review(video, lang, fmt, dir, p);
     }
-    if (steps.includes('encode')) writeFileSync(join(media, `${video}-${lang}.vtt`), vtt(p.cues));
+    if (steps.includes('encode')) writeFileSync(join(media, `${video}-${lang}.vtt`), vtt(p.vttCues ?? p.cues));
   }
 }

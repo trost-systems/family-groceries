@@ -55,7 +55,14 @@ try {
   for (const [i, handle] of shot.members.entries()) {
     const u = manifest.users[handle];
     const c = await d.launch(
-      { name: handle, email: u.email, password: u.password, lang, display: Number(`${prefix}9${i}`) },
+      {
+        name: handle,
+        email: u.email,
+        password: u.password,
+        lang,
+        display: Number(`${prefix}9${i}`),
+        dictation: shot.dictation?.[lang] ?? '',
+      },
       bundle,
       work,
     );

@@ -1,7 +1,7 @@
 # Demo videos for hummlist.com
 
-The three silent, captioned loops on the landing pages `/de` and `/en` (job 54): `add-tick`,
-`household-sync` and `mcp-chat`, each in German and English, wide (1920 × 1080) and compact
+The four silent, captioned loops on the landing pages `/de` and `/en`: `add-tick`,
+`household-sync` and `mcp-chat` (job 54) and `voice-add` (job 150), each in German and English, wide (1920 × 1080) and compact
 (1080 × 1350). The finished files live in `site/public/media/` under the names
 `site/public/media/README.md` asks for; this folder holds everything that makes them.
 
@@ -23,7 +23,7 @@ scripts/fg up --only stack                       # local Supabase on 577xx
   --dart-define=SUPABASE_URL=http://127.0.0.1:57721 --dart-define=SUPABASE_PUBLISHABLE_KEY=<local key> \
   --dart-define=FAKE_STORE=ok)                    # the key from `supabase status`; never commit it
 
-for v in add-tick household-sync mcp-chat; do for l in de en; do
+for v in add-tick household-sync mcp-chat voice-add; do for l in de en; do
   deno run -A marketing/videos/capture/take.ts $v $l   # one take: seed, film, tear down
 done; done
 cd marketing/videos && npm ci && node build.mjs  # projects, check, render, encode, review
@@ -40,6 +40,11 @@ in the app or its design needs new takes.
   ffmpeg so they share a clock. Taps and key strokes are real X input (xdotool); Marionette only
   reports where widgets are. The engine runs its software renderer with Skia: under Xvfb the
   OpenGL path presented a frame only when an X event arrived, so animations lost their frames.
+- Every app starts with `FG_DICTATION` set, which gives the Linux build the phone's microphone
+  in the add field (`app/test_driver/main_marionette.dart`). A shot's `dictation` is the sentence
+  it hears: `test_driver/scripted_speech.dart` stands where the iOS and Android recognizers stand
+  and reports it word by word; everything after it is the app's real dictation. The app listens
+  in German in every language, so `voice-add` hears the same German sentence in both takes.
 - `capture/shots.ts` is what each video films; `capture/take.ts` runs one take and writes
   `<video>/footage/<lang>/` (not committed): one `.mkv` per member, `events.json` (every input on
   the recording clock), `take.json` (clock offsets, measured latencies, the real MCP results).
@@ -54,7 +59,7 @@ in the app or its design needs new takes.
 
 ## The test data
 
-- `add-tick`, `household-sync`: `test/fixtures/scenarios/demo-familie.yaml` and
+- `add-tick`, `household-sync`, `voice-add`: `test/fixtures/scenarios/demo-familie.yaml` and
   `demo-family-en.yaml`, the fictional Brandt family (Mia, Noah, Ida) with no store tags, so no
   retailer shows.
 - `mcp-chat`: `solo-long-list.yaml`, Sam in "Sams Wohnung". The take signs Sam in over the auth

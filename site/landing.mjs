@@ -12,6 +12,17 @@ import { signupForm } from './waitlist.mjs';
 const LOCALES = ['de', 'en'];
 const STATUSES = ['draft', 'reused'];
 const COMPACT = '(max-width: 37.5rem)';
+
+// Where each video's play button sits, wide and compact: over empty space or list filler, never
+// on the add field and its microphone (job 150). `br` bottom right, `bl` bottom left, `tr` top
+// right, `ur` right edge at 30 % (above the open add sheet), `mr` right edge below the middle.
+// Each was checked against every second of its videos at 1440 and 390 px.
+const TOGGLE = {
+  'add-tick': { wide: 'br', compact: 'ur' },
+  'household-sync': { wide: 'bl', compact: 'br' },
+  'voice-add': { wide: 'bl', compact: 'ur' },
+  'mcp-chat': { wide: 'tr', compact: 'mr' },
+};
 const DARK = '(prefers-color-scheme: dark)';
 
 export class CopyError extends Error {}
@@ -239,7 +250,9 @@ export function renderLanding({ locale, copy, config, publicDir, stage, consent 
       `<source src="${wideMp4}" type="video/mp4">`,
     ].join('');
     const label = locale === 'de' ? 'Deutsch' : 'English';
-    return `<figure class="media-frame demo" data-demo data-copy-id="demo.${slot}">${picture(media, alt, { hidden: true })}<video muted loop playsinline preload="none" controls aria-label="${escapeAttr(alt)}">${sources}<track kind="captions" srclang="${locale}" label="${label}" src="${media.video.captions}"></video><button type="button" class="demo-toggle" hidden data-play="${play}" data-pause="${pause}" aria-label="${play}"><span class="demo-toggle-face">${icon('play', 'icon-play')}${icon('pause', 'icon-pause')}</span></button></figure>`;
+    const toggle = TOGGLE[slot];
+    if (!toggle) throw new CopyError(`demo slot "${slot}" has no play button place in TOGGLE (landing.mjs)`);
+    return `<figure class="media-frame demo" data-demo data-copy-id="demo.${slot}" data-toggle-wide="${toggle.wide}" data-toggle-compact="${toggle.compact}">${picture(media, alt, { hidden: true })}<video muted loop playsinline preload="none" controls aria-label="${escapeAttr(alt)}">${sources}<track kind="captions" srclang="${locale}" label="${label}" src="${media.video.captions}"></video><button type="button" class="demo-toggle" hidden data-play="${play}" data-pause="${pause}" aria-label="${play}"><span class="demo-toggle-face">${icon('play', 'icon-play')}${icon('pause', 'icon-pause')}</span></button></figure>`;
   };
 
 
@@ -321,6 +334,13 @@ ${el('h2', 'voice.title', 'class="headline" id="voice-title"')}
 ${el('p', 'voice.lead', 'class="lead"')}
 </div>
 <div class="voice-grid">
+<article class="assistant assistant--app" aria-labelledby="voice-app">
+<div class="assistant-copy">
+${el('h3', 'voice.app.title', 'class="title" id="voice-app"')}
+${el('p', 'voice.app.body')}
+</div>
+${demo('voice-add')}
+</article>
 <article class="assistant assistant--ai" aria-labelledby="voice-ai">
 <div class="assistant-copy">
 ${el('h3', 'voice.ai.title', 'class="title" id="voice-ai"')}

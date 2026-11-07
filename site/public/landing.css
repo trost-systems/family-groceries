@@ -457,6 +457,36 @@
   cursor: pointer;
 }
 
+/* Each slot names a place for it (landing.mjs TOGGLE) that keeps the app's add field and its
+   microphone clear. */
+[data-toggle-wide="bl"] .demo-toggle {
+  right: auto;
+  left: var(--hl-space-3);
+}
+
+[data-toggle-wide="tr"] .demo-toggle {
+  top: var(--hl-space-3);
+  bottom: auto;
+}
+
+@media (max-width: 37.5rem) {
+  [data-toggle-compact] .demo-toggle {
+    inset: auto var(--hl-space-3) var(--hl-space-3) auto;
+  }
+
+  [data-toggle-compact="bl"] .demo-toggle {
+    inset: auto auto var(--hl-space-3) var(--hl-space-3);
+  }
+
+  [data-toggle-compact="ur"] .demo-toggle {
+    inset: 30% var(--hl-space-3) auto auto;
+  }
+
+  [data-toggle-compact="mr"] .demo-toggle {
+    inset: 62% var(--hl-space-3) auto auto;
+  }
+}
+
 .demo-toggle[hidden] {
   display: none;
 }
@@ -792,7 +822,8 @@
     order: 2;
   }
 
-  .assistant--ai {
+  .assistant--ai,
+  .assistant--app {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: var(--hl-space-6);
     align-items: center;

@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const VIDEOS = ['add-tick', 'household-sync', 'mcp-chat'];
+const VIDEOS = ['add-tick', 'household-sync', 'mcp-chat', 'voice-add'];
 const CUTS = ['de-wide', 'de-compact', 'en-wide', 'en-compact'];
 const kb = (b) => `${(b / 1024).toFixed(0)} KB`;
 

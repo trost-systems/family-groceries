@@ -53,6 +53,12 @@ pill above the floating tab pill (#278, #288), the add sheet confirms in its own
 - Compact fade starts 6 u lower (`fadeTop` [82, 130]) so the cut "Kühlregal" label above Vollmilch
   dissolves fully.
 
+## Re-take (job 150, 2026-11-06)
+
+Filmed again from main 02cc9da8 (job 148's floating top bar and hex Anpassen) with the
+microphone in the add field: the Linux capture build now starts with `FG_DICTATION`
+(`test_driver/main_marionette.dart`), so the field looks as on a phone. Same shots and timing.
+
 ## Kept warnings (hyperframes check)
 
 - `line_unread` on the last caption: it is the first caption again (loop seam), on screen for
@@ -65,23 +71,23 @@ pill above the floating tab pill (#278, #288), the add sheet confirms in its own
 <!-- report -->
 | Cut | File | Codec | Size | fps | Duration | Bytes | Audio |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.80 s | 1445 KB | none |
-| de-wide | add-tick-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.80 s | 510 KB | none |
-| de-wide | add-tick-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.80 s | 420 KB | none |
-| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.80 s | 1070 KB | none |
-| de-compact | add-tick-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.80 s | 409 KB | none |
-| de-compact | add-tick-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.80 s | 386 KB | none |
-| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.03 s | 1273 KB | none |
-| en-wide | add-tick-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.03 s | 431 KB | none |
-| en-wide | add-tick-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.03 s | 365 KB | none |
-| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.03 s | 904 KB | none |
-| en-compact | add-tick-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.03 s | 339 KB | none |
-| en-compact | add-tick-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.03 s | 330 KB | none |
+| de-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.20 s | 1425 KB | none |
+| de-wide | add-tick-de-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.20 s | 492 KB | none |
+| de-wide | add-tick-de-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.20 s | 419 KB | none |
+| de-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.20 s | 1026 KB | none |
+| de-compact | add-tick-de-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.20 s | 389 KB | none |
+| de-compact | add-tick-de-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.20 s | 388 KB | none |
+| en-wide | master (render) | h264 yuv420p | 1920x1080 | 30/1 | 11.20 s | 1182 KB | none |
+| en-wide | add-tick-en-wide.mp4 | h264 yuv420p | 1920x1080 | 30/1 | 11.20 s | 421 KB | none |
+| en-wide | add-tick-en-wide.webm | vp9 yuv420p | 1920x1080 | 30/1 | 11.20 s | 361 KB | none |
+| en-compact | master (render) | h264 yuv420p | 1080x1350 | 30/1 | 11.20 s | 853 KB | none |
+| en-compact | add-tick-en-compact.mp4 | h264 yuv420p | 1080x1350 | 30/1 | 11.20 s | 339 KB | none |
+| en-compact | add-tick-en-compact.webm | vp9 yuv420p | 1080x1350 | 30/1 | 11.20 s | 322 KB | none |
 
 | Cut | Seam SSIM (first vs last frame) | Poster | Poster at |
 | --- | --- | --- | --- |
-| de-wide | 0.9970 | add-tick-de-wide.webp, 28 KB | 7.67 s |
-| de-compact | 0.9970 | add-tick-de-compact.webp, 29 KB | 7.67 s |
-| en-wide | 0.9970 | add-tick-en-wide.webp, 26 KB | 7.23 s |
-| en-compact | 0.9971 | add-tick-en-compact.webp, 26 KB | 7.23 s |
+| de-wide | 0.9969 | add-tick-de-wide.webp, 30 KB | 7.47 s |
+| de-compact | 0.9971 | add-tick-de-compact.webp, 30 KB | 7.47 s |
+| en-wide | 0.9968 | add-tick-en-wide.webp, 28 KB | 7.27 s |
+| en-compact | 0.9970 | add-tick-en-compact.webp, 27 KB | 7.27 s |
 <!-- /report -->

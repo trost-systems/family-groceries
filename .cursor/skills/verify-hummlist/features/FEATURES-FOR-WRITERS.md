@@ -178,7 +178,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 ## Dictation
 
-**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. Brand and details are read out as when typing: „Windeln Pampers Größe 3“ adds Windeln with the brand Pampers and the detail Größe 3. It then shows a short message with what it added. One sentence takes up to 30 items; with more, the first 30 are added and the message asks to say the rest again.
+**What it does.** In the iPhone and Android apps, a microphone next to the add bar lets people speak what they need. Hummlist listens in German, on the phone only, so the voice never goes to a server. The words appear as they are spoken, the latest always in view, and, when the person pauses, Hummlist splits the sentence into separate items ("Milch, zwei Gurken und Klopapier") and adds them. An amount said after the item counts too: „Gurken zwei“ adds 2 Gurken. Brand and details are read out as when typing: „Windeln Pampers Größe 3“ adds Windeln with the brand Pampers and the detail Größe 3. It then shows a short message with what it added. One sentence takes up to 30 items; with more, the first 30 are added and the message asks to say the rest again.
 
 **How to get there.**
 1. Open the Hummlist app on an iPhone or Android phone, on the „Liste“ (EN: "List") tab.
@@ -194,7 +194,9 @@ What Hummlist does today, in plain words, with the exact button and screen label
 
 **Unverified.** Behaviour on real devices (permission prompts, recognizer) was read from code, not run.
 
-**Last verified.** main 6da42673, 2026-11-06 (CET), from code, and the server side driven over HTTP on the local stack: brand and details split („Windeln Pampers Größe 3, Big Pack“), „Gurken zwei“, more than 30 items. The microphone needs a phone: unverified. Recipe: [dictation.md](./dictation.md).
+**Shown on hummlist.com.** The landing page's "In der App" / "In the app" card has a video of it (job 150): the real app with a scripted recognizer, „Pizza, Orangensaft und zwei Packungen Fischstäbchen“ landing under Getränke and Tiefkühl. The English video shows the same German sentence, because the app listens in German.
+
+**Last verified.** job 150 branch on main 02cc9da8, 2026-11-06 (CET): the microphone, the listening state, the words following in the field and the add with its message driven in the Linux app with a scripted recognizer (the rest of the path is the app's real code, the splitter on the local stack). Earlier (main 6da42673): brand and details split („Windeln Pampers Größe 3, Big Pack“), „Gurken zwei“, more than 30 items over HTTP. A phone's own recognizer and prompts: unverified. Recipe: [dictation.md](./dictation.md).
 
 ## Ticking items, "Zuletzt verwendet" and undo
 

@@ -2096,3 +2096,13 @@ and Chromium were stopped for most of a 10 s wait. All 11 such attempts printed 
 
 To close: close #78 and #79 with a link to the PR. If either one fails again without a
 `[host-stall]` line in the failing attempt, reopen it with the run log.
+## Job 150: site videos with the microphone (2026-11-06)
+
+- **Phone check of the loops.** As for job 54: watch the four loops on a phone at real speed
+  (landing page, both languages), especially the new voice-add card.
+- **English video hears German (your call).** The app's dictation listens in German in every
+  language, so the English voice-add cut shows the German sentence with "Hummlist listens in
+  German." (DECISIONS "Job 150" 3). The other way is English dictation in the app (its own job),
+  then a re-take with an English sentence.
+- **Copy.** New strings are drafts in `site/COPY_NEEDED.md` (voice.app.*, demo.voice-add,
+  voice-add.*) for Hummlist Launch; voice.siri.now lost its in-app sentence to the new card.

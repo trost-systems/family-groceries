@@ -30,9 +30,11 @@ export interface SplitItem extends ParsedItem {
   properties: string | null;
   /** The store add_item would pick (remembered, the brand's, drugstore items to dm), by id. */
   storeId: string | null;
+  /** The category the insert trigger will pick (classify_item), by id, so the app shows the row there at once (job 150). */
+  categoryId: string | null;
 }
 
-export interface Added extends Omit<SplitItem, 'storeId'> {
+export interface Added extends Omit<SplitItem, 'storeId' | 'categoryId'> {
   /** The category the classifier picked, by name. */
   category: string;
   /** True when the item was active already and nothing was added. */

@@ -462,6 +462,9 @@ class SupabaseListRepository(
               properties: item['properties'] as String?,
               quantity: quantity,
               storeId: item['storeId'] as String?,
+              // The server's category, so the row lands in it before the
+              // insert trigger confirms (job 150); older functions omit it.
+              categoryId: item['categoryId'] as String?,
             ),
       ];
       return (

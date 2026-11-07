@@ -18,6 +18,8 @@ function member(c: Clients, name: string): Client {
 export interface Shot {
   scenario: Record<Lang, string>;
   members: string[];
+  /** The sentence each member's microphone hears (empty: it hears nothing). */
+  dictation?: Record<Lang, string>;
   prepare?(s: Session, c: Clients, lang: Lang): Promise<void>;
   film(s: Session, c: Clients, lang: Lang): Promise<Record<string, unknown> | void>;
 }
@@ -26,6 +28,13 @@ const items = {
   addTick: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
   sync: { de: 'Eier', en: 'Eggs' },
   mcp: { de: ['Honig', 'Marmelade'], en: ['Honey', 'Jam'] },
+  // The app listens in German in either language (lib/list/dictation.dart), so the English take
+  // hears the German sentence too.
+  voice: {
+    said: 'Pizza, Orangensaft und zwei Packungen Fischstäbchen',
+    rows: ['Orangensaft', 'Pizza', 'Fischstäbchen'],
+    added: { de: 'Hinzugefügt', en: 'Added' },
+  },
 } as const;
 
 /** A value take.ts sets from the local stack before any shot runs. */
@@ -71,10 +80,11 @@ async function mcpClient(c: Client) {
   };
 }
 
-/** Seconds from `since` until `client` shows (or, with gone, stops showing) `text`. */
-async function until(s: Session, c: Client, text: string, since: number, isGone = false) {
-  if (isGone) await gone(c, { text }, 20_000);
-  else await find(c, { text }, 20_000);
+/** Seconds from `since` until `client` shows (or, with gone, stops showing) `text`; `part` matches inside a longer text. */
+async function until(s: Session, c: Client, text: string, since: number, isGone = false, part = false) {
+  const target = part ? { contains: text } : { text };
+  if (isGone) await gone(c, target, 20_000);
+  else await find(c, target, 20_000);
   const ms = performance.timeOrigin + performance.now() - since;
   s.mark(c.name, `${isGone ? 'gone' : 'shown'} ${text} after ${Math.round(ms)} ms (Marionette poll)`);
   return Math.round(ms);
@@ -151,13 +161,59 @@ export const shots: Record<string, Shot> = {
       return { addToNoahMs: toNoah, addToIdaMs: toIda, tickToMiaMs: goneMia, tickToIdaMs: goneIda };
     },
   },
+  'voice-add': {
+    scenario: { de: 'demo-familie', en: 'demo-family-en' },
+    members: ['mia'],
+    dictation: { de: items.voice.said, en: items.voice.said },
+    async prepare(s, c, lang) {
+      const mia = member(c, 'mia');
+      // The drinks and the frozen section sit right above the add field, where the new rows land.
+      await s.scrollUntil(mia, { text: lang === 'de' ? 'Schokolade' : 'Cookies' }, 210);
+      // One item bought before filming: "Zuletzt verwendet" is there from the first frame, so the
+      // three ticks at the end don't add it and the loop's last frame matches its first.
+      const bought = lang === 'de' ? 'Zahnpasta' : 'Toothpaste';
+      await s.tap(mia, { text: bought }, { dx: 150 });
+      await gone(mia, { text: bought });
+      await sleep(1500);
+    },
+    async film(s, c, lang) {
+      const mia = member(c, 'mia');
+      // Located once: a lookup between the taps would delay the stop by a second or more.
+      const b = await find(mia, { key: 'dictation-button' });
+      const button = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+      await sleep(1500);
+      s.mark('mia', 'mic');
+      await s.tap(mia, button);
+      const tapped = now();
+      // The sentence takes about 2.4 s (scripted_speech.dart); then she taps the red stop button
+      // instead of waiting out the recognizer's 3 s pause.
+      await sleep(3300);
+      s.mark('mia', 'stop');
+      await s.tap(mia, button);
+      // The app's own message after the add; until then the field holds the words.
+      const shown = await until(s, mia, items.voice.added[lang], tapped, false, true);
+      const rows = await Promise.all(items.voice.rows.map((n) => find(mia, { contains: n })));
+      const newRows = { top: Math.min(...rows.map((r) => r.y)), bottom: Math.max(...rows.map((r) => r.y + r.height)) };
+      await sleep(2400);
+      s.mark('mia', 'tick');
+      // Bottom up, so no row moves under the finger before its tap.
+      for (const row of [...rows].sort((a, b) => b.y - a.y)) {
+        await s.tap(mia, { x: row.x + 150, y: row.y + row.height / 2 });
+        await sleep(550);
+      }
+      await sleep(2000);
+      s.mark('mia', 'end');
+      return { addedMessageMs: shown, newRows, said: items.voice.said, added: items.voice.added[lang] };
+    },
+  },
   'mcp-chat': {
     scenario: { de: 'solo-long-list', en: 'solo-long-list' },
     members: ['sam'],
     async prepare(s, c) {
       const sam = member(c, 'sam');
-      // Sam looks at the pantry rows without a store, where new pantry items land.
-      await s.scrollUntil(sam, { text: 'Ketchup' }, 300);
+      // Sam looks at the pantry rows without a store, where new pantry items land; scrolled only
+      // so far that they land just above the add field, so the compact crop holds both.
+      await s.scrollUntil(sam, { text: 'Ketchup' }, 520);
     },
     async film(s, c, lang) {
       const sam = member(c, 'sam');

@@ -156,6 +156,41 @@ void main() {
     );
   });
 
+  test(
+    'a dictated item shows in the category the server will give it, '
+    'and an older voice function leaves it to the server (job 150)',
+    () async {
+      final repo = answering(200, {
+        'speech': 'Verstanden: Pizza, Orangensaft.',
+        'items': [
+          {
+            'name': 'Pizza',
+            'brand': null,
+            'properties': null,
+            'quantity': null,
+            'storeId': null,
+            'categoryId': 'frozen',
+          },
+          {
+            'name': 'Orangensaft',
+            'brand': null,
+            'properties': null,
+            'quantity': null,
+            'storeId': null,
+          },
+        ],
+        'truncated': false,
+      });
+      final (:entries, truncated: _) = await repo.splitSpoken(
+        'Pizza und Orangensaft',
+      );
+      expect(entries.map((e) => (e.name, e.categoryId)), [
+        ('Pizza', 'frozen'),
+        ('Orangensaft', null),
+      ]);
+    },
+  );
+
   test('dictation asks the voice function for the split', () async {
     Object? sent;
     final repo = SupabaseListRepository(

@@ -173,6 +173,16 @@ voice.lead:
   en: "Hands full of bags or dough on your fingers? Just speak, and it's on the list."
   status: draft
   source: "6b prototype; English new."
+voice.app.title:
+  de: "In der App"
+  en: "In the app"
+  status: draft
+  source: "New (job 150): card of the in-app dictation video."
+voice.app.body:
+  de: "In der iPhone- und Android-App tippst du auf das Mikrofon im Eingabefeld und sagst, was fehlt. Hummlist hört direkt auf dem Handy zu, auf Deutsch, und sortiert jedes Teil in seine Kategorie."
+  en: "In the iPhone and Android app, tap the microphone in the input field and say what you need. Hummlist listens right on your phone, in German, and sorts each item into its category."
+  status: draft
+  source: "New (job 150), from FEATURES-FOR-WRITERS \"Dictation\": iPhone and Android app only, German, on the device; the splitting needs a connection. Replaces the Siri card's in-app sentence."
 voice.ai.title:
   de: "Mit KI-Assistenten"
   en: "With AI assistants"
@@ -189,10 +199,10 @@ voice.siri.title:
   status: draft
   source: "6b prototype; English new."
 voice.siri.now:
-  de: "Mit einem [Kurzbefehl](/de/anleitungen/siri-kurzbefehl) setzt Siri es auf die Liste. In der App diktierst du direkt ins Eingabefeld."
-  en: "With a [shortcut](/en/guides/siri-shortcut), Siri puts it on the list. In the app you dictate straight into the input field."
+  de: "Mit einem [Kurzbefehl](/de/anleitungen/siri-kurzbefehl) setzt Siri es auf die Liste."
+  en: "With a [shortcut](/en/guides/siri-shortcut), Siri puts it on the list."
   status: draft
-  source: "Job 82 Addendum 7: no „bald“/\"soon\" promise; the Shortcut works today."
+  source: "Job 82 Addendum 7: no „bald“/\"soon\" promise; the Shortcut works today. Job 150: the in-app sentence moved to voice.app.body, the card with the dictation video."
 
 privacy.title:
   de: "Eure Liste bleibt eure Sache."
@@ -272,6 +282,11 @@ demo.household-sync:
   en: "Silent video: three phones of the Brandt family. Mia puts eggs on the list; less than a second later they are on Noah’s and Ida’s phones, with the note “1 new from Mia Brandt”. Noah ticks them off, and they disappear for everyone."
   status: draft
   source: "Job 54: text alternative of the household-sync video; job 146 re-filmed it after the UI changes; under a second is the measured sync time of the takes (0.58 to 0.80 s)."
+demo.voice-add:
+  de: "Video ohne Ton: Mia tippt auf das Mikrofon im Eingabefeld der Hummlist-App und sagt „Pizza, Orangensaft und zwei Packungen Fischstäbchen“. Die Wörter erscheinen im Feld, während sie spricht. Sie tippt auf Stopp, und gleich darauf stehen Orangensaft unter Getränke und Pizza und 2 Packungen Fischstäbchen unter Tiefkühl. Im Laden hakt sie alle drei ab."
+  en: "Silent video: Mia taps the microphone in the Hummlist app’s input field and says, in German, “Pizza, Orangensaft und zwei Packungen Fischstäbchen” (pizza, orange juice and two packs of fish fingers). The words appear in the field as she speaks. She taps stop, and right after, Orangensaft is under Drinks and Pizza and 2 Packungen Fischstäbchen under Frozen. In the store she ticks all three off."
+  status: draft
+  source: "Job 150: text alternative of the voice-add video; matches its take (marketing/videos/capture/shots.ts). The app listens in German in every language."
 demo.mcp-chat:
   de: "Video ohne Ton: Ein KI-Chat bekommt „Schreib Honig und Marmelade auf“. Hummlist meldet beide unter Vorrat & Konserven, und sie erscheinen in der App. Per Sprache folgt „Hab beides gekauft, hak es ab“, und beide verschwinden wieder."
   en: "Silent video: an AI chat gets “Put honey and jam on the list”. Hummlist reports both under Pantry, and they appear in the app. By voice follows “Bought both, tick them off”, and both disappear again."
