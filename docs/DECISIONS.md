@@ -9212,3 +9212,58 @@ Pinned tools now come from the Actions cache; their downloads, Deno's and the PG
    (run 42154588914) and also on main (run 42185909564), so only the pinned runs separate them.
    This job changes no code. The proof is in `docs/done/143-fix-premium-yearly-json.md`. #260
    landed as 5062100c and closed #265.
+
+## Job 154: hill-climb hc-design-v2 (app and web, frozen rubric, blind council), 2026-11-07
+
+1. **No separate site repo.** The brief names a "hummlist-site repo"; the site lives in `site/` of
+   this repo. Two branches and PRs here: `job/154-hc-design-v2-app` (only `app/`) and
+   `job/154-hc-design-v2-web` (only `site/public/*.css`), each with its own attempt log.
+2. **Judging stays outside the repo.** Rubric, prompts, the council runner, the screenshot capture
+   and the guards live in the job's ops directory. The repo gets the attempt logs
+   `docs/hillclimb/hc-design-v2-{app,web}.md` (numbers only) and the code and golden changes.
+3. **App screenshots come from the golden render path** with a harness-private test file that is
+   copied in for one run and removed. It loads Noto Color Emoji as the fallback a device's system
+   provides (flutter_tester runs with `--use-test-fonts`, so a glyph no named font has draws as a
+   box) and drops the debug banner a release build does not show, through a private copy of
+   `pumpMore` with `hcTheme`. Found by the first smoke council (category icons as boxes, banner,
+   the test's own "open" button behind the edit sheet); fixed before the freeze.
+4. **Known harness gap, kept frozen:** More, settings and stores are pumped without the shell, so
+   the pill tab bar is missing in those shots; judges note it under consistency/layout. It is the
+   same in both versions of every pairwise comparison, so it does not bias keeps; it lowers the
+   absolute app score by an unknown amount.
+5. **Text 150 % on the web** is the browser's default font size raised from 16 to 24 px (CDP
+   `Page.setFontSizes`), the reader setting rem-based CSS follows. A full-page screenshot resets
+   it, so those tiles are viewport screenshots after scrolling; the capture asserts the root font
+   size before shooting.
+6. **Keep floor** is the best kept state's absolute minimum minus the band (app band 1, web 0.5),
+   where the baseline's reference is the median of its three runs.
+7. **crawl.mjs and contrast.mjs in the web guard run under `/tmp/fg-hc-measure.lock`**, not the
+   e2e lock: they are short page loads like the capture, and the e2e lock was held by another
+   job's 40-minute run. The CI site gate still runs them.
+8. **Per-step commits.** Each kept step is its own commit on the branch (brief). Before the
+   final push `scripts/push-pr.sh` squashes the PR into the one commit main takes; the per-step
+   history stays on the pushed branch `job/154-hc-design-v2-{app,web}-steps`.
+9. **The 615xx port block is not used**: no Supabase stack is needed (goldens and a static site
+   build), and job 150 had announced the same block.
+10. **Hypothesis a4 dropped unmeasured.** Judges said list rows scroll under an unbacked status
+    bar. The list already paints a surface strip over the top inset and login sits in a SafeArea;
+    the rows look cut because the harness draws no clock. Fidelity gap of the frozen harness,
+    not an app defect, so no change was made.
+11. **Step a9 kept with a semantics fix made after the measurement.** The error icon moved field
+    errors from `errorText` to an error widget, which drops the message from the text field's own
+    semantics hint (a screen reader focusing the field no longer heard it). Each field now sets
+    `Semantics(hint:)` itself, as `InputDecorator` does for `errorText`; all 44 harness shots
+    rendered byte-identical before and after the fix.
+12. **Step a11 kept on a 3-1 aspect vote** (accessibility, iconography, consistency for the
+    candidate; hierarchy for the baseline: the hex keys add weight to every store header). The
+    frozen rule keeps it; the trade-off is in the log for the lead.
+13. **Web w4/w5 attribution.** The w4 delegate halved one padding line after w4 was measured and
+    before it was committed; w5's measurement was the first to include it. The final tree is
+    measured as a whole either way. Later delegates write a done marker that the runner waits for.
+14. **The web branch was rebased onto main after #290** (landing store chips; `waitlist.css`
+    conflict resolved to the hex tiles, keeping main's 320 px reason). One absolute run of the
+    rebased head (7, mean 7.33) became the pairwise reference for the later steps.
+15. **App renders are not re-entrant per worktree.** `render-app.sh` copies its test file into
+    the repo outside the capture lock, so two parallel renders of one worktree delete each
+    other's file; such runs fail with score 0 (no wrong score). Final runs were made one after
+    another.

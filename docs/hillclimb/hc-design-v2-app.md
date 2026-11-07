@@ -57,3 +57,23 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **a12** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 5, accessibility 5, iconography 7, empty_error_states 7; pairwise typography cand, hierarchy cand, color_contrast cand, layout cand, consistency cand, empty_error_states cand; seeds [1896992073, 3412467248, 566282466].
 - **a13** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 8; pairwise spacing cand, accessibility cand; seeds [189715346, 1116966773, 3907225711].
 
+## Final
+
+Branch head `00c864af`, three absolute runs like the baseline: minimum [5, 5, 6], mean [5.889, 6.222, 6.333]. Score (median) **5** (baseline 4, band 1); mean of aspect medians 6.222 (baseline 5.333).
+
+| aspect | baseline (median of 3 runs) | final (median of 3 runs) |
+|---|---|---|
+| typography | 5 | 6 |
+| hierarchy | 6 | 6 |
+| color_contrast | 6 | 7 |
+| spacing | 5 | 6 |
+| layout | 5 | 6 |
+| consistency | 5 | 6 |
+| accessibility | 4 | 5 |
+| iconography | 6 | 6 |
+| empty_error_states | 6 | 8 |
+
+## Stop
+
+Step budget reached: 12 measured steps (a1-a3, a5-a13; a4 dropped before measuring, see its row), 11 kept, 1 reverted, about 4 h 20 min of the 6 h, weekly usage 36 %. A blind pairwise of the baseline shots against the final shots (seeds [651835787, 4179272943, 576477151]) prefers the final state on all 9 aspects. Floors left: layout and accessibility at 5. Most of their remaining reasons are harness fidelity (no status bar or clock drawn, More/settings/stores rendered without the pill tab bar) or out of scope (the floating Anpassen pill over the store header at 150 %, which another PR is changing; the stadium-shaped Google/Apple buttons, which follow those brands' rules).
+
