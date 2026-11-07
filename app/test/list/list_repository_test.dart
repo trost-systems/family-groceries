@@ -48,15 +48,112 @@ void main() {
     );
   });
 
-  test('a JWT error is not a rejection, so the op stays queued', () async {
-    for (final code in ['PGRST301', 'PGRST303']) {
-      final repo = answering(401, {'code': code, 'message': 'JWT expired'});
+  group('the server in trouble is no rejection, so the op stays queued '
+      '(job 161)', () {
+    /// A repository whose every answer is [status] with a plain [body].
+    SupabaseListRepository plain(int status, String body) =>
+        SupabaseListRepository(
+          SupabaseClient(
+            'http://127.0.0.1:1',
+            'sb_publishable_test',
+            httpClient: MockClient(
+              (request) async => http.Response(
+                body,
+                status,
+                headers: {'content-type': 'text/plain'},
+                request: request,
+              ),
+            ),
+          ),
+          'household',
+        );
+
+    const trouble = {
+      'PGRST301': 401, // JWT expired
+      'PGRST303': 401,
+      'PGRST000': 503, // no database connection
+      'PGRST002': 503,
+      '08006': 503, // connection failure
+      '40001': 500, // serialization failure
+      '40P01': 500, // deadlock
+      '53300': 503, // too many connections
+      '57014': 500, // statement timeout
+      '57P01': 503, // admin shutdown
+      '58030': 500, // io error
+      'XX000': 500, // internal error
+    };
+    const refusals = {
+      '23505': 409, // unique violation
+      '42501': 403, // row-level security
+      'P0001': 400, // raised by a function
+      '22001': 400, // value too long
+      'PGRST116': 406, // not one row
+      'PGRST204': 400, // unknown column
+    };
+
+    test('PostgREST codes and SQLSTATEs', () async {
+      for (final MapEntry(key: code, value: status) in trouble.entries) {
+        await expectLater(
+          answering(status, {'code': code, 'message': 'trouble'}).send(add),
+          throwsA(isA<ServerTrouble>()),
+          reason: code,
+        );
+      }
+      for (final MapEntry(key: code, value: status) in refusals.entries) {
+        await expectLater(
+          answering(status, {'code': code, 'message': 'no'}).send(add),
+          throwsA(isA<RejectedOp>()),
+          reason: code,
+        );
+      }
+    });
+
+    test('a 5xx with no PostgREST body, as a gateway sends', () async {
+      for (final status in [500, 502, 503, 504]) {
+        await expectLater(
+          plain(status, 'Service Unavailable').send(add),
+          throwsA(isA<ServerTrouble>()),
+          reason: '$status',
+        );
+      }
+      await expectLater(
+        plain(404, 'Not Found').send(add),
+        throwsA(isA<RejectedOp>()),
+      );
+    });
+
+    test('reads map the same way, and a refused read stays an error, not '
+        'trouble', () async {
+      final down = plain(503, 'Service Unavailable');
+      await expectLater(down.fetchItems(), throwsA(isA<ServerTrouble>()));
+      await expectLater(down.fetchCatalog(), throwsA(isA<ServerTrouble>()));
+      await expectLater(down.parse('Milch'), throwsA(isA<ServerTrouble>()));
+      await expectLater(
+        answering(403, {'code': '42501', 'message': 'no'}).fetchItems(),
+        throwsA(isA<PostgrestException>()),
+      );
+    });
+
+    test('no answer at all is neither: the list is offline', () async {
+      final repo = SupabaseListRepository(
+        SupabaseClient(
+          'http://127.0.0.1:1',
+          'sb_publishable_test',
+          httpClient: MockClient(
+            (request) async => throw http.ClientException('refused'),
+          ),
+        ),
+        'household',
+      );
       await expectLater(
         repo.send(add),
-        throwsA(isA<PostgrestException>().having((e) => e.code, 'code', code)),
-        reason: code,
+        throwsA(allOf(isNot(isA<ServerTrouble>()), isNot(isA<RejectedOp>()))),
       );
-    }
+      await expectLater(
+        repo.fetchItems(),
+        throwsA(isNot(isA<ServerTrouble>())),
+      );
+    });
   });
 
   group('an add answers with the row it is (put_item, job 64b)', () {
@@ -1018,6 +1115,10 @@ void main() {
       test('fails when the endpoint does', () async {
         await expectLater(
           server((_) => (500, {'error': 'boom'})).splitSpoken('Milch'),
+          throwsA(isA<ServerTrouble>()),
+        );
+        await expectLater(
+          server((_) => (400, {'error': 'bad'})).splitSpoken('Milch'),
           throwsA(isA<FunctionException>()),
         );
       });

@@ -8,7 +8,9 @@ import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/quantity.dart';
 
 /// An in-memory server. [online] false makes every call fail like a dropped
-/// connection; [reject] makes the next write fail like a refused one.
+/// connection; [reject] makes the next write fail like a refused one;
+/// [sendTrouble] and [fetchTrouble] make item writes and list reads fail
+/// like a server in trouble (a 5xx).
 /// Writes come from [me]; [remoteAdd] is Lea's by default.
 ///
 /// Stores: Lidl walks the route backwards; dm does not carry produce or
@@ -61,6 +63,8 @@ class FakeRepository() implements ListRepository {
   final catalogCalls = <String>[];
   var online = true;
   var reject = false;
+  var sendTrouble = false;
+  var fetchTrouble = false;
   var _clock = DateTime.utc(2026, 10, 22, 12);
   void Function(Item item)? emitItem;
 
@@ -103,9 +107,16 @@ class FakeRepository() implements ListRepository {
     }
   }
 
+  void _ensureFetchable() {
+    if (fetchTrouble) {
+      throw const ServerTrouble('503');
+    }
+  }
+
   @override
   Future<Catalog> fetchCatalog() async {
     _ensureOnline();
+    _ensureFetchable();
     await catalogGate?.future;
     return Catalog(
       categories: categories,
@@ -259,6 +270,7 @@ class FakeRepository() implements ListRepository {
   @override
   Future<List<Item>> fetchItems() async {
     _ensureOnline();
+    _ensureFetchable();
     await itemsGate?.future;
     return rows.values.toList();
   }
@@ -282,6 +294,9 @@ class FakeRepository() implements ListRepository {
   Future<Map<String, Item?>> send(ItemOp sentOp) async {
     await gate?.future;
     _ensureOnline();
+    if (sendTrouble) {
+      throw const ServerTrouble('503');
+    }
     beforeSend?.call(sentOp);
     if (reject) {
       reject = false;

@@ -1300,8 +1300,8 @@ void main() {
 
   group('the bar above the list', () {
     Finder header() => find.byKey(const ValueKey('list-header'));
-    Finder syncIcon(IconData icon) =>
-        find.descendant(of: header(), matching: find.byIcon(icon));
+    Finder indicator() => find.byKey(const ValueKey('sync-indicator'));
+    Finder pill() => find.byKey(const ValueKey('sync-pill'));
 
     /// The cubit's stream answers a microtask later: one frame to see it,
     /// one to build it.
@@ -1338,24 +1338,28 @@ void main() {
       }
 
       same('synced');
-      expect(syncIcon(Icons.cloud_upload_outlined), findsNothing);
-      expect(syncIcon(Icons.cloud_off), findsNothing);
+      expect(indicator(), findsNothing);
+      expect(pill(), findsNothing);
 
       final held = repo.gate = Completer<void>();
       cubit.tick(repo.rows.values.firstWhere((i) => i.name == 'Milch').id);
       await frames(tester);
-      expect(syncIcon(Icons.cloud_upload_outlined), findsOneWidget);
+      expect(indicator(), findsNothing, reason: 'pending online: nothing');
       same('pending');
 
       repo.online = false;
       repo.emitStatus!(ConnectionStatus.offline);
       await frames(tester);
-      expect(syncIcon(Icons.cloud_off), findsOneWidget);
+      expect(indicator(), findsOneWidget);
       same('offline with a pending change');
+      await tester.pump(const Duration(seconds: 4));
+      expect(pill(), findsOneWidget);
+      same('offline, collapsed');
 
       repo.emitStatus!(ConnectionStatus.connecting);
       await frames(tester);
-      expect(syncIcon(Icons.cloud_upload_outlined), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+      expect(pill(), findsNothing);
       same('reconnecting with a pending change');
 
       repo
@@ -1366,8 +1370,8 @@ void main() {
       await frames(tester);
       await tester.pump(const Duration(seconds: 1));
       expect(cubit.state.pending, isEmpty);
-      expect(syncIcon(Icons.cloud_upload_outlined), findsNothing);
-      expect(syncIcon(Icons.cloud_off), findsNothing);
+      expect(indicator(), findsNothing);
+      expect(pill(), findsNothing);
       same('synced again');
 
       repo.emitItem!(repo.remoteAdd('Tee'));
@@ -1376,13 +1380,13 @@ void main() {
       same('a partner add');
       repo.emitStatus!(ConnectionStatus.offline);
       await frames(tester);
-      expect(syncIcon(Icons.cloud_off), findsOneWidget);
+      expect(indicator(), findsOneWidget);
       same('a partner add, offline');
       await tester.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('Anpassen stands alone; the sync icon and new adds get '
-        'their own capsule beside it', (tester) async {
+    testWidgets('Anpassen stands alone; new adds get their own capsule '
+        'beside it, and the sync pill keeps clear of both', (tester) async {
       phone(tester);
       await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
       final edit = find.byKey(const ValueKey('list-edit'));
@@ -1391,20 +1395,26 @@ void main() {
 
       repo.emitStatus!(ConnectionStatus.offline);
       await frames(tester);
-      expect(
-        find.descendant(of: status, matching: find.byIcon(Icons.cloud_off)),
-        findsOneWidget,
-      );
+      expect(status, findsNothing, reason: 'offline is the indicator’s');
+      repo.emitItem!(repo.remoteAdd('Tee'));
+      await tester.pump(const Duration(seconds: 4));
       expect(find.descendant(of: status, matching: edit), findsNothing);
       expect(
         tester.getRect(status).right,
         lessThanOrEqualTo(tester.getRect(edit).left),
         reason: 'beside Anpassen, before it',
       );
+      expect(find.descendant(of: header(), matching: pill()), findsNothing);
+      expect(
+        tester.getRect(pill()).right,
+        lessThanOrEqualTo(tester.getRect(status).left),
+        reason: 'the pill sits left of the capsule',
+      );
 
       repo.emitStatus!(ConnectionStatus.online);
       await frames(tester);
-      expect(status, findsNothing);
+      await tester.pump(const Duration(seconds: 1));
+      expect(pill(), findsNothing);
       await tester.pump(const Duration(seconds: 4));
     });
 

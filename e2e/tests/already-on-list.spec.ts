@@ -2,7 +2,7 @@
 // name) shows the open item instead of vanishing: an offline add replayed after another phone added
 // the same item. (The undone delete case left with the sheet's Löschen, job 149.)
 import { expect, test } from './fixtures';
-import { addItem, apiAs, cutOff, itemRow, newEmail, signUpWithHousehold, tick } from './helpers';
+import { addItem, apiAs, cutOff, itemRow, newEmail, offlineIndicator, signUpWithHousehold, tick } from './helpers';
 
 async function otherPhone(email: string) {
   const api = await apiAs(email);
@@ -31,7 +31,7 @@ test('an offline add and tick replayed after another phone added the item tick t
   await connection.restore();
   await expect.poll(() => phone.items(), { message: 'the queued add and tick reach the server', timeout: 20_000 })
     .toEqual([{ name: 'Brot', status: 'active' }, { name: 'Butter', status: 'bought' }]);
-  await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
+  await expect(offlineIndicator(page)).toHaveCount(0, { timeout: 15_000 });
   await expect(itemRow(page, 'Brot')).toBeVisible();
   await expect(itemRow(page, 'Butter'), 'the tick made offline ticked the Butter that was there').toHaveCount(0);
 });

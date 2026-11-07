@@ -9800,3 +9800,37 @@ Baumarkt off the landing page because the app had no hardware categories.
     -tips, -pflege), those two foods, Pfannenwender and Wechselrahmen are listed now, with word-list
     rows; Nagel, Nägel, Stahlnägel and Drahtstifte stay Schrauben & Befestigung. A plain „Rahmen“
     still reads as Rahm (Kühlregal): both have the key `rahm`, as before this job.
+
+## Job 161: the sync indicator S2-C3F2 in the app, 2026-11-07
+
+1. **Peter picked S2-C3F2 (Q97), not job 157's top pick S2-C3F3.** The floating hex card says
+   the whole sentence for offline and for sync failing. After 3 s, or at once on a scroll of the
+   list or a swipe up on the card, it collapses into a compact hex pill at the top left of the
+   list's bar, left of Anpassen. A tap on the pill opens the card again; offline, a tap on the
+   open card closes it. While failing, a tap on either form retries: success hides it (screen
+   readers hear "Synchronisiert"), a failed retry leaves the pill with a nudge. Online shows
+   nothing, also while changes are on their way, so the old cloud_upload "pending" icon is gone
+   with the cloud_off icon. There is no "back online" confirmation.
+2. **"Failing" is a real state now.** Job 157 noted that the app had no failing signal: every
+   write that failed without a refusal made the list "offline". The repository now tells the
+   two apart at the boundary. No HTTP answer (a dropped connection, a timeout) stays offline. An
+   answer worth retrying is `ServerTrouble`: a 5xx, PostgREST's own PGRST0xx/PGRST3xx, and the
+   SQLSTATE classes that mean the server is in trouble (08, 40001, 40P01, 53, 57, 58, XX), and an
+   edge function's 5xx. `ListState.failing` holds while the last send or fetch failed that way.
+   Offline wins over failing. An acknowledged send clears it; a resync clears it only when
+   nothing is pending, so a server that keeps failing never flickers the card away and back
+   during the 3 s retries.
+3. **A 5xx no longer drops the change.** Before, `_refusable` turned every PostgREST error but
+   PGRST3xx into a refusal, so a 500 (a statement timeout under load) or a gateway 503 dropped
+   the op and said "Änderung abgelehnt". Those now stay queued and retry. 4xx refusals behave
+   as before.
+4. **The card's kind decides when it opens again.** Coming offline, or switching between
+   offline and failing, opens the card with a fresh 3 s; the same kind on the next retry never
+   reopens it. The indicator's phases (hidden, open, collapsed, busy) are one pure reducer, so
+   each transition has a unit test.
+5. **Anpassen stays as #296 left it.** Peter's "Balken" note was about the frame the prototype
+   still drew around Anpassen; main lost that frame in job 152. Anpassen keeps its place and its
+   one depth style; the new pill sits left of it and never wraps it, and the partner's "n neu"
+   capsule stays for that line only.
+6. **Reduced motion is a 200 ms crossfade**, as in the prototype: no scale or slide, and the
+   retry arrows pulse instead of spinning.

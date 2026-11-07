@@ -1,6 +1,7 @@
 // Goldens of key screens in the Hummlist theme (design job 52), light and
 // dark at a phone size, with the real fonts. After a deliberate look change:
 //   flutter test --update-goldens test/design/screens_golden_test.dart
+import 'dart:async';
 import 'dart:ui' show SemanticsHitTestBehavior;
 
 import 'package:bloc_test/bloc_test.dart';
@@ -12,10 +13,13 @@ import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
+import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/name_dialog.dart';
+import 'package:family_groceries/list/sync_indicator.dart';
 import 'package:family_groceries/more/app_update.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
@@ -88,12 +92,13 @@ const _longList = [
 
 /// The shell with List and More as the app builds it, a few items on the
 /// list, in [brightness].
-Future<void> _pumpShell(
+Future<FakeRepository> _pumpShell(
   WidgetTester tester,
   Brightness brightness, {
   Size size = _phone,
   bool empty = false,
   bool long = false,
+  Locale locale = const Locale('de'),
 
   /// The home indicator's or gesture bar's height.
   double inset = 0,
@@ -173,13 +178,14 @@ Future<void> _pumpShell(
           theme: appTheme(brightness),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('de'),
+          locale: locale,
           routerConfig: router,
         ),
       ),
     ),
   );
   await tester.pumpAndSettle();
+  return repo;
 }
 
 /// The sign-in screen with Google and Apple, the e-mail field focused.
@@ -463,6 +469,44 @@ void main() {
           matchesGoldenFile('goldens/name-dialog-keyboard-$lang-$mode.png'),
         );
       }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+    }
+
+    // Job 161: the sync indicator, open and collapsed into the bar.
+    for (final (lang, locale) in [
+      if (brightness == Brightness.light) ('de', const Locale('de')),
+      if (brightness == Brightness.dark) ('en', const Locale('en')),
+    ]) {
+      for (final kind in SyncTrouble.values) {
+        testWidgets('sync $kind, $lang, $mode', (tester) async {
+          final repo = await _pumpShell(tester, brightness, locale: locale);
+          final cubit = BlocProvider.of<ListCubit>(
+            tester.element(find.byKey(const ValueKey('list-header'))),
+          );
+          switch (kind) {
+            case SyncTrouble.offline:
+              repo
+                ..online = false
+                ..emitStatus!(ConnectionStatus.offline);
+            case SyncTrouble.failing:
+              repo.fetchTrouble = true;
+              unawaited(cubit.resync());
+          }
+          await tester.pump();
+          await tester.pumpAndSettle();
+          await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile('goldens/sync-${kind.name}-open-$lang-$mode.png'),
+          );
+          await tester.pump(SyncIndicator.peek);
+          await tester.pumpAndSettle();
+          await expectLater(
+            find.byType(MaterialApp),
+            matchesGoldenFile(
+              'goldens/sync-${kind.name}-collapsed-$lang-$mode.png',
+            ),
+          );
+        });
+      }
     }
 
     testWidgets('list, $mode', (tester) async {

@@ -52,7 +52,7 @@ try {
   await context.setOffline(true);
   const ticked = itemRow(page, partnerItem).first();
   await ticked.click();
-  await page.getByText(/^Offline:/).first().waitFor({ timeout: 20_000 }).catch(() => {});
+  await page.getByRole('button', { name: /^Offline:/ }).first().waitFor({ timeout: 20_000 }).catch(() => {});
   await page.waitForTimeout(800);
   log(`Anpassen box offline ${JSON.stringify(await edit.boundingBox())}`);
   await capture(page, dir, '03-top-bar-offline');

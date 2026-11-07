@@ -54,7 +54,7 @@ let failed = null;
 try {
   await signIn(page, L, user);
   await context.setOffline(true);
-  await page.getByText(/^Offline:/).first().waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.getByRole('button', { name: /^Offline:/ }).first().waitFor({ timeout: 15_000 }).catch(() => {});
   log(`offline as ${user.handle}; adding ${lines.length} lines`);
   await addAll({ online: false });
   await capture(page, dir, '01-added-offline');

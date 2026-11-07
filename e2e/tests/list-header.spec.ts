@@ -1,9 +1,10 @@
 import { expect, test, type Page } from './fixtures';
-import { addItem, boxOf, cutOff, itemRow, listBarHeight, newEmail, screenshot, signUpWithHousehold, tick } from './helpers';
+import { addItem, apiAs, boxOf, cutOff, failingIndicator, itemRow, listBarHeight, newEmail, offlineIndicator, screenshot, signUpWithHousehold, tick } from './helpers';
 
-/** The sync icon's accessible names: "1 Änderung wird synchronisiert" and "Offline: …". */
-const pending = (page: Page) => page.getByText(/^\d+ Änderung(en)? w(ird|erden) synchronisiert$/);
-const offline = (page: Page) => page.getByText(/^Offline:/);
+/** The sync indicator's accessible names; it shows nothing while online, even with changes in flight. */
+const offline = offlineIndicator;
+const failing = failingIndicator;
+const edit = (page: Page) => page.getByRole('button', { name: 'Anpassen', exact: true });
 
 test('the bar above the list keeps its height in every sync state and names no household or count', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('topbar'));
@@ -11,21 +12,21 @@ test('the bar above the list keeps its height in every sync state and names no h
   await addItem(page, 'Milch');
   await addItem(page, 'Seife');
   await expect(itemRow(page, 'Seife')).toBeVisible();
-  await expect(pending(page)).toHaveCount(0, { timeout: 15_000 });
 
   await expect(page.getByText('Unser Haushalt'), 'no household name').toHaveCount(0);
   await expect(page.getByText(/^\d+ Artikel$/), 'no item count').toHaveCount(0);
 
   // The explainer card is the list's first entry, right under the bar, and stays while items are ticked
-  // (a store divider would move when its last item goes). It must not move while the sync icon comes and goes.
+  // (a store divider would move when its last item goes). It must not move while the indicator comes and goes.
   const card = page.getByRole('button', { name: 'Verstanden', exact: true });
   const top = async () => (await boxOf(card)).y;
   const synced = await top();
+  const anpassen = await boxOf(edit(page));
   expect(synced, 'the list starts under the bar').toBeGreaterThan(listBarHeight);
   expect(synced, 'right under it').toBeLessThan(listBarHeight + 48);
   await screenshot(page, 'topbar-01-synced');
 
-  // Hold every item write until released: the tick stays pending.
+  // Hold every item write until released: the tick stays pending, and online that shows nothing.
   let release!: () => void;
   const held = new Promise<void>((resolve) => { release = resolve; });
   const items = '**/rest/v1/items**';
@@ -34,23 +35,72 @@ test('the bar above the list keeps its height in every sync state and names no h
     await route.fallback();
   });
   await tick(page, 'Milch');
-  await expect(pending(page), 'the pending icon shows').toHaveCount(1);
-  expect(await top(), 'pending: the list did not move').toBe(synced);
-  await screenshot(page, 'topbar-02-pending');
-
+  await page.waitForTimeout(1_000);
+  await expect(offline(page), 'pending online: no indicator').toHaveCount(0);
+  await expect(failing(page), 'pending online: no indicator').toHaveCount(0);
   release();
   await page.unroute(items);
-  await expect(pending(page), 'the tick reached the server').toHaveCount(0, { timeout: 15_000 });
-  expect(await top(), 'synced again').toBe(synced);
 
   const network = await cutOff(page);
   await tick(page, 'Seife');
-  await expect(offline(page), 'the offline icon shows').toHaveCount(1, { timeout: 10_000 });
+  await expect(offline(page), 'offline opens the card').toHaveCount(1, { timeout: 10_000 });
   expect(await top(), 'offline: the list did not move').toBe(synced);
-  await screenshot(page, 'topbar-03-offline');
+  expect(await boxOf(edit(page)), 'offline: Anpassen did not move').toEqual(anpassen);
+  await screenshot(page, 'topbar-02-offline-open');
+
+  // About 3 s later it is the pill at the top left: still one node with the full sentence.
+  await expect(async () => {
+    const pill = await boxOf(offline(page));
+    expect(pill.x + pill.width, 'the pill sits left of Anpassen').toBeLessThan(anpassen.x);
+  }).toPass({ timeout: 8_000 });
+  await expect(offline(page)).toHaveCount(1);
+  await screenshot(page, 'topbar-03-offline-pill');
+
+  await offline(page).click();
+  await expect(async () => {
+    const open = await boxOf(offline(page));
+    expect(open.y, 'a tap opens the card below the bar').toBeGreaterThan(anpassen.y + anpassen.height - 1);
+  }).toPass({ timeout: 3_000 });
 
   await network.restore();
-  await expect(offline(page), 'back online').toHaveCount(0, { timeout: 20_000 });
-  await expect(pending(page)).toHaveCount(0, { timeout: 15_000 });
+  await expect(offline(page), 'back online: gone, no confirmation').toHaveCount(0, { timeout: 20_000 });
+  await expect(page.getByText(/Synchronisiert/), 'no confirmation snackbar').toHaveCount(0);
   expect(await top(), 'back online: the list did not move').toBe(synced);
+  expect(await boxOf(edit(page)), 'back online: Anpassen did not move').toEqual(anpassen);
+});
+
+test('a server that answers with errors shows sync failing, keeps the change and retries on a tap', async ({ page }) => {
+  const email = newEmail('syncfail');
+  await signUpWithHousehold(page, email);
+  await addItem(page, 'Kaffee');
+  await expect(itemRow(page, 'Kaffee')).toBeVisible();
+
+  // Every write answers 503, as a gateway in trouble does; reads still work, so the app is not offline.
+  const writes = '**/rest/v1/**';
+  await page.route(writes, async (route) => {
+    if (route.request().method() === 'GET') await route.fallback();
+    else await route.fulfill({ status: 503, contentType: 'text/plain', body: 'Service Unavailable' });
+  });
+  await tick(page, 'Kaffee');
+  await expect(failing(page), 'sync failing shows').toHaveCount(1, { timeout: 10_000 });
+  await expect(offline(page)).toHaveCount(0);
+  // A dropped change would put the open row back.
+  await expect(itemRow(page, 'Kaffee'), 'the tick stays').toHaveCount(0);
+  await expect(page.getByText(/^Änderung abgelehnt/), 'not dropped as refused').toHaveCount(0);
+  await screenshot(page, 'topbar-04-failing-open');
+  await expect(async () => {
+    const pill = await boxOf(failing(page));
+    expect(pill.y + pill.height, 'collapsed into the bar').toBeLessThanOrEqual(listBarHeight);
+  }).toPass({ timeout: 8_000 });
+  await screenshot(page, 'topbar-05-failing-pill');
+
+  await page.unroute(writes);
+  // The list also retries every 3 s on its own; one that lands first leaves nothing to tap.
+  await failing(page).click({ timeout: 2_000 }).catch(() => undefined);
+  await expect(failing(page), 'the retry went through and the indicator left').toHaveCount(0, { timeout: 10_000 });
+  const api = await apiAs(email);
+  await expect(async () => {
+    const { data } = await api.from('items').select('status').eq('name', 'Kaffee');
+    expect(data).toEqual([{ status: 'bought' }]);
+  }).toPass({ timeout: 10_000 });
 });

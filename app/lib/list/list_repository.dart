@@ -9,7 +9,8 @@ enum ConnectionStatus() {
 }
 
 /// The list's only door to the backend. Errors from [send] other than a
-/// [RejectedOp] are treated as transient and retried.
+/// [RejectedOp] are treated as transient and retried: a [ServerTrouble]
+/// when the server answered, anything else when it could not be reached.
 abstract interface class ListRepository() {
   Future<Catalog> fetchCatalog();
 
@@ -93,14 +94,56 @@ final class const RejectedOp(
   String toString() => 'RejectedOp($message)';
 }
 
-/// Runs a write; a PostgREST answer means the database refused it, except a
-/// JWT error (PGRST3xx): the token lapsed in flight, and a retry refreshes it.
+/// The server answered, but with an error a retry may fix: it is
+/// overloaded, restarting or lost its database, or the token lapsed in
+/// flight. The app is not offline then, and the change is not refused.
+final class const ServerTrouble(final String message) implements Exception {
+  @override
+  String toString() => 'ServerTrouble($message)';
+}
+
+/// Whether [e] is the server's trouble rather than a refusal of this
+/// request: a JWT (PGRST3xx) or database connection (PGRST0xx) error, a
+/// 5xx status (the code when the body is no PostgREST error), or a
+/// transient SQLSTATE: connection (08), serialization (40001), deadlock
+/// (40P01), resources (53), operator intervention such as a statement
+/// timeout (57), system (58) or internal (XX).
+bool _isTrouble(PostgrestException e) {
+  final code = e.code ?? '';
+  if (code.length == 3) {
+    return code.startsWith('5');
+  }
+  return code.startsWith('PGRST0') ||
+      code.startsWith('PGRST3') ||
+      (code.length == 5 &&
+          (const ['08', '53', '57', '58', 'XX'].any(code.startsWith) ||
+              code == '40001' ||
+              code == '40P01'));
+}
+
+/// Runs a read; the server's trouble comes out as a [ServerTrouble].
+Future<T> _answered<T>(Future<T> Function() read) async {
+  try {
+    return await read();
+  } on PostgrestException catch (e) {
+    if (_isTrouble(e)) {
+      throw ServerTrouble(e.message);
+    }
+    rethrow;
+  }
+}
+
+/// Sends [request] once: a PostgREST builder sends it again on every await.
+Future<T> _sent<T>(Future<T> request) async => await request;
+
+/// Runs a write; a PostgREST answer means the database refused it, unless it
+/// is the server's trouble (a [ServerTrouble]), which a retry may get past.
 Future<T> _refusable<T>(Future<T> Function() write) async {
   try {
     return await write();
   } on PostgrestException catch (e) {
-    if (e.code?.startsWith('PGRST3') ?? false) {
-      rethrow;
+    if (_isTrouble(e)) {
+      throw ServerTrouble(e.message);
     }
     throw RejectedOp(e.message, nameTaken: e.code == '23505');
   }
@@ -116,40 +159,51 @@ class SupabaseListRepository(
       'categorized_via, canonical_key';
 
   @override
-  Future<Catalog> fetchCatalog() async {
-    final (categories, stores, layout, memberIds, profiles) = await (
+  Future<Catalog> fetchCatalog() => _answered(() async {
+    final categories = _sent(
       _client.rest
           .from('categories')
           .select('id, name, sort_order, seed_key')
           .eq('household_id', householdId)
           .order('sort_order', ascending: true),
+    );
+    final stores = _sent(
       _client.rest
           .from('stores')
           .select('id, name, sort_order, seed_key')
           .eq('household_id', householdId)
           .order('sort_order', ascending: true),
+    );
+    final layout = _sent(
       _client.rest
           .from('store_category_order')
           .select('store_id, category_id, sort_order, hidden')
           .eq('household_id', householdId),
+    );
+    final memberIds = _sent(
       _client.rest
           .from('household_members')
           .select('user_id, role')
           .eq('household_id', householdId),
-      // No foreign key to join on; RLS returns everyone the user shares a
-      // household with, and the member ids pick this one's.
+    );
+    // No foreign key to join on; RLS returns everyone the user shares a
+    // household with, and the member ids pick this one's.
+    final profiles = _sent(
       _client.rest.from('profiles').select('id, display_name'),
-    ).wait;
+    );
+    // Not a record `.wait`: its ParallelWaitError would hide whether the
+    // server answered. Future.wait throws the first error once all settled.
+    await Future.wait([categories, stores, layout, memberIds, profiles]);
     final roles = {
-      for (final row in memberIds)
+      for (final row in await memberIds)
         row['user_id']! as String: row['role'] as String?,
     };
     return Catalog(
-      categories: categories.map(Category.fromJson).toList(),
-      stores: stores.map(Store.fromJson).toList(),
-      layout: layout.map(StoreCategory.fromJson).toList(),
+      categories: (await categories).map(Category.fromJson).toList(),
+      stores: (await stores).map(Store.fromJson).toList(),
+      layout: (await layout).map(StoreCategory.fromJson).toList(),
       members: [
-        for (final member in profiles.map(Member.fromJson))
+        for (final member in (await profiles).map(Member.fromJson))
           if (roles.containsKey(member.id))
             Member(
               id: member.id,
@@ -158,7 +212,7 @@ class SupabaseListRepository(
             ),
       ],
     );
-  }
+  });
 
   @override
   Future<void> renameCategory(String id, String name) => _refusable(
@@ -211,13 +265,13 @@ class SupabaseListRepository(
   );
 
   @override
-  Future<ParsedEntry> parse(String text) async {
+  Future<ParsedEntry> parse(String text) => _answered(() async {
     final Object? result = await _client.rpc<dynamic>(
       'parse_item',
       params: {'p_household': householdId, 'p_text': text},
     );
     return ParsedEntry.fromJson(_singleRow(result)!);
-  }
+  });
 
   @override
   Future<List<Suggestion>> suggest(String text) async {
@@ -255,7 +309,7 @@ class SupabaseListRepository(
   );
 
   @override
-  Future<List<Item>> fetchItems() async {
+  Future<List<Item>> fetchItems() => _answered(() async {
     final results = await Future.wait([
       _client.rest
           .from('items')
@@ -271,7 +325,7 @@ class SupabaseListRepository(
           .limit(50),
     ]);
     return [for (final rows in results) ...rows.map(Item.fromJson)];
-  }
+  });
 
   @override
   Future<List<Usual>> fetchUsuals() async {
@@ -477,6 +531,9 @@ class SupabaseListRepository(
     } on FunctionException catch (e) {
       if (e.status == 422) {
         return (entries: const <ParsedEntry>[], truncated: false);
+      }
+      if (e.status >= 500) {
+        throw ServerTrouble('${e.status}');
       }
       rethrow;
     }

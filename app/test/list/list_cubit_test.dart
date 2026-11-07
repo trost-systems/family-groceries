@@ -360,6 +360,105 @@ void main() {
     expect(cubit.state.connection, ConnectionStatus.online);
   });
 
+  group('a server in trouble (job 161)', () {
+    setUp(() async {
+      repo.emitStatus!(ConnectionStatus.online);
+      await settle();
+    });
+
+    test('a send answered with a 5xx is failing; the change stays queued and '
+        'is not refused', () async {
+      final rejections = <Rejected>[];
+      final sub = cubit.rejections.listen(rejections.add);
+      repo.sendTrouble = true;
+      cubit.addEntry(parseEntry('Kaffee'));
+      await settle();
+      expect(cubit.state.trouble, SyncTrouble.failing);
+      expect(cubit.state.connection, isNot(ConnectionStatus.offline));
+      expect(cubit.state.pending, hasLength(1));
+      expect(activeNames(), ['Kaffee']);
+      expect(rejections, isEmpty);
+      await sub.cancel();
+    });
+
+    test('a send with no answer is offline, not failing', () async {
+      repo.online = false;
+      cubit.addEntry(parseEntry('Kaffee'));
+      await settle();
+      expect(cubit.state.trouble, SyncTrouble.offline);
+      expect(cubit.state.failing, isFalse);
+    });
+
+    test('a fetch answered with a 5xx is failing too', () async {
+      repo.fetchTrouble = true;
+      await cubit.resync();
+      expect(cubit.state.trouble, SyncTrouble.failing);
+    });
+
+    test('an acknowledged send clears failing', () async {
+      repo.sendTrouble = true;
+      cubit.addEntry(parseEntry('Kaffee'));
+      await settle();
+      expect(cubit.state.trouble, SyncTrouble.failing);
+      repo.sendTrouble = false;
+      await cubit.retry();
+      expect(cubit.state.pending, isEmpty);
+      expect(cubit.state.trouble, isNull);
+    });
+
+    test('offline wins over failing', () async {
+      expect(
+        const ListState(
+          connection: ConnectionStatus.offline,
+          failing: true,
+        ).trouble,
+        SyncTrouble.offline,
+      );
+      repo.sendTrouble = true;
+      cubit.addEntry(parseEntry('Kaffee'));
+      await settle();
+      repo.emitStatus!(ConnectionStatus.offline);
+      await settle();
+      expect(cubit.state.trouble, SyncTrouble.offline);
+    });
+
+    test('retry says whether the list syncs again', () async {
+      repo.sendTrouble = true;
+      cubit.addEntry(parseEntry('Kaffee'));
+      await settle();
+      expect(await cubit.retry(), isFalse);
+      expect(cubit.state.trouble, SyncTrouble.failing);
+      repo.sendTrouble = false;
+      expect(await cubit.retry(), isTrue);
+      expect(repo.rows.values.map((i) => i.name), contains('Kaffee'));
+    });
+
+    test('a server failing every write stays failing across the 3 s '
+        'retries, never clear in between', () {
+      fakeAsync((async) {
+        final looping = ListCubit(repo, MemoryListCache(), userId: 'peter')
+          ..start();
+        async.elapse(Duration.zero);
+        repo
+          ..emitStatus!(ConnectionStatus.online)
+          ..sendTrouble = true;
+        final seen = <bool>[];
+        final sub = looping.stream.listen((s) => seen.add(s.failing));
+        looping.addEntry(parseEntry('Kaffee'));
+        async.elapse(const Duration(seconds: 20));
+        expect(seen.skipWhile((f) => !f), everyElement(isTrue));
+        expect(seen, contains(true));
+        expect(looping.state.pending, hasLength(1));
+        repo.sendTrouble = false;
+        async.elapse(const Duration(seconds: 4));
+        expect(looping.state.trouble, isNull, reason: 'the loop got through');
+        unawaited(sub.cancel());
+        unawaited(looping.close());
+        async.flushMicrotasks();
+      });
+    });
+  });
+
   test('a resync does not claim online while the channel is down', () async {
     repo.emitStatus!(ConnectionStatus.offline);
     await cubit.resync();

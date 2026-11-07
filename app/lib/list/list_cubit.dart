@@ -25,6 +25,10 @@ class const ListState({
   final bool loaded = false,
   final ConnectionStatus connection = ConnectionStatus.connecting,
 
+  /// The server answers, but the last send or fetch failed with a
+  /// [ServerTrouble].
+  final bool failing = false,
+
   /// What the household buys again and again, best first.
   final List<Usual> usuals = const [],
 
@@ -37,12 +41,20 @@ class const ListState({
 }) {
   Map<String, Item> get items => visibleItems(server, pending);
 
+  /// What keeps the list from syncing, if anything; offline wins.
+  SyncTrouble? get trouble => connection == ConnectionStatus.offline
+      ? SyncTrouble.offline
+      : failing
+      ? SyncTrouble.failing
+      : null;
+
   ListState copyWith({
     Catalog? catalog,
     Map<String, Item>? server,
     List<ItemOp>? pending,
     bool? loaded,
     ConnectionStatus? connection,
+    bool? failing,
     List<Usual>? usuals,
     SeenMark? seen,
     ListPrefs? prefs,
@@ -52,10 +64,19 @@ class const ListState({
     pending: pending ?? this.pending,
     loaded: loaded ?? this.loaded,
     connection: connection ?? this.connection,
+    failing: failing ?? this.failing,
     usuals: usuals ?? this.usuals,
     seen: seen ?? this.seen,
     prefs: prefs ?? this.prefs,
   );
+}
+
+enum SyncTrouble() {
+  /// The device has no connection to the server.
+  offline,
+
+  /// The server answers with errors (5xx, a database timeout).
+  failing,
 }
 
 sealed class const AddResult();
@@ -144,7 +165,9 @@ class ListCubit(
   Timer? _catalogReload;
   Timer? _save;
   Timer? _usualsReload;
-  var _flushing = false;
+
+  /// The send loop in flight: a second flush joins it.
+  Future<void>? _flushRun;
 
   /// What each resync in flight heard since it started; it beats the
   /// snapshot, which may have been read before. Resyncs overlap (the opening
@@ -283,7 +306,14 @@ class ListCubit(
 
   void _onChannelStatus(ConnectionStatus status) {
     _channelUp = status == ConnectionStatus.online;
-    emit(state.copyWith(connection: status));
+    // Offline says nothing of the server: back online, the next send or
+    // fetch tells again, so the failing card never flashes up in between.
+    emit(
+      state.copyWith(
+        connection: status,
+        failing: status == ConnectionStatus.offline ? false : null,
+      ),
+    );
     if (_channelUp) {
       _resubscribe?.cancel();
       _resubscribe = null;
@@ -554,6 +584,9 @@ class ListCubit(
           parsed.ontoRename(refused.changes),
           keyBefore: refused.keyBefore,
         );
+      } on ServerTrouble {
+        _goFailing();
+        return false;
       } on Object {
         _goOffline();
         return false;
@@ -972,14 +1005,23 @@ class ListCubit(
     _resyncsHeard.add(heard);
     var fetched = true;
     try {
-      final (catalog, rows) = await (
-        _repo.fetchCatalog(),
-        _repo.fetchItems(),
-      ).wait;
+      final catalog = _repo.fetchCatalog();
+      final rows = _repo.fetchItems();
+      // Not a record `.wait`: its ParallelWaitError would hide a
+      // ServerTrouble.
+      await Future.wait([catalog, rows]);
       if (number > _resyncShown) {
         _resyncShown = number;
-        _showSnapshot(catalog, rows, heard);
+        _showSnapshot(await catalog, await rows, heard);
       }
+      // With ops queued the next send decides: a server that fails every
+      // write would otherwise flicker between failing and not.
+      if (state.failing && state.pending.isEmpty) {
+        emit(state.copyWith(failing: false));
+      }
+    } on ServerTrouble {
+      fetched = false;
+      _goFailing();
     } on Object {
       fetched = false;
       _goOffline();
@@ -1044,6 +1086,8 @@ class ListCubit(
       // Await first: `state` read before the await would be stale by now.
       final catalog = await _repo.fetchCatalog();
       emit(state.copyWith(catalog: catalog));
+    } on ServerTrouble {
+      _goFailing();
     } on Object {
       _goOffline();
     }
@@ -1054,11 +1098,23 @@ class ListCubit(
     unawaited(_flush());
   }
 
+  /// Retries now what the 3 s timer would retry later: a resync, then the
+  /// queue. Whether the list syncs again.
+  Future<bool> retry() async {
+    _retry?.cancel();
+    _retry = null;
+    await resync();
+    await _flush();
+    return state.trouble == null;
+  }
+
   Future<void> _flush() async {
-    if (_flushing) {
+    if (_flushRun case final run?) {
+      await run;
       return;
     }
-    _flushing = true;
+    final done = Completer<void>();
+    _flushRun = done.future;
     try {
       while (state.pending.isNotEmpty && !isClosed) {
         final op = state.pending.first;
@@ -1089,13 +1145,17 @@ class ListCubit(
             _ => ItemRejected(_nameOf(op)),
           });
           unawaited(resync());
+        } on ServerTrouble {
+          _goFailing();
+          return;
         } on Object {
           _goOffline();
           return;
         }
       }
     } finally {
-      _flushing = false;
+      _flushRun = null;
+      done.complete();
       _heardInFlight = null;
       _shownInFlight = null;
     }
@@ -1144,6 +1204,7 @@ class ListCubit(
               ?(kept == null ? p : p.ontoKept(op.itemId, kept)),
         ],
         connection: ConnectionStatus.online,
+        failing: false,
       ),
     );
     // Job 104: a rename to another spelling or a synonym of an open item
@@ -1228,7 +1289,16 @@ class ListCubit(
       emit(state.copyWith(server: server));
 
   void _goOffline() {
-    emit(state.copyWith(connection: ConnectionStatus.offline));
+    emit(state.copyWith(connection: ConnectionStatus.offline, failing: false));
+    _retryLater();
+  }
+
+  void _goFailing() {
+    emit(state.copyWith(failing: true));
+    _retryLater();
+  }
+
+  void _retryLater() {
     _retry ??= Timer(const Duration(seconds: 3), () {
       _retry = null;
       if (!isClosed) {
