@@ -10171,3 +10171,39 @@ the main RunnerTests had passed (main runs 42334852466 and 42339585329, PR #298 
     hint test moved to `name_dialog_error_test.dart` beside #296's layout test; the goldens
     both PRs touch were regenerated on the merged code. The council measured the tree before
     #296, so the merged screens were not re-judged.
+
+## Job 154b: app design climb on harness v3 (min-aspect targeting), 2026-11-07
+
+1. **Base.** The branch is #300's app commit (job 154) rebased onto main f2afee4e: the more and
+   sync goldens re-rendered (main added rows and the sync indicator after 154), and the onboarding
+   test "an empty name is refused before any call" finds its problem line offstage: the iconed
+   field error (154) and the longer store list (Baumarkt) push it out of the lazy list once the
+   name field takes focus back; the line is still built under the button.
+2. **Harness v3** (ops directory, the v2 harness untouched): the shots draw an iOS status bar over
+   the top inset, and More, settings, stores and store details go through the app's own routes
+   inside the shell with its tab pill. New baseline (3 absolute runs 5, 5, 6, band 1, floor 4;
+   A-vs-A 27/27 tie). v3 numbers do not compare with v2's.
+3. **Keep floor never goes down**: baseline median minus the band, raised to a kept step's minimum
+   minus the band when that is higher (4, then 5 from b4). v2 used best minus band, which could
+   fall after a keep at the floor.
+4. **The guard's 16-file cap counts the change, not the goldens** regenerated after a keep
+   (re-frozen; the guard is not a scoring input, every scoring input's hash is unchanged).
+5. **Targets.** Each brief carried the lowest aspect and every judge's one-line reason for it, no
+   other scores. b4 took Layout, tied lowest with Accessibility, after b3's Accessibility change
+   (list overline contrast 3.9:1 to 7.1:1) went unseen in the pairwise. b8 (icons, settings
+   groups, a two-row page bar) lost layout and accessibility to the taller bar; b9 kept its other
+   two parts.
+6. **Calls kept out of steps.** Rounded cards next to hex rows (DESIGN.md specifies radius-18
+   cards), the Google/Apple pill buttons (brand rules), the tab the pill marks on Stores (it
+   belongs to the List tab), `_Header` / Anpassen and the sync indicator (Q105 pending). b7's
+   delegate dropped the add sheet's chip icons; reverted before measuring (job 149: the add
+   sheet keeps them).
+7. **b5 fix after the measure**: the pinned header's fade sits under `IgnorePointer` (a painted
+   `BoxDecoration` hit-tests opaque and would have taken taps meant for rows under the bar);
+   all 44 shots byte-identical to the measured ones.
+8. **b6 changes a design token's use**: `HlSticker.shadow` in dark is the light offsets in the dark
+   contour colour, not the night token (near-black plus a glow, invisible on the dark page and a
+   second depth style). The top bar's count capsule keeps its old shadow so `_Header`'s bar looks
+   as before. DESIGN.md says so.
+9. **b9 trade-off**: colour and contrast 3-0 for the baseline (the dark row icons in the lavender
+   border colour are dimmer), consistency and iconography 3-0 for the candidate; kept by the rule.

@@ -58,3 +58,44 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **b11** (keep): medians typography 7, hierarchy 7, color_contrast 7, spacing 7, layout 7, consistency 6, accessibility 7, iconography 7, empty_error_states 8; pairwise hierarchy cand, color_contrast cand, accessibility cand; seeds [2944349528, 508754425, 463048765].
 - **b12** (keep): medians typography 7, hierarchy 7, color_contrast 7, spacing 7, layout 7, consistency 6, accessibility 7, iconography 7, empty_error_states 8; pairwise consistency cand; seeds [3524906230, 341150490, 2450019004].
 
+## Final
+
+Branch head `e8dba1c4`, three absolute runs like the baseline: minimum [6, 6, 6], mean [7, 7, 6.889]. Score (median) **6** (baseline 5, band 1); mean of aspect medians 7 (baseline 6.444).
+
+| aspect | baseline (median of 3 runs) | final (median of 3 runs) |
+|---|---|---|
+| typography | 6 | 7 |
+| hierarchy | 6 | 7 |
+| color_contrast | 7 | 7 |
+| spacing | 6 | 7 |
+| layout | 6 | 7 |
+| consistency | 6 | 6 |
+| accessibility | 6 | 7 |
+| iconography | 7 | 7 |
+| empty_error_states | 8 | 8 |
+
+A blind pairwise of the baseline shots against the final shots (3 judges, seeds [3407264744, 1962306826, 2116079832]) prefers the final on 6 aspects, the baseline on 0, 3 tie: typography cand, hierarchy tie, color_contrast cand, spacing cand, layout cand, consistency cand, accessibility cand, iconography tie, empty_error_states tie.
+
+## Lowest aspect per step
+
+Before each step: the lowest median in the best kept state (ties broken by the lower mean judge score), the aspect the step targeted (b4 took Layout, tied lowest with Accessibility, after b3's Accessibility attempt went unseen; b9 retried b8 on the unchanged state). After: the lowest median in the step's own absolute run.
+
+| step | lowest before | targeted | lowest after (aspects) |
+|---|---|---|---|
+| b1 | accessibility 6 | accessibility | 5 (accessibility) |
+| b2 | accessibility 5 | accessibility | 5 (layout, accessibility) |
+| b3 | accessibility 5 | accessibility | 5 (layout) |
+| b4 | accessibility 5 | layout | 6 (typography, hierarchy, spacing, layout, consistency, accessibility, iconography) |
+| b5 | layout 6 | layout | 6 (hierarchy, spacing, layout, consistency, accessibility, iconography) |
+| b6 | consistency 6 | consistency | 6 (typography, hierarchy, spacing, layout, consistency, accessibility, iconography) |
+| b7 | consistency 6 | consistency | 6 (typography, hierarchy, consistency, iconography) |
+| b8 | consistency 6 | consistency | 5 (layout, accessibility) |
+| b9 | consistency 6 | consistency | 6 (typography, hierarchy, consistency, iconography) |
+| b10 | typography 6 | typography | 6 (spacing, consistency, accessibility) |
+| b11 | accessibility 6 | accessibility | 6 (consistency) |
+| b12 | consistency 6 | consistency | 6 (consistency) |
+
+## Stop
+
+Stopped at the step budget: 12 measured steps (b1-b12), 10 kept, 2 reverted (b3, b8; b9 kept b8's parts without its page bar), at 1 h 45 min of the 6 h budget; never 3 rejects in a row. Design-system consistency stays the floor at 6: its remaining reasons are rounded cards next to hex rows (docs/DESIGN.md specifies radius-18 cards), the Google/Apple pill buttons (brand rules) and the list top bar (_Header, kept off limits until Peter answers Q105).
+
