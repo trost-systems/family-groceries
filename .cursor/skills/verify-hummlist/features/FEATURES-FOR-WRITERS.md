@@ -416,7 +416,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## The More tab, help and legal pages
 
-**What it does.** The app has two tabs, List and More. On phones they sit in a small pill that floats at the bottom of the screen; the list scrolls on behind it. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, for a household that has Premium (a free unlock in the beta or for testers) or once Premium is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback") and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, looking like any other row, and the app version at the bottom. Categories and stores are under the list's „Anpassen“. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
+**What it does.** The app has two tabs, List and More. On phones they sit in a small pill that floats at the bottom of the screen; the list scrolls on behind it. More is a short list of grouped rows, each one line with an icon, in this order: „Konto“ (EN: "Account") and, for a household that has Premium (a free unlock in the beta or for testers) or once Premium is on sale, „Hummlist Premium“; „Partner einladen“ (EN: "Invite your partner") and „Anderem Haushalt beitreten“ (EN: "Join another household"); „Zugänge“ (EN: "Access"); „Einstellungen“ (EN: "Settings") and „Nutzungsdaten“ (EN: "Usage data"); „Feedback senden“ (EN: "Send feedback"), in the iPhone and Android apps „Hummlist bewerten“ (EN: "Rate Hummlist"), and „Hilfe & Kontakt“ (EN: "Help & contact"); under the small heading „Rechtliches“ (EN: "Legal") the rows „Impressum“ (EN: "Imprint"), „Datenschutzerklärung“ (EN: "Privacy policy"), „Nutzungsbedingungen (EULA)“ (EN: "Terms of Use (EULA)") and „Lizenzen“ (EN: "Licenses"); then „Abmelden“ (EN: "Sign out") on its own, looking like any other row, and the app version at the bottom. Categories and stores are under the list's „Anpassen“. „Nutzungsdaten“ opens a page with just the usage-data switch. Help, imprint and privacy policy open pages on hummlist.com in the browser; the terms open Apple's standard terms on iPhone and, until Hummlist has its own, the help page elsewhere. The imprint is two taps from the list: „Mehr“, then „Impressum“.
 
 **How to get there.**
 1. Tap „Mehr“ (EN: "More") in the pill at the bottom (on wide screens: the rail on the left).
@@ -437,6 +437,24 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - Terms of use of Hummlist's own: the terms row shows Apple's standard terms on iPhone and the help page elsewhere.
 
 **Last verified.** main c2ce938f, 2026-11-07 (CET), from code and driven on the web build (verify-hummlist): every row in order, „Abmelden“ last in the plain row style, the version, Nutzungsdaten, the tab pill. Earlier: job 144 branch (job/144-bottom-nav-floating-pill), 2026-11-06 (CET), driven on the web build (verify-hummlist) at 390x844, 412x915, 844x390 and 820x1180, light and dark: the tab pill (tabs „Liste“ and „Mehr“ for screen readers, hover on the hex), More scrolling on behind the pill. Recipe: [more-help.md](./more-help.md).
+
+## Rating Hummlist in the store
+
+**What it does.** In the iPhone and Android apps, More has the row „Hummlist bewerten“ (EN: "Rate Hummlist"). It opens Hummlist's page in the App Store or on Google Play, where people can leave a rating. Once Hummlist is in the public stores, the app may also ask for a rating with the phone's own rating window: only right after a shopping trip is finished (every item of a list with at least three items ticked off), after a few quiet seconds, and only for people who have used Hummlist for at least a week, on several days, without trouble (no failed sync, no error) lately. It asks at most a few times a year, never twice in four months. Hummlist asks no question of its own first and shows no extra text.
+
+**How to get there.**
+1. Tap „Mehr“ (EN: "More").
+2. Tap „Hummlist bewerten“ (EN: "Rate Hummlist").
+
+**Never claim.**
+- That Hummlist asks "Do you like Hummlist?" or offers anything for a rating.
+- That the rating window appears at a set time or for everyone: the phone decides whether to show it.
+- The rating window in the beta (TestFlight, Google Play testing) or in the browser: it does not appear there.
+- The rate row in the browser version: it is in the iPhone and Android apps only.
+
+**Unverified.** The rating window on a real phone (no device on the runner); the store page opening on a real phone.
+
+**Last verified.** job 155 branch (job/155-review-prompt, review 7 fixes), 2026-11-06 (CET): driven on the web build (verify-hummlist, `drive.sh rate-hummlist`): no rate row in the browser, a whole list ticked off counts one trip on the device and asks nothing, an undo and re-tick stays one trip, 10 s offline is no failure and 70 s is; the row in the iPhone/Android layout, DE and EN, from widget tests and goldens; the rules from unit tests. Recipe: [rate-hummlist.md](./rate-hummlist.md).
 
 ## Account: data export and deletion
 

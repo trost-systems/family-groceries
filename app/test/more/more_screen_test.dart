@@ -1,16 +1,21 @@
+import 'dart:io';
+
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
+import 'package:family_groceries/review/store_review.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../app/fake_launcher.dart';
 import '../purchases/fakes.dart';
+import '../review/fakes.dart';
 import 'more_harness.dart';
 
 void main() {
@@ -344,6 +349,89 @@ void main() {
       expect(key('more-feedback'), findsOneWidget);
       expect(key('more-help'), findsNothing);
       expect(find.text('Hilfe & Kontakt'), findsNothing);
+    });
+  });
+
+  group('Hummlist bewerten (job 155)', () {
+    for (final (device, label) in const [
+      (Locale('de', 'DE'), 'Hummlist bewerten'),
+      (Locale('en', 'US'), 'Rate Hummlist'),
+    ]) {
+      testWidgets('opens the store listing, ${device.languageCode}', (
+        tester,
+      ) async {
+        final review = FakeStoreReview();
+        await pumpMore(tester, device: [device], storeReview: review);
+        await tester.scrollUntilVisible(key('more-rate'), 200);
+        expect(
+          find.descendant(of: key('more-rate'), matching: find.text(label)),
+          findsOneWidget,
+        );
+        await tapKey(tester, 'more-rate');
+        expect(review.listings, 1);
+        expect(review.requests, 0, reason: 'never the prompt on a tap');
+      });
+    }
+
+    testWidgets('a listing that does not open says so, and throws nothing', (
+      tester,
+    ) async {
+      final review = FakeStoreReview()
+        ..listingError = PlatformException(code: 'unavailable');
+      await pumpMore(tester, storeReview: review);
+      await tester.scrollUntilVisible(key('more-rate'), 200);
+      await tapKey(tester, 'more-rate');
+      await tester.pump();
+      expect(review.listings, 1);
+      expect(
+        find.text(
+          'Der Store ist gerade nicht erreichbar. Prüfe die Verbindung.',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    test('the App Store id is the one the IAP scripts use', () {
+      final script = File('../scripts/iap/apple_product.ts').readAsStringSync();
+      final id = RegExp(r"appAppleId = '(\d+)'").firstMatch(script)?.group(1);
+      expect(id, InAppStoreReview.appStoreId);
+    });
+
+    testWidgets('is hidden on desktop', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      await pumpMore(tester);
+      await tester.scrollUntilVisible(key('more-version'), 200);
+      expect(key('more-feedback'), findsOneWidget);
+      expect(key('more-rate'), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    test('only the iPhone and Android apps have a listing', () {
+      expect(
+        storeListingShown(web: false, platform: TargetPlatform.iOS),
+        isTrue,
+      );
+      expect(
+        storeListingShown(web: false, platform: TargetPlatform.android),
+        isTrue,
+      );
+      expect(
+        storeListingShown(web: true, platform: TargetPlatform.android),
+        isFalse,
+      );
+      expect(
+        storeListingShown(web: true, platform: TargetPlatform.iOS),
+        isFalse,
+      );
+      for (final desktop in [
+        TargetPlatform.macOS,
+        TargetPlatform.linux,
+        TargetPlatform.windows,
+      ]) {
+        expect(storeListingShown(web: false, platform: desktop), isFalse);
+      }
     });
   });
 

@@ -1,19 +1,26 @@
+import 'dart:async';
 import 'dart:ui' show SemanticsHitTestBehavior, Tristate;
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
+import 'package:family_groceries/review/review_counters.dart';
+import 'package:family_groceries/review/review_gates.dart';
+import 'package:family_groceries/review/review_prompt.dart';
+import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -29,6 +36,7 @@ import '../design/fonts.dart';
 import '../list/fake_repository.dart';
 import '../more/more_harness.dart';
 import '../purchases/fakes.dart';
+import '../review/fakes.dart';
 
 /// The shell as `buildRouter` builds it: List and More as tabs, [rows]
 /// items on the list, on a phone whose home indicator or gesture bar takes
@@ -40,6 +48,9 @@ Future<void> pumpShell(
   int rows = 0,
   Locale locale = const Locale('de'),
   double textScale = 1,
+
+  /// The rating prompt the list's trigger feeds, if any.
+  ReviewPrompt? reviewPrompt,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -77,7 +88,11 @@ Future<void> pumpShell(
       sortKey: i.toDouble(),
     );
   }
+  // As the app wires it: the root navigator's popups, for Notices.
+  final popups = Popups();
+  addTearDown(popups.dispose);
   final router = GoRouter(
+    observers: [popups],
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (_, _, shell) => AppShell(shell: shell, repository: repo),
@@ -104,6 +119,7 @@ Future<void> pumpShell(
       providers: [
         RepositoryProvider.value(value: cache),
         RepositoryProvider<PremiumServer>.value(value: purchases.premium),
+        if (reviewPrompt != null) RepositoryProvider.value(value: reviewPrompt),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -119,6 +135,8 @@ Future<void> pumpShell(
           theme: appTheme(Brightness.light),
           locale: locale,
           routerConfig: router,
+          builder: (context, child) =>
+              NoticesHost(popups: popups, child: child!),
         ),
       ),
     ),
@@ -437,5 +455,79 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('tab-list')));
     await tester.pumpAndSettle();
     expect(sheet, findsNothing);
+  });
+
+  group('the rating prompt in the shell', () {
+    late FakeStoreReview review;
+
+    /// A due store-build install, the list's three rows ticked off.
+    Future<void> finishTrip(WidgetTester tester) async {
+      review = FakeStoreReview();
+      final now = DateTime.now();
+      final store = MemoryReviewStore()
+        ..json = ReviewCounters(
+          firstLaunch: now.subtract(const Duration(days: 30)),
+          activeDays: 5,
+          completedTrips: 4,
+          itemsAdded: 60,
+        ).toJson();
+      await pumpShell(
+        tester,
+        rows: 3,
+        reviewPrompt: ReviewPrompt(
+          store,
+          review,
+          channel: BuildChannel.store,
+          version: Future.value('1.4.0'),
+        ),
+      );
+      final cubit = tester.element(find.byType(ListScreen)).read<ListCubit>();
+      cubit.state.items.keys.toList().forEach(cubit.tick);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+    }
+
+    testWidgets('left alone on the list, it asks', (tester) async {
+      await finishTrip(tester);
+      await tester.pump(ReviewPromptTrigger.idle);
+      await tester.pump();
+      expect(review.requests, 1);
+    });
+
+    testWidgets('a tap on the tab bar within the 3 s asks nothing', (
+      tester,
+    ) async {
+      await finishTrip(tester);
+      await tester.tap(more);
+      await tester.pump(ReviewPromptTrigger.idle);
+      await tester.pumpAndSettle();
+      expect(review.requests, 0);
+    });
+
+    testWidgets('a dialog open on the root navigator holds it back', (
+      tester,
+    ) async {
+      await finishTrip(tester);
+      unawaited(
+        showDialog<void>(
+          context: tester.element(find.byType(ListScreen)),
+          builder: (_) => const AlertDialog(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(ReviewPromptTrigger.idle);
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(review.requests, 0);
+    });
+
+    testWidgets('with the List tab hidden it never asks', (tester) async {
+      await finishTrip(tester);
+      GoRouter.of(tester.element(find.byType(ListScreen))).go(morePath);
+      await tester.pump();
+      await tester.pump(ReviewPromptTrigger.idle);
+      await tester.pumpAndSettle();
+      expect(find.byType(MoreScreen), findsOneWidget);
+      expect(review.requests, 0);
+    });
   });
 }

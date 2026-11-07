@@ -456,6 +456,8 @@
   "@sendTestError": {"description": "More, internal installs only: raises a test exception for error tracking"},
   "feedbackRow": "Feedback senden",
   "@feedbackRow": {"description": "More: opens the feedback form; also the form's title"},
+  "rateApp": "Hummlist bewerten",
+  "@rateApp": {"description": "More: opens Hummlist's page in the App Store or Google Play, to rate it"},
   "helpRow": "Hilfe & Kontakt",
   "@helpRow": {"description": "More: opens the help and contact page on hummlist.com in the browser"},
   "feedbackMessage": "Deine Nachricht",

@@ -22,6 +22,9 @@ import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/setup.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
+import 'package:family_groceries/review/review_gates.dart';
+import 'package:family_groceries/review/review_prompt.dart';
+import 'package:family_groceries/review/store_review.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -38,6 +41,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Set once analytics is loaded; errors before that are not reported.
 Analytics? _analytics;
 
+/// Set with analytics; an error holds the rating prompt back.
+ReviewPrompt? _reviewPrompt;
+
 Future<void> main() => bootstrap(WidgetsFlutterBinding.ensureInitialized);
 
 /// Starts the app with [binding], which `test_driver/main_marionette.dart`
@@ -49,6 +55,7 @@ Future<void> bootstrap(WidgetsBinding Function() binding) async {
   // the platform dispatcher. Analytics sends nothing without consent.
   await runZonedGuarded(() => _main(binding), (error, stack) {
     _analytics?.captureException(error, stack);
+    unawaited(_reviewPrompt?.errorSeen());
     Zone.root.print('Uncaught: $error\n$stack');
   });
 }
@@ -92,8 +99,20 @@ Future<void> _main(WidgetsBinding Function() binding) async {
     ),
   );
   final cache = DeviceCache.onDevice();
+  final storeReview = InAppStoreReview();
   final analytics = _analytics = await startAnalytics(cache);
-  reportUncaughtErrors(analytics);
+  final reviewPrompt = _reviewPrompt = ReviewPrompt(
+    cache,
+    storeReview,
+    channel: BuildChannel.current,
+    version: appVersionName(),
+    analytics: analytics,
+  );
+  unawaited(reviewPrompt.load());
+  reportUncaughtErrors(
+    analytics,
+    onError: () => unawaited(reviewPrompt.errorSeen()),
+  );
   final account = SupabaseAccountRepository(
     client,
     // Only iOS has Apple's own dialog; elsewhere the server answers
@@ -161,6 +180,8 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       premium: SupabasePremiumServer(client),
       storePrices: storePriceReader(),
       analytics: analytics,
+      reviewPrompt: reviewPrompt,
+      storeReview: storeReview,
       social: social,
       cache: cache,
       account: account,

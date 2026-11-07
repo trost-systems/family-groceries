@@ -1134,6 +1134,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get feedbackRow => 'Feedback senden';
 
   @override
+  String get rateApp => 'Hummlist bewerten';
+
+  @override
   String get helpRow => 'Hilfe & Kontakt';
 
   @override

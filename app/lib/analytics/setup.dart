@@ -38,14 +38,17 @@ Future<Analytics> startAnalytics(AnalyticsStore store) async {
 /// Hands the errors no one caught to [analytics]' error tracking: the
 /// framework's through `FlutterError.onError` (still presented as before),
 /// the rest through the platform dispatcher. `main` adds its zone's.
-void reportUncaughtErrors(Analytics analytics) {
+/// [onError] hears each of them too (the rating prompt holds back).
+void reportUncaughtErrors(Analytics analytics, {void Function()? onError}) {
   final presentError = FlutterError.onError;
   FlutterError.onError = (details) {
     presentError?.call(details);
     analytics.captureException(details.exception, details.stack);
+    onError?.call();
   };
   PlatformDispatcher.instance.onError = (error, stack) {
     analytics.captureException(error, stack);
+    onError?.call();
     return false;
   };
 }
@@ -61,6 +64,17 @@ Future<String> _appVersion() async {
         ? info.version
         : '${info.version}+${info.buildNumber}';
     return versionPattern.hasMatch(version) ? version : '0';
+  } on Object {
+    return '0';
+  }
+}
+
+/// The app's version without the build number (`1.4.0`), as the stores
+/// show it; `0` when the platform does not say.
+Future<String> appVersionName() async {
+  try {
+    final version = (await PackageInfo.fromPlatform()).version;
+    return version.isEmpty ? '0' : version;
   } on Object {
     return '0';
   }

@@ -105,6 +105,18 @@ abstract final class Environment() {
   /// `releases/flags.json` releases the `native-siri` hold (Fastfile).
   static const nativeSiriLive = bool.fromEnvironment('NATIVE_SIRI_LIVE');
 
+  /// This is the public Play production build: outside the iPhone (whose
+  /// release builds may always ask, TestFlight never shows the prompt) only
+  /// it asks the store for a rating (job 155). Play internal builds must not
+  /// pass `--dart-define=STORE_RELEASE=true` (docs/RELEASE.md, "Public
+  /// releases").
+  static const storeRelease = bool.fromEnvironment('STORE_RELEASE');
+
+  /// QA: outside a store release the rating prompt's gates are skipped and
+  /// any completed trip asks (`--dart-define=REVIEW_PROMPT_FORCE=true`).
+  /// A store release ignores it.
+  static const reviewPromptForce = bool.fromEnvironment('REVIEW_PROMPT_FORCE');
+
   /// RevenueCat's public SDK keys (`appl_…`, `goog_…`); empty also means
   /// "coming soon". Never committed: release builds pass them in.
   static const revenueCatIosKey = String.fromEnvironment(

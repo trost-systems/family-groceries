@@ -29,6 +29,17 @@ manual gate: a build that the internal testers have had, after a full
 end-to-end pass on it, weekly or more often once that is quick and reliable.
 It needs its own job and Peter's go.
 
+The store rating prompt (job 155, `app/lib/review/`) fits this:
+
+- iOS: no define. Every iPhone release build may ask, and StoreKit never
+  shows the prompt in TestFlight, so the testers' build is the one App Store
+  review gets, unchanged.
+- Android: a Play internal install can show the prompt, so only a build with
+  `--dart-define=STORE_RELEASE=true` asks. The production AAB is the commit
+  the testers had, built once more with that define (and a new version
+  code); the internal-track builds never pass it. Promoting the internal AAB
+  unchanged also works: then the Android app never asks.
+
 What is public is recorded in [`releases/releases.json`](../releases/README.md),
 empty until the first public release. The public release step, once it exists,
 must end like this: after both stores have accepted the build, it calls the

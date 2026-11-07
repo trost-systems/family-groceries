@@ -22,6 +22,7 @@ import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/sync_indicator.dart';
+import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -402,140 +403,144 @@ class _ShoppingListState() extends State<_ShoppingList> {
   @override
   Widget build(BuildContext context) {
     final open = context.select<AddSheetCubit, bool>((c) => c.state.open);
-    return MultiBlocListener(
-      listeners: [
-        // A hint whose items are no longer both open (the add undone, a
-        // partner ticked one) has nothing left to merge: it goes.
-        BlocListener<ListCubit, ListState>(
-          listenWhen: (a, b) =>
-              !identical(a.server, b.server) ||
-              !identical(a.pending, b.pending),
-          listener: (context, list) {
-            final items = list.items;
-            bool stale(DedupeHint hint) => [
-              hint.added,
-              hint.onList,
-            ].any((i) => items[i.id]?.status != ItemStatus.active);
-            if (_openHint case (final hint, final bar) when stale(hint)) {
-              bar.close();
-            }
-            final sheet = context.read<AddSheetCubit>();
-            if (sheet.state.hint case final hint? when stale(hint)) {
-              sheet.drop(hint);
-            }
-          },
-        ),
-        BlocListener<AddSheetCubit, AddSheetState>(
-          listenWhen: (a, b) => a.open != b.open,
-          listener: (_, sheet) => _sheetOpen?.value = sheet.open,
-        ),
-        // A hint or merge in the closing sheet's note goes on as a snackbar.
-        BlocListener<AddSheetCubit, AddSheetState>(
-          listenWhen: (a, b) => a.open && !b.open,
-          listener: (context, _) {
-            final (hint, merge) = context.read<AddSheetCubit>().handOver();
-            if (merge != null) {
-              _showMerged(merge);
-            } else if (hint != null) {
-              _hint(hint, counted: true);
-            }
-          },
-        ),
-        // A sheet that starts over (closed, or opened again) clears the
-        // input too.
-        BlocListener<AddSheetCubit, AddSheetState>(
-          listenWhen: (a, b) => b.text.isEmpty && a.text.isNotEmpty,
-          listener: (_, _) {
-            if (_input.text.isNotEmpty) {
-              _input.clear();
-            }
-          },
-        ),
-      ],
-      // Tab goes input, suggestions, chips, Schließen, then the bar's
-      // buttons (DECISIONS, Job 17).
-      child: FocusTraversalGroup(
-        policy: OrderedTraversalPolicy(),
-        child: Scaffold(
-          // The shell's scaffold makes room for the keyboard.
-          resizeToAvoidBottomInset: false,
-          // The list scrolls on under the floating add field (job 135).
-          extendBody: true,
-          body: Stack(
-            key: _page,
-            children: [
-              ExcludeFocus(
-                excluding: open,
-                child: ExcludeSemantics(
-                  excluding: open,
-                  child: SyncIndicator(
-                    rowTop: _Header._gap,
-                    rowHeight: _Header.height,
-                    cardTop: _Header.extent,
-                    child: ShoppingListView(
-                      onInteract: _leaveField,
-                      header: const _Header(),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: TextFieldTapRegion(
-                  // Escape from a row or chip of the sheet; never focused
-                  // itself, and no semantics node: on the web one this
-                  // size would take every tap on the list.
-                  child: Focus(
-                    canRequestFocus: false,
-                    skipTraversal: true,
-                    includeSemantics: false,
-                    onKeyEvent: (_, event) {
-                      if (event is! KeyDownEvent ||
-                          event.logicalKey != LogicalKeyboardKey.escape ||
-                          !open) {
-                        return KeyEventResult.ignored;
-                      }
-                      _close();
-                      return KeyEventResult.handled;
-                    },
-                    child: AddSheet(
-                      onTake: _take,
-                      onClose: _close,
-                      onPicked: _refocusAfterTap,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    return ReviewPromptTrigger(
+      cubit: context.read<ListCubit>(),
+      listening: _listening,
+      child: MultiBlocListener(
+        listeners: [
+          // A hint whose items are no longer both open (the add undone, a
+          // partner ticked one) has nothing left to merge: it goes.
+          BlocListener<ListCubit, ListState>(
+            listenWhen: (a, b) =>
+                !identical(a.server, b.server) ||
+                !identical(a.pending, b.pending),
+            listener: (context, list) {
+              final items = list.items;
+              bool stale(DedupeHint hint) => [
+                hint.added,
+                hint.onList,
+              ].any((i) => items[i.id]?.status != ItemStatus.active);
+              if (_openHint case (final hint, final bar) when stale(hint)) {
+                bar.close();
+              }
+              final sheet = context.read<AddSheetCubit>();
+              if (sheet.state.hint case final hint? when stale(hint)) {
+                sheet.drop(hint);
+              }
+            },
           ),
-          bottomNavigationBar: ScrollThrough(
-            under: _page,
-            child: TextFieldTapRegion(
-              child: _AddBar(
-                input: _input,
-                inputScroll: _inputScroll,
-                focus: _inputFocus,
-                barFocus: _barFocus,
-                autofocus: _autofocus,
-                listening: _listening,
-                onSubmit: () => unawaited(_submit()),
-                onClose: _close,
-                onLeave: _leaveField,
-                onRefocus: _refocusAfterTap,
-                dictation: switch (widget.dictation) {
-                  final dictation? => DictationButton(
-                    dictation: dictation,
-                    input: _input,
-                    onMessage: _snack,
-                    onListening: (listening) =>
-                        setState(() => _listening = listening),
-                    // The dictated text waits in the field; a tap opens it.
-                    onDone: () {
-                      _openOnFocus = false;
-                      _inputFocus.requestFocus();
-                    },
+          BlocListener<AddSheetCubit, AddSheetState>(
+            listenWhen: (a, b) => a.open != b.open,
+            listener: (_, sheet) => _sheetOpen?.value = sheet.open,
+          ),
+          // A hint or merge in the closing sheet's note goes on as a snackbar.
+          BlocListener<AddSheetCubit, AddSheetState>(
+            listenWhen: (a, b) => a.open && !b.open,
+            listener: (context, _) {
+              final (hint, merge) = context.read<AddSheetCubit>().handOver();
+              if (merge != null) {
+                _showMerged(merge);
+              } else if (hint != null) {
+                _hint(hint, counted: true);
+              }
+            },
+          ),
+          // A sheet that starts over (closed, or opened again) clears the
+          // input too.
+          BlocListener<AddSheetCubit, AddSheetState>(
+            listenWhen: (a, b) => b.text.isEmpty && a.text.isNotEmpty,
+            listener: (_, _) {
+              if (_input.text.isNotEmpty) {
+                _input.clear();
+              }
+            },
+          ),
+        ],
+        // Tab goes input, suggestions, chips, Schließen, then the bar's
+        // buttons (DECISIONS, Job 17).
+        child: FocusTraversalGroup(
+          policy: OrderedTraversalPolicy(),
+          child: Scaffold(
+            // The shell's scaffold makes room for the keyboard.
+            resizeToAvoidBottomInset: false,
+            // The list scrolls on under the floating add field (job 135).
+            extendBody: true,
+            body: Stack(
+              key: _page,
+              children: [
+                ExcludeFocus(
+                  excluding: open,
+                  child: ExcludeSemantics(
+                    excluding: open,
+                    child: SyncIndicator(
+                      rowTop: _Header._gap,
+                      rowHeight: _Header.height,
+                      cardTop: _Header.extent,
+                      child: ShoppingListView(
+                        onInteract: _leaveField,
+                        header: const _Header(),
+                      ),
+                    ),
                   ),
-                  null => null,
-                },
+                ),
+                Positioned.fill(
+                  child: TextFieldTapRegion(
+                    // Escape from a row or chip of the sheet; never focused
+                    // itself, and no semantics node: on the web one this
+                    // size would take every tap on the list.
+                    child: Focus(
+                      canRequestFocus: false,
+                      skipTraversal: true,
+                      includeSemantics: false,
+                      onKeyEvent: (_, event) {
+                        if (event is! KeyDownEvent ||
+                            event.logicalKey != LogicalKeyboardKey.escape ||
+                            !open) {
+                          return KeyEventResult.ignored;
+                        }
+                        _close();
+                        return KeyEventResult.handled;
+                      },
+                      child: AddSheet(
+                        onTake: _take,
+                        onClose: _close,
+                        onPicked: _refocusAfterTap,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            bottomNavigationBar: ScrollThrough(
+              under: _page,
+              child: TextFieldTapRegion(
+                child: _AddBar(
+                  input: _input,
+                  inputScroll: _inputScroll,
+                  focus: _inputFocus,
+                  barFocus: _barFocus,
+                  autofocus: _autofocus,
+                  listening: _listening,
+                  onSubmit: () => unawaited(_submit()),
+                  onClose: _close,
+                  onLeave: _leaveField,
+                  onRefocus: _refocusAfterTap,
+                  dictation: switch (widget.dictation) {
+                    final dictation? => DictationButton(
+                      dictation: dictation,
+                      input: _input,
+                      onMessage: _snack,
+                      onListening: (listening) =>
+                          setState(() => _listening = listening),
+                      // The dictated text waits in the field; a tap opens it.
+                      onDone: () {
+                        _openOnFocus = false;
+                        _inputFocus.requestFocus();
+                      },
+                    ),
+                    null => null,
+                  },
+                ),
               ),
             ),
           ),

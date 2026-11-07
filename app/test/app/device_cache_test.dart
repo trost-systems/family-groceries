@@ -186,4 +186,12 @@ void main() {
     await SharedPreferencesAsync().setString('itemicons.cache', 'not json');
     expect(await cache.cachedItemIcons(), isNull);
   });
+
+  test('the rating prompt counters survive sign-outs', () async {
+    expect(await cache.reviewState(), isNull);
+    await cache.saveReviewState('{"items_added":3}');
+    await cache.remember('peter', null);
+    await cache.forget();
+    expect(await cache.reviewState(), '{"items_added":3}');
+  });
 }

@@ -1,0 +1,54 @@
+id: in-app-review-only-in-store-review
+snapshots:
+  "export 'package:in_app_review/in_app_review.dart';\n":
+    labels:
+    - source: export 'package:in_app_review/in_app_review.dart';
+      style: primary
+      start: 0
+      end: 50
+    - source: "'package:in_app_review/in_app_review.dart'"
+      style: secondary
+      start: 7
+      end: 49
+  "import \"package:in_app_review/in_app_review.dart\" as review;\n":
+    labels:
+    - source: import "package:in_app_review/in_app_review.dart" as review;
+      style: primary
+      start: 0
+      end: 60
+    - source: "\"package:in_app_review/in_app_review.dart\""
+      style: secondary
+      start: 7
+      end: 49
+  "import 'package:family_groceries/review/none.dart'\n    if (dart.library.io) 'package:in_app_review/in_app_review.dart';\n":
+    labels:
+    - source: |-
+        import 'package:family_groceries/review/none.dart'
+            if (dart.library.io) 'package:in_app_review/in_app_review.dart';
+      style: primary
+      start: 0
+      end: 119
+    - source: "'package:in_app_review/in_app_review.dart'"
+      style: secondary
+      start: 76
+      end: 118
+  "import 'package:in_app_review/in_app_review.dart' show InAppReview;\n":
+    labels:
+    - source: import 'package:in_app_review/in_app_review.dart' show InAppReview;
+      style: primary
+      start: 0
+      end: 67
+    - source: "'package:in_app_review/in_app_review.dart'"
+      style: secondary
+      start: 7
+      end: 49
+  "import 'package:in_app_review/in_app_review.dart';\n":
+    labels:
+    - source: import 'package:in_app_review/in_app_review.dart';
+      style: primary
+      start: 0
+      end: 50
+    - source: "'package:in_app_review/in_app_review.dart'"
+      style: secondary
+      start: 7
+      end: 49

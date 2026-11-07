@@ -5,6 +5,7 @@ import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/list/item_icons_remote.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/review/review_counters.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/tips.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,8 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
         AnalyticsStore,
         PendingInviteStore,
         TipStore,
-        ItemIconsStore {
+        ItemIconsStore,
+        ReviewStore {
   /// On Linux, supabase_flutter's legacy SharedPreferences and
   /// SharedPreferencesAsync each rewrite the whole file from their own copy,
   /// so sharing shared_preferences.json loses the session. The other
@@ -69,6 +71,10 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// body, etag}` in one value, so a cut-off write leaves the old check.
   /// Not under [forget]'s prefixes: it belongs to the device.
   static const _itemIconsKey = 'itemicons.cache';
+
+  /// The store rating prompt's counters (job 155), one JSON value. Not
+  /// under [forget]'s prefixes: they count this install's use.
+  static const _reviewKey = 'review.state';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -251,6 +257,13 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
       }),
     ),
   );
+
+  @override
+  Future<String?> reviewState() => _readString(_reviewKey);
+
+  @override
+  Future<void> saveReviewState(String json) =>
+      _write(() => _prefs.setString(_reviewKey, json));
 
   Future<String?> _readString(String key) async {
     try {

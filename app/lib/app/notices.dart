@@ -10,6 +10,10 @@ import 'package:flutter/rendering.dart';
 class Popups() extends NavigatorObserver with ChangeNotifier {
   Route<dynamic>? _top;
 
+  /// The app's, from its [NoticesHost].
+  static Popups? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<_Host>()?.popups;
+
   /// A dialog or sheet is on top, and its barrier covers every page.
   bool get open => _top is PopupRoute;
 

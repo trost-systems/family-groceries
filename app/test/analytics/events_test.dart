@@ -18,6 +18,7 @@ void main() {
       'dedupe_hint_merged',
       'dedupe_hint_ignored',
       'paywall_viewed',
+      'review_prompt_requested',
     });
   });
 
@@ -44,6 +45,7 @@ void main() {
     ('category_reordered', {'scope': 'default'}),
     ('category_reordered', {'scope': 'store'}),
     ('store_reordered', {}),
+    ('review_prompt_requested', {}),
     ('paywall_viewed', {'entry_point': 'more'}),
     ('paywall_viewed', {'entry_point': 'integrations'}),
     (
@@ -108,6 +110,8 @@ void main() {
     ('invite_accepted', {}, 'fine without method? no: see below'),
     ('category_reordered', {'scope': 'Obst & Gemüse'}, 'a category name'),
     ('store_reordered', {'ids': 'a,b'}, 'a list of ids'),
+    ('review_prompt_requested', {'shown': true}, 'whether it showed'),
+    ('review_prompt_requested', {'items_added': 25}, 'a usage count'),
     ('first_open', {'email': 'peter@example.com'}, 'an e-mail'),
     ('feedback_submitted', {'message': 'Der Haken hängt'}, 'the note'),
     ('feedback_submitted', {'category': 'Bug'}, 'a label as category'),

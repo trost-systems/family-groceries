@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
+import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_switch.dart';
@@ -22,6 +23,7 @@ import 'package:family_groceries/purchases/premium_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
+import 'package:family_groceries/review/store_review.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/settings/account_screen.dart';
@@ -190,6 +192,7 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
   settings(Icons.settings_outlined, 'more-settings', _Tint.mint),
   usageData(Icons.insights_outlined, 'more-usage-data', _Tint.mint),
   feedback(Icons.feedback_outlined, 'more-feedback', _Tint.plain),
+  rate(Icons.star_outline, 'more-rate', _Tint.plain),
   help(Icons.help_outline, 'more-help', _Tint.plain),
   imprint(Icons.info_outline, 'more-imprint', _Tint.plain),
   privacyPolicy(Icons.privacy_tip_outlined, 'more-privacy-policy', _Tint.plain),
@@ -205,7 +208,7 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
     (legal: false, items: [invite, join, archived]),
     (legal: false, items: [access]),
     (legal: false, items: [settings, usageData]),
-    (legal: false, items: [feedback, help]),
+    (legal: false, items: [feedback, rate, help]),
     (legal: true, items: [imprint, privacyPolicy, terms, licenses]),
     (legal: false, items: [signOut]),
   ];
@@ -259,6 +262,10 @@ class _MoreListState() extends State<_MoreList> {
           _Item.invite => household != null,
           _Item.archived => widget.showArchived,
           _Item.help => widget.showHelp,
+          _Item.rate => storeListingShown(
+            web: kIsWeb,
+            platform: defaultTargetPlatform,
+          ),
           _Item.usageData => context.read<Analytics>().enabled,
           _ => true,
         };
@@ -350,6 +357,14 @@ class _MoreListState() extends State<_MoreList> {
         label: l10n.feedbackRow,
         onTap: () => unawaited(showFeedbackSheet(context)),
       ),
+      // The listing, never the store's prompt: Apple refuses apps that ask
+      // for a rating on a tap.
+      _Item.rate => _Row(
+        item,
+        label: l10n.rateApp,
+        trailing: _Trailing.external,
+        onTap: () => unawaited(_openStoreListing(context)),
+      ),
       _Item.help => _Row(
         item,
         label: l10n.helpRow,
@@ -386,6 +401,18 @@ class _MoreListState() extends State<_MoreList> {
         onTap: () => unawaited(context.read<SessionCubit>().signOut()),
       ),
     };
+  }
+}
+
+/// The store's page for this app. A failure (no store app, no connection)
+/// is told, and caught: an uncaught one would hold the rating prompt back.
+Future<void> _openStoreListing(BuildContext context) async {
+  final text = AppLocalizations.of(context).lifetimeStoreOffline;
+  final notices = Notices.maybeOf(context);
+  try {
+    await context.read<StoreReview>().openStoreListing();
+  } on Object {
+    notices?.showSnackBar(SnackBar(content: Text(text)));
   }
 }
 

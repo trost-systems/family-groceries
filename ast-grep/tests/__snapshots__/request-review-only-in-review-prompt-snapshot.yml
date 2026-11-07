@@ -1,0 +1,20 @@
+id: request-review-only-in-review-prompt
+snapshots:
+  "Widget f(StoreReview review) =>\n    TextButton(onPressed: review.requestReview, child: child);\n":
+    labels:
+    - source: review.requestReview
+      style: primary
+      start: 58
+      end: 78
+  "void f(BuildContext context) =>\n    unawaited(context.read<StoreReview>().requestReview());\n":
+    labels:
+    - source: context.read<StoreReview>().requestReview
+      style: primary
+      start: 46
+      end: 87
+  "void f(StoreReview review) => review..requestReview();\n":
+    labels:
+    - source: ..requestReview()
+      style: primary
+      start: 36
+      end: 53

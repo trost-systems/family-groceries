@@ -21,6 +21,7 @@ import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
+import 'package:family_groceries/review/store_review.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/integration_lock.dart';
@@ -42,6 +43,7 @@ import '../household/harness.dart'
     show FakeInvites, FakeSharer, MemoryPendingStore;
 import '../list/fake_repository.dart';
 import '../purchases/fakes.dart';
+import '../review/fakes.dart';
 import '../settings/fake_account.dart';
 
 class FakeSession() extends MockCubit<Session> implements SessionCubit;
@@ -176,6 +178,9 @@ Future<More> pumpMore(
 
   /// The PostHog flags that are on.
   Set<String> flags = const {},
+
+  /// The store's rating prompt and listing.
+  FakeStoreReview? storeReview,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -275,6 +280,9 @@ Future<More> pumpMore(
         RepositoryProvider<StorePriceReader>.value(
           value: purchases.storePrices,
         ),
+        RepositoryProvider<StoreReview>.value(
+          value: storeReview ?? FakeStoreReview(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -331,7 +339,7 @@ const menuGroups = [
   ['more-invite', 'more-join'],
   ['more-access'],
   ['more-settings'],
-  ['more-feedback', 'more-help'],
+  ['more-feedback', 'more-rate', 'more-help'],
   legalRows,
   ['more-sign-out'],
 ];

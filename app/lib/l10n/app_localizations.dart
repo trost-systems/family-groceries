@@ -1898,6 +1898,12 @@ abstract class AppLocalizations {
   /// **'Feedback senden'**
   String get feedbackRow;
 
+  /// More: opens Hummlist's page in the App Store or Google Play, to rate it
+  ///
+  /// In de, this message translates to:
+  /// **'Hummlist bewerten'**
+  String get rateApp;
+
   /// More: opens the help and contact page on hummlist.com in the browser
   ///
   /// In de, this message translates to:

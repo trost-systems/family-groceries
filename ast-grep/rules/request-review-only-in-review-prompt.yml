@@ -1,0 +1,20 @@
+# Only ReviewPrompt (app/lib/review/) asks the store for its rating prompt, after the gates in
+# review_gates.dart and a completed trip (job 155). The stores allow the prompt a few times a
+# year and never say whether it showed; Apple refuses apps that ask from a button. A button that
+# wants a rating opens the listing (StoreReview.openStoreListing), as More's row does.
+#
+# Matched on any `.requestReview` member, called or torn off.
+id: request-review-only-in-review-prompt
+language: dart
+severity: error
+files:
+  - app/lib/**
+ignores:
+  - app/lib/review/**
+rule:
+  any:
+    - kind: member_expression
+      regex: '\.\s*requestReview$'
+    - kind: cascade_section
+      regex: '^\.\.\s*requestReview\b'
+message: 'requestReview is called outside app/lib/review/: a button opens the listing (StoreReview.openStoreListing); the prompt is ReviewPrompt.requestIfDue, after its gates'

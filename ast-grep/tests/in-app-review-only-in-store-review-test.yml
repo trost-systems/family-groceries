@@ -1,0 +1,25 @@
+id: in-app-review-only-in-store-review
+valid:
+  # The app goes through StoreReview.
+  - |
+    import 'package:family_groceries/review/store_review.dart';
+  # A package whose name only starts the same.
+  - |
+    import 'package:in_app_review_extras/extras.dart';
+  # Named in a comment or a string, nothing is imported.
+  - |
+    /// in_app_review lives in store_review.dart.
+    const uri = 'package:in_app_review/in_app_review.dart';
+invalid:
+  # A More row that wants the store's prompt straight from the plugin.
+  - |
+    import 'package:in_app_review/in_app_review.dart';
+  - |
+    import "package:in_app_review/in_app_review.dart" as review;
+  - |
+    import 'package:in_app_review/in_app_review.dart' show InAppReview;
+  - |
+    export 'package:in_app_review/in_app_review.dart';
+  - |
+    import 'package:family_groceries/review/none.dart'
+        if (dart.library.io) 'package:in_app_review/in_app_review.dart';
