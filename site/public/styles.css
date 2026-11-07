@@ -36,6 +36,10 @@
   --ring-gap: var(--hl-color-surface);
   --foot: var(--hl-color-inverse);
   --on-foot: var(--hl-color-on-inverse);
+  /* The tokens' heading tracking set Bricolage's heavy weight so tight its letters touched; the
+     site opens it up. Phones keep the larger sizes' tracking: at 150 % text a looser one wrapped
+     guide and legal headings onto another line. */
+  --hl-type-title-tracking: -0.012em;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +52,10 @@
 @media (min-width: 720px) {
   :root {
     --gutter: var(--hl-space-6);
+    --hl-type-display-tracking: -0.025em;
+    --hl-type-headline-l-tracking: -0.022em;
+    --hl-type-headline-tracking: -0.018em;
+    --hl-type-title-tracking: -0.01em;
   }
 }
 
@@ -300,6 +308,7 @@ a {
   font-size: var(--hl-type-label-size);
   font-weight: var(--hl-font-weight-heavy);
   line-height: var(--hl-type-label-line);
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
