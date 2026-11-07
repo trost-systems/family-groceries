@@ -13,6 +13,8 @@ hummlist.com/de and /en keep their landing page; the calls to action follow `sit
 - `unsubscribe` the link in every mail opens /de/warteliste/abmelden (EN /en/waitlist/unsubscribe); the button deletes the entry at once. Later mails also offer one-click unsubscribe in the mail client.
 - `no-app-links` no page on hummlist.com links to or loads anything from app.hummlist.com.
 - `support-faq` /support and /en/support: questions and answers plus support@hummlist.com.
+- `landing-stores` (#290) the stores card: under „Tippe auf einen Laden:“ / "Tap a store:" (the hint labels the button group) the hex buttons „Drogerie“, „Getränkemarkt“, „Supermarkt“ / "Drugstore", "Drinks store", "Supermarket" (`aria-pressed`; Getränkemarkt replaced Bäckerei) re-order the five category stops below, a list named after the pressed store, with the app's category names. Without JavaScript the Supermarkt route shows. The hero still draws Bäckerei among its stores.
+- `landing-videos` (#292, #301) four silent videos with written descriptions (the `aria-label`): typing „Honig“ and „Marmelade“ and ticking them off; three phones of the Brandt family in sync („1 neu von Mia Brandt“); adding by voice, „Pizza, Orangensaft und zwei Packungen Fischstäbchen“; an AI chat adding and ticking off. They show the floating add field and the tab pill.
 
 ## How to get to it (user POV)
 
@@ -29,6 +31,7 @@ Preconditions: a local Supabase stack with this checkout's migrations; `supabase
 - Form, stub upstream: `cd site/checks && npm ci` once, then `node site/checks/waitlist.mjs site/dist --port <prefix>10` (default port 57640; `flock /tmp/fg-e2e.lock` when the box is busy) checks errors, success, honeypot, confirm and unsubscribe pages, no cookies, no off-origin requests, no console errors.
 - Sign up: `getByLabel(/E-Mail-Adresse/)`, `getByRole('radio', { name: 'iPhone' })`, wait 2 s (sends within 1.5 s of page load are dropped as bots), `getByRole('button', { name: 'Auf die Warteliste' }).last()`; result: an element with `data-state="done"`; the form is `#test form`.
 - Confirm: open the confirm URL from the stand-in's log, `getByRole('button')` with „bestätigen“; result `data-state="confirmed"`; again: `data-state="invalid"`.
+- Landing: `PORT=<prefix>90 node site/scripts/preview.mjs` after the build. `getByRole('group', { name: 'Tippe auf einen Laden:' })`, click each `getByRole('button', { name: 'Getränkemarkt' })` (and the others); result `aria-pressed="true"` and `getByRole('list', { name: /Getränkemarkt/ }).getByRole('listitem')` starting with Getränke. `page.locator('video')`: four, each with an `aria-label` (DE and EN at /de and /en).
 - Unsubscribe: the URL from the welcome mail, button with „löschen“; result `data-state="deleted"`, and the row count for that address is 0.
 
 ## Gotchas

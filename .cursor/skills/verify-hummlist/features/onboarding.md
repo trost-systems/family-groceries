@@ -1,6 +1,6 @@
 # Onboarding: from first sign-in to the list
 
-After the first sign-in a user without a household lands on „Willkommen bei Hummlist“ / "Welcome to Hummlist" and either creates a household or accepts an invite. Creating asks for a name (prefilled „Unser Haushalt“ / "Our household") and which stores the household shops at (ten common ones to pick, own ones to type, or none), then offers to invite the partner, then opens the list. Opening an invite link (`/join/<code>`) skips the choice and goes to the join screen after sign-in. Builds that carry analytics ask the analytics question first (feature privacy-consent).
+After the first sign-in a user without a household lands on „Willkommen bei Hummlist“ / "Welcome to Hummlist" and either creates a household or accepts an invite. Creating asks for a name (prefilled „Unser Haushalt“ / "Our household") and which stores the household shops at (eleven common ones to pick, the last a „Baumarkt“; own ones to type; or none), then offers to invite the partner, then opens the list. Opening an invite link (`/join/<code>`) skips the choice and goes to the join screen after sign-in. Builds that carry analytics ask the analytics question first (feature privacy-consent).
 
 ## Sub-features
 

@@ -1,4 +1,4 @@
-# AI assistants (MCP) and access keys
+# AI assistants (MCP) and access tokens
 
 An AI assistant that supports MCP can read and change the household's shopping list through Hummlist's MCP server. The user connects it in one of two ways: signing in (OAuth) when the assistant asks, which opens a consent page „Zugriff erlauben?“; or with a personal access token („Zugriffstoken“) that the user creates in the app (shown once). Everything is managed in Mehr → Zugänge: the server address with a copy button, the access tokens, and the connected apps, each of which can be revoked or disconnected at once. Nothing needs Premium today.
 
@@ -39,7 +39,7 @@ An AI assistant that supports MCP can read and change the household's shopping l
 Preconditions:
 
 - Seeded household „Familie Brandt“, signed in. For OAuth steps the browser context must be the one signed in to the app; the test registers an OAuth client with the official MCP SDK (`TestOAuthProvider`, `openAuthorization`, `callbackParams` in `e2e/tests/mcp-helpers.ts`). The Driving section may call the MCP endpoint over HTTP against the local stack only (`mcpUrl` = local `/functions/v1/mcp`), never production.
-- Specs: `e2e/tests/mcp.spec.ts` (OAuth with consent, deny, sign-in on the way, access key lifecycle, cross-household, forged tokens, `counts`), `e2e/tests/mcp-consent-wait.spec.ts` (the done page while the client connects), `e2e/tests/integration-lock.spec.ts`, `e2e/tests/public-api.spec.ts` (the held API); scripted: `helpers/drive.sh ai-assistants [--lang en]`; run with `scripts/verify.sh --only e2e -- tests/mcp.spec.ts tests/mcp-consent-wait.spec.ts`.
+- Specs: `e2e/tests/mcp.spec.ts` (OAuth with consent, deny, sign-in on the way, access token lifecycle, cross-household, forged tokens, `counts`), `e2e/tests/mcp-consent-wait.spec.ts` (the done page while the client connects), `e2e/tests/integration-lock.spec.ts`, `e2e/tests/public-api.spec.ts` (the held API); scripted: `helpers/drive.sh ai-assistants [--lang en]`; run with `scripts/verify.sh --only e2e -- tests/mcp.spec.ts tests/mcp-consent-wait.spec.ts`.
 
 - **Open Zugänge.** `await openMore(page, 'Zugänge')`. URL `/more/access`.
 - **API key (flag build only).** Reveal `page.getByRole('button', { name: 'API-Schlüssel erstellen' })` and click it, `typeInto(page.getByRole('textbox', { name: 'Name' }), 'Home Assistant')`, `page.getByRole('radio', { name: /^Lesen und schreiben/ }).click()`, `page.getByRole('button', { name: 'Erstellen', exact: true }).click()`. Observable: `page.getByText(/^fgp_[A-Za-z0-9_-]{43}$/)` visible, then after „Fertig“ the row text `…<4> · Lesen und schreiben · Erstellt am …`; supabase-js as the member reads the `personal_access_tokens` row with `kind` `api` and `scopes` `["read","write"]`.
