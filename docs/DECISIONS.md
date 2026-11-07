@@ -9908,3 +9908,42 @@ Baumarkt off the landing page because the app had no hardware categories.
 13. **Two lints keep `requestReview` off buttons:** `in_app_review` may be imported only in
    `app/lib/review/store_review.dart`, and `.requestReview(` may be called only in `app/lib/review/`.
    The brief's "never wire a button to `requestReview()`" is then a lint error, not a note.
+
+
+## Job 164: the StoreKit test phase searches 5 min for its simulator, 2026-11-07
+
+The ios gate failed in phase `storekit_tests` with "xcodebuild: error: Unable to find a device
+matching the provided destination specifier: { arch:arm64, id:<the new 26.2 simulator> }", after
+the main RunnerTests had passed (main runs 42334852466 and 42339585329, PR #298 three times).
+
+1. **How often.** Every ios job from Nov 3 to Nov 7 (all attempts, 40 that reached the phase):
+   6 failed this way, 34 passed, none failed otherwise in that phase.
+2. **Not the id or the arch.** Each failure lists the destinations xcodebuild knew: My Mac and
+   the two placeholders, no simulator at all. The 26.5 simulator the main tests had just used
+   was missing too. When xcodebuild does list the 26.2 simulator, it lists it as
+   `arch:arm64, id:<udid>`, so the specifier matches.
+3. **Why the list was empty.** Probe workflow `ios-probe-164` on `probe/164-dest*` branches
+   (macos-26, the gate's simulator steps). Right after the 26.2 simulator's first boot, an
+   `xcodebuild -showdestinations` run listed no simulator for minutes at a time (3 of 4 jobs:
+   9 to 18 of 49 polls, up to 5 min in a row, some after `bootstatus` returned), while
+   `simctl list` showed the device throughout and the load average stood at 100 to 600
+   (run 42361571358).
+4. **Why the default search lost it.** xcodebuild's device list is live: a simulator created
+   20 or 60 s after xcodebuild started was still found (run 42370324559). `-destination-timeout`
+   sets how long it looks. With a simulator that joins the list 150 or 240 s late, the default
+   search failed with the same "Unable to find a device" 4 of 4 times, and `-destination-timeout 300`
+   found it 4 of 4 times (2 runners, run 42372263213). The failed CI runs searched 60 to 79 s.
+5. **The fix.** The StoreKit run passes `-destination-timeout 300`. If xcodebuild still finds no
+   simulator, the gate says so ("listed no iOS 26.2 simulator ... no StoreKit test ran") instead
+   of the misleading "a skip means storekitd refused Hummlist.storekit". A test that runs and
+   fails fails the gate as before. A found device costs nothing extra; the search only runs
+   longer while the list is empty.
+6. **Not done.** No retry loop and no `-showdestinations` wait before the run. A poll that finds
+   the device says nothing about the next xcodebuild process (the list emptied again after
+   successful polls, item 3), and the longer search already covers the empty windows measured
+   after `bootstatus`. The main RunnerTests keep the default search: their simulator was listed
+   in every poll and they never failed this way in the 40 runs. Shutting the main simulator down
+   before booting the 26.2 one was probed too (run 42363609343). It neither reproduced nor
+   prevented anything there, so it is not part of the fix. Running the tests right after boot or
+   with nothing else running never reproduced the failure (46 runs in runs 42363609343 and
+   42365917510). The real failure comes up in about 1 run in 7.
