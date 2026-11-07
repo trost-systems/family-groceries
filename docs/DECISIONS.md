@@ -9641,3 +9641,16 @@ phone apps always show; add an example of talking to the app.
    The new `Anpassen stands alone` test checks that the status capsule shows only then, beside
    Anpassen and not around it. Job 153 redesigns
    the sync indicator. Until then the icon works as before (Peter t618u/t619u).
+
+## Job 160: Siri gating in FEATURES-FOR-WRITERS.md, 2026-11-07
+
+1. **Siri becomes Premium after the public launch.** The writers' map said Siri is free "also
+   after Premium launches", which no source from Peter backs. The canonical rule is Spec #4
+   (Peter, Oct 31) with the testers' free unlock (P1, Nov 2): Siri and AI assistants are free for
+   everyone during the beta and part of Hummlist Premium after the public launch, as
+   `docs/PAYWALL_RELEASE.md` says. Only the Alexa skill stays free (Peter Q39 AP1, Nov 2). The
+   global Never-claim list, the Siri, Alexa and Premium sections now say so, each with a source
+   note. "Nothing is gated today" stays.
+2. **Left out of scope.** The brief is this file only. The note on `integration-lock` in
+   `releases/flags.json` still names Alexa among the integrations the lock covers, although the
+   lock never covers it (job 72). It is internal, not writer copy. A later flags.json PR can fix it.

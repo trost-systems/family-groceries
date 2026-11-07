@@ -14,7 +14,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 ## Never claim (everywhere)
 
 - That Hummlist Premium can be bought, or any price, plan, trial or discount. Premium is not on sale and nothing is locked behind it today.
-- That Siri, Alexa or AI assistants need Premium. Today they don't, and the Alexa skill stays free for good.
+- That Siri, Alexa or AI assistants need Premium today. They don't: nothing is locked during the beta. After the public launch Siri and AI assistants become part of Hummlist Premium; the Alexa skill stays free for good. Never write that Siri stays free after the launch. Source: Spec #4, Oct 31; docs/PAYWALL_RELEASE.md; Alexa: Peter Q39 AP1, Nov 2.
 - Siri without setup ("just say Hey Siri", no Shortcut) as available. It is built, but its announcement waits for Hummlist Launch. Today Siri works through a Shortcut the user sets up once, in German.
 - That the Alexa skill is launched, certified or in the Alexa Skill Store. It is a beta by invitation, in German and English.
 - Store logos or chain colours, official store layouts, prices, offers or opening hours. Store names are plain names; walking orders are researched defaults.
@@ -494,7 +494,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 - That Siri works without setup as a released feature (held until Hummlist Launch).
 - That it works on Apple Watch, AirPods or CarPlay (untested), or Android, or in the browser.
 - That English sentences are split correctly through the Shortcut (German only).
-- That it needs Premium (it is free, also after Premium launches).
+- That it needs Premium today, or that it stays free after the public launch. Siri is free for everyone during the beta (testers keep a free unlock) and becomes part of Hummlist Premium after the public launch. Source: Spec #4, Oct 31; docs/PAYWALL_RELEASE.md; testers' free unlock: P1, Nov 2.
 - That the voice microphone in the app works on the web (iOS and Android apps only).
 
 **Unverified.** Real Siri voice on a device; the Shortcut on current iOS versions. Siri without setup in German: the device tests on build 1119 (3 Nov 2026) sent „Füge … zur Hummliste hinzu“ to Reminders or answered „Hummlist unterstützt das nicht“. The fix (sentences that name Hummlist first or as the object, like „Etwas auf Hummlist setzen“ and „Hummlist, was steht drauf?“; any item in „Füge Zahnpasta zu Hummlist hinzu“; Siri asks once to be allowed for Hummlist) waits for the next German device test. Never write „Einkaufsliste“ as a Hummlist Siri sentence: Siri gives it to Reminders. Job 97 (not yet on a device): Siri says the name „Hummlist“ and no longer takes „Hummliste“ or „Humm Liste“ for it, more German sentences („Füge etwas zu meiner Hummlist hinzu“, „Zeig meine Hummlist“), the household's own words for an item („Möhren“ for „Karotten“), and on an error Siri answers instead of opening the app. The iPhone app needs iOS 17 or newer since job 97.
@@ -535,7 +535,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 **Never claim.**
 - That the skill is certified, in the public Alexa Skill Store, or available to everyone.
 - That it speaks any language besides German and English, or that everyone can find it in the Skill Store (it is listed for every country only once certified).
-- That it needs Premium (it is free, also after Premium launches).
+- That it needs Premium (it is free, also after Premium launches). Source: Peter Q39 AP1, Nov 2; docs/PAYWALL_RELEASE.md.
 - That it works for ticking items off or moving them (add and read only).
 - That „Alexa, setz Milch auf die Hummlist“ (EN "Alexa, add milk to Hummlist") works: without „sag/frag/öffne Hummlist“ ("ask/tell/open Hummlist") Alexa's own lists take the sentence.
 - Exact deletion periods beyond what the privacy policy says (its wording waits for Peter's approval).
@@ -546,7 +546,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 ## Hummlist Premium (held)
 
-**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. The app has a „Hummlist Premium“ page about the household: „Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.“ (EN: "Hummlist Premium covers your whole household, including everyone who joins later."), „KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden“ (EN: "Connect AI assistants that support MCP to your list"). Once native Siri is released, the iPhone app lists „Per Siri auf die Liste, ohne die App zu öffnen“ (EN: "Add to the list with Siri, without opening the app") above that line, and once the Hummlist API is released, „Eigene Automationen mit der Hummlist API“ (EN: "Your own automations with the Hummlist API") below it; both are hidden today. Today it shows nothing else: no slogan, no prices, no buy buttons, no „bald verfügbar“, no note about buying in the apps, no refund link. Never name an assistant brand for Premium (Legal Review N-67). Beta households with a free unlock see „In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet“ (EN: "Free in the beta, until Hummlist Premium launches") with „Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.“ (EN: "You pay nothing, and nothing renews automatically. We'll let you know at least 4 weeks before the free unlock ends.") and a link „Mehr dazu in der Datenschutzerklärung“ (EN: "More in the privacy policy"); these are Legal Review's approved texts. Testers and app review see „Kostenlos freigeschaltet (Test und App-Prüfung)“ (EN: "Unlocked free of charge (testing and app review)") instead. They also see the row „Hummlist Premium“ in Mehr.
+**What it does.** Premium is not on sale yet and nothing in the app is gated by it: Siri, Alexa and AI assistants work for everyone. After the public launch Siri and AI assistants become part of Premium; the Alexa skill stays free. Source: Spec #4, Oct 31; docs/PAYWALL_RELEASE.md; Alexa: Peter Q39 AP1, Nov 2. The app has a „Hummlist Premium“ page about the household: „Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.“ (EN: "Hummlist Premium covers your whole household, including everyone who joins later."), „KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden“ (EN: "Connect AI assistants that support MCP to your list"). Once native Siri is released, the iPhone app lists „Per Siri auf die Liste, ohne die App zu öffnen“ (EN: "Add to the list with Siri, without opening the app") above that line, and once the Hummlist API is released, „Eigene Automationen mit der Hummlist API“ (EN: "Your own automations with the Hummlist API") below it; both are hidden today. Today it shows nothing else: no slogan, no prices, no buy buttons, no „bald verfügbar“, no note about buying in the apps, no refund link. Never name an assistant brand for Premium (Legal Review N-67). Beta households with a free unlock see „In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet“ (EN: "Free in the beta, until Hummlist Premium launches") with „Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.“ (EN: "You pay nothing, and nothing renews automatically. We'll let you know at least 4 weeks before the free unlock ends.") and a link „Mehr dazu in der Datenschutzerklärung“ (EN: "More in the privacy policy"); these are Legal Review's approved texts. Testers and app review see „Kostenlos freigeschaltet (Test und App-Prüfung)“ (EN: "Unlocked free of charge (testing and app review)") instead. They also see the row „Hummlist Premium“ in Mehr.
 
 **How to get there.** Not from Mehr before the launch: the row „Hummlist Premium“ shows only for households that have Premium (a free unlock in the beta or for testers). The page opens from its link.
 
@@ -554,7 +554,7 @@ The starting categories, in order: Obst & Gemüse, Brot & Backwaren, Kühlregal,
 
 **Never claim.**
 - That Premium can be bought, or any price, plan or discount (yearly and Lifetime are planned, not for sale).
-- That Siri, Alexa or AI assistants need Premium today (they do not), or that Alexa ever will (the skill stays free).
+- That Siri, Alexa or AI assistants need Premium today (they do not), that Siri or AI assistants stay free after the public launch (they become part of Premium), or that Alexa ever needs it (the skill stays free). Source: Spec #4, Oct 31; docs/PAYWALL_RELEASE.md; Alexa: Peter Q39 AP1, Nov 2.
 - That Google Assistant or Apple Watch exist or are coming.
 - That there is a free trial.
 - That Mehr shows Hummlist Premium to everyone (it does once Premium is on sale).
