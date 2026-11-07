@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -139,6 +141,49 @@ void main() {
       tester.getRect(storeDivider('s6')).top,
       moreOrLessEquals(barBottom(tester), epsilon: 1),
     );
+  });
+
+  testWidgets('a cold start at /stores/<id> waits for the server when the '
+      "device's copy lacks the store", (tester) async {
+    seedStores();
+    cache.saved = ListSnapshot(
+      catalog: await repo.fetchCatalog(),
+      server: const [],
+      pending: const [],
+    );
+    final items = repo.itemsGate = Completer<void>();
+    links.pending = const StoreLink('s6');
+    await pumpList(tester);
+    expect(row('Ding 0-0'), findsNothing);
+    items.complete();
+    await tester.pumpAndSettle();
+    expect(row('Ding 6-0'), findsOneWidget);
+    expect(
+      tester.getRect(storeDivider('s6')).top,
+      moreOrLessEquals(barBottom(tester), epsilon: 1),
+    );
+  });
+
+  testWidgets('an offline cold start decides a store link against the '
+      "device's copy, and reconnecting leaves the list as it is", (
+    tester,
+  ) async {
+    seedStores();
+    cache.saved = ListSnapshot(
+      catalog: await repo.fetchCatalog(),
+      server: const [],
+      pending: const [],
+    );
+    repo.online = false;
+    links.pending = const StoreLink('s6');
+    await pumpList(tester);
+    expect(links.pending, isNull);
+    repo.online = true;
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(row('Ding 0-0'), findsOneWidget);
+    expect(row('Ding 6-0'), findsNothing);
+    expect(cache.prefs!.folded, {'s6'});
   });
 
   testWidgets('an unknown store leaves the list as it is', (tester) async {

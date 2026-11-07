@@ -1,9 +1,10 @@
-import { expect, test, type Page } from './fixtures';
+import { expect, test, type Page, type Route } from './fixtures';
 import { addItem, apiAs, boxOf, cutOff, failingIndicator, itemRow, listBarHeight, newEmail, offlineIndicator, screenshot, signUpWithHousehold, tick } from './helpers';
 
 /** The sync indicator's accessible names; it shows nothing while online, even with changes in flight. */
 const offline = offlineIndicator;
 const failing = failingIndicator;
+const retrying = (page: Page) => page.getByRole('button', { name: 'Wird erneut versucht', exact: true });
 const edit = (page: Page) => page.getByRole('button', { name: 'Anpassen', exact: true });
 
 test('the bar above the list keeps its height in every sync state and names no household or count', async ({ page }) => {
@@ -77,9 +78,24 @@ test('a server that answers with errors shows sync failing, keeps the change and
 
   // Every write answers 503, as a gateway in trouble does; reads still work, so the app is not offline.
   const writes = '**/rest/v1/**';
+  const unavailable = { status: 503, contentType: 'text/plain', body: 'Service Unavailable' };
+  let lastFail = 0;
+  let failed: (() => void) | undefined;
+  let hold: ((route: Route) => void) | undefined;
   await page.route(writes, async (route) => {
-    if (route.request().method() === 'GET') await route.fallback();
-    else await route.fulfill({ status: 503, contentType: 'text/plain', body: 'Service Unavailable' });
+    if (route.request().method() === 'GET') return route.fallback();
+    // Each resync also POSTs rpc/suggest_items; only the tick's item write is timed and held.
+    if (!route.request().url().includes('/rest/v1/items')) return route.fulfill(unavailable);
+    if (hold) {
+      hold(route);
+      hold = undefined;
+      return undefined;
+    }
+    lastFail = Date.now();
+    await route.fulfill(unavailable);
+    failed?.();
+    failed = undefined;
+    return undefined;
   });
   await tick(page, 'Kaffee');
   await expect(failing(page), 'sync failing shows').toHaveCount(1, { timeout: 10_000 });
@@ -88,16 +104,38 @@ test('a server that answers with errors shows sync failing, keeps the change and
   await expect(itemRow(page, 'Kaffee'), 'the tick stays').toHaveCount(0);
   await expect(page.getByText(/^Änderung abgelehnt/), 'not dropped as refused').toHaveCount(0);
   await screenshot(page, 'topbar-04-failing-open');
-  await expect(async () => {
+  const collapsed = async () => {
     const pill = await boxOf(failing(page));
     expect(pill.y + pill.height, 'collapsed into the bar').toBeLessThanOrEqual(listBarHeight);
-  }).toPass({ timeout: 8_000 });
+  };
+  await expect(collapsed).toPass({ timeout: 8_000 });
   await screenshot(page, 'topbar-05-failing-pill');
 
+  // The list retries 3 s after each failed write, timed from the app's receipt of the 503 and with a
+  // resync before it writes again: an item write sooner than 3 s after one is the tap's.
+  // Held unanswered, it keeps the retry in flight for the label to be read.
+  await new Promise<void>((resolve) => {
+    failed = resolve;
+  });
+  const since = lastFail;
+  const tapped = new Promise<{ route: Route; at: number }>((resolve) => {
+    hold = (route) => resolve({ route, at: Date.now() });
+  });
+  await failing(page).click();
+  const write = await Promise.race([
+    tapped,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('the tap sent no item write within 5 s')), 5_000)),
+  ]);
+  expect(write.at - since, 'the tap wrote before the 3 s retry could').toBeLessThan(3_000);
+  await expect(retrying(page), 'the pill says it tries again').toHaveCount(1);
+  await expect(failing(page)).toHaveCount(0);
+  await write.route.fulfill(unavailable);
+  await expect(failing(page), 'still failing: back to the pill').toHaveCount(1);
+  await expect(retrying(page)).toHaveCount(0);
+  await expect(collapsed).toPass({ timeout: 2_000 });
+
   await page.unroute(writes);
-  // The list also retries every 3 s on its own; one that lands first leaves nothing to tap.
-  await failing(page).click({ timeout: 2_000 }).catch(() => undefined);
-  await expect(failing(page), 'the retry went through and the indicator left').toHaveCount(0, { timeout: 10_000 });
+  await expect(failing(page), 'the next retry went through and the indicator left').toHaveCount(0, { timeout: 10_000 });
   const api = await apiAs(email);
   await expect(async () => {
     const { data } = await api.from('items').select('status').eq('name', 'Kaffee');
