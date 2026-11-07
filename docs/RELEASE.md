@@ -95,8 +95,8 @@ Each public release has a user-facing changelog, collected from the
 
 Without a draft, the release is recorded without a changelog: the workflow
 warns, and the page shows "Fehlerbehebungen und Verbesserungen.". TestFlight's
-"What to Test" (`scripts/release/notes.sh`) stays as it is: PR titles since
-the last upload, for the internal testers.
+"What to Test" is written from the same notes, per upload, for the internal
+testers ([What to Test](#what-to-test)).
 
 ## When a run ships
 
@@ -308,23 +308,65 @@ and the Fastfile parses.
 
 ## What to Test
 
-`scripts/release/notes.sh` writes the TestFlight notes: the titles of the PRs
-merged into `main` since the last upload's commit (`main` takes one
-`<PR title> (#n)` commit per PR), newest first, at most 12 lines. It drops
-PRs about the repo's own machinery (docs, CI, lints, gates, deploys, backups,
-release tooling, the verify skill; the word list is `internal` in the
-script), the `Job <n>:` prefixes, PR numbers and anything that looks like an
-email address. The lane removes what Apple rejects (emoji, `<`) and cuts to
-4000 bytes; if App Store Connect still refuses the notes, the run warns and
-stays green, since the build reached the testers anyway. de-DE gets a German heading,
-en-US an English one; the titles stay as written. Play gets no release notes
-(`skip_upload_changelogs`; job 14 owns store metadata).
+`node scripts/release/changelog.mjs notes --lang <de|en> --previous-sha <last
+upload> --sha <shipped commit>` writes the TestFlight notes for the commits
+`main` took since the last upload's commit (one `<PR title> (#n)` commit per
+PR), newest first, at most 12 lines. Each commit gives:
+
+- its `## Changelog` items (`docs/CHANGELOG.md`) in the note's language, so
+  testers read the same sentences the stores and hummlist.com get, `flag:`
+  and `hold:` items included;
+- nothing when the section says `none`;
+- its title, without the `Job <n>:` prefix, PR number and anything that looks
+  like an e-mail address, when it has no section (before job 39).
+
+The lane removes what Apple rejects (emoji, `<`) and cuts to 4000 bytes; if
+App Store Connect still refuses the notes, the run warns and stays green,
+since the build reached the testers anyway. de-DE gets a German heading,
+en-US an English one. Play gets no release notes (`skip_upload_changelogs`;
+job 14 owns store metadata).
 
 The first upload (Release run 11, build 1021) had no earlier upload to start
 from, so the script took the last 20 `main` commits, and after the filters
 only "rename the app to Hummlist (com.hummlist.app)" was left. That note was
 a one-off: from build 1021 on, every run lists the PRs since the previous
 upload.
+
+Until job 167 the notes were PR titles filtered by a word list. Build 1201
+(2026-11-07) told testers about "nexus.hummlist.com: ops control room
+dashboard" and a privacy-page PR, and the word "e2e" hid the app fix that
+build was for. `docs/screenshots/167/notes-before-after.txt` shows both
+versions of today's notes.
+
+### Internal work stays out
+
+A commit is internal, and gives no note and no changelog item, when one of
+these holds (`internalReason` in `scripts/release/changelog.mjs`, job 167):
+
+1. **It changes nothing that reaches users.** At least one changed path must be
+   on the allowlist and not on the denylist.
+   - Allowlist: `app/lib/`, `app/l10n/`, `app/assets/`, `app/android/`,
+     `app/ios/`, `app/web/`, `app/pubspec.yaml`, `app/pubspec.lock`,
+     `supabase/migrations/`, `supabase/functions/`, `supabase/classifier/`,
+     `alexa/`.
+   - Denylist inside it: `test/`, `tests/`, `test_driver/`,
+     `integration_test/` and `fastlane/` directories, `*_test.dart`,
+     `*_test.ts`, `*.test.ts`, `*.test.mjs` and `*.md` files.
+   So Nexus (`nexus/`), CI, `scripts/`, `docs/`, `e2e/`, `mcp-proxy/`,
+   `analytics/`, the verify skills, the lint packs, the hz lanes and the site
+   never show up.
+2. **Its PR description has a paragraph `Changelog: skip`** (or
+   `Changelog: internal`) outside HTML comments and code blocks. Put it
+   above the `## Changelog` section. Use it for an internal change
+   that touches an allowlisted path, such as a debug-only screen. It is not
+   the `## Changelog` heading; that section still says `none` or lists items.
+3. **It has no `## Changelog` section and its title starts with `docs:`,
+   `ci:`, `chore:`, `test:`, `build:` or `style:`** (scope allowed), or
+   `Revert "`.
+
+The changelog draft applies the same rule and names each commit whose
+items it left out, so the reviewer can add an item back by hand if users
+see it after all.
 
 ## Secrets and variables
 

@@ -259,6 +259,10 @@ GitHub API, no network, no LLM.
 What `draft` does with the notes:
 
 - It drops `none` and commits without a section.
+- It drops the items of internal commits: no changed path that reaches users,
+  or a `Changelog: skip` line (`docs/RELEASE.md`, "Internal work stays out").
+  It prints a warning for each, so a wrongly dropped item can go back in by
+  hand.
 - It holds back an item whose flag or hold is closed (above) and adds the
   items of `pending.json` whose gate is open now.
 - It groups the items as new, improved, fixed, in merge order (oldest first)

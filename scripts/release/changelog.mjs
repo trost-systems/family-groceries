@@ -12,6 +12,8 @@
 //     with the App Store and Play "What's new" texts.
 //   node scripts/release/changelog.mjs store --version X [--file F]
 //     Rewrites a draft's store texts from its (edited) title and items.
+//   node scripts/release/changelog.mjs notes --lang de|en --sha S [--previous-sha P]
+//     TestFlight's "What to Test" for the commits in previous..sha (testerNotes).
 //   node scripts/release/changelog.mjs drafts [--dir D]
 //     Checks releases/flags.json and releases/changelog/: every draft valid, named <version>.json,
 //     store texts current; pending.json and the <version>.override.md files valid.
@@ -64,17 +66,20 @@ const word = (line) =>
     .toLowerCase();
 const NEAR_HEADING = /^[ \t]*#{1,6}[ \t]*\**changelog\b/i;
 
+// A description without HTML comments (the template's guidance) and code fences: it may quote the
+// format, heading included.
+const unquoted = (message) =>
+  message
+    .replace(/\r/g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?^ {0,3}\1[`~]*[ \t]*$/gm, '');
+
 // The `## Changelog` section of a PR description or commit message: null when there is none,
 // 'none', or the items in order. It runs to the next heading or `---` rule; a paragraph that is
 // neither an item nor `none` ends it too, so text after it (a "Generated with" line, trailers)
 // is no part of it. Strict about structure, lenient about case, a trailing colon and list dashes.
 export function parseNote(message) {
-  // Code fences go too: a description may quote the format, heading included.
-  const lines = message
-    .replace(/\r/g, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?^ {0,3}\1[`~]*[ \t]*$/gm, '')
-    .split('\n');
+  const lines = unquoted(message).split('\n');
   const starts = lines.flatMap((line, i) => (HEADING.test(line) ? [i] : []));
   const near = lines.find((line) => NEAR_HEADING.test(line) && !HEADING.test(line));
   if (near !== undefined) throw new NoteError(`"${near.trim()}" is not the section heading; write it as "## Changelog" on its own line`);
@@ -416,14 +421,15 @@ function git(...args) {
   }
 }
 
-const commitOf = (ref, flag) => {
+const commitOrNull = (ref) => {
   try {
     return execFileSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
-    return refuse(`${flag} ${ref} is not a commit in this repository`);
+    return null;
   }
 };
 
+const commitOf = (ref, flag) => commitOrNull(ref) ?? refuse(`${flag} ${ref} is not a commit in this repository`);
 const isAncestor = (ancestor, descendant) => {
   try {
     execFileSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], { stdio: 'ignore' });
@@ -433,16 +439,47 @@ const isAncestor = (ancestor, descendant) => {
   }
 };
 
+// main's commits in a range (git log arguments), with subject, message and changed paths.
+function commits(...range) {
+  const log = git('-c', 'core.quotePath=false', 'log', '--first-parent', '--format=%x1e%H%x00%s%x00%B%x00', '--name-only', ...range);
+  return log.split('\x1e').slice(1).map((chunk) => {
+    const [hash, subject, message, names] = chunk.split('\x00');
+    return { hash, subject, message, paths: names.split('\n').filter(Boolean) };
+  });
+}
+
+// --- who a commit is for (job 167) --------------------------------------------------------------
+
+// What reaches users: the app builds, the server they talk to, the Alexa skill.
+const USER_PATHS = [/^app\/(lib|l10n|assets|android|ios|web)\//, /^app\/pubspec\.(yaml|lock)$/, /^supabase\/(migrations|functions|classifier)\//, /^alexa\//];
+// Inside those, what users never run: tests and their fixtures, docs, store tooling.
+const INTERNAL_PATHS = [/(^|\/)(tests?|test_driver|integration_test|fastlane)\//, /[._]test\.(dart|ts|mjs)$/, /\.md$/];
+export const reachesUsers = (path) => USER_PATHS.some((p) => p.test(path)) && !INTERNAL_PATHS.some((p) => p.test(path));
+// A paragraph of the PR description, for what the paths get wrong.
+const SKIP_LINE = /^changelog[ \t]*:[ \t]*(?:skip|internal)[ \t]*$/im;
+// Section-less commits (before job 39) that say what they are in a conventional prefix.
+const INTERNAL_SUBJECT = /^(?:docs|ci|chore|test|build|style)(?:\(.*\))?!?:|^revert "/i;
+
+// Why a commit is no news for users (the testers' notes, the changelog), or null when it may be:
+// a "Changelog: skip" line, no changed path that reaches users (Nexus, CI, scripts, docs, e2e,
+// mcp-proxy, the site, tests), or, without a ## Changelog section, a docs/ci/test-style subject.
+export function internalReason({ subject, message, paths }, note) {
+  if (SKIP_LINE.test(unquoted(message))) return 'is marked "Changelog: skip"';
+  if (!paths.some(reachesUsers)) return 'changes nothing that reaches users';
+  if (note === null && INTERNAL_SUBJECT.test(subject)) return 'is a docs, CI, chore, test, build or style commit';
+  return null;
+}
+
 // The items of the notes of main's commits in previous..sha (from the root without previous),
 // oldest first, each with its category, flag or hold, PR and commit. Commits without a section
-// (before job 39, release records, Dependabot) and `none` give no items.
+// (before job 39, release records, Dependabot) and `none` give no items; nor do internal commits,
+// whose items come back as `excluded` for the report.
 export function collect({ previous, sha, skip = [] }) {
-  const range = previous ? [`${previous}..${sha}`] : [sha];
-  const log = git('log', '--first-parent', '--reverse', '--format=%x1e%H%x00%s%x00%B', ...range);
   const items = [];
+  const excluded = [];
   const problems = [];
-  for (const chunk of log.split('\x1e').slice(1)) {
-    const [hash, subject, message] = chunk.split('\x00');
+  for (const commit of commits('--reverse', ...(previous ? [`${previous}..${sha}`] : [sha]))) {
+    const { hash, subject, message } = commit;
     if (skip.some((s) => hash.startsWith(s))) continue;
     let note;
     try {
@@ -453,13 +490,56 @@ export function collect({ previous, sha, skip = [] }) {
       continue;
     }
     if (note === null || note === 'none') continue;
+    const reason = internalReason(commit, note);
+    if (reason) {
+      excluded.push({ hash, subject, reason });
+      continue;
+    }
     const pr = Number(/\(#(\d+)\)$/.exec(subject)?.[1]) || null;
     for (const item of note) items.push({ ...item, pr, sha: hash });
   }
   if (problems.length) {
     refuse(`invalid ## Changelog sections on main (fix the wording in the draft by hand and rerun with --skip <sha> for each):\n  ${problems.join('\n  ')}`);
   }
-  return items;
+  return { items, excluded };
+}
+
+// TestFlight's "What to Test" (docs/RELEASE.md): what users see from main's commits in
+// previous..sha, newest first. A commit's ## Changelog items in the note's language, or its title
+// (no job prefix, PR number or e-mail address) when it has no section; `none` and internal commits
+// give nothing. An unknown or missing previous commit (the first upload) takes the last 20.
+const NOTES_WORDS = {
+  de: { head: 'Neu in diesem Build von Hummlist:', none: 'Kleine Verbesserungen und Fehlerbehebungen.', more: (n) => `und ${n} weitere Änderungen` },
+  en: { head: 'New in this Hummlist build:', none: 'Small improvements and fixes.', more: (n) => `and ${n} more changes` },
+};
+const NOTES_MAX = 12;
+const noteTitle = (subject) =>
+  subject
+    .replace(/ \(#\d+\)$/, '')
+    .replace(/^Job \d+[a-z]*[^:]*: /i, '')
+    .replace(/[\w.%+-]+@[\w.-]+/g, '')
+    .trim();
+
+export function testerNotes({ lang, previous, sha }) {
+  const known = previous && commitOrNull(previous);
+  const lines = [];
+  for (const commit of commits(...(known ? [`${known}..${sha}`] : ['-n', '20', sha]))) {
+    let note;
+    try {
+      note = parseNote(commit.message);
+    } catch (error) {
+      if (!(error instanceof NoteError)) throw error;
+      note = null;
+    }
+    if (note === 'none' || internalReason(commit, note)) continue;
+    if (note === null) lines.push(noteTitle(commit.subject));
+    else lines.push(...note.map((item) => item[lang]));
+  }
+  const words = NOTES_WORDS[lang];
+  const shown = lines.filter((line) => line !== '');
+  if (shown.length === 0) return words.none;
+  const more = shown.length > NOTES_MAX ? [words.more(shown.length - NOTES_MAX)] : [];
+  return [words.head, ...[...shown.slice(0, NOTES_MAX), ...more].map((line) => `- ${line}`)].join('\n');
 }
 
 const repoRoot = () => git('rev-parse', '--show-toplevel').trim();
@@ -520,7 +600,11 @@ function draftCommand(argv) {
   const root = repoRoot();
   const dir = changelogDir();
   const gates = loadGates(resolve(root, 'releases/flags.json'));
-  const { items, held, released, matched } = plan(collect({ previous, sha, skip: opts.skip }), loadPending(dir).items, gates);
+  const collected = collect({ previous, sha, skip: opts.skip });
+  const { items, held, released, matched } = plan(collected.items, loadPending(dir).items, gates);
+  for (const { hash, subject, reason } of collected.excluded) {
+    console.error(`WARNING: left out the items of ${hash.slice(0, 7)} "${subject}": it ${reason}. If users do see it, add its items to the draft by hand.`);
+  }
   for (const { item, word } of matched) {
     console.error(`WARNING: "${item.en}" (${item.sha.slice(0, 7)}) mentions "${word}" but has no "hold: ${item.hold}" line; held anyway until releases/flags.json releases that hold`);
   }
@@ -630,11 +714,18 @@ function checkCommand(argv) {
   console.log(note === 'none' ? 'changelog: none (nothing users see)' : `changelog: ${note.map((i) => `${i.category}${gated(i)}: ${i.en}`).join(' | ')}`);
 }
 
+function notesCommand(argv) {
+  const { values: opts } = parseArgs({ args: argv, strict: true, options: { lang: { type: 'string' }, sha: { type: 'string' }, 'previous-sha': { type: 'string', default: '' } } });
+  if (!Object.hasOwn(NOTES_WORDS, opts.lang ?? '')) refuse('--lang is de or en');
+  if (opts.sha === undefined) refuse('--sha is required');
+  console.log(testerNotes({ lang: opts.lang, previous: opts['previous-sha'], sha: commitOf(opts.sha, '--sha') }));
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [command, ...rest] = process.argv.slice(2);
-  const commands = { check: checkCommand, draft: draftCommand, store: storeCommand, drafts: draftsCommand };
+  const commands = { check: checkCommand, draft: draftCommand, store: storeCommand, drafts: draftsCommand, notes: notesCommand };
   try {
-    if (!commands[command]) refuse(`unknown command ${command ?? '(none)'}; usage: changelog.mjs check|draft|store (see the comment at the top)`);
+    if (!commands[command]) refuse(`unknown command ${command ?? '(none)'}; usage: changelog.mjs check|draft|store|drafts|notes (see the comment at the top)`);
     commands[command](rest);
   } catch (error) {
     if (!(error instanceof Refusal || error instanceof NoteError || error instanceof RecordError || error.code?.startsWith('ERR_PARSE_ARGS'))) throw error;
