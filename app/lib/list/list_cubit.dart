@@ -23,6 +23,10 @@ class const ListState({
   /// Ops not yet acknowledged, oldest first.
   final List<ItemOp> pending = const [],
   final bool loaded = false,
+
+  /// A resync since the list started is over, answered or not; before,
+  /// [server] is the device's copy and the server may know more.
+  final bool resynced = false,
   final ConnectionStatus connection = ConnectionStatus.connecting,
 
   /// The server answers, but the last send or fetch failed with a
@@ -53,6 +57,7 @@ class const ListState({
     Map<String, Item>? server,
     List<ItemOp>? pending,
     bool? loaded,
+    bool? resynced,
     ConnectionStatus? connection,
     bool? failing,
     List<Usual>? usuals,
@@ -63,6 +68,7 @@ class const ListState({
     server: server ?? this.server,
     pending: pending ?? this.pending,
     loaded: loaded ?? this.loaded,
+    resynced: resynced ?? this.resynced,
     connection: connection ?? this.connection,
     failing: failing ?? this.failing,
     usuals: usuals ?? this.usuals,
@@ -1075,6 +1081,9 @@ class ListCubit(
       _goOffline();
     } finally {
       _resyncsHeard.remove(heard);
+    }
+    if (!state.resynced && !isClosed) {
+      emit(state.copyWith(resynced: true));
     }
     unawaited(_flush());
     return fetched;

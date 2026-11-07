@@ -139,7 +139,7 @@ What Hummlist does today, in plain words, with the exact button and screen label
 - Links that fill in an item ("add Milch") or tick something off: a link only opens a screen.
 - That a link keeps working after the app was closed during sign-in on the phone: it then opens the list.
 
-**Last verified.** main c2ce938f, 2026-11-07 (CET), from code and driven on the web build (verify-hummlist): /add opens the add sheet, /more/legal lands on Mehr, unknown paths land on the list, /settings lands on Zugänge. Earlier: main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): /add, /stores/<id>, /more/legal, unknown paths, a signed-out /more/invites and an invite link. app.hummlist.com serves the 6 Nov build with these links. Phone apps: unverified on a device. Recipe: [app-links.md](./app-links.md).
+**Last verified.** job 161b (PR #314), 2026-11-07 (CET), driven on the web build (Playwright): a store link opens the list at that store also when this device's saved list is older than the store's items (it waits for the server's first answer; offline it opens the list as it is). Earlier: main c2ce938f, 2026-11-07 (CET), from code and driven on the web build (verify-hummlist): /add opens the add sheet, /more/legal lands on Mehr, unknown paths land on the list, /settings lands on Zugänge. Earlier: main 6da42673, 2026-11-06 (CET), from code and driven on the web build (verify-hummlist): /add, /stores/<id>, /more/legal, unknown paths, a signed-out /more/invites and an invite link. app.hummlist.com serves the 6 Nov build with these links. Phone apps: unverified on a device. Recipe: [app-links.md](./app-links.md).
 
 # The list
 

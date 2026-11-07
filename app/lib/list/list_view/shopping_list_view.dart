@@ -141,32 +141,42 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   ListCubit get _cubit => context.read<ListCubit>();
 
   /// A `/stores/<id>` link, once the list is loaded ([build] asks again
-  /// then). After the frame: the router asks during its own work.
+  /// then, and once the first resync is over). A store the device's copy
+  /// lacks waits for that resync; without open items then (an unknown
+  /// store, an empty one, or no answer from the server) the list stays as
+  /// it is. After the frame: the router asks during its own work.
   void _linked() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_cubit.state.loaded) {
         return;
       }
-      if (_links?.take<StoreLink>() case StoreLink(:final storeId)) {
-        unawaited(_reveal(storeId));
+      if (_links?.pending case StoreLink(:final storeId)) {
+        final section = _sectionOf(storeId);
+        if (section == null && !_cubit.state.resynced) {
+          return;
+        }
+        _links?.take<StoreLink>();
+        if (section != null) {
+          unawaited(_reveal(section));
+        }
       }
     });
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
-  /// Scrolls the divider of [storeId] to the top, unfolding its section.
-  /// No section (an unknown store, one without open items): the list as
-  /// it is. The rows are built lazily, so a far divider may not be there
-  /// yet: the list jumps toward it and looks again, a few frames at most.
-  Future<void> _reveal(String storeId) async {
+  /// The section of [storeId] with open items, if any.
+  StoreSection? _sectionOf(String storeId) {
     final state = _cubit.state;
-    final section = shownSections(sectionsOf(state.items.values, state.catalog))
+    return shownSections(sectionsOf(state.items.values, state.catalog))
         .where((s) => s.store?.id == storeId && s.count > 0)
         .firstOrNull;
-    if (section == null) {
-      return;
-    }
-    if (state.prefs.folded.contains(section.key)) {
+  }
+
+  /// Scrolls the divider of [section] to the top, unfolding it. The rows
+  /// are built lazily, so a far divider may not be there yet: the list
+  /// jumps toward it and looks again, a few frames at most.
+  Future<void> _reveal(StoreSection section) async {
+    if (_cubit.state.prefs.folded.contains(section.key)) {
       _cubit.toggleFold(section.key);
     }
     // Until the divider is there and stays at the top: rows laid out for
@@ -341,7 +351,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
 
   @override
   Widget build(BuildContext context) => BlocListener<ListCubit, ListState>(
-    listenWhen: (a, b) => !a.loaded && b.loaded,
+    listenWhen: (a, b) => a.loaded != b.loaded || a.resynced != b.resynced,
     listener: (_, _) => _linked(),
     child: _list(context),
   );
