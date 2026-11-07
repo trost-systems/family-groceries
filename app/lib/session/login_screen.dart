@@ -6,6 +6,7 @@ import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/brand_block.dart';
 import 'package:family_groceries/design/field_border.dart';
+import 'package:family_groceries/design/status_bar_backdrop.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
@@ -48,29 +49,32 @@ class const LoginScreen({
       header: const BrandBlock(),
     );
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            if (deleted != null)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Card(
-                  key: const ValueKey('account-deleted-notice'),
-                  margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  child: ListTile(
-                    leading: const Icon(Icons.check_circle_outline),
-                    title: Text(l10n.accountDeletedNotice),
-                    subtitle: deleted.removeAppleManually
-                        ? Text(l10n.accountDeletedApple)
-                        : null,
+      body: StatusBarBackdrop(
+        fade: HlSpace.s4,
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              if (deleted != null)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Card(
+                    key: const ValueKey('account-deleted-notice'),
+                    margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: ListTile(
+                      leading: const Icon(Icons.check_circle_outline),
+                      title: Text(l10n.accountDeletedNotice),
+                      subtitle: deleted.removeAppleManually
+                          ? Text(l10n.accountDeletedApple)
+                          : null,
+                    ),
                   ),
                 ),
-              ),
-            Expanded(child: Center(child: panel)),
-            // Outside the scrolling form: visible without scrolling.
-            const SafeArea(top: false, child: LegalFooter()),
-          ],
+              Expanded(child: Center(child: panel)),
+              // Outside the scrolling form: visible without scrolling.
+              const SafeArea(top: false, child: LegalFooter()),
+            ],
+          ),
         ),
       ),
     );
