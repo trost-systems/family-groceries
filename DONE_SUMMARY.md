@@ -605,3 +605,7 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 ## Job 155: native store rating prompt
 
 Public store builds ask for the system rating dialog 3 s after a completed trip (3 or more own ticks), behind every gate of the brief; More gets „Hummlist bewerten“ / "Rate Hummlist" (iOS and Android) opening the store listing. iPhone release builds may ask (TestFlight never shows the dialog); Android asks only in the future Play production build with `STORE_RELEASE=true`; no device proof (no device or emulator on the runner). Not merged (the Lead merges). Details: [docs/done/155-review-prompt.md](docs/done/155-review-prompt.md).
+
+## Job 164: ios gate StoreKit simulator search
+
+The ios gate's StoreKit tests no longer fail with "Unable to find a device" after the 26.2 simulator boots: xcodebuild now searches 5 min for it (CI only). Details: [docs/done/164-ios-gate-sim-retry.md](docs/done/164-ios-gate-sim-retry.md).

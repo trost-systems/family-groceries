@@ -112,10 +112,21 @@ xcrun simctl bootstatus "$storekit_udid" -b
 
 log "phase storekit_tests"
 storekit_result=/tmp/hummlist-storekit-tests.xcresult
+storekit_log=/tmp/hummlist-storekit-tests.log
 rm -rf "$storekit_result"
+# Minutes after this first boot of the runtime, an xcodebuild started on the loaded runner can see
+# no simulator at all, while simctl lists this one. The default search gave up after about a
+# minute ("Unable to find a device", 6 of 40 runs); xcodebuild picks the simulator up once its
+# list fills, so it searches for 5 min (DECISIONS 164).
+storekit_search=300
 xcodebuild test-without-building -workspace ios/Runner.xcworkspace -scheme Runner \
-  -destination "id=$storekit_udid,arch=arm64" -derivedDataPath "$derived" -only-testing:RunnerTests/LifetimeStoreKitTests \
-  -parallel-testing-enabled NO -test-timeouts-enabled YES -resultBundlePath "$storekit_result" || status=$?
+  -destination "id=$storekit_udid,arch=arm64" -destination-timeout "$storekit_search" -derivedDataPath "$derived" \
+  -only-testing:RunnerTests/LifetimeStoreKitTests -parallel-testing-enabled NO -test-timeouts-enabled YES \
+  -resultBundlePath "$storekit_result" 2>&1 | tee "$storekit_log" || status=$?
+if grep -q "Unable to find a device matching the provided destination specifier" "$storekit_log"; then
+  echo "ios: xcodebuild listed no iOS $storekit_ios simulator $storekit_udid within ${storekit_search} s; no StoreKit test ran (DECISIONS 164)" >&2
+  exit 1
+fi
 [[ -d $storekit_result ]] || exit "${status:-1}"
 xcrun xcresulttool get test-results tests --path "$storekit_result" >/tmp/hummlist-storekit-tests.json
 python3 - "$storekit_ios" <<'PY'
