@@ -655,4 +655,58 @@ void main() {
       expect(find.byKey(const ValueKey('siri-legacy-hint')), findsNothing);
     });
   });
+
+  group('name dialogs on a small phone, keyboard open, text x2', () {
+    Future<void> shrink(WidgetTester tester) async {
+      tester.view
+        ..physicalSize = const Size(320, 568)
+        ..viewInsets = const FakeViewPadding(bottom: 253);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await tester.pumpAndSettle();
+    }
+
+    void expectFits(WidgetTester tester) {
+      expect(tester.takeException(), isNull);
+      final dialog = tester.getRect(
+        find
+            .descendant(
+              of: find.byType(Dialog),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      final field = tester.getRect(find.widgetWithText(LabeledField, 'Name'));
+      final buttons = tester.getRect(find.byType(OverflowBar));
+      expect(dialog.bottom, lessThanOrEqualTo(568 - 253));
+      expect(field.top, greaterThanOrEqualTo(dialog.top));
+      expect(buttons.bottom, lessThanOrEqualTo(dialog.bottom));
+    }
+
+    testWidgets('the token name: buttons right under the field', (
+      tester,
+    ) async {
+      await pumpAccess(tester);
+      await tapText(tester, 'Token erstellen');
+      await shrink(tester);
+      expectFits(tester);
+      final field = tester.getRect(find.widgetWithText(LabeledField, 'Name'));
+      expect(
+        tester.getRect(find.byType(OverflowBar)).top - field.bottom,
+        lessThanOrEqualTo(32),
+      );
+    });
+
+    testWidgets('the API key: scopes scroll, buttons stay', (tester) async {
+      await pumpAccess(tester, flags: {'public-api'});
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('api-create')),
+        200,
+      );
+      await tester.tap(find.byKey(const ValueKey('api-create')));
+      await tester.pumpAndSettle();
+      await shrink(tester);
+      expectFits(tester);
+    });
+  });
 }

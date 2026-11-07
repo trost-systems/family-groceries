@@ -46,6 +46,7 @@ class const _NameDialog({
 
 class _NameDialogState() extends State<_NameDialog> {
   late final _name = TextEditingController(text: widget.initial);
+  final _field = GlobalKey(debugLabel: 'name-dialog-field');
   var _busy = false;
   String? _error;
 
@@ -83,37 +84,61 @@ class _NameDialogState() extends State<_NameDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(widget.title),
-      content: LabeledField(
-        label: widget.label,
-        field: TextField(
-          key: const ValueKey('name-dialog-field'),
-          controller: _name,
-          autofocus: true,
-          readOnly: _busy,
-          maxLength: widget.maxLength,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(errorText: _error, errorMaxLines: 3),
-          onChanged: (_) {
-            if (_error != null) {
-              setState(() => _error = null);
-            }
-          },
-          onSubmitted: (_) => unawaited(_submit()),
+    // The keyboard shrinks the dialog after the field asked to be shown, so
+    // the field's lower edge and counter could end up under the buttons:
+    // keep the whole field in view whenever the scroll view resizes.
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (_) {
+        if (_field.currentContext case final field?) {
+          Scrollable.ensureVisible(
+            field,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+          );
+        }
+        return false;
+      },
+      child: AlertDialog(
+        scrollable: true,
+        title: Text(widget.title),
+        content: LabeledField(
+          key: _field,
+          label: widget.label,
+          field: TextField(
+            key: const ValueKey('name-dialog-field'),
+            controller: _name,
+            autofocus: true,
+            readOnly: _busy,
+            maxLength: widget.maxLength,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(errorText: _error, errorMaxLines: 3),
+            onChanged: (_) {
+              if (_error != null) {
+                setState(() => _error = null);
+              }
+            },
+            onSubmitted: (_) => unawaited(_submit()),
+          ),
         ),
+        // Large text still leaves room for the field on a small phone with
+        // the keyboard open: two 2x buttons stacked took all of it.
+        actions: [
+          for (final action in [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              key: const ValueKey('name-dialog-confirm'),
+              onPressed: _busy ? null : () => unawaited(_submit()),
+              child: Text(widget.confirm),
+            ),
+          ])
+            MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.5,
+              child: action,
+            ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancel),
-        ),
-        FilledButton(
-          key: const ValueKey('name-dialog-confirm'),
-          onPressed: _busy ? null : () => unawaited(_submit()),
-          child: Text(widget.confirm),
-        ),
-      ],
     );
   }
 }

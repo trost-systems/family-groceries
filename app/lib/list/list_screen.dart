@@ -764,18 +764,20 @@ const _composeHeight = 52.0;
 /// The bar above the list: how many partner adds are new, the sync state
 /// and Anpassen, which opens the stores and categories; no household name
 /// and no count (Peter, DECISIONS Job 29a). It floats over the list like
-/// the tab pill below (job 148): a raised hex capsule with the sticker
-/// shadow, [height] tall in every state and as wide as it needs, at the
-/// frame's end; the rows scroll on under it.
+/// the tab pill below (job 148), at the frame's end, [height] tall in every
+/// state; the rows scroll on under it. Anpassen is a raised button on its
+/// own, with no frame around it (job 152); the new adds and the sync icon
+/// sit in their own small capsule beside it, only while there is something
+/// to show.
 class const _Header() extends StatelessWidget implements PreferredSizeWidget {
-  /// The capsule's height: the tab pill's.
+  /// The bar's height: the tab pill's.
   static const height = 52.0;
 
-  /// Room above the capsule, below the top safe area.
+  /// Room above the bar, below the top safe area.
   static const _gap = HlSpace.s2;
 
   /// How far below the top safe area the list's first row starts: the
-  /// capsule, its shadow and a gap.
+  /// bar, its shadow and a gap.
   static const extent = _gap + height + HlSpace.s2;
 
   @override
@@ -784,88 +786,9 @@ class const _Header() extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
-    final cubit = context.watch<ListCubit>();
-    final state = cubit.state;
-    final fresh = cubit.fresh;
-    final by = {for (final id in fresh) state.items[id]?.addedBy};
-    final partner = by.length == 1 ? state.catalog.member(by.single) : null;
+    final t = HummlistColors.of(Theme.of(context).brightness);
+    final state = context.watch<ListCubit>().state;
     final top = MediaQuery.paddingOf(context).top;
-    final capsule = DecoratedBox(
-      decoration: ShapeDecoration(
-        shape: const HexBorder(),
-        shadows: HlSticker.shadow(brightness, StickerDepth.s),
-      ),
-      child: Material(
-        color: t.surfaceRaised,
-        shape: HexBorder(
-          side: BorderSide(color: t.border, width: HlBorder.width),
-        ),
-        child: SizedBox(
-          height: height,
-          child: Padding(
-            // The tab pill's inset: the button's tip runs along the bar's.
-            padding: const EdgeInsets.symmetric(
-              horizontal: HlSpace.s3 + HlBorder.width,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (fresh.isNotEmpty)
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: HlSpace.s2,
-                        end: HlSpace.s1,
-                      ),
-                      child: Text(
-                        partner == null
-                            ? l10n.newItems(fresh.length)
-                            : l10n.newItemsFrom(
-                                fresh.length,
-                                partner.displayName,
-                              ),
-                        key: const ValueKey('new-items-subtitle'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: t.success,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                const _SyncIndicator(),
-                // Large text shrinks the label rather than the bar.
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 144),
-                  child: OutlinedButton(
-                    key: const ValueKey('list-edit'),
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.standard,
-                      // The face and its edge fit the capsule; the tap
-                      // target stays 48 high.
-                      minimumSize: const Size(0, _buttonHeight),
-                      tapTargetSize: MaterialTapTargetSize.padded,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: HlHex.tip * _buttonHeight + HlSpace.s2,
-                      ),
-                    ),
-                    onPressed: () => context.go(editPath),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(l10n.listEdit),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
     return Column(
       key: const ValueKey('list-header'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -888,19 +811,43 @@ class const _Header() extends StatelessWidget implements PreferredSizeWidget {
                 side + HlSpace.s4,
                 extent - _gap - height,
               ),
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
+              child: SizedBox(
+                height: height,
                 child: MediaQuery.withClampedTextScaling(
-                  // Large text still fits the 52 high capsule.
+                  // Large text still fits the 52 high bar.
                   maxScaleFactor: 1.5,
-                  // On the web the rows under the capsule keep their
-                  // tappable semantics elements, which take a browser click
-                  // before the framework sees it; the opaque node blocks
-                  // them. Rows beside it stay tappable: they show in full.
-                  child: Semantics(
-                    container: true,
-                    hitTestBehavior: SemanticsHitTestBehavior.opaque,
-                    child: capsule,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    spacing: HlSpace.s2,
+                    children: [
+                      const Flexible(child: _Status()),
+                      // On the web the rows under the button keep their
+                      // tappable semantics elements, which take a browser
+                      // click before the framework sees it; the opaque node
+                      // blocks them. Rows beside it stay tappable: they show
+                      // in full.
+                      Semantics(
+                        container: true,
+                        hitTestBehavior: SemanticsHitTestBehavior.opaque,
+                        // Large text shrinks the label rather than the bar.
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 160),
+                          child: OutlinedButton(
+                            key: const ValueKey('list-edit'),
+                            // Desktop's compact density would shrink it
+                            // under 48 px.
+                            style: OutlinedButton.styleFrom(
+                              visualDensity: VisualDensity.standard,
+                            ),
+                            onPressed: () => context.go(editPath),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(l10n.listEdit),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -912,36 +859,94 @@ class const _Header() extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// Anpassen's face and edge, inside the capsule.
-const _buttonHeight = 34.0;
-
-class const _SyncIndicator() extends StatelessWidget {
+/// The partner's new adds and the sync icon in a small raised capsule
+/// beside Anpassen; nothing while both are quiet.
+class const _Status() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final (connection, pending) = context
-        .select<ListCubit, (ConnectionStatus, int)>(
-          (c) => (c.state.connection, c.state.pending.length),
-        );
-    final message = switch ((connection, pending)) {
-      (ConnectionStatus.offline, _) => l10n.offline,
-      (_, > 0) => l10n.pendingChanges(pending),
-      _ => null,
-    };
-    if (message != null) {
-      return Tooltip(
-        message: message,
-        excludeFromSemantics: true,
-        child: Center(
-          child: Icon(
-            connection == ConnectionStatus.offline
-                ? Icons.cloud_off
-                : Icons.cloud_upload_outlined,
-            semanticLabel: message,
+    final brightness = Theme.of(context).brightness;
+    final t = HummlistColors.of(brightness);
+    final cubit = context.watch<ListCubit>();
+    final state = cubit.state;
+    final fresh = cubit.fresh;
+    final by = {for (final id in fresh) state.items[id]?.addedBy};
+    final partner = by.length == 1 ? state.catalog.member(by.single) : null;
+    final sync = _syncIcon(l10n, state);
+    if (fresh.isEmpty && sync == null) {
+      return const SizedBox.shrink();
+    }
+    return Semantics(
+      key: const ValueKey('list-status'),
+      container: true,
+      hitTestBehavior: SemanticsHitTestBehavior.opaque,
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: const HexBorder(),
+          shadows: HlSticker.shadow(brightness, StickerDepth.s),
+        ),
+        child: Material(
+          color: t.surfaceRaised,
+          shape: HexBorder(
+            side: BorderSide(color: t.border, width: HlBorder.width),
+          ),
+          child: SizedBox(
+            height: HlSize.target,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: HlHex.tip * HlSize.target + HlSpace.s1,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: HlSpace.s2,
+                children: [
+                  if (fresh.isNotEmpty)
+                    Flexible(
+                      child: Text(
+                        partner == null
+                            ? l10n.newItems(fresh.length)
+                            : l10n.newItemsFrom(
+                                fresh.length,
+                                partner.displayName,
+                              ),
+                        key: const ValueKey('new-items-subtitle'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: t.success,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ?sync,
+                ],
+              ),
+            ),
           ),
         ),
-      );
-    }
-    return const SizedBox.shrink();
+      ),
+    );
   }
+}
+
+/// The sync icon: offline, or changes not sent yet; null when synced.
+Widget? _syncIcon(AppLocalizations l10n, ListState state) {
+  final offline = state.connection == ConnectionStatus.offline;
+  final message = switch ((state.connection, state.pending.length)) {
+    (ConnectionStatus.offline, _) => l10n.offline,
+    (_, final pending && > 0) => l10n.pendingChanges(pending),
+    _ => null,
+  };
+  if (message == null) {
+    return null;
+  }
+  return Tooltip(
+    message: message,
+    excludeFromSemantics: true,
+    child: Icon(
+      offline ? Icons.cloud_off : Icons.cloud_upload_outlined,
+      semanticLabel: message,
+    ),
+  );
 }
