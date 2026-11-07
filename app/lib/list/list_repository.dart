@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -78,6 +80,12 @@ abstract interface class ListRepository() {
     required void Function() onCatalogChanged,
     required void Function(ConnectionStatus status) onStatus,
   });
+
+  /// The device's network was down: the realtime socket may have died with
+  /// it, unnoticed until a heartbeat goes unanswered (25 to 50 s). Closes it
+  /// as a missed heartbeat does; the client opens a new one and every
+  /// channel joins again, which [watch]'s `onStatus` tells.
+  void renewRealtime();
 }
 
 typedef SpokenSplit = ({List<ParsedEntry> entries, bool truncated});
@@ -628,5 +636,13 @@ class SupabaseListRepository(
     return () async {
       await _client.removeChannel(channel);
     };
+  }
+
+  @override
+  void renewRealtime() {
+    final socket = _client.realtime;
+    if (socket.isConnected) {
+      unawaited(socket.conn?.sink.close(1000, 'network changed'));
+    }
   }
 }

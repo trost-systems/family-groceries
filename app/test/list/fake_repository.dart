@@ -90,6 +90,13 @@ class FakeRepository() implements ListRepository {
   /// How many times the list asked for its items, answered or not.
   var itemFetches = 0;
 
+  /// How many times the list renewed the realtime socket.
+  var renewals = 0;
+
+  /// Whether a renewal drops the channel and joins it again, as the client
+  /// does with the server in reach. Off, the channel says nothing.
+  var rejoinOnRenew = true;
+
   /// Each unsubscribe waits for the next of these, if any.
   final unwatchGates = <Completer<void>>[];
 
@@ -607,6 +614,17 @@ class FakeRepository() implements ListRepository {
         await unwatchGates.removeAt(0).future;
       }
     };
+  }
+
+  @override
+  void renewRealtime() {
+    renewals++;
+    if (rejoinOnRenew) {
+      scheduleMicrotask(() {
+        emitStatus?.call(ConnectionStatus.offline);
+        emitStatus?.call(ConnectionStatus.online);
+      });
+    }
   }
 
   /// A change made by another household member.

@@ -733,7 +733,8 @@ void main() {
           reason: 'never cleared in between',
         );
         async.elapse(const Duration(milliseconds: 200));
-        expect(repo.itemFetches, fetches + 1, reason: 'one retry');
+        expect(repo.itemFetches, greaterThan(fetches));
+        expect(repo.renewals, 1, reason: 'one reconnect');
         expect(c.state.trouble, isNull);
         close(async, c);
       });
@@ -751,6 +752,7 @@ void main() {
         up(async);
         async.elapse(networkSettle);
         expect(repo.watches, watches + 1);
+        expect(repo.renewals, 0, reason: 'its socket closed already');
         expect(c.state.trouble, SyncTrouble.offline, reason: 'channel not up');
         repo.emitStatus!(ConnectionStatus.online);
         async.elapse(Duration.zero);
@@ -796,6 +798,57 @@ void main() {
         repo.emitStatus!(ConnectionStatus.offline);
         async.elapse(const Duration(milliseconds: 6100));
         expect(repo.watches, watches + 1);
+        close(async, c);
+      });
+    });
+
+    test(
+      'after a real down, a channel that still says up is not trusted: '
+      'its socket is renewed, and the list is online once it joins again',
+      () {
+        fakeAsync((async) {
+          final (c, _) = following(async);
+          repo.rejoinOnRenew = false;
+          down(async);
+          up(async);
+          async.elapse(networkSettle);
+          expect(repo.renewals, 1, reason: 'it may have died with the network');
+          expect(
+            c.state.trouble,
+            SyncTrouble.offline,
+            reason: 'the resync answered, realtime is not back yet',
+          );
+          repo.emitStatus!(ConnectionStatus.online);
+          async.elapse(Duration.zero);
+          expect(c.state.trouble, isNull);
+          close(async, c);
+        });
+      },
+    );
+
+    test('a retry that gets through before the network settled does not '
+        'trust the channel either', () {
+      fakeAsync((async) {
+        final (c, seen) = following(async);
+        repo.rejoinOnRenew = false;
+        down(async);
+        async.elapse(const Duration(seconds: 2));
+        up(async);
+        // The 3 s retry answers while the network settles.
+        async.elapse(networkSettle);
+        expect(repo.renewals, 1);
+        expect(c.state.trouble, SyncTrouble.offline);
+        repo.emitStatus!(ConnectionStatus.online);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, isNull);
+        expect(
+          seen
+              .map((s) => s.trouble)
+              .skipWhile((t) => t == null)
+              .skipWhile((t) => t != null),
+          everyElement(isNull),
+          reason: 'offline once, never back after it cleared',
+        );
         close(async, c);
       });
     });

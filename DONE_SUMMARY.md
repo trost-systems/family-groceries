@@ -597,6 +597,7 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 - Job 161, the sync indicator S2-C3F2 (a hex card for offline and sync failing that folds into a pill; a real failing state; a 5xx no longer drops a change): [docs/done/161.md](docs/done/161.md)
 - Job 165, sync indicator polish (one transient error shows nothing; the card folds into the pill as one shape): [docs/done/165.md](docs/done/165.md)
 - Job 166, the sync indicator follows the device's network (flight mode on shows „Offline“ at once, off clears it on its own): [docs/done/166.md](docs/done/166.md)
+- Job 166b, the network watch's edge cases (a stale startup check; a new realtime socket after a real down, so partner changes arrive at once): [docs/done/166b.md](docs/done/166b.md)
 
 
 

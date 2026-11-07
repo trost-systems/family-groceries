@@ -179,6 +179,11 @@ class ListCubit(
   /// Whether the OS's network went down and has not been back for
   /// [networkSettle] since.
   var _networkDown = false;
+
+  /// Whether the channel said up when the network went down and has said
+  /// nothing since: its socket may have died with the network, unnoticed
+  /// until a heartbeat goes unanswered (25 to 50 s).
+  var _channelSuspect = false;
   final _rejections = StreamController<Rejected>.broadcast();
   final _hints = StreamController<DedupeHint>.broadcast();
   final _renameMerges = StreamController<Merge>.broadcast();
@@ -367,6 +372,7 @@ class ListCubit(
 
   void _onChannelStatus(ConnectionStatus status) {
     _channelUp = status == ConnectionStatus.online;
+    _channelSuspect = false;
     if (status == ConnectionStatus.offline) {
       _troubleRound = null;
     }
@@ -395,6 +401,12 @@ class ListCubit(
     switch (network) {
       case Network.down:
         _networkDown = true;
+        if (_channelUp) {
+          // Until it joins again, a resync that answers does not bring the
+          // list online.
+          _channelUp = false;
+          _channelSuspect = true;
+        }
         _goOffline();
       case Network.up when _networkDown:
         _networkBack = Timer(networkSettle, _reconnect);
@@ -404,11 +416,14 @@ class ListCubit(
   }
 
   /// The network is back: subscribe and fetch now, not when the backoff and
-  /// the 3 s retry come due.
+  /// the 3 s retry come due. A suspect channel gets a new socket.
   void _reconnect() {
     _networkBack = null;
     _networkDown = false;
-    if (!_channelUp) {
+    if (_channelSuspect) {
+      _channelSuspect = false;
+      _repo.renewRealtime();
+    } else if (!_channelUp) {
       _resubscribe?.cancel();
       _resubscribeDelay = _firstResubscribe;
       unawaited(_rewatch());
