@@ -37,6 +37,8 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | w7 | guide dialogue box gets even inner padding | cand 1 / base 0 / tie 8 | 7 (mean 7.444) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
 | w8 | 404 hex links drop the link underline and use the hex button label style | cand 4 / base 0 / tie 5 | 7 (mean 7.333) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
 | w9 | header nav reflows evenly at large text (no orphaned English link, even gaps) | cand 4 / base 0 / tie 5 | 7 (mean 7.444) | keep | guard-web green: 167/167 site tests, copy identical 27+31 pages, crawl + contrast pass |
+| rebase | re-anchor: branch rebased onto main 598291fc (#290 landing store chips; waitlist.css conflict resolved to the hex tiles); one absolute run of the rebased head becomes the pairwise reference | - | 7 (mean 7.333) | re-anchor | medians typography 7, hierarchy 8, colour 8, spacing 7, layout 7, consistency 7, accessibility 8, iconography 7, empty/error 7 |
+| w10 | landing slabs separated by a larger, uniform gap from the spacing scale | cand 2 / base 0 / tie 7 | 7 (mean 7.556) | keep | guard-web green: 169/169 site tests, copy identical 27+31 pages, crawl + contrast pass |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
@@ -49,4 +51,5 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **w7** (keep): medians typography 7, hierarchy 8, color_contrast 7, spacing 7, layout 8, consistency 7, accessibility 8, iconography 8, empty_error_states 7; pairwise spacing cand; seeds [84511642, 589526624, 1145303209].
 - **w8** (keep): medians typography 7, hierarchy 8, color_contrast 7, spacing 7, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand, hierarchy cand, consistency cand, empty_error_states cand; seeds [1842274054, 893622326, 3736770380].
 - **w9** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise spacing cand, layout cand, consistency cand, accessibility cand; seeds [176800370, 4064644348, 351887573].
+- **w10** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 8, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise hierarchy cand, spacing cand; seeds [2659000451, 1801435031, 2096725542].
 
