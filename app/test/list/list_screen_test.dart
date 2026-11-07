@@ -535,6 +535,53 @@ void main() {
     expect(editSheet(), findsNothing);
   });
 
+  testWidgets('the mouse wheel over the add band scrolls the list under it; '
+      'a tap on the field still opens the sheet', (tester) async {
+    phone(tester);
+    await pumpList(
+      tester,
+      seed: (repo) {
+        for (var i = 0; i < 30; i++) {
+          repo.remoteAdd('Artikel $i', categoryId: 'produce');
+        }
+      },
+    );
+    double top() => tester.getRect(row('Artikel 0')).top;
+    final band = tester.getRect(
+      find.ancestor(of: addField(), matching: find.byType(SafeArea)).first,
+    );
+    for (final at in [
+      tester.getCenter(addField()),
+      Offset(band.left + 4, band.center.dy),
+    ]) {
+      final before = top();
+      final mouse = TestPointer(1, PointerDeviceKind.mouse);
+      await tester.sendEventToBinding(mouse.hover(at));
+      await tester.sendEventToBinding(mouse.scroll(const Offset(0, 120)));
+      await tester.pumpAndSettle();
+      expect(top(), moreOrLessEquals(before - 120), reason: 'wheel at $at');
+    }
+    final trackpad = TestPointer(2, PointerDeviceKind.trackpad);
+    final before = top();
+    await tester.sendEventToBinding(
+      trackpad.hover(tester.getCenter(addField())),
+    );
+    await tester.sendEventToBinding(trackpad.scroll(const Offset(0, -60)));
+    await tester.pumpAndSettle();
+    expect(top(), moreOrLessEquals(before + 60));
+
+    await tester.tap(addField());
+    await tester.pumpAndSettle();
+    expect(sheet(), findsOneWidget);
+    expect(fieldFocus(tester).hasFocus, isTrue);
+    final open = top();
+    final later = TestPointer(3, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(later.hover(tester.getCenter(addField())));
+    await tester.sendEventToBinding(later.scroll(const Offset(0, 120)));
+    await tester.pumpAndSettle();
+    expect(top(), open, reason: 'the open sheet covers the list');
+  });
+
   testWidgets('Abbrechen in the held-open sheet writes nothing and shows '
       'no message', (tester) async {
     await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));

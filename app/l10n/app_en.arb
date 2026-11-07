@@ -329,7 +329,7 @@
   "storeDeleteTitle": "Delete {store}?",
   "@storeDeleteTitle": {"description": "delete confirmation title", "placeholders": {"store": {"type": "String"}}},
   "storeNameTaken": "A store named “{name}” already exists.",
-  "@storeNameTaken": {"description": "rename onto another store's name", "placeholders": {"name": {"type": "String"}}},
+  "@storeNameTaken": {"description": "adding a store, or renaming one, onto a name the household has (any case)", "placeholders": {"name": {"type": "String"}}},
   "storesNeedConnection": "Adding, renaming or deleting stores needs a connection.",
   "@storesNeedConnection": {"description": "store add/rename/delete while offline"},
   "storesEmpty": "No stores yet. Add one and the list sorts your items along its walking route.",

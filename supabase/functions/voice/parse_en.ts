@@ -1,7 +1,7 @@
 // Splits one dictated English sentence into list items:
 // "We need milk, two cucumbers and a pack of eggs" -> milk | 2 cucumbers | 1 pack eggs.
 // Names keep the casing and the plural Siri transcribed.
-import { maxItems, type ParsedItem } from './parse.ts';
+import { maxItems, numberNames, type ParsedItem } from './parse.ts';
 
 const maxNameLength = 120;
 const maxQuantityLength = 40;
@@ -177,7 +177,8 @@ function readPiece(segment: string[]): ParsedItem | null {
   const vague = vagueAmounts.find((p) => startsWith(tokens, p) && tokens.length > p.length);
   if (vague) return item(tokens.slice(vague.length), vague.filter((w) => w !== 'of').join(' '));
 
-  const first = tokens.length > 1 ? readNumber(tokens[0]) : null;
+  const named = numberNames.some((name) => startsWith(tokens, name));
+  const first = tokens.length > 1 && !named ? readNumber(tokens[0]) : null;
   const gluedUnit = first?.glued ? units.get(first.glued.toLowerCase()) : undefined;
   if (!first || (first.glued && !gluedUnit)) return trailingCount(tokens) ?? item(tokens, null);
   const article = isArticle(tokens[0]);

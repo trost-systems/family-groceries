@@ -1,4 +1,5 @@
 import 'package:family_groceries/app/router.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -78,5 +79,38 @@ void main() {
         );
       });
     }
+  }
+
+  // Job 159: a mouse wheel over the pill scrolls the page under it.
+  for (final path in ['/', '/more']) {
+    testWidgets('the wheel over the tab pill scrolls $path', (tester) async {
+      await pumpMore(
+        tester,
+        location: path,
+        app: true,
+        seed: (repo) {
+          for (var i = 0; i < 30; i++) {
+            repo.remoteAdd('Artikel $i', categoryId: 'produce');
+          }
+        },
+      );
+      final page = tester
+          .stateList<ScrollableState>(
+            find.descendant(
+              of: find.byType(StatefulNavigationShell),
+              matching: find.byType(Scrollable),
+            ),
+          )
+          .firstWhere((s) => s.position.axis == Axis.vertical)
+          .position;
+      expect(page.pixels, 0);
+      final mouse = TestPointer(1, PointerDeviceKind.mouse);
+      await tester.sendEventToBinding(
+        mouse.hover(tester.getCenter(find.byKey(const ValueKey('tab-list')))),
+      );
+      await tester.sendEventToBinding(mouse.scroll(const Offset(0, 120)));
+      await tester.pumpAndSettle();
+      expect(page.pixels, 120);
+    });
   }
 }

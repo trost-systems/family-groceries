@@ -334,7 +334,7 @@
   "storeDeleteTitle": "{store} löschen?",
   "@storeDeleteTitle": {"description": "delete confirmation title", "placeholders": {"store": {"type": "String"}}},
   "storeNameTaken": "Einen Laden „{name}“ gibt es schon.",
-  "@storeNameTaken": {"description": "rename onto another store's name", "placeholders": {"name": {"type": "String"}}},
+  "@storeNameTaken": {"description": "adding a store, or renaming one, onto a name the household has (any case)", "placeholders": {"name": {"type": "String"}}},
   "storesNeedConnection": "Läden lassen sich nur mit Verbindung anlegen, umbenennen oder löschen.",
   "@storesNeedConnection": {"description": "store add/rename/delete while offline"},
   "storesEmpty": "Noch keine Läden. Leg einen an, dann sortiert die Liste deine Artikel nach seinem Laufweg.",

@@ -81,6 +81,14 @@ const trailingFiller = [
   ),
 ];
 
+/**
+ * Names that start with a number word and keep it: "Drei Glocken Nudeln" is no 3 Glocken Nudeln.
+ * The `name` rows of supabase/tests/number_words.tsv, as typing has them (job 104).
+ */
+export const numberNames = words(
+  'drei glocken|seven up|four roses|elf bar|drei wetter|vier jahreszeiten|fünf minuten|fuenf minuten',
+);
+
 const ones: Record<string, number> = {
   ein: 1,
   eins: 1,
@@ -337,7 +345,8 @@ function readPiece(segment: string[]): Piece | null {
   let unit: Unit | null = null;
   let article = false;
   if (tokens.length > 1 && isHalf(tokens[0])) tokens = ['0,5', ...tokens.slice(1)];
-  const first = tokens.length ? readNumber(tokens[0]) : null;
+  const named = numberNames.some((name) => startsWith(tokens, name));
+  const first = tokens.length && !named ? readNumber(tokens[0]) : null;
   const gluedUnit = first?.glued ? units[first.glued.toLowerCase()] : undefined;
   if (first && (!first.glued || gluedUnit || multipliers.has(first.glued.toLowerCase()))) {
     article = isArticle(tokens[0]);

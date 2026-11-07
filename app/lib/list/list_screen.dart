@@ -3,6 +3,7 @@ import 'dart:ui' show SemanticsHitTestBehavior;
 
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/app/scroll_through.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
@@ -96,6 +97,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
   /// The field's own scrolling, which follows dictated words: unfocused it
   /// would keep showing the sentence's start.
   final _inputScroll = ScrollController();
+
+  /// The page under the add bar, which takes the wheel over the bar.
+  final _page = GlobalKey(debugLabel: 'list-page');
 
   /// The add bar around the input: it holds focus between a tap in the
   /// sheet and the input's refocus, and after a close, and takes Escape
@@ -458,6 +462,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
           // The list scrolls on under the floating add field (job 135).
           extendBody: true,
           body: Stack(
+            key: _page,
             children: [
               ExcludeFocus(
                 excluding: open,
@@ -497,33 +502,36 @@ class _ShoppingListState() extends State<_ShoppingList> {
               ),
             ],
           ),
-          bottomNavigationBar: TextFieldTapRegion(
-            child: _AddBar(
-              input: _input,
-              inputScroll: _inputScroll,
-              focus: _inputFocus,
-              barFocus: _barFocus,
-              autofocus: _autofocus,
-              listening: _listening,
-              onSubmit: () => unawaited(_submit()),
-              onClose: _close,
-              onLeave: _leaveField,
-              onRefocus: _refocusAfterTap,
-              dictation: switch (widget.dictation) {
-                final dictation? => DictationButton(
-                  dictation: dictation,
-                  input: _input,
-                  onMessage: _snack,
-                  onListening: (listening) =>
-                      setState(() => _listening = listening),
-                  // The dictated text waits in the field; a tap opens it.
-                  onDone: () {
-                    _openOnFocus = false;
-                    _inputFocus.requestFocus();
-                  },
-                ),
-                null => null,
-              },
+          bottomNavigationBar: ScrollThrough(
+            under: _page,
+            child: TextFieldTapRegion(
+              child: _AddBar(
+                input: _input,
+                inputScroll: _inputScroll,
+                focus: _inputFocus,
+                barFocus: _barFocus,
+                autofocus: _autofocus,
+                listening: _listening,
+                onSubmit: () => unawaited(_submit()),
+                onClose: _close,
+                onLeave: _leaveField,
+                onRefocus: _refocusAfterTap,
+                dictation: switch (widget.dictation) {
+                  final dictation? => DictationButton(
+                    dictation: dictation,
+                    input: _input,
+                    onMessage: _snack,
+                    onListening: (listening) =>
+                        setState(() => _listening = listening),
+                    // The dictated text waits in the field; a tap opens it.
+                    onDone: () {
+                      _openOnFocus = false;
+                      _inputFocus.requestFocus();
+                    },
+                  ),
+                  null => null,
+                },
+              ),
             ),
           ),
         ),

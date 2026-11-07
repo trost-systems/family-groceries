@@ -9654,3 +9654,36 @@ phone apps always show; add an example of talking to the app.
 2. **Left out of scope.** The brief is this file only. The note on `integration-lock` in
    `releases/flags.json` still names Alexa among the integrations the lock covers, although the
    lock never covers it (job 72). It is internal, not writer copy. A later flags.json PR can fix it.
+
+## Job 159: three small gaps from vmaint-20261106, 2026-11-07
+
+1. **A taken store name keeps the add dialog open.** „Laden hinzufügen“ with a name the
+   household has („lidl“ while Lidl exists) closed the dialog and did nothing. It now shows
+   the rename dialog's message under the field, „Einen Laden „Lidl“ gibt es schon.“ / "A store
+   named “Lidl” already exists.", through the name dialog's `validate`, as renaming does. No
+   snackbar, no announcement. The match is the server's `store_name_key`: case and spacing,
+   umlauts lower-cased with their letter („MÜLLER“ finds Müller). „Muller“ does not find
+   Müller, because the server would accept it as a second store; a client check that refuses
+   what the server allows would be a second rule. The store fold's „Neuer Laden“ keeps picking
+   the existing store: there the user wants that store on the item, not a new one.
+2. **Said, a name that starts with a number word keeps it.** The splitter read „Drei Glocken
+   Nudeln“ as 3x „Glocken Nudeln“. Typing had kept such names whole since job 104 through the
+   `name` rows of `supabase/tests/number_words.tsv`. The German and English splitters now skip
+   the leading amount for those names too (`numberNames` in `voice/parse.ts`; a test fails when
+   it drifts from the table, so the functions gate reads `supabase/tests`). A count before or
+   after the name is still the Menge („zwei Drei Glocken Nudeln“, „Drei Glocken Nudeln zwei“),
+   and „drei Äpfel“ is still 3 Äpfel. As when typing, digits are not guarded: a recognizer
+   writing „3 Glocken Nudeln“ gives 3x Glocken Nudeln. Siri, Alexa and in-app dictation share
+   the splitter.
+3. **The wheel over the add band and the tab pill scrolls the page.** Both bands are a
+   Scaffold's `bottomNavigationBar`, a sibling of the page, so hit testing stopped at the band
+   and a wheel or trackpad scroll over it reached no Scrollable (the vmaint drive had to point
+   above the band). Driving it showed the tab pill had the same gap. `ScrollThrough`
+   (`app/lib/app/scroll_through.dart`) wraps a band: a `PointerScrollEvent` over it is hit
+   tested again in the page under it and handed to what is there, so it goes through the
+   pointer-signal resolver as any wheel event does. Taps are untouched (`onPointerSignal`
+   only). The page decides what scrolls: the list, More's list, or, while the add sheet is
+   open, the sheet, which covers the list. Rejected: handing the list's `ScrollController` to
+   the add bar. It fixed the add bar only; the shell cannot know each page's controller.
+   Not covered: an iPad trackpad sends pan-zoom gestures, not scroll events, so it still has to
+   start on the list.

@@ -1,0 +1,8 @@
+[03:22:46.486Z] wheel 300 over the add field at (408, 703): "Bananen" moved 300 px
+[03:22:47.450Z] wheel 300 over the band beside the hex at (87, 703): "Bananen" moved 300 px
+[03:22:48.467Z] wheel 300 over the tab pill at (400, 762): "Bananen" moved 300 px
+[03:22:49.781Z] click on the add field: the sheet opened
+[03:22:52.373Z] "lidl" while Lidl exists: dialog open=true, error "Einen Laden „Lidl“ gibt es schon." in page=true
+[03:22:52.439Z] stores in the database: Lidl
+[03:22:52.494Z] voice parse "Drei Glocken Nudeln und drei Äpfel": 200 {"speech":"Verstanden: Drei Glocken Nudeln, 3 Äpfel.","items":[{"name":"Drei Glocken Nudeln","brand":null,"properties":null,"quantity":null,"storeId":null,"categoryId":"8f511487-fa16-4ca4-bd0e-61fd023a8be2"},{"name":"Äpfel","brand":null,"properties":null,"quantity":"3","storeId":null,"categoryId":"7b718ddc-5c07-4cb4-ab68-398936047743"}],"truncated":false}
+[03:22:52.648Z] DONE
