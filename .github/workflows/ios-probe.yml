@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [keep, shutdown]
+        variant: [default, long]
         n: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -22,4 +22,4 @@ jobs:
           cache: true
       - run: scripts/probe-164.sh
         env:
-          MODE: ${{ matrix.mode }}
+          VARIANT: ${{ matrix.variant }}

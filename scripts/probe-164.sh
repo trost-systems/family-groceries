@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Job 164 probe v2: does -destination-timeout ride out the empty simulator list? Does shutting the
-# main simulator down first shorten it? MODE=keep|shutdown
+# main simulator down first shorten it? VARIANT=default|long; xcodebuild right after boot
 set -uo pipefail
 cd app
 flutter build ios --config-only --simulator --debug >/dev/null
@@ -36,7 +36,6 @@ run() {
 }
 xcrun simctl boot "$udid"; xcrun simctl bootstatus "$udid" -b >/dev/null
 probe main-booted "$udid"
-[[ $MODE == shutdown ]] && { xcrun simctl shutdown "$udid"; probe main-shutdown "$udid"; }
 read -r runtime devicetype <<<"$(xcrun simctl list runtimes -j | python3 -c '
 import json, sys
 for r in json.load(sys.stdin)["runtimes"]:
@@ -44,11 +43,10 @@ for r in json.load(sys.stdin)["runtimes"]:
         iphones = {t["name"]: t["identifier"] for t in r["supportedDeviceTypes"] if t["productFamily"] == "iPhone"}
         name = next((n for n in ("iPhone 17 Pro", "iPhone 16 Pro", "iPhone 16") if n in iphones), list(iphones)[-1])
         print(r["identifier"], iphones[name]); break')"
-sk="$(xcrun simctl create "Hummlist StoreKit" "$devicetype" "$runtime")"
-xcrun simctl boot "$sk"
-xcrun simctl bootstatus "$sk" -b >/dev/null
-echo "PROBE bootstatus-done t=$(date +%H:%M:%S)"
-for i in 1 2 3 4; do
-  probe "pre$i" "$sk"; run "default$i"
-  probe "pre$i" "$sk"; run "long$i" -destination-timeout 300
+for i in 1 2; do
+  sk="$(xcrun simctl create "Hummlist StoreKit $i" "$devicetype" "$runtime")"
+  xcrun simctl boot "$sk"
+  probe "booted$i" "$sk"
+  if [[ $VARIANT == long ]]; then run "$VARIANT$i" -destination-timeout 600; else run "$VARIANT$i"; fi
+  xcrun simctl shutdown "$sk"
 done
