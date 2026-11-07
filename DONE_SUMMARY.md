@@ -33,6 +33,7 @@
 - Job 149, item edit sheet: no title, hint or chip icons, Abbrechen instead of Löschen: [docs/done/149-item-edit-sheet-cleanup.md](docs/done/149-item-edit-sheet-cleanup.md)
 - Job 151, Baumarkt: seven DIY categories, a Baumarkt store type, 251 DIY words: [docs/done/151-hardware-store-categories.md](docs/done/151-hardware-store-categories.md)
 - Job 101, hill-climb hc-strictness: a strict TypeScript/JavaScript lint pack (`tool/lint/ts/`, every Deno lint rule and strict compiler option decided, 114 enforced in the lint gate), score 1030 -> 2 over 241 files, reviews 0 and 1: the type check fails closed, Deno is pinned in `.dvmrc`, every in-scope TS file is type-checked: [docs/done/101-hc-strictness.md](docs/done/101-hc-strictness.md)
+- Job 169, Phase 1: households and the invite loop: plan (HH1..HH3, M-H1..M-H3, Q-HH1..Q-HH5), research, old-app proof and a switcher/invite prototype, draft PR not for merge: [docs/done/169-households-invite.md](docs/done/169-households-invite.md)
 
 ## Job 1: foundation (2026-10-22)
 

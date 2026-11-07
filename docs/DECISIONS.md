@@ -10177,3 +10177,35 @@ Peter (t652u): nexus.hummlist.com showed up in the "what changed" notes for app 
    skip line is looked for outside HTML comments and code fences, like the section itself, so the
    PR template can mention it. An invalid section makes `notes` fall back to the title, while
    `draft` refuses: the notes are a courtesy and must never stop an upload.
+
+## Job 169, Phase 1: households and the invite loop (plan only), 2026-11-07
+
+Plan and evidence: `docs/households/PLAN.md`. Phase 1 builds nothing in the app. Calls made
+without Peter, each reversible in Phase 2:
+
+1. **Old apps keep seeing one household.** Planned: the `household_members` select policy shows
+   a user's own rows only when `is_default`, and the new app reads households and members through
+   functions. Without it, today's `.maybeSingle()` throws for anyone in two households. Checked
+   in a scratch Postgres (`docs/households/proofs/old-app-policy.md`).
+2. **The join page shows no item names.** Inviter first name, household name and counts only. A
+   forwarded link must not leak the list (research: `invite-loops-pricing.md`, implication 6).
+3. **No paid deep-link SDK, no fingerprinting.** Web join first, the Play Install Referrer on
+   Android, a tap-to-paste invite on iPhone, the typed code as the fallback.
+4. **Household kinds come from job 168** (`partner`, `family`, `flat`, `club`, `solo`). Whichever
+   job lands first adds `households.kind`.
+5. **The growth research file was missing on hz** (`/workspace/hummlist/research/hummlist-eng-lead/growth-research-2026-11-06.md`).
+   Asked on BOARD. The plan stands on the job's own research in `docs/households/research/`.
+6. **Exactly one default membership per user, kept by a trigger** (review 0). An `after delete`
+   trigger on `household_members` hands the default to the oldest remaining membership, so leave,
+   removal, a deleted household and account deletion all keep old apps and Siri/Alexa on one
+   household. Without it the old app's query returned 0 rows and would offer onboarding.
+7. **Two second-hop hints, not one** (review 0). Job 168's `second-household` (14 active days)
+   is for people who run a household; `own-household` (2nd active day after joining, under 168's
+   hint rules) is for invitees with none of their own, the loop's second hop.
+8. **Old signatures keep their old meaning, on the default only** (review 1). `create_household`
+   without a request id keeps the `already_in_household` guard (old builds rely on it for retries);
+   the old `leave_current_household` and `unarchive_household` act on the default membership only,
+   instead of deleting all of the caller's memberships.
+9. **The promotion trigger locks its pick** (review 1). `... limit 1 for update`: two leaves at
+   once otherwise left a user with memberships and no default
+   (`docs/households/proofs/concurrent-leave.sh`).

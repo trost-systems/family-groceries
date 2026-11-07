@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="alternate" hreflang="de" href="https://hummlist.com/internal/households">
+<link rel="alternate" hreflang="x-default" href="https://hummlist.com/internal/households">
+<title>Households: switcher and invite loop (internal prototype)</title>
+<link rel="stylesheet" href="/internal/households/households.css">
+<script src="/internal/households/households.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__title">
+    <h1>Households: switcher and invite loop (internal prototype)</h1>
+    <span>Internal, not for merge. Every tap works; share a link on the left to invite Mia on the right.</span>
+  </div>
+  <div class="bar__controls">
+    <div class="seg seg--main" data-control="variant" role="group" aria-label="Switcher variant">
+      <button type="button" data-value="s1" aria-pressed="true">S1 Chip + sheet</button>
+      <button type="button" data-value="s2" aria-pressed="false">S2 Tab pill</button>
+      <button type="button" data-value="s3" aria-pressed="false">S3 Pager</button>
+    </div>
+    <div class="seg" data-control="lang" role="group" aria-label="Language">
+      <button type="button" data-value="de" aria-pressed="true">DE</button>
+      <button type="button" data-value="en" aria-pressed="false">EN</button>
+    </div>
+    <div class="seg" data-control="theme" role="group" aria-label="Theme">
+      <button type="button" data-value="light" aria-pressed="true">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
+    <button type="button" class="reset" data-reset>Reset</button>
+  </div>
+</header>
+<main class="frames" id="frames"></main>
+<footer class="notes">
+  <h2>Notes</h2>
+  <ul>
+    <li><b>S1 (recommended)</b>: a household chip top left (name + expand icon only) opens the "Haushalte" sheet: switch, invite per row, new household, join with a code, and the default household for voice and AI assistants in its footer.</li>
+    <li><b>S2</b>: the tab pill's first segment is the household (icon + name) and opens the same sheet. Always in thumb reach, but it makes the pill wide with long names.</li>
+    <li><b>S3</b>: swipe or use the arrows to page between households; dots under the top bar, a "+" page at the end creates or joins. Invite is the person icon in the top bar. No overview of all households at once, no room for the voice default.</li>
+    <li><b>Invite</b>: "Eine Person" is a one-time code for 7 days; "Gruppenlink" is a QR and link for up to 50 people for 30 days, revocable. The QR is a pattern (Muster), not a real code. The share sheet is a neutral stand-in for the system one.</li>
+    <li><b>Mia's loop</b>: the web landing shows no items (a forwarded link would leak them), only inviter, household and counts; joining in the browser is the main path, the app picks the household up from the account. After install the code comes back by install referrer (Android) or one paste tap (iPhone). After joining the list shows at once, no toast; the one-time card asks for a list of her own (the second hop).</li>
+    <li>New household: the kind (job 168) prefills the name; "Nur ich" skips the invite sheet.</li>
+  </ul>
+</footer>
+</body>
+</html>
