@@ -429,6 +429,8 @@
   "sendTestError": "Send a test error",
   "feedbackRow": "Send feedback",
   "@feedbackRow": {"description": "More: opens the feedback form; also the form's title"},
+  "rateApp": "Rate Hummlist",
+  "@rateApp": {"description": "More: opens Hummlist's page in the App Store or Google Play, to rate it"},
   "helpRow": "Help & contact",
   "@helpRow": {"description": "More: opens the help and contact page on hummlist.com in the browser"},
   "feedbackMessage": "Your message",

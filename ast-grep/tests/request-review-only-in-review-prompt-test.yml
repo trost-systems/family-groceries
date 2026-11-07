@@ -1,0 +1,20 @@
+id: request-review-only-in-review-prompt
+valid:
+  - |
+    void f(BuildContext context) =>
+        unawaited(context.read<StoreReview>().openStoreListing());
+  - |
+    Future<void> f(ReviewPrompt prompt) => prompt.requestIfDue();
+  - |
+    /// Never review.requestReview() from a button.
+    void f() {}
+invalid:
+  # A "Rate us" button asking for the store's prompt.
+  - |
+    void f(BuildContext context) =>
+        unawaited(context.read<StoreReview>().requestReview());
+  - |
+    Widget f(StoreReview review) =>
+        TextButton(onPressed: review.requestReview, child: child);
+  - |
+    void f(StoreReview review) => review..requestReview();

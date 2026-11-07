@@ -117,6 +117,9 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
   'paywall_viewed': const {
     'entry_point': OneOf({'more', 'integrations'}),
   },
+  // Job 155: the app asked the store for its rating prompt (the store may
+  // not show it and never says). Nothing else: no gate, no counts.
+  'review_prompt_requested': const {},
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

@@ -9834,3 +9834,77 @@ Baumarkt off the landing page because the app had no hardware categories.
    capsule stays for that line only.
 6. **Reduced motion is a 200 ms crossfade**, as in the prototype: no scale or slide, and the
    retry arrows pulse instead of spinning.
+
+## Job 155: native store rating prompt (Peter Q96=R1), 2026-11-06
+
+1. **The research note was not on this runner.** `~/groceries-ops/reading/review-prompt-timing.md`
+   does not exist on the Hetzner runner (research sync is box to runner only for some paths). The
+   brief lists every gate and threshold, so the build follows the brief. A later read of the note
+   that changes a threshold is one constant in `app/lib/review/review_gates.dart`.
+2. **"Store build": an iPhone release build, or elsewhere a build with `STORE_RELEASE`**
+   (`BuildChannel.of`). The repo has no flavours, and the public release is "a build that the
+   internal testers have had" (`docs/RELEASE.md`). On iOS that is the TestFlight binary itself, and
+   Apple documents that the prompt never shows in TestFlight, so release mode alone means "not debug,
+   not beta" there (review 1: a define on iOS would have meant the prompt never runs, or the release
+   policy changes). A Play internal install can show the prompt, so Android asks only in a build
+   with the define: the production AAB is the tested commit rebuilt with it. Debug never asks. A
+   forgotten Android define means no prompt there, which fails safe. Web and desktop are never a
+   store build without the define, and `isAvailable()` is false there anyway.
+3. **A completed trip is "this device's ticks emptied the list".** ListCubit counts the user's own
+   ticks of open items since the list last had no open item and reports `TripCompleted(n)` when a
+   tick leaves none. The trigger needs `n >= 3`; every completion counts towards the "2 completed
+   trips" gate. When a partner's tick or a delete empties the list, the count resets and nothing is
+   reported: the other device's user finished that trip. A tick that empties the list again within
+   `ListCubit.undoWindow` (10 min) of this device's last completed trip is the same trip (review 0:
+   putting the last item back from „Zuletzt verwendet“ and ticking it again counted a second trip,
+   so one real trip passed the "2 trips" gate). A real new trip inside those 10 minutes is not
+   counted; the gate only gets stricter. A trip counts distinct items: an item unticked and ticked
+   again counts once, so a 2-item list never reaches the 3-item trigger (review 1).
+4. **Errors that block the prompt:** a refused change (the list's `rejections`), the list staying
+   offline for 60 s or more (`ReviewPromptTrigger.offlineGrace`), and any uncaught app error (the
+   same paths that feed error tracking). Review 0: counting every drop to offline blocked the
+   prompt after any tick in a supermarket dead spot that the op queue sent a moment later, the
+   normal shopping case. A minute offline is a failure the user saw (the sync icon); a blip is not.
+   The minute counts only while the app is in the foreground with changes waiting (review 1):
+   offline in the background (Doze, airplane mode overnight) or with nothing to send fails no
+   sync. A session starts at launch and each time the app comes back from the background
+   (`onShow`), not on an inactive bounce (Control Center, Face ID, a permission dialog), which
+   would make "the last session" a few seconds long (review 1); not only at cold start either,
+   since iOS keeps apps alive for weeks. "Last session" is the session before this one: the gate blocks when the last
+   error is newer than the earlier of 24 h ago and the previous session's start. A native crash that kills
+   the app before Dart runs is not seen; the store's own crash rate covers that.
+5. **The rate row shows only in the iPhone and Android apps.** The web app and desktop builds have
+   no store page to open for the user's platform, so the row would be a dead end there.
+6. **The QA override `REVIEW_PROMPT_FORCE` is ignored by a store build** (above), so no public
+   build can ship it. It skips the counter gates and the 3-item minimum, never `isAvailable()`.
+7. **The 3 s idle wait hears every touch in the app** (a global pointer route), not only the
+   list's: a tap on the tab bar or the rail cancels it (review 2: tapping „Mehr“ right after the
+   last tick put the dialog over More). When it fires, it also stays quiet while the List tab is
+   hidden (the shell keeps the branch mounted offstage, `TickerMode` off) or a page is pushed over
+   the list.
+8. **Only a queued write the server refused counts as an error** (`ItemRejected`,
+   `CatalogRejected`). A taken name, a refused merge or rename, and an order or store change
+   refused up front while offline are messages about the input, not sync failures (review 2).
+9. **A launch into the background is one session.** iOS prewarming or an Android background
+   start shows the app for the first time later; that first `onShow` (before any `onResume`)
+   does not start another session, or the real last session would drop out of
+   `previous_session_start` (review 2). An app launched in the foreground is already resumed when
+   the listener is created, and the listener does not replay that state, so it starts as shown:
+   its first return from the background does start a session and count the day (review 4).
+10. **TestFlight installs count requests too.** An iPhone release build is a store build, so a
+    tester's install calls `requestReview()` (Apple shows nothing), records the request (120-day
+    cooldown, version cap) and sends `review_prompt_requested`. Accepted: testers are internal
+    installs, the cooldown only makes them quieter, and `docs/ANALYTICS.md` says to filter them.
+11. **„Hummlist bewerten“ survives a listing that does not open** (no store app, no connection,
+    a plugin error): the failure is caught and told with the existing „Der Store ist gerade nicht
+    erreichbar. Prüfe die Verbindung.“ (`lifetimeStoreOffline`, no new copy). Uncaught, it would
+    reach the zone handler and count as an app error, holding the prompt back for a day (review 7).
+    The App Store id has a test that it matches `scripts/iap/apple_product.ts`.
+12. **"Sync failing" counts like offline** (#311 added it: the server answered with an error worth
+    retrying, and the write stays queued instead of being refused). Sixty seconds in the
+    foreground with changes waiting while the list is offline or failing (`ListState.trouble`) is
+    a sync failure; a 503 the next retry gets past is not. Without this, a server that kept
+    failing would no longer have counted at all once #311 stopped dropping those writes.
+13. **Two lints keep `requestReview` off buttons:** `in_app_review` may be imported only in
+   `app/lib/review/store_review.dart`, and `.requestReview(` may be called only in `app/lib/review/`.
+   The brief's "never wire a button to `requestReview()`" is then a lint error, not a note.

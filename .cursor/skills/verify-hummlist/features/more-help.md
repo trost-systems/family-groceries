@@ -25,7 +25,7 @@ More entries in order (groups top to bottom; rows: DE label, EN label; no hints;
 2. „Partner einladen“ / "Invite your partner", only when the user is in a household (opens Einladungen; see household-invites); „Anderem Haushalt beitreten“ / "Join another household" (opens the join-code page); „Archivierte Haushalte“ / "Archived households", hidden on normal builds (see Gotchas). (Job 78 moved „Kategorien verwalten“ and „Läden“ to the list header's „Anpassen“; see stores-walk-order and categories.)
 3. „Zugänge“ / "Access".
 4. „Einstellungen“ / "Settings"; „Nutzungsdaten“ / "Usage data" (only where the build can send analytics).
-5. „Feedback senden“ / "Send feedback"; „Hilfe & Kontakt“ / "Help & contact" (external-link icon).
+5. „Feedback senden“ / "Send feedback"; „Hummlist bewerten“ / "Rate Hummlist" (external-link icon, iPhone and Android apps only, opens the store page; see rate-hummlist); „Hilfe & Kontakt“ / "Help & contact" (external-link icon).
 6. Heading „Rechtliches“ / "Legal", then „Impressum“ / "Imprint", „Datenschutzerklärung“ / "Privacy policy", „Nutzungsbedingungen (EULA)“ / "Terms of Use (EULA)" (these three with the external-link icon), „Lizenzen“ / "Licenses".
 7. „Abmelden“ / "Sign out", alone, plain like the other rows (job 137: not red).
 8. Version line „Version {version}“ (same in EN), version plus build number in brackets when there is a build number.

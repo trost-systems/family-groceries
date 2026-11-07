@@ -1834,4 +1834,143 @@ void main() {
       ]);
     });
   });
+
+  group('activity for the rating prompt', () {
+    late List<ListActivity> heard;
+    late StreamSubscription<ListActivity> listening;
+
+    setUp(() {
+      heard = [];
+      listening = cubit.activity.listen(heard.add);
+    });
+
+    tearDown(() => listening.cancel());
+
+    Future<String> added(String name) async {
+      final id = (cubit.addEntry(parseEntry(name)) as Added).item.id;
+      await settle();
+      return id;
+    }
+
+    List<int> trips() => [
+      for (final a in heard)
+        if (a case TripCompleted(:final ticked)) ticked,
+    ];
+
+    test(
+      'the tick that empties the list completes a trip of my ticks',
+      () async {
+        final ids = [
+          for (final n in ['Milch', 'Brot', 'Eier']) await added(n),
+        ]..forEach(cubit.tick);
+        await settle();
+        expect(trips(), [3]);
+        // Put back from "recently used" (the tick's undo) and ticked off
+        // again, twice: still that one trip.
+        for (var i = 0; i < 2; i++) {
+          cubit
+            ..readd(ids.first)
+            ..tick(ids.first);
+          await settle();
+        }
+        expect(trips(), [3]);
+      },
+    );
+
+    test('a list emptied again after the undo window is a new trip', () async {
+      var now = DateTime.utc(2026, 11, 6, 9);
+      final clocked = ListCubit(
+        FakeRepository(),
+        MemoryListCache(),
+        userId: 'peter',
+        clock: () => now,
+      )..start();
+      addTearDown(clocked.close);
+      final done = <int>[];
+      final sub = clocked.activity.listen((a) {
+        if (a case TripCompleted(:final ticked)) {
+          done.add(ticked);
+        }
+      });
+      addTearDown(sub.cancel);
+      await settle();
+      final milk = (clocked.addEntry(parseEntry('Milch')) as Added).item.id;
+      await settle();
+      clocked.tick(milk);
+      await settle();
+      now = now.add(ListCubit.undoWindow + const Duration(minutes: 1));
+      final bread = (clocked.addEntry(parseEntry('Brot')) as Added).item.id;
+      await settle();
+      clocked.tick(bread);
+      await settle();
+      expect(done, [1, 1]);
+    });
+
+    test('no trip when a partner empties the list, and their emptying '
+        'starts the count over', () async {
+      final milk = await added('Milch');
+      final bread = await added('Brot');
+      cubit.tick(milk);
+      repo.rows.remove(bread);
+      repo.emitDelete!(bread);
+      await settle();
+      expect(trips(), isEmpty);
+
+      final eggs = await added('Eier');
+      cubit.tick(eggs);
+      await settle();
+      expect(trips(), [1]);
+    });
+
+    test('an item unticked and ticked again counts once', () async {
+      final milk = await added('Milch');
+      final bread = await added('Brot');
+      cubit
+        ..tick(milk)
+        ..untick(milk)
+        ..tick(milk)
+        ..tick(bread);
+      await settle();
+      expect(trips(), [2]);
+    });
+
+    test(
+      'my adds and re-adds are told; an undo, a retry and an echo not',
+      () async {
+        final milk = await added('Milch');
+        cubit
+          ..addEntry(parseEntry('milch'))
+          ..tick(milk)
+          ..readd(milk);
+        await settle();
+        repo.emitItem!(repo.rows[milk]!);
+        repo.remoteAdd('Tee');
+        await cubit.resync();
+        expect(heard.whereType<OwnItemAdded>(), hasLength(1));
+      },
+    );
+
+    test('a re-add after the undo window is an add', () async {
+      var now = DateTime.utc(2026, 11, 6, 9);
+      final clocked = ListCubit(
+        FakeRepository(),
+        MemoryListCache(),
+        userId: 'peter',
+        clock: () => now,
+      )..start();
+      addTearDown(clocked.close);
+      final adds = <ListActivity>[];
+      final sub = clocked.activity.listen(adds.add);
+      addTearDown(sub.cancel);
+      await settle();
+      final id = (clocked.addEntry(parseEntry('Milch')) as Added).item.id;
+      await settle();
+      clocked.tick(id);
+      await settle();
+      now = now.add(ListCubit.undoWindow + const Duration(minutes: 1));
+      clocked.readd(id);
+      await settle();
+      expect(adds.whereType<OwnItemAdded>(), hasLength(2));
+    });
+  });
 }

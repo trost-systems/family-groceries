@@ -127,6 +127,17 @@ final class const Merge(
   required final Item result,
 });
 
+/// What the user did on the list that the store rating prompt counts
+/// (job 155). Never a retry, a realtime echo or a restore.
+sealed class const ListActivity();
+
+/// The user added an item (`item_added`).
+final class const OwnItemAdded() extends ListActivity;
+
+/// The user's tick left no item on the list; [ticked] is how many items
+/// they ticked since it last had none.
+final class const TripCompleted(final int ticked) extends ListActivity;
+
 const _maxResubscribe = Duration(seconds: 30);
 
 class ListCubit(
@@ -148,6 +159,14 @@ class ListCubit(
   final _rejections = StreamController<Rejected>.broadcast();
   final _hints = StreamController<DedupeHint>.broadcast();
   final _renameMerges = StreamController<Merge>.broadcast();
+  final _activity = StreamController<ListActivity>.broadcast();
+
+  /// The items this user ticked since the list last had no open item; an
+  /// untick and a tick again count the item once.
+  final _tripTicked = <String>{};
+
+  /// When this user's tick last completed a trip.
+  DateTime? _tripDoneAt;
 
   /// Renames sent again after a refusal; a second refusal is final.
   final _resentRenames = Set<EditItem>.identity();
@@ -224,6 +243,8 @@ class ListCubit(
   /// brand and details, in any case or spacing), so it was folded into that
   /// one. The UI says so, with an undo.
   Stream<Merge> get renameMerges => _renameMerges.stream;
+
+  Stream<ListActivity> get activity => _activity.stream;
 
   /// Shows the cached list, if any, then connects. Ops queued before the
   /// cache answers go after the cached ones.
@@ -455,6 +476,7 @@ class ListCubit(
       ),
     );
     _track('item_added', {'source': source.name, ..._actor()});
+    _tell(const OwnItemAdded());
     return Added(item);
   }
 
@@ -473,9 +495,25 @@ class ListCubit(
 
   void tick(String id) {
     final active = state.items[id]?.status == ItemStatus.active;
+    // Counted before the enqueue, whose emptied list resets the count.
+    if (active) {
+      _tripTicked.add(id);
+    }
+    final ticked = _tripTicked.length;
     _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
     if (active) {
       _track('item_ticked', _actor());
+      final now = _clock();
+      // Emptied again within the undo window (a re-add from "recently used"
+      // ticked off again): the same trip, not a second one.
+      final again = switch (_tripDoneAt) {
+        final done? => now.difference(done) <= undoWindow,
+        null => false,
+      };
+      if (!_hasOpenItem(state.items) && !again) {
+        _tripDoneAt = now;
+        _tell(TripCompleted(ticked));
+      }
     }
   }
 
@@ -496,6 +534,7 @@ class ListCubit(
     untick(id);
     if (bought && !undo) {
       _track('item_added', {'source': AddSource.suggestion.name, ..._actor()});
+      _tell(const OwnItemAdded());
     }
   }
 
@@ -992,6 +1031,15 @@ class ListCubit(
     };
   }
 
+  void _tell(ListActivity activity) {
+    if (!_activity.isClosed) {
+      _activity.add(activity);
+    }
+  }
+
+  static bool _hasOpenItem(Map<String, Item> items) =>
+      items.values.any((i) => i.status == ItemStatus.active);
+
   void _report(Rejected rejection) {
     if (!_rejections.isClosed) {
       _rejections.add(rejection);
@@ -1316,6 +1364,9 @@ class ListCubit(
     super.onChange(change);
     final next = change.nextState;
     final before = change.currentState;
+    if (_tripTicked.isNotEmpty && !_hasOpenItem(next.items)) {
+      _tripTicked.clear();
+    }
     if (!identical(next.server, before.server) &&
         !setEquals(_activeNames(next.server), _activeNames(before.server))) {
       _usualsReload?.cancel();
@@ -1376,6 +1427,7 @@ class ListCubit(
     await _rejections.close();
     await _hints.close();
     await _renameMerges.close();
+    await _activity.close();
     await super.close();
   }
 }

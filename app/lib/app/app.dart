@@ -23,6 +23,8 @@ import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
+import 'package:family_groceries/review/review_prompt.dart';
+import 'package:family_groceries/review/store_review.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
@@ -39,6 +41,12 @@ class const App({
   required final AccountRepository account,
   required final Analytics analytics,
   required final FeedbackRepository feedback,
+
+  /// Counts this install's use and asks the store for a rating when due.
+  required final ReviewPrompt reviewPrompt,
+
+  /// The store's rating prompt and listing.
+  required final StoreReview storeReview,
   required final InviteRepository invites,
 
   /// Whether the household has Hummlist Premium.
@@ -124,10 +132,12 @@ class _AppState() extends State<App> {
   /// or the tab is hidden: it may not come back. Back in front, it reads the
   /// household's unlock again: a plan may have ended meanwhile.
   late final AppLifecycleListener _lifecycle;
+  late final AppLifecycleListener _reviewSessions;
 
   @override
   void initState() {
     super.initState();
+    _reviewSessions = widget.reviewPrompt.followLifecycle();
     _lifecycle = AppLifecycleListener(
       onHide: () => unawaited(widget.analytics.flush()),
       onResume: () => unawaited(widget.entitlements.refresh()),
@@ -160,6 +170,7 @@ class _AppState() extends State<App> {
   @override
   void dispose() {
     _lifecycle.dispose();
+    _reviewSessions.dispose();
     unawaited(_widgetLaunches?.cancel());
     _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
@@ -191,6 +202,8 @@ class _AppState() extends State<App> {
       RepositoryProvider.value(value: widget.premium),
       RepositoryProvider.value(value: widget.storePrices),
       RepositoryProvider.value(value: _addSheetRequest),
+      RepositoryProvider.value(value: widget.reviewPrompt),
+      RepositoryProvider.value(value: widget.storeReview),
       if (widget.homeWidgets case final homeWidgets?)
         RepositoryProvider.value(value: homeWidgets),
     ],

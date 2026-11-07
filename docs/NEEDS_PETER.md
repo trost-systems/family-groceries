@@ -1347,6 +1347,18 @@ The job now tells its subagents never to run a script against a hosted service.
   findings) is excluded from the pack because the hill-climb protocol freezes it. Fix it when job
   106's goal is next re-baselined.
 
+## Job 155: the store rating prompt waits for the public release build (2026-11-06)
+
+iPhone: nothing to do. The build the testers had is the one to submit; StoreKit never shows the
+prompt in TestFlight, so testers are not asked and App Store users are. Android: when the public
+release step exists (its own job, your go), its Play production AAB is the tested commit built
+once more with `--dart-define=STORE_RELEASE=true`; internal-track builds never pass it
+(docs/RELEASE.md, "Public releases"). If you would rather promote the internal AAB unchanged,
+say so: then Android never asks, which is safe. Before launch, check the native dialog once on a
+phone:
+`flutter run --dart-define=REVIEW_PROMPT_FORCE=true`, tick off a list, wait 3 s (iOS shows it in
+debug builds; Android only for an app installed from Play).
+
 ## Job 149: deleting single items, after the edit sheet lost Löschen (2026-11-06)
 
 The edit sheet has no Löschen any more (your call, t612u). The public deletion page

@@ -594,3 +594,12 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 - Job 159, three small gaps: a store name the household has keeps the add dialog open with why, „Drei Glocken Nudeln“ said stays one item, the mouse wheel over the add field and the tab pill scrolls the list: [docs/done/159-small-gaps.md](docs/done/159-small-gaps.md)
 - Job 162, legal and help texts follow the app (tester list, archived households, Alexa 12-month purge, Zugriffstoken): [docs/done/162-legal-copy-sync.md](docs/done/162-legal-copy-sync.md)
 - Job 161, the sync indicator S2-C3F2 (a hex card for offline and sync failing that folds into a pill; a real failing state; a 5xx no longer drops a change): [docs/done/161.md](docs/done/161.md)
+
+
+
+
+
+
+## Job 155: native store rating prompt
+
+Public store builds ask for the system rating dialog 3 s after a completed trip (3 or more own ticks), behind every gate of the brief; More gets „Hummlist bewerten“ / "Rate Hummlist" (iOS and Android) opening the store listing. iPhone release builds may ask (TestFlight never shows the dialog); Android asks only in the future Play production build with `STORE_RELEASE=true`; no device proof (no device or emulator on the runner). Not merged (the Lead merges). Details: [docs/done/155-review-prompt.md](docs/done/155-review-prompt.md).

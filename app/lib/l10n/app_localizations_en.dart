@@ -1123,6 +1123,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackRow => 'Send feedback';
 
   @override
+  String get rateApp => 'Rate Hummlist';
+
+  @override
   String get helpRow => 'Help & contact';
 
   @override
