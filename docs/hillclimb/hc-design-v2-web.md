@@ -40,6 +40,7 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | rebase | re-anchor: branch rebased onto main 598291fc (#290 landing store chips; waitlist.css conflict resolved to the hex tiles); one absolute run of the rebased head becomes the pairwise reference | - | 7 (mean 7.333) | re-anchor | medians typography 7, hierarchy 8, colour 8, spacing 7, layout 7, consistency 7, accessibility 8, iconography 7, empty/error 7 |
 | w10 | landing slabs separated by a larger, uniform gap from the spacing scale | cand 2 / base 0 / tie 7 | 7 (mean 7.556) | keep | guard-web green: 169/169 site tests, copy identical 27+31 pages, crawl + contrast pass |
 | w11 | display headings and hex CTA labels get less negative tracking so letters stop colliding | cand 1 / base 0 / tie 8 | 7 (mean 7.444) | keep | guard-web green: 169/169 site tests, copy identical 27+31 pages, crawl + contrast pass; 222 headings: line counts unchanged at 1440/390/390@150 % |
+| w12 | hero status chip drawn as a hex like the other chips and controls | cand 2 / base 0 / tie 7 | 7 (mean 7.556) | keep | guard-web green: 169/169 site tests, copy identical 27+31 pages, crawl + contrast pass |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
@@ -54,4 +55,5 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **w9** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise spacing cand, layout cand, consistency cand, accessibility cand; seeds [176800370, 4064644348, 351887573].
 - **w10** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 8, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise hierarchy cand, spacing cand; seeds [2659000451, 1801435031, 2096725542].
 - **w11** (keep): medians typography 7, hierarchy 8, color_contrast 7, spacing 8, layout 8, consistency 7, accessibility 8, iconography 7, empty_error_states 7; pairwise typography cand; seeds [499622399, 152733097, 2715562490].
+- **w12** (keep): medians typography 7, hierarchy 8, color_contrast 8, spacing 7, layout 8, consistency 8, accessibility 8, iconography 7, empty_error_states 7; pairwise consistency cand, accessibility cand; seeds [2583501821, 2024323798, 3066085814].
 
