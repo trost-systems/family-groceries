@@ -36,7 +36,13 @@ abstract interface class Dictation() {
 
 /// The platform recognizer (Siri's on iOS, Google's on Android), in German
 /// and on the device only.
-class DeviceDictation({SpeechToText? speech}) implements Dictation {
+class DeviceDictation({
+  SpeechToText? speech,
+
+  /// Replaces the native offline-German check, for the Linux capture
+  /// entrypoint (`test_driver/main_marionette.dart`), which has none.
+  Future<bool?> Function()? offlineGermanCheck,
+}) implements Dictation {
   /// The app's own check (MainActivity.kt, AppDelegate.swift): with
   /// `onDevice` speech_to_text 7.5 falls back to the network recognizer on
   /// Android and can't tell whether German is installed.
@@ -50,6 +56,9 @@ class DeviceDictation({SpeechToText? speech}) implements Dictation {
   };
 
   final SpeechToText _speech = speech ?? SpeechToText();
+  final Future<bool?> Function() _offlineGermanCheck =
+      offlineGermanCheck ??
+      (() => offlineGerman.invokeMethod<bool>('offlineGerman'));
   Completer<Dictated>? _done;
   var _heard = '';
   DictationProblem? _problem;
@@ -88,9 +97,7 @@ class DeviceDictation({SpeechToText? speech}) implements Dictation {
     }
     try {
       // A recognizer service that never answers counts as no.
-      return await offlineGerman
-                  .invokeMethod<bool>('offlineGerman')
-                  .timeout(const Duration(seconds: 5)) ??
+      return await _offlineGermanCheck().timeout(const Duration(seconds: 5)) ??
               false
           ? null
           : DictationProblem.noOfflineGerman;

@@ -450,3 +450,51 @@ body {
   left: calc(-11.3 * var(--u));
   top: calc(-13 * var(--u));
 }
+
+/* voice-add: what Mia says, word by word, as a speech caption in the user's cobalt. */
+.said {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  justify-items: start;
+  gap: calc(8 * var(--u));
+}
+
+.said--center {
+  justify-items: center;
+}
+
+.said-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(8 * var(--u));
+  margin: 0;
+  padding: calc(9 * var(--u)) calc(14 * var(--u));
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: calc(16 * var(--u)) calc(16 * var(--u)) calc(16 * var(--u)) calc(4 * var(--u));
+  background: var(--hl-color-cobalt);
+  color: var(--hl-color-on-cobalt);
+  box-shadow: 0 calc(3 * var(--u)) 0 var(--hl-color-ink);
+  font-family: "Inter", sans-serif;
+  font-size: calc(15 * var(--u));
+  font-weight: 650;
+  line-height: 1.3;
+  opacity: 0;
+}
+
+.said-bubble .mi {
+  font-size: calc(16 * var(--u));
+  margin-top: calc(2 * var(--u));
+}
+
+.said-bubble .w {
+  opacity: 0;
+}
+
+.said-note {
+  font-family: "Inter", sans-serif;
+  font-size: calc(12 * var(--u));
+  font-weight: 600;
+  color: var(--hl-color-text);
+  opacity: 0;
+}

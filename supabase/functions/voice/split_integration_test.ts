@@ -2,7 +2,7 @@
 // item the way public.add_item splits a typed or Siri-added one. Runs voice/items.ts as a signed-in
 // user against the local stack; the db gate sets FG_DB_TEST=1 and SUPABASE_DB_URL. Skipped without
 // FG_DB_TEST.
-import { assertEquals } from '@std/assert';
+import { assert, assertEquals } from '@std/assert';
 import postgres from 'postgres';
 import { asUser } from '../_shared/db.ts';
 import type { SplitItem } from './handler.ts';
@@ -46,7 +46,7 @@ Deno.test({
       });
       const heard = parseSentence(said, 30);
       const split = await asUser(userId, (tx) => splitItems(tx, householdId, heard));
-      assertEquals(split, [
+      assertEquals(split.map(({ categoryId: _, ...rest }) => rest), [
         { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3', quantity: null, storeId: dm },
         { name: 'Milch', brand: null, properties: null, quantity: '2 l', storeId: null },
         {
@@ -60,9 +60,12 @@ Deno.test({
       await asUser(userId, (tx) => addItems(tx, householdId, heard));
       const stored = await asUser(userId, (tx) =>
         tx<SplitItem[]>`
-          select name, brand, properties, quantity, store_id as "storeId" from public.items
+          select name, brand, properties, quantity, store_id as "storeId", category_id as "categoryId"
+          from public.items
           where household_id = ${householdId}`);
       const byName = (a: SplitItem, b: SplitItem) => a.name.localeCompare(b.name);
+      // The category each row really lands in is the one the app was told to show it in.
       assertEquals([...stored].sort(byName), [...split].sort(byName));
+      assert(split.every((item) => item.categoryId !== null), 'every item has a category');
     }),
 });

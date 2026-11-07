@@ -41,7 +41,13 @@ const caught = withTelemetry(
     // Only mode parse splits, so this add never calls it; it would split nothing off.
     splitItems: (_caller, items) =>
       Promise.resolve(
-        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+        items.map((item) => ({
+          ...item,
+          brand: null,
+          properties: null,
+          storeId: null,
+          categoryId: null,
+        })),
       ),
     report: (e) => telemetry.exception(e),
   }),

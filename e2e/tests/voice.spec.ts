@@ -77,9 +77,11 @@ test('in-app dictation (mode parse, split) splits brand and details as a typed a
   });
   expect(res.status).toBe(200);
   // A new household has no stores yet, so no store comes back (voice/split_integration_test.ts has dm).
+  // Each item names its category, so the app shows the row there at once (job 150).
+  const category = expect.any(String);
   expect((await functionJson(res)).items).toEqual([
-    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3, Big Pack', quantity: null, storeId: null },
-    { name: 'Milch', brand: null, properties: null, quantity: '2 l', storeId: null },
+    { name: 'Windeln', brand: 'Pampers', properties: 'Größe 3, Big Pack', quantity: null, storeId: null, categoryId: category },
+    { name: 'Milch', brand: null, properties: null, quantity: '2 l', storeId: null, categoryId: category },
   ]);
 });
 

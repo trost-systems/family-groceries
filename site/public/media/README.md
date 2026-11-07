@@ -8,7 +8,7 @@ size or a half-finished set fails the build and names the file.
 
 `<name>-<locale>-<width>[-dark].<ext>`, with
 
-- `name`: `hero` (a still), or a demo slot: `add-tick`, `household-sync`, `mcp-chat`;
+- `name`: `hero` (a still), or a demo slot: `add-tick`, `household-sync`, `mcp-chat`, `voice-add`;
 - `locale`: `de` or `en` (each language has its own on-screen words);
 - `width`: `wide` (shown from 601 px viewport width) or `compact` (up to 600 px);
 - `-dark`: optional, the poster for `prefers-color-scheme: dark`. Without it dark mode shows the
@@ -55,5 +55,7 @@ it to say what the video shows, and list the change in `site/COPY_NEEDED.md`
 | `add-tick` | Add items in the add sheet, tick one off | Feature card "Eine Liste für alle" |
 | `household-sync` | One household, several members, live sync | Feature card "Der ganze Haushalt" |
 | `mcp-chat` | A generic AI chat adds items through MCP, they appear in the app | Voice block, card "Mit KI-Assistenten" |
+| `voice-add` | Tap the mic in the add field, say a sentence, the items land in their categories | Voice block, card "In der App" |
 
-Siri and Google Assistant have no slot (Peter, 2026-10-31: no videos for them for now).
+Siri, Alexa and Google Assistant have no slot (Peter, 2026-10-31: no videos for them for now; job
+150 kept it so).

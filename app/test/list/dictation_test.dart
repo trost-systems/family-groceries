@@ -34,6 +34,29 @@ class FakeDictation({final DictationProblem? problem}) implements Dictation {
   Future<void> stop() async {}
 }
 
+/// Reports words as the test says them, like a recognizer's partial
+/// results, and hears the last ones when `finish` completes.
+class SpeakingDictation() implements Dictation {
+  final finish = Completer<void>();
+  void Function(String words)? say;
+  var _said = '';
+
+  @override
+  Future<DictationProblem?> prepare() async => null;
+
+  @override
+  Future<Dictated> listen({
+    required void Function(String words) onWords,
+  }) async {
+    say = (words) => onWords(_said = words);
+    await finish.future;
+    return Heard(_said);
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
 void main() {
   late FakeRepository repo;
 
@@ -104,6 +127,34 @@ void main() {
     expect(fieldText(tester), isEmpty);
     expect(find.byTooltip('Diktieren'), findsOneWidget);
     expect(tester.widget<TextField>(addField()).focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('while the user speaks, the field shows the latest words', (
+    tester,
+  ) async {
+    final dictation = SpeakingDictation();
+    await pumpList(tester, dictation);
+    await tester.tap(find.byTooltip('Diktieren'));
+    await tester.pump();
+    dictation.say!('Pizza, Orangensaft und zwei Packungen Fischstäbchen');
+    await tester.pump();
+    await tester.pump();
+
+    final field = tester
+        .state<EditableTextState>(
+          find.descendant(of: addField(), matching: find.byType(EditableText)),
+        )
+        .renderEditable;
+    final end = field.localToGlobal(
+      field
+          .getLocalRectForCaret(TextPosition(offset: fieldText(tester).length))
+          .centerLeft,
+    );
+    expect(
+      tester.getRect(addField()).contains(end),
+      isTrue,
+      reason: 'the last word is inside the field',
+    );
   });
 
   testWidgets('a dictated item gets its brand and details split off, as a '

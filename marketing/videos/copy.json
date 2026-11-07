@@ -95,5 +95,29 @@
     "en": "Listening …",
     "status": "draft",
     "source": "New: the chat’s voice-input state."
+  },
+  "voice-add.say": {
+    "de": "Sag einfach, was fehlt.",
+    "en": "Just say what you need.",
+    "status": "draft",
+    "source": "New: caption of the voice-add video while Mia taps the microphone and speaks (job 150)."
+  },
+  "voice-add.quote": {
+    "de": "„%s“",
+    "en": "“%s”",
+    "status": "draft",
+    "source": "New: quotation marks around the spoken sentence (the take's own words, capture/shots.ts) in the voice-add video's speech caption."
+  },
+  "voice-add.german": {
+    "de": "Hummlist hört auf Deutsch zu.",
+    "en": "Hummlist listens in German.",
+    "status": "draft",
+    "source": "New: English voice-add video only, under the German sentence: in-app dictation listens in German in every app language (FEATURES-FOR-WRITERS, Dictation). German kept for symmetry, not shown."
+  },
+  "voice-add.tick": {
+    "de": "Im Laden:\nantippen, abgehakt.",
+    "en": "In the store:\none tap, ticked off.",
+    "status": "reused",
+    "source": "add-tick.tick: the voice-add video ends ticking the three items off, so the loop starts on the same list (job 150)."
   }
 }

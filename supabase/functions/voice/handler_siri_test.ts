@@ -32,7 +32,13 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     requirePremium: () => Promise.resolve('open'),
     splitItems: (_caller, items) =>
       Promise.resolve(
-        items.map((item) => ({ ...item, brand: null, properties: null, storeId: null })),
+        items.map((item) => ({
+          ...item,
+          brand: null,
+          properties: null,
+          storeId: null,
+          categoryId: null,
+        })),
       ),
     addItems: asAdded(['milk', 'Milch']),
     readItems: () => Promise.resolve([]),

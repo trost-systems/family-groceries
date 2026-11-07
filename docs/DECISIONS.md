@@ -9530,3 +9530,59 @@ The three tests fail only when a stall outlasts the budget it lands in. Their bu
    `MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.hummlist.com`; if the page breaks MCP,
    reverting the PR restores the old rewrites. Once it passes, `site-agent` can set
    `MCP_SMOKE_PAGE=1`.
+
+## Job 150: the site videos show the microphone, and a voice-add video, 2026-11-06
+
+Peter (t614u): none of the hummlist.com videos showed the microphone in the add field, which the
+phone apps always show; add an example of talking to the app.
+
+1. **Why the mic was missing.** `ListScreen.dictationFor` gives a recognizer to iOS and Android
+   only; the videos film the Linux build, which got none, so the add bar hid the button. Real
+   users keep exactly that (web and desktop have no microphone). The fix lives in the capture
+   entrypoint: with `FG_DICTATION` set, `test_driver/main_marionette.dart` installs
+   `ScriptedSpeech` as speech_to_text's platform implementation and gives `ListScreen` a
+   `DeviceDictation` whose offline-German check says yes. The app's seams for it are a settable
+   `ListScreen.dictation` (`@visibleForTesting`) and `DeviceDictation(offlineGermanCheck:)`; both
+   keep their phone defaults.
+2. **Faked at the recognizer, nothing else.** `ScriptedSpeech` stands where the iOS and Android
+   plugins stand: it reports the sentence as partial results (first word 0.7 s after listening
+   starts, then one per 0.34 s) and the final result when speech_to_text stops it. The plugin's
+   pause timer, `DeviceDictation`, the button's states, the voice function's splitter, the
+   classifier and the list are the real code. The speech caption in the video uses the same
+   timings. fg drives it too (`FG_DICTATION=… scripts/fg up`, features/voice.md).
+3. **English hears German.** The app listens in German (`de_DE`) whatever its language, and the
+   site may not show what the app doesn't do. So the English cut is the English app hearing the
+   same German sentence, with "Hummlist listens in German." under it; the rows land in German
+   among the English items. If English dictation comes, re-take with an English sentence.
+4. **The sentence.** „Pizza, Orangensaft und zwei Packungen Fischstäbchen“: three items with
+   icons, one with a quantity, landing in two neighbouring sections (Getränke, Tiefkühl) right
+   above the add field, so one crop holds the microphone, the words and the payoff. The brief's
+   example (Milch, Eier, Gurken) lands at the top of the list, out of any crop that also shows
+   the field, and Milch would sit next to the fixture's Vollmilch.
+5. **She taps stop.** Waiting out the recognizer's 3 s pause left four seconds without change
+   (fresh-eye review P1). Mia taps the red stop button 0.9 s after her last word, a real action
+   ("Diktat beenden"); no footage is cut or sped up.
+6. **Two app defects found while filming, fixed.**
+   - While listening the field showed only the start of a long sentence: an unfocused field
+     never scrolls to its end. The list screen now gives the field a scroll controller and jumps
+     to the end on each recognized word.
+   - Dictated rows first showed without a category and moved about 0.35 s later, when the insert
+     trigger's category arrived over realtime (the list jumped). The voice function's split
+     answer now carries `categoryId` from `parse_item` (the same `classify_item` the trigger
+     runs), and the app shows the row there at once; the add still sends no category, so the
+     server decides as before. Older apps ignore the extra field; a function without it gives
+     what it gave.
+7. **Every video shows the mic.** All 16 cuts re-filmed from 02cc9da8 (job 148's UI). mcp-chat
+   compact's phone strip ended above the field, so Sam's list scrolls less (Ketchup at y 520) and
+   the strip moved down (`appTop` 511) to hold the new rows and the field.
+8. **Placement.** A new first card "In der App" / "In the app" in the voice block with the video;
+   the Siri card's in-app sentence moved into it. No Siri or Alexa in the video (brief).
+9. **The play button keeps off the field (review 1).** The landing page's hex play/pause button
+   sat bottom right, which is where the add field's microphone now is (it hid it in mcp-chat).
+   No corner is free in every slot: captions, name tags, the chat composer and the field take
+   different ones. So each slot names its place, wide and compact (`TOGGLE` in `landing.mjs`,
+   `data-toggle-wide`/`-compact`, CSS in `landing.css`), each checked with the button's box drawn
+   on every second of both languages' videos: add-tick br/ur, household-sync bl/br, voice-add
+   bl/ur, mcp-chat tr/mr. A new slot without a place fails the build.
+10. **Text alternative follows the take.** `demo.voice-add` says she taps stop, not "after a
+   short pause" (review 1).

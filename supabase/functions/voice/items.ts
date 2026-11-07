@@ -77,7 +77,7 @@ export async function addItems(
 }
 
 /**
- * Splits brand, details and store off each item through `parse_item`, the parser `add_item` and
+ * Splits brand, details, store and category off each item through `parse_item`, the parser `add_item` and
  * the app's typed add use: "Windeln Pampers Größe 3" is Windeln, Pampers, Größe 3, at dm. The
  * spoken quantity wins, as in `addItems`.
  */
@@ -89,13 +89,13 @@ export async function splitItems(
   const split: SplitItem[] = [];
   for (const item of items) {
     const [row] = await tx<SplitItem[]>`
-      select name, brand, properties, quantity, store_id as "storeId"
+      select name, brand, properties, quantity, store_id as "storeId", category_id as "categoryId"
       from public.parse_item(${householdId}, ${item.name})`;
     // A line parse_item reads no name from stays as heard, never dropped.
     split.push(
       row?.name
         ? { ...row, quantity: item.quantity ?? row.quantity }
-        : { ...item, brand: null, properties: null, storeId: null },
+        : { ...item, brand: null, properties: null, storeId: null, categoryId: null },
     );
   }
   return split;
