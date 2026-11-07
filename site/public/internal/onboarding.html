@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="alternate" hreflang="de" href="https://hummlist.com/internal/onboarding">
+<link rel="alternate" hreflang="x-default" href="https://hummlist.com/internal/onboarding">
+<title>Onboarding prototype (internal)</title>
+<link rel="stylesheet" href="/internal/onboarding/onb.css">
+<script type="module" src="/internal/onboarding/onb.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__title">
+    <h1>Onboarding prototype: O2 Guided start and H2 trigger hints</h1>
+    <span>Internal, not for merge. Click through the phone; the notes say what is new, why, what data and which event.</span>
+  </div>
+  <div class="bar__controls">
+    <div class="seg" data-control="lang" role="group" aria-label="Language">
+      <button type="button" data-value="de" aria-pressed="true">DE</button>
+      <button type="button" data-value="en" aria-pressed="false">EN</button>
+    </div>
+    <div class="seg" data-control="theme" role="group" aria-label="Theme">
+      <button type="button" data-value="light" aria-pressed="true">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="seg" data-control="motion" role="group" aria-label="Motion">
+      <button type="button" data-value="full" aria-pressed="true">Motion</button>
+      <button type="button" data-value="reduced" aria-pressed="false">Reduced</button>
+    </div>
+    <div class="seg" data-control="size" role="group" aria-label="Size">
+      <button type="button" data-value="fit" aria-pressed="true">Fit</button>
+      <button type="button" data-value="real" aria-pressed="false">1:1</button>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="stage" aria-labelledby="flow-title">
+    <div class="stage__head">
+      <h2 id="flow-title">O2 Guided start</h2>
+      <p>Today's onboarding plus two one-tap steps that change what comes next („Mit wem kaufst du ein?“, „Was fehlt gerade?“), invite copy that fits the answer, and „Erste Schritte“ on the list. Every step can be skipped with a button as big as the answer.</p>
+    </div>
+    <ol class="steps" id="steps"></ol>
+    <div class="stage__body">
+      <div class="viewport"><div class="phone" id="flow"></div></div>
+      <aside class="notes" id="flow-notes" aria-live="polite"></aside>
+    </div>
+  </section>
+  <section class="stage" aria-labelledby="hints-title">
+    <div class="stage__head">
+      <h2 id="hints-title">H2 Trigger hints</h2>
+      <p>One hint at a time, only after the behaviour that makes it useful, at most one per 24 h, never again after ✕ or once the feature is used. Pick a hint to see where it sits.</p>
+    </div>
+    <div class="picker" id="picker" role="group" aria-label="Hint"></div>
+    <div class="stage__body">
+      <div class="viewport"><div class="phone" id="hints"></div></div>
+      <aside class="notes" id="hint-notes" aria-live="polite"></aside>
+    </div>
+  </section>
+</main>
+<footer class="foot">
+  <p>390 × 844 pt phone, the list screen as it is on main (floating „Anpassen“, add field and tab pill). Plan and options: docs/onboarding/PLAN.md in the PR. Store names are plain text, no logos. Hints never sit inside a hex pill: they are cards in the list or bubbles beside the control.</p>
+</footer>
+</body>
+</html>

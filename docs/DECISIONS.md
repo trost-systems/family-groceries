@@ -10141,3 +10141,25 @@ Job 166's review (review.0, nice to have 1 and 2) named two edge cases; Peter wa
    replaced" fails on job 166's code (the add waits for the heartbeat).
 3. **Real phones.** NEEDS_PETER, "Job 23: weekly releases", item 5: flight mode on and off once
    on a TestFlight and a Play internal build. Nothing else needs Peter.
+
+## Job 168: onboarding, activation and contextual hints (phase 1), 2026-11-07
+
+1. **Activation is per household.** The aha is a partner's change showing up on your phone, so
+   `household_activated` = 2+ members, 5+ items and a write by a member other than the creator
+   within 7 days. Measured in PostHog (consented only) and as a Postgres count over
+   `household_members` and `items.added_by` (everyone, counts only). No published benchmark exists
+   for list apps (research), so the first month sets ours.
+2. **A step earns its place only if its answer changes the next screen.** That keeps the store
+   picker and admits "Mit wem kaufst du ein?" (name, invite copy, checklist, hints) and the
+   starter staples (no empty first list, the invite can say what is waiting). Research-only
+   questions (household size, how you shop, diet) stay out of onboarding; diet never, Art. 9.
+3. **Recommended O2 + H2 (7.5 lane-days), not O3.** A guest list before sign-in has the biggest
+   upside (Duolingo moved sign-up later, about +20 % DAU) but needs anonymous users, cleanup,
+   abuse limits and a consent order without an email: 10 lane-days and risk before Nov 28.
+4. **Hints follow Apple TipKit's rules,** since Flutter cannot use TipKit: trigger by behaviour,
+   retire on use, one per 24 h and per session, ✕ forever, recall under More → Tipps. State stays
+   on the device (§ 25 (2) no. 2 TDDDG); hint events only after the analytics yes.
+5. **`households.kind` is shared with job 169** (partner, family, flat, club, solo, nullable);
+   whichever job lands first adds the column.
+6. **The prototype is a site page** (`/internal/onboarding`, Vercel preview behind SSO), like jobs
+   136 and 153, so the `site` gate fails and the PR is NOT FOR MERGE.
