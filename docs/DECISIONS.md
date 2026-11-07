@@ -10141,3 +10141,39 @@ Job 166's review (review.0, nice to have 1 and 2) named two edge cases; Peter wa
    replaced" fails on job 166's code (the add waits for the heartbeat).
 3. **Real phones.** NEEDS_PETER, "Job 23: weekly releases", item 5: flight mode on and off once
    on a TestFlight and a Play internal build. Nothing else needs Peter.
+
+## Job 167: internal work stays out of the testers' notes and the changelog, 2026-11-07
+
+Peter (t652u): nexus.hummlist.com showed up in the "what changed" notes for app testers.
+
+1. **Where it leaked.** Only TestFlight's "What to Test". `notes.sh` listed PR titles filtered by a
+   word list. "nexus.hummlist.com: ops control room dashboard (#305)" and "privacy §14 last-member
+   (#313)" passed it, and "Store links wait ...; the sync indicator e2e proves the tap retries
+   (#314)", the one app fix in that range, was dropped for the word "e2e". Release run 42384463696
+   published that text as build 1201 (de-DE, en-US). The changelog draft, the record, hummlist.com
+   and Play were clean: they read `## Changelog` sections (#305 said `none`), and Play uploads no
+   notes. Build 1201's text stays as published (no store edits from jobs). No later build had it,
+   and the pending range after build 1204 (#318) has no internal line.
+2. **Paths decide, not words.** `internalReason` in `changelog.mjs` calls a commit internal when
+   none of its changed paths reaches users (allowlist of app build, server and Alexa paths minus a
+   denylist of tests, fixtures, fastlane and Markdown), when its description has a `Changelog:
+   skip` paragraph, or, without a section, when its title is a `docs:`/`ci:`/`test:`-style
+   commit. Over all of main's 239 commits, no commit with changelog items is internal by this rule,
+   so the public changelog loses nothing.
+3. **One rule for both outputs.** The draft and record.mjs's late gated items use the same
+   function. The draft warns per left-out commit, so a wrong call is visible in review.
+4. **Notes from the `## Changelog` items.** The testers now read the items in their language
+   instead of PR titles with job jargon; section-less commits (before job 39) still give their
+   title. `none` gives nothing. `flag:` and `hold:` items are included: testers have the build.
+5. **No site pages on the allowlist.** The brief suggested site user pages. The notes describe an
+   app build and the changelog a store release; the site deploys on its own and is in neither.
+6. **A description line, not a GitHub label.** `changelog.mjs` reads git only (no network, by
+   design since job 39), and push-pr.sh puts the description into the commit, so a line travels
+   with the commit; a label would need the API in the release job.
+7. **notes.sh is gone.** release.yml calls `changelog.mjs notes` with Node 22 (setup-node, as in
+   CI); its tests moved from test.sh to changelog.test.mjs.
+8. **Review follow-ups.** git quotes non-ASCII paths by default ("app/assets/icons/h\303\244kchen.svg"),
+   which no allowlist pattern matched, so `commits()` reads them with `core.quotePath=false`. The
+   skip line is looked for outside HTML comments and code fences, like the section itself, so the
+   PR template can mention it. An invalid section makes `notes` fall back to the title, while
+   `draft` refuses: the notes are a courtesy and must never stop an upload.

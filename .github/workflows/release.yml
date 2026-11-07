@@ -96,6 +96,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
       # A workflow_run or scheduled run has no inputs; it gets the dispatch defaults here, so
       # every event takes the same path from this step on.
       - id: inputs
@@ -207,9 +210,9 @@ jobs:
         run: |
           eof="NOTES_$(openssl rand -hex 8)"
           for lang in de en; do
-            { echo "$lang<<$eof"; scripts/release/notes.sh "$lang" "$PREVIOUS" "$SHA"; echo "$eof"; } >>"$GITHUB_OUTPUT"
+            { echo "$lang<<$eof"; node scripts/release/changelog.mjs notes --lang "$lang" --previous-sha "$PREVIOUS" --sha "$SHA"; echo "$eof"; } >>"$GITHUB_OUTPUT"
           done
-          scripts/release/notes.sh de "$PREVIOUS" "$SHA"
+          node scripts/release/changelog.mjs notes --lang de --previous-sha "$PREVIOUS" --sha "$SHA"
 
   ios:
     needs: plan

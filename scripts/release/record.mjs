@@ -341,7 +341,7 @@ function heldAfter({ draft, draftLabel, pendingBefore, previousSha, sha, gates }
   }
   if (from === sha) return base;
   const late = [];
-  for (const item of collect({ previous: from, sha })) {
+  for (const item of collect({ previous: from, sha }).items) {
     let matched;
     try {
       ({ matched } = gateOf(item, gates));

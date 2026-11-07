@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Tests scripts/release/ offline: when a Release run ships or skips (fixture facts), how it finds
-# the last upload (fake gh), the TestFlight notes (scratch repo), the failure issue (fake gh), the
-# AAB signer check (throwaway keystore), the public release record (record.test.mjs, loc.test.mjs), the
-# changelog collector (changelog.test.mjs) and the CI changelog gate (scratch merge commits). Run
-# by the lint gate.
+# the last upload (fake gh), the failure issue (fake gh), the AAB signer check (throwaway
+# keystore), the public release record (record.test.mjs, loc.test.mjs), the changelog collector
+# and the TestFlight notes (changelog.test.mjs) and the CI changelog gate (scratch merge
+# commits). Run by the lint gate.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 
@@ -283,38 +283,6 @@ fixture "$r/actions/workflows/release.yml/runs?branch=main&status=success&per_pa
 gathered="$(gather TESTFLIGHT_JSON= EVENT=workflow_dispatch)"
 expect_eq "gather: no earlier upload" "$(jq -c '[.last_upload, .testflight]' <<<"$gathered")" '[null,null]'
 expect_eq "gather: no earlier upload counts as an app change" "$(jq -c '[.candidates[].app_changed]' <<<"$gathered")" '[true]'
-
-# --- notes.sh -------------------------------------------------------------------------------
-repo="$tmp/repo"
-git init -q -b main "$repo"
-commit() { git -C "$repo" -c user.name=t -c user.email=t@example.com commit -q --allow-empty -m "$1"; }
-commit "Job 20: rename the app to Hummlist (com.hummlist.app) (#46)"
-base="$(git -C "$repo" rev-parse HEAD)"
-commit "Job 21: feedback button on the list (#60)"
-commit "docs(done): job 21 summary (#61)"
-commit "Verify skill upkeep 2026-11-01: drift fixed (#62)"
-commit "Job 22 review 1: onboarding mail from peter@example.com no longer shows (#63)"
-commit "ci: faster e2e (#64)"
-commit "Job 11: one CI run per merge, one gate definition (#59)"
-commit "Job 13b: nightly encrypted database backups (#58)"
-commit "the list keeps its sort order (#65)"
-to="$(git -C "$repo" rev-parse HEAD)"
-notes() { (cd "$repo" && "$here/notes.sh" "$@"); }
-expect_eq "notes (de): user-facing PRs since the last upload, newest first, no repo machinery" "$(notes de "$base" "$to")" \
-"Neu in diesem Build von Hummlist:
-- the list keeps its sort order
-- onboarding mail from  no longer shows
-- feedback button on the list"
-expect_eq "notes (en): same list, English heading" "$(notes en "$base" "$to" | head -1)" "New in this Hummlist build:"
-expect_eq "notes: unknown previous commit falls back to recent history" "$(notes en "$prev" "$to" | tail -1)" \
-  "- rename the app to Hummlist (com.hummlist.app)"
-commit "docs: only docs (#66)"
-expect_eq "notes: nothing user-facing" "$(notes de "$to" HEAD)" "Kleine Verbesserungen und Fehlerbehebungen."
-for i in $(seq 1 15); do commit "change $i (#$((70 + i)))"; done
-out="$(notes en "$to" HEAD)"
-expect_eq "notes: at most 12 lines" "$(grep -c '^- change' <<<"$out")" 12
-expect_eq "notes: the rest is counted" "$(tail -1 <<<"$out")" "- and 3 more changes"
-if notes en "$base" "$to" | grep -qE '@|#[0-9]|Job [0-9]'; then fail "notes leak an email, PR number or job prefix"; fi
 
 # --- report.sh decide -----------------------------------------------------------------------
 report() {

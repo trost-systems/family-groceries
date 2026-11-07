@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { RecordError, STORE_LIMITS, parseDraft, parseRecord } from '../../site/releases.mjs';
@@ -149,8 +149,9 @@ describe('draft and store commands', () => {
   let repo;
   const shas = {};
   const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
-  const commit = (subject, body = '') => {
-    writeFileSync(join(repo, 'f.txt'), subject);
+  const commit = (subject, body = '', path = 'app/lib/f.dart') => {
+    mkdirSync(dirname(join(repo, path)), { recursive: true });
+    writeFileSync(join(repo, path), subject);
     git('add', '-A');
     git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', subject, ...(body ? ['-m', body] : []));
     shas[subject] = git('rev-parse', 'HEAD');
@@ -303,8 +304,9 @@ describe('gated items, pending.json and the override', () => {
   let repo;
   const shas = {};
   const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
-  const commit = (subject, body = '') => {
-    writeFileSync(join(repo, 'f.txt'), subject);
+  const commit = (subject, body = '', path = 'app/lib/f.dart') => {
+    mkdirSync(dirname(join(repo, path)), { recursive: true });
+    writeFileSync(join(repo, path), subject);
     git('add', '-A');
     git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', subject, ...(body ? ['-m', body] : []));
     shas[subject] = git('rev-parse', 'HEAD');
@@ -667,5 +669,87 @@ describe('parseOverride', () => {
         assert.doesNotMatch(text, /alexa|humm\b|verbessert|behoben|improved|fixed|beta/i, `${store} ${lang}`);
       }
     }
+  });
+});
+
+// Job 167: internal work (Nexus, CI, scripts, docs, tests, the site) never reaches the testers'
+// "What to Test" or the public changelog; what users run does.
+describe('internal commits stay out of the notes and the draft', () => {
+  let repo;
+  const shas = {};
+  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  const commit = (subject, body, ...paths) => {
+    for (const path of paths) {
+      mkdirSync(dirname(join(repo, path)), { recursive: true });
+      writeFileSync(join(repo, path), subject);
+    }
+    git('add', '-A');
+    git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '--allow-empty', '-m', subject, ...(body ? ['-m', body] : []));
+    shas[subject] = git('rev-parse', 'HEAD');
+  };
+  const run = (...args) => {
+    const r = spawnSync('node', [cli, ...args], { cwd: repo, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    return { stdout: r.stdout.trimEnd(), stderr: r.stderr };
+  };
+  const notes = (lang, from, to = 'main') => run('notes', '--lang', lang, '--previous-sha', from, '--sha', to).stdout;
+
+  before(() => {
+    repo = mkdtempSync(join(tmpdir(), 'changelog-internal-'));
+    git('init', '-q', '-b', 'main');
+    mkdirSync(join(repo, 'releases'));
+    writeFileSync(join(repo, 'releases/releases.json'), realRecord);
+    writeFileSync(join(repo, 'releases/flags.json'), realFlags);
+    commit('Job 20: rename the app to Hummlist (com.hummlist.app) (#46)', '', 'app/lib/main.dart');
+    commit('Job 21: feedback button on the list (#60)', '', 'app/lib/feedback.dart');
+    commit('nexus.hummlist.com: ops control room dashboard (#305)', note('none'), 'nexus/index.html', 'scripts/nexus/publish.sh');
+    commit('Nexus status page (#306)', note(item('new', 'Ein Dashboard für den Betrieb.', 'An ops dashboard.')), 'nexus/status.html', '.github/workflows/nexus.yml');
+    commit('privacy §14 last-member (#313)', note('none'), 'site/content/legal/privacy.md');
+    commit('Store links wait for the server; the e2e proves the tap retries (#314)', note(item('fixed', 'Ein Link zu einem Laden öffnet ihn wieder.', 'A store link opens that store again.')), 'app/lib/router.dart', 'e2e/tests/deep-links.spec.ts');
+    commit('Job 22 review 1: onboarding mail from peter@example.com no longer shows (#63)', '', 'app/lib/onboarding.dart');
+    commit('ci: faster gates (#64)', '', 'app/lib/main.dart', 'scripts/gates/e2e.sh');
+    commit('docs(done): job 21 summary (#61)', '', 'docs/done/21.md');
+    commit('Sync indicator tests (#70)', note(item('fixed', 'Tests.', 'Tests.')), 'app/test/sync_test.dart', 'supabase/functions/voice/parse_test.ts', 'supabase/tests/rls.test.sql');
+    commit('Debug overlay (#71)', `${note(item('new', 'Ein Overlay.', 'An overlay.'))}\nChangelog: skip\n`, 'app/lib/debug.dart');
+    commit('Refactor the list cubit (#72)', note('none'), 'app/lib/list/list_cubit.dart');
+    commit('Quoted skip line (#74)', `${note(item('new', 'Zitiert.', 'Quoted.'))}\n\`\`\`\nChangelog: skip\n\`\`\`\n<!--\nChangelog: skip\n-->\n`, 'app/lib/quoted.dart');
+    commit('Grüne Häkchen (#75)', note(item('improved', 'Häkchen sind grün.', 'Ticks are green.')), 'app/assets/icons/häkchen.svg');
+    commit('Classifier knows Baumarkt words (#73)', note(item('improved', 'Baumarkt-Wörter landen richtig.', 'DIY words land right.')), 'supabase/classifier/dictionary.tsv');
+  });
+  after(() => rmSync(repo, { recursive: true, force: true }));
+
+  test('What to Test lists what users run, in their language, newest first', () => {
+    const from = shas['Job 21: feedback button on the list (#60)'];
+    assert.equal(notes('de', from), ['Neu in diesem Build von Hummlist:', '- Baumarkt-Wörter landen richtig.', '- Häkchen sind grün.', '- Zitiert.', '- onboarding mail from  no longer shows', '- Ein Link zu einem Laden öffnet ihn wieder.'].join('\n'));
+    assert.equal(notes('en', from), ['New in this Hummlist build:', '- DIY words land right.', '- Ticks are green.', '- Quoted.', '- onboarding mail from  no longer shows', '- A store link opens that store again.'].join('\n'));
+  });
+
+  test('a range of internal commits only gives the nothing-new line', () => {
+    const to = shas['Refactor the list cubit (#72)'];
+    assert.equal(notes('de', shas['Job 21: feedback button on the list (#60)'], shas['privacy §14 last-member (#313)']), 'Kleine Verbesserungen und Fehlerbehebungen.');
+    assert.equal(notes('en', shas['Job 22 review 1: onboarding mail from peter@example.com no longer shows (#63)'], to), 'Small improvements and fixes.');
+  });
+
+  test('an unknown previous commit (the first upload) takes the recent history, filtered the same way', () => {
+    const out = notes('en', '0000000000000000000000000000000000000000');
+    assert.match(out, /- rename the app to Hummlist \(com\.hummlist\.app\)$/);
+    assert.doesNotMatch(out, /Nexus|nexus|dashboard|privacy|ci:|docs|Tests\.|overlay|@|#\d|Job \d/);
+  });
+
+  test('at most 12 lines, the rest counted', () => {
+    const from = git('rev-parse', 'HEAD');
+    for (let i = 1; i <= 15; i++) commit(`change ${i} (#${80 + i})`, '', `app/lib/change${i}.dart`);
+    const out = notes('en', from).split('\n');
+    assert.equal(out.filter((l) => l.startsWith('- change')).length, 12);
+    assert.equal(out.at(-1), '- and 3 more changes');
+  });
+
+  test('the draft leaves out the items of internal commits and names them', () => {
+    const r = run('draft', '--version', '1.0.0', '--sha', shas['Classifier knows Baumarkt words (#73)'], '--dry-run');
+    const draft = JSON.parse(r.stdout.slice(0, r.stdout.indexOf('\n}\n') + 2));
+    assert.deepEqual(['new', 'improved', 'fixed'].flatMap((c) => draft.items[c].map((i) => i.en)), ['Quoted.', 'Ticks are green.', 'DIY words land right.', 'A store link opens that store again.']);
+    assert.match(r.stderr, /left out the items of [0-9a-f]{7} "Nexus status page \(#306\)": it changes nothing that reaches users/);
+    assert.match(r.stderr, /"Sync indicator tests \(#70\)": it changes nothing that reaches users/);
+    assert.match(r.stderr, /"Debug overlay \(#71\)": it is marked "Changelog: skip"/);
   });
 });

@@ -30,6 +30,11 @@ Not everyone has it yet? Add "flag: <key>" when the item ships behind a feature 
 The key must be in releases/flags.json; the item stays out of the public changelog until that
 file opens its gate.
 
+These items are also the testers' TestFlight notes. A PR that changes nothing users run (Nexus,
+CI, scripts, docs, tests, the site) never shows up there or in the changelog. For an internal
+change in the app's own code, add a paragraph "Changelog: skip" above this section
+(docs/RELEASE.md, "Internal work stays out").
+
 Example:
 
 new

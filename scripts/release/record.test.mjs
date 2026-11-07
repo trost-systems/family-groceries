@@ -342,3 +342,17 @@ test('parseRecord: malformed job 105 stats fail with the field', () => {
   rejects((s) => (s.loc = 4), /stats\.loc: must be an object/);
   rejects((s) => (s.lines = 4), /stats\.lines: unknown field/);
 });
+
+// Job 167: a gated item merged after the previous release waits in pending.json only when its
+// commit reaches users; one from an internal tool (Nexus) never gets there.
+test('a late gated item from an internal commit stays out of pending.json', () => {
+  mkdirSync(join(repo, 'nexus'), { recursive: true });
+  mkdirSync(join(repo, 'app/lib'), { recursive: true });
+  const gated = (de, en) => ['## Changelog', 'new', 'flag: public-api', `de: ${de}`, `en: ${en}`];
+  commit('Nexus dashboard (#305)', peter, { 'nexus/index.html': '<h1>ops</h1>\n' }, gated('Ein Dashboard.', 'A dashboard.'));
+  commit('API keys (#306)', peter, { 'app/lib/keys.dart': 'void keys() {}\n' }, gated('API-Schlüssel.', 'API keys.'));
+  const out = run('--version', '1.4.0', '--sha', shas['API keys (#306)'], '--build', '14', '--date', '2026-11-02');
+  assert.equal(out.code, 0, out.stderr);
+  const pending = JSON.parse(readFileSync(join(repo, 'changelog/pending.json'), 'utf8')).items;
+  assert.deepEqual(pending.map((i) => i.en), ['API keys.']);
+});

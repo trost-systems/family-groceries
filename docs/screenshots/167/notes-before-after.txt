@@ -1,0 +1,76 @@
+# TestFlight "What to Test": old notes.sh vs changelog.mjs notes (job 167)
+# Ranges of the uploads on 2026-11-07, plus the pending range (last upload f2afee4e .. main 1874c18e).
+
+## build 1198 (41424fe7..8f1e110d) de, old (published)
+Neu in diesem Build von Hummlist:
+- Store rating: native prompt after a completed trip, Rate Hummlist row
+## build 1198 (41424fe7..8f1e110d) de, new
+Neu in diesem Build von Hummlist:
+- Unter „Mehr“ kannst du Hummlist jetzt im App Store oder bei Google Play bewerten.
+
+## build 1198 (41424fe7..8f1e110d) en, old (published)
+New in this Hummlist build:
+- Store rating: native prompt after a completed trip, Rate Hummlist row
+## build 1198 (41424fe7..8f1e110d) en, new
+New in this Hummlist build:
+- You can now rate Hummlist in the App Store or on Google Play from More.
+
+## build 1201 (8f1e110d..b2168223) de, old (published)
+Neu in diesem Build von Hummlist:
+- privacy §14 last-member (Legal LR-2026-11-07-1, Peter A103)
+- nexus.hummlist.com: ops control room dashboard
+## build 1201 (8f1e110d..b2168223) de, new
+Neu in diesem Build von Hummlist:
+- Ein Link zu einem Laden öffnet die Liste jetzt auch dann bei diesem Laden, wenn seine Artikel dazukamen, während die App zu war.
+
+## build 1201 (8f1e110d..b2168223) en, old (published)
+New in this Hummlist build:
+- privacy §14 last-member (Legal LR-2026-11-07-1, Peter A103)
+- nexus.hummlist.com: ops control room dashboard
+## build 1201 (8f1e110d..b2168223) en, new
+New in this Hummlist build:
+- A link to a store now opens the list at that store even when its items were added while the app was closed.
+
+## build 1202 (b2168223..5c795364) de, old (published)
+Neu in diesem Build von Hummlist:
+- Sync indicator: failing only after the retry fails, one shell that morphs card to pill
+## build 1202 (b2168223..5c795364) de, new
+Neu in diesem Build von Hummlist:
+- Ein kurzer Aussetzer des Servers zeigt keine Warnung mehr, „Sync gestört“ erscheint erst, wenn auch der automatische neue Versuch scheitert.
+- Die Karte für Offline und „Sync gestört“ schrumpft jetzt in einer fließenden Bewegung zur kleinen Pille und wächst beim Tippen wieder zur Karte.
+
+## build 1202 (b2168223..5c795364) en, old (published)
+New in this Hummlist build:
+- Sync indicator: failing only after the retry fails, one shell that morphs card to pill
+## build 1202 (b2168223..5c795364) en, new
+New in this Hummlist build:
+- A brief server hiccup no longer shows a warning; "Sync failing" appears only when the automatic retry fails too.
+- The card for offline and "Sync failing" now shrinks into the small pill in one smooth motion and grows back into the card when you tap it.
+
+## build 1204 (5c795364..f2afee4e) de, old (published)
+Neu in diesem Build von Hummlist:
+- Sync indicator follows the device's network: offline at once, back without a tap
+## build 1204 (5c795364..f2afee4e) de, new
+Neu in diesem Build von Hummlist:
+- Die Offline-Anzeige erscheint sofort, wenn dein Gerät die Verbindung verliert (etwa im Flugmodus), und verschwindet von selbst, sobald es wieder online ist.
+
+## build 1204 (5c795364..f2afee4e) en, old (published)
+New in this Hummlist build:
+- Sync indicator follows the device's network: offline at once, back without a tap
+## build 1204 (5c795364..f2afee4e) en, new
+New in this Hummlist build:
+- The offline notice now appears as soon as your device loses its connection (for example in flight mode) and goes away on its own once it is back online.
+
+## build pending (f2afee4e..1874c18e) de, old
+Neu in diesem Build von Hummlist:
+- Network watch: no stale startup check, a new realtime socket after a real down
+## build pending (f2afee4e..1874c18e) de, new
+Neu in diesem Build von Hummlist:
+- Nach einem Funkloch oder dem Flugmodus kommen Änderungen der anderen im Haushalt sofort wieder an, nicht erst nach einer halben Minute.
+
+## build pending (f2afee4e..1874c18e) en, old
+New in this Hummlist build:
+- Network watch: no stale startup check, a new realtime socket after a real down
+## build pending (f2afee4e..1874c18e) en, new
+New in this Hummlist build:
+- After a dead spot or flight mode, changes from others in your household show up again right away instead of after half a minute.
