@@ -13,7 +13,7 @@ for r in json.load(sys.stdin)["runtimes"]:
         name = next((n for n in ("iPhone 17 Pro", "iPhone 16 Pro", "iPhone 16") if n in iphones), list(iphones)[-1])
         print(r["identifier"], iphones[name]); break')"
 xb() { xcodebuild test-without-building -workspace ios/Runner.xcworkspace -scheme Runner \
-  -destination "platform=iOS Simulator,name=$1" -derivedDataPath build/ios/derived "${@:2}" >/tmp/$1.log 2>&1; }
+  -destination "platform=iOS Simulator,OS=26.2,name=$1" -derivedDataPath build/ios/derived "${@:2}" >/tmp/$1.log 2>&1; }
 report() {
   local verdict=FOUND
   grep -q "Unable to find a device" /tmp/$1.log && verdict=NODEVICE
@@ -34,4 +34,6 @@ before Pre1
 before Pre2long -destination-timeout 120
 after Late0 0
 after Late20long 20 -destination-timeout 120
+after Late60 60
+after Late60long 60 -destination-timeout 180
 before Pre3
