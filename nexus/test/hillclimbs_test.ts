@@ -12,6 +12,7 @@ Deno.test('every registered doc on main parses to its known numbers', async () =
   );
   assertEquals(got, {
     'hc-backend-perf': [122.82, 91.98, 1],
+    'hc-domain-tests': [77.112, 99.27, 3],
     'hc-size-start': [1, 1, 0],
     'hc-strictness': [1030, 2, 6],
     'hc-sync': [175.000509, 0.000491, 8],

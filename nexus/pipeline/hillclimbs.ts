@@ -24,6 +24,13 @@ export const hillClimbDocs: readonly HillClimbDoc[] = [
     target: null,
   },
   {
+    id: 'hc-domain-tests',
+    metric: 'domain coverage x mutation score',
+    direction: 'higher',
+    baseline: /^\*\*Baseline median: ([\d.]+)\*\*/m,
+    target: 100,
+  },
+  {
     id: 'hc-size-start',
     metric: 'download size and start time (1.0 = baseline)',
     direction: 'lower',

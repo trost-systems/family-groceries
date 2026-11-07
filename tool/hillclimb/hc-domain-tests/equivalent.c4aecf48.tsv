@@ -1,0 +1,3 @@
+# id	reason (a surviving mutant that no test can kill: the program behaves the same)
+m042	list_cubit.dart:246 `_noteDuringResyncs({id: null}, answered: false)`: the value merged in is null, so `answered && kept != null && ...` is false whatever `answered` is; both take the same branch
+m045	list_cubit.dart:292 `doubled < _maxResubscribe ? doubled : _maxResubscribe` vs `<=`: when they are equal both branches give the same Duration (compared by value)
