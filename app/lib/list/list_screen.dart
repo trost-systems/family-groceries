@@ -5,6 +5,7 @@ import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/scroll_through.dart';
 import 'package:family_groceries/app/shell.dart';
+import 'package:family_groceries/design/bottom_scroll_edge.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/sticker.dart';
@@ -476,9 +477,11 @@ class _ShoppingListState() extends State<_ShoppingList> {
                       rowTop: _Header._gap,
                       rowHeight: _Header.height,
                       cardTop: _Header.extent,
-                      child: ShoppingListView(
-                        onInteract: _leaveField,
-                        header: const _Header(),
+                      child: BottomScrollEdge(
+                        child: ShoppingListView(
+                          onInteract: _leaveField,
+                          header: const _Header(),
+                        ),
                       ),
                     ),
                   ),
