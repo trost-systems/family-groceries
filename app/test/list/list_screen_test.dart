@@ -1334,6 +1334,33 @@ void main() {
       await tester.pump(const Duration(seconds: 4));
     });
 
+    testWidgets('Anpassen stands alone; the sync icon and new adds get '
+        'their own capsule beside it', (tester) async {
+      phone(tester);
+      await pumpList(tester, seed: (repo) => repo.remoteAdd('Brot'));
+      final edit = find.byKey(const ValueKey('list-edit'));
+      final status = find.byKey(const ValueKey('list-status'));
+      expect(status, findsNothing, reason: 'synced, nothing new: no frame');
+
+      repo.emitStatus!(ConnectionStatus.offline);
+      await frames(tester);
+      expect(
+        find.descendant(of: status, matching: find.byIcon(Icons.cloud_off)),
+        findsOneWidget,
+      );
+      expect(find.descendant(of: status, matching: edit), findsNothing);
+      expect(
+        tester.getRect(status).right,
+        lessThanOrEqualTo(tester.getRect(edit).left),
+        reason: 'beside Anpassen, before it',
+      );
+
+      repo.emitStatus!(ConnectionStatus.online);
+      await frames(tester);
+      expect(status, findsNothing);
+      await tester.pump(const Duration(seconds: 4));
+    });
+
     testWidgets('stays while the list loads', (tester) async {
       phone(tester);
       final held = Completer<void>();

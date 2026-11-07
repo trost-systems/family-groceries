@@ -6,7 +6,7 @@ Members of one household see each other's changes without reloading: an item one
 
 - `sync-add` / `sync-tick` / `sync-edit` / `sync-delete` a partner's add, tick, edit or delete shows on the other list within a couple of seconds.
 - `sync-move` a partner's move of an item to another category or store shows in its new place.
-- `news-subtitle` bar text „{n} neu von {name}“ (EN "{n} new from {name}") when the unseen adds are all from one partner; „{n} neu“ / "{n} new" when from several; empty otherwise. The bar floats over the top of the list (job 148): a hex capsule at the top right, holding this text, the sync icon and „Anpassen“; it keeps its height in every state and the rows scroll on under it.
+- `news-subtitle` bar text „{n} neu von {name}“ (EN "{n} new from {name}") when the unseen adds are all from one partner; „{n} neu“ / "{n} new" when from several; empty otherwise. The bar floats over the top of the list (job 148): „Anpassen“ at the top right is a raised button with no frame around it (job 152); this text and the sync icon sit in their own small hex capsule to its left, shown only while there is something to say. The bar keeps its height and „Anpassen“ its place in every state, and the rows scroll on under it.
 - `news-row` an unseen partner item's row is tinted honey (since job 57) and "Neu" (EN "New") ends its accessible name, after the details and quantity: "Kaffee Neu", "Bananen 6 Neu".
 - `news-clear` an item stops being new after 3 s more than half on screen while the app is showing; stays cleared after reload. A ticked item is not counted while it is ticked; put back before it was seen, it is new again. Own adds are never new. On first start nothing old is new. Items added while the app was closed are new on the next open.
 - `sync-status-icon` pending „1 Änderung wird synchronisiert“ / „{n} Änderungen werden synchronisiert“ (EN "Syncing 1 change" / "Syncing {n} changes"); offline „Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist“ (EN "Offline: changes will sync once the connection is back"). Offline wins over pending.
@@ -15,7 +15,7 @@ Members of one household see each other's changes without reloading: an item one
 
 ## How to get to it (user POV)
 
-- No screen of its own: two members signed in to the same household (one invites with „Mehr“ → „Partner einladen“, the other joins with the link or code), both on „Liste“. The bar is the strip at the top of the list; the icon sits just left of „Anpassen“ / "Edit" at its right end.
+- No screen of its own: two members signed in to the same household (one invites with „Mehr“ → „Partner einladen“, the other joins with the link or code), both on „Liste“. The bar is the strip at the top of the list; the icon sits in a small capsule just left of „Anpassen“ / "Edit" at its right end.
 
 ## Driving it with Playwright
 

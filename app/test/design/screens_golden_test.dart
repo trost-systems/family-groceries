@@ -15,6 +15,7 @@ import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/name_dialog.dart';
 import 'package:family_groceries/more/app_update.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
@@ -274,6 +275,67 @@ Future<void> _pumpEditSheet(WidgetTester tester, Brightness brightness) async {
   await tester.pumpAndSettle();
 }
 
+/// An iPhone 15's keyboard with its suggestion bar.
+const _keyboard = 336.0;
+
+/// A store's rename dialog over an iPhone's keyboard (job 152); a grey
+/// block stands in for the keyboard.
+Future<void> _pumpNameDialog(
+  WidgetTester tester,
+  Brightness brightness,
+  Locale locale,
+) async {
+  tester.view
+    ..devicePixelRatio = 1
+    ..physicalSize = _phone
+    ..viewInsets = const FakeViewPadding(bottom: _keyboard);
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: appTheme(brightness),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: locale,
+      home: Builder(
+        builder: (context) {
+          final l10n = AppLocalizations.of(context);
+          return Stack(
+            children: [
+              Scaffold(
+                body: Center(
+                  child: TextButton(
+                    onPressed: () => showNameDialog(
+                      context,
+                      title: l10n.storeRename('Wochenmarkt'),
+                      confirm: l10n.save,
+                      label: l10n.storeNameHint,
+                      initial: 'Wochenmarkt',
+                      maxLength: 40,
+                      save: (_) async => true,
+                    ),
+                    child: const Text('open'),
+                  ),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  height: _keyboard,
+                  width: double.infinity,
+                  child: ColoredBox(color: Color(0xFFD1D3D9)),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUpAll(() async {
     await loadAppFonts();
@@ -391,6 +453,17 @@ void main() {
         matchesGoldenFile('goldens/edit-sheet-$mode.png'),
       );
     });
+
+    for (final lang in ['de', 'en']) {
+      // On iOS: no Android selection handle under the caret.
+      testWidgets('name dialog, keyboard open, $lang, $mode', (tester) async {
+        await _pumpNameDialog(tester, brightness, Locale(lang));
+        await expectLater(
+          find.byType(MaterialApp),
+          matchesGoldenFile('goldens/name-dialog-keyboard-$lang-$mode.png'),
+        );
+      }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+    }
 
     testWidgets('list, $mode', (tester) async {
       await _pumpShell(tester, brightness);

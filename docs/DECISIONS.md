@@ -9586,3 +9586,58 @@ phone apps always show; add an example of talking to the app.
    bl/ur, mcp-chat tr/mr. A new slot without a place fails the build.
 10. **Text alternative follows the take.** `demo.voice-add` says she taps stop, not "after a
    short pause" (review 1).
+
+## Job 152: name dialogs size to their content, Anpassen without a frame, 2026-11-06
+
+1. **The dead space came from `LabeledField` (job 148).** Its `Column` kept the default
+   `MainAxisSize.max`. In an `AlertDialog` the content sits in a `Flexible`, so the column took
+   every pixel the dialog could have, and the buttons went to the bottom of the screen (or of the
+   space above the keyboard). On the web build the gap between the field and „Abbrechen“ was
+   531 px on a 390×844 page and 195 px with 336 px cut away for a keyboard. Now it is 18 px, the
+   dialog's own 24 px content padding less the buttons' tap target. The fix is one line in the
+   shared widget, so every dialog with a labelled field gets it: the name dialog (add or rename a
+   store or category) and the token and API key name dialogs. The delete-account dialog already
+   scrolled, so its column had no height to fill. `scrollable: true` (item 2) hides the gap on
+   its own, because the content then has unbounded height. So the test
+   `a LabeledField in a dialog takes only its own height` pins the shared fix in a plain,
+   non-scrolling `AlertDialog`: 645 px without it, within 32 px with it (review 0).
+2. **Text-input dialogs scroll instead of overflowing.** On an iPhone SE (320×568) with the
+   keyboard open, or with text at 1.5x or 2x, the name dialog overflowed by up to 237 px. Before
+   job 148 it overflowed too. `AlertDialog(scrollable: true)` scrolls the title and field and
+   keeps the buttons in view. `name_dialog_test` covers 2 phones × keyboard open or closed ×
+   text 1.0/1.5/2.0 × DE/EN. `access_screen_test` covers the token and API key dialogs at the
+   hardest case.
+3. **The whole field stays in view when the keyboard rises (review 0).** On a real phone the
+   keyboard rises after the dialog has opened and focused the field. Flutter then scrolls the
+   caret into view, but `Dialog` animates its keyboard padding over 100 ms, and the reveal runs
+   before the dialog has shrunk. Also, an autofocused field with prefilled text has no valid
+   selection, and then Flutter does not scroll at all. On a 320×568 page with 253 px cut off,
+   only 42 of the field's 74 px showed in DE, and the lower border and the counter sat under the
+   buttons. The name dialog now listens for `ScrollMetricsNotification` from its scroll view and
+   keeps the whole `LabeledField` visible (`keepVisibleAtEnd`) each time the view resizes. The
+   web build now shows 74 of 74 px in DE and EN (`top-bar-and-name-dialog.mjs --se`). The test
+   is `iPhone SE: the keyboard rises after the dialog opened`. The token and API key dialogs
+   don't get the listener: they have no prefilled text and their test opens with the keyboard
+   already up.
+4. **Large text caps the name dialog's buttons at 1.5x.** On an SE with the keyboard open and
+   text at 2x, the two German buttons stack. At 2x they left a scroll area about 27 px tall,
+   less than one line of the field. Capped at 1.5x, as the list's top bar already is, they leave
+   room for the line typed into. Title, label and field keep 2x. The whole field still misses
+   by 5 px in that one case, so the test checks the typed line there and the whole field
+   everywhere else.
+5. **The tests use a keyboard inset. The screenshots stand one in.** No iOS simulator is
+   available here. The goldens `name-dialog-keyboard-{de,en}-{light,dark}` render the dialog at
+   390×844 with a 336 px view inset and a grey block for the keyboard, on the iOS platform
+   (no Android selection handle under the caret). The web shots cut the
+   page to 508 px, as Safari does when a keyboard opens.
+6. **Anpassen floats alone (Peter t617u).** The capsule around it is gone. Anpassen is the
+   theme's raised secondary button at standard density (48 px, like `AddButton`), with its end
+   where the capsule's end was. The capsule only ever held one control. Its other two parts are
+   status, not controls. The new-items line and the sync icon now share a small capsule of their
+   own (`list-status`, 48 px, the old sticker shadow) to the left of Anpassen. It shows only
+   while one of them has something to show, so a synced list with nothing new shows Anpassen
+   alone. Anpassen keeps its place in every state: `list_screen_test`'s `keeps its height in
+   every sync state` compares its rect while synced, pending, offline and with a partner's add.
+   The new `Anpassen stands alone` test checks that the status capsule shows only then, beside
+   Anpassen and not around it. Job 153 redesigns
+   the sync indicator. Until then the icon works as before (Peter t618u/t619u).

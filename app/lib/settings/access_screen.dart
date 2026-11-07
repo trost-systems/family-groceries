@@ -818,6 +818,7 @@ class _NameDialogState() extends State<_NameDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
+      scrollable: true,
       title: Text(l10n.createToken),
       content: LabeledField(
         label: l10n.tokenName,
@@ -864,6 +865,7 @@ class _ApiKeyDialogState() extends State<_ApiKeyDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
+      scrollable: true,
       title: Text(l10n.createApiKey),
       content: Column(
         mainAxisSize: MainAxisSize.min,
