@@ -591,3 +591,4 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 - Job 158 (mcp.hummlist.com page for people): [docs/done/158-mcp-landing.md](docs/done/158-mcp-landing.md)
 - Job 150, the site videos show the add field's microphone (scripted recognizer in the Linux capture build), a new voice-add video in the voice block, and two dictation fixes (the field follows the words, rows land in their category at once): [docs/done/150-site-videos-mic-voice.md](docs/done/150-site-videos-mic-voice.md)
 - Job 159, three small gaps: a store name the household has keeps the add dialog open with why, „Drei Glocken Nudeln“ said stays one item, the mouse wheel over the add field and the tab pill scrolls the list: [docs/done/159-small-gaps.md](docs/done/159-small-gaps.md)
+- Job 162, legal and help texts follow the app (tester list, archived households, Alexa 12-month purge, Zugriffstoken): [docs/done/162-legal-copy-sync.md](docs/done/162-legal-copy-sync.md)
