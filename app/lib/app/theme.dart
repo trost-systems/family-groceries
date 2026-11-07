@@ -8,6 +8,10 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// The dim over the page behind a sheet: the add sheet's scrim and every
+/// modal bottom sheet's barrier.
+const sheetBarrier = Color(0x66000000);
+
 /// The Material roles of the Hummlist palette (6b Hex Frische, design job
 /// 52): cobalt is primary, lemon ("honey") secondary, mint tertiary; outline
 /// is the navy contour. Every colour comes from `tokens.g.dart`.
@@ -235,6 +239,7 @@ ThemeData appTheme(Brightness brightness) {
         borderRadius: BorderRadius.vertical(top: Radius.circular(HlRadius.l)),
       ),
       dragHandleColor: t.textMuted,
+      modalBarrierColor: sheetBarrier,
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,

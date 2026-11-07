@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
@@ -179,7 +180,7 @@ class _AddSheetState() extends State<AddSheet> {
                           opacity: open ? 1 : 0,
                           duration: hlMotion(context, _sheetDuration),
                           curve: open ? HlEasing.standard : HlEasing.exit,
-                          child: const ColoredBox(color: Color(0x66000000)),
+                          child: const ColoredBox(color: sheetBarrier),
                         ),
                       ),
                     ),
