@@ -1043,6 +1043,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryDrugstore => '👶 Drugstore';
 
   @override
+  String get categoryPaint => 'Paint & varnish';
+
+  @override
+  String get categoryPlumbing => 'Plumbing';
+
+  @override
+  String get categoryElectrical => 'Electrical & lighting';
+
+  @override
+  String get categoryTools => 'Tools';
+
+  @override
+  String get categoryFasteners => 'Screws & fixings';
+
+  @override
+  String get categoryBuilding => 'Wood & building';
+
+  @override
+  String get categoryGarden => 'Garden & plants';
+
+  @override
   String get categoryOther => 'Other';
 
   @override

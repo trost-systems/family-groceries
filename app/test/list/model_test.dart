@@ -425,6 +425,28 @@ void main() {
     );
   });
 
+  test('a renamed chain stops being its chain, a renamed Baumarkt stays the '
+      'hardware store', () {
+    const catalog = Catalog(
+      stores: [
+        Store(id: 'dm', name: 'dm', sortOrder: 10, seedKey: 'dm'),
+        Store(id: 'b', name: 'Baumarkt', sortOrder: 20, seedKey: 'hardware'),
+      ],
+    );
+    final renamed = catalog
+        .withStoreName('dm', 'Drogerie')
+        .withStoreName('b', 'Baumarkt Nord');
+    expect(
+      [for (final s in renamed.stores) (s.name, s.seedKey)],
+      [('Drogerie', null), ('Baumarkt Nord', 'hardware')],
+    );
+    expect(
+      catalog.withStoreName('dm', ' DM ').store('dm')?.seedKey,
+      'dm',
+      reason: 'the same name in another case is still the chain',
+    );
+  });
+
   test('recently used is newest first', () {
     final bought = recentlyUsed([
       item('old', status: ItemStatus.bought, at: 1),

@@ -24,6 +24,11 @@
 # - Canned fish (Thunfisch, Sardinen) is pantry; fresh and smoked fish is meat.
 # - Fresh pasta, dough and deli salads are chilled; Erbsen default to frozen.
 # - Fresh herbs are produce; dried spices are pantry.
+# - DIY words (job 151) have seven categories, which a household gets with a Baumarkt store;
+#   without one public.classify_item_detail puts them in Haushalt. Glühbirne, Lampe, Kabel,
+#   Kabelbinder, Stecker, Sicherung, Abdeckband, Erde, Blumenerde and Dünger moved there from
+#   Haushalt, Farbe from Drogerie. What the supermarket sells stays Haushalt: Batterien,
+#   Grillkohle, Kerzen, Eimer, Gummihandschuhe, and Klebeband and Kleber (parcels, crafts).
 
 # Obst & Gemüse
 ananas	produce
@@ -36,6 +41,9 @@ babyspinat	produce
 banane	produce
 bärlauch	produce
 basilikum	produce
+basilikumpflanze	produce
+kräuterpflanze	produce
+kräutertopf	produce
 batavia	produce
 beere	produce
 birne	produce
@@ -566,6 +574,10 @@ lebensmittelfarbe	pantry
 leinöl	pantry
 limettensaft	pantry
 linsen	pantry
+tellerlinse	pantry
+tellerlinsen	pantry
+löffelerbsen	pantry
+haferschleim	pantry
 lorbeer	pantry
 lorbeerblätter	pantry
 mais	pantry
@@ -590,6 +602,13 @@ nudel	pantry
 nuss	pantry
 nusscreme	pantry
 nutella	pantry
+ostereierfarbe	pantry
+glasur	pantry
+eierfarbe	pantry
+speisefarbe	pantry
+backfarbe	pantry
+pflanzenöl	pantry
+zuckerrohr	pantry
 öl	pantry
 oliven	pantry
 olivenöl	pantry
@@ -717,6 +736,7 @@ kitkat	sweets
 knabberzeug	sweets
 knoppers	sweets
 lakritz	sweets
+süßholz	sweets
 lakritzschnecke	sweets
 lebkuchen	sweets
 lion	sweets
@@ -892,7 +912,6 @@ wedges	frozen
 wokgemüse	frozen
 
 # Haushalt
-abdeckband	household
 abflussreiniger	household
 abzieher	household
 ajax	household
@@ -903,13 +922,81 @@ anzündwürfel	household
 ariel	household
 backofenreiniger	household
 backpapier	household
+backpinsel	household
+# Wooden kitchen things (holz, brett): Nudelholz, Holzlöffel, Schneidebrett stay Haushalt.
+nudelholz	household
+pfannenwender	household
+löffel	household
+kochlöffel	household
+holzlöffel	household
+holzkochlöffel	household
+rührlöffel	household
+brett	household
+holzbrett	household
+schneidebrett	household
+holzschneidebrett	household
+frühstücksbrett	household
+brettchen	household
+schüssel	household
+holzschüssel	household
+teller	household
+holzteller	household
+bilderrahmen	household
+wechselrahmen	household
+fotorahmen	household
+holzstäbchen	household
+# Kitchen tools whose head is a DIY term (zange, hammer, hobel, spachtel, silikon prefix, schaufel):
+backform	household
+silikonform	household
+eiswürfelform	household
+muffinform	household
+springform	household
+kuchenform	household
+auflaufform	household
+backmatte	household
+silikonmatte	household
+deckel	household
+spatel	household
+schaber	household
+teigspachtel	household
+pfannenspachtel	household
+grillspachtel	household
+silikonhülle	household
+spaghettizange	household
+servierzange	household
+küchenzange	household
+eiswürfelzange	household
+pastazange	household
+spargelzange	household
+brotzange	household
+gebäckzange	household
+kuchenzange	household
+fleischhammer	household
+trüffelhobel	household
+kuchenschaufel	household
+kohlenschaufel	household
+schraubglas	household
+schraubgläser	household
+räucherholz	household
+grillholz	household
+anzündholz	household
+fliegenklatsche	household
+wasserfarbe	household
+wasserfarben	household
+schraubverschluss	household
+silikonpinsel	household
+grillpinsel	household
+tortenschaufel	household
+zuckerzange	household
+gurkenhobel	household
+textilfarbe	household
+stofffarbe	household
 badreiniger	household
 batterie	household
 besen	household
 besteck	household
 beutel	household
 bleiche	household
-blumenerde	household
 bratschlauch	household
 briefumschlag	household
 bürste	household
@@ -919,10 +1006,8 @@ colorwaschmittel	household
 desinfektionsmittel	household
 destilliertes wasser	household
 domestos	household
-dünger	household
 eimer	household
 entkalker	household
-erde	household
 essigessenz	household
 fairy	household
 feinwaschmittel	household
@@ -941,6 +1026,7 @@ futter	household
 gallseife	household
 geburtstagskarte	household
 gefrierbeutel	household
+gemüsehobel	household
 geschenkband	household
 geschenkkarte	household
 geschenkpapier	household
@@ -950,19 +1036,18 @@ geschirrtabs	household
 glasreiniger	household
 glorix	household
 glückwunschkarte	household
-glühbirne	household
 grillanzünder	household
 grillkohle	household
+grillzange	household
 gummihandschuhe	household
 guthabenkarte	household
 handfeger	household
 handschuh	household
 holzkohle	household
+holzspieß	household
 hundefutter	household
 hundesnack	household
 insektenspray	household
-kabel	household
-kabelbinder	household
 kalkentferner	household
 kalkreiniger	household
 katzenfutter	household
@@ -970,6 +1055,7 @@ katzensnack	household
 katzenstreu	household
 kauknochen	household
 kehrblech	household
+kehrschaufel	household
 kernseife	household
 kerze	household
 klammer	household
@@ -980,12 +1066,12 @@ klobürste	household
 klopapier	household
 klostein	household
 knopfzelle	household
+käsehobel	household
 küchenpapier	household
 küchenrolle	household
 küchentücher	household
 kugelschreiber	household
 kühlakku	household
-lampe	household
 lampenöl	household
 lappen	household
 leckerli	household
@@ -996,6 +1082,7 @@ mausefalle	household
 meister proper	household
 mikrofasertuch	household
 mittel	household
+muttertagskarte	household
 möbelpolitur	household
 mopp	household
 müllbeutel	household
@@ -1014,13 +1101,13 @@ rohrfrei	household
 rolle	household
 sack	household
 sagrotan	household
+salatzange	household
 schere	household
 scheuermilch	household
 scheuerpulver	household
 schuhcreme	household
 schwamm	household
 servietten	household
-sicherung	household
 somat	household
 spiritus	household
 spülbürste	household
@@ -1036,7 +1123,6 @@ spültuch	household
 stahlwolle	household
 staubsaugerbeutel	household
 staubwedel	household
-stecker	household
 stein	household
 streichholz	household
 streichhölzer	household
@@ -1067,6 +1153,7 @@ wasserfilter	household
 wc reiniger	household
 weichspüler	household
 wischbezug	household
+wäscheseil	household
 zahnstocher	household
 zitronensäure	household
 zewa	household
@@ -1121,11 +1208,15 @@ elmex	drugstore
 entferner	drugstore
 eyeliner	drugstore
 fa	drugstore
-farbe	drugstore
-feile	drugstore
+nagelfeile	drugstore
+hornhautfeile	drugstore
+glasfeile	drugstore
+sandblattfeile	drugstore
+fußfeile	drugstore
 festiger	drugstore
 feuchte tücher	drugstore
 feuchttücher	drugstore
+fingerfarbe	drugstore
 fläschchen	drugstore
 flüssigseife	drugstore
 folgemilch	drugstore
@@ -1140,7 +1231,9 @@ haargel	drugstore
 haargummi	drugstore
 haarklammer	drugstore
 haarkur	drugstore
+haarlack	drugstore
 haarnadel	drugstore
+haartönung	drugstore
 haaröl	drugstore
 haarspange	drugstore
 haarspray	drugstore
@@ -1148,6 +1241,7 @@ handcreme	drugstore
 handdesinfektion	drugstore
 handseife	drugstore
 hansaplast	drugstore
+heilerde	drugstore
 hipp	drugstore
 hustensaft	drugstore
 ibuprofen	drugstore
@@ -1181,8 +1275,21 @@ mückenschutz	drugstore
 mundspülung	drugstore
 mundwasser	drugstore
 nagelbürste	drugstore
+nagelknipser	drugstore
 nagellack	drugstore
 nagelschere	drugstore
+nagelöl	drugstore
+nagelhaut	drugstore
+nagelhautschere	drugstore
+nagelhautöl	drugstore
+nagelset	drugstore
+nagelsticker	drugstore
+nagelpolierer	drugstore
+nageldesign	drugstore
+nagelkleber	drugstore
+nageltips	drugstore
+nagelpflege	drugstore
+nagelweiß	drugstore
 odol	drugstore
 ohrenstäbchen	drugstore
 ohrstöpsel	drugstore
@@ -1200,12 +1307,56 @@ quetschies	drugstore
 rasierer	drugstore
 rasiergel	drugstore
 rasierklinge	drugstore
+rasierpinsel	drugstore
 rasierschaum	drugstore
 rasierwasser	drugstore
 reinigungsmilch	drugstore
 rouge	drugstore
 schaum	drugstore
 schmerzmittel	drugstore
+schminkpinsel	drugstore
+# Cosmetic brushes, colours and nails whose head is a DIY term (pinsel, farbe, nägel, zange, erde):
+blushpinsel	drugstore
+bronzerpinsel	drugstore
+lippenpinsel	drugstore
+fächerpinsel	drugstore
+highlighterpinsel	drugstore
+konturpinsel	drugstore
+lidstrichpinsel	drugstore
+eyelinerpinsel	drugstore
+lidschattenfarbe	drugstore
+nagelfarbe	drugstore
+strähnchenfarbe	drugstore
+brauenfarbe	drugstore
+kosmetikspachtel	drugstore
+wimpernzange	drugstore
+lockenzange	drugstore
+acrylnägel	drugstore
+gelnägel	drugstore
+kunstnägel	drugstore
+fingernägel	drugstore
+nagelhärter	drugstore
+kieselerde	drugstore
+tonerde	drugstore
+silikonsauger	drugstore
+silikonpads	drugstore
+kosmetikpinsel	drugstore
+makeuppinsel	drugstore
+makeup pinsel	drugstore
+make up pinsel	drugstore
+rougepinsel	drugstore
+foundationpinsel	drugstore
+kabukipinsel	drugstore
+augenbrauenpinsel	drugstore
+nagelpinsel	drugstore
+concealerpinsel	drugstore
+puderpinsel	drugstore
+lidschattenpinsel	drugstore
+wimpernfarbe	drugstore
+augenbrauenfarbe	drugstore
+bartfarbe	drugstore
+nagelzange	drugstore
+hornhauthobel	drugstore
 schnuller	drugstore
 schwangerschaftstest	drugstore
 seife	drugstore
@@ -1230,6 +1381,7 @@ tempo	drugstore
 thermometer	drugstore
 tropfen	drugstore
 tusche	drugstore
+tönung	drugstore
 verbandszeug	drugstore
 vitamin	drugstore
 watte	drugstore
@@ -1246,3 +1398,304 @@ zahnungsgel	drugstore
 zahnzwischenraumbürste	drugstore
 zäpfchen	drugstore
 nivea	drugstore
+
+# Farben & Lacke
+# farbe is wall paint now; Haarfarbe, Tönung and Lebensmittelfarbe are listed with their aisles.
+# Spray and roller compounds are listed: spray is Drogerie and rolle Haushalt on their own.
+abdeckband	paint
+abdeckvlies	paint
+abdeckfolie	paint
+abtönfarbe	paint
+acryl	paint
+beize	paint
+buntlack	paint
+dispersionsfarbe	paint
+farbe	paint
+farbrolle	paint
+farbspray	paint
+farbwanne	paint
+grundierung	paint
+haftgrund	paint
+heizkörperlack	paint
+holzlasur	paint
+holzöl	paint
+terrassenöl	paint
+holzschutz	paint
+klarlack	paint
+kleister	paint
+kreppband	paint
+lack	paint
+lackspray	paint
+lasur	paint
+malerkrepp	paint
+malerrolle	paint
+malervlies	paint
+# A bare Pinselset stays paint: the sets at both shops are sold as such, and a make-up set is
+# usually typed with its kind (Make-up Pinselset ends in pinselset but starts with make up).
+pinsel	paint
+pinselreiniger	paint
+raufaser	paint
+spachtel	paint
+spachtelmasse	paint
+tapete	paint
+tapetenkleister	paint
+terpentin	paint
+tiefengrund	paint
+verdünner	paint
+verdünnung	paint
+wandfarbe	paint
+
+# Sanitär
+# Mischbatterie is a tap, not a battery; Klobrille a seat, not glasses. A bare Schlauch is left
+# out: Fahrradschlauch is neither garden nor plumbing.
+abflussrohr	plumbing
+abflussstöpsel	plumbing
+abwasserschlauch	plumbing
+armatur	plumbing
+dichtband	plumbing
+dichtung	plumbing
+dichtungsring	plumbing
+duschbrause	plumbing
+duschkopf	plumbing
+duschschlauch	plumbing
+duschstange	plumbing
+duschvorhang	plumbing
+eckventil	plumbing
+handbrause	plumbing
+klobrille	plumbing
+mischbatterie	plumbing
+perlator	plumbing
+pümpel	plumbing
+rohr	plumbing
+sanitärsilikon	plumbing
+saugglocke	plumbing
+silikon	plumbing
+siphon	plumbing
+spülbecken	plumbing
+spülkasten	plumbing
+strahlregler	plumbing
+syphon	plumbing
+teflonband	plumbing
+thermostatkopf	plumbing
+toilettensitz	plumbing
+waschbecken	plumbing
+wasserhahn	plumbing
+wc sitz	plumbing
+zulaufschlauch	plumbing
+
+# Elektro & Leuchtmittel
+# Batteries and Akkus stay Haushalt (the supermarket checkout); Lampenöl too. Birne alone is a
+# pear, so the bulb compounds are listed.
+abzweigdose	electrical
+adapter	electrical
+bewegungsmelder	electrical
+dimmer	electrical
+energiesparbirne	electrical
+glühbirne	electrical
+led	electrical
+leds	electrical
+heizlüfter	electrical
+isolierband	electrical
+kabel	electrical
+kabelbinder	electrical
+kabelkanal	electrical
+kabeltrommel	electrical
+klingel	electrical
+lampe	electrical
+lampenfassung	electrical
+led birne	electrical
+led streifen	electrical
+leuchte	electrical
+leuchtmittel	electrical
+leuchtstoffröhre	electrical
+lichterkette	electrical
+lüsterklemme	electrical
+mehrfachsteckdose	electrical
+netzteil	electrical
+rauchmelder	electrical
+schalter	electrical
+sicherung	electrical
+steckdose	electrical
+steckdosenleiste	electrical
+stecker	electrical
+strahler	electrical
+verlängerungskabel	electrical
+zeitschaltuhr	electrical
+
+# Werkzeug
+# Schraubendreher and -schlüssel are listed: they start with schraube. Kelle and Feile alone are
+# the kitchen's and the nail file; Waage alone is the kitchen scale.
+akkuschrauber	tools
+arbeitshandschuhe	tools
+atemschutzmaske	tools
+bohrer	tools
+bohrmaschine	tools
+cuttermesser	tools
+gabelschlüssel	tools
+gehörschutz	tools
+hammer	tools
+heißklebepistole	tools
+hobel	tools
+inbusschlüssel	tools
+kartuschenpistole	tools
+leiter	tools
+lötkolben	tools
+maßband	tools
+meißel	tools
+ratsche	tools
+säge	tools
+sägeblatt	tools
+schleifmaschine	tools
+schleifpapier	tools
+feile	tools
+drahtbürste	tools
+maurerkelle	tools
+lötzinn	tools
+sandpapier	tools
+kriechöl	tools
+rostlöser	tools
+schraubendreher	tools
+schraubenschlüssel	tools
+schraubenzieher	tools
+schraubstock	tools
+schutzbrille	tools
+staubmaske	tools
+steckschlüssel	tools
+teppichmesser	tools
+wasserwaage	tools
+werkzeug	tools
+werkzeugkasten	tools
+werkzeugkoffer	tools
+winkelschleifer	tools
+zange	tools
+zollstock	tools
+zwinge	tools
+
+# Schrauben & Befestigung
+# Nagellack, Nagelschere, Nagelfeile and Nagelknipser stay Drogerie (their own terms). Seil is
+# rope from the reel; Wäscheseil stays Haushalt.
+bilderhaken	fasteners
+blindniete	fasteners
+drahtstift	fasteners
+drahtstifte	fasteners
+öse	fasteners
+ösen	fasteners
+draht	fasteners
+dübel	fasteners
+gewebeband	fasteners
+gewindestange	fasteners
+haken	fasteners
+hohlraumdübel	fasteners
+holzschraube	fasteners
+kabelschelle	fasteners
+karabiner	fasteners
+klebehaken	fasteners
+klettband	fasteners
+montagekleber	fasteners
+mutter	fasteners
+nagel	fasteners
+niete	fasteners
+panzertape	fasteners
+reißzwecke	fasteners
+rohrschelle	fasteners
+scharnier	fasteners
+schraube	fasteners
+schraubhaken	fasteners
+schrauböse	fasteners
+seil	fasteners
+spanngurt	fasteners
+spreizdübel	fasteners
+unterlegscheibe	fasteners
+vorhängeschloss	fasteners
+winkelverbinder	fasteners
+zurrgurt	fasteners
+
+# Holz & Baustoffe
+# Latte alone stays out (Caffè Latte); Platte and Brett too (Käseplatte, Schneidebrett).
+# Montageschaum is listed: schaum is Drogerie on its own.
+balken	building
+bauschaum	building
+beton	building
+dachlatte	building
+dachpappe	building
+dämmung	building
+dämmwolle	building
+estrich	building
+fliese	building
+fliesenkleber	building
+fugenmasse	building
+gips	building
+gipskarton	building
+glaswolle	building
+holz	building
+holzlatte	building
+holzleim	building
+kantholz	building
+kies	building
+laminat	building
+leim	building
+leiste	building
+mdf platte	building
+montageschaum	building
+mörtel	building
+osb platte	building
+parkett	building
+pflasterstein	building
+quarzsand	building
+regalbrett	building
+schotter	building
+spanplatte	building
+rigips	building
+rigipsplatte	building
+schalbrett	building
+sperrholz	building
+spielsand	building
+styropor	building
+vinylboden	building
+zement	building
+ziegel	building
+
+# Garten & Pflanzen
+unkrautvlies	garden
+# Samen alone stays pantry (Leinsamen), so seed compounds are listed; Blumenzwiebel too
+# (zwiebel is produce). Pflanzenöl is pantry. Vogelfutter stays with the pet food in Haushalt.
+blumenerde	garden
+blumenkasten	garden
+blumensamen	garden
+blumentopf	garden
+blumenzwiebel	garden
+dünger	garden
+erde	garden
+gartenhandschuhe	garden
+gartenschere	garden
+gartenschlauch	garden
+gießkanne	garden
+grassamen	garden
+harke	garden
+heckenschere	garden
+hochbeet	garden
+hornspäne	garden
+kompost	garden
+laubsack	garden
+mulch	garden
+pflanze	garden
+pflanzkübel	garden
+rasendünger	garden
+rasenmäher	garden
+rasensamen	garden
+rasensprenger	garden
+rasentrimmer	garden
+rechen	garden
+rindenmulch	garden
+rosenschere	garden
+saatgut	garden
+schaufel	garden
+schlauchtrommel	garden
+schneckenkorn	garden
+setzling	garden
+spaten	garden
+torf	garden
+tulpenzwiebel	garden
+wasserschlauch	garden
+übertopf	garden
+unkrautvernichter	garden

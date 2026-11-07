@@ -222,7 +222,7 @@ void main() {
     testWidgets('a double tap creates once', (tester) async {
       final o = await pumpOnboarding(tester, location: '/welcome/create');
       o.session.hold = Completer();
-      await tester.ensureVisible(key('create-household'));
+      await scrollTo(tester, key('create-household'));
       await tester.pumpAndSettle();
       await tester.tap(key('create-household'));
       await tester.pump();
@@ -286,6 +286,7 @@ void main() {
       );
       expect(find.widgetWithText(TextField, 'Our household'), findsOneWidget);
       expect(find.text('Add your own store'), findsOneWidget);
+      await scrollTo(tester, find.text('Skip'));
       expect(find.text('Skip'), findsOneWidget);
       expect(
         find.textContaining("Hummlist is independent and isn't affiliated"),

@@ -382,8 +382,21 @@ class _SessionListenable(Cubit<Session> session) extends ChangeNotifier {
 
 Future<void> tapKey(WidgetTester tester, String key) async {
   final finder = find.byKey(ValueKey(key));
-  await tester.ensureVisible(finder);
+  await scrollTo(tester, finder);
   await tester.pump();
   await tester.tap(finder);
   await tester.pumpAndSettle();
+}
+
+/// Scrolls the page until [finder] is built and on screen: the onboarding
+/// pages are lazy lists, which build nothing far below the fold.
+Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+  }
+  await tester.ensureVisible(finder);
 }

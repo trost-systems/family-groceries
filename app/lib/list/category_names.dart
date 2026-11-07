@@ -3,7 +3,8 @@ import 'package:family_groceries/list/model.dart';
 import 'package:flutter/widgets.dart';
 
 /// A category's name in the UI language. Seeded categories are stored
-/// with their German names (`public.seed_household`); one the household
+/// with their German names (`public.seed_household`, the Baumarkt ones
+/// `public.hardware_categories`); one the household
 /// has not renamed shows its name for the UI language. A renamed or
 /// created one shows what the household wrote.
 String categoryName(Category category, AppLocalizations l10n) {
@@ -27,5 +28,12 @@ final Map<String, String Function(AppLocalizations)> _seeded = {
   'frozen': (l) => l.categoryFrozen,
   'household': (l) => l.categoryHousehold,
   'drugstore': (l) => l.categoryDrugstore,
+  'paint': (l) => l.categoryPaint,
+  'plumbing': (l) => l.categoryPlumbing,
+  'electrical': (l) => l.categoryElectrical,
+  'tools': (l) => l.categoryTools,
+  'fasteners': (l) => l.categoryFasteners,
+  'building': (l) => l.categoryBuilding,
+  'garden': (l) => l.categoryGarden,
   'other': (l) => l.categoryOther,
 };

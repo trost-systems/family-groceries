@@ -9715,3 +9715,88 @@ phone apps always show; add an example of talking to the app.
    „Zugangs-Token“ Amazon receives for Alexa is a different token and stays.
 5. **Dates.** As in #216: `updated:` and „Stand“/"Last updated" move to 7 November 2026 on the
    privacy policy; the support pages' `updated:` too.
+
+## Job 151: Baumarkt categories and a Baumarkt store, 2026-11-06
+
+Peter (2026-11-06): "let's also add hardware store categories at some point". Job 145 had left
+Baumarkt off the landing page because the app had no hardware categories.
+
+1. **Seven categories, one registry.** `public.hardware_categories()` is the only list: Farben &
+   Lacke (`paint`), Sanitär (`plumbing`), Elektro & Leuchtmittel (`electrical`), Werkzeug
+   (`tools`), Schrauben & Befestigung (`fasteners`), Holz & Baustoffe (`building`), Garten &
+   Pflanzen (`garden`), in the Baumarkt's walking order. Existing categories overlap only with
+   Haushalt, which keeps what a supermarket sells (batteries, charcoal, parcel tape, cleaning).
+   The classifier, the default store and the seeding read the registry; the app has their
+   German and English names (ARB) and divider emoji 🎨 🚿 💡 🔨 🔩 🪵 🌱 by seed key.
+2. **They come with a Baumarkt, not with every household.** Seeding them into all households
+   would put 18 categories into every grocery-only household's add-sheet picker and „Anpassen“.
+   A household gets them the first time it adds a store named „Baumarkt“, „Heimwerkermarkt“,
+   "Hardware store" or "DIY store" (any case or spacing): `add_store` makes it the household's
+   store of type `hardware` (seed key) and seeds the seven categories. Onboarding offers
+   „Baumarkt“ as its last store chip. No retailer name is recognized or shown (Legal Addendum D).
+3. **Seeding never renames or reorders the household's categories.** Each one goes in just
+   before „Sonstiges“ through `create_category`, which also extends every store's layout, so
+   the household's own order of the others stays. A category the household already has under
+   that name (its own „Werkzeug“) is adopted: it gets the seed key, keeps its id, place and
+   items. A seed key the household deleted once (it sits in another category's
+   `absorbed_seed_keys`) is not created again.
+4. **Households without a Baumarkt keep today's categories.** A DIY word whose category the
+   household does not have goes to the category that serves Haushalt, before the Sonstiges
+   fallback. So Glühbirne, Kabelbinder and Blumenerde stay in Haushalt there, and words the
+   dictionary did not know (Schrauben, Dübel, Pinsel, which were Sonstiges) now land in Haushalt
+   as non-food. Once the household has the Baumarkt categories, the same words go there.
+5. **Default store.** A DIY item goes to the household's Baumarkt unless the household
+   remembers another store for it, as drugstore items go to dm. `public.category_store` holds
+   both rules; `parse_item` and `guess_store` call it.
+6. **A Baumarkt stays one when renamed.** „Baumarkt“ renamed to „Baumarkt Nord“ (or to the
+   chain's name) is still the household's hardware store: it is a type, not a chain, so
+   `rename_store` and the app's optimistic copy keep `hardware`. dm, Lidl and Edeka keep job 58's
+   rule (another name stops being the chain).
+7. **Walking order** (docs/STORE_LAYOUTS.md, "Baumarkt"): paint and wallpaper at the entrance
+   (sourced), then plumbing, electrical, tools, fasteners, timber and building materials at the
+   back, the garden centre by the tills, then Haushalt, drinks and sweets at the checkout;
+   food categories hidden like dm's. Lidl, Edeka and dm list the DIY categories just before
+   Sonstiges in the Baumarkt's order, which is where `create_category` puts them in a store
+   that existed before the Baumarkt: a household's dm looks the same whether it picked „dm,
+   Baumarkt“ or „Baumarkt, dm“ in onboarding (review: the first draft hid them in a dm added
+   later and showed them in one added earlier).
+8. **Existing data.** A household that already had a store with one of those names (no seed key,
+   no Baumarkt yet) gets it marked `hardware` and the seven categories in the migration. Its
+   layout is not reset: the new categories go before Sonstiges in the order it has.
+9. **Renaming a store to „Baumarkt“ does not make it the Baumarkt,** as renaming one to „dm“
+   does not make it dm (job 58): a rename keeps a store what it is. The household adds a
+   Baumarkt to get one. The data migration is a one-off for stores named so before the type
+   existed.
+10. **Two names, one Baumarkt.** Four names map to the one `hardware` key, so two members
+    adding „Baumarkt“ and „Heimwerkermarkt“ at the same moment would hit the seed key's unique
+    index; the second becomes a plain store instead of failing, as if it had come second.
+11. **Suggestions.** The add sheet's catalogue suggests a DIY term to a household without the
+    Baumarkt categories only from four typed letters on: a grocery list's „Ho“ stays Honig and
+    Hokkaido, not Holz and Hobel, and „Glühbi“ still offers Glühbirne, as before this job.
+12. **Guards in the dictionary.** New heads (farbe, pinsel, zange, hobel, schaufel, holz,
+    pflanze) would catch grocery and drugstore compounds, so those are listed with their own
+    category: Wimpernfarbe and Bartfarbe Drogerie, Eierfarbe and Speisefarbe pantry,
+    Grillpinsel, Gurkenhobel and Tortenschaufel Haushalt, Süßholz sweets, Basilikumpflanze
+    produce, and more (review 0 of the draft found them by classifying a control list). Review 0 of
+    the PR added the cosmetic brushes (Kosmetik-, Makeup-, Rouge-, Kabukipinsel …) to Drogerie,
+    „LED“ and „LEDs“ alone to Elektro, and Schraubverschluss to Haushalt. Review 1 found the same
+    class leaking further (Silikonbackform, Blushpinsel, Teigspachtel, Küchenzange, Schokoglasur
+    via lasur), so a sweep of 164 kitchen, make-up and craft compounds went through the classifier
+    with a Baumarkt; heads that cover many (glasur, backform, spatel, schaber, deckel) and the
+    remaining single words became guards, and „Feile“ moved to Werkzeug with the nail and foot files
+    listed as Drogerie.
+13. **The word-list gate runs with a Baumarkt.** Without one a DIY drift lands in Haushalt and
+    looks right, so `wordlist.sh` creates its household with a Baumarkt and `wordlist.tsv` carries
+    the sweep's 101 kitchen, make-up and craft words as rows: one that drifts into a DIY category
+    counts as a false match and fails the db gate at 1 %. The fallback to Haushalt stays covered by
+    pgTAP (`hardware_categories.test.sql`). Review 5 found wooden kitchen things (Nudelholz,
+    Holzlöffel, Holzbrett) under the `holz` head; `löffel`, `brett`, `schüssel` and `teller` are
+    Haushalt heads now, with Bilder-, Fotorahmen and Holzstäbchen as guards, and the word list has
+    rows for them. Holzspielzeug, Holzperlen and Spielsand stay in Holz & Baustoffe on purpose: a
+    Baumarkt sells them, and a toy or craft aisle the household lacks has no better place.
+    Review 6: a dictionary term also matches as a word's start (4+ letters), so `nagel` caught
+    Nagelhautöl and Nagelset and the new `teller`/`löffel` heads caught Tellerlinsen and
+    Löffelerbsen. The Nagel- cosmetics (Nagelhaut…, -set, -sticker, -polierer, -design, -kleber,
+    -tips, -pflege), those two foods, Pfannenwender and Wechselrahmen are listed now, with word-list
+    rows; Nagel, Nägel, Stahlnägel and Drahtstifte stay Schrauben & Befestigung. A plain „Rahmen“
+    still reads as Rahm (Kühlregal): both have the key `rahm`, as before this job.

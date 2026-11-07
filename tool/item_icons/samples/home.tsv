@@ -139,3 +139,50 @@ WC Ente	🚽
 Insektenspray	-
 Frottee Waschlappen	-
 Hornmehl	-
+# Baumarkt (job 151)
+Farbe weiß	🎨
+Holzlack	🎨
+Klarlack seidenmatt	🎨
+Sprühlack schwarz	🎨
+Holzlasur	🎨
+Muttern M8	🔩
+Dachlatten	🪵
+Holzlatten 2m	🪵
+Kantholz	🪵
+Außensteckdose	🔌
+Deckenleuchte	💡
+Wasserhahn	🚰
+Küchenarmatur	🚰
+Duschkopf	🚿
+Handbrause	🚿
+Duschschlauch	🚿
+Schutzbrille	🥽
+Pflanzkübel	🪴
+Bohrmaschine	-
+Zement	-
+# trap: Haarfarbe and food colouring are not paint
+Haarfarbe	-
+Haartönung	-
+Lebensmittelfarbe	-
+# trap: Nagellack and Haarlack are not varnish
+Nagellack	💅
+Nagellackentferner	-
+Haarlack	🧴
+# trap: a glaze is not a wood stain
+Schokoglasur	-
+Kuchenglasur	-
+# trap: Latte is coffee, Mutter a mother
+Caffè Latte	-
+Latte Macchiato	☕
+Latte	-
+Mutter	-
+# trap: tail batterie would be a battery
+Mischbatterie	🚰
+# trap: Brause alone is the drink
+Brause	🥤
+Fassbrause	🥤
+Fahrradschlauch	-
+Tulpenzwiebel	🌷
+Steckschlüssel	🔧
+Dämmwolle	-
+LEDs	💡

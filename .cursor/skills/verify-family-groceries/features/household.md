@@ -4,7 +4,7 @@ A list belongs to a household. A new user goes through onboarding (`features/onb
 
 ## Sub-features
 
-- `hh-create` creates a household (onboarding Step 2a) with a name (prefilled "Unser Haushalt", 1-80 characters), with the stores picked from ten common ones or typed (nothing preselected; job 58) or without ("Überspringen"). The 11 categories with "Sonstiges" are always seeded. A double tap or a retry makes one household.
+- `hh-create` creates a household (onboarding Step 2a) with a name (prefilled "Unser Haushalt", 1-80 characters), with the stores picked from eleven common ones (the last is „Baumarkt“, job 151) or typed (nothing preselected; job 58) or without ("Überspringen"). The 11 categories with "Sonstiges" are always seeded. A double tap or a retry makes one household.
 - `hh-invite` makes an invite code (8 characters from A-Z without I and O, and 2-9). It is valid for 7 days and works once: after one person joins with it, it is used up. Step 3 and More's Einladungen show it with its link (`APP_URL/join/<code>`), "gültig bis …", "Link kopieren", "Code kopieren", and "Teilen" (the share sheet in the iOS, Android and macOS apps; Web Share where the browser has it). The Linux fg client shows neither "Teilen" (`invite-share` counts 0) nor the link (no `APP_URL`), only the code.
 - `hh-invites-list` lists the household's open invites under Mehr, Partner einladen (`/more/invites`). Any member revokes one ("Widerrufen"); its link and code stop at once. Used, revoked and expired invites are not listed.
 - `hh-join` joins with a code (typed at `/join`, or from a link `/join/<code>`): the screen first shows the household's name ("Einladung in den Haushalt"), then "Haushalt beitreten". Lowercase, spaces and dashes in the code are accepted.
