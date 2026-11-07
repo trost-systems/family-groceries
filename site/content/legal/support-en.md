@@ -4,7 +4,7 @@ description: "Help with Hummlist: how to reach us, and answers to common questio
 locale: en
 path: /en/support
 translation_key: support
-updated: 2026-11-04
+updated: 2026-11-07
 draft: false
 ---
 
@@ -61,7 +61,7 @@ Without the app: write to [support@hummlist.com](mailto:support@hummlist.com).
 
 ### What happens to Hummlist Lifetime if I leave a household as its last member?
 
-Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, you can archive it: it is kept with its list and Hummlist Lifetime, and you can re-enable it under **More** › **Archived households**. If you don't re-enable it within 24 months, it is deleted. If you delete it instead of archiving it, Hummlist Lifetime ends with it. For refunds, see "Can I get a refund for Hummlist Lifetime?".
+Hummlist Lifetime belongs to the household and does not move with you. If you leave a household with Hummlist Lifetime as its last member, it is deleted. The app warns you first: Hummlist Lifetime ends with the household. For refunds, see "Can I get a refund for Hummlist Lifetime?".
 
 ### Can I get a refund for Hummlist Lifetime?
 

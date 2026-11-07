@@ -4,13 +4,13 @@ description: "Privacy policy of Hummlist: which data the app and the website pro
 locale: en
 path: /en/privacy
 translation_key: privacy
-updated: 2026-11-03
+updated: 2026-11-07
 ---
 
 # Privacy policy
 
 This is a translation. The [German version](/datenschutz) is authoritative.
-Last updated: 3 November 2026
+Last updated: 7 November 2026
 
 This page explains which personal data Hummlist processes, why, on what legal basis, who receives it and what rights you have. Hummlist is a shopping-list app for households on iPhone, Android and in the browser (app.hummlist.com), with the website hummlist.com.
 
@@ -73,18 +73,18 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 7. Siri, Alexa and AI assistants
 
-You can connect Hummlist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access key or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each key we store a name, a hash, its last four characters and when it was last used. When a key ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke keys and connections in the app at any time.
+You can connect Hummlist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access token or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each token we store a name, a hash, its last four characters and when it was last used. When a token ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke tokens and connections in the app at any time.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Siri on iPhone
 
-When you are signed in to the iPhone app and belong to a household, the app automatically creates its own access key for Siri; you don't need to do anything. In the app it is called "Siri (this iPhone)". The key is kept in this iPhone's Keychain and is not transferred to other devices. For it we store a hash (SHA-256) of the key, its last four characters, the name "Siri", which sign-in session it belongs to, and when it was created and last used. The key only works for Siri requests to Hummlist, and only while you are signed in and a member of that household.
+When you are signed in to the iPhone app and belong to a household, the app automatically creates its own access token for Siri; you don't need to do anything. In the app it is called "Siri (this iPhone)". The token is kept in this iPhone's Keychain and is not transferred to other devices. For it we store a hash (SHA-256) of the token, its last four characters, the name "Siri", which sign-in session it belongs to, and when it was created and last used. The token only works for Siri requests to Hummlist, and only while you are signed in and a member of that household.
 
-When you ask Siri to add something to your list or read it out, Apple turns your speech into text. We do not receive a voice recording. We only receive the recognised text or the name of a suggestion you picked (for example "milk"), whether you want to add or hear items, the language (German or English) and the key. When reading out, no text is sent. We add the items to your household's list just as if you had entered them in the app; the other members see them. We do not write the text to logs or to usage analytics; for errors we only log the type of error.
+When you ask Siri to add something to your list or read it out, Apple turns your speech into text. We do not receive a voice recording. We only receive the recognised text or the name of a suggestion you picked (for example "milk"), whether you want to add or hear items, the language (German or English) and the token. When reading out, no text is sent. We add the items to your household's list just as if you had entered them in the app; the other members see them. We do not write the text to logs or to usage analytics; for errors we only log the type of error.
 
 So that Siri understands phrases like "Add milk to Hummlist", the app stores up to 50 item names of your household on your iPhone and passes them to iOS's App Shortcuts. How Apple processes your speech, its transcript and this data is governed by Apple, as an independent controller, in its privacy policy and in your iPhone's Siri settings; we have no influence on this.
 
-The key ends when you sign out, leave the household, delete your account, revoke it under More › Access, or sign in again on this iPhone (the app then creates a new one). Each account has at most five Siri keys; when another is added, the oldest ends. After a key ends, we keep its stored data for 30 more days so we can look into misuse or questions, then delete it at the next daily clean-up. If the key ends because you signed out, we notice this by the next day at the latest.
+The token ends when you sign out, leave the household, delete your account, revoke it under More › Access, or sign in again on this iPhone (the app then creates a new one). Each account has at most five Siri tokens; when another is added, the oldest ends. After a token ends, we keep its stored data for 30 more days so we can look into misuse or questions, then delete it at the next daily clean-up. If the token ends because you signed out, we notice this by the next day at the latest.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Amazon Alexa
@@ -93,7 +93,7 @@ You can enable the Alexa skill "Hummlist" in the Alexa app and link it to your H
 
 When you ask Alexa to add something to your list or read it out, Amazon records your speech and turns it into text. We do not receive a voice recording from Amazon, only the recognised text (for example "milk and eggs"), the kind of request, the access token, an ID of your Alexa account and technical details about the device and language. We do not use the device ID. We add the items to the list of your current household, just as if you had entered them in the app; the other members see them. In our reply we send Amazon the item names, which Alexa reads out to you and shows as a card in the Alexa app: the items just added, or up to 10 open items on your list.
 
-For this we store a hash (SHA-256) of your Alexa ID, which sign-in session belongs to it and when you last used the skill, so that we can end the connection when you disable the skill. We also count how many items you added in the current minute (at most 30). We delete this data as soon as the connection ends: when you disable the skill in the Alexa app, link it again, choose "Disconnect Amazon Alexa" under More › Access, or delete your account. If you only unlink in the Alexa app, Amazon deletes the tokens; the entry under More › Access stays until you remove it.
+For this we store a hash (SHA-256) of your Alexa ID, which sign-in session belongs to it and when you last used the skill, so that we can end the connection when you disable the skill. We also count how many items you added in the current minute (at most 30). We delete this data as soon as the connection ends: when you disable the skill in the Alexa app, link it again, choose "Disconnect Amazon Alexa" under More › Access, or delete your account. If you don't use the skill for 12 months, we end the connection and delete this data as well. If you only unlink in the Alexa app, Amazon deletes the tokens; the entry under More › Access stays until you remove it or it has gone unused for 12 months.
 
 Amazon processes your voice recordings, their transcript and our replies as an independent controller under Amazon's Alexa Terms of Use and privacy notice. For Alexa on amazon.de, your contract partner is Amazon Media EU S.à r.l., 38 avenue John F. Kennedy, L-1855 Luxembourg. How long Amazon keeps voice recordings and how you delete them is set in the Alexa app; we have no influence on this.
 Legal basis: Art. 6(1)(b) GDPR.
@@ -151,7 +151,7 @@ You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
-We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access keys, connections (Alexa included) and your usage-data decisions immediately; for purchases we remove the link to your account. We delete a household's record at RevenueCat 30 days after the household is deleted (section 5). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, you can archive it; we delete it if it is not re-enabled within 24 months. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year. For the waitlist, the periods in section 2a apply.
+We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access tokens, connections (Alexa included) and your usage-data decisions immediately; for purchases we remove the link to your account. We delete a household's record at RevenueCat 30 days after the household is deleted (section 5). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, you can archive it; we delete it if it is not re-enabled within 24 months. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year. For the waitlist, the periods in section 2a apply.
 
 ## 15. Your rights {#rights}
 

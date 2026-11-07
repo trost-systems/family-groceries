@@ -9687,3 +9687,31 @@ phone apps always show; add an example of talking to the app.
    the add bar. It fixed the add bar only; the shell cannot know each page's controller.
    Not covered: an iPad trackpad sends pan-zoom gestures, not scroll events, so it still has to
    start on the list.
+
+## Job 162: legal and help texts follow the app (L1-L4), 2026-11-07
+
+1. **L1, Testerliste.** The tester list is gone since `20261101150000_testers_via_revenuecat.sql`
+   (testers get RevenueCat promotional grants on the household). Deleting an account removes no
+   tester entry any more, so `app/web/konto-loeschen.html` drops "sowie ein Eintrag in der
+   Testerliste". The deletion page has no English version; the brief's "EN page" does not exist.
+2. **L2, archived households.** The code path is still Mehr › „Archivierte Haushalte“
+   (`archivedTitle`, `app/lib/more/more_screen.dart`), but the row shows only with the
+   `HOUSEHOLD_ARCHIVE` define, which only `app/config/e2e.json` sets. No release build offers
+   archiving. A released app warns the last member that the household is deleted and Lifetime
+   ends with it (`joinLifetimeEnds`, the deletion card). So the support FAQ (DE and EN) now says
+   that, instead of a menu row users can't see. When archiving goes live (NEEDS_LEAD job 43
+   step 4), the FAQ answer needs the archive sentences back. The purchase privacy addendum
+   (`datenschutz-kaeufe.md`, `privacy-purchases.md`) still describes archiving; it was out of
+   the brief and stays as Legal approved it, as does privacy §16's archive sentence
+   (`docs/done/162-legal-copy-sync.md`, "Not changed").
+3. **L3, Alexa 12 months.** `public.purge_alexa()` (pg_cron daily,
+   `supabase/migrations/20261102093000_alexa_cleanup.sql`) deletes an Alexa session unused for
+   `interval '12 months'`, then its link and grant. There is no named constant; the interval is
+   the literal in that function. Privacy §7 (DE and EN) now says so, also for the entry under
+   Mehr › Zugänge after unlinking only in the Alexa app.
+4. **L4, Zugriffstoken.** The app says „Zugriffstoken“ / "Access tokens" (`accessTokens`) and
+   uses „der Token“. §7 and §16 of the privacy policy now use those terms, including the short
+   back-references („zu jedem Token“, „Der Token endet“), so one thing has one name. The OAuth
+   „Zugangs-Token“ Amazon receives for Alexa is a different token and stays.
+5. **Dates.** As in #216: `updated:` and „Stand“/"Last updated" move to 7 November 2026 on the
+   privacy policy; the support pages' `updated:` too.

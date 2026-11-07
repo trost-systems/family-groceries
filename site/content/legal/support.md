@@ -4,7 +4,7 @@ description: "Hilfe zu Hummlist: so erreichst du uns, und Antworten auf häufige
 locale: de
 path: /support
 translation_key: support
-updated: 2026-11-04
+updated: 2026-11-07
 draft: false
 ---
 
@@ -61,7 +61,7 @@ Ohne App geht es auch: Schreib an [support@hummlist.com](mailto:support@hummlist
 
 ### Was passiert mit Hummlist Lifetime, wenn ich als letztes Mitglied einen Haushalt verlasse?
 
-Hummlist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, kannst du ihn archivieren: Er bleibt mit Liste und Hummlist Lifetime erhalten, und du kannst ihn unter **Mehr** › **Archivierte Haushalte** wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten, wird er gelöscht. Löschst du ihn statt zu archivieren, endet Hummlist Lifetime mit ihm. Zu Erstattungen siehe „Kann ich Hummlist Lifetime zurückgeben?“.
+Hummlist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, wird er gelöscht. Die App warnt dich vorher: Hummlist Lifetime endet mit dem Haushalt. Zu Erstattungen siehe „Kann ich Hummlist Lifetime zurückgeben?“.
 
 ### Kann ich Hummlist Lifetime zurückgeben?
 
