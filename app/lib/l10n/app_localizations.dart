@@ -344,17 +344,71 @@ abstract class AppLocalizations {
   /// **'Löschen'**
   String get delete;
 
-  /// No description provided for @offline.
+  /// List: the sync indicator's title and its collapsed pill's word while offline
   ///
   /// In de, this message translates to:
-  /// **'Offline: Änderungen werden synchronisiert, sobald die Verbindung zurück ist'**
-  String get offline;
+  /// **'Offline'**
+  String get syncOffline;
 
-  /// No description provided for @pendingChanges.
+  /// No description provided for @syncOfflineLine.
   ///
   /// In de, this message translates to:
-  /// **'{count, plural, =1{1 Änderung wird synchronisiert} other{{count} Änderungen werden synchronisiert}}'**
-  String pendingChanges(int count);
+  /// **'Änderungen werden synchronisiert, sobald du wieder online bist.'**
+  String get syncOfflineLine;
+
+  /// List: the offline indicator for screen readers; must start with the title and a colon (e2e)
+  ///
+  /// In de, this message translates to:
+  /// **'Offline: Änderungen werden synchronisiert, sobald du wieder online bist.'**
+  String get syncOfflineLabel;
+
+  /// No description provided for @syncFailing.
+  ///
+  /// In de, this message translates to:
+  /// **'Sync gestört'**
+  String get syncFailing;
+
+  /// List: the collapsed failing pill's one word
+  ///
+  /// In de, this message translates to:
+  /// **'Gestört'**
+  String get syncFailingWord;
+
+  /// No description provided for @syncFailingLine.
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Änderungen sind auf dem Gerät gespeichert.'**
+  String get syncFailingLine;
+
+  /// List: the failing indicator for screen readers; must start with the title and a colon (e2e)
+  ///
+  /// In de, this message translates to:
+  /// **'Sync gestört: Deine Änderungen sind auf dem Gerät gespeichert.'**
+  String get syncFailingLabel;
+
+  /// No description provided for @syncRetrying.
+  ///
+  /// In de, this message translates to:
+  /// **'Wird erneut versucht'**
+  String get syncRetrying;
+
+  /// No description provided for @syncDetails.
+  ///
+  /// In de, this message translates to:
+  /// **'Details anzeigen'**
+  String get syncDetails;
+
+  /// List: announced to screen readers when a retry went through; nothing shows
+  ///
+  /// In de, this message translates to:
+  /// **'Synchronisiert'**
+  String get syncSynced;
+
+  /// No description provided for @syncStillFailing.
+  ///
+  /// In de, this message translates to:
+  /// **'Immer noch gestört'**
+  String get syncStillFailing;
 
   /// No description provided for @syncFailed.
   ///

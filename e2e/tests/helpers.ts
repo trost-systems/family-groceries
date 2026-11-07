@@ -104,6 +104,13 @@ export const actionSnackBar = (page: Page, text: string): Locator => page.getByR
  * app/lib/list/list_screen.dart): the same in every sync state, and the web has no top inset. Rows
  * scroll on under the bar; one above this line may be hidden behind it.
  */
+/**
+ * The list's sync indicator (job 161), card or pill: one button whose name starts with the state.
+ * On web its text is the button's name, not page text, so getByText would never find it.
+ */
+export const offlineIndicator = (page: Page): Locator => page.getByRole('button', { name: /^Offline:/ });
+export const failingIndicator = (page: Page): Locator => page.getByRole('button', { name: /^Sync gestört:/ });
+
 export const listBarHeight = 68;
 
 /** The list's visible band: from the bar above it to the top of the add bar, 12 px above its field. */

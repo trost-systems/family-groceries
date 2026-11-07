@@ -24,6 +24,7 @@ const sameInBothLanguages = {
   'feedbackCategoryBug': '"Bug" is what German testers say',
   'feedbackCounter': 'only numbers',
   'siriHeader': 'product name',
+  'syncOffline': '"Offline" is German too (job 161)',
 };
 
 Map<String, Object?> readArb(String path) =>

@@ -156,19 +156,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete => 'Delete';
 
   @override
-  String get offline =>
-      'Offline: changes will sync once the connection is back';
+  String get syncOffline => 'Offline';
 
   @override
-  String pendingChanges(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Syncing $count changes',
-      one: 'Syncing 1 change',
-    );
-    return '$_temp0';
-  }
+  String get syncOfflineLine =>
+      'Your changes will sync once you\'re back online.';
+
+  @override
+  String get syncOfflineLabel =>
+      'Offline: Your changes will sync once you\'re back online.';
+
+  @override
+  String get syncFailing => 'Sync failing';
+
+  @override
+  String get syncFailingWord => 'Failing';
+
+  @override
+  String get syncFailingLine => 'Your changes are saved on this device.';
+
+  @override
+  String get syncFailingLabel =>
+      'Sync failing: Your changes are saved on this device.';
+
+  @override
+  String get syncRetrying => 'Trying again';
+
+  @override
+  String get syncDetails => 'Show details';
+
+  @override
+  String get syncSynced => 'Synced';
+
+  @override
+  String get syncStillFailing => 'Still failing';
 
   @override
   String syncFailed(String name) {

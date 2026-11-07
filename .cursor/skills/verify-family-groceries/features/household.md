@@ -40,7 +40,7 @@ Preconditions:
 
 - `hh-join-menu` crashed on main until job 04's fix (2026-10-23): a red error screen after "Beitreten" in the old join dialog (gone since job 22). If it comes back, `fg logs --client lea --grep EXCEPTION` names the cause.
 - The release web build (the e2e tests, Vercel) strips Flutter's debug asserts, so a controller disposed too early ("TextEditingController was used after being disposed", `_dependents.isEmpty`) never shows there. Only the debug app (fg) and the widget tests (`app/test/household/onboarding_test.dart`) catch that class of bug.
-- After a join (or creating a household) the list must not show the crossed-out cloud ("Offline: …"). Until job 2b it stayed there until the first write: two overlapping resyncs shared one map and one threw. Check with `fg wait --contains Offline --gone --timeout 5 --client lea` after `fg wait --key add-item-field`.
+- After a join (or creating a household) the list must not show the offline indicator ("Offline: …"). Until job 2b it stayed there until the first write: two overlapping resyncs shared one map and one threw. Check with `fg wait --contains Offline --gone --timeout 5 --client lea` after `fg wait --key add-item-field`.
 - `--as peter` and `--as lea` mean the seeded users, not whoever is signed in on the client of that name.
 - A failed `fg tap` or `fg find` leaves an "EXCEPTION CAUGHT BY FLUTTER FRAMEWORK … ext.flutter.marionette" block in the app log. Skip those when you read `fg logs --grep EXCEPTION` for an app error.
 - Users from these recipes stay members of "Familie Test" until `fg up --fresh`. Recipes that count its members (`journeys/account-deletion.sh`) compare with the count before their own join.

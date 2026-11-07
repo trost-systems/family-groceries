@@ -3,10 +3,7 @@
 // rename the server refuses because another phone's copy got there first (made offline, or the
 // other phone renamed first) folds into that copy once the list shows it.
 import { expect, test, type Page } from './fixtures';
-import {
-  addItem, apiAs, cutOff, editField, itemRow, newEmail, openEdit, saveEdit, screenshot, signUpWithHousehold,
-  supabaseUrl, typeInto,
-} from './helpers';
+import { addItem, apiAs, cutOff, editField, itemRow, newEmail, offlineIndicator, openEdit, saveEdit, screenshot, signUpWithHousehold, supabaseUrl, typeInto } from './helpers';
 
 const merged = (page: Page) => page.getByRole('group', { name: /^Zusammengeführt: / });
 
@@ -77,7 +74,7 @@ test('RENAME: offline, then the other phone adds Mineralwasser: one Mineralwasse
   await connection.restore();
   await expect.poll(() => phone.open(), { message: 'the rename folded into their item', timeout: 20_000 })
     .toEqual([{ name: 'Mineralwasser', quantity: '8' }]);
-  await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
+  await expect(offlineIndicator(page)).toHaveCount(0, { timeout: 15_000 });
   await expect(itemRow(page, 'Mineralwasser')).toHaveCount(1);
   await expect(merged(page)).toBeVisible();
 });

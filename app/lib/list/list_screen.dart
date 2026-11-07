@@ -18,10 +18,10 @@ import 'package:family_groceries/list/dictation.dart';
 import 'package:family_groceries/list/dictation_button.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_link.dart';
-import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/sync_indicator.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -468,9 +468,14 @@ class _ShoppingListState() extends State<_ShoppingList> {
                 excluding: open,
                 child: ExcludeSemantics(
                   excluding: open,
-                  child: ShoppingListView(
-                    onInteract: _leaveField,
-                    header: const _Header(),
+                  child: SyncIndicator(
+                    rowTop: _Header._gap,
+                    rowHeight: _Header.height,
+                    cardTop: _Header.extent,
+                    child: ShoppingListView(
+                      onInteract: _leaveField,
+                      header: const _Header(),
+                    ),
                   ),
                 ),
               ),
@@ -774,9 +779,9 @@ const _composeHeight = 52.0;
 /// and no count (Peter, DECISIONS Job 29a). It floats over the list like
 /// the tab pill below (job 148), at the frame's end, [height] tall in every
 /// state; the rows scroll on under it. Anpassen is a raised button on its
-/// own, with no frame around it (job 152); the new adds and the sync icon
-/// sit in their own small capsule beside it, only while there is something
-/// to show.
+/// own, with no frame around it (job 152); the new adds sit in their own
+/// small capsule beside it, only while there are any. The sync indicator's
+/// pill takes the bar's empty left slot (job 161).
 class const _Header() extends StatelessWidget implements PreferredSizeWidget {
   /// The bar's height: the tab pill's.
   static const height = 52.0;
@@ -823,11 +828,14 @@ class const _Header() extends StatelessWidget implements PreferredSizeWidget {
                 height: height,
                 child: MediaQuery.withClampedTextScaling(
                   // Large text still fits the 52 high bar.
-                  maxScaleFactor: 1.5,
+                  maxScaleFactor: SyncPillSpace.maxTextScale,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     spacing: HlSpace.s2,
                     children: [
+                      SyncPillSpace(
+                        row: constraints.maxWidth - 2 * (side + HlSpace.s4),
+                      ),
                       const Flexible(child: _Status()),
                       // On the web the rows under the button keep their
                       // tappable semantics elements, which take a browser
@@ -867,8 +875,8 @@ class const _Header() extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-/// The partner's new adds and the sync icon in a small raised capsule
-/// beside Anpassen; nothing while both are quiet.
+/// The partner's new adds in a small raised capsule beside Anpassen;
+/// nothing while there are none.
 class const _Status() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -880,8 +888,7 @@ class const _Status() extends StatelessWidget {
     final fresh = cubit.fresh;
     final by = {for (final id in fresh) state.items[id]?.addedBy};
     final partner = by.length == 1 ? state.catalog.member(by.single) : null;
-    final sync = _syncIcon(l10n, state);
-    if (fresh.isEmpty && sync == null) {
+    if (fresh.isEmpty) {
       return const SizedBox.shrink();
     }
     return Semantics(
@@ -908,26 +915,24 @@ class const _Status() extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 spacing: HlSpace.s2,
                 children: [
-                  if (fresh.isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        partner == null
-                            ? l10n.newItems(fresh.length)
-                            : l10n.newItemsFrom(
-                                fresh.length,
-                                partner.displayName,
-                              ),
-                        key: const ValueKey('new-items-subtitle'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: t.success,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  Flexible(
+                    child: Text(
+                      partner == null
+                          ? l10n.newItems(fresh.length)
+                          : l10n.newItemsFrom(
+                              fresh.length,
+                              partner.displayName,
+                            ),
+                      key: const ValueKey('new-items-subtitle'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: t.success,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ?sync,
+                  ),
                 ],
               ),
             ),
@@ -936,25 +941,4 @@ class const _Status() extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The sync icon: offline, or changes not sent yet; null when synced.
-Widget? _syncIcon(AppLocalizations l10n, ListState state) {
-  final offline = state.connection == ConnectionStatus.offline;
-  final message = switch ((state.connection, state.pending.length)) {
-    (ConnectionStatus.offline, _) => l10n.offline,
-    (_, final pending && > 0) => l10n.pendingChanges(pending),
-    _ => null,
-  };
-  if (message == null) {
-    return null;
-  }
-  return Tooltip(
-    message: message,
-    excludeFromSemantics: true,
-    child: Icon(
-      offline ? Icons.cloud_off : Icons.cloud_upload_outlined,
-      semanticLabel: message,
-    ),
-  );
 }

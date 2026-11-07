@@ -1,7 +1,5 @@
 import { expect, test } from './fixtures';
-import {
-  addField, addItem, apiAs, confirmJoin, createInviteCode, editField, itemRow, joinWithCode, must, newEmail, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within,
-} from './helpers';
+import { addField, addItem, apiAs, confirmJoin, createInviteCode, editField, itemRow, joinWithCode, must, newEmail, offlineIndicator, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, tick, typeInto, within } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
@@ -88,7 +86,7 @@ test('a member of another household joins with a code from the menu', async ({ b
   await expect(itemRow(lea, 'Tee'), 'the old list is gone').toHaveCount(0);
   // Both opening resyncs have answered by now; a lost race shows Offline.
   await lea.waitForTimeout(1_000);
-  await expect(lea.getByText(/^Offline:/), 'the new list is online').toHaveCount(0);
+  await expect(offlineIndicator(lea), 'the new list is online').toHaveCount(0);
   await addItem(lea, 'Brot');
   await expect(itemRow(peter, 'Brot'), 'and both now share one list').toBeVisible();
   expect(errors, 'no Flutter errors on the way').toEqual([]);
@@ -110,7 +108,7 @@ test('a tick made while offline syncs when the connection returns', async ({ bro
   await addItem(peter, 'Eier');
   await expect(itemRow(peter, 'Brot'), 'optimistic while offline').toHaveCount(0);
   await expect(itemRow(peter, 'Eier')).toBeVisible();
-  await expect(peter.getByText(/^Offline:/)).toHaveCount(1);
+  await expect(offlineIndicator(peter)).toHaveCount(1);
   await screenshot(peter, '07-offline-pending');
   await expect(itemRow(lea, 'Brot'), 'the other side has not seen it yet').toBeVisible();
 
@@ -205,9 +203,9 @@ for (const drop of ['closes the list channel', 'drops the socket'] as const) {
 
     if (drop === 'closes the list channel') realtime.closeChannel();
     else realtime.close();
-    await expect(page.getByText(/^Offline:/), 'the drop shows').toHaveCount(1);
+    await expect(offlineIndicator(page), 'the drop shows').toHaveCount(1);
 
-    await expect(page.getByText(/^Offline:/), 'and clears again on its own').toHaveCount(0, { timeout: 20_000 });
+    await expect(offlineIndicator(page), 'and clears again on its own').toHaveCount(0, { timeout: 20_000 });
     await expect.poll(() => realtime.live, { message: 'live again', timeout: 20_000 }).toBe(true);
     const api = await apiAs(email);
     const { data } = await api.from('household_members').select('household_id').single();

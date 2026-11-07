@@ -1,9 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import {
-  addField, addItem, answerConsent, editField, openEdit, saveEdit, apiAs, cutOff, itemRow, newEmail, openMore, password, screenshot, signUpWithHousehold, tick,
-  typeInto, within,
-  openEmailSignIn,
-} from './helpers';
+import { addField, addItem, answerConsent, apiAs, cutOff, editField, itemRow, newEmail, offlineIndicator, openEdit, openEmailSignIn, openMore, password, saveEdit, screenshot, signUpWithHousehold, tick, typeInto, within } from './helpers';
 
 /** The list snapshot the app keeps in localStorage, or null. */
 function cachedList(page: Page): Promise<{ server: unknown[]; pending: unknown[] } | null> {
@@ -51,7 +47,7 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await within(3_000, (timeout) => expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout }));
   await expect(itemRow(page, 'Milch')).toBeVisible();
   await expect(addField(page)).toBeFocused();
-  await within(3_000, (timeout) => expect(page.getByText(/^Offline:/), 'and says so right away').toHaveCount(1, { timeout }));
+  await within(3_000, (timeout) => expect(offlineIndicator(page), 'and says so right away').toHaveCount(1, { timeout }));
 
   await addItem(page, 'Käse');
   // Job 111: the device reads the amount (number words, job 104); the server splits brand and
@@ -88,7 +84,7 @@ test('a cold start without Supabase shows the cached list, queues changes across
   ]);
   await expect(itemRow(page, 'Windeln'), 'the list shows the split row').toHaveAccessibleName(/^Windeln Pampers · Größe 3 2$/);
   await screenshot(page, 'offline-02-synced-split');
-  await expect(page.getByText(/^Offline:/)).toHaveCount(0, { timeout: 15_000 });
+  await expect(offlineIndicator(page)).toHaveCount(0, { timeout: 15_000 });
 
   const other = await (await browser.newContext()).newPage();
   await other.goto('/');
