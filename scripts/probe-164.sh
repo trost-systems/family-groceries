@@ -30,10 +30,7 @@ after() {
   sleep "$delay"; xcrun simctl create "$name" "$devicetype" "$runtime" >/dev/null
   wait $pid; report "$name" "created-after=${delay}s $*" $(( $(date +%s)-s ))
 }
-before Pre1
-before Pre2long -destination-timeout 120
-after Late0 0
-after Late20long 20 -destination-timeout 120
-after Late60 60
-after Late60long 60 -destination-timeout 180
-before Pre3
+after Late150 150
+after Late150long 150 -destination-timeout 300
+after Late240 240
+after Late240long 240 -destination-timeout 300
