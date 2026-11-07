@@ -39,6 +39,7 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | a9 | inline field errors get a leading error icon (not colour alone) | cand 3 / base 0 / tie 6 | 5 (mean 5.889) | keep | guard-app green: analyze clean, 2046 passed / 90 skipped, widgetbook 334; no golden changed; semantics fix after the measurement (fields keep the error as their own hint, as errorText did): all 44 harness shots byte-identical to the measured ones |
 | a10 | stores and store details: intro text separated from the first row by one consistent gap | cand 1 / base 0 / tie 8 | 5 (mean 6.111) | keep | guard-app green: analyze clean, 2046 passed / 90 skipped, widgetbook 334; goldens stores, no-store, store-details light/dark updated |
 | a11 | store header collapse chevron sits in a visible 52x48 raised hex key | cand 3 / base 1 / tie 5 | 5 (mean 5.889) | keep | guard-app green: analyze clean, 2046 passed / 90 skipped, widgetbook 334; 18 goldens updated (list, list-wide, list-long, shell-pill x2, add-sheet x4, light/dark); trade-off: hierarchy 2/3 for the baseline (the keys add weight) |
+| a12 | empty list sentence set as the focal title heading, centred clear of the add field | cand 6 / base 0 / tie 3 | 5 (mean 6) | keep | guard-app green: analyze clean, 2047 passed / 90 skipped, widgetbook 334; goldens list-empty light/dark updated |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
@@ -52,4 +53,5 @@ Per-step aspect medians and per-aspect pairwise votes:
 - **a9** (keep): medians typography 6, hierarchy 6, color_contrast 6, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 7; pairwise color_contrast cand, accessibility cand, empty_error_states cand; seeds [1814096379, 2394864840, 2953690310].
 - **a10** (keep): medians typography 7, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 6, empty_error_states 7; pairwise spacing cand; seeds [3745370498, 2368575900, 1262521298].
 - **a11** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 5, layout 5, consistency 5, accessibility 5, iconography 7, empty_error_states 7; pairwise hierarchy base, consistency cand, accessibility cand, iconography cand; seeds [3536585676, 3887376012, 781654275].
+- **a12** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 5, accessibility 5, iconography 7, empty_error_states 7; pairwise typography cand, hierarchy cand, color_contrast cand, layout cand, consistency cand, empty_error_states cand; seeds [1896992073, 3412467248, 566282466].
 
