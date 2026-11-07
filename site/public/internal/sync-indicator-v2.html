@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="alternate" hreflang="de" href="https://hummlist.com/internal/sync-indicator-v2">
+<link rel="alternate" hreflang="x-default" href="https://hummlist.com/internal/sync-indicator-v2">
+<title>Sync indicator, round 2 (internal)</title>
+<link rel="stylesheet" href="/internal/sync-indicator-v2/v2.css">
+<script src="/internal/sync-indicator-v2/v2.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <div class="bar__title">
+    <h1>Sync indicator, round 2</h1>
+    <span>Internal, not for merge. Answer with the labels (e.g. S3-a1, S2-C3F2).</span>
+  </div>
+  <div class="bar__controls">
+    <div class="seg seg--state" data-control="sync" role="group" aria-label="Sync state">
+      <button type="button" data-value="online" aria-pressed="true">Online</button>
+      <button type="button" data-value="offline" aria-pressed="false">Offline</button>
+      <button type="button" data-value="failing" aria-pressed="false">Sync failing</button>
+    </div>
+    <div class="seg" data-control="outcome" role="group" aria-label="What a retry does">
+      <button type="button" data-value="ok" aria-pressed="true">Retry works</button>
+      <button type="button" data-value="fail" aria-pressed="false">Retry fails</button>
+    </div>
+    <div class="seg" data-control="lang" role="group" aria-label="Language">
+      <button type="button" data-value="de" aria-pressed="true">DE</button>
+      <button type="button" data-value="en" aria-pressed="false">EN</button>
+    </div>
+    <div class="seg" data-control="theme" role="group" aria-label="Theme">
+      <button type="button" data-value="light" aria-pressed="true">Light</button>
+      <button type="button" data-value="dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="seg" data-control="motion" role="group" aria-label="Motion">
+      <button type="button" data-value="full" aria-pressed="true">Motion</button>
+      <button type="button" data-value="reduced" aria-pressed="false">Reduced</button>
+    </div>
+    <div class="seg" data-control="size" role="group" aria-label="Size">
+      <button type="button" data-value="fit" aria-pressed="true">Fit</button>
+      <button type="button" data-value="real" aria-pressed="false">1:1</button>
+    </div>
+    <div class="acts">
+      <button type="button" class="act" data-action="replay">Replay</button>
+      <button type="button" class="act" data-action="scroll">Scroll lists</button>
+    </div>
+  </div>
+  <nav class="jump" aria-label="Sections">
+    <a href="#s3">S3 Island capsule</a>
+    <a href="#s1">S1 Top banner</a>
+    <a href="#s2">S2 Hex snackbar</a>
+    <a href="#rec">Recommendation</a>
+  </nav>
+</header>
+<main id="groups">
+  <section class="group" id="s3"></section>
+  <section class="group" id="s1"></section>
+  <section class="group" id="s2"></section>
+</main>
+<section class="rec" id="rec">
+  <h2>Recommendation</h2>
+  <div id="rec-body"></div>
+</section>
+<footer class="notes">
+  <p>States: online shows nothing; offline explains and has no retry; sync failing (online, but queued changes keep failing) retries on a tap, spins, and on success the indicator simply leaves. No "back online" or "synced" snackbar: the indicator going away is the confirmation. Screen readers get a polite announcement instead.</p>
+  <p>Device geometry is approximate (points): iPhone 15 393 × 852 with the island at y 11; iPhone 14 390 × 844 with a 162 × 32 notch; iPhone SE 375 × 667 with a 20 pt status bar; Pixel 9 412 × 915 with a centred punch-hole; a 360 × 800 Android phone without a cutout. A phone with a centred notch or waterdrop (Galaxy A) behaves like the Pixel column.</p>
+  <p>Motion uses the app's tokens: 180 / 260 / 360 ms, the standard curve to enter, the exit curve to leave, the bounce curve only for the small collapsed badge. Reduced motion crossfades every change in 200 ms: nothing slides, grows or spins.</p>
+</footer>
+</body>
+</html>
