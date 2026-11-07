@@ -31,8 +31,10 @@ A-vs-A check (identical images as P and Q, 3 runs): 27 of 27 aspect verdicts tie
 | # | target aspect | hypothesis | pairwise (cand / base / tie aspects) | min (mean) | verdict | note |
 |---|---|---|---|---|---|---|
 | b1 | accessibility | add sheet: the band under the add field grows to fit the wrapped hint (only while the sheet is open), so the hint is no longer cut off at 150 % on the small phone | cand 2 / base 0 / tie 7 | 5 (mean 6.333) | keep | guard-app green: analyze clean, 2220 passed / 92 skipped, widgetbook 334; goldens add-sheet-compact light/dark updated (hint wraps there) |
+| b2 | accessibility | targets read as >=44 pt: the selected tab's hex face 34 -> 44 px, Verstanden on a sunken hex face filling its 44 px, Impressum/Datenschutz at 14 px underlined (wrap when narrow) | cand 3 / base 0 / tie 6 | 5 (mean 6.222) | keep | guard-app green: analyze clean, 2220 passed / 92 skipped, widgetbook 334; 30 goldens updated (add-sheet x4, list x4, login, shell-pill x2, sync x4; light/dark) |
 
 Per-step aspect medians and per-aspect pairwise votes:
 
 - **b1** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 6, consistency 6, accessibility 5, iconography 7, empty_error_states 8; pairwise layout cand, accessibility cand; seeds [4124828050, 3597097864, 2767896956].
+- **b2** (keep): medians typography 6, hierarchy 6, color_contrast 7, spacing 6, layout 5, consistency 6, accessibility 5, iconography 7, empty_error_states 8; pairwise typography cand, color_contrast cand, accessibility cand; seeds [1696506243, 2607387522, 2480894823].
 

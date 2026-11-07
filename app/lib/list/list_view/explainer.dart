@@ -23,7 +23,9 @@ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
     final dismiss = TextButton(
       key: const ValueKey('list-hint-dismiss'),
       onPressed: onDismiss,
+      // A sunken hex face shows the whole 44 high target, not just the word.
       style: TextButton.styleFrom(
+        backgroundColor: t.surfaceSunken,
         minimumSize: const Size(0, 44),
         textStyle: const TextStyle(
           fontFamily: HlFont.sans,

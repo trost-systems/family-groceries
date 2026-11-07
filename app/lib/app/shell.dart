@@ -338,7 +338,7 @@ class const _Pill({
     final brightness = Theme.of(context).brightness;
     final t = HummlistColors.of(brightness);
     return MediaQuery.withClampedTextScaling(
-      // Large text still fits the 34 high indicator.
+      // Large text still fits the 44 high indicator.
       maxScaleFactor: 1.5,
       child: DecoratedBox(
         decoration: ShapeDecoration(
@@ -396,7 +396,7 @@ class const _Tab({
   required final bool selected,
   required final VoidCallback onTap,
 }) extends StatefulWidget {
-  static const _indicatorHeight = 34.0;
+  static const _indicatorHeight = 44.0;
 
   @override
   State<_Tab> createState() => _TabState();
