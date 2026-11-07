@@ -9489,3 +9489,18 @@ The three tests fail only when a stall outlasts the budget it lands in. Their bu
    runner time (`within()`) would hide a real server hang behind every pause, and no stress the
    detector misses brings them near their budget. Both issues stay open for the lead with this
    evidence (`NEEDS_LEAD.md`, "Job 123").
+
+
+## Job 157: sync indicator, round 2, 2026-11-07
+
+1. A new page (`/internal/sync-indicator-v2`) beside job 153's, branched from main, so it doesn't depend on #297 landing. It reuses 153's list screen, hex drawing and copy.
+2. No "Wieder online" flash any more (153 had one): the brief says online shows nothing and success shows by disappearing. A polite screen-reader announcement ("Synchronisiert") replaces it, because a sighted user sees the indicator leave and a screen-reader user otherwise gets nothing.
+3. The Pixel column uses the Pixel 9's centred punch-hole. The second Android column is a phone with no cutout. A centred notch or waterdrop (Galaxy A) behaves like the Pixel column, which the page notes.
+4. S2's expanded card sits where its collapsed form lives (top for F1 to F3, above the add field for F4). Collapsing is then a short shrink toward the form, not a trip across the screen.
+5. Offline: a tap on the open card collapses it. The brief only says a tap explains, and the card already explains, so a toggle is the useful action.
+6. Failing: the whole card or form is the retry target. The card keeps a hex retry button (icon only in hex shapes, "Erneut versuchen" in the black and tab cards) as the affordance; no hint text sits inside a hex.
+7. Compact island and camera words are short ("Gestört" / "Failing"); the full title "Sync gestört" doesn't fit an island ear without covering the clock.
+8. The status-bar icon brightness is computed, not hand-set: of white and black icons, the one with the higher WCAG contrast on the target colour wins. Tomato gets dark icons (white would be 3:1).
+9. One depth style: floating surfaces (snackbar, hex capsule, top bar) use the sticker edge, pressable faces (collapsed forms, retry) the tactile tinted edge, as in the app since job 148. The black island shapes have no depth because they extend hardware.
+10. Recommendation: S2-C3F3, then S3 per device (a1 / d1 / hex capsule elsewhere), with S1-x1 as the quick win. Reasons are in docs/done/157.md.
+11. Review 0: while an S3 capsule is open, the list makes room for the whole open card (all shapes, not only the hex capsule). An open card over Anpassen looked broken, and an overlay that cuts a button is worse than a 360 ms shift that follows the capsule. The compact form keeps its own, smaller shift (none for a1 and d1).

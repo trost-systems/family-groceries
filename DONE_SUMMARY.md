@@ -583,6 +583,7 @@ hummlist.com gets a waitlist instead of browser-app links: a double opt-in form,
 - Job 144, the tabs float as a hex pill: [docs/done/144-bottom-nav-floating-pill.md](docs/done/144-bottom-nav-floating-pill.md)
 - Job 147, item icons for 1,430 items and a neutral fallback: [docs/done/147-item-icon-coverage.md](docs/done/147-item-icon-coverage.md)
 - Job 148, UI consistency pass (floating top bar, hex Anpassen, one 3D depth switch, no category numbers, one hex per store row, centred hex text): [docs/done/148-ui-consistency-pass.md](docs/done/148-ui-consistency-pass.md)
+- Job 157, sync indicator round 2: S3 per device, S1 status-bar colours, S2 collapse matrix (draft, not for merge): [docs/done/157.md](docs/done/157.md)
 - Job 145, interactive store chips on the landing page (PR #290, not merged, lead review): [docs/done/145-landing-store-chips.md](docs/done/145-landing-store-chips.md)
 
 ## Job 113: CI tool downloads cached and retried
