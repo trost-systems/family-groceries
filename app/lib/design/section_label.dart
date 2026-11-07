@@ -1,3 +1,4 @@
+import 'package:family_groceries/design/fonts.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 
@@ -11,10 +12,15 @@ class const HlSectionLabel(
   super.key,
 }) extends StatelessWidget {
   /// The overline of section titles and the list's category labels: the
-  /// 12 px caption token (0.09 em tracking). Height 1.1 keeps the line box
-  /// of the former 11 px labels, so the rows around them keep their rhythm.
-  static TextStyle overline(Color color) =>
-      HlType.caption.copyWith(height: 1.1, color: color);
+  /// caption token's weight and capitals at the app's one caption size,
+  /// with its 0.08 em tracking. Height 1 keeps the line box of the former
+  /// 12 px labels, so the rows around them keep their rhythm.
+  static TextStyle overline(Color color) => HlType.caption.copyWith(
+    fontSize: captionSize,
+    letterSpacing: 0.08 * captionSize,
+    height: 1,
+    color: color,
+  );
 
   @override
   Widget build(BuildContext context) {
