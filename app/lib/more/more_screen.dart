@@ -436,7 +436,15 @@ class const _Group({
             child: Column(
               children: [
                 for (final (i, child) in children.indexed) ...[
-                  if (i > 0) Divider(height: 1, indent: 60, color: t.divider),
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      indent: 60,
+                      // Ends where the trailing icons do, clear of the
+                      // card's edge.
+                      endIndent: HlSpace.s3,
+                      color: t.divider,
+                    ),
                   child,
                 ],
               ],

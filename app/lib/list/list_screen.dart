@@ -7,7 +7,6 @@ import 'package:family_groceries/app/scroll_through.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
-import 'package:family_groceries/design/status_bar_backdrop.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/home_widget/widget_launch.dart';
@@ -477,12 +476,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
                       rowTop: _Header._gap,
                       rowHeight: _Header.height,
                       cardTop: _Header.extent,
-                      // Under the sync pill and card, over the rows.
-                      child: StatusBarBackdrop(
-                        child: ShoppingListView(
-                          onInteract: _leaveField,
-                          header: const _Header(),
-                        ),
+                      child: ShoppingListView(
+                        onInteract: _leaveField,
+                        header: const _Header(),
                       ),
                     ),
                   ),

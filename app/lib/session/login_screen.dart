@@ -50,7 +50,7 @@ class const LoginScreen({
     );
     return Scaffold(
       body: StatusBarBackdrop(
-        fade: HlSpace.s4,
+        fade: HlSpace.s7,
         child: SafeArea(
           bottom: false,
           child: Column(
