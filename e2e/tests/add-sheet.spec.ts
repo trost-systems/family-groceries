@@ -348,3 +348,35 @@ test('a tap beside the floating field opens it and leaves the row under it alone
   const { data: active } = await api.from('items').select('name').eq('household_id', must(household, 'household').id).eq('status', 'active');
   expect(must(active, 'active items').map((i) => i.name).sort(), 'no row was ticked').toEqual([...names].sort());
 });
+
+test('the mouse wheel over the floating field and the tab pill scrolls the list; a click still opens the field', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const email = newEmail('sheet-wheel');
+  await signUpWithHousehold(page, email);
+  const api = await apiAs(email);
+  const { data: household } = await api.from('households').select('id').single();
+  const names = Array.from({ length: 24 }, (_, i) => `Artikel ${String(i).padStart(2, '0')}`);
+  const { error } = await api.from('items').insert(names.map((name) => ({ household_id: must(household, 'household').id, name })));
+  if (error) throw error;
+  await page.reload();
+  const first = itemRow(page, 'Artikel 00');
+  await expect(first).toHaveCount(1);
+
+  const field = await boxOf(addField(page));
+  const pill = await boxOf(listTab(page));
+  for (const [where, at] of [
+    ['the field', { x: field.x + field.width / 2, y: field.y + field.height / 2 }],
+    ['the tab pill', { x: pill.x + pill.width / 2, y: pill.y + pill.height / 2 }],
+  ] as const) {
+    const before = (await boxOf(first)).y;
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.wheel(0, 120);
+    await expect.poll(async () => before - (await boxOf(first)).y, `the wheel over ${where}`).toBe(120);
+    await page.mouse.wheel(0, -120);
+    await expect.poll(async () => (await boxOf(first)).y).toBe(before);
+  }
+  await expect(sheet(page)).toHaveCount(0);
+  await addField(page).click();
+  await expect(sheet(page)).toBeVisible();
+  await expect(addField(page)).toBeFocused();
+});

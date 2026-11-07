@@ -70,7 +70,7 @@ class const StoresScreen({super.key}) extends StatelessWidget {
     }
   }
 
-  /// A store of that name is found rather than added twice.
+  /// A name the household has already stays in the dialog, with why.
   Future<void> _add(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final cubit = context.read<ListCubit>();
@@ -82,21 +82,22 @@ class const StoresScreen({super.key}) extends StatelessWidget {
       confirm: l10n.storeCreateConfirm,
       label: l10n.storeNameHint,
       maxLength: maxStoreNameLength,
+      validate: (name) => switch (cubit.state.catalog.storeNamed(name)) {
+        final existing? => l10n.storeNameTaken(existing.name),
+        null => null,
+      },
       save: (name) async {
-        final existing = cubit.state.catalog.storeNamed(name);
-        final store = existing ?? await cubit.addStore(name);
+        final store = await cubit.addStore(name);
         if (store == null) {
           return false;
         }
-        if (existing == null) {
-          unawaited(
-            SemanticsService.sendAnnouncement(
-              view,
-              l10n.storeAdded(store.name),
-              direction,
-            ),
-          );
-        }
+        unawaited(
+          SemanticsService.sendAnnouncement(
+            view,
+            l10n.storeAdded(store.name),
+            direction,
+          ),
+        );
         return true;
       },
     );

@@ -4,7 +4,7 @@
 # scripts (job 91) and the waitlist invite script (job 82): Deno fmt, lint, tests.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
-(cd "$REPO_ROOT/supabase/functions" && deno fmt --check && deno lint && deno test --allow-env --allow-net)
+(cd "$REPO_ROOT/supabase/functions" && deno fmt --check && deno lint && deno test --allow-env --allow-net --allow-read=../tests)
 (cd "$REPO_ROOT/supabase/classifier" && deno fmt --check && deno lint && deno test --allow-read)
 (cd "$REPO_ROOT/supabase/deploy" && deno fmt --check && deno lint && deno test --allow-read)
 (cd "$REPO_ROOT/analytics" && deno fmt --check && deno lint && deno test --allow-read)

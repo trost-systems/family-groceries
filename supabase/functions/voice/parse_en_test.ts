@@ -100,3 +100,16 @@ Deno.test('EN stops at the item cap', () => {
   assertEquals(parseEnglish(sentence).length, maxItems);
   assertEquals(parseEnglish(sentence, maxItems + 1).length, maxItems + 1);
 });
+
+// Job 159: a name that starts with a number word keeps it, as typed (job 104).
+for (
+  const [sentence, expected] of [
+    ['seven up and four roses', ['seven up', 'four roses']],
+    ['two seven up', ['2 seven up']],
+    ['seven apples', ['7 apples']],
+  ] as [string, string[]][]
+) {
+  Deno.test(`"${sentence}" -> ${JSON.stringify(expected)}`, () => {
+    assertEquals(parseEnglish(sentence).map(spokenEnglish), expected);
+  });
+}

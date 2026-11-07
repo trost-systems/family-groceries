@@ -1,5 +1,5 @@
 import { assertEquals } from '@std/assert';
-import { maxItems, parseSentence, spoken } from './parse.ts';
+import { maxItems, numberNames, parseSentence, spoken } from './parse.ts';
 
 /** Sentence -> items as read back ("2 Gurken"). */
 const cases: [string, string[]][] = [
@@ -319,3 +319,35 @@ for (
     assertEquals(parseSentence(sentence).map(spoken), expected);
   });
 }
+
+// Job 159: a name that starts with a number word keeps it, as typed (job 104); a count before
+// or after it is still the Menge.
+for (
+  const [sentence, expected] of [
+    ['Drei Glocken Nudeln', ['Drei Glocken Nudeln']],
+    ['drei glocken spaghetti', ['Drei glocken spaghetti']],
+    ['Wir brauchen Drei Glocken Nudeln und Milch', ['Drei Glocken Nudeln', 'Milch']],
+    ['zwei Drei Glocken Nudeln', ['2 Drei Glocken Nudeln']],
+    ['Drei Glocken Nudeln zwei', ['2 Drei Glocken Nudeln']],
+    ['Vier Jahreszeiten Pizza', ['Vier Jahreszeiten Pizza']],
+    ['Fünf Minuten Terrine', ['Fünf Minuten Terrine']],
+    ['Elf Bar', ['Elf Bar']],
+    ['drei Äpfel', ['3 Äpfel']],
+    ['drei Glocken', ['Drei Glocken']],
+    ['drei Glockenblumen', ['3 Glockenblumen']],
+  ] as [string, string[]][]
+) {
+  Deno.test(`"${sentence}" -> ${JSON.stringify(expected)}`, () => {
+    assertEquals(parseSentence(sentence).map(spoken), expected);
+  });
+}
+
+Deno.test('the names that keep their number word are supabase/tests/number_words.tsv', async () => {
+  const table = await Deno.readTextFile(new URL('../../tests/number_words.tsv', import.meta.url));
+  assertEquals(
+    numberNames.map((name) => name.join(' ')),
+    table.split('\n').map((line) => line.split('\t')).flatMap(([kind, text]) =>
+      kind === 'name' && text ? [text] : []
+    ),
+  );
+});

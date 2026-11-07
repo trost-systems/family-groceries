@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show SemanticsHitTestBehavior, SemanticsRole;
 
+import 'package:family_groceries/app/scroll_through.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/sticker.dart';
@@ -109,6 +110,9 @@ class const AppShell({
 class _AppShellState() extends State<AppShell> {
   final _sheetOpen = SheetOpenNotifier();
 
+  /// The page under the tab band, which takes the wheel over the band.
+  final _page = GlobalKey(debugLabel: 'shell-page');
+
   @override
   void dispose() {
     _sheetOpen.dispose();
@@ -180,6 +184,7 @@ class _AppShellState() extends State<AppShell> {
                 builder: (context) {
                   final media = MediaQuery.of(context);
                   return MediaQuery(
+                    key: _page,
                     data: media.copyWith(
                       viewPadding: media.viewPadding.copyWith(
                         bottom: math.max(
@@ -194,7 +199,14 @@ class _AppShellState() extends State<AppShell> {
               ),
               bottomNavigationBar: band == null
                   ? null
-                  : _TabBand(band: band, index: index, onSelect: _select),
+                  : ScrollThrough(
+                      under: _page,
+                      child: _TabBand(
+                        band: band,
+                        index: index,
+                        onSelect: _select,
+                      ),
+                    ),
             );
           },
         ),

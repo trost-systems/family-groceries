@@ -68,12 +68,47 @@ void main() {
     ]);
   });
 
-  testWidgets('a name the household has adds nothing', (tester) async {
+  testWidgets('a name the household has stays in the dialog with why', (
+    tester,
+  ) async {
     await pump(tester);
-    await addStore(tester, 'LIDL');
+    await addStore(tester, 'lidl');
     expect(names(), ['dm', 'Lidl']);
     expect(repo.catalogCalls, isEmpty);
+    expect(key('name-dialog-field'), findsOneWidget);
+    expect(
+      find.text('Einen Laden „Lidl“ gibt es schon.').hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.byType(SnackBar), findsNothing);
+    expect(tester.takeAnnouncements(), isEmpty);
+
+    await tester.enterText(key('name-dialog-field'), 'Lidl Express');
+    await tester.pump();
+    expect(find.text('Einen Laden „Lidl“ gibt es schon.'), findsNothing);
+    await tester.tap(key('name-dialog-confirm'));
+    await tester.pumpAndSettle();
+    expect(names(), ['dm', 'Lidl', 'Lidl Express']);
     expect(key('name-dialog-field'), findsNothing);
+  });
+
+  testWidgets('a taken name in English, upper case with umlauts', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      language: AppLanguage.en,
+      seed: (repo) => repo.stores = [
+        ...repo.stores,
+        const Store(id: 'muller', name: 'Müller', sortOrder: 30),
+      ],
+    );
+    await addStore(tester, 'MÜLLER');
+    expect(key('name-dialog-field'), findsOneWidget);
+    expect(
+      find.text('A store named “Müller” already exists.').hitTestable(),
+      findsOneWidget,
+    );
   });
 
   testWidgets('offline, the name stays in the dialog to try again', (

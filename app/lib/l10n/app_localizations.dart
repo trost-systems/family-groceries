@@ -1514,7 +1514,7 @@ abstract class AppLocalizations {
   /// **'{store} löschen?'**
   String storeDeleteTitle(String store);
 
-  /// rename onto another store's name
+  /// adding a store, or renaming one, onto a name the household has (any case)
   ///
   /// In de, this message translates to:
   /// **'Einen Laden „{name}“ gibt es schon.'**
