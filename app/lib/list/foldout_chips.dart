@@ -18,16 +18,20 @@ enum _Fold() {
   category,
 }
 
-/// The chips' and options' height: a touch target.
+/// The options' height: a touch target.
 const _height = 44.0;
 
-/// Room from the hex's edge to a label in [style]: the tip's depth, so the
-/// content starts where the flat sides do, and more at large text, where a
-/// tall line would reach into the tips.
-EdgeInsets _hexPadding(BuildContext context, TextStyle style) =>
+/// The chips' height, face plus edge: the add sheet's close key beside them,
+/// so the face alone stays a 44 px target.
+const _chipHeight = HlSize.target;
+
+/// Room from the edge of a hex [height] tall to a label in [style]: the
+/// tip's depth, so the content starts where the flat sides do, and more at
+/// large text, where a tall line would reach into the tips.
+EdgeInsets _hexPadding(BuildContext context, TextStyle style, double height) =>
     EdgeInsets.symmetric(
       horizontal: math.max(
-        HlHex.tip * _height,
+        HlHex.tip * height,
         hexLabelInset(style, MediaQuery.textScalerOf(context)),
       ),
     );
@@ -240,8 +244,10 @@ class const _Chip({
               // Desktop defaults to compact density, which shrinks targets
               // under 44 px.
               visualDensity: VisualDensity.standard,
-              minimumSize: const WidgetStatePropertyAll(Size(0, _height)),
-              padding: WidgetStatePropertyAll(_hexPadding(context, _chipText)),
+              minimumSize: const WidgetStatePropertyAll(Size(0, _chipHeight)),
+              padding: WidgetStatePropertyAll(
+                _hexPadding(context, _chipText, _chipHeight),
+              ),
             ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -501,7 +507,7 @@ class const _Option({
         style: TextButton.styleFrom(
           visualDensity: VisualDensity.standard,
           minimumSize: const Size(0, _height),
-          padding: _hexPadding(context, _optionText),
+          padding: _hexPadding(context, _optionText, _height),
           // Lemon on the page needs the navy contour.
           shape: HexBorder(
             side: selected
