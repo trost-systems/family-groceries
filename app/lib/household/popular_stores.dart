@@ -2,7 +2,8 @@
 /// ADDENDUM 3). Change the offer here and nowhere else. Names are plain
 /// text: no logos, colours or ® (Legal Review N-23). "EDEKA", "Lidl" and
 /// "dm" become those chains on the server, with their researched walking
-/// order (`public.add_store`).
+/// order (`public.add_store`). "Baumarkt" is a store type, not a chain: it
+/// becomes the hardware store and brings the DIY categories (job 151).
 const popularStores = [
   'EDEKA',
   'REWE',
@@ -14,4 +15,5 @@ const popularStores = [
   'Penny',
   'dm',
   'Rossmann',
+  'Baumarkt',
 ];

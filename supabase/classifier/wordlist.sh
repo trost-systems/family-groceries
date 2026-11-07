@@ -17,7 +17,9 @@ begin;
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000f8', 'wordlist@example.com');
 select set_config('role', 'authenticated', true);
 select set_config('request.jwt.claims', '{"sub": "00000000-0000-0000-0000-0000000000f8", "role": "authenticated"}', true);
-create temp table h as select id from public.create_household('Wordlist');
+-- With a Baumarkt (job 151): a kitchen or make-up word that drifts into a DIY category counts as a
+-- false match here, where a household without one would hide it in Haushalt.
+create temp table h as select id from public.create_household('Wordlist', false, '{Baumarkt}');
 select 'row', r->>0, r->>1, r->>2, c.seed_key, d.via
 from json_array_elements(\$rows\$$rows\$rows\$::json) with ordinality t(r, n)
 cross join lateral public.classify_item_detail((select id from h), r->>0) d

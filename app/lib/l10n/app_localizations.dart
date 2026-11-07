@@ -1730,6 +1730,48 @@ abstract class AppLocalizations {
   /// **'👶 Drogerie'**
   String get categoryDrugstore;
 
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Farben & Lacke'**
+  String get categoryPaint;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Sanitär'**
+  String get categoryPlumbing;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Elektro & Leuchtmittel'**
+  String get categoryElectrical;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Werkzeug'**
+  String get categoryTools;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Schrauben & Befestigung'**
+  String get categoryFasteners;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Holz & Baustoffe'**
+  String get categoryBuilding;
+
+  /// Seeded Baumarkt category, exactly as public.hardware_categories names it in German
+  ///
+  /// In de, this message translates to:
+  /// **'Garten & Pflanzen'**
+  String get categoryGarden;
+
   /// Seeded category, exactly as public.seed_household names it in German
   ///
   /// In de, this message translates to:

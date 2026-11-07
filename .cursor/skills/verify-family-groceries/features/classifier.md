@@ -5,6 +5,7 @@ Every new item lands in a category without the user choosing one, unless they pi
 ## Sub-features
 
 - `cls-auto` puts a new item under a category divider from the dictionary, including compound endings ("Ziegenmilch" → Kühlregal, through "milch").
+- `cls-baumarkt` DIY words (about 250, job 151) go to the Baumarkt categories when the household has a Baumarkt ("Schrauben" → Schrauben & Befestigung, "Glühbirne" → Elektro & Leuchtmittel), else to Haushalt; pgTAP `hardware_categories.test.sql` classifies 56 of them both ways.
 - `cls-fallback` puts an unknown item under "Sonstiges", shown last.
 - `cls-order` shows the dividers of "Ohne Laden" in route order (uppercase, without the emoji): Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Vorrat & Konserven, Süßes & Snacks, Getränke, Tiefkühl, Haushalt, 👶 Drogerie, Sonstiges.
 - `cls-move` moves an item to another category through the edit sheet's category chip ("Fertig").

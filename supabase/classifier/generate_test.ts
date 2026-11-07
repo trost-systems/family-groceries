@@ -25,7 +25,7 @@ Deno.test("the newest dictionary migration is generated from dictionary.tsv", as
 Deno.test("the dictionary covers every category with several hundred terms", async () => {
   const terms = parseDictionary(await Deno.readTextFile(dictionaryUrl));
   const perCategory = Map.groupBy(terms, (t) => t.category);
-  assertEquals(perCategory.size, 10);
+  assertEquals(perCategory.size, 17);
   for (const [category, list] of perCategory) {
     if (list.length < 30) {
       throw new Error(`${category} has only ${list.length} terms`);

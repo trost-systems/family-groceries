@@ -206,5 +206,12 @@ const _categories = {
   'frozen': '🧊',
   'household': '🧽',
   'drugstore': '🧴',
+  'paint': '🎨',
+  'plumbing': '🚿',
+  'electrical': '💡',
+  'tools': '🔨',
+  'fasteners': '🔩',
+  'building': '🪵',
+  'garden': '🌱',
   'other': '🛒',
 };

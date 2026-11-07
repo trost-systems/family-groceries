@@ -14,6 +14,13 @@ export const categories = [
   "frozen",
   "household",
   "drugstore",
+  "paint",
+  "plumbing",
+  "electrical",
+  "tools",
+  "fasteners",
+  "building",
+  "garden",
 ] as const;
 
 export type Category = typeof categories[number];

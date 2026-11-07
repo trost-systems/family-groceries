@@ -1053,6 +1053,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get categoryDrugstore => '👶 Drogerie';
 
   @override
+  String get categoryPaint => 'Farben & Lacke';
+
+  @override
+  String get categoryPlumbing => 'Sanitär';
+
+  @override
+  String get categoryElectrical => 'Elektro & Leuchtmittel';
+
+  @override
+  String get categoryTools => 'Werkzeug';
+
+  @override
+  String get categoryFasteners => 'Schrauben & Befestigung';
+
+  @override
+  String get categoryBuilding => 'Holz & Baustoffe';
+
+  @override
+  String get categoryGarden => 'Garten & Pflanzen';
+
+  @override
   String get categoryOther => 'Sonstiges';
 
   @override

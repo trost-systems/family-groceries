@@ -4,6 +4,9 @@
 # Left out on purpose (no emoji reads as the item): Alufolie, Frischhaltefolie, Backpapier,
 # Gefrierbeutel, Spültabs and Somat/Finish, Klebeband and tesa, Kleber, Nägel, Dübel, Lappen,
 # Servietten, Staubsaugerbeutel, Wäscheklammern, Insektenspray, Dünger, Briefmarken, Mütze, Lotto.
+# Baumarkt (job 151), no emoji up to Unicode 14 draws them: Bohrmaschine, Bohrer, Zange,
+# Wasserwaage, Zement, Mörtel, Beton, Gips, Fliesen, Tapete, Silikon, Farbrolle, Gartenschlauch,
+# Gießkanne, Spaten, Schaufel, Rechen, Schubkarre, Rasenmäher, Kabelbinder, Isolierband.
 
 # Cleaning and washing
 Spülmittel|Spülmitteln|Spüli|Handspülmittel|dish soap|washing up liquid	🧴
@@ -89,7 +92,7 @@ Feuerlöscher|fire extinguisher	🧯
 Glühbirne|Glühbirnen|Glühlampe|Glühlampen|light bulb|light bulbs	💡	before the pear
 Energiesparlampe|Energiesparlampen|Energiesparbirne	💡
 Leuchtmittel	💡
-=LED|LED Birne|LED Birnen	💡
+=LED|=LEDs|LED Birne|LED Birnen	💡
 Lampe|Lampen|lamp	💡	head: LED Lampe, Schreibtischlampe
 Taschenlampe|Taschenlampen|Stirnlampe|flashlight|torch	🔦
 
@@ -128,7 +131,7 @@ Wecker|alarm clock	⏰	head: Radiowecker
 # DIY and Baumarkt
 Schraube|Schrauben|screws|screw	🔩	head: Holzschrauben
 Schraubenzieher|Schraubendreher|Akkuschrauber|screwdriver	🪛	before schraube
-Schraubenschlüssel|Maulschlüssel|Inbusschlüssel|Gabelschlüssel|wrench|spanner	🔧	before schlüssel
+Schraubenschlüssel|Maulschlüssel|Inbusschlüssel|Gabelschlüssel|Steckschlüssel|Ringschlüssel|wrench|spanner	🔧	before schlüssel
 Hammer|Hämmer	🔨	head: Gummihammer
 Säge|Sägen|=saw	🪚	head: Handsäge, Stichsäge
 =Axt|Beil	🪓
@@ -144,8 +147,17 @@ Ziegel|Ziegelsteine|Backsteine|bricks	🧱
 Seil|Seile|rope	🪢	head: Springseil
 =Pinsel|Malerpinsel|Farbpinsel|Lackpinsel|paintbrush	🖌️	whole: Backpinsel, Rasierpinsel
 Wandfarbe|Wandfarben|Dispersionsfarbe|Abtönfarbe|Fassadenfarbe|wall paint	🎨	not every farbe: Haarfarbe
+=Farbe|=Farben|Holzfarbe|Lackfarbe|Sprühfarbe|spray paint	🎨	whole: Haarfarbe, Lebensmittelfarbe
+Lack|Lacke|Holzlack|Klarlack|Buntlack|Sprühlack|Lackspray|Heizkörperlack|varnish	🎨	head: Weißlack; Nagellack and Haarlack are their own
+=Lasur|Holzlasur|Dickschichtlasur|Dünnschichtlasur|wood stain	🎨	whole: Glasur, Schokoglasur
 Acrylfarbe|Acrylfarben|Wasserfarben|Fingerfarben|Malkasten|Tuschkasten|=paint	🎨
 Zollstock|Maßband|Meterstab|tape measure	📏
+=Muttern|Schraubenmutter|Schraubenmuttern|Bolzen|nuts and bolts	🔩	whole: Mutter is a mother
+Holzlatte|Holzlatten|Dachlatte|Dachlatten|=Latten|Kantholz|Kanthölzer|Holzbalken	🪵	whole: Latte is coffee
+Steckdose|Steckdosen|socket	🔌	head: Außensteckdose, Funksteckdose
+Leuchte|Leuchten|Deckenleuchte|light fixture	💡
+Wasserhahn|Wasserhähne|Armatur|Armaturen|Mischbatterie|=tap|faucet	🚰	head: Küchenarmatur; Mischbatterie else batterie
+Duschkopf|Duschköpfe|Duschbrause|Handbrause|Regenbrause|Kopfbrause|Duschschlauch|Brauseschlauch|shower head	🚿	else the Brause drink
 
 # Kitchenware
 Besteck|cutlery	🍴	head: Plastikbesteck, Salatbesteck
@@ -173,7 +185,7 @@ Mausefalle|Mausefallen|Mäusefalle|Rattenfalle|mouse trap	🪤
 # Wool and sewing
 Wolle|yarn	🧶	head: Strickwolle, Baumwolle
 Stahlwolle	-	not yarn
-Glaswolle|Steinwolle|Holzwolle	-	not yarn
+Glaswolle|Steinwolle|Holzwolle|Dämmwolle|Mineralwolle	-	not yarn
 Garn|Nähgarn|Faden|Nähfaden|Bindfaden|thread	🧵
 Nähnadel|Nähnadeln|sewing needle	🪡
 
@@ -210,12 +222,13 @@ Hamsterfutter	🐹
 Blume|Blumen|flowers|flower	💐	head: Schnittblumen, Trockenblumen
 Blumenstrauß|Blumensträuße|bouquet	💐
 Tulpe|Tulpen|tulips	🌷
-Blumenzwiebeln|Blumenzwiebel|Tulpenzwiebeln|flower bulbs	🌷	else zwiebel
+Blumenzwiebeln|Blumenzwiebel|Tulpenzwiebeln|Tulpenzwiebel|flower bulbs	🌷	else zwiebel
 Rosen|roses	🌹
 Sonnenblume|Sonnenblumen|sunflowers	🌻
 Pflanze|Pflanzen|plant|plants|houseplant	🪴	head: Zimmerpflanze, Topfpflanze
 Orchidee|Orchideen	🪴
 Blumentopf|Blumentöpfe|Übertopf|Übertöpfe	🪴
+Pflanztopf|Pflanztöpfe|Pflanzkübel|Blumenkübel	🪴
 =Erde|Blumenerde|Pflanzenerde|Gartenerde|Kräutererde|Tomatenerde|Anzuchterde|Balkonerde|Hochbeeterde|potting soil	🪴	whole: Pferde, Beschwerde
 Kakteenerde|Orchideenerde|Graberde	🪴
 Kaktus|Kakteen|cactus	🌵
@@ -306,7 +319,7 @@ Geldbeutel|Portemonnaie|Geldbörse|wallet	👛
 Handtasche|Handtaschen|handbag	👜
 Sonnenbrille|Sonnenbrillen|sunglasses	🕶️
 Brille|Brillen	👓	head: Lesebrille
-Taucherbrille|Schwimmbrille|Skibrille|goggles	🥽	else brille
+Taucherbrille|Schwimmbrille|Skibrille|Schutzbrille|Schutzbrillen|goggles|safety glasses	🥽	else brille
 Koffer|suitcase	🧳	head: Reisekoffer
 
 # Car and bike

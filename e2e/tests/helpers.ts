@@ -529,7 +529,7 @@ export async function signUpWithHousehold(page: Page, email: string, { stores }:
 }
 
 /** Onboarding's store offer (app/lib/household/popular_stores.dart). */
-export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord', 'Kaufland', 'Netto', 'Penny', 'dm', 'Rossmann'];
+export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord', 'Kaufland', 'Netto', 'Penny', 'dm', 'Rossmann', 'Baumarkt'];
 
 /**
  * The chains with a researched walking order, for specs that test chain behaviour (layouts, dm's

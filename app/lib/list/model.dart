@@ -143,8 +143,9 @@ class const Catalog({
     members: members,
   );
 
-  /// A preset store given another name stops being its chain, as
-  /// `public.rename_store` does.
+  /// A chain store given another name stops being its chain, as
+  /// `public.rename_store` does. The Baumarkt is a store type, not a chain:
+  /// it stays the hardware store under any name.
   Catalog withStoreName(String storeId, String name) => Catalog(
     categories: categories,
     stores: [
@@ -154,7 +155,9 @@ class const Catalog({
             id: s.id,
             name: name,
             sortOrder: s.sortOrder,
-            seedKey: nameKey(name) == nameKey(s.name) ? s.seedKey : null,
+            seedKey: s.seedKey == 'hardware' || nameKey(name) == nameKey(s.name)
+                ? s.seedKey
+                : null,
           )
         else
           s,

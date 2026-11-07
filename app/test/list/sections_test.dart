@@ -210,5 +210,24 @@ void main() {
         reason: 'a renamed category keeps what the household wrote',
       );
     });
+
+    test('a Baumarkt category shows its icon and its name for the UI '
+        'language', () {
+      const tools = Category(
+        id: 't',
+        name: 'Werkzeug',
+        sortOrder: 4,
+        seedKey: 'tools',
+      );
+      expect(categoryIcon(tools), '🔨');
+      expect(
+        categoryLabel(tools, lookupAppLocalizations(const Locale('en'))),
+        'Tools',
+      );
+      expect(
+        categoryLabel(tools, lookupAppLocalizations(const Locale('de'))),
+        'Werkzeug',
+      );
+    });
   });
 }
