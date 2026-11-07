@@ -25,7 +25,9 @@ class const ExplainerCard({required final VoidCallback onDismiss, super.key})
       onPressed: onDismiss,
       // A sunken hex face shows the whole 44 high target, not just the word.
       style: TextButton.styleFrom(
-        backgroundColor: t.surfaceSunken,
+        // surfaceDim: the sunken face in light, the page in dark, where the
+        // sunken token is too close to the card to show the hex.
+        backgroundColor: Theme.of(context).colorScheme.surfaceDim,
         minimumSize: const Size(0, 44),
         textStyle: const TextStyle(
           fontFamily: HlFont.sans,

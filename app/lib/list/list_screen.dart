@@ -903,7 +903,10 @@ class const _Status() extends StatelessWidget {
       child: DecoratedBox(
         decoration: ShapeDecoration(
           shape: const HexBorder(),
-          shadows: HlSticker.shadow(brightness, StickerDepth.s),
+          // The top bar keeps its own look (job 154b).
+          shadows: brightness == Brightness.light
+              ? HlShadow.stickerS
+              : HlShadow.nightS,
         ),
         child: Material(
           color: t.surfaceRaised,
