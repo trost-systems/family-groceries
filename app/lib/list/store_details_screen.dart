@@ -101,8 +101,15 @@ class const StoreDetailsScreen({required final String? storeId, super.key})
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (store != null) _StoreName(store),
+                // With HexPill.margin's s1, s4 above and below the intro,
+                // as on the stores screen.
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    HlSpace.s4,
+                    HlSpace.s3,
+                    HlSpace.s4,
+                    HlSpace.s3,
+                  ),
                   child: Text(
                     store == null ? l10n.categoriesHint : l10n.storeLayoutHint,
                   ),

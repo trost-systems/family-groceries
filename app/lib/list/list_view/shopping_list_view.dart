@@ -405,9 +405,29 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
       );
     }
 
-    // Every store empty: no section shows, the empty list says so.
-    final body = shown.isEmpty
+    // The bottom padding the add field comes in as (below).
+    final bottom = MediaQuery.paddingOf(context).bottom + HlSpace.s5;
+    // Every store empty: no section shows, the empty list says so. Alone,
+    // it is centred in the room above the add field; with recently used
+    // items it stays on top, so their tile shows below it.
+    final body = shown.isEmpty && used.isNotEmpty
         ? const SliverToBoxAdapter(child: EmptyList())
+        : shown.isEmpty
+        ? SliverLayoutBuilder(
+            builder: (context, constraints) => SliverToBoxAdapter(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: math.max(
+                    0,
+                    constraints.viewportMainAxisExtent -
+                        constraints.precedingScrollExtent -
+                        bottom,
+                  ),
+                ),
+                child: const Center(child: EmptyList()),
+              ),
+            ),
+          )
         : columnCount == 1
         ? column(shown)
         : SliverCrossAxisGroup(
@@ -477,11 +497,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
         ),
         // The add field floats over the list's bottom edge (job 135) and
         // comes in as the bottom padding: the last row scrolls clear of it.
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: MediaQuery.paddingOf(context).bottom + HlSpace.s5,
-          ),
-        ),
+        SliverToBoxAdapter(child: SizedBox(height: bottom)),
       ],
     );
   }

@@ -610,3 +610,7 @@ Public store builds ask for the system rating dialog 3 s after a completed trip 
 ## Job 164: ios gate StoreKit simulator search
 
 The ios gate's StoreKit tests no longer fail with "Unable to find a device" after the 26.2 simulator boots: xcodebuild now searches 5 min for it (CI only). Details: [docs/done/164-ios-gate-sim-retry.md](docs/done/164-ios-gate-sim-retry.md).
+
+## Job 154: design hill-climb with a frozen rubric and a blind council (app and site)
+
+A researched, frozen 10-aspect rubric and three blind Opus judges (absolute scores plus a blind pairwise per step) climbed the app from 4 to 5 (mean 5.3 to 6.2, 11 kept steps: wrapping and iconed field errors, edit-sheet reflow, visible 44 px hex targets, hex label clearance at large text, 12 px overlines, aligned edges, the empty list heading) and hummlist.com from 4 to 7 (mean 6.6 to 7.7, 12 kept CSS steps: one depth style in dark mode, empty and 404 states, German hyphenation, hex form controls, even paddings and gaps, nav reflow, tracking). Two PRs, DO NOT MERGE (the lead reviews): #300 (app) and #299 (site). Details: [docs/done/154-hc-design-v2-app.md](docs/done/154-hc-design-v2-app.md).
