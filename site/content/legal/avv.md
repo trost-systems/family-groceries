@@ -44,6 +44,7 @@ Hummlist speichert die Daten des Haushalts, zeigt sie seinen Mitgliedern in der 
 - „Ich bringe“-Zusagen: welches Mitglied welchen Eintrag mitbringt, mit einer freiwilligen Mengenangabe
 - Einladungen: wer sie erstellt hat, Art, Ablauf, Zahl der Beitritte und der Aufrufe der Beitrittsseite; wer über welche Einladung wann beigetreten ist
 - Beitrittsanfragen: wer beitreten möchte, über welche Einladung, wann, die Entscheidung, wann und von wem sie getroffen wurde
+- Entfernungen: wer aus dem Haushalt entfernt wurde und wann, 30 Tage lang
 - was Hummlist für den Haushalt lernt (Kategorien, Läden, Marken und ihre Reihenfolge)
 
 Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) sind nicht vorgesehen. Hummlist hat keine Felder dafür. Der Verein weist seine Mitglieder darauf hin, solche Angaben nicht in Einträge zu schreiben.

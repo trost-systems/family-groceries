@@ -45,6 +45,7 @@ Hummlist stores the household's data, shows it to its members in the app, syncs 
 - "I'll bring it" claims: which member brings which item, with an optional quantity
 - Invites: who created them, kind, expiry, number of joins and of views of the join page; who joined through which invite and when
 - Join requests: who wants to join, through which invite, when, the decision, and when and by whom it was made
+- Removals: who was removed from the household and when, for 30 days
 - What Hummlist learns for the household (categories, stores, brands and their order)
 
 Special categories of personal data (Art. 9 GDPR) are not intended. Hummlist has no fields for them. The club tells its members not to write such details into items.

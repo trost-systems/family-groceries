@@ -2,7 +2,8 @@
 
 Status: DRAFT for Legal. The texts are `site/content/legal/datenschutz.md` (binding) and
 `site/content/legal/privacy.md` (translation). Facts come from the branches `job/169b-households-p2`
-(PR #327, wave 1), `job/169b-w2` (wave 2) and `job/169b-w3` (wave 3), contracts in
+(PR #327, wave 1), `job/169b-w2` (wave 2, PR #332 at `bb37668e`) and `job/169b-w3` (wave 3, PR #333 at
+`a09c8701`), contracts in
 `docs/households/W1.md`, `W2.md` and `W3.md`. Migrations:
 `supabase/migrations/20261108125048_households_multi.sql` (W1),
 `20261108133253_households_invite_loop.sql` (W2), `20261108144409_households_lists.sql`,
@@ -22,11 +23,12 @@ it with the draft banner and `noindex`. Nothing links to them.
 | 3 | Device storage: lists (plural), the household last opened on this device, an opened invite until joining | W1 device cache per user and household; `DeviceCache` keys `invite.pending`, `invite.referrer_read` | § 25 Abs. 2 Nr. 2 TDDDG (unchanged) |
 | 5 | Several households; household kind if given; roles and join dates; members of one household don't see your others; default household chosen by the user, first one until then | W1 migration: `household_members.is_default`, insert trigger, `households.kind`, `my_households()`, `household_members_of()` | Art. 6 Abs. 1 lit. b |
 | 5 | Several lists per household (name, order, creator, created); deleting a list deletes its items | W3 `lists` table, `items.list_id` with `on delete cascade`, `create_list` / `delete_list` | Art. 6 Abs. 1 lit. b |
-| 5, new paragraph | "Ich bringe das": who brings which item, optional amount, all members see it with the display name; ends on take-back, tick, item or list delete, leave, removal, account deletion | W3 `item_claims` (RLS `is_household_member`), triggers `items_end_claims`, `household_members_end_claims`, foreign keys `on delete cascade` to `items` and `auth.users` | Art. 6 Abs. 1 lit. b |
+| 5, new paragraph | "Ich bringe das": who brings which item, optional amount, all members see it with the display name; ends on take-back, tick, item or list delete, leave, removal, account deletion | W3 `item_claims` (RLS `is_household_member`), triggers `items_end_claims`, `household_members_end_claims`, foreign keys `on delete cascade` to `items` and `auth.users`. Update 2: each claim has its own random id as primary key, so a Realtime delete event carries only that id and tells no other household who held it. No text change | Art. 6 Abs. 1 lit. b |
 | 5, new "Rollen und Einladungen" | Owner ("Hauptadmin"), admins, removal of members, owner succession | W2: `set_member_role`, `remove_member`, succession in `leave_household_as` / `delete_account` | Art. 6 Abs. 1 lit. b |
-| 5 | Replaces "Einladungslinks laufen nach 7 Tagen ab und gelten nur einmal": person link 7 days, one use; group link 30 days, 50 joins, revocable, owner/admins only; Hummlist sends no invites (N-18) | W2: `invites.kind`, `max_uses`, `create_invite` intervals 7 / 30 days | Art. 6 Abs. 1 lit. b |
-| 5 | Per invite: creator, expiry, join count, join-page open count (no identities); per join: invite and time, shown to members under "Wer ist beigetreten"; deleted when the member leaves or is removed | `invites.use_count`, `preview_count`; table `invite_uses`; trigger `invite_uses_end_with_membership` (W2 commit `cc18547a` on `job/169b-w2`) | Art. 6 Abs. 1 lit. b |
-| 5, new paragraph | Join approval ("Beitritte bestätigen"): owner/admins switch it on, on from the start for club households; a join request stores requester, household, invite, time, decision, when and who decided; only the requester and owner/admins see it, with the requester's display name; open until decided or withdrawn, decided ones deleted after 7 days by a daily job | W3 `households.join_approval` (on for new `kind = 'club'` in `create_household`), `join_requests` (RLS: own row or `is_household_admin`), `household_join_requests()` returns `display_name`, `purge_join_requests` (pg_cron `purge-join-requests`, 03:47 UTC) | Art. 6 Abs. 1 lit. b (question 16) |
+| 5, new paragraph (update 2) | Removal records: household, removed user, time. For 30 days invites made before the removal and invites from plain members don't let the person back in; only a new owner/admin invite does. No member sees them in the app. Deleted after 30 days, on that rejoin, with the account or the household; in the removed user's export | W2 `household_removals` (no grant to clients; written by `remove_member`, read by `check_invite`, `claim_invite` deletes on join), daily `purge_household_removals` (pg_cron `purge-household-removals`, 03:47 UTC, `removed_at` older than 30 days); W3 `decide_join_request` deletes it on approval; DECISIONS 169b invite loop item 10; `docs/PRIVACY_DATA_MAP.md` | Art. 6 Abs. 1 lit. f (question 26) |
+| 5 | Replaces "Einladungslinks laufen nach 7 Tagen ab und gelten nur einmal": person link 7 days, one use; group link 30 days, 50 joins, owner/admins only, and only they can revoke it (update 2); Hummlist sends no invites (N-18) | W2: `invites.kind`, `max_uses`, `create_invite` intervals 7 / 30 days; `revoke_invite` answers `not_admin` to a member for a group link (DECISIONS item 11). Old store builds read `invites` directly; its select policy now shows person invites only, so they never list a group link (no text change) | Art. 6 Abs. 1 lit. b |
+| 5 | Per invite: creator, expiry, join count, join-page open count (no identities); per join: invite and time, shown to members under "Wer ist beigetreten"; deleted when the member leaves or is removed | `invites.use_count`, `preview_count`; table `invite_uses`; trigger `invite_uses_end_with_membership` (W2 commit `cc18547a` on `job/169b-w2`). Update 2: the app refreshes "Wer ist beigetreten" by asking the server every 5 s while the panel is on screen; `invite_uses` and `household_members` are not in the Realtime publication, because Realtime sends delete events to every subscriber regardless of RLS and would have told every signed-in user when someone left (DECISIONS item 13). No text change | Art. 6 Abs. 1 lit. b |
+| 5, new paragraph | Join approval ("Beitritte bestätigen"): owner/admins switch it on, on from the start for club households; a join request stores requester, household, invite, time, decision, when and who decided; only the requester and owner/admins see it, with the requester's display name; open until decided or withdrawn, decided ones deleted after 7 days by a daily job. Update 2: a membership closes the user's open request for that household, however they got in; after a decline the user can ask the same household again only after 24 hours, checked against the stored decision time (no new field) | W3 `households.join_approval` (on for new `kind = 'club'` in `create_household`), `join_requests` (RLS: own row or `is_household_admin`), `household_join_requests()` returns `display_name`, `purge_join_requests` (pg_cron `purge-join-requests`, 03:47 UTC); trigger `join_requests_close_on_join` on `household_members` insert (W3 DECISIONS item 8); `claim_invite` answers `declined_recently` while a decline is under 24 hours old | Art. 6 Abs. 1 lit. b (question 16) |
 | 5 | Public join page: inviter's first name (only with a display name of their own), household name and kind, member and open-item counts, Premium; never item names, emails or ids | `preview_invite_public()` (anon), `app/web/join/` | Art. 6 Abs. 1 lit. f (question 1) |
 | 5 | Rate limit: salted SHA-256 of `X-Real-IP` and of the code per hour, with a count; no raw IP; past hours deleted at the next join-page request | `invite_preview_rate`, `invite_preview_salt`, `invite_preview_hit()`; the delete runs at the top of `preview_invite_public()` | Art. 6 Abs. 1 lit. f (question 2) |
 | 5 | Android Install Referrer read once at first start; only the invite code and the click time are kept, on the device | `app/lib/household/install_referrer.dart` (`inviteInReferrer` reads only `invite`; `clickedAt` dates the pending invite) | Art. 6 Abs. 1 lit. b; § 25 Abs. 2 Nr. 2 TDDDG (question 4) |
@@ -34,8 +36,8 @@ it with the draft banner and `noindex`. Nothing links to them.
 | 7 | Access tokens bound to their household; an OAuth connection works in the default household, sees names and member counts of the others and can act in them when the service names one | W1 `create_personal_access_token(..., p_household)`; `supabase/functions/mcp/tools.ts` `households()` (OAuth: all, token: its own), `household` argument | Art. 6 Abs. 1 lit. b (question 7) |
 | 7 Siri | Token works while member of at least one household, acts in the default, follows a changed default; ends when leaving the last household; suggestions are item names of the household open in the app | W1 migration lines 655-770 (Siri tokens follow `is_default`, revoked only without any membership); `app/lib/list/list_scope.dart` builds `SiriSuggestions` from the open list | Art. 6 Abs. 1 lit. b (question 6) |
 | 7 Alexa | "aktuellen Haushalts" becomes the default household | `householdOf()` in `supabase/functions/_shared/db.ts` reads `is_default` | Art. 6 Abs. 1 lit. b |
-| 8 | Export holds all households, the invites joined through, the lists created, the claims, the join requests and each added item's list | `export_my_data()` in the W3 join-approval migration (`households`, `invite_uses`, `lists_created`, `item_claims`, `join_requests`, `items_added[].list`) | unchanged |
-| 14 | Account deletion also deletes the join records, claims and join requests; leaving or a removal deletes the join record and the claims in that household; a deleted household takes its lists, invites, join requests and join records with it; join-page check values after the hour, decided join requests after 7 days | `invite_uses`, `item_claims`, `join_requests` foreign keys `on delete cascade` to `auth.users` and `households`; the W2 and W3 triggers on `household_members` delete | unchanged |
+| 8 | Export holds all households, the invites joined through, the lists created, the claims, the join requests, the removal records (update 2) and each added item's list | `export_my_data()` in the W3 join-approval migration (`households`, `invite_uses`, `lists_created`, `item_claims`, `join_requests`, `household_removals`, `items_added[].list`) | unchanged |
+| 14 | Account deletion also deletes the join records, claims and join requests; leaving or a removal deletes the join record and the claims in that household; a deleted household takes its lists, invites, join requests and join records with it; join-page check values after the hour, decided join requests after 7 days | `invite_uses`, `item_claims`, `join_requests` foreign keys `on delete cascade` to `auth.users` and `households`; the W2 and W3 triggers on `household_members` delete. Update 2: removal records go with the account and the household (`household_removals` foreign keys `on delete cascade`) and after 30 days | unchanged |
 
 ## Open questions for Legal
 
@@ -51,7 +53,8 @@ it with the draft banner and `noindex`. Nothing links to them.
 3. Join records after leaving. Answered by a code change: leaving or a removal now deletes the
    member's `invite_uses` row for that household (trigger `invite_uses_end_with_membership`, W2
    commit `cc18547a`; pgTAP "her join record goes with the membership"). Sections 5 and 14 say so;
-   the earlier sentence that the record stays is gone.
+   the earlier sentence that the record stays is gone. Update 2: a removal now leaves a different
+   record, `household_removals` (question 26).
 4. Install Referrer. Is reading it at first start covered by § 25 Abs. 2 Nr. 2 TDDDG (the user
    tapped a join link to join), or does it need consent? Is Google an independent controller for
    it and belongs in section 12? The path is only reached once the Play listing is public and the
@@ -86,6 +89,21 @@ it with the draft banner and `noindex`. Nothing links to them.
 14. Claims in the export. `item_claims` in the export carries the item's name, which other
     members may have written. We think that is the user's own data in context (what they promised
     to bring). Agree?
+
+26. Removal records (new in update 2). When an owner or admin removes a member, we keep household,
+    user and time for 30 days, so the person can't walk back in through the group link still in
+    the club's chat or through an invite a plain member made for them; a new invite from the owner
+    or an admin lets them in and deletes the record. We propose Art. 6 Abs. 1 lit. f, the
+    household's interest that a removal holds. Is that the right basis, and is it the household's
+    interest or ours? Is 30 days right? It matches the longest invite (group link, 30 days); after
+    that a plain member's invite works for them again. The removed person is not told why an old
+    link fails (the app shows the message for a revoked link). Does Art. 13/14 need more than the
+    sentence in section 5, for example a hint in the app when someone is removed? The draft AVV
+    (section 5 of `avv.md` / `dpa.md`) now lists removals among the household data it covers,
+    which fits the club's interest reading; with our interest they would come out of it.
+27. Rejoin after a decline (update 2). A declined user can ask the same household again only after
+    24 hours. This uses the decision time already stored with the request (deleted after 7 days),
+    so no new data. Section 5 now says so. Fine?
 
 ## Open questions for Legal: data processing agreement for clubs
 
