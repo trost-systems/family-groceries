@@ -12,7 +12,7 @@ A link to `https://app.hummlist.com/<path>` opens that screen of Hummlist: in th
 - `al-unknown` any other path, signed in, opens the list. Signed out it opens the sign-in page without carrying the path. (Signed in, `/edit` and `/edit/<store id|none>` (Liste → Anpassen), `/join` and `/settings` open their own screens; they are not app links, so signed out they are dropped.)
 - `al-signed-out` signed out, a link above opens „Anmelden“ with `?next=<path>` in the address (an invite link instead gives `/login?invite=<code>`, which survives an app kill); after sign-in (and the usage-data question on a new device) the link's screen opens.
 - `al-no-household` an account without a household goes through „Willkommen bei Hummlist“ and creating or joining a household, with `?next=` in the address, and then lands on the link's screen instead of the invite step.
-- `al-sign-out` signing out never carries the current page: from Mehr → Konto, „Abmelden“ ends on plain `/login`.
+- `al-sign-out` signing out never carries the current page: „Abmelden“, the last row of Mehr, ends on plain `/login`.
 - `al-apps` on the iPhone and Android apps the same paths open the app instead of the browser (universal links, App Links). `/`, the sign-in pages, onboarding and the MCP consent page always stay in the browser.
 
 ## How to get to it (user POV)
