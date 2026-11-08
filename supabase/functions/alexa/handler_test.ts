@@ -2,7 +2,7 @@
 // unlinked and revoked accounts, two households, errors and analytics (AC2-AC10). The verification
 // itself is verify_test.ts; here the first test runs the real verifier to show that a refused
 // request reaches nothing.
-import { assert, assertEquals, assertFalse, assertStringIncludes } from '@std/assert';
+import { assert, assertEquals, assertFalse, assertMatch, assertStringIncludes } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
 import { telemetryFor } from '../_shared/telemetry.ts';
 import type { Added } from '../voice/handler.ts';
@@ -51,8 +51,9 @@ class World {
   links = new Map<string, Set<string>>();
   revokedSessions: string[] = [];
   reports: unknown[] = [];
-  /** The request lines the handler logged. */
+  /** The request lines the handler logged, without the job 170 details (`full` has them). */
   lines: string[] = [];
+  full: string[] = [];
   taken = new Map<string, number>();
   failAdds = false;
   failList = false;
@@ -73,7 +74,9 @@ class World {
         Promise.resolve(JSON.parse(new TextDecoder().decode(body)) as Envelope),
       authenticate: (token) => {
         const owner = this.tokens.get(token);
-        if (!owner) return Promise.reject(new AuthError('invalid_token', 'revoked'));
+        if (!owner) {
+          return Promise.reject(new AuthError('invalid_token', 'revoked', 'session_ended'));
+        }
         const householdId = this.householdOf.get(owner.userId);
         if (!householdId) return Promise.reject(new AuthError('no_household', 'none'));
         return Promise.resolve({ ...owner, householdId });
@@ -157,7 +160,10 @@ class World {
         return Promise.resolve();
       },
       report: (e) => this.reports.push(e),
-      log: (line) => this.lines.push(line),
+      log: (line) => {
+        this.full.push(line);
+        this.lines.push(line.replace(/ rid=.*$/, ''));
+      },
       ...over,
     };
   }
@@ -1027,7 +1033,7 @@ Deno.test('job 74: one request line per request, each reply kind, no personal da
       'revoked',
       'link',
       () => send(world.deps(), envelope(intent('ReadListIntent'), { token: 'tok-SECRET-gone' })),
-      'alexa: IntentRequest ReadListIntent de-DE linked=true -> link',
+      'alexa: IntentRequest ReadListIntent de-DE linked=true -> link invalid_token:session_ended',
     ],
     [
       'no household',
@@ -1228,6 +1234,41 @@ Deno.test('job 74: one request line per request, each reply kind, no personal da
   assert(world.rows.some((r) => r.name === 'Kaffeebohnen'), 'the add went through');
 });
 
+Deno.test('job 170b: a rejected link logs why, never the token', async () => {
+  const token = 'tok-SECRET-eyJhbGciOi';
+  const rejections: [AuthError, string][] = [
+    [new AuthError('invalid_token', 'jwt expired', 'expired'), 'invalid_token:expired'],
+    [new AuthError('invalid_token', `issuer ${token}`, 'issuer'), 'invalid_token:issuer'],
+    [new AuthError('invalid_token', 'Kein Alexa-Zugang.', 'not_oauth'), 'invalid_token:not_oauth'],
+    [new AuthError('invalid_token', 'Sitzung beendet.'), 'invalid_token'],
+    [new AuthError('user_deleted', 'gone'), 'user_deleted'],
+  ];
+  const world = new World();
+  for (const [error, reason] of rejections) {
+    const deps = world.deps({ authenticate: () => Promise.reject(error) });
+    const { reply } = await send(deps, envelope(intent('ReadListIntent'), { token }));
+    assertEquals(reply.response.card, { type: 'LinkAccount' }, reason);
+    assertEquals(
+      world.lines.at(-1),
+      `alexa: IntentRequest ReadListIntent de-DE linked=true -> link ${reason}`,
+    );
+    await send(
+      deps,
+      envelope({
+        type: 'AlexaSkillEvent.SkillAccountLinked',
+        locale: undefined,
+        body: { accessToken: token },
+      }),
+    );
+    assertEquals(
+      world.lines.at(-1),
+      `alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty ${reason}`,
+      'the link event itself says why the new token is no link',
+    );
+  }
+  assertFalse(world.full.join('\n').includes('SECRET'), 'the log names the token');
+});
+
 Deno.test('job 74: odd request fields cannot put free text or a second line into the log', () => {
   const line = requestLine(
     {
@@ -1242,7 +1283,7 @@ Deno.test('job 74: odd request fields cannot put free text or a second line into
     'help',
   );
   assertEquals(line.split('\n').length, 1);
-  assertEquals(line.split(' ').length, 7);
+  assertEquals(line.split(' ').length, 13);
   assertFalse(line.includes('Milch hinzu'));
 });
 
@@ -1344,4 +1385,37 @@ Deno.test('Q79: English asks the same question in English', async () => {
     english(confirmed('DENIED', 'butter'), { token: 'tok-peter', attributes: {} }),
   );
   assertEquals(said(no.reply), 'Already on Hummlist: Butter Weihenstephan.');
+});
+
+Deno.test('job 170: the line has the request id end, slot word count, dialog state and timing', async () => {
+  const world = new World();
+  world.link('tok-peter', 'user-peter', HH_A, 'session-1');
+  await send(
+    world.deps(),
+    envelope(
+      {
+        ...intent('AddItemIntent', 'Milch und zwei Gurken'),
+        requestId: 'amzn1.echo-api.request.0f1e2d3c-aaaa-bbbb-cccc-123456789abc',
+      },
+      { token: 'tok-peter' },
+    ),
+  );
+  assertMatch(
+    world.full.at(-1) ?? '',
+    /^alexa: IntentRequest AddItemIntent de-DE linked=true -> added rid=123456789abc slot=4 confirm=NONE ended=- error=- ms=\d+$/,
+  );
+  await send(
+    world.deps(),
+    envelope({
+      type: 'SessionEndedRequest',
+      reason: 'ERROR',
+      error: { type: 'INVALID_RESPONSE', message: 'Milch was here' },
+    }),
+  );
+  assertMatch(
+    world.full.at(-1) ?? '',
+    /^alexa: SessionEndedRequest - de-DE linked=false -> empty rid=1 slot=- confirm=- ended=ERROR error=INVALID_RESPONSE ms=\d+$/,
+  );
+  assertFalse(world.full.join('\n').includes('Milch'));
+  assertFalse(world.full.join('\n').includes('Gurken'));
 });

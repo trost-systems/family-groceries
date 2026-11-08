@@ -83,6 +83,18 @@ final class VoiceClientTests: XCTestCase {
     XCTAssertEqual(json, ["text": "milk, eggs and bread", "mode": "add", "lang": "de"])
   }
 
+  func testTheRequestNamesTheBuildAndTheIntent() async throws {
+    StubProtocol.reply = .http(200, #"{"outcome":"added","speech":"Added milk."}"#)
+    var sender = client()
+    sender.caller = "AddItems"
+    _ = await sender.send(text: "milk", mode: .add, lang: .en)
+    let header = try XCTUnwrap(StubProtocol.requests.last?.request.value(forHTTPHeaderField: "x-hummlist-client"))
+    XCTAssertTrue(header.hasPrefix("ios-"), header)
+    XCTAssertTrue(header.hasSuffix(".AddItems"), header)
+    XCTAssertEqual(VoiceClient.clientHeader(caller: "Lists.add", info: ["CFBundleVersion": "1210"]), "ios-1210.Lists.add")
+    XCTAssertEqual(VoiceClient.clientHeader(caller: "ReadList", info: nil), "ios-0.ReadList")
+  }
+
   func testReadSendsNoText() async throws {
     _ = await send(.http(200, #"{"outcome":"read","speech":"Milk."}"#), mode: .read)
     let body = try XCTUnwrap(StubProtocol.requests.last?.body)
@@ -589,13 +601,21 @@ final class AppShortcutPhraseTests: XCTestCase {
   private func catalog(_ lang: String) throws -> [String: [String]] {
     struct Catalog: Decodable {
       struct Entry: Decodable { let localizations: [String: Localization] }
-      struct Localization: Decodable { let stringSet: StringSet? }
+      struct Localization: Decodable {
+        let stringSet: StringSet?
+        let stringUnit: StringUnit?
+      }
       struct StringSet: Decodable { let values: [String] }
+      struct StringUnit: Decodable { let value: String }
       let strings: [String: Entry]
     }
     let data = try Data(contentsOf: runner.appendingPathComponent("AppShortcuts.xcstrings"))
+    // Phrases are stringSets; a negative phrase is one stringUnit (job 170).
     return try JSONDecoder().decode(Catalog.self, from: data).strings
-      .mapValues { $0.localizations[lang]?.stringSet?.values ?? [] }
+      .mapValues { entry in
+        let localization = entry.localizations[lang]
+        return localization?.stringSet?.values ?? localization?.stringUnit.map { [$0.value] } ?? []
+      }
   }
 
   func testEveryPhraseHasEnglishAndGermanVariantsThatNameTheApp() throws {

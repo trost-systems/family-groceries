@@ -612,3 +612,11 @@ Public store builds ask for the system rating dialog 3 s after a completed trip 
 ## Job 164: ios gate StoreKit simulator search
 
 The ios gate's StoreKit tests no longer fail with "Unable to find a device" after the 26.2 simulator boots: xcodebuild now searches 5 min for it (CI only). Details: [docs/done/164-ios-gate-sim-retry.md](docs/done/164-ios-gate-sim-retry.md).
+
+## Job 170: voice test prep (Siri and Alexa session 2026-11-08)
+
+Each Siri and Alexa request now writes one log line on the server (`voice` new, `alexa` extended). The iPhone names its build and Siri path. `scripts/voice/health.sh` checks the setup, `scripts/voice/tail.sh` follows the session live, and Peter's runbook is `docs/voice/TEST-SESSION-2026-11-08.md`. Not merged (the Lead merges). Details: [docs/done/170-voice-test-prep.md](docs/done/170-voice-test-prep.md).
+
+## Job 170b: Alexa logs why a linked token is rejected
+
+A rejected Alexa link now logs its reason, as in `-> link invalid_token:expired` or `-> link invalid_token:not_oauth`, and so does a `SkillAccountLinked` event whose new token Hummlist rejects. `diagnose.sh` prints each reason with its next step. The runbook's X5 row and docs/ALEXA.md's troubleshooting table are split by reason. This supersedes #321 and carries all of it. Details: [docs/done/170b-alexa-link-reason.md](docs/done/170b-alexa-link-reason.md)

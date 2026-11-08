@@ -83,7 +83,12 @@ interface Reply {
   /** Q79: ask yes or no about these items (the slot's new value), on AddItemIntent. */
   confirm?: string;
   attributes?: Record<string, unknown>;
+  /** Why a linked token is no link (linkReason), for the request line. */
+  reason?: string;
 }
+
+/** `invalid_token:expired`, `user_deleted`: closed words, never the token or the message. */
+const linkReason = (e: AuthError) => e.detail ? `${e.reason}:${e.detail}` : e.reason;
 
 function alexaResponse(reply: Reply): Response {
   const response: Record<string, unknown> = {};
@@ -133,16 +138,41 @@ const alexaUserOf = (envelope: Envelope) =>
 const word = (value: string | undefined) =>
   value ? value.replace(/[^\w.:-]/g, '_').slice(0, 64) : '-';
 
+/** Facts about how the request went that Alexa's own logs don't show (job 170). */
+export interface RequestFacts {
+  ms?: number;
+  /** Why the verifier refused it (VerificationError.reason), or a linked token is no link. */
+  reason?: string;
+}
+
 /**
- * `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>`, the only line a request logs
- * (docs/ALEXA.md, "Request log"). Ids, tokens, slot values and addresses never go in.
+ * `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind> [reason] rid=… slot=… confirm=… ended=…
+ * error=… ms=…`, the only line a request logs (docs/ALEXA.md, "Request log"). `rid` is the end of
+ * Alexa's request id, to find the request in the console's device log; `slot` counts the words
+ * heard for the items, never the words. Tokens, user ids, slot values and addresses never go in.
  */
-export function requestLine(envelope: Envelope | undefined, kind: ReplyKind): string {
+export function requestLine(
+  envelope: Envelope | undefined,
+  kind: ReplyKind,
+  facts: RequestFacts = {},
+): string {
   const request = envelope?.request;
   const linked = Boolean(envelope && (accessTokenOf(envelope) ?? request?.body?.accessToken));
+  const slot = request?.intent?.slots?.items;
+  const words = slot?.value?.trim() ? slot.value.trim().split(/\s+/).length : 0;
+  const details = [
+    `rid=${word(request?.requestId?.split('.').at(-1)?.slice(-12))}`,
+    `slot=${slot ? words : '-'}`,
+    `confirm=${word(request?.intent?.confirmationStatus)}`,
+    `ended=${word(request?.reason)}`,
+    `error=${word(request?.error?.type)}`,
+    `ms=${facts.ms ?? '-'}`,
+  ];
   return `alexa: ${word(request?.type)} ${word(request?.intent?.name)} ${
     word(request?.locale)
-  } linked=${linked} -> ${kind}`;
+  } linked=${linked} -> ${kind}${facts.reason ? ` ${word(facts.reason)}` : ''} ${
+    details.join(' ')
+  }`;
 }
 
 export function createHandler(deps: Deps) {
@@ -160,7 +190,13 @@ export function createHandler(deps: Deps) {
           return { speech: speech.noHousehold, end: true, kind: 'no-household' };
         }
         // Revoked in the app, the account deleted, signed out everywhere, or expired: unlinked.
-        return { speech: speech.linkAccount, card: 'link', end: true, kind: 'link' };
+        return {
+          speech: speech.linkAccount,
+          card: 'link',
+          end: true,
+          kind: 'link',
+          reason: linkReason(e),
+        };
       }
       deps.report(e);
       return { speech: speech.failed, end: true, kind: 'error' };
@@ -281,7 +317,8 @@ export function createHandler(deps: Deps) {
     }
   }
 
-  async function skillEvent(envelope: Envelope): Promise<void> {
+  /** Handles an Alexa skill event; returns why the token from a new link is no link. */
+  async function skillEvent(envelope: Envelope): Promise<string | undefined> {
     const alexaUser = alexaUserOf(envelope);
     if (!alexaUser) return;
     if (envelope.request.type === 'AlexaSkillEvent.SkillDisabled') {
@@ -295,21 +332,23 @@ export function createHandler(deps: Deps) {
         await deps.remember(alexaUser, await deps.authenticate(token), true);
       } catch (e) {
         if (!(e instanceof AuthError)) throw e;
+        return linkReason(e);
       }
     }
   }
 
-  /** The answer to a verified request and its kind. */
-  async function respond(envelope: Envelope): Promise<[Response, ReplyKind]> {
+  /** The answer to a verified request, its kind and the reason for the request line. */
+  async function respond(envelope: Envelope): Promise<[Response, ReplyKind, string?]> {
     const type = envelope.request.type;
     if (type.startsWith('AlexaSkillEvent.')) {
+      let reason: string | undefined;
       try {
-        await skillEvent(envelope);
+        reason = await skillEvent(envelope);
       } catch (e) {
         deps.report(e);
         return [json({ error: 'server' }, { status: 500 }), 'error'];
       }
-      return [empty(), 'empty'];
+      return [empty(), 'empty', reason];
     }
     let reply: Reply;
     switch (type) {
@@ -323,12 +362,14 @@ export function createHandler(deps: Deps) {
         // SessionEndedRequest, System.ExceptionEncountered and the rest want no speech.
         return [empty(), 'empty'];
     }
-    return [alexaResponse(reply), reply.kind];
+    return [alexaResponse(reply), reply.kind, reply.reason];
   }
 
   return async (req: Request): Promise<Response> => {
+    const started = performance.now();
+    const ms = () => Math.round(performance.now() - started);
     if (req.method !== 'POST') {
-      deps.log(requestLine(undefined, 'refused'));
+      deps.log(requestLine(undefined, 'refused', { ms: ms() }));
       return json({ error: 'method' }, { status: 405 });
     }
     const body = new Uint8Array(await req.arrayBuffer());
@@ -337,19 +378,21 @@ export function createHandler(deps: Deps) {
       envelope = await deps.verify(req.headers, body);
     } catch (e) {
       if (!(e instanceof VerificationError)) {
-        deps.log(requestLine(undefined, 'error'));
+        deps.log(requestLine(undefined, 'error', { ms: ms() }));
         throw e;
       }
-      deps.log(`${requestLine(undefined, 'refused')} ${e.reason}`);
+      deps.log(requestLine(undefined, 'refused', { ms: ms(), reason: e.reason }));
       return json({ error: e.reason }, { status: 400 });
     }
     let kind: ReplyKind = 'error';
+    let reason: string | undefined;
     try {
-      const [response, answered] = await respond(envelope);
+      const [response, answered, why] = await respond(envelope);
       kind = answered;
+      reason = why;
       return response;
     } finally {
-      deps.log(requestLine(envelope, kind));
+      deps.log(requestLine(envelope, kind, reason ? { ms: ms(), reason } : { ms: ms() }));
     }
   };
 }

@@ -71,6 +71,8 @@ export interface Deps<C extends Caller = Caller> {
   track?(caller: C, event: VoiceEvent): Promise<void>;
   /** Error tracking for a failure answered with 500 (telemetry.ts); scrubbed there. */
   report?(error: unknown): void;
+  /** Writes the one request line (requestLine) to the function log; console.log by default. */
+  log?(line: string): void;
 }
 
 export const maxTextLength = 1000;
@@ -218,10 +220,65 @@ async function readBody(req: Request): Promise<Body> {
 
 const sources: Partial<Record<Via, VoiceEvent['source']>> = { siri: 'native', pat: 'shortcut' };
 
+/** What one request did, for its log line; never the text or a name. */
+export interface RequestFacts {
+  /** How the caller signed in, `none` when that failed, `-` before it was tried. */
+  via: Via | 'none' | '-';
+  mode: Body['mode'] | '-';
+  lang: Lang | '-';
+  /** The `x-hummlist-client` header: which app build and intent sent it ("ios-1210.AddItems"). */
+  client: string | null;
+  outcome: ReplyOutcome | '-';
+  status: number;
+  /** Items understood (add, parse) or open (read). */
+  count: number;
+  ms: number;
+}
+
+/** The client header as one token: our apps send "ios-1210.AddItems"; anything else is `other`. */
+const clientToken = (value: string | null) =>
+  value === null ? '-' : /^[A-Za-z0-9._-]{1,40}$/.test(value) ? value : 'other';
+
+/**
+ * `voice: <via> <mode> <lang> client=<client> -> <outcome> status=<n> count=<n> ms=<n>`, the only
+ * line a request logs (docs/SIRI_SHORTCUT.md, "Request log"). Text, names, tokens and ids never go in.
+ */
+export const requestLine = (f: RequestFacts) =>
+  `voice: ${f.via} ${f.mode} ${f.lang} client=${
+    clientToken(f.client)
+  } -> ${f.outcome} status=${f.status} count=${f.count} ms=${f.ms}`;
+
 export function createHandler<C extends Caller>(deps: Deps<C>) {
+  const log = deps.log ?? ((line: string) => console.log(line));
   return async (req: Request): Promise<Response> => {
     const early = preflight(req);
     if (early) return early;
+    const facts: RequestFacts = {
+      via: '-',
+      mode: '-',
+      lang: '-',
+      client: req.headers.get('x-hummlist-client'),
+      outcome: '-',
+      status: 0,
+      count: 0,
+      ms: 0,
+    };
+    const started = performance.now();
+    try {
+      const response = await handle(req, facts);
+      facts.status = response.status;
+      return response;
+    } catch (e) {
+      // withTelemetry answers a throw with 500.
+      facts.status = 500;
+      throw e;
+    } finally {
+      facts.ms = Math.round(performance.now() - started);
+      log(requestLine(facts));
+    }
+  };
+
+  async function handle(req: Request, facts: RequestFacts): Promise<Response> {
     const asText = new URL(req.url).searchParams.get('format') === 'text';
 
     const reply = (status: number, body: { speech: string } & Record<string, unknown>) => {
@@ -239,11 +296,16 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       return reply(405, { error: 'method', speech: copy.de.failures.method });
     }
     const body = await readBody(req);
+    facts.mode = body.mode;
+    facts.lang = body.lang;
     const say = copy[body.lang];
     const send = (
       status: number,
       { outcome, ...rest }: { outcome: ReplyOutcome; speech: string } & Record<string, unknown>,
-    ) => reply(status, body.tagged ? { outcome, ...rest } : rest);
+    ) => {
+      facts.outcome = outcome;
+      return reply(status, body.tagged ? { outcome, ...rest } : rest);
+    };
     const fail = (error: FailureCode) =>
       send(statuses[error], { outcome: error, error, speech: say.failures[error] });
 
@@ -251,14 +313,17 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     try {
       caller = await deps.authenticate(req);
     } catch (e) {
+      facts.via = 'none';
       if (e instanceof AuthError) return fail(e.status === 403 ? 'no_household' : 'unauthorized');
       console.error('voice: authenticate failed', errorShape(e));
       deps.report?.(e);
       return fail('server');
     }
 
+    facts.via = caller.via ?? '-';
     const source = caller.via && sources[caller.via];
     const track = async (event: VoiceEvent['event'], reason: Outcome, count: number) => {
+      facts.count = count;
       if (!source || !deps.track) return;
       const result = ['added', 'nothing_added', 'read'].includes(reason) ? 'success' : 'fail';
       try {
@@ -328,6 +393,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     const cut = truncated ? ` ${say.tooMany}` : '';
 
     if (!adding) {
+      facts.count = items.length;
       return send(200, {
         outcome: 'parsed',
         speech: say.parsed(items.map(say.spoken)) + cut,
@@ -355,7 +421,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       deps.report?.(e);
       return refuse('server', items.length);
     }
-  };
+  }
 }
 
 /** An error for the function log: its type and scrubbed message, never an item name. */
