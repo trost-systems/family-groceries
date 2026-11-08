@@ -632,3 +632,28 @@ Harness v3 adds a drawn status bar and puts More, settings and stores inside the
 ## Job 154c: land the app design climb
 
 PR #320 (jobs 154 and 154b) rebased onto main and landed on Peter's go (A107). The merge review drove the release web build in light and dark at 100 % and 150 % and found three regressions, now fixed with tests that fail on the old code: turning an iPhone on the login screen lost the typed text, turning the phone in the edit sheet dropped the focused field, and „Ohne Laden“ was cut at 150 % text. Details: docs/DECISIONS.md, job 154c.
+
+## Job 172: voice read-back counts open items only (2026-11-08)
+
+**Finding.** Peter's „Du hast 26 Artikel auf deiner Einkaufsliste“ (about 14:35) came from
+Alexa's own shopping list, not Hummlist. `scripts/alexa/diagnose.sh` shows no `ReadListIntent`;
+the last request that reached the skill was an add at 14:33:09, and `alexa_links.last_seen`
+stops at 14:33:08. Hummlist never says „Artikel“. Its household then had 3 open items, 1 ticked
+today, 27 rows in all (counts-only read-only query).
+
+**Read paths.** Alexa (`alexa/deps.ts` → `store.openItems`), Siri/voice (`mode: read`) and MCP
+`list_items` all use `_shared/list.ts` `openItems`: `status = 'active'` in the caller's household.
+No query change was needed.
+
+**Built.**
+- `supabase/functions/_shared/read_open_only_integration_test.ts` (db gate): 3 open, 1 ticked
+  today, 23 ticked earlier, a second household; Alexa's ReadListIntent says „3 Sachen“ with the
+  three names, Siri's read returns total 3, `listItems` items 3 and counts `{open: 3,
+  checkedLast24h: 1}`. Without the status filter it fails („27 Sachen“).
+- `supabase/functions/voice/deps.ts`: the voice function's production wiring, moved out of
+  `index.ts` so the test runs it.
+- docs/ALEXA.md Troubleshooting row and TEST-SESSION X9a for „… Artikel auf deiner
+  Einkaufsliste“; DECISIONS „Job 172“; NEEDS_PETER „Job 172“.
+
+**Verify.** `scripts/verify.sh --only lint,functions,changelog,db` passed locally (port block
+618). Deploy: `supabase-deploy.yml` redeploys `voice` from main; behaviour is unchanged.

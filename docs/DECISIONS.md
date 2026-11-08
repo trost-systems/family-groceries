@@ -10390,3 +10390,28 @@ Peter's go (A107): review #320 and merge it on a review PASS and `ci-ok`.
    „Ohne Lad…“ at 150 % on a 375 px phone (main showed it whole). The fold key stays as wide as
    the add sheet's keys; the line between badge and count may now shrink to nothing instead of
    keeping 12 px. `store_header_test.dart` checks DE and EN; DE fails on the old code.
+
+## Job 172: voice read-back counts open items only, 2026-11-08
+
+Peter (Nov 8, about 14:35): „frag … was auf der Liste steht“ answered „Du hast 26 Artikel auf
+deiner Einkaufsliste“ with 3 items open. The brief suspected the read path counts ticked or
+recently used items.
+
+1. **The skill did not answer that.** `scripts/alexa/diagnose.sh` for 13:00 to 17:30 shows the
+   last request that reached the `alexa` function at 14:33:09 (an add); `alexa_links.last_seen`,
+   moved by every linked request, stops at 14:33:08. No `ReadListIntent` arrived. No version of
+   `speech.ts` ever said „Artikel auf deiner Einkaufsliste“; the skill says „Auf der Hummlist
+   stehen N Sachen“. Alexa's own shopping list answered (the misrouting the Troubleshooting table
+   already lists). Peter's household had 3 open, 1 ticked today and 27 rows in all (a counts-only
+   read-only query); 26 is Amazon's list, which this box cannot read.
+2. **Alexa, Siri and MCP already read open items only.** All three go through
+   `_shared/list.ts` `openItems` (`status = 'active'`, the caller's household). No query change.
+3. **The proof is a test through the production wiring.** `_shared/read_open_only_integration_test.ts`
+   seeds Peter's shape (3 open, 1 ticked today, 23 ticked before, a second household) and reads
+   through Alexa's `deps.ts`, Siri's new `voice/deps.ts` (the wiring moved out of `index.ts`,
+   as Alexa's did, so the test runs what production runs) and `listItems`. Without the status
+   filter it fails with „Auf der Hummlist stehen 27 Sachen“.
+4. **The symptom has a Troubleshooting row** in docs/ALEXA.md: „… Artikel auf deiner
+   Einkaufsliste“ means Amazon's list, with the phrasings that reach the skill.
+5. **No deploy needed for behaviour.** The functions' behaviour is unchanged; `supabase-deploy.yml`
+   redeploys `voice` from main with the refactor as usual.
