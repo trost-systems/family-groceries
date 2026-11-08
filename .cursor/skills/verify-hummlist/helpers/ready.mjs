@@ -19,7 +19,7 @@ try {
   if (data.length) {
     const first = page.getByRole('checkbox').first();
     await first.waitFor({ timeout: 15_000 });
-    const label = await first.getAttribute('aria-label') ?? accessibleName(await first.ariaSnapshot());
+    const label = await first.getAttribute('aria-label') || accessibleName(await first.ariaSnapshot());
     shown = data.map((d) => d.name).sort((a, b) => b.length - a.length).find((n) => label === n || (label.startsWith(n) && /^[\s,]/.test(label.slice(n.length))));
     if (!shown) throw new Error(`the list's first row "${label}" is none of the household's ${data.length} active items`);
   }
