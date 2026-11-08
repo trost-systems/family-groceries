@@ -64,6 +64,7 @@ String householdProblemText(AppLocalizations l10n, HouseholdProblem problem) =>
       HouseholdProblem.tooManyAttempts => l10n.tooManyAttempts,
       HouseholdProblem.offline => l10n.householdOffline,
       HouseholdProblem.archiveDisabled => l10n.householdArchiveDisabled,
+      HouseholdProblem.declinedRecently => l10n.joinDeclinedRecently,
       HouseholdProblem.tooManyHouseholds => l10n.tooManyHouseholds,
       HouseholdProblem.notAdmin => l10n.householdNotAdmin,
       HouseholdProblem.notOwner => l10n.householdNotOwner,
@@ -72,18 +73,28 @@ String householdProblemText(AppLocalizations l10n, HouseholdProblem problem) =>
       HouseholdProblem.other => l10n.genericError(problem.name),
     };
 
-/// A problem line under a form: error colour, announced to screen readers.
-class const ProblemText(final String text, {super.key})
-    extends StatelessWidget {
+/// A problem line under a form, announced to screen readers: in the error
+/// colour, or [neutral] for an answer that is no mistake (a declined join
+/// request).
+class const ProblemText(
+  final String text, {
+  super.key,
+  final bool neutral = false,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: Semantics(
-      liveRegion: true,
-      child: Text(
-        text,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Semantics(
+        liveRegion: true,
+        child: Text(
+          text,
+          style: TextStyle(
+            color: neutral ? colors.onSurfaceVariant : colors.error,
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

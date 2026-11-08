@@ -170,14 +170,18 @@ void main() {
     expect(find.text('Reihenfolge bearbeiten'), findsNothing);
   });
 
-  testWidgets('delete says how many open items lose their store, then they '
-      'have none', (tester) async {
+  testWidgets('delete says how many open items lose their store, on every '
+      'list, then they have none', (tester) async {
     late Item milk;
     await pump(
       tester,
       seed: (repo) {
+        repo.lists = const [
+          HouseholdList(id: 'weekly', name: 'Wocheneinkauf', position: 0),
+          HouseholdList(id: 'party', name: 'Sommerfest', position: 1),
+        ];
         milk = repo.remoteAdd('Milch', storeId: 'lidl');
-        repo.remoteAdd('Käse', storeId: 'lidl');
+        repo.remoteAdd('Käse', storeId: 'lidl', listId: 'party');
       },
     );
     await tester.tap(find.byTooltip('Lidl löschen'));

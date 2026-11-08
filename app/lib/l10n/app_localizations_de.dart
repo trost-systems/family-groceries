@@ -2060,4 +2060,167 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get householdNotOwner =>
       'Admins ernennt nur, wer den Haushalt angelegt hat.';
+
+  @override
+  String get listsTitle => 'Listen';
+
+  @override
+  String get listMain => 'Einkaufsliste';
+
+  @override
+  String get listNew => 'Neue Liste';
+
+  @override
+  String get listNameLabel => 'Name der Liste';
+
+  @override
+  String listAdded(String name) {
+    return 'Liste „$name“ angelegt';
+  }
+
+  @override
+  String get listRenameTitle => 'Liste umbenennen';
+
+  @override
+  String listActions(String name) {
+    return 'Aktionen für „$name“';
+  }
+
+  @override
+  String get listMoveUp => 'Nach oben';
+
+  @override
+  String get listMoveDown => 'Nach unten';
+
+  @override
+  String listDeleteTitle(String name) {
+    return '„$name“ löschen?';
+  }
+
+  @override
+  String listDeleteBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Die $count offenen Artikel darauf werden mit gelöscht.',
+      one: 'Der 1 offene Artikel darauf wird mit gelöscht.',
+      zero: 'Auf der Liste ist nichts offen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get listsNeedConnection =>
+      'Listen lassen sich nur mit Verbindung anlegen, umbenennen, sortieren oder löschen.';
+
+  @override
+  String onListAlready(String name, String list) {
+    return '„$name“ steht schon auf „$list“.';
+  }
+
+  @override
+  String get editList => 'Liste';
+
+  @override
+  String get claimMine => 'Ich bringe das';
+
+  @override
+  String get claimAmount => 'Wie viel?';
+
+  @override
+  String get claimAmountHint => 'z. B. 2';
+
+  @override
+  String claimBy(String name) {
+    return '$name bringt';
+  }
+
+  @override
+  String claimByAmount(String name, String amount) {
+    return '$name bringt $amount';
+  }
+
+  @override
+  String get claimYou => 'Du bringst';
+
+  @override
+  String claimYouAmount(String amount) {
+    return 'Du bringst $amount';
+  }
+
+  @override
+  String get claimSomeone => 'Jemand';
+
+  @override
+  String joinRequestSent(String name) {
+    return 'Anfrage gesendet: Ein Admin von „$name“ bestätigt deinen Beitritt.';
+  }
+
+  @override
+  String get joinDeclinedRecently =>
+      'Deine Anfrage für diesen Haushalt wurde vor Kurzem abgelehnt. Du kannst nach 24 Stunden wieder anfragen.';
+
+  @override
+  String get joinRequestWithdraw => 'Anfrage zurückziehen';
+
+  @override
+  String get joinRequestToList => 'Zur Liste';
+
+  @override
+  String get joinRequestCreateOwn => 'Eigenen Haushalt anlegen';
+
+  @override
+  String joinApprovedNotice(String name) {
+    return 'Du bist jetzt in „$name“.';
+  }
+
+  @override
+  String joinDeclinedNotice(String name) {
+    return 'Deine Anfrage für „$name“ wurde nicht angenommen.';
+  }
+
+  @override
+  String get joinRequestPending => 'Anfrage offen';
+
+  @override
+  String joinRequestWithdrawFor(String name) {
+    return 'Anfrage für „$name“ zurückziehen?';
+  }
+
+  @override
+  String get joinApprovalToggle => 'Beitritte bestätigen';
+
+  @override
+  String get joinApprovalHint =>
+      'Neue Leute warten, bis ein Admin sie aufnimmt.';
+
+  @override
+  String get joinRequestsTitle => 'Beitrittsanfragen';
+
+  @override
+  String joinRequestsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count offene Anfragen',
+      one: '1 offene Anfrage',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get joinRequestsNone => 'Keine offenen Anfragen.';
+
+  @override
+  String get joinRequestsFailed => 'Anfragen konnten nicht geladen werden.';
+
+  @override
+  String get joinRequestApprove => 'Aufnehmen';
+
+  @override
+  String get joinRequestInviteFull =>
+      'Die Einladung zu dieser Anfrage ist voll. Schick einen neuen Link. Sobald er geöffnet ist, kannst du aufnehmen.';
+
+  @override
+  String get joinRequestDecline => 'Ablehnen';
 }

@@ -22,6 +22,10 @@ enum JoinPhase() {
 
   /// In the household now (or already was): on to the list.
   joined,
+
+  /// The household confirms joins (job 169b W3 M): the request waits for
+  /// an owner or admin of [JoinState.requested].
+  requested,
 }
 
 @immutable
@@ -34,6 +38,9 @@ class const JoinState({
   /// What Hummlist Lifetime means for this join, once previewed.
   final JoinLifetime lifetime = const JoinLifetime(),
   final HouseholdProblem? problem,
+
+  /// The household asked to join, in [JoinPhase.requested].
+  final String? requested,
 }) {
   bool get busy => phase == JoinPhase.checking || phase == JoinPhase.joining;
 
@@ -113,6 +120,7 @@ class JoinCubit(
     }
     final household = state.household;
     final lifetime = state.lifetime;
+    final JoinAnswer answer;
     emit(
       state.copyWith(
         phase: JoinPhase.joining,
@@ -121,9 +129,7 @@ class JoinCubit(
       ),
     );
     try {
-      await _session.join(code, method: _methodOf(code));
-      pendingInvite?.clear();
-      emit(state.copyWith(phase: JoinPhase.joined, household: household));
+      answer = await _session.join(code, method: _methodOf(code));
     } on HouseholdError catch (e) {
       if (e.problem == HouseholdProblem.offline) {
         // Still the same good code: Join again once back online.
@@ -138,7 +144,17 @@ class JoinCubit(
       } else {
         _refused(code, e.problem);
       }
+      return;
     }
+    pendingInvite?.clear();
+    emit(switch (answer) {
+      Joined() => state.copyWith(phase: JoinPhase.joined, household: household),
+      JoinRequested(:final householdId) => JoinState(
+        phase: JoinPhase.requested,
+        household: household,
+        requested: householdId,
+      ),
+    });
   }
 
   JoinMethod _methodOf(String code) =>

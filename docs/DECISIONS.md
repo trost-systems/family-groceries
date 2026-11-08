@@ -10577,3 +10577,48 @@ make a new one; invites stay links the user shares (N-18).
     and reloads once on return (review W2.2: 24 requests a minute from the list tab before).
     Only the newest load emits and a tick waits for the last answer, so a slow poll can't bring
     back a link just revoked or renewed.
+
+## Job 169b: club features, wave 3, 2026-11-08
+
+Contract [`docs/households/W3.md`](households/W3.md). Peter (Q-HH5): club features in the build,
+no club outreach, research or landing page.
+
+1. **Every household has at least one list; old writes land in the first.** A before-insert
+   trigger fills a missing `list_id` with the household's first list, so old store builds, Siri,
+   Alexa, voice and API calls without a list keep working. Old builds show every list's items as
+   one list until they update; accepted for the transition.
+2. **`put_item` takes a required `p_list`** (null = the first list), a new signature next to the
+   old one, and `add_list_item` is a new name rather than an `add_item` overload: the edge
+   functions call `add_item` positionally, and two overloads made those calls ambiguous.
+3. **The duplicate rule is per list**: "Kuchen" may be open on "Sommerfest" and "Vereinsheim".
+4. **The device copy stays one per household**, not per list: the write queue, live updates and
+   moves between lists are per household, and splitting the copy would split the queue. The
+   shown list is remembered per user and household.
+5. **Claims are a person's promise**: members claim with an optional amount; claims end on a
+   tick, a delete, a list delete, leaving or a removal. MCP and the API don't expose claims.
+6. **Join approval is on by default for clubs only** (`kind = 'club'`), off for everyone else and
+   for existing households. With it on, every `accept_invite` signature answers `requested` and
+   counts no use until an admin approves (the use is counted then, under the invite lock; a link
+   full by then answers `invite_full` and the request stays open). Old builds show their generic
+   error for `requested`; approval is new and opt-in. Decided requests are deleted after 7 days.
+7. **The data processing agreement (AVV)** is a draft for Legal in the separate privacy draft
+   PR, linked from nothing until Legal approves.
+8. **A membership closes the user's open join request for that household** (review W3.2), by
+   a trigger on `household_members`, whichever way they got in. Left open, the request stayed in
+   the admins' list and, approved after the user left or was removed, let them back in without
+   asking. `decide_join_request` also closes a request from someone removed since asking: a call
+   that began before the user joined and was removed can still file one.
+9. **An approval stands even if the invite was revoked or expired since the request.** The
+   admin decides about the person in front of them; the invite only decided who could ask.
+10. **MCP `list_items` without `list` shows the first list; the API's `GET /v1/items` without
+   `?list=` shows every list.** An assistant talks about "the list", a script wants everything;
+   both say which list each item is on (`listId`).
+11. **Joins, requests and approvals of one user lock in one order** (review W3.3): the household,
+   the user's memberships (`lock_memberships`), the invite row, the request row. `claim_invite`
+   takes the memberships lock before it counts a use or files a request and checks membership
+   under it, so a second tap during an approval answers `member` instead of filing a new request.
+   `decide_join_request` used to lock the request first and the invite and memberships after, the
+   reverse of a direct join, and one side died with 40P01. The memberships lock comes before the
+   invite (the review proposed the reverse) because the request's invite can move while
+   `claim_invite` holds it: with the invite first, an approval would have to lock the new invite out of
+   order. The two-connection tests in `_shared/households_integration_test.ts` fail without it.

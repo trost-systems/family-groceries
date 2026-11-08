@@ -658,3 +658,7 @@ No query change was needed.
 
 **Verify.** `scripts/verify.sh --only lint,functions,changelog,db` passed locally (port block
 618). Deploy: `supabase-deploy.yml` redeploys `voice` from main; behaviour is unchanged.
+
+## Job 169b: several households, the invite loop, club features (2026-11-08)
+
+Three waves, each its own PR merged on an Opus review PASS and ci-ok: #327 (several households, switcher, default household for Siri, Alexa and AI), #332 (join page, group link with QR, roles, removing members), #333 (several lists, „Ich bringe“, join approval). Privacy text and a draft data processing agreement for clubs: draft #328 for Legal (not merged). Details: [docs/done/169b-households.md](docs/done/169b-households.md).

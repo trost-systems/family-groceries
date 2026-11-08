@@ -329,3 +329,169 @@ test("a stranger's remove_member is refused without waiting on the member's lock
     await holder;
     assertEquals(answer, 'not_member');
   }));
+
+test("W3: two admins approve requests racing for a group link's last use: one joins", () =>
+  withGroupLink(49, 4, async ({ admin, joiners, code, invite, household }) => {
+    const [first, second, ...requesters] = joiners;
+    if (first === undefined || second === undefined) throw new Error('no admins');
+    for (const { user } of [first, second]) {
+      await admin`insert into public.household_members (household_id, user_id, role)
+        values (${household}, ${user}, 'admin')`;
+    }
+    await admin`update public.households set join_approval = true where id = ${household}`;
+    const requests: string[] = [];
+    for (const r of requesters) {
+      const [row] = await as(r.sql, r.user, async (tx) => {
+        await tx`select public.accept_invite(${code}, p_mode => 'add')`;
+        return await tx<{ id: string; status: string }[]>`
+          select id, public.accept_invite(${code}, p_mode => 'add') ->> 'status' as status
+          from public.join_requests`;
+      });
+      assertEquals(row?.status, 'requested', 'asking twice answers requested, one request');
+      requests.push(row?.id ?? '');
+    }
+    assertEquals((await uses(admin, invite, household))?.use_count, 49, 'requests count nothing');
+
+    const statuses: string[] = [];
+    const decide = (tx: postgres.TransactionSql, request: string) =>
+      tx<{ status: string }[]>`
+        select public.decide_join_request(${request}, true) ->> 'status' as status`
+        .then(([row]) => statuses.push(row?.status ?? ''));
+    await overlapping(
+      (release) =>
+        as(first.sql, first.user, async (tx) => {
+          await decide(tx, requests[0] ?? '');
+          await release;
+        }),
+      () => as(second.sql, second.user, (tx) => decide(tx, requests[1] ?? '')),
+    );
+    assertEquals(statuses.sort(), ['approved', 'invite_full']);
+    assertEquals(await uses(admin, invite, household), { use_count: 50, joins: 1, members: 4 });
+  }));
+
+/** A club with approval on: [admin] is an admin, [asker] has an open request through the link. */
+async function withRequest(
+  work: (
+    s: {
+      admin: Sql;
+      approver: Joiner;
+      asker: Joiner;
+      code: string;
+      invite: string;
+      household: string;
+      request: string;
+    },
+  ) => Promise<void>,
+) {
+  await withGroupLink(0, 2, async ({ admin, joiners, code, invite, household }) => {
+    const [approver, asker] = joiners;
+    if (approver === undefined || asker === undefined) throw new Error('no joiners');
+    await admin`insert into public.household_members (household_id, user_id, role)
+      values (${household}, ${approver.user}, 'admin')`;
+    await admin`update public.households set join_approval = true where id = ${household}`;
+    await as(
+      asker.sql,
+      asker.user,
+      (tx) => tx`select public.accept_invite(${code}, p_mode => 'add')`,
+    );
+    const [row] = await admin<{ id: string }[]>`
+      select id from public.join_requests where user_id = ${asker.user} and decision is null`;
+    await work({ admin, approver, asker, code, invite, household, request: row?.id ?? '' });
+  });
+}
+
+const requestState = async (admin: Sql, user: string, household: string) => {
+  const [row] = await admin<{ members: number; open: number }[]>`
+    select
+      (select count(*)::int from public.household_members m
+        where m.household_id = ${household} and m.user_id = ${user}) as members,
+      (select count(*)::int from public.join_requests r
+        where r.household_id = ${household} and r.user_id = ${user} and r.decision is null) as open`;
+  return row;
+};
+
+const failure = (e: unknown) => `error: ${e instanceof Error ? e.message : String(e)}`;
+
+test('W3: the asker taps the link again while an admin approves: a member, no open request', () =>
+  withRequest(async ({ admin, approver, asker, code, household, request }) => {
+    const answers: Record<string, string> = {};
+    await overlapping(
+      (release) =>
+        as(approver.sql, approver.user, async (tx) => {
+          const [row] = await tx<{ status: string }[]>`
+            select public.decide_join_request(${request}, true) ->> 'status' as status`;
+          answers.decide = row?.status ?? '';
+          await release;
+        }),
+      () =>
+        as(asker.sql, asker.user, (tx) =>
+          tx<{ status: string }[]>`
+            select public.accept_invite(${code}, p_mode => 'add') ->> 'status' as status`)
+          .then(([row]) => (answers.tap = row?.status ?? ''), (e) => (answers.tap = failure(e))),
+    );
+    assertEquals(answers, { decide: 'approved', tap: 'member' });
+    assertEquals(await requestState(admin, asker.user, household), { members: 1, open: 0 });
+  }));
+
+test('W3: an approval racing a direct join (approval off meanwhile): no deadlock, one membership', () =>
+  withRequest(async ({ admin, approver, asker, code, invite, household, request }) => {
+    await admin`update public.households set join_approval = false where id = ${household}`;
+    // Holding the asker's membership lock lines both calls up mid-way, whatever order they take.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const holder = admin.begin(async (tx) => {
+      await tx`select public.lock_memberships(${asker.user})`;
+      await held;
+    });
+    await pause();
+    const answers: Record<string, string> = {};
+    const join = as(asker.sql, asker.user, (tx) =>
+      tx<{ status: string }[]>`
+        select public.accept_invite(${code}, p_mode => 'add') ->> 'status' as status`)
+      .then(([row]) => (answers.join = row?.status ?? ''), (e) => (answers.join = failure(e)));
+    await pause();
+    const decide = as(approver.sql, approver.user, (tx) =>
+      tx<{ status: string }[]>`
+        select public.decide_join_request(${request}, true) ->> 'status' as status`)
+      .then(([row]) => (answers.decide = row?.status ?? ''), (e) => (answers.decide = failure(e)));
+    await pause();
+    release();
+    await Promise.all([holder, join, decide]);
+    assertEquals(answers, { join: 'joined', decide: 'cancelled' });
+    assertEquals(await requestState(admin, asker.user, household), { members: 1, open: 0 });
+    assertEquals((await uses(admin, invite, household))?.use_count, 1, 'one use counted');
+  }));
+
+test('W3: a request filed by a call that began before a join and removal is closed, not approved', () =>
+  withGroupLink(0, 2, async ({ admin, joiners, code, household, owner }) => {
+    const [approver, lou] = joiners;
+    if (approver === undefined || lou === undefined) throw new Error('no joiners');
+    await admin`insert into public.household_members (household_id, user_id, role)
+      values (${household}, ${approver.user}, 'admin')`;
+    const status = await as(lou.sql, lou.user, async (tx) => {
+      await tx`select now()`;
+      await as(admin, lou.user, (t) => t`select public.accept_invite(${code}, p_mode => 'add')`);
+      await as(
+        approver.sql,
+        approver.user,
+        (t) => t`select public.remove_member(${household}, ${lou.user})`,
+      );
+      const [fresh] = await as(
+        admin,
+        owner,
+        (t) => t<{ code: string }[]>`select code from public.create_invite(${household}, 'person')`,
+      );
+      await admin`update public.households set join_approval = true where id = ${household}`;
+      const [row] = await tx<{ status: string }[]>`
+        select public.accept_invite(${fresh?.code ?? ''}, p_mode => 'add') ->> 'status' as status`;
+      return row?.status;
+    });
+    assertEquals(status, 'requested', "the owner's newer invite lets Lou ask");
+    const [request] = await admin<{ id: string }[]>`
+      select id from public.join_requests where user_id = ${lou.user} and decision is null`;
+    const [decided] = await as(approver.sql, approver.user, (tx) =>
+      tx<{ status: string }[]>`
+        select public.decide_join_request(${request?.id ?? ''}, true) ->> 'status' as status`);
+    assertEquals(decided?.status, 'cancelled');
+    assertEquals(await requestState(admin, lou.user, household), { members: 0, open: 0 });
+  }));

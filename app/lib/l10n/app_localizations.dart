@@ -3361,6 +3361,246 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Admins ernennt nur, wer den Haushalt angelegt hat.'**
   String get householdNotOwner;
+
+  /// Job 169b K: household page section and the list tabs' group label
+  ///
+  /// In de, this message translates to:
+  /// **'Listen'**
+  String get listsTitle;
+
+  /// Job 169b K: the list every household starts with, exactly as the server names it in German (lists.seed_key main)
+  ///
+  /// In de, this message translates to:
+  /// **'Einkaufsliste'**
+  String get listMain;
+
+  /// Job 169b K: the tabs' + button, the household page's add row and the name dialog's title
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Liste'**
+  String get listNew;
+
+  /// Job 169b K: label of the name field when adding or renaming a list
+  ///
+  /// In de, this message translates to:
+  /// **'Name der Liste'**
+  String get listNameLabel;
+
+  /// Job 169b K: screen reader announcement after adding a list
+  ///
+  /// In de, this message translates to:
+  /// **'Liste „{name}“ angelegt'**
+  String listAdded(String name);
+
+  /// Job 169b K: rename dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Liste umbenennen'**
+  String get listRenameTitle;
+
+  /// Job 169b K: household page, tooltip of a list's menu
+  ///
+  /// In de, this message translates to:
+  /// **'Aktionen für „{name}“'**
+  String listActions(String name);
+
+  /// Job 169b K: list menu, move the list one up
+  ///
+  /// In de, this message translates to:
+  /// **'Nach oben'**
+  String get listMoveUp;
+
+  /// Job 169b K: list menu, move the list one down
+  ///
+  /// In de, this message translates to:
+  /// **'Nach unten'**
+  String get listMoveDown;
+
+  /// Job 169b K: delete confirmation title
+  ///
+  /// In de, this message translates to:
+  /// **'„{name}“ löschen?'**
+  String listDeleteTitle(String name);
+
+  /// Job 169b K: delete confirmation, how many open items go with the list
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =0{Auf der Liste ist nichts offen.} =1{Der 1 offene Artikel darauf wird mit gelöscht.} other{Die {count} offenen Artikel darauf werden mit gelöscht.}}'**
+  String listDeleteBody(int count);
+
+  /// Job 169b K: list add/rename/move/delete while offline
+  ///
+  /// In de, this message translates to:
+  /// **'Listen lassen sich nur mit Verbindung anlegen, umbenennen, sortieren oder löschen.'**
+  String get listsNeedConnection;
+
+  /// Job 169b K: an item moved to a list where it is open already stays
+  ///
+  /// In de, this message translates to:
+  /// **'„{name}“ steht schon auf „{list}“.'**
+  String onListAlready(String name, String list);
+
+  /// Job 169b K: edit sheet, label over the list picker
+  ///
+  /// In de, this message translates to:
+  /// **'Liste'**
+  String get editList;
+
+  /// Job 169b L: edit sheet checkbox, the user says they bring the item
+  ///
+  /// In de, this message translates to:
+  /// **'Ich bringe das'**
+  String get claimMine;
+
+  /// Job 169b L: edit sheet, label of the optional amount the user brings
+  ///
+  /// In de, this message translates to:
+  /// **'Wie viel?'**
+  String get claimAmount;
+
+  /// Job 169b L: edit sheet, example in the amount field
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. 2'**
+  String get claimAmountHint;
+
+  /// Job 169b L: row line, a member brings the item
+  ///
+  /// In de, this message translates to:
+  /// **'{name} bringt'**
+  String claimBy(String name);
+
+  /// Job 169b L: row line, a member brings an amount
+  ///
+  /// In de, this message translates to:
+  /// **'{name} bringt {amount}'**
+  String claimByAmount(String name, String amount);
+
+  /// Job 169b L: row line, the user brings the item
+  ///
+  /// In de, this message translates to:
+  /// **'Du bringst'**
+  String get claimYou;
+
+  /// Job 169b L: row line, the user brings an amount
+  ///
+  /// In de, this message translates to:
+  /// **'Du bringst {amount}'**
+  String claimYouAmount(String amount);
+
+  /// Job 169b L: row line, a claimant the list cannot name yet
+  ///
+  /// In de, this message translates to:
+  /// **'Jemand'**
+  String get claimSomeone;
+
+  /// Job 169b W3 M: the joiner's waiting screen after accept_invite answered requested
+  ///
+  /// In de, this message translates to:
+  /// **'Anfrage gesendet: Ein Admin von „{name}“ bestätigt deinen Beitritt.'**
+  String joinRequestSent(String name);
+
+  /// Job 169b W3 M: accept_invite answered declined_recently, the user's request to this household was declined in the last 24 hours. Neutral, no blame
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Anfrage für diesen Haushalt wurde vor Kurzem abgelehnt. Du kannst nach 24 Stunden wieder anfragen.'**
+  String get joinDeclinedRecently;
+
+  /// Job 169b W3 M: waiting screen
+  ///
+  /// In de, this message translates to:
+  /// **'Anfrage zurückziehen'**
+  String get joinRequestWithdraw;
+
+  /// Job 169b W3 M: waiting screen, for someone in a household already
+  ///
+  /// In de, this message translates to:
+  /// **'Zur Liste'**
+  String get joinRequestToList;
+
+  /// Job 169b W3 M: waiting screen without a household: create one instead of waiting
+  ///
+  /// In de, this message translates to:
+  /// **'Eigenen Haushalt anlegen'**
+  String get joinRequestCreateOwn;
+
+  /// Job 169b W3 M: an admin approved the user's join request; the household shows
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist jetzt in „{name}“.'**
+  String joinApprovedNotice(String name);
+
+  /// Job 169b W3 M: an admin declined the user's join request
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Anfrage für „{name}“ wurde nicht angenommen.'**
+  String joinDeclinedNotice(String name);
+
+  /// Job 169b W3 M: switcher, a household the user asked to join
+  ///
+  /// In de, this message translates to:
+  /// **'Anfrage offen'**
+  String get joinRequestPending;
+
+  /// Job 169b W3 M: switcher, dialog title after tapping a pending request's row
+  ///
+  /// In de, this message translates to:
+  /// **'Anfrage für „{name}“ zurückziehen?'**
+  String joinRequestWithdrawFor(String name);
+
+  /// Job 169b W3 M: household page switch (owner and admins)
+  ///
+  /// In de, this message translates to:
+  /// **'Beitritte bestätigen'**
+  String get joinApprovalToggle;
+
+  /// Job 169b W3 M: one line under the switch
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Leute warten, bis ein Admin sie aufnimmt.'**
+  String get joinApprovalHint;
+
+  /// Job 169b W3 M: household page section (owner and admins)
+  ///
+  /// In de, this message translates to:
+  /// **'Beitrittsanfragen'**
+  String get joinRequestsTitle;
+
+  /// Job 169b W3 M: screen reader label of the count badge
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 offene Anfrage} other{{count} offene Anfragen}}'**
+  String joinRequestsCount(int count);
+
+  /// Job 169b W3 M: household page, approval on and nobody waiting
+  ///
+  /// In de, this message translates to:
+  /// **'Keine offenen Anfragen.'**
+  String get joinRequestsNone;
+
+  /// Job 169b W3 M: household page, the requests did not load
+  ///
+  /// In de, this message translates to:
+  /// **'Anfragen konnten nicht geladen werden.'**
+  String get joinRequestsFailed;
+
+  /// Job 169b W3 M: household page, let a requester in
+  ///
+  /// In de, this message translates to:
+  /// **'Aufnehmen'**
+  String get joinRequestApprove;
+
+  /// Job 169b W3 M: under a request whose group link or person invite has no use left (decide_join_request invite_full); the request stays open until the person opens a new link
+  ///
+  /// In de, this message translates to:
+  /// **'Die Einladung zu dieser Anfrage ist voll. Schick einen neuen Link. Sobald er geöffnet ist, kannst du aufnehmen.'**
+  String get joinRequestInviteFull;
+
+  /// Job 169b W3 M: household page, turn a requester away
+  ///
+  /// In de, this message translates to:
+  /// **'Ablehnen'**
+  String get joinRequestDecline;
 }
 
 class _AppLocalizationsDelegate
