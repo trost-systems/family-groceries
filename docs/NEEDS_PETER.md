@@ -1401,3 +1401,28 @@ assistants) counts only open items; a test now holds that with ticked items pres
   a misheard „humm list“ doesn't read them out.
 - [ ] Ask again with „Alexa, öffne humm list“ (Humm-list in two syllables), then „Was steht auf
   der Liste?“ (rows A8 and X9a in `docs/voice/TEST-SESSION-2026-11-08.md`).
+
+## Job 169b: households, invite loop and club features (2026-11-08)
+
+Built and merged (#327, #332, #333). What only Peter can do:
+
+1. **Legal review of the privacy text and the club data processing agreement.** Draft PR #328
+   (do not merge) changes `site/content/legal/datenschutz.md` and `privacy.md` and adds draft
+   `avv.md` / `dpa.md` (hidden in production builds). 27 open questions are in
+   `docs/legal/169b-privacy-draft.md` on that branch, among them: the legal basis for showing the
+   inviter's first name on the signed-out join page (Art. 6(1)(f)?), the hourly salted IP hash,
+   the Play Install Referrer and the tap-to-paste clipboard read under § 25 TDDDG, removal
+   records (30 days), and whether a club needs an AVV at all. Merge the policy only after Legal
+   approves; the features are live in the app from the next release regardless, so Legal should
+   look before the next store release.
+2. **Store listings and the join page.** When the App Store and Play listings are public, set
+   `storeListings` in `app/web/join/join.js` (both) so `/join/<code>` shows "App laden" and the
+   Smart App Banner (`app-id=6826922741`), and fill `site/config/stores.mjs`. The Play link already
+   carries `&referrer=invite%3D<code>`.
+3. **Play Console "Data safety".** The Android app now includes Google's Play Install Referrer
+   library (`play_install_referrer`), read once on the first start, keeping only `invite=<code>`
+   on the device. Check whether the Data safety form needs an answer for it (it is Google's own
+   API; nothing leaves the device to Hummlist beyond the join that the user then does).
+4. **Decide later (product):** a removed member can be re-invited by any member after 30 days
+   (removal records are purged for privacy; DECISIONS 169b W2 item 10), and a club has no signal
+   for open join requests outside More → household. Both are deliberate for now.
