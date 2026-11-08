@@ -41,7 +41,7 @@ class const AddButton({
 class const StoresScreen({super.key}) extends StatelessWidget {
   Future<void> _delete(BuildContext context, Store store) async {
     final cubit = context.read<ListCubit>();
-    final open = cubit.state.items.values
+    final open = cubit.state.allItems.values
         .where((i) => i.storeId == store.id && i.status == ItemStatus.active)
         .length;
     final confirmed = await showDialog<bool>(

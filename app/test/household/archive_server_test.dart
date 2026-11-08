@@ -290,6 +290,37 @@ void main() {
       },
     );
 
+    test('a decision answers what came of it (job 169b W3 M)', () async {
+      for (final (status, outcome) in [
+        ('approved', JoinRequestOutcome.approved),
+        ('declined', JoinRequestOutcome.declined),
+        ('cancelled', JoinRequestOutcome.cancelled),
+        ('invite_full', JoinRequestOutcome.inviteFull),
+      ]) {
+        final repo = server(
+          (_) => {'status': status, 'household_id': 'home', 'user_id': 'lea'},
+        );
+        expect(
+          await repo.decideJoinRequest('r1', approve: true),
+          outcome,
+          reason: status,
+        );
+      }
+      expect(sent.single.url.path, '/rest/v1/rpc/decide_join_request');
+      expect(params(sent.single), {'p_request': 'r1', 'p_approve': true});
+      await expectLater(
+        server((_) => {'status': 'later'})
+            .decideJoinRequest('r1', approve: false),
+        throwsA(
+          isA<HouseholdError>().having(
+            (e) => e.problem,
+            'problem',
+            HouseholdProblem.other,
+          ),
+        ),
+      );
+    });
+
     test('revoking names the invite', () async {
       await server((_) => null).revoke('i1');
       expect(sent.single.url.path, '/rest/v1/rpc/revoke_invite');

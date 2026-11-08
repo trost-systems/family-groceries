@@ -145,7 +145,11 @@ void main() {
       jsonDecode(v1) as Map<String, Object?>,
     );
     expect(loaded.pending.map((op) => op.runtimeType), [AddItem, SetStatus]);
-    expect(loaded.toJson()['version'], 3, reason: 'upgraded through v2');
+    expect(
+      loaded.toJson()['version'],
+      ListSnapshot.version,
+      reason: 'upgraded through v2',
+    );
     expect(loaded.server.single.addedBy, isNull);
     expect(loaded.server.single.sortKey, isNull);
     expect(loaded.catalog.members, isEmpty);
@@ -253,5 +257,55 @@ void main() {
     expect(prefs.folded, {'dm'});
     expect(prefs.hintDismissed, isFalse);
     expect(ListPrefs.fromJson(const {}).folded, isEmpty);
+  });
+
+  test('a claim keeps the id a realtime delete names on the device', () {
+    final back = roundTrip(
+      ListSnapshot(
+        catalog: const Catalog(),
+        server: const [],
+        pending: const [],
+        claims: [
+          Claim(
+            id: 'c1',
+            itemId: 'i1',
+            userId: 'lea',
+            quantity: '2',
+            createdAt: DateTime.utc(2026, 11, 8),
+          ),
+        ],
+      ),
+    );
+    expect(
+      [for (final c in back.claims) (c.id, c.key, c.quantity)],
+      [('c1', ('i1', 'lea'), '2')],
+    );
+  });
+
+  test('the first list keeps its seed key on the device, others have none', () {
+    const catalog = Catalog(
+      lists: [
+        HouseholdList(
+          id: 'l1',
+          name: 'Einkaufsliste',
+          position: 0,
+          seedKey: 'main',
+        ),
+        HouseholdList(id: 'l2', name: 'Baumarkt', position: 1),
+      ],
+    );
+    final back = Catalog.fromJson(
+      jsonDecode(jsonEncode(catalog.toJson())) as Map<String, Object?>,
+    );
+    expect([for (final l in back.lists) l.seedKey], ['main', null]);
+    expect(
+      back
+          .withListName('l1', 'Wocheneinkauf')
+          .withListOrder(['l2', 'l1'])
+          .list('l1')
+          ?.seedKey,
+      'main',
+      reason: 'a rename or move keeps it: the name decides what shows',
+    );
   });
 }

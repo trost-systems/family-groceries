@@ -105,6 +105,11 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
   },
   // Job 169b W2: an owner or admin removed a member. Nothing else: not who.
   'member_removed': const {},
+  // Job 169b W3 M: an invite made a join request (the household confirms
+  // joins); an owner or admin decided on one. Never who asked or the
+  // household's name.
+  'join_requested': const {},
+  'join_request_decided': const {'approved': IsBool()},
   'item_added': {
     'source': _namesOf(AddSource.values),
     'actor_role': _roles,
@@ -115,6 +120,16 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'scope': OneOf({for (final s in ReorderScope.values) s.wire}),
   },
   'store_reordered': const {},
+  // Job 169b K: the user added a list, or picked another one in the tabs.
+  // Never its name: the household rides along as household_id.
+  'list_created': const {},
+  'list_switched': const {},
+  // Job 169b L: the user said "Ich bringe das" on an item they had not
+  // claimed yet. Never the item, the amount or who else brings it.
+  'item_claimed': const {
+    'actor_role': _roles,
+    'household_size': _householdSize,
+  },
   // Job 32a: once per added item, when the server confirmed the add.
   'item_categorized': const {'via': OneOf(categorizedVia)},
   // Spec #8 Part B (job 32b): the duplicate hint ("Möhren steht schon auf

@@ -9,8 +9,13 @@ import 'package:flutter/material.dart';
 class const HlSectionLabel(
   final String text, {
   final EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(20, 20, 16, 4),
+
+  /// After the text, before the rule: a count, with its own semantics.
+  final Widget? badge,
   super.key,
 }) extends StatelessWidget {
+  static const _badgeRoom = 48.0;
+
   /// The overline of section titles and the list's category labels: the
   /// caption token's weight and capitals at the app's one caption size,
   /// with its 0.08 em tracking. Height 1 keeps the line box of the former
@@ -27,21 +32,28 @@ class const HlSectionLabel(
     final t = HummlistColors.of(Theme.of(context).brightness);
     return Padding(
       padding: padding,
-      child: Semantics(
-        header: true,
-        label: text,
-        excludeSemantics: true,
-        child: LayoutBuilder(
-          builder: (context, constraints) => Row(
-            spacing: HlSpace.s3,
-            children: [
-              // Large text wraps a long title instead of running it past
-              // the row. Not Flexible: that would split the row with the
-              // rule and cut the title at half.
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: (constraints.maxWidth - HlSpace.s3).clamp(0, 1e9),
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Row(
+          spacing: HlSpace.s3,
+          children: [
+            // Large text wraps a long title instead of running it past
+            // the row. Not Flexible: that would split the row with the
+            // rule and cut the title at half.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth:
+                    (constraints.maxWidth -
+                            HlSpace.s3 -
+                            // A badge's room: a count of two digits.
+                            (badge == null ? 0 : _badgeRoom + HlSpace.s3))
+                        .clamp(0, 1e9),
+              ),
+              child: Semantics(
+                // Its own node in a column of other text too.
+                container: true,
+                header: true,
+                label: text,
+                excludeSemantics: true,
                 child: Text(
                   // German capitals spell ß as SS (SÜSSES), as CSS does.
                   text.toUpperCase().replaceAll('ß', 'SS'),
@@ -50,9 +62,10 @@ class const HlSectionLabel(
                   style: overline(t.textMuted),
                 ),
               ),
-              Expanded(child: Container(height: 1, color: t.divider)),
-            ],
-          ),
+            ),
+            ?badge,
+            Expanded(child: Container(height: 1, color: t.divider)),
+          ],
         ),
       ),
     );

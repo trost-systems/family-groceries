@@ -7,6 +7,7 @@ import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/home_widget/home_widget_sync.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/list_names.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
@@ -234,6 +235,11 @@ class _ScopeState() extends State<_Scope> {
         NeedsConnection() => l10n.reorderNeedsConnection,
         StoreNameTaken(:final name) => l10n.storeNameTaken(name),
         StoreNeedsConnection() => l10n.storesNeedConnection,
+        ListsNeedConnection() => l10n.listsNeedConnection,
+        OnListAlready(:final name, :final list) => l10n.onListAlready(
+          name,
+          listName(list, l10n),
+        ),
         MergeRefused(:final name) => l10n.mergeRefused(name),
         RenameTaken(:final name) => l10n.alreadyOnList(name),
       };
