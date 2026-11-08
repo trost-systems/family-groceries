@@ -4,12 +4,12 @@ description: "Datenschutzerklärung von Hummlist: welche Daten die App und die W
 locale: de
 path: /datenschutz
 translation_key: privacy
-updated: 2026-11-07
+updated: 2026-11-08
 ---
 
 # Datenschutzerklärung
 
-Stand: 7. November 2026
+Stand: 8. November 2026
 
 Hier steht, welche personenbezogenen Daten Hummlist verarbeitet, wozu, auf welcher Rechtsgrundlage, an wen sie gehen und welche Rechte du hast. Hummlist ist eine Einkaufslisten-App für Haushalte für iPhone, Android und Browser (app.hummlist.com) mit der Website hummlist.com.
 
@@ -57,7 +57,9 @@ Die Web-App wird ebenfalls von Vercel als statische Dateien ausgeliefert (siehe 
 Im Speicher deines Browsers (Local Storage) bzw. auf deinem Gerät legt Hummlist ab:
 
 - deine Anmeldesitzung,
-- eine Kopie deiner Liste und deine Listeneinstellungen, damit die App schnell startet und offline funktioniert,
+- eine Kopie deiner Listen und deine Listeneinstellungen, damit die App schnell startet und offline funktioniert,
+- welchen deiner Haushalte du auf diesem Gerät zuletzt geöffnet hast,
+- eine Einladung, die du geöffnet hast, bis du beitrittst (Abschnitt 5),
 - die gewählte Sprache,
 - deine Entscheidung zu Nutzungsdaten (Abschnitt 9).
 
@@ -70,8 +72,21 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Nutzungsvertrags).
 
 ## 5. Einkaufsliste und Haushalt
 
-Wir speichern, was du in Hummlist eingibst: Haushaltsname, Mitglieder und ihre Rolle, Einladungen, Einträge (Artikelname, Menge, wer ihn hinzugefügt und gekauft hat, Zeitpunkte), einen Verlauf der Änderungen sowie, was Hummlist für deinen Haushalt lernt (Kategorien, Läden, Marken). Alle Mitglieder deines Haushalts sehen die Liste, den Verlauf und die Anzeigenamen der anderen Mitglieder. Einladungslinks laufen nach 7 Tagen ab und gelten nur einmal.
+Du kannst Mitglied in mehreren Haushalten sein. Wir speichern, was du in Hummlist eingibst: Haushaltsname, die Art des Haushalts (Paar, Familie, WG, Verein oder nur ich), falls du sie angibst, Mitglieder, ihre Rolle und wann sie beigetreten sind, Einladungen, Einträge (Artikelname, Menge, wer ihn hinzugefügt und gekauft hat, Zeitpunkte), einen Verlauf der Änderungen sowie, was Hummlist für deinen Haushalt lernt (Kategorien, Läden, Marken). Alle Mitglieder eines Haushalts sehen seine Liste, seinen Verlauf und die Anzeigenamen und Rollen der anderen Mitglieder. Die Mitglieder eines Haushalts sehen nicht, in welchen anderen Haushalten du bist. Einen deiner Haushalte wählst du als Standard; bis du einen anderen wählst, ist das dein erster Haushalt. Im Standardhaushalt arbeiten Siri, Alexa und KI-Assistenten (Abschnitt 7).
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+
+### Rollen und Einladungen {#einladungen}
+
+Wer einen Haushalt anlegt, ist sein Hauptadmin und kann andere Mitglieder zu Admins machen. Hauptadmin und Admins können Mitglieder aus dem Haushalt entfernen; ein Admin kann den Hauptadmin und andere Admins nicht entfernen. Verlässt der Hauptadmin den Haushalt oder löscht sein Konto, geht die Rolle an den Admin, der am längsten dabei ist, sonst an das Mitglied, das am längsten dabei ist.
+
+Hummlist verschickt keine Einladungen. Du teilst einen Link oder Code selbst, zum Beispiel per Messenger. Jedes Mitglied kann einen Link für eine Person erstellen; er läuft nach 7 Tagen ab und gilt nur einmal. Hauptadmin und Admins können außerdem einen Gruppenlink erstellen; er läuft nach 30 Tagen ab, gilt für bis zu 50 Beitritte und lässt sich jederzeit widerrufen. Zu jeder Einladung speichern wir, wer sie erstellt hat, wann sie abläuft, wie oft über sie beigetreten wurde und wie oft ihre Beitrittsseite geöffnet wurde. Das ist nur eine Zahl; wer die Seite geöffnet hat, speichern wir nicht. Tritt jemand bei, speichern wir, über welche Einladung und wann. Die aktuellen Mitglieder des Haushalts sehen das unter „Wer ist beigetreten“; wer den Haushalt verlassen hat, erscheint dort nicht mehr.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+
+Ein Einladungslink öffnet eine Beitrittsseite der Web-App (Abschnitt 3). Wer den Link hat, sieht dort auch ohne Konto den Vornamen der Person, die eingeladen hat (nur wenn sie einen Anzeigenamen eingetragen hat), den Namen und die Art des Haushalts, die Zahl der Mitglieder und der offenen Einträge und ob der Haushalt Hummlist Premium hat. Artikelnamen, E-Mail-Adressen und Kennungen zeigt die Seite nie. Gib einen Link deshalb nur an Personen weiter, die du einladen willst. Damit niemand Codes durch Ausprobieren findet, begrenzen wir, wie oft die Seite pro Stunde abgefragt werden kann. Dafür speichert unser Server je Stunde einen Prüfwert der IP-Adresse des Aufrufs und einen Prüfwert des Codes (je ein SHA-256-Hash mit einem geheimen Zusatzwert) mit der Zahl der Abfragen. Die IP-Adresse selbst speichern wir nicht. Die Prüfwerte einer Stunde löschen wir nach Ablauf der Stunde beim nächsten Aufruf einer Beitrittsseite. Die Seite liefert Vercel aus.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse, dass Eingeladene vor dem Beitritt sehen, wohin sie eingeladen werden, und dass niemand Einladungscodes durch Ausprobieren findet).
+
+Installierst du die Android-App über den Google-Play-Link der Beitrittsseite, liest die App beim ersten Start einmal den Install-Referrer von Google Play, also die Angaben, mit denen der Link zu Google Play kam. Daraus übernimmt sie nur den Einladungscode und den Zeitpunkt, zu dem du auf den Link getippt hast, damit eine alte Einladung verfällt; beides bleibt auf deinem Gerät. Alles andere verwirft sie. Tippst du auf „Einladung einfügen“, liest die App einmal die Zwischenablage und übernimmt daraus nur einen Einladungslink oder -code. Ohne diesen Tipp liest Hummlist die Zwischenablage nicht.
+Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO; für das Auslesen auf deinem Gerät § 25 Abs. 2 Nr. 2 TDDDG.
 
 ### Hummlist Premium in der Beta {#premium-beta}
 
@@ -86,25 +101,25 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ## 7. Siri, Alexa und KI-Assistenten
 
-Du kannst Hummlist mit KI-Assistenten (zum Beispiel über das Model Context Protocol unter mcp.hummlist.com) oder über einen selbst erstellten Kurzbefehl mit Siri verbinden. Das geschieht nur, wenn du selbst einen Zugriffstoken erstellst oder eine Verbindung erlaubst. Für Siri direkt in der iPhone-App gilt der Abschnitt „Siri auf dem iPhone“. Der verbundene Dienst kann dann die Einträge deiner Liste lesen und ändern; sein Anbieter verarbeitet diese Inhalte nach seinen eigenen Datenschutzbestimmungen. Wir speichern zu jedem Token einen Namen, einen Hash, seine letzten vier Zeichen und den Zeitpunkt der letzten Nutzung. Endet ein Token, etwa weil du ihn widerrufst oder den Haushalt verlässt, löschen wir diese Angaben 30 Tage danach beim nächsten täglichen Aufräumen. Du kannst Tokens und Verbindungen jederzeit in der App widerrufen.
+Du kannst Hummlist mit KI-Assistenten (zum Beispiel über das Model Context Protocol unter mcp.hummlist.com) oder über einen selbst erstellten Kurzbefehl mit Siri verbinden. Das geschieht nur, wenn du selbst einen Zugriffstoken erstellst oder eine Verbindung erlaubst. Für Siri direkt in der iPhone-App gilt der Abschnitt „Siri auf dem iPhone“. Der verbundene Dienst kann dann die Einträge deiner Liste lesen und ändern; sein Anbieter verarbeitet diese Inhalte nach seinen eigenen Datenschutzbestimmungen. Ein Zugriffstoken gilt nur für den Haushalt, in dem du ihn erstellt hast. Eine erlaubte Verbindung arbeitet in deinem Standardhaushalt (Abschnitt 5). Sie sieht außerdem die Namen deiner anderen Haushalte und deren Mitgliederzahl und kann deren Einträge lesen und ändern, wenn der Dienst einen dieser Haushalte angibt, etwa weil du ihn darum bittest. Wir speichern zu jedem Token einen Namen, einen Hash, seine letzten vier Zeichen und den Zeitpunkt der letzten Nutzung. Endet ein Token, etwa weil du ihn widerrufst oder den Haushalt verlässt, für den er gilt, löschen wir diese Angaben 30 Tage danach beim nächsten täglichen Aufräumen. Du kannst Tokens und Verbindungen jederzeit in der App widerrufen.
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ### Siri auf dem iPhone
 
-Wenn du in der iPhone-App angemeldet bist und zu einem Haushalt gehörst, legt die App automatisch einen eigenen Zugriffstoken für Siri an; du musst dafür nichts tun. In der App heißt er „Siri (dieses iPhone)“. Der Token liegt im Schlüsselbund dieses iPhones und wird nicht auf andere Geräte übertragen. Wir speichern dazu einen Hash (SHA-256) des Tokens, seine letzten vier Zeichen, den Namen „Siri“, welche Anmeldesitzung zu ihm gehört und wann er erstellt und zuletzt genutzt wurde. Der Token funktioniert nur für Siri-Anfragen an Hummlist und nur, solange du angemeldet und Mitglied dieses Haushalts bist.
+Wenn du in der iPhone-App angemeldet bist und zu mindestens einem Haushalt gehörst, legt die App automatisch einen eigenen Zugriffstoken für Siri an; du musst dafür nichts tun. In der App heißt er „Siri (dieses iPhone)“. Der Token liegt im Schlüsselbund dieses iPhones und wird nicht auf andere Geräte übertragen. Wir speichern dazu einen Hash (SHA-256) des Tokens, seine letzten vier Zeichen, den Namen „Siri“, welche Anmeldesitzung zu ihm gehört und wann er erstellt und zuletzt genutzt wurde. Der Token funktioniert nur für Siri-Anfragen an Hummlist und nur, solange du angemeldet und Mitglied mindestens eines Haushalts bist. Er wirkt immer in deinem Standardhaushalt (Abschnitt 5); wählst du einen anderen Standard, gilt er ab der nächsten Anfrage dort.
 
-Wenn du Siri bittest, etwas auf deine Liste zu setzen oder sie vorzulesen, wandelt Apple deine Sprache in Text um. Wir erhalten keine Sprachaufnahme. Wir erhalten nur den erkannten Text oder den Namen eines Vorschlags, den du gewählt hast (zum Beispiel „Milch“), ob du etwas hinzufügen oder vorlesen lassen willst, die Sprache (Deutsch oder Englisch) und den Token. Beim Vorlesen senden wir keinen Text mit. Wir tragen die Artikel in die Liste deines Haushalts ein wie bei einer Eingabe in der App; die anderen Mitglieder sehen sie. Den Text schreiben wir weder in Protokolle noch in die Nutzungsanalyse; bei Fehlern protokollieren wir nur die Art des Fehlers.
+Wenn du Siri bittest, etwas auf deine Liste zu setzen oder sie vorzulesen, wandelt Apple deine Sprache in Text um. Wir erhalten keine Sprachaufnahme. Wir erhalten nur den erkannten Text oder den Namen eines Vorschlags, den du gewählt hast (zum Beispiel „Milch“), ob du etwas hinzufügen oder vorlesen lassen willst, die Sprache (Deutsch oder Englisch) und den Token. Beim Vorlesen senden wir keinen Text mit. Wir tragen die Artikel in die Liste deines Standardhaushalts ein wie bei einer Eingabe in der App; die anderen Mitglieder sehen sie. Den Text schreiben wir weder in Protokolle noch in die Nutzungsanalyse; bei Fehlern protokollieren wir nur die Art des Fehlers.
 
-Damit Siri Sätze wie „Füge Milch zu Hummlist hinzu“ versteht, speichert die App bis zu 50 Artikelnamen deines Haushalts auf deinem iPhone und gibt sie an die Kurzbefehle-Funktion von iOS weiter. Wie Apple deine Sprache, ihre Abschrift und diese Angaben verarbeitet, regelt Apple als eigenständig Verantwortlicher in seiner Datenschutzrichtlinie und in den Siri-Einstellungen deines iPhones; darauf haben wir keinen Einfluss.
+Damit Siri Sätze wie „Füge Milch zu Hummlist hinzu“ versteht, speichert die App bis zu 50 Artikelnamen des Haushalts, den du in der App gerade geöffnet hast, auf deinem iPhone und gibt sie an die Kurzbefehle-Funktion von iOS weiter. Wie Apple deine Sprache, ihre Abschrift und diese Angaben verarbeitet, regelt Apple als eigenständig Verantwortlicher in seiner Datenschutzrichtlinie und in den Siri-Einstellungen deines iPhones; darauf haben wir keinen Einfluss.
 
-Der Token endet, wenn du dich abmeldest, den Haushalt verlässt, dein Konto löschst, ihn unter Mehr › Zugänge widerrufst oder dich auf diesem iPhone neu anmeldest (dann legt die App einen neuen an). Pro Konto gibt es höchstens fünf Siri-Tokens; kommt ein weiterer hinzu, endet der älteste. Nach dem Ende bewahren wir die gespeicherten Angaben zum Token noch 30 Tage auf, damit wir Missbrauch oder Rückfragen nachgehen können, und löschen sie dann beim nächsten täglichen Aufräumen. Endet der Token durch das Abmelden, erkennen wir das spätestens am nächsten Tag.
+Der Token endet, wenn du dich abmeldest, deinen letzten Haushalt verlässt, dein Konto löschst, ihn unter Mehr › Zugänge widerrufst oder dich auf diesem iPhone neu anmeldest (dann legt die App einen neuen an). Pro Konto gibt es höchstens fünf Siri-Tokens; kommt ein weiterer hinzu, endet der älteste. Nach dem Ende bewahren wir die gespeicherten Angaben zum Token noch 30 Tage auf, damit wir Missbrauch oder Rückfragen nachgehen können, und löschen sie dann beim nächsten täglichen Aufräumen. Endet der Token durch das Abmelden, erkennen wir das spätestens am nächsten Tag.
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ### Amazon Alexa
 
 Du kannst den Alexa-Skill „Hummlist" in der Alexa-App aktivieren und mit deinem Hummlist-Konto verknüpfen. Dazu meldest du dich bei Hummlist an und erlaubst „Amazon Alexa" den Zugriff auf deine Liste. Amazon erhält dafür ein Zugangs-Token und ein Erneuerungs-Token und bewahrt sie auf.
 
-Wenn du Alexa bittest, etwas auf deine Liste zu setzen oder sie vorzulesen, nimmt Amazon deine Sprache auf und wandelt sie in Text um. Wir erhalten von Amazon keine Sprachaufnahme, sondern nur den erkannten Text (zum Beispiel „Milch und Eier"), die Art der Anfrage, das Zugangs-Token, eine Kennung deines Alexa-Kontos und technische Angaben zu Gerät und Sprache. Die Gerätekennung werten wir nicht aus. Wir tragen die Artikel in die Liste deines aktuellen Haushalts ein wie bei einer Eingabe in der App; die anderen Mitglieder sehen sie. In unserer Antwort senden wir Amazon die Artikelnamen, die Alexa dir vorliest und in der Alexa-App als Karte anzeigt: die gerade eingetragenen Artikel oder bis zu 10 offene Einträge deiner Liste.
+Wenn du Alexa bittest, etwas auf deine Liste zu setzen oder sie vorzulesen, nimmt Amazon deine Sprache auf und wandelt sie in Text um. Wir erhalten von Amazon keine Sprachaufnahme, sondern nur den erkannten Text (zum Beispiel „Milch und Eier"), die Art der Anfrage, das Zugangs-Token, eine Kennung deines Alexa-Kontos und technische Angaben zu Gerät und Sprache. Die Gerätekennung werten wir nicht aus. Wir tragen die Artikel in die Liste deines Standardhaushalts (Abschnitt 5) ein wie bei einer Eingabe in der App; die anderen Mitglieder sehen sie. In unserer Antwort senden wir Amazon die Artikelnamen, die Alexa dir vorliest und in der Alexa-App als Karte anzeigt: die gerade eingetragenen Artikel oder bis zu 10 offene Einträge deiner Liste.
 
 Wir speichern dazu einen Hash (SHA-256) deiner Alexa-Kennung, welche Anmeldesitzung zu ihr gehört und wann du den Skill zuletzt genutzt hast, damit wir die Verbindung beenden können, wenn du den Skill deaktivierst. Außerdem zählen wir, wie viele Artikel du in der laufenden Minute hinzugefügt hast (höchstens 30). Diese Angaben löschen wir, sobald die Verbindung endet: wenn du den Skill in der Alexa-App deaktivierst, ihn neu verknüpfst, unter Mehr › Zugänge „Amazon Alexa trennen" wählst oder dein Konto löschst. Nutzt du den Skill 12 Monate lang nicht, beenden wir die Verbindung und löschen diese Angaben ebenfalls. Trennst du die Verknüpfung nur in der Alexa-App, löscht Amazon die Tokens; der Eintrag unter Mehr › Zugänge bleibt, bis du ihn entfernst oder er 12 Monate lang ungenutzt war.
 
@@ -113,7 +128,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ## 8. Daten exportieren und Konto löschen
 
-Unter Konto › Meine Daten exportieren erhältst du deine Daten als JSON-Datei. Unter Konto › Konto löschen löschst du dein Konto sofort. Was dabei mit gemeinsamen Haushalten passiert, steht unter https://app.hummlist.com/konto-loeschen.html.
+Unter Konto › Meine Daten exportieren erhältst du deine Daten als JSON-Datei, mit allen Haushalten, in denen du Mitglied bist, und den Einladungen, über die du beigetreten bist. Unter Konto › Konto löschen löschst du dein Konto sofort. Was dabei mit gemeinsamen Haushalten passiert, steht unter https://app.hummlist.com/konto-loeschen.html.
 
 ## 9. Nutzungsdaten und Fehlerberichte (nur mit Einwilligung)
 
@@ -164,7 +179,7 @@ Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
 
 ## 14. Speicherdauer
 
-Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, Zugriffstoken, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Den Datensatz eines Haushalts bei RevenueCat löschen wir 30 Tage nach dem Löschen des Haushalts (Abschnitt 5). Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, wird der Haushalt mit seinen Daten gelöscht. Hummlist Lifetime endet mit dem Haushalt. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr. Für die Warteliste gelten die Fristen in Abschnitt 2a.
+Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, löschen wir Konto, Profil, Mitgliedschaften, die Angaben, über welche Einladung du beigetreten bist, Zugriffstoken, Verbindungen (auch zu Alexa) und deine Entscheidungen zu Nutzungsdaten sofort; bei Käufen entfernen wir die Verbindung zu deinem Konto. Den Datensatz eines Haushalts bei RevenueCat löschen wir 30 Tage nach dem Löschen des Haushalts (Abschnitt 5). Daten zur Alexa-Verbindung löschen wir außerdem, sobald die Verbindung endet (Abschnitt 7). Bist du das letzte Mitglied eines Haushalts, wird der Haushalt mit allem gelöscht, ebenso jeder Haushalt, den du archiviert hast. Du kannst auch einzelne Haushalte verlassen, ohne dein Konto zu löschen. Mit einem Haushalt löschen wir auch seine Einladungen und die Angaben, wer über sie beigetreten ist. Verlässt du einen Haushalt mit Hummlist Lifetime als letztes Mitglied, ohne dein Konto zu löschen, wird der Haushalt mit seinen Daten gelöscht. Hummlist Lifetime endet mit dem Haushalt. Sonst bleiben die Einträge und der Verlauf für die anderen Mitglieder erhalten, aber ohne Bezug zu dir; die Artikelnamen bleiben dabei sichtbar. Gemeinsame Haushaltsdaten, auch den Verlauf, speichern wir, solange der Haushalt besteht, auch archiviert. Die Prüfwerte der Beitrittsseite löschen wir nach Ablauf der Stunde (Abschnitt 5). Protokolle unseres Datenbank-Anbieters werden nach höchstens 1 Tag gelöscht, Sicherungskopien nach 90 Tagen, Nutzungsdaten und Fehlerberichte bei PostHog nach 1 Jahr. Für die Warteliste gelten die Fristen in Abschnitt 2a.
 
 ## 15. Deine Rechte {#rechte}
 

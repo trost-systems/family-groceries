@@ -4,13 +4,13 @@ description: "Privacy policy of Hummlist: which data the app and the website pro
 locale: en
 path: /en/privacy
 translation_key: privacy
-updated: 2026-11-07
+updated: 2026-11-08
 ---
 
 # Privacy policy
 
 This is a translation. The [German version](/datenschutz) is authoritative.
-Last updated: 7 November 2026
+Last updated: 8 November 2026
 
 This page explains which personal data Hummlist processes, why, on what legal basis, who receives it and what rights you have. Hummlist is a shopping-list app for households on iPhone, Android and in the browser (app.hummlist.com), with the website hummlist.com.
 
@@ -48,7 +48,7 @@ The waitlist and the beta are for people aged 16 and over.
 ## 3. Web app app.hummlist.com
 
 The web app is also delivered by Vercel as static files (see section 2). The web app currently loads program libraries and fonts from Google servers (gstatic.com); Google receives your IP address when it does. We will change this shortly.
-Hummlist stores the following in your browser's local storage or on your device: your sign-in session; a copy of your list and your list settings, so the app starts quickly and works offline; your language; and your choice about usage data (section 9). These are strictly necessary for the app you asked to use (§ 25(2) no. 2 TDDDG). A service worker caches the app files. A random installation ID is stored only if you allow usage data (section 9).
+Hummlist stores the following in your browser's local storage or on your device: your sign-in session; a copy of your lists and your list settings, so the app starts quickly and works offline; which of your households you last opened on this device; an invite you opened, until you join (section 5); your language; and your choice about usage data (section 9). These are strictly necessary for the app you asked to use (§ 25(2) no. 2 TDDDG). A service worker caches the app files. A random installation ID is stored only if you allow usage data (section 9).
 
 ## 4. Account and sign-in
 
@@ -57,8 +57,21 @@ Legal basis: Art. 6(1)(b) GDPR (performance of the user agreement).
 
 ## 5. Shopping list and household
 
-We store what you enter in Hummlist: the household name, members and their roles, invitations, items (item name, quantity, who added and bought it, timestamps), a history of changes, and what Hummlist learns for your household (categories, stores, brands). All members of your household see the list, the history and the other members' display names. Invite links expire after 7 days and work only once.
+You can be a member of several households. We store what you enter in Hummlist: the household name, the kind of household (couple, family, flat share, club or just me) if you give it, members, their roles and when they joined, invitations, items (item name, quantity, who added and bought it, timestamps), a history of changes, and what Hummlist learns for your household (categories, stores, brands). All members of a household see its list, its history and the other members' display names and roles. The members of a household don't see which other households you are in. You choose one of your households as your default; until you choose another, it is your first household. Siri, Alexa and AI assistants work in your default household (section 7).
 Legal basis: Art. 6(1)(b) GDPR.
+
+### Roles and invites {#invites}
+
+Whoever creates a household is its owner and can make other members admins. The owner and admins can remove members from the household; an admin can't remove the owner or other admins. If the owner leaves the household or deletes their account, the role passes to the admin who has been in the household longest, otherwise to the member who has been in it longest.
+
+Hummlist doesn't send invites. You share a link or code yourself, for example through a messenger. Any member can create a link for one person; it expires after 7 days and works only once. The owner and admins can also create a group link; it expires after 30 days, works for up to 50 joins and can be revoked at any time. For each invite we store who created it, when it expires, how often someone joined through it and how often its join page was opened. That is only a number; we don't store who opened the page. When someone joins, we store through which invite and when. The household's current members see this under "Who joined"; whoever has left the household no longer appears there.
+Legal basis: Art. 6(1)(b) GDPR.
+
+An invite link opens a join page of the web app (section 3). Anyone who has the link sees there, even without an account, the first name of the person who invited (only if they entered a display name), the household's name and kind, the number of members and open items, and whether the household has Hummlist Premium. The page never shows item names, e-mail addresses or IDs. So only pass a link on to people you want to invite. So that nobody finds invite codes by trying them out, we limit how often the page can be queried per hour. For this our server stores, per hour, a check value of the request's IP address and a check value of the code (each a SHA-256 hash with a secret added value) with the number of requests. We don't store the IP address itself. We delete an hour's check values after the hour has ended, at the next visit to a join page. Vercel delivers the page.
+Legal basis: Art. 6(1)(f) GDPR (our legitimate interest in letting invited people see what they are invited to before they join, and in nobody finding invite codes by trying them out).
+
+If you install the Android app through the join page's Google Play link, the app reads Google Play's install referrer once at first start, that is, the details the link brought to Google Play. From it the app takes only the invite code and the time you tapped the link, so that an old invite lapses; both stay on your device. It discards everything else. If you tap "Paste invite", the app reads the clipboard once and takes only an invite link or code from it. Without that tap, Hummlist doesn't read the clipboard.
+Legal basis: Art. 6(1)(b) GDPR; for reading from your device, § 25(2) no. 2 TDDDG.
 
 ### Hummlist Premium in the beta {#premium-beta}
 
@@ -73,25 +86,25 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 7. Siri, Alexa and AI assistants
 
-You can connect Hummlist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access token or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each token we store a name, a hash, its last four characters and when it was last used. When a token ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke tokens and connections in the app at any time.
+You can connect Hummlist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access token or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. An access token works only for the household you created it in. An approved connection works in your default household (section 5). It also sees the names of your other households and their number of members, and can read and change their items if the service names one of these households, for example because you ask it to. For each token we store a name, a hash, its last four characters and when it was last used. When a token ends, for example because you revoke it or leave the household it works for, we delete this data at the next daily clean-up 30 days later. You can revoke tokens and connections in the app at any time.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Siri on iPhone
 
-When you are signed in to the iPhone app and belong to a household, the app automatically creates its own access token for Siri; you don't need to do anything. In the app it is called "Siri (this iPhone)". The token is kept in this iPhone's Keychain and is not transferred to other devices. For it we store a hash (SHA-256) of the token, its last four characters, the name "Siri", which sign-in session it belongs to, and when it was created and last used. The token only works for Siri requests to Hummlist, and only while you are signed in and a member of that household.
+When you are signed in to the iPhone app and belong to at least one household, the app automatically creates its own access token for Siri; you don't need to do anything. In the app it is called "Siri (this iPhone)". The token is kept in this iPhone's Keychain and is not transferred to other devices. For it we store a hash (SHA-256) of the token, its last four characters, the name "Siri", which sign-in session it belongs to, and when it was created and last used. The token only works for Siri requests to Hummlist, and only while you are signed in and a member of at least one household. It always works in your default household (section 5); if you choose another default, it works there from the next request.
 
-When you ask Siri to add something to your list or read it out, Apple turns your speech into text. We do not receive a voice recording. We only receive the recognised text or the name of a suggestion you picked (for example "milk"), whether you want to add or hear items, the language (German or English) and the token. When reading out, no text is sent. We add the items to your household's list just as if you had entered them in the app; the other members see them. We do not write the text to logs or to usage analytics; for errors we only log the type of error.
+When you ask Siri to add something to your list or read it out, Apple turns your speech into text. We do not receive a voice recording. We only receive the recognised text or the name of a suggestion you picked (for example "milk"), whether you want to add or hear items, the language (German or English) and the token. When reading out, no text is sent. We add the items to your default household's list just as if you had entered them in the app; the other members see them. We do not write the text to logs or to usage analytics; for errors we only log the type of error.
 
-So that Siri understands phrases like "Add milk to Hummlist", the app stores up to 50 item names of your household on your iPhone and passes them to iOS's App Shortcuts. How Apple processes your speech, its transcript and this data is governed by Apple, as an independent controller, in its privacy policy and in your iPhone's Siri settings; we have no influence on this.
+So that Siri understands phrases like "Add milk to Hummlist", the app stores up to 50 item names of the household you currently have open in the app on your iPhone and passes them to iOS's App Shortcuts. How Apple processes your speech, its transcript and this data is governed by Apple, as an independent controller, in its privacy policy and in your iPhone's Siri settings; we have no influence on this.
 
-The token ends when you sign out, leave the household, delete your account, revoke it under More › Access, or sign in again on this iPhone (the app then creates a new one). Each account has at most five Siri tokens; when another is added, the oldest ends. After a token ends, we keep its stored data for 30 more days so we can look into misuse or questions, then delete it at the next daily clean-up. If the token ends because you signed out, we notice this by the next day at the latest.
+The token ends when you sign out, leave your last household, delete your account, revoke it under More › Access, or sign in again on this iPhone (the app then creates a new one). Each account has at most five Siri tokens; when another is added, the oldest ends. After a token ends, we keep its stored data for 30 more days so we can look into misuse or questions, then delete it at the next daily clean-up. If the token ends because you signed out, we notice this by the next day at the latest.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Amazon Alexa
 
 You can enable the Alexa skill "Hummlist" in the Alexa app and link it to your Hummlist account. To do so, you sign in to Hummlist and allow "Amazon Alexa" to access your list. Amazon receives an access token and a refresh token for this and keeps them.
 
-When you ask Alexa to add something to your list or read it out, Amazon records your speech and turns it into text. We do not receive a voice recording from Amazon, only the recognised text (for example "milk and eggs"), the kind of request, the access token, an ID of your Alexa account and technical details about the device and language. We do not use the device ID. We add the items to the list of your current household, just as if you had entered them in the app; the other members see them. In our reply we send Amazon the item names, which Alexa reads out to you and shows as a card in the Alexa app: the items just added, or up to 10 open items on your list.
+When you ask Alexa to add something to your list or read it out, Amazon records your speech and turns it into text. We do not receive a voice recording from Amazon, only the recognised text (for example "milk and eggs"), the kind of request, the access token, an ID of your Alexa account and technical details about the device and language. We do not use the device ID. We add the items to the list of your default household (section 5), just as if you had entered them in the app; the other members see them. In our reply we send Amazon the item names, which Alexa reads out to you and shows as a card in the Alexa app: the items just added, or up to 10 open items on your list.
 
 For this we store a hash (SHA-256) of your Alexa ID, which sign-in session belongs to it and when you last used the skill, so that we can end the connection when you disable the skill. We also count how many items you added in the current minute (at most 30). We delete this data as soon as the connection ends: when you disable the skill in the Alexa app, link it again, choose "Disconnect Amazon Alexa" under More › Access, or delete your account. If you don't use the skill for 12 months, we end the connection and delete this data as well. If you only unlink in the Alexa app, Amazon deletes the tokens; the entry under More › Access stays until you remove it or it has gone unused for 12 months.
 
@@ -100,7 +113,7 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 8. Export your data and delete your account
 
-Account › Export my data gives you your data as a JSON file. Account › Delete account deletes your account immediately. What happens to shared households is explained at https://app.hummlist.com/konto-loeschen.html.
+Account › Export my data gives you your data as a JSON file, with all households you are a member of and the invites you joined through. Account › Delete account deletes your account immediately. What happens to shared households is explained at https://app.hummlist.com/konto-loeschen.html.
 
 ## 9. Usage data and error reports (only with consent)
 
@@ -151,7 +164,7 @@ You can get a copy of the safeguards from support@hummlist.com.
 
 ## 14. Retention
 
-We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, access tokens, connections (Alexa included) and your usage-data decisions immediately; for purchases we remove the link to your account. We delete a household's record at RevenueCat 30 days after the household is deleted (section 5). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. If you leave a household with Hummlist Lifetime as its last member without deleting your account, the household and its data are deleted. Hummlist Lifetime ends with the household. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included. Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year. For the waitlist, the periods in section 2a apply.
+We keep your data as long as you have an account. When you delete your account, we delete your account, profile, memberships, the record of which invite you joined through, access tokens, connections (Alexa included) and your usage-data decisions immediately; for purchases we remove the link to your account. We delete a household's record at RevenueCat 30 days after the household is deleted (section 5). We also delete Alexa connection data as soon as the connection ends (section 7). If you are the last member of a household, the household and everything in it is deleted, as is any household you archived. You can also leave single households without deleting your account. With a household we also delete its invites and the record of who joined through them. If you leave a household with Hummlist Lifetime as its last member without deleting your account, the household and its data are deleted. Hummlist Lifetime ends with the household. Otherwise the items and history stay for the other members, without any link to you; the item names remain visible. We keep shared household data, the history included, as long as the household exists, archived households included. We delete the join page's check values after the hour has ended (section 5). Our database provider's logs are deleted after at most 1 day, backups after 90 days, and usage data and error reports at PostHog after 1 year. For the waitlist, the periods in section 2a apply.
 
 ## 15. Your rights {#rights}
 
