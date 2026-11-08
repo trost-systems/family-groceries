@@ -10415,3 +10415,24 @@ recently used items.
    Einkaufsliste“ means Amazon's list, with the phrasings that reach the skill.
 5. **No deploy needed for behaviour.** The functions' behaviour is unchanged; `supabase-deploy.yml`
    redeploys `voice` from main with the refactor as usual.
+
+## Job 171: a store divider only folds, 2026-11-08
+
+Peter (Nov 8): a hold on a store's section header must not open its store menu; a tap only folds
+or unfolds the section.
+
+1. **Category dividers lose their hold too.** A hold on a category divider opened the same store
+   details as the store divider, so keeping it would keep the surprise Peter reported. Neither
+   divider reacts to a hold or a right click now; a store's details open only from Liste →
+   „Anpassen“ → the store. Item rows keep their hold and right click (the edit sheet).
+2. **A hold on a store divider does nothing, not a fold.** Without a long-press recognizer the
+   tap recognizer is alone in the arena and takes a hold's release as a tap, which folded the
+   section. The store divider sits in the rows' `Hold` with an empty `onHold`, so a hold claims
+   the press at the rows' threshold (300 ms; an empty `onLongPress` would wait 500 ms and fold a
+   press in between, found by the merge review) and ends in nothing. The widget test holds 350 ms
+   and the default long press; both fail without it.
+3. **Screen readers.** The store divider keeps its tap action (fold) and loses the long-press
+   action; the category divider is a heading with no action.
+4. **No in-app copy to change.** No ARB string mentions holding a store; the list explainer
+   („Tippen hakt ab · Halten bearbeitet“) and the edit tip are about items and stay. The feature
+   files, FEATURES-FOR-WRITERS and STORE_LAYOUTS.md no longer say a divider hold opens anything.
