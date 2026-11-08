@@ -161,6 +161,87 @@ void main() {
       expect(cubit.state, _shows('home', households: ['home']));
     });
 
+    test('kind, role and Premium come with each household', () async {
+      server
+        ..kinds['club'] = 'club'
+        ..premium.add('home')
+        ..member('lea', 'club', 'Sommerfest');
+      await cubit.refresh();
+      final [home, club] = (cubit.state as InHousehold).households;
+      expect(
+        (home.kind, home.role, home.premium),
+        (null, HouseholdRole.owner, true),
+      );
+      expect(
+        (club.kind, club.role, club.premium),
+        (HouseholdKind.club, HouseholdRole.owner, false),
+      );
+      expect(Household.fromJson(home.toJson())?.premium, isTrue);
+      expect(Household.fromJson(club.toJson())?.kind, HouseholdKind.club);
+    });
+
+    group('removed by someone else (job 169b W2)', () {
+      late List<String> told;
+
+      setUp(() {
+        told = [];
+        cubit.removals.listen((h) => told.add(h.name));
+      });
+
+      test(
+        'from the household shown: the default shows, and it is said',
+        () async {
+          cache.households['peter'] = (
+            households: [_home, _club],
+            shown: 'club',
+          );
+          await cubit.refresh();
+          expect(cubit.state, _shows('club'));
+          server.removedBySomeone('peter', 'club');
+          await cubit.refresh();
+          await pumpEventQueue();
+          expect(cubit.state, _shows('home', households: ['home']));
+          expect(told, ['Sommerfest']);
+        },
+      );
+
+      test('from another household: the one shown stays', () async {
+        await cubit.refresh();
+        server.removedBySomeone('peter', 'club');
+        await cubit.refresh();
+        await pumpEventQueue();
+        expect(cubit.state, _shows('home', households: ['home']));
+        expect(told, ['Sommerfest']);
+      });
+
+      test('from the last one: onboarding, and it is said', () async {
+        await cubit.refresh();
+        server
+          ..removedBySomeone('peter', 'club')
+          ..removedBySomeone('peter', 'home');
+        await cubit.refresh();
+        await pumpEventQueue();
+        expect(cubit.state, isA<NeedsHousehold>());
+        expect(told, unorderedEquals(['Zuhause', 'Sommerfest']));
+      });
+
+      test('the default moves on the server: the new default shows', () async {
+        await cubit.refresh();
+        server.removedBySomeone('peter', 'home');
+        await cubit.refresh();
+        final state = cubit.state as InHousehold;
+        expect(state, _shows('club'));
+        expect(state.defaultHousehold.id, 'club');
+      });
+
+      test('leaving is not a removal', () async {
+        await cubit.refresh();
+        await cubit.leave('club');
+        await pumpEventQueue();
+        expect(told, isEmpty);
+      });
+    });
+
     test('a switch while a reload is out wins', () async {
       await cubit.refresh();
       final reload = cubit.refresh();
@@ -404,6 +485,71 @@ void main() {
       expect(gated.households['peter']?.shown, 'new');
     });
 
+    test('a switch while a reload keeps its answer on the device '
+        'stays', () async {
+      final gated = _GatedCache();
+      final cubit = SessionCubit(server, gated);
+      addTearDown(cubit.close);
+      await cubit.refresh();
+      final saving = Completer<void>();
+      final gate = gated.gate = Completer<void>();
+      gated.onRemember = saving.complete;
+      final reload = cubit.refresh();
+      await saving.future;
+      final switched = cubit.switchTo('club');
+      gate.complete();
+      await reload;
+      await switched;
+      expect(cubit.state, _shows('club'));
+      expect(gated.households['peter']?.shown, 'club');
+    });
+
+    test('a reload out when the user signs out does not bring their '
+        'household back', () async {
+      final hold = server.holdReads = Completer<void>();
+      _signIn(auth);
+      await pumpEventQueue();
+      expect(server.calls.last, startsWith('rpc/my_households'));
+      await auth.signOut();
+      await pumpEventQueue();
+      hold.complete();
+      await pumpEventQueue();
+      expect(cubit.state, isA<SignedOut>());
+      expect(cache.households, isEmpty);
+      server.holdReads = null;
+      auth.user = _user;
+      _signIn(auth);
+      await pumpEventQueue();
+      expect(cubit.state, _shows('home'), reason: 'signing in again loads');
+    });
+
+    test('a reload out when the account is deleted does not bring its '
+        'household back', () async {
+      final gated = _GatedCache();
+      final cubit = SessionCubit(server, gated);
+      addTearDown(cubit.close);
+      final hold = server.holdReads = Completer<void>();
+      _signIn(auth);
+      await pumpEventQueue();
+      final forgetting = gated.forgetGate = Completer<void>();
+      final states = <Session>[];
+      cubit.stream.listen(states.add);
+      final deleted = cubit.accountDeleted(
+        const AccountDeletedNotice(removeAppleManually: false),
+      );
+      hold.complete();
+      await pumpEventQueue();
+      forgetting.complete();
+      await deleted;
+      await pumpEventQueue();
+      expect(states, isNot(contains(isA<InHousehold>())));
+      expect(
+        cubit.state,
+        isA<SignedOut>().having((s) => s.deleted, 'deleted', isNotNull),
+      );
+      expect(gated.households, isEmpty);
+    });
+
     test('unarchiving adds the household and shows it', () async {
       await cubit.refresh();
       await cubit.unarchive('old');
@@ -416,10 +562,14 @@ void main() {
   });
 }
 
-/// Holds its next [remember] until [gate] completes, after [onRemember].
+/// Holds its next [remember] until [gate] completes, after [onRemember],
+/// and its next [forget] until [forgetGate] completes. Writes land in call
+/// order, as DeviceCache's do.
 class _GatedCache() extends MemorySessionCache {
   Completer<void>? gate;
+  Completer<void>? forgetGate;
   void Function()? onRemember;
+  var _last = Future<void>.value();
 
   @override
   Future<void> remember(
@@ -427,11 +577,25 @@ class _GatedCache() extends MemorySessionCache {
     required List<Household> households,
     String? shown,
   }) async {
-    if (gate case final held?) {
-      gate = null;
+    final held = gate;
+    gate = null;
+    if (held != null) {
       onRemember?.call();
-      await held.future;
     }
+    final previous = _last;
+    final done = Completer<void>();
+    _last = done.future;
+    await previous;
+    await held?.future;
     await super.remember(userId, households: households, shown: shown);
+    done.complete();
+  }
+
+  @override
+  Future<void> forget() async {
+    final held = forgetGate;
+    forgetGate = null;
+    await held?.future;
+    await super.forget();
   }
 }

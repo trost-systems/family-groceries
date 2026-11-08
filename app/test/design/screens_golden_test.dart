@@ -13,6 +13,7 @@ import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/edit_item_sheet.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -40,7 +41,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
 import '../analytics/fakes.dart' show MemoryAnalyticsStore, loadedAnalytics;
-import '../household/harness.dart' show FakeInvites;
+import '../household/harness.dart' show FakeInvites, FakeSharer;
 import '../list/fake_repository.dart';
 import '../more/more_harness.dart';
 import '../purchases/fakes.dart';
@@ -112,6 +113,9 @@ Future<FakeRepository> _pumpShell(
     Household(id: 'home', name: 'Zuhause', isDefault: true),
   ],
   String initialLocation = listPath,
+
+  /// The household's invites and members; Peter and Lea by default.
+  FakeInvites? invites,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -185,12 +189,15 @@ Future<FakeRepository> _pumpShell(
         RepositoryProvider.value(value: cache),
         RepositoryProvider<PremiumServer>.value(value: purchases.premium),
         RepositoryProvider<InviteRepository>.value(
-          value: FakeInvites()
-            ..memberLists['home'] = const [
-              HouseholdMember(userId: 'peter', displayName: 'Peter'),
-              HouseholdMember(userId: 'lea', displayName: 'Lea'),
-            ],
+          value:
+              invites ??
+              (FakeInvites()
+                ..memberLists['home'] = const [
+                  HouseholdMember(userId: 'peter', displayName: 'Peter'),
+                  HouseholdMember(userId: 'lea', displayName: 'Lea'),
+                ]),
         ),
+        RepositoryProvider<InviteSharer>.value(value: FakeSharer()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -604,6 +611,92 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('goldens/household-page-$mode.png'),
+      );
+    });
+
+    // Job 169b W2: the owner's view of the members with their roles, and
+    // the invite sheet with an active group link and who joined.
+    const owned = [
+      Household(
+        id: 'home',
+        name: 'Zuhause',
+        isDefault: true,
+        memberCount: 4,
+        openCount: 4,
+        role: HouseholdRole.owner,
+        premium: true,
+        kind: HouseholdKind.family,
+      ),
+    ];
+    FakeInvites crew() {
+      final invites = FakeInvites()
+        ..memberLists['home'] = const [
+          HouseholdMember(
+            userId: 'peter',
+            displayName: 'Peter',
+            role: HouseholdRole.owner,
+          ),
+          HouseholdMember(
+            userId: 'lea',
+            displayName: 'Lea',
+            role: HouseholdRole.admin,
+          ),
+          HouseholdMember(userId: 'mia', displayName: 'Mia'),
+          HouseholdMember(userId: 'jonas', displayName: 'Jonas'),
+        ]
+        ..created.add(
+          Invite(
+            id: 'group-1',
+            code: 'HUMM4825',
+            // Local time, as the sheet shows it: the same text in every zone.
+            expiresAt: DateTime(2026, 12, 8, 10, 30),
+            kind: InviteKind.group,
+            maxUses: 50,
+            useCount: 2,
+          ),
+        );
+      invites.joinLists['group-1'] = [
+        InviteJoin(
+          userId: 'mia',
+          displayName: 'Mia',
+          joinedAt: DateTime.utc(2026, 11, 6, 18),
+        ),
+        InviteJoin(
+          userId: 'jonas',
+          displayName: 'Jonas',
+          joinedAt: DateTime.utc(2026, 11, 7, 9),
+        ),
+      ];
+      return invites;
+    }
+
+    testWidgets('household page with roles, $mode', (tester) async {
+      await _pumpShell(
+        tester,
+        brightness,
+        households: owned,
+        invites: crew(),
+        initialLocation: householdPath,
+      );
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/household-roles-$mode.png'),
+      );
+    });
+
+    testWidgets('invite sheet, $mode', (tester) async {
+      await _pumpShell(
+        tester,
+        brightness,
+        households: owned,
+        invites: crew(),
+        initialLocation: householdPath,
+      );
+      await tester.tap(find.byKey(const ValueKey('household-invite')));
+      await tester.pumpAndSettle();
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('goldens/invite-sheet-$mode.png'),
       );
     });
 

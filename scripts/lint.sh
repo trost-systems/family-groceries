@@ -17,6 +17,13 @@ for tool in AST_GREP SQUAWK; do
   fi
 done
 
+log "merge conflict markers"
+# A 3-way apply that stopped on a conflict leaves its markers staged (job 169b W2 shipped two
+# feature docs with them; no other gate reads those files).
+if git grep -nE '^(<<<<<<<|>>>>>>>)( |$)' -- . ':!*.png' ':!*.jpg' ':!*.gif' ':!*.mp4' ':!*.webm' ':!*.woff2' ':!*.ttf'; then
+  echo "lint: merge conflict markers above: resolve them (keep both sides' meaning), then git add" >&2
+  exit 1
+fi
 log "ast-grep rule tests"
 scripts/ast-grep.sh test
 log "ast-grep scan"
