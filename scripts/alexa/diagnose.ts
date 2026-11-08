@@ -2,6 +2,7 @@
 // the Amazon Alexa client's OAuth steps and the alexa_links rows now (diagnose.sh, docs/ALEXA.md,
 // "Troubleshooting"). Raw log rows carry IPs, e-mails, names and tokens: they are parsed into the
 // types below from allow-listed fields only, and render() sees nothing else.
+import type { InvalidTokenDetail } from '../../supabase/functions/_shared/auth.ts';
 import { type ReplyKind, replyKinds } from '../../supabase/functions/alexa/handler.ts';
 
 export const projectRef = 'jdwqrallbpdbshrdhenk';
@@ -26,6 +27,8 @@ export interface RequestLine {
   linked: boolean;
   kind: ReplyKind;
   reason?: string;
+  /** Job 170's `rid=… slot=… confirm=… ended=… error=… ms=…`, as logged; absent on older lines. */
+  details?: string;
 }
 
 /** What the function logged for one call: its request line, a line we refuse to echo, or none. */
@@ -77,32 +80,81 @@ const word = '[\\w.:-]+';
 const requestGrammar = new RegExp(
   `^alexa: (${word}) (${word}) (${word}) linked=(true|false) -> (${
     replyKinds.join('|')
-  })(?: (${word}))?$`,
+  })(?: (${word}))?((?: [a-z]+=${word})*)$`,
 );
+// Job 170's details: the keys it logs, each value a short enum, count or id end.
+const detail = /^(rid|slot|confirm|ended|error|ms)=(-|[A-Za-z0-9_]{1,32})$/;
 // Tighter than the grammar: a field that could hold a token or an address never gets printed.
 const fieldShapes = {
   type: /^(-|[A-Za-z.]{1,64})$/,
   intent: /^(-|[A-Za-z.]{1,64})$/,
   locale: /^(-|[a-z]{2}-[A-Z]{2})$/,
-  reason: /^[a-z_]{1,32}$/,
+  reason: /^[a-z_]{1,32}(:[a-z_]{1,32})?$/,
 };
+/** The kinds that log a reason: a verifier refusal, a rejected link, a link event's token. */
+const reasonKinds = new Set<ReplyKind>(['refused', 'link', 'empty']);
+
+/**
+ * What a rejected link token's reason means and what to do next (`-> link invalid_token:<detail>`,
+ * job 170b). docs/ALEXA.md "Troubleshooting" and the voice runbook's X5 rows say the same.
+ */
+export const linkReasons: Record<InvalidTokenDetail, string> = {
+  session_ended: "the link's session is gone (removed under Zugänge, signed out everywhere, " +
+    'account deleted, or a reused refresh token revoked it). Link the skill again.',
+  expired: 'Alexa sent an access token past its expiry, so its refresh failed. Look for a ' +
+    'token refresh_token row with an error below (refresh_token_already_used: link again).',
+  not_oauth: 'a valid Hummlist token, but an app session or API key, not an OAuth token. Check ' +
+    "the skill's Client ID is the Amazon Alexa client (health.sh), then link again.",
+  unknown_key: 'an API key or Siri credential Hummlist does not know. Check the Client ID and ' +
+    'Access Token URI in the skill (docs/ALEXA.md, Account linking), then link again.',
+  issuer: "the token comes from another auth server: the skill's Access Token URI points at " +
+    'another project or host. Fix the URIs (docs/ALEXA.md, Account linking), then link again.',
+  audience: 'a JWT that is no Supabase user token. Check the Access Token URI, then link again.',
+  signature: "signed with a key this project does not publish: another project's token, or " +
+    'signing keys rotated. Check the Access Token URI, then link again.',
+  claims: 'a Supabase token without a user session (anon or service role). Check the Access ' +
+    'Token URI and Client ID, then link again.',
+  malformed: 'not a JWT. Check the Access Token URI, then link again.',
+  unverified: 'the check itself failed (the key set did not load). Try once more; if it ' +
+    'repeats, read the function logs for an auth outage before anyone relinks.',
+};
+
+function linkHint(reason: string): string | undefined {
+  const [failure, detail] = reason.split(':');
+  if (detail && Object.hasOwn(linkReasons, detail)) {
+    return linkReasons[detail as InvalidTokenDetail];
+  }
+  if (failure === 'invalid_token') return 'the token was rejected. Link the skill again.';
+  return undefined;
+}
 
 export function parseRequestLine(message: string): RequestLine | null {
   const m = requestGrammar.exec(message.trimEnd());
   if (!m) return null;
-  const [, type, intent, locale, linked, kind, reason] = m;
+  const [, type, intent, locale, linked, kind, reason, trailer] = m;
+  const details = trailer?.trim();
   if (
     !fieldShapes.type.test(type) || !fieldShapes.intent.test(intent) ||
     !fieldShapes.locale.test(locale) ||
-    (reason !== undefined && (kind !== 'refused' || !fieldShapes.reason.test(reason)))
+    (reason !== undefined &&
+      (!reasonKinds.has(kind as ReplyKind) || !fieldShapes.reason.test(reason))) ||
+    (details && !details.split(' ').every((d) => detail.test(d)))
   ) return null;
-  return { type, intent, locale, linked: linked === 'true', kind: kind as ReplyKind, reason };
+  return {
+    type,
+    intent,
+    locale,
+    linked: linked === 'true',
+    kind: kind as ReplyKind,
+    reason,
+    ...(details && { details }),
+  };
 }
 
 export const formatLine = (l: RequestLine) =>
   `alexa: ${l.type} ${l.intent} ${l.locale} linked=${l.linked} -> ${l.kind}${
     l.reason ? ` ${l.reason}` : ''
-  }`;
+  }${l.details ? ` ${l.details}` : ''}`;
 
 const spokenTypes = new Set(['LaunchRequest', 'IntentRequest', 'SessionEndedRequest']);
 
@@ -392,6 +444,13 @@ export function render(window: Window, d: Diagnosis): string {
       '  refused: the request failed verification (wrong_skill: the ALEXA_SKILL_ID secret; ' +
         'stale_timestamp: a clock off by more than 150 s; cert_* or bad_signature: not from Amazon).',
     );
+  }
+  const rejected = new Set(
+    lines.flatMap((l) => l.kind !== 'refused' && l.reason ? [l.reason] : []),
+  );
+  for (const reason of rejected) {
+    const hint = linkHint(reason);
+    if (hint) out.push(`  link ${reason}: ${hint}`);
   }
   out.push('');
 

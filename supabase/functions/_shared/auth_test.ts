@@ -6,6 +6,7 @@ import {
   authenticateSession,
   AuthError,
   type AuthFailure,
+  type InvalidTokenDetail,
   type SessionDeps,
   sha256Hex,
 } from './auth.ts';
@@ -55,9 +56,9 @@ function token(
 const bearer = (value: string) =>
   new Request('http://local/mcp', { headers: { authorization: `Bearer ${value}` } });
 
-async function failsWith(req: Request, reason: AuthFailure) {
+async function failsWith(req: Request, reason: AuthFailure, detail?: InvalidTokenDetail) {
   const error = await assertRejects(() => authenticate(req, deps), AuthError);
-  assertEquals(error.reason, reason);
+  assertEquals([error.reason, error.detail], [reason, detail]);
 }
 
 Deno.test('an OAuth access token authenticates as its user, household and client', async () => {
@@ -80,9 +81,13 @@ Deno.test('an app session token authenticates as a session', async () => {
 });
 
 Deno.test('a JWT whose session ended (app disconnected, signed out) is invalid', async () => {
-  await failsWith(bearer(await token({ client_id: 'c-1', session_id: ENDED })), 'invalid_token');
-  await failsWith(bearer(await token({ session_id: ENDED })), 'invalid_token');
-  await failsWith(bearer(await token({ session_id: undefined })), 'invalid_token');
+  await failsWith(
+    bearer(await token({ client_id: 'c-1', session_id: ENDED })),
+    'invalid_token',
+    'session_ended',
+  );
+  await failsWith(bearer(await token({ session_id: ENDED })), 'invalid_token', 'session_ended');
+  await failsWith(bearer(await token({ session_id: undefined })), 'invalid_token', 'claims');
 });
 
 Deno.test('a personal access token authenticates by its hash', async () => {
@@ -100,7 +105,7 @@ Deno.test('a Siri credential authenticates as siri only where the function opts 
     via: 'siri',
   });
   assertEquals((await authenticate(bearer(PAT), deps, { siri: true })).via, 'pat');
-  await failsWith(bearer(SIRI), 'invalid_token');
+  await failsWith(bearer(SIRI), 'invalid_token', 'unknown_key');
   const error = await assertRejects(
     () => authenticateSession(bearer(SIRI), sessionDeps),
     AuthError,
@@ -117,19 +122,28 @@ Deno.test('missing or malformed Authorization headers are missing tokens', async
 });
 
 Deno.test('unknown or revoked personal access tokens are invalid', async () => {
-  await failsWith(bearer('fgp_revoked'), 'invalid_token');
+  await failsWith(bearer('fgp_revoked'), 'invalid_token', 'unknown_key');
 });
 
 Deno.test('tokens that fail signature, expiry, audience, issuer or role checks are invalid', async () => {
-  await failsWith(bearer(await token({}, { key: other.privateKey })), 'invalid_token');
-  await failsWith(bearer(await token({}, { exp: '-1m' })), 'invalid_token');
-  await failsWith(bearer(await token({}, { aud: 'someone-else' })), 'invalid_token');
+  await failsWith(bearer(await token({}, { key: other.privateKey })), 'invalid_token', 'signature');
+  await failsWith(bearer(await token({}, { exp: '-1m' })), 'invalid_token', 'expired');
+  await failsWith(bearer(await token({}, { aud: 'someone-else' })), 'invalid_token', 'audience');
   await failsWith(
     bearer(await token({}, { iss: 'https://evil.example/auth/v1' })),
     'invalid_token',
+    'issuer',
   );
-  await failsWith(bearer(await token({ role: 'anon' })), 'invalid_token');
-  await failsWith(bearer('not-a-jwt'), 'invalid_token');
+  await failsWith(bearer(await token({ role: 'anon' })), 'invalid_token', 'claims');
+  await failsWith(bearer('not-a-jwt'), 'invalid_token', 'malformed');
+  const legacy = await new SignJWT({ role: 'authenticated', session_id: SESSION })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(USER)
+    .setIssuer(ISSUER)
+    .setAudience('authenticated')
+    .setExpirationTime('1h')
+    .sign(new TextEncoder().encode('the legacy jwt secret, at least 32 chars'));
+  await failsWith(bearer(legacy), 'invalid_token', 'signature');
 });
 
 Deno.test('a valid user without a household is refused with 403', async () => {

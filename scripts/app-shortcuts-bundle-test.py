@@ -44,7 +44,7 @@ class AppShortcutsBundle(unittest.TestCase):
     @staticmethod
     def complete(lang: str) -> dict:
         table = {f"#!SET#!_{k}[0]": k.replace("Add", lang) for keys in TEMPLATES.values() for k in keys}
-        table[f"#!SET#!_{NEGATIVE}[0]"] = f"{lang}: shopping list"
+        table[NEGATIVE] = NEGATIVE if lang == "en" else f"{lang}: shopping list"
         return table
 
     def write_info(self, spoken="Hummlist", names=NAMES) -> None:
@@ -128,9 +128,13 @@ class AppShortcutsBundle(unittest.TestCase):
 
     def test_a_negative_phrase_without_german_phrases_fails(self):
         table = self.complete("de")
-        del table[f"#!SET#!_{NEGATIVE}[0]"]
+        del table[NEGATIVE]
         self.write_phrases("de", table)
         self.assertFails(f'de.lproj AppShortcuts: no phrases for the negative "{NEGATIVE}"')
+
+    def test_a_german_negative_left_in_english_fails(self):
+        self.write_phrases("de", {**self.complete("de"), NEGATIVE: NEGATIVE})
+        self.assertFails(f'de.lproj AppShortcuts: the negative "{NEGATIVE}" is not translated')
 
     def test_a_negative_phrase_that_names_the_app_fails(self):
         self.write_phrases("en", {**self.complete("en"), f"#!SET#!_{NEGATIVE}[1]": "Add milk to Hummlist"})

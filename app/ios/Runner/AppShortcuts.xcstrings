@@ -33,23 +33,15 @@
     "Add something to my shopping list": {
       "localizations": {
         "de": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "Füge etwas zur Einkaufsliste hinzu",
-              "Setz etwas auf die Einkaufsliste",
-              "Füge etwas zu meiner Einkaufsliste hinzu"
-            ]
+            "value": "Füge etwas zu meiner Einkaufsliste hinzu"
           }
         },
         "en": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "Add something to my shopping list",
-              "Add to my shopping list",
-              "Add to my groceries list"
-            ]
+            "value": "Add something to my shopping list"
           }
         }
       }
@@ -93,24 +85,82 @@
         }
       }
     },
-    "Remind me to buy something": {
+    "Add to my groceries list": {
       "localizations": {
         "de": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "Erinnere mich, etwas zu kaufen",
-              "Füge etwas zu meinen Erinnerungen hinzu"
-            ]
+            "value": "Füge etwas zur Einkaufsliste hinzu"
           }
         },
         "en": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "Remind me to buy something",
-              "Add to my reminders"
-            ]
+            "value": "Add to my groceries list"
+          }
+        }
+      }
+    },
+    "Add to my reminders": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge etwas zu meinen Erinnerungen hinzu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to my reminders"
+          }
+        }
+      }
+    },
+    "Add to my shopping list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setz etwas auf die Einkaufsliste"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to my shopping list"
+          }
+        }
+      }
+    },
+    "Read my shopping list": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lies meine Einkaufsliste vor"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read my shopping list"
+          }
+        }
+      }
+    },
+    "Remind me to buy something": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erinnere mich, etwas zu kaufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remind me to buy something"
           }
         }
       }
@@ -176,21 +226,15 @@
     "What's on my shopping list": {
       "localizations": {
         "de": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "Was steht auf meiner Einkaufsliste",
-              "Lies meine Einkaufsliste vor"
-            ]
+            "value": "Was steht auf meiner Einkaufsliste"
           }
         },
         "en": {
-          "stringSet": {
+          "stringUnit": {
             "state": "translated",
-            "values": [
-              "What's on my shopping list",
-              "Read my shopping list"
-            ]
+            "value": "What's on my shopping list"
           }
         }
       }

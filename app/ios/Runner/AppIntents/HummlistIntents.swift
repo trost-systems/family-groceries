@@ -18,7 +18,8 @@ struct AddItemsIntent: AppIntent {
   var item: ItemSuggestion?
 
   func perform() async throws -> some IntentResult & ProvidesDialog {
-    let client = VoiceClient.live()
+    let client = VoiceClient.live(caller: item == nil ? "AddItems" : "AddItems.item")
+    VoiceClient.log.notice("\(client.caller, privacy: .public): invoked, text \(text == nil ? "none" : "given", privacy: .public)")
     guard client.credential() != nil else {
       let lang = VoiceLanguage.of(text)
       return .result(dialog: dialog(VoiceResult.failed(.notSignedIn).answer(mode: .add, copy: SiriCopy(lang))))
@@ -60,7 +61,7 @@ struct ReadListIntent: AppIntent {
 
   func perform() async throws -> some IntentResult & ProvidesDialog {
     let lang = VoiceLanguage.of(nil)
-    let result = await VoiceClient.live().send(text: nil, mode: .read, lang: lang)
+    let result = await VoiceClient.live(caller: "ReadList").send(text: nil, mode: .read, lang: lang)
     return .result(dialog: dialog(result.answer(mode: .read, copy: SiriCopy(lang))))
   }
 }
@@ -167,12 +168,17 @@ struct HummlistShortcuts: AppShortcutsProvider {
   }
 
   /// Requests for the system's own lists. Siri never hands these to Hummlist, whatever its fuzzy
-  /// matching makes of them.
+  /// matching makes of them. One plain German translation each in AppShortcuts.xcstrings (job
+  /// 170): the build log can't show whether a negative phrase's string set reaches Siri.
   static var negativePhrases: NegativeAppShortcutPhrases {
     NegativeAppShortcutPhrases(phrases: [
       "Add something to my shopping list",
+      "Add to my shopping list",
+      "Add to my groceries list",
       "What's on my shopping list",
+      "Read my shopping list",
       "Remind me to buy something",
+      "Add to my reminders",
     ])
   }
 }

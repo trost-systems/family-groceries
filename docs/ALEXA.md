@@ -199,21 +199,39 @@ The function writes exactly one line per request to its log (`requestLine` in
 Hummlist:
 
 ```
-alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind>
-alexa: IntentRequest AddItemIntent de-DE linked=true -> added
-alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty
-alexa: - - - linked=false -> refused bad_signature
+alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind> [reason] rid=<id end> slot=<words|-> confirm=<status|-> ended=<reason|-> error=<type|-> ms=<n>
+alexa: IntentRequest AddItemIntent de-DE linked=true -> added rid=3f2a9c1d0b7e slot=3 confirm=NONE ended=- error=- ms=812
+alexa: AlexaSkillEvent.SkillAccountLinked - - linked=true -> empty rid=8d0e11aa42c1 slot=- confirm=- ended=- error=- ms=640
+alexa: IntentRequest ReadListIntent de-DE linked=true -> link invalid_token:session_ended rid=c1d0b7e3f2a9 slot=- confirm=NONE ended=- error=- ms=31
+alexa: SessionEndedRequest - de-DE linked=true -> empty rid=0b7e3f2a9c1d slot=- confirm=- ended=ERROR error=INVALID_RESPONSE ms=3
+alexa: - - - linked=false -> refused bad_signature rid=- slot=- confirm=- ended=- error=- ms=41
 ```
 
+Job 170 added the fields after the reply kind, for following a device test live
+(`scripts/voice/tail.sh`, `docs/voice/TEST-SESSION-2026-11-08.md`):
+
+- `rid`: the last 12 characters of Alexa's request id, to match the console's device log.
+- `slot`: how many words Alexa heard for the items (`-` when the intent has no items slot). The
+  words themselves never.
+- `confirm`: the intent's confirmation status (`NONE`, `CONFIRMED`, `DENIED`), the Q79 yes or no.
+- `ended` and `error`: a `SessionEndedRequest`'s reason and Alexa's error type. `ended=ERROR
+  error=INVALID_RESPONSE` is Alexa refusing the previous answer ("Problem mit der Antwort des
+  Skills"); `ENDPOINT_TIMEOUT` is an answer later than 8 s.
+- `ms`: how long the function took, verification included.
+
 - `linked` says whether Alexa sent an access token (for `SkillAccountLinked`, the one in the event
-  body). `linked=true -> link` means the token was revoked, expired or not ours.
+  body). `linked=true -> link <reason>` means Hummlist rejected the token, and the reason says
+  why (job 170b): `invalid_token:<check>` with the check it failed (`InvalidTokenDetail` in
+  `supabase/functions/_shared/auth.ts`). A `SkillAccountLinked` event whose new token is rejected
+  logs the same reason after `empty`. The reasons and their next step are in
+  [Troubleshooting](#troubleshooting); `diagnose.sh` prints the step under the requests.
 - Reply kinds: `link` (link card), `no-household`, `launch`, `added`, `ask` (the yes/no question about a branded open item, Q79), `read`, `help`, `goodbye`,
   `reprompt` (the one second try), `not-understood`, `too-long`, `rate-limited`, `empty` (session end, `System.ExceptionEncountered` and the skill
   events, which want no speech), `error` (the apology or a 500; the exception is in PostHog error
   tracking) and `refused` (verification failed, with its reason, or not a POST; nothing from the
   body is trusted, so type, intent and locale are `-`).
-- Never in the line: tokens, Alexa, user, household or session ids, item names, utterances, IP
-  addresses. Each field is cut to one word of `[A-Za-z0-9_.:-]`. `handler_test.ts` ("job 74")
+- Never in the line: tokens, Alexa, user, household or session ids, item names, utterances,
+  Alexa's error message, IP addresses. Each field is cut to one word of `[A-Za-z0-9_.:-]`. `handler_test.ts` ("job 74")
   feeds tokens, ids and item names through every kind and checks none appears.
 
 Read it in the dashboard (Edge Functions → alexa → Logs) or through the Management API, about the
@@ -267,7 +285,12 @@ fault is in how Amazon routes that device's requests.
 | „Es ist ein unerwartetes Kommunikationsproblem aufgetreten“ | No row | Amazon's own failure before the skill was chosen. One possible cause is Alexa+ (Early Access) handling a beta skill; that is a guess, Amazon does not document it | Try once more, try the Alexa app on the phone, and check whether the Echo is on Alexa+. If it repeats with no row, it is Amazon's problem; note the time and the device |
 | the same | A row | Read its kind as above | |
 | „Bitte verknüpfe zuerst dein Hummlist-Konto …“ and a LinkAccount card in the Alexa app | `linked=false -> link` | Alexa sent no token. The Amazon account the Echo uses has the skill enabled but not linked. Often this is a different account from the one that linked | Link in the Alexa app of the Echo's account: Skills → Hummlist → Konto verknüpfen |
-| the same | `linked=true -> link` | The token is revoked or expired: the link was removed under Zugänge, the account was deleted, or a refresh failed (see Account linking for `refresh_token_already_used`) | Link again. A refresh failure is in DECISIONS „Job 91“ |
+| the same | `linked=true -> link invalid_token:session_ended` | The link's session is gone: the link was removed under Zugänge, the account was signed out everywhere or deleted, or a reused refresh token revoked it | Link again. Still `session_ended` right after a fresh link: check the Access Token URI as for `issuer` |
+| the same | `linked=true -> link invalid_token:expired` | Alexa sent an access token past its expiry: its refresh failed. diagnose.sh shows a `token refresh_token` row with an error, often `refresh_token_already_used` (DECISIONS „Job 91“) | Link again |
+| the same | `linked=true -> link invalid_token:not_oauth` or `:unknown_key` | A valid Hummlist app session, API key or Siri credential, not an OAuth token from account linking | Console › Account Linking: the Client ID must be the „Amazon Alexa“ OAuth client (`scripts/voice/health.sh` prints its id), the URIs as in [Account linking](#account-linking). Then link again |
+| the same | `linked=true -> link invalid_token:issuer`, `:audience`, `:signature`, `:claims` or `:malformed` | The token is not a user token from this project's auth server: the Access Token URI points at another host or project, or the signing keys were rotated (`signature`) | Check the Authorization and Access Token URIs against [Account linking](#account-linking), then link again |
+| the same | `linked=true -> link invalid_token:unverified` | Hummlist could not check the token: its key set did not load | Try again. If it repeats, look for an auth outage in the function logs. Linking again does not help |
+| the same | `-> empty invalid_token:<check>` on `SkillAccountLinked` | Linking finished in the Alexa app, but Hummlist rejects the new token. Requests after it log `-> link` with the same reason | The row for that reason above |
 | Skill not found: no Hummlist in the Alexa app's skill search, or „Ich konnte den Skill nicht finden“ | No row | The skill is not live. Only beta testers can see it, through their invitation link, on amazon.de | Open the invitation link while signed in to the invited Amazon account (beta rules) |
 | The Alexa app reports that linking failed | No new link in alexa_links | Check the Account linking section. A 403 `bad_jwt` on `authorization` means the Hummlist sign-in in the browser had expired, and the consent page asks to sign in again. A `token` row that is not 200 means a problem with the client secret or PKCE | Try linking again and sign in on the consent page. A token error: [Account linking](#account-linking) |
 

@@ -1,5 +1,6 @@
 import Foundation
 import NaturalLanguage
+import os
 
 /// The language of one request: the server answers in it and the local copy follows it.
 enum VoiceLanguage: String, CaseIterable {
@@ -55,6 +56,12 @@ struct VoiceClient {
 
   let session: URLSession
   let credential: () -> SiriCredential?
+  /// Which intent sends ("AddItems", "Lists.add"): the server logs it with the build number
+  /// (`x-hummlist-client`, voice's request line), so a test session sees which path Siri took.
+  var caller = "unknown"
+
+  /// The Siri log in Console.app (subsystem com.hummlist.app, category siri). Never the text.
+  static let log = Logger(subsystem: "com.hummlist.app", category: "siri")
 
   static func configuration() -> URLSessionConfiguration {
     let config = URLSessionConfiguration.ephemeral
@@ -65,10 +72,16 @@ struct VoiceClient {
     return config
   }
 
-  static func live() -> VoiceClient {
-    VoiceClient(session: URLSession(configuration: configuration())) {
-      SiriCredentialStore().load()
-    }
+  static func live(caller: String) -> VoiceClient {
+    VoiceClient(
+      session: URLSession(configuration: configuration()),
+      credential: { SiriCredentialStore().load() },
+      caller: caller)
+  }
+
+  /// "ios-1210.AddItems": the app's build and the intent.
+  static func clientHeader(caller: String, info: [String: Any]? = Bundle.main.infoDictionary) -> String {
+    "ios-\(info?["CFBundleVersion"] as? String ?? "0").\(caller)"
   }
 
   /// `ask`: this caller can put a yes/no question to the user (only AddItemsIntent can).
@@ -76,11 +89,15 @@ struct VoiceClient {
   func send(
     text: String?, mode: VoiceMode, lang: VoiceLanguage, ask: Bool = false, confirmed: Bool = false
   ) async -> VoiceResult {
-    guard let credential = credential() else { return .failed(.notSignedIn) }
+    guard let credential = credential() else {
+      Self.log.notice("\(caller, privacy: .public) \(mode.rawValue, privacy: .public): no Siri credential")
+      return .failed(.notSignedIn)
+    }
     var request = URLRequest(url: credential.url, timeoutInterval: Self.timeout)
     request.httpMethod = "POST"
     request.setValue("Bearer \(credential.token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.setValue(Self.clientHeader(caller: caller), forHTTPHeaderField: "x-hummlist-client")
     var body: [String: Any] = ["mode": mode.rawValue, "lang": lang.rawValue]
     if let text { body["text"] = text }
     if ask { body["ask"] = true }
@@ -92,12 +109,17 @@ struct VoiceClient {
     do {
       (data, response) = try await session.data(for: request)
     } catch let error as URLError {
+      Self.log.notice("\(caller, privacy: .public) \(mode.rawValue, privacy: .public): URLError \(error.code.rawValue)")
       return .failed(Self.failure(for: error.code))
     } catch {
       return .failed(.noAnswer)
     }
     guard let http = response as? HTTPURLResponse else { return .failed(.noAnswer) }
-    return Self.result(status: http.statusCode, body: data, mode: mode)
+    let result = Self.result(status: http.statusCode, body: data, mode: mode)
+    Self.log.notice(
+      "\(caller, privacy: .public) \(mode.rawValue, privacy: .public) \(lang.rawValue, privacy: .public): HTTP \(http.statusCode)"
+    )
+    return result
   }
 
   static func failure(for code: URLError.Code) -> VoiceFailure {

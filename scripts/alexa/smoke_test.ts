@@ -132,7 +132,9 @@ Deno.test('the unlinked body, signed like Amazon does, gets the LinkAccount card
   assertEquals(res.status, 200, 'verification accepted the request');
   const reply = await res.json();
   assertEquals(reply.response.card, { type: 'LinkAccount' });
-  assertEquals(lines, ['alexa: LaunchRequest - de-DE linked=false -> link'], 'the hinted line');
+  assertEquals(lines.map((l) => l.replace(/ rid=.*$/, '')), [
+    'alexa: LaunchRequest - de-DE linked=false -> link',
+  ], 'the hinted line');
 });
 
 Deno.test('a good answer passes; the token goes to ask but never to the output', async () => {

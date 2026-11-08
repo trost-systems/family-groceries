@@ -10,7 +10,7 @@
 //             session that minted it exists. Only functions that pass { siri: true } take it.
 // authenticateSession accepts only the app's own session token, household or not: for account
 // actions no connected app or token may take.
-import { createRemoteJWKSet, type JWTPayload, jwtVerify } from 'jose';
+import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from 'jose';
 import { householdOf, resolveAccessToken, sessionActive, userExists } from './db.ts';
 
 /** The project's internal URL; the runtime always sets it. */
@@ -40,8 +40,33 @@ export type AuthFailure =
   /** A genuine session token whose user has since been deleted. */
   | 'user_deleted';
 
+/**
+ * Which check an invalid_token failed, for logs only (Alexa's request line, job 170b): responses
+ * keep the bare reason. Closed, so a log never carries the token or the verifier's message.
+ */
+export type InvalidTokenDetail =
+  | 'expired'
+  | 'issuer'
+  | 'audience'
+  | 'signature'
+  /** A required claim is missing, or the role is not a signed-in user's. */
+  | 'claims'
+  | 'malformed'
+  /** Anything else the verifier threw, a key set that would not load among them. */
+  | 'unverified'
+  /** Signed out, disconnected in "Zugänge", revoked, or the user deleted. */
+  | 'session_ended'
+  /** A personal access token or Siri credential that is unknown, revoked or not taken here. */
+  | 'unknown_key'
+  /** A valid credential, but not an OAuth client's (Alexa takes only its account link). */
+  | 'not_oauth';
+
 export class AuthError extends Error {
-  constructor(readonly reason: AuthFailure, message: string) {
+  constructor(
+    readonly reason: AuthFailure,
+    message: string,
+    readonly detail?: InvalidTokenDetail,
+  ) {
     super(message);
   }
 
@@ -90,7 +115,7 @@ export async function authenticate(
   if (token.startsWith(PAT_PREFIX)) {
     const owner = await deps.resolvePat(await sha256Hex(token));
     if (!owner || (owner.kind === 'siri' && !options.siri)) {
-      throw new AuthError('invalid_token', 'Token unbekannt oder widerrufen.');
+      throw new AuthError('invalid_token', 'Token unbekannt oder widerrufen.', 'unknown_key');
     }
     return { userId: owner.userId, householdId: owner.householdId, via: owner.kind };
   }
@@ -101,7 +126,9 @@ export async function authenticate(
     deps.sessionActive({ id: claims.session_id, userId: claims.sub, clientId }),
     deps.householdOf(claims.sub),
   ]);
-  if (!active) throw new AuthError('invalid_token', 'Sitzung beendet oder Zugang getrennt.');
+  if (!active) {
+    throw new AuthError('invalid_token', 'Sitzung beendet oder Zugang getrennt.', 'session_ended');
+  }
   if (!householdId) throw new AuthError('no_household', 'Dieses Konto gehört zu keinem Haushalt.');
   return clientId
     ? { userId: claims.sub, householdId, via: 'oauth', clientId, sessionId: claims.session_id }
@@ -130,7 +157,7 @@ export async function authenticateSession(
   if (!await deps.userExists(claims.sub)) {
     throw new AuthError('user_deleted', 'Dieses Konto ist gelöscht.');
   }
-  throw new AuthError('invalid_token', 'Sitzung beendet.');
+  throw new AuthError('invalid_token', 'Sitzung beendet.', 'session_ended');
 }
 
 async function verifyJwt(
@@ -148,12 +175,28 @@ async function verifyJwt(
     });
     const { sub, role, session_id } = payload;
     if (typeof sub !== 'string' || typeof session_id !== 'string' || role !== 'authenticated') {
-      throw new Error('not a user token');
+      throw new AuthError('invalid_token', 'Token ungültig: not a user token', 'claims');
     }
     return { ...payload, sub, session_id };
   } catch (e) {
-    throw new AuthError('invalid_token', `Token ungültig: ${(e as Error).message}`);
+    if (e instanceof AuthError) throw e;
+    throw new AuthError('invalid_token', `Token ungültig: ${(e as Error).message}`, detailOf(e));
   }
+}
+
+/** jose's error code (and failed claim) as an InvalidTokenDetail. */
+function detailOf(e: unknown): InvalidTokenDetail {
+  if (!(e instanceof errors.JOSEError)) return 'unverified';
+  if (e instanceof errors.JWTExpired) return 'expired';
+  if (e instanceof errors.JWTClaimValidationFailed) {
+    return e.claim === 'iss' ? 'issuer' : e.claim === 'aud' ? 'audience' : 'claims';
+  }
+  if (
+    e instanceof errors.JWSSignatureVerificationFailed || e instanceof errors.JWKSNoMatchingKey ||
+    e instanceof errors.JOSEAlgNotAllowed
+  ) return 'signature';
+  if (e instanceof errors.JWSInvalid || e instanceof errors.JWTInvalid) return 'malformed';
+  return 'unverified';
 }
 
 export async function sha256Hex(text: string): Promise<string> {

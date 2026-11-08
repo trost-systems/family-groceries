@@ -13,7 +13,7 @@ export async function linkedBy(accessToken: string): Promise<Linked> {
   const auth = await authenticate(
     new Request('http://alexa.local/', { headers: { authorization: `Bearer ${accessToken}` } }),
   );
-  if (auth.via !== 'oauth') throw new AuthError('invalid_token', 'Kein Alexa-Zugang.');
+  if (auth.via !== 'oauth') throw new AuthError('invalid_token', 'Kein Alexa-Zugang.', 'not_oauth');
   return { userId: auth.userId, householdId: auth.householdId, sessionId: auth.sessionId };
 }
 

@@ -79,6 +79,8 @@ export interface Envelope {
     };
     dialogState?: string;
     reason?: string;
+    /** SessionEndedRequest with reason ERROR: why Alexa gave up on the skill's answer. */
+    error?: { type?: string; message?: string };
     body?: Record<string, unknown>;
   };
 }
